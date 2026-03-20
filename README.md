@@ -1,81 +1,73 @@
 # Doke — Base Visual Oficial
 
-Este pacote foi criado para servir como nova fundação visual do Doke, sem depender do legado anterior.
+Este pacote serve como base visual do Doke, com shell principal, auth e home modularizados para facilitar manutenção.
 
-## O que existe no ZIP
+## Estrutura atual
 
 - `index.html`
-  - Showcase principal com shell fixo, componentes e estados visuais.
+  - Home principal do shell.
+- `dashboard.html`
+  - Página interna de referência.
 - `templates/page-base.html`
   - Template limpo para começar novas páginas.
+- `auth/`
+  - Fluxos de login, cadastro e recuperação.
+
+### CSS
+
 - `assets/css/tokens.css`
-  - Variáveis oficiais de cor, espaçamento, raio, sombra e dimensões do shell.
+  - Variáveis oficiais de cor, espaçamento, raio, sombra e dimensões.
 - `assets/css/base.css`
   - Reset, tipografia, grids utilitários e base global.
 - `assets/css/layout.css`
-  - Sidebar fixa, header fixo, área de conteúdo e comportamento responsivo.
+  - Sidebar, topbar, dropdowns estruturais e responsividade do shell.
 - `assets/css/components.css`
-  - Botões, inputs, filtros, stats, community cards, order cards, skeleton e empty state.
+  - Botões, inputs, cards, tabelas e componentes reutilizáveis.
+- `assets/css/shell-home.css`
+  - Apenas fundo e sizing estrutural da home.
+- `assets/css/home-sections.css`
+  - Categorias, filtros, anúncios, vídeos curtos e antes/depois da home.
+- `assets/css/dashboard.css`
+  - Ajustes específicos do dashboard.
+- `assets/css/auth.css`
+  - Layout e componentes das páginas de autenticação.
+
+### JavaScript
+
 - `assets/js/app.js`
-  - Interações mínimas para menu mobile e chips de filtro.
+  - Interações globais do shell: sidebar, tema, avatar e dropdown de perfil.
+- `assets/js/home.js`
+  - Interações exclusivas da home: busca e filtros rápidos.
+- `assets/js/auth-service.js`
+  - Camada de sessão/auth local + integração opcional com Supabase.
+- `assets/js/auth.js`
+  - Comportamentos das telas de autenticação.
+- `assets/js/supabase-config.js`
+  - Configuração local do Supabase.
 
+## Regras de organização
 
-## Como usar no projeto
+1. Não criar CSS global novo quando a regra for específica de uma página.
+2. Componentes reutilizáveis vão para `components.css`.
+3. Estrutura do shell vai para `layout.css`.
+4. Comportamentos exclusivos da home ficam em `home.js`.
+5. Cada nova página deve ganhar no máximo um CSS específico, além da base compartilhada.
 
-1. Comece pelo `templates/page-base.html`.
-2. Duplique esse arquivo para criar cada nova página crítica.
-3. Mantenha sempre a mesma ordem dos CSS:
-   1. `tokens.css`
-   2. `base.css`
-   3. `layout.css`
-   4. `components.css`
-4. Não copie CSS legado antigo para dentro desta base.
-5. Se precisar criar novos componentes, use os tokens existentes primeiro.
+## Ordem recomendada dos CSS
 
-## Decisões visuais
+1. `tokens.css`
+2. `base.css`
+3. `layout.css`
+4. `components.css`
+5. CSS específico da página
 
-- **Shell fixo:** sidebar e topbar são estruturais e não devem recarregar visualmente.
-- **Paleta:** azul como base de confiança e verde como apoio de ação/sucesso.
-- **Hover:** leve, curto e sem exagero de escala.
-- **Cards:** borda suave, fundo branco translúcido, sombra controlada.
-- **Inputs e filtros:** linguagem visual única para busca, seleção e chips.
-- **Estados:** skeleton e empty state já definidos para reduzir improviso.
+## Ordem recomendada dos scripts
 
-## Componentes já prontos
-
-- Botões primário, secundário, ghost, soft e danger
-- Input padrão
-- Searchbox
-- Select padrão
-- Chips/filtros
-- Cards de comunidade
-- Cards de pedido
-- Stat cards
-- Empty state
-- Skeleton card
-- Tabela base
-
-## Regras para não contaminar a nova base
-
-- Não criar outro shell paralelo.
-- Não duplicar CSS global por página.
-- Não misturar múltiplos arquivos com o mesmo papel.
-- Não aplicar estilos inline estruturais além de ajustes pequenos de demo.
-- Não reaproveitar JS legado de navegação/autenticação dentro desta camada visual.
+1. `supabase-config.js`
+2. `auth-service.js`
+3. `app.js`
+4. JS específico da página
 
 ## Próximo passo recomendado
 
-Reconstruir primeiro as páginas mais críticas em cima desta base:
-
-1. `pedidos.html`
-2. `comunidade.html`
-3. `perfil.html`
-4. `mensagens.html`
-
-## Auth e Supabase
-
-- O projeto agora sai com auth local por padrao para facilitar demo e layout.
-- Para ativar Supabase, preencha `assets/js/supabase-config.js` com `url` e `anonKey` e troque `enabled` para `true`.
-- Existe um modelo pronto em `assets/js/supabase-config.example.js`.
-- O runtime do Supabase ja esta incluido via CDN oficial nas paginas de auth e no shell principal.
-
+Depois de validar a home no desktop, faça a responsividade por página, não só no final do projeto.
