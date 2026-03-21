@@ -1,6 +1,6 @@
 /* Home page interactions: search dropdown and quick-filter chips. */
 const searchBox = document.querySelector("[data-searchbox]");
-const searchInput = document.querySelector("[data-search-input]");
+const searchInput = document.querySelector("[data-search-input]") || document.querySelector("#main-site-search");
 const searchDropdown = document.querySelector("[data-search-dropdown]");
 const searchRecommendationList = document.querySelector("[data-search-recommendation-list]");
 const searchHistoryList = document.querySelector("[data-search-history-list]");
@@ -8,6 +8,7 @@ const searchResultsList = document.querySelector("[data-search-results-list]");
 const searchResultsSection = document.querySelector("[data-search-results-section]");
 const searchHistorySection = document.querySelector("[data-search-history-section]");
 const searchClearButton = document.querySelector("[data-search-clear]");
+const searchEmptyState = document.querySelector("[data-search-empty]");
 const SEARCH_HISTORY_STORAGE_KEY = "doke.search.history";
 
 const searchRecommendations = [
@@ -111,6 +112,9 @@ const renderSearchResults = (query = "") => {
   const normalizedQuery = query.trim().toLowerCase();
   searchResultsList.innerHTML = "";
   activeSearchIndex = -1;
+  if (searchEmptyState) {
+    searchEmptyState.hidden = true;
+  }
 
   if (!normalizedQuery) {
     searchResultsSection.hidden = true;
@@ -122,7 +126,10 @@ const renderSearchResults = (query = "") => {
     .slice(0, 4);
 
   if (!results.length) {
-    searchResultsSection.hidden = true;
+    searchResultsSection.hidden = false;
+    if (searchEmptyState) {
+      searchEmptyState.hidden = false;
+    }
     return;
   }
 
@@ -187,9 +194,8 @@ if (searchBox && searchInput && searchDropdown) {
   });
 
   searchInput.addEventListener("focus", () => {
-    if (!searchDropdownOpenedByClick) {
-      closeSearchDropdown();
-    }
+    searchDropdownOpenedByClick = true;
+    syncSearchDropdown();
   });
 
   searchInput.addEventListener("input", () => {
@@ -241,6 +247,12 @@ if (searchBox && searchInput && searchDropdown) {
       closeSearchDropdown();
     }
   });
+
+  searchBox.addEventListener("submit", (event) => {
+    event.preventDefault();
+    searchDropdownOpenedByClick = true;
+    commitSearchValue(searchInput.value);
+  });
 }
 
 if (searchClearButton) {
@@ -270,6 +282,9 @@ const moreFiltersToggle = document.querySelector("[data-more-filters-toggle]");
 const moreFiltersPanel = document.querySelector("[data-more-filters-panel]");
 const moreFiltersClose = document.querySelector("[data-more-filters-close]");
 const moreFiltersApply = document.querySelector("[data-more-filters-apply]");
+const categoryTrack = document.querySelector("[data-category-track]");
+const categoryArrows = document.querySelectorAll("[data-category-arrow]");
+const railArrows = document.querySelectorAll("[data-rail-arrow]");
 
 const openMoreFilters = () => {
   if (!moreFiltersToggle || !moreFiltersPanel) return;
@@ -313,3 +328,36 @@ if (moreFiltersToggle && moreFiltersPanel) {
     }
   });
 }
+
+const bindScrollRail = ({ track, arrows, directionAttr, amountFactor }) => {
+  if (!track || !arrows.length) return;
+
+  arrows.forEach((arrow) => {
+    arrow.addEventListener("click", () => {
+      const direction = arrow.dataset[directionAttr] === "next" ? 1 : -1;
+      const amount = Math.max(220, Math.round(track.clientWidth * amountFactor));
+      track.scrollBy({ left: amount * direction, behavior: "smooth" });
+    });
+  });
+};
+
+bindScrollRail({
+  track: categoryTrack,
+  arrows: categoryArrows,
+  directionAttr: "categoryArrow",
+  amountFactor: 0.45
+});
+
+railArrows.forEach((arrow) => {
+  const targetId = arrow.dataset.railTarget;
+  if (!targetId) return;
+  const track = document.getElementById(targetId);
+  if (!track) return;
+
+  bindScrollRail({
+    track,
+    arrows: [arrow],
+    directionAttr: "railArrow",
+    amountFactor: 0.82
+  });
+});

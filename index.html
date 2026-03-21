@@ -6,13 +6,14 @@
   <title>Doke | Base do site</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/tokens.css">
   <link rel="stylesheet" href="assets/css/base.css">
   <link rel="stylesheet" href="assets/css/layout.css">
   <link rel="stylesheet" href="assets/css/components.css">
   <link rel="stylesheet" href="assets/css/shell-home.css">
   <link rel="stylesheet" href="assets/css/home-sections.css">
+  <link rel="stylesheet" href="assets/css/home-refresh.css">
 </head>
 <body class="shell-home">
   <div class="app-shell">
@@ -29,7 +30,7 @@
 
       <div class="sidebar__group">
         <div class="sidebar__label">Principal</div>
-        <a class="nav-link is-active" href="#">
+        <a class="nav-link nav-link--home is-active" href="#">
           <span class="nav-link__start">
             <span class="nav-link__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
@@ -41,7 +42,7 @@
           </span>
           <span class="nav-link__count">Base</span>
         </a>
-        <a class="nav-link" href="#">
+        <a class="nav-link nav-link--orders" href="#">
           <span class="nav-link__start">
             <span class="nav-link__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
@@ -54,7 +55,7 @@
             <span>Pedidos</span>
           </span>
         </a>
-        <a class="nav-link" href="#">
+        <a class="nav-link nav-link--messages" href="#">
           <span class="nav-link__start">
             <span class="nav-link__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
@@ -66,7 +67,7 @@
             <span>Mensagens</span>
           </span>
         </a>
-        <a class="nav-link" href="#">
+        <a class="nav-link nav-link--notifications" href="#">
           <span class="nav-link__start">
             <span class="nav-link__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
@@ -78,7 +79,7 @@
           </span>
           <span class="nav-link__count">3</span>
         </a>
-        <a class="nav-link" href="#">
+        <a class="nav-link nav-link--communities" href="#">
           <span class="nav-link__start">
             <span class="nav-link__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
@@ -95,7 +96,7 @@
 
       <div class="sidebar__group">
         <div class="sidebar__label">Conta</div>
-        <a class="nav-link" href="#">
+        <a class="nav-link nav-link--profile" href="#">
           <span class="nav-link__start">
             <span class="nav-link__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
@@ -106,7 +107,7 @@
             <span>Perfil</span>
           </span>
         </a>
-        <a class="nav-link" href="#">
+        <a class="nav-link nav-link--settings" href="#">
           <span class="nav-link__start">
             <span class="nav-link__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
@@ -128,25 +129,7 @@
 
       <div class="sidebar__footer">
         <div class="sidebar__group sidebar__group--footer">
-          <button class="nav-link nav-link--footer-action" type="button" data-theme-toggle aria-label="Alternar tema">
-            <span class="nav-link__start">
-              <span class="nav-link__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="3.2"></circle>
-                  <path d="M12 3.8v2.1"></path>
-                  <path d="M12 18.1v2.1"></path>
-                  <path d="m18.2 5.8-1.5 1.5"></path>
-                  <path d="m7.3 16.7-1.5 1.5"></path>
-                  <path d="M20.2 12h-2.1"></path>
-                  <path d="M5.9 12H3.8"></path>
-                  <path d="m18.2 18.2-1.5-1.5"></path>
-                  <path d="m7.3 7.3-1.5-1.5"></path>
-                </svg>
-              </span>
-              <span>Tema</span>
-            </span>
-          </button>
-          <button class="nav-link nav-link--footer-action" type="button" data-sidebar-logout aria-label="Sair">
+<button class="nav-link nav-link--footer-action" type="button" data-sidebar-logout aria-label="Sair">
             <span class="nav-link__start">
               <span class="nav-link__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24">
@@ -165,32 +148,48 @@
     <div class="page">
       <header class="topbar topbar--location">
         <div class="topbar__left">
-          <div class="topbar-search-wrap" data-searchbox>
-            <label class="topbar-search" aria-label="Pesquisar">
-              <span class="topbar-search__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24">
-                  <circle cx="11" cy="11" r="6"></circle>
-                  <path d="m20 20-4.2-4.2"></path>
-                </svg>
-              </span>
-              <input type="search" placeholder="Buscar serviços ou profissionais" autocomplete="off" data-search-input aria-expanded="false" aria-haspopup="listbox" aria-controls="search-dropdown">
-            </label>
-            <div class="search-dropdown" id="search-dropdown" data-search-dropdown hidden>
-              <div class="search-dropdown__section" data-search-recommendations>
-                <div class="search-dropdown__title">Sugestões rápidas</div>
-                <div class="search-dropdown__chips" data-search-recommendation-list></div>
-              </div>
-              <div class="search-dropdown__section" data-search-history-section hidden>
-                <div class="search-dropdown__heading-row">
-                  <div class="search-dropdown__title">Recentes</div>
-                  <button class="search-dropdown__clear" type="button" data-search-clear>Limpar</button>
-                </div>
-                <div class="search-dropdown__list" role="listbox" data-search-history-list></div>
-              </div>
-              <div class="search-dropdown__section search-dropdown__section--results" data-search-results-section hidden>
-                <div class="search-dropdown__list" role="listbox" data-search-results-list></div>
-              </div>
-            </div>
+          <button class="mobile-toggle" type="button" data-sidebar-toggle aria-label="Abrir menu lateral">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h16"></path>
+              <path d="M4 12h16"></path>
+              <path d="M4 17h16"></path>
+            </svg>
+          </button>
+          <label class="topbar-search topbar-search--subtle" aria-label="Buscar no cabeçalho">
+            <span class="topbar-search__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="6"></circle>
+                <path d="m20 20-4.2-4.2"></path>
+              </svg>
+            </span>
+            <input type="search" placeholder="Buscar">
+          </label>
+        </div>
+        <a class="mobile-header-logo" href="#" aria-label="Doke">
+          <img src="assets/img/doke-logo-sidebar.jpeg" alt="Doke">
+        </a>
+        <div class="mobile-header-shortcuts" aria-label="Atalhos rápidos mobile">
+          <a class="mobile-header-shortcut" href="#">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 5.5h10"></path>
+              <path d="M7 9.5h10"></path>
+              <path d="M7 13.5h6"></path>
+              <path d="M5 4h14v16H5z"></path>
+            </svg>
+          </a>
+          <a class="mobile-header-shortcut" href="#">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 6h16v10H8l-4 4V6z"></path>
+              <path d="M8 10h8"></path>
+              <path d="M8 13h5"></path>
+            </svg>
+          </a>
+        </div>
+        <div class="topbar__center">
+          <div class="topbar-shortcuts" aria-label="Atalhos do cabeçalho">
+            <a class="topbar-shortcut topbar-shortcut--primary" href="#">Anunciar serviço</a>
+            <a class="topbar-shortcut" href="#">Ajuda</a>
+            <a class="topbar-shortcut" href="#">Novidades</a>
           </div>
         </div>
         <div class="topbar__right">
@@ -210,13 +209,7 @@
               </span>
             </div>
           </div>
-          <button class="topbar-action topbar-action--notifications" type="button" aria-label="Notificações">
-            <svg viewBox="0 0 24 24">
-              <path d="M12 4.5a4.8 4.8 0 0 0-4.8 4.8v2.6c0 1.4-.4 2.7-1.2 3.8h12c-.8-1.1-1.2-2.4-1.2-3.8V9.3A4.8 4.8 0 0 0 12 4.5z"></path>
-              <path d="M9.5 18a2.5 2.5 0 0 0 5 0"></path>
-            </svg>
-          </button>
-          <div class="topbar-profile" aria-label="Perfil do usuário">
+<div class="topbar-profile" aria-label="Perfil do usuário">
             <button class="topbar-profile__button" type="button" data-profile-menu-toggle aria-expanded="false" aria-haspopup="true" aria-label="Abrir menu do perfil">
               <div class="avatar">DK</div>
             </button>
@@ -301,9 +294,58 @@
 
       <main class="page__content">
         <div class="page__content-inner container shell-home__workspace shell-home__workspace--clean">
+          <section class="home-search-hero" aria-label="Buscar serviços">
+            <div class="home-search-hero__panel">
+              <div class="home-search-hero__card">
+                <form class="home-search-hero__form" action="#" role="search" data-searchbox novalidate>
+                  <label class="home-search-hero__field" for="main-site-search">
+                    <input id="main-site-search" class="home-search-hero__input" type="search" placeholder="Descreva o que você está procurando">
+                  </label>
+                  <button class="home-search-hero__button" type="submit" aria-label="Buscar">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M5 12h14"></path>
+                      <path d="m13 6 6 6-6 6"></path>
+                    </svg>
+                  </button>
+                  <div class="search-dropdown home-search-hero__dropdown" id="main-search-dropdown" data-search-dropdown hidden>
+                    <div class="search-dropdown__section">
+                      <div class="search-dropdown__heading-row">
+                        <span class="search-dropdown__title">Sugestoes rapidas</span>
+                      </div>
+                      <div class="search-dropdown__chips" data-search-recommendation-list></div>
+                    </div>
+                    <div class="search-dropdown__section" data-search-history-section hidden>
+                      <div class="search-dropdown__heading-row">
+                        <span class="search-dropdown__title">Pesquisas recentes</span>
+                        <button class="search-dropdown__clear" type="button" data-search-clear>Limpar</button>
+                      </div>
+                      <div class="search-dropdown__list" data-search-history-list></div>
+                    </div>
+                    <div class="search-dropdown__section" data-search-results-section hidden>
+                      <div class="search-dropdown__heading-row">
+                        <span class="search-dropdown__title">Resultados</span>
+                      </div>
+                      <div class="search-dropdown__list" data-search-results-list></div>
+                      <div class="search-dropdown__empty" data-search-empty hidden>Nenhuma sugestao encontrada.</div>
+                    </div>
+                  </div>
+                </form>
+                <div class="home-search-hero__actions">
+                  <a class="home-search-hero__cta home-search-hero__cta--primary" href="#">Procurar serviços</a>
+                  <a class="home-search-hero__cta home-search-hero__cta--secondary" href="#">Anunciar meu serviço</a>
+                </div>
+              </div>
+            </div>
+          </section>
           <section class="home-categories" aria-labelledby="home-categories-title">
             <h2 class="home-categories__title" id="home-categories-title">Categorias</h2>
-            <div class="home-categories__track" role="list">
+            <div class="home-categories__rail">
+              <button class="home-categories__arrow home-categories__arrow--prev" type="button" aria-label="Ver categorias anteriores" data-category-arrow="prev">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m14.5 6.5-5 5 5 5"></path>
+                </svg>
+              </button>
+              <div class="home-categories__track" role="list" data-category-track>
               <a class="home-category" href="#" role="listitem">
                 <span class="home-category__icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24">
@@ -400,19 +442,30 @@
                 </span>
                 <span class="home-category__label">Reforma</span>
               </a>
+              </div>
+              <button class="home-categories__arrow home-categories__arrow--next" type="button" aria-label="Ver próximas categorias" data-category-arrow="next">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m9.5 6.5 5 5-5 5"></path>
+                </svg>
+              </button>
             </div>
           </section>
 
           <section class="featured-services" aria-labelledby="featured-services-title">
             <div class="section-heading section-heading--spread">
               <div>
-                <span class="section-heading__eyebrow">Anúncios em destaque</span>
-                <h2 class="section-heading__title" id="featured-services-title">Profissionais que podem te atender agora</h2>
+                <h2 class="section-heading__title" id="featured-services-title">Anúncios em destaque</h2>
               </div>
               <a class="section-heading__link" href="#">Ver todos</a>
             </div>
-            <div class="service-grid">
-              <article class="service-card service-card--featured">
+            <div class="content-rail">
+              <button class="home-categories__arrow content-rail__arrow content-rail__arrow--prev" type="button" aria-label="Ver anúncios anteriores" data-rail-arrow="prev" data-rail-target="featured-services-track">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m14.5 6.5-5 5 5 5"></path>
+                </svg>
+              </button>
+              <div class="service-grid" id="featured-services-track" data-rail-track>
+              <article class="service-card service-card--featured service-card--feed">
                 <div class="service-card__media service-card__media--painter">
                   <button class="service-card__favorite" type="button" aria-label="Salvar anúncio">
                     <svg viewBox="0 0 24 24"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
@@ -425,22 +478,27 @@
                 </div>
                 <div class="service-card__body">
                   <div class="service-card__rating">★ 4,9 <span>(128 avaliações)</span></div>
-                  <div class="service-card__meta">Salvador • Brotas • Responde em até 10 min</div>
+                  <div class="service-card__meta-row">
+                    <div class="service-card__profile">
+                      <span class="service-card__avatar service-card__avatar--carlos" aria-hidden="true"></span>
+                      <span class="service-card__location">Centro, Belo Horizonte, MG</span>
+                    </div>
+                  </div>
                   <div class="service-card__tags">
-                    <span>Interna e externa</span>
-                    <span>Material opcional</span>
+                    <span>#pintura</span>
+                    <span>#residencial</span>
+                    <span>#acabamento</span>
                   </div>
                   <div class="service-card__footer">
                     <div>
-                      <span class="service-card__price-label">A partir de</span>
                       <strong class="service-card__price">R$ 120</strong>
                     </div>
-                    <a class="service-card__cta" href="#">Solicitar orçamento</a>
+                    <a class="service-card__cta" href="#">Ver anúncio</a>
                   </div>
                 </div>
               </article>
 
-              <article class="service-card service-card--featured">
+              <article class="service-card service-card--featured service-card--feed">
                 <div class="service-card__media service-card__media--electrician">
                   <button class="service-card__favorite" type="button" aria-label="Salvar anúncio">
                     <svg viewBox="0 0 24 24"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
@@ -453,14 +511,19 @@
                 </div>
                 <div class="service-card__body">
                   <div class="service-card__rating">★ 4,8 <span>(96 avaliações)</span></div>
-                  <div class="service-card__meta">Pituba • Atendimento emergencial</div>
+                  <div class="service-card__meta-row">
+                    <div class="service-card__profile">
+                      <span class="service-card__avatar service-card__avatar--marcos" aria-hidden="true"></span>
+                      <span class="service-card__location">Savassi, Belo Horizonte, MG</span>
+                    </div>
+                  </div>
                   <div class="service-card__tags">
-                    <span>Instalação</span>
-                    <span>Curto circuito</span>
+                    <span>#eletrica</span>
+                    <span>#24h</span>
+                    <span>#manutencao</span>
                   </div>
                   <div class="service-card__footer">
                     <div>
-                      <span class="service-card__price-label">A partir de</span>
                       <strong class="service-card__price">R$ 90</strong>
                     </div>
                     <a class="service-card__cta" href="#">Ver anúncio</a>
@@ -468,7 +531,7 @@
                 </div>
               </article>
 
-              <article class="service-card service-card--featured">
+              <article class="service-card service-card--featured service-card--feed">
                 <div class="service-card__media service-card__media--cleaning">
                   <button class="service-card__favorite" type="button" aria-label="Salvar anúncio">
                     <svg viewBox="0 0 24 24"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
@@ -481,72 +544,95 @@
                 </div>
                 <div class="service-card__body">
                   <div class="service-card__rating">★ 4,9 <span>(74 avaliações)</span></div>
-                  <div class="service-card__meta">Caminho das Árvores • Agenda disponível</div>
+                  <div class="service-card__meta-row">
+                    <div class="service-card__profile">
+                      <span class="service-card__avatar service-card__avatar--elaine" aria-hidden="true"></span>
+                      <span class="service-card__location">Funcionários, Belo Horizonte, MG</span>
+                    </div>
+                  </div>
                   <div class="service-card__tags">
-                    <span>Faxina pesada</span>
-                    <span>Pós-obra</span>
+                    <span>#diarista</span>
+                    <span>#limpeza</span>
+                    <span>#posobra</span>
                   </div>
                   <div class="service-card__footer">
                     <div>
-                      <span class="service-card__price-label">Diária</span>
                       <strong class="service-card__price">R$ 160</strong>
                     </div>
-                    <a class="service-card__cta" href="#">Solicitar orçamento</a>
+                    <a class="service-card__cta" href="#">Ver anúncio</a>
                   </div>
                 </div>
               </article>
+              </div>
+              <button class="home-categories__arrow content-rail__arrow content-rail__arrow--next" type="button" aria-label="Ver próximos anúncios" data-rail-arrow="next" data-rail-target="featured-services-track">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m9.5 6.5 5 5-5 5"></path>
+                </svg>
+              </button>
             </div>
           </section>
 
           <section class="short-videos" aria-labelledby="short-videos-title">
             <div class="section-heading section-heading--spread section-heading--light">
               <div>
-                <span class="section-heading__eyebrow">Vídeos curtos</span>
-                <h2 class="section-heading__title" id="short-videos-title">Veja trabalhos, dicas e bastidores</h2>
+                <h2 class="section-heading__title" id="short-videos-title">Vídeos curtos</h2>
               </div>
               <a class="section-heading__link section-heading__link--light" href="#">Explorar</a>
             </div>
-            <div class="short-videos__track">
+            <div class="content-rail">
+              <button class="home-categories__arrow content-rail__arrow content-rail__arrow--prev" type="button" aria-label="Ver vídeos anteriores" data-rail-arrow="prev" data-rail-target="short-videos-track">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m14.5 6.5-5 5 5 5"></path>
+                </svg>
+              </button>
+              <div class="short-videos__track" id="short-videos-track" data-rail-track>
               <article class="video-card video-card--one">
                 <span class="video-card__play">▶</span>
                 <div class="video-card__content">
                   <strong>Como renovar parede sem sujeira</strong>
-                  <span>@pintura.carlos • 58 mil views</span>
                 </div>
               </article>
               <article class="video-card video-card--two">
                 <span class="video-card__play">▶</span>
                 <div class="video-card__content">
                   <strong>Antes e depois de cozinha planejada</strong>
-                  <span>@studio.marcenaria • 31 mil views</span>
                 </div>
               </article>
               <article class="video-card video-card--three">
                 <span class="video-card__play">▶</span>
                 <div class="video-card__content">
                   <strong>5 erros elétricos que custam caro</strong>
-                  <span>@marcos.luz • 22 mil views</span>
                 </div>
               </article>
               <article class="video-card video-card--four">
                 <span class="video-card__play">▶</span>
                 <div class="video-card__content">
                   <strong>Limpeza pós-obra em 40 segundos</strong>
-                  <span>@elaine.clean • 19 mil views</span>
                 </div>
               </article>
+              </div>
+              <button class="home-categories__arrow content-rail__arrow content-rail__arrow--next" type="button" aria-label="Ver próximos vídeos" data-rail-arrow="next" data-rail-target="short-videos-track">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m9.5 6.5 5 5-5 5"></path>
+                </svg>
+              </button>
             </div>
           </section>
 
           <section class="before-after" aria-labelledby="before-after-title">
             <div class="section-heading section-heading--spread">
               <div>
-                <span class="section-heading__eyebrow">Antes e depois</span>
-                <h2 class="section-heading__title" id="before-after-title">Resultados que ajudam a decidir melhor</h2>
+                <h2 class="section-heading__title" id="before-after-title">Antes e depois</h2>
               </div>
               <a class="section-heading__link" href="#">Ver mais casos</a>
             </div>
-            <div class="comparison-grid">
+            <div class="content-rail">
+              <button class="home-categories__arrow content-rail__arrow content-rail__arrow--prev" type="button" aria-label="Ver casos anteriores" data-rail-arrow="prev" data-rail-target="before-after-track">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m14.5 6.5-5 5 5 5"></path>
+                </svg>
+              </button>
+              <div class="comparison-grid" id="before-after-track" data-rail-track>
               <article class="comparison-card">
                 <div class="comparison-card__visual comparison-card__visual--reforma">
                   <div class="comparison-card__half comparison-card__half--before"><span>Antes</span></div>
@@ -554,7 +640,6 @@
                 </div>
                 <div class="comparison-card__body">
                   <strong>Reforma completa de sala</strong>
-                  <p>Projeto entregue em 9 dias com pintura, painel ripado e iluminação nova.</p>
                   <div class="comparison-card__meta">
                     <span>Por Studio Casa Viva</span>
                     <span>★ 4,9</span>
@@ -568,34 +653,40 @@
                 </div>
                 <div class="comparison-card__body">
                   <strong>Banheiro revitalizado sem quebra-quebra</strong>
-                  <p>Troca de metais, pintura epóxi e acabamento final em 2 dias.</p>
                   <div class="comparison-card__meta">
                     <span>Por Renato Acabamentos</span>
                     <span>★ 4,8</span>
                   </div>
                 </div>
               </article>
+              </div>
+              <button class="home-categories__arrow content-rail__arrow content-rail__arrow--next" type="button" aria-label="Ver próximos casos" data-rail-arrow="next" data-rail-target="before-after-track">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m9.5 6.5 5 5-5 5"></path>
+                </svg>
+              </button>
             </div>
           </section>
 
           <section class="more-services" aria-labelledby="more-services-title">
             <div class="section-heading section-heading--spread">
               <div>
-                <span class="section-heading__eyebrow">Mais anúncios</span>
-                <h2 class="section-heading__title" id="more-services-title">Continue explorando profissionais</h2>
+                <h2 class="section-heading__title" id="more-services-title">Mais anúncios</h2>
               </div>
               <div class="more-services__controls">
                 <div class="mini-tabs" role="tablist" aria-label="Mais anúncios">
                   <button class="mini-tab is-active" type="button">Para você</button>
                   <button class="mini-tab" type="button">Bem avaliados</button>
+                  <button class="mini-tab" type="button">Com garantia</button>
+                  <button class="mini-tab" type="button">DisponÃ­veis hoje</button>
                   <button class="mini-tab" type="button">Novos</button>
-                </div>
-                <button class="filter-toggle" type="button" data-more-filters-toggle aria-expanded="false" aria-controls="more-filters-panel">
+                  <button class="filter-toggle" type="button" data-more-filters-toggle aria-expanded="false" aria-controls="more-filters-panel">
                   <span class="filter-toggle__icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M7 12h10"></path><path d="M10 17h4"></path></svg>
                   </span>
                   <span>Filtros</span>
                 </button>
+                </div>
               </div>
             </div>
             <div class="more-filters" id="more-filters-panel" data-more-filters-panel hidden>
@@ -705,55 +796,131 @@
               </div>
             </div>
             <div class="service-grid service-grid--compact">
-              <article class="service-card service-card--compact">
+              <article class="service-card service-card--featured service-card--feed">
                 <div class="service-card__media service-card__media--handyman">
+                  <button class="service-card__favorite" type="button" aria-label="Salvar anúncio">
+                    <svg viewBox="0 0 24 24"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
+                  </button>
                   <span class="service-card__badge">Montagem</span>
+                  <div class="service-card__media-content">
+                    <span class="service-card__category">Montagem de móveis</span>
+                    <strong>Montador de móveis</strong>
+                  </div>
                 </div>
                 <div class="service-card__body">
-                  <strong class="service-card__title">Montador de móveis</strong>
-                  <div class="service-card__meta">Imbuí • Hoje às 16h</div>
-                  <div class="service-card__footer service-card__footer--compact">
-                    <strong class="service-card__price">R$ 80</strong>
-                    <a class="service-card__cta service-card__cta--ghost" href="#">Ver</a>
+                  <div class="service-card__rating">★ 4,8 <span>(63 avaliações)</span></div>
+                  <div class="service-card__meta-row">
+                    <div class="service-card__profile">
+                      <span class="service-card__avatar service-card__avatar--carlos" aria-hidden="true"></span>
+                      <span class="service-card__location">Lourdes, Belo Horizonte, MG</span>
+                    </div>
+                  </div>
+                  <div class="service-card__tags">
+                    <span>#montagem</span>
+                    <span>#moveis</span>
+                    <span>#sobmedida</span>
+                  </div>
+                  <div class="service-card__footer">
+                    <div>
+                      <strong class="service-card__price">R$ 80</strong>
+                    </div>
+                    <a class="service-card__cta" href="#">Ver anúncio</a>
                   </div>
                 </div>
               </article>
-              <article class="service-card service-card--compact">
+              <article class="service-card service-card--featured service-card--feed">
                 <div class="service-card__media service-card__media--tech">
+                  <button class="service-card__favorite" type="button" aria-label="Salvar anúncio">
+                    <svg viewBox="0 0 24 24"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
+                  </button>
                   <span class="service-card__badge service-card__badge--mint">Tecnologia</span>
+                  <div class="service-card__media-content">
+                    <span class="service-card__category">Suporte técnico</span>
+                    <strong>Suporte para notebook</strong>
+                  </div>
                 </div>
                 <div class="service-card__body">
-                  <strong class="service-card__title">Suporte para notebook</strong>
-                  <div class="service-card__meta">Itaigara • Coleta e entrega</div>
-                  <div class="service-card__footer service-card__footer--compact">
-                    <strong class="service-card__price">R$ 70</strong>
-                    <a class="service-card__cta service-card__cta--ghost" href="#">Ver</a>
+                  <div class="service-card__rating">★ 4,7 <span>(41 avaliações)</span></div>
+                  <div class="service-card__meta-row">
+                    <div class="service-card__profile">
+                      <span class="service-card__avatar service-card__avatar--marcos" aria-hidden="true"></span>
+                      <span class="service-card__location">Buritis, Belo Horizonte, MG</span>
+                    </div>
+                  </div>
+                  <div class="service-card__tags">
+                    <span>#suporte</span>
+                    <span>#notebook</span>
+                    <span>#tecnologia</span>
+                  </div>
+                  <div class="service-card__footer">
+                    <div>
+                      <strong class="service-card__price">R$ 70</strong>
+                    </div>
+                    <a class="service-card__cta" href="#">Ver anúncio</a>
                   </div>
                 </div>
               </article>
-              <article class="service-card service-card--compact">
+              <article class="service-card service-card--featured service-card--feed">
                 <div class="service-card__media service-card__media--class">
+                  <button class="service-card__favorite" type="button" aria-label="Salvar anúncio">
+                    <svg viewBox="0 0 24 24"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
+                  </button>
                   <span class="service-card__badge">Aulas</span>
+                  <div class="service-card__media-content">
+                    <span class="service-card__category">Reforço escolar</span>
+                    <strong>Professor particular</strong>
+                  </div>
                 </div>
                 <div class="service-card__body">
-                  <strong class="service-card__title">Professor particular de matemática</strong>
-                  <div class="service-card__meta">Online • 2 vagas esta semana</div>
-                  <div class="service-card__footer service-card__footer--compact">
-                    <strong class="service-card__price">R$ 60/h</strong>
-                    <a class="service-card__cta service-card__cta--ghost" href="#">Ver</a>
+                  <div class="service-card__rating">★ 4,9 <span>(52 avaliações)</span></div>
+                  <div class="service-card__meta-row">
+                    <div class="service-card__profile">
+                      <span class="service-card__avatar service-card__avatar--renata" aria-hidden="true"></span>
+                      <span class="service-card__location">Sion, Belo Horizonte, MG</span>
+                    </div>
+                  </div>
+                  <div class="service-card__tags">
+                    <span>#aulas</span>
+                    <span>#reforco</span>
+                    <span>#particular</span>
+                  </div>
+                  <div class="service-card__footer">
+                    <div>
+                      <strong class="service-card__price">R$ 60/h</strong>
+                    </div>
+                    <a class="service-card__cta" href="#">Ver anúncio</a>
                   </div>
                 </div>
               </article>
-              <article class="service-card service-card--compact">
+              <article class="service-card service-card--featured service-card--feed">
                 <div class="service-card__media service-card__media--beauty">
+                  <button class="service-card__favorite" type="button" aria-label="Salvar anúncio">
+                    <svg viewBox="0 0 24 24"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
+                  </button>
                   <span class="service-card__badge">Beleza</span>
+                  <div class="service-card__media-content">
+                    <span class="service-card__category">Atendimento em casa</span>
+                    <strong>Manicure a domicílio</strong>
+                  </div>
                 </div>
                 <div class="service-card__body">
-                  <strong class="service-card__title">Manicure a domicílio</strong>
-                  <div class="service-card__meta">Graça • Agenda aberta</div>
-                  <div class="service-card__footer service-card__footer--compact">
-                    <strong class="service-card__price">R$ 55</strong>
-                    <a class="service-card__cta service-card__cta--ghost" href="#">Ver</a>
+                  <div class="service-card__rating">★ 4,8 <span>(38 avaliações)</span></div>
+                  <div class="service-card__meta-row">
+                    <div class="service-card__profile">
+                      <span class="service-card__avatar service-card__avatar--elaine" aria-hidden="true"></span>
+                      <span class="service-card__location">Mangabeiras, Belo Horizonte, MG</span>
+                    </div>
+                  </div>
+                  <div class="service-card__tags">
+                    <span>#beleza</span>
+                    <span>#manicure</span>
+                    <span>#domicilio</span>
+                  </div>
+                  <div class="service-card__footer">
+                    <div>
+                      <strong class="service-card__price">R$ 55</strong>
+                    </div>
+                    <a class="service-card__cta" href="#">Ver anúncio</a>
                   </div>
                 </div>
               </article>
@@ -764,18 +931,22 @@
           <section class="featured-pros" aria-labelledby="featured-pros-title">
             <div class="section-heading section-heading--spread">
               <div>
-                <span class="section-heading__eyebrow">Profissionais em destaque</span>
-                <h2 class="section-heading__title" id="featured-pros-title">Perfis que passam mais confiança logo de cara</h2>
+                <h2 class="section-heading__title" id="featured-pros-title">Profissionais em destaque</h2>
               </div>
               <a class="section-heading__link" href="#">Conhecer mais perfis</a>
             </div>
-            <div class="featured-pros__grid">
+            <div class="content-rail">
+              <button class="home-categories__arrow content-rail__arrow content-rail__arrow--prev" type="button" aria-label="Ver profissionais anteriores" data-rail-arrow="prev" data-rail-target="featured-pros-track">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m14.5 6.5-5 5 5 5"></path>
+                </svg>
+              </button>
+              <div class="featured-pros__grid" id="featured-pros-track" data-rail-track>
               <article class="pro-card pro-card--compact">
                 <div class="pro-card__header">
                   <div class="pro-card__avatar pro-card__avatar--painter"></div>
                   <div class="pro-card__identity">
                     <strong>Carlos Andrade</strong>
-                    <span>Brotas • Salvador</span>
                   </div>
                   <span class="pro-card__score">★ 4,9</span>
                 </div>
@@ -789,7 +960,6 @@
                   <div class="pro-card__avatar pro-card__avatar--cleaner"></div>
                   <div class="pro-card__identity">
                     <strong>Elaine Santos</strong>
-                    <span>Graça • Salvador</span>
                   </div>
                   <span class="pro-card__score">★ 4,8</span>
                 </div>
@@ -803,7 +973,6 @@
                   <div class="pro-card__avatar pro-card__avatar--teacher"></div>
                   <div class="pro-card__identity">
                     <strong>Marina Costa</strong>
-                    <span>Online • Salvador</span>
                   </div>
                   <span class="pro-card__score">★ 5,0</span>
                 </div>
@@ -811,9 +980,39 @@
                   <a class="pro-card__cta" href="#">Ver perfil</a>
                 </div>
               </article>
+              </div>
+              <button class="home-categories__arrow content-rail__arrow content-rail__arrow--next" type="button" aria-label="Ver próximos profissionais" data-rail-arrow="next" data-rail-target="featured-pros-track">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m9.5 6.5 5 5-5 5"></path>
+                </svg>
+              </button>
             </div>
           </section>
         </div>
+
+
+        <nav class="bottom-nav" aria-label="Navegação principal mobile">
+          <a class="bottom-nav__item bottom-nav__item--home is-active" href="#">
+            <span class="bottom-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5.5 9.5V20h13V9.5"></path></svg></span>
+            <span>Início</span>
+          </a>
+          <a class="bottom-nav__item bottom-nav__item--orders" href="#">
+            <span class="bottom-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg></span>
+            <span>Pedidos</span>
+          </a>
+          <a class="bottom-nav__item bottom-nav__item--messages" href="#">
+            <span class="bottom-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg></span>
+            <span>Mensagens</span>
+          </a>
+          <a class="bottom-nav__item bottom-nav__item--communities" href="#">
+            <span class="bottom-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="8" cy="10" r="2.5"></circle><circle cx="16" cy="9" r="2.5"></circle><path d="M3.5 18c.8-2.4 2.8-3.8 5.5-3.8S13.7 15.6 14.5 18"></path><path d="M12.5 18c.6-1.9 2.1-3.1 4.3-3.1 2 0 3.6 1.1 4.2 3.1"></path></svg></span>
+            <span>Comun.</span>
+          </a>
+          <a class="bottom-nav__item bottom-nav__item--profile" href="#">
+            <span class="bottom-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.2-3.2 3.7-4.8 7-4.8s5.8 1.6 7 4.8"></path></svg></span>
+            <span>Perfil</span>
+          </a>
+        </nav>
 
         <footer class="home-footer" aria-labelledby="footer-title">
           <div class="home-footer__grid">

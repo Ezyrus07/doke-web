@@ -13,6 +13,14 @@ Este pacote serve como base visual do Doke, com shell principal, auth e home mod
 - `auth/`
   - Fluxos de login, cadastro e recuperação.
 
+## Convenção de organização
+
+- Prioridade sempre para organização antes de adicionar novas camadas.
+- Regras-base da home ficam em `assets/css/home-sections.css`.
+- Ajustes visuais recentes e refinamentos da home ficam em `assets/css/home-refresh.css`.
+- Antes de criar CSS novo para a home, preferir consolidar no arquivo já responsável pela seção.
+- Comportamentos de scroll, busca e filtros da home devem permanecer centralizados em `assets/js/home.js`.
+
 ### CSS
 
 - `assets/css/tokens.css`
@@ -27,6 +35,8 @@ Este pacote serve como base visual do Doke, com shell principal, auth e home mod
   - Apenas fundo e sizing estrutural da home.
 - `assets/css/home-sections.css`
   - Categorias, filtros, anúncios, vídeos curtos e antes/depois da home.
+- `assets/css/home-refresh.css`
+  - Refinos visuais e overrides consolidados da home, carregado por último.
 - `assets/css/dashboard.css`
   - Ajustes específicos do dashboard.
 - `assets/css/auth.css`
@@ -52,6 +62,7 @@ Este pacote serve como base visual do Doke, com shell principal, auth e home mod
 3. Estrutura do shell vai para `layout.css`.
 4. Comportamentos exclusivos da home ficam em `home.js`.
 5. Cada nova página deve ganhar no máximo um CSS específico, além da base compartilhada.
+6. Se uma alteração for na home, verificar primeiro se ela já pertence a `home-sections.css` ou `home-refresh.css` antes de abrir outra frente.
 
 ## Ordem recomendada dos CSS
 
