@@ -7,18 +7,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/tokens.css">
-  <link rel="stylesheet" href="assets/css/base.css">
-  <link rel="stylesheet" href="assets/css/layout.css">
-  <link rel="stylesheet" href="assets/css/components.css">
-  <link rel="stylesheet" href="assets/css/shell-home.css">
-  <link rel="stylesheet" href="assets/css/home-sections.css">
-  <link rel="stylesheet" href="assets/css/home-refresh.css">
-  <link rel="stylesheet" href="assets/css/search-results.css">
+  <link rel="stylesheet" href="assets/css/core/tokens.css">
+  <link rel="stylesheet" href="assets/css/core/base.css">
+  <link rel="stylesheet" href="assets/css/core/layout.css">
+  <link rel="stylesheet" href="assets/css/core/components.css">
+  <link rel="stylesheet" href="assets/css/pages/shell-home.css">
+  <link rel="stylesheet" href="assets/css/pages/home-sections.css">
+  <link rel="stylesheet" href="assets/css/pages/home-refresh.css">
+  <link rel="stylesheet" href="assets/css/pages/search-results.css">
 </head>
 <body class="shell-home search-results-body">
   <div class="app-shell">
-    <aside class="sidebar">
+        <aside class="sidebar">
       <button class="sidebar__collapse-button" type="button" data-sidebar-collapse aria-label="Diminuir ou expandir menu lateral">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="m14.5 6.5-5 5 5 5"></path>
@@ -41,8 +41,9 @@
             </span>
             <span>Inicio</span>
           </span>
+          <span class="nav-link__count">Base</span>
         </a>
-        <a class="nav-link nav-link--orders is-active" href="#">
+        <a class="nav-link nav-link--orders" href="pedidos.html">
           <span class="nav-link__start">
             <span class="nav-link__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
@@ -75,7 +76,7 @@
                 <path d="M9.5 18a2.5 2.5 0 0 0 5 0"></path>
               </svg>
             </span>
-            <span>Notificacoes</span>
+            <span>Notificações</span>
           </span>
           <span class="nav-link__count">3</span>
         </a>
@@ -146,7 +147,7 @@
     </aside>
 
     <div class="page">
-      <header class="topbar topbar--location">
+            <header class="topbar topbar--location">
         <div class="topbar__left">
           <button class="mobile-toggle" type="button" data-sidebar-toggle aria-label="Abrir menu lateral">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -161,14 +162,14 @@
               <path d="m20 20-4.2-4.2"></path>
             </svg>
           </button>
-          <form class="topbar-search topbar-search--subtle" data-results-topbar-search autocomplete="off">
-            <span class="topbar-search__icon" aria-hidden="true">
+          <form class="topbar-search topbar-search--subtle" data-global-topbar-search autocomplete="off" aria-label="Buscar no cabeçalho">
+            <button class="topbar-search__icon" type="submit" data-global-topbar-submit aria-label="Pesquisar">
               <svg viewBox="0 0 24 24">
                 <circle cx="11" cy="11" r="6"></circle>
                 <path d="m20 20-4.2-4.2"></path>
               </svg>
-            </span>
-            <input type="text" placeholder="Buscar" data-results-topbar-input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+            </button>
+            <input type="search" placeholder="Buscar" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
             <button class="topbar-search-close" type="button" data-mobile-search-close aria-label="Fechar busca">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M6 6l12 12"></path>
@@ -176,62 +177,58 @@
               </svg>
             </button>
           </form>
+          <button class="topbar-location topbar-location--inline" type="button" data-location-trigger>
+            <span class="topbar-location__label">Localização</span>
+            <strong data-topbar-location-value>Rua Maranhão, 343</strong>
+          </button>
         </div>
         <a class="mobile-header-logo" href="index.html" aria-label="Doke">
           <img src="assets/img/doke-logo-sidebar.jpeg" alt="Doke">
         </a>
+        <div class="mobile-header-shortcuts" aria-label="Atalhos rápidos mobile">
+          <a class="mobile-header-shortcut" href="pedidos.html">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 5.5h10"></path>
+              <path d="M7 9.5h10"></path>
+              <path d="M7 13.5h6"></path>
+              <path d="M5 4h14v16H5z"></path>
+            </svg>
+          </a>
+          <a class="mobile-header-shortcut" href="#">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 6h16v10H8l-4 4V6z"></path>
+              <path d="M8 10h8"></path>
+              <path d="M8 13h5"></path>
+            </svg>
+          </a>
+        </div>
         <div class="topbar__center">
-          <div class="topbar-shortcuts" aria-label="Atalhos do cabecalho">
-            <a class="topbar-shortcut topbar-shortcut--primary" href="#">Anunciar servico</a>
+          <div class="topbar-shortcuts" aria-label="Atalhos do cabeçalho">
+            <a class="topbar-shortcut topbar-shortcut--primary" href="#">Anunciar serviço</a>
             <a class="topbar-shortcut" href="#">Ajuda</a>
             <a class="topbar-shortcut" href="#">Novidades</a>
           </div>
         </div>
         <div class="topbar__right">
-          <div class="topbar-location">
-            <span class="topbar-location__label">Localizacao</span>
-            <strong>Rua Maranhao, 343</strong>
-          </div>
-          <div class="topbar-points">
-            <span class="topbar-points__label">Progresso</span>
-            <div class="topbar-points__row">
-              <span class="topbar-points__level">Nivel 15</span>
-              <span class="topbar-points__badge">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="m12 3.5 2.1 4.4 4.9.7-3.6 3.5.9 4.9-4.3-2.3-4.3 2.3.9-4.9-3.6-3.5 4.9-.7z"></path>
-                </svg>
-                230 pontos
-              </span>
-            </div>
-          </div>
-          <div class="topbar-profile" aria-label="Perfil do usuario">
-            <button class="topbar-profile__button" type="button" data-profile-menu-toggle aria-expanded="false" aria-haspopup="true" aria-label="Abrir menu do perfil">
-              <div class="avatar">DK</div>
-            </button>
-            <div class="profile-dropdown" data-profile-menu hidden>
-              <div class="profile-dropdown__header">@gabriel</div>
-              <div class="profile-dropdown__body">
-                <a class="profile-dropdown__item" href="#">
-                  <span class="profile-dropdown__icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                      <circle cx="12" cy="8" r="3.5"></circle>
-                      <path d="M5 19c1.2-3.2 3.7-4.8 7-4.8s5.8 1.6 7 4.8"></path>
-                    </svg>
-                  </span>
-                  <span>Ver Perfil</span>
-                </a>
+          <div class="topbar-account-cluster">
+            <div class="topbar-points">
+              <span class="topbar-points__label">Progresso</span>
+              <div class="topbar-points__row">
+                <span class="topbar-points__level">Nível 15</span>
+                <span class="topbar-points__badge">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m12 3.5 2.1 4.4 4.9.7-3.6 3.5.9 4.9-4.3-2.3-4.3 2.3.9-4.9-3.6-3.5 4.9-.7z"></path>
+                  </svg>
+                  230 pontos
+                </span>
               </div>
-              <div class="profile-dropdown__footer">
-                <button class="profile-dropdown__item profile-dropdown__item--danger" type="button" data-profile-logout>
-                  <span class="profile-dropdown__icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                      <path d="M15 7.5V5.8A1.8 1.8 0 0 0 13.2 4H7.8A1.8 1.8 0 0 0 6 5.8v12.4A1.8 1.8 0 0 0 7.8 20h5.4a1.8 1.8 0 0 0 1.8-1.8v-1.7"></path>
-                      <path d="M10 12h10"></path>
-                      <path d="m17 8 3 4-3 4"></path>
-                    </svg>
-                  </span>
-                  <span>Sair</span>
-                </button>
+            </div>
+            <div class="topbar-profile" aria-label="Perfil do usuário">
+              <button class="topbar-profile__button" type="button" data-profile-menu-toggle aria-expanded="false" aria-haspopup="true" aria-label="Abrir menu do perfil">
+                <div class="avatar">DK</div>
+              </button>
+              <div class="profile-dropdown" data-profile-menu hidden>
+                <div class="profile-dropdown__header">@gabriel</div>
               </div>
             </div>
           </div>
@@ -462,11 +459,11 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="assets/js/supabase-config.js"></script>
-  <script src="assets/js/auth-service.js"></script>
-  <script src="assets/js/app.js"></script>
-  <script src="assets/js/search-data.js"></script>
-  <script src="assets/js/home.js"></script>
-  <script src="assets/js/search-results.js"></script>
+  <script src="assets/js/core/supabase-config.js"></script>
+  <script src="assets/js/core/auth-service.js"></script>
+  <script src="assets/js/core/app.js"></script>
+  <script src="assets/js/pages/search-data.js"></script>
+  <script src="assets/js/pages/home.js"></script>
+  <script src="assets/js/pages/search-results.js"></script>
 </body>
 </html>

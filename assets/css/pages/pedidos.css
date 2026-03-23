@@ -1,0 +1,387 @@
+.orders-page-shell {
+  --orders-status-pending: #d48a12;
+  --orders-status-pending-bg: rgba(212, 138, 18, 0.12);
+  --orders-status-conversation: #1f6fe5;
+  --orders-status-conversation-bg: rgba(31, 111, 229, 0.12);
+  --orders-status-responded: #146ca8;
+  --orders-status-responded-bg: rgba(20, 108, 168, 0.12);
+  --orders-status-completed: #168a5c;
+  --orders-status-completed-bg: rgba(22, 138, 92, 0.12);
+  --orders-status-cancelled: #8a4a5a;
+  --orders-status-cancelled-bg: rgba(138, 74, 90, 0.12);
+}
+
+.orders-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  width: 100%;
+}
+
+.orders-main,
+.orders-sidebar {
+  min-width: 0;
+}
+
+.orders-main {
+  display: grid;
+  gap: 18px;
+}
+
+.orders-hero {
+  padding: 24px;
+  display: grid;
+  gap: 18px;
+}
+
+.orders-hero__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.orders-hero__header h1,
+.orders-filters__head h2,
+.orders-empty h2,
+.orders-panel h2 {
+  margin: 0;
+}
+
+.orders-hero__header p,
+.orders-filters__head p,
+.orders-empty p,
+.orders-panel p,
+.orders-panel__list {
+  margin: 0;
+  color: var(--quote-muted);
+}
+
+.orders-hero__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.orders-hero__metrics article,
+.orders-card__meta article {
+  min-height: 84px;
+  padding: 16px 18px;
+  border: 1px solid rgba(31, 111, 229, 0.09);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.8);
+  display: grid;
+  gap: 6px;
+}
+
+.orders-hero__metrics span,
+.orders-card__meta span,
+.orders-filters__head span {
+  color: var(--quote-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.orders-hero__metrics strong,
+.orders-card__meta strong {
+  font-size: 1.42rem;
+  line-height: 1;
+}
+
+.orders-filters {
+  padding: 20px 22px;
+  display: grid;
+  gap: 16px;
+}
+
+.orders-filters__head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.orders-filters__head p {
+  max-width: 420px;
+}
+
+.orders-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.orders-chip {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(202, 214, 230, 0.95);
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--quote-text);
+  font-weight: 600;
+}
+
+.orders-chip.is-active {
+  background: rgba(31, 111, 229, 0.1);
+  border-color: rgba(31, 111, 229, 0.34);
+  color: var(--quote-blue-deep);
+}
+
+.orders-list {
+  display: grid;
+  gap: 14px;
+}
+
+.orders-card {
+  padding: 20px 22px;
+  display: grid;
+  gap: 16px;
+}
+
+.orders-card__top,
+.orders-card__footer,
+.orders-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.orders-card__header {
+  align-items: center;
+}
+
+.orders-card__header h3,
+.orders-card__timeline strong,
+.orders-card__summary strong {
+  margin: 0;
+}
+
+.orders-card__provider,
+.orders-card__summary p,
+.orders-card__timeline p,
+.orders-card__date,
+.orders-card__next {
+  margin: 0;
+  color: var(--quote-muted);
+}
+
+.orders-card__provider {
+  font-size: 0.96rem;
+}
+
+.orders-card__status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.orders-card__status[data-status="pending"] {
+  color: var(--orders-status-pending);
+  background: var(--orders-status-pending-bg);
+}
+
+.orders-card__status[data-status="conversation"] {
+  color: var(--orders-status-conversation);
+  background: var(--orders-status-conversation-bg);
+}
+
+.orders-card__status[data-status="responded"] {
+  color: var(--orders-status-responded);
+  background: var(--orders-status-responded-bg);
+}
+
+.orders-card__status[data-status="completed"] {
+  color: var(--orders-status-completed);
+  background: var(--orders-status-completed-bg);
+}
+
+.orders-card__status[data-status="cancelled"] {
+  color: var(--orders-status-cancelled);
+  background: var(--orders-status-cancelled-bg);
+}
+
+.orders-card__meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.orders-card__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
+  gap: 16px;
+}
+
+.orders-card__summary,
+.orders-card__timeline {
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(202, 214, 230, 0.75);
+  background: rgba(247, 250, 252, 0.82);
+  display: grid;
+  gap: 8px;
+}
+
+.orders-card__footer {
+  align-items: center;
+}
+
+.orders-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.orders-button {
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.orders-button--primary {
+  background: linear-gradient(135deg, var(--quote-blue), var(--quote-blue-deep));
+  color: #fff;
+}
+
+.orders-button--ghost {
+  background: #fff;
+  color: var(--quote-blue-deep);
+  border-color: rgba(31, 111, 229, 0.18);
+}
+
+.orders-empty {
+  padding: 28px 22px;
+  display: grid;
+  gap: 12px;
+  place-items: start;
+}
+
+.orders-empty__icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  background: rgba(31, 111, 229, 0.1);
+  color: var(--quote-blue-deep);
+  display: grid;
+  place-items: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.orders-panel {
+  padding: 22px;
+  display: grid;
+  gap: 14px;
+}
+
+.orders-panel--soft {
+  background: linear-gradient(180deg, rgba(233, 248, 242, 0.95), rgba(255, 255, 255, 0.95));
+}
+
+.orders-panel__list {
+  padding-left: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.orders-card[hidden],
+.orders-empty[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 1080px) {
+  .orders-layout,
+  .orders-card__body {
+    grid-template-columns: 1fr;
+  }
+
+  .orders-sidebar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (max-width: 780px) {
+  .orders-hero,
+  .orders-filters,
+  .orders-card,
+  .orders-panel,
+  .orders-empty {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .orders-hero__header,
+  .orders-filters__head,
+  .orders-card__top,
+  .orders-card__header,
+  .orders-card__footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .orders-hero__header .quote-button,
+  .orders-card__actions .orders-button {
+    width: 100%;
+  }
+
+  .orders-hero__metrics,
+  .orders-card__meta,
+  .orders-sidebar {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .orders-main {
+    gap: 14px;
+  }
+
+  .orders-hero__header h1 {
+    font-size: 1.75rem;
+    line-height: 1.06;
+  }
+
+  .orders-chip-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .orders-chip-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .orders-chip {
+    flex: 0 0 auto;
+  }
+
+  .orders-card__meta article,
+  .orders-card__summary,
+  .orders-card__timeline {
+    min-height: 0;
+    padding: 14px 15px;
+    border-radius: 18px;
+  }
+
+  .orders-card__status {
+    align-self: flex-start;
+  }
+}

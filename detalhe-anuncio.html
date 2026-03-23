@@ -7,18 +7,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/tokens.css">
-  <link rel="stylesheet" href="assets/css/base.css">
-  <link rel="stylesheet" href="assets/css/layout.css">
-  <link rel="stylesheet" href="assets/css/components.css">
-  <link rel="stylesheet" href="assets/css/shell-home.css">
-  <link rel="stylesheet" href="assets/css/home-refresh.css">
-  <link rel="stylesheet" href="assets/css/search-results.css">
-  <link rel="stylesheet" href="assets/css/detalhe-anuncio.css">
+  <link rel="stylesheet" href="assets/css/core/tokens.css">
+  <link rel="stylesheet" href="assets/css/core/base.css">
+  <link rel="stylesheet" href="assets/css/core/layout.css">
+  <link rel="stylesheet" href="assets/css/core/components.css">
+  <link rel="stylesheet" href="assets/css/pages/shell-home.css">
+  <link rel="stylesheet" href="assets/css/pages/home-refresh.css">
+  <link rel="stylesheet" href="assets/css/pages/search-results.css">
+  <link rel="stylesheet" href="assets/css/pages/detalhe-anuncio.css">
 </head>
 <body class="shell-home detalhe-shell-page">
   <div class="app-shell">
-    <aside class="sidebar">
+        <aside class="sidebar">
       <button class="sidebar__collapse-button" type="button" data-sidebar-collapse aria-label="Diminuir ou expandir menu lateral">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="m14.5 6.5-5 5 5 5"></path>
@@ -41,8 +41,9 @@
             </span>
             <span>Inicio</span>
           </span>
+          <span class="nav-link__count">Base</span>
         </a>
-        <a class="nav-link nav-link--orders is-active" href="resultados.html">
+        <a class="nav-link nav-link--orders" href="pedidos.html">
           <span class="nav-link__start">
             <span class="nav-link__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
@@ -75,7 +76,7 @@
                 <path d="M9.5 18a2.5 2.5 0 0 0 5 0"></path>
               </svg>
             </span>
-            <span>Notificacoes</span>
+            <span>Notificações</span>
           </span>
           <span class="nav-link__count">3</span>
         </a>
@@ -146,7 +147,7 @@
     </aside>
 
     <div class="page">
-      <header class="topbar topbar--location">
+            <header class="topbar topbar--location">
         <div class="topbar__left">
           <button class="mobile-toggle" type="button" data-sidebar-toggle aria-label="Abrir menu lateral">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -161,85 +162,73 @@
               <path d="m20 20-4.2-4.2"></path>
             </svg>
           </button>
-          <label class="topbar-search topbar-search--subtle" aria-label="Buscar no cabecalho">
-            <span class="topbar-search__icon" aria-hidden="true">
+          <form class="topbar-search topbar-search--subtle" data-global-topbar-search autocomplete="off" aria-label="Buscar no cabeçalho">
+            <button class="topbar-search__icon" type="submit" data-global-topbar-submit aria-label="Pesquisar">
               <svg viewBox="0 0 24 24">
                 <circle cx="11" cy="11" r="6"></circle>
                 <path d="m20 20-4.2-4.2"></path>
               </svg>
-            </span>
-            <input type="search" placeholder="Buscar">
+            </button>
+            <input type="search" placeholder="Buscar" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
             <button class="topbar-search-close" type="button" data-mobile-search-close aria-label="Fechar busca">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M6 6l12 12"></path>
                 <path d="M18 6 6 18"></path>
               </svg>
             </button>
-          </label>
+          </form>
+          <button class="topbar-location topbar-location--inline" type="button" data-location-trigger>
+            <span class="topbar-location__label">Localização</span>
+            <strong data-topbar-location-value>Rua Maranhão, 343</strong>
+          </button>
         </div>
         <a class="mobile-header-logo" href="index.html" aria-label="Doke">
           <img src="assets/img/doke-logo-sidebar.jpeg" alt="Doke">
         </a>
+        <div class="mobile-header-shortcuts" aria-label="Atalhos rápidos mobile">
+          <a class="mobile-header-shortcut" href="pedidos.html">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 5.5h10"></path>
+              <path d="M7 9.5h10"></path>
+              <path d="M7 13.5h6"></path>
+              <path d="M5 4h14v16H5z"></path>
+            </svg>
+          </a>
+          <a class="mobile-header-shortcut" href="#">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 6h16v10H8l-4 4V6z"></path>
+              <path d="M8 10h8"></path>
+              <path d="M8 13h5"></path>
+            </svg>
+          </a>
+        </div>
         <div class="topbar__center">
-          <div class="topbar-shortcuts" aria-label="Atalhos do cabecalho">
-            <a class="topbar-shortcut topbar-shortcut--primary" href="#">Anunciar servico</a>
+          <div class="topbar-shortcuts" aria-label="Atalhos do cabeçalho">
+            <a class="topbar-shortcut topbar-shortcut--primary" href="#">Anunciar serviço</a>
             <a class="topbar-shortcut" href="#">Ajuda</a>
             <a class="topbar-shortcut" href="#">Novidades</a>
           </div>
         </div>
         <div class="topbar__right">
-          <div class="topbar-location">
-            <span class="topbar-location__label">Localizacao</span>
-            <strong>Rua Maranhao, 343</strong>
-          </div>
-          <div class="topbar-points">
-            <span class="topbar-points__label">Progresso</span>
-            <div class="topbar-points__row">
-              <span class="topbar-points__level">Nivel 15</span>
-              <span class="topbar-points__badge">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="m12 3.5 2.1 4.4 4.9.7-3.6 3.5.9 4.9-4.3-2.3-4.3 2.3.9-4.9-3.6-3.5 4.9-.7z"></path>
-                </svg>
-                230 pontos
-              </span>
+          <div class="topbar-account-cluster">
+            <div class="topbar-points">
+              <span class="topbar-points__label">Progresso</span>
+              <div class="topbar-points__row">
+                <span class="topbar-points__level">Nível 15</span>
+                <span class="topbar-points__badge">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m12 3.5 2.1 4.4 4.9.7-3.6 3.5.9 4.9-4.3-2.3-4.3 2.3.9-4.9-3.6-3.5 4.9-.7z"></path>
+                  </svg>
+                  230 pontos
+                </span>
+              </div>
             </div>
-          </div>
-          <div class="topbar-profile" aria-label="Perfil do usuario">
-            <button class="topbar-profile__button" type="button" data-profile-menu-toggle aria-expanded="false" aria-haspopup="true" aria-label="Abrir menu do perfil">
-              <div class="avatar">DK</div>
-            </button>
-            <div class="profile-dropdown" data-profile-menu hidden>
-              <div class="profile-dropdown__header">@gabriel</div>
-              <div class="profile-dropdown__body">
-                <a class="profile-dropdown__item" href="#">
-                  <span class="profile-dropdown__icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                      <circle cx="12" cy="8" r="3.5"></circle>
-                      <path d="M5 19c1.2-3.2 3.7-4.8 7-4.8s5.8 1.6 7 4.8"></path>
-                    </svg>
-                  </span>
-                  <span>Meu perfil</span>
-                </a>
-                <a class="profile-dropdown__item" href="#">
-                  <span class="profile-dropdown__icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                      <path d="M5 7h14"></path>
-                      <path d="M5 12h14"></path>
-                      <path d="M5 17h10"></path>
-                    </svg>
-                  </span>
-                  <span>Pedidos</span>
-                </a>
-                <button class="profile-dropdown__item profile-dropdown__item--danger" type="button" data-profile-logout>
-                  <span class="profile-dropdown__icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                      <path d="M15 7.5V5.8A1.8 1.8 0 0 0 13.2 4H7.8A1.8 1.8 0 0 0 6 5.8v12.4A1.8 1.8 0 0 0 7.8 20h5.4a1.8 1.8 0 0 0 1.8-1.8v-1.7"></path>
-                      <path d="M10 12h10"></path>
-                      <path d="m17 8 3 4-3 4"></path>
-                    </svg>
-                  </span>
-                  <span>Sair</span>
-                </button>
+            <div class="topbar-profile" aria-label="Perfil do usuário">
+              <button class="topbar-profile__button" type="button" data-profile-menu-toggle aria-expanded="false" aria-haspopup="true" aria-label="Abrir menu do perfil">
+                <div class="avatar">DK</div>
+              </button>
+              <div class="profile-dropdown" data-profile-menu hidden>
+                <div class="profile-dropdown__header">@gabriel</div>
               </div>
             </div>
           </div>
@@ -335,11 +324,9 @@
               </div>
 
               <aside class="ad-request">
-                <div class="ad-request__card">
+                <div class="ad-request__card ad-request__card--cta">
                   <div class="ad-request__top">
-                    <span class="ad-request__eyebrow">Solicitacao guiada</span>
-                    <h2>Conte o basico antes do prestador aceitar</h2>
-                    <p>Essa triagem ajuda a filtrar prazo, escopo e prioridade sem criar uma conversa longa logo no inicio.</p>
+                    <h2>Solicitar orçamento</h2>
                   </div>
 
                   <div class="ad-request__price">
@@ -347,82 +334,14 @@
                     <strong>R$ 180,00</strong>
                   </div>
 
-                  <form class="ad-form" id="ad-request-form" data-request-form>
-                    <label class="ad-form__field">
-                      <span>Nome</span>
-                      <input type="text" name="nome" placeholder="Ex.: Ana Souza" required>
-                    </label>
+                  <a class="ad-form__submit ad-form__submit--link" href="orcamento.html?service=reforma-residencial-alto-padrao&pro=Studio%20Aquarela&price=180">Solicitar orcamento</a>
 
-                    <label class="ad-form__field">
-                      <span>Tipo de imovel</span>
-                      <select name="imovel" required>
-                        <option value="">Selecione</option>
-                        <option>Apartamento</option>
-                        <option>Casa</option>
-                        <option>Loja</option>
-                        <option>Escritorio</option>
-                      </select>
-                    </label>
-
-                    <label class="ad-form__field">
-                      <span>Quando voce quer comecar?</span>
-                      <select name="prazo" required>
-                        <option value="">Selecione</option>
-                        <option>Ainda esta semana</option>
-                        <option>Nos proximos 15 dias</option>
-                        <option>Este mes</option>
-                        <option>So estou pesquisando</option>
-                      </select>
-                    </label>
-
-                    <label class="ad-form__field">
-                      <span>Area estimada</span>
-                      <input type="text" name="area" placeholder="Ex.: 42 m2">
-                    </label>
-
-                    <fieldset class="ad-form__checks">
-                      <legend>O que voce precisa?</legend>
-                      <label class="ad-check">
-                        <input type="checkbox" name="extras" value="teto">
-                        <span class="ad-check__box"></span>
-                        <span>Pintura de teto</span>
-                      </label>
-                      <label class="ad-check">
-                        <input type="checkbox" name="extras" value="portas">
-                        <span class="ad-check__box"></span>
-                        <span>Portas e janelas</span>
-                      </label>
-                      <label class="ad-check">
-                        <input type="checkbox" name="extras" value="massa">
-                        <span class="ad-check__box"></span>
-                        <span>Massa corrida e correcoes</span>
-                      </label>
-                    </fieldset>
-
-                    <label class="ad-form__field">
-                      <span>Detalhes do pedido</span>
-                      <textarea name="detalhes" placeholder="Descreva o ambiente, estado atual, cores desejadas e qualquer informacao importante." required></textarea>
-                    </label>
-
-                    <div class="ad-form__status" data-request-status>
-                      <span class="ad-form__status-dot"></span>
-                      <span data-request-status-text>Solicitacao enviada com sucesso.</span>
-                    </div>
-                  </form>
-
-                  <button class="ad-form__submit" type="submit" form="ad-request-form">Solicitar orcamento</button>
-
-                  <div class="ad-request__trust">
+                  <div class="ad-request__trust ad-request__trust--compact">
                     <span>Profissional verificada</span>
                     <span>Resposta media rapida</span>
                     <span>128 avaliacoes positivas</span>
                   </div>
 
-                  <div class="ad-request__links">
-                    <a href="#agenda">Visualizar agenda</a>
-                    <a href="#perguntas">Perguntas e respostas</a>
-                    <a href="#avaliacoes">Ir para avaliacoes</a>
-                  </div>
                 </div>
               </aside>
             </section>
@@ -722,7 +641,7 @@
     <div class="mobile-scrim" data-sidebar-scrim></div>
   </div>
 
-  <script src="assets/js/app.js"></script>
-  <script src="assets/js/detalhe-anuncio.js"></script>
+  <script src="assets/js/core/app.js"></script>
+  <script src="assets/js/pages/detalhe-anuncio.js"></script>
 </body>
 </html>
