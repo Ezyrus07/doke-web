@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -6,7 +6,7 @@
   <title>Doke | Base do site</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/tokens.css">
   <link rel="stylesheet" href="assets/css/base.css">
   <link rel="stylesheet" href="assets/css/layout.css">
@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="assets/css/shell-home.css">
   <link rel="stylesheet" href="assets/css/home-sections.css">
   <link rel="stylesheet" href="assets/css/home-refresh.css">
+  <link rel="stylesheet" href="assets/css/search-results.css">
 </head>
 <body class="shell-home">
   <div class="app-shell">
@@ -155,6 +156,12 @@
               <path d="M4 17h16"></path>
             </svg>
           </button>
+          <button class="topbar-search-icon" type="button" data-mobile-search-open aria-label="Abrir busca">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="6"></circle>
+              <path d="m20 20-4.2-4.2"></path>
+            </svg>
+          </button>
           <label class="topbar-search topbar-search--subtle" aria-label="Buscar no cabeçalho">
             <span class="topbar-search__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24">
@@ -163,6 +170,12 @@
               </svg>
             </span>
             <input type="search" placeholder="Buscar">
+            <button class="topbar-search-close" type="button" data-mobile-search-close aria-label="Fechar busca">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 6l12 12"></path>
+                <path d="M18 6 6 18"></path>
+              </svg>
+            </button>
           </label>
         </div>
         <a class="mobile-header-logo" href="#" aria-label="Doke">
@@ -297,9 +310,9 @@
           <section class="home-search-hero" aria-label="Buscar serviços">
             <div class="home-search-hero__panel">
               <div class="home-search-hero__card">
-                <form class="home-search-hero__form" action="#" role="search" data-searchbox novalidate>
+                <form class="home-search-hero__form" action="resultados.html" role="search" data-searchbox novalidate autocomplete="off">
                   <label class="home-search-hero__field" for="main-site-search">
-                    <input id="main-site-search" class="home-search-hero__input" type="search" placeholder="Descreva o que você está procurando">
+                    <input id="main-site-search" class="home-search-hero__input" type="text" placeholder="Descreva o que você está procurando" data-search-input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
                   </label>
                   <button class="home-search-hero__button" type="submit" aria-label="Buscar">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -321,6 +334,17 @@
                       </div>
                       <div class="search-dropdown__list" data-search-history-list></div>
                     </div>
+                    <div class="search-dropdown__section search-dropdown__section--refine" data-search-refine-section hidden>
+                      <div class="search-dropdown__heading-row">
+                        <span class="search-dropdown__title">Refinar busca</span>
+                      </div>
+                      <div class="search-dropdown__refine-chips">
+                        <button class="search-refine-chip" type="button">Com garantia</button>
+                        <button class="search-refine-chip" type="button">Emergência</button>
+                        <button class="search-refine-chip" type="button">Disponível hoje</button>
+                        <button class="search-refine-chip" type="button">Perto de mim</button>
+                      </div>
+                    </div>
                     <div class="search-dropdown__section" data-search-results-section hidden>
                       <div class="search-dropdown__heading-row">
                         <span class="search-dropdown__title">Resultados</span>
@@ -337,6 +361,7 @@
               </div>
             </div>
           </section>
+
           <section class="home-categories" aria-labelledby="home-categories-title">
             <h2 class="home-categories__title" id="home-categories-title">Categorias</h2>
             <div class="home-categories__rail">
@@ -349,9 +374,9 @@
               <a class="home-category" href="#" role="listitem">
                 <span class="home-category__icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24">
-                    <path d="M9.2 17.6h5.6"></path>
-                    <path d="M10 20h4"></path>
-                    <path d="M8.3 10.1a3.7 3.7 0 1 1 7.4 0c0 1.2-.53 2.1-1.38 2.97-.7.72-1.12 1.23-1.22 2.13h-2.4c-.1-.9-.52-1.41-1.22-2.13-.85-.87-1.38-1.77-1.38-2.97Z"></path>
+                    <path d="M12 4.8a4 4 0 0 0-4 4c0 1.6.8 2.9 1.9 3.8.9.7 1.6 1.8 1.8 2.9h.6c.2-1.1.9-2.2 1.8-2.9A5 5 0 0 0 16 8.8a4 4 0 0 0-4-4Z"></path>
+                    <path d="M10.3 17.3h3.4"></path>
+                    <path d="M10.8 19.4h2.4"></path>
                   </svg>
                 </span>
                 <span class="home-category__label">Eletricista</span>
@@ -359,12 +384,9 @@
               <a class="home-category" href="#" role="listitem">
                 <span class="home-category__icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24">
-                    <path d="M14.8 6.2a2.4 2.4 0 1 1 3.4 3.4l-2 2"></path>
-                    <path d="M7.7 9.3 5.3 6.9"></path>
-                    <path d="M9.6 7.4 6.2 10.8"></path>
-                    <path d="m10.7 13.7 5.7-5.7"></path>
-                    <path d="m12.5 15.5 5.3 5.3"></path>
-                    <path d="M9.7 12.7 4.8 17.6"></path>
+                    <path d="m14.6 7.2 2.2-2.2a2.1 2.1 0 0 1 3 3l-2.2 2.2"></path>
+                    <path d="m13.3 8.5 2.2 2.2"></path>
+                    <path d="m6.2 15.6 7.1-7.1 4 4-7.1 7.1H6.2z"></path>
                   </svg>
                 </span>
                 <span class="home-category__label">Encanador</span>
@@ -372,10 +394,10 @@
               <a class="home-category" href="#" role="listitem">
                 <span class="home-category__icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24">
-                    <path d="m14.6 5.5 3.9 3.9"></path>
-                    <path d="m10.6 15.1 7.4-7.4"></path>
-                    <path d="m9.2 16.5-3.5 1.1 1.1-3.5 7.1-7.1 2.4 2.4-7.1 7.1Z"></path>
-                    <path d="M4.8 19.2h14.4"></path>
+                    <path d="m14.7 5.8 3.5 3.5"></path>
+                    <path d="m10.2 15.3 5.6-5.6 2.1 2.1-5.6 5.6"></path>
+                    <path d="M8 17.5 6.8 20l2.5-1.2"></path>
+                    <path d="M4.8 20h3.6"></path>
                   </svg>
                 </span>
                 <span class="home-category__label">Pintura</span>
@@ -383,8 +405,9 @@
               <a class="home-category" href="#" role="listitem">
                 <span class="home-category__icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24">
-                    <path d="M4.8 9.2c1.7 0 1.7 1.6 3.4 1.6s1.7-1.6 3.5-1.6 1.7 1.6 3.4 1.6 1.7-1.6 3.5-1.6"></path>
-                    <path d="M4.8 13c1.7 0 1.7 1.6 3.4 1.6s1.7-1.6 3.5-1.6 1.7 1.6 3.4 1.6 1.7-1.6 3.5-1.6"></path>
+                    <path d="M7 7.6c1.2 1.2 2.8 1.8 5 1.8s3.8-.6 5-1.8"></path>
+                    <path d="M7 11.6c1.2 1.2 2.8 1.8 5 1.8s3.8-.6 5-1.8"></path>
+                    <path d="M7 15.6c1.2 1.2 2.8 1.8 5 1.8s3.8-.6 5-1.8"></path>
                   </svg>
                 </span>
                 <span class="home-category__label">Limpeza</span>
@@ -392,9 +415,10 @@
               <a class="home-category" href="#" role="listitem">
                 <span class="home-category__icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24">
-                    <path d="m7 8.2 5-3 5 3v7l-5 3-5-3Z"></path>
-                    <path d="m7 8.2 5 3 5-3"></path>
-                    <path d="M12 11.2v7"></path>
+                    <path d="M5 9h9.5v6H5z"></path>
+                    <path d="M14.5 10.5h2.7l1.8 1.8v2.7h-4.5"></path>
+                    <circle cx="8" cy="17" r="1.1"></circle>
+                    <circle cx="17.2" cy="17" r="1.1"></circle>
                   </svg>
                 </span>
                 <span class="home-category__label">Frete</span>
@@ -402,10 +426,9 @@
               <a class="home-category" href="#" role="listitem">
                 <span class="home-category__icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24">
-                    <rect x="5" y="5" width="4" height="4" rx="1"></rect>
-                    <rect x="15" y="5" width="4" height="4" rx="1"></rect>
-                    <rect x="5" y="15" width="4" height="4" rx="1"></rect>
-                    <rect x="15" y="15" width="4" height="4" rx="1"></rect>
+                    <path d="M12 4.8 18 8.1v7.8L12 19.2 6 15.9V8.1z"></path>
+                    <path d="M12 4.8v6.1"></path>
+                    <path d="m6 8.1 6 2.8 6-2.8"></path>
                   </svg>
                 </span>
                 <span class="home-category__label">Tecnologia</span>
@@ -413,9 +436,9 @@
               <a class="home-category" href="#" role="listitem">
                 <span class="home-category__icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24">
-                    <rect x="5.2" y="6.2" width="13.6" height="11.6" rx="2"></rect>
-                    <path d="M8.3 9.6h7.4"></path>
-                    <path d="M8.3 12.2h5.4"></path>
+                    <path d="M6.5 5.8h11a1.4 1.4 0 0 1 1.4 1.4v11H8a1.5 1.5 0 0 1-1.5-1.5z"></path>
+                    <path d="M9 8.6h6.5"></path>
+                    <path d="M9 12h6.5"></path>
                   </svg>
                 </span>
                 <span class="home-category__label">Aulas</span>
@@ -423,11 +446,11 @@
               <a class="home-category" href="#" role="listitem">
                 <span class="home-category__icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24">
-                    <path d="M7.3 6.8a2.1 2.1 0 1 1 2.1 2.1 2.1 2.1 0 0 1-2.1-2.1Z"></path>
-                    <path d="M14.6 15.9 8.4 9.7"></path>
-                    <path d="m13.4 9.4 3.5-3.5"></path>
-                    <path d="m14.8 16.1 3.2 3.1"></path>
-                    <path d="m9.5 14.9-3.1 3.1"></path>
+                    <circle cx="8.2" cy="8" r="1.6"></circle>
+                    <path d="m9.6 9.4 4.8 4.8"></path>
+                    <path d="m14.4 9.4-4.8 4.8"></path>
+                    <path d="m14.4 14.2 3 3"></path>
+                    <path d="m6.6 14.2-3 3"></path>
                   </svg>
                 </span>
                 <span class="home-category__label">Beleza</span>
@@ -435,9 +458,9 @@
               <a class="home-category" href="#" role="listitem">
                 <span class="home-category__icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24">
-                    <path d="M5.2 11.2 12 5.6l6.8 5.6"></path>
-                    <path d="M7.4 10.6v7.2h9.2v-7.2"></path>
-                    <path d="M10.2 17.8v-4.6h3.6v4.6"></path>
+                    <path d="M5.8 10.2 12 5l6.2 5.2"></path>
+                    <path d="M7.2 9.2V19h9.6V9.2"></path>
+                    <path d="M10 19v-5.2h4V19"></path>
                   </svg>
                 </span>
                 <span class="home-category__label">Reforma</span>
@@ -493,7 +516,7 @@
                     <div>
                       <strong class="service-card__price">R$ 120</strong>
                     </div>
-                    <a class="service-card__cta" href="#">Ver anúncio</a>
+        <span class="service-card__cta">Ver anúncio</span>
                   </div>
                 </div>
               </article>
@@ -526,7 +549,7 @@
                     <div>
                       <strong class="service-card__price">R$ 90</strong>
                     </div>
-                    <a class="service-card__cta" href="#">Ver anúncio</a>
+        <span class="service-card__cta">Ver anúncio</span>
                   </div>
                 </div>
               </article>
@@ -559,7 +582,7 @@
                     <div>
                       <strong class="service-card__price">R$ 160</strong>
                     </div>
-                    <a class="service-card__cta" href="#">Ver anúncio</a>
+        <span class="service-card__cta">Ver anúncio</span>
                   </div>
                 </div>
               </article>
@@ -575,9 +598,8 @@
           <section class="short-videos" aria-labelledby="short-videos-title">
             <div class="section-heading section-heading--spread section-heading--light">
               <div>
-                <h2 class="section-heading__title" id="short-videos-title">Vídeos curtos</h2>
+                <h2 class="section-heading__title" id="short-videos-title">Workers</h2>
               </div>
-              <a class="section-heading__link section-heading__link--light" href="#">Explorar</a>
             </div>
             <div class="content-rail">
               <button class="home-categories__arrow content-rail__arrow content-rail__arrow--prev" type="button" aria-label="Ver vídeos anteriores" data-rail-arrow="prev" data-rail-target="short-videos-track">
@@ -676,11 +698,12 @@
               <div class="more-services__controls">
                 <div class="mini-tabs" role="tablist" aria-label="Mais anúncios">
                   <button class="mini-tab is-active" type="button">Para você</button>
+                  <button class="mini-tab" type="button">Seguindo</button>
                   <button class="mini-tab" type="button">Bem avaliados</button>
                   <button class="mini-tab" type="button">Com garantia</button>
-                  <button class="mini-tab" type="button">DisponÃ­veis hoje</button>
+                  <button class="mini-tab" type="button">Disponíveis hoje</button>
                   <button class="mini-tab" type="button">Novos</button>
-                  <button class="filter-toggle" type="button" data-more-filters-toggle aria-expanded="false" aria-controls="more-filters-panel">
+                  <button class="filter-toggle" type="button" data-more-filters-toggle data-more-filters-source="tabs" aria-expanded="false" aria-controls="more-filters-panel">
                   <span class="filter-toggle__icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M7 12h10"></path><path d="M10 17h4"></path></svg>
                   </span>
@@ -689,7 +712,8 @@
                 </div>
               </div>
             </div>
-            <div class="more-filters" id="more-filters-panel" data-more-filters-panel hidden>
+            <div class="more-services__filters-host" data-more-filters-tabs-host>
+            <div class="more-filters more-filters--section" id="more-filters-panel" data-more-filters-panel hidden>
               <div class="more-filters__header">
                 <div>
                   <strong>Mais filtros</strong>
@@ -706,7 +730,7 @@
               <div class="more-filters__grid more-filters__grid--minimal more-filters__grid--dense">
                 <label class="filter-field filter-field--compact" aria-label="Categoria do anúncio">
                   <span class="filter-field__label">Categoria</span>
-                  <select class="filter-field__select">
+                  <select class="filter-field__select" data-ui-select>
                     <option>Todas</option>
                     <option>Reforma</option>
                     <option>Limpeza</option>
@@ -715,19 +739,9 @@
                     <option>Beleza</option>
                   </select>
                 </label>
-                <label class="filter-field filter-field--compact" aria-label="Localização do atendimento">
-                  <span class="filter-field__label">Localização</span>
-                  <select class="filter-field__select">
-                    <option>Perto de mim</option>
-                    <option>Até 5 km</option>
-                    <option>Até 10 km</option>
-                    <option>Salvador</option>
-                    <option>Bairro específico</option>
-                  </select>
-                </label>
                 <label class="filter-field filter-field--compact" aria-label="Tipo de serviço">
                   <span class="filter-field__label">Tipo de serviço</span>
-                  <select class="filter-field__select">
+                  <select class="filter-field__select" data-ui-select>
                     <option>Qualquer tipo</option>
                     <option>Residencial</option>
                     <option>Comercial</option>
@@ -737,7 +751,7 @@
                 </label>
                 <label class="filter-field filter-field--compact" aria-label="Modalidade do atendimento">
                   <span class="filter-field__label">Online ou presencial</span>
-                  <select class="filter-field__select">
+                  <select class="filter-field__select" data-ui-select>
                     <option>Tanto faz</option>
                     <option>Presencial</option>
                     <option>Online</option>
@@ -746,7 +760,7 @@
                 </label>
                 <label class="filter-field filter-field--compact" aria-label="Faixa de preço">
                   <span class="filter-field__label">Preço</span>
-                  <select class="filter-field__select">
+                  <select class="filter-field__select" data-ui-select>
                     <option>Qualquer valor</option>
                     <option>Até R$ 100</option>
                     <option>R$ 100 a R$ 250</option>
@@ -756,7 +770,7 @@
                 </label>
                 <label class="filter-field filter-field--compact" aria-label="Avaliação mínima">
                   <span class="filter-field__label">Avaliação</span>
-                  <select class="filter-field__select">
+                  <select class="filter-field__select" data-ui-select>
                     <option>4,8+ estrelas</option>
                     <option>4,5+ estrelas</option>
                     <option>4,0+ estrelas</option>
@@ -765,7 +779,7 @@
                 </label>
                 <label class="filter-field filter-field--compact" aria-label="Pagamentos aceitos">
                   <span class="filter-field__label">Pagamentos aceitos</span>
-                  <select class="filter-field__select">
+                  <select class="filter-field__select" data-ui-select>
                     <option>Todos</option>
                     <option>Pix</option>
                     <option>Cartão</option>
@@ -775,7 +789,7 @@
                 </label>
                 <label class="filter-field filter-field--compact" aria-label="Garantia do serviço">
                   <span class="filter-field__label">Garantia</span>
-                  <select class="filter-field__select">
+                  <select class="filter-field__select" data-ui-select>
                     <option>Tanto faz</option>
                     <option>Com garantia</option>
                     <option>Sem garantia</option>
@@ -783,12 +797,38 @@
                 </label>
                 <label class="filter-field filter-field--compact" aria-label="Atendimento emergencial">
                   <span class="filter-field__label">Atende emergências</span>
-                  <select class="filter-field__select">
+                  <select class="filter-field__select" data-ui-select>
                     <option>Tanto faz</option>
                     <option>Sim</option>
                     <option>Não</option>
                   </select>
                 </label>
+              </div>
+              <div class="more-filters__location-card">
+                <div class="more-filters__location-top">
+                  <span class="filter-field__label">Localização</span>
+                  <button class="more-filters__cep" type="button" data-home-cep-fill>Inserir CEP</button>
+                </div>
+                <div class="more-filters__location-grid">
+                  <label class="filter-field filter-field--compact" aria-label="Estado">
+                    <span class="filter-field__label">Estado</span>
+                    <select class="filter-field__select" data-home-state-select data-ui-select>
+                      <option value="">Qualquer estado</option>
+                    </select>
+                  </label>
+                  <label class="filter-field filter-field--compact" aria-label="Cidade">
+                    <span class="filter-field__label">Cidade</span>
+                    <select class="filter-field__select" data-home-city-select data-ui-select>
+                      <option value="">Qualquer cidade</option>
+                    </select>
+                  </label>
+                  <label class="filter-field filter-field--compact" aria-label="Bairro">
+                    <span class="filter-field__label">Bairro</span>
+                    <select class="filter-field__select" data-home-neighborhood-select data-ui-select>
+                      <option value="">Qualquer bairro</option>
+                    </select>
+                  </label>
+                </div>
               </div>
               <div class="more-filters__actions">
                 <button class="filter-action filter-action--ghost" type="button" data-more-filters-close>Fechar</button>
@@ -824,7 +864,7 @@
                     <div>
                       <strong class="service-card__price">R$ 80</strong>
                     </div>
-                    <a class="service-card__cta" href="#">Ver anúncio</a>
+        <span class="service-card__cta">Ver anúncio</span>
                   </div>
                 </div>
               </article>
@@ -856,7 +896,7 @@
                     <div>
                       <strong class="service-card__price">R$ 70</strong>
                     </div>
-                    <a class="service-card__cta" href="#">Ver anúncio</a>
+        <span class="service-card__cta">Ver anúncio</span>
                   </div>
                 </div>
               </article>
@@ -888,7 +928,7 @@
                     <div>
                       <strong class="service-card__price">R$ 60/h</strong>
                     </div>
-                    <a class="service-card__cta" href="#">Ver anúncio</a>
+        <span class="service-card__cta">Ver anúncio</span>
                   </div>
                 </div>
               </article>
@@ -920,7 +960,7 @@
                     <div>
                       <strong class="service-card__price">R$ 55</strong>
                     </div>
-                    <a class="service-card__cta" href="#">Ver anúncio</a>
+        <span class="service-card__cta">Ver anúncio</span>
                   </div>
                 </div>
               </article>
@@ -1073,10 +1113,38 @@
     <div class="mobile-scrim" data-sidebar-scrim></div>
   </div>
 
+
+  <div class="ui-modal" data-ui-modal hidden>
+    <div class="ui-modal__backdrop" data-ui-modal-close></div>
+    <div class="ui-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="ui-modal-title">
+      <div class="ui-modal__header">
+        <span class="ui-modal__eyebrow" data-ui-modal-eyebrow>Localização</span>
+        <h3 class="ui-modal__title" id="ui-modal-title" data-ui-modal-title>Inserir CEP</h3>
+        <p class="ui-modal__text" data-ui-modal-text>Digite o CEP para preencher estado, cidade e bairro automaticamente.</p>
+      </div>
+      <label class="ui-modal__field" data-ui-modal-field>
+        <span class="ui-modal__label" data-ui-modal-label>CEP</span>
+        <input class="ui-modal__input" type="text" inputmode="numeric" placeholder="30140-071" data-ui-modal-input>
+      </label>
+      <div class="ui-modal__actions">
+        <button class="ui-modal__button" type="button" data-ui-modal-cancel>Cancelar</button>
+        <button class="ui-modal__button ui-modal__button--primary" type="button" data-ui-modal-confirm>Confirmar</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/supabase-config.js"></script>
   <script src="assets/js/auth-service.js"></script>
   <script src="assets/js/app.js"></script>
+  <script src="assets/js/search-data.js"></script>
   <script src="assets/js/home.js"></script>
+  <script src="assets/js/search-results.js"></script>
+
 </body>
 </html>
+
+
+
+
+

@@ -1,4 +1,10 @@
-/* Home page interactions: search dropdown and quick-filter chips. */
+﻿window.DokeInitHome = function DokeInitHome() {
+const routeController = new AbortController();
+window.DokeHomeCleanup?.();
+window.DokeHomeCleanup = () => routeController.abort();
+const { signal } = routeController;
+/* Home page interactions: search suggestions, tabs and rails. */
+const searchData = window.DokeSearchData || {};
 const searchBox = document.querySelector("[data-searchbox]");
 const searchInput = document.querySelector("[data-search-input]") || document.querySelector("#main-site-search");
 const searchDropdown = document.querySelector("[data-search-dropdown]");
@@ -7,42 +13,45 @@ const searchHistoryList = document.querySelector("[data-search-history-list]");
 const searchResultsList = document.querySelector("[data-search-results-list]");
 const searchResultsSection = document.querySelector("[data-search-results-section]");
 const searchHistorySection = document.querySelector("[data-search-history-section]");
+const searchRefineSection = document.querySelector("[data-search-refine-section]");
 const searchClearButton = document.querySelector("[data-search-clear]");
 const searchEmptyState = document.querySelector("[data-search-empty]");
-const SEARCH_HISTORY_STORAGE_KEY = "doke.search.history";
+const searchPrimaryCta = document.querySelector(".home-search-hero__cta--primary");
 
-const searchRecommendations = [
-  "Eletricista 24h",
-  "Diarista perto de mim",
-  "Marceneiro sob medida",
-  "Frete pequeno"
-];
+const searchRecommendations = searchData.recommendations || [];
+const getSearchHistory = searchData.getSearchHistory || (() => []);
+const saveSearchHistory = searchData.saveSearchHistory || (() => {});
+const addSearchHistory = searchData.addSearchHistory || (() => {});
+const getSuggestionMatches = searchData.getSuggestionMatches || (() => []);
+const locationOptions = searchData.locationOptions || { states: [], citiesByState: {}, neighborhoodsByCity: {}, cepLookup: {} };
+const moreFiltersToggles = document.querySelectorAll("[data-more-filters-toggle]");
+const moreFiltersPanel = document.querySelector("[data-more-filters-panel]");
+const moreFiltersClose = document.querySelector("[data-more-filters-close]");
+const moreFiltersApply = document.querySelector("[data-more-filters-apply]");
+const moreFiltersTabsHost = document.querySelector("[data-more-filters-tabs-host]");
+const homeStateSelect = document.querySelector("[data-home-state-select]");
+const homeCitySelect = document.querySelector("[data-home-city-select]");
+const homeNeighborhoodSelect = document.querySelector("[data-home-neighborhood-select]");
+const homeCepFillButton = document.querySelector("[data-home-cep-fill]");
+const uiModal = document.querySelector("[data-ui-modal]");
+const uiModalClose = document.querySelector("[data-ui-modal-close]");
+const uiModalEyebrow = document.querySelector("[data-ui-modal-eyebrow]");
+const uiModalTitle = document.querySelector("[data-ui-modal-title]");
+const uiModalText = document.querySelector("[data-ui-modal-text]");
+const uiModalField = document.querySelector("[data-ui-modal-field]");
+const uiModalLabel = document.querySelector("[data-ui-modal-label]");
+const uiModalInput = document.querySelector("[data-ui-modal-input]");
+const uiModalCancel = document.querySelector("[data-ui-modal-cancel]");
+const uiModalConfirm = document.querySelector("[data-ui-modal-confirm]");
+const categoryTrack = document.querySelector("[data-category-track]");
+const categoryArrows = document.querySelectorAll("[data-category-arrow]");
+const railArrows = document.querySelectorAll("[data-rail-arrow]");
+const customSelectRegistry = new Map();
+let activeModalResolver = null;
 
-const searchSuggestionPool = [
-  { label: "Eletricista residencial", meta: "Instalação e reparo", badge: "Serviço", value: "eletricista residencial" },
-  { label: "Encanador urgente", meta: "Vazamentos e tubulação", badge: "Serviço", value: "encanador urgente" },
-  { label: "Pintor profissional", meta: "Paredes e acabamento", badge: "Serviço", value: "pintor profissional" },
-  { label: "Marceneiro sob medida", meta: "Móveis planejados", badge: "Serviço", value: "marceneiro sob medida" },
-  { label: "Diarista semanal", meta: "Limpeza residencial", badge: "Serviço", value: "diarista semanal" },
-  { label: "Frete para mudança", meta: "Transporte local", badge: "Serviço", value: "frete para mudança" },
-  { label: "Aulas de inglês", meta: "Professor particular", badge: "Categoria", value: "aulas de inglês" },
-  { label: "Designer para logo", meta: "Criativo e branding", badge: "Profissional", value: "designer para logo" },
-  { label: "Rua Maranhão, 343", meta: "Localização atual", badge: "Endereço", value: "Rua Maranhão, 343" }
-];
-
-const getSearchHistory = () => {
-  try {
-    const raw = window.localStorage.getItem(SEARCH_HISTORY_STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter(Boolean).slice(0, 4) : [];
-  } catch (error) {
-    return [];
-  }
-};
-
-const saveSearchHistory = (items) => {
-  window.localStorage.setItem(SEARCH_HISTORY_STORAGE_KEY, JSON.stringify(items.slice(0, 4)));
-};
+if (!searchBox || !searchInput) {
+  return;
+}
 
 const searchItemIcon = (type = "search") => {
   if (type === "history") {
@@ -95,45 +104,42 @@ const renderSearchHistory = () => {
   }
 
   searchHistorySection.hidden = false;
-
   history.forEach((item) => {
     searchHistoryList.appendChild(createSuggestionButton({
       label: item,
       meta: "Pesquisa recente",
-      badge: "Histórico",
+      badge: "Historico",
       value: item,
       type: "history"
     }));
   });
 };
 
-const renderSearchResults = (query = "") => {
+const renderSearchSuggestions = (query = "") => {
   if (!searchResultsList || !searchResultsSection) return;
-  const normalizedQuery = query.trim().toLowerCase();
+
   searchResultsList.innerHTML = "";
   activeSearchIndex = -1;
-  if (searchEmptyState) {
-    searchEmptyState.hidden = true;
+  if (searchEmptyState) searchEmptyState.hidden = true;
+
+  const cleanQuery = String(query || "").trim();
+  if (searchRefineSection) {
+    searchRefineSection.hidden = cleanQuery.length < 2;
   }
 
-  if (!normalizedQuery) {
+  if (cleanQuery.length < 2) {
     searchResultsSection.hidden = true;
     return;
   }
 
-  const results = searchSuggestionPool
-    .filter((item) => `${item.label} ${item.meta} ${item.value}`.toLowerCase().includes(normalizedQuery))
-    .slice(0, 4);
-
-  if (!results.length) {
+  const matches = getSuggestionMatches(cleanQuery);
+  if (!matches.length) {
     searchResultsSection.hidden = false;
-    if (searchEmptyState) {
-      searchEmptyState.hidden = false;
-    }
+    if (searchEmptyState) searchEmptyState.hidden = false;
     return;
   }
 
-  results.forEach((item) => {
+  matches.forEach((item) => {
     searchResultsList.appendChild(createSuggestionButton(item));
   });
   searchResultsSection.hidden = false;
@@ -152,17 +158,18 @@ const closeSearchDropdown = () => {
   activeSearchIndex = -1;
 };
 
-const commitSearchValue = (value) => {
-  if (!searchInput || !value) return;
-  const cleanValue = String(value).trim();
+const goToSearchResults = (value) => {
+  const cleanValue = String(value || "").trim();
   if (!cleanValue) return;
-  searchInput.value = cleanValue;
-  const history = getSearchHistory().filter((item) => item.toLowerCase() !== cleanValue.toLowerCase());
-  history.unshift(cleanValue);
-  saveSearchHistory(history);
-  renderSearchHistory();
-  renderSearchResults(cleanValue);
-  closeSearchDropdown();
+  addSearchHistory(cleanValue);
+  const nextUrl = new URL("resultados.html", window.location.href);
+  nextUrl.searchParams.set("q", cleanValue);
+  if (window.DokeNavigate) {
+    window.DokeNavigate(nextUrl.toString());
+    return;
+  }
+
+  window.location.href = nextUrl.toString();
 };
 
 const getVisibleSearchOptions = () => {
@@ -172,36 +179,35 @@ const getVisibleSearchOptions = () => {
 
 renderRecommendationChips();
 renderSearchHistory();
-renderSearchResults("");
-
-if (searchDropdown) {
-  searchDropdown.hidden = true;
-}
+renderSearchSuggestions("");
+if (searchDropdown) searchDropdown.hidden = true;
 
 if (searchBox && searchInput && searchDropdown) {
-  let searchDropdownOpenedByClick = false;
-
   const syncSearchDropdown = () => {
     const query = searchInput.value.trim();
     renderSearchHistory();
-    renderSearchResults(query);
-    openSearchDropdown();
+    renderSearchSuggestions(query);
+
+    if (!query.length) {
+      const hasRecommendations = !!searchRecommendationList?.children.length;
+      const hasHistory = !!searchHistoryList?.children.length;
+      if (hasRecommendations || hasHistory) {
+        openSearchDropdown();
+        return;
+      }
+    }
+
+    if (query.length >= 2) {
+      openSearchDropdown();
+      return;
+    }
+
+    closeSearchDropdown();
   };
 
-  searchInput.addEventListener("click", () => {
-    searchDropdownOpenedByClick = true;
-    syncSearchDropdown();
-  });
-
-  searchInput.addEventListener("focus", () => {
-    searchDropdownOpenedByClick = true;
-    syncSearchDropdown();
-  });
-
-  searchInput.addEventListener("input", () => {
-    if (!searchDropdownOpenedByClick) return;
-    syncSearchDropdown();
-  });
+  searchInput.addEventListener("focus", syncSearchDropdown);
+  searchInput.addEventListener("click", syncSearchDropdown);
+  searchInput.addEventListener("input", syncSearchDropdown);
 
   searchInput.addEventListener("keydown", (event) => {
     const options = getVisibleSearchOptions();
@@ -223,14 +229,13 @@ if (searchBox && searchInput && searchDropdown) {
     if (event.key === "Enter") {
       event.preventDefault();
       if (activeSearchIndex >= 0 && options[activeSearchIndex]) {
-        commitSearchValue(options[activeSearchIndex].dataset.value || options[activeSearchIndex].textContent);
+        goToSearchResults(options[activeSearchIndex].dataset.value || options[activeSearchIndex].textContent);
         return;
       }
-      commitSearchValue(searchInput.value);
+      goToSearchResults(searchInput.value);
     }
 
     if (event.key === "Escape") {
-      searchDropdownOpenedByClick = false;
       closeSearchDropdown();
     }
   });
@@ -238,20 +243,25 @@ if (searchBox && searchInput && searchDropdown) {
   searchDropdown.addEventListener("click", (event) => {
     const suggestion = event.target.closest(".search-suggestion, .search-chip");
     if (!suggestion) return;
-    commitSearchValue(suggestion.dataset.value || suggestion.textContent);
+    goToSearchResults(suggestion.dataset.value || suggestion.textContent);
   });
 
   document.addEventListener("click", (event) => {
     if (!event.target.closest("[data-searchbox]")) {
-      searchDropdownOpenedByClick = false;
       closeSearchDropdown();
     }
-  });
+  }, { signal });
 
   searchBox.addEventListener("submit", (event) => {
     event.preventDefault();
-    searchDropdownOpenedByClick = true;
-    commitSearchValue(searchInput.value);
+    goToSearchResults(searchInput.value);
+  });
+}
+
+if (searchPrimaryCta && searchInput) {
+  searchPrimaryCta.addEventListener("click", (event) => {
+    event.preventDefault();
+    goToSearchResults(searchInput.value);
   });
 }
 
@@ -262,9 +272,334 @@ if (searchClearButton) {
   });
 }
 
+const closeAllCustomSelects = (exceptSelect = null) => {
+  customSelectRegistry.forEach((instance, select) => {
+    if (exceptSelect && select === exceptSelect) return;
+    instance.root.classList.remove("is-open");
+    instance.menu.hidden = true;
+    instance.trigger.setAttribute("aria-expanded", "false");
+  });
+};
+
+const refreshCustomSelect = (select) => {
+  const instance = customSelectRegistry.get(select);
+  if (!instance) return;
+
+  const selectedOption = select.options[select.selectedIndex];
+  instance.label.textContent = selectedOption?.textContent || select.options[0]?.textContent || "";
+  instance.menu.innerHTML = "";
+
+  [...select.options].forEach((option) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "ui-select__option";
+    button.textContent = option.textContent;
+    button.dataset.value = option.value;
+
+    if (option.value === select.value) {
+      button.classList.add("is-selected");
+    }
+
+    button.addEventListener("click", () => {
+      select.value = option.value;
+      refreshCustomSelect(select);
+      closeAllCustomSelects();
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    instance.menu.appendChild(button);
+  });
+};
+
+const enhanceSelect = (select) => {
+  if (!select || customSelectRegistry.has(select)) return;
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "ui-select";
+
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "ui-select__trigger";
+  trigger.setAttribute("aria-haspopup", "listbox");
+  trigger.setAttribute("aria-expanded", "false");
+  trigger.innerHTML = `
+    <span class="ui-select__label"></span>
+    <span class="ui-select__caret" aria-hidden="true"></span>
+  `;
+
+  const menu = document.createElement("div");
+  menu.className = "ui-select__menu";
+  menu.hidden = true;
+
+  select.classList.add("ui-select__native");
+  select.parentNode.insertBefore(wrapper, select);
+  wrapper.appendChild(select);
+  wrapper.appendChild(trigger);
+  wrapper.appendChild(menu);
+
+  const instance = {
+    root: wrapper,
+    trigger,
+    menu,
+    label: trigger.querySelector(".ui-select__label")
+  };
+
+  customSelectRegistry.set(select, instance);
+
+  trigger.addEventListener("click", () => {
+    const isOpen = !menu.hidden;
+    closeAllCustomSelects(select);
+    menu.hidden = isOpen;
+    wrapper.classList.toggle("is-open", !isOpen);
+    trigger.setAttribute("aria-expanded", String(!isOpen));
+  });
+
+  select.addEventListener("change", () => {
+    refreshCustomSelect(select);
+  });
+
+  refreshCustomSelect(select);
+};
+
+const enhanceHomeSelects = () => {
+  document.querySelectorAll("select[data-ui-select]").forEach((select) => {
+    enhanceSelect(select);
+  });
+};
+
+const fillSelectOptions = (select, items, placeholder) => {
+  if (!select) return;
+  const currentValue = select.value;
+  select.innerHTML = "";
+
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.textContent = placeholder;
+  select.appendChild(defaultOption);
+
+  items.forEach((item) => {
+    const option = document.createElement("option");
+    option.value = item;
+    option.textContent = item;
+    select.appendChild(option);
+  });
+
+  if (items.includes(currentValue)) {
+    select.value = currentValue;
+  }
+
+  refreshCustomSelect(select);
+};
+
+const ensureSelectValue = (select, value) => {
+  if (!select || !value) return;
+  const hasOption = [...select.options].some((option) => option.value === value);
+
+  if (!hasOption) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    select.appendChild(option);
+  }
+
+  select.value = value;
+  refreshCustomSelect(select);
+};
+
+const extendLocationOptions = ({ state = "", city = "", neighborhood = "" } = {}) => {
+  if (state && !locationOptions.states.includes(state)) {
+    locationOptions.states = [...locationOptions.states, state].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }
+
+  if (state && city) {
+    const existingCities = Array.isArray(locationOptions.citiesByState[state])
+      ? locationOptions.citiesByState[state]
+      : [];
+
+    if (!existingCities.includes(city)) {
+      locationOptions.citiesByState[state] = [...existingCities, city]
+        .sort((a, b) => a.localeCompare(b, "pt-BR"));
+    }
+  }
+
+  if (city && neighborhood) {
+    const existingNeighborhoods = Array.isArray(locationOptions.neighborhoodsByCity[city])
+      ? locationOptions.neighborhoodsByCity[city]
+      : [];
+
+    if (!existingNeighborhoods.includes(neighborhood)) {
+      locationOptions.neighborhoodsByCity[city] = [...existingNeighborhoods, neighborhood]
+        .sort((a, b) => a.localeCompare(b, "pt-BR"));
+    }
+  }
+};
+
+const syncHomeLocationSelects = (source = "state") => {
+  const selectedState = homeStateSelect?.value || "";
+  const cities = selectedState ? (locationOptions.citiesByState[selectedState] || []) : [];
+  fillSelectOptions(homeCitySelect, cities, "Qualquer cidade");
+
+  if (source === "state" && homeCitySelect) {
+    homeCitySelect.value = "";
+    refreshCustomSelect(homeCitySelect);
+  }
+
+  const selectedCity = homeCitySelect?.value || "";
+  const neighborhoods = selectedCity ? (locationOptions.neighborhoodsByCity[selectedCity] || []) : [];
+  fillSelectOptions(homeNeighborhoodSelect, neighborhoods, "Qualquer bairro");
+
+  if ((source === "state" || source === "city") && homeNeighborhoodSelect) {
+    homeNeighborhoodSelect.value = "";
+    refreshCustomSelect(homeNeighborhoodSelect);
+  }
+};
+
+const bootstrapHomeLocationSelects = () => {
+  fillSelectOptions(homeStateSelect, locationOptions.states || [], "Qualquer estado");
+  syncHomeLocationSelects();
+};
+
+const closeUiModal = (payload = null) => {
+  if (!uiModal) return;
+  uiModal.hidden = true;
+  document.body.classList.remove("has-modal-open");
+  if (activeModalResolver) {
+    activeModalResolver(payload);
+    activeModalResolver = null;
+  }
+};
+
+const openUiModal = ({
+  eyebrow = "Aviso",
+  title = "Mensagem",
+  text = "",
+  label = "Valor",
+  value = "",
+  placeholder = "",
+  confirmLabel = "Confirmar",
+  cancelLabel = "Cancelar",
+  mode = "input"
+} = {}) => {
+  if (!uiModal || !uiModalTitle || !uiModalText || !uiModalConfirm || !uiModalCancel || !uiModalInput || !uiModalField) {
+    return Promise.resolve(null);
+  }
+
+  uiModalEyebrow.textContent = eyebrow;
+  uiModalTitle.textContent = title;
+  uiModalText.textContent = text;
+  uiModalLabel.textContent = label;
+  uiModalInput.value = value;
+  uiModalInput.placeholder = placeholder;
+  uiModalConfirm.textContent = confirmLabel;
+  uiModalCancel.textContent = cancelLabel;
+  uiModalField.hidden = mode !== "input";
+  uiModalCancel.hidden = mode === "notice";
+  uiModal.hidden = false;
+  document.body.classList.add("has-modal-open");
+
+  window.setTimeout(() => {
+    if (mode === "input") {
+      uiModalInput.focus();
+      uiModalInput.select();
+    } else {
+      uiModalConfirm.focus();
+    }
+  }, 0);
+
+  return new Promise((resolve) => {
+    activeModalResolver = resolve;
+  });
+};
+
+const promptCepValue = () => openUiModal({
+  eyebrow: "Localização",
+  title: "Inserir CEP",
+  text: "Digite o CEP para preencher estado, cidade e bairro automaticamente.",
+  label: "CEP",
+  value: "30140-071",
+  placeholder: "30140-071",
+  confirmLabel: "Preencher",
+  cancelLabel: "Cancelar",
+  mode: "input"
+});
+
+const showNotice = (title, text) => openUiModal({
+  eyebrow: "Localização",
+  title,
+  text,
+  confirmLabel: "Entendi",
+  mode: "notice"
+});
+
+const fetchCepData = async (cep) => {
+  const cleanCep = String(cep || "").replace(/\D/g, "");
+  if (cleanCep.length !== 8) return null;
+
+  const formattedCep = `${cleanCep.slice(0, 5)}-${cleanCep.slice(5)}`;
+  const localCep = locationOptions.cepLookup?.[cleanCep] || locationOptions.cepLookup?.[formattedCep];
+  if (localCep) return localCep;
+
+  const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+  if (!response.ok) return null;
+
+  const data = await response.json();
+  if (data.erro) return null;
+
+  return {
+    state: data.uf || "",
+    city: data.localidade || "",
+    neighborhood: data.bairro || ""
+  };
+};
+
+const applyHomeCepPreset = async () => {
+  const sampleCep = await promptCepValue();
+  if (!sampleCep || !sampleCep.confirmed) return;
+
+  const normalizedCep = String(sampleCep.value || "").trim();
+  const cepData = await fetchCepData(normalizedCep);
+
+  if (!cepData) {
+    await showNotice("CEP não encontrado", "Não conseguimos localizar esse CEP. Confira o número digitado e tente novamente.");
+    return;
+  }
+
+  extendLocationOptions(cepData);
+  bootstrapHomeLocationSelects();
+  ensureSelectValue(homeStateSelect, cepData.state);
+  fillSelectOptions(homeCitySelect, locationOptions.citiesByState[cepData.state] || [], "Qualquer cidade");
+  ensureSelectValue(homeCitySelect, cepData.city);
+  fillSelectOptions(homeNeighborhoodSelect, locationOptions.neighborhoodsByCity[cepData.city] || [], "Qualquer bairro");
+  ensureSelectValue(homeNeighborhoodSelect, cepData.neighborhood);
+};
+
+enhanceHomeSelects();
+bootstrapHomeLocationSelects();
+
+homeStateSelect?.addEventListener("change", () => {
+  syncHomeLocationSelects("state");
+});
+
+homeCitySelect?.addEventListener("change", () => {
+  syncHomeLocationSelects("city");
+});
+
+homeCepFillButton?.addEventListener("click", applyHomeCepPreset);
+uiModalClose?.addEventListener("click", () => closeUiModal({ confirmed: false }));
+uiModalCancel?.addEventListener("click", () => closeUiModal({ confirmed: false }));
+uiModalConfirm?.addEventListener("click", () => {
+  closeUiModal({ confirmed: true, value: uiModalInput?.value || "" });
+});
+
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".ui-select")) {
+    closeAllCustomSelects();
+  }
+}, { signal });
+
 document.querySelectorAll("[data-chip-group]").forEach((group) => {
   group.addEventListener("click", (event) => {
-    const chip = event.target.closest(".chip");
+    const chip = event.target.closest(".chip, .filter-chip");
     if (!chip || chip.dataset.locked === "true") return;
 
     if (group.dataset.mode === "single") {
@@ -277,56 +612,59 @@ document.querySelectorAll("[data-chip-group]").forEach((group) => {
   });
 });
 
-
-const moreFiltersToggle = document.querySelector("[data-more-filters-toggle]");
-const moreFiltersPanel = document.querySelector("[data-more-filters-panel]");
-const moreFiltersClose = document.querySelector("[data-more-filters-close]");
-const moreFiltersApply = document.querySelector("[data-more-filters-apply]");
-const categoryTrack = document.querySelector("[data-category-track]");
-const categoryArrows = document.querySelectorAll("[data-category-arrow]");
-const railArrows = document.querySelectorAll("[data-rail-arrow]");
-
 const openMoreFilters = () => {
-  if (!moreFiltersToggle || !moreFiltersPanel) return;
+  if (!moreFiltersToggles.length || !moreFiltersPanel) return;
   moreFiltersPanel.hidden = false;
-  moreFiltersToggle.setAttribute("aria-expanded", "true");
-  moreFiltersToggle.classList.add("is-active");
+  moreFiltersToggles.forEach((toggle) => {
+    toggle.setAttribute("aria-expanded", "true");
+    toggle.classList.add("is-active");
+  });
 };
 
 const closeMoreFilters = () => {
-  if (!moreFiltersToggle || !moreFiltersPanel) return;
+  if (!moreFiltersToggles.length || !moreFiltersPanel) return;
   moreFiltersPanel.hidden = true;
-  moreFiltersToggle.setAttribute("aria-expanded", "false");
-  moreFiltersToggle.classList.remove("is-active");
+  moreFiltersToggles.forEach((toggle) => {
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.classList.remove("is-active");
+  });
 };
 
-if (moreFiltersToggle && moreFiltersPanel) {
+if (moreFiltersToggles.length && moreFiltersPanel) {
   closeMoreFilters();
 
-  moreFiltersToggle.addEventListener("click", (event) => {
-    event.stopPropagation();
-    const isOpen = moreFiltersToggle.getAttribute("aria-expanded") === "true";
-    if (isOpen) {
-      closeMoreFilters();
-      return;
-    }
-    openMoreFilters();
+  moreFiltersToggles.forEach((toggle) => {
+    toggle.addEventListener("click", (event) => {
+      const isOpen = toggle.getAttribute("aria-expanded") === "true";
+      if (isOpen) {
+        closeMoreFilters();
+        return;
+      }
+      openMoreFilters();
+    });
   });
 
   moreFiltersClose?.addEventListener("click", closeMoreFilters);
   moreFiltersApply?.addEventListener("click", closeMoreFilters);
 
-  document.addEventListener("click", (event) => {
-    if (!event.target.closest("[data-more-filters-toggle]") && !event.target.closest("[data-more-filters-panel]")) {
-      closeMoreFilters();
-    }
-  });
-
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeMoreFilters();
     }
-  });
+
+    if (event.key === "Escape" && uiModal && !uiModal.hidden) {
+      closeUiModal({ confirmed: false });
+    }
+
+    if (event.key === "Escape") {
+      closeAllCustomSelects();
+    }
+
+    if (event.key === "Enter" && uiModal && !uiModal.hidden && document.activeElement === uiModalInput) {
+      event.preventDefault();
+      closeUiModal({ confirmed: true, value: uiModalInput?.value || "" });
+    }
+  }, { signal });
 }
 
 const bindScrollRail = ({ track, arrows, directionAttr, amountFactor }) => {
@@ -361,3 +699,8 @@ railArrows.forEach((arrow) => {
     amountFactor: 0.82
   });
 });
+
+};
+
+window.DokeInitHome();
+
