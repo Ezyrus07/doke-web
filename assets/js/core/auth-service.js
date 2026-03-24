@@ -403,6 +403,26 @@
     return toPublicUser(user);
   }
 
+  async function signInWithProvider(provider) {
+    const allowed = ["google", "facebook", "apple"];
+    if (!allowed.includes(provider)) {
+      throw new Error("Provedor nao suportado.");
+    }
+
+    if (!supabaseClient) {
+      throw new Error("Login social depende do Supabase configurado.");
+    }
+
+    const redirectTo = `${window.location.origin}${window.location.pathname.includes('/auth/') ? '/index.html' : window.location.pathname}`;
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo }
+    });
+
+    if (error) throw new Error(translateSupabaseError(error.message, provider));
+    return true;
+  }
+
   function signOut() {
     if (supabaseClient) {
       supabaseClient.auth.signOut();
@@ -516,6 +536,7 @@
     isPhone,
     normalizePhone,
     normalizeEmail,
-    provider: supabaseClient ? "supabase" : "local"
+    provider: supabaseClient ? "supabase" : "local",
+    signInWithProvider
   };
 })();

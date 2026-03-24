@@ -41,9 +41,9 @@ function applyPhoneMask(value) {
 }
 
 document.querySelectorAll("[data-phone-mask]").forEach((input) => {
-  input.addEventListener("input", () => {
+  input.addEventListener("blur", () => {
     const raw = input.value.trim();
-    if (raw.includes("@")) return;
+    if (!raw || /[A-Za-z@]/.test(raw)) return;
     input.value = applyPhoneMask(raw);
   });
 });
@@ -70,13 +70,20 @@ document.querySelectorAll("[data-password-strength]").forEach((input) => {
   if (!bars.length) return;
 
   const renderStrength = () => {
-    const score = scorePassword(input.value.trim());
+    const value = input.value.trim();
+    const score = scorePassword(value);
+    const hasValue = value.length > 0;
+
+    meter.classList.toggle("is-empty", !hasValue);
+
     bars.forEach((bar, index) => {
-      bar.classList.toggle("is-on", index < score);
+      bar.classList.toggle("is-on", hasValue && index < score);
     });
 
     if (label && label.hasAttribute("data-strength-label")) {
-      if (!input.value.trim()) {
+      label.classList.toggle("is-empty", !hasValue);
+
+      if (!hasValue) {
         label.textContent = "";
       } else if (score <= 1) {
         label.textContent = "Senha fraca";
@@ -389,3 +396,19 @@ if (quoteText && quoteAuthor && quoteRole && prevButton && nextButton) {
 
   renderQuote();
 }
+
+
+document.querySelectorAll('[data-auth-provider]').forEach((button) => {
+  button.addEventListener('click', async () => {
+    const provider = button.getAttribute('data-auth-provider');
+    if (!authService || !provider) return;
+    try {
+      button.disabled = true;
+      await authService.signInWithProvider(provider);
+    } catch (error) {
+      const feedback = document.querySelector('[data-auth-feedback]');
+      setFeedback(feedback, 'error', error.message || 'Nao foi possivel iniciar o login social.');
+      button.disabled = false;
+    }
+  });
+});
