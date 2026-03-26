@@ -396,19 +396,3 @@ if (quoteText && quoteAuthor && quoteRole && prevButton && nextButton) {
 
   renderQuote();
 }
-
-
-document.querySelectorAll('[data-auth-provider]').forEach((button) => {
-  button.addEventListener('click', async () => {
-    const provider = button.getAttribute('data-auth-provider');
-    if (!authService || !provider) return;
-    try {
-      button.disabled = true;
-      await authService.signInWithProvider(provider);
-    } catch (error) {
-      const feedback = document.querySelector('[data-auth-feedback]');
-      setFeedback(feedback, 'error', error.message || 'Nao foi possivel iniciar o login social.');
-      button.disabled = false;
-    }
-  });
-});

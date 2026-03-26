@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const voteNext = page.querySelector("[data-vote-next]");
   const filterButtons = [...page.querySelectorAll("[data-review-filter]")];
   const reviews = [...page.querySelectorAll(".ad-review[data-review-tone]")];
+  const voteCards = [...page.querySelectorAll(".ad-vote-card[data-review-tone]")];
 
   let currentIndex = Math.max(0, thumbs.findIndex((thumb) => thumb.classList.contains("is-active")));
 
@@ -68,6 +69,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const tone = review.dataset.reviewTone || "positive";
         const visible = filter === "all" || tone === filter;
         review.hidden = !visible;
+      });
+
+      voteCards.forEach((card) => {
+        const tone = card.dataset.reviewTone || "positive";
+        const visible = filter === "all" || tone === filter;
+        card.hidden = !visible;
       });
     });
   });

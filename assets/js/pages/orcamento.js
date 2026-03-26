@@ -421,10 +421,13 @@ const initBudgetPage = () => {
 
     const orders = getStoredOrders().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     const counts = {
+      all: orders.length,
       total: orders.length,
       pending: orders.filter((item) => item.status === "pending").length,
       conversation: orders.filter((item) => item.status === "conversation").length,
-      completed: orders.filter((item) => item.status === "completed").length
+      responded: orders.filter((item) => item.status === "responded").length,
+      completed: orders.filter((item) => item.status === "completed").length,
+      cancelled: orders.filter((item) => item.status === "cancelled").length
     };
 
     const metrics = {
@@ -437,6 +440,12 @@ const initBudgetPage = () => {
     Object.entries(metrics).forEach(([selector, value]) => {
       const node = document.querySelector(selector);
       if (node) node.textContent = String(value);
+    });
+
+    Object.entries(counts).forEach(([key, value]) => {
+      document.querySelectorAll(`[data-filter-count="${key}"]`).forEach((node) => {
+        node.textContent = `(${value})`;
+      });
     });
 
     const statusLabels = {
@@ -476,12 +485,15 @@ const initBudgetPage = () => {
         const nextAction = order.nextAction || nextActionLabels[status] || "Ver detalhes";
 
         return `
-          <article class="quote-card orders-card" data-status="${status}">
+          <article class="quote-card orders-card" data-status="${status}" data-order-id="${order.id || order.createdAt || Math.random().toString(36).slice(2)}">
             <div class="orders-card__top">
               <div class="orders-card__header">
-                <div>
-                  <h3>${serviceName}</h3>
-                  <p class="orders-card__provider">Enviado para <strong>${providerName}</strong></p>
+                <div class="orders-card__title-wrap">
+                  <input class="orders-card__check" type="checkbox" aria-label="Selecionar pedido ${serviceName}">
+                  <div>
+                    <h3>${serviceName}</h3>
+                    <p class="orders-card__provider">Enviado para <strong>${providerName}</strong></p>
+                  </div>
                 </div>
                 <span class="orders-card__status" data-status="${status}">${statusLabel}</span>
               </div>
@@ -517,15 +529,194 @@ const initBudgetPage = () => {
       }).join("");
     };
 
+    const searchWrap = document.querySelector("[data-orders-search-wrap]");
+    const searchToggle = document.querySelector("[data-orders-search-toggle]");
+    const searchClose = document.querySelector("[data-orders-search-close]");
+    const searchInput = document.querySelector("[data-orders-search-input]");
+    const filtersWrapElement = document.querySelector("[data-orders-filters]");
+    const selectToggle = document.querySelector("[data-orders-select-toggle]");
+    const deleteSelectedButton = document.querySelector("[data-orders-delete-selected]");
+    let currentFilter = "all";
+    let searchTerm = "";
+
+    const applySelectionState = () => {
+      const selected = list.querySelectorAll('.orders-card__check:checked').length;
+      if (deleteSelectedButton) {
+        deleteSelectedButton.hidden = !(pageRoot.classList.contains('is-selecting') && selected > 0);
+        deleteSelectedButton.textContent = selected > 0 ? `Excluir selecionados (${selected})` : 'Excluir selecionados';
+      }
+    };
+
+    const renderFiltered = () => {
+      const filtered = currentFilter === "all"
+        ? orders
+        : orders.filter((order) => order.status === currentFilter);
+      const searched = searchTerm
+        ? filtered.filter((order) => {
+            const haystack = [order.service, order.provider, order.details, order.locationTitle, order.location, order.requestType]
+              .filter(Boolean)
+              .join(' ')
+              .toLowerCase();
+            return haystack.includes(searchTerm);
+          })
+        : filtered;
+
+      if (!searched.length) {
+        list.innerHTML = "";
+        empty.hidden = false;
+        applySelectionState();
+        return;
+      }
+
+      empty.hidden = true;
+      list.innerHTML = searched.map((order) => {
+        const status = order.status || "pending";
+        const serviceName = order.service || "Serviço solicitado";
+        const providerName = order.provider || "Profissional Doke";
+        const summary = order.details || "Seu pedido foi registrado e está pronto para seguir por aqui.";
+        const location = order.locationTitle || order.location || "A definir";
+        const urgency = order.urgency || "Sem pressa";
+        const requestType = order.requestType || "Pedido enviado";
+        const statusLabel = order.statusLabel || statusLabels[status] || "Aguardando";
+        const nextAction = order.nextAction || nextActionLabels[status] || "Ver detalhes";
+
+        return `
+          <article class="quote-card orders-card" data-status="${status}" data-order-id="${order.id || order.createdAt || Math.random().toString(36).slice(2)}">
+            <div class="orders-card__top">
+              <div class="orders-card__header">
+                <div class="orders-card__title-wrap">
+                  <input class="orders-card__check" type="checkbox" aria-label="Selecionar pedido ${serviceName}">
+                  <div>
+                    <h3>${serviceName}</h3>
+                    <p class="orders-card__provider">Enviado para <strong>${providerName}</strong></p>
+                  </div>
+                </div>
+                <span class="orders-card__status" data-status="${status}">${statusLabel}</span>
+              </div>
+              <p class="orders-card__date">Pedido criado em ${formatCreatedAt(order.createdAt)}</p>
+            </div>
+
+            <div class="orders-card__meta">
+              <article><span>Local</span><strong>${location}</strong></article>
+              <article><span>Urgência</span><strong>${urgency}</strong></article>
+              <article><span>Tipo</span><strong>${requestType}</strong></article>
+            </div>
+
+            <div class="orders-card__body">
+              <div class="orders-card__summary">
+                <strong>Resumo do pedido</strong>
+                <p>${summary}</p>
+              </div>
+              <div class="orders-card__timeline">
+                <strong>Próximo passo</strong>
+                <p>${nextAction} dentro do Doke.</p>
+              </div>
+            </div>
+
+            <div class="orders-card__footer">
+              <p class="orders-card__next">Tudo fica centralizado aqui para acompanhar respostas e próximos passos.</p>
+              <div class="orders-card__actions">
+                <a class="orders-button orders-button--ghost" href="pedidos.html">Ver detalhes</a>
+                <a class="orders-button orders-button--primary" href="#">${nextAction}</a>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+      applySelectionState();
+    };
+
     filtersWrap.addEventListener("click", (event) => {
       const button = event.target.closest("[data-status-filter], [data-filter]");
       if (!button) return;
       filtersWrap.querySelectorAll("[data-status-filter], [data-filter]").forEach((item) => item.classList.remove("is-active"));
       button.classList.add("is-active");
-      render(button.dataset.statusFilter || button.dataset.filter || "all");
+      currentFilter = button.dataset.statusFilter || button.dataset.filter || "all";
+      renderFiltered();
     });
 
-    render();
+    const closeSearch = ({ clear = false } = {}) => {
+      if (!searchWrap) return;
+      searchWrap.classList.remove('is-open');
+      searchToggle?.classList.remove('is-active');
+      filtersWrapElement?.classList.remove('is-hidden');
+      pageRoot.classList.remove('search-open');
+      if (clear && searchInput) {
+        searchInput.value = '';
+        searchTerm = '';
+      }
+      renderFiltered();
+    };
+
+    const setSearchMode = (isOpen) => {
+      if (!searchWrap) return;
+      searchWrap.classList.toggle("is-open", isOpen);
+      searchToggle?.classList.toggle('is-active', isOpen);
+      filtersWrapElement?.classList.toggle("is-hidden", isOpen);
+      pageRoot.classList.toggle('search-open', isOpen);
+      if (isOpen) {
+        searchInput?.focus();
+      } else if (searchInput) {
+        searchInput.value = "";
+        searchTerm = '';
+      }
+      renderFiltered();
+    };
+
+    if (searchToggle && searchWrap) {
+      searchToggle.addEventListener("click", () => {
+        const willOpen = !searchWrap.classList.contains("is-open");
+        setSearchMode(willOpen);
+      });
+    }
+
+    if (searchClose && searchWrap) {
+      searchClose.addEventListener("click", () => setSearchMode(false));
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        searchTerm = searchInput.value.trim().toLowerCase();
+        renderFiltered();
+      });
+    }
+
+    document.addEventListener('click', (event) => {
+      if (!searchWrap || !searchWrap.classList.contains('is-open')) return;
+      if (searchWrap.contains(event.target)) return;
+      closeSearch();
+    });
+
+
+    if (selectToggle) {
+      selectToggle.addEventListener('click', () => {
+        pageRoot.classList.toggle('is-selecting');
+        if (!pageRoot.classList.contains('is-selecting')) {
+          list.querySelectorAll('.orders-card__check').forEach((input) => {
+            input.checked = false;
+          });
+        }
+        applySelectionState();
+      });
+    }
+
+    list.addEventListener('change', (event) => {
+      if (event.target.matches('.orders-card__check')) applySelectionState();
+    });
+
+    if (deleteSelectedButton) {
+      deleteSelectedButton.addEventListener('click', () => {
+        const selectedIds = Array.from(list.querySelectorAll('.orders-card__check:checked'))
+          .map((input) => input.closest('.orders-card')?.dataset.orderId)
+          .filter(Boolean);
+        if (!selectedIds.length) return;
+        const nextOrders = getStoredOrders().filter((order) => !selectedIds.includes(order.id || order.createdAt));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(nextOrders));
+        window.location.reload();
+      });
+    }
+
+    renderFiltered();
   };
 
   renderOrdersPage();

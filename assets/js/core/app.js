@@ -118,21 +118,48 @@ const syncTopbarScrollState = () => {
 };
 
 
-const syncStylesFromDocument = (nextDoc) => {
+const BASE_SHELL_STYLE_PATTERNS = [
+  /assets\/css\/core\/tokens\.css$/i,
+  /assets\/css\/core\/base\.css$/i,
+  /assets\/css\/core\/layout\.css$/i,
+  /assets\/css\/core\/components\.css$/i
+];
+
+const syncStylesFromDocument = async (nextDoc) => {
   const currentHead = document.head;
-  const existing = new Set([...currentHead.querySelectorAll('link[rel="stylesheet"]')].map((node) => new URL(node.href, window.location.href).href));
+  const existing = new Set(
+    [...currentHead.querySelectorAll('link[rel="stylesheet"]')].map((node) => new URL(node.href, window.location.href).href)
+  );
+
+  const pending = [];
+
   nextDoc.querySelectorAll('link[rel="stylesheet"]').forEach((link) => {
     const href = link.getAttribute('href');
     if (!href) return;
     const absolute = new URL(href, window.location.href).href;
+    if (BASE_SHELL_STYLE_PATTERNS.some((pattern) => pattern.test(absolute))) {
+      return;
+    }
     if (existing.has(absolute)) return;
+
     const clone = document.createElement('link');
     clone.rel = 'stylesheet';
     clone.href = href;
     clone.setAttribute('data-doke-dynamic-style', 'true');
+
+    const loaded = new Promise((resolve) => {
+      clone.addEventListener('load', resolve, { once: true });
+      clone.addEventListener('error', resolve, { once: true });
+    });
+
     currentHead.appendChild(clone);
     existing.add(absolute);
+    pending.push(loaded);
   });
+
+  if (pending.length) {
+    await Promise.all(pending);
+  }
 };
 
 const ensureScriptsFromDocument = async (nextDoc) => {
@@ -157,6 +184,46 @@ const ensureScriptsFromDocument = async (nextDoc) => {
   }
 };
 
+const syncShellFromDocument = (nextDoc) => {
+  const nextSidebar = nextDoc.querySelector('.sidebar');
+  const nextTopbar = nextDoc.querySelector('.topbar');
+  const nextScrim = nextDoc.querySelector('.mobile-scrim');
+  const currentSidebar = document.querySelector('.sidebar');
+  const currentTopbar = document.querySelector('.topbar');
+  const currentScrim = document.querySelector('.mobile-scrim');
+
+  if (nextSidebar && currentSidebar) {
+    currentSidebar.replaceWith(nextSidebar.cloneNode(true));
+  }
+
+  if (nextTopbar && currentTopbar) {
+    currentTopbar.replaceWith(nextTopbar.cloneNode(true));
+  }
+
+  if (nextScrim && currentScrim) {
+    currentScrim.replaceWith(nextScrim.cloneNode(true));
+  }
+};
+
+
+const cleanupDynamicStyles = (nextDoc) => {
+  const allowed = new Set();
+  nextDoc.querySelectorAll('link[rel="stylesheet"]').forEach((link) => {
+    const href = link.getAttribute('href');
+    if (!href) return;
+    const absolute = new URL(href, window.location.href).href;
+    if (BASE_SHELL_STYLE_PATTERNS.some((pattern) => pattern.test(absolute))) return;
+    allowed.add(absolute);
+  });
+
+  document.querySelectorAll('link[data-doke-dynamic-style="true"]').forEach((node) => {
+    const absolute = new URL(node.href, window.location.href).href;
+    if (!allowed.has(absolute)) {
+      node.remove();
+    }
+  });
+};
+
 const syncStandaloneUiFromDocument = (nextDoc) => {
   const currentModal = document.querySelector(".ui-modal");
   const nextModal = nextDoc.querySelector(".ui-modal");
@@ -174,6 +241,22 @@ const syncStandaloneUiFromDocument = (nextDoc) => {
   if (currentModal && nextModal) {
     currentModal.replaceWith(nextModal.cloneNode(true));
   }
+};
+
+
+const initChipRails = () => {
+  document.querySelectorAll('[data-chip-arrow]').forEach((button) => {
+    if (button.dataset.boundChipArrow === 'true') return;
+    button.dataset.boundChipArrow = 'true';
+    button.addEventListener('click', () => {
+      const targetId = button.getAttribute('data-chip-target');
+      const track = targetId ? document.getElementById(targetId) : null;
+      if (!track) return;
+      const direction = button.getAttribute('data-chip-arrow') === 'next' ? 1 : -1;
+      const amount = Math.max(180, track.clientWidth * 0.55);
+      track.scrollBy({ left: amount * direction, behavior: 'smooth' });
+    });
+  });
 };
 
 const syncBodyClassesFromDocument = (nextDoc) => {
@@ -195,6 +278,8 @@ const initializeCurrentView = () => {
   window.DokeInitHome?.();
   window.DokeInitSearchResults?.();
   window.DokeInitBudget?.();
+  window.DokeInitOrders?.();
+  initChipRails();
 };
 
 const swapView = async (href, { replace = false, preserveScroll = false } = {}) => {
@@ -218,11 +303,14 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
     return;
   }
 
+  body.classList.add('is-shell-swapping');
   syncBodyClassesFromDocument(nextDoc);
-  syncStylesFromDocument(nextDoc);
+  await syncStylesFromDocument(nextDoc);
   await ensureScriptsFromDocument(nextDoc);
+  syncShellFromDocument(nextDoc);
   syncStandaloneUiFromDocument(nextDoc);
-  currentMain.replaceWith(nextMain.cloneNode(true));
+  document.querySelector(".page__content")?.replaceWith(nextMain.cloneNode(true));
+  cleanupDynamicStyles(nextDoc);
   document.title = nextDoc.title || document.title;
   closeProfileMenu();
   closeMobileSearch();
@@ -238,6 +326,7 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
   }
 
   initializeCurrentView();
+  requestAnimationFrame(() => body.classList.remove('is-shell-swapping'));
 };
 
 window.DokeNavigate = async (href, options) => {
@@ -329,6 +418,7 @@ window.addEventListener("popstate", () => {
 document.addEventListener("click", (event) => {
   const toggleButton = event.target.closest("[data-sidebar-toggle]");
   if (toggleButton) {
+    if (!body.classList.contains("sidebar-open")) { closeMobileSearch(); }
     body.classList.toggle("sidebar-open");
     return;
   }
@@ -382,6 +472,7 @@ document.addEventListener("click", (event) => {
   }
 
   if (event.target.closest("[data-mobile-search-open]")) {
+    body.classList.remove("sidebar-open");
     body.classList.add("mobile-search-active");
     window.setTimeout(() => {
       document.querySelector(".topbar-search input")?.focus();
