@@ -69,19 +69,45 @@ body.auth-page--signup .auth-visual-panel {
 }
 
 .auth-mark {
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   margin-bottom: 12px;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.auth-mark::before {
-  content: "";
-  width: 14px;
-  height: 14px;
+.auth-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   display: block;
-  background: linear-gradient(180deg, var(--auth-accent) 0%, var(--auth-accent-strong) 100%);
-  clip-path: polygon(40% 0, 100% 0, 64% 45%, 100% 45%, 0 100%, 34% 56%, 0 56%);
+}
+
+
+.auth-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.auth-field > span {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.auth-password {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 50px;
+}
+
+.auth-password button:hover {
+  background: rgba(17, 24, 39, 0.03);
+}
+
+.auth-password-strength.is-empty,
+.auth-strength-label.is-empty {
+  display: none;
 }
 
 .auth-copy h1 {
@@ -611,6 +637,42 @@ body.auth-page--signup .auth-visual-panel {
   cursor: pointer;
 }
 
+
+.auth-note {
+  line-height: 1.4;
+}
+
+@media (min-width: 721px) {
+  .auth-form-panel {
+    padding: 28px 28px 22px;
+  }
+
+  .auth-mark {
+    width: 34px;
+    height: 34px;
+    margin-bottom: 14px;
+  }
+
+  .auth-copy p {
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+
+  .auth-form {
+    gap: 10px;
+  }
+
+  .auth-input,
+  .auth-password,
+  .auth-button,
+  .auth-social-btn {
+    min-height: 46px;
+  }
+
+  .auth-password-strength span {
+    height: 5px;
+  }
+}
 @media (max-width: 1024px) {
   .auth-layout {
     grid-template-columns: 1fr;
@@ -630,29 +692,135 @@ body.auth-page--signup .auth-visual-panel {
 
 @media (max-width: 720px) {
   .auth-shell {
-    padding: 16px;
+    align-items: start;
+    padding: 12px;
   }
 
   .auth-stage {
-    border-radius: 22px;
+    border-radius: 20px;
+    background: rgba(255, 250, 246, 0.97);
   }
 
-  .auth-form-panel,
-  .auth-visual-panel {
-    padding: 18px;
+  .auth-layout {
+    min-height: auto;
+  }
+
+  .auth-form-panel {
+    padding: 18px 16px 16px;
+  }
+
+  .auth-mark {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 10px;
+  }
+
+  .auth-copy h1 {
+    font-size: 2rem;
+    line-height: 0.98;
+    letter-spacing: -0.05em;
+  }
+
+  .auth-copy p {
+    margin-top: 4px;
+    max-width: none;
+    font-size: 0.96rem;
+    line-height: 1.42;
+  }
+
+  .auth-form {
+    margin-top: 14px;
+    gap: 10px;
+  }
+
+  .auth-field {
+    gap: 5px;
+  }
+
+  .auth-field > span {
+    font-size: 0.9rem;
   }
 
   .auth-grid-2 {
     grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .auth-input,
+  .auth-password,
+  .auth-button,
+  .auth-social-btn {
+    min-height: 50px;
+    border-radius: 16px;
+  }
+
+  .auth-input input,
+  .auth-password input {
+    padding: 0 16px;
+    font-size: 1rem;
+  }
+
+  .auth-password {
+    grid-template-columns: minmax(0, 1fr) 54px;
+  }
+
+  .auth-password input {
+    min-width: 0;
+    border-radius: 16px 0 0 16px;
+  }
+
+  .auth-password button {
+    width: 54px;
+    border-radius: 0 16px 16px 0;
+  }
+
+  .auth-password button svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .auth-meta-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .auth-check {
+    font-size: 0.9rem;
+  }
+
+  .auth-link--muted,
+  .auth-footer {
+    font-size: 0.84rem;
+  }
+
+  .auth-feedback {
+    padding: 10px 12px;
+    border-radius: 13px;
+    font-size: 0.82rem;
+  }
+
+  .auth-password-strength {
+    gap: 6px;
+    margin-top: -2px;
+  }
+
+  .auth-password-strength span {
+    height: 5px;
+  }
+
+  .auth-strength-label,
+  .auth-note {
+    font-size: 0.75rem;
   }
 
   .auth-recovery-options {
     grid-template-columns: 1fr;
   }
 
-  .auth-meta-row {
-    flex-direction: column;
-    align-items: flex-start;
+  .auth-divider {
+    gap: 10px;
+    font-size: 0.78rem;
   }
 
   .auth-social {
@@ -660,14 +828,9 @@ body.auth-page--signup .auth-visual-panel {
     gap: 8px;
   }
 
-  .auth-social-btn {
-    min-height: 40px;
-    border-radius: 13px;
-  }
-
   .auth-social-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
   }
 
   .auth-visual-panel {

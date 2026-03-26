@@ -7,13 +7,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const dots = [...page.querySelectorAll("[data-gallery-dot]")];
   const prevButton = page.querySelector("[data-gallery-prev]");
   const nextButton = page.querySelector("[data-gallery-next]");
-  const form = page.querySelector("[data-request-form]");
-  const status = page.querySelector("[data-request-status]");
   const voteRail = page.querySelector(".ad-vote-stats");
   const votePrev = page.querySelector("[data-vote-prev]");
   const voteNext = page.querySelector("[data-vote-next]");
   const filterButtons = [...page.querySelectorAll("[data-review-filter]")];
   const reviews = [...page.querySelectorAll(".ad-review[data-review-tone]")];
+  const voteCards = [...page.querySelectorAll(".ad-vote-card[data-review-tone]")];
 
   let currentIndex = Math.max(0, thumbs.findIndex((thumb) => thumb.classList.contains("is-active")));
 
@@ -71,29 +70,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const visible = filter === "all" || tone === filter;
         review.hidden = !visible;
       });
+
+      voteCards.forEach((card) => {
+        const tone = card.dataset.reviewTone || "positive";
+        const visible = filter === "all" || tone === filter;
+        card.hidden = !visible;
+      });
     });
-  });
-
-  form?.addEventListener("submit", (event) => {
-    event.preventDefault();
-
-    const data = new FormData(form);
-    const nome = String(data.get("nome") || "").trim();
-    const detalhes = String(data.get("detalhes") || "").trim();
-
-    if (!nome || !detalhes) {
-      status?.classList.remove("is-visible");
-      return;
-    }
-
-    form.reset();
-
-    if (status) {
-      const text = status.querySelector("[data-request-status-text]");
-      if (text) {
-        text.textContent = `Solicitacao enviada para analise de ${nome}.`;
-      }
-      status.classList.add("is-visible");
-    }
   });
 });

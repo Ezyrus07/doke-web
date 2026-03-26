@@ -13,6 +13,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const filterButtons = [...page.querySelectorAll("[data-review-filter]")];
   const reviews = [...page.querySelectorAll(".ad-review[data-review-tone]")];
   const voteCards = [...page.querySelectorAll(".ad-vote-card[data-review-tone]")];
+  const extraReviews = [...page.querySelectorAll("[data-review-extra]")];
+  const reviewsMoreButton = page.querySelector("[data-reviews-more]");
 
   let currentIndex = Math.max(0, thumbs.findIndex((thumb) => thumb.classList.contains("is-active")));
 
@@ -77,5 +79,12 @@ document.addEventListener("DOMContentLoaded", () => {
         card.hidden = !visible;
       });
     });
+  });
+
+  reviewsMoreButton?.addEventListener("click", () => {
+    extraReviews.forEach((review) => {
+      review.hidden = false;
+    });
+    reviewsMoreButton.hidden = true;
   });
 });

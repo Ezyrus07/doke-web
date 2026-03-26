@@ -74,10 +74,30 @@ window.DokeSearchResultsCleanup = () => {
 
 const getSearchMode = () => [...searchModeInputs].find((input) => input.checked)?.value || "services";
 
+const getSelectedCategoriesFromParams = () => {
+  const values = params.getAll("category")
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+
+  return [...new Set(values)];
+};
+
 const setSearchMode = (mode = "services") => {
   [...searchModeInputs].forEach((input) => {
     input.checked = input.value === mode;
   });
+};
+
+const getTagSearchValue = (value) => String(value || "").replace(/^#/, "").trim();
+const goToAdDetails = () => {
+  const nextUrl = new URL("detalhe-anuncio.html", window.location.href);
+
+  if (window.DokeNavigate) {
+    window.DokeNavigate(nextUrl.toString());
+    return;
+  }
+
+  window.location.href = nextUrl.toString();
 };
 
 const setResultsState = (state) => {
@@ -218,12 +238,13 @@ const getFilters = () => {
 
 const renderCategoryFilters = () => {
   if (!categoryList) return;
+  const selectedCategories = getSelectedCategoriesFromParams();
   categoryList.innerHTML = "";
   categories.forEach((category) => {
     const label = document.createElement("label");
     label.className = "results-category-chip";
     label.innerHTML = `
-      <input type="checkbox" name="categories" value="${category}">
+      <input type="checkbox" name="categories" value="${category}" ${selectedCategories.includes(category) ? "checked" : ""}>
       <span>${category}</span>
     `;
     categoryList.appendChild(label);
@@ -672,9 +693,19 @@ const setQuery = (value) => {
   return cleanValue;
 };
 
+const syncCategoryParams = () => {
+  const filters = getFilters();
+  params.delete("category");
+  filters.categories.forEach((category) => {
+    params.append("category", category);
+  });
+};
+
 const renderResults = () => {
   if (!resultsGrid || !resultsTitle || !resultsDescription || !resultsCount) return;
 
+  syncCategoryParams();
+  window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
   const query = String(params.get("q") || "").trim();
   const filters = getFilters();
   const userResults = getUserMatches(query);
@@ -780,6 +811,28 @@ filtersForm?.addEventListener("change", () => {
   renderResults();
 });
 
+document.addEventListener("click", (event) => {
+  const tag = event.target.closest(".service-card__tags span");
+  if (!tag) return;
+
+  event.preventDefault();
+  setQuery(getTagSearchValue(tag.textContent));
+  renderCategoryFilters();
+  loadResults();
+}, { signal });
+
+document.addEventListener("click", (event) => {
+  const card = event.target.closest(".service-card");
+  if (!card) return;
+
+  if (event.target.closest(".service-card__profile, .service-card__tags, .service-card__favorite")) {
+    return;
+  }
+
+  event.preventDefault();
+  goToAdDetails();
+}, { signal });
+
 stateSelect?.addEventListener("change", () => {
   syncLocationSelects("state");
   renderResults();
@@ -849,6 +902,3 @@ window.addEventListener("resize", () => {
 };
 
 window.DokeInitSearchResults();
-
-
-

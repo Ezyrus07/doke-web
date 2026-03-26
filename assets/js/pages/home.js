@@ -180,6 +180,18 @@ const goToSearchResults = (value) => {
   window.location.href = nextUrl.toString();
 };
 
+const getTagSearchValue = (value) => String(value || "").replace(/^#/, "").trim();
+const goToAdDetails = () => {
+  const nextUrl = new URL("detalhe-anuncio.html", window.location.href);
+
+  if (window.DokeNavigate) {
+    window.DokeNavigate(nextUrl.toString());
+    return;
+  }
+
+  window.location.href = nextUrl.toString();
+};
+
 const getVisibleSearchOptions = () => {
   if (!searchDropdown || searchDropdown.hidden) return [];
   return [...searchDropdown.querySelectorAll(".search-suggestion:not([hidden])")];
@@ -272,6 +284,26 @@ if (searchPrimaryCta && searchInput) {
     goToSearchResults(searchInput.value);
   });
 }
+
+document.addEventListener("click", (event) => {
+  const tag = event.target.closest(".service-card__tags span");
+  if (!tag) return;
+
+  event.preventDefault();
+  goToSearchResults(getTagSearchValue(tag.textContent));
+}, { signal });
+
+document.addEventListener("click", (event) => {
+  const card = event.target.closest(".service-card");
+  if (!card) return;
+
+  if (event.target.closest(".service-card__profile, .service-card__tags, .service-card__favorite")) {
+    return;
+  }
+
+  event.preventDefault();
+  goToAdDetails();
+}, { signal });
 
 window.addEventListener("resize", () => {
   if (!isMobileSearchViewport()) {

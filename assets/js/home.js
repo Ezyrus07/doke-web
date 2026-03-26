@@ -1,7 +1,10 @@
 ﻿window.DokeInitHome = function DokeInitHome() {
 const routeController = new AbortController();
 window.DokeHomeCleanup?.();
-window.DokeHomeCleanup = () => routeController.abort();
+window.DokeHomeCleanup = () => {
+  document.body.classList.remove("home-search-overlay-active");
+  routeController.abort();
+};
 const { signal } = routeController;
 /* Home page interactions: search suggestions, tabs and rails. */
 const searchData = window.DokeSearchData || {};
@@ -61,6 +64,7 @@ const searchItemIcon = (type = "search") => {
 };
 
 let activeSearchIndex = -1;
+const isMobileSearchViewport = () => window.innerWidth <= 760;
 
 const createSuggestionButton = ({ label, meta, badge, value, type = "search" }) => {
   const button = document.createElement("button");
@@ -149,6 +153,9 @@ const openSearchDropdown = () => {
   if (!searchDropdown || !searchInput) return;
   searchDropdown.hidden = false;
   searchInput.setAttribute("aria-expanded", "true");
+  if (isMobileSearchViewport()) {
+    document.body.classList.add("home-search-overlay-active");
+  }
 };
 
 const closeSearchDropdown = () => {
@@ -156,6 +163,7 @@ const closeSearchDropdown = () => {
   searchDropdown.hidden = true;
   searchInput.setAttribute("aria-expanded", "false");
   activeSearchIndex = -1;
+  document.body.classList.remove("home-search-overlay-active");
 };
 
 const goToSearchResults = (value) => {
@@ -264,6 +272,14 @@ if (searchPrimaryCta && searchInput) {
     goToSearchResults(searchInput.value);
   });
 }
+
+window.addEventListener("resize", () => {
+  if (!isMobileSearchViewport()) {
+    document.body.classList.remove("home-search-overlay-active");
+  } else if (!searchDropdown.hidden) {
+    document.body.classList.add("home-search-overlay-active");
+  }
+}, { signal });
 
 if (searchClearButton) {
   searchClearButton.addEventListener("click", () => {
@@ -703,4 +719,3 @@ railArrows.forEach((arrow) => {
 };
 
 window.DokeInitHome();
-
