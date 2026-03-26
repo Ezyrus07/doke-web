@@ -1,4 +1,3 @@
-
 (() => {
   const initOrdersPage = () => {
     const root = document.querySelector('.orders-page');
@@ -12,6 +11,12 @@
     const popover = root.querySelector('[data-orders-filters-popover]');
     const activeChip = root.querySelector('[data-orders-active-chip]');
     const clearFilterButton = root.querySelector('[data-orders-clear-filter]');
+    const statNodes = {
+      all: root.querySelector('[data-orders-stat="all"]'),
+      pending: root.querySelector('[data-orders-stat="pending"]'),
+      conversation: root.querySelector('[data-orders-stat="conversation"]'),
+      completed: root.querySelector('[data-orders-stat="completed"]')
+    };
     const selectToggle = root.querySelector('[data-orders-select-toggle]');
     const selectPanel = root.querySelector('[data-orders-select-panel]');
     const deleteSelectedButton = root.querySelector('[data-orders-delete-selected]');
@@ -32,17 +37,27 @@
     };
 
     const normalize = (value) => value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const counts = { all: cards.length, pending: 0, conversation: 0, responded: 0, completed: 0, cancelled: 0 };
+    const counts = { all: 0, pending: 0, conversation: 0, responded: 0, completed: 0, cancelled: 0 };
 
-    cards.forEach((card) => {
-      const status = card.dataset.status || 'all';
-      if (status in counts) counts[status] += 1;
-    });
+    const recountCards = () => {
+      counts.all = root.querySelectorAll('.order-card').length;
+      counts.pending = root.querySelectorAll('.order-card[data-status="pending"]').length;
+      counts.conversation = root.querySelectorAll('.order-card[data-status="conversation"]').length;
+      counts.responded = root.querySelectorAll('.order-card[data-status="responded"]').length;
+      counts.completed = root.querySelectorAll('.order-card[data-status="completed"]').length;
+      counts.cancelled = root.querySelectorAll('.order-card[data-status="cancelled"]').length;
+    };
 
-    filterButtons.forEach((button) => {
-      const filter = button.dataset.filter;
-      button.textContent = `${labels[filter]} (${counts[filter] ?? 0})`;
-    });
+    const syncStats = () => {
+      Object.entries(statNodes).forEach(([key, node]) => {
+        if (node) node.textContent = String(counts[key] ?? 0);
+      });
+
+      filterButtons.forEach((button) => {
+        const filter = button.dataset.filter;
+        button.textContent = `${labels[filter]} (${counts[filter] ?? 0})`;
+      });
+    };
 
     const syncActiveChip = () => {
       const active = root.dataset.activeFilter || 'all';
@@ -67,6 +82,33 @@
     const closePopover = () => {
       if (popover) popover.hidden = true;
       if (filterToggle) filterToggle.setAttribute('aria-expanded', 'false');
+    };
+
+    const openPanel = (type, card) => {
+      if (type === 'chat' && window.innerWidth < 768) {
+        const id = card?.dataset.id || '';
+        window.location.href = `mensagens.html?pedido=${encodeURIComponent(id)}`;
+        return;
+      }
+
+      sidePanels.forEach((panel) => {
+        panel.hidden = panel.dataset.ordersPanel !== type;
+      });
+      if (panelScrim) panelScrim.hidden = false;
+
+      if (card && type === 'details') {
+        if (detailTitle) detailTitle.textContent = card.querySelector('h2')?.textContent || 'Pedido';
+        if (detailPro) detailPro.textContent = card.querySelector('.order-card__subtitle strong')?.textContent || 'Profissional';
+        if (detailSummary) detailSummary.textContent = card.querySelector('.order-card__subtitle')?.textContent || '';
+        if (detailNext) detailNext.textContent = card.querySelector('.order-card__deadline span:last-child')?.textContent || '';
+      }
+    };
+
+    const closePanels = () => {
+      sidePanels.forEach((panel) => {
+        panel.hidden = true;
+      });
+      if (panelScrim) panelScrim.hidden = true;
     };
 
     filterButtons.forEach((button) => {
@@ -106,7 +148,7 @@
 
     const syncSelectState = () => {
       root.classList.toggle('orders-is-selecting', selecting);
-      selectPanel.hidden = !selecting;
+      if (selectPanel) selectPanel.hidden = !selecting;
       if (!selecting) clearSelectedCards();
     };
 
@@ -122,7 +164,9 @@
         selecting = true;
         syncSelectState();
         clearSelectedCards();
-        if (mode === 'all') cards.filter((card) => !card.hidden).forEach((card) => card.classList.add('is-selected'));
+        if (mode === 'all') {
+          cards.filter((card) => !card.hidden).forEach((card) => card.classList.add('is-selected'));
+        }
       });
     });
 
@@ -137,46 +181,17 @@
 
     deleteSelectedButton?.addEventListener('click', () => {
       cards.filter((card) => card.classList.contains('is-selected')).forEach((card) => card.remove());
-      counts.all = root.querySelectorAll('.order-card').length;
-      counts.pending = root.querySelectorAll('.order-card[data-status="pending"]').length;
-      counts.conversation = root.querySelectorAll('.order-card[data-status="conversation"]').length;
-      counts.responded = root.querySelectorAll('.order-card[data-status="responded"]').length;
-      counts.completed = root.querySelectorAll('.order-card[data-status="completed"]').length;
-      counts.cancelled = root.querySelectorAll('.order-card[data-status="cancelled"]').length;
-      filterButtons.forEach((button) => {
-        const filter = button.dataset.filter;
-        button.textContent = `${labels[filter]} (${counts[filter] ?? 0})`;
-      });
+      recountCards();
+      syncStats();
       selecting = false;
       syncSelectState();
       applyFilters();
     });
 
-    const openPanel = (type, card) => {
-      if (type === 'chat' && window.innerWidth < 768) {
-        const id = card?.dataset.id || '';
-        window.location.href = `mensagens.html?pedido=${encodeURIComponent(id)}`;
-        return;
-      }
-
-      sidePanels.forEach((panel) => panel.hidden = panel.dataset.ordersPanel !== type);
-      panelScrim.hidden = false;
-
-      if (card && type === 'details') {
-        detailTitle.textContent = card.querySelector('h2')?.textContent || 'Pedido';
-        detailPro.textContent = card.querySelector('.order-card__subtitle strong')?.textContent || 'Profissional';
-        detailSummary.textContent = card.querySelector('.order-card__subtitle')?.textContent || '';
-        detailNext.textContent = card.querySelector('.order-card__deadline span:last-child')?.textContent || '';
-      }
-    };
-
-    const closePanels = () => {
-      sidePanels.forEach((panel) => panel.hidden = true);
-      panelScrim.hidden = true;
-    };
-
     panelScrim?.addEventListener('click', closePanels);
-    root.querySelectorAll('[data-orders-panel-close]').forEach((button) => button.addEventListener('click', closePanels));
+    root.querySelectorAll('[data-orders-panel-close]').forEach((button) => {
+      button.addEventListener('click', closePanels);
+    });
 
     root.querySelectorAll('[data-order-open]').forEach((button) => {
       button.addEventListener('click', (event) => {
@@ -186,6 +201,8 @@
       });
     });
 
+    recountCards();
+    syncStats();
     root.dataset.activeFilter = 'all';
     syncSelectState();
     applyFilters();

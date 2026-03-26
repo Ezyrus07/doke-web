@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doke | Variações Hero Pedidos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #eef3f7;
+      --text: #173a67;
+      --muted: #6a82a0;
+      --line: rgba(191, 207, 224, 0.9);
+      --blue: #2f73b1;
+      --blue-deep: #1b4f83;
+      --blue-soft: rgba(255, 255, 255, 0.14);
+      --shadow: 0 20px 44px rgba(21, 47, 78, 0.12);
+      --card: rgba(255, 255, 255, 0.96);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      color: var(--text);
+      background:
+        linear-gradient(180deg, #9eb7d1 0, #d7e1eb 210px, var(--bg) 100%);
+    }
+
+    .page {
+      width: min(1280px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 32px 0 48px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 28px;
+    }
+
+    .demo {
+      display: grid;
+      gap: 18px;
+    }
+
+    .demo__label {
+      margin: 0;
+      color: #597595;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .hero-box {
+      border-radius: 30px;
+      background: linear-gradient(135deg, var(--blue) 0%, var(--blue-deep) 100%);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-box--compact {
+      display: grid;
+      gap: 18px;
+      padding: 20px 24px;
+    }
+
+    .hero-box--compact .hero-box__top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .hero-title {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .hero-title__eyebrow {
+      margin: 0;
+      color: rgba(230, 239, 250, 0.78);
+      font-size: 0.74rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .hero-title h1,
+    .hero-title h2 {
+      margin: 0;
+      color: #fff;
+      font-size: clamp(1.5rem, 2.4vw, 2rem);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }
+
+    .hero-title p {
+      margin: 0;
+      color: rgba(237, 244, 252, 0.86);
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    .stats-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .stat-chip,
+    .stat-tile {
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: var(--blue-soft);
+      color: #fff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .stat-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 42px;
+      padding: 0 14px;
+      border-radius: 999px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .stat-chip strong {
+      font-size: 1rem;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .search,
+    .button,
+    .button-icon {
+      min-height: 52px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 10px 24px rgba(28, 52, 81, 0.06);
+    }
+
+    .search {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 18px;
+    }
+
+    .search svg,
+    .button svg,
+    .button-icon svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex: 0 0 auto;
+    }
+
+    .search input {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      font-size: 1rem;
+    }
+
+    .search input::placeholder {
+      color: #7a91ad;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 18px;
+      font: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .button-icon {
+      width: 52px;
+      padding: 0;
+      display: inline-grid;
+      place-items: center;
+    }
+
+    .filters-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .filter-chip {
+      min-height: 38px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(188, 207, 227, 0.92);
+      background: rgba(255, 255, 255, 0.96);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.92rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .filter-chip.is-active {
+      border-color: transparent;
+      background: linear-gradient(135deg, #377ec5, #1e558f);
+      color: #fff;
+    }
+
+    .hero-strip {
+      display: grid;
+      gap: 16px;
+      padding: 18px 22px 20px;
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(41, 103, 163, 0.98) 0%, rgba(28, 79, 131, 0.96) 100%);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-strip__top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .hero-strip__title {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .hero-strip__title h2 {
+      margin: 0;
+      color: #fff;
+      font-size: clamp(1.35rem, 2vw, 1.8rem);
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .hero-strip__title p {
+      margin: 0;
+      color: rgba(237, 244, 252, 0.82);
+      font-size: 0.92rem;
+    }
+
+    .hero-strip__meta {
+      color: rgba(237, 244, 252, 0.86);
+      font-size: 0.95rem;
+      font-weight: 500;
+      line-height: 1.35;
+    }
+
+    .hero-strip__toolbar {
+      display: grid;
+      gap: 12px;
+    }
+
+    .hero-strip__toolbar .toolbar {
+      grid-template-columns: minmax(320px, 520px) auto auto;
+      justify-content: start;
+    }
+
+    .filters-row[hidden] {
+      display: none;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .order-card {
+      border-radius: 24px;
+      border: 1px solid rgba(194, 209, 225, 0.92);
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 10px 26px rgba(24, 49, 78, 0.05);
+      overflow: hidden;
+    }
+
+    .order-card__top,
+    .order-card__body,
+    .order-card__actions,
+    .order-card__footer {
+      padding-left: 18px;
+      padding-right: 18px;
+    }
+
+    .order-card__top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      padding-top: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(220, 229, 239, 0.9);
+    }
+
+    .statusline {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: #215d9b;
+      font-size: 0.92rem;
+      font-weight: 800;
+    }
+
+    .statusline__dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #4d88c3;
+      flex: 0 0 auto;
+    }
+
+    .statusline__dot--green {
+      background: #4aa97a;
+    }
+
+    .order-card__time {
+      color: #7789a0;
+      font-size: 0.9rem;
+      text-align: right;
+    }
+
+    .order-card__body {
+      display: grid;
+      gap: 12px;
+      padding-top: 18px;
+      padding-bottom: 16px;
+    }
+
+    .order-card__body h3 {
+      margin: 0;
+      color: #153967;
+      font-size: 1.2rem;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    .order-card__subtitle {
+      margin: 0;
+      color: #466686;
+      font-size: 0.95rem;
+      line-height: 1.3;
+    }
+
+    .order-card__subtitle strong {
+      color: #173f77;
+    }
+
+    .identity {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #367dc5, #1f578f);
+      color: #fff;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      flex: 0 0 auto;
+    }
+
+    .location {
+      color: #48698a;
+      font-size: 0.95rem;
+      line-height: 1.25;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px 16px;
+    }
+
+    .meta {
+      display: inline-flex;
+      align-items: flex-start;
+      gap: 10px;
+      color: #516f90;
+      font-size: 0.94rem;
+      line-height: 1.3;
+    }
+
+    .meta svg {
+      width: 18px;
+      height: 18px;
+      stroke: #7b90ab;
+      fill: none;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex: 0 0 auto;
+      margin-top: 1px;
+    }
+
+    .order-card__actions {
+      display: flex;
+      gap: 10px;
+      padding-bottom: 14px;
+    }
+
+    .order-button {
+      flex: 1 1 0;
+      min-height: 42px;
+      border-radius: 999px;
+      font: inherit;
+      font-size: 0.94rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      border: 1px solid rgba(46, 111, 182, 0.22);
+      background: rgba(46, 111, 182, 0.08);
+      color: #225f9d;
+    }
+
+    .order-button--secondary {
+      border-color: rgba(48, 148, 105, 0.5);
+      background: rgba(255, 255, 255, 0.9);
+      color: #147e57;
+    }
+
+    .order-card__footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-top: 1px solid rgba(220, 229, 239, 0.9);
+      background: rgba(249, 251, 253, 0.9);
+      color: #5d7a9d;
+      padding-top: 14px;
+      padding-bottom: 14px;
+      font-size: 0.94rem;
+    }
+
+    @media (max-width: 1024px) {
+      .hero-box--compact .hero-box__top,
+      .hero-strip__top {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-row {
+        justify-content: flex-start;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        width: min(100%, calc(100% - 24px));
+        padding-top: 18px;
+      }
+
+      .hero-box--compact,
+      .hero-strip {
+        padding: 16px;
+        border-radius: 24px;
+      }
+
+      .hero-strip__toolbar .toolbar {
+        grid-template-columns: minmax(0, 1fr) auto auto;
+      }
+
+      .toolbar {
+        grid-template-columns: minmax(0, 1fr) auto auto;
+      }
+
+      .button {
+        padding-inline: 14px;
+      }
+
+      .button span:last-child {
+        display: none;
+      }
+
+      .stat-chip {
+        font-size: 0.84rem;
+      }
+
+      .meta-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .order-card__actions {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="stack">
+      <section class="demo" aria-labelledby="demo-1">
+        <p class="demo__label" id="demo-1">Opção 1 · Hero Compacto Horizontal</p>
+        <section class="hero-box hero-box--compact">
+          <div class="hero-box__top">
+            <div class="hero-title">
+              <p class="hero-title__eyebrow">Pedidos</p>
+              <h1>Seus pedidos em andamento</h1>
+              <p>Acompanhe o que está aguardando resposta, em conversa e concluído sem ocupar metade da tela.</p>
+            </div>
+            <div class="stats-row" aria-label="Resumo">
+              <span class="stat-chip">Aguardando <strong>1</strong></span>
+              <span class="stat-chip">Em conversa <strong>1</strong></span>
+              <span class="stat-chip">Concluídos <strong>1</strong></span>
+            </div>
+          </div>
+
+          <div class="toolbar" aria-label="Ferramentas">
+            <form class="search">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg>
+              <input type="search" placeholder="Buscar pedido">
+            </form>
+            <button class="button" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"></path><path d="M7 12h10"></path><path d="M10 18h4"></path></svg>
+              <span>Filtros</span>
+            </button>
+            <button class="button-icon" type="button" aria-label="Selecionar pedidos">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11.5 11 13.5 15.5 9"></path><rect x="4.5" y="4.5" width="15" height="15" rx="3"></rect></svg>
+            </button>
+          </div>
+
+          <div class="filters-row" aria-label="Filtros ativos">
+            <span class="filter-chip is-active">Todos (3)</span>
+            <span class="filter-chip">Aguardando resposta (1)</span>
+            <span class="filter-chip">Em conversa (1)</span>
+            <span class="filter-chip">Concluídos (1)</span>
+          </div>
+        </section>
+      </section>
+
+      <section class="demo" aria-labelledby="demo-2">
+        <p class="demo__label" id="demo-2">Opção 2 · Faixa Integrada Minimalista</p>
+        <section class="hero-strip">
+          <div class="hero-strip__top">
+            <div class="hero-strip__title">
+              <h2>Pedidos</h2>
+              <p class="hero-strip__meta">3 ativos · 1 aguardando resposta · 1 em conversa · 1 concluído</p>
+            </div>
+          </div>
+
+          <div class="hero-strip__toolbar">
+            <div class="toolbar" aria-label="Ferramentas">
+              <form class="search">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg>
+                <input type="search" placeholder="Buscar pedido">
+              </form>
+              <button class="button" type="button" onclick="document.getElementById('demo2-filters').toggleAttribute('hidden')">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"></path><path d="M7 12h10"></path><path d="M10 18h4"></path></svg>
+                <span>Filtros</span>
+              </button>
+              <button class="button-icon" type="button" aria-label="Selecionar pedidos">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11.5 11 13.5 15.5 9"></path><rect x="4.5" y="4.5" width="15" height="15" rx="3"></rect></svg>
+              </button>
+            </div>
+
+            <div class="filters-row" id="demo2-filters" aria-label="Lista de filtros" hidden>
+              <span class="filter-chip is-active">Todos (3)</span>
+              <span class="filter-chip">Aguardando resposta (1)</span>
+              <span class="filter-chip">Em conversa (1)</span>
+              <span class="filter-chip">Respondidos (0)</span>
+              <span class="filter-chip">Concluídos (1)</span>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="cards" aria-label="Prévia dos cards">
+        <article class="order-card">
+          <div class="order-card__top">
+            <div class="statusline">
+              <span class="statusline__dot"></span>
+              <span>Aguardando resposta</span>
+            </div>
+            <span class="order-card__time">Solicitado há 2 dias</span>
+          </div>
+          <div class="order-card__body">
+            <h3>Orçamento para pintura</h3>
+            <p class="order-card__subtitle">Aguardando resposta da <strong>Studio Aquarela</strong></p>
+            <div class="identity">
+              <span class="avatar">SA</span>
+              <span class="location">Avenida Paulista, São Paulo - SP</span>
+            </div>
+            <div class="meta-grid">
+              <div class="meta">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5v5l3.5 2"></path></svg>
+                <span>Dentro de 7 dias</span>
+              </div>
+              <div class="meta">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 7.5h11"></path><path d="M6.5 12h11"></path><path d="M6.5 16.5h7"></path></svg>
+                <span>Orçamento para execução</span>
+              </div>
+            </div>
+          </div>
+          <div class="order-card__actions">
+            <button class="order-button" type="button">Ver detalhes</button>
+            <button class="order-button order-button--secondary" type="button">Abrir chat</button>
+          </div>
+          <div class="order-card__footer">
+            <span>Responder até 22/04</span>
+            <span>›</span>
+          </div>
+        </article>
+
+        <article class="order-card">
+          <div class="order-card__top">
+            <div class="statusline">
+              <span class="statusline__dot"></span>
+              <span>Em conversa</span>
+            </div>
+            <span class="order-card__time">Atualizado hoje</span>
+          </div>
+          <div class="order-card__body">
+            <h3>Reforma de sala</h3>
+            <p class="order-card__subtitle">Em conversa com <strong>Casa Viva Reformas</strong></p>
+            <div class="identity">
+              <span class="avatar">CV</span>
+              <span class="location">Rio Vermelho, Salvador - BA</span>
+            </div>
+            <div class="meta-grid">
+              <div class="meta">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 6 13h5l-1 9 8-12h-5l0-8z"></path></svg>
+                <span>Urgência média</span>
+              </div>
+              <div class="meta">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 7.5h11"></path><path d="M6.5 12h11"></path><path d="M6.5 16.5h7"></path></svg>
+                <span>Ajustes pontuais</span>
+              </div>
+            </div>
+          </div>
+          <div class="order-card__actions">
+            <button class="order-button" type="button">Ver detalhes</button>
+            <button class="order-button order-button--secondary" type="button">Abrir chat</button>
+          </div>
+          <div class="order-card__footer">
+            <span>Próxima etapa até amanhã</span>
+            <span>›</span>
+          </div>
+        </article>
+
+        <article class="order-card">
+          <div class="order-card__top">
+            <div class="statusline">
+              <span class="statusline__dot statusline__dot--green"></span>
+              <span>Concluído</span>
+            </div>
+            <span class="order-card__time">Finalizado há 5 dias</span>
+          </div>
+          <div class="order-card__body">
+            <h3>Instalação elétrica</h3>
+            <p class="order-card__subtitle">Serviço concluído por <strong>Luz Técnica</strong></p>
+            <div class="identity">
+              <span class="avatar">LT</span>
+              <span class="location">Pituba, Salvador - BA</span>
+            </div>
+            <div class="meta-grid">
+              <div class="meta">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.5 2.1 4.4 4.9.7-3.6 3.5.9 4.9-4.3-2.3-4.3 2.3.9-4.9-3.6-3.5 4.9-.7z"></path></svg>
+                <span>Aguardando avaliação</span>
+              </div>
+              <div class="meta">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 7.5h11"></path><path d="M6.5 12h11"></path><path d="M6.5 16.5h7"></path></svg>
+                <span>Execução concluída</span>
+              </div>
+            </div>
+          </div>
+          <div class="order-card__actions">
+            <button class="order-button" type="button">Ver detalhes</button>
+            <button class="order-button order-button--secondary" type="button">Abrir chat</button>
+          </div>
+          <div class="order-card__footer">
+            <span>Solicite garantia ou avaliar</span>
+            <span>›</span>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

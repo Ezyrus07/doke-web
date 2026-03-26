@@ -18,7 +18,6 @@ const searchResultsSection = document.querySelector("[data-search-results-sectio
 const searchHistorySection = document.querySelector("[data-search-history-section]");
 const searchRefineSection = document.querySelector("[data-search-refine-section]");
 const searchClearButton = document.querySelector("[data-search-clear]");
-const searchCloseButton = document.querySelector("[data-search-close]");
 const searchEmptyState = document.querySelector("[data-search-empty]");
 const searchPrimaryCta = document.querySelector(".home-search-hero__cta--primary");
 
@@ -271,13 +270,6 @@ if (searchPrimaryCta && searchInput) {
   searchPrimaryCta.addEventListener("click", (event) => {
     event.preventDefault();
     goToSearchResults(searchInput.value);
-  });
-}
-
-if (searchCloseButton) {
-  searchCloseButton.addEventListener("click", () => {
-    closeSearchDropdown();
-    searchInput.blur();
   });
 }
 
@@ -727,4 +719,3 @@ railArrows.forEach((arrow) => {
 };
 
 window.DokeInitHome();
-
