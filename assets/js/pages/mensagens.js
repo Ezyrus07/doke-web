@@ -1,0 +1,601 @@
+(() => {
+  const conversations = {
+    painting: {
+      avatar: "assets/img/auth/carpenter-cutout.png",
+      name: "Studio Aquarela",
+      lastSeen: "Online agora",
+      unread: 2,
+      group: "orders",
+      messages: [
+        { author: "Studio Aquarela", time: "09:12", text: "Recebemos seu pedido e já separamos uma proposta base para pintura interna com pequenos reparos.", mine: false },
+        { author: "Você", time: "09:18", text: "Perfeito. Quero entender prazo, materiais incluídos e se vocês conseguem começar ainda esta semana.", mine: true },
+        { author: "Studio Aquarela", time: "09:26", text: "Conseguimos iniciar em até 7 dias. Tinta, proteção e acabamento já entram no orçamento.", mine: false },
+        { author: "Studio Aquarela", time: "09:27", text: "Se fizer sentido, posso te enviar agora a versão fechada da proposta para aprovação.", mine: false }
+      ]
+    },
+    "living-room": {
+      avatar: "assets/img/auth/marceneira-hero.png",
+      name: "Casa Viva Reformas",
+      lastSeen: "Visto há 12 min",
+      unread: 1,
+      group: "orders",
+      messages: [
+        { author: "Casa Viva Reformas", time: "11:48", text: "Analisei as fotos e dá para concentrar a obra em 3 frentes: gesso, pintura e marcenaria leve.", mine: false },
+        { author: "Você", time: "11:54", text: "Quero priorizar primeiro a pintura e os ajustes de elétrica. Marcenaria pode ficar para uma segunda etapa.", mine: true },
+        { author: "Casa Viva Reformas", time: "12:11", text: "Fechado. Com essa divisão, o prazo fica mais confortável e consigo te mandar um escopo enxuto ainda hoje.", mine: false }
+      ]
+    },
+    electrical: {
+      avatar: "assets/img/auth/carpenter-cutout.png",
+      name: "Luz Técnica",
+      lastSeen: "Visto ontem",
+      unread: 0,
+      group: "orders",
+      messages: [
+        { author: "Luz Técnica", time: "Ontem", text: "Finalizamos a instalação elétrica e deixamos o quadro identificado para facilitar manutenção futura.", mine: false },
+        { author: "Você", time: "Ontem", text: "Recebi tudo certo. Obrigado pelo cuidado com a limpeza e a organização.", mine: true },
+        { author: "Luz Técnica", time: "Ontem", text: "Quando puder, deixe sua avaliação aqui na plataforma para encerrar o atendimento.", mine: false }
+      ]
+    },
+    amanda: {
+      avatar: "assets/img/auth/marceneira-hero.png",
+      name: "Amanda Rocha",
+      lastSeen: "Online há 5 min",
+      unread: 0,
+      group: "contacts",
+      messages: [
+        { author: "Amanda Rocha", time: "08:33", text: "Conseguiu fechar com aquele profissional que eu te indiquei?", mine: false },
+        { author: "Você", time: "08:37", text: "Consegui sim. O atendimento foi ótimo e já estamos alinhando o orçamento.", mine: true },
+        { author: "Amanda Rocha", time: "08:40", text: "Fechou, depois me manda as fotos daquele ambiente.", mine: false }
+      ]
+    },
+    marcos: {
+      avatar: "assets/img/auth/carpenter-cutout.png",
+      name: "Marcos Lima",
+      lastSeen: "Visto ontem às 20:18",
+      unread: 0,
+      group: "contacts",
+      messages: [
+        { author: "Marcos Lima", time: "Ontem", text: "Valeu por indicar o profissional. Gostei bastante do atendimento.", mine: false },
+        { author: "Você", time: "Ontem", text: "Boa. Depois me conta como ficou o resultado final.", mine: true }
+      ]
+    }
+  };
+
+  const initMessagesPage = () => {
+    const root = document.querySelector("[data-messages-page]");
+    if (!root || root.dataset.messagesReady === "true") return;
+    root.dataset.messagesReady = "true";
+
+    const items = Array.from(root.querySelectorAll(".message-item[data-message-id]"));
+    const searchForm = root.querySelector("[data-messages-search-form]");
+    const searchInput = root.querySelector("[data-messages-search-input]");
+    const resetSearchButton = root.querySelector("[data-messages-reset-search]");
+    const emptyState = root.querySelector("[data-messages-empty]");
+    const ordersCount = root.querySelector("[data-messages-orders-count]");
+    const contactsCount = root.querySelector("[data-messages-contacts-count]");
+    const threadBody = root.querySelector("[data-thread-body]");
+    const threadEmpty = root.querySelector("[data-messages-thread-empty]");
+    const threadAvatar = root.querySelector("[data-thread-avatar]");
+    const threadName = root.querySelector("[data-thread-name]");
+    const threadLastSeen = root.querySelector("[data-thread-last-seen]");
+    const composer = root.querySelector("[data-messages-composer]");
+    const composerInput = root.querySelector("[data-messages-composer-input]");
+    const backButton = root.querySelector("[data-messages-back]");
+    const imageInput = root.querySelector("[data-messages-image-input]");
+    const emojiButton = root.querySelector("[data-messages-emoji]");
+    const audioButton = root.querySelector("[data-messages-audio]");
+    const messageMenu = root.querySelector("[data-message-menu]");
+    const replyPreview = root.querySelector("[data-messages-reply-preview]");
+    const replyAuthor = root.querySelector("[data-messages-reply-author]");
+    const replyText = root.querySelector("[data-messages-reply-text]");
+    const replyClose = root.querySelector("[data-messages-reply-close]");
+    const copyToast = root.querySelector("[data-messages-copy-toast]");
+    const selectionBar = root.querySelector("[data-messages-selection]");
+    const selectionCount = root.querySelector("[data-messages-selection-count]");
+    const selectionClear = root.querySelector("[data-messages-clear-selection]");
+    const selectionDelete = root.querySelector("[data-messages-delete-selected]");
+    const selectionForward = root.querySelector("[data-messages-forward-selected]");
+    const audioDraft = root.querySelector("[data-messages-audio-draft]");
+    const audioTime = root.querySelector("[data-messages-audio-time]");
+    const audioCancelButton = root.querySelector("[data-messages-audio-cancel]");
+    const imageDraft = root.querySelector("[data-messages-image-draft]");
+    const imagePreview = root.querySelector("[data-messages-image-preview]");
+    const imageCancelButton = root.querySelector("[data-messages-image-cancel]");
+    const lightbox = document.querySelector("[data-image-lightbox]");
+    const lightboxImage = document.querySelector("[data-image-lightbox-image]");
+    const lightboxClose = document.querySelector("[data-image-lightbox-close]");
+
+    let contextMessageIndex = -1;
+    let longPressTimer = null;
+    let activeBubble = null;
+    let selectedMessageIndexes = new Set();
+    let replyToMessage = null;
+    let copyToastTimer = null;
+    let audioDraftSeconds = 0;
+    let audioDraftTimer = null;
+    let imageDraftSrc = "";
+
+    let activeId = "painting";
+    const normalize = (value) => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    const syncCounts = () => {
+      const entries = Object.values(conversations);
+      const orders = entries.filter((item) => item.group === "orders").length;
+      const contacts = entries.filter((item) => item.group === "contacts").length;
+      if (ordersCount) ordersCount.textContent = String(orders);
+      if (contactsCount) contactsCount.textContent = String(contacts);
+    };
+
+    const getMessagePreview = (message) => {
+      if (!message) return "";
+      if (message.type === "audio") return "Audio enviado";
+      if (message.type === "image") return "Imagem enviada";
+      return String(message.text || "");
+    };
+
+    const refreshConversationCards = () => {
+      items.forEach((item) => {
+        const id = item.dataset.messageId;
+        const conversation = id ? conversations[id] : null;
+        if (!conversation) return;
+        const preview = item.querySelector(".message-item__preview");
+        const status = item.querySelector(".message-item__status");
+        const badge = item.querySelector(".message-item__badge");
+        const lastMessage = conversation.messages[conversation.messages.length - 1];
+
+        if (preview) {
+          preview.textContent = lastMessage ? getMessagePreview(lastMessage) : "Sem mensagens ainda.";
+        }
+
+        if (status) {
+          status.textContent = conversation.lastSeen;
+        }
+
+        if (badge) {
+          badge.hidden = !conversation.unread;
+          badge.textContent = String(conversation.unread || 0);
+        }
+      });
+    };
+
+    const clearSelection = () => {
+      selectedMessageIndexes = new Set();
+      if (selectionBar) selectionBar.hidden = true;
+      if (selectionCount) selectionCount.textContent = "0 selecionadas";
+    };
+
+    const syncSelectionBar = () => {
+      const total = selectedMessageIndexes.size;
+      if (!selectionBar || !selectionCount) return;
+      selectionBar.hidden = total === 0;
+      selectionCount.textContent = `${total} ${total === 1 ? "selecionada" : "selecionadas"}`;
+    };
+
+    const renderThread = (id) => {
+      const conversation = conversations[id];
+      if (!conversation || !threadBody) return;
+      const isSameThread = activeId === id;
+      activeId = id;
+      contextMessageIndex = -1;
+      if (!isSameThread) clearSelection();
+      clearReplyPreview();
+      messageMenu?.setAttribute("hidden", "");
+      activeBubble?.classList.remove("is-context-target");
+      activeBubble = null;
+      items.forEach((item) => item.classList.toggle("is-active", item.dataset.messageId === id));
+      if (threadAvatar) threadAvatar.src = conversation.avatar;
+      if (threadName) threadName.textContent = conversation.name;
+      if (threadLastSeen) threadLastSeen.textContent = conversation.lastSeen;
+      if (threadEmpty) threadEmpty.hidden = conversation.messages.length !== 0;
+      if (threadBody) threadBody.hidden = conversation.messages.length === 0;
+      threadBody.innerHTML = conversation.messages.map((message, index) => `
+        <article class="message-row${message.mine ? " message-row--me" : ""}" data-message-index="${index}">
+          ${message.mine ? "" : `<img class="message-row__avatar" src="${conversation.avatar}" alt="Foto de perfil de ${conversation.name}">`}
+          <div class="message-bubble${message.mine ? " message-bubble--me" : ""}${selectedMessageIndexes.has(index) ? " is-selected" : ""}" data-message-bubble data-message-index="${index}">
+            <div class="message-bubble__meta">
+              <span>${message.author}</span>
+              <span>${message.time}</span>
+            </div>
+            ${message.replyTo ? `
+            <div class="message-bubble__reply${message.mine ? " message-bubble__reply--me" : ""}">
+              <strong>${message.replyTo.author}</strong>
+              <span>${String(message.replyTo.text || "").slice(0, 72)}</span>
+            </div>` : ""}
+            ${message.type === "audio" ? `
+            <div class="message-bubble__audio">
+              <span class="message-bubble__audio-play">▶</span>
+              <span class="message-bubble__audio-track"></span>
+              <span class="message-bubble__audio-meta">
+                <span>${message.duration || "00:00"}</span>
+              </span>
+              <button class="message-bubble__audio-speed" type="button" data-audio-speed>${message.speed || "1x"}</button>
+            </div>` : message.type === "image" ? `
+            <div class="message-bubble__image">
+              <img src="${message.src}" alt="Imagem enviada na conversa">
+            </div>` : `<p>${message.text}</p>`}
+          </div>
+        </article>
+      `).join("");
+      syncSelectionBar();
+      refreshConversationCards();
+      if (window.innerWidth <= 767) {
+        root.classList.add("messages-app--thread-open");
+      }
+    };
+
+    const hideMessageMenu = () => {
+      messageMenu?.setAttribute("hidden", "");
+      activeBubble?.classList.remove("is-context-target");
+      activeBubble = null;
+      contextMessageIndex = -1;
+    };
+
+    const formatAudioTime = (totalSeconds) => {
+      const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+      const seconds = String(totalSeconds % 60).padStart(2, "0");
+      return `${minutes}:${seconds}`;
+    };
+
+    const stopAudioDraft = () => {
+      if (!audioDraftTimer) return;
+      window.clearInterval(audioDraftTimer);
+      audioDraftTimer = null;
+    };
+
+    const resetAudioDraft = () => {
+      stopAudioDraft();
+      audioDraftSeconds = 0;
+      if (audioTime) audioTime.textContent = "00:00";
+      audioDraft?.setAttribute("hidden", "");
+    };
+
+    const startAudioDraft = () => {
+      if (!audioDraft) return;
+      audioDraft.removeAttribute("hidden");
+      if (audioTime) audioTime.textContent = formatAudioTime(audioDraftSeconds);
+      stopAudioDraft();
+      audioDraftTimer = window.setInterval(() => {
+        audioDraftSeconds += 1;
+        if (audioTime) audioTime.textContent = formatAudioTime(audioDraftSeconds);
+      }, 1000);
+    };
+
+    const resetImageDraft = () => {
+      imageDraftSrc = "";
+      if (imagePreview) imagePreview.src = "";
+      imageDraft?.setAttribute("hidden", "");
+      if (imageInput) imageInput.value = "";
+    };
+
+    const showCopyToast = (label = "Copiado") => {
+      if (!copyToast) return;
+      copyToast.textContent = label;
+      copyToast.hidden = false;
+      if (copyToastTimer) window.clearTimeout(copyToastTimer);
+      copyToastTimer = window.setTimeout(() => {
+        copyToast.hidden = true;
+      }, 900);
+    };
+
+    const clearReplyPreview = () => {
+      replyToMessage = null;
+      replyPreview?.setAttribute("hidden", "");
+      if (replyAuthor) replyAuthor.textContent = "Respondendo";
+      if (replyText) replyText.textContent = "";
+    };
+
+    const setReplyPreview = (message) => {
+      replyToMessage = message;
+      if (replyAuthor) replyAuthor.textContent = `Respondendo a ${message.author}`;
+      if (replyText) replyText.textContent = String(message.text || "").slice(0, 72);
+      replyPreview?.removeAttribute("hidden");
+      composerInput?.focus();
+    };
+
+    const openMessageMenu = (bubble, x, y) => {
+      if (!messageMenu || !bubble) return;
+      activeBubble?.classList.remove("is-context-target");
+      activeBubble = bubble;
+      bubble.classList.add("is-context-target");
+      contextMessageIndex = Number(bubble.dataset.messageIndex || -1);
+      messageMenu.hidden = false;
+      const menuWidth = 180;
+      const menuHeight = 150;
+      const left = Math.min(Math.max(12, x), window.innerWidth - menuWidth - 12);
+      const top = Math.min(Math.max(12, y), window.innerHeight - menuHeight - 12);
+      messageMenu.style.left = `${left}px`;
+      messageMenu.style.top = `${top}px`;
+    };
+
+    const openLightbox = (src, alt) => {
+      if (!lightbox || !lightboxImage || !src) return;
+      lightboxImage.src = src;
+      lightboxImage.alt = alt || "Imagem ampliada";
+      if (typeof lightbox.showModal === "function") {
+        if (!lightbox.open) lightbox.showModal();
+      } else {
+        lightbox.setAttribute("open", "");
+      }
+    };
+
+    const closeLightbox = () => {
+      if (!lightbox) return;
+      if (typeof lightbox.close === "function" && lightbox.open) {
+        lightbox.close();
+      } else {
+        lightbox.removeAttribute("open");
+      }
+      if (lightboxImage) {
+        lightboxImage.src = "";
+        lightboxImage.alt = "Imagem ampliada";
+      }
+    };
+
+    const syncVisibility = () => {
+      const query = normalize(searchInput?.value);
+      let visibleCount = 0;
+      items.forEach((item) => {
+        const visible = !query || normalize(item.textContent).includes(query);
+        item.hidden = !visible;
+        if (visible) visibleCount += 1;
+      });
+      if (emptyState) emptyState.hidden = visibleCount !== 0;
+    };
+
+    searchForm?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      syncVisibility();
+    });
+
+    searchInput?.addEventListener("input", syncVisibility);
+
+    resetSearchButton?.addEventListener("click", () => {
+      if (searchInput) searchInput.value = "";
+      syncVisibility();
+    });
+
+    items.forEach((item) => {
+      item.addEventListener("click", () => {
+        const id = item.dataset.messageId;
+        if (!id) return;
+        renderThread(id);
+      });
+    });
+
+    threadBody?.addEventListener("contextmenu", (event) => {
+      const bubble = event.target.closest("[data-message-bubble]");
+      if (!bubble) return;
+      event.preventDefault();
+      openMessageMenu(bubble, event.clientX, event.clientY);
+    });
+
+    threadBody?.addEventListener("click", (event) => {
+      const bubble = event.target.closest("[data-message-bubble]");
+      const speedButton = event.target.closest("[data-audio-speed]");
+      if (speedButton) {
+        event.preventDefault();
+        const index = Number(bubble?.dataset.messageIndex || -1);
+        const currentMessage = conversations[activeId]?.messages?.[index];
+        if (!currentMessage || currentMessage.type !== "audio") return;
+        currentMessage.speed = currentMessage.speed === "1x" ? "1.5x" : currentMessage.speed === "1.5x" ? "2x" : "1x";
+        speedButton.textContent = currentMessage.speed;
+        return;
+      }
+
+      if (selectedMessageIndexes.size && bubble) {
+        const index = Number(bubble.dataset.messageIndex || -1);
+        if (selectedMessageIndexes.has(index)) {
+          selectedMessageIndexes.delete(index);
+        } else {
+          selectedMessageIndexes.add(index);
+        }
+        renderThread(activeId);
+      }
+    });
+
+    threadBody?.addEventListener("click", (event) => {
+      const image = event.target.closest(".message-bubble__image img");
+      if (!image) return;
+      openLightbox(image.currentSrc || image.src, image.alt);
+    });
+
+    threadBody?.addEventListener("pointerdown", (event) => {
+      const bubble = event.target.closest("[data-message-bubble]");
+      if (!bubble || event.pointerType === "mouse") return;
+      longPressTimer = window.setTimeout(() => {
+        openMessageMenu(bubble, event.clientX || 24, event.clientY || 24);
+      }, 420);
+    });
+
+    ["pointerup", "pointercancel", "pointermove", "scroll"].forEach((eventName) => {
+      threadBody?.addEventListener(eventName, () => {
+        if (longPressTimer) {
+          window.clearTimeout(longPressTimer);
+          longPressTimer = null;
+        }
+      });
+    });
+
+    document.addEventListener("click", (event) => {
+      if (messageMenu?.hidden) return;
+      if (event.target.closest("[data-message-menu]")) return;
+      if (event.target.closest("[data-message-bubble]")) return;
+      hideMessageMenu();
+    });
+
+    messageMenu?.addEventListener("click", async (event) => {
+      const action = event.target.closest("[data-message-action]")?.dataset.messageAction;
+      const conversation = conversations[activeId];
+      const message = conversation?.messages?.[contextMessageIndex];
+      if (!action || !message) return;
+
+      if (action === "select") {
+        selectedMessageIndexes.add(contextMessageIndex);
+        renderThread(activeId);
+      }
+
+      if (action === "reply" && composerInput) {
+        setReplyPreview(message);
+      }
+
+      if (action === "copy") {
+        try {
+          await navigator.clipboard.writeText(message.text);
+        } catch (_) {
+          composerInput && (composerInput.value = message.text);
+        }
+        showCopyToast();
+      }
+
+      if (action === "delete") {
+        conversation.messages.splice(contextMessageIndex, 1);
+        clearSelection();
+        renderThread(activeId);
+      }
+
+      hideMessageMenu();
+    });
+
+    composer?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const value = String(composerInput?.value || "").trim();
+      if (audioDraft && !audioDraft.hidden) {
+        conversations[activeId].messages.push({ author: "Você", time: "agora", mine: true, type: "audio", duration: formatAudioTime(Math.max(audioDraftSeconds, 1)), speed: "1x", replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null });
+        renderThread(activeId);
+        composer.reset();
+        clearReplyPreview();
+        resetAudioDraft();
+        composerInput?.focus();
+        return;
+      }
+      if (imageDraftSrc) {
+        conversations[activeId].messages.push({ author: "Você", time: "agora", mine: true, type: "image", src: imageDraftSrc, replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null });
+        renderThread(activeId);
+        composer.reset();
+        clearReplyPreview();
+        resetImageDraft();
+        composerInput?.focus();
+        return;
+      }
+      if (!value) return;
+      conversations[activeId].messages.push({ author: "Você", time: "agora", text: value, mine: true, replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null });
+      renderThread(activeId);
+      composer.reset();
+      clearReplyPreview();
+      composerInput?.focus();
+    });
+
+    composer?.addEventListener("click", (event) => {
+      const closeButton = event.target.closest("[data-messages-reply-close]");
+      const cancelImageButton = event.target.closest("[data-messages-image-cancel]");
+      if (closeButton) {
+        event.preventDefault();
+        event.stopPropagation();
+        clearReplyPreview();
+        return;
+      }
+      if (cancelImageButton) {
+        event.preventDefault();
+        event.stopPropagation();
+        resetImageDraft();
+      }
+    });
+
+    imageInput?.addEventListener("change", () => {
+      if (!imageInput.files?.length) return;
+      const file = imageInput.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        imageDraftSrc = String(reader.result || "");
+        if (imagePreview) imagePreview.src = imageDraftSrc;
+        imageDraft?.removeAttribute("hidden");
+      };
+      reader.readAsDataURL(file);
+    });
+
+    emojiButton?.addEventListener("click", () => {
+      if (!composerInput) return;
+      composerInput.value = `${composerInput.value || ""} 🙂`;
+      composerInput.focus();
+    });
+
+    audioButton?.addEventListener("click", () => {
+      startAudioDraft();
+    });
+
+    audioCancelButton?.addEventListener("click", () => {
+      resetAudioDraft();
+    });
+
+    selectionClear?.addEventListener("click", () => {
+      clearSelection();
+      renderThread(activeId);
+    });
+
+    selectionDelete?.addEventListener("click", () => {
+      const conversation = conversations[activeId];
+      if (!conversation || !selectedMessageIndexes.size) return;
+      conversation.messages = conversation.messages.filter((_, index) => !selectedMessageIndexes.has(index));
+      clearSelection();
+      renderThread(activeId);
+    });
+
+    selectionForward?.addEventListener("click", () => {
+      if (!selectedMessageIndexes.size) return;
+      showCopyToast("Encaminhado");
+      clearSelection();
+      renderThread(activeId);
+    });
+
+    backButton?.addEventListener("click", () => {
+      hideMessageMenu();
+      root.classList.remove("messages-app--thread-open");
+    });
+
+    document.querySelectorAll('.sidebar a[href="mensagens.html"], .mobile-header-shortcut[href="mensagens.html"]').forEach((link) => {
+      if (link.dataset.messagesNavBound === "true") return;
+      link.dataset.messagesNavBound = "true";
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        window.DokeNavigate?.("mensagens.html");
+      });
+    });
+
+    lightboxClose?.addEventListener("click", closeLightbox);
+
+    lightbox?.addEventListener("click", (event) => {
+      const surface = event.target.closest(".image-lightbox__surface");
+      if (!surface || event.target === surface) closeLightbox();
+      if (event.target === lightbox) closeLightbox();
+    });
+
+    window.addEventListener("resize", () => {
+      hideMessageMenu();
+      if (window.innerWidth > 767) {
+        root.classList.remove("messages-app--thread-open");
+      }
+    });
+
+    syncCounts();
+    syncVisibility();
+    refreshConversationCards();
+    clearReplyPreview();
+    clearSelection();
+    resetAudioDraft();
+    resetImageDraft();
+    if (copyToast) copyToast.hidden = true;
+    renderThread(activeId);
+    if (window.innerWidth <= 767) {
+      root.classList.remove("messages-app--thread-open");
+    }
+  };
+
+  window.DokeInitMessages = initMessagesPage;
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initMessagesPage, { once: true });
+  } else {
+    initMessagesPage();
+  }
+})();

@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
   const initOrdersPage = () => {
     const root = document.querySelector('.orders-page');
     if (!root || root.dataset.ordersReady === 'true') return;
@@ -11,6 +11,9 @@
     const popover = root.querySelector('[data-orders-filters-popover]');
     const activeChip = root.querySelector('[data-orders-active-chip]');
     const clearFilterButton = root.querySelector('[data-orders-clear-filter]');
+    const emptyState = root.querySelector('[data-orders-empty]');
+    const emptyText = root.querySelector('[data-orders-empty-text]');
+    const resetEmptyButton = root.querySelector('[data-orders-reset-empty]');
     const statNodes = {
       all: root.querySelector('[data-orders-stat="all"]'),
       pending: root.querySelector('[data-orders-stat="pending"]'),
@@ -71,11 +74,23 @@
     const applyFilters = () => {
       const active = root.dataset.activeFilter || 'all';
       const query = normalize(searchInput?.value || '');
+      let visibleCount = 0;
       cards.forEach((card) => {
         const matchesFilter = active === 'all' || card.dataset.status === active;
         const matchesSearch = !query || normalize(card.textContent || '').includes(query);
-        card.hidden = !(matchesFilter && matchesSearch);
+        const visible = matchesFilter && matchesSearch;
+        card.hidden = !visible;
+        if (visible) visibleCount += 1;
       });
+      if (emptyState) {
+        const hasQuery = Boolean(query);
+        emptyState.hidden = visibleCount > 0;
+        if (emptyText) {
+          emptyText.textContent = hasQuery
+            ? 'Nenhum pedido combinou com essa busca. Tente outro termo ou limpe os filtros para voltar a ver tudo.'
+            : 'Você pode limpar o filtro atual ou voltar para a base para solicitar um novo orçamento.';
+        }
+      }
       syncActiveChip();
     };
 
@@ -85,9 +100,14 @@
     };
 
     const openPanel = (type, card) => {
-      if (type === 'chat' && window.innerWidth < 768) {
+      if (type === 'chat') {
         const id = card?.dataset.id || '';
-        window.location.href = `mensagens.html?pedido=${encodeURIComponent(id)}`;
+        const href = `mensagens.html?pedido=${encodeURIComponent(id)}`;
+        if (window.DokeNavigate) {
+          window.DokeNavigate(href);
+        } else {
+          window.location.href = href;
+        }
         return;
       }
 
@@ -137,6 +157,13 @@
     clearFilterButton?.addEventListener('click', () => {
       const allButton = filterButtons.find((button) => button.dataset.filter === 'all');
       allButton?.click();
+    });
+
+    resetEmptyButton?.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      const allButton = filterButtons.find((button) => button.dataset.filter === 'all');
+      allButton?.click();
+      applyFilters();
     });
 
     searchInput?.addEventListener('input', applyFilters);
@@ -208,7 +235,8 @@
     applyFilters();
   };
 
-  window.initOrdersPage = initOrdersPage;
+    window.initOrdersPage = initOrdersPage;
+    window.DokeInitOrders = initOrdersPage;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initOrdersPage, { once: true });
@@ -216,3 +244,4 @@
     initOrdersPage();
   }
 })();
+

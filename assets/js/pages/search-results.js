@@ -28,6 +28,7 @@ const resultsEmptyText = document.querySelector("[data-results-empty-text]");
 const resultsEmptySuggestions = document.querySelector("[data-results-empty-suggestions]");
 const resultsEmptyGrid = document.querySelector("[data-results-empty-grid]");
 const resultsEmptyHelper = document.querySelector("[data-results-empty-helper]");
+const resultsEmptyReset = document.querySelector("[data-results-empty-reset]");
 const resultsSummary = document.querySelector("[data-results-summary]");
 const resultsUsersSection = document.querySelector("[data-results-users]");
 const resultsUsersGrid = document.querySelector("[data-results-users-grid]");
@@ -847,6 +848,17 @@ filtersReset?.addEventListener("click", () => {
   filtersForm?.reset();
   setSearchMode("services");
   bootstrapLocationSelects();
+  renderResults();
+});
+
+resultsEmptyReset?.addEventListener("click", () => {
+  params.delete("q");
+  syncInputs("");
+  filtersForm?.reset();
+  setSearchMode("services");
+  bootstrapLocationSelects();
+  renderCategoryFilters();
+  window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
   renderResults();
 });
 

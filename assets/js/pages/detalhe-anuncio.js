@@ -21,6 +21,12 @@ const initDetailPage = () => {
   const budgetCloseButtons = [...document.querySelectorAll("[data-budget-close]")];
   const budgetRoot = document.querySelector("[data-budget-page]");
   const budgetDialog = budgetModal?.querySelector(".detail-budget-modal__dialog");
+  const lightbox = document.querySelector("[data-image-lightbox]");
+  const lightboxImage = document.querySelector("[data-image-lightbox-image]");
+  const lightboxClose = document.querySelector("[data-image-lightbox-close]");
+  const lightboxPrev = document.querySelector("[data-image-lightbox-prev]");
+  const lightboxNext = document.querySelector("[data-image-lightbox-next]");
+  const lightboxThumbs = document.querySelector("[data-image-lightbox-thumbs]");
   let lockedScrollY = 0;
 
   let currentIndex = Math.max(0, thumbs.findIndex((thumb) => thumb.classList.contains("is-active")));
@@ -48,6 +54,60 @@ const initDetailPage = () => {
 
   thumbs.forEach((thumb, index) => {
     thumb.addEventListener("click", () => applyImage(index));
+  });
+
+  const renderLightboxThumbs = (activeIndex) => {
+    if (!lightboxThumbs) return;
+    lightboxThumbs.innerHTML = thumbs.map((thumb, index) => {
+      const src = thumb.querySelector("img")?.src || "";
+      const alt = thumb.dataset.alt || thumb.querySelector("img")?.alt || "";
+      return `<button class="image-lightbox__thumb${index === activeIndex ? " is-active" : ""}" type="button" data-image-lightbox-thumb="${index}" aria-label="Abrir imagem ${index + 1}"><img src="${src}" alt="${alt}"></button>`;
+    }).join("");
+  };
+
+  const syncLightboxImage = (index) => {
+    const thumb = thumbs[index];
+    if (!thumb || !lightboxImage) return;
+    const src = thumb.dataset.full || thumb.querySelector("img")?.src;
+    const alt = thumb.dataset.alt || thumb.querySelector("img")?.alt || "";
+    if (src) lightboxImage.src = src;
+    lightboxImage.alt = alt || "Imagem ampliada";
+    renderLightboxThumbs(index);
+    currentIndex = index;
+  };
+
+  const openLightbox = (index) => {
+    if (!lightbox || !lightboxImage) return;
+    syncLightboxImage(index);
+    if (typeof lightbox.showModal === "function") {
+      if (!lightbox.open) lightbox.showModal();
+    } else {
+      lightbox.setAttribute("open", "");
+    }
+  };
+
+  const closeLightbox = () => {
+    if (!lightbox) return;
+    if (typeof lightbox.close === "function" && lightbox.open) {
+      lightbox.close();
+    } else {
+      lightbox.removeAttribute("open");
+    }
+    if (lightboxImage) {
+      lightboxImage.src = "";
+      lightboxImage.alt = "Imagem ampliada";
+    }
+  };
+
+  mainImage?.addEventListener("click", () => {
+    openLightbox(currentIndex);
+  });
+
+  thumbs.forEach((thumb) => {
+    thumb.addEventListener("dblclick", () => {
+      const index = thumbs.indexOf(thumb);
+      openLightbox(index);
+    });
   });
 
   prevButton?.addEventListener("click", () => {
@@ -168,6 +228,27 @@ const initDetailPage = () => {
     document.body.style.top = "";
     document.body.classList.remove("detail-budget-open");
     window.scrollTo(0, nextScrollY);
+  });
+
+  lightboxClose?.addEventListener("click", closeLightbox);
+  lightboxPrev?.addEventListener("click", () => syncLightboxImage((currentIndex - 1 + thumbs.length) % thumbs.length));
+  lightboxNext?.addEventListener("click", () => syncLightboxImage((currentIndex + 1) % thumbs.length));
+
+  lightboxThumbs?.addEventListener("click", (event) => {
+    const thumbButton = event.target.closest("[data-image-lightbox-thumb]");
+    if (!thumbButton) return;
+    const index = Number(thumbButton.dataset.imageLightboxThumb || -1);
+    if (index >= 0) syncLightboxImage(index);
+  });
+
+  lightbox?.addEventListener("click", (event) => {
+    if (event.target.closest(".image-lightbox__thumb")) return;
+    if (event.target.closest(".image-lightbox__nav")) return;
+    if (event.target.closest(".image-lightbox__close")) return;
+    if (event.target.closest(".image-lightbox__image")) return;
+    const surface = event.target.closest(".image-lightbox__surface");
+    if (!surface) closeLightbox();
+    if (event.target === lightbox) closeLightbox();
   });
 };
 

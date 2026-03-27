@@ -3,7 +3,7 @@ const body = document.body;
 const SIDEBAR_STORAGE_KEY = "doke.sidebar.collapsed";
 const THEME_STORAGE_KEY = "doke.theme";
 const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", "mobile-search-active"];
-const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/orcamento.html", "/orcamento-sucesso.html", "/pedidos.html", "/dashboard.html", "/"]);
+const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/orcamento.html", "/orcamento-sucesso.html", "/pedidos.html", "/mensagens.html", "/dashboard.html", "/"]);
 
 if (window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true") {
   body.classList.add("sidebar-collapsed");
@@ -33,10 +33,12 @@ const updateSidebarActiveState = () => {
   const path = getCurrentPath();
   const homeActive = path === "/index.html";
   const ordersActive = path === "/pedidos.html";
+  const messagesActive = path === "/mensagens.html";
 
   document.querySelectorAll(".sidebar .nav-link").forEach((link) => link.classList.remove("is-active"));
   document.querySelector(".nav-link--home")?.classList.toggle("is-active", homeActive);
   document.querySelector(".nav-link--orders")?.classList.toggle("is-active", ordersActive);
+  document.querySelector(".nav-link--messages")?.classList.toggle("is-active", messagesActive);
 };
 
 const syncAuthUi = () => {
@@ -258,6 +260,7 @@ const initializeCurrentView = () => {
   window.DokeInitDetailPage?.();
   window.DokeInitBudget?.();
   window.DokeInitOrders?.();
+  window.DokeInitMessages?.();
   initChipRails();
 };
 
