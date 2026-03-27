@@ -3,6 +3,7 @@ const routeController = new AbortController();
 window.DokeHomeCleanup?.();
 window.DokeHomeCleanup = () => {
   document.body.classList.remove("home-search-overlay-active");
+  document.body.classList.remove("home-search-has-query");
   routeController.abort();
 };
 const { signal } = routeController;
@@ -65,6 +66,9 @@ const searchItemIcon = (type = "search") => {
 
 let activeSearchIndex = -1;
 const isMobileSearchViewport = () => window.innerWidth <= 760;
+const syncSearchOverlayState = (query = "") => {
+  document.body.classList.toggle("home-search-has-query", isMobileSearchViewport() && String(query || "").trim().length >= 2);
+};
 
 const createSuggestionButton = ({ label, meta, badge, value, type = "search" }) => {
   const button = document.createElement("button");
@@ -108,7 +112,8 @@ const renderSearchHistory = () => {
   }
 
   searchHistorySection.hidden = false;
-  history.forEach((item) => {
+  const visibleHistory = isMobileSearchViewport() ? history.slice(0, 2) : history;
+  visibleHistory.forEach((item) => {
     searchHistoryList.appendChild(createSuggestionButton({
       label: item,
       meta: "Pesquisa recente",
@@ -156,6 +161,7 @@ const openSearchDropdown = () => {
   if (isMobileSearchViewport()) {
     document.body.classList.add("home-search-overlay-active");
   }
+  syncSearchOverlayState(searchInput.value);
 };
 
 const closeSearchDropdown = () => {
@@ -164,6 +170,7 @@ const closeSearchDropdown = () => {
   searchInput.setAttribute("aria-expanded", "false");
   activeSearchIndex = -1;
   document.body.classList.remove("home-search-overlay-active");
+  document.body.classList.remove("home-search-has-query");
 };
 
 const goToSearchResults = (value) => {
@@ -207,6 +214,7 @@ if (searchBox && searchInput && searchDropdown) {
     const query = searchInput.value.trim();
     renderSearchHistory();
     renderSearchSuggestions(query);
+    syncSearchOverlayState(query);
 
     if (!query.length) {
       const hasRecommendations = !!searchRecommendationList?.children.length;
@@ -308,8 +316,10 @@ document.addEventListener("click", (event) => {
 window.addEventListener("resize", () => {
   if (!isMobileSearchViewport()) {
     document.body.classList.remove("home-search-overlay-active");
+    document.body.classList.remove("home-search-has-query");
   } else if (!searchDropdown.hidden) {
     document.body.classList.add("home-search-overlay-active");
+    syncSearchOverlayState(searchInput?.value || "");
   }
 }, { signal });
 

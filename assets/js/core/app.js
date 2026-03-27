@@ -185,43 +185,21 @@ const ensureScriptsFromDocument = async (nextDoc) => {
 };
 
 const syncShellFromDocument = (nextDoc) => {
-  const nextSidebar = nextDoc.querySelector('.sidebar');
-  const nextTopbar = nextDoc.querySelector('.topbar');
-  const nextScrim = nextDoc.querySelector('.mobile-scrim');
-  const currentSidebar = document.querySelector('.sidebar');
-  const currentTopbar = document.querySelector('.topbar');
+  // Keep shell chrome stable across internal navigations to avoid
+  // sidebar/header flicker, logo reload, and mobile-search jank.
   const currentScrim = document.querySelector('.mobile-scrim');
+  const nextScrim = nextDoc.querySelector('.mobile-scrim');
 
-  if (nextSidebar && currentSidebar) {
-    currentSidebar.replaceWith(nextSidebar.cloneNode(true));
-  }
-
-  if (nextTopbar && currentTopbar) {
-    currentTopbar.replaceWith(nextTopbar.cloneNode(true));
-  }
-
-  if (nextScrim && currentScrim) {
-    currentScrim.replaceWith(nextScrim.cloneNode(true));
+  if (!currentScrim && nextScrim) {
+    document.body.appendChild(nextScrim.cloneNode(true));
   }
 };
 
 
 const cleanupDynamicStyles = (nextDoc) => {
-  const allowed = new Set();
-  nextDoc.querySelectorAll('link[rel="stylesheet"]').forEach((link) => {
-    const href = link.getAttribute('href');
-    if (!href) return;
-    const absolute = new URL(href, window.location.href).href;
-    if (BASE_SHELL_STYLE_PATTERNS.some((pattern) => pattern.test(absolute))) return;
-    allowed.add(absolute);
-  });
-
-  document.querySelectorAll('link[data-doke-dynamic-style="true"]').forEach((node) => {
-    const absolute = new URL(node.href, window.location.href).href;
-    if (!allowed.has(absolute)) {
-      node.remove();
-    }
-  });
+  // Keep already-loaded page styles mounted to avoid shell flicker during
+  // internal navigation. The current codebase still mixes shell rules into
+  // page styles, so removing them causes visible sidebar/header reflow.
 };
 
 const syncStandaloneUiFromDocument = (nextDoc) => {

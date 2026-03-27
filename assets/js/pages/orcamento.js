@@ -1,5 +1,5 @@
 const initBudgetPage = () => {
-  const pageRoot = document.querySelector("[data-budget-page], .orders-page-shell");
+  const pageRoot = document.querySelector("[data-budget-page]");
   if (!pageRoot || pageRoot.dataset.budgetInitialized === "true") return;
   pageRoot.dataset.budgetInitialized = "true";
   const form = document.querySelector("[data-budget-form]");
@@ -149,23 +149,28 @@ const initBudgetPage = () => {
     const nextButton = form.querySelector("[data-step-next]");
     const submitButton = form.querySelector("[data-step-submit]");
     const successSection = pageRoot.querySelector("[data-budget-success]");
+    const loadingSection = pageRoot.querySelector("[data-budget-loading]");
     let currentStep = 0;
     let savedLocation = null;
 
     const getNativeSelect = (name) => form.querySelector(`.ui-select__native[name="${name}"]`) || form.querySelector(`select[name="${name}"]`);
 
     const categorySelect = getNativeSelect("categoria");
-    if (categorySelect && service) {
+    const categoryInput = form.querySelector('input[name="categoria"]');
+    if (service) {
       const normalized = formatTitleCase(service);
-      const hasOption = [...categorySelect.options].some((option) => option.textContent.toLowerCase() === normalized.toLowerCase());
-      if (!hasOption) {
-        const option = document.createElement("option");
-        option.value = normalized;
-        option.textContent = normalized;
-        categorySelect.insertBefore(option, categorySelect.firstChild.nextSibling || null);
+      if (categorySelect) {
+        const hasOption = [...categorySelect.options].some((option) => option.textContent.toLowerCase() === normalized.toLowerCase());
+        if (!hasOption) {
+          const option = document.createElement("option");
+          option.value = normalized;
+          option.textContent = normalized;
+          categorySelect.insertBefore(option, categorySelect.firstChild.nextSibling || null);
+        }
+        categorySelect.value = normalized;
+        categorySelect.dispatchEvent(new Event("change", { bubbles: true }));
       }
-      categorySelect.value = normalized;
-      categorySelect.dispatchEvent(new Event("change", { bubbles: true }));
+      if (categoryInput) categoryInput.value = normalized;
     }
 
     const readStoredLocation = () => {
@@ -399,17 +404,34 @@ const initBudgetPage = () => {
         const node = document.querySelector(selector);
         if (node && value) node.textContent = value;
       });
-      if (successSection) {
-        form.style.display = "none";
-        form.hidden = true;
-        successSection.hidden = false;
-        successSection.style.display = "block";
-        successSection.classList.add("is-active");
-        pageRoot.classList.add("is-success");
+      form.style.display = "none";
+      form.hidden = true;
+
+      if (loadingSection) {
+        loadingSection.hidden = false;
+        loadingSection.style.display = "grid";
+        loadingSection.classList.add("is-active");
         window.requestAnimationFrame(() => {
-          successSection.scrollIntoView({ block: "start", behavior: "smooth" });
+          loadingSection.scrollIntoView({ block: "start", behavior: "smooth" });
         });
       }
+
+      window.setTimeout(() => {
+        if (loadingSection) {
+          loadingSection.hidden = true;
+          loadingSection.style.display = "none";
+          loadingSection.classList.remove("is-active");
+        }
+        if (successSection) {
+          successSection.hidden = false;
+          successSection.style.display = "block";
+          successSection.classList.add("is-active");
+          pageRoot.classList.add("is-success");
+          window.requestAnimationFrame(() => {
+            successSection.scrollIntoView({ block: "start", behavior: "smooth" });
+          });
+        }
+      }, 1400);
     });
   }
 
