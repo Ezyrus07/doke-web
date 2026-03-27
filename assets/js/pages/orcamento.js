@@ -148,8 +148,6 @@ const initBudgetPage = () => {
     const prevButton = form.querySelector("[data-step-prev]");
     const nextButton = form.querySelector("[data-step-next]");
     const submitButton = form.querySelector("[data-step-submit]");
-    const successSection = pageRoot.querySelector("[data-budget-success]");
-    const loadingSection = pageRoot.querySelector("[data-budget-loading]");
     let currentStep = 0;
     let savedLocation = null;
     let lockedScrollY = 0;
@@ -415,44 +413,8 @@ const initBudgetPage = () => {
 
       window.sessionStorage.setItem(storageKey, JSON.stringify(payload));
       persistOrderFromSubmission(payload);
-      const map = {
-        "[data-success-service]": payload.service,
-        "[data-success-provider]": payload.provider,
-        "[data-success-location]": payload.locationTitle || payload.location,
-        "[data-success-urgency]": payload.urgency
-      };
-      Object.entries(map).forEach(([selector, value]) => {
-        const node = document.querySelector(selector);
-        if (node && value) node.textContent = value;
-      });
-      form.style.display = "none";
-      form.hidden = true;
-
-      if (loadingSection) {
-        loadingSection.hidden = false;
-        loadingSection.style.display = "grid";
-        loadingSection.classList.add("is-active");
-        window.requestAnimationFrame(() => {
-          loadingSection.scrollIntoView({ block: "start", behavior: "smooth" });
-        });
-      }
-
-      window.setTimeout(() => {
-        if (loadingSection) {
-          loadingSection.hidden = true;
-          loadingSection.style.display = "none";
-          loadingSection.classList.remove("is-active");
-        }
-        if (successSection) {
-          successSection.hidden = false;
-          successSection.style.display = "block";
-          successSection.classList.add("is-active");
-          pageRoot.classList.add("is-success");
-          window.requestAnimationFrame(() => {
-            successSection.scrollIntoView({ block: "start", behavior: "smooth" });
-          });
-        }
-      }, 1400);
+      window.sessionStorage.setItem("doke.quoteOverlay", JSON.stringify(payload));
+      window.location.href = "index.html?quote=sent";
     });
   }
 

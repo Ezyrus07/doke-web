@@ -50,6 +50,13 @@ const uiModalConfirm = document.querySelector("[data-ui-modal-confirm]");
 const categoryTrack = document.querySelector("[data-category-track]");
 const categoryArrows = document.querySelectorAll("[data-category-arrow]");
 const railArrows = document.querySelectorAll("[data-rail-arrow]");
+const orderFeedback = document.querySelector("[data-order-feedback]");
+const orderFeedbackLoading = document.querySelector("[data-order-feedback-loading]");
+const orderFeedbackSuccess = document.querySelector("[data-order-feedback-success]");
+const orderFeedbackClose = document.querySelector("[data-order-feedback-close]");
+const orderFeedbackProvider = document.querySelector("[data-order-feedback-provider]");
+const orderFeedbackLocation = document.querySelector("[data-order-feedback-location]");
+const orderFeedbackUrgency = document.querySelector("[data-order-feedback-urgency]");
 const customSelectRegistry = new Map();
 let activeModalResolver = null;
 
@@ -757,6 +764,46 @@ railArrows.forEach((arrow) => {
     amountFactor: 0.82
   });
 });
+
+const closeOrderFeedback = () => {
+  if (!orderFeedback) return;
+  orderFeedback.hidden = true;
+  document.body.classList.remove("order-feedback-active");
+  if (orderFeedbackLoading) orderFeedbackLoading.hidden = true;
+  if (orderFeedbackSuccess) orderFeedbackSuccess.hidden = true;
+};
+
+const openOrderFeedback = (payload) => {
+  if (!orderFeedback || !payload) return;
+  if (orderFeedbackProvider) orderFeedbackProvider.textContent = payload.provider || "Profissional";
+  if (orderFeedbackLocation) orderFeedbackLocation.textContent = payload.locationTitle || payload.location || "Endereco salvo";
+  if (orderFeedbackUrgency) orderFeedbackUrgency.textContent = payload.urgency || "Sem pressa";
+
+  orderFeedback.hidden = false;
+  document.body.classList.add("order-feedback-active");
+  if (orderFeedbackSuccess) orderFeedbackSuccess.hidden = true;
+  if (orderFeedbackLoading) orderFeedbackLoading.hidden = false;
+
+  window.setTimeout(() => {
+    if (orderFeedbackLoading) orderFeedbackLoading.hidden = true;
+    if (orderFeedbackSuccess) orderFeedbackSuccess.hidden = false;
+  }, 1250);
+};
+
+orderFeedbackClose?.addEventListener("click", closeOrderFeedback);
+
+try {
+  const shouldShowOrderFeedback = new URLSearchParams(window.location.search).get("quote") === "sent";
+  const storedOrderFeedback = window.sessionStorage.getItem("doke.quoteOverlay");
+  if (shouldShowOrderFeedback && storedOrderFeedback) {
+    const payload = JSON.parse(storedOrderFeedback);
+    window.sessionStorage.removeItem("doke.quoteOverlay");
+    openOrderFeedback(payload);
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete("quote");
+    window.history.replaceState({}, "", nextUrl.toString());
+  }
+} catch {}
 
 };
 
