@@ -152,6 +152,7 @@ const initBudgetPage = () => {
     const loadingSection = pageRoot.querySelector("[data-budget-loading]");
     let currentStep = 0;
     let savedLocation = null;
+    let lockedScrollY = 0;
 
     const getNativeSelect = (name) => form.querySelector(`.ui-select__native[name="${name}"]`) || form.querySelector(`select[name="${name}"]`);
 
@@ -212,6 +213,20 @@ const initBudgetPage = () => {
 
     applySavedLocation(readStoredLocation());
 
+    const lockViewport = () => {
+      lockedScrollY = window.scrollY || window.pageYOffset || 0;
+      document.body.style.top = `-${lockedScrollY}px`;
+      document.body.classList.add("budget-modal-open");
+    };
+
+    const unlockViewport = () => {
+      const top = document.body.style.top;
+      document.body.classList.remove("budget-modal-open");
+      document.body.style.top = "";
+      const nextScrollY = top ? Math.abs(parseInt(top, 10)) || lockedScrollY : lockedScrollY;
+      window.scrollTo(0, nextScrollY);
+    };
+
     const openAddressModal = () => {
       if (!addressModal || !addressForm) return;
       if (savedLocation) {
@@ -230,7 +245,12 @@ const initBudgetPage = () => {
         if (uf) uf.value = "BA";
         if (padrao) padrao.checked = true;
       }
+      lockViewport();
       addressModal.showModal();
+      window.requestAnimationFrame(() => {
+        const firstField = addressForm.querySelector('input:not([type="checkbox"]), textarea');
+        if (firstField && window.innerWidth <= 760) firstField.focus({ preventScroll: true });
+      });
     };
 
     const closeAddressModal = () => addressModal?.close();
@@ -240,6 +260,7 @@ const initBudgetPage = () => {
       const dialogBox = addressModal.querySelector(".address-modal__dialog");
       if (dialogBox && !dialogBox.contains(event.target)) closeAddressModal();
     });
+    addressModal?.addEventListener("close", unlockViewport);
 
     addressForm?.addEventListener("submit", (event) => {
       event.preventDefault();
