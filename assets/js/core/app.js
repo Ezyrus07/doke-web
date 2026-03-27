@@ -255,6 +255,7 @@ const initializeCurrentView = () => {
   syncHeaderLocation();
   window.DokeInitHome?.();
   window.DokeInitSearchResults?.();
+  window.DokeInitDetailPage?.();
   window.DokeInitBudget?.();
   window.DokeInitOrders?.();
   initChipRails();

@@ -1,6 +1,7 @@
-document.addEventListener("DOMContentLoaded", () => {
+const initDetailPage = () => {
   const page = document.querySelector("[data-detail-page]");
-  if (!page) return;
+  if (!page || page.dataset.detailInitialized === "true") return;
+  page.dataset.detailInitialized = "true";
 
   const mainImage = page.querySelector("[data-gallery-main]");
   const thumbs = [...page.querySelectorAll("[data-gallery-thumb]")];
@@ -15,6 +16,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const voteCards = [...page.querySelectorAll(".ad-vote-card[data-review-tone]")];
   const extraReviews = [...page.querySelectorAll("[data-review-extra]")];
   const reviewsMoreButton = page.querySelector("[data-reviews-more]");
+  const budgetModal = document.querySelector("[data-budget-modal]");
+  const budgetOpenButtons = [...document.querySelectorAll("[data-budget-open]")];
+  const budgetCloseButtons = [...document.querySelectorAll("[data-budget-close]")];
+  const budgetRoot = document.querySelector("[data-budget-page]");
+  const budgetDialog = budgetModal?.querySelector(".detail-budget-modal__dialog");
+  let lockedScrollY = 0;
 
   let currentIndex = Math.max(0, thumbs.findIndex((thumb) => thumb.classList.contains("is-active")));
 
@@ -87,4 +94,86 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     reviewsMoreButton.hidden = true;
   });
-});
+
+  const syncBudgetContext = (button) => {
+    if (!budgetRoot || !button) return;
+    const provider = button.dataset.budgetProvider || "Studio Aquarela";
+    const service = button.dataset.budgetService || "reforma residencial premium";
+
+    budgetRoot.dataset.budgetProvider = provider;
+    budgetRoot.dataset.budgetService = service;
+    budgetRoot.dataset.budgetSuccessUrl = "index.html?quote=sent";
+
+    budgetRoot.querySelectorAll("[data-budget-provider]").forEach((node) => {
+      node.textContent = provider;
+    });
+
+    budgetRoot.querySelectorAll("[data-budget-service]").forEach((node) => {
+      node.textContent = service.replace(/\b\w/g, (char) => char.toUpperCase());
+    });
+  };
+
+  const openBudgetModal = (button) => {
+    if (!budgetModal) return;
+    syncBudgetContext(button);
+
+    lockedScrollY = window.scrollY || window.pageYOffset || 0;
+    document.body.style.top = `-${lockedScrollY}px`;
+    document.body.classList.add("detail-budget-open");
+
+    if (typeof budgetModal.showModal === "function") {
+      if (!budgetModal.open) budgetModal.showModal();
+    } else {
+      budgetModal.setAttribute("open", "");
+    }
+
+    if (typeof window.DokeInitBudget === "function") window.DokeInitBudget();
+
+    window.requestAnimationFrame(() => {
+      const firstField = budgetRoot?.querySelector("[data-details-input]");
+      firstField?.focus();
+    });
+  };
+
+  const closeBudgetModal = () => {
+    if (!budgetModal) return;
+
+    if (typeof budgetModal.close === "function" && budgetModal.open) {
+      budgetModal.close();
+    } else {
+      budgetModal.removeAttribute("open");
+      document.body.style.top = "";
+      document.body.classList.remove("detail-budget-open");
+      window.scrollTo(0, lockedScrollY);
+    }
+  };
+
+  budgetOpenButtons.forEach((button) => {
+    button.addEventListener("click", () => openBudgetModal(button));
+  });
+
+  budgetCloseButtons.forEach((button) => {
+    button.addEventListener("click", closeBudgetModal);
+  });
+
+  budgetModal?.addEventListener("click", (event) => {
+    if (budgetDialog && !budgetDialog.contains(event.target)) {
+      closeBudgetModal();
+    }
+  });
+
+  budgetModal?.addEventListener("close", () => {
+    const top = document.body.style.top;
+    const nextScrollY = top ? Math.abs(parseInt(top, 10)) || lockedScrollY : lockedScrollY;
+    document.body.style.top = "";
+    document.body.classList.remove("detail-budget-open");
+    window.scrollTo(0, nextScrollY);
+  });
+};
+
+window.DokeInitDetailPage = initDetailPage;
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initDetailPage, { once: true });
+} else {
+  initDetailPage();
+}

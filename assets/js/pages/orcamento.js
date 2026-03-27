@@ -2,21 +2,22 @@ const initBudgetPage = () => {
   const pageRoot = document.querySelector("[data-budget-page]");
   if (!pageRoot || pageRoot.dataset.budgetInitialized === "true") return;
   pageRoot.dataset.budgetInitialized = "true";
-  const form = document.querySelector("[data-budget-form]");
+  const form = pageRoot.querySelector("[data-budget-form]");
   const storageKey = "doke.quoteSubmission";
   const ordersStorageKey = "doke.orders";
   const defaultLocationKey = "doke.defaultServiceLocation";
 
   const query = new URLSearchParams(window.location.search);
-  const provider = query.get("pro") || "Studio Aquarela";
-  const service = (query.get("service") || "reforma residencial premium").replace(/-/g, " ");
+  const provider = pageRoot.dataset.budgetProvider || query.get("pro") || "Studio Aquarela";
+  const service = (pageRoot.dataset.budgetService || query.get("service") || "reforma residencial premium").replace(/-/g, " ");
+  const successUrl = pageRoot.dataset.budgetSuccessUrl || "index.html?quote=sent";
   const formatTitleCase = (value) => String(value || "").replace(/\b\w/g, (c) => c.toUpperCase());
 
-  document.querySelectorAll("[data-budget-provider]").forEach((node) => {
+  pageRoot.querySelectorAll("[data-budget-provider]").forEach((node) => {
     node.textContent = provider;
   });
 
-  document.querySelectorAll("[data-budget-service]").forEach((node) => {
+  pageRoot.querySelectorAll("[data-budget-service]").forEach((node) => {
     node.textContent = formatTitleCase(service);
   });
 
@@ -88,10 +89,10 @@ const initBudgetPage = () => {
     native.dataset.uiReady = "true";
   };
 
-  document.querySelectorAll("select[data-ui-select]").forEach(createUiSelect);
+  pageRoot.querySelectorAll("select[data-ui-select]").forEach(createUiSelect);
 
   document.addEventListener("click", (event) => {
-    document.querySelectorAll(".ui-select.is-open").forEach((item) => {
+    pageRoot.querySelectorAll(".ui-select.is-open").forEach((item) => {
       if (!item.contains(event.target)) {
         item.classList.remove("is-open");
         const menu = item.querySelector(".ui-select__menu");
@@ -137,14 +138,16 @@ const initBudgetPage = () => {
     const addressLine = form.querySelector("[data-address-line]");
     const addressMeta = form.querySelector("[data-address-meta]");
     const addressModal = document.querySelector("[data-address-modal]");
-    const addressForm = document.querySelector("[data-address-form]");
-    const headerChipLabel = document.querySelector("[data-saved-address-chip]");
+    const addressForm = addressModal?.querySelector("[data-address-form]");
+    const headerChipLabel = pageRoot.querySelector("[data-saved-address-chip]");
     const headerChipButton = headerChipLabel?.closest("[data-open-address-modal]");
-    const openAddressButtons = [...document.querySelectorAll("[data-open-address-modal]")];
-    const closeAddressButtons = [...document.querySelectorAll("[data-close-address-modal]")];
+    const openAddressButtons = [...pageRoot.querySelectorAll("[data-open-address-modal]")];
+    const closeAddressButtons = [...(addressModal?.querySelectorAll("[data-close-address-modal]") || [])];
 
     const panels = [...form.querySelectorAll("[data-step-panel]")];
     const indicators = [...form.querySelectorAll("[data-step-target]")];
+    const progressLabel = form.querySelector("[data-step-progress-label]");
+    const progressFill = form.querySelector("[data-step-progress-fill]");
     const prevButton = form.querySelector("[data-step-prev]");
     const nextButton = form.querySelector("[data-step-next]");
     const submitButton = form.querySelector("[data-step-submit]");
@@ -301,7 +304,7 @@ const initBudgetPage = () => {
     const validateStep = (index) => {
       const panel = panels[index];
       if (!panel) return true;
-      if (index === 1 && (!savedLocation || !addressRequiredInput?.value)) {
+      if (index === panels.length - 1 && (!savedLocation || !addressRequiredInput?.value)) {
         openAddressModal();
         return false;
       }
@@ -327,12 +330,24 @@ const initBudgetPage = () => {
         panel.classList.toggle("is-active", active);
       });
       indicators.forEach((indicator, indicatorIndex) => {
-        indicator.classList.toggle("is-active", indicatorIndex === currentStep);
+        const bullet = indicator.querySelector(".budget-progress-step__bullet");
+        const isComplete = indicatorIndex < currentStep;
+        const isActive = indicatorIndex === currentStep;
+        indicator.classList.toggle("is-active", isActive);
+        indicator.classList.toggle("is-complete", isComplete);
+        if (bullet) {
+          bullet.textContent = isComplete ? "✓" : String(indicatorIndex + 1);
+        }
       });
+      if (progressLabel) progressLabel.textContent = `Passo ${currentStep + 1} de ${panels.length}`;
+      if (progressFill) progressFill.style.width = `${((currentStep + 1) / panels.length) * 100}%`;
       if (prevButton) prevButton.hidden = currentStep === 0;
       if (nextButton) nextButton.hidden = currentStep === panels.length - 1;
       if (submitButton) submitButton.hidden = currentStep !== panels.length - 1;
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      const scrollTarget = pageRoot.closest(".detail-budget-modal__dialog") || pageRoot;
+      if ("scrollTo" in scrollTarget) {
+        scrollTarget.scrollTo({ top: 0, behavior: "smooth" });
+      }
     };
 
     syncCount();
@@ -414,7 +429,7 @@ const initBudgetPage = () => {
       window.sessionStorage.setItem(storageKey, JSON.stringify(payload));
       persistOrderFromSubmission(payload);
       window.sessionStorage.setItem("doke.quoteOverlay", JSON.stringify(payload));
-      window.location.href = "index.html?quote=sent";
+      window.location.href = successUrl;
     });
   }
 

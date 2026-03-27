@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="assets/css/pages/home-shared.css">
   <link rel="stylesheet" href="assets/css/pages/home-refresh.css">
   <link rel="stylesheet" href="assets/css/pages/search-results.css">
+  <link rel="stylesheet" href="assets/css/pages/orcamento.css">
   <link rel="stylesheet" href="assets/css/pages/detalhe-anuncio.css">
 </head>
 <body class="shell-home detalhe-shell-page">
@@ -238,7 +239,7 @@
       <main class="page__content">
         <div class="page__content-inner container shell-home__workspace">
           <div class="ad-page__shell" data-detail-page>
-            <section class="ad-hero">
+            <section class="ad-hero" id="topo-anuncio">
               <div class="ad-hero__feature">
                 <div class="ad-hero__badge-row"></div>
 
@@ -340,7 +341,15 @@
                     <strong>R$ 180,00</strong>
                   </div>
 
-                  <a class="ad-form__submit ad-form__submit--link" href="orcamento.html?service=reforma-residencial-alto-padrao&pro=Studio%20Aquarela&price=180">Solicitar orcamento</a>
+                  <button
+                    class="ad-form__submit ad-form__submit--link"
+                    type="button"
+                    data-budget-open
+                    data-budget-provider="Studio Aquarela"
+                    data-budget-service="reforma residencial de alto padrao"
+                    data-budget-price="180">
+                    Solicitar orcamento
+                  </button>
 
                   <div class="ad-request__trust ad-request__trust--compact">
                     <span>Profissional verificada</span>
@@ -731,7 +740,302 @@
     <div class="mobile-scrim" data-sidebar-scrim></div>
   </div>
 
+  <dialog class="detail-budget-modal" data-budget-modal>
+    <div
+      class="detail-budget-modal__dialog quote-layout quote-layout--single"
+      data-budget-page
+      data-budget-provider="Studio Aquarela"
+      data-budget-service="reforma residencial de alto padrao"
+      data-budget-success-url="index.html?quote=sent">
+      <section class="quote-main">
+        <form class="budget-flow detail-budget-modal__flow" data-budget-form>
+          <div class="detail-budget-modal__topbar">
+            <div class="detail-budget-modal__title">
+              <h1>Orcamento</h1>
+              <p><strong data-budget-provider>Studio Aquarela</strong> <span data-budget-service>Reforma residencial de alto padrao</span></p>
+            </div>
+            <div class="detail-budget-modal__actions">
+              <a class="budget-button budget-button--ghost budget-button--sm" href="#topo-anuncio">Ver anuncio</a>
+              <button class="detail-budget-modal__close" type="button" data-budget-close aria-label="Fechar orcamento">×</button>
+            </div>
+          </div>
+
+          <div class="budget-progress" data-step-indicators>
+            <div class="budget-progress__meta">
+              <strong data-step-progress-label>Passo 1 de 5</strong>
+              <span>Preencha por partes para enviar um pedido mais claro.</span>
+            </div>
+            <div class="budget-progress__bar" aria-hidden="true">
+              <span class="budget-progress__fill" data-step-progress-fill style="width: 20%;"></span>
+            </div>
+            <div class="budget-progress__steps">
+              <button class="budget-progress-step is-active" type="button" data-step-target="0">
+                <span class="budget-progress-step__bullet">1</span>
+                <strong>Pedido</strong>
+              </button>
+              <button class="budget-progress-step" type="button" data-step-target="1">
+                <span class="budget-progress-step__bullet">2</span>
+                <strong>Fotos</strong>
+              </button>
+              <button class="budget-progress-step" type="button" data-step-target="2">
+                <span class="budget-progress-step__bullet">3</span>
+                <strong>Perguntas</strong>
+              </button>
+              <button class="budget-progress-step" type="button" data-step-target="3">
+                <span class="budget-progress-step__bullet">4</span>
+                <strong>Endereco</strong>
+              </button>
+              <button class="budget-progress-step" type="button" data-step-target="4">
+                <span class="budget-progress-step__bullet">5</span>
+                <strong>Prazo</strong>
+              </button>
+            </div>
+          </div>
+
+          <section class="budget-panel is-active" data-step-panel="0">
+            <div class="budget-panel__head">
+              <h2>O que voce precisa?</h2>
+            </div>
+
+            <label class="budget-field budget-field--textarea">
+              <span>Descreva o pedido</span>
+              <textarea name="detalhes" rows="5" maxlength="500" placeholder="Ex: quero reformar sala e cozinha, incluindo pintura, pequenos reparos e revisao de acabamento." data-details-input required></textarea>
+              <small><strong data-details-count>0</strong>/500 caracteres</small>
+            </label>
+
+            <input type="hidden" name="categoria" value="Reforma residencial">
+            <input type="hidden" name="tipo" value="Orcamento para execucao">
+            <input type="hidden" name="escopo" value="Ainda vou definir" data-choice-input>
+            <input type="hidden" name="area" value="">
+          </section>
+
+          <section class="budget-panel" data-step-panel="1" hidden>
+            <div class="budget-panel__head">
+              <h2>Tem imagens de referencia?</h2>
+            </div>
+
+            <label class="budget-upload budget-upload--detail">
+              <input type="file" name="referencias" accept="image/*" multiple>
+              <strong>Anexar fotos de referencia</strong>
+              <span>Opcional - ajuda o profissional a entender melhor o pedido</span>
+            </label>
+            <div class="budget-files" data-files-list hidden></div>
+          </section>
+
+          <section class="budget-panel" data-step-panel="2" hidden>
+            <div class="budget-panel__head">
+              <h2>Perguntas do profissional</h2>
+              <p>Exemplo de perguntas que o profissional pode criar antes de analisar seu pedido.</p>
+            </div>
+
+            <div class="budget-grid budget-grid--2 budget-grid--compact">
+              <label class="budget-field">
+                <span>O ambiente esta vazio ou ocupado?</span>
+                <select name="profissional_ocupacao" data-ui-select required>
+                  <option value="">Selecione</option>
+                  <option>Vazio</option>
+                  <option>Ocupado</option>
+                  <option>Parcialmente ocupado</option>
+                </select>
+              </label>
+              <label class="budget-field">
+                <span>Qual seu objetivo principal com essa reforma?</span>
+                <select name="profissional_objetivo" data-ui-select required>
+                  <option value="">Selecione</option>
+                  <option>Melhorar acabamento</option>
+                  <option>Resolver problemas atuais</option>
+                  <option>Preparar para mudanca</option>
+                  <option>Valorizar o imovel</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="budget-grid budget-grid--2 budget-grid--compact">
+              <label class="budget-field">
+                <span>Existe restricao de horario no local?</span>
+                <select name="profissional_restricao" data-ui-select required>
+                  <option value="">Selecione</option>
+                  <option>Nao</option>
+                  <option>Sim, horario comercial</option>
+                  <option>Sim, apenas dias uteis</option>
+                  <option>Sim, preciso combinar antes</option>
+                </select>
+              </label>
+              <label class="budget-field">
+                <span>Ja existe material comprado?</span>
+                <select name="profissional_materiais" data-ui-select required>
+                  <option value="">Selecione</option>
+                  <option>Sim, quase tudo</option>
+                  <option>Tenho parte dos materiais</option>
+                  <option>Ainda nao comprei</option>
+                  <option>Quero orientacao sobre isso</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section class="budget-panel" data-step-panel="3" hidden>
+            <div class="budget-panel__head">
+              <h2>Onde sera o servico?</h2>
+            </div>
+
+            <input type="hidden" name="endereco_salvo" data-address-required>
+
+            <div class="budget-address-card" data-address-card>
+              <div class="budget-address-card__head">
+                <div>
+                  <strong data-address-title>Nenhum endereco salvo</strong>
+                </div>
+                <button class="budget-button budget-button--primary" type="button" data-open-address-modal>Adicionar endereco</button>
+              </div>
+              <p data-address-summary></p>
+              <div class="budget-address-card__meta" data-address-meta hidden>
+                <span data-address-line></span>
+                <button class="budget-button budget-button--ghost budget-button--sm" type="button" data-open-address-modal>Editar</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="budget-panel" data-step-panel="4" hidden>
+            <div class="budget-panel__head">
+              <h2>Prazo e envio</h2>
+            </div>
+
+            <div class="budget-grid budget-grid--3 budget-grid--compact">
+              <label class="budget-field">
+                <span>Tipo de imovel</span>
+                <select name="imovel" data-ui-select required>
+                  <option value="">Selecione</option>
+                  <option>Casa</option>
+                  <option>Apartamento</option>
+                  <option>Comercial</option>
+                  <option>Outro</option>
+                </select>
+              </label>
+              <label class="budget-field">
+                <span>Urgencia</span>
+                <select name="urgencia" data-ui-select required>
+                  <option value="">Selecione</option>
+                  <option>Hoje</option>
+                  <option>Nos proximos 3 dias</option>
+                  <option>Esta semana</option>
+                  <option>Este mes</option>
+                  <option>Sem pressa</option>
+                </select>
+              </label>
+              <label class="budget-field">
+                <span>Quando pode ser?</span>
+                <select name="turno" data-ui-select required>
+                  <option value="">Selecione</option>
+                  <option>Manha</option>
+                  <option>Tarde</option>
+                  <option>Noite</option>
+                  <option>Dia inteiro</option>
+                  <option>Flexivel</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="budget-grid budget-grid--2 budget-grid--compact">
+              <label class="budget-field">
+                <span>Data desejada</span>
+                <input type="date" name="data">
+              </label>
+            </div>
+
+            <label class="budget-check budget-check--simple">
+              <input type="checkbox" required>
+              <span>Confirmar envio</span>
+            </label>
+          </section>
+
+          <div class="budget-actions">
+            <button class="budget-button budget-button--ghost budget-button--nav" type="button" data-budget-close aria-label="Voltar ao anuncio">
+              <span>Voltar</span>
+            </button>
+            <div class="budget-actions__right">
+              <button class="budget-button budget-button--ghost budget-button--nav" type="button" data-step-prev hidden aria-label="Etapa anterior">
+                <span>Voltar</span>
+              </button>
+              <button class="budget-button budget-button--primary budget-button--nav" type="button" data-step-next aria-label="Proximo">
+                <span>Proximo</span>
+              </button>
+              <button class="budget-button budget-button--success budget-button--nav" type="submit" data-step-submit hidden aria-label="Enviar pedido">
+                <span>Enviar pedido</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </section>
+    </div>
+  </dialog>
+
+  <dialog class="address-modal" data-address-modal>
+    <form class="address-modal__dialog" method="dialog" data-address-form>
+      <div class="address-modal__head">
+        <div>
+          <h2>Adicionar</h2>
+        </div>
+        <button class="address-modal__close" type="button" data-close-address-modal aria-label="Fechar">×</button>
+      </div>
+
+      <div class="budget-grid budget-grid--2 budget-grid--compact">
+        <label class="budget-field">
+          <span>Titulo do endereco</span>
+          <input type="text" name="titulo" placeholder="Ex: Casa, Apartamento, Escritorio" required>
+        </label>
+        <label class="budget-field budget-field--inline-small">
+          <span>Numero</span>
+          <input type="text" name="numero" placeholder="Ex: 120" required>
+        </label>
+      </div>
+
+      <div class="budget-grid budget-grid--2 budget-grid--compact">
+        <label class="budget-field">
+          <span>Rua ou avenida</span>
+          <input type="text" name="rua" placeholder="Ex: Rua das Acacias" required>
+        </label>
+        <label class="budget-field">
+          <span>Bairro</span>
+          <input type="text" name="bairro" placeholder="Ex: Jardins" required>
+        </label>
+      </div>
+
+      <div class="budget-grid budget-grid--3 budget-grid--compact">
+        <label class="budget-field">
+          <span>Cidade</span>
+          <input type="text" name="cidade" value="Sao Paulo" required>
+        </label>
+        <label class="budget-field budget-field--inline-small">
+          <span>UF</span>
+          <input type="text" name="uf" value="SP" maxlength="2" required>
+        </label>
+        <label class="budget-field">
+          <span>Complemento</span>
+          <input type="text" name="complemento" placeholder="Apto, bloco, sala, portaria...">
+        </label>
+      </div>
+
+      <div class="budget-grid budget-grid--2 budget-grid--compact">
+        <label class="budget-field">
+          <span>Ponto de referencia</span>
+          <input type="text" name="referencia" placeholder="Ex: em frente a praca">
+        </label>
+        <label class="budget-check budget-check--boxed">
+          <input type="checkbox" name="padrao" checked>
+          <span>Usar como padrao</span>
+        </label>
+      </div>
+
+      <div class="address-modal__actions">
+        <button class="budget-button budget-button--ghost" type="button" data-close-address-modal>Cancelar</button>
+        <button class="budget-button budget-button--primary" type="submit">Salvar endereco</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="assets/js/core/app.js"></script>
+  <script src="assets/js/pages/orcamento.js"></script>
   <script src="assets/js/pages/detalhe-anuncio.js"></script>
 </body>
 </html>
