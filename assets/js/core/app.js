@@ -3,7 +3,7 @@ const body = document.body;
 const SIDEBAR_STORAGE_KEY = "doke.sidebar.collapsed";
 const THEME_STORAGE_KEY = "doke.theme";
 const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", "mobile-search-active"];
-const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/orcamento.html", "/orcamento-sucesso.html", "/pedidos.html", "/mensagens.html", "/dashboard.html", "/"]);
+const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/orcamento.html", "/orcamento-sucesso.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/dashboard.html", "/"]);
 
 if (window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true") {
   body.classList.add("sidebar-collapsed");
@@ -34,11 +34,13 @@ const updateSidebarActiveState = () => {
   const homeActive = path === "/index.html";
   const ordersActive = path === "/pedidos.html";
   const messagesActive = path === "/mensagens.html";
+  const notificationsActive = path === "/notificacoes.html";
 
   document.querySelectorAll(".sidebar .nav-link").forEach((link) => link.classList.remove("is-active"));
   document.querySelector(".nav-link--home")?.classList.toggle("is-active", homeActive);
   document.querySelector(".nav-link--orders")?.classList.toggle("is-active", ordersActive);
   document.querySelector(".nav-link--messages")?.classList.toggle("is-active", messagesActive);
+  document.querySelector(".nav-link--notifications")?.classList.toggle("is-active", notificationsActive);
 };
 
 const syncAuthUi = () => {
@@ -100,6 +102,10 @@ const closeProfileMenu = () => {
 const closeMobileSearch = () => {
   body.classList.remove("mobile-search-active");
 };
+
+const usesPageSearchOnlyMobile = () =>
+  window.innerWidth <= 767 &&
+  ["/pedidos.html", "/mensagens.html", "/notificacoes.html"].includes(getCurrentPath());
 
 const navigateToSearchResults = (value) => {
   const cleanValue = String(value || "").trim();
@@ -255,12 +261,16 @@ const initializeCurrentView = () => {
   syncAuthUi();
   syncTopbarScrollState();
   syncHeaderLocation();
+  if (usesPageSearchOnlyMobile()) {
+    closeMobileSearch();
+  }
   window.DokeInitHome?.();
   window.DokeInitSearchResults?.();
   window.DokeInitDetailPage?.();
   window.DokeInitBudget?.();
   window.DokeInitOrders?.();
   window.DokeInitMessages?.();
+  window.DokeInitNotifications?.();
   initChipRails();
 };
 
@@ -285,7 +295,6 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
     return;
   }
 
-  body.classList.add('is-shell-swapping');
   syncBodyClassesFromDocument(nextDoc);
   await syncStylesFromDocument(nextDoc);
   await ensureScriptsFromDocument(nextDoc);
@@ -308,7 +317,6 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
   }
 
   initializeCurrentView();
-  requestAnimationFrame(() => body.classList.remove('is-shell-swapping'));
 };
 
 window.DokeNavigate = async (href, options) => {
@@ -454,6 +462,10 @@ document.addEventListener("click", (event) => {
   }
 
   if (event.target.closest("[data-mobile-search-open]")) {
+    if (usesPageSearchOnlyMobile()) {
+      closeMobileSearch();
+      return;
+    }
     body.classList.remove("sidebar-open");
     body.classList.add("mobile-search-active");
     window.setTimeout(() => {

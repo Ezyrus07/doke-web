@@ -131,51 +131,55 @@
         <div class="page__content-inner container shell-home__workspace shell-home__workspace--clean orders-shell-content">
           
 <section class="orders-page">
-  <section class="orders-page-header" aria-label="Cabeçalho de pedidos">
-    <div class="hero-strip">
-      <div class="hero-strip__top">
-        <div class="hero-strip__title">
-          <h2>Pedidos</h2>
-          <p class="hero-strip__meta"><span data-orders-stat="all">0</span> ativos · <span data-orders-stat="pending">0</span> aguardando resposta · <span data-orders-stat="conversation">0</span> em conversa · <span data-orders-stat="completed">0</span> concluído</p>
-        </div>
+  <section class="orders-page-header orders-page-header--messages" aria-label="Cabeçalho de pedidos">
+    <form class="messages-search orders-header-search orders-page-header__search" aria-label="Buscar pedidos">
+      <button class="orders-header-search__icon" type="submit" aria-label="Pesquisar pedido">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg>
+      </button>
+      <input type="search" placeholder="Buscar">
+    </form>
+
+    <div class="messages-block__header orders-page-header__bar">
+      <div class="orders-page-header__heading">
+        <h2>Pedidos</h2>
+        <span class="messages-block__count orders-page-header__count" data-orders-stat="all">0</span>
+      </div>
+      <div class="orders-page-header__actions">
+        <button class="button orders-filter-button" type="button" data-orders-filter-toggle aria-expanded="false" aria-controls="orders-filters-row">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"></path><path d="M7 12h10"></path><path d="M10 18h4"></path></svg>
+          <span>Filtros</span>
+        </button>
+        <button class="button-icon orders-header-select" type="button" data-orders-select-toggle aria-label="Selecionar pedidos">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11.5 11 13.5 15.5 9"></path><rect x="4.5" y="4.5" width="15" height="15" rx="3"></rect></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="orders-page-header__stats" hidden aria-hidden="true">
+      <span data-orders-stat="pending">0</span>
+      <span data-orders-stat="conversation">0</span>
+      <span data-orders-stat="completed">0</span>
+    </div>
+
+    <div class="orders-page-header__controls">
+      <div class="filters-row orders-filters-popover" id="orders-filters-row" data-orders-filters-popover hidden>
+        <button class="filter-chip orders-filter-item is-active" type="button" data-filter="all">Todos (0)</button>
+        <button class="filter-chip orders-filter-item" type="button" data-filter="pending">Aguardando resposta (0)</button>
+        <button class="filter-chip orders-filter-item" type="button" data-filter="conversation">Em conversa (0)</button>
+        <button class="filter-chip orders-filter-item" type="button" data-filter="responded">Respondidos (0)</button>
+        <button class="filter-chip orders-filter-item" type="button" data-filter="completed">Concluídos (0)</button>
+        <button class="filter-chip orders-filter-item" type="button" data-filter="cancelled">Cancelados (0)</button>
       </div>
 
-      <div class="hero-strip__toolbar">
-        <div class="toolbar" aria-label="Ferramentas de pedidos">
-          <form class="search orders-header-search" aria-label="Buscar pedidos">
-            <button class="orders-header-search__icon" type="submit" aria-label="Pesquisar pedido">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg>
-            </button>
-            <input type="search" placeholder="Buscar pedido">
-          </form>
-          <button class="button orders-filter-button" type="button" data-orders-filter-toggle aria-expanded="false" aria-controls="orders-filters-row">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"></path><path d="M7 12h10"></path><path d="M10 18h4"></path></svg>
-            <span>Filtros</span>
-          </button>
-          <button class="button-icon orders-header-select" type="button" data-orders-select-toggle aria-label="Selecionar pedidos">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11.5 11 13.5 15.5 9"></path><rect x="4.5" y="4.5" width="15" height="15" rx="3"></rect></svg>
-          </button>
-        </div>
-
-        <div class="filters-row orders-filters-popover" id="orders-filters-row" data-orders-filters-popover hidden>
-          <button class="filter-chip orders-filter-item is-active" type="button" data-filter="all">Todos (0)</button>
-          <button class="filter-chip orders-filter-item" type="button" data-filter="pending">Aguardando resposta (0)</button>
-          <button class="filter-chip orders-filter-item" type="button" data-filter="conversation">Em conversa (0)</button>
-          <button class="filter-chip orders-filter-item" type="button" data-filter="responded">Respondidos (0)</button>
-          <button class="filter-chip orders-filter-item" type="button" data-filter="completed">Concluídos (0)</button>
-          <button class="filter-chip orders-filter-item" type="button" data-filter="cancelled">Cancelados (0)</button>
-        </div>
-
-        <div class="orders-filter-status-stack">
-          <div class="orders-active-filter-row">
-            <span class="orders-active-filter-chip" data-orders-active-chip hidden>Todos (0)</span>
-            <div class="orders-select-panel" data-orders-select-panel hidden>
-              <button class="orders-select-option" type="button" data-orders-select-mode="single">Selecionar</button>
-              <button class="orders-select-option" type="button" data-orders-select-mode="all">Selecionar todos</button>
-              <button class="orders-select-option orders-select-option--danger" type="button" data-orders-delete-selected>Excluir selecionados</button>
-            </div>
-            <button class="orders-active-filter-clear" type="button" data-orders-clear-filter hidden>Limpar filtro</button>
+      <div class="orders-filter-status-stack">
+        <div class="orders-active-filter-row">
+          <span class="orders-active-filter-chip" data-orders-active-chip hidden>Todos (0)</span>
+          <div class="orders-select-panel" data-orders-select-panel hidden>
+            <button class="orders-select-option" type="button" data-orders-select-mode="single">Selecionar</button>
+            <button class="orders-select-option" type="button" data-orders-select-mode="all">Selecionar todos</button>
+            <button class="orders-select-option orders-select-option--danger" type="button" data-orders-delete-selected>Excluir selecionados</button>
           </div>
+          <button class="orders-active-filter-clear" type="button" data-orders-clear-filter hidden>Limpar filtro</button>
         </div>
       </div>
     </div>
