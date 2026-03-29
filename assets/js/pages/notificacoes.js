@@ -9,7 +9,11 @@
     const cards = [...root.querySelectorAll('.notification-card')];
     const empty = root.querySelector('[data-notifications-empty]');
     const countNode = document.querySelector('[data-notifications-unread-count]');
+    const pageTitle = root.querySelector('.notifications-page-header__heading h2');
     const searchInput = root.querySelector('[data-notifications-search]');
+    const searchForm = searchInput?.closest('form');
+    const searchTrigger = searchForm?.querySelector('.orders-header-search__icon');
+    const searchClose = searchForm?.querySelector('.orders-header-search__close');
     const filtersToggle = root.querySelector('[data-notifications-filters-toggle]');
     const filtersPanel = root.querySelector('[data-notifications-filters-panel]');
     const selectToggle = root.querySelector('[data-notifications-select-toggle]');
@@ -45,6 +49,14 @@
     let currentFilter = 'all';
     let currentTimeFilter = 'all';
     let selectionEnabled = false;
+    const mobileSearchQuery = window.matchMedia('(max-width: 640px)');
+
+    if (pageTitle) pageTitle.textContent = 'Notificações';
+
+    const setSearchExpanded = (expanded) => {
+      if (!mobileSearchQuery.matches) return;
+      root.classList.toggle('is-search-open', expanded);
+    };
 
     const selectedCards = () => cards.filter((card) => card.classList.contains('is-selected') && card.dataset.dismissed !== 'true');
 
@@ -251,8 +263,35 @@
     });
 
     searchInput?.addEventListener('input', () => applyFilter(currentFilter));
-    searchInput?.closest('form')?.addEventListener('submit', (event) => {
+    searchForm?.addEventListener('submit', (event) => {
       event.preventDefault();
+      if (mobileSearchQuery.matches && !root.classList.contains('is-search-open')) {
+        setSearchExpanded(true);
+        searchInput?.focus();
+        return;
+      }
+      applyFilter(currentFilter, currentTimeFilter);
+    });
+
+    searchTrigger?.addEventListener('click', (event) => {
+      if (!mobileSearchQuery.matches) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (!root.classList.contains('is-search-open')) setSearchExpanded(true);
+      window.setTimeout(() => searchInput?.focus(), 0);
+    });
+
+    searchInput?.addEventListener('focus', () => {
+      if (mobileSearchQuery.matches) setSearchExpanded(true);
+    });
+
+    searchClose?.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!mobileSearchQuery.matches) return;
+      if (searchInput) searchInput.value = '';
+      setSearchExpanded(false);
+      searchInput?.blur();
       applyFilter(currentFilter, currentTimeFilter);
     });
 
@@ -315,6 +354,11 @@
       const target = event.target;
       if (!(target instanceof Element)) return;
 
+      if (mobileSearchQuery.matches && root.classList.contains('is-search-open')) {
+        const clickedInsideSearch = target.closest('.notifications-page-header__search');
+        if (!clickedInsideSearch && !(searchInput?.value || '').trim()) setSearchExpanded(false);
+      }
+
       if (settingsPanel && !settingsPanel.hidden) {
         const clickedInsideSettings = target.closest('[data-notifications-settings-panel]');
         const clickedSettingsToggle = target.closest('[data-notifications-settings-toggle]');
@@ -336,6 +380,7 @@
 
     document.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape') return;
+      setSearchExpanded(false);
       closeSettingsPanel();
       closeFiltersPanel();
       closeSelectPanel();

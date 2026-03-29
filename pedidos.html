@@ -132,18 +132,20 @@
           
 <section class="orders-page">
   <section class="orders-page-header orders-page-header--messages" aria-label="Cabeçalho de pedidos">
-    <form class="messages-search orders-header-search orders-page-header__search" aria-label="Buscar pedidos">
-      <button class="orders-header-search__icon" type="submit" aria-label="Pesquisar pedido">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg>
-      </button>
-      <input type="search" placeholder="Buscar">
-    </form>
-
     <div class="messages-block__header orders-page-header__bar">
       <div class="orders-page-header__heading">
         <h2>Pedidos</h2>
         <span class="messages-block__count orders-page-header__count" data-orders-stat="all">0</span>
       </div>
+      <form class="messages-search orders-header-search orders-page-header__search" aria-label="Buscar pedidos">
+        <button class="orders-header-search__icon" type="submit" aria-label="Pesquisar pedido">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg>
+        </button>
+        <input type="search" placeholder="Buscar pedido, profissional ou bairro">
+        <button class="orders-header-search__close" type="button" aria-label="Fechar busca">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
+        </button>
+      </form>
       <div class="orders-page-header__actions">
         <button class="button orders-filter-button" type="button" data-orders-filter-toggle aria-expanded="false" aria-controls="orders-filters-row">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"></path><path d="M7 12h10"></path><path d="M10 18h4"></path></svg>
@@ -186,7 +188,7 @@
   </section>
 
   <section class="orders-list" aria-label="Lista de pedidos">
-    <article class="order-card" data-id="painting" data-status="pending" tabindex="0">
+    <article class="order-card" data-id="painting" data-status="pending" data-detail-status="Aguardando resposta" data-detail-address="Avenida Paulista, São Paulo - SP" data-detail-scope="Pintura interna de sala e corredor com pequenos reparos" data-detail-timeline="Execução prevista em até 7 dias após aprovação" data-detail-materials="Tintas premium, proteção de piso e acabamento inclusos" data-detail-budget="Faixa estimada de R$ 3.200 a R$ 4.100" data-detail-payment="Entrada de 30% e restante na conclusão" data-detail-flow="Aguardando retorno do profissional para validar prazo e fechar a proposta" tabindex="0">
       <button class="order-card__select" type="button" aria-label="Selecionar pedido"><span></span></button>
       <div class="order-card__top">
         <div class="order-card__statusline">
@@ -232,7 +234,7 @@
       </button>
     </article>
 
-    <article class="order-card" data-id="living-room" data-status="conversation" tabindex="0">
+    <article class="order-card" data-id="living-room" data-status="conversation" data-detail-status="Em conversa" data-detail-address="Rio Vermelho, Salvador - BA" data-detail-scope="Reforma de sala com ajustes pontuais em gesso, pintura e iluminação" data-detail-timeline="Próxima etapa prevista até amanhã" data-detail-materials="Materiais principais a confirmar com o profissional" data-detail-budget="Faixa estimada de R$ 5.800 a R$ 7.200" data-detail-payment="Parcelamento em 2 etapas durante a execução" data-detail-flow="Negociação em andamento com ajustes finos antes da aprovação final" tabindex="0">
       <button class="order-card__select" type="button" aria-label="Selecionar pedido"><span></span></button>
       <div class="order-card__top">
         <div class="order-card__statusline">
@@ -278,7 +280,7 @@
       </button>
     </article>
 
-    <article class="order-card" data-id="electrical" data-status="completed" tabindex="0">
+    <article class="order-card" data-id="electrical" data-status="completed" data-detail-status="Concluído" data-detail-address="Pituba, Salvador - BA" data-detail-scope="Instalação elétrica finalizada com revisão de pontos e testes" data-detail-timeline="Execução concluída e aguardando avaliação final" data-detail-materials="Materiais aplicados e revisados conforme proposta aprovada" data-detail-budget="Valor final de R$ 2.480" data-detail-payment="Pagamento concluído" data-detail-flow="Serviço encerrado; próximo passo é liberar avaliação ou acionar garantia" tabindex="0">
       <button class="order-card__select" type="button" aria-label="Selecionar pedido"><span></span></button>
       <div class="order-card__top">
         <div class="order-card__statusline">
@@ -339,30 +341,57 @@
 
   <div class="orders-panel-scrim" data-orders-panel-close hidden></div>
 
-  <aside class="orders-sidepanel" data-orders-panel="details" hidden aria-label="Detalhes do pedido">
+  <aside class="orders-sidepanel orders-sidepanel--details" data-orders-panel="details" hidden aria-label="Detalhes do pedido">
     <div class="orders-sidepanel__header">
       <div>
         <p class="orders-sidepanel__eyebrow">Pedido selecionado</p>
-        <h2>Detalhes do pedido</h2>
+        <h2>Resumo do pedido</h2>
       </div>
       <button class="orders-sidepanel__close" type="button" data-orders-panel-close aria-label="Fechar painel">×</button>
     </div>
-    <div class="orders-sidepanel__body">
-      <div class="orders-sidepanel__section">
-        <h3>Título</h3>
-        <p data-orders-detail-title>Orçamento para pintura</p>
-      </div>
-      <div class="orders-sidepanel__section">
-        <h3>Profissional</h3>
-        <p data-orders-detail-pro>Studio Aquarela</p>
-      </div>
-      <div class="orders-sidepanel__section">
-        <h3>Resumo</h3>
+    <div class="orders-sidepanel__body orders-sidepanel__body--details">
+      <section class="orders-detail-summary">
+        <div class="orders-detail-summary__meta">
+          <span class="orders-detail-summary__status" data-orders-detail-status>Aguardando resposta</span>
+          <span class="orders-detail-summary__next" data-orders-detail-next>Responder até 22/04</span>
+        </div>
+        <h3 data-orders-detail-title>Orçamento para pintura</h3>
         <p data-orders-detail-summary>Pedido em acompanhamento, aguardando próxima resposta.</p>
-      </div>
-      <div class="orders-sidepanel__section">
-        <h3>Próximo passo</h3>
-        <p data-orders-detail-next>Responder até 22/04</p>
+      </section>
+
+      <div class="orders-detail-grid">
+        <div class="orders-sidepanel__section">
+          <h3>Profissional</h3>
+          <p data-orders-detail-pro>Studio Aquarela</p>
+        </div>
+        <div class="orders-sidepanel__section">
+          <h3>Endereço</h3>
+          <p data-orders-detail-address>Avenida Paulista, São Paulo - SP</p>
+        </div>
+        <div class="orders-sidepanel__section">
+          <h3>Escopo</h3>
+          <p data-orders-detail-scope>Pintura interna de sala e corredor com pequenos reparos.</p>
+        </div>
+        <div class="orders-sidepanel__section">
+          <h3>Prazo</h3>
+          <p data-orders-detail-timeline>Execução prevista em até 7 dias após aprovação.</p>
+        </div>
+        <div class="orders-sidepanel__section">
+          <h3>Materiais</h3>
+          <p data-orders-detail-materials>Tintas premium, proteção de piso e acabamento inclusos.</p>
+        </div>
+        <div class="orders-sidepanel__section">
+          <h3>Faixa de orçamento</h3>
+          <p data-orders-detail-budget>Faixa estimada de R$ 3.200 a R$ 4.100.</p>
+        </div>
+        <div class="orders-sidepanel__section">
+          <h3>Pagamento</h3>
+          <p data-orders-detail-payment>Entrada de 30% e restante na conclusão.</p>
+        </div>
+        <div class="orders-sidepanel__section">
+          <h3>Status do fluxo</h3>
+          <p data-orders-detail-flow>Aguardando retorno do profissional para seguir com aprovação.</p>
+        </div>
       </div>
     </div>
   </aside>

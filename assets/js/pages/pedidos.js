@@ -7,6 +7,9 @@
     const filterButtons = Array.from(root.querySelectorAll('.orders-filter-item[data-filter]'));
     const cards = Array.from(root.querySelectorAll('.order-card[data-status]'));
     const searchInput = root.querySelector('.orders-header-search input');
+    const searchForm = searchInput?.closest('form');
+    const searchTrigger = searchForm?.querySelector('.orders-header-search__icon');
+    const searchClose = searchForm?.querySelector('.orders-header-search__close');
     const filterToggle = root.querySelector('[data-orders-filter-toggle]');
     const popover = root.querySelector('[data-orders-filters-popover]');
     const activeChip = root.querySelector('[data-orders-active-chip]');
@@ -26,8 +29,16 @@
     const panelScrim = root.querySelector('.orders-panel-scrim');
     const sidePanels = Array.from(root.querySelectorAll('.orders-sidepanel'));
     const detailTitle = root.querySelector('[data-orders-detail-title]');
+    const detailStatus = root.querySelector('[data-orders-detail-status]');
     const detailPro = root.querySelector('[data-orders-detail-pro]');
+    const detailAddress = root.querySelector('[data-orders-detail-address]');
     const detailSummary = root.querySelector('[data-orders-detail-summary]');
+    const detailScope = root.querySelector('[data-orders-detail-scope]');
+    const detailTimeline = root.querySelector('[data-orders-detail-timeline]');
+    const detailMaterials = root.querySelector('[data-orders-detail-materials]');
+    const detailBudget = root.querySelector('[data-orders-detail-budget]');
+    const detailPayment = root.querySelector('[data-orders-detail-payment]');
+    const detailFlow = root.querySelector('[data-orders-detail-flow]');
     const detailNext = root.querySelector('[data-orders-detail-next]');
 
     const labels = {
@@ -118,10 +129,25 @@
 
       if (card && type === 'details') {
         if (detailTitle) detailTitle.textContent = card.querySelector('h2')?.textContent || 'Pedido';
+        if (detailStatus) detailStatus.textContent = card.dataset.detailStatus || card.querySelector('.order-card__status-text')?.textContent || 'Status indisponível';
         if (detailPro) detailPro.textContent = card.querySelector('.order-card__subtitle strong')?.textContent || 'Profissional';
+        if (detailAddress) detailAddress.textContent = card.dataset.detailAddress || card.querySelector('.order-card__location')?.textContent || 'Endereço indisponível';
         if (detailSummary) detailSummary.textContent = card.querySelector('.order-card__subtitle')?.textContent || '';
+        if (detailScope) detailScope.textContent = card.dataset.detailScope || 'Escopo não informado';
+        if (detailTimeline) detailTimeline.textContent = card.dataset.detailTimeline || card.querySelector('.order-card__meta span:last-child')?.textContent || 'Prazo não informado';
+        if (detailMaterials) detailMaterials.textContent = card.dataset.detailMaterials || 'Materiais não informados';
+        if (detailBudget) detailBudget.textContent = card.dataset.detailBudget || 'Faixa de orçamento não informada';
+        if (detailPayment) detailPayment.textContent = card.dataset.detailPayment || 'Pagamento não informado';
+        if (detailFlow) detailFlow.textContent = card.dataset.detailFlow || card.querySelector('.order-card__deadline span:last-child')?.textContent || 'Próximo passo não informado';
         if (detailNext) detailNext.textContent = card.querySelector('.order-card__deadline span:last-child')?.textContent || '';
       }
+    };
+
+    const mobileSearchQuery = window.matchMedia('(max-width: 640px)');
+
+    const setSearchExpanded = (expanded) => {
+      if (!mobileSearchQuery.matches) return;
+      root.classList.toggle('is-search-open', expanded);
     };
 
     const closePanels = () => {
@@ -149,8 +175,16 @@
     });
 
     document.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      if (mobileSearchQuery.matches && root.classList.contains('is-search-open')) {
+        const clickedInsideSearch = target.closest('.orders-page-header__search');
+        if (!clickedInsideSearch && !(searchInput?.value || '').trim()) setSearchExpanded(false);
+      }
+
       if (!popover || popover.hidden) return;
-      if (popover.contains(event.target) || filterToggle?.contains(event.target)) return;
+      if (popover.contains(target) || filterToggle?.contains(target)) return;
       closePopover();
     });
 
@@ -167,6 +201,37 @@
     });
 
     searchInput?.addEventListener('input', applyFilters);
+    searchForm?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (mobileSearchQuery.matches && !root.classList.contains('is-search-open')) {
+        setSearchExpanded(true);
+        searchInput?.focus();
+        return;
+      }
+      applyFilters();
+    });
+
+    searchTrigger?.addEventListener('click', (event) => {
+      if (!mobileSearchQuery.matches) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (!root.classList.contains('is-search-open')) setSearchExpanded(true);
+      window.setTimeout(() => searchInput?.focus(), 0);
+    });
+
+    searchInput?.addEventListener('focus', () => {
+      if (mobileSearchQuery.matches) setSearchExpanded(true);
+    });
+
+    searchClose?.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!mobileSearchQuery.matches) return;
+      if (searchInput) searchInput.value = '';
+      setSearchExpanded(false);
+      searchInput?.blur();
+      applyFilters();
+    });
 
     let selecting = false;
     const cardSelectButtons = Array.from(root.querySelectorAll('.order-card__select'));
