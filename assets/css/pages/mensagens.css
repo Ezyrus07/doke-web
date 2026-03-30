@@ -22,6 +22,7 @@
 
 .messages-app {
   min-height: calc(100dvh - var(--header-height) - 46px);
+  height: calc(100dvh - var(--header-height) - 46px);
   display: grid;
   grid-template-columns: minmax(290px, 360px) minmax(0, 1fr);
   gap: 16px;
@@ -34,6 +35,7 @@
 
 .messages-sidebar,
 .messages-thread {
+  min-height: 0;
   min-height: 100%;
   border-radius: 24px;
   border: 1px solid rgba(199, 212, 226, 0.94);
@@ -42,6 +44,7 @@
 }
 
 .messages-sidebar {
+  min-height: 0;
   padding: 14px;
   display: grid;
   gap: 14px;
@@ -87,6 +90,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.messages-thread__action--charge {
+  background: rgba(227, 244, 239, 0.98);
+  color: #1f7c68;
 }
 
 .messages-search__icon {
@@ -297,6 +305,140 @@
   place-items: center;
 }
 
+.charge-modal {
+  width: min(92vw, 420px);
+  max-width: 420px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.charge-modal::backdrop {
+  background: rgba(10, 18, 30, 0.42);
+  backdrop-filter: blur(6px);
+}
+
+.charge-modal__surface {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(205, 214, 224, 0.92);
+  background: rgba(255, 255, 255, 0.99);
+  box-shadow: 0 24px 54px rgba(18, 40, 68, 0.16);
+}
+
+.charge-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.charge-modal__header strong {
+  color: #173a67;
+  font-size: 1.08rem;
+}
+
+.charge-modal__header p {
+  margin: 4px 0 0;
+  color: #6f88a7;
+  font-size: 0.9rem;
+}
+
+.charge-modal__close {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(239, 245, 252, 0.98);
+  color: #355d88;
+  font: inherit;
+  font-size: 1.2rem;
+  display: grid;
+  place-items: center;
+}
+
+.charge-modal__field {
+  display: grid;
+  gap: 8px;
+}
+
+.charge-modal__field span {
+  color: #6a84a4;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.charge-modal__money-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 0 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(197, 211, 225, 0.96);
+  background: #fff;
+}
+
+.charge-modal__money-field span {
+  color: #245487;
+  font-size: 1.18rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: none;
+}
+
+.charge-modal__money-field input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #173a67;
+  font: inherit;
+  font-size: 1.18rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.charge-modal__field select {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(197, 211, 225, 0.96);
+  background: #fff;
+  color: #173a67;
+  font: inherit;
+  font-weight: 600;
+}
+
+.charge-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.charge-modal__button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #3a79ba 0%, #245487 100%);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+}
+
+.charge-modal__button--ghost {
+  border: 1px solid rgba(197, 211, 225, 0.96);
+  background: #fff;
+  color: #355d88;
+}
+
 .messages-empty__card {
   display: grid;
   gap: 10px;
@@ -340,8 +482,8 @@
 
 .messages-thread {
   min-width: 0;
-  min-height: 100%;
-  height: calc(100dvh - var(--header-height) - 52px);
+  min-height: 0;
+  height: 100%;
   padding: 14px;
   display: grid;
   grid-template-rows: auto 1fr auto;
@@ -658,6 +800,106 @@
   line-height: 1.42;
 }
 
+.message-bubble__charge {
+  width: min(320px, 100%);
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f9fe 100%);
+  border: 1px solid rgba(191, 210, 232, 0.96);
+  box-shadow: 0 12px 28px rgba(36, 84, 135, 0.08);
+}
+
+.message-bubble__charge-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.message-bubble__charge-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(44, 116, 193, 0.12);
+  color: #255689;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.message-bubble__charge-value {
+  color: #163d6b;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.message-bubble__charge-text {
+  color: #5f7ca1;
+  font-size: 0.88rem;
+  line-height: 1.42;
+}
+
+.message-bubble__charge-text + .message-bubble__charge-text {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(34, 79, 130, 0.08);
+  color: #355d88;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.message-bubble__charge-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.message-bubble__charge-status {
+  color: #4f6f93;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.message-bubble__charge-pay {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #3a79ba 0%, #245487 100%);
+  color: #fff;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  box-shadow: 0 10px 22px rgba(36, 84, 135, 0.2);
+}
+
+.message-bubble__charge-pay.is-paid {
+  background: rgba(227, 244, 239, 0.98);
+  color: #1f7c68;
+  box-shadow: none;
+}
+
+.message-bubble__charge-pay.is-complete {
+  background: linear-gradient(180deg, #34a27a 0%, #238866 100%);
+  color: #fff;
+}
+
+.message-bubble__charge-pay.is-done {
+  background: rgba(239, 245, 252, 0.98);
+  color: #245487;
+  box-shadow: none;
+}
+
 .message-bubble.is-context-target {
   box-shadow: 0 0 0 2px rgba(63, 125, 198, 0.18);
 }
@@ -958,10 +1200,11 @@
   .messages-app {
     grid-template-columns: minmax(270px, 330px) minmax(0, 1fr);
     min-height: calc(100dvh - var(--header-height) - 42px);
+    height: calc(100dvh - var(--header-height) - 42px);
   }
 
   .messages-thread {
-    height: calc(100dvh - var(--header-height) - 64px);
+    height: 100%;
   }
 
   .messages-thread__actions {
@@ -1026,6 +1269,7 @@
 
   body.messages-page-shell .messages-app {
     min-height: calc(100dvh - var(--header-height)) !important;
+    height: calc(100dvh - var(--header-height)) !important;
     width: 100% !important;
     grid-template-columns: minmax(0, 1fr);
     padding: 0 !important;
@@ -1258,5 +1502,17 @@
   .message-bubble p {
     font-size: 0.92rem;
     line-height: 1.45;
+  }
+
+  .message-bubble__charge {
+    width: 100%;
+  }
+
+  .message-bubble__charge-value {
+    font-size: 1.18rem;
+  }
+
+  .message-bubble__charge-text {
+    font-size: 0.82rem;
   }
 }

@@ -82,6 +82,7 @@
     const composer = root.querySelector("[data-messages-composer]");
     const composerInput = root.querySelector("[data-messages-composer-input]");
     const backButton = root.querySelector("[data-messages-back]");
+    const chargeButton = root.querySelector("[data-messages-charge]");
     const imageInput = root.querySelector("[data-messages-image-input]");
     const emojiButton = root.querySelector("[data-messages-emoji]");
     const audioButton = root.querySelector("[data-messages-audio]");
@@ -105,6 +106,11 @@
     const lightbox = document.querySelector("[data-image-lightbox]");
     const lightboxImage = document.querySelector("[data-image-lightbox-image]");
     const lightboxClose = document.querySelector("[data-image-lightbox-close]");
+    const chargeModal = document.querySelector("[data-charge-modal]");
+    const chargeForm = document.querySelector("[data-charge-form]");
+    const chargeAmountInput = document.querySelector("[data-charge-amount]");
+    const chargeInstallments = document.querySelector("[data-charge-installments]");
+    const chargeCancelButtons = document.querySelectorAll("[data-charge-cancel]");
 
     let contextMessageIndex = -1;
     let longPressTimer = null;
@@ -116,8 +122,55 @@
     let audioDraftTimer = null;
     let imageDraftSrc = "";
 
-    let activeId = "painting";
+    const pageParams = new URLSearchParams(window.location.search);
+    let activeId = pageParams.get("conversation") && conversations[pageParams.get("conversation")] ? pageParams.get("conversation") : "painting";
     const normalize = (value) => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const getLatestChargeMessage = (conversationId) => {
+      const messages = conversations[conversationId]?.messages || [];
+      for (let index = messages.length - 1; index >= 0; index -= 1) {
+        if (messages[index]?.type === "charge") return messages[index];
+      }
+      return null;
+    };
+    const syncPaymentFlowFromQuery = () => {
+      const conversationId = pageParams.get("conversation");
+      if (!conversationId || !conversations[conversationId]) return;
+      const charge = getLatestChargeMessage(conversationId);
+      if (!charge) return;
+
+      if (pageParams.get("payment") === "success") {
+        charge.paid = true;
+      }
+
+      if (pageParams.get("completed") === "1") {
+        charge.paid = true;
+        charge.completed = true;
+      }
+
+      if (pageParams.get("review") === "1") {
+        charge.paid = true;
+        charge.completed = true;
+        charge.reviewed = true;
+      }
+    };
+    const openPaymentPage = (message) => {
+      const query = new URLSearchParams({
+        amount: message.amount || "R$ 0,00",
+        installments: message.installments || "À vista",
+        professional: conversations[activeId]?.name || "Profissional",
+        description: message.text || "Cobrança enviada na conversa.",
+        avatar: conversations[activeId]?.avatar || "",
+        title: `Cobrança de ${conversations[activeId]?.name || "profissional"}`,
+        conversation: activeId
+      });
+
+      const nextUrl = `pagamento.html?${query.toString()}`;
+      if (window.DokeNavigate) {
+        window.DokeNavigate(nextUrl);
+      } else {
+        window.location.href = nextUrl;
+      }
+    };
 
     const syncCounts = () => {
       const entries = Object.values(conversations);
@@ -131,6 +184,7 @@
       if (!message) return "";
       if (message.type === "audio") return "Audio enviado";
       if (message.type === "image") return "Imagem enviada";
+      if (message.type === "charge") return `Cobrança ${message.amount}`;
       return String(message.text || "");
     };
 
@@ -217,6 +271,42 @@
           </div>
         </article>
       `).join("");
+      conversation.messages.forEach((message, index) => {
+        if (message.type !== "charge") return;
+        const bubble = threadBody.querySelector(`.message-bubble[data-message-index="${index}"]`);
+        if (!bubble) return;
+        const paragraph = bubble.querySelector("p");
+        if (paragraph) paragraph.remove();
+        const chargeCard = document.createElement("div");
+        chargeCard.className = "message-bubble__charge";
+        const chargeStatus = message.reviewed
+          ? "Atendimento avaliado"
+          : message.completed
+            ? "Aguardando avaliação"
+            : message.paid
+              ? "Pagamento confirmado"
+              : "Aguardando pagamento";
+        const chargeAction = message.reviewed
+          ? ""
+          : message.completed
+            ? `<button class="message-bubble__charge-pay is-done" type="button" data-message-review>Avaliar</button>`
+            : message.paid
+              ? `<button class="message-bubble__charge-pay is-complete" type="button" data-message-complete>Finalizar pedido</button>`
+              : `<button class="message-bubble__charge-pay" type="button" data-message-pay>Pagar</button>`;
+        chargeCard.innerHTML = `
+          <div class="message-bubble__charge-head">
+            <span class="message-bubble__charge-label">Cobrança</span>
+            <strong class="message-bubble__charge-value">${message.amount}</strong>
+          </div>
+          <div class="message-bubble__charge-text">${message.text}</div>
+          <div class="message-bubble__charge-text">${message.installments || "À vista"}</div>
+          <div class="message-bubble__charge-actions">
+            <span class="message-bubble__charge-status">${chargeStatus}</span>
+            ${chargeAction}
+          </div>
+        `;
+        bubble.appendChild(chargeCard);
+      });
       syncSelectionBar();
       refreshConversationCards();
       if (window.innerWidth <= 767) {
@@ -332,6 +422,26 @@
       }
     };
 
+    const openChargeModal = () => {
+      if (!chargeModal) return;
+      if (typeof chargeModal.showModal === "function") {
+        if (!chargeModal.open) chargeModal.showModal();
+      } else {
+        chargeModal.setAttribute("open", "");
+      }
+      chargeAmountInput?.focus();
+      chargeAmountInput?.select();
+    };
+
+    const closeChargeModal = () => {
+      if (!chargeModal) return;
+      if (typeof chargeModal.close === "function" && chargeModal.open) {
+        chargeModal.close();
+      } else {
+        chargeModal.removeAttribute("open");
+      }
+    };
+
     const syncVisibility = () => {
       const query = normalize(searchInput?.value);
       let visibleCount = 0;
@@ -380,6 +490,62 @@
         if (!currentMessage || currentMessage.type !== "audio") return;
         currentMessage.speed = currentMessage.speed === "1x" ? "1.5x" : currentMessage.speed === "1.5x" ? "2x" : "1x";
         speedButton.textContent = currentMessage.speed;
+        return;
+      }
+
+      const payButton = event.target.closest("[data-message-pay]");
+      if (payButton) {
+        event.preventDefault();
+        const index = Number(bubble?.dataset.messageIndex || -1);
+        const currentMessage = conversations[activeId]?.messages?.[index];
+        if (!currentMessage || currentMessage.type !== "charge") return;
+        openPaymentPage(currentMessage);
+        return;
+      }
+
+      const completeButton = event.target.closest("[data-message-complete]");
+      if (completeButton) {
+        event.preventDefault();
+        const index = Number(bubble?.dataset.messageIndex || -1);
+        const currentMessage = conversations[activeId]?.messages?.[index];
+        if (!currentMessage || currentMessage.type !== "charge") return;
+        const query = new URLSearchParams({
+          conversation: activeId,
+          professional: conversations[activeId]?.name || "Profissional",
+          amount: currentMessage.amount || "R$ 0,00",
+          installments: currentMessage.installments || "À vista",
+          description: currentMessage.text || "Finalize o pedido para liberar o atendimento.",
+          avatar: conversations[activeId]?.avatar || "",
+          title: `Finalizar pedido com ${conversations[activeId]?.name || "profissional"}`
+        });
+        const nextUrl = `finalizar-pedido.html?${query.toString()}`;
+        if (window.DokeNavigate) {
+          window.DokeNavigate(nextUrl);
+        } else {
+          window.location.href = nextUrl;
+        }
+        return;
+      }
+
+      const reviewButton = event.target.closest("[data-message-review]");
+      if (reviewButton) {
+        event.preventDefault();
+        const index = Number(bubble?.dataset.messageIndex || -1);
+        const currentMessage = conversations[activeId]?.messages?.[index];
+        if (!currentMessage || currentMessage.type !== "charge") return;
+        const query = new URLSearchParams({
+          conversation: activeId,
+          professional: conversations[activeId]?.name || "Profissional",
+          amount: currentMessage.amount || "R$ 0,00",
+          avatar: conversations[activeId]?.avatar || "",
+          title: `Avaliar ${conversations[activeId]?.name || "profissional"}`
+        });
+        const nextUrl = `avaliacao.html?${query.toString()}`;
+        if (window.DokeNavigate) {
+          window.DokeNavigate(nextUrl);
+        } else {
+          window.location.href = nextUrl;
+        }
         return;
       }
 
@@ -486,6 +652,34 @@
       composerInput?.focus();
     });
 
+    chargeButton?.addEventListener("click", () => {
+      openChargeModal();
+    });
+
+    chargeForm?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const normalized = String(chargeAmountInput?.value || "").trim();
+      if (!normalized) return;
+      conversations[activeId].messages.push({
+        author: conversations[activeId].name,
+        time: "agora",
+        text: "Proposta pronta para aprovação. Você pode pagar por aqui para confirmar o atendimento.",
+        mine: false,
+        type: "charge",
+        amount: normalized.startsWith("R$") ? normalized : `R$ ${normalized}`,
+        installments: chargeInstallments?.selectedOptions?.[0]?.textContent || "À vista",
+        paid: false
+      });
+      closeChargeModal();
+      renderThread(activeId);
+    });
+
+    chargeCancelButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        closeChargeModal();
+      });
+    });
+
     composer?.addEventListener("click", (event) => {
       const closeButton = event.target.closest("[data-messages-reply-close]");
       const cancelImageButton = event.target.closest("[data-messages-image-cancel]");
@@ -579,6 +773,7 @@
 
     syncCounts();
     syncVisibility();
+    syncPaymentFlowFromQuery();
     refreshConversationCards();
     clearReplyPreview();
     clearSelection();

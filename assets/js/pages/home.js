@@ -33,6 +33,7 @@ const moreFiltersPanel = document.querySelector("[data-more-filters-panel]");
 const moreFiltersClose = document.querySelector("[data-more-filters-close]");
 const moreFiltersApply = document.querySelector("[data-more-filters-apply]");
 const moreFiltersTabsHost = document.querySelector("[data-more-filters-tabs-host]");
+const moreFiltersSearchHost = document.querySelector("[data-more-filters-search-host]");
 const homeStateSelect = document.querySelector("[data-home-state-select]");
 const homeCitySelect = document.querySelector("[data-home-city-select]");
 const homeNeighborhoodSelect = document.querySelector("[data-home-neighborhood-select]");
@@ -677,18 +678,33 @@ document.querySelectorAll("[data-chip-group]").forEach((group) => {
   });
 });
 
-const openMoreFilters = () => {
+const mountMoreFiltersPanel = (source = "tabs") => {
+  if (!moreFiltersPanel) return;
+  const nextHost = source === "search-dropdown" ? moreFiltersSearchHost : moreFiltersTabsHost;
+  if (nextHost && moreFiltersPanel.parentElement !== nextHost) {
+    nextHost.appendChild(moreFiltersPanel);
+  }
+};
+
+const openMoreFilters = (source = "tabs") => {
   if (!moreFiltersToggles.length || !moreFiltersPanel) return;
+  mountMoreFiltersPanel(source);
+  if (source === "search-dropdown") {
+    closeSearchDropdown();
+    moreFiltersSearchHost?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   moreFiltersPanel.hidden = false;
   moreFiltersToggles.forEach((toggle) => {
-    toggle.setAttribute("aria-expanded", "true");
-    toggle.classList.add("is-active");
+    const sameSource = (toggle.dataset.moreFiltersSource || "tabs") === source;
+    toggle.setAttribute("aria-expanded", sameSource ? "true" : "false");
+    toggle.classList.toggle("is-active", sameSource);
   });
 };
 
 const closeMoreFilters = () => {
   if (!moreFiltersToggles.length || !moreFiltersPanel) return;
   moreFiltersPanel.hidden = true;
+  mountMoreFiltersPanel("tabs");
   moreFiltersToggles.forEach((toggle) => {
     toggle.setAttribute("aria-expanded", "false");
     toggle.classList.remove("is-active");
@@ -701,11 +717,12 @@ if (moreFiltersToggles.length && moreFiltersPanel) {
   moreFiltersToggles.forEach((toggle) => {
     toggle.addEventListener("click", (event) => {
       const isOpen = toggle.getAttribute("aria-expanded") === "true";
+      const source = toggle.dataset.moreFiltersSource || "tabs";
       if (isOpen) {
         closeMoreFilters();
         return;
       }
-      openMoreFilters();
+      openMoreFilters(source);
     });
   });
 

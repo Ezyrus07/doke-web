@@ -50,12 +50,22 @@
     let currentTimeFilter = 'all';
     let selectionEnabled = false;
     const mobileSearchQuery = window.matchMedia('(max-width: 640px)');
+    let longPressTimer = null;
 
     if (pageTitle) pageTitle.textContent = 'Notificações';
 
     const setSearchExpanded = (expanded) => {
       if (!mobileSearchQuery.matches) return;
       root.classList.toggle('is-search-open', expanded);
+    };
+
+    const closeContextMenu = () => {
+      cards.forEach((card) => card.classList.remove('is-context-open'));
+    };
+
+    const openContextMenu = (card) => {
+      closeContextMenu();
+      card.classList.add('is-context-open');
     };
 
     const selectedCards = () => cards.filter((card) => card.classList.contains('is-selected') && card.dataset.dismissed !== 'true');
@@ -302,6 +312,15 @@
       applyFilter(currentFilter, currentTimeFilter);
     }));
 
+    root.querySelectorAll('[data-mark-read-icon]').forEach((button) => button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      button.closest('.notification-card')?.classList.remove('is-unread');
+      updateUnread();
+      updateStats();
+      applyFilter(currentFilter, currentTimeFilter);
+    }));
+
     markSelectedButton?.addEventListener('click', () => {
       const targetCards = selectionEnabled ? selectedCards() : cards.filter((card) => !card.hidden && card.dataset.dismissed !== 'true');
       targetCards.forEach((card) => card.classList.remove('is-unread'));
@@ -350,6 +369,69 @@
       if (href) window.location.href = href;
     }));
 
+    cards.forEach((card) => {
+      if (!card.querySelector('.notification-card__context-actions')) {
+        const actions = document.createElement('div');
+        actions.className = 'notification-card__context-actions';
+        actions.innerHTML = `
+          <button class="notification-card__context-button" type="button" data-context-action="select">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 12 3 3 7-7"></path><rect x="4" y="4" width="16" height="16" rx="3"></rect></svg>
+            <span>Selecionar</span>
+          </button>
+          <button class="notification-card__context-button notification-card__context-button--danger" type="button" data-context-action="delete">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5h6"></path><path d="M5.5 7.5h13"></path><path d="M8 7.5v11"></path><path d="M16 7.5v11"></path><path d="M6.5 7.5 7 19a2 2 0 0 0 2 1.9h6a2 2 0 0 0 2-1.9l.5-11.5"></path></svg>
+            <span>Apagar</span>
+          </button>
+        `;
+        card.appendChild(actions);
+
+        actions.querySelector('[data-context-action="select"]')?.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setSelectionEnabled(true);
+          openSelectPanel();
+          card.classList.toggle('is-selected');
+          if (!selectedCards().length) {
+            setSelectionEnabled(false);
+            closeSelectPanel();
+          }
+          closeContextMenu();
+        });
+
+        actions.querySelector('[data-context-action="delete"]')?.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          card.dataset.dismissed = 'true';
+          card.hidden = true;
+          updateUnread();
+          updateStats();
+          applyFilter(currentFilter, currentTimeFilter);
+          closeContextMenu();
+        });
+      }
+
+      card.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        openContextMenu(card);
+      });
+
+      card.addEventListener('pointerdown', (event) => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        longPressTimer = window.setTimeout(() => {
+          openContextMenu(card);
+        }, 450);
+      });
+
+      ['pointerup', 'pointerleave', 'pointercancel', 'pointermove'].forEach((eventName) => {
+        card.addEventListener(eventName, () => {
+          if (longPressTimer) {
+            window.clearTimeout(longPressTimer);
+            longPressTimer = null;
+          }
+        });
+      });
+    });
+
     document.addEventListener('click', (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
@@ -376,6 +458,8 @@
         const clickedSelectToggle = target.closest('[data-notifications-select-toggle]');
         if (!clickedInsideSelect && !clickedSelectToggle) closeSelectPanel();
       }
+
+      if (!target.closest('.notification-card')) closeContextMenu();
     });
 
     document.addEventListener('keydown', (event) => {
@@ -385,6 +469,7 @@
       closeFiltersPanel();
       closeSelectPanel();
       setSelectionEnabled(false);
+      closeContextMenu();
     });
 
     updateUnread();

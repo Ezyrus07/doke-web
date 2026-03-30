@@ -3,7 +3,7 @@ const body = document.body;
 const SIDEBAR_STORAGE_KEY = "doke.sidebar.collapsed";
 const THEME_STORAGE_KEY = "doke.theme";
 const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", "mobile-search-active"];
-const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/orcamento.html", "/orcamento-sucesso.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/dashboard.html", "/"]);
+const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/orcamento.html", "/orcamento-sucesso.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/pagamento.html", "/finalizar-pedido.html", "/avaliacao.html", "/dashboard.html", "/carteira.html", "/adicionar-cartao.html", "/conta-bancaria.html", "/"]);
 
 if (window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true") {
   body.classList.add("sidebar-collapsed");
@@ -33,17 +33,44 @@ const updateSidebarActiveState = () => {
   const path = getCurrentPath();
   const homeActive = path === "/index.html";
   const ordersActive = path === "/pedidos.html";
-  const messagesActive = path === "/mensagens.html";
+  const messagesActive = path === "/mensagens.html" || path === "/pagamento.html" || path === "/finalizar-pedido.html" || path === "/avaliacao.html";
   const notificationsActive = path === "/notificacoes.html";
+  const walletActive = path === "/carteira.html" || path === "/adicionar-cartao.html" || path === "/conta-bancaria.html";
 
   document.querySelectorAll(".sidebar .nav-link").forEach((link) => link.classList.remove("is-active"));
   document.querySelector(".nav-link--home")?.classList.toggle("is-active", homeActive);
   document.querySelector(".nav-link--orders")?.classList.toggle("is-active", ordersActive);
   document.querySelector(".nav-link--messages")?.classList.toggle("is-active", messagesActive);
   document.querySelector(".nav-link--notifications")?.classList.toggle("is-active", notificationsActive);
+  document.querySelector(".nav-link--wallet")?.classList.toggle("is-active", walletActive);
+};
+
+const ensureWalletProfileItem = () => {
+  const dropdownBody = document.querySelector(".profile-dropdown__body");
+  if (!dropdownBody) return;
+
+  const hasWallet = [...dropdownBody.querySelectorAll(".profile-dropdown__item")].some((item) =>
+    item.textContent?.trim().toLowerCase().includes("carteira")
+  );
+
+  if (hasWallet) return;
+
+  const walletLink = document.createElement("a");
+  walletLink.className = "profile-dropdown__item";
+  walletLink.href = "carteira.html";
+  walletLink.innerHTML =
+    '<span class="profile-dropdown__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.5 8.5A2.5 2.5 0 0 1 7 6h11.5v12H7a2.5 2.5 0 1 1 0-5h12"></path><path d="M16 13h3"></path></svg></span><span>Carteira</span>';
+
+  const firstItem = dropdownBody.querySelector(".profile-dropdown__item");
+  if (firstItem) {
+    firstItem.insertAdjacentElement("afterend", walletLink);
+  } else {
+    dropdownBody.appendChild(walletLink);
+  }
 };
 
 const syncAuthUi = () => {
+  ensureWalletProfileItem();
   if (!authService) return;
 
   const avatar = document.querySelector(".avatar");
@@ -197,17 +224,37 @@ const syncShellFromDocument = (nextDoc) => {
   // sidebar/header flicker, logo reload, and mobile-search jank.
   const currentScrim = document.querySelector('.mobile-scrim');
   const nextScrim = nextDoc.querySelector('.mobile-scrim');
+  const currentTopbarRight = document.querySelector('.topbar__right');
+  const nextTopbarRight = nextDoc.querySelector('.topbar__right');
 
   if (!currentScrim && nextScrim) {
     document.body.appendChild(nextScrim.cloneNode(true));
+  }
+
+  // The profile dropdown lives inside the stable shell header. Without
+  // syncing this region, internal navigations keep showing stale menu
+  // content until a full refresh.
+  if (currentTopbarRight && nextTopbarRight) {
+    currentTopbarRight.replaceWith(nextTopbarRight.cloneNode(true));
   }
 };
 
 
 const cleanupDynamicStyles = (nextDoc) => {
-  // Keep already-loaded page styles mounted to avoid shell flicker during
-  // internal navigation. The current codebase still mixes shell rules into
-  // page styles, so removing them causes visible sidebar/header reflow.
+  const nextStyles = new Set(
+    [...nextDoc.querySelectorAll('link[rel="stylesheet"]')]
+      .map((node) => node.getAttribute("href"))
+      .filter(Boolean)
+      .map((href) => new URL(href, window.location.href).href)
+  );
+
+  document.querySelectorAll('link[rel="stylesheet"]').forEach((node) => {
+    const absolute = new URL(node.href, window.location.href).href;
+    if (BASE_SHELL_STYLE_PATTERNS.some((pattern) => pattern.test(absolute))) return;
+    if (!nextStyles.has(absolute)) {
+      node.remove();
+    }
+  });
 };
 
 const syncStandaloneUiFromDocument = (nextDoc) => {
@@ -270,7 +317,11 @@ const initializeCurrentView = () => {
   window.DokeInitBudget?.();
   window.DokeInitOrders?.();
   window.DokeInitMessages?.();
+  window.DokeInitPayment?.();
+  window.DokeInitOrderFinalize?.();
+  window.DokeInitReview?.();
   window.DokeInitNotifications?.();
+  window.DokeInitWallet?.();
   initChipRails();
 };
 
