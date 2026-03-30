@@ -3,6 +3,7 @@ const routeController = new AbortController();
 window.DokeHomeCleanup?.();
 window.DokeHomeCleanup = () => {
   document.body.classList.remove("home-search-overlay-active");
+  document.body.classList.remove("home-search-has-query");
   routeController.abort();
 };
 const { signal } = routeController;
@@ -32,6 +33,7 @@ const moreFiltersPanel = document.querySelector("[data-more-filters-panel]");
 const moreFiltersClose = document.querySelector("[data-more-filters-close]");
 const moreFiltersApply = document.querySelector("[data-more-filters-apply]");
 const moreFiltersTabsHost = document.querySelector("[data-more-filters-tabs-host]");
+const moreFiltersSearchHost = document.querySelector("[data-more-filters-search-host]");
 const homeStateSelect = document.querySelector("[data-home-state-select]");
 const homeCitySelect = document.querySelector("[data-home-city-select]");
 const homeNeighborhoodSelect = document.querySelector("[data-home-neighborhood-select]");
@@ -49,6 +51,13 @@ const uiModalConfirm = document.querySelector("[data-ui-modal-confirm]");
 const categoryTrack = document.querySelector("[data-category-track]");
 const categoryArrows = document.querySelectorAll("[data-category-arrow]");
 const railArrows = document.querySelectorAll("[data-rail-arrow]");
+const orderFeedback = document.querySelector("[data-order-feedback]");
+const orderFeedbackLoading = document.querySelector("[data-order-feedback-loading]");
+const orderFeedbackSuccess = document.querySelector("[data-order-feedback-success]");
+const orderFeedbackClose = document.querySelector("[data-order-feedback-close]");
+const orderFeedbackProvider = document.querySelector("[data-order-feedback-provider]");
+const orderFeedbackLocation = document.querySelector("[data-order-feedback-location]");
+const orderFeedbackUrgency = document.querySelector("[data-order-feedback-urgency]");
 const customSelectRegistry = new Map();
 let activeModalResolver = null;
 
@@ -65,6 +74,9 @@ const searchItemIcon = (type = "search") => {
 
 let activeSearchIndex = -1;
 const isMobileSearchViewport = () => window.innerWidth <= 760;
+const syncSearchOverlayState = (query = "") => {
+  document.body.classList.toggle("home-search-has-query", isMobileSearchViewport() && String(query || "").trim().length >= 2);
+};
 
 const createSuggestionButton = ({ label, meta, badge, value, type = "search" }) => {
   const button = document.createElement("button");
@@ -108,7 +120,8 @@ const renderSearchHistory = () => {
   }
 
   searchHistorySection.hidden = false;
-  history.forEach((item) => {
+  const visibleHistory = isMobileSearchViewport() ? history.slice(0, 2) : history;
+  visibleHistory.forEach((item) => {
     searchHistoryList.appendChild(createSuggestionButton({
       label: item,
       meta: "Pesquisa recente",
@@ -156,6 +169,7 @@ const openSearchDropdown = () => {
   if (isMobileSearchViewport()) {
     document.body.classList.add("home-search-overlay-active");
   }
+  syncSearchOverlayState(searchInput.value);
 };
 
 const closeSearchDropdown = () => {
@@ -164,6 +178,7 @@ const closeSearchDropdown = () => {
   searchInput.setAttribute("aria-expanded", "false");
   activeSearchIndex = -1;
   document.body.classList.remove("home-search-overlay-active");
+  document.body.classList.remove("home-search-has-query");
 };
 
 const goToSearchResults = (value) => {
@@ -172,6 +187,18 @@ const goToSearchResults = (value) => {
   addSearchHistory(cleanValue);
   const nextUrl = new URL("resultados.html", window.location.href);
   nextUrl.searchParams.set("q", cleanValue);
+  if (window.DokeNavigate) {
+    window.DokeNavigate(nextUrl.toString());
+    return;
+  }
+
+  window.location.href = nextUrl.toString();
+};
+
+const getTagSearchValue = (value) => String(value || "").replace(/^#/, "").trim();
+const goToAdDetails = () => {
+  const nextUrl = new URL("detalhe-anuncio.html", window.location.href);
+
   if (window.DokeNavigate) {
     window.DokeNavigate(nextUrl.toString());
     return;
@@ -195,6 +222,7 @@ if (searchBox && searchInput && searchDropdown) {
     const query = searchInput.value.trim();
     renderSearchHistory();
     renderSearchSuggestions(query);
+    syncSearchOverlayState(query);
 
     if (!query.length) {
       const hasRecommendations = !!searchRecommendationList?.children.length;
@@ -273,11 +301,33 @@ if (searchPrimaryCta && searchInput) {
   });
 }
 
+document.addEventListener("click", (event) => {
+  const tag = event.target.closest(".service-card__tags span");
+  if (!tag) return;
+
+  event.preventDefault();
+  goToSearchResults(getTagSearchValue(tag.textContent));
+}, { signal });
+
+document.addEventListener("click", (event) => {
+  const card = event.target.closest(".service-card");
+  if (!card) return;
+
+  if (event.target.closest(".service-card__profile, .service-card__tags, .service-card__favorite")) {
+    return;
+  }
+
+  event.preventDefault();
+  goToAdDetails();
+}, { signal });
+
 window.addEventListener("resize", () => {
   if (!isMobileSearchViewport()) {
     document.body.classList.remove("home-search-overlay-active");
+    document.body.classList.remove("home-search-has-query");
   } else if (!searchDropdown.hidden) {
     document.body.classList.add("home-search-overlay-active");
+    syncSearchOverlayState(searchInput?.value || "");
   }
 }, { signal });
 
@@ -628,18 +678,33 @@ document.querySelectorAll("[data-chip-group]").forEach((group) => {
   });
 });
 
-const openMoreFilters = () => {
+const mountMoreFiltersPanel = (source = "tabs") => {
+  if (!moreFiltersPanel) return;
+  const nextHost = source === "search-dropdown" ? moreFiltersSearchHost : moreFiltersTabsHost;
+  if (nextHost && moreFiltersPanel.parentElement !== nextHost) {
+    nextHost.appendChild(moreFiltersPanel);
+  }
+};
+
+const openMoreFilters = (source = "tabs") => {
   if (!moreFiltersToggles.length || !moreFiltersPanel) return;
+  mountMoreFiltersPanel(source);
+  if (source === "search-dropdown") {
+    closeSearchDropdown();
+    moreFiltersSearchHost?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   moreFiltersPanel.hidden = false;
   moreFiltersToggles.forEach((toggle) => {
-    toggle.setAttribute("aria-expanded", "true");
-    toggle.classList.add("is-active");
+    const sameSource = (toggle.dataset.moreFiltersSource || "tabs") === source;
+    toggle.setAttribute("aria-expanded", sameSource ? "true" : "false");
+    toggle.classList.toggle("is-active", sameSource);
   });
 };
 
 const closeMoreFilters = () => {
   if (!moreFiltersToggles.length || !moreFiltersPanel) return;
   moreFiltersPanel.hidden = true;
+  mountMoreFiltersPanel("tabs");
   moreFiltersToggles.forEach((toggle) => {
     toggle.setAttribute("aria-expanded", "false");
     toggle.classList.remove("is-active");
@@ -652,11 +717,12 @@ if (moreFiltersToggles.length && moreFiltersPanel) {
   moreFiltersToggles.forEach((toggle) => {
     toggle.addEventListener("click", (event) => {
       const isOpen = toggle.getAttribute("aria-expanded") === "true";
+      const source = toggle.dataset.moreFiltersSource || "tabs";
       if (isOpen) {
         closeMoreFilters();
         return;
       }
-      openMoreFilters();
+      openMoreFilters(source);
     });
   });
 
@@ -715,6 +781,46 @@ railArrows.forEach((arrow) => {
     amountFactor: 0.82
   });
 });
+
+const closeOrderFeedback = () => {
+  if (!orderFeedback) return;
+  orderFeedback.hidden = true;
+  document.body.classList.remove("order-feedback-active");
+  if (orderFeedbackLoading) orderFeedbackLoading.hidden = true;
+  if (orderFeedbackSuccess) orderFeedbackSuccess.hidden = true;
+};
+
+const openOrderFeedback = (payload) => {
+  if (!orderFeedback || !payload) return;
+  if (orderFeedbackProvider) orderFeedbackProvider.textContent = payload.provider || "Profissional";
+  if (orderFeedbackLocation) orderFeedbackLocation.textContent = payload.locationTitle || payload.location || "Endereco salvo";
+  if (orderFeedbackUrgency) orderFeedbackUrgency.textContent = payload.urgency || "Sem pressa";
+
+  orderFeedback.hidden = false;
+  document.body.classList.add("order-feedback-active");
+  if (orderFeedbackSuccess) orderFeedbackSuccess.hidden = true;
+  if (orderFeedbackLoading) orderFeedbackLoading.hidden = false;
+
+  window.setTimeout(() => {
+    if (orderFeedbackLoading) orderFeedbackLoading.hidden = true;
+    if (orderFeedbackSuccess) orderFeedbackSuccess.hidden = false;
+  }, 1250);
+};
+
+orderFeedbackClose?.addEventListener("click", closeOrderFeedback);
+
+try {
+  const shouldShowOrderFeedback = new URLSearchParams(window.location.search).get("quote") === "sent";
+  const storedOrderFeedback = window.sessionStorage.getItem("doke.quoteOverlay");
+  if (shouldShowOrderFeedback && storedOrderFeedback) {
+    const payload = JSON.parse(storedOrderFeedback);
+    window.sessionStorage.removeItem("doke.quoteOverlay");
+    openOrderFeedback(payload);
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete("quote");
+    window.history.replaceState({}, "", nextUrl.toString());
+  }
+} catch {}
 
 };
 
