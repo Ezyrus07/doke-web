@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doke | Recuperar acesso</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/core/tokens.css">
+  <link rel="stylesheet" href="../assets/css/core/base.css">
+  <link rel="stylesheet" href="../assets/css/pages/auth.css">
+</head>
+<body class="auth-page auth-page--login">
+  <main class="auth-shell">
+    <section class="auth-stage">
+      <div class="auth-layout">
+        <section class="auth-form-panel">
+          <span class="auth-mark" aria-hidden="true"></span>
+
+          <header class="auth-copy">
+            <h1>Recuperar acesso</h1>
+            <p>
+              Escolha como deseja receber o codigo para voltar a acessar sua conta no Doke com seguranca.
+            </p>
+          </header>
+
+          <form class="auth-form" data-auth-recovery>
+            <div class="auth-recovery-options">
+              <label class="auth-choice">
+                <input type="radio" name="recovery-method" value="email" checked>
+                <span class="auth-choice-card">
+                  <strong>Por e-mail</strong>
+                  <span>Envie um link ou codigo para o endereco cadastrado.</span>
+                </span>
+              </label>
+
+              <label class="auth-choice">
+                <input type="radio" name="recovery-method" value="phone">
+                <span class="auth-choice-card">
+                  <strong>Por telefone</strong>
+                  <span>Receba um codigo por SMS no numero vinculado a conta.</span>
+                </span>
+              </label>
+            </div>
+
+            <label class="auth-field">
+              <span data-recovery-contact-label>E-mail cadastrado</span>
+              <div class="auth-input">
+                <input id="recovery-contact" type="text" placeholder="voce@email.com" autocomplete="username" data-phone-mask>
+              </div>
+            </label>
+
+            <div class="auth-feedback is-hidden" data-auth-feedback></div>
+
+            <p class="auth-note">
+              Use a mesma informacao cadastrada na sua conta para localizar o acesso corretamente.
+            </p>
+
+            <button class="auth-button" type="submit" data-auth-submit>Enviar codigo</button>
+
+            <section class="auth-recovery-reset is-hidden" data-recovery-reset>
+              <label class="auth-field">
+                <span>Codigo recebido</span>
+                <div class="auth-input">
+                  <input id="recovery-code" type="text" inputmode="numeric" placeholder="Digite o codigo recebido">
+                </div>
+              </label>
+
+              <label class="auth-field">
+                <span>Nova senha</span>
+                <div class="auth-password">
+                  <input id="recovery-password" type="password" placeholder="Crie uma nova senha" autocomplete="new-password">
+                  <button type="button" data-toggle-password="recovery-password" aria-label="Mostrar senha">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  </button>
+                </div>
+              </label>
+
+              <button class="auth-button auth-button--secondary" type="button" data-recovery-reset-submit>Redefinir senha</button>
+            </section>
+
+            <p class="auth-footer">
+              Lembrou da senha? <a class="auth-switch-link" href="login.html">Voltar para entrar</a>
+            </p>
+          </form>
+        </section>
+
+        <aside class="auth-visual-panel">
+          <div class="auth-visual">
+            <div class="auth-tag-row">
+              <span class="auth-tag">Recuperacao segura</span>
+              <span class="auth-tag">Acesso em minutos</span>
+            </div>
+
+            <article class="auth-quote">
+              <p data-auth-quote>
+                Recupere o acesso de forma simples para voltar aos seus pedidos, mensagens e oportunidades dentro do Doke.
+              </p>
+              <footer>
+                <strong data-auth-author>Retorno rapido</strong>
+                <span data-auth-role>Fluxo claro para usuarios que precisam voltar a conta</span>
+              </footer>
+            </article>
+
+            <div class="auth-arrows">
+              <button class="auth-arrow" type="button" aria-label="Depoimento anterior" data-auth-prev>&larr;</button>
+              <button class="auth-arrow" type="button" aria-label="Proximo depoimento" data-auth-next>&rarr;</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../assets/js/core/supabase-config.js"></script>
+  <script src="../assets/js/core/auth-service.js"></script>
+  <script src="../assets/js/pages/auth.js"></script>
+</body>
+</html>

@@ -1,0 +1,553 @@
+window.DokeSearchData = (() => {
+  const SEARCH_HISTORY_STORAGE_KEY = "doke.search.history";
+
+  const recommendations = [
+    "Eletricista 24h",
+    "Diarista perto de mim",
+    "Marceneiro sob medida",
+    "Frete pequeno"
+  ];
+
+  const suggestionPool = [
+    { label: "Eletricista residencial", meta: "Instalacao e reparo", badge: "Servico", value: "eletricista residencial" },
+    { label: "Encanador urgente", meta: "Vazamentos e tubulacao", badge: "Servico", value: "encanador urgente" },
+    { label: "Pintor profissional", meta: "Paredes e acabamento", badge: "Servico", value: "pintor profissional" },
+    { label: "Marceneiro sob medida", meta: "Moveis planejados", badge: "Servico", value: "marceneiro sob medida" },
+    { label: "Diarista semanal", meta: "Limpeza residencial", badge: "Servico", value: "diarista semanal" },
+    { label: "Frete para mudanca", meta: "Transporte local", badge: "Servico", value: "frete para mudanca" },
+    { label: "Aulas de ingles", meta: "Professor particular", badge: "Categoria", value: "aulas de ingles" },
+    { label: "Designer para logo", meta: "Criativo e branding", badge: "Profissional", value: "designer para logo" },
+    { label: "Rua Maranhao, 343", meta: "Localizacao atual", badge: "Endereco", value: "Rua Maranhao, 343" }
+  ];
+
+  const servicePool = [
+    {
+      id: "svc-pintura-carlos",
+      title: "Carlos Andrade",
+      category: "Pintura residencial",
+      badge: "Disponivel hoje",
+      mediaClass: "service-card__media--painter",
+      avatarClass: "service-card__avatar--carlos",
+      location: "Centro, Belo Horizonte, MG",
+      state: "MG",
+      city: "Belo Horizonte",
+      neighborhood: "Centro",
+      region: "Centro-Sul",
+      rating: 4.9,
+      reviews: "128 avaliacoes",
+      price: "R$ 120",
+      priceValue: 120,
+      tags: ["#pintura", "#residencial", "#acabamento"],
+      keywords: ["pintura", "pintor", "acabamento", "residencial", "carlos"],
+      guaranteed: true,
+      emergency: false,
+      online: false,
+      availableToday: true
+    },
+    {
+      id: "svc-eletrica-marcos",
+      title: "Marcos Luz",
+      category: "Eletrica 24h",
+      badge: "Resposta rapida",
+      badgeModifier: "service-card__badge--mint",
+      mediaClass: "service-card__media--electrician",
+      avatarClass: "service-card__avatar--marcos",
+      location: "Savassi, Belo Horizonte, MG",
+      state: "MG",
+      city: "Belo Horizonte",
+      neighborhood: "Savassi",
+      region: "Centro-Sul",
+      rating: 4.8,
+      reviews: "96 avaliacoes",
+      price: "R$ 90",
+      priceValue: 90,
+      tags: ["#eletrica", "#24h", "#manutencao"],
+      keywords: ["eletricista", "eletrica", "24h", "manutencao", "marcos"],
+      guaranteed: true,
+      emergency: true,
+      online: false,
+      availableToday: true
+    },
+    {
+      id: "svc-limpeza-elaine",
+      title: "Elaine Santos",
+      category: "Diarista premium",
+      badge: "Top da semana",
+      mediaClass: "service-card__media--cleaning",
+      avatarClass: "service-card__avatar--elaine",
+      location: "Funcionarios, Belo Horizonte, MG",
+      state: "MG",
+      city: "Belo Horizonte",
+      neighborhood: "Funcionarios",
+      region: "Centro-Sul",
+      rating: 4.9,
+      reviews: "74 avaliacoes",
+      price: "R$ 160",
+      priceValue: 160,
+      tags: ["#diarista", "#limpeza", "#posobra"],
+      keywords: ["diarista", "limpeza", "pos-obra", "elaine"],
+      guaranteed: false,
+      emergency: false,
+      online: false,
+      availableToday: true
+    },
+    {
+      id: "svc-encanador-bruno",
+      title: "Bruno Reis",
+      category: "Encanador",
+      badge: "Emergencia",
+      mediaClass: "service-card__media--electrician",
+      avatarClass: "service-card__avatar--marcos",
+      location: "Santo Agostinho, Belo Horizonte, MG",
+      state: "MG",
+      city: "Belo Horizonte",
+      neighborhood: "Santo Agostinho",
+      region: "Centro-Sul",
+      rating: 4.8,
+      reviews: "58 avaliacoes",
+      price: "R$ 95",
+      priceValue: 95,
+      tags: ["#encanador", "#vazamento", "#24h"],
+      keywords: ["encanador", "cano", "vazamento", "hidraulica", "bruno"],
+      guaranteed: true,
+      emergency: true,
+      online: false,
+      availableToday: true
+    },
+    {
+      id: "svc-tech-notebook",
+      title: "Suporte para notebook",
+      category: "Suporte tecnico",
+      badge: "Tecnologia",
+      badgeModifier: "service-card__badge--mint",
+      mediaClass: "service-card__media--tech",
+      avatarClass: "service-card__avatar--marcos",
+      location: "Buritis, Belo Horizonte, MG",
+      state: "MG",
+      city: "Belo Horizonte",
+      neighborhood: "Buritis",
+      region: "Oeste",
+      rating: 4.7,
+      reviews: "41 avaliacoes",
+      price: "R$ 70",
+      priceValue: 70,
+      tags: ["#suporte", "#notebook", "#tecnologia"],
+      keywords: ["notebook", "suporte", "tecnologia", "manutencao", "computador"],
+      guaranteed: true,
+      emergency: false,
+      online: true,
+      availableToday: true
+    },
+    {
+      id: "svc-frete-diego",
+      title: "Frete rapido BH",
+      category: "Frete",
+      badge: "Disponivel hoje",
+      mediaClass: "service-card__media--cleaning",
+      avatarClass: "service-card__avatar--carlos",
+      location: "Prado, Belo Horizonte, MG",
+      state: "MG",
+      city: "Belo Horizonte",
+      neighborhood: "Prado",
+      region: "Oeste",
+      rating: 4.7,
+      reviews: "36 avaliacoes",
+      price: "R$ 85",
+      priceValue: 85,
+      tags: ["#frete", "#mudanca", "#transporte"],
+      keywords: ["frete", "mudanca", "transporte", "carga", "diego"],
+      guaranteed: false,
+      emergency: false,
+      online: false,
+      availableToday: true
+    },
+    {
+      id: "svc-aulas-professor",
+      title: "Professor particular",
+      category: "Reforco escolar",
+      badge: "Aulas",
+      mediaClass: "service-card__media--class",
+      avatarClass: "service-card__avatar--renata",
+      location: "Sion, Belo Horizonte, MG",
+      state: "MG",
+      city: "Belo Horizonte",
+      neighborhood: "Sion",
+      region: "Centro-Sul",
+      rating: 4.9,
+      reviews: "52 avaliacoes",
+      price: "R$ 60/h",
+      priceValue: 60,
+      tags: ["#aulas", "#reforco", "#particular"],
+      keywords: ["aulas", "professor", "reforco", "escolar", "particular"],
+      guaranteed: false,
+      emergency: false,
+      online: true,
+      availableToday: false
+    },
+    {
+      id: "svc-reforma-casa",
+      title: "Reforma sem quebra-quebra",
+      category: "Reforma",
+      badge: "Com garantia",
+      mediaClass: "service-card__media--painter",
+      avatarClass: "service-card__avatar--renata",
+      location: "Belvedere, Belo Horizonte, MG",
+      state: "MG",
+      city: "Belo Horizonte",
+      neighborhood: "Belvedere",
+      region: "Centro-Sul",
+      rating: 4.9,
+      reviews: "67 avaliacoes",
+      price: "R$ 140",
+      priceValue: 140,
+      tags: ["#reforma", "#acabamento", "#obra"],
+      keywords: ["reforma", "obra", "acabamento", "banheiro", "cozinha"],
+      guaranteed: true,
+      emergency: false,
+      online: false,
+      availableToday: false
+    },
+    {
+      id: "svc-beleza-manicure",
+      title: "Manicure a domicilio",
+      category: "Atendimento em casa",
+      badge: "Beleza",
+      mediaClass: "service-card__media--beauty",
+      avatarClass: "service-card__avatar--elaine",
+      location: "Mangabeiras, Belo Horizonte, MG",
+      state: "MG",
+      city: "Belo Horizonte",
+      neighborhood: "Mangabeiras",
+      region: "Centro-Sul",
+      rating: 4.8,
+      reviews: "38 avaliacoes",
+      price: "R$ 55",
+      priceValue: 55,
+      tags: ["#beleza", "#manicure", "#domicilio"],
+      keywords: ["manicure", "beleza", "domicilio", "atendimento em casa"],
+      guaranteed: false,
+      emergency: false,
+      online: false,
+      availableToday: false
+    },
+    {
+      id: "svc-montagem-moveis",
+      title: "Montador de moveis",
+      category: "Montagem de moveis",
+      badge: "Montagem",
+      mediaClass: "service-card__media--handyman",
+      avatarClass: "service-card__avatar--carlos",
+      location: "Lourdes, Belo Horizonte, MG",
+      state: "MG",
+      city: "Belo Horizonte",
+      neighborhood: "Lourdes",
+      region: "Centro-Sul",
+      rating: 4.8,
+      reviews: "63 avaliacoes",
+      price: "R$ 80",
+      priceValue: 80,
+      tags: ["#montagem", "#moveis", "#sobmedida"],
+      keywords: ["montador", "montagem", "moveis", "sob medida"],
+      guaranteed: true,
+      emergency: false,
+      online: false,
+      availableToday: true
+    }
+  ];
+
+  const userPool = [
+    {
+      id: "usr-carlos",
+      name: "Carlos Andrade",
+      handle: "@carlospintura",
+      role: "Pintor residencial",
+      location: "Centro, Belo Horizonte, MG",
+      rating: 4.9,
+      jobs: 128,
+      avatarClass: "service-card__avatar--carlos",
+      keywords: ["carlos", "pintor", "pintura", "acabamento", "residencial"]
+    },
+    {
+      id: "usr-marcos",
+      name: "Marcos Luz",
+      handle: "@marcos24h",
+      role: "Eletricista 24h",
+      location: "Savassi, Belo Horizonte, MG",
+      rating: 4.8,
+      jobs: 96,
+      avatarClass: "service-card__avatar--marcos",
+      keywords: ["marcos", "eletricista", "eletrica", "24h", "manutencao"]
+    },
+    {
+      id: "usr-elaine",
+      name: "Elaine Santos",
+      handle: "@elainepremium",
+      role: "Diarista premium",
+      location: "Funcionarios, Belo Horizonte, MG",
+      rating: 4.9,
+      jobs: 74,
+      avatarClass: "service-card__avatar--elaine",
+      keywords: ["elaine", "diarista", "limpeza", "casa", "faxina"]
+    },
+    {
+      id: "usr-renata",
+      name: "Renata Alves",
+      handle: "@renataensina",
+      role: "Professora particular",
+      location: "Sion, Belo Horizonte, MG",
+      rating: 4.9,
+      jobs: 52,
+      avatarClass: "service-card__avatar--renata",
+      keywords: ["renata", "professora", "aulas", "reforco", "particular"]
+    }
+  ];
+
+  const shortVideoPool = [
+    {
+      id: "vid-pintura",
+      title: "Como renovar parede sem sujeira",
+      author: "Carlos Andrade",
+      mediaClass: "video-card--one",
+      keywords: ["pintura", "parede", "acabamento", "reforma", "carlos"]
+    },
+    {
+      id: "vid-cozinha",
+      title: "Antes e depois de cozinha planejada",
+      author: "Studio Casa Viva",
+      mediaClass: "video-card--two",
+      keywords: ["cozinha", "planejada", "marcenaria", "reforma", "antes e depois"]
+    },
+    {
+      id: "vid-eletrica",
+      title: "5 erros elétricos que custam caro",
+      author: "Marcos Luz",
+      mediaClass: "video-card--three",
+      keywords: ["eletrica", "eletricista", "fiacao", "seguranca", "marcos"]
+    },
+    {
+      id: "vid-limpeza",
+      title: "Limpeza pós-obra em 40 segundos",
+      author: "Elaine Santos",
+      mediaClass: "video-card--four",
+      keywords: ["limpeza", "pos-obra", "diarista", "faxina", "elaine"]
+    }
+  ];
+
+  const beforeAfterPool = [
+    {
+      id: "ba-sala",
+      title: "Reforma completa de sala",
+      author: "Studio Casa Viva",
+      rating: 4.9,
+      visualClass: "comparison-card__visual--reforma",
+      keywords: ["reforma", "sala", "acabamento", "antes", "depois"]
+    },
+    {
+      id: "ba-banheiro",
+      title: "Banheiro revitalizado sem quebra-quebra",
+      author: "Renato Acabamentos",
+      rating: 4.8,
+      visualClass: "comparison-card__visual--bathroom",
+      keywords: ["banheiro", "reforma", "acabamento", "antes", "depois"]
+    }
+  ];
+
+  const quickFilters = [
+    "Com garantia",
+    "Emergencia",
+    "Disponivel hoje",
+    "Perto de mim"
+  ];
+
+  const categories = [
+    "Eletricista",
+    "Encanador",
+    "Pintura",
+    "Limpeza",
+    "Frete",
+    "Tecnologia",
+    "Aulas",
+    "Beleza",
+    "Reforma",
+    "Montagem"
+  ];
+
+  const locationOptions = {
+    states: ["MG", "SP", "RJ"],
+    citiesByState: {
+      MG: ["Belo Horizonte", "Contagem", "Nova Lima"],
+      SP: ["Sao Paulo", "Campinas"],
+      RJ: ["Rio de Janeiro", "Niteroi"]
+    },
+    neighborhoodsByCity: {
+      "Belo Horizonte": [
+        "Belvedere",
+        "Buritis",
+        "Centro",
+        "Funcionarios",
+        "Lourdes",
+        "Mangabeiras",
+        "Prado",
+        "Santo Agostinho",
+        "Savassi",
+        "Sion"
+      ],
+      Contagem: ["Eldorado", "Inconfidentes"],
+      "Nova Lima": ["Vila da Serra"],
+      "Sao Paulo": ["Pinheiros", "Moema"],
+      Campinas: ["Cambuí", "Taquaral"],
+      "Rio de Janeiro": ["Botafogo", "Barra da Tijuca"],
+      Niteroi: ["Icarai", "Charitas"]
+    },
+    cepLookup: {
+      "30130-110": { state: "MG", city: "Belo Horizonte", neighborhood: "Centro" },
+      "30140-071": { state: "MG", city: "Belo Horizonte", neighborhood: "Funcionarios" },
+      "30380-435": { state: "MG", city: "Belo Horizonte", neighborhood: "Belvedere" },
+      "30350-540": { state: "MG", city: "Belo Horizonte", neighborhood: "Mangabeiras" },
+      "30411-186": { state: "MG", city: "Belo Horizonte", neighborhood: "Prado" },
+      "30380-000": { state: "MG", city: "Belo Horizonte", neighborhood: "Savassi" }
+    }
+  };
+
+  const normalize = (value = "") => value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  const getSearchHistory = () => {
+    try {
+      const raw = window.localStorage.getItem(SEARCH_HISTORY_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed.filter(Boolean).slice(0, 4) : [];
+    } catch (error) {
+      return [];
+    }
+  };
+
+  const saveSearchHistory = (items) => {
+    window.localStorage.setItem(
+      SEARCH_HISTORY_STORAGE_KEY,
+      JSON.stringify(items.filter(Boolean).slice(0, 4))
+    );
+  };
+
+  const addSearchHistory = (value) => {
+    const cleanValue = String(value || "").trim();
+    if (!cleanValue) return;
+    const nextItems = getSearchHistory().filter((item) => normalize(item) !== normalize(cleanValue));
+    nextItems.unshift(cleanValue);
+    saveSearchHistory(nextItems);
+  };
+
+  const getSuggestionMatches = (query = "") => {
+    const normalizedQuery = normalize(query.trim());
+    if (!normalizedQuery) return [];
+
+    const baseMatches = suggestionPool
+      .filter((item) => normalize(`${item.label} ${item.meta} ${item.value}`).includes(normalizedQuery))
+      .slice(0, 3);
+
+    const userMatches = userPool
+      .filter((item) => normalize(`${item.name} ${item.handle} ${item.role} ${item.location} ${item.keywords.join(" ")}`).includes(normalizedQuery))
+      .slice(0, 2)
+      .map((item) => ({
+        label: item.name,
+        meta: `${item.role} • ${item.location}`,
+        badge: "Usuario",
+        value: item.name
+      }));
+
+    return [...baseMatches, ...userMatches].slice(0, 5);
+  };
+
+  const getUserMatches = (query = "") => {
+    const normalizedQuery = normalize(query.trim());
+    if (!normalizedQuery) return [];
+
+    return userPool.filter((item) => normalize(
+      `${item.name} ${item.handle} ${item.role} ${item.location} ${item.keywords.join(" ")}`
+    ).includes(normalizedQuery));
+  };
+
+  const getShortVideoMatches = (query = "") => {
+    const normalizedQuery = normalize(query.trim());
+    if (!normalizedQuery) return [];
+
+    return shortVideoPool.filter((item) => normalize(
+      `${item.title} ${item.author} ${item.keywords.join(" ")}`
+    ).includes(normalizedQuery));
+  };
+
+  const getBeforeAfterMatches = (query = "") => {
+    const normalizedQuery = normalize(query.trim());
+    if (!normalizedQuery) return [];
+
+    return beforeAfterPool.filter((item) => normalize(
+      `${item.title} ${item.author} ${item.keywords.join(" ")}`
+    ).includes(normalizedQuery));
+  };
+
+  const getServiceMatches = (query = "", filters = {}) => {
+    const normalizedQuery = normalize(query.trim());
+
+    return servicePool.filter((item) => {
+      const haystack = normalize([
+        item.title,
+        item.category,
+        item.location,
+        item.region,
+        item.badge,
+        ...item.tags,
+        ...item.keywords
+      ].join(" "));
+
+      const matchesQuery = !normalizedQuery || haystack.includes(normalizedQuery);
+      const categoryFilters = Array.isArray(filters.categories) ? filters.categories.filter(Boolean) : [];
+      const matchesCategory = !categoryFilters.length
+        || categoryFilters.some((category) => normalize(item.category).includes(normalize(category)));
+      const matchesRegion = !filters.region || normalize(item.region).includes(normalize(filters.region));
+      const matchesState = !filters.state || normalize(item.state).includes(normalize(filters.state));
+      const matchesCity = !filters.city || normalize(item.city).includes(normalize(filters.city));
+      const matchesNeighborhood = !filters.neighborhood || normalize(item.neighborhood).includes(normalize(filters.neighborhood));
+      const matchesGuarantee = !filters.guaranteed || item.guaranteed;
+      const matchesEmergency = !filters.emergency || item.emergency;
+      const matchesOnline = !filters.online || item.online;
+      const matchesToday = !filters.availableToday || item.availableToday;
+      const matchesRating = !filters.minRating || item.rating >= Number(filters.minRating);
+
+      return matchesQuery
+        && matchesCategory
+        && matchesRegion
+        && matchesState
+        && matchesCity
+        && matchesNeighborhood
+        && matchesGuarantee
+        && matchesEmergency
+        && matchesOnline
+        && matchesToday
+        && matchesRating;
+    });
+  };
+
+  return {
+    SEARCH_HISTORY_STORAGE_KEY,
+    recommendations,
+    categories,
+    locationOptions,
+    suggestionPool,
+    servicePool,
+    userPool,
+    shortVideoPool,
+    beforeAfterPool,
+    quickFilters,
+    normalize,
+    getSearchHistory,
+    saveSearchHistory,
+    addSearchHistory,
+    getSuggestionMatches,
+    getServiceMatches,
+    getUserMatches,
+    getShortVideoMatches,
+    getBeforeAfterMatches
+  };
+})();

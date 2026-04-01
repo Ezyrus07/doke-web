@@ -1,0 +1,329 @@
+/* Identity refresh: recover the older Doke feel without changing the site's structure. */
+
+:root {
+  --doke-bg-top: #f6f8f8;
+  --doke-bg-bottom: #eef4f2;
+  --doke-text-strong: #163250;
+  --doke-text-muted: #667b92;
+  --doke-green: #0f7a69;
+  --doke-border-soft: rgba(201, 217, 230, 0.92);
+  --doke-shadow-soft: 0 14px 28px rgba(30, 58, 90, 0.07);
+  --doke-shadow-card: 0 10px 22px rgba(30, 58, 90, 0.06);
+}
+
+.app-shell {
+  background: linear-gradient(180deg, var(--doke-bg-top) 0%, var(--doke-bg-bottom) 100%);
+}
+
+.topbar {
+  background: rgba(255, 255, 255, 0.72);
+  border-bottom: 1px solid rgba(208, 220, 230, 0.72);
+  box-shadow: none;
+}
+
+.topbar__left {
+  gap: 12px;
+}
+
+.topbar-search-wrap {
+  display: none !important;
+}
+
+.search-stage {
+  margin: 6px 0 34px;
+}
+
+.search-stage__inner {
+  position: relative;
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px 12px 20px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255, 170, 40, 0.95), rgba(248, 64, 156, 0.98) 52%, rgba(140, 75, 255, 0.98));
+  box-shadow: 0 16px 34px rgba(66, 80, 104, 0.11);
+}
+
+.search-stage__inner::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: inherit;
+  background: #fff;
+}
+
+.search-stage__field,
+.search-stage__submit {
+  position: relative;
+  z-index: 1;
+}
+
+.search-stage__field {
+  min-height: 82px;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+}
+
+.search-stage__icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  color: #b4b4b4;
+}
+
+.search-stage__icon svg {
+  width: 28px;
+  height: 28px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.search-stage__field input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #444e61;
+  font-size: clamp(1.22rem, 2.3vw, 1.55rem);
+  font-weight: 700;
+}
+
+.search-stage__field input::placeholder {
+  color: #c4c4c4;
+}
+
+.search-stage__submit {
+  border: 0;
+  background: transparent;
+  color: #564368;
+  min-height: 82px;
+  padding: 0 18px 0 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  cursor: pointer;
+}
+
+.search-stage__submit-title {
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.search-stage__submit-subtitle {
+  margin-top: 4px;
+  font-size: 0.82rem;
+  color: #8f8f8f;
+  font-weight: 500;
+}
+
+.search-dropdown--main {
+  top: calc(100% + 12px);
+  left: 0;
+  right: 0;
+  min-width: 100%;
+}
+
+.home-categories__title {
+  margin-bottom: 18px;
+  color: var(--doke-green);
+  font-size: clamp(1.8rem, 2.1vw, 2.3rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+
+.home-category {
+  background: #fff;
+  border: 1px solid var(--doke-border-soft);
+  border-radius: 28px;
+  box-shadow: var(--doke-shadow-card);
+}
+
+.home-category__label {
+  color: #586d83;
+  font-size: 1rem;
+}
+
+.section-heading__eyebrow {
+  color: #7b8fa7;
+}
+
+.section-heading__title {
+  color: var(--doke-text-strong);
+  font-size: clamp(1.95rem, 2.7vw, 2.55rem);
+  line-height: 1.06;
+  letter-spacing: -0.04em;
+  max-width: 12ch;
+}
+
+.section-heading__link {
+  color: #2f6698;
+  font-weight: 800;
+}
+
+.featured-services .service-card,
+.more-services .service-card,
+.before-after-card,
+.pro-card {
+  border-radius: 28px;
+  border-color: var(--doke-border-soft);
+  box-shadow: var(--doke-shadow-card);
+}
+
+.short-videos {
+  border-radius: 32px;
+  background: linear-gradient(180deg, #316aa2 0%, #214f7b 100%);
+}
+
+.short-videos .section-heading__eyebrow,
+.short-videos .section-heading__title,
+.short-videos .section-heading__link {
+  color: #fff;
+}
+
+.video-card {
+  border-radius: 28px;
+  overflow: hidden;
+}
+
+.bottom-nav {
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 18px 40px rgba(21, 45, 71, 0.12);
+}
+
+.bottom-nav__icon {
+  color: #6a8096;
+}
+
+.bottom-nav__item.is-active {
+  color: var(--doke-green);
+  background: transparent;
+}
+
+.bottom-nav__item.is-active .bottom-nav__icon {
+  color: var(--doke-green);
+}
+
+.home-footer {
+  margin-inline: 0;
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+}
+
+@media (max-width: 1024px) {
+  .search-stage__inner {
+    max-width: none;
+    grid-template-columns: 1fr;
+    border-radius: 32px;
+    padding: 12px;
+  }
+
+  .search-stage__field {
+    min-height: 72px;
+    padding-inline: 6px;
+  }
+
+  .search-stage__submit {
+    min-height: 54px;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 18px;
+    border-radius: 18px;
+    color: #fff;
+    background: linear-gradient(180deg, #4b7faf 0%, #2f6698 100%);
+  }
+
+  .search-stage__submit-subtitle {
+    color: rgba(255, 255, 255, 0.76);
+  }
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    background: transparent;
+    border-bottom: 0;
+    padding: 14px 16px 10px;
+  }
+
+  .topbar-location,
+  .topbar-points {
+    display: none;
+  }
+
+  .search-stage {
+    margin: 0 0 24px;
+  }
+
+  .search-stage__inner {
+    border-radius: 26px;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .search-stage__field {
+    min-height: 62px;
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .search-stage__icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .search-stage__icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .search-stage__field input {
+    font-size: 1rem;
+  }
+
+  .search-stage__submit-title {
+    font-size: 1.04rem;
+  }
+
+  .home-categories__title {
+    font-size: 1.35rem;
+    margin-bottom: 14px;
+  }
+
+  .home-category {
+    border-radius: 24px;
+  }
+
+  .section-heading__title {
+    font-size: 1.65rem;
+    max-width: none;
+  }
+
+  .short-videos {
+    border-radius: 28px;
+    padding-top: 18px;
+  }
+
+  .bottom-nav {
+    left: 16px;
+    right: 16px;
+    bottom: 14px;
+    padding: 10px 10px 9px;
+  }
+
+  .bottom-nav__item {
+    font-size: 0.66rem;
+  }
+}
