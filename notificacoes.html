@@ -13,8 +13,8 @@
   <link rel="stylesheet" href="assets/css/core/components.css">
   <link rel="stylesheet" href="assets/css/pages/home-shared.css">
   <link rel="stylesheet" href="assets/css/pages/home.css">
+  <link rel="stylesheet" href="assets/css/pages/pedidos.css">
   <link rel="stylesheet" href="assets/css/pages/notificacoes.css">
-  <link rel="stylesheet" href="assets/css/pages/internal-mobile-system.css">
 </head>
 <body class="shell-home notifications-page-shell">
   <div class="app-shell">
@@ -148,23 +148,33 @@
                   <h2>Notifica&ccedil;&otilde;es</h2>
                   <span class="messages-block__count notifications-page-header__count" data-notifications-stat="unread">0</span>
                 </div>
-                <form class="messages-search orders-header-search notifications-header-search notifications-page-header__search" aria-label="Buscar notifica&ccedil;&otilde;es">
-                  <button class="orders-header-search__icon" type="submit" aria-label="Pesquisar notifica&ccedil;&atilde;o">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg>
-                  </button>
-                  <input type="search" placeholder="Buscar" data-notifications-search>
-                  <button class="orders-header-search__close" type="button" aria-label="Fechar busca">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
-                  </button>
-                </form>
-                <div class="notifications-page-header__actions">
-                  <button class="button orders-filter-button notifications-filter-button" type="button" data-notifications-filters-toggle aria-expanded="false">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"></path><path d="M7 12h10"></path><path d="M10 17h4"></path></svg>
-                    <span>Filtros</span>
-                  </button>
-                  <button class="button-icon orders-header-select notifications-mark-all-button" type="button" data-notifications-select-toggle aria-label="Selecionar notifica&ccedil;&otilde;es" aria-expanded="false">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="16" rx="2"></rect><path d="m9 12 2 2 4-4"></path></svg>
-                  </button>
+                <div class="notifications-page-header__toolbar">
+                  <form class="messages-search orders-header-search notifications-header-search notifications-page-header__search" aria-label="Buscar notifica&ccedil;&otilde;es">
+                    <button class="orders-header-search__icon" type="submit" aria-label="Pesquisar notifica&ccedil;&atilde;o">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg>
+                    </button>
+                    <input type="search" placeholder="Buscar" data-notifications-search>
+                    <button class="orders-header-search__close" type="button" aria-label="Fechar busca">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
+                    </button>
+                  </form>
+                  <div class="notifications-page-header__actions">
+                    <button class="button orders-filter-button notifications-filter-button" type="button" data-notifications-filters-toggle aria-expanded="false">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"></path><path d="M7 12h10"></path><path d="M10 17h4"></path></svg>
+                      <span>Filtros</span>
+                    </button>
+                    <div class="orders-page-header__menu">
+                      <button class="button-icon orders-header-select notifications-mark-all-button" type="button" data-notifications-select-toggle aria-label="Selecionar notifica&ccedil;&otilde;es" aria-expanded="false" aria-controls="notifications-select-panel" aria-haspopup="true">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="16" rx="2"></rect><path d="m9 12 2 2 4-4"></path></svg>
+                      </button>
+                      <div class="orders-select-panel notifications-select-panel" id="notifications-select-panel" data-notifications-select-panel hidden>
+                        <button class="orders-select-option" type="button" data-notifications-select-mode="single">Selecionar</button>
+                        <button class="orders-select-option" type="button" data-notifications-select-mode="all">Selecionar todas</button>
+                        <button class="orders-select-option" type="button" data-notifications-mark-selected>Marcar lidas</button>
+                        <button class="orders-select-option orders-select-option--danger" type="button" data-notifications-dismiss-selected>Dispensar</button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -176,17 +186,11 @@
                 <span data-notifications-stat="ads">0</span>
               </div>
 
-              <div class="notifications-page-header__controls">
+              <div class="notifications-page-header__controls" hidden>
                 <div class="orders-filter-status-stack notifications-filter-stack">
                   <div class="orders-active-filter-row">
                     <span class="orders-active-filter-chip" data-notifications-active-chip hidden>Todas</span>
                     <span class="orders-active-filter-chip notifications-time-chip" data-notifications-active-time-chip hidden>&Uacute;ltimas 24h</span>
-                    <div class="orders-select-panel notifications-select-panel" data-notifications-select-panel hidden>
-                      <button class="orders-select-option" type="button" data-notifications-select-mode="single">Selecionar</button>
-                      <button class="orders-select-option" type="button" data-notifications-select-mode="all">Selecionar todas</button>
-                      <button class="orders-select-option" type="button" data-notifications-mark-selected>Marcar lidas</button>
-                      <button class="orders-select-option orders-select-option--danger" type="button" data-notifications-dismiss-selected>Dispensar</button>
-                    </div>
                     <button class="orders-active-filter-clear" type="button" data-notifications-clear-filter hidden>Limpar filtros</button>
                   </div>
 

@@ -3,8 +3,10 @@ const body = document.body;
 const SIDEBAR_STORAGE_KEY = "doke.sidebar.collapsed";
 const THEME_STORAGE_KEY = "doke.theme";
 const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", "mobile-search-active"];
-const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/orcamento.html", "/orcamento-sucesso.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/pagamento.html", "/finalizar-pedido.html", "/avaliacao.html", "/dashboard.html", "/carteira.html", "/adicionar-cartao.html", "/conta-bancaria.html", "/perfil.html", "/"]);
+const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/comunidade.html", "/pagamento.html", "/finalizar-pedido.html", "/avaliacao.html", "/carteira.html", "/adicionar-cartao.html", "/conta-bancaria.html", "/perfil.html", "/"]);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
+const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", "/perfil.html", "/carteira.html"];
+let sidebarViewsHinted = false;
 
 if (window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true") {
   body.classList.add("sidebar-collapsed");
@@ -42,6 +44,7 @@ const updateSidebarActiveState = () => {
   const ordersActive = path === "/pedidos.html";
   const messagesActive = path === "/mensagens.html" || path === "/pagamento.html" || path === "/finalizar-pedido.html" || path === "/avaliacao.html";
   const notificationsActive = path === "/notificacoes.html";
+  const communitiesActive = path === "/comunidade.html";
   const walletActive = path === "/carteira.html" || path === "/adicionar-cartao.html" || path === "/conta-bancaria.html";
   const profileActive = path === "/perfil.html";
 
@@ -50,6 +53,7 @@ const updateSidebarActiveState = () => {
   document.querySelector(".nav-link--orders")?.classList.toggle("is-active", ordersActive);
   document.querySelector(".nav-link--messages")?.classList.toggle("is-active", messagesActive);
   document.querySelector(".nav-link--notifications")?.classList.toggle("is-active", notificationsActive);
+  document.querySelector(".nav-link--communities")?.classList.toggle("is-active", communitiesActive);
   document.querySelector(".nav-link--wallet")?.classList.toggle("is-active", walletActive);
   document.querySelector(".nav-link--profile")?.classList.toggle("is-active", profileActive);
 };
@@ -177,7 +181,6 @@ const INTERNAL_VIEW_STYLE_HINTS = {
   ],
   "/resultados.html": [
     "assets/css/pages/home-shared.css",
-    "assets/css/pages/home.css",
     "assets/css/pages/search-results.css"
   ],
   "/pedidos.html": [
@@ -196,6 +199,11 @@ const INTERNAL_VIEW_STYLE_HINTS = {
     "assets/css/pages/pedidos.css",
     "assets/css/pages/notificacoes.css"
   ],
+  "/comunidade.html": [
+    "assets/css/pages/home-shared.css",
+    "assets/css/pages/home.css",
+    "assets/css/pages/perfil.css"
+  ],
   "/pagamento.html": [
     "assets/css/pages/home-shared.css",
     "assets/css/pages/home.css",
@@ -204,12 +212,12 @@ const INTERNAL_VIEW_STYLE_HINTS = {
   "/finalizar-pedido.html": [
     "assets/css/pages/home-shared.css",
     "assets/css/pages/home.css",
-    "assets/css/pages/pagamento.css"
+    "assets/css/pages/post-service.css"
   ],
   "/avaliacao.html": [
     "assets/css/pages/home-shared.css",
     "assets/css/pages/home.css",
-    "assets/css/pages/pagamento.css"
+    "assets/css/pages/post-service.css"
   ],
   "/carteira.html": [
     "assets/css/pages/home-shared.css",
@@ -224,21 +232,18 @@ const INTERNAL_VIEW_STYLE_HINTS = {
   "/adicionar-cartao.html": [
     "assets/css/pages/home-shared.css",
     "assets/css/pages/home.css",
-    "assets/css/pages/carteira.css"
+    "assets/css/pages/wallet-manage.css"
   ],
   "/conta-bancaria.html": [
     "assets/css/pages/home-shared.css",
     "assets/css/pages/home.css",
-    "assets/css/pages/carteira.css"
-  ],
-  "/dashboard.html": [
-    "assets/css/pages/home-shared.css",
-    "assets/css/pages/home.css",
-    "assets/css/pages/dashboard.css"
+    "assets/css/pages/wallet-manage.css"
   ],
   "/detalhe-anuncio.html": [
     "assets/css/pages/home-shared.css",
-    "assets/css/pages/home.css",
+    "assets/css/pages/home-refresh.css",
+    "assets/css/pages/search-results.css",
+    "assets/css/pages/orcamento.css",
     "assets/css/pages/detalhe-anuncio.css"
   ]
 };
@@ -267,6 +272,22 @@ const hintInternalViewStyles = (href) => {
     document.head.appendChild(preload);
     preloadedStyleHrefs.add(absolute);
   });
+};
+
+const scheduleSidebarViewHints = () => {
+  if (sidebarViewsHinted) return;
+  sidebarViewsHinted = true;
+
+  const run = () => {
+    SIDEBAR_PRIMARY_VIEWS.forEach((path) => hintInternalViewStyles(path));
+  };
+
+  if (typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(run, { timeout: 1200 });
+    return;
+  }
+
+  window.setTimeout(run, 180);
 };
 
 const syncStylesFromDocument = async (nextDoc) => {
@@ -433,6 +454,7 @@ const initializeCurrentView = () => {
   window.DokeInitNotifications?.();
   window.DokeInitWallet?.();
   initChipRails();
+  scheduleSidebarViewHints();
 };
 
 const swapView = async (href, { replace = false, preserveScroll = false } = {}) => {

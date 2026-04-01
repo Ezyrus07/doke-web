@@ -12,7 +12,9 @@
     const searchClose = searchForm?.querySelector('.orders-header-search__close');
     const filterToggle = root.querySelector('[data-orders-filter-toggle]');
     const popover = root.querySelector('[data-orders-filters-popover]');
+    const headerControls = root.querySelector('.orders-page-header__controls');
     const activeChip = root.querySelector('[data-orders-active-chip]');
+    const filterStatusStack = root.querySelector('.orders-filter-status-stack');
     const clearFilterButton = root.querySelector('[data-orders-clear-filter]');
     const emptyState = root.querySelector('[data-orders-empty]');
     const emptyText = root.querySelector('[data-orders-empty-text]');
@@ -98,6 +100,18 @@
         activeChip.hidden = active === 'all';
       }
       if (clearFilterButton) clearFilterButton.hidden = active === 'all';
+      syncHeaderControls();
+    };
+
+    const syncHeaderControls = () => {
+      if (!headerControls) return;
+      const showStatusStack = Boolean(
+        (activeChip && !activeChip.hidden)
+        || (clearFilterButton && !clearFilterButton.hidden)
+      );
+      if (filterStatusStack) filterStatusStack.hidden = !showStatusStack;
+      const showControls = Boolean((popover && !popover.hidden) || showStatusStack);
+      headerControls.hidden = !showControls;
     };
 
     const applyFilters = () => {
@@ -126,6 +140,7 @@
     const closePopover = () => {
       if (popover) popover.hidden = true;
       if (filterToggle) filterToggle.setAttribute('aria-expanded', 'false');
+      syncHeaderControls();
     };
 
     const closeContextMenu = () => {
@@ -346,6 +361,7 @@
       const next = popover?.hidden !== false;
       if (popover) popover.hidden = !next;
       filterToggle.setAttribute('aria-expanded', String(next));
+      syncHeaderControls();
     });
 
     document.addEventListener('click', (event) => {
@@ -360,6 +376,14 @@
       if (popover && !popover.hidden) {
         if (!popover.contains(target) && !filterToggle?.contains(target)) {
           closePopover();
+        }
+      }
+
+      if (selectPanel && !selectPanel.hidden) {
+        const clickedInsideSelect = target.closest('[data-orders-select-panel]');
+        const clickedSelectToggle = target.closest('[data-orders-select-toggle]');
+        if (!clickedInsideSelect && !clickedSelectToggle) {
+          closeSelectPanel();
         }
       }
 
@@ -420,16 +444,29 @@
 
     const clearSelectedCards = () => cards.forEach((card) => card.classList.remove('is-selected'));
 
+    const closeSelectPanel = () => {
+      if (selectPanel) selectPanel.hidden = true;
+      selectToggle?.setAttribute('aria-expanded', 'false');
+    };
+
+    const openSelectPanel = () => {
+      if (selectPanel) selectPanel.hidden = false;
+      selectToggle?.setAttribute('aria-expanded', 'true');
+      closePopover();
+    };
+
     const syncSelectState = () => {
       root.classList.toggle('orders-is-selecting', selecting);
-      if (selectPanel) selectPanel.hidden = !selecting;
-      if (!selecting) clearSelectedCards();
+      if (selecting) openSelectPanel();
+      else {
+        closeSelectPanel();
+        clearSelectedCards();
+      }
     };
 
     selectToggle?.addEventListener('click', () => {
       selecting = !selecting;
       syncSelectState();
-      closePopover();
     });
 
     agendaToggle?.addEventListener('click', () => {
@@ -601,6 +638,7 @@
     syncSelectState();
     setAgendaExpanded(true);
     applyFilters();
+    syncHeaderControls();
     if (planner) {
       renderPlannerCalendar();
       syncPlannerDay(currentPlannerDate);
@@ -614,7 +652,11 @@
     });
 
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') closeContextMenu();
+      if (event.key !== 'Escape') return;
+      closeContextMenu();
+      selecting = false;
+      syncSelectState();
+      closePopover();
     });
   };
 
@@ -627,4 +669,3 @@
     initOrdersPage();
   }
 })();
-

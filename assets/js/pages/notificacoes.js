@@ -16,6 +16,7 @@
     const searchClose = searchForm?.querySelector('.orders-header-search__close');
     const filtersToggle = root.querySelector('[data-notifications-filters-toggle]');
     const filtersPanel = root.querySelector('[data-notifications-filters-panel]');
+    const headerControls = root.querySelector('.notifications-page-header__controls');
     const selectToggle = root.querySelector('[data-notifications-select-toggle]');
     const selectPanel = root.querySelector('[data-notifications-select-panel]');
     const selectModeButtons = [...root.querySelectorAll('[data-notifications-select-mode]')];
@@ -27,6 +28,7 @@
     const settingsSave = root.querySelector('[data-notifications-settings-save]');
     const settingsReset = root.querySelector('[data-notifications-settings-reset]');
     const activeChip = root.querySelector('[data-notifications-active-chip]');
+    const filterStatusStack = root.querySelector('.notifications-filter-stack');
     const clearFilterButton = root.querySelector('[data-notifications-clear-filter]');
     const activeTimeChip = root.querySelector('[data-notifications-active-time-chip]');
     const filterCountNodes = {
@@ -74,6 +76,7 @@
       if (!filtersPanel) return;
       filtersPanel.hidden = true;
       filtersToggle?.setAttribute('aria-expanded', 'false');
+      syncHeaderControls();
     };
 
     const closeSelectPanel = () => {
@@ -111,6 +114,7 @@
       filtersToggle?.setAttribute('aria-expanded', 'true');
       closeSelectPanel();
       closeSettingsPanel();
+      syncHeaderControls();
     };
 
     const openSettingsPanel = () => {
@@ -160,6 +164,19 @@
         activeTimeChip.hidden = !showTimeChip;
       }
       if (clearFilterButton) clearFilterButton.hidden = !(showTypeChip || showTimeChip);
+      syncHeaderControls();
+    };
+
+    const syncHeaderControls = () => {
+      if (!headerControls) return;
+      const showStatusStack = Boolean(
+        (activeChip && !activeChip.hidden)
+        || (activeTimeChip && !activeTimeChip.hidden)
+        || (clearFilterButton && !clearFilterButton.hidden)
+      );
+      if (filterStatusStack) filterStatusStack.hidden = !showStatusStack && (!filtersPanel || filtersPanel.hidden);
+      const showControls = Boolean((filtersPanel && !filtersPanel.hidden) || showStatusStack);
+      headerControls.hidden = !showControls;
     };
 
     const applyFilter = (filter = currentFilter, timeFilter = currentTimeFilter) => {
@@ -204,12 +221,14 @@
       buttons.forEach((item) => item.classList.remove('is-active'));
       button.classList.add('is-active');
       applyFilter(button.dataset.filter || 'all', currentTimeFilter);
+      if (mobileSearchQuery.matches) closeFiltersPanel();
     }));
 
     timeButtons.forEach((button) => button.addEventListener('click', () => {
       timeButtons.forEach((item) => item.classList.remove('is-active'));
       button.classList.add('is-active');
       applyFilter(currentFilter, button.dataset.timeFilter || 'all');
+      if (mobileSearchQuery.matches) closeFiltersPanel();
     }));
 
     filtersToggle?.addEventListener('click', () => {
@@ -270,6 +289,7 @@
       if (allButton) { buttons.forEach((item) => item.classList.remove('is-active')); allButton.classList.add('is-active'); }
       if (allTimeButton) { timeButtons.forEach((item) => item.classList.remove('is-active')); allTimeButton.classList.add('is-active'); }
       applyFilter('all', 'all');
+      closeFiltersPanel();
     });
 
     searchInput?.addEventListener('input', () => applyFilter(currentFilter));
@@ -456,7 +476,9 @@
       if (selectPanel && !selectPanel.hidden) {
         const clickedInsideSelect = target.closest('[data-notifications-select-panel]');
         const clickedSelectToggle = target.closest('[data-notifications-select-toggle]');
-        if (!clickedInsideSelect && !clickedSelectToggle) closeSelectPanel();
+        if (!clickedInsideSelect && !clickedSelectToggle) {
+          closeSelectPanel();
+        }
       }
 
       if (!target.closest('.notification-card')) closeContextMenu();
@@ -475,6 +497,7 @@
     updateUnread();
     updateStats();
     applyFilter('all', 'all');
+    syncHeaderControls();
   };
 
   window.DokeInitNotifications = initNotifications;

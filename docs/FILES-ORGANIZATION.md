@@ -1,31 +1,22 @@
-# Organização aplicada nesta etapa
+# Organização aplicada
 
-## Objetivo
-Reduzir ambiguidade de manutenção e preparar o projeto para crescer sem continuar espalhando CSS e JS duplicados.
-
-## O que ficou ativo
-A base ativa continua concentrada em:
+## Base ativa
 - `assets/css/core/`
 - `assets/css/pages/`
 - `assets/js/core/`
 - `assets/js/pages/`
 
-## O que foi arquivado
-Arquivos legados que estavam duplicados na raiz de `assets/css/` e `assets/js/` foram movidos para:
+## O que saiu
+- duplicatas antigas na raiz de `assets/css/`
+- duplicatas antigas na raiz de `assets/js/`
+- `profilefix/`
 - `assets/css/legacy/`
 - `assets/js/legacy/`
+- folhas CSS órfãs em `assets/css/pages/` sem referência ativa
 
-Esses arquivos não eram a fonte oficial carregada pelos HTMLs atuais.
-
-## Benefícios
-- menos risco de editar o arquivo errado;
-- leitura mais clara do projeto;
-- manutenção futura mais previsível;
-- base preparada para continuar padronizando páginas novas.
-
-## Exceções importantes
-- `assets/js/core/auth.js` foi criado como shim de compatibilidade para páginas que já apontavam para esse caminho.
-- As páginas continuam importando os mesmos caminhos ativos para evitar quebra de navegação.
+## Exceções preservadas
+- `assets/js/core/auth.js` continua como camada de compatibilidade
+- `assets/js/supabase-config.example.js` continua como exemplo de configuração
 
 ## Próximo passo recomendado
-Consolidar includes repetidos do shell em um template/base parcial ou em um build step, para reduzir repetição entre HTMLs internos.
+- consolidar padrões reais da interface em cima da base ativa já reduzida
