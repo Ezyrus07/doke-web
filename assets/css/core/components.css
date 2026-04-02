@@ -56,7 +56,18 @@
   gap: 12px;
 }
 
-.button {
+.button,
+.wallet-page__button,
+.budget-button,
+.results-button,
+.payment-primary-button,
+.payment-secondary-button,
+.orders-empty__button,
+.results-empty__button,
+.messages-empty__button,
+.charge-modal__button,
+.profile-mobile-hero__button,
+.messages-mobile-hero__button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -65,22 +76,62 @@
   padding: 0 18px;
   border-radius: 15px;
   border: 1px solid transparent;
+  text-decoration: none;
+  font: inherit;
   font-weight: 700;
+  cursor: pointer;
   transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
 
-.button:hover {
+.button:hover,
+.wallet-page__button:hover,
+.budget-button:hover,
+.results-button:hover,
+.payment-primary-button:hover,
+.payment-secondary-button:hover,
+.orders-empty__button:hover,
+.results-empty__button:hover,
+.messages-empty__button:hover,
+.charge-modal__button:hover,
+.profile-mobile-hero__button:hover,
+.messages-mobile-hero__button:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
 
-.button:active {
+.button:active,
+.wallet-page__button:active,
+.budget-button:active,
+.results-button:active,
+.payment-primary-button:active,
+.payment-secondary-button:active,
+.orders-empty__button:active,
+.results-empty__button:active,
+.messages-empty__button:active,
+.charge-modal__button:active,
+.profile-mobile-hero__button:active,
+.messages-mobile-hero__button:active {
   transform: translateY(0);
 }
 
-.button--primary {
+.button--primary,
+.wallet-page__button--primary,
+.budget-button--primary,
+.results-button {
   background: var(--gradient-button-primary);
   color: #fff;
+}
+
+.budget-choice.is-active,
+.budget-button--primary {
+  border-color: var(--quote-blue, var(--color-primary));
+  background: var(--quote-blue, var(--color-primary));
+  color: #fff;
+}
+
+.budget-button--primary:hover {
+  background: var(--quote-blue-deep, var(--color-primary-strong));
+  border-color: var(--quote-blue-deep, var(--color-primary-strong));
 }
 
 .button--secondary {
@@ -89,10 +140,21 @@
   border-color: var(--color-secondary-border);
 }
 
-.button--ghost {
+.button--ghost,
+.wallet-page__button--ghost,
+.budget-button--ghost,
+.orders-empty__button,
+.results-empty__button,
+.charge-modal__button--ghost {
   background: rgba(255,255,255,0.88);
   color: var(--color-heading);
   border-color: var(--color-border);
+}
+
+.budget-button {
+  min-height: 42px;
+  padding-inline: 16px;
+  border-radius: 999px;
 }
 
 .button--soft {
@@ -107,11 +169,38 @@
   border-color: #fecaca;
 }
 
-.button--sm {
+.button--sm,
+.budget-button--sm {
   min-height: 38px;
   padding-inline: 14px;
   font-size: 0.9rem;
   border-radius: 13px;
+}
+
+.budget-button--icon svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.budget-button--nav {
+  min-width: 110px;
+}
+
+.budget-button--success {
+  background: var(--color-secondary);
+  border-color: var(--color-secondary);
+  color: #fff;
+}
+
+.budget-button--success:hover {
+  background: var(--color-secondary-strong);
+  border-color: var(--color-secondary-strong);
 }
 
 .icon-button {
@@ -144,14 +233,39 @@
 }
 
 .input,
-.select {
+.select,
+.budget-field input,
+.budget-field textarea,
+.budget-field select,
+.budget-flow .ui-select__trigger,
+.payment-field input,
+.wallet-field input,
+.charge-modal__money-field input,
+.charge-modal__field select,
+.results-field select,
+.ad-field input,
+.ad-field select,
+.ad-field textarea {
   width: 100%;
   padding: 0 16px;
 }
 
 .input:focus,
 .select:focus,
-.searchbox:focus-within {
+.searchbox:focus-within,
+.budget-field input:focus,
+.budget-field textarea:focus,
+.budget-field select:focus,
+.budget-flow .ui-select__trigger:focus-visible,
+.budget-flow .ui-select.is-open .ui-select__trigger,
+.payment-field input:focus,
+.wallet-field input:focus,
+.charge-modal__money-field input:focus,
+.charge-modal__field select:focus,
+.results-field select:focus,
+.ad-field input:focus,
+.ad-field select:focus,
+.ad-field textarea:focus {
   border-color: rgba(37, 99, 235, 0.40);
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
   background: #fff;
@@ -187,7 +301,9 @@
   gap: 16px;
 }
 
-.chip {
+.chip,
+.orders-active-filter-chip,
+.payment-chip {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -201,7 +317,9 @@
   transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
 }
 
-.chip:hover {
+.chip:hover,
+.orders-active-filter-chip:hover,
+.payment-chip:hover {
   transform: translateY(-1px);
   border-color: var(--color-border-strong);
 }
@@ -874,14 +992,3 @@ body.has-modal-open {
   overflow: hidden;
 }
 
-
-
-
-/* 2026-03-26 shell swap guard to avoid unstyled flash */
-body.is-shell-swapping .page__content {
-  opacity: 1;
-}
-
-body.is-shell-swapping .page__content * {
-  transition: none !important;
-}

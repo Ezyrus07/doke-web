@@ -58,7 +58,7 @@ const orderFeedbackClose = document.querySelector("[data-order-feedback-close]")
 const orderFeedbackProvider = document.querySelector("[data-order-feedback-provider]");
 const orderFeedbackLocation = document.querySelector("[data-order-feedback-location]");
 const orderFeedbackUrgency = document.querySelector("[data-order-feedback-urgency]");
-const customSelectRegistry = new Map();
+const uiSelectApi = window.DokeUiSelect;
 let activeModalResolver = null;
 
 if (!searchBox || !searchInput) {
@@ -338,99 +338,8 @@ if (searchClearButton) {
   });
 }
 
-const closeAllCustomSelects = (exceptSelect = null) => {
-  customSelectRegistry.forEach((instance, select) => {
-    if (exceptSelect && select === exceptSelect) return;
-    instance.root.classList.remove("is-open");
-    instance.menu.hidden = true;
-    instance.trigger.setAttribute("aria-expanded", "false");
-  });
-};
-
-const refreshCustomSelect = (select) => {
-  const instance = customSelectRegistry.get(select);
-  if (!instance) return;
-
-  const selectedOption = select.options[select.selectedIndex];
-  instance.label.textContent = selectedOption?.textContent || select.options[0]?.textContent || "";
-  instance.menu.innerHTML = "";
-
-  [...select.options].forEach((option) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "ui-select__option";
-    button.textContent = option.textContent;
-    button.dataset.value = option.value;
-
-    if (option.value === select.value) {
-      button.classList.add("is-selected");
-    }
-
-    button.addEventListener("click", () => {
-      select.value = option.value;
-      refreshCustomSelect(select);
-      closeAllCustomSelects();
-      select.dispatchEvent(new Event("change", { bubbles: true }));
-    });
-
-    instance.menu.appendChild(button);
-  });
-};
-
-const enhanceSelect = (select) => {
-  if (!select || customSelectRegistry.has(select)) return;
-
-  const wrapper = document.createElement("div");
-  wrapper.className = "ui-select";
-
-  const trigger = document.createElement("button");
-  trigger.type = "button";
-  trigger.className = "ui-select__trigger";
-  trigger.setAttribute("aria-haspopup", "listbox");
-  trigger.setAttribute("aria-expanded", "false");
-  trigger.innerHTML = `
-    <span class="ui-select__label"></span>
-    <span class="ui-select__caret" aria-hidden="true"></span>
-  `;
-
-  const menu = document.createElement("div");
-  menu.className = "ui-select__menu";
-  menu.hidden = true;
-
-  select.classList.add("ui-select__native");
-  select.parentNode.insertBefore(wrapper, select);
-  wrapper.appendChild(select);
-  wrapper.appendChild(trigger);
-  wrapper.appendChild(menu);
-
-  const instance = {
-    root: wrapper,
-    trigger,
-    menu,
-    label: trigger.querySelector(".ui-select__label")
-  };
-
-  customSelectRegistry.set(select, instance);
-
-  trigger.addEventListener("click", () => {
-    const isOpen = !menu.hidden;
-    closeAllCustomSelects(select);
-    menu.hidden = isOpen;
-    wrapper.classList.toggle("is-open", !isOpen);
-    trigger.setAttribute("aria-expanded", String(!isOpen));
-  });
-
-  select.addEventListener("change", () => {
-    refreshCustomSelect(select);
-  });
-
-  refreshCustomSelect(select);
-};
-
 const enhanceHomeSelects = () => {
-  document.querySelectorAll("select[data-ui-select]").forEach((select) => {
-    enhanceSelect(select);
-  });
+  uiSelectApi?.enhanceAll(document);
 };
 
 const fillSelectOptions = (select, items, placeholder) => {
@@ -454,7 +363,7 @@ const fillSelectOptions = (select, items, placeholder) => {
     select.value = currentValue;
   }
 
-  refreshCustomSelect(select);
+  uiSelectApi?.refresh(select);
 };
 
 const ensureSelectValue = (select, value) => {
@@ -469,7 +378,7 @@ const ensureSelectValue = (select, value) => {
   }
 
   select.value = value;
-  refreshCustomSelect(select);
+  uiSelectApi?.refresh(select);
 };
 
 const extendLocationOptions = ({ state = "", city = "", neighborhood = "" } = {}) => {
@@ -507,7 +416,7 @@ const syncHomeLocationSelects = (source = "state") => {
 
   if (source === "state" && homeCitySelect) {
     homeCitySelect.value = "";
-    refreshCustomSelect(homeCitySelect);
+    uiSelectApi?.refresh(homeCitySelect);
   }
 
   const selectedCity = homeCitySelect?.value || "";
@@ -516,7 +425,7 @@ const syncHomeLocationSelects = (source = "state") => {
 
   if ((source === "state" || source === "city") && homeNeighborhoodSelect) {
     homeNeighborhoodSelect.value = "";
-    refreshCustomSelect(homeNeighborhoodSelect);
+    uiSelectApi?.refresh(homeNeighborhoodSelect);
   }
 };
 
@@ -657,12 +566,6 @@ uiModalConfirm?.addEventListener("click", () => {
   closeUiModal({ confirmed: true, value: uiModalInput?.value || "" });
 });
 
-document.addEventListener("click", (event) => {
-  if (!event.target.closest(".ui-select")) {
-    closeAllCustomSelects();
-  }
-}, { signal });
-
 document.querySelectorAll("[data-chip-group]").forEach((group) => {
   group.addEventListener("click", (event) => {
     const chip = event.target.closest(".chip, .filter-chip");
@@ -736,10 +639,6 @@ if (moreFiltersToggles.length && moreFiltersPanel) {
 
     if (event.key === "Escape" && uiModal && !uiModal.hidden) {
       closeUiModal({ confirmed: false });
-    }
-
-    if (event.key === "Escape") {
-      closeAllCustomSelects();
     }
 
     if (event.key === "Enter" && uiModal && !uiModal.hidden && document.activeElement === uiModalInput) {

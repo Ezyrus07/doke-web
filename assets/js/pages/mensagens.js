@@ -74,6 +74,7 @@
     const emptyState = root.querySelector("[data-messages-empty]");
     const ordersCount = root.querySelector("[data-messages-orders-count]");
     const contactsCount = root.querySelector("[data-messages-contacts-count]");
+    const mobileCount = root.querySelector("[data-messages-mobile-count]");
     const threadBody = root.querySelector("[data-thread-body]");
     const threadEmpty = root.querySelector("[data-messages-thread-empty]");
     const threadAvatar = root.querySelector("[data-thread-avatar]");
@@ -83,6 +84,8 @@
     const composerInput = root.querySelector("[data-messages-composer-input]");
     const backButton = root.querySelector("[data-messages-back]");
     const chargeButton = root.querySelector("[data-messages-charge]");
+    const mobileSearchButton = root.querySelector("[data-messages-mobile-search]");
+    const mobileChargeButton = root.querySelector("[data-messages-mobile-charge]");
     const imageInput = root.querySelector("[data-messages-image-input]");
     const emojiButton = root.querySelector("[data-messages-emoji]");
     const audioButton = root.querySelector("[data-messages-audio]");
@@ -178,6 +181,7 @@
       const contacts = entries.filter((item) => item.group === "contacts").length;
       if (ordersCount) ordersCount.textContent = String(orders);
       if (contactsCount) contactsCount.textContent = String(contacts);
+      if (mobileCount) mobileCount.textContent = String(orders + contacts);
     };
 
     const getMessagePreview = (message) => {
@@ -225,6 +229,16 @@
       selectionBar.hidden = total === 0;
       selectionCount.textContent = `${total} ${total === 1 ? "selecionada" : "selecionadas"}`;
     };
+
+
+    mobileSearchButton?.addEventListener("click", () => {
+      searchInput?.focus();
+      searchInput?.scrollIntoView({ block: "nearest" });
+    });
+
+    mobileChargeButton?.addEventListener("click", () => {
+      chargeButton?.click();
+    });
 
     const renderThread = (id) => {
       const conversation = conversations[id];

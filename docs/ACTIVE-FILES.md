@@ -23,6 +23,7 @@
 ## Arquivos oficiais de estilo
 - `assets/css/core/*`
 - `assets/css/pages/*`
+- Manifestos compartilhados: `assets/css/pages/app-shell.css` e `assets/css/pages/home.css`
 
 ## Arquivos oficiais de script
 - `assets/js/core/*`

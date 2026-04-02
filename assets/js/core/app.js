@@ -422,6 +422,131 @@ const initChipRails = () => {
   });
 };
 
+const createUiSelectApi = () => {
+  const registry = new Map();
+
+  const pruneDisconnected = () => {
+    registry.forEach((instance, select) => {
+      if (select.isConnected && instance.root.isConnected) return;
+      registry.delete(select);
+    });
+  };
+
+  const closeAll = (exceptSelect = null) => {
+    pruneDisconnected();
+    registry.forEach((instance, select) => {
+      if (exceptSelect && select === exceptSelect) return;
+      instance.root.classList.remove("is-open");
+      instance.menu.hidden = true;
+      instance.trigger.setAttribute("aria-expanded", "false");
+    });
+  };
+
+  const refresh = (select) => {
+    pruneDisconnected();
+    const instance = registry.get(select);
+    if (!instance) return;
+
+    const selectedOption = select.options[select.selectedIndex];
+    instance.label.textContent = selectedOption?.textContent || select.options[0]?.textContent || "";
+    instance.menu.innerHTML = "";
+
+    [...select.options].forEach((option) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "ui-select__option";
+      button.textContent = option.textContent;
+      button.dataset.value = option.value;
+
+      if (option.value === select.value) {
+        button.classList.add("is-selected");
+      }
+
+      button.addEventListener("click", () => {
+        select.value = option.value;
+        refresh(select);
+        closeAll();
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+
+      instance.menu.appendChild(button);
+    });
+  };
+
+  const enhance = (select) => {
+    pruneDisconnected();
+    if (!select || registry.has(select)) return select;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "ui-select";
+
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "ui-select__trigger";
+    trigger.setAttribute("aria-haspopup", "listbox");
+    trigger.setAttribute("aria-expanded", "false");
+    trigger.innerHTML = `
+      <span class="ui-select__label"></span>
+      <span class="ui-select__caret" aria-hidden="true"></span>
+    `;
+
+    const menu = document.createElement("div");
+    menu.className = "ui-select__menu";
+    menu.hidden = true;
+
+    select.classList.add("ui-select__native");
+    select.parentNode.insertBefore(wrapper, select);
+    wrapper.appendChild(select);
+    wrapper.appendChild(trigger);
+    wrapper.appendChild(menu);
+
+    const instance = {
+      root: wrapper,
+      trigger,
+      menu,
+      label: trigger.querySelector(".ui-select__label")
+    };
+
+    registry.set(select, instance);
+
+    trigger.addEventListener("click", () => {
+      const isOpen = !menu.hidden;
+      closeAll(select);
+      menu.hidden = isOpen;
+      wrapper.classList.toggle("is-open", !isOpen);
+      trigger.setAttribute("aria-expanded", String(!isOpen));
+    });
+
+    select.addEventListener("change", () => {
+      refresh(select);
+    });
+
+    refresh(select);
+    return select;
+  };
+
+  const enhanceAll = (root = document) => {
+    root.querySelectorAll("select[data-ui-select]").forEach((select) => {
+      enhance(select);
+    });
+  };
+
+  document.addEventListener("click", (event) => {
+    if (event.target.closest(".ui-select")) return;
+    closeAll();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeAll();
+    }
+  });
+
+  return { enhance, enhanceAll, refresh, closeAll };
+};
+
+window.DokeUiSelect = window.DokeUiSelect || createUiSelectApi();
+
 const syncBodyClassesFromDocument = (nextDoc) => {
   const preserved = SHELL_STATE_CLASSES.filter((className) => body.classList.contains(className));
   body.className = "";
@@ -456,6 +581,13 @@ const initializeCurrentView = () => {
   initChipRails();
   scheduleSidebarViewHints();
 };
+
+const waitForNextPaint = () =>
+  new Promise((resolve) => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(resolve);
+    });
+  });
 
 const swapView = async (href, { replace = false, preserveScroll = false } = {}) => {
   const url = new URL(href, window.location.href);
@@ -504,7 +636,8 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
   }
 
   initializeCurrentView();
-  requestAnimationFrame(() => body.classList.remove("is-shell-swapping"));
+  await waitForNextPaint();
+  body.classList.remove("is-shell-swapping");
 };
 
 window.DokeNavigate = async (href, options = {}) => {

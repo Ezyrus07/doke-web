@@ -63,7 +63,7 @@ const normalize = searchData.normalize || ((value) => String(value || "").toLowe
 const addSearchHistory = searchData.addSearchHistory || (() => {});
 const categories = searchData.categories || [];
 const locationOptions = searchData.locationOptions || { states: [], citiesByState: {}, neighborhoodsByCity: {}, cepLookup: {} };
-const customSelectRegistry = new Map();
+const uiSelectApi = window.DokeUiSelect;
 let activeModalResolver = null;
 let resultsLoadTimer = null;
 window.DokeSearchResultsCleanup = () => {
@@ -273,7 +273,7 @@ const fillSelectOptions = (select, items, placeholder) => {
     select.value = currentValue;
   }
 
-  refreshCustomSelect(select);
+  uiSelectApi?.refresh(select);
 };
 
 const ensureSelectValue = (select, value, placeholder) => {
@@ -288,102 +288,11 @@ const ensureSelectValue = (select, value, placeholder) => {
   }
 
   select.value = value;
-  refreshCustomSelect(select);
-};
-
-const closeAllCustomSelects = (exceptSelect = null) => {
-  customSelectRegistry.forEach((instance, select) => {
-    if (exceptSelect && select === exceptSelect) return;
-    instance.root.classList.remove("is-open");
-    instance.menu.hidden = true;
-    instance.trigger.setAttribute("aria-expanded", "false");
-  });
-};
-
-const refreshCustomSelect = (select) => {
-  const instance = customSelectRegistry.get(select);
-  if (!instance) return;
-
-  const selectedOption = select.options[select.selectedIndex];
-  instance.label.textContent = selectedOption?.textContent || select.options[0]?.textContent || "";
-  instance.menu.innerHTML = "";
-
-  [...select.options].forEach((option) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "ui-select__option";
-    button.textContent = option.textContent;
-    button.dataset.value = option.value;
-
-    if (option.value === select.value) {
-      button.classList.add("is-selected");
-    }
-
-    button.addEventListener("click", () => {
-      select.value = option.value;
-      refreshCustomSelect(select);
-      closeAllCustomSelects();
-      select.dispatchEvent(new Event("change", { bubbles: true }));
-    });
-
-    instance.menu.appendChild(button);
-  });
-};
-
-const enhanceSelect = (select) => {
-  if (!select || customSelectRegistry.has(select)) return;
-
-  const wrapper = document.createElement("div");
-  wrapper.className = "ui-select";
-
-  const trigger = document.createElement("button");
-  trigger.type = "button";
-  trigger.className = "ui-select__trigger";
-  trigger.setAttribute("aria-haspopup", "listbox");
-  trigger.setAttribute("aria-expanded", "false");
-  trigger.innerHTML = `
-    <span class="ui-select__label"></span>
-    <span class="ui-select__caret" aria-hidden="true"></span>
-  `;
-
-  const menu = document.createElement("div");
-  menu.className = "ui-select__menu";
-  menu.hidden = true;
-
-  select.classList.add("ui-select__native");
-  select.parentNode.insertBefore(wrapper, select);
-  wrapper.appendChild(select);
-  wrapper.appendChild(trigger);
-  wrapper.appendChild(menu);
-
-  const instance = {
-    root: wrapper,
-    trigger,
-    menu,
-    label: trigger.querySelector(".ui-select__label")
-  };
-
-  customSelectRegistry.set(select, instance);
-
-  trigger.addEventListener("click", () => {
-    const isOpen = !menu.hidden;
-    closeAllCustomSelects(select);
-    menu.hidden = isOpen;
-    wrapper.classList.toggle("is-open", !isOpen);
-    trigger.setAttribute("aria-expanded", String(!isOpen));
-  });
-
-  select.addEventListener("change", () => {
-    refreshCustomSelect(select);
-  });
-
-  refreshCustomSelect(select);
+  uiSelectApi?.refresh(select);
 };
 
 const enhanceResultsSelects = () => {
-  document.querySelectorAll("select[data-ui-select]").forEach((select) => {
-    enhanceSelect(select);
-  });
+  uiSelectApi?.enhanceAll(document);
 };
 
 const extendLocationOptions = ({ state = "", city = "", neighborhood = "" } = {}) => {
@@ -889,19 +798,9 @@ document.addEventListener("keydown", (event) => {
     closeUiModal({ confirmed: false });
   }
 
-  if (event.key === "Escape") {
-    closeAllCustomSelects();
-  }
-
   if (event.key === "Enter" && uiModal && !uiModal.hidden && document.activeElement === uiModalInput) {
     event.preventDefault();
     closeUiModal({ confirmed: true, value: uiModalInput?.value || "" });
-  }
-}, { signal });
-
-document.addEventListener("click", (event) => {
-  if (!event.target.closest(".ui-select")) {
-    closeAllCustomSelects();
   }
 }, { signal });
 
