@@ -61,6 +61,35 @@ const orderFeedbackUrgency = document.querySelector("[data-order-feedback-urgenc
 const uiSelectApi = window.DokeUiSelect;
 let activeModalResolver = null;
 
+const sideMeta = document.querySelector(".home-side-meta");
+const sideMetaSearchButton = document.querySelector(".home-side-meta__search");
+const sideMetaSearchInput = document.querySelector(".home-side-meta__search-input");
+
+if (sideMeta && sideMetaSearchButton && sideMetaSearchInput) {
+  const closeSideMetaSearch = () => sideMeta.classList.remove("is-search-open");
+  sideMetaSearchButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    const willOpen = !sideMeta.classList.contains("is-search-open");
+    sideMeta.classList.toggle("is-search-open", willOpen);
+    if (willOpen) {
+      window.requestAnimationFrame(() => sideMetaSearchInput.focus());
+    }
+  }, { signal });
+
+  document.addEventListener("click", (event) => {
+    if (!sideMeta.contains(event.target)) {
+      closeSideMetaSearch();
+    }
+  }, { signal });
+
+  sideMetaSearchInput.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeSideMetaSearch();
+      sideMetaSearchButton.focus();
+    }
+  }, { signal });
+}
+
 if (!searchBox || !searchInput) {
   return;
 }
@@ -74,6 +103,7 @@ const searchItemIcon = (type = "search") => {
 
 let activeSearchIndex = -1;
 const isMobileSearchViewport = () => window.innerWidth <= 760;
+const shouldUseSearchDropdown = () => !isMobileSearchViewport();
 const syncSearchOverlayState = (query = "") => {
   document.body.classList.toggle("home-search-has-query", isMobileSearchViewport() && String(query || "").trim().length >= 2);
 };
@@ -164,6 +194,10 @@ const renderSearchSuggestions = (query = "") => {
 
 const openSearchDropdown = () => {
   if (!searchDropdown || !searchInput) return;
+  if (!shouldUseSearchDropdown()) {
+    closeSearchDropdown();
+    return;
+  }
   searchDropdown.hidden = false;
   searchInput.setAttribute("aria-expanded", "true");
   if (isMobileSearchViewport()) {
@@ -219,6 +253,11 @@ if (searchDropdown) searchDropdown.hidden = true;
 
 if (searchBox && searchInput && searchDropdown) {
   const syncSearchDropdown = () => {
+    if (!shouldUseSearchDropdown()) {
+      closeSearchDropdown();
+      return;
+    }
+
     const query = searchInput.value.trim();
     renderSearchHistory();
     renderSearchSuggestions(query);
@@ -246,6 +285,7 @@ if (searchBox && searchInput && searchDropdown) {
   searchInput.addEventListener("input", syncSearchDropdown);
 
   searchInput.addEventListener("keydown", (event) => {
+    if (!shouldUseSearchDropdown()) return;
     const options = getVisibleSearchOptions();
 
     if (event.key === "ArrowDown" && options.length) {
@@ -277,6 +317,7 @@ if (searchBox && searchInput && searchDropdown) {
   });
 
   searchDropdown.addEventListener("click", (event) => {
+    if (!shouldUseSearchDropdown()) return;
     const suggestion = event.target.closest(".search-suggestion, .search-chip");
     if (!suggestion) return;
     goToSearchResults(suggestion.dataset.value || suggestion.textContent);

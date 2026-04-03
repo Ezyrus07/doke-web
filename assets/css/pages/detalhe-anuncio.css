@@ -1911,71 +1911,93 @@ button {
   }
 }
 
-/* 2026-03-26 detalhe-anuncio media + reviews refresh */
+/* 2026-03-26 detalhe-anuncio media + reviews authoritative */
+.ad-media {
+  gap: 14px !important;
+}
+
 .ad-media__videos {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  align-items: stretch;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(220px, 270px)) !important;
+  justify-content: start !important;
+  grid-auto-flow: unset !important;
+  grid-auto-columns: unset !important;
+  overflow: visible !important;
+  gap: 12px !important;
+  padding-bottom: 0 !important;
+  scroll-snap-type: none !important;
 }
 
 .ad-video-card {
+  width: 100% !important;
+  min-width: 0 !important;
   min-height: 0 !important;
   height: auto !important;
-  aspect-ratio: 9 / 16;
-  padding: 12px !important;
-  border-radius: 22px;
-  border: 1px solid rgba(192, 209, 225, 0.9);
-  box-shadow: 0 10px 24px rgba(25, 52, 83, 0.08);
-  background-position: center;
+  aspect-ratio: 0.66 / 1 !important;
+  padding: 14px !important;
+  border-radius: 24px !important;
+  border: 1px solid rgba(192, 209, 225, 0.9) !important;
+  box-shadow: inset 0 -90px 72px rgba(8, 13, 22, 0.64) !important;
+  align-self: stretch !important;
 }
 
 .ad-video-card__play {
-  width: 44px;
-  height: 44px;
-  background: rgba(255,255,255,0.16);
-  backdrop-filter: blur(8px);
+  width: 38px !important;
+  height: 38px !important;
+  top: 14px !important;
+  right: 14px !important;
 }
 
 .ad-video-card__content {
-  display: grid;
-  align-content: end;
-  min-height: 72px;
+  display: grid !important;
+  align-content: end !important;
+  min-height: 68px !important;
 }
 
 .ad-video-card__content strong {
-  font-size: 1rem;
-  line-height: 1.28;
+  font-size: 0.96rem !important;
+  line-height: 1.2 !important;
+  margin-bottom: 6px !important;
 }
 
 .ad-video-card__content span {
-  font-size: 0.84rem;
+  font-size: 0.78rem !important;
 }
 
-.ad-reviews {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+.ad-media__comparisons {
+  grid-template-columns: repeat(2, minmax(320px, 410px)) !important;
+  justify-content: start !important;
+  gap: 12px !important;
+}
+
+.ad-compare-card {
+  border-radius: 24px !important;
+}
+
+.ad-compare-card__visual {
+  min-height: 220px !important;
+}
+
+.ad-compare-card__body {
+  padding: 16px !important;
+  gap: 6px !important;
+}
+
+.ad-compare-card__body strong {
+  font-size: 0.96rem !important;
+  line-height: 1.24 !important;
+}
+
+.ad-compare-card__body span {
+  font-size: 0.8rem !important;
 }
 
 .ad-reviews-overview--refresh {
-  display: grid;
-  gap: 16px;
-  padding-bottom: 0;
-  border-bottom: 0;
+  gap: 14px !important;
 }
 
-.ad-reviews-hero {
-  display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: 14px;
-  align-items: stretch;
-}
-
-.ad-reviews-hero__score,
-.ad-review-summary-pill,
-.ad-vote-card,
-.ad-review {
-  border: 1px solid rgba(199, 212, 228, 0.82);
-  background: rgba(255,255,255,0.84);
+.ad-reviews-trend {
+  grid-template-columns: 280px minmax(0, 1fr) !important;
 }
 
 .ad-reviews-hero__score {
@@ -1986,6 +2008,14 @@ button {
   align-content: start;
 }
 
+.ad-reviews-hero__score--solo {
+  min-height: 100%;
+  border-radius: 22px !important;
+  padding: 18px !important;
+  border: 1px solid rgba(199, 212, 228, 0.82) !important;
+  background: rgba(255,255,255,0.86) !important;
+}
+
 .ad-reviews-hero__label {
   font-size: 0.82rem;
   font-weight: 800;
@@ -1994,414 +2024,16 @@ button {
   color: var(--ad-muted);
 }
 
-.ad-reviews-hero__score strong {
-  font-size: 2.45rem;
+.ad-reviews-hero__score--solo strong {
+  font-size: 2.6rem !important;
   line-height: 1;
-  letter-spacing: -0.06em;
-  color: #214f84;
+  color: #163e72 !important;
 }
 
 .ad-reviews-hero__score p {
   margin: 0;
   color: var(--ad-muted);
   font-size: 0.88rem;
-}
-
-.ad-reviews-hero__summary {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.ad-review-summary-pill {
-  min-height: 88px;
-  border-radius: 22px;
-  padding: 16px 18px;
-  display: grid;
-  align-content: center;
-  gap: 6px;
-}
-
-.ad-review-summary-pill span {
-  color: var(--ad-muted);
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.ad-review-summary-pill strong {
-  font-size: 1.35rem;
-  line-height: 1;
-  color: var(--ad-text);
-}
-
-.ad-vote-stats--grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  overflow: visible;
-}
-
-.ad-vote-card {
-  min-height: 0;
-  padding: 18px;
-  border-radius: 22px;
-  display: grid;
-  gap: 14px;
-}
-
-.ad-vote-card__top {
-  display: grid;
-  gap: 4px;
-}
-
-.ad-vote-card__top strong {
-  font-size: 1rem;
-  line-height: 1.2;
-}
-
-.ad-vote-card__top span {
-  color: var(--ad-muted);
-  font-size: 0.88rem;
-  font-weight: 600;
-}
-
-.ad-vote-card__rows {
-  display: grid;
-  gap: 8px;
-}
-
-.ad-vote-card__rows div {
-  display: grid;
-  grid-template-columns: 74px 1fr 18px;
-  gap: 8px;
-  align-items: center;
-}
-
-.ad-vote-card__rows span,
-.ad-vote-card__rows em {
-  font-size: 0.86rem;
-  color: var(--ad-muted);
-  font-style: normal;
-}
-
-.ad-vote-card__rows i {
-  display: block;
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(207, 219, 232, 0.82);
-  overflow: hidden;
-}
-
-.ad-vote-card__rows b {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #3a80c8, #2865a5);
-}
-
-.ad-review {
-  border-radius: 22px;
-  padding: 18px;
-  box-shadow: none;
-}
-
-.ad-review__head > span {
-  color: #f0b34f;
-  letter-spacing: 0.08em;
-}
-
-@media (max-width: 1180px) {
-  .ad-media__videos {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .ad-video-card {
-    border-radius: 20px;
-  }
-  .ad-reviews-hero {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 900px) {
-  .ad-media__videos {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-  .ad-video-card {
-    aspect-ratio: 9 / 16;
-  }
-  .ad-vote-stats--grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (max-width: 680px) {
-  .ad-media__videos {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 10px;
-  }
-  .ad-video-card {
-    padding: 10px !important;
-    border-radius: 18px;
-  }
-  .ad-video-card__play {
-    width: 38px;
-    height: 38px;
-  }
-  .ad-video-card__content strong {
-    font-size: 0.94rem;
-  }
-  .ad-media__comparisons,
-  .ad-reviews,
-  .ad-vote-stats--grid,
-  .ad-reviews-hero__summary {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-@media (max-width: 520px) {
-  .ad-media__videos {
-    grid-template-columns: 1fr !important;
-  }
-  .ad-video-card {
-    max-width: 320px;
-    width: 100%;
-    justify-self: start;
-  }
-}
-
-
-/* 2026-03-26 detalhe anuncio media + reviews hard refresh */
-.ad-media__videos {
-  display: grid !important;
-  grid-auto-flow: column !important;
-  grid-auto-columns: clamp(220px, 24vw, 324px) !important;
-  grid-template-columns: none !important;
-  gap: 14px !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  padding-bottom: 6px;
-  scrollbar-width: none;
-  scroll-snap-type: x proximity;
-}
-
-.ad-media__videos::-webkit-scrollbar {
-  display: none;
-}
-
-.ad-video-card {
-  min-height: 0 !important;
-  height: auto !important;
-  aspect-ratio: 9 / 16 !important;
-  scroll-snap-align: start;
-  border-radius: 24px !important;
-}
-
-.ad-video-card__content strong {
-  font-size: 0.98rem !important;
-}
-
-.ad-video-card__content span {
-  font-size: 0.82rem !important;
-}
-
-.ad-reviews-overview--refresh {
-  gap: 14px !important;
-}
-
-.ad-reviews-hero {
-  display: grid !important;
-  grid-template-columns: 220px minmax(0, 1fr) !important;
-  gap: 14px !important;
-}
-
-.ad-reviews-hero__score,
-.ad-review-summary-pill,
-.ad-vote-card,
-.ad-review {
-  box-shadow: none !important;
-}
-
-.ad-reviews-hero__summary {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 12px !important;
-}
-
-.ad-review-summary-pill {
-  min-height: 96px !important;
-  border-radius: 22px !important;
-  padding: 16px 18px !important;
-}
-
-.ad-review-summary-pill span {
-  font-size: 0.88rem !important;
-}
-
-.ad-review-summary-pill strong {
-  font-size: 1.9rem !important;
-  color: #163e72 !important;
-}
-
-.ad-vote-stats--grid {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  grid-auto-flow: row !important;
-  grid-auto-columns: unset !important;
-  overflow: visible !important;
-  gap: 14px !important;
-  padding-bottom: 0 !important;
-}
-
-.ad-vote-card {
-  min-width: 0 !important;
-  padding: 18px !important;
-  border-radius: 24px !important;
-  gap: 14px !important;
-}
-
-.ad-vote-card__top {
-  gap: 4px !important;
-}
-
-.ad-vote-card__top strong {
-  font-size: 0.98rem !important;
-  line-height: 1.2;
-}
-
-.ad-vote-card__top span {
-  font-size: 0.84rem !important;
-}
-
-.ad-vote-card__rows {
-  gap: 10px !important;
-}
-
-.ad-vote-card__rows div {
-  grid-template-columns: 70px minmax(0, 1fr) 18px !important;
-  gap: 10px !important;
-}
-
-.ad-vote-card__rows span,
-.ad-vote-card__rows em {
-  font-size: 0.84rem !important;
-}
-
-.ad-vote-card__rows i {
-  height: 10px !important;
-}
-
-.ad-vote-card:nth-child(1) .ad-vote-card__rows b,
-.ad-vote-card:nth-child(2) .ad-vote-card__rows b,
-.ad-vote-card:nth-child(3) .ad-vote-card__rows b,
-.ad-vote-card:nth-child(4) .ad-vote-card__rows b {
-  background: linear-gradient(90deg, #3b7ac0 0%, #215b96 100%) !important;
-}
-
-@media (max-width: 1024px) {
-  .ad-media__videos {
-    grid-auto-columns: clamp(210px, 34vw, 290px) !important;
-  }
-
-  .ad-reviews-hero {
-    grid-template-columns: 1fr !important;
-  }
-
-  .ad-reviews-hero__summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-
-  .ad-vote-stats--grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-}
-
-@media (max-width: 760px) {
-  .ad-media__videos {
-    grid-auto-columns: 78vw !important;
-    gap: 12px !important;
-  }
-
-  .ad-video-card {
-    border-radius: 22px !important;
-  }
-
-  .ad-video-card__play {
-    width: 40px !important;
-    height: 40px !important;
-  }
-
-  .ad-reviews-hero__summary,
-  .ad-vote-stats--grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  .ad-review-summary-pill,
-  .ad-vote-card {
-    border-radius: 20px !important;
-  }
-
-  .ad-vote-card {
-    padding: 16px !important;
-  }
-
-  .ad-vote-card__rows div {
-    grid-template-columns: 64px minmax(0, 1fr) 18px !important;
-    gap: 8px !important;
-  }
-}
-
-
-/* 2026-03-26 final detalhe anuncio parity with index */
-.ad-media__videos {
-  display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  grid-auto-flow: unset !important;
-  grid-auto-columns: unset !important;
-  overflow: visible !important;
-  gap: 14px !important;
-  padding-bottom: 0 !important;
-  scroll-snap-type: none !important;
-}
-
-.ad-video-card {
-  width: 100% !important;
-  min-width: 0 !important;
-  aspect-ratio: 9 / 16 !important;
-  min-height: 340px !important;
-  height: 100% !important;
-  border-radius: 22px !important;
-  border: 1px solid rgba(192, 209, 225, 0.9) !important;
-  box-shadow: 0 10px 24px rgba(25, 52, 83, 0.08) !important;
-  align-self: stretch !important;
-}
-
-.ad-video-card__content {
-  display: grid !important;
-  align-content: end !important;
-  min-height: 68px !important;
-}
-
-.ad-media__comparisons {
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 14px !important;
-}
-
-.ad-reviews-overview--refresh {
-  gap: 14px !important;
-}
-
-.ad-review-summary-pill {
-  min-height: 96px !important;
-  padding: 16px 18px !important;
-  border-radius: 22px !important;
-  background: rgba(255,255,255,0.86) !important;
-  border: 1px solid rgba(199, 212, 228, 0.82) !important;
-}
-
-.ad-review-summary-pill strong {
-  font-size: 1.75rem !important;
-  line-height: 1;
-  color: #163e72 !important;
 }
 
 .ad-review-trend-card {
@@ -2529,150 +2161,6 @@ button {
   background: linear-gradient(90deg, #3b7ac0 0%, #215b96 100%) !important;
 }
 
-@media (max-width: 1024px) {
-  .ad-media__videos {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  }
-
-  .ad-video-card {
-    min-height: 300px !important;
-  }
-
-  .ad-reviews-trend {
-    grid-template-columns: 1fr !important;
-  }
-
-  .ad-reviews-trend__summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-}
-
-@media (max-width: 760px) {
-  .ad-media__videos {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 10px !important;
-  }
-
-  .ad-video-card {
-    min-height: 252px !important;
-    border-radius: 18px !important;
-    padding: 10px !important;
-  }
-
-  .ad-video-card__content {
-    min-height: 60px !important;
-  }
-
-  .ad-media__comparisons {
-    grid-template-columns: 1fr !important;
-  }
-
-  .ad-reviews-trend__summary {
-    grid-template-columns: 1fr !important;
-  }
-
-  .ad-review-toolbar--refresh {
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .ad-review-rail-actions {
-    margin-left: auto;
-  }
-
-  .ad-vote-stats--rail {
-    grid-auto-columns: 88% !important;
-  }
-}
-
-
-/* 2026-03-26 detalhe reviews simplify top score only */
-.ad-reviews-trend {
-  grid-template-columns: 280px minmax(0, 1fr) !important;
-}
-
-.ad-reviews-hero__score--solo {
-  min-height: 100%;
-  border-radius: 22px !important;
-  padding: 18px !important;
-  border: 1px solid rgba(199, 212, 228, 0.82) !important;
-  background: rgba(255,255,255,0.86) !important;
-  display: grid;
-  gap: 6px;
-  align-content: start;
-}
-
-.ad-reviews-hero__score--solo strong {
-  font-size: 2.6rem !important;
-  line-height: 1;
-  color: #163e72 !important;
-}
-
-/* 2026-03-26 emergency media scale reset */
-.ad-media {
-  gap: 14px !important;
-}
-
-.ad-media__videos {
-  grid-template-columns: repeat(3, minmax(220px, 270px)) !important;
-  justify-content: start !important;
-  gap: 12px !important;
-}
-
-.ad-video-card {
-  min-height: 0 !important;
-  height: auto !important;
-  aspect-ratio: 0.66 / 1 !important;
-  padding: 14px !important;
-  border-radius: 24px !important;
-  box-shadow: inset 0 -90px 72px rgba(8, 13, 22, 0.64) !important;
-}
-
-.ad-video-card__play {
-  width: 38px !important;
-  height: 38px !important;
-  top: 14px !important;
-  right: 14px !important;
-}
-
-.ad-video-card__content strong {
-  font-size: 0.96rem !important;
-  line-height: 1.2 !important;
-  margin-bottom: 6px !important;
-}
-
-.ad-video-card__content span {
-  font-size: 0.78rem !important;
-}
-
-.ad-media__comparisons {
-  grid-template-columns: repeat(2, minmax(320px, 410px)) !important;
-  justify-content: start !important;
-  gap: 12px !important;
-}
-
-.ad-compare-card {
-  border-radius: 24px !important;
-}
-
-.ad-compare-card__visual {
-  min-height: 220px !important;
-}
-
-.ad-compare-card__body {
-  padding: 16px !important;
-  gap: 6px !important;
-}
-
-.ad-compare-card__body strong {
-  font-size: 0.96rem !important;
-  line-height: 1.24 !important;
-}
-
-.ad-compare-card__body span {
-  font-size: 0.8rem !important;
-}
-
 @media (max-width: 1280px) {
   .ad-media__videos {
     grid-template-columns: repeat(3, minmax(200px, 240px)) !important;
@@ -2680,6 +2168,12 @@ button {
 
   .ad-media__comparisons {
     grid-template-columns: repeat(2, minmax(280px, 360px)) !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .ad-reviews-trend {
+    grid-template-columns: 1fr !important;
   }
 }
 
@@ -2707,9 +2201,14 @@ button {
   }
 
   .ad-video-card {
+    min-height: 252px !important;
     aspect-ratio: 0.72 / 1 !important;
     padding: 10px !important;
     border-radius: 18px !important;
+  }
+
+  .ad-video-card__content {
+    min-height: 60px !important;
   }
 
   .ad-video-card__content strong {
@@ -2718,6 +2217,19 @@ button {
 
   .ad-video-card__content span {
     font-size: 0.72rem !important;
+  }
+
+  .ad-review-toolbar--refresh {
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .ad-review-rail-actions {
+    margin-left: auto;
+  }
+
+  .ad-vote-stats--rail {
+    grid-auto-columns: 88% !important;
   }
 }
 

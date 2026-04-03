@@ -7,14 +7,31 @@ const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalh
 const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", "/perfil.html", "/carteira.html"];
 let sidebarViewsHinted = false;
+const isMobileSidebarViewport = () => window.innerWidth <= 760;
 
-if (window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true") {
+if (!isMobileSidebarViewport() && window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true") {
   body.classList.add("sidebar-collapsed");
 }
 
 if (window.localStorage.getItem(THEME_STORAGE_KEY) === "dark") {
   body.classList.add("theme-dark");
 }
+
+const syncSidebarCollapsedState = () => {
+  if (isMobileSidebarViewport()) {
+    body.classList.remove("sidebar-collapsed");
+    return;
+  }
+
+  if (window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true") {
+    body.classList.add("sidebar-collapsed");
+  } else {
+    body.classList.remove("sidebar-collapsed");
+  }
+};
+
+window.addEventListener("resize", syncSidebarCollapsedState, { passive: true });
+syncSidebarCollapsedState();
 
 const authService = window.DokeAuth || null;
 
@@ -673,7 +690,18 @@ document.addEventListener("submit", (event) => {
 
 document.addEventListener("keydown", (event) => {
   const activeInput = event.target.closest('[data-global-topbar-search] input[type="search"], [data-global-topbar-search] input[type="text"]');
-  if (!activeInput || event.key !== "Enter") return;
+  if (!activeInput) return;
+
+  if (event.key === "Escape") {
+    const searchForm = activeInput.closest('[data-global-topbar-search]');
+    if (window.innerWidth > 760 && document.body.classList.contains('home-index-shell') && !String(activeInput.value || '').trim()) {
+      searchForm?.classList.remove('is-expanded');
+    }
+    activeInput.blur();
+    return;
+  }
+
+  if (event.key !== "Enter") return;
 
   const query = activeInput.value || "";
   if (!String(query).trim()) return;
@@ -689,12 +717,28 @@ document.addEventListener("click", (event) => {
     const searchForm = submitButton.closest("[data-global-topbar-search]");
     const searchInput = searchForm?.querySelector('input[type="search"], input[type="text"]');
     const query = searchInput?.value || "";
+    const isDesktopHomeTopbar = window.innerWidth > 760 && document.body.classList.contains("home-index-shell") && searchForm?.closest(".topbar--location");
+
+    if (isDesktopHomeTopbar && searchForm && !searchForm.classList.contains("is-expanded")) {
+      event.preventDefault();
+      searchForm.classList.add("is-expanded");
+      window.setTimeout(() => searchInput?.focus(), 0);
+      return;
+    }
 
     if (String(query).trim()) {
       event.preventDefault();
       closeMobileSearch();
       navigateToSearchResults(query);
       return;
+    }
+  }
+
+  const expandedDesktopSearch = document.querySelector('.home-index-shell .topbar--location [data-global-topbar-search].is-expanded');
+  if (expandedDesktopSearch && !event.target.closest('[data-global-topbar-search]')) {
+    const expandedInput = expandedDesktopSearch.querySelector('input[type="search"], input[type="text"]');
+    if (!String(expandedInput?.value || '').trim()) {
+      expandedDesktopSearch.classList.remove('is-expanded');
     }
   }
 
@@ -758,6 +802,9 @@ window.addEventListener("popstate", () => {
 document.addEventListener("click", (event) => {
   const toggleButton = event.target.closest("[data-sidebar-toggle]");
   if (toggleButton) {
+    if (isMobileSidebarViewport()) {
+      body.classList.remove("sidebar-collapsed");
+    }
     if (!body.classList.contains("sidebar-open")) { closeMobileSearch(); }
     body.classList.toggle("sidebar-open");
     return;
@@ -765,6 +812,11 @@ document.addEventListener("click", (event) => {
 
   const collapseButton = event.target.closest("[data-sidebar-collapse]");
   if (collapseButton) {
+    if (isMobileSidebarViewport()) {
+      body.classList.remove("sidebar-collapsed");
+      window.localStorage.setItem(SIDEBAR_STORAGE_KEY, "false");
+      return;
+    }
     body.classList.toggle("sidebar-collapsed");
     window.localStorage.setItem(
       SIDEBAR_STORAGE_KEY,
