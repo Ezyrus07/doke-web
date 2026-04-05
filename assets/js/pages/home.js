@@ -34,6 +34,7 @@ const moreFiltersClose = document.querySelector("[data-more-filters-close]");
 const moreFiltersApply = document.querySelector("[data-more-filters-apply]");
 const moreFiltersTabsHost = document.querySelector("[data-more-filters-tabs-host]");
 const moreFiltersSearchHost = document.querySelector("[data-more-filters-search-host]");
+const leadingHeroFiltersButton = document.querySelector(".home-search-hero__leading-filter");
 const homeStateSelect = document.querySelector("[data-home-state-select]");
 const homeCitySelect = document.querySelector("[data-home-city-select]");
 const homeNeighborhoodSelect = document.querySelector("[data-home-neighborhood-select]");
@@ -64,6 +65,26 @@ let activeModalResolver = null;
 const sideMeta = document.querySelector(".home-side-meta");
 const sideMetaSearchButton = document.querySelector(".home-side-meta__search");
 const sideMetaSearchInput = document.querySelector(".home-side-meta__search-input");
+const homeProfileMenuToggle = document.querySelector("[data-home-profile-menu-toggle]");
+const homeAccountMenuToggle = document.querySelector("[data-home-account-menu-toggle]");
+const homeProfileMenu = document.querySelector("[data-home-profile-menu]");
+const homeAccountMenu = document.querySelector("[data-home-account-menu]");
+const desktopLocationTrigger = document.querySelector(".home-side-meta__location");
+const mobileLocationTrigger = document.querySelector(".mobile-header-location[data-location-trigger]");
+const locationTriggers = [desktopLocationTrigger, mobileLocationTrigger].filter(Boolean);
+const locationMenu = document.querySelector("[data-home-location-menu]");
+const locationMenuContent = document.querySelector("[data-home-location-content]");
+const locationMenuClose = document.querySelector("[data-home-location-close]");
+const locationMenuAdd = document.querySelector("[data-home-location-add]");
+const locationMenuFooter = document.querySelector("[data-home-location-footer]");
+const addressModal = document.querySelector("[data-home-address-modal]");
+const addressForm = document.querySelector("[data-home-address-form]");
+const addressCloseButtons = document.querySelectorAll("[data-home-address-close]");
+const topbarLocationValues = document.querySelectorAll("[data-topbar-location-value]");
+const defaultServiceLocationKey = "doke.defaultServiceLocation";
+const savedServiceLocationsKey = "doke.savedServiceLocations";
+let activeLocationTrigger = null;
+let lockedLocationScrollY = 0;
 
 if (sideMeta && sideMetaSearchButton && sideMetaSearchInput) {
   const closeSideMetaSearch = () => sideMeta.classList.remove("is-search-open");
@@ -89,6 +110,356 @@ if (sideMeta && sideMetaSearchButton && sideMetaSearchInput) {
     }
   }, { signal });
 }
+
+const closeHomeProfileMenus = () => {
+  homeProfileMenu && (homeProfileMenu.hidden = true);
+  homeAccountMenu && (homeAccountMenu.hidden = true);
+  homeProfileMenuToggle?.setAttribute("aria-expanded", "false");
+  homeAccountMenuToggle?.setAttribute("aria-expanded", "false");
+};
+
+const toggleHomeProfileMenu = (menu, toggle) => {
+  if (!menu || !toggle) return;
+  const shouldOpen = menu.hidden;
+  closeHomeProfileMenus();
+  menu.hidden = !shouldOpen;
+  toggle.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+};
+
+homeProfileMenuToggle?.addEventListener("click", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  toggleHomeProfileMenu(homeProfileMenu, homeProfileMenuToggle);
+}, { signal });
+
+homeAccountMenuToggle?.addEventListener("click", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  toggleHomeProfileMenu(homeAccountMenu, homeAccountMenuToggle);
+}, { signal });
+
+homeProfileMenu?.addEventListener("click", (event) => {
+  event.stopPropagation();
+}, { signal });
+
+homeAccountMenu?.addEventListener("click", (event) => {
+  event.stopPropagation();
+}, { signal });
+
+const readSavedLocations = () => {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(savedServiceLocationsKey) || "[]");
+    return Array.isArray(parsed) ? parsed.filter((item) => item && typeof item === "object") : [];
+  } catch {
+    return [];
+  }
+};
+
+const readDefaultLocation = () => {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(defaultServiceLocationKey) || "null");
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
+const persistSavedLocations = (items) => {
+  window.localStorage.setItem(savedServiceLocationsKey, JSON.stringify(items));
+};
+
+const persistDefaultLocation = (item) => {
+  if (!item) {
+    window.localStorage.removeItem(defaultServiceLocationKey);
+    return;
+  }
+
+  window.localStorage.setItem(defaultServiceLocationKey, JSON.stringify(item));
+};
+
+const buildLocationId = (item) => [
+  item.titulo,
+  item.rua,
+  item.numero,
+  item.bairro,
+  item.cidade,
+  item.uf
+].map((value) => String(value || "").trim().toLowerCase()).join("|");
+
+const normalizeLocation = (item = {}) => ({
+  id: item.id || buildLocationId(item),
+  titulo: String(item.titulo || "").trim(),
+  rua: String(item.rua || "").trim(),
+  numero: String(item.numero || "").trim(),
+  bairro: String(item.bairro || "").trim(),
+  cidade: String(item.cidade || "").trim(),
+  uf: String(item.uf || "").trim().toUpperCase(),
+  complemento: String(item.complemento || "").trim(),
+  referencia: String(item.referencia || "").trim()
+});
+
+const ensureLocationCollection = () => {
+  const savedLocations = readSavedLocations().map(normalizeLocation);
+  const defaultLocation = readDefaultLocation();
+  if (!defaultLocation) {
+    persistSavedLocations(savedLocations);
+    return savedLocations;
+  }
+
+  const normalizedDefault = normalizeLocation(defaultLocation);
+  const hasDefault = savedLocations.some((item) => item.id === normalizedDefault.id);
+  const nextLocations = hasDefault ? savedLocations : [normalizedDefault, ...savedLocations];
+  persistSavedLocations(nextLocations);
+  return nextLocations;
+};
+
+const formatLocationSummary = (item) => {
+  if (!item) return "";
+  return [item.rua && item.numero ? `${item.rua}, ${item.numero}` : item.rua, item.bairro, item.cidade, item.uf]
+    .filter(Boolean)
+    .join(" · ");
+};
+
+const formatLocationTriggerValue = (item) => {
+  if (!item) return "Adicionar endereço";
+  if (item.cidade && item.uf) return `${item.cidade}, ${item.uf}`;
+  return item.titulo || item.rua || "Adicionar endereço";
+};
+
+const syncTopbarLocationValues = () => {
+  const currentLocation = readDefaultLocation();
+  const value = formatLocationTriggerValue(currentLocation);
+  topbarLocationValues.forEach((node) => {
+    node.textContent = value;
+  });
+};
+
+const closeLocationMenu = () => {
+  if (!locationMenu) return;
+  locationMenu.hidden = true;
+  locationTriggers.forEach((trigger) => trigger.setAttribute("aria-expanded", "false"));
+  activeLocationTrigger = null;
+};
+
+const renderLocationMenu = () => {
+  if (!locationMenuContent) return;
+  const savedLocations = ensureLocationCollection();
+  const defaultLocation = readDefaultLocation();
+  if (locationMenuFooter) {
+    locationMenuFooter.hidden = savedLocations.length === 0;
+  }
+
+  if (!savedLocations.length) {
+    locationMenuContent.innerHTML = `
+      <div class="home-location-popover__empty">
+        <strong>Nenhum endereço cadastrado</strong>
+        <p>Adicione um endereço para reutilizar nesta home e nos próximos fluxos.</p>
+      </div>
+    `;
+    return;
+  }
+
+  locationMenuContent.innerHTML = "";
+  savedLocations.forEach((item) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "home-location-option";
+    if (defaultLocation && normalizeLocation(defaultLocation).id === item.id) {
+      button.classList.add("is-active");
+    }
+    button.dataset.locationId = item.id;
+    button.innerHTML = `
+      <span class="home-location-option__text">
+        <strong>${item.titulo || formatLocationTriggerValue(item)}</strong>
+        <span>${formatLocationSummary(item)}</span>
+      </span>
+      <span class="home-location-option__check" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M5 12.5 9.2 17 19 7.5"></path></svg>
+      </span>
+    `;
+    locationMenuContent.appendChild(button);
+  });
+};
+
+const positionLocationMenu = (trigger) => {
+  if (!locationMenu || !trigger) return;
+  const rect = trigger.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+  const menuWidth = Math.min(360, Math.max(280, rect.width));
+  const left = Math.min(
+    Math.max(16, rect.left),
+    Math.max(16, viewportWidth - menuWidth - 16)
+  );
+
+  locationMenu.style.setProperty("--home-location-popover-top", `${rect.bottom + 12}px`);
+  locationMenu.style.setProperty("--home-location-popover-left", `${left}px`);
+  locationMenu.style.setProperty("--home-location-popover-width", `${menuWidth}px`);
+};
+
+const openLocationMenu = (trigger) => {
+  if (!locationMenu || !trigger) return;
+  if (!ensureLocationCollection().length) {
+    openAddressModal();
+    return;
+  }
+  activeLocationTrigger = trigger;
+  renderLocationMenu();
+  positionLocationMenu(trigger);
+  locationMenu.hidden = false;
+  locationTriggers.forEach((item) => item.setAttribute("aria-expanded", item === trigger ? "true" : "false"));
+};
+
+const lockAddressViewport = () => {
+  lockedLocationScrollY = window.scrollY || window.pageYOffset || 0;
+  document.body.style.top = `-${lockedLocationScrollY}px`;
+  document.body.classList.add("home-address-modal-open");
+};
+
+const unlockAddressViewport = () => {
+  const top = document.body.style.top;
+  document.body.classList.remove("home-address-modal-open");
+  document.body.style.top = "";
+  const nextScrollY = top ? Math.abs(parseInt(top, 10)) || lockedLocationScrollY : lockedLocationScrollY;
+  window.scrollTo(0, nextScrollY);
+};
+
+const openAddressModal = () => {
+  if (!addressModal || !addressForm) return;
+  addressForm.reset();
+  const cityField = addressForm.elements.namedItem("cidade");
+  const ufField = addressForm.elements.namedItem("uf");
+  const defaultCheckbox = addressForm.elements.namedItem("padrao");
+  if (cityField) cityField.value = "Belo Horizonte";
+  if (ufField) ufField.value = "MG";
+  if (defaultCheckbox && "checked" in defaultCheckbox) defaultCheckbox.checked = !readDefaultLocation();
+  lockAddressViewport();
+  addressModal.showModal();
+  window.requestAnimationFrame(() => {
+    const firstInput = addressForm.querySelector("input:not([type='checkbox'])");
+    firstInput?.focus();
+  });
+};
+
+const closeAddressModal = () => {
+  addressModal?.close();
+};
+
+const saveLocation = (item, makeDefault = false) => {
+  const normalized = normalizeLocation(item);
+  const savedLocations = ensureLocationCollection().filter((location) => location.id !== normalized.id);
+  const nextLocations = [normalized, ...savedLocations];
+  persistSavedLocations(nextLocations);
+  if (makeDefault || !readDefaultLocation()) {
+    persistDefaultLocation(normalized);
+  }
+  syncTopbarLocationValues();
+  renderLocationMenu();
+};
+
+const activateLocationById = (locationId) => {
+  const selected = ensureLocationCollection().find((item) => item.id === locationId);
+  if (!selected) return;
+  persistDefaultLocation(selected);
+  syncTopbarLocationValues();
+  renderLocationMenu();
+  closeLocationMenu();
+};
+
+syncTopbarLocationValues();
+ensureLocationCollection();
+
+desktopLocationTrigger?.setAttribute("data-location-trigger", "");
+
+locationTriggers.forEach((trigger) => {
+  trigger.setAttribute("aria-expanded", "false");
+  trigger.setAttribute("aria-haspopup", "dialog");
+  trigger.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (locationMenu && !locationMenu.hidden && activeLocationTrigger === trigger) {
+      closeLocationMenu();
+      return;
+    }
+    openLocationMenu(trigger);
+  }, { signal });
+});
+
+locationMenuClose?.addEventListener("click", () => {
+  closeLocationMenu();
+}, { signal });
+
+locationMenuAdd?.addEventListener("click", () => {
+  closeLocationMenu();
+  openAddressModal();
+}, { signal });
+
+locationMenuContent?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  const locationOption = event.target.closest("[data-location-id]");
+  if (!locationOption) return;
+  activateLocationById(locationOption.dataset.locationId || "");
+}, { signal });
+
+locationMenu?.addEventListener("click", (event) => {
+  event.stopPropagation();
+}, { signal });
+
+addressCloseButtons.forEach((button) => {
+  button.addEventListener("click", closeAddressModal, { signal });
+});
+
+addressModal?.addEventListener("click", (event) => {
+  const dialog = addressModal.querySelector(".home-address-modal__dialog");
+  if (dialog && !dialog.contains(event.target)) {
+    closeAddressModal();
+  }
+}, { signal });
+
+addressModal?.addEventListener("close", unlockAddressViewport, { signal });
+
+addressForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (!addressForm.reportValidity()) return;
+  const data = new FormData(addressForm);
+  const nextLocation = {
+    titulo: data.get("titulo"),
+    rua: data.get("rua"),
+    numero: data.get("numero"),
+    bairro: data.get("bairro"),
+    cidade: data.get("cidade"),
+    uf: data.get("uf"),
+    complemento: data.get("complemento"),
+    referencia: data.get("referencia")
+  };
+  saveLocation(nextLocation, Boolean(data.get("padrao")));
+  closeAddressModal();
+});
+
+document.addEventListener("click", (event) => {
+  if (event.target.closest(".home-side-meta__profile-wrap")) return;
+  if (event.target.closest(".home-side-meta__location, .mobile-header-location, [data-home-location-menu]")) return;
+  closeLocationMenu();
+  closeHomeProfileMenus();
+}, { signal });
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeLocationMenu();
+    closeHomeProfileMenus();
+  }
+}, { signal });
+
+window.addEventListener("resize", () => {
+  if (activeLocationTrigger && locationMenu && !locationMenu.hidden) {
+    positionLocationMenu(activeLocationTrigger);
+  }
+}, { signal });
+
+window.addEventListener("scroll", () => {
+  if (activeLocationTrigger && locationMenu && !locationMenu.hidden) {
+    positionLocationMenu(activeLocationTrigger);
+  }
+}, { signal, passive: true });
 
 if (!searchBox || !searchInput) {
   return;
@@ -672,6 +1043,17 @@ if (moreFiltersToggles.length && moreFiltersPanel) {
 
   moreFiltersClose?.addEventListener("click", closeMoreFilters);
   moreFiltersApply?.addEventListener("click", closeMoreFilters);
+
+  leadingHeroFiltersButton?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const isOpen = leadingHeroFiltersButton.getAttribute("aria-expanded") === "true";
+    if (isOpen) {
+      closeMoreFilters();
+      return;
+    }
+    openMoreFilters("hero-field");
+  });
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {

@@ -22,12 +22,10 @@ const neighborhoodSelect = document.querySelector("[data-results-neighborhood-se
 const cepFillButton = document.querySelector("[data-results-cep-fill]");
 const loadingState = document.querySelector("[data-results-loading]");
 const resultsGrid = document.querySelector("[data-results-grid]");
-const resultsEmpty = document.querySelector("[data-results-empty]");
 const resultsEmptyTitle = document.querySelector("[data-results-empty-title]");
 const resultsEmptyText = document.querySelector("[data-results-empty-text]");
-const resultsEmptySuggestions = document.querySelector("[data-results-empty-suggestions]");
-const resultsEmptyGrid = document.querySelector("[data-results-empty-grid]");
-const resultsEmptyHelper = document.querySelector("[data-results-empty-helper]");
+const resultsInlineEmpty = document.querySelector("[data-results-inline-empty]");
+const resultsActiveChips = document.querySelector("[data-results-active-chips]");
 const resultsEmptyReset = document.querySelector("[data-results-empty-reset]");
 const resultsSummary = document.querySelector("[data-results-summary]");
 const resultsUsersSection = document.querySelector("[data-results-users]");
@@ -110,12 +108,8 @@ const setResultsState = (state) => {
     resultsGrid.hidden = state !== "results";
   }
 
-  if (resultsEmpty) {
-    resultsEmpty.hidden = state !== "empty";
-  }
-
-  if (resultsSummary) {
-    resultsSummary.hidden = state !== "results";
+  if (resultsInlineEmpty) {
+    resultsInlineEmpty.hidden = state !== "empty";
   }
 };
 
@@ -167,22 +161,23 @@ const createServiceCard = (item) => {
 
 const createUserCard = (item) => {
   const article = document.createElement("article");
-  article.className = "result-user-card";
+  article.className = "pro-card pro-card--compact";
   article.innerHTML = `
-    <div class="result-user-card__top">
-      <span class="service-card__avatar ${item.avatarClass}" aria-hidden="true"></span>
-      <div class="result-user-card__identity">
+    <div class="pro-card__header">
+      <div class="pro-card__avatar ${item.avatarClass}" aria-hidden="true"></div>
+      <div class="pro-card__identity">
         <strong>${item.name}</strong>
         <span>${item.handle}</span>
       </div>
+      <span class="pro-card__score">★ ${item.rating.toFixed(1).replace(".", ",")}</span>
     </div>
-    <div class="result-user-card__body">
+    <div class="pro-card__body">
       <p>${item.role}</p>
       <span>${item.location}</span>
+      <small>${item.jobs} serviços</small>
     </div>
-    <div class="result-user-card__footer">
-      <span>★ ${item.rating.toFixed(1).replace(".", ",")} • ${item.jobs} serviços</span>
-      <a href="#">Ver perfil</a>
+    <div class="pro-card__footer">
+      <a class="pro-card__cta" href="#">Ver perfil</a>
     </div>
   `;
   return article;
@@ -535,27 +530,19 @@ const getRelatedServices = (query, filters, limit = 1) => {
 };
 
 const renderEmptySuggestions = (query, filters) => {
-  if (!resultsEmptyGrid || !resultsEmptySuggestions || !resultsEmptyTitle || !resultsEmptyText || !resultsEmptyHelper) return;
+  if (!resultsInlineEmpty || !resultsEmptyTitle || !resultsEmptyText) return [];
 
-  const relatedServices = getRelatedServices(query, filters);
+  const relatedServices = getRelatedServices(query, filters, 6);
   const hasLocation = filters.neighborhood || filters.city || filters.state;
 
   resultsEmptyTitle.textContent = query
-    ? `Nao achamos um resultado exato para "${query}".`
+    ? `Não achamos um resultado exato para "${query}".`
     : "Nenhum anúncio encaixou nesses filtros.";
   resultsEmptyText.textContent = hasLocation
-    ? "Mas ainda dá para explorar profissionais parecidos com a sua busca ou próximos da região selecionada."
+    ? "Separamos alternativas próximas da região escolhida para você não sair da busca de mãos vazias."
     : "Separamos alternativas parecidas para você não sair da busca de mãos vazias.";
-  resultsEmptyHelper.textContent = hasLocation
-    ? "Priorizamos anúncios na mesma cidade, no mesmo bairro ou com termos parecidos com o que você digitou."
-    : "Priorizamos anúncios com categorias e palavras próximas do que você procurou.";
 
-  resultsEmptyGrid.innerHTML = "";
-  relatedServices.forEach((item) => {
-    resultsEmptyGrid.appendChild(createServiceCard(item));
-  });
-
-  resultsEmptySuggestions.hidden = relatedServices.length === 0;
+  return relatedServices;
 };
 
 const renderRelatedSections = (query) => {
@@ -611,6 +598,18 @@ const syncCategoryParams = () => {
   });
 };
 
+const renderActiveChips = (query, filters, count) => {
+  if (!resultsActiveChips) return;
+  const chips = [];
+  if (query) chips.push(`Busca: ${query}`);
+  if (filters.categories?.length) chips.push(...filters.categories.slice(0, 3));
+  if (filters.city) chips.push(filters.city);
+  if (filters.state) chips.push(filters.state);
+  if (filters.minRating) chips.push(`${filters.minRating}+`);
+  chips.push(`${count} resultado${count === 1 ? "" : "s"}`);
+  resultsActiveChips.innerHTML = chips.map((chip) => `<span class="results-active-chip">${chip}</span>`).join("");
+};
+
 const renderResults = () => {
   if (!resultsGrid || !resultsTitle || !resultsDescription || !resultsCount) return;
 
@@ -619,62 +618,50 @@ const renderResults = () => {
   const query = String(params.get("q") || "").trim();
   const filters = getFilters();
   const userResults = getUserMatches(query);
-  const serviceResults = getServiceMatches(query, filters);
+  const exactServiceResults = getServiceMatches(query, filters);
   const isUserSearch = filters.searchType === "users";
-  const results = isUserSearch ? [] : serviceResults;
+
   renderRelatedSections(query);
 
-  resultsGrid.innerHTML = "";
-  results.forEach((item) => {
-    resultsGrid.appendChild(createServiceCard(item));
-  });
-
-  resultsCount.textContent = String(isUserSearch ? userResults.length : results.length);
-  resultsTitle.textContent = isUserSearch
-    ? (query ? `Usuários para "${query}"` : "Usuários em destaque")
-    : (query ? `Resultados para "${query}"` : "Resultados em destaque");
-  resultsDescription.textContent = isUserSearch
-    ? (userResults.length
-      ? "Perfis relacionados ao que você digitou."
-      : "Não encontramos usuários com esse nome ou termo.")
-    : (results.length
-      ? "Ajuste os filtros laterais para refinar sem sair da busca."
-      : "Não encontramos anúncios com essa combinação de termo e filtro.");
-
-  if (resultsUsersSection) {
-    resultsUsersSection.hidden = isUserSearch ? userResults.length === 0 : resultsUsersSection.hidden;
-  }
-
   if (isUserSearch) {
-    if (resultsGrid) {
-      resultsGrid.innerHTML = "";
-    }
+    resultsGrid.innerHTML = "";
     if (resultsUsersGrid) {
       resultsUsersGrid.innerHTML = "";
-      userResults.slice(0, 6).forEach((item) => {
-        resultsUsersGrid.appendChild(createUserCard(item));
-      });
+      userResults.slice(0, 6).forEach((item) => resultsUsersGrid.appendChild(createUserCard(item)));
     }
-    if (resultsUsersSection) {
-      resultsUsersSection.hidden = userResults.length === 0;
-    }
-    if (userResults.length) {
-      setResultsState("empty");
-      if (resultsEmpty) {
-        resultsEmpty.hidden = true;
-      }
-    } else {
-      renderEmptySuggestions(query, filters);
-      setResultsState("empty");
-    }
+    if (resultsUsersSection) resultsUsersSection.hidden = userResults.length === 0;
+    if (resultsInlineEmpty) resultsInlineEmpty.hidden = userResults.length > 0;
+    resultsTitle.textContent = query ? `Usuários para "${query}"` : "Usuários em destaque";
+    resultsDescription.textContent = userResults.length ? "Perfis relacionados ao que você digitou." : "Não encontramos usuários com esse nome ou termo.";
+    resultsCount.textContent = String(userResults.length);
+    renderActiveChips(query, filters, userResults.length);
+    setResultsState(userResults.length ? "results" : "empty");
     return;
   }
 
-  if (results.length) {
+  const relatedServices = exactServiceResults.length >= 6
+    ? []
+    : getRelatedServices(query, filters, 6).filter((item) => !exactServiceResults.some((exact) => exact.id === item.id));
+  const displayServices = [...exactServiceResults, ...relatedServices].slice(0, 6);
+
+  resultsGrid.innerHTML = "";
+  displayServices.forEach((item) => resultsGrid.appendChild(createServiceCard(item)));
+
+  resultsCount.textContent = String(exactServiceResults.length);
+  resultsTitle.textContent = query ? `Resultados para "${query}"` : "Resultados em destaque";
+  resultsDescription.textContent = exactServiceResults.length
+    ? "Ajuste os filtros laterais para refinar sem sair da busca."
+    : "Selecionamos anúncios relacionados para continuar a sua busca.";
+  renderActiveChips(query, filters, exactServiceResults.length || displayServices.length);
+
+  if (exactServiceResults.length) {
+    if (resultsInlineEmpty) resultsInlineEmpty.hidden = true;
     setResultsState("results");
   } else {
     renderEmptySuggestions(query, filters);
     setResultsState("empty");
+    if (resultsGrid) resultsGrid.hidden = false;
+    if (resultsInlineEmpty) resultsInlineEmpty.hidden = false;
   }
 };
 
@@ -688,7 +675,7 @@ const loadResults = () => {
   resultsLoadTimer = window.setTimeout(() => {
     resultsLoadTimer = null;
     renderResults();
-  }, 1300);
+  }, 250);
 };
 
 const handleSearchSubmit = (event, sourceInput) => {

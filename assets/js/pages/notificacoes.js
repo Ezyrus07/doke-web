@@ -57,7 +57,6 @@
     if (pageTitle) pageTitle.textContent = 'Notificações';
 
     const setSearchExpanded = (expanded) => {
-      if (!mobileSearchQuery.matches) return;
       root.classList.toggle('is-search-open', expanded);
     };
 
@@ -304,7 +303,6 @@
     });
 
     searchTrigger?.addEventListener('click', (event) => {
-      if (!mobileSearchQuery.matches) return;
       event.preventDefault();
       event.stopPropagation();
       if (!root.classList.contains('is-search-open')) setSearchExpanded(true);
@@ -312,13 +310,12 @@
     });
 
     searchInput?.addEventListener('focus', () => {
-      if (mobileSearchQuery.matches) setSearchExpanded(true);
+      setSearchExpanded(true);
     });
 
     searchClose?.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      if (!mobileSearchQuery.matches) return;
       if (searchInput) searchInput.value = '';
       setSearchExpanded(false);
       searchInput?.blur();

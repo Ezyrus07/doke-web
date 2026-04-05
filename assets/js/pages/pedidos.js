@@ -8,7 +8,7 @@
     const cards = Array.from(root.querySelectorAll('.order-card[data-status]'));
     const searchInput = root.querySelector('.orders-header-search input');
     const searchForm = searchInput?.closest('form');
-    const searchTrigger = searchForm?.querySelector('.orders-header-search__icon');
+    const searchTrigger = root.querySelector('.orders-header-search__icon');
     const searchClose = searchForm?.querySelector('.orders-header-search__close');
     const filterToggle = root.querySelector('[data-orders-filter-toggle]');
     const popover = root.querySelector('[data-orders-filters-popover]');
@@ -330,7 +330,6 @@
     const mobileSearchQuery = window.matchMedia('(max-width: 640px)');
 
     const setSearchExpanded = (expanded) => {
-      if (!mobileSearchQuery.matches) return;
       root.classList.toggle('is-search-open', expanded);
     };
 
@@ -368,8 +367,8 @@
       const target = event.target;
       if (!(target instanceof Element)) return;
 
-      if (mobileSearchQuery.matches && root.classList.contains('is-search-open')) {
-        const clickedInsideSearch = target.closest('.orders-page-header__search');
+      if (root.classList.contains('is-search-open')) {
+        const clickedInsideSearch = target.closest('.orders-header-search, .home-side-meta__search');
         if (!clickedInsideSearch && !(searchInput?.value || '').trim()) setSearchExpanded(false);
       }
 
@@ -409,7 +408,7 @@
     searchInput?.addEventListener('input', applyFilters);
     searchForm?.addEventListener('submit', (event) => {
       event.preventDefault();
-      if (mobileSearchQuery.matches && !root.classList.contains('is-search-open')) {
+      if (!root.classList.contains('is-search-open')) {
         setSearchExpanded(true);
         searchInput?.focus();
         return;
@@ -418,7 +417,6 @@
     });
 
     searchTrigger?.addEventListener('click', (event) => {
-      if (!mobileSearchQuery.matches) return;
       event.preventDefault();
       event.stopPropagation();
       if (!root.classList.contains('is-search-open')) setSearchExpanded(true);
@@ -426,13 +424,12 @@
     });
 
     searchInput?.addEventListener('focus', () => {
-      if (mobileSearchQuery.matches) setSearchExpanded(true);
+      setSearchExpanded(true);
     });
 
     searchClose?.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      if (!mobileSearchQuery.matches) return;
       if (searchInput) searchInput.value = '';
       setSearchExpanded(false);
       searchInput?.blur();
@@ -467,6 +464,9 @@
     selectToggle?.addEventListener('click', () => {
       selecting = !selecting;
       syncSelectState();
+      if (selecting) {
+        searchInput?.blur();
+      }
     });
 
     agendaToggle?.addEventListener('click', () => {
