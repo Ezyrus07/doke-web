@@ -3,9 +3,9 @@ const body = document.body;
 const SIDEBAR_STORAGE_KEY = "doke.sidebar.collapsed";
 const THEME_STORAGE_KEY = "doke.theme";
 const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", "mobile-search-active"];
-const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/comunidade.html", "/pagamento.html", "/finalizar-pedido.html", "/avaliacao.html", "/carteira.html", "/adicionar-cartao.html", "/conta-bancaria.html", "/perfil.html", "/"]);
+const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/comunidade.html", "/pagamento.html", "/finalizar-pedido.html", "/avaliacao.html", "/carteira.html", "/adicionar-cartao.html", "/conta-bancaria.html", "/perfil.html", "/mais.html", "/"]);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
-const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", "/perfil.html", "/carteira.html"];
+const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", "/perfil.html", "/mais.html", "/carteira.html"];
 let sidebarViewsHinted = false;
 const isMobileSidebarViewport = () => window.innerWidth <= 760;
 
@@ -49,11 +49,7 @@ const isInternalViewUrl = (href) => {
   }
 };
 
-const shouldBypassShellSwap = (href) => {
-  const currentPath = body.dataset.currentViewPath || getCurrentPath();
-  const nextPath = getCurrentPath(href);
-  return currentPath === MESSAGES_VIEW_PATH || nextPath === MESSAGES_VIEW_PATH;
-};
+const shouldBypassShellSwap = (_href) => false;
 
 const updateSidebarActiveState = () => {
   const path = getCurrentPath();
@@ -64,6 +60,7 @@ const updateSidebarActiveState = () => {
   const communitiesActive = path === "/comunidade.html";
   const walletActive = path === "/carteira.html" || path === "/adicionar-cartao.html" || path === "/conta-bancaria.html";
   const profileActive = path === "/perfil.html";
+  const settingsActive = path === "/mais.html";
 
   document.querySelectorAll(".sidebar .nav-link").forEach((link) => link.classList.remove("is-active"));
   document.querySelector(".nav-link--home")?.classList.toggle("is-active", homeActive);
@@ -73,6 +70,16 @@ const updateSidebarActiveState = () => {
   document.querySelector(".nav-link--communities")?.classList.toggle("is-active", communitiesActive);
   document.querySelector(".nav-link--wallet")?.classList.toggle("is-active", walletActive);
   document.querySelector(".nav-link--profile")?.classList.toggle("is-active", profileActive);
+  document.querySelector(".nav-link--settings")?.classList.toggle("is-active", settingsActive);
+};
+
+const syncSettingsLinks = () => {
+  document.querySelectorAll(".nav-link--settings, .profile-dropdown__item").forEach((link) => {
+    const text = (link.textContent || "").trim().toLowerCase();
+    if (link.classList.contains("nav-link--settings") || text.includes("configurações")) {
+      if (link.tagName === "A") link.setAttribute("href", "mais.html");
+    }
+  });
 };
 
 const ensureWalletProfileItem = () => {
@@ -101,6 +108,7 @@ const ensureWalletProfileItem = () => {
 
 const syncAuthUi = () => {
   ensureWalletProfileItem();
+  syncSettingsLinks();
   if (!authService) return;
 
   const avatar = document.querySelector(".avatar");
@@ -245,6 +253,12 @@ const INTERNAL_VIEW_STYLE_HINTS = {
     "assets/css/pages/home-shared.css",
     "assets/css/pages/home.css",
     "assets/css/pages/perfil.css"
+  ],
+  "/mais.html": [
+    "assets/css/pages/home-shared.css",
+    "assets/css/pages/home.css",
+    "assets/css/pages/perfil.css",
+    "assets/css/pages/mais.css"
   ],
   "/adicionar-cartao.html": [
     "assets/css/pages/home-shared.css",
@@ -621,10 +635,12 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
   const html = await response.text();
   const parser = new DOMParser();
   const nextDoc = parser.parseFromString(html, "text/html");
-  const nextMain = nextDoc.querySelector(".page__content");
-  const currentMain = document.querySelector(".page__content");
+  const nextPage = nextDoc.querySelector(".page");
+  const currentPage = document.querySelector(".page");
+  const nextSidebar = nextDoc.querySelector(".app-shell > .sidebar");
+  const currentSidebar = document.querySelector(".app-shell > .sidebar");
 
-  if (!nextMain || !currentMain) {
+  if (!nextPage || !currentPage) {
     window.location.href = url.toString();
     return;
   }
@@ -634,9 +650,14 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
 
   body.classList.add("is-shell-swapping");
   syncBodyClassesFromDocument(nextDoc);
-  syncShellFromDocument(nextDoc);
   syncStandaloneUiFromDocument(nextDoc);
-  currentMain.replaceWith(nextMain.cloneNode(true));
+
+  if (currentSidebar && nextSidebar) {
+    currentSidebar.replaceWith(nextSidebar.cloneNode(true));
+  }
+
+  currentPage.replaceWith(nextPage.cloneNode(true));
+
   cleanupDynamicStyles(nextDoc);
   document.title = nextDoc.title || document.title;
   closeProfileMenu();
@@ -750,6 +771,20 @@ document.addEventListener("click", (event) => {
     return;
   }
 
+
+  const quickSearchTrigger = event.target.closest(".home-side-meta__search");
+  if (quickSearchTrigger) {
+    event.preventDefault();
+    const group = quickSearchTrigger.closest(".home-side-meta__group");
+    const form = group?.querySelector(".home-side-meta__search-form");
+    const input = form?.querySelector("input[type='search'], input[type='text']");
+    if (input) {
+      form?.classList.add("is-expanded");
+      window.setTimeout(() => input.focus(), 0);
+    }
+    return;
+  }
+
   const cta = event.target.closest(".service-card__cta");
   if (cta) {
     event.preventDefault();
@@ -788,11 +823,6 @@ document.addEventListener("touchstart", (event) => {
 hintInternalViewStyles(window.location.href);
 
 window.addEventListener("popstate", () => {
-  if (shouldBypassShellSwap(window.location.href)) {
-    window.location.reload();
-    return;
-  }
-
   swapView(window.location.href, { replace: true, preserveScroll: true }).catch((error) => {
     console.error(error);
     window.location.reload();

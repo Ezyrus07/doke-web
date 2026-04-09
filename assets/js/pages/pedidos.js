@@ -8,7 +8,7 @@
     const cards = Array.from(root.querySelectorAll('.order-card[data-status]'));
     const searchInput = root.querySelector('.orders-header-search input');
     const searchForm = searchInput?.closest('form');
-    const searchTrigger = root.querySelector('.orders-header-search__icon');
+    const searchTrigger = searchForm?.querySelector('.orders-header-search__icon');
     const searchClose = searchForm?.querySelector('.orders-header-search__close');
     const filterToggle = root.querySelector('[data-orders-filter-toggle]');
     const popover = root.querySelector('[data-orders-filters-popover]');
@@ -368,7 +368,7 @@
       if (!(target instanceof Element)) return;
 
       if (root.classList.contains('is-search-open')) {
-        const clickedInsideSearch = target.closest('.orders-header-search, .home-side-meta__search');
+        const clickedInsideSearch = target.closest('.orders-page-header__search');
         if (!clickedInsideSearch && !(searchInput?.value || '').trim()) setSearchExpanded(false);
       }
 
@@ -464,9 +464,6 @@
     selectToggle?.addEventListener('click', () => {
       selecting = !selecting;
       syncSelectState();
-      if (selecting) {
-        searchInput?.blur();
-      }
     });
 
     agendaToggle?.addEventListener('click', () => {

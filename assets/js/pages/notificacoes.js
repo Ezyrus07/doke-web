@@ -8,7 +8,7 @@
     const timeButtons = [...root.querySelectorAll('[data-time-filter]')];
     const cards = [...root.querySelectorAll('.notification-card')];
     const empty = root.querySelector('[data-notifications-empty]');
-    const countNode = document.querySelector('[data-notifications-unread-count]');
+    const countNodes = [...document.querySelectorAll('[data-notifications-unread-count], [data-notifications-hero-count]')];
     const pageTitle = root.querySelector('.notifications-page-header__heading h2');
     const searchInput = root.querySelector('[data-notifications-search]');
     const searchForm = searchInput?.closest('form');
@@ -125,7 +125,7 @@
 
     const updateUnread = () => {
       const count = [...root.querySelectorAll('.notification-card.is-unread')].filter((card) => card.dataset.dismissed !== 'true').length;
-      if (countNode) countNode.textContent = String(count);
+      countNodes.forEach((node) => { node.textContent = String(count); });
     };
 
     const updateStats = () => {
