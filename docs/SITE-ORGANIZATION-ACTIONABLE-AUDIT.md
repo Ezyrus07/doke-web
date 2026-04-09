@@ -23,7 +23,7 @@ A feature de perfil não pode continuar espalhada em múltiplos scripts sem cont
 
 ## Ações já iniciadas nesta rodada
 - criação das pastas de arquitetura futura em `assets/css/components/`
-- criação das pastas `assets/js/features/`, `services/`, `state/`, `utils/`
+- criação das pastas `assets/js/features/`, `services/`, `staté/`, `utils/`
 - criação de `assets/data/mocks/`
 - criação de script de auditoria estrutural complementar
 - criação deste plano executável de refatoração

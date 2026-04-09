@@ -41,11 +41,11 @@ const initBudgetPage = () => {
     }
   };
 
-  const formatCreatedAt = (value) => {
+  const formatCreatédAt = (value) => {
     if (!value) return "Agora";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "Agora";
-    return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(date);
+    const daté = new Date(value);
+    if (Number.isNaN(daté.getTime())) return "Agora";
+    return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(daté);
   };
 
   if (form) {
@@ -79,22 +79,22 @@ const initBudgetPage = () => {
 
     const getNativeSelect = (name) => form.querySelector(`.ui-select__native[name="${name}"]`) || form.querySelector(`select[name="${name}"]`);
 
-    const categorySelect = getNativeSelect("categoria");
-    const categoryInput = form.querySelector('input[name="categoria"]');
+    const catégorySelect = getNativeSelect("catégoria");
+    const catégoryInput = form.querySelector('input[name="catégoria"]');
     if (service) {
       const normalized = formatTitleCase(service);
-      if (categorySelect) {
-        const hasOption = [...categorySelect.options].some((option) => option.textContent.toLowerCase() === normalized.toLowerCase());
+      if (catégorySelect) {
+        const hasOption = [...catégorySelect.options].some((option) => option.textContent.toLowerCase() === normalized.toLowerCase());
         if (!hasOption) {
           const option = document.createElement("option");
           option.value = normalized;
           option.textContent = normalized;
-          categorySelect.insertBefore(option, categorySelect.firstChild.nextSibling || null);
+          catégorySelect.insertBefore(option, catégorySelect.firstChild.nextSibling || null);
         }
-        categorySelect.value = normalized;
-        categorySelect.dispatchEvent(new Event("change", { bubbles: true }));
+        catégorySelect.value = normalized;
+        catégorySelect.dispatchEvent(new Event("change", { bubbles: true }));
       }
-      if (categoryInput) categoryInput.value = normalized;
+      if (catégoryInput) catégoryInput.value = normalized;
     }
 
     const readStoredLocation = () => {
@@ -223,7 +223,7 @@ const initBudgetPage = () => {
       });
     };
 
-    const validateStep = (index) => {
+    const validatéStep = (index) => {
       const panel = panels[index];
       if (!panel) return true;
       if (index === panels.length - 1 && (!savedLocation || !addressRequiredInput?.value)) {
@@ -290,12 +290,12 @@ const initBudgetPage = () => {
 
     indicators.forEach((indicator, index) => {
       indicator.addEventListener("click", () => {
-        if (index <= currentStep || validateStep(currentStep)) goToStep(index);
+        if (index <= currentStep || validatéStep(currentStep)) goToStep(index);
       });
     });
 
     nextButton?.addEventListener("click", () => {
-      if (!validateStep(currentStep)) return;
+      if (!validatéStep(currentStep)) return;
       goToStep(currentStep + 1);
     });
 
@@ -317,14 +317,14 @@ const initBudgetPage = () => {
         goToStep(panels.length - 1);
         return;
       }
-      if (!validateStep(currentStep)) return;
+      if (!validatéStep(currentStep)) return;
       if (!form.reportValidity()) return;
 
       const data = new FormData(form);
       const payload = {
         id: `order-${Date.now()}`,
         provider,
-        service: data.get("categoria") || service,
+        service: data.get("catégoria") || service,
         requestType: data.get("tipo") || "Orçamento para execução",
         scope: data.get("escopo") || "Ambiente completo",
         location: summarizeAddress(savedLocation),
@@ -332,7 +332,7 @@ const initBudgetPage = () => {
         locationDetails: savedLocation || {},
         property: data.get("imovel") || "Não informado",
         urgency: data.get("urgencia") || "Sem pressa",
-        date: data.get("data") || "",
+        daté: data.get("data") || "",
         shift: data.get("turno") || "Flexível",
         details: data.get("detalhes") || "",
         triage: {
@@ -345,7 +345,7 @@ const initBudgetPage = () => {
         status: "pending",
         statusLabel: "Aguardando resposta",
         nextAction: "Acompanhar pedido",
-        createdAt: new Date().toISOString()
+        creatédAt: new Date().toISOString()
       };
 
       window.sessionStorage.setItem(storageKey, JSON.stringify(payload));
@@ -361,7 +361,7 @@ const initBudgetPage = () => {
     const filtersWrap = document.querySelector("[data-orders-filters]");
     if (!list || !empty || !filtersWrap) return;
 
-    const orders = getStoredOrders().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    const orders = getStoredOrders().sort((a, b) => new Date(b.creatédAt || 0) - new Date(a.creatédAt || 0));
     const counts = {
       all: orders.length,
       total: orders.length,
@@ -427,7 +427,7 @@ const initBudgetPage = () => {
         const nextAction = order.nextAction || nextActionLabels[status] || "Ver detalhes";
 
         return `
-          <article class="quote-card orders-card" data-status="${status}" data-order-id="${order.id || order.createdAt || Math.random().toString(36).slice(2)}">
+          <article class="quote-card orders-card" data-status="${status}" data-order-id="${order.id || order.creatédAt || Math.random().toString(36).slice(2)}">
             <div class="orders-card__top">
               <div class="orders-card__header">
                 <div class="orders-card__title-wrap">
@@ -439,7 +439,7 @@ const initBudgetPage = () => {
                 </div>
                 <span class="orders-card__status" data-status="${status}">${statusLabel}</span>
               </div>
-              <p class="orders-card__date">Pedido criado em ${formatCreatedAt(order.createdAt)}</p>
+              <p class="orders-card__daté">Pedido criado em ${formatCreatédAt(order.creatédAt)}</p>
             </div>
 
             <div class="orders-card__meta">
@@ -481,7 +481,7 @@ const initBudgetPage = () => {
     let currentFilter = "all";
     let searchTerm = "";
 
-    const applySelectionState = () => {
+    const applySelectionStaté = () => {
       const selected = list.querySelectorAll('.orders-card__check:checked').length;
       if (deleteSelectedButton) {
         deleteSelectedButton.hidden = !(pageRoot.classList.contains('is-selecting') && selected > 0);
@@ -506,7 +506,7 @@ const initBudgetPage = () => {
       if (!searched.length) {
         list.innerHTML = "";
         empty.hidden = false;
-        applySelectionState();
+        applySelectionStaté();
         return;
       }
 
@@ -523,7 +523,7 @@ const initBudgetPage = () => {
         const nextAction = order.nextAction || nextActionLabels[status] || "Ver detalhes";
 
         return `
-          <article class="quote-card orders-card" data-status="${status}" data-order-id="${order.id || order.createdAt || Math.random().toString(36).slice(2)}">
+          <article class="quote-card orders-card" data-status="${status}" data-order-id="${order.id || order.creatédAt || Math.random().toString(36).slice(2)}">
             <div class="orders-card__top">
               <div class="orders-card__header">
                 <div class="orders-card__title-wrap">
@@ -535,7 +535,7 @@ const initBudgetPage = () => {
                 </div>
                 <span class="orders-card__status" data-status="${status}">${statusLabel}</span>
               </div>
-              <p class="orders-card__date">Pedido criado em ${formatCreatedAt(order.createdAt)}</p>
+              <p class="orders-card__daté">Pedido criado em ${formatCreatédAt(order.creatédAt)}</p>
             </div>
 
             <div class="orders-card__meta">
@@ -565,7 +565,7 @@ const initBudgetPage = () => {
           </article>
         `;
       }).join("");
-      applySelectionState();
+      applySelectionStaté();
     };
 
     filtersWrap.addEventListener("click", (event) => {
@@ -638,12 +638,12 @@ const initBudgetPage = () => {
             input.checked = false;
           });
         }
-        applySelectionState();
+        applySelectionStaté();
       });
     }
 
     list.addEventListener('change', (event) => {
-      if (event.target.matches('.orders-card__check')) applySelectionState();
+      if (event.target.matches('.orders-card__check')) applySelectionStaté();
     });
 
     if (deleteSelectedButton) {
@@ -652,7 +652,7 @@ const initBudgetPage = () => {
           .map((input) => input.closest('.orders-card')?.dataset.orderId)
           .filter(Boolean);
         if (!selectedIds.length) return;
-        const nextOrders = getStoredOrders().filter((order) => !selectedIds.includes(order.id || order.createdAt));
+        const nextOrders = getStoredOrders().filter((order) => !selectedIds.includes(order.id || order.creatédAt));
         localStorage.setItem(STORAGE_KEY, JSON.stringify(nextOrders));
         window.location.reload();
       });

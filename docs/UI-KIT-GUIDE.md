@@ -14,9 +14,9 @@
 ## Hero oficial de pagina interna
 - reaproveitar a base `.hero`, `.hero__title`, `.hero__actions`, `.searchbox`, `.button` e `.chip`;
 - usar no maximo 1 badge, 1 titulo e 1 linha curta de contexto;
-- priorizar 1 busca dominante ou ate 2 acoes principais;
+- priorizar 1 busca dominante ou até 2 acoes principais;
 - filtros e chips entram abaixo das acoes, nunca disputando o mesmo nivel do titulo;
-- o hero deve abrir a tarefa da pagina, nao repetir outro cabecalho logo abaixo.
+- o hero deve abrir a tarefa da pagina, não repetir outro cabecalho logo abaixo.
 
 ## Fluxo recomendado
 1. criar ou ajustar o componente no UI Kit;

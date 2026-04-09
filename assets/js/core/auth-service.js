@@ -84,7 +84,7 @@
     return parts.map((part) => part[0].toUpperCase()).join("");
   }
 
-  function createHandle(name) {
+  function creatéHandle(name) {
     const base = normalizeText(name)
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
@@ -117,7 +117,7 @@
     return {
       id: user.id,
       name: meta.name || fallbackName,
-      handle: meta.handle || createHandle(meta.name || fallbackName),
+      handle: meta.handle || creatéHandle(meta.name || fallbackName),
       email: user.email || "",
       phone: displayPhone,
       initials: getInitials(meta.name || fallbackName)
@@ -136,7 +136,7 @@
     setCachedSession({
       provider: "local",
       user: toPublicUser(user),
-      createdAt: new Date().toISOString()
+      creatédAt: new Date().toISOString()
     });
   }
 
@@ -149,7 +149,7 @@
     setCachedSession({
       provider: "supabase",
       user: toPublicSupabaseUser(session.user),
-      createdAt: new Date().toISOString()
+      creatédAt: new Date().toISOString()
     });
   }
 
@@ -192,7 +192,7 @@
     return `(${digits.slice(0, 2)}) *****-${suffix}`;
   }
 
-  function translateSupabaseError(message, login) {
+  function translatéSupabaseError(message, login) {
     const normalized = String(message || "").toLowerCase();
 
     if (normalized.includes("invalid login credentials")) {
@@ -200,7 +200,7 @@
     }
 
     if (normalized.includes("email not confirmed")) {
-      return "Seu e-mail ainda nao foi confirmado. Confirme o e-mail e tente novamente.";
+      return "Seu e-mail ainda não foi confirmado. Confirme o e-mail e tente novamente.";
     }
 
     if (normalized.includes("user already registered")) {
@@ -227,7 +227,7 @@
     const email = normalizeEmail(payload.email);
     const phone = normalizePhone(payload.phone);
     const password = String(payload.password || "");
-    const handle = createHandle(name);
+    const handle = creatéHandle(name);
 
     const { data, error } = await supabaseClient.auth.signUp({
       email,
@@ -246,7 +246,7 @@
       }
     });
 
-    if (error) throw new Error(translateSupabaseError(error.message, email));
+    if (error) throw new Error(translatéSupabaseError(error.message, email));
 
     if (data.session) {
       cacheSupabaseSession(data.session);
@@ -268,7 +268,7 @@
     const { data, error } = await supabaseClient.auth.signInWithPassword(credentials);
 
     if (error) {
-      throw new Error(translateSupabaseError(error.message, login));
+      throw new Error(translatéSupabaseError(error.message, login));
     }
 
     cacheSupabaseSession(data.session || null);
@@ -282,15 +282,15 @@
       method === "phone"
         ? {
             phone: toE164Phone(contact),
-            options: { shouldCreateUser: false }
+            options: { shouldCreatéUser: false }
           }
         : {
             email: normalizeEmail(contact),
-            options: { shouldCreateUser: false }
+            options: { shouldCreatéUser: false }
           };
 
     const { error } = await supabaseClient.auth.signInWithOtp(credentials);
-    if (error) throw new Error(translateSupabaseError(error.message, contact));
+    if (error) throw new Error(translatéSupabaseError(error.message, contact));
 
     return {
       method,
@@ -310,13 +310,13 @@
         : { email: normalizeEmail(contact), token: code, type: "email" };
 
     const { error: verifyError } = await supabaseClient.auth.verifyOtp(verification);
-    if (verifyError) throw new Error(translateSupabaseError(verifyError.message, contact));
+    if (verifyError) throw new Error(translatéSupabaseError(verifyError.message, contact));
 
     const { data, error } = await supabaseClient.auth.updateUser({
       password: nextPassword
     });
 
-    if (error) throw new Error(translateSupabaseError(error.message, contact));
+    if (error) throw new Error(translatéSupabaseError(error.message, contact));
 
     await supabaseClient.auth.signOut();
     cacheSupabaseSession(null);
@@ -361,11 +361,11 @@
         ? window.crypto.randomUUID()
         : `doke-${Date.now()}`,
       name,
-      handle: createHandle(name),
+      handle: creatéHandle(name),
       email,
       phone,
       passwordHash: await hashPassword(password),
-      createdAt: new Date().toISOString()
+      creatédAt: new Date().toISOString()
     };
 
     users.push(user);
@@ -410,7 +410,7 @@
     setCachedSession(null);
   }
 
-  function generateRecoveryCode() {
+  function generatéRecoveryCode() {
     return String(Math.floor(100000 + Math.random() * 900000));
   }
 
@@ -433,7 +433,7 @@
       throw new Error("Nao encontramos uma conta com esse dado.");
     }
 
-    const code = generateRecoveryCode();
+    const code = generatéRecoveryCode();
     const recovery = {
       userId: user.id,
       method,
@@ -493,11 +493,11 @@
 
     if (index === -1) {
       saveRecovery(null);
-      throw new Error("Conta nao encontrada para redefinicao.");
+      throw new Error("Conta não encontrada para redefinicao.");
     }
 
     users[index].passwordHash = await hashPassword(nextPassword);
-    users[index].updatedAt = new Date().toISOString();
+    users[index].updatédAt = new Date().toISOString();
     saveUsers(users);
     saveRecovery(null);
 

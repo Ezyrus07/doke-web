@@ -1,1 +1,1 @@
-Feature modules. Page scripts should progressively delegate interaction logic here.
+Feature modules. Page scripts should progressively delegaté interaction logic here.

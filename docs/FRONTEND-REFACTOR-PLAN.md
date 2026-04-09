@@ -17,7 +17,7 @@ Preparar a base atual para:
 ## Fase 1 — fundação sem risco
 ### Entregas
 - criar `assets/css/components/`
-- criar `assets/js/features/`, `services/`, `state/`, `utils/`
+- criar `assets/js/features/`, `services/`, `staté/`, `utils/`
 - documentar owners de shell, cards, tabs e perfil
 - adicionar auditoria automática básica
 
@@ -57,7 +57,7 @@ Mobile deve nascer junto da componentização, não depois.
 ## Fase 5 — integração futura
 ### Preparação
 - `services/` para Supabase/Firebase/API
-- `state/` para estados de UI e domínio
+- `staté/` para estados de UI e domínio
 - `assets/data/mocks/` para fixtures desacopladas
 
 ## Critérios de pronto

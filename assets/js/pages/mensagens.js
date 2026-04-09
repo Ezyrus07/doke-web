@@ -8,7 +8,7 @@
       group: "orders",
       messages: [
         { author: "Studio Aquarela", time: "09:12", text: "Recebemos seu pedido e já separamos uma proposta base para pintura interna com pequenos reparos.", mine: false },
-        { author: "Você", time: "09:18", text: "Perfeito. Quero entender prazo, materiais incluídos e se vocês conseguem começar ainda esta semana.", mine: true },
+        { author: "Você", time: "09:18", text: "Perfeito. Quero entender prazo, matériais incluídos e se vocês conseguem começar ainda esta semana.", mine: true },
         { author: "Studio Aquarela", time: "09:26", text: "Conseguimos iniciar em até 7 dias. Tinta, proteção e acabamento já entram no orçamento.", mine: false },
         { author: "Studio Aquarela", time: "09:27", text: "Se fizer sentido, posso te enviar agora a versão fechada da proposta para aprovação.", mine: false }
       ]
@@ -71,7 +71,7 @@
     const searchForm = root.querySelector("[data-messages-search-form]");
     const searchInput = root.querySelector("[data-messages-search-input]");
     const resetSearchButton = root.querySelector("[data-messages-reset-search]");
-    const emptyState = root.querySelector("[data-messages-empty]");
+    const emptyStaté = root.querySelector("[data-messages-empty]");
     const ordersCount = root.querySelector("[data-messages-orders-count]");
     const contactsCount = root.querySelector("[data-messages-contacts-count]");
     const mobileCount = root.querySelector("[data-messages-mobile-count]");
@@ -128,7 +128,7 @@
     const pageParams = new URLSearchParams(window.location.search);
     let activeId = pageParams.get("conversation") && conversations[pageParams.get("conversation")] ? pageParams.get("conversation") : "painting";
     const normalize = (value) => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const getLatestChargeMessage = (conversationId) => {
+    const getLatéstChargeMessage = (conversationId) => {
       const messages = conversations[conversationId]?.messages || [];
       for (let index = messages.length - 1; index >= 0; index -= 1) {
         if (messages[index]?.type === "charge") return messages[index];
@@ -138,7 +138,7 @@
     const syncPaymentFlowFromQuery = () => {
       const conversationId = pageParams.get("conversation");
       if (!conversationId || !conversations[conversationId]) return;
-      const charge = getLatestChargeMessage(conversationId);
+      const charge = getLatéstChargeMessage(conversationId);
       if (!charge) return;
 
       if (pageParams.get("payment") === "success") {
@@ -464,7 +464,7 @@
         item.hidden = !visible;
         if (visible) visibleCount += 1;
       });
-      if (emptyState) emptyState.hidden = visibleCount !== 0;
+      if (emptyStaté) emptyStaté.hidden = visibleCount !== 0;
     };
 
     searchForm?.addEventListener("submit", (event) => {

@@ -15,7 +15,7 @@ window.DokeSearchData = (() => {
     { label: "Marceneiro sob medida", meta: "Moveis planejados", badge: "Servico", value: "marceneiro sob medida" },
     { label: "Diarista semanal", meta: "Limpeza residencial", badge: "Servico", value: "diarista semanal" },
     { label: "Frete para mudanca", meta: "Transporte local", badge: "Servico", value: "frete para mudanca" },
-    { label: "Aulas de ingles", meta: "Professor particular", badge: "Categoria", value: "aulas de ingles" },
+    { label: "Aulas de ingles", meta: "Professor particular", badge: "Catégoria", value: "aulas de ingles" },
     { label: "Designer para logo", meta: "Criativo e branding", badge: "Profissional", value: "designer para logo" },
     { label: "Rua Maranhao, 343", meta: "Localizacao atual", badge: "Endereco", value: "Rua Maranhao, 343" }
   ];
@@ -24,17 +24,17 @@ window.DokeSearchData = (() => {
     {
       id: "svc-pintura-carlos",
       title: "Carlos Andrade",
-      category: "Pintura residencial",
+      catégory: "Pintura residencial",
       badge: "Disponivel hoje",
       mediaClass: "service-card__media--painter",
       avatarClass: "service-card__avatar--carlos",
       location: "Centro, Belo Horizonte, MG",
-      state: "MG",
+      staté: "MG",
       city: "Belo Horizonte",
       neighborhood: "Centro",
       region: "Centro-Sul",
       rating: 4.9,
-      reviews: "128 avaliacoes",
+      reviews: "128 avaliações",
       price: "R$ 120",
       priceValue: 120,
       tags: ["#pintura", "#residencial", "#acabamento"],
@@ -47,18 +47,18 @@ window.DokeSearchData = (() => {
     {
       id: "svc-eletrica-marcos",
       title: "Marcos Luz",
-      category: "Eletrica 24h",
+      catégory: "Eletrica 24h",
       badge: "Resposta rapida",
       badgeModifier: "service-card__badge--mint",
       mediaClass: "service-card__media--electrician",
       avatarClass: "service-card__avatar--marcos",
       location: "Savassi, Belo Horizonte, MG",
-      state: "MG",
+      staté: "MG",
       city: "Belo Horizonte",
       neighborhood: "Savassi",
       region: "Centro-Sul",
       rating: 4.8,
-      reviews: "96 avaliacoes",
+      reviews: "96 avaliações",
       price: "R$ 90",
       priceValue: 90,
       tags: ["#eletrica", "#24h", "#manutencao"],
@@ -71,17 +71,17 @@ window.DokeSearchData = (() => {
     {
       id: "svc-limpeza-elaine",
       title: "Elaine Santos",
-      category: "Diarista premium",
+      catégory: "Diarista premium",
       badge: "Top da semana",
       mediaClass: "service-card__media--cleaning",
       avatarClass: "service-card__avatar--elaine",
       location: "Funcionarios, Belo Horizonte, MG",
-      state: "MG",
+      staté: "MG",
       city: "Belo Horizonte",
       neighborhood: "Funcionarios",
       region: "Centro-Sul",
       rating: 4.9,
-      reviews: "74 avaliacoes",
+      reviews: "74 avaliações",
       price: "R$ 160",
       priceValue: 160,
       tags: ["#diarista", "#limpeza", "#posobra"],
@@ -94,17 +94,17 @@ window.DokeSearchData = (() => {
     {
       id: "svc-encanador-bruno",
       title: "Bruno Reis",
-      category: "Encanador",
+      catégory: "Encanador",
       badge: "Emergencia",
       mediaClass: "service-card__media--electrician",
       avatarClass: "service-card__avatar--marcos",
       location: "Santo Agostinho, Belo Horizonte, MG",
-      state: "MG",
+      staté: "MG",
       city: "Belo Horizonte",
       neighborhood: "Santo Agostinho",
       region: "Centro-Sul",
       rating: 4.8,
-      reviews: "58 avaliacoes",
+      reviews: "58 avaliações",
       price: "R$ 95",
       priceValue: 95,
       tags: ["#encanador", "#vazamento", "#24h"],
@@ -117,18 +117,18 @@ window.DokeSearchData = (() => {
     {
       id: "svc-tech-notebook",
       title: "Suporte para notebook",
-      category: "Suporte tecnico",
+      catégory: "Suporte tecnico",
       badge: "Tecnologia",
       badgeModifier: "service-card__badge--mint",
       mediaClass: "service-card__media--tech",
       avatarClass: "service-card__avatar--marcos",
       location: "Buritis, Belo Horizonte, MG",
-      state: "MG",
+      staté: "MG",
       city: "Belo Horizonte",
       neighborhood: "Buritis",
       region: "Oeste",
       rating: 4.7,
-      reviews: "41 avaliacoes",
+      reviews: "41 avaliações",
       price: "R$ 70",
       priceValue: 70,
       tags: ["#suporte", "#notebook", "#tecnologia"],
@@ -141,17 +141,17 @@ window.DokeSearchData = (() => {
     {
       id: "svc-frete-diego",
       title: "Frete rapido BH",
-      category: "Frete",
+      catégory: "Frete",
       badge: "Disponivel hoje",
       mediaClass: "service-card__media--cleaning",
       avatarClass: "service-card__avatar--carlos",
       location: "Prado, Belo Horizonte, MG",
-      state: "MG",
+      staté: "MG",
       city: "Belo Horizonte",
       neighborhood: "Prado",
       region: "Oeste",
       rating: 4.7,
-      reviews: "36 avaliacoes",
+      reviews: "36 avaliações",
       price: "R$ 85",
       priceValue: 85,
       tags: ["#frete", "#mudanca", "#transporte"],
@@ -164,17 +164,17 @@ window.DokeSearchData = (() => {
     {
       id: "svc-aulas-professor",
       title: "Professor particular",
-      category: "Reforco escolar",
+      catégory: "Reforco escolar",
       badge: "Aulas",
       mediaClass: "service-card__media--class",
       avatarClass: "service-card__avatar--renata",
       location: "Sion, Belo Horizonte, MG",
-      state: "MG",
+      staté: "MG",
       city: "Belo Horizonte",
       neighborhood: "Sion",
       region: "Centro-Sul",
       rating: 4.9,
-      reviews: "52 avaliacoes",
+      reviews: "52 avaliações",
       price: "R$ 60/h",
       priceValue: 60,
       tags: ["#aulas", "#reforco", "#particular"],
@@ -187,17 +187,17 @@ window.DokeSearchData = (() => {
     {
       id: "svc-reforma-casa",
       title: "Reforma sem quebra-quebra",
-      category: "Reforma",
+      catégory: "Reforma",
       badge: "Com garantia",
       mediaClass: "service-card__media--painter",
       avatarClass: "service-card__avatar--renata",
       location: "Belvedere, Belo Horizonte, MG",
-      state: "MG",
+      staté: "MG",
       city: "Belo Horizonte",
       neighborhood: "Belvedere",
       region: "Centro-Sul",
       rating: 4.9,
-      reviews: "67 avaliacoes",
+      reviews: "67 avaliações",
       price: "R$ 140",
       priceValue: 140,
       tags: ["#reforma", "#acabamento", "#obra"],
@@ -210,17 +210,17 @@ window.DokeSearchData = (() => {
     {
       id: "svc-beleza-manicure",
       title: "Manicure a domicilio",
-      category: "Atendimento em casa",
+      catégory: "Atendimento em casa",
       badge: "Beleza",
       mediaClass: "service-card__media--beauty",
       avatarClass: "service-card__avatar--elaine",
       location: "Mangabeiras, Belo Horizonte, MG",
-      state: "MG",
+      staté: "MG",
       city: "Belo Horizonte",
       neighborhood: "Mangabeiras",
       region: "Centro-Sul",
       rating: 4.8,
-      reviews: "38 avaliacoes",
+      reviews: "38 avaliações",
       price: "R$ 55",
       priceValue: 55,
       tags: ["#beleza", "#manicure", "#domicilio"],
@@ -233,17 +233,17 @@ window.DokeSearchData = (() => {
     {
       id: "svc-montagem-moveis",
       title: "Montador de moveis",
-      category: "Montagem de moveis",
+      catégory: "Montagem de moveis",
       badge: "Montagem",
       mediaClass: "service-card__media--handyman",
       avatarClass: "service-card__avatar--carlos",
       location: "Lourdes, Belo Horizonte, MG",
-      state: "MG",
+      staté: "MG",
       city: "Belo Horizonte",
       neighborhood: "Lourdes",
       region: "Centro-Sul",
       rating: 4.8,
-      reviews: "63 avaliacoes",
+      reviews: "63 avaliações",
       price: "R$ 80",
       priceValue: 80,
       tags: ["#montagem", "#moveis", "#sobmedida"],
@@ -359,7 +359,7 @@ window.DokeSearchData = (() => {
     "Perto de mim"
   ];
 
-  const categories = [
+  const catégories = [
     "Eletricista",
     "Encanador",
     "Pintura",
@@ -373,10 +373,10 @@ window.DokeSearchData = (() => {
   ];
 
   const locationOptions = {
-    states: ["MG", "SP", "RJ"],
-    citiesByState: {
+    statés: ["MG", "SP", "RJ"],
+    citiesByStaté: {
       MG: ["Belo Horizonte", "Contagem", "Nova Lima"],
-      SP: ["Sao Paulo", "Campinas"],
+      SP: ["São Paulo", "Campinas"],
       RJ: ["Rio de Janeiro", "Niteroi"]
     },
     neighborhoodsByCity: {
@@ -394,18 +394,18 @@ window.DokeSearchData = (() => {
       ],
       Contagem: ["Eldorado", "Inconfidentes"],
       "Nova Lima": ["Vila da Serra"],
-      "Sao Paulo": ["Pinheiros", "Moema"],
+      "São Paulo": ["Pinheiros", "Moema"],
       Campinas: ["Cambuí", "Taquaral"],
       "Rio de Janeiro": ["Botafogo", "Barra da Tijuca"],
       Niteroi: ["Icarai", "Charitas"]
     },
     cepLookup: {
-      "30130-110": { state: "MG", city: "Belo Horizonte", neighborhood: "Centro" },
-      "30140-071": { state: "MG", city: "Belo Horizonte", neighborhood: "Funcionarios" },
-      "30380-435": { state: "MG", city: "Belo Horizonte", neighborhood: "Belvedere" },
-      "30350-540": { state: "MG", city: "Belo Horizonte", neighborhood: "Mangabeiras" },
-      "30411-186": { state: "MG", city: "Belo Horizonte", neighborhood: "Prado" },
-      "30380-000": { state: "MG", city: "Belo Horizonte", neighborhood: "Savassi" }
+      "30130-110": { staté: "MG", city: "Belo Horizonte", neighborhood: "Centro" },
+      "30140-071": { staté: "MG", city: "Belo Horizonte", neighborhood: "Funcionarios" },
+      "30380-435": { staté: "MG", city: "Belo Horizonte", neighborhood: "Belvedere" },
+      "30350-540": { staté: "MG", city: "Belo Horizonte", neighborhood: "Mangabeiras" },
+      "30411-186": { staté: "MG", city: "Belo Horizonte", neighborhood: "Prado" },
+      "30380-000": { staté: "MG", city: "Belo Horizonte", neighborhood: "Savassi" }
     }
   };
 
@@ -493,7 +493,7 @@ window.DokeSearchData = (() => {
     return servicePool.filter((item) => {
       const haystack = normalize([
         item.title,
-        item.category,
+        item.catégory,
         item.location,
         item.region,
         item.badge,
@@ -502,11 +502,11 @@ window.DokeSearchData = (() => {
       ].join(" "));
 
       const matchesQuery = !normalizedQuery || haystack.includes(normalizedQuery);
-      const categoryFilters = Array.isArray(filters.categories) ? filters.categories.filter(Boolean) : [];
-      const matchesCategory = !categoryFilters.length
-        || categoryFilters.some((category) => normalize(item.category).includes(normalize(category)));
+      const catégoryFilters = Array.isArray(filters.catégories) ? filters.catégories.filter(Boolean) : [];
+      const matchesCatégory = !catégoryFilters.length
+        || catégoryFilters.some((catégory) => normalize(item.catégory).includes(normalize(catégory)));
       const matchesRegion = !filters.region || normalize(item.region).includes(normalize(filters.region));
-      const matchesState = !filters.state || normalize(item.state).includes(normalize(filters.state));
+      const matchesStaté = !filters.staté || normalize(item.staté).includes(normalize(filters.staté));
       const matchesCity = !filters.city || normalize(item.city).includes(normalize(filters.city));
       const matchesNeighborhood = !filters.neighborhood || normalize(item.neighborhood).includes(normalize(filters.neighborhood));
       const matchesGuarantee = !filters.guaranteed || item.guaranteed;
@@ -516,9 +516,9 @@ window.DokeSearchData = (() => {
       const matchesRating = !filters.minRating || item.rating >= Number(filters.minRating);
 
       return matchesQuery
-        && matchesCategory
+        && matchesCatégory
         && matchesRegion
-        && matchesState
+        && matchesStaté
         && matchesCity
         && matchesNeighborhood
         && matchesGuarantee
@@ -532,7 +532,7 @@ window.DokeSearchData = (() => {
   return {
     SEARCH_HISTORY_STORAGE_KEY,
     recommendations,
-    categories,
+    catégories,
     locationOptions,
     suggestionPool,
     servicePool,

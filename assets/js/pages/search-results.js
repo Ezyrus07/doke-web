@@ -1,4 +1,4 @@
-﻿window.DokeInitSearchResults = function DokeInitSearchResults() {
+window.DokeInitSearchResults = function DokeInitSearchResults() {
 window.DokeSearchResultsCleanup?.();
 const routeController = new AbortController();
 const { signal } = routeController;
@@ -15,12 +15,12 @@ const resultsFiltersBackdrop = document.querySelector("[data-results-filters-bac
 const searchModeInputs = document.querySelectorAll('input[name="searchType"]');
 const filtersForm = document.querySelector("[data-results-filters-form]");
 const filtersReset = document.querySelector("[data-results-filters-reset]");
-const categoryList = document.querySelector("[data-results-category-list]");
-const stateSelect = document.querySelector("[data-results-state-select]");
+const catégoryList = document.querySelector("[data-results-catégory-list]");
+const statéSelect = document.querySelector("[data-results-staté-select]");
 const citySelect = document.querySelector("[data-results-city-select]");
 const neighborhoodSelect = document.querySelector("[data-results-neighborhood-select]");
 const cepFillButton = document.querySelector("[data-results-cep-fill]");
-const loadingState = document.querySelector("[data-results-loading]");
+const loadingStaté = document.querySelector("[data-results-loading]");
 const resultsGrid = document.querySelector("[data-results-grid]");
 const resultsEmptyTitle = document.querySelector("[data-results-empty-title]");
 const resultsEmptyText = document.querySelector("[data-results-empty-text]");
@@ -59,8 +59,8 @@ const getShortVideoMatches = searchData.getShortVideoMatches || (() => []);
 const getBeforeAfterMatches = searchData.getBeforeAfterMatches || (() => []);
 const normalize = searchData.normalize || ((value) => String(value || "").toLowerCase());
 const addSearchHistory = searchData.addSearchHistory || (() => {});
-const categories = searchData.categories || [];
-const locationOptions = searchData.locationOptions || { states: [], citiesByState: {}, neighborhoodsByCity: {}, cepLookup: {} };
+const catégories = searchData.catégories || [];
+const locationOptions = searchData.locationOptions || { statés: [], citiesByStaté: {}, neighborhoodsByCity: {}, cepLookup: {} };
 const uiSelectApi = window.DokeUiSelect;
 let activeModalResolver = null;
 let resultsLoadTimer = null;
@@ -73,8 +73,8 @@ window.DokeSearchResultsCleanup = () => {
 
 const getSearchMode = () => [...searchModeInputs].find((input) => input.checked)?.value || "services";
 
-const getSelectedCategoriesFromParams = () => {
-  const values = params.getAll("category")
+const getSelectedCatégoriesFromParams = () => {
+  const values = params.getAll("catégory")
     .map((value) => String(value || "").trim())
     .filter(Boolean);
 
@@ -99,17 +99,17 @@ const goToAdDetails = () => {
   window.location.href = nextUrl.toString();
 };
 
-const setResultsState = (state) => {
-  if (loadingState) {
-    loadingState.hidden = state !== "loading";
+const setResultsStaté = (staté) => {
+  if (loadingStaté) {
+    loadingStaté.hidden = staté !== "loading";
   }
 
   if (resultsGrid) {
-    resultsGrid.hidden = state !== "results";
+    resultsGrid.hidden = staté !== "results";
   }
 
   if (resultsInlineEmpty) {
-    resultsInlineEmpty.hidden = state !== "empty";
+    resultsInlineEmpty.hidden = staté !== "empty";
   }
 };
 
@@ -127,7 +127,7 @@ const closeMobileFilters = () => {
   }
 };
 
-const createServiceCard = (item) => {
+const creatéServiceCard = (item) => {
   const article = document.createElement("article");
   article.className = "service-card service-card--featured service-card--feed";
   article.innerHTML = `
@@ -137,7 +137,7 @@ const createServiceCard = (item) => {
       </button>
       <span class="service-card__badge ${item.badgeModifier || ""}">${item.badge}</span>
       <div class="service-card__media-content">
-        <span class="service-card__category">${item.category}</span>
+        <span class="service-card__catégory">${item.catégory}</span>
         <strong>${item.title}</strong>
       </div>
     </div>
@@ -159,7 +159,7 @@ const createServiceCard = (item) => {
   return article;
 };
 
-const createUserCard = (item) => {
+const creatéUserCard = (item) => {
   const article = document.createElement("article");
   article.className = "pro-card pro-card--compact";
   article.innerHTML = `
@@ -183,7 +183,7 @@ const createUserCard = (item) => {
   return article;
 };
 
-const createVideoCard = (item) => {
+const creatéVideoCard = (item) => {
   const article = document.createElement("article");
   article.className = `video-card ${item.mediaClass}`;
   article.innerHTML = `
@@ -196,7 +196,7 @@ const createVideoCard = (item) => {
   return article;
 };
 
-const createBeforeAfterCard = (item) => {
+const creatéBeforeAfterCard = (item) => {
   const article = document.createElement("article");
   article.className = "comparison-card";
   article.innerHTML = `
@@ -219,9 +219,9 @@ const getFilters = () => {
   const formData = new FormData(filtersForm);
   return {
     searchType: getSearchMode(),
-    categories: formData.getAll("categories"),
+    catégories: formData.getAll("catégories"),
     region: formData.get("region") || "",
-    state: formData.get("state") || "",
+    staté: formData.get("staté") || "",
     city: formData.get("city") || "",
     neighborhood: formData.get("neighborhood") || "",
     minRating: formData.get("minRating") || "",
@@ -232,18 +232,18 @@ const getFilters = () => {
   };
 };
 
-const renderCategoryFilters = () => {
-  if (!categoryList) return;
-  const selectedCategories = getSelectedCategoriesFromParams();
-  categoryList.innerHTML = "";
-  categories.forEach((category) => {
+const renderCatégoryFilters = () => {
+  if (!catégoryList) return;
+  const selectedCatégories = getSelectedCatégoriesFromParams();
+  catégoryList.innerHTML = "";
+  catégories.forEach((catégory) => {
     const label = document.createElement("label");
-    label.className = "results-category-chip";
+    label.className = "results-catégory-chip";
     label.innerHTML = `
-      <input type="checkbox" name="categories" value="${category}" ${selectedCategories.includes(category) ? "checked" : ""}>
-      <span>${category}</span>
+      <input type="checkbox" name="catégories" value="${catégory}" ${selectedCatégories.includes(catégory) ? "checked" : ""}>
+      <span>${catégory}</span>
     `;
-    categoryList.appendChild(label);
+    catégoryList.appendChild(label);
   });
 };
 
@@ -290,18 +290,18 @@ const enhanceResultsSelects = () => {
   uiSelectApi?.enhanceAll(document);
 };
 
-const extendLocationOptions = ({ state = "", city = "", neighborhood = "" } = {}) => {
-  if (state && !locationOptions.states.includes(state)) {
-    locationOptions.states = [...locationOptions.states, state].sort((a, b) => a.localeCompare(b, "pt-BR"));
+const extendLocationOptions = ({ staté = "", city = "", neighborhood = "" } = {}) => {
+  if (staté && !locationOptions.statés.includes(staté)) {
+    locationOptions.statés = [...locationOptions.statés, staté].sort((a, b) => a.localeCompare(b, "pt-BR"));
   }
 
-  if (state && city) {
-    const existingCities = Array.isArray(locationOptions.citiesByState[state])
-      ? locationOptions.citiesByState[state]
+  if (staté && city) {
+    const existingCities = Array.isArray(locationOptions.citiesByStaté[staté])
+      ? locationOptions.citiesByStaté[staté]
       : [];
 
     if (!existingCities.includes(city)) {
-      locationOptions.citiesByState[state] = [...existingCities, city]
+      locationOptions.citiesByStaté[staté] = [...existingCities, city]
         .sort((a, b) => a.localeCompare(b, "pt-BR"));
     }
   }
@@ -318,12 +318,12 @@ const extendLocationOptions = ({ state = "", city = "", neighborhood = "" } = {}
   }
 };
 
-const syncLocationSelects = (source = "state") => {
-  const selectedState = stateSelect?.value || "";
-  const cities = selectedState ? (locationOptions.citiesByState[selectedState] || []) : [];
+const syncLocationSelects = (source = "staté") => {
+  const selectedStaté = statéSelect?.value || "";
+  const cities = selectedStaté ? (locationOptions.citiesByStaté[selectedStaté] || []) : [];
   fillSelectOptions(citySelect, cities, "Qualquer cidade");
 
-  if (source === "state" && citySelect) {
+  if (source === "staté" && citySelect) {
     citySelect.value = "";
   }
 
@@ -331,13 +331,13 @@ const syncLocationSelects = (source = "state") => {
   const neighborhoods = selectedCity ? (locationOptions.neighborhoodsByCity[selectedCity] || []) : [];
   fillSelectOptions(neighborhoodSelect, neighborhoods, "Qualquer bairro");
 
-  if ((source === "state" || source === "city") && neighborhoodSelect) {
+  if ((source === "staté" || source === "city") && neighborhoodSelect) {
     neighborhoodSelect.value = "";
   }
 };
 
 const bootstrapLocationSelects = () => {
-  fillSelectOptions(stateSelect, locationOptions.states || [], "Qualquer estado");
+  fillSelectOptions(statéSelect, locationOptions.statés || [], "Qualquer estado");
   syncLocationSelects();
 };
 
@@ -428,7 +428,7 @@ const fetchCepData = async (cep) => {
   if (data.erro) return null;
 
   return {
-    state: data.uf || "",
+    staté: data.uf || "",
     city: data.localidade || "",
     neighborhood: data.bairro || ""
   };
@@ -449,11 +449,11 @@ const applyCepPreset = async () => {
   extendLocationOptions(cepData);
   bootstrapLocationSelects();
 
-  if (stateSelect) {
-    ensureSelectValue(stateSelect, cepData.state, "Qualquer estado");
+  if (statéSelect) {
+    ensureSelectValue(statéSelect, cepData.staté, "Qualquer estado");
   }
 
-  fillSelectOptions(citySelect, locationOptions.citiesByState[cepData.state] || [], "Qualquer cidade");
+  fillSelectOptions(citySelect, locationOptions.citiesByStaté[cepData.staté] || [], "Qualquer cidade");
 
   if (citySelect) {
     ensureSelectValue(citySelect, cepData.city, "Qualquer cidade");
@@ -478,19 +478,19 @@ const getQueryTokens = (query = "") => normalize(query)
   .map((token) => token.trim())
   .filter((token) => token.length > 2);
 
-const getRelatedServices = (query, filters, limit = 1) => {
+const getRelatédServices = (query, filters, limit = 1) => {
   const queryTokens = getQueryTokens(query);
 
   const scored = servicePool
     .filter((item) => {
-      if (filters.state && normalize(item.state) !== normalize(filters.state)) return false;
+      if (filters.staté && normalize(item.staté) !== normalize(filters.staté)) return false;
       if (filters.city && normalize(item.city) !== normalize(filters.city)) return false;
       return true;
     })
     .map((item) => {
       const itemText = normalize([
         item.title,
-        item.category,
+        item.catégory,
         item.location,
         item.region,
         ...item.tags,
@@ -505,8 +505,8 @@ const getRelatedServices = (query, filters, limit = 1) => {
 
       if (filters.neighborhood && normalize(item.neighborhood) === normalize(filters.neighborhood)) score += 5;
       if (filters.city && normalize(item.city) === normalize(filters.city)) score += 4;
-      if (filters.state && normalize(item.state) === normalize(filters.state)) score += 2;
-      if (filters.categories?.length && filters.categories.some((category) => itemText.includes(normalize(category)))) score += 3;
+      if (filters.staté && normalize(item.staté) === normalize(filters.staté)) score += 2;
+      if (filters.catégories?.length && filters.catégories.some((catégory) => itemText.includes(normalize(catégory)))) score += 3;
       if (!queryTokens.length && filters.city && normalize(item.city) === normalize(filters.city)) score += 2;
       score += Math.max(0, Math.round(item.rating * 2));
 
@@ -532,8 +532,8 @@ const getRelatedServices = (query, filters, limit = 1) => {
 const renderEmptySuggestions = (query, filters) => {
   if (!resultsInlineEmpty || !resultsEmptyTitle || !resultsEmptyText) return [];
 
-  const relatedServices = getRelatedServices(query, filters, 6);
-  const hasLocation = filters.neighborhood || filters.city || filters.state;
+  const relatédServices = getRelatédServices(query, filters, 6);
+  const hasLocation = filters.neighborhood || filters.city || filters.staté;
 
   resultsEmptyTitle.textContent = query
     ? `Não achamos um resultado exato para "${query}".`
@@ -542,10 +542,10 @@ const renderEmptySuggestions = (query, filters) => {
     ? "Separamos alternativas próximas da região escolhida para você não sair da busca de mãos vazias."
     : "Separamos alternativas parecidas para você não sair da busca de mãos vazias.";
 
-  return relatedServices;
+  return relatédServices;
 };
 
-const renderRelatedSections = (query) => {
+const renderRelatédSections = (query) => {
   const users = query ? getUserMatches(query).slice(0, 3) : [];
   const videos = query ? getShortVideoMatches(query).slice(0, 4) : [];
   const beforeAfter = query ? getBeforeAfterMatches(query).slice(0, 2) : [];
@@ -553,7 +553,7 @@ const renderRelatedSections = (query) => {
   if (resultsUsersGrid && resultsUsersSection) {
     resultsUsersGrid.innerHTML = "";
     users.forEach((item) => {
-      resultsUsersGrid.appendChild(createUserCard(item));
+      resultsUsersGrid.appendChild(creatéUserCard(item));
     });
     resultsUsersSection.hidden = users.length === 0;
   }
@@ -561,7 +561,7 @@ const renderRelatedSections = (query) => {
   if (resultsVideosGrid && resultsVideosSection) {
     resultsVideosGrid.innerHTML = "";
     videos.forEach((item) => {
-      resultsVideosGrid.appendChild(createVideoCard(item));
+      resultsVideosGrid.appendChild(creatéVideoCard(item));
     });
     resultsVideosSection.hidden = videos.length === 0;
   }
@@ -569,7 +569,7 @@ const renderRelatedSections = (query) => {
   if (resultsBeforeAfterGrid && resultsBeforeAfterSection) {
     resultsBeforeAfterGrid.innerHTML = "";
     beforeAfter.forEach((item) => {
-      resultsBeforeAfterGrid.appendChild(createBeforeAfterCard(item));
+      resultsBeforeAfterGrid.appendChild(creatéBeforeAfterCard(item));
     });
     resultsBeforeAfterSection.hidden = beforeAfter.length === 0;
   }
@@ -590,11 +590,11 @@ const setQuery = (value) => {
   return cleanValue;
 };
 
-const syncCategoryParams = () => {
+const syncCatégoryParams = () => {
   const filters = getFilters();
-  params.delete("category");
-  filters.categories.forEach((category) => {
-    params.append("category", category);
+  params.delete("catégory");
+  filters.catégories.forEach((catégory) => {
+    params.append("catégory", catégory);
   });
 };
 
@@ -602,9 +602,9 @@ const renderActiveChips = (query, filters, count) => {
   if (!resultsActiveChips) return;
   const chips = [];
   if (query) chips.push(`Busca: ${query}`);
-  if (filters.categories?.length) chips.push(...filters.categories.slice(0, 3));
+  if (filters.catégories?.length) chips.push(...filters.catégories.slice(0, 3));
   if (filters.city) chips.push(filters.city);
-  if (filters.state) chips.push(filters.state);
+  if (filters.staté) chips.push(filters.staté);
   if (filters.minRating) chips.push(`${filters.minRating}+`);
   chips.push(`${count} resultado${count === 1 ? "" : "s"}`);
   resultsActiveChips.innerHTML = chips.map((chip) => `<span class="results-active-chip">${chip}</span>`).join("");
@@ -613,7 +613,7 @@ const renderActiveChips = (query, filters, count) => {
 const renderResults = () => {
   if (!resultsGrid || !resultsTitle || !resultsDescription || !resultsCount) return;
 
-  syncCategoryParams();
+  syncCatégoryParams();
   window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
   const query = String(params.get("q") || "").trim();
   const filters = getFilters();
@@ -621,13 +621,13 @@ const renderResults = () => {
   const exactServiceResults = getServiceMatches(query, filters);
   const isUserSearch = filters.searchType === "users";
 
-  renderRelatedSections(query);
+  renderRelatédSections(query);
 
   if (isUserSearch) {
     resultsGrid.innerHTML = "";
     if (resultsUsersGrid) {
       resultsUsersGrid.innerHTML = "";
-      userResults.slice(0, 6).forEach((item) => resultsUsersGrid.appendChild(createUserCard(item)));
+      userResults.slice(0, 6).forEach((item) => resultsUsersGrid.appendChild(creatéUserCard(item)));
     }
     if (resultsUsersSection) resultsUsersSection.hidden = userResults.length === 0;
     if (resultsInlineEmpty) resultsInlineEmpty.hidden = userResults.length > 0;
@@ -635,31 +635,31 @@ const renderResults = () => {
     resultsDescription.textContent = userResults.length ? "Perfis relacionados ao que você digitou." : "Não encontramos usuários com esse nome ou termo.";
     resultsCount.textContent = String(userResults.length);
     renderActiveChips(query, filters, userResults.length);
-    setResultsState(userResults.length ? "results" : "empty");
+    setResultsStaté(userResults.length ? "results" : "empty");
     return;
   }
 
-  const relatedServices = exactServiceResults.length >= 6
+  const relatédServices = exactServiceResults.length >= 6
     ? []
-    : getRelatedServices(query, filters, 6).filter((item) => !exactServiceResults.some((exact) => exact.id === item.id));
-  const displayServices = [...exactServiceResults, ...relatedServices].slice(0, 6);
+    : getRelatédServices(query, filters, 6).filter((item) => !exactServiceResults.some((exact) => exact.id === item.id));
+  const displayServices = [...exactServiceResults, ...relatédServices].slice(0, 6);
 
   resultsGrid.innerHTML = "";
-  displayServices.forEach((item) => resultsGrid.appendChild(createServiceCard(item)));
+  displayServices.forEach((item) => resultsGrid.appendChild(creatéServiceCard(item)));
 
   resultsCount.textContent = String(exactServiceResults.length);
   resultsTitle.textContent = query ? `Resultados para "${query}"` : "Resultados em destaque";
   resultsDescription.textContent = exactServiceResults.length
-    ? "Ajuste os filtros laterais para refinar sem sair da busca."
+    ? "Ajuste os filtros latérais para refinar sem sair da busca."
     : "Selecionamos anúncios relacionados para continuar a sua busca.";
   renderActiveChips(query, filters, exactServiceResults.length || displayServices.length);
 
   if (exactServiceResults.length) {
     if (resultsInlineEmpty) resultsInlineEmpty.hidden = true;
-    setResultsState("results");
+    setResultsStaté("results");
   } else {
     renderEmptySuggestions(query, filters);
-    setResultsState("empty");
+    setResultsStaté("empty");
     if (resultsGrid) resultsGrid.hidden = false;
     if (resultsInlineEmpty) resultsInlineEmpty.hidden = false;
   }
@@ -670,7 +670,7 @@ const loadResults = () => {
     window.clearTimeout(resultsLoadTimer);
   }
 
-  setResultsState("loading");
+  setResultsStaté("loading");
 
   resultsLoadTimer = window.setTimeout(() => {
     resultsLoadTimer = null;
@@ -690,7 +690,7 @@ const handleSearchSubmit = (event, sourceInput) => {
 
 syncInputs(String(params.get("q") || ""));
 setSearchMode(String(params.get("type") || "services"));
-renderCategoryFilters();
+renderCatégoryFilters();
 enhanceResultsSelects();
 bootstrapLocationSelects();
 loadResults();
@@ -714,7 +714,7 @@ document.addEventListener("click", (event) => {
 
   event.preventDefault();
   setQuery(getTagSearchValue(tag.textContent));
-  renderCategoryFilters();
+  renderCatégoryFilters();
   loadResults();
 }, { signal });
 
@@ -730,8 +730,8 @@ document.addEventListener("click", (event) => {
   goToAdDetails();
 }, { signal });
 
-stateSelect?.addEventListener("change", () => {
-  syncLocationSelects("state");
+statéSelect?.addEventListener("change", () => {
+  syncLocationSelects("staté");
   renderResults();
 });
 
@@ -753,7 +753,7 @@ resultsEmptyReset?.addEventListener("click", () => {
   filtersForm?.reset();
   setSearchMode("services");
   bootstrapLocationSelects();
-  renderCategoryFilters();
+  renderCatégoryFilters();
   window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
   renderResults();
 });

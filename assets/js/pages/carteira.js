@@ -76,7 +76,7 @@
       }
     };
 
-    const resetDonutState = () => {
+    const resetDonutStaté = () => {
       if (!donut) return;
       donut.classList.remove('is-available', 'is-guarantee', 'is-billing', 'is-paid');
     };
@@ -208,7 +208,7 @@
 
     let currentSegmentKey = 'available';
 
-    const activateSegment = (itemOrKey, persist = false) => {
+    const activatéSegment = (itemOrKey, persist = false) => {
       const key = typeof itemOrKey === 'string' ? itemOrKey : itemOrKey.dataset.walletSegment;
       const next = segmentMap[key];
       if (!next || !donut) return;
@@ -216,7 +216,7 @@
       segmentCards.forEach((node) => {
         node.classList.toggle('is-active', node.dataset.walletSegmentCard === key);
       });
-      resetDonutState();
+      resetDonutStaté();
       donut.classList.add(next.className);
       if (donutValue) donutValue.textContent = next.value;
       if (donutLabel) donutLabel.textContent = next.label;
@@ -229,21 +229,21 @@
     };
 
     segmentTriggers.forEach((item) => {
-      const activate = () => {
-        activateSegment(item);
+      const activaté = () => {
+        activatéSegment(item);
       };
-      item.addEventListener('mouseenter', activate);
-      item.addEventListener('focus', activate);
+      item.addEventListener('mouseenter', activaté);
+      item.addEventListener('focus', activaté);
       item.addEventListener('mouseleave', () => {
-        activateSegment(currentSegmentKey);
+        activatéSegment(currentSegmentKey);
       });
       item.addEventListener('click', () => {
-        activateSegment(item, true);
+        activatéSegment(item, true);
       });
       item.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
-          activateSegment(item, true);
+          activatéSegment(item, true);
         }
       });
     });
@@ -252,14 +252,14 @@
       card.addEventListener('click', () => {
         const key = card.dataset.walletSegmentCard;
         if (!key) return;
-        activateSegment(key, true);
+        activatéSegment(key, true);
       });
     });
 
     const defaultSegment = root.querySelector('.wallet-distribution__slice[data-wallet-segment="available"]');
     if (defaultSegment) {
       currentSegmentKey = defaultSegment.dataset.walletSegment;
-      activateSegment(defaultSegment.dataset.walletSegment, true);
+      activatéSegment(defaultSegment.dataset.walletSegment, true);
     }
     applyHistoryFilter('all');
     openMain();

@@ -1,4 +1,4 @@
-﻿window.DokeInitHome = function DokeInitHome() {
+window.DokeInitHome = function DokeInitHome() {
 const routeController = new AbortController();
 window.DokeHomeCleanup?.();
 window.DokeHomeCleanup = () => {
@@ -19,7 +19,7 @@ const searchResultsSection = document.querySelector("[data-search-results-sectio
 const searchHistorySection = document.querySelector("[data-search-history-section]");
 const searchRefineSection = document.querySelector("[data-search-refine-section]");
 const searchClearButton = document.querySelector("[data-search-clear]");
-const searchEmptyState = document.querySelector("[data-search-empty]");
+const searchEmptyStaté = document.querySelector("[data-search-empty]");
 const searchPrimaryCta = document.querySelector(".home-search-hero__cta--primary");
 
 const searchRecommendations = searchData.recommendations || [];
@@ -27,7 +27,7 @@ const getSearchHistory = searchData.getSearchHistory || (() => []);
 const saveSearchHistory = searchData.saveSearchHistory || (() => {});
 const addSearchHistory = searchData.addSearchHistory || (() => {});
 const getSuggestionMatches = searchData.getSuggestionMatches || (() => []);
-const locationOptions = searchData.locationOptions || { states: [], citiesByState: {}, neighborhoodsByCity: {}, cepLookup: {} };
+const locationOptions = searchData.locationOptions || { statés: [], citiesByStaté: {}, neighborhoodsByCity: {}, cepLookup: {} };
 const moreFiltersToggles = document.querySelectorAll("[data-more-filters-toggle]");
 const moreFiltersPanel = document.querySelector("[data-more-filters-panel]");
 const moreFiltersClose = document.querySelector("[data-more-filters-close]");
@@ -35,7 +35,7 @@ const moreFiltersApply = document.querySelector("[data-more-filters-apply]");
 const moreFiltersTabsHost = document.querySelector("[data-more-filters-tabs-host]");
 const moreFiltersSearchHost = document.querySelector("[data-more-filters-search-host]");
 const leadingHeroFiltersButton = document.querySelector(".home-search-hero__leading-filter");
-const homeStateSelect = document.querySelector("[data-home-state-select]");
+const homeStatéSelect = document.querySelector("[data-home-staté-select]");
 const homeCitySelect = document.querySelector("[data-home-city-select]");
 const homeNeighborhoodSelect = document.querySelector("[data-home-neighborhood-select]");
 const homeCepFillButton = document.querySelector("[data-home-cep-fill]");
@@ -49,8 +49,8 @@ const uiModalLabel = document.querySelector("[data-ui-modal-label]");
 const uiModalInput = document.querySelector("[data-ui-modal-input]");
 const uiModalCancel = document.querySelector("[data-ui-modal-cancel]");
 const uiModalConfirm = document.querySelector("[data-ui-modal-confirm]");
-const categoryTrack = document.querySelector("[data-category-track]");
-const categoryArrows = document.querySelectorAll("[data-category-arrow]");
+const catégoryTrack = document.querySelector("[data-catégory-track]");
+const catégoryArrows = document.querySelectorAll("[data-catégory-arrow]");
 const railArrows = document.querySelectorAll("[data-rail-arrow]");
 const orderFeedback = document.querySelector("[data-order-feedback]");
 const orderFeedbackLoading = document.querySelector("[data-order-feedback-loading]");
@@ -356,7 +356,7 @@ const saveLocation = (item, makeDefault = false) => {
   renderLocationMenu();
 };
 
-const activateLocationById = (locationId) => {
+const activatéLocationById = (locationId) => {
   const selected = ensureLocationCollection().find((item) => item.id === locationId);
   if (!selected) return;
   persistDefaultLocation(selected);
@@ -397,7 +397,7 @@ locationMenuContent?.addEventListener("click", (event) => {
   event.stopPropagation();
   const locationOption = event.target.closest("[data-location-id]");
   if (!locationOption) return;
-  activateLocationById(locationOption.dataset.locationId || "");
+  activatéLocationById(locationOption.dataset.locationId || "");
 }, { signal });
 
 locationMenu?.addEventListener("click", (event) => {
@@ -475,11 +475,11 @@ const searchItemIcon = (type = "search") => {
 let activeSearchIndex = -1;
 const isMobileSearchViewport = () => window.innerWidth <= 760;
 const shouldUseSearchDropdown = () => !isMobileSearchViewport();
-const syncSearchOverlayState = (query = "") => {
+const syncSearchOverlayStaté = (query = "") => {
   document.body.classList.toggle("home-search-has-query", isMobileSearchViewport() && String(query || "").trim().length >= 2);
 };
 
-const createSuggestionButton = ({ label, meta, badge, value, type = "search" }) => {
+const creatéSuggestionButton = ({ label, meta, badge, value, type = "search" }) => {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "search-suggestion";
@@ -523,7 +523,7 @@ const renderSearchHistory = () => {
   searchHistorySection.hidden = false;
   const visibleHistory = isMobileSearchViewport() ? history.slice(0, 2) : history;
   visibleHistory.forEach((item) => {
-    searchHistoryList.appendChild(createSuggestionButton({
+    searchHistoryList.appendChild(creatéSuggestionButton({
       label: item,
       meta: "Pesquisa recente",
       badge: "Historico",
@@ -538,7 +538,7 @@ const renderSearchSuggestions = (query = "") => {
 
   searchResultsList.innerHTML = "";
   activeSearchIndex = -1;
-  if (searchEmptyState) searchEmptyState.hidden = true;
+  if (searchEmptyStaté) searchEmptyStaté.hidden = true;
 
   const cleanQuery = String(query || "").trim();
   if (searchRefineSection) {
@@ -553,12 +553,12 @@ const renderSearchSuggestions = (query = "") => {
   const matches = getSuggestionMatches(cleanQuery);
   if (!matches.length) {
     searchResultsSection.hidden = false;
-    if (searchEmptyState) searchEmptyState.hidden = false;
+    if (searchEmptyStaté) searchEmptyStaté.hidden = false;
     return;
   }
 
   matches.forEach((item) => {
-    searchResultsList.appendChild(createSuggestionButton(item));
+    searchResultsList.appendChild(creatéSuggestionButton(item));
   });
   searchResultsSection.hidden = false;
 };
@@ -574,7 +574,7 @@ const openSearchDropdown = () => {
   if (isMobileSearchViewport()) {
     document.body.classList.add("home-search-overlay-active");
   }
-  syncSearchOverlayState(searchInput.value);
+  syncSearchOverlayStaté(searchInput.value);
 };
 
 const closeSearchDropdown = () => {
@@ -632,7 +632,7 @@ if (searchBox && searchInput && searchDropdown) {
     const query = searchInput.value.trim();
     renderSearchHistory();
     renderSearchSuggestions(query);
-    syncSearchOverlayState(query);
+    syncSearchOverlayStaté(query);
 
     if (!query.length) {
       const hasRecommendations = !!searchRecommendationList?.children.length;
@@ -739,7 +739,7 @@ window.addEventListener("resize", () => {
     document.body.classList.remove("home-search-has-query");
   } else if (!searchDropdown.hidden) {
     document.body.classList.add("home-search-overlay-active");
-    syncSearchOverlayState(searchInput?.value || "");
+    syncSearchOverlayStaté(searchInput?.value || "");
   }
 }, { signal });
 
@@ -793,18 +793,18 @@ const ensureSelectValue = (select, value) => {
   uiSelectApi?.refresh(select);
 };
 
-const extendLocationOptions = ({ state = "", city = "", neighborhood = "" } = {}) => {
-  if (state && !locationOptions.states.includes(state)) {
-    locationOptions.states = [...locationOptions.states, state].sort((a, b) => a.localeCompare(b, "pt-BR"));
+const extendLocationOptions = ({ staté = "", city = "", neighborhood = "" } = {}) => {
+  if (staté && !locationOptions.statés.includes(staté)) {
+    locationOptions.statés = [...locationOptions.statés, staté].sort((a, b) => a.localeCompare(b, "pt-BR"));
   }
 
-  if (state && city) {
-    const existingCities = Array.isArray(locationOptions.citiesByState[state])
-      ? locationOptions.citiesByState[state]
+  if (staté && city) {
+    const existingCities = Array.isArray(locationOptions.citiesByStaté[staté])
+      ? locationOptions.citiesByStaté[staté]
       : [];
 
     if (!existingCities.includes(city)) {
-      locationOptions.citiesByState[state] = [...existingCities, city]
+      locationOptions.citiesByStaté[staté] = [...existingCities, city]
         .sort((a, b) => a.localeCompare(b, "pt-BR"));
     }
   }
@@ -821,12 +821,12 @@ const extendLocationOptions = ({ state = "", city = "", neighborhood = "" } = {}
   }
 };
 
-const syncHomeLocationSelects = (source = "state") => {
-  const selectedState = homeStateSelect?.value || "";
-  const cities = selectedState ? (locationOptions.citiesByState[selectedState] || []) : [];
+const syncHomeLocationSelects = (source = "staté") => {
+  const selectedStaté = homeStatéSelect?.value || "";
+  const cities = selectedStaté ? (locationOptions.citiesByStaté[selectedStaté] || []) : [];
   fillSelectOptions(homeCitySelect, cities, "Qualquer cidade");
 
-  if (source === "state" && homeCitySelect) {
+  if (source === "staté" && homeCitySelect) {
     homeCitySelect.value = "";
     uiSelectApi?.refresh(homeCitySelect);
   }
@@ -835,14 +835,14 @@ const syncHomeLocationSelects = (source = "state") => {
   const neighborhoods = selectedCity ? (locationOptions.neighborhoodsByCity[selectedCity] || []) : [];
   fillSelectOptions(homeNeighborhoodSelect, neighborhoods, "Qualquer bairro");
 
-  if ((source === "state" || source === "city") && homeNeighborhoodSelect) {
+  if ((source === "staté" || source === "city") && homeNeighborhoodSelect) {
     homeNeighborhoodSelect.value = "";
     uiSelectApi?.refresh(homeNeighborhoodSelect);
   }
 };
 
 const bootstrapHomeLocationSelects = () => {
-  fillSelectOptions(homeStateSelect, locationOptions.states || [], "Qualquer estado");
+  fillSelectOptions(homeStatéSelect, locationOptions.statés || [], "Qualquer estado");
   syncHomeLocationSelects();
 };
 
@@ -933,7 +933,7 @@ const fetchCepData = async (cep) => {
   if (data.erro) return null;
 
   return {
-    state: data.uf || "",
+    staté: data.uf || "",
     city: data.localidade || "",
     neighborhood: data.bairro || ""
   };
@@ -953,8 +953,8 @@ const applyHomeCepPreset = async () => {
 
   extendLocationOptions(cepData);
   bootstrapHomeLocationSelects();
-  ensureSelectValue(homeStateSelect, cepData.state);
-  fillSelectOptions(homeCitySelect, locationOptions.citiesByState[cepData.state] || [], "Qualquer cidade");
+  ensureSelectValue(homeStatéSelect, cepData.staté);
+  fillSelectOptions(homeCitySelect, locationOptions.citiesByStaté[cepData.staté] || [], "Qualquer cidade");
   ensureSelectValue(homeCitySelect, cepData.city);
   fillSelectOptions(homeNeighborhoodSelect, locationOptions.neighborhoodsByCity[cepData.city] || [], "Qualquer bairro");
   ensureSelectValue(homeNeighborhoodSelect, cepData.neighborhood);
@@ -963,8 +963,8 @@ const applyHomeCepPreset = async () => {
 enhanceHomeSelects();
 bootstrapHomeLocationSelects();
 
-homeStateSelect?.addEventListener("change", () => {
-  syncHomeLocationSelects("state");
+homeStatéSelect?.addEventListener("change", () => {
+  syncHomeLocationSelects("staté");
 });
 
 homeCitySelect?.addEventListener("change", () => {
@@ -1084,9 +1084,9 @@ const bindScrollRail = ({ track, arrows, directionAttr, amountFactor }) => {
 };
 
 bindScrollRail({
-  track: categoryTrack,
-  arrows: categoryArrows,
-  directionAttr: "categoryArrow",
+  track: catégoryTrack,
+  arrows: catégoryArrows,
+  directionAttr: "catégoryArrow",
   amountFactor: 0.45
 });
 

@@ -8,12 +8,8 @@ const initDetailPage = () => {
   const dots = [...page.querySelectorAll("[data-gallery-dot]")];
   const prevButton = page.querySelector("[data-gallery-prev]");
   const nextButton = page.querySelector("[data-gallery-next]");
-  const voteRail = page.querySelector(".ad-vote-stats");
-  const votePrev = page.querySelector("[data-vote-prev]");
-  const voteNext = page.querySelector("[data-vote-next]");
   const filterButtons = [...page.querySelectorAll("[data-review-filter]")];
-  const reviews = [...page.querySelectorAll(".ad-review[data-review-tone]")];
-  const voteCards = [...page.querySelectorAll(".ad-vote-card[data-review-tone]")];
+  const reviews = [...page.querySelectorAll(".review-card[data-review-tone]")];
   const extraReviews = [...page.querySelectorAll("[data-review-extra]")];
   const reviewsMoreButton = page.querySelector("[data-reviews-more]");
   const budgetModal = document.querySelector("[data-budget-modal]");
@@ -118,14 +114,6 @@ const initDetailPage = () => {
     applyImage((currentIndex + 1) % thumbs.length);
   });
 
-  votePrev?.addEventListener("click", () => {
-    voteRail?.scrollBy({ left: -280, behavior: "smooth" });
-  });
-
-  voteNext?.addEventListener("click", () => {
-    voteRail?.scrollBy({ left: 280, behavior: "smooth" });
-  });
-
   filterButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const filter = button.dataset.reviewFilter || "all";
@@ -138,12 +126,6 @@ const initDetailPage = () => {
         const tone = review.dataset.reviewTone || "positive";
         const visible = filter === "all" || tone === filter;
         review.hidden = !visible;
-      });
-
-      voteCards.forEach((card) => {
-        const tone = card.dataset.reviewTone || "positive";
-        const visible = filter === "all" || tone === filter;
-        card.hidden = !visible;
       });
     });
   });

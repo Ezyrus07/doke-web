@@ -22,7 +22,7 @@
 - `assets/css/pages/home-shared.css`
 - `assets/css/pages/mensagens.css`
 - `assets/css/pages/notificacoes.css`
-- `assets/css/pages/orcamento.css`
+- `assets/css/pages/orçamento.css`
 - `assets/css/pages/pagamento.css`
 - `assets/css/pages/pedidos.css`
 - `assets/css/pages/perfil.css`
@@ -46,7 +46,7 @@
 - `assets/js/pages/home.js`
 - `assets/js/pages/mensagens.js`
 - `assets/js/pages/notificacoes.js`
-- `assets/js/pages/orcamento.js`
+- `assets/js/pages/orçamento.js`
 - `assets/js/pages/pagamento.js`
 - `assets/js/pages/pedidos.js`
 - `assets/js/pages/perfil.js`

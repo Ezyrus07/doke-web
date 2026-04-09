@@ -19,12 +19,12 @@
       .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
   };
 
-  const validateEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
-  const validateCardNumber = (value) => {
+  const validatéEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+  const validatéCardNumber = (value) => {
     const length = digitsOnly(value).length;
     return length >= 13 && length <= 16;
   };
-  const validateExpiry = (value) => {
+  const validatéExpiry = (value) => {
     const clean = formatExpiry(value);
     if (!/^\d{2}\/\d{2}$/.test(clean)) return false;
     const [monthText, yearText] = clean.split("/");
@@ -36,8 +36,8 @@
     const currentYear = now.getFullYear();
     return year > currentYear || (year === currentYear && month >= currentMonth);
   };
-  const validateCvv = (value) => /^\d{3,4}$/.test(digitsOnly(value));
-  const validateCpf = (value) => digitsOnly(value).length === 11;
+  const validatéCvv = (value) => /^\d{3,4}$/.test(digitsOnly(value));
+  const validatéCpf = (value) => digitsOnly(value).length === 11;
 
   const initPaymentPage = () => {
     const root = document.querySelector("[data-payment-page]");
@@ -87,10 +87,10 @@
 
     let paymentTimer = null;
     const pointsBalance = 230;
-    const pointCurrencyRate = 0.1;
+    const pointCurrencyRaté = 0.1;
     const baseAmount = parseCurrency(amount);
 
-    const navigateTo = (href) => {
+    const navigatéTo = (href) => {
       if (!href) return;
       overlay?.setAttribute("hidden", "");
       if (window.DokeNavigate) {
@@ -116,7 +116,7 @@
       return `${next.pathname}${next.search}`;
     };
 
-    const clearInvalidState = () => {
+    const clearInvalidStaté = () => {
       [nameInput, cardInput, expiryInput, cvvInput, documentInput, emailInput].forEach((input) => {
         input?.classList.remove("is-invalid");
       });
@@ -128,8 +128,8 @@
       feedback.hidden = !message;
     };
 
-    const invalidate = (input, message) => {
-      clearInvalidState();
+    const invalidaté = (input, message) => {
+      clearInvalidStaté();
       input?.classList.add("is-invalid");
       setFeedback(message);
       input?.focus();
@@ -147,7 +147,7 @@
       });
     };
 
-    const updatePoints = () => {
+    const updatéPoints = () => {
       if (!pointsToggle || !pointsInput || !amountNode) return;
       const enabled = pointsToggle.checked;
       const rawRequested = Number(pointsInput.value || 0);
@@ -156,7 +156,7 @@
         pointsInput.value = String(normalizedPoints);
       }
 
-      const discount = enabled ? normalizedPoints * pointCurrencyRate : 0;
+      const discount = enabled ? normalizedPoints * pointCurrencyRaté : 0;
       const total = Math.max(0, baseAmount - discount);
 
       if (pointsControls) pointsControls.hidden = !enabled;
@@ -173,7 +173,7 @@
       addCardButton?.classList.toggle("is-active", !usingSaved);
       if (paymentForm) paymentForm.hidden = usingSaved;
       setFeedback("");
-      clearInvalidState();
+      clearInvalidStaté();
     };
 
     const setSuccessLinks = () => {
@@ -231,13 +231,13 @@
       setCardMode("new");
       nameInput?.focus();
     });
-    pointsToggle?.addEventListener("change", updatePoints);
-    pointsInput?.addEventListener("input", updatePoints);
+    pointsToggle?.addEventListener("change", updatéPoints);
+    pointsInput?.addEventListener("input", updatéPoints);
 
     document.querySelectorAll(".payment-success__actions a").forEach((link) => {
       link.addEventListener("click", (event) => {
         event.preventDefault();
-        navigateTo(link.getAttribute("href") || "");
+        navigatéTo(link.getAttribute("href") || "");
       });
     });
 
@@ -252,15 +252,15 @@
         const documentValue = String(documentInput?.value || "");
         const emailValue = String(emailInput?.value || "").trim();
 
-        if (nameValue.length < 5) return invalidate(nameInput, "Preencha o nome do titular como aparece no cartão.");
-        if (!validateCardNumber(cardValue)) return invalidate(cardInput, "Digite um número de cartão válido com 13 a 16 dígitos.");
-        if (!validateExpiry(expiryValue)) return invalidate(expiryInput, "Informe uma validade futura no formato MM/AA.");
-        if (!validateCvv(cvvValue)) return invalidate(cvvInput, "O CVV precisa ter 3 ou 4 números.");
-        if (!validateCpf(documentValue)) return invalidate(documentInput, "Informe um CPF válido com 11 dígitos.");
-        if (!validateEmail(emailValue)) return invalidate(emailInput, "Digite um e-mail válido para receber o comprovante.");
+        if (nameValue.length < 5) return invalidaté(nameInput, "Preencha o nome do titular como aparece no cartão.");
+        if (!validatéCardNumber(cardValue)) return invalidaté(cardInput, "Digite um número de cartão válido com 13 a 16 dígitos.");
+        if (!validatéExpiry(expiryValue)) return invalidaté(expiryInput, "Informe uma validade futura no formato MM/AA.");
+        if (!validatéCvv(cvvValue)) return invalidaté(cvvInput, "O CVV precisa ter 3 ou 4 números.");
+        if (!validatéCpf(documentValue)) return invalidaté(documentInput, "Informe um CPF válido com 11 dígitos.");
+        if (!validatéEmail(emailValue)) return invalidaté(emailInput, "Digite um e-mail válido para receber o comprovante.");
       }
 
-      clearInvalidState();
+      clearInvalidStaté();
       setFeedback("");
       overlay?.removeAttribute("hidden");
       processingCard?.removeAttribute("hidden");
@@ -284,7 +284,7 @@
 
     setCardMode("saved");
     setMethod("card");
-    updatePoints();
+    updatéPoints();
   };
 
   window.DokeInitPayment = initPaymentPage;

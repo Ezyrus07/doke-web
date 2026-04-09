@@ -1,4 +1,2 @@
-# lists
-
-Componente reservado para extração futura do sistema visual compartilhado.
-Ainda não mover regras sem evidência de reuso estável.
+Reusable tab rails.
+First extraction: profile-tabs.css owns the compact pill tab system used by perfil.html.

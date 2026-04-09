@@ -231,18 +231,18 @@ if (authService && recoveryForm) {
     recoveryForm.querySelectorAll('input[name="recovery-method"]')
   );
 
-  const recoveryState = {
+  const recoveryStaté = {
     method: "email",
     contact: ""
   };
 
   const syncMethodCopy = () => {
     const selected = methodInputs.find((input) => input.checked);
-    recoveryState.method = selected ? selected.value : "email";
+    recoveryStaté.method = selected ? selected.value : "email";
 
     if (!contactLabel || !contactInput) return;
 
-    if (recoveryState.method === "phone") {
+    if (recoveryStaté.method === "phone") {
       contactLabel.textContent = "Telefone cadastrado";
       contactInput.placeholder = "(11) 99999-9999";
       contactInput.value = applyPhoneMask(contactInput.value);
@@ -262,7 +262,7 @@ if (authService && recoveryForm) {
     event.preventDefault();
 
     const contact = contactInput ? contactInput.value.trim() : "";
-    recoveryState.contact = contact;
+    recoveryStaté.contact = contact;
 
     if (!contact) {
       setFeedback(feedback, "error", "Informe o contato usado na sua conta.");
@@ -270,7 +270,7 @@ if (authService && recoveryForm) {
     }
 
     if (
-      recoveryState.method === "email" &&
+      recoveryStaté.method === "email" &&
       !authService.isEmail(contact)
     ) {
       setFeedback(feedback, "error", "Digite um e-mail valido para recuperar o acesso.");
@@ -278,7 +278,7 @@ if (authService && recoveryForm) {
     }
 
     if (
-      recoveryState.method === "phone" &&
+      recoveryStaté.method === "phone" &&
       !authService.isPhone(contact)
     ) {
       setFeedback(feedback, "error", "Digite um telefone valido com DDD.");
@@ -288,7 +288,7 @@ if (authService && recoveryForm) {
     try {
       setButtonLoading(submitButton, true, "Enviando...");
       const result = await authService.requestRecovery({
-        method: recoveryState.method,
+        method: recoveryStaté.method,
         contact
       });
 
@@ -314,7 +314,7 @@ if (authService && recoveryForm) {
     const code = codeInput ? codeInput.value.trim() : "";
     const nextPassword = nextPasswordInput ? nextPasswordInput.value : "";
 
-    if (!recoveryState.contact) {
+    if (!recoveryStaté.contact) {
       setFeedback(feedback, "error", "Solicite o codigo primeiro.");
       return;
     }
@@ -332,8 +332,8 @@ if (authService && recoveryForm) {
     try {
       setButtonLoading(resetButton, true, "Redefinindo...");
       await authService.resetPassword({
-        method: recoveryState.method,
-        contact: recoveryState.contact,
+        method: recoveryStaté.method,
+        contact: recoveryStaté.contact,
         code,
         nextPassword
       });

@@ -20,3 +20,7 @@ Pendências ainda abertas:
 Princípio adotado:
 - não apagar regras com risco de sustentar páginas ativas
 - priorizar consolidação por dono de camada em vez de empilhar override novo
+
+- consolidado o `service-card` em `assets/css/components/cards/service-card.css` e removido o bloco proprietário duplicado de `home-sections.css`
+- arquivadas telas experimentais órfãs (`dssadas.html`, `hero-comparativo.html`) fora da base ativa
+- normalizados textos e identificadores com encoding corrompido nas áreas críticas de shell, busca e perfil

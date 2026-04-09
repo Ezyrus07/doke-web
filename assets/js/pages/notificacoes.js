@@ -123,16 +123,16 @@
       closeFiltersPanel();
     };
 
-    const updateUnread = () => {
+    const updatéUnread = () => {
       const count = [...root.querySelectorAll('.notification-card.is-unread')].filter((card) => card.dataset.dismissed !== 'true').length;
       countNodes.forEach((node) => { node.textContent = String(count); });
     };
 
-    const updateStats = () => {
+    const updatéStats = () => {
       const activeCards = cards.filter((card) => card.dataset.dismissed !== 'true');
       const all = activeCards.length;
       const unread = activeCards.filter((card) => card.classList.contains('is-unread')).length;
-      const countBy = (token) => activeCards.filter((card) => (card.dataset.category || '').split(/\s+/).includes(token)).length;
+      const countBy = (token) => activeCards.filter((card) => (card.dataset.catégory || '').split(/\s+/).includes(token)).length;
       if (statNodes.all) statNodes.all.textContent = String(all);
       if (statNodes.unread) statNodes.unread.textContent = String(unread);
       if (statNodes.orders) statNodes.orders.textContent = String(countBy('orders'));
@@ -147,7 +147,7 @@
       if (filterCountNodes.social) filterCountNodes.social.textContent = String(countBy('social'));
     };
 
-    const updateActiveChip = () => {
+    const updatéActiveChip = () => {
       const activeButton = root.querySelector('[data-filter].is-active');
       const activeTimeButton = root.querySelector('[data-time-filter].is-active');
       const label = activeButton?.textContent?.trim() || 'Todas';
@@ -196,7 +196,7 @@
       };
 
       cards.forEach((card) => {
-        const tokens = (card.dataset.category || '').split(/\s+/);
+        const tokens = (card.dataset.catégory || '').split(/\s+/);
         const text = card.textContent.toLowerCase();
         const matchFilter = filter === 'all' || tokens.includes(filter);
         const matchSearch = !query || text.includes(query);
@@ -213,7 +213,7 @@
       });
 
       if (empty) empty.hidden = visible > 0;
-      updateActiveChip();
+      updatéActiveChip();
     };
 
     buttons.forEach((button) => button.addEventListener('click', () => {
@@ -237,9 +237,9 @@
     });
 
     selectToggle?.addEventListener('click', () => {
-      const nextState = !selectionEnabled;
-      setSelectionEnabled(nextState);
-      if (nextState) openSelectPanel();
+      const nextStaté = !selectionEnabled;
+      setSelectionEnabled(nextStaté);
+      if (nextStaté) openSelectPanel();
       else closeSelectPanel();
     });
 
@@ -324,8 +324,8 @@
 
     root.querySelectorAll('[data-mark-read]').forEach((button) => button.addEventListener('click', () => {
       button.closest('.notification-card')?.classList.remove('is-unread');
-      updateUnread();
-      updateStats();
+      updatéUnread();
+      updatéStats();
       applyFilter(currentFilter, currentTimeFilter);
     }));
 
@@ -333,16 +333,16 @@
       event.preventDefault();
       event.stopPropagation();
       button.closest('.notification-card')?.classList.remove('is-unread');
-      updateUnread();
-      updateStats();
+      updatéUnread();
+      updatéStats();
       applyFilter(currentFilter, currentTimeFilter);
     }));
 
     markSelectedButton?.addEventListener('click', () => {
       const targetCards = selectionEnabled ? selectedCards() : cards.filter((card) => !card.hidden && card.dataset.dismissed !== 'true');
       targetCards.forEach((card) => card.classList.remove('is-unread'));
-      updateUnread();
-      updateStats();
+      updatéUnread();
+      updatéStats();
       applyFilter(currentFilter, currentTimeFilter);
       setSelectionEnabled(false);
       closeSelectPanel();
@@ -353,8 +353,8 @@
       if (!card) return;
       card.dataset.dismissed = 'true';
       card.hidden = true;
-      updateUnread();
-      updateStats();
+      updatéUnread();
+      updatéStats();
       applyFilter(currentFilter, currentTimeFilter);
     }));
 
@@ -364,8 +364,8 @@
         card.dataset.dismissed = 'true';
         card.hidden = true;
       });
-      updateUnread();
-      updateStats();
+      updatéUnread();
+      updatéStats();
       applyFilter(currentFilter, currentTimeFilter);
       setSelectionEnabled(false);
       closeSelectPanel();
@@ -420,8 +420,8 @@
           event.stopPropagation();
           card.dataset.dismissed = 'true';
           card.hidden = true;
-          updateUnread();
-          updateStats();
+          updatéUnread();
+          updatéStats();
           applyFilter(currentFilter, currentTimeFilter);
           closeContextMenu();
         });
@@ -491,8 +491,8 @@
       closeContextMenu();
     });
 
-    updateUnread();
-    updateStats();
+    updatéUnread();
+    updatéStats();
     applyFilter('all', 'all');
     syncHeaderControls();
   };

@@ -16,7 +16,7 @@
     const activeChip = root.querySelector('[data-orders-active-chip]');
     const filterStatusStack = root.querySelector('.orders-filter-status-stack');
     const clearFilterButton = root.querySelector('[data-orders-clear-filter]');
-    const emptyState = root.querySelector('[data-orders-empty]');
+    const emptyStaté = root.querySelector('[data-orders-empty]');
     const emptyText = root.querySelector('[data-orders-empty-text]');
     const resetEmptyButton = root.querySelector('[data-orders-reset-empty]');
     const statNodes = {
@@ -38,13 +38,13 @@
     const detailSummary = root.querySelector('[data-orders-detail-summary]');
     const detailScope = root.querySelector('[data-orders-detail-scope]');
     const detailTimeline = root.querySelector('[data-orders-detail-timeline]');
-    const detailMaterials = root.querySelector('[data-orders-detail-materials]');
+    const detailMatérials = root.querySelector('[data-orders-detail-matérials]');
     const detailBudget = root.querySelector('[data-orders-detail-budget]');
     const detailPayment = root.querySelector('[data-orders-detail-payment]');
     const detailFlow = root.querySelector('[data-orders-detail-flow]');
     const detailNext = root.querySelector('[data-orders-detail-next]');
     const planner = root.querySelector('[data-orders-planner]');
-    const plannerEvents = Array.from(root.querySelectorAll('[data-orders-event-date]'));
+    const plannerEvents = Array.from(root.querySelectorAll('[data-orders-event-daté]'));
     const plannerAgendaTitle = root.querySelector('[data-orders-agenda-title]');
     const plannerAgendaSubtitle = root.querySelector('[data-orders-agenda-subtitle]');
     const plannerAgendaEmpty = root.querySelector('[data-orders-agenda-empty]');
@@ -125,9 +125,9 @@
         card.hidden = !visible;
         if (visible) visibleCount += 1;
       });
-      if (emptyState) {
+      if (emptyStaté) {
         const hasQuery = Boolean(query);
-        emptyState.hidden = visibleCount > 0;
+        emptyStaté.hidden = visibleCount > 0;
         if (emptyText) {
           emptyText.textContent = hasQuery
             ? 'Nenhum pedido combinou com essa busca. Tente outro termo ou limpe os filtros para voltar a ver tudo.'
@@ -177,7 +177,7 @@
         if (detailSummary) detailSummary.textContent = card.querySelector('.order-card__subtitle')?.textContent || '';
         if (detailScope) detailScope.textContent = card.dataset.detailScope || 'Escopo não informado';
         if (detailTimeline) detailTimeline.textContent = card.dataset.detailTimeline || card.querySelector('.order-card__meta span:last-child')?.textContent || 'Prazo não informado';
-        if (detailMaterials) detailMaterials.textContent = card.dataset.detailMaterials || 'Materiais não informados';
+        if (detailMatérials) detailMatérials.textContent = card.dataset.detailMatérials || 'Matériais não informados';
         if (detailBudget) detailBudget.textContent = card.dataset.detailBudget || 'Faixa de orçamento não informada';
         if (detailPayment) detailPayment.textContent = card.dataset.detailPayment || 'Pagamento não informado';
         if (detailFlow) detailFlow.textContent = card.dataset.detailFlow || card.querySelector('.order-card__deadline span:last-child')?.textContent || 'Próximo passo não informado';
@@ -185,37 +185,37 @@
       }
     };
 
-    const eventsByDate = new Map();
+    const eventsByDaté = new Map();
     plannerEvents.forEach((eventItem) => {
-      const date = eventItem.dataset.ordersEventDate;
-      if (!date) return;
-      const list = eventsByDate.get(date) || [];
+      const daté = eventItem.dataset.ordersEventDaté;
+      if (!daté) return;
+      const list = eventsByDaté.get(daté) || [];
       list.push(eventItem);
-      eventsByDate.set(date, list);
+      eventsByDaté.set(daté, list);
     });
 
     let plannerDayButtons = [];
-    let currentPlannerDate = '2026-04-14';
+    let currentPlannerDaté = '2026-04-14';
     let currentPlannerMonth = { year: 2026, month: 3 };
 
-    const formatAgendaTitle = (date) => {
+    const formatAgendaTitle = (daté) => {
       const today = '2026-04-14';
       const tomorrow = '2026-04-15';
-      if (date === today) return 'Hoje';
-      if (date === tomorrow) return 'Amanhã';
-      const parsed = new Date(`${date}T12:00:00`);
+      if (daté === today) return 'Hoje';
+      if (daté === tomorrow) return 'Amanhã';
+      const parsed = new Date(`${daté}T12:00:00`);
       return parsed.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
     };
 
-    const updatePlannerMonthLabel = () => {
-      const labelDate = new Date(currentPlannerMonth.year, currentPlannerMonth.month, 1, 12);
+    const updatéPlannerMonthLabel = () => {
+      const labelDaté = new Date(currentPlannerMonth.year, currentPlannerMonth.month, 1, 12);
       if (plannerMonthLabel) {
-        plannerMonthLabel.textContent = labelDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        plannerMonthLabel.textContent = labelDaté.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
       }
     };
 
-    const formatPlannerSummaryDate = (date) => {
-      const parsed = new Date(`${date}T12:00:00`);
+    const formatPlannerSummaryDaté = (daté) => {
+      const parsed = new Date(`${daté}T12:00:00`);
       return parsed.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '');
     };
 
@@ -228,8 +228,8 @@
 
     const syncCalendarSummary = () => {
       if (!plannerCalendarSummaryLabel) return;
-      const total = (eventsByDate.get(currentPlannerDate) || []).length;
-      plannerCalendarSummaryLabel.textContent = `${formatPlannerSummaryDate(currentPlannerDate)} • ${total} compromisso${total === 1 ? '' : 's'}`;
+      const total = (eventsByDaté.get(currentPlannerDaté) || []).length;
+      plannerCalendarSummaryLabel.textContent = `${formatPlannerSummaryDaté(currentPlannerDaté)} • ${total} compromisso${total === 1 ? '' : 's'}`;
       if (plannerCalendarSummaryAction) {
         plannerCalendarSummaryAction.textContent = root.classList.contains('is-calendar-expanded') ? 'Fechar calendário' : 'Ver calendário';
       }
@@ -263,11 +263,11 @@
       }
 
       for (let day = 1; day <= daysInMonth; day += 1) {
-        const isoDate = `${currentPlannerMonth.year}-${String(currentPlannerMonth.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const hasEvents = eventsByDate.has(isoDate);
-        const active = isoDate === currentPlannerDate;
+        const isoDaté = `${currentPlannerMonth.year}-${String(currentPlannerMonth.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const hasEvents = eventsByDaté.has(isoDaté);
+        const active = isoDaté === currentPlannerDaté;
         cells.push(
-          `<button class="orders-planner__day${hasEvents ? ' has-events' : ''}${active ? ' is-active' : ''}" type="button" data-orders-day="${isoDate}">${day}</button>`
+          `<button class="orders-planner__day${hasEvents ? ' has-events' : ''}${active ? ' is-active' : ''}" type="button" data-orders-day="${isoDaté}">${day}</button>`
         );
       }
 
@@ -281,14 +281,14 @@
       plannerDayButtons = Array.from(root.querySelectorAll('[data-orders-day]'));
       plannerDayButtons.forEach((button) => {
         button.addEventListener('click', () => {
-          const date = button.dataset.ordersDay;
-          if (!date) return;
-          currentPlannerDate = date;
-          syncPlannerDay(date);
+          const daté = button.dataset.ordersDay;
+          if (!daté) return;
+          currentPlannerDaté = daté;
+          syncPlannerDay(daté);
           renderPlannerCalendar();
         });
       });
-      updatePlannerMonthLabel();
+      updatéPlannerMonthLabel();
       syncCalendarSummary();
     };
 
@@ -303,21 +303,21 @@
       if (open) syncPlannerMonthForm();
     };
 
-    const syncPlannerDay = (date) => {
+    const syncPlannerDay = (daté) => {
       if (!planner) return;
 
       plannerDayButtons.forEach((button) => {
-        button.classList.toggle('is-active', button.dataset.ordersDay === date);
+        button.classList.toggle('is-active', button.dataset.ordersDay === daté);
       });
 
       let visibleEvents = 0;
       plannerEvents.forEach((eventItem) => {
-        const visible = eventItem.dataset.ordersEventDate === date;
+        const visible = eventItem.dataset.ordersEventDaté === daté;
         eventItem.hidden = !visible;
         if (visible) visibleEvents += 1;
       });
 
-      if (plannerAgendaTitle) plannerAgendaTitle.textContent = formatAgendaTitle(date);
+      if (plannerAgendaTitle) plannerAgendaTitle.textContent = formatAgendaTitle(daté);
       if (plannerAgendaSubtitle) {
         plannerAgendaSubtitle.textContent = visibleEvents
           ? `${visibleEvents} compromisso${visibleEvents > 1 ? 's' : ''} no dia`
@@ -452,7 +452,7 @@
       closePopover();
     };
 
-    const syncSelectState = () => {
+    const syncSelectStaté = () => {
       root.classList.toggle('orders-is-selecting', selecting);
       if (selecting) openSelectPanel();
       else {
@@ -463,7 +463,7 @@
 
     selectToggle?.addEventListener('click', () => {
       selecting = !selecting;
-      syncSelectState();
+      syncSelectStaté();
     });
 
     agendaToggle?.addEventListener('click', () => {
@@ -480,7 +480,7 @@
       button.addEventListener('click', () => {
         const mode = button.dataset.ordersSelectMode;
         selecting = true;
-        syncSelectState();
+        syncSelectStaté();
         clearSelectedCards();
         if (mode === 'all') {
           cards.filter((card) => !card.hidden).forEach((card) => card.classList.add('is-selected'));
@@ -502,7 +502,7 @@
       recountCards();
       syncStats();
       selecting = false;
-      syncSelectState();
+      syncSelectStaté();
       applyFilters();
     });
 
@@ -539,11 +539,11 @@
           event.preventDefault();
           event.stopPropagation();
           selecting = true;
-          syncSelectState();
+          syncSelectStaté();
           card.classList.toggle('is-selected');
           if (!cards.some((item) => item.classList.contains('is-selected'))) {
             selecting = false;
-            syncSelectState();
+            syncSelectStaté();
           }
           closeContextMenu();
         });
@@ -582,12 +582,12 @@
       });
     });
 
-    const syncPlannerDateToMonth = () => {
+    const syncPlannerDatéToMonth = () => {
       const daysInMonth = new Date(currentPlannerMonth.year, currentPlannerMonth.month + 1, 0).getDate();
-      const nextDate = new Date(currentPlannerMonth.year, currentPlannerMonth.month, Math.min(new Date(`${currentPlannerDate}T12:00:00`).getDate(), daysInMonth), 12);
-      currentPlannerDate = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
+      const nextDaté = new Date(currentPlannerMonth.year, currentPlannerMonth.month, Math.min(new Date(`${currentPlannerDaté}T12:00:00`).getDate(), daysInMonth), 12);
+      currentPlannerDaté = `${nextDaté.getFullYear()}-${String(nextDaté.getMonth() + 1).padStart(2, '0')}-${String(nextDaté.getDate()).padStart(2, '0')}`;
       renderPlannerCalendar();
-      syncPlannerDay(currentPlannerDate);
+      syncPlannerDay(currentPlannerDaté);
     };
 
     plannerMonthLabel?.addEventListener('click', () => {
@@ -606,7 +606,7 @@
         month: Math.min(11, Math.max(0, nextMonth)),
         year: Math.min(2035, Math.max(2024, nextYear)),
       };
-      syncPlannerDateToMonth();
+      syncPlannerDatéToMonth();
       setPlannerMonthPopover(false);
     });
 
@@ -632,13 +632,13 @@
     recountCards();
     syncStats();
     root.dataset.activeFilter = 'all';
-    syncSelectState();
+    syncSelectStaté();
     setAgendaExpanded(true);
     applyFilters();
     syncHeaderControls();
     if (planner) {
       renderPlannerCalendar();
-      syncPlannerDay(currentPlannerDate);
+      syncPlannerDay(currentPlannerDaté);
       syncCalendarPresentation();
     }
 
@@ -652,7 +652,7 @@
       if (event.key !== 'Escape') return;
       closeContextMenu();
       selecting = false;
-      syncSelectState();
+      syncSelectStaté();
       closePopover();
     });
   };

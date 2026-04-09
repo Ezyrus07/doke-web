@@ -3,9 +3,10 @@ const body = document.body;
 const SIDEBAR_STORAGE_KEY = "doke.sidebar.collapsed";
 const THEME_STORAGE_KEY = "doke.theme";
 const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", "mobile-search-active"];
-const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/comunidade.html", "/pagamento.html", "/finalizar-pedido.html", "/avaliacao.html", "/carteira.html", "/adicionar-cartao.html", "/conta-bancaria.html", "/perfil.html", "/mais.html", "/"]);
+const INTERNAL_PROFILE_PATH = "/perfil.html";
+const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/comunidade.html", "/pagamento.html", "/finalizar-pedido.html", "/avaliacao.html", "/carteira.html", "/adicionar-cartao.html", "/conta-bancaria.html", INTERNAL_PROFILE_PATH, "/mais.html", "/"]);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
-const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", "/perfil.html", "/mais.html", "/carteira.html"];
+const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/mais.html", "/carteira.html"];
 let sidebarViewsHinted = false;
 const isMobileSidebarViewport = () => window.innerWidth <= 760;
 
@@ -51,6 +52,91 @@ const isInternalViewUrl = (href) => {
 
 const shouldBypassShellSwap = (_href) => false;
 
+
+const SHARED_SIDEBAR_MARKUP = `
+  <button
+    class="sidebar__collapse-button"
+    type="button"
+    data-sidebar-collapse
+    aria-label="Diminuir ou expandir menu lateral"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m14.5 6.5-5 5 5 5"></path>
+    </svg>
+  </button>
+
+  <div class="sidebar__brand">
+    <div class="brand-logo" aria-label="Doke">
+      <img src="assets/img/doke-logo-lockup.png" alt="Doke" />
+    </div>
+  </div>
+
+  <div class="sidebar__group">
+    <div class="sidebar__label">Principal</div>
+    <a class="nav-link nav-link--home" href="index.html">
+      <span class="nav-link__start">
+        <span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5.5 9.5V20h13V9.5"></path></svg></span>
+        <span>Início</span>
+      </span>
+      <span class="nav-link__count">Base</span>
+    </a>
+    <a class="nav-link nav-link--orders" href="pedidos.html">
+      <span class="nav-link__start">
+        <span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg></span>
+        <span>Pedidos</span>
+      </span>
+    </a>
+    <a class="nav-link nav-link--messages" href="mensagens.html">
+      <span class="nav-link__start">
+        <span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg></span>
+        <span>Mensagens</span>
+      </span>
+    </a>
+    <a class="nav-link nav-link--notifications" href="notificacoes.html">
+      <span class="nav-link__start">
+        <span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4.5a4.8 4.8 0 0 0-4.8 4.8v2.6c0 1.4-.4 2.7-1.2 3.8h12c-.8-1.1-1.2-2.4-1.2-3.8V9.3A4.8 4.8 0 0 0 12 4.5z"></path><path d="M9.5 18a2.5 2.5 0 0 0 5 0"></path></svg></span>
+        <span>Notificações</span>
+      </span>
+      <span class="nav-link__count">3</span>
+    </a>
+    <a class="nav-link nav-link--communities" href="comunidade.html">
+      <span class="nav-link__start">
+        <span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="8" cy="10" r="2.5"></circle><circle cx="16" cy="9" r="2.5"></circle><path d="M3.5 18c.8-2.4 2.8-3.8 5.5-3.8S13.7 15.6 14.5 18"></path><path d="M12.5 18c.6-1.9 2.1-3.1 4.3-3.1 2 0 3.6 1.1 4.2 3.1"></path></svg></span>
+        <span>Comunidade</span>
+      </span>
+    </a>
+  </div>
+
+  <div class="sidebar__group">
+    <div class="sidebar__label">Conta</div>
+    <a class="nav-link nav-link--profile" href="perfil.html">
+      <span class="nav-link__start"><span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.2-3.2 3.7-4.8 7-4.8s5.8 1.6 7 4.8"></path></svg></span><span>Meu perfil</span></span>
+    </a>
+    <a class="nav-link nav-link--wallet" href="carteira.html">
+      <span class="nav-link__start"><span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.5 8.5A2.5 2.5 0 0 1 7 6h11.5v12H7a2.5 2.5 0 1 1 0-5h12"></path><path d="M16 13h3"></path></svg></span><span>Carteira</span></span>
+    </a>
+    <a class="nav-link nav-link--settings" href="mais.html">
+      <span class="nav-link__start"><span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 3.8v2.1"></path><path d="M12 18.1v2.1"></path><path d="m18.2 5.8-1.5 1.5"></path><path d="m7.3 16.7-1.5 1.5"></path><path d="M20.2 12h-2.1"></path><path d="M5.9 12H3.8"></path><path d="m18.2 18.2-1.5-1.5"></path><path d="m7.3 7.3-1.5-1.5"></path></svg></span><span>Configurações</span></span>
+    </a>
+  </div>
+
+  <div class="sidebar__footer">
+    <div class="sidebar__group sidebar__group--footer">
+      <button class="nav-link nav-link--footer-action" type="button" data-sidebar-logout aria-label="Sair">
+        <span class="nav-link__start"><span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M15 7.5V5.8A1.8 1.8 0 0 0 13.2 4H7.8A1.8 1.8 0 0 0 6 5.8v12.4A1.8 1.8 0 0 0 7.8 20h5.4a1.8 1.8 0 0 0 1.8-1.8v-1.7"></path><path d="M10 12h10"></path><path d="m17 8 3 4-3 4"></path></svg></span><span>Sair</span></span>
+      </button>
+    </div>
+  </div>
+`;
+
+const renderSharedSidebar = () => {
+  const sidebar = document.querySelector('.app-shell > .sidebar');
+  if (!sidebar) return;
+  if (sidebar.dataset.shellRendered === 'true') return;
+  sidebar.innerHTML = SHARED_SIDEBAR_MARKUP;
+  sidebar.dataset.shellRendered = 'true';
+};
+
 const updateSidebarActiveState = () => {
   const path = getCurrentPath();
   const homeActive = path === "/index.html";
@@ -59,7 +145,7 @@ const updateSidebarActiveState = () => {
   const notificationsActive = path === "/notificacoes.html";
   const communitiesActive = path === "/comunidade.html";
   const walletActive = path === "/carteira.html" || path === "/adicionar-cartao.html" || path === "/conta-bancaria.html";
-  const profileActive = path === "/perfil.html";
+  const profileActive = path === INTERNAL_PROFILE_PATH;
   const settingsActive = path === "/mais.html";
 
   document.querySelectorAll(".sidebar .nav-link").forEach((link) => link.classList.remove("is-active"));
@@ -74,10 +160,15 @@ const updateSidebarActiveState = () => {
 };
 
 const syncSettingsLinks = () => {
-  document.querySelectorAll(".nav-link--settings, .profile-dropdown__item").forEach((link) => {
-    const text = (link.textContent || "").trim().toLowerCase();
-    if (link.classList.contains("nav-link--settings") || text.includes("configurações")) {
-      if (link.tagName === "A") link.setAttribute("href", "mais.html");
+  document.querySelectorAll('.nav-link--settings, .nav-link--profile, .profile-dropdown__item').forEach((link) => {
+    const text = (link.textContent || '').trim().toLowerCase();
+
+    if (link.classList.contains('nav-link--settings') || text.includes('configurações')) {
+      if (link.tagName === 'A') link.setAttribute('href', 'mais.html');
+    }
+
+    if (link.classList.contains('nav-link--profile') || text.includes('meu perfil') || text === 'perfil') {
+      if (link.tagName === 'A') link.setAttribute('href', INTERNAL_PROFILE_PATH.replace('/', ''));
     }
   });
 };
@@ -225,9 +316,7 @@ const INTERNAL_VIEW_STYLE_HINTS = {
     "assets/css/pages/notificacoes.css"
   ],
   "/comunidade.html": [
-    "assets/css/pages/home-shared.css",
-    "assets/css/pages/home.css",
-    "assets/css/pages/perfil.css"
+    "assets/css/pages/comunidade.css"
   ],
   "/pagamento.html": [
     "assets/css/pages/home-shared.css",
@@ -250,14 +339,13 @@ const INTERNAL_VIEW_STYLE_HINTS = {
     "assets/css/pages/carteira.css"
   ],
   "/perfil.html": [
-    "assets/css/pages/home-shared.css",
-    "assets/css/pages/home.css",
     "assets/css/pages/perfil.css"
   ],
+  "/perfil-profissional.html": [
+    "assets/css/pages/perfil-profissional.css"
+  ],
   "/mais.html": [
-    "assets/css/pages/home-shared.css",
-    "assets/css/pages/home.css",
-    "assets/css/pages/perfil.css",
+    "assets/css/pages/internal-shell.css",
     "assets/css/pages/mais.css"
   ],
   "/adicionar-cartao.html": [
@@ -591,6 +679,7 @@ const syncBodyClassesFromDocument = (nextDoc) => {
 
 const initializeCurrentView = () => {
   body.dataset.currentViewPath = getCurrentPath();
+  renderSharedSidebar();
   updateSidebarActiveState();
   syncAuthUi();
   syncTopbarScrollState();
@@ -609,6 +698,8 @@ const initializeCurrentView = () => {
   window.DokeInitReview?.();
   window.DokeInitNotifications?.();
   window.DokeInitWallet?.();
+  window.DokeInitProfile?.();
+  window.DokeInitProfessionalProfile?.();
   initChipRails();
   scheduleSidebarViewHints();
 };
