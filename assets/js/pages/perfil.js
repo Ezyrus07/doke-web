@@ -20,6 +20,7 @@ window.DokeInitProfile = () => {
     verified: root.querySelector("[data-profile-verified]"),
     nameActions: root.querySelector("[data-profile-name-actions]"),
     stats: root.querySelector("[data-profile-stats]"),
+    highlights: root.querySelector("[data-profile-highlights]"),
     actions: root.querySelector("[data-profile-actions]"),
     tabs: [...root.querySelectorAll("[data-profile-tab]")],
     panels: [...root.querySelectorAll("[data-profile-panel]")],
@@ -60,8 +61,31 @@ window.DokeInitProfile = () => {
   const chipMarkup = (text, accent = false) =>
     `<span class="profile-chip ${accent ? "profile-chip--accent" : ""}">${normalize(text)}</span>`;
 
-  const categoryMarkup = (item) =>
-    `<span class="profile-category-pill ${item.accent ? "profile-category-pill--accent" : ""}">${normalize(item.label)}</span>`;
+  const categoryIcons = {
+    painting: `<svg viewBox="0 0 24 24"><path d="m14.7 5.8 3.5 3.5"></path><path d="m10.2 15.3 5.6-5.6 2.1 2.1-5.6 5.6"></path><path d="M8 17.5 6.8 20l2.5-1.2"></path><path d="M4.8 20h3.6"></path></svg>`,
+    electrician: `<svg viewBox="0 0 24 24"><path d="M12 4.8a4 4 0 0 0-4 4c0 1.6.8 2.9 1.9 3.8.9.7 1.6 1.8 1.8 2.9h.6c.2-1.1.9-2.2 1.8-2.9A5 5 0 0 0 16 8.8a4 4 0 0 0-4-4Z"></path><path d="M10.3 17.3h3.4"></path><path d="M10.8 19.4h2.4"></path></svg>`,
+    plumbing: `<svg viewBox="0 0 24 24"><path d="m14.6 7.2 2.2-2.2a2.1 2.1 0 0 1 3 3l-2.2 2.2"></path><path d="m13.3 8.5 2.2 2.2"></path><path d="m6.2 15.6 7.1-7.1 4 4-7.1 7.1H6.2z"></path></svg>`,
+    cleaning: `<svg viewBox="0 0 24 24"><path d="M7 7.6c1.2 1.2 2.8 1.8 5 1.8s3.8-.6 5-1.8"></path><path d="M7 11.6c1.2 1.2 2.8 1.8 5 1.8s3.8-.6 5-1.8"></path><path d="M7 15.6c1.2 1.2 2.8 1.8 5 1.8s3.8-.6 5-1.8"></path></svg>`,
+    freight: `<svg viewBox="0 0 24 24"><path d="M5 9h9.5v6H5z"></path><path d="M14.5 10.5h2.7l1.8 1.8v2.7h-4.5"></path><circle cx="8" cy="17" r="1.1"></circle><circle cx="17.2" cy="17" r="1.1"></circle></svg>`
+  };
+
+  const getCategoryIcon = (item) => {
+    const label = normalize(item?.label).toLowerCase();
+    const key = item?.iconKey || (label.includes('pint') || label.includes('acabamento') ? 'painting' : '');
+    return categoryIcons[key] || categoryIcons.painting;
+  };
+
+  const categoryMarkup = (item) => {
+    const clickable = item.accent ? "false" : "true";
+    const icon = item.accent
+      ? ""
+      : `<span class="profile-category-pill__icon" aria-hidden="true">${getCategoryIcon(item)}</span>`;
+
+    return `<button class="profile-category-pill ${item.accent ? "profile-category-pill--accent" : ""}" type="button" data-clickable="${clickable}" ${item.accent ? "" : `data-profile-category="${normalize(item.label)}"`}>
+      ${icon}
+      <span>${normalize(item.label)}</span>
+    </button>`;
+  };
 
   const statMarkup = (item) => `
     <div class="profile-stat">
@@ -70,14 +94,24 @@ window.DokeInitProfile = () => {
     </div>
   `;
 
-  const actionMarkup = (item) => `
-    <button class="profile-action ${item.tone === "primary" || item.style === "primary" ? "profile-action--success" : ""}" type="button">
-      ${normalize(item.label)}
-    </button>
-  `;
+  const actionMarkup = (item) => {
+    const classes = `profile-action ${item.tone === "primary" || item.style === "primary" ? "profile-action--success" : ""}`.trim();
+    if (item.href) {
+      return `
+        <a class="${classes}" href="${item.href}">
+          ${normalize(item.label)}
+        </a>
+      `;
+    }
+    return `
+      <button class="${classes}" type="button">
+        ${normalize(item.label)}
+      </button>
+    `;
+  };
 
   const followActionMarkup = (item) => `
-    <button class="profile-follow-action" type="button">${normalize(item.label)}</button>
+    <button class="profile-follow-action" type="button" data-profile-follow aria-pressed="false">${normalize(item.label)}</button>
   `;
 
   const renderPanelShell = (content) => `
@@ -327,6 +361,164 @@ window.DokeInitProfile = () => {
     `);
   };
 
+
+  const renderAchievements = () => {
+    const section = baseProfile.sections?.achievements || {};
+    const items = section.items || [];
+    return renderPanelShell(`
+      <div class="profile-achievements-grid">
+        ${items
+          .map(
+            (item) => `
+          <article class="profile-achievement-card">
+            <span class="profile-achievement-card__icon" aria-hidden="true">${normalize(item.icon || "★")}</span>
+            <h3>${normalize(item.title)}</h3>
+            <p>${normalize(item.detail)}</p>
+          </article>
+        `
+          )
+          .join("")}
+      </div>
+    `);
+  };
+
+  const renderCertificates = () => {
+    const section = baseProfile.sections?.certificates || {};
+    const items = section.items || [];
+    return renderPanelShell(`
+      <div class="profile-certificates-grid">
+        ${items
+          .map(
+            (item) => `
+          <article class="profile-certificate-card">
+            <div class="profile-certificate-card__meta">
+              <span class="profile-certificate-card__status">${normalize(item.status)}</span>
+              <span class="profile-certificate-card__issuer">${normalize(item.issuer)}</span>
+            </div>
+            <h3>${normalize(item.title)}</h3>
+            <p>${normalize(item.meta)}</p>
+          </article>
+        `
+          )
+          .join("")}
+      </div>
+    `);
+  };
+
+  const renderFaq = () => {
+    const section = baseProfile.sections?.faq || {};
+    const items = section.items || [];
+    return renderPanelShell(`
+      <div class="profile-faq-list">
+        ${items
+          .map(
+            (item, index) => `
+          <article class="profile-faq-card">
+            <button type="button" data-profile-faq-toggle aria-expanded="${index === 0 ? "true" : "false"}">
+              <h3>${normalize(item.question)}</h3>
+              <span aria-hidden="true">${index === 0 ? "−" : "+"}</span>
+            </button>
+            <p class="profile-faq-card__answer" ${index === 0 ? "" : "hidden"}>${normalize(item.answer)}</p>
+          </article>
+        `
+          )
+          .join("")}
+      </div>
+    `);
+  };
+
+  let highlightTimer = null;
+
+  const renderHeroHighlight = (items, activeIndex = 0, animate = false) => {
+    if (!els.highlights) return;
+    const safeItems = items.length ? items : [
+      { label: "Tempo de resposta", value: "Até 1h", detail: "em horário comercial" }
+    ];
+    const active = safeItems[activeIndex] || safeItems[0];
+
+    if (!els.highlights.innerHTML.trim()) {
+      els.highlights.innerHTML = `
+        <article class="profile-highlight-strip${animate ? " is-changing" : ""}" data-profile-highlight-card>
+          <span class="profile-highlight-strip__eyebrow">Agora</span>
+          <div class="profile-highlight-strip__content">
+            <div class="profile-highlight-strip__top">
+              <strong class="profile-highlight-strip__value">${normalize(active.value)}</strong>
+              <span class="profile-highlight-strip__label">${normalize(active.label)}</span>
+            </div>
+            <small class="profile-highlight-strip__detail">${normalize(active.detail)}</small>
+          </div>
+          <div class="profile-highlight-strip__dots" data-profile-highlight-dots>
+            ${safeItems.map((_, index) => `<button class="profile-highlight-strip__dot ${index === activeIndex ? "is-active" : ""}" type="button" aria-label="Ver destaque ${index + 1}" data-profile-highlight-dot="${index}"></button>`).join("")}
+          </div>
+        </article>
+      `;
+      return;
+    }
+
+    const card = els.highlights.querySelector('[data-profile-highlight-card]');
+    if (!card) return;
+    const value = card.querySelector('.profile-highlight-strip__value');
+    const label = card.querySelector('.profile-highlight-strip__label');
+    const detail = card.querySelector('.profile-highlight-strip__detail');
+    const dots = card.querySelectorAll('[data-profile-highlight-dot]');
+
+    if (animate) {
+      card.classList.add('is-changing');
+      window.setTimeout(() => {
+        if (value) value.textContent = normalize(active.value);
+        if (label) label.textContent = normalize(active.label);
+        if (detail) detail.textContent = normalize(active.detail);
+        dots.forEach((dot) => {
+          dot.classList.toggle('is-active', Number(dot.dataset.profileHighlightDot) === activeIndex);
+        });
+        requestAnimationFrame(() => card.classList.remove('is-changing'));
+      }, 170);
+      return;
+    }
+
+    if (value) value.textContent = normalize(active.value);
+    if (label) label.textContent = normalize(active.label);
+    if (detail) detail.textContent = normalize(active.detail);
+    dots.forEach((dot) => {
+      dot.classList.toggle('is-active', Number(dot.dataset.profileHighlightDot) === activeIndex);
+    });
+  };
+
+  const bindHeroHighlights = (items) => {
+    if (!els.highlights) return;
+    const safeItems = (items || []).filter((item) => item && (item.value || item.label));
+    if (!safeItems.length) return;
+
+    let activeIndex = 0;
+    renderHeroHighlight(safeItems, activeIndex, false);
+
+    const startTimer = () => {
+      if (highlightTimer || safeItems.length <= 1) return;
+      highlightTimer = window.setInterval(() => {
+        activeIndex = (activeIndex + 1) % safeItems.length;
+        renderHeroHighlight(safeItems, activeIndex, true);
+      }, 3200);
+    };
+
+    const stopTimer = () => {
+      if (!highlightTimer) return;
+      window.clearInterval(highlightTimer);
+      highlightTimer = null;
+    };
+
+    stopTimer();
+    startTimer();
+
+    els.highlights.onmouseenter = stopTimer;
+    els.highlights.onmouseleave = startTimer;
+    els.highlights.querySelectorAll('[data-profile-highlight-dot]').forEach((dot) => {
+      dot.onclick = () => {
+        activeIndex = Number(dot.dataset.profileHighlightDot) || 0;
+        renderHeroHighlight(safeItems, activeIndex, true);
+      };
+    });
+  };
+
   const renderPanel = (key) => {
     switch (key) {
       case "services":
@@ -339,6 +531,12 @@ window.DokeInitProfile = () => {
         return renderAbout();
       case "portfolio":
         return renderPortfolio();
+      case "achievements":
+        return renderAchievements();
+      case "certificates":
+        return renderCertificates();
+      case "faq":
+        return renderFaq();
       default:
         return "";
     }
@@ -346,20 +544,11 @@ window.DokeInitProfile = () => {
 
   const render = () => {
     const hero = baseProfile.hero || {};
-    const stats = [
-      { value: "4,9", label: "Nota média" },
-      { value: "46", label: "Projetos" },
-      { value: "2h", label: "Resposta" }
-    ];
-    const categories = [
-      { label: "Profissional verificado", accent: true },
-      { label: "Design de interiores" }
-    ];
-    const actions = [
-      { label: "Orçamento", tone: "primary" },
-      { label: "Mensagem" }
-    ];
+    const stats = (hero.stats || []).map((item) => ({ value: item.value, label: item.label })) || [];
+    const categories = (hero.badges || []).map((item) => ({ label: item.label, accent: item.tone === "accent" })) || [];
+    const actions = (hero.actions || []).filter((item) => item.label !== "Compartilhar");
     const followAction = { label: "Seguir" };
+    const rotatingHighlights = hero.rotatingHighlights || [];
 
     document.title = "Doke | Perfil público do profissional";
     body.dataset.profileType = "professional";
@@ -369,17 +558,27 @@ window.DokeInitProfile = () => {
     els.username.textContent = normalize(hero.username || "@gabriel");
     els.city.textContent = normalize(hero.location || "Salvador, BA");
     els.avatar.textContent = normalize(hero.avatar || "GA");
-    els.headline.textContent =
-      "Especialista em ambientes residenciais com foco em leitura visual limpa, acabamento consistente e comunicação objetiva do início ao fim.";
+    const shortHeadline = normalize(
+      hero.headline ||
+        "Especialista em ambientes residenciais com foco em leitura visual limpa, acabamento consistente e comunicação objetiva do início ao fim."
+    );
+    els.headline.innerHTML = `${shortHeadline} <button class="profile-bio__more" type="button" data-profile-more>Ver mais</button>`;
     els.categories.innerHTML = categories.map(categoryMarkup).join("");
     els.verified.hidden = !hero.verified;
+    els.verified.dataset.tooltip = 'Selo de perfil verificado pela Doke.';
     els.stats.innerHTML = stats.map(statMarkup).join("");
     els.nameActions.innerHTML = followActionMarkup(followAction);
     els.actions.innerHTML = actions.map(actionMarkup).join("");
+    bindHeroHighlights(rotatingHighlights);
 
+    const labels = baseProfile.tabs || {};
     els.tabs.forEach((tab) => {
-      const isActive = tab.dataset.profileTab === state.activeTab;
+      const key = tab.dataset.profileTab;
+      const visible = Boolean(labels[key]);
+      const isActive = visible && key === state.activeTab;
+      tab.hidden = !visible;
       tab.classList.toggle("is-active", isActive);
+      tab.setAttribute("aria-selected", String(isActive));
     });
 
     Object.entries(panelMap).forEach(([key, panel]) => {
@@ -391,6 +590,41 @@ window.DokeInitProfile = () => {
 
     window.DokeUiSelect?.enhanceAll(root);
     updateUrl();
+
+    root.querySelectorAll('[data-profile-category]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const label = button.dataset.profileCategory;
+        if (!label) return;
+        window.open(`resultados.html?q=${encodeURIComponent(label)}`, '_blank', 'noopener');
+      });
+    });
+
+    root.querySelector('[data-profile-more]')?.addEventListener('click', () => {
+      state.activeTab = 'about';
+      render();
+      panelMap.about?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    root.querySelector('[data-profile-follow]')?.addEventListener('click', (event) => {
+      const button = event.currentTarget;
+      const active = button.getAttribute('aria-pressed') === 'true';
+      button.setAttribute('aria-pressed', String(!active));
+      button.textContent = active ? 'Seguir' : '✓ Seguindo';
+      button.classList.toggle('is-active', !active);
+    });
+
+    root.querySelectorAll('[data-profile-faq-toggle]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const card = button.closest('.profile-faq-card');
+        if (!card) return;
+        const answer = card.querySelector('.profile-faq-card__answer');
+        const icon = button.querySelector('span[aria-hidden="true"]');
+        const expanded = button.getAttribute('aria-expanded') === 'true';
+        button.setAttribute('aria-expanded', String(!expanded));
+        if (answer) answer.hidden = expanded;
+        if (icon) icon.textContent = expanded ? '+' : '−';
+      });
+    });
 
     document.querySelectorAll("[data-profile-review-hub]").forEach((hub) => {
       if (hub.dataset.profileReviewReady === "true") return;
@@ -430,7 +664,7 @@ window.DokeInitProfile = () => {
           ${summaryCards
             .map(
               (metric, index) => `
-            <article class="profile-review-metric ${index === 0 ? "profile-review-metric--score" : ""}">
+            <article class="profile-review-metric ${index === 0 ? "profile-review-metric--score" : "profile-review-metric--compact"}">
               <span>${metric.label}</span>
               <strong>${metric.value}</strong>
               ${index === 0 ? `<div class="profile-review-metric__stars">${active.stars}</div>` : ""}

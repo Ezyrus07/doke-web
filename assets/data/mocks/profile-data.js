@@ -10,8 +10,7 @@ window.DokeProfileData = {
       headline: 'Pintura residencial e acabamento com escopo claro, comunicação organizada e execução limpa do início ao pós-obra.',
       badges: [
         { label: 'Profissional verificada', tone: 'accent' },
-        { label: 'Pintura e acabamento' },
-        { label: 'Atende visita técnica' }
+        { label: 'Pintura e acabamento', iconKey: 'painting' }
       ],
       stats: [
         { value: '4,9', label: 'nota média' },
@@ -22,6 +21,12 @@ window.DokeProfileData = {
         { label: 'Solicitar orçamento', href: 'detalhe-anuncio.html', tone: 'primary' },
         { label: 'Mensagem', href: 'mensagens.html' },
         { label: 'Compartilhar', tone: 'ghost' }
+      ],
+      rotatingHighlights: [
+        { label: 'Tempo de resposta', value: 'Até 1h', detail: 'em horário comercial' },
+        { label: 'Ticket médio', value: 'R$ 180', detail: 'projetos residenciais leves' },
+        { label: 'Entrega combinada', value: '2 a 4 dias', detail: 'para pintura interna padrão' },
+        { label: 'Retorno em orçamento', value: '92%', detail: 'clientes respondidos no mesmo dia' }
       ]
     },
     tabs: {
@@ -29,7 +34,10 @@ window.DokeProfileData = {
       posts: 'Publicações',
       reviews: 'Avaliações',
       about: 'Sobre',
-      portfolio: 'Portfólio'
+      portfolio: 'Portfólio',
+      achievements: 'Conquistas',
+      certificates: 'Certificados',
+      faq: 'FAQ'
     },
     sections: {
       services: {
@@ -216,6 +224,72 @@ window.DokeProfileData = {
             subtitle: 'Retoque pós-obra',
             text: 'Intervenção rápida para corrigir falhas visuais sem transformar o pedido em obra longa.',
             chips: ['Retorno rápido', 'Alto índice de satisfação']
+          }
+        ]
+      },
+      achievements: {
+        layout: 'achievements',
+        title: 'Conquistas públicas',
+        intro: 'Sinais de confiança que ajudam o cliente a decidir mais rápido.',
+        items: [
+          {
+            title: 'Top profissional da semana',
+            detail: 'Perfil com alta taxa de resposta e avaliações consistentes.',
+            icon: '★'
+          },
+          {
+            title: 'Resposta rápida',
+            detail: 'Maior parte dos contatos respondida em até 1 hora.',
+            icon: '↗'
+          },
+          {
+            title: 'Cliente recorrente',
+            detail: 'Boa retenção em serviços residenciais leves e retoques.',
+            icon: '❤'
+          }
+        ]
+      },
+      certificates: {
+        layout: 'certificates',
+        title: 'Certificados e validações',
+        intro: 'Comprovações públicas do profissional para reforçar confiança antes do primeiro contato.',
+        items: [
+          {
+            title: 'Identidade validada',
+            issuer: 'Equipe Doke',
+            meta: 'Documento e selfie aprovados',
+            status: 'Verificado'
+          },
+          {
+            title: 'Curso de Design de Interiores',
+            issuer: 'SENAC Bahia',
+            meta: 'Concluído em 2021',
+            status: 'Certificado'
+          },
+          {
+            title: 'Boas práticas de atendimento',
+            issuer: 'Formação complementar',
+            meta: 'Atualização recente',
+            status: 'Atualizado'
+          }
+        ]
+      },
+      faq: {
+        layout: 'faq',
+        title: 'Perguntas frequentes',
+        intro: 'Dúvidas comuns antes de solicitar orçamento.',
+        items: [
+          {
+            question: 'Você atende só Salvador?',
+            answer: 'Atendo Salvador e Lauro de Freitas. Para outras regiões, avalio deslocamento conforme o escopo.'
+          },
+          {
+            question: 'Você faz visita antes de fechar?',
+            answer: 'Sim. Em projetos com maior variação de acabamento ou metragem, a visita técnica ajuda a alinhar prazo e custo com mais precisão.'
+          },
+          {
+            question: 'O orçamento já inclui material?',
+            answer: 'Depende do serviço. Posso trabalhar com material do cliente ou incluir uma estimativa separada para manter o escopo mais claro.'
           }
         ]
       }
