@@ -28,7 +28,7 @@ window.DokeInitProfile = () => {
           },
           tabs: {
             ...(publicProfile.tabs || {}),
-            overview: "Visão geral"
+            overview: "Estatísticas"
           },
           sections: {
             ...(publicProfile.sections || {}),
@@ -58,7 +58,9 @@ window.DokeInitProfile = () => {
     followersModal: document.querySelector("[data-profile-followers-modal]"),
     followersList: document.querySelector("[data-profile-followers-list]"),
     followersSearch: document.querySelector("[data-profile-followers-search]"),
-    followersClose: [...document.querySelectorAll("[data-profile-followers-close]")]
+    followersClose: [...document.querySelectorAll("[data-profile-followers-close]")],
+    editModal: document.querySelector("[data-profile-edit-modal]"),
+    editClose: [...document.querySelectorAll("[data-profile-edit-close]")]
   };
 
   const panelMap = Object.fromEntries(els.panels.map((panel) => [panel.dataset.profilePanel, panel]));
@@ -208,6 +210,100 @@ window.DokeInitProfile = () => {
     }
   };
 
+  const closeEditModal = () => {
+    if (!els.editModal) return;
+    els.editModal.hidden = true;
+    body.classList.remove("has-modal-open");
+  };
+
+  const openEditModal = () => {
+    if (!els.editModal) return;
+    closeFollowersModal();
+    els.editModal.hidden = false;
+    body.classList.add("has-modal-open");
+    window.setTimeout(() => {
+      els.editModal?.querySelector("input, textarea")?.focus();
+    }, 30);
+  };
+
+  const bindOwnerDashboard = () => {
+    const dashboard = root.querySelector("[data-owner-dashboard]");
+    if (!dashboard || dashboard.dataset.ready === "true") return;
+    dashboard.dataset.ready = "true";
+
+    const lineChart = dashboard.querySelector("[data-dashboard-line-chart]");
+    const total = dashboard.querySelector("[data-dashboard-total]");
+    const labelButtons = [...dashboard.querySelectorAll("[data-dashboard-index]")];
+    const periodButtons = [...dashboard.querySelectorAll("[data-dashboard-period]")];
+    const pointCircles = [...dashboard.querySelectorAll("[data-dashboard-point-circle]")];
+    const funnelRows = [...dashboard.querySelectorAll("[data-dashboard-funnel]")];
+
+    const chartLabels = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+    const readSeries = (key) =>
+      (lineChart?.dataset[`series${key.toUpperCase()}`] || "")
+        .split(",")
+        .map((value) => Number(value.trim()))
+        .filter((value) => !Number.isNaN(value));
+
+    const drawSeries = (key) => {
+      if (!lineChart) return;
+      const series = readSeries(key);
+      if (!series.length) return;
+      const max = Math.max(...series, 1);
+      const coords = series.map((value, index) => ({
+        x: 26 + index * 58,
+        y: 164 - (value / max) * 112,
+        value
+      }));
+      const line = coords.map((point) => `${point.x},${point.y}`).join(" ");
+      const area = `M ${coords[0].x} 164 L ${coords.map((point) => `${point.x} ${point.y}`).join(" L ")} L ${coords[coords.length - 1].x} 164 Z`;
+
+      lineChart.querySelector(".profile-owner-line-chart__line")?.setAttribute("points", line);
+      lineChart.querySelector(".profile-owner-line-chart__area")?.setAttribute("d", area);
+      pointCircles.forEach((circle, index) => {
+        const point = coords[index];
+        if (!point) return;
+        circle.setAttribute("cx", String(point.x));
+        circle.setAttribute("cy", String(point.y));
+      });
+      labelButtons.forEach((button, index) => {
+        const value = series[index];
+        if (value == null) return;
+        button.querySelector("span").textContent = chartLabels[index];
+        button.querySelector("strong").textContent = String(value);
+        button.classList.toggle("is-active", value === Math.max(...series));
+      });
+      if (total) total.textContent = String(series.reduce((sum, value) => sum + value, 0));
+    };
+
+    periodButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const key = button.dataset.dashboardPeriod;
+        if (!key) return;
+        periodButtons.forEach((item) => item.classList.toggle("is-active", item === button));
+        drawSeries(key);
+      });
+    });
+
+    labelButtons.forEach((button) => {
+      button.addEventListener("mouseenter", () => {
+        labelButtons.forEach((item) => item.classList.toggle("is-active", item === button));
+      });
+      button.addEventListener("focus", () => {
+        labelButtons.forEach((item) => item.classList.toggle("is-active", item === button));
+      });
+    });
+
+    funnelRows.forEach((row) => {
+      row.addEventListener("mouseenter", () => {
+        funnelRows.forEach((item) => item.classList.toggle("is-active", item === row));
+      });
+      row.addEventListener("focus", () => {
+        funnelRows.forEach((item) => item.classList.toggle("is-active", item === row));
+      });
+    });
+  };
+
   const actionMarkup = (item) => {
     const classes = `profile-action ${item.tone === "primary" || item.style === "primary" ? "profile-action--success" : ""}`.trim();
     if (item.href) {
@@ -289,21 +385,18 @@ window.DokeInitProfile = () => {
 
   const renderPosts = () =>
     renderPanelShell(`
-      <div class="profile-posts-stack">
+      <div class="profile-posts-stack ${profileMode === "owner" ? "profile-posts-stack--owner" : ""}">
         ${profileMode === "owner" ? `
         <div class="profile-services-toolbar">
           <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Novo</button>
           <button class="profile-services-toolbar__action ${state.selectingPosts ? "is-active" : ""}" type="button" data-profile-posts-select-toggle>${state.selectingPosts ? "Cancelar" : "Selecionar"}</button>
-          ${state.selectedPosts.length === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-posts-edit>Editar anúncio</button>` : ""}
-          ${state.selectedPosts.length > 1 ? `<span class="profile-services-toolbar__hint">Só dá para editar um anúncio por vez.</span>` : ""}
+          ${state.selectedPosts.length === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-posts-edit>Editar an?ncio</button>` : ""}
+          ${state.selectedPosts.length > 1 ? `<span class="profile-services-toolbar__hint">S? d? para editar um an?ncio por vez.</span>` : ""}
         </div>
         ` : ""}
         <section class="short-videos" aria-labelledby="profile-short-videos-title">
-          <div class="section-heading section-heading--spread home-section-header">
-            <div><h2 class="section-heading__title home-section-title" id="profile-short-videos-title">WORKERS</h2></div>
-          </div>
           <div class="content-rail">
-            <button class="home-categories__arrow content-rail__arrow content-rail__arrow--prev" type="button" aria-label="Ver vídeos anteriores" data-rail-arrow="prev" data-rail-target="profile-short-videos-track">
+            <button class="home-categories__arrow content-rail__arrow content-rail__arrow--prev" type="button" aria-label="Ver v?deos anteriores" data-rail-arrow="prev" data-rail-target="profile-short-videos-track">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6.5-5 5 5 5"></path></svg>
             </button>
             <div class="short-videos__track profile-posts-videos" id="profile-short-videos-track" data-rail-track>
@@ -311,25 +404,25 @@ window.DokeInitProfile = () => {
                 .map(
                   (item, index) => `
                 <article class="video-card ${item.mediaClass} ${state.selectingPosts ? "is-selecting" : ""} ${state.selectedPosts.includes(`video-${index}`) ? "is-selected" : ""}" data-profile-post-card="video-${index}">
-                  ${profileMode === "owner" && state.selectingPosts ? `<button class="profile-post-select-indicator ${state.selectedPosts.includes(`video-${index}`) ? "is-selected" : ""}" type="button" data-profile-post-select="video-${index}" aria-label="Selecionar publicação">${state.selectedPosts.includes(`video-${index}`) ? "✓" : ""}</button>` : ""}
-                  <span class="video-card__play">▶</span>
+                  ${profileMode === "owner" && state.selectingPosts ? `<button class="profile-post-select-indicator ${state.selectedPosts.includes(`video-${index}`) ? "is-selected" : ""}" type="button" data-profile-post-select="video-${index}" aria-label="Selecionar publica??o">${state.selectedPosts.includes(`video-${index}`) ? "?" : ""}</button>` : ""}
+                  <span class="video-card__play">?</span>
                   <div class="video-card__content"><strong>${normalize(item.title)}</strong></div>
                 </article>
               `
                 )
                 .join("")}
             </div>
-            <button class="home-categories__arrow content-rail__arrow content-rail__arrow--next" type="button" aria-label="Ver próximos vídeos" data-rail-arrow="next" data-rail-target="profile-short-videos-track">
+            <button class="home-categories__arrow content-rail__arrow content-rail__arrow--next" type="button" aria-label="Ver pr?ximos v?deos" data-rail-arrow="next" data-rail-target="profile-short-videos-track">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6.5 5 5-5 5"></path></svg>
             </button>
           </div>
         </section>
 
         <section class="before-after" aria-labelledby="profile-before-after-title">
-          <div class="section-heading section-heading--spread home-section-header">
+          ${profileMode === "owner" ? "" : `<div class="section-heading section-heading--spread home-section-header">
             <div><h2 class="section-heading__title home-section-title" id="profile-before-after-title">ANTES E DEPOIS</h2></div>
             <a class="section-heading__link" href="#">Ver mais casos</a>
-          </div>
+          </div>`}
           <div class="content-rail">
             <button class="home-categories__arrow content-rail__arrow content-rail__arrow--prev" type="button" aria-label="Ver casos anteriores" data-rail-arrow="prev" data-rail-target="profile-before-after-track">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6.5-5 5 5 5"></path></svg>
@@ -339,7 +432,7 @@ window.DokeInitProfile = () => {
                 .map(
                   (item, index) => `
                 <article class="comparison-card ${state.selectingPosts ? "is-selecting" : ""} ${state.selectedPosts.includes(`compare-${index}`) ? "is-selected" : ""}" data-profile-post-card="compare-${index}">
-                  ${profileMode === "owner" && state.selectingPosts ? `<button class="profile-post-select-indicator ${state.selectedPosts.includes(`compare-${index}`) ? "is-selected" : ""}" type="button" data-profile-post-select="compare-${index}" aria-label="Selecionar publicação">${state.selectedPosts.includes(`compare-${index}`) ? "✓" : ""}</button>` : ""}
+                  ${profileMode === "owner" && state.selectingPosts ? `<button class="profile-post-select-indicator ${state.selectedPosts.includes(`compare-${index}`) ? "is-selected" : ""}" type="button" data-profile-post-select="compare-${index}" aria-label="Selecionar publica??o">${state.selectedPosts.includes(`compare-${index}`) ? "?" : ""}</button>` : ""}
                   <div class="comparison-card__visual ${item.visualClass}">
                     <div class="comparison-card__half comparison-card__half--before"><span>Antes</span></div>
                     <div class="comparison-card__half comparison-card__half--after"><span>Depois</span></div>
@@ -348,7 +441,7 @@ window.DokeInitProfile = () => {
                     <strong>${normalize(item.title)}</strong>
                     <div class="comparison-card__meta">
                       <span>Por ${normalize(item.author)}</span>
-                      <span>★ ${String(item.rating).replace(".", ",")}</span>
+                      <span>? ${String(item.rating).replace(".", ",")}</span>
                     </div>
                   </div>
                 </article>
@@ -356,7 +449,7 @@ window.DokeInitProfile = () => {
                 )
                 .join("")}
             </div>
-            <button class="home-categories__arrow content-rail__arrow content-rail__arrow--next" type="button" aria-label="Ver próximos casos" data-rail-arrow="next" data-rail-target="profile-before-after-track">
+            <button class="home-categories__arrow content-rail__arrow content-rail__arrow--next" type="button" aria-label="Ver pr?ximos casos" data-rail-arrow="next" data-rail-target="profile-before-after-track">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6.5 5 5-5 5"></path></svg>
             </button>
           </div>
@@ -397,9 +490,12 @@ window.DokeInitProfile = () => {
       <div class="profile-review-hub" data-profile-review-hub data-review-ads='${JSON.stringify(reviewAds).replace(/'/g, "&apos;")}'>
         <div class="profile-review-hub__summary"></div>
         <div class="profile-review-toolbar" role="tablist" aria-label="Filtrar avaliações do anúncio">
-          <button class="profile-review-filter is-active" type="button" data-profile-review-filter="all">Todas</button>
-          <button class="profile-review-filter" type="button" data-profile-review-filter="positive">Positivas</button>
-          <button class="profile-review-filter" type="button" data-profile-review-filter="negative">Negativas</button>
+          <div class="profile-review-toolbar__filters">
+            <button class="profile-review-filter is-active" type="button" data-profile-review-filter="all">Todas</button>
+            <button class="profile-review-filter" type="button" data-profile-review-filter="positive">Positivas</button>
+            <button class="profile-review-filter" type="button" data-profile-review-filter="negative">Críticas</button>
+          </div>
+          <div class="profile-review-toolbar__distribution" data-profile-review-distribution></div>
         </div>
         <div class="profile-review-hub__list"></div>
       </div>
@@ -578,9 +674,199 @@ window.DokeInitProfile = () => {
     const section = baseProfile.sections?.overview || {};
     const metrics = section.metrics || [];
     const priorities = section.priorities || [];
+    const dashboardSeries = {
+      "7d": [3, 5, 4, 7, 6, 8, 6],
+      "30d": [8, 11, 9, 14, 13, 17, 15],
+      "90d": [18, 24, 20, 28, 30, 34, 32]
+    };
+    const conversionStages = [
+      { label: "Visualizações", value: 1280, color: "rgba(38, 99, 164, 0.9)" },
+      { label: "Cliques", value: 412, color: "rgba(28, 145, 143, 0.9)" },
+      { label: "Conversas", value: 96, color: "rgba(37, 174, 122, 0.9)" },
+      { label: "Orçamentos", value: 28, color: "rgba(255, 176, 64, 0.95)" }
+    ];
+    const sourceSegments = [
+      { label: "Busca", value: 46, tone: "#246eb2" },
+      { label: "Seguidores", value: 28, tone: "#21a18f" },
+      { label: "Avaliações", value: 16, tone: "#62d59f" },
+      { label: "Portfólio", value: 10, tone: "#ffb04c" }
+    ];
+    const aiInsights = [
+      {
+        badge: "A??o recomendada",
+        title: "Separar an?ncio de consultoria do an?ncio de execu??o",
+        text: "A IA identificou inten??o misturada nos cliques. Separar os dois fluxos tende a melhorar a resposta qualificada e reduzir conversa morna.",
+        cta: "Aplicar sugest?o"
+      },
+      {
+        badge: "Resposta sugerida",
+        title: "Lead com alto potencial parado h? 42 min",
+        text: "Cliente abriu portf?lio, voltou ao an?ncio e clicou em avalia??es. Melhor resposta: curta, com pergunta filtradora e proposta de visita.",
+        cta: "Ver resposta"
+      },
+      {
+        badge: "Conte?do da semana",
+        title: "Post recomendado: antes e depois com prova visual curta",
+        text: "Seu perfil est? convertendo melhor quando mostra processo visual em menos de 20 segundos. A IA sugere publicar isso primeiro.",
+        cta: "Gerar rascunho"
+      }
+    ];
+    const chartPoints = dashboardSeries["7d"];
+    const chartMax = Math.max(...chartPoints, 1);
+    const chartLabels = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+    const chartCoords = chartPoints.map((value, index) => {
+      const x = 26 + index * 58;
+      const y = 164 - (value / chartMax) * 112;
+      return { x, y, value, label: chartLabels[index] };
+    });
+    const chartLine = chartCoords.map((point) => `${point.x},${point.y}`).join(" ");
+    const chartArea = `M ${chartCoords[0].x} 164 L ${chartCoords.map((point) => `${point.x} ${point.y}`).join(" L ")} L ${chartCoords[chartCoords.length - 1].x} 164 Z`;
+    const funnelMax = Math.max(...conversionStages.map((item) => item.value), 1);
+    const sourceGradient = sourceSegments
+      .reduce((acc, item) => {
+        const start = acc.offset;
+        const end = start + item.value;
+        acc.parts.push(`${item.tone} ${start}% ${end}%`);
+        acc.offset = end;
+        return acc;
+      }, { offset: 0, parts: [] })
+      .parts
+      .join(", ");
     return renderPanelShell(`
-      <div class="profile-owner-overview">
-        <section class="profile-owner-metrics">
+      <div class="profile-owner-overview profile-owner-dashboard" data-owner-dashboard>
+        <section class="profile-owner-dashboard__board">
+          <article class="profile-owner-chart-card profile-owner-chart-card--wide" data-dashboard-line-card>
+            <div class="profile-owner-chart-card__top">
+              <div>
+                <span class="profile-owner-chart-card__eyebrow">Fluxo</span>
+                <h3>Evolução de leads</h3>
+              </div>
+              <div class="profile-owner-chart-switch">
+                <button class="profile-owner-chart-switch__button is-active" type="button" data-dashboard-period="7d">7d</button>
+                <button class="profile-owner-chart-switch__button" type="button" data-dashboard-period="30d">30d</button>
+                <button class="profile-owner-chart-switch__button" type="button" data-dashboard-period="90d">90d</button>
+              </div>
+            </div>
+            <div class="profile-owner-chart-card__highlight">
+              <strong data-dashboard-total>${chartPoints.reduce((sum, value) => sum + value, 0)}</strong>
+              <span>Leads no período selecionado</span>
+            </div>
+            <div class="profile-owner-line-chart" data-dashboard-line-chart data-series-7d="${dashboardSeries["7d"].join(",")}" data-series-30d="${dashboardSeries["30d"].join(",")}" data-series-90d="${dashboardSeries["90d"].join(",")}">
+              <svg viewBox="0 0 400 190" aria-hidden="true">
+                <defs>
+                  <linearGradient id="profile-owner-line-fill" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="rgba(69, 220, 176, 0.38)"></stop>
+                    <stop offset="100%" stop-color="rgba(69, 220, 176, 0.02)"></stop>
+                  </linearGradient>
+                </defs>
+                <path class="profile-owner-line-chart__area" d="${chartArea}"></path>
+                <polyline class="profile-owner-line-chart__line" points="${chartLine}"></polyline>
+                ${chartCoords
+                  .map(
+                    (point) => `
+                  <g class="profile-owner-line-chart__point" data-dashboard-point>
+                    <circle cx="${point.x}" cy="${point.y}" r="6" data-dashboard-point-circle></circle>
+                  </g>
+                `
+                  )
+                  .join("")}
+              </svg>
+              <div class="profile-owner-line-chart__labels" data-dashboard-labels>
+                ${chartCoords
+                  .map(
+                    (point) => `
+                  <button class="profile-owner-line-chart__label ${point.value === Math.max(...chartPoints) ? "is-active" : ""}" type="button" data-dashboard-index="${chartCoords.indexOf(point)}">
+                    <span>${point.label}</span>
+                    <strong>${point.value}</strong>
+                  </button>
+                `
+                  )
+                  .join("")}
+              </div>
+            </div>
+          </article>
+
+          <article class="profile-owner-chart-card">
+            <div class="profile-owner-chart-card__top">
+              <div>
+                <span class="profile-owner-chart-card__eyebrow">Funil</span>
+                <h3>Conversão por etapa</h3>
+              </div>
+            </div>
+            <div class="profile-owner-funnel">
+              ${conversionStages
+                .map(
+                  (item, index) => `
+                <button class="profile-owner-funnel__row ${index === 0 ? "is-active" : ""}" type="button" data-dashboard-funnel="${index}">
+                  <div class="profile-owner-funnel__meta">
+                    <span>${item.label}</span>
+                    <strong>${item.value}</strong>
+                  </div>
+                  <div class="profile-owner-funnel__bar">
+                    <span style="width:${(item.value / funnelMax) * 100}%; background:${item.color};"></span>
+                  </div>
+                </button>
+              `
+                )
+                .join("")}
+            </div>
+          </article>
+
+          <article class="profile-owner-chart-card">
+            <div class="profile-owner-chart-card__top">
+              <div>
+                <span class="profile-owner-chart-card__eyebrow">Origem</span>
+                <h3>De onde chegam os contatos</h3>
+              </div>
+            </div>
+            <div class="profile-owner-source">
+              <div class="profile-owner-source__ring" style="--source-gradient:${sourceGradient};">
+                <div class="profile-owner-source__ring-core">
+                  <strong>100%</strong>
+                  <span>do tráfego</span>
+                </div>
+              </div>
+              <div class="profile-owner-source__legend">
+                ${sourceSegments
+                  .map(
+                    (item) => `
+                  <button class="profile-owner-source__item" type="button">
+                    <span class="profile-owner-source__dot" style="--dot:${item.tone};"></span>
+                    <span>${item.label}</span>
+                    <strong>${item.value}%</strong>
+                  </button>
+                `
+                  )
+                  .join("")}
+              </div>
+            </div>
+          </article>
+        </section>
+        <section class="profile-owner-ai-panel">
+          <div class="profile-owner-ai-panel__head">
+            <div>
+              <span class="profile-owner-dashboard__eyebrow profile-owner-dashboard__eyebrow--ai">IA Doke</span>
+              <h3>O que a IA faria agora no seu lugar</h3>
+              <p>Sugest?es visuais para guiar o profissional em an?ncios, resposta e conte?do sem sair da dashboard.</p>
+            </div>
+            <button class="profile-owner-ai-panel__assistant" type="button">Abrir assistente</button>
+          </div>
+          <div class="profile-owner-ai-grid">
+            ${aiInsights
+              .map(
+                (item, index) => `
+              <article class="profile-owner-ai-card profile-owner-ai-card--tone-${index + 1}">
+                <span class="profile-owner-ai-card__badge">${normalize(item.badge)}</span>
+                <h4>${normalize(item.title)}</h4>
+                <p>${normalize(item.text)}</p>
+                <button class="profile-owner-ai-card__action" type="button">${normalize(item.cta)}</button>
+              </article>
+            `
+              )
+              .join("")}
+          </div>
+        </section>
+        <section class="profile-owner-metrics profile-owner-dashboard__metrics">
           ${metrics
             .map(
               (item) => `
@@ -593,20 +879,28 @@ window.DokeInitProfile = () => {
             )
             .join("")}
         </section>
-        <section class="profile-owner-priorities">
-          ${priorities
-            .map(
-              (item, index) => `
-            <article class="profile-owner-priority-card">
-              <span class="profile-owner-priority-card__index">0${index + 1}</span>
-              <div>
-                <strong>${normalize(item.title)}</strong>
-                <p>${normalize(item.text)}</p>
-              </div>
-            </article>
-          `
-            )
-            .join("")}
+        <section class="profile-owner-dashboard__section">
+          <div class="profile-owner-dashboard__section-head">
+            <div>
+              <span class="profile-owner-dashboard__eyebrow">Pr?ximos passos</span>
+              <h3>Prioridades da semana</h3>
+            </div>
+          </div>
+          <div class="profile-owner-priorities">
+            ${priorities
+              .map(
+                (item, index) => `
+              <article class="profile-owner-priority-card">
+                <span class="profile-owner-priority-card__index">0${index + 1}</span>
+                <div>
+                  <strong>${normalize(item.title)}</strong>
+                  <p>${normalize(item.text)}</p>
+                </div>
+              </article>
+            `
+              )
+              .join("")}
+          </div>
         </section>
       </div>
     `);
@@ -864,6 +1158,7 @@ window.DokeInitProfile = () => {
     });
 
     window.DokeUiSelect?.enhanceAll(root);
+    bindOwnerDashboard();
     updateUrl();
 
     root.querySelectorAll('[data-profile-category]').forEach((button) => {
@@ -943,6 +1238,7 @@ window.DokeInitProfile = () => {
       card.addEventListener("click", () => {
         if (!state.selectingPosts) return;
         const id = card.dataset.profilePostCard;
+
         if (!id) return;
         togglePostSelection(id);
       });
@@ -962,6 +1258,14 @@ window.DokeInitProfile = () => {
       button.classList.toggle('is-active', !active);
     });
 
+    root.querySelectorAll('.profile-action').forEach((button) => {
+      if (button.textContent.trim().toLowerCase() !== 'editar perfil') return;
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        openEditModal();
+      });
+    });
+
     root.querySelectorAll('[data-profile-faq-toggle]').forEach((button) => {
       button.addEventListener('click', () => {
         const card = button.closest('.profile-faq-card');
@@ -974,7 +1278,6 @@ window.DokeInitProfile = () => {
         if (icon) icon.textContent = expanded ? '+' : '−';
       });
     });
-
     document.querySelectorAll("[data-profile-review-hub]").forEach((hub) => {
       if (hub.dataset.profileReviewReady === "true") return;
       hub.dataset.profileReviewReady = "true";
@@ -983,6 +1286,7 @@ window.DokeInitProfile = () => {
       const summary = hub.querySelector(".profile-review-hub__summary");
       const list = hub.querySelector(".profile-review-hub__list");
       const filters = [...hub.querySelectorAll("[data-profile-review-filter]")];
+      const distribution = hub.querySelector("[data-profile-review-distribution]");
       const raw = hub.dataset.reviewAds || "[]";
       const avatarPool = [
         "assets/img/auth/carpinteira.png",
@@ -1000,29 +1304,52 @@ window.DokeInitProfile = () => {
       const draw = (id) => {
         const active = ads.find((item) => item.id === id) || ads[0];
         if (!active || !summary || !list) return;
-        const summaryCards = [
-          {
-            label: "Avaliação do anúncio",
-            value: active.score,
-            text: active.count
-          },
-          ...active.metrics
-        ].slice(0, 6);
 
         summary.innerHTML = `
-          ${summaryCards
-            .map(
-              (metric, index) => `
-            <article class="profile-review-metric ${index === 0 ? "profile-review-metric--score" : "profile-review-metric--compact"}">
-              <span>${metric.label}</span>
-              <strong>${metric.value}</strong>
-              ${index === 0 ? `<div class="profile-review-metric__stars">${active.stars}</div>` : ""}
-              <small>${metric.text}</small>
-            </article>
-          `
-            )
-            .join("")}
+          <article class="profile-review-metric profile-review-metric--score">
+            <span>Nota m?dia</span>
+            <strong>${active.score}</strong>
+            <div class="profile-review-metric__stars">${active.stars}</div>
+            <small>${active.count}</small>
+          </article>
+          <div class="profile-review-hub__metrics">
+            ${(active.metrics || [])
+              .slice(0, 4)
+              .map(
+                (metric) => `
+              <article class="profile-review-metric profile-review-metric--compact">
+                <span>${metric.label}</span>
+                <strong>${metric.value}</strong>
+                <small>${metric.text}</small>
+              </article>
+            `
+              )
+              .join("")}
+          </div>
         `;
+
+        const ratings = active.reviews.map((item) => Number(String(item.rating).replace(",", ".")) || 0);
+        const totalReviews = ratings.length || 1;
+        const distributionMap = [
+          { label: "5 estrelas", count: ratings.filter((value) => value >= 4.8).length },
+          { label: "4 estrelas", count: ratings.filter((value) => value >= 4 && value < 4.8).length },
+          { label: "3 estrelas", count: ratings.filter((value) => value < 4).length }
+        ];
+
+        if (distribution) {
+          distribution.innerHTML = distributionMap
+            .map((item) => {
+              const percent = Math.round((item.count / totalReviews) * 100);
+              return `
+                <div>
+                  <span>${item.label}</span>
+                  <i><b style="width:${percent}%"></b></i>
+                  <strong>${percent}%</strong>
+                </div>
+              `;
+            })
+            .join("");
+        }
 
         list.innerHTML = active.reviews
           .map(
@@ -1030,9 +1357,7 @@ window.DokeInitProfile = () => {
           <article class="profile-review-entry" data-review-tone="${Number(String(item.rating).replace(",", ".")) >= 4.8 ? "positive" : "negative"}">
             <div class="profile-review-entry__head">
               <div class="profile-review-entry__identity">
-                <span class="profile-review-entry__avatar-shell">
-                  <img class="profile-review-entry__avatar" src="${avatarPool[index % avatarPool.length]}" alt="Foto de perfil de ${item.name}">
-                </span>
+                <img class="profile-review-entry__avatar" src="${avatarPool[index % avatarPool.length]}" alt="Foto de perfil de ${item.name}">
                 <div>
                   <strong>${item.name}</strong>
                   <span>${item.meta}</span>
@@ -1063,7 +1388,7 @@ window.DokeInitProfile = () => {
           if (!oldEmpty) {
             list.insertAdjacentHTML(
               "beforeend",
-              `<article class="profile-review-empty"><strong>Nenhuma avaliação neste filtro</strong><p>Troque o filtro ou selecione outro anúncio para ver mais comentários.</p></article>`
+              `<article class="profile-review-empty"><strong>Nenhuma avalia??o neste filtro</strong><p>Troque o filtro ou selecione outro an?ncio para ver mais coment?rios.</p></article>`
             );
           }
         } else if (oldEmpty) {
@@ -1094,12 +1419,24 @@ window.DokeInitProfile = () => {
     button.addEventListener("click", closeFollowersModal);
   });
 
+  els.editClose.forEach((button) => {
+    button.addEventListener("click", closeEditModal);
+  });
+
   els.followersSearch?.addEventListener("input", (event) => {
     renderFollowersModal(event.currentTarget.value);
   });
 
+  els.editModal?.querySelector("form")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    closeEditModal();
+  });
+
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeFollowersModal();
+    if (event.key === "Escape") {
+      closeFollowersModal();
+      closeEditModal();
+    }
   });
 
   if (window.DokeProfileShare && els.shareButtons.length) {
