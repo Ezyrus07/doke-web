@@ -15,7 +15,7 @@ window.DokeProfileData = {
       stats: [
         { value: '4,9', label: 'nota média' },
         { value: '128', label: 'avaliações' },
-        { value: '92%', label: 'resposta em até 1h' }
+        { value: '18,4 mil', label: 'seguidores' }
       ],
       actions: [
         { label: 'Solicitar orçamento', href: 'detalhe-anuncio.html', tone: 'primary' },
@@ -26,7 +26,7 @@ window.DokeProfileData = {
         { label: 'Tempo de resposta', value: 'Até 1h', detail: 'em horário comercial' },
         { label: 'Ticket médio', value: 'R$ 180', detail: 'projetos residenciais leves' },
         { label: 'Entrega combinada', value: '2 a 4 dias', detail: 'para pintura interna padrão' },
-        { label: 'Retorno em orçamento', value: '92%', detail: 'clientes respondidos no mesmo dia' }
+        { label: 'Comunidade', value: '18,4 mil', detail: 'seguidores acompanhando o perfil' }
       ]
     },
     tabs: {
@@ -235,17 +235,42 @@ window.DokeProfileData = {
           {
             title: 'Top profissional da semana',
             detail: 'Perfil com alta taxa de resposta e avaliações consistentes.',
-            icon: '★'
+            icon: '★',
+            theme: 'gold',
+            shape: 'shield',
+            progress: 100,
+            status: 'Desbloqueada',
+            metric: 'Top 3 da categoria'
           },
           {
             title: 'Resposta rápida',
             detail: 'Maior parte dos contatos respondida em até 1 hora.',
-            icon: '↗'
+            icon: '↗',
+            theme: 'blue',
+            shape: 'ticket',
+            progress: 82,
+            status: '82% para elite',
+            metric: 'Meta: 95% em 1h'
           },
           {
             title: 'Cliente recorrente',
             detail: 'Boa retenção em serviços residenciais leves e retoques.',
-            icon: '❤'
+            icon: '❤',
+            theme: 'coral',
+            shape: 'blob',
+            progress: 67,
+            status: '67% concluída',
+            metric: '8 de 12 retornos'
+          },
+          {
+            title: 'Mestre do acabamento',
+            detail: 'Mantém padrão visual elevado em serviços com revisão final aprovada.',
+            icon: '✦',
+            theme: 'mint',
+            shape: 'diamond',
+            progress: 44,
+            status: '44% da trilha',
+            metric: 'Faltam 5 projetos'
           }
         ]
       },

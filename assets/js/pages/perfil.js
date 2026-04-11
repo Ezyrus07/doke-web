@@ -5,7 +5,37 @@ window.DokeInitProfile = () => {
   const params = new URLSearchParams(window.location.search);
   const body = document.body;
   const data = window.DokeProfileData || {};
-  const baseProfile = data.professionalPublic || {};
+  const profileMode = params.get("mode");
+  const publicProfile = data.professionalPublic || {};
+  const ownerProfile = data.professionalOwner || {};
+  const baseProfile =
+    profileMode === "owner"
+      ? {
+          ...publicProfile,
+          ...ownerProfile,
+          hero: {
+            ...(publicProfile.hero || {}),
+            actions: (ownerProfile.hero?.actions || publicProfile.hero?.actions || [])
+              .filter((item) => item && item.label !== "Novo anúncio" && item.label !== "Novo anÃºncio")
+              .map((item) => ({
+                ...item,
+                label:
+                  item.label === "Editar vitrine pública" || item.label === "Editar vitrine pÃºblica"
+                    ? "Editar perfil"
+                    : item.label
+              })),
+            badges: [...((publicProfile.hero?.badges || []).slice(0, 2))]
+          },
+          tabs: {
+            ...(publicProfile.tabs || {}),
+            overview: "Visão geral"
+          },
+          sections: {
+            ...(publicProfile.sections || {}),
+            overview: ownerProfile.sections?.overview || {}
+          }
+        }
+      : publicProfile;
   const servicePool = window.DokeSearchData?.servicePool || [];
   const shortVideoPool = window.DokeSearchData?.shortVideoPool || [];
   const beforeAfterPool = window.DokeSearchData?.beforeAfterPool || [];
@@ -24,15 +54,32 @@ window.DokeInitProfile = () => {
     actions: root.querySelector("[data-profile-actions]"),
     tabs: [...root.querySelectorAll("[data-profile-tab]")],
     panels: [...root.querySelectorAll("[data-profile-panel]")],
-    shareButtons: [...document.querySelectorAll("[data-profile-share]")]
+    shareButtons: [...document.querySelectorAll("[data-profile-share]")],
+    followersModal: document.querySelector("[data-profile-followers-modal]"),
+    followersList: document.querySelector("[data-profile-followers-list]"),
+    followersSearch: document.querySelector("[data-profile-followers-search]"),
+    followersClose: [...document.querySelectorAll("[data-profile-followers-close]")]
   };
 
   const panelMap = Object.fromEntries(els.panels.map((panel) => [panel.dataset.profilePanel, panel]));
+  const availableTabs = Object.keys(baseProfile.tabs || {});
+  const requestedPanel = params.get("panel");
   const state = {
-    activeTab: els.tabs.some((tab) => tab.dataset.profileTab === params.get("panel"))
-      ? params.get("panel")
-      : "services"
+    activeTab: availableTabs.includes(requestedPanel) ? requestedPanel : availableTabs[0] || "services",
+    selectingServices: false,
+    selectedServices: [],
+    selectingPosts: false,
+    selectedPosts: []
   };
+
+  const followerDemo = [
+    { name: "Marina Alves", handle: "@marinaalves", meta: "Arquiteta", initials: "MA", tone: "blue", following: false },
+    { name: "Caio Mendes", handle: "@caiomendes", meta: "Cliente recorrente", initials: "CM", tone: "gold", following: false },
+    { name: "Renata Lima", handle: "@renatalima", meta: "Design de interiores", initials: "RL", tone: "coral", following: false },
+    { name: "Juliana Prado", handle: "@juprado", meta: "Reformas leves", initials: "JP", tone: "mint", following: true },
+    { name: "Bruno Costa", handle: "@brunocosta", meta: "Engenheiro civil", initials: "BC", tone: "navy", following: true },
+    { name: "Studio Ninho", handle: "@studioninho", meta: "Estúdio parceiro", initials: "SN", tone: "blue", following: false }
+  ];
 
   const normalize = (value) =>
     String(value || "")
@@ -88,11 +135,78 @@ window.DokeInitProfile = () => {
   };
 
   const statMarkup = (item) => `
-    <div class="profile-stat">
+    <button class="profile-stat" type="button" data-profile-stat="${normalize(item.label).toLowerCase()}">
       <span class="profile-stat__value">${normalize(item.value)}</span>
       <span class="profile-stat__label">${normalize(item.label)}</span>
-    </div>
+    </button>
   `;
+
+  const renderFollowersModal = (query = "") => {
+    if (!els.followersList) return;
+    const normalizedQuery = normalize(query).toLowerCase();
+    const visibleFollowers = followerDemo.filter((item) => {
+      if (!normalizedQuery) return true;
+      return [item.name, item.handle, item.meta].some((value) => normalize(value).toLowerCase().includes(normalizedQuery));
+    });
+
+    els.followersList.innerHTML = visibleFollowers
+      .map(
+        (item) => `
+      <article class="profile-follower-card">
+        <div class="profile-follower-card__avatar profile-follower-card__avatar--${item.tone}">
+          <span>${normalize(item.initials)}</span>
+        </div>
+        <div class="profile-follower-card__body">
+          <strong>${normalize(item.handle)}</strong>
+          <span>${normalize(item.name)}</span>
+          <small>${normalize(item.meta)}</small>
+        </div>
+        <button class="profile-follower-card__action ${item.following ? "is-active" : ""}" type="button">${item.following ? "Seguindo" : "Seguir"}</button>
+      </article>
+    `
+      )
+      .join("");
+  };
+
+  const closeFollowersModal = () => {
+    if (!els.followersModal) return;
+    els.followersModal.hidden = true;
+    body.classList.remove("has-modal-open");
+  };
+
+  const toggleServiceSelection = (index) => {
+    const exists = state.selectedServices.includes(index);
+    state.selectedServices = exists
+      ? state.selectedServices.filter((item) => item !== index)
+      : [...state.selectedServices, index];
+    render();
+  };
+
+  const togglePostSelection = (id) => {
+    const exists = state.selectedPosts.includes(id);
+    state.selectedPosts = exists
+      ? state.selectedPosts.filter((item) => item !== id)
+      : [...state.selectedPosts, id];
+    render();
+  };
+
+  const openReviewsPanel = () => {
+    closeFollowersModal();
+    state.activeTab = "reviews";
+    render();
+    panelMap.reviews?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const openFollowersPanel = () => {
+    if (!els.followersModal) return;
+    renderFollowersModal();
+    els.followersModal.hidden = false;
+    body.classList.add("has-modal-open");
+    if (els.followersSearch) {
+      els.followersSearch.value = "";
+      window.setTimeout(() => els.followersSearch?.focus(), 30);
+    }
+  };
 
   const actionMarkup = (item) => {
     const classes = `profile-action ${item.tone === "primary" || item.style === "primary" ? "profile-action--success" : ""}`.trim();
@@ -122,16 +236,27 @@ window.DokeInitProfile = () => {
 
   const renderServiceCards = () => {
     const items = servicePool.slice(0, 3);
+    const selectedCount = state.selectedServices.length;
     return `
+      ${profileMode === "owner" ? `
+      <div class="profile-services-toolbar">
+        <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Novo</button>
+        <button class="profile-services-toolbar__action ${state.selectingServices ? "is-active" : ""}" type="button" data-profile-services-select-toggle>${state.selectingServices ? "Cancelar" : "Selecionar"}</button>
+        ${selectedCount === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-services-edit>Editar anúncio</button>` : ""}
+        ${selectedCount > 1 ? `<span class="profile-services-toolbar__hint">Só dá para editar um anúncio por vez.</span>` : ""}
+      </div>
+      ` : ""}
       <div class="results-grid profile-services-results">
         ${items
           .map(
-            (item) => `
-          <article class="service-card service-card--featured service-card--feed">
+            (item, index) => `
+          <article class="service-card service-card--featured service-card--feed ${state.selectedServices.includes(index) ? "is-selected" : ""} ${state.selectingServices ? "is-selecting" : ""}" data-profile-service-card="${index}">
             <div class="service-card__media ${item.mediaClass}">
-              <button class="service-card__favorite" type="button" aria-label="Salvar anúncio">
+              ${profileMode === "owner" && state.selectingServices
+                ? `<button class="service-card__favorite profile-service-select-indicator ${state.selectedServices.includes(index) ? "is-selected" : ""}" type="button" aria-label="Selecionar anúncio" data-profile-service-select="${index}">${state.selectedServices.includes(index) ? "✓" : ""}</button>`
+                : `<button class="service-card__favorite" type="button" aria-label="Salvar anúncio">
                 <svg viewBox="0 0 24 24"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
-              </button>
+              </button>`}
               <span class="service-card__badge ${item.badgeModifier || ""}">${normalize(item.badge)}</span>
               <div class="service-card__media-content">
                 <span class="service-card__category">${normalize(item.category)}</span>
@@ -165,6 +290,14 @@ window.DokeInitProfile = () => {
   const renderPosts = () =>
     renderPanelShell(`
       <div class="profile-posts-stack">
+        ${profileMode === "owner" ? `
+        <div class="profile-services-toolbar">
+          <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Novo</button>
+          <button class="profile-services-toolbar__action ${state.selectingPosts ? "is-active" : ""}" type="button" data-profile-posts-select-toggle>${state.selectingPosts ? "Cancelar" : "Selecionar"}</button>
+          ${state.selectedPosts.length === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-posts-edit>Editar anúncio</button>` : ""}
+          ${state.selectedPosts.length > 1 ? `<span class="profile-services-toolbar__hint">Só dá para editar um anúncio por vez.</span>` : ""}
+        </div>
+        ` : ""}
         <section class="short-videos" aria-labelledby="profile-short-videos-title">
           <div class="section-heading section-heading--spread home-section-header">
             <div><h2 class="section-heading__title home-section-title" id="profile-short-videos-title">WORKERS</h2></div>
@@ -176,8 +309,9 @@ window.DokeInitProfile = () => {
             <div class="short-videos__track profile-posts-videos" id="profile-short-videos-track" data-rail-track>
               ${shortVideoPool
                 .map(
-                  (item) => `
-                <article class="video-card ${item.mediaClass}">
+                  (item, index) => `
+                <article class="video-card ${item.mediaClass} ${state.selectingPosts ? "is-selecting" : ""} ${state.selectedPosts.includes(`video-${index}`) ? "is-selected" : ""}" data-profile-post-card="video-${index}">
+                  ${profileMode === "owner" && state.selectingPosts ? `<button class="profile-post-select-indicator ${state.selectedPosts.includes(`video-${index}`) ? "is-selected" : ""}" type="button" data-profile-post-select="video-${index}" aria-label="Selecionar publicação">${state.selectedPosts.includes(`video-${index}`) ? "✓" : ""}</button>` : ""}
                   <span class="video-card__play">▶</span>
                   <div class="video-card__content"><strong>${normalize(item.title)}</strong></div>
                 </article>
@@ -203,8 +337,9 @@ window.DokeInitProfile = () => {
             <div class="comparison-grid profile-posts-comparison" id="profile-before-after-track" data-rail-track>
               ${beforeAfterPool
                 .map(
-                  (item) => `
-                <article class="comparison-card">
+                  (item, index) => `
+                <article class="comparison-card ${state.selectingPosts ? "is-selecting" : ""} ${state.selectedPosts.includes(`compare-${index}`) ? "is-selected" : ""}" data-profile-post-card="compare-${index}">
+                  ${profileMode === "owner" && state.selectingPosts ? `<button class="profile-post-select-indicator ${state.selectedPosts.includes(`compare-${index}`) ? "is-selected" : ""}" type="button" data-profile-post-select="compare-${index}" aria-label="Selecionar publicação">${state.selectedPosts.includes(`compare-${index}`) ? "✓" : ""}</button>` : ""}
                   <div class="comparison-card__visual ${item.visualClass}">
                     <div class="comparison-card__half comparison-card__half--before"><span>Antes</span></div>
                     <div class="comparison-card__half comparison-card__half--after"><span>Depois</span></div>
@@ -370,10 +505,22 @@ window.DokeInitProfile = () => {
         ${items
           .map(
             (item) => `
-          <article class="profile-achievement-card">
-            <span class="profile-achievement-card__icon" aria-hidden="true">${normalize(item.icon || "★")}</span>
-            <h3>${normalize(item.title)}</h3>
-            <p>${normalize(item.detail)}</p>
+          <article class="profile-achievement-card profile-achievement-card--${normalize(item.theme || "gold").toLowerCase()} profile-achievement-card--shape-${normalize(item.shape || "shield").toLowerCase()}">
+            <div class="profile-achievement-card__top">
+              <span class="profile-achievement-card__icon" aria-hidden="true">${normalize(item.icon || "★")}</span>
+              <span class="profile-achievement-card__status">${normalize(item.status || "Em progresso")}</span>
+            </div>
+            <div class="profile-achievement-card__body">
+              <div class="profile-achievement-card__header">
+                <h3>${normalize(item.title)}</h3>
+                <strong class="profile-achievement-card__percent">${Math.max(0, Math.min(100, Number(item.progress) || 0))}%</strong>
+              </div>
+              <p>${normalize(item.detail)}</p>
+              <div class="profile-achievement-card__meta">${normalize(item.metric || "Progresso da conquista")}</div>
+              <div class="profile-achievement-card__progress" aria-hidden="true">
+                <span style="width: ${Math.max(0, Math.min(100, Number(item.progress) || 0))}%"></span>
+              </div>
+            </div>
           </article>
         `
           )
@@ -419,6 +566,124 @@ window.DokeInitProfile = () => {
               <span aria-hidden="true">${index === 0 ? "−" : "+"}</span>
             </button>
             <p class="profile-faq-card__answer" ${index === 0 ? "" : "hidden"}>${normalize(item.answer)}</p>
+          </article>
+        `
+          )
+          .join("")}
+      </div>
+    `);
+  };
+
+  const renderOwnerOverview = () => {
+    const section = baseProfile.sections?.overview || {};
+    const metrics = section.metrics || [];
+    const priorities = section.priorities || [];
+    return renderPanelShell(`
+      <div class="profile-owner-overview">
+        <section class="profile-owner-metrics">
+          ${metrics
+            .map(
+              (item) => `
+            <article class="profile-owner-metric-card">
+              <strong>${normalize(item.value)}</strong>
+              <span>${normalize(item.label)}</span>
+              <p>${normalize(item.text)}</p>
+            </article>
+          `
+            )
+            .join("")}
+        </section>
+        <section class="profile-owner-priorities">
+          ${priorities
+            .map(
+              (item, index) => `
+            <article class="profile-owner-priority-card">
+              <span class="profile-owner-priority-card__index">0${index + 1}</span>
+              <div>
+                <strong>${normalize(item.title)}</strong>
+                <p>${normalize(item.text)}</p>
+              </div>
+            </article>
+          `
+            )
+            .join("")}
+        </section>
+      </div>
+    `);
+  };
+
+  const renderOwnerListings = () => {
+    const section = baseProfile.sections?.listings || {};
+    const items = section.items || [];
+    return renderPanelShell(`
+      <div class="profile-owner-listings">
+        ${items
+          .map(
+            (item) => `
+          <article class="profile-owner-listing-card">
+            <div class="profile-owner-listing-card__top">
+              <span class="profile-owner-listing-card__status">${normalize(item.status)}</span>
+              <button type="button">Gerenciar</button>
+            </div>
+            <h3>${normalize(item.title)}</h3>
+            <p>${normalize(item.text)}</p>
+            <div class="profile-owner-listing-card__meta">
+              ${(item.meta || []).map((meta) => `<span>${normalize(meta)}</span>`).join("")}
+            </div>
+          </article>
+        `
+          )
+          .join("")}
+      </div>
+    `);
+  };
+
+  const renderOwnerReputation = () => {
+    const section = baseProfile.sections?.reputation || {};
+    const metrics = section.metrics || [];
+    const items = section.items || [];
+    return renderPanelShell(`
+      <div class="profile-owner-reputation">
+        <section class="profile-owner-reputation__metrics">
+          ${metrics
+            .map(
+              (item) => `
+            <article class="profile-owner-insight-card">
+              <span>${normalize(item.label)}</span>
+              <strong>${normalize(item.value)}</strong>
+            </article>
+          `
+            )
+            .join("")}
+        </section>
+        <section class="profile-owner-notes">
+          ${items
+            .map(
+              (item) => `
+            <article class="profile-owner-note-card">
+              <h3>${normalize(item.title)}</h3>
+              <p>${normalize(item.text)}</p>
+            </article>
+          `
+            )
+            .join("")}
+        </section>
+      </div>
+    `);
+  };
+
+  const renderOwnerNotes = (key) => {
+    const section = baseProfile.sections?.[key] || {};
+    const items = section.items || [];
+    return renderPanelShell(`
+      <div class="profile-owner-notes">
+        ${items
+          .map(
+            (item) => `
+          <article class="profile-owner-note-card">
+            <h3>${normalize(item.title || item.eyebrow)}</h3>
+            <p>${normalize(item.text)}</p>
+            ${item.footer ? `<div class="profile-owner-note-card__footer">${(item.footer || []).map((meta) => `<span>${normalize(meta)}</span>`).join("")}</div>` : ""}
           </article>
         `
           )
@@ -537,6 +802,16 @@ window.DokeInitProfile = () => {
         return renderCertificates();
       case "faq":
         return renderFaq();
+      case "overview":
+        return renderOwnerOverview();
+      case "listings":
+        return renderOwnerListings();
+      case "reputation":
+        return renderOwnerReputation();
+      case "content":
+        return renderOwnerNotes("content");
+      case "settings":
+        return renderOwnerNotes("settings");
       default:
         return "";
     }
@@ -550,9 +825,9 @@ window.DokeInitProfile = () => {
     const followAction = { label: "Seguir" };
     const rotatingHighlights = hero.rotatingHighlights || [];
 
-    document.title = "Doke | Perfil público do profissional";
+    document.title = normalize(baseProfile.pageTitle || "Doke | Perfil");
     body.dataset.profileType = "professional";
-    body.dataset.profileView = "visitor";
+    body.dataset.profileView = profileMode === "owner" ? "owner" : "visitor";
 
     els.name.textContent = normalize(hero.name || "Gabriel Antonio");
     els.username.textContent = normalize(hero.username || "@gabriel");
@@ -567,7 +842,7 @@ window.DokeInitProfile = () => {
     els.verified.hidden = !hero.verified;
     els.verified.dataset.tooltip = 'Selo de perfil verificado pela Doke.';
     els.stats.innerHTML = stats.map(statMarkup).join("");
-    els.nameActions.innerHTML = followActionMarkup(followAction);
+    els.nameActions.innerHTML = "";
     els.actions.innerHTML = actions.map(actionMarkup).join("");
     bindHeroHighlights(rotatingHighlights);
 
@@ -596,6 +871,80 @@ window.DokeInitProfile = () => {
         const label = button.dataset.profileCategory;
         if (!label) return;
         window.open(`resultados.html?q=${encodeURIComponent(label)}`, '_blank', 'noopener');
+      });
+    });
+
+    root.querySelectorAll("[data-profile-stat]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const label = button.dataset.profileStat || "";
+        if (label.includes("nota") || label.includes("avalia")) {
+          openReviewsPanel();
+          return;
+        }
+        if (label.includes("seguidores")) {
+          openFollowersPanel();
+        }
+      });
+    });
+
+    root.querySelector("[data-profile-services-select-toggle]")?.addEventListener("click", () => {
+      state.selectingServices = !state.selectingServices;
+      if (!state.selectingServices) state.selectedServices = [];
+      render();
+    });
+
+    root.querySelector("[data-profile-services-edit]")?.addEventListener("click", () => {
+      if (state.selectedServices.length !== 1) return;
+      window.location.href = "detalhe-anuncio.html";
+    });
+
+    root.querySelector("[data-profile-posts-select-toggle]")?.addEventListener("click", () => {
+      state.selectingPosts = !state.selectingPosts;
+      if (!state.selectingPosts) state.selectedPosts = [];
+      render();
+    });
+
+    root.querySelector("[data-profile-posts-edit]")?.addEventListener("click", () => {
+      if (state.selectedPosts.length !== 1) return;
+      window.location.href = "detalhe-anuncio.html";
+    });
+
+    root.querySelectorAll("[data-profile-service-select]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const index = Number(button.dataset.profileServiceSelect);
+        if (Number.isNaN(index)) return;
+        if (!state.selectingServices) state.selectingServices = true;
+        toggleServiceSelection(index);
+      });
+    });
+
+    root.querySelectorAll("[data-profile-service-card]").forEach((card) => {
+      card.addEventListener("click", (event) => {
+        if (!state.selectingServices) return;
+        if (event.target.closest(".service-card__cta") || event.target.closest(".service-card__favorite")) return;
+        const index = Number(card.dataset.profileServiceCard);
+        if (Number.isNaN(index)) return;
+        toggleServiceSelection(index);
+      });
+    });
+
+    root.querySelectorAll("[data-profile-post-select]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const id = button.dataset.profilePostSelect;
+        if (!id) return;
+        if (!state.selectingPosts) state.selectingPosts = true;
+        togglePostSelection(id);
+      });
+    });
+
+    root.querySelectorAll("[data-profile-post-card]").forEach((card) => {
+      card.addEventListener("click", () => {
+        if (!state.selectingPosts) return;
+        const id = card.dataset.profilePostCard;
+        if (!id) return;
+        togglePostSelection(id);
       });
     });
 
@@ -739,6 +1088,18 @@ window.DokeInitProfile = () => {
       state.activeTab = tab.dataset.profileTab;
       render();
     });
+  });
+
+  els.followersClose.forEach((button) => {
+    button.addEventListener("click", closeFollowersModal);
+  });
+
+  els.followersSearch?.addEventListener("input", (event) => {
+    renderFollowersModal(event.currentTarget.value);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeFollowersModal();
   });
 
   if (window.DokeProfileShare && els.shareButtons.length) {
