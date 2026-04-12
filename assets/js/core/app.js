@@ -10,25 +10,20 @@ const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.ht
 let sidebarViewsHinted = false;
 const isMobileSidebarViewport = () => window.innerWidth <= 760;
 
-if (!isMobileSidebarViewport() && window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true") {
-  body.classList.add("sidebar-collapsed");
+if (body.classList.contains("sidebar-collapsed")) {
+  body.classList.remove("sidebar-collapsed");
 }
+
+try {
+  window.localStorage.removeItem(SIDEBAR_STORAGE_KEY);
+} catch {}
 
 if (window.localStorage.getItem(THEME_STORAGE_KEY) === "dark") {
   body.classList.add("theme-dark");
 }
 
 const syncSidebarCollapsedState = () => {
-  if (isMobileSidebarViewport()) {
-    body.classList.remove("sidebar-collapsed");
-    return;
-  }
-
-  if (window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true") {
-    body.classList.add("sidebar-collapsed");
-  } else {
-    body.classList.remove("sidebar-collapsed");
-  }
+  body.classList.remove("sidebar-collapsed");
 };
 
 window.addEventListener("resize", syncSidebarCollapsedState, { passive: true });

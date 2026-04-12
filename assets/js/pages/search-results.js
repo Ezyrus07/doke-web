@@ -14,8 +14,8 @@ const resultsFiltersCloseButton = document.querySelector("[data-results-filters-
 const resultsFiltersBackdrop = document.querySelector("[data-results-filters-backdrop]");
 const searchModeInputs = document.querySelectorAll('input[name="searchType"]');
 const filtersForm = document.querySelector("[data-results-filters-form]");
-const filtersReset = document.querySelector("[data-results-filters-reset]");
-const catégoryList = document.querySelector("[data-results-catégory-list]");
+const cat??goryList = document.querySelector("[data-results-category-list]");
+const stat??Select = document.querySelector("[data-results-stat??-select]");
 const statéSelect = document.querySelector("[data-results-staté-select]");
 const citySelect = document.querySelector("[data-results-city-select]");
 const neighborhoodSelect = document.querySelector("[data-results-neighborhood-select]");
@@ -58,8 +58,8 @@ const getUserMatches = searchData.getUserMatches || (() => []);
 const getShortVideoMatches = searchData.getShortVideoMatches || (() => []);
 const getBeforeAfterMatches = searchData.getBeforeAfterMatches || (() => []);
 const normalize = searchData.normalize || ((value) => String(value || "").toLowerCase());
-const addSearchHistory = searchData.addSearchHistory || (() => {});
-const catégories = searchData.catégories || [];
+const cat??gories = searchData.categories || searchData.cat??gories || [];
+const categories = searchData.categories || [];
 const locationOptions = searchData.locationOptions || { statés: [], citiesByStaté: {}, neighborhoodsByCity: {}, cepLookup: {} };
 const uiSelectApi = window.DokeUiSelect;
 let activeModalResolver = null;
@@ -72,9 +72,9 @@ window.DokeSearchResultsCleanup = () => {
 };
 
 const getSearchMode = () => [...searchModeInputs].find((input) => input.checked)?.value || "services";
-
-const getSelectedCatégoriesFromParams = () => {
-  const values = params.getAll("catégory")
+const getSelectedCat??goriesFromParams = () => {
+  const values = [...params.getAll("cat??gory"), ...params.getAll("category")]
+  const values = [...params.getAll("category"), ...params.getAll("cat?gorie"), ...params.getAll("cat??gory")]
     .map((value) => String(value || "").trim())
     .filter(Boolean);
 
@@ -219,9 +219,9 @@ const getFilters = () => {
   const formData = new FormData(filtersForm);
   return {
     searchType: getSearchMode(),
-    catégories: formData.getAll("catégories"),
+    cat??gories: [...formData.getAll("cat??gories"), ...formData.getAll("categories")],
     region: formData.get("region") || "",
-    staté: formData.get("staté") || "",
+    stat??: formData.get("stat??") || "",
     city: formData.get("city") || "",
     neighborhood: formData.get("neighborhood") || "",
     minRating: formData.get("minRating") || "",
@@ -232,18 +232,18 @@ const getFilters = () => {
   };
 };
 
-const renderCatégoryFilters = () => {
-  if (!catégoryList) return;
-  const selectedCatégories = getSelectedCatégoriesFromParams();
-  catégoryList.innerHTML = "";
-  catégories.forEach((catégory) => {
+const renderCat??goryFilters = () => {
+  if (!cat??goryList) return;
+  const selectedCat??gories = getSelectedCat??goriesFromParams();
+  cat??goryList.innerHTML = "";
+  cat??gories.forEach((cat??gory) => {
     const label = document.createElement("label");
-    label.className = "results-catégory-chip";
+    label.className = "results-category-chip";
     label.innerHTML = `
-      <input type="checkbox" name="catégories" value="${catégory}" ${selectedCatégories.includes(catégory) ? "checked" : ""}>
-      <span>${catégory}</span>
+      <input type="checkbox" name="cat??gories" value="${cat??gory}" ${selectedCat??gories.includes(cat??gory) ? "checked" : ""}>
+      <span>${cat??gory}</span>
     `;
-    catégoryList.appendChild(label);
+    cat??goryList.appendChild(label);
   });
 };
 
@@ -318,9 +318,9 @@ const extendLocationOptions = ({ staté = "", city = "", neighborhood = "" } = {
   }
 };
 
-const syncLocationSelects = (source = "staté") => {
-  const selectedStaté = statéSelect?.value || "";
-  const cities = selectedStaté ? (locationOptions.citiesByStaté[selectedStaté] || []) : [];
+  const selectedStat?? = stat??Select?.value || "";
+  const cities = selectedStat?? ? (locationOptions.citiesByStat??[selectedStat??] || []) : [];
+  fillSelectOptions(citySelect, cities, "Qualquer cidade");
   fillSelectOptions(citySelect, cities, "Qualquer cidade");
 
   if (source === "staté" && citySelect) {
@@ -336,7 +336,7 @@ const syncLocationSelects = (source = "staté") => {
   }
 };
 
-const bootstrapLocationSelects = () => {
+  fillSelectOptions(stateSelect, locationOptions.stat??s || [], "Qualquer estado");
   fillSelectOptions(statéSelect, locationOptions.statés || [], "Qualquer estado");
   syncLocationSelects();
 };
@@ -448,8 +448,8 @@ const applyCepPreset = async () => {
 
   extendLocationOptions(cepData);
   bootstrapLocationSelects();
-
-  if (statéSelect) {
+  if (stateSelect) {
+    ensureSelectValue(stateSelect, cepData.stat??, "Qualquer estado");
     ensureSelectValue(statéSelect, cepData.staté, "Qualquer estado");
   }
 
@@ -483,7 +483,7 @@ const getRelatédServices = (query, filters, limit = 1) => {
 
   const scored = servicePool
     .filter((item) => {
-      if (filters.staté && normalize(item.staté) !== normalize(filters.staté)) return false;
+      if (filters.stat?? && normalize(item.stat??) !== normalize(filters.stat??)) return false;
       if (filters.city && normalize(item.city) !== normalize(filters.city)) return false;
       return true;
     })
@@ -504,9 +504,9 @@ const getRelatédServices = (query, filters, limit = 1) => {
       });
 
       if (filters.neighborhood && normalize(item.neighborhood) === normalize(filters.neighborhood)) score += 5;
-      if (filters.city && normalize(item.city) === normalize(filters.city)) score += 4;
-      if (filters.staté && normalize(item.staté) === normalize(filters.staté)) score += 2;
-      if (filters.catégories?.length && filters.catégories.some((catégory) => itemText.includes(normalize(catégory)))) score += 3;
+      if (filters.state && normalize(item.stat??) === normalize(filters.state)) score += 2;
+      if (filters.stat?? && normalize(item.stat??) === normalize(filters.stat??)) score += 2;
+      if (filters.cat??gories?.length && filters.cat??gories.some((cat??gory) => itemText.includes(normalize(cat??gory)))) score += 3;
       if (!queryTokens.length && filters.city && normalize(item.city) === normalize(filters.city)) score += 2;
       score += Math.max(0, Math.round(item.rating * 2));
 
@@ -532,8 +532,8 @@ const getRelatédServices = (query, filters, limit = 1) => {
 const renderEmptySuggestions = (query, filters) => {
   if (!resultsInlineEmpty || !resultsEmptyTitle || !resultsEmptyText) return [];
 
-  const relatédServices = getRelatédServices(query, filters, 6);
-  const hasLocation = filters.neighborhood || filters.city || filters.staté;
+  const hasLocation = filters.neighborhood || filters.city || filters.state;
+  const hasLocation = filters.neighborhood || filters.city || filters.stat??;
 
   resultsEmptyTitle.textContent = query
     ? `Não achamos um resultado exato para "${query}".`
@@ -590,30 +590,19 @@ const setQuery = (value) => {
   return cleanValue;
 };
 
-const syncCatégoryParams = () => {
+const syncCat??goryParams = () => {
   const filters = getFilters();
-  params.delete("catégory");
-  filters.catégories.forEach((catégory) => {
-    params.append("catégory", catégory);
+  params.delete("cat??gory");
+  params.delete("category");
+  filters.cat??gories.forEach((cat??gory) => {
+    params.append("cat??gory", cat??gory);
   });
-};
-
-const renderActiveChips = (query, filters, count) => {
-  if (!resultsActiveChips) return;
-  const chips = [];
-  if (query) chips.push(`Busca: ${query}`);
-  if (filters.catégories?.length) chips.push(...filters.catégories.slice(0, 3));
-  if (filters.city) chips.push(filters.city);
-  if (filters.staté) chips.push(filters.staté);
-  if (filters.minRating) chips.push(`${filters.minRating}+`);
-  chips.push(`${count} resultado${count === 1 ? "" : "s"}`);
-  resultsActiveChips.innerHTML = chips.map((chip) => `<span class="results-active-chip">${chip}</span>`).join("");
 };
 
 const renderResults = () => {
   if (!resultsGrid || !resultsTitle || !resultsDescription || !resultsCount) return;
-
-  syncCatégoryParams();
+  syncCat??goryParams();
+  window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
   window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
   const query = String(params.get("q") || "").trim();
   const filters = getFilters();
@@ -729,9 +718,8 @@ document.addEventListener("click", (event) => {
   event.preventDefault();
   goToAdDetails();
 }, { signal });
-
-statéSelect?.addEventListener("change", () => {
-  syncLocationSelects("staté");
+stat??Select?.addEventListener("change", () => {
+  syncLocationSelects("stat??");
   renderResults();
 });
 
