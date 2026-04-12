@@ -7,7 +7,47 @@ window.DokeInitProfile = () => {
   const data = window.DokeProfileData || {};
   const profileMode = params.get("mode");
   const publicProfile = data.professionalPublic || {};
+  const clientPublicProfile = data.clientPublic || {};
   const ownerProfile = data.professionalOwner || {};
+  const clientOwnerProfile = {
+    pageTitle: "Doke | Meu perfil de cliente",
+    hero: {
+      ...(clientPublicProfile.hero || {}),
+      badges: [],
+      stats: [
+        { value: "18,4 mil", label: "seguidores" },
+        { value: "26", label: "serviços feitos" },
+        { value: "4,9", label: "nota média" }
+      ],
+      actions: [
+        { label: "Editar perfil", tone: "primary" },
+        { label: "Ver perfil público", href: "perfil.html?mode=client&from=owner", tone: "ghost" }
+      ],
+      rotatingHighlights: [
+        { label: "Comunidade", value: "18,4 mil", detail: "seguidores acompanhando seu perfil" },
+        { label: "Execuções", value: "26", detail: "serviços concluídos com profissionais" },
+        { label: "Resposta", value: "Até 2h", detail: "tempo médio para responder contatos" }
+      ]
+    },
+    tabs: {
+      about: "Sobre",
+      portfolio: "Portfólios"
+    },
+    sections: {
+      about: clientPublicProfile.sections?.about || {},
+      portfolio: {
+        ...(clientPublicProfile.sections?.collections || {}),
+        title: "Portfólios compartilhados",
+        intro: "Portfólios salvos e republicados no seu perfil para orientar profissionais com o estilo que você busca."
+      }
+    }
+  };
+  const normalizeActionLabel = (value) =>
+    String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
   const baseProfile =
     profileMode === "owner"
       ? {
@@ -16,14 +56,16 @@ window.DokeInitProfile = () => {
           hero: {
             ...(publicProfile.hero || {}),
             actions: (ownerProfile.hero?.actions || publicProfile.hero?.actions || [])
-              .filter((item) => item && item.label !== "Novo anúncio" && item.label !== "Novo anÃºncio")
-              .map((item) => ({
-                ...item,
-                label:
-                  item.label === "Editar vitrine pública" || item.label === "Editar vitrine pÃºblica"
-                    ? "Editar perfil"
-                    : item.label
-              })),
+              .filter((item) => item && !normalizeActionLabel(item.label).includes("novo anuncio"))
+              .map((item) => {
+                const isEditAction = normalizeActionLabel(item.label).includes("editar vitrine publica");
+
+                return {
+                  ...item,
+                  href: isEditAction ? undefined : item.href,
+                  label: isEditAction ? "Editar perfil" : item.label
+                };
+              }),
             badges: [...((publicProfile.hero?.badges || []).slice(0, 2))]
           },
           tabs: {
@@ -35,7 +77,45 @@ window.DokeInitProfile = () => {
             overview: ownerProfile.sections?.overview || {}
           }
         }
-      : publicProfile;
+      : profileMode === "client"
+        ? {
+            ...clientPublicProfile,
+            hero: {
+              ...(clientPublicProfile.hero || {}),
+              badges: [],
+              stats: [
+                { value: "18,4 mil", label: "seguidores" },
+                { value: "26", label: "serviços feitos" },
+                { value: "4,9", label: "nota média" }
+              ],
+              rotatingHighlights: [
+                { label: "Comunidade", value: "18,4 mil", detail: "seguidores acompanhando o perfil" },
+                { label: "Execuções", value: "26", detail: "serviços concluídos com profissionais" },
+                { label: "Resposta", value: "Até 2h", detail: "tempo médio para responder contatos" }
+              ],
+              actions: [
+                { label: "Mensagem", href: "mensagens.html", tone: "primary" },
+                ...(params.get("from") === "owner"
+                  ? [{ label: "Voltar ao meu perfil", href: "perfil.html?mode=client-owner", tone: "ghost" }]
+                  : [])
+              ]
+            },
+            tabs: {
+              about: clientPublicProfile.tabs?.about || "Sobre",
+              portfolio: clientPublicProfile.tabs?.collections || "Portfólios"
+            },
+            sections: {
+              about: clientPublicProfile.sections?.about || {},
+              portfolio: {
+                ...(clientPublicProfile.sections?.collections || {}),
+                title: "Portfólios compartilhados",
+                intro: "Portfólios salvos e republicados no perfil do cliente, no estilo de referência compartilhada entre cliente e profissional."
+              }
+            }
+          }
+        : profileMode === "client-owner"
+          ? clientOwnerProfile
+        : publicProfile;
   const servicePool = window.DokeSearchData?.servicePool || [];
   const shortVideoPool = window.DokeSearchData?.shortVideoPool || [];
   const beforeAfterPool = window.DokeSearchData?.beforeAfterPool || [];
@@ -60,7 +140,13 @@ window.DokeInitProfile = () => {
     followersSearch: document.querySelector("[data-profile-followers-search]"),
     followersClose: [...document.querySelectorAll("[data-profile-followers-close]")],
     editModal: document.querySelector("[data-profile-edit-modal]"),
-    editClose: [...document.querySelectorAll("[data-profile-edit-close]")]
+    editClose: [...document.querySelectorAll("[data-profile-edit-close]")],
+    editForm: document.querySelector("[data-profile-edit-form]"),
+    editName: document.querySelector("[data-profile-edit-name]"),
+    editBio: document.querySelector("[data-profile-edit-bio]"),
+    editHighlight: document.querySelector("[data-profile-edit-highlight]"),
+    editAvatar: document.querySelector("[data-profile-edit-avatar]"),
+    editHighlightField: document.querySelector("[data-profile-edit-highlight-field]")
   };
 
   const panelMap = Object.fromEntries(els.panels.map((panel) => [panel.dataset.profilePanel, panel]));
@@ -219,6 +305,14 @@ window.DokeInitProfile = () => {
   const openEditModal = () => {
     if (!els.editModal) return;
     closeFollowersModal();
+    const hero = baseProfile.hero || {};
+    const firstHighlight = (hero.rotatingHighlights || [])[0] || {};
+    const isClientProfile = profileMode === "client" || profileMode === "client-owner";
+    if (els.editName) els.editName.value = normalize(hero.name || "Gabriel Antonio");
+    if (els.editBio) els.editBio.value = normalize(hero.headline || "");
+    if (els.editHighlight) els.editHighlight.value = normalize(firstHighlight.detail || "");
+    if (els.editAvatar) els.editAvatar.textContent = normalize(hero.avatar || "GA");
+    if (els.editHighlightField) els.editHighlightField.hidden = isClientProfile;
     els.editModal.hidden = false;
     body.classList.add("has-modal-open");
     window.setTimeout(() => {
@@ -330,7 +424,58 @@ window.DokeInitProfile = () => {
     </div>
   `;
 
+  const renderClientRequests = () => {
+    const section = baseProfile.sections?.services || {};
+    const items = section.items || [];
+    return `
+      <div class="profile-owner-listings">
+        ${items
+          .map(
+            (item) => `
+          <article class="profile-owner-listing-card">
+            <div class="profile-owner-listing-card__top">
+              <span class="profile-owner-listing-card__status">${normalize(item.status)}</span>
+            </div>
+            <h3>${normalize(item.title)}</h3>
+            <p>${normalize(item.text)}</p>
+            <div class="profile-owner-listing-card__meta">
+              ${(item.meta || []).map((meta) => `<span>${normalize(meta)}</span>`).join("")}
+            </div>
+          </article>
+        `
+          )
+          .join("")}
+      </div>
+    `;
+  };
+
+  const renderClientReferences = () => {
+    const section = baseProfile.sections?.posts || {};
+    const items = section.items || [];
+    return renderPanelShell(`
+      <div class="profile-owner-notes">
+        ${items
+          .map(
+            (item) => `
+          <article class="profile-owner-note-card">
+            <span class="profile-owner-listing-card__status">${normalize(item.eyebrow || "Referência")}</span>
+            <h3>${normalize(item.title)}</h3>
+            <p>${normalize(item.text)}</p>
+            <div class="profile-owner-note-card__footer">
+              ${(item.footer || []).map((meta) => `<span>${normalize(meta)}</span>`).join("")}
+            </div>
+          </article>
+        `
+          )
+          .join("")}
+      </div>
+    `);
+  };
+
   const renderServiceCards = () => {
+    if (profileMode === "client") {
+      return renderClientRequests();
+    }
     const items = servicePool.slice(0, 3);
     const selectedCount = state.selectedServices.length;
     return `
@@ -384,7 +529,9 @@ window.DokeInitProfile = () => {
   };
 
   const renderPosts = () =>
-    renderPanelShell(`
+    profileMode === "client"
+      ? renderClientReferences()
+      : renderPanelShell(`
       <div class="profile-posts-stack ${profileMode === "owner" ? "profile-posts-stack--owner" : ""}">
         ${profileMode === "owner" ? `
         <div class="profile-services-toolbar">
@@ -506,6 +653,17 @@ window.DokeInitProfile = () => {
     const section = baseProfile.sections?.about || {};
     const facts = section.facts || [];
     const blocks = section.blocks || [];
+
+    if (profileMode === "client" || profileMode === "client-owner") {
+      return renderPanelShell(`
+        <div class="profile-client-about">
+          <article class="profile-client-about__card">
+            ${blocks.map((item) => `<p>${normalize(item.text)}</p>`).join("")}
+          </article>
+        </div>
+      `);
+    }
+
     return renderPanelShell(`
       <div class="profile-about-flow">
         <section class="profile-about-hero">
@@ -1120,8 +1278,8 @@ window.DokeInitProfile = () => {
     const rotatingHighlights = hero.rotatingHighlights || [];
 
     document.title = normalize(baseProfile.pageTitle || "Doke | Perfil");
-    body.dataset.profileType = "professional";
-    body.dataset.profileView = profileMode === "owner" ? "owner" : "visitor";
+    body.dataset.profileType = profileMode === "client" || profileMode === "client-owner" ? "client" : "professional";
+    body.dataset.profileView = profileMode === "owner" || profileMode === "client-owner" ? "owner" : "visitor";
 
     els.name.textContent = normalize(hero.name || "Gabriel Antonio");
     els.username.textContent = normalize(hero.username || "@gabriel");
@@ -1132,11 +1290,11 @@ window.DokeInitProfile = () => {
         "Especialista em ambientes residenciais com foco em leitura visual limpa, acabamento consistente e comunicação objetiva do início ao fim."
     );
     els.headline.innerHTML = `${shortHeadline} <button class="profile-bio__more" type="button" data-profile-more>Ver mais</button>`;
-    els.categories.innerHTML = categories.map(categoryMarkup).join("");
+    els.categories.innerHTML = profileMode === "client" || profileMode === "client-owner" ? "" : categories.map(categoryMarkup).join("");
     els.verified.hidden = !hero.verified;
     els.verified.dataset.tooltip = 'Selo de perfil verificado pela Doke.';
     els.stats.innerHTML = stats.map(statMarkup).join("");
-    els.nameActions.innerHTML = "";
+    els.nameActions.innerHTML = profileMode === "client" ? followActionMarkup({ label: "Seguir" }) : "";
     els.actions.innerHTML = actions.map(actionMarkup).join("");
     bindHeroHighlights(rotatingHighlights);
 
@@ -1427,8 +1585,35 @@ window.DokeInitProfile = () => {
     renderFollowersModal(event.currentTarget.value);
   });
 
-  els.editModal?.querySelector("form")?.addEventListener("submit", (event) => {
+  els.editForm?.addEventListener("submit", (event) => {
     event.preventDefault();
+    const hero = baseProfile.hero || {};
+    hero.name = normalize(els.editName?.value || hero.name || "Gabriel Antonio");
+    hero.headline = normalize(els.editBio?.value || hero.headline || "");
+    hero.avatar = hero.name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase() || normalize(hero.avatar || "GA");
+
+    const currentHighlights = [...(hero.rotatingHighlights || [])];
+    if (currentHighlights.length) {
+      currentHighlights[0] = {
+        ...currentHighlights[0],
+        detail: normalize(els.editHighlight?.value || currentHighlights[0].detail || "")
+      };
+    } else {
+      currentHighlights.push({
+        label: "Agora",
+        value: hero.name,
+        detail: normalize(els.editHighlight?.value || "")
+      });
+    }
+    hero.rotatingHighlights = currentHighlights;
+    baseProfile.hero = hero;
+    render();
     closeEditModal();
   });
 
