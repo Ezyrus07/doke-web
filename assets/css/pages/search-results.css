@@ -8,9 +8,6 @@
   display: grid;
   gap: 24px;
   overflow: visible;
-  width: min(1480px, calc(100vw - var(--sidebar-width) - 56px));
-  max-width: min(1480px, calc(100vw - var(--sidebar-width) - 56px));
-  margin-inline: auto;
 }
 
 .search-results-body .page,
@@ -100,7 +97,8 @@
   height: 18px;
   margin-right: 10px;
   opacity: 0.55;
-  background: center / 18px 18px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23597390' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='6'/%3E%3Cpath d='m20 20-4.2-4.2'/%3E%3C/svg%3E");
+  background: center / 18px 18px no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' stroke='%23597390' stroke-width='2' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='6'/%3E%3Cpath d='m20 20-4.2-4.2'/%3E%3C/svg%3E");
 }
 
 .results-searchbar__field input {
@@ -179,7 +177,11 @@
 .results-summary {
   padding: 22px 24px;
   background:
-    radial-gradient(circle at top right, rgba(74, 205, 154, 0.08), transparent 30%),
+    radial-gradient(
+      circle at top right,
+      rgba(74, 205, 154, 0.08),
+      transparent 30%
+    ),
     rgba(255, 255, 255, 0.98);
 }
 
@@ -332,7 +334,8 @@
   height: 10px;
   transform: scale(0);
   transition: transform 0.16s ease;
-  background: center / 10px 10px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 6.2 4.4 8.6 10 3'/%3E%3C/svg%3E");
+  background: center / 10px 10px no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 6.2 4.4 8.6 10 3'/%3E%3C/svg%3E");
 }
 
 .results-check input[type="checkbox"]:checked {
@@ -635,23 +638,83 @@
   }
 }
 
-
-@media (min-width: 1025px) {
-  .search-results-body .page__content-inner {
-    width: min(100%, 1500px);
-    max-width: 1500px;
-    margin-inline: auto;
-  }
-
-  .search-results-body .page__content {
-    padding-inline: 24px;
-  }
+/* checks + cards alinhados com index */
+.results-check {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 24px;
+  color: #516b88;
+  font-size: 0.92rem;
+  line-height: 1.25;
 }
-
-
-@media (max-width: 1024px) {
-  .search-results-workspace {
-    width: min(100%, calc(100vw - 32px));
-    max-width: min(100%, calc(100vw - 32px));
-  }
+.results-check input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 1.6px solid rgba(162, 184, 208, 0.98);
+  border-radius: 5px;
+  background: #fff;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+}
+.results-check input[type="checkbox"]::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  transform: scale(0);
+  transition: transform 0.16s ease;
+  background: center/10px 10px no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 6.2 4.4 8.6 10 3'/%3E%3C/svg%3E");
+}
+.results-check input[type="checkbox"]:checked {
+  border-color: #1f5d93;
+  background: #1f5d93;
+  box-shadow: 0 0 0 3px rgba(31, 93, 147, 0.12);
+}
+.results-check input[type="checkbox"]:checked::after {
+  transform: scale(1);
+}
+.results-grid {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 320px));
+  justify-content: start;
+  gap: 18px;
+}
+.results-grid .service-card--feed,
+.results-empty__grid .service-card--feed {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  max-width: 320px;
+}
+.results-grid .service-card__media,
+.results-empty__grid .service-card__media {
+  min-height: 208px;
+}
+.results-grid .service-card__body,
+.results-empty__grid .service-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 auto;
+  padding: 14px 14px 16px;
+}
+.results-grid .service-card__footer,
+.results-empty__grid .service-card__footer {
+  margin-top: auto;
+  align-items: center;
+}
+.results-grid .service-card__price,
+.results-empty__grid .service-card__price {
+  font-size: 1.65rem;
+  line-height: 1;
+}
+.results-grid .service-card__cta,
+.results-empty__grid .service-card__cta {
+  min-width: 138px;
+  min-height: 46px;
 }
