@@ -179,10 +179,8 @@ const initBudgetPage = () => {
     const closeAddressModal = () => addressModal?.close();
     openAddressButtons.forEach((button) => button.addEventListener("click", openAddressModal));
     closeAddressButtons.forEach((button) => button.addEventListener("click", closeAddressModal));
-    addressModal?.addEventListener("click", (event) => {
-      const dialogBox = addressModal.querySelector(".address-modal__dialog");
-      if (dialogBox && !dialogBox.contains(event.target)) closeAddressModal();
-    });
+    // Deliberately avoid closing the address modal on backdrop click.
+    // This prevents accidental exits while selecting fields on mobile.
     addressModal?.addEventListener("close", unlockViewport);
 
     addressForm?.addEventListener("submit", (event) => {

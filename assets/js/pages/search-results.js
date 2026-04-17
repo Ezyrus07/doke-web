@@ -1,790 +1,705 @@
 window.DokeInitSearchResults = function DokeInitSearchResults() {
-window.DokeSearchResultsCleanup?.();
-const routeController = new AbortController();
-const { signal } = routeController;
-const searchData = window.DokeSearchData || {};
-const params = new URLSearchParams(window.location.search);
+  window.DokeSearchResultsCleanup?.();
 
-const resultsSearchForm = document.querySelector("[data-results-search-form]");
-const resultsSearchInput = document.querySelector("[data-results-search-input]");
-const topbarSearchForm = document.querySelector("[data-results-topbar-search]");
-const topbarSearchInput = document.querySelector("[data-results-topbar-input]");
-const resultsFiltersOpenButton = document.querySelector("[data-results-filters-open]");
-const resultsFiltersCloseButton = document.querySelector("[data-results-filters-close]");
-const resultsFiltersBackdrop = document.querySelector("[data-results-filters-backdrop]");
-const searchModeInputs = document.querySelectorAll('input[name="searchType"]');
-const filtersForm = document.querySelector("[data-results-filters-form]");
-const cat??goryList = document.querySelector("[data-results-category-list]");
-const stat??Select = document.querySelector("[data-results-stat??-select]");
-const statéSelect = document.querySelector("[data-results-staté-select]");
-const citySelect = document.querySelector("[data-results-city-select]");
-const neighborhoodSelect = document.querySelector("[data-results-neighborhood-select]");
-const cepFillButton = document.querySelector("[data-results-cep-fill]");
-const loadingStaté = document.querySelector("[data-results-loading]");
-const resultsGrid = document.querySelector("[data-results-grid]");
-const resultsEmptyTitle = document.querySelector("[data-results-empty-title]");
-const resultsEmptyText = document.querySelector("[data-results-empty-text]");
-const resultsInlineEmpty = document.querySelector("[data-results-inline-empty]");
-const resultsActiveChips = document.querySelector("[data-results-active-chips]");
-const resultsEmptyReset = document.querySelector("[data-results-empty-reset]");
-const resultsSummary = document.querySelector("[data-results-summary]");
-const resultsUsersSection = document.querySelector("[data-results-users]");
-const resultsUsersGrid = document.querySelector("[data-results-users-grid]");
-const resultsVideosSection = document.querySelector("[data-results-videos]");
-const resultsVideosGrid = document.querySelector("[data-results-videos-grid]");
-const resultsBeforeAfterSection = document.querySelector("[data-results-before-after]");
-const resultsBeforeAfterGrid = document.querySelector("[data-results-before-after-grid]");
-const resultsTitle = document.querySelector("[data-results-title]");
-const resultsDescription = document.querySelector("[data-results-description]");
-const resultsCount = document.querySelector("[data-results-count]");
-const uiModal = document.querySelector("[data-ui-modal]");
-const uiModalClose = document.querySelector("[data-ui-modal-close]");
-const uiModalEyebrow = document.querySelector("[data-ui-modal-eyebrow]");
-const uiModalTitle = document.querySelector("[data-ui-modal-title]");
-const uiModalText = document.querySelector("[data-ui-modal-text]");
-const uiModalField = document.querySelector("[data-ui-modal-field]");
-const uiModalLabel = document.querySelector("[data-ui-modal-label]");
-const uiModalInput = document.querySelector("[data-ui-modal-input]");
-const uiModalCancel = document.querySelector("[data-ui-modal-cancel]");
-const uiModalConfirm = document.querySelector("[data-ui-modal-confirm]");
+  const routeController = new AbortController();
+  const { signal } = routeController;
+  const searchData = window.DokeSearchData || {};
+  const params = new URLSearchParams(window.location.search);
+  const uiSelectApi = window.DokeUiSelect;
 
-if (!resultsSearchForm || !resultsSearchInput) {
-  return;
-}
+  const queryAny = (...selectors) => {
+    for (const selector of selectors) {
+      const node = document.querySelector(selector);
+      if (node) return node;
+    }
+    return null;
+  };
 
-const getServiceMatches = searchData.getServiceMatches || (() => []);
-const servicePool = searchData.servicePool || [];
-const getUserMatches = searchData.getUserMatches || (() => []);
-const getShortVideoMatches = searchData.getShortVideoMatches || (() => []);
-const getBeforeAfterMatches = searchData.getBeforeAfterMatches || (() => []);
-const normalize = searchData.normalize || ((value) => String(value || "").toLowerCase());
-const cat??gories = searchData.categories || searchData.cat??gories || [];
-const categories = searchData.categories || [];
-const locationOptions = searchData.locationOptions || { statés: [], citiesByStaté: {}, neighborhoodsByCity: {}, cepLookup: {} };
-const uiSelectApi = window.DokeUiSelect;
-let activeModalResolver = null;
-let resultsLoadTimer = null;
-window.DokeSearchResultsCleanup = () => {
-  routeController.abort();
-  if (resultsLoadTimer) {
-    window.clearTimeout(resultsLoadTimer);
-  }
-};
+  const queryAllAny = (...selectors) => {
+    for (const selector of selectors) {
+      const nodes = [...document.querySelectorAll(selector)];
+      if (nodes.length) return nodes;
+    }
+    return [];
+  };
 
-const getSearchMode = () => [...searchModeInputs].find((input) => input.checked)?.value || "services";
-const getSelectedCat??goriesFromParams = () => {
-  const values = [...params.getAll("cat??gory"), ...params.getAll("category")]
-  const values = [...params.getAll("category"), ...params.getAll("cat?gorie"), ...params.getAll("cat??gory")]
-    .map((value) => String(value || "").trim())
-    .filter(Boolean);
+  const els = {
+    resultsSearchForm: queryAny('[data-results-search-form]'),
+    resultsSearchInput: queryAny('[data-results-search-input]'),
+    topbarSearchForm: queryAny('[data-global-topbar-search]', '[data-results-topbar-search]'),
+    topbarSearchInput: queryAny('[data-global-topbar-search] input[type="search"]', '[data-results-topbar-input]'),
+    resultsFiltersOpenButton: queryAny('[data-results-filters-open]'),
+    resultsFiltersCloseButton: queryAny('[data-results-filters-close]'),
+    resultsFiltersBackdrop: queryAny('[data-results-filters-backdrop]'),
+    searchModeInputs: queryAllAny('input[name="searchType"]'),
+    filtersForm: queryAny('[data-results-filters-form]'),
+    categoryList: queryAny('[data-results-category-list]', '[data-results-catégory-list]'),
+    stateSelect: queryAny('[data-results-state-select]', '[data-results-staté-select]'),
+    citySelect: queryAny('[data-results-city-select]'),
+    neighborhoodSelect: queryAny('[data-results-neighborhood-select]'),
+    cepFillButton: queryAny('[data-results-cep-fill]'),
+    loadingState: queryAny('[data-results-loading]'),
+    resultsGrid: queryAny('[data-results-grid]'),
+    resultsEmptyTitle: queryAny('[data-results-empty-title]'),
+    resultsEmptyText: queryAny('[data-results-empty-text]'),
+    resultsInlineEmpty: queryAny('[data-results-inline-empty]'),
+    resultsActiveChips: queryAny('[data-results-active-chips]'),
+    resultsEmptyReset: queryAny('[data-results-empty-reset]'),
+    resultsSummary: queryAny('[data-results-summary]'),
+    resultsUsersSection: queryAny('[data-results-users]'),
+    resultsUsersGrid: queryAny('[data-results-users-grid]'),
+    resultsVideosSection: queryAny('[data-results-videos]'),
+    resultsVideosGrid: queryAny('[data-results-videos-grid]'),
+    resultsBeforeAfterSection: queryAny('[data-results-before-after]'),
+    resultsBeforeAfterGrid: queryAny('[data-results-before-after-grid]'),
+    resultsTitle: queryAny('[data-results-title]'),
+    resultsDescription: queryAny('[data-results-description]'),
+    resultsCount: queryAny('[data-results-count]'),
+    uiModal: queryAny('[data-ui-modal]'),
+    uiModalClose: queryAny('[data-ui-modal-close]'),
+    uiModalEyebrow: queryAny('[data-ui-modal-eyebrow]'),
+    uiModalTitle: queryAny('[data-ui-modal-title]'),
+    uiModalText: queryAny('[data-ui-modal-text]'),
+    uiModalField: queryAny('[data-ui-modal-field]'),
+    uiModalLabel: queryAny('[data-ui-modal-label]'),
+    uiModalInput: queryAny('[data-ui-modal-input]'),
+    uiModalCancel: queryAny('[data-ui-modal-cancel]'),
+    uiModalConfirm: queryAny('[data-ui-modal-confirm]'),
+    stateHosts: queryAllAny('[data-results-state]')
+  };
 
-  return [...new Set(values)];
-};
-
-const setSearchMode = (mode = "services") => {
-  [...searchModeInputs].forEach((input) => {
-    input.checked = input.value === mode;
-  });
-};
-
-const getTagSearchValue = (value) => String(value || "").replace(/^#/, "").trim();
-const goToAdDetails = () => {
-  const nextUrl = new URL("detalhe-anuncio.html", window.location.href);
-
-  if (window.DokeNavigate) {
-    window.DokeNavigate(nextUrl.toString());
+  if (!els.resultsSearchForm || !els.resultsSearchInput || !els.filtersForm || !els.resultsGrid) {
     return;
   }
 
-  window.location.href = nextUrl.toString();
-};
+  const normalize = searchData.normalize || ((value = '') => String(value || '').toLowerCase());
+  const servicePool = searchData.servicePool || [];
+  const getServiceMatches = searchData.getServiceMatches || (() => []);
+  const getUserMatches = searchData.getUserMatches || (() => []);
+  const getShortVideoMatches = searchData.getShortVideoMatches || (() => []);
+  const getBeforeAfterMatches = searchData.getBeforeAfterMatches || (() => []);
+  const addSearchHistory = searchData.addSearchHistory || (() => {});
+  const categories = searchData.categories || searchData.catégories || [];
+  const locationOptions = searchData.locationOptions || {};
+  const states = locationOptions.states || locationOptions.statés || [];
+  const citiesByState = locationOptions.citiesByState || locationOptions.citiesByStaté || {};
+  const neighborhoodsByCity = locationOptions.neighborhoodsByCity || {};
+  const cepLookup = locationOptions.cepLookup || {};
 
-const setResultsStaté = (staté) => {
-  if (loadingStaté) {
-    loadingStaté.hidden = staté !== "loading";
-  }
+  let activeModalResolver = null;
+  let resultsLoadTimer = null;
 
-  if (resultsGrid) {
-    resultsGrid.hidden = staté !== "results";
-  }
+  window.DokeSearchResultsCleanup = () => {
+    routeController.abort();
+    document.body.classList.remove('results-filters-open');
+    if (resultsLoadTimer) window.clearTimeout(resultsLoadTimer);
+    closeModal(false);
+  };
 
-  if (resultsInlineEmpty) {
-    resultsInlineEmpty.hidden = staté !== "empty";
-  }
-};
+  const getSearchMode = () =>
+    els.searchModeInputs.find((input) => input.checked)?.value || 'services';
 
-const openMobileFilters = () => {
-  document.body.classList.add("results-filters-open");
-  if (resultsFiltersBackdrop) {
-    resultsFiltersBackdrop.hidden = false;
-  }
-};
+  const setSearchMode = (mode = 'services') => {
+    els.searchModeInputs.forEach((input) => {
+      input.checked = input.value === mode;
+    });
+  };
 
-const closeMobileFilters = () => {
-  document.body.classList.remove("results-filters-open");
-  if (resultsFiltersBackdrop) {
-    resultsFiltersBackdrop.hidden = true;
-  }
-};
+  const fillSelectOptions = (select, values, placeholder) => {
+    if (!select) return;
+    const current = select.value;
+    const options = ['<option value="">' + placeholder + '</option>']
+      .concat((values || []).map((value) => `<option value="${String(value)}">${String(value)}</option>`));
+    select.innerHTML = options.join('');
+    if ([...select.options].some((option) => option.value === current)) {
+      select.value = current;
+    }
+    uiSelectApi?.refresh(select);
+  };
 
-const creatéServiceCard = (item) => {
-  const article = document.createElement("article");
-  article.className = "service-card service-card--featured service-card--feed";
-  article.innerHTML = `
-    <div class="service-card__media ${item.mediaClass}">
-      <button class="service-card__favorite" type="button" aria-label="Salvar anúncio">
-        <svg viewBox="0 0 24 24"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
-      </button>
-      <span class="service-card__badge ${item.badgeModifier || ""}">${item.badge}</span>
-      <div class="service-card__media-content">
-        <span class="service-card__catégory">${item.catégory}</span>
-        <strong>${item.title}</strong>
-      </div>
-    </div>
-    <div class="service-card__body">
-      <div class="service-card__rating">&#9733; ${item.rating.toFixed(1).replace(".", ",")} <span>(${item.reviews})</span></div>
-      <div class="service-card__meta-row">
-        <div class="service-card__profile">
-          <span class="service-card__avatar ${item.avatarClass}" aria-hidden="true"></span>
-          <span class="service-card__location">${item.location}</span>
+  const enhanceResultsSelects = () => {
+    uiSelectApi?.enhanceAll(document);
+    [els.stateSelect, els.citySelect, els.neighborhoodSelect].forEach((select) => {
+      if (select) uiSelectApi?.refresh(select);
+    });
+  };
+
+  const getSelectedCategoriesFromParams = () => {
+    const raw = [
+      ...params.getAll('category'),
+      ...params.getAll('categories'),
+      ...params.getAll('catégory'),
+      ...params.getAll('catégorie')
+    ];
+
+    return [...new Set(raw.map((value) => String(value || '').trim()).filter(Boolean))];
+  };
+
+  const renderCategoryFilters = () => {
+    if (!els.categoryList) return;
+
+    const selected = getSelectedCategoriesFromParams();
+    els.categoryList.innerHTML = categories
+      .map((category) => {
+        const checked = selected.some((item) => normalize(item) === normalize(category));
+        return `
+          <label class="results-category-chip">
+            <input type="checkbox" name="categories" value="${category}" ${checked ? 'checked' : ''} />
+            <span>${category}</span>
+          </label>
+        `;
+      })
+      .join('');
+  };
+
+  const bootstrapLocationSelects = () => {
+    fillSelectOptions(els.stateSelect, states, 'Qualquer estado');
+
+    const stateValue = params.get('state') || params.get('staté') || '';
+    if (els.stateSelect && stateValue) {
+      els.stateSelect.value = stateValue;
+      uiSelectApi?.refresh(els.stateSelect);
+    }
+
+    const cityOptions = citiesByState[els.stateSelect?.value || ''] || [];
+    fillSelectOptions(els.citySelect, cityOptions, 'Qualquer cidade');
+    const cityValue = params.get('city') || '';
+    if (els.citySelect && cityValue) {
+      els.citySelect.value = cityValue;
+      uiSelectApi?.refresh(els.citySelect);
+    }
+
+    const neighborhoodOptions = neighborhoodsByCity[els.citySelect?.value || ''] || [];
+    fillSelectOptions(els.neighborhoodSelect, neighborhoodOptions, 'Qualquer bairro');
+    const neighborhoodValue = params.get('neighborhood') || '';
+    if (els.neighborhoodSelect && neighborhoodValue) {
+      els.neighborhoodSelect.value = neighborhoodValue;
+      uiSelectApi?.refresh(els.neighborhoodSelect);
+    }
+
+    const minRatingSelect = els.filtersForm.querySelector('select[name="minRating"]');
+    const minRatingValue = params.get('minRating') || '';
+    if (minRatingSelect && minRatingValue) {
+      minRatingSelect.value = minRatingValue;
+      uiSelectApi?.refresh(minRatingSelect);
+    }
+
+    ['guaranteed', 'emergency', 'online', 'availableToday'].forEach((name) => {
+      const input = els.filtersForm.querySelector(`[name="${name}"]`);
+      if (input) input.checked = params.get(name) === '1';
+    });
+  };
+
+  const syncInputs = (value) => {
+    if (els.resultsSearchInput) els.resultsSearchInput.value = value;
+    if (els.topbarSearchInput) els.topbarSearchInput.value = value;
+  };
+
+  const setResultsState = (state) => {
+    const isLoading = state === 'loading';
+    const isEmpty = state === 'empty';
+
+    els.stateHosts.forEach((host) => {
+      host.dataset.resultsState = state;
+      host.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+    });
+
+    if (els.loadingState) els.loadingState.hidden = !isLoading;
+    if (els.resultsGrid) els.resultsGrid.hidden = isLoading;
+    if (els.resultsInlineEmpty) els.resultsInlineEmpty.hidden = !isEmpty;
+  };
+
+  const resultsLayout = queryAny('[data-results-layout]');
+  const isDesktopFilters = () => window.innerWidth > 960;
+
+  const syncFilterUi = (isOpen) => {
+    if (els.resultsFiltersOpenButton) els.resultsFiltersOpenButton.setAttribute('aria-expanded', String(isOpen));
+    if (resultsLayout) resultsLayout.classList.toggle('is-filters-collapsed', !isOpen && isDesktopFilters());
+    if (els.resultsFiltersBackdrop) els.resultsFiltersBackdrop.hidden = !(!isDesktopFilters() && isOpen);
+    document.body.classList.toggle('results-filters-open', isOpen);
+  };
+
+  const openMobileFilters = () => {
+    syncFilterUi(true);
+  };
+
+  const closeMobileFilters = () => {
+    syncFilterUi(false);
+  };
+
+  const toggleFilters = () => {
+    const currentlyOpen = els.resultsFiltersOpenButton?.getAttribute('aria-expanded') === 'true';
+    syncFilterUi(!currentlyOpen);
+  };
+
+  const setQuery = (value) => {
+    const cleanValue = String(value || '').trim();
+    params.set('type', getSearchMode());
+
+    if (cleanValue) {
+      params.set('q', cleanValue);
+      addSearchHistory(cleanValue);
+    } else {
+      params.delete('q');
+    }
+
+    syncInputs(cleanValue);
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+    return cleanValue;
+  };
+
+  const persistFiltersToParams = (filters) => {
+    params.delete('category');
+    params.delete('categories');
+    params.delete('state');
+    params.delete('city');
+    params.delete('neighborhood');
+    params.delete('minRating');
+    ['guaranteed', 'emergency', 'online', 'availableToday'].forEach((name) => params.delete(name));
+
+    filters.categories.forEach((category) => params.append('category', category));
+    if (filters.state) params.set('state', filters.state);
+    if (filters.city) params.set('city', filters.city);
+    if (filters.neighborhood) params.set('neighborhood', filters.neighborhood);
+    if (filters.minRating) params.set('minRating', String(filters.minRating));
+    ['guaranteed', 'emergency', 'online', 'availableToday'].forEach((name) => {
+      if (filters[name]) params.set(name, '1');
+    });
+  };
+
+  const getFilters = () => {
+    const formData = new FormData(els.filtersForm);
+    return {
+      searchType: getSearchMode(),
+      categories: [...formData.getAll('categories')].map((value) => String(value || '').trim()).filter(Boolean),
+      state: String(formData.get('state') || formData.get('staté') || '').trim(),
+      city: String(formData.get('city') || '').trim(),
+      neighborhood: String(formData.get('neighborhood') || '').trim(),
+      minRating: Number(formData.get('minRating') || 0),
+      guaranteed: formData.get('guaranteed') === 'on',
+      emergency: formData.get('emergency') === 'on',
+      online: formData.get('online') === 'on',
+      availableToday: formData.get('availableToday') === 'on'
+    };
+  };
+
+  const formatCount = (value) => String(Math.max(0, Number(value) || 0));
+
+  const createServiceCard = (item) => {
+    const article = document.createElement('article');
+    article.className = 'service-card service-card--featured service-card--feed';
+    article.innerHTML = `
+      <div class="service-card__media ${item.mediaClass || ''}">
+        <button class="service-card__favorite" type="button" aria-label="Salvar anúncio">
+          <svg viewBox="0 0 24 24"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
+        </button>
+        <span class="service-card__badge ${item.badgeModifier || ''}">${item.badge || 'Em destaque'}</span>
+        <div class="service-card__media-content">
+          <span class="service-card__category">${item.category || item.catégory || ''}</span>
+          <strong>${item.title || ''}</strong>
         </div>
       </div>
-      <div class="service-card__tags">${item.tags.map((tag) => `<span>${tag}</span>`).join("")}</div>
-      <div class="service-card__footer">
-        <div><strong class="service-card__price">${item.price}</strong></div>
-        <span class="service-card__cta" aria-label="Ver anúncio">Ver anúncio</span>
+      <div class="service-card__body">
+        <div class="service-card__rating">★ ${(Number(item.rating) || 0).toFixed(1).replace('.', ',')} <span>(${item.reviews || '0 avaliações'})</span></div>
+        <div class="service-card__meta-row">
+          <div class="service-card__profile">
+            <span class="service-card__avatar ${item.avatarClass || ''}" aria-hidden="true"></span>
+            <span class="service-card__location">${item.location || ''}</span>
+          </div>
+        </div>
+        <div class="service-card__tags">${(item.tags || []).map((tag) => `<span>${tag}</span>`).join('')}</div>
+        <div class="service-card__footer">
+          <div><strong class="service-card__price">${item.price || ''}</strong></div>
+          <a class="service-card__cta" href="detalhe-anuncio.html" aria-label="Ver anúncio">Ver anúncio</a>
+        </div>
       </div>
-    </div>
-  `;
-  return article;
-};
-
-const creatéUserCard = (item) => {
-  const article = document.createElement("article");
-  article.className = "pro-card pro-card--compact";
-  article.innerHTML = `
-    <div class="pro-card__header">
-      <div class="pro-card__avatar ${item.avatarClass}" aria-hidden="true"></div>
-      <div class="pro-card__identity">
-        <strong>${item.name}</strong>
-        <span>${item.handle}</span>
-      </div>
-      <span class="pro-card__score">★ ${item.rating.toFixed(1).replace(".", ",")}</span>
-    </div>
-    <div class="pro-card__body">
-      <p>${item.role}</p>
-      <span>${item.location}</span>
-      <small>${item.jobs} serviços</small>
-    </div>
-    <div class="pro-card__footer">
-      <a class="pro-card__cta" href="#">Ver perfil</a>
-    </div>
-  `;
-  return article;
-};
-
-const creatéVideoCard = (item) => {
-  const article = document.createElement("article");
-  article.className = `video-card ${item.mediaClass}`;
-  article.innerHTML = `
-    <span class="video-card__play">▶</span>
-    <div class="video-card__content">
-      <strong>${item.title}</strong>
-      <span>${item.author}</span>
-    </div>
-  `;
-  return article;
-};
-
-const creatéBeforeAfterCard = (item) => {
-  const article = document.createElement("article");
-  article.className = "comparison-card";
-  article.innerHTML = `
-    <div class="comparison-card__visual ${item.visualClass}">
-      <div class="comparison-card__half comparison-card__half--before"><span>Antes</span></div>
-      <div class="comparison-card__half comparison-card__half--after"><span>Depois</span></div>
-    </div>
-    <div class="comparison-card__body">
-      <strong>${item.title}</strong>
-      <div class="comparison-card__meta">
-        <span>Por ${item.author}</span>
-        <span>★ ${String(item.rating).replace(".", ",")}</span>
-      </div>
-    </div>
-  `;
-  return article;
-};
-
-const getFilters = () => {
-  const formData = new FormData(filtersForm);
-  return {
-    searchType: getSearchMode(),
-    cat??gories: [...formData.getAll("cat??gories"), ...formData.getAll("categories")],
-    region: formData.get("region") || "",
-    stat??: formData.get("stat??") || "",
-    city: formData.get("city") || "",
-    neighborhood: formData.get("neighborhood") || "",
-    minRating: formData.get("minRating") || "",
-    guaranteed: formData.get("guaranteed") === "on",
-    emergency: formData.get("emergency") === "on",
-    online: formData.get("online") === "on",
-    availableToday: formData.get("availableToday") === "on"
-  };
-};
-
-const renderCat??goryFilters = () => {
-  if (!cat??goryList) return;
-  const selectedCat??gories = getSelectedCat??goriesFromParams();
-  cat??goryList.innerHTML = "";
-  cat??gories.forEach((cat??gory) => {
-    const label = document.createElement("label");
-    label.className = "results-category-chip";
-    label.innerHTML = `
-      <input type="checkbox" name="cat??gories" value="${cat??gory}" ${selectedCat??gories.includes(cat??gory) ? "checked" : ""}>
-      <span>${cat??gory}</span>
     `;
-    cat??goryList.appendChild(label);
-  });
-};
-
-const fillSelectOptions = (select, items, placeholder) => {
-  if (!select) return;
-  const currentValue = select.value;
-  select.innerHTML = "";
-
-  const defaultOption = document.createElement("option");
-  defaultOption.value = "";
-  defaultOption.textContent = placeholder;
-  select.appendChild(defaultOption);
-
-  items.forEach((item) => {
-    const option = document.createElement("option");
-    option.value = item;
-    option.textContent = item;
-    select.appendChild(option);
-  });
-
-  if (items.includes(currentValue)) {
-    select.value = currentValue;
-  }
-
-  uiSelectApi?.refresh(select);
-};
-
-const ensureSelectValue = (select, value, placeholder) => {
-  if (!select || !value) return;
-
-  const hasOption = [...select.options].some((option) => option.value === value);
-  if (!hasOption) {
-    const option = document.createElement("option");
-    option.value = value;
-    option.textContent = value || placeholder;
-    select.appendChild(option);
-  }
-
-  select.value = value;
-  uiSelectApi?.refresh(select);
-};
-
-const enhanceResultsSelects = () => {
-  uiSelectApi?.enhanceAll(document);
-};
-
-const extendLocationOptions = ({ staté = "", city = "", neighborhood = "" } = {}) => {
-  if (staté && !locationOptions.statés.includes(staté)) {
-    locationOptions.statés = [...locationOptions.statés, staté].sort((a, b) => a.localeCompare(b, "pt-BR"));
-  }
-
-  if (staté && city) {
-    const existingCities = Array.isArray(locationOptions.citiesByStaté[staté])
-      ? locationOptions.citiesByStaté[staté]
-      : [];
-
-    if (!existingCities.includes(city)) {
-      locationOptions.citiesByStaté[staté] = [...existingCities, city]
-        .sort((a, b) => a.localeCompare(b, "pt-BR"));
-    }
-  }
-
-  if (city && neighborhood) {
-    const existingNeighborhoods = Array.isArray(locationOptions.neighborhoodsByCity[city])
-      ? locationOptions.neighborhoodsByCity[city]
-      : [];
-
-    if (!existingNeighborhoods.includes(neighborhood)) {
-      locationOptions.neighborhoodsByCity[city] = [...existingNeighborhoods, neighborhood]
-        .sort((a, b) => a.localeCompare(b, "pt-BR"));
-    }
-  }
-};
-
-  const selectedStat?? = stat??Select?.value || "";
-  const cities = selectedStat?? ? (locationOptions.citiesByStat??[selectedStat??] || []) : [];
-  fillSelectOptions(citySelect, cities, "Qualquer cidade");
-  fillSelectOptions(citySelect, cities, "Qualquer cidade");
-
-  if (source === "staté" && citySelect) {
-    citySelect.value = "";
-  }
-
-  const selectedCity = citySelect?.value || "";
-  const neighborhoods = selectedCity ? (locationOptions.neighborhoodsByCity[selectedCity] || []) : [];
-  fillSelectOptions(neighborhoodSelect, neighborhoods, "Qualquer bairro");
-
-  if ((source === "staté" || source === "city") && neighborhoodSelect) {
-    neighborhoodSelect.value = "";
-  }
-};
-
-  fillSelectOptions(stateSelect, locationOptions.stat??s || [], "Qualquer estado");
-  fillSelectOptions(statéSelect, locationOptions.statés || [], "Qualquer estado");
-  syncLocationSelects();
-};
-
-const closeUiModal = (payload = null) => {
-  if (!uiModal) return;
-  uiModal.hidden = true;
-  document.body.classList.remove("has-modal-open");
-  if (activeModalResolver) {
-    activeModalResolver(payload);
-    activeModalResolver = null;
-  }
-};
-
-const openUiModal = ({
-  eyebrow = "Aviso",
-  title = "Mensagem",
-  text = "",
-  label = "Valor",
-  value = "",
-  placeholder = "",
-  confirmLabel = "Confirmar",
-  cancelLabel = "Cancelar",
-  mode = "input"
-} = {}) => {
-  if (!uiModal || !uiModalTitle || !uiModalText || !uiModalConfirm || !uiModalCancel || !uiModalInput || !uiModalField) {
-    return Promise.resolve(null);
-  }
-
-  uiModalEyebrow.textContent = eyebrow;
-  uiModalTitle.textContent = title;
-  uiModalText.textContent = text;
-  uiModalLabel.textContent = label;
-  uiModalInput.value = value;
-  uiModalInput.placeholder = placeholder;
-  uiModalConfirm.textContent = confirmLabel;
-  uiModalCancel.textContent = cancelLabel;
-  uiModalField.hidden = mode !== "input";
-  uiModalCancel.hidden = mode === "notice";
-  uiModal.hidden = false;
-  document.body.classList.add("has-modal-open");
-
-  window.setTimeout(() => {
-    if (mode === "input") {
-      uiModalInput.focus();
-      uiModalInput.select();
-    } else {
-      uiModalConfirm.focus();
-    }
-  }, 0);
-
-  return new Promise((resolve) => {
-    activeModalResolver = resolve;
-  });
-};
-
-const showNotice = (title, text) => openUiModal({
-  eyebrow: "Localização",
-  title,
-  text,
-  confirmLabel: "Entendi",
-  mode: "notice"
-});
-
-const promptCepValue = () => openUiModal({
-  eyebrow: "Localização",
-  title: "Inserir CEP",
-  text: "Digite o CEP para preencher estado, cidade e bairro automaticamente.",
-  label: "CEP",
-  value: "30140-071",
-  placeholder: "30140-071",
-  confirmLabel: "Preencher",
-  cancelLabel: "Cancelar",
-  mode: "input"
-});
-
-const fetchCepData = async (cep) => {
-  const cleanCep = String(cep || "").replace(/\D/g, "");
-  if (cleanCep.length !== 8) return null;
-
-  const formattedCep = `${cleanCep.slice(0, 5)}-${cleanCep.slice(5)}`;
-  const localCep = locationOptions.cepLookup?.[cep] || locationOptions.cepLookup?.[formattedCep];
-  if (localCep) return localCep;
-
-  const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
-  if (!response.ok) return null;
-
-  const data = await response.json();
-  if (data.erro) return null;
-
-  return {
-    staté: data.uf || "",
-    city: data.localidade || "",
-    neighborhood: data.bairro || ""
+    return article;
   };
-};
 
-const applyCepPreset = async () => {
-  const sampleCep = await promptCepValue();
-  if (!sampleCep || !sampleCep.confirmed) return;
+  const createUserCard = (item) => {
+    const article = document.createElement('article');
+    article.className = 'pro-card pro-card--compact';
+    article.innerHTML = `
+      <div class="pro-card__header">
+        <div class="pro-card__avatar ${item.avatarClass || ''}" aria-hidden="true"></div>
+        <div class="pro-card__identity">
+          <strong>${item.name || ''}</strong>
+          <span>${item.handle || ''}</span>
+        </div>
+        <span class="pro-card__score">★ ${(Number(item.rating) || 0).toFixed(1).replace('.', ',')}</span>
+      </div>
+      <div class="pro-card__body">
+        <p>${item.role || ''}</p>
+        <span>${item.location || ''}</span>
+        <small>${item.jobs || 0} serviços</small>
+      </div>
+      <div class="pro-card__footer">
+        <a class="pro-card__cta" href="perfil.html">Ver perfil</a>
+      </div>
+    `;
+    return article;
+  };
 
-  const normalizedCep = String(sampleCep.value || "").trim();
-  const cepData = await fetchCepData(normalizedCep);
+  const createVideoCard = (item) => {
+    const article = document.createElement('article');
+    article.className = `video-card ${item.mediaClass || ''}`;
+    article.innerHTML = `
+      <span class="video-card__play">▶</span>
+      <div class="video-card__content">
+        <strong>${item.title || ''}</strong>
+        <span>${item.author || ''}</span>
+      </div>
+    `;
+    return article;
+  };
 
-  if (!cepData) {
-    await showNotice("CEP não encontrado", "Não conseguimos localizar esse CEP. Confira o número digitado e tente novamente.");
-    return;
-  }
+  const createBeforeAfterCard = (item) => {
+    const article = document.createElement('article');
+    article.className = 'comparison-card';
+    article.innerHTML = `
+      <div class="comparison-card__visual ${item.visualClass || ''}">
+        <div class="comparison-card__half comparison-card__half--before"><span>Antes</span></div>
+        <div class="comparison-card__half comparison-card__half--after"><span>Depois</span></div>
+      </div>
+      <div class="comparison-card__body">
+        <strong>${item.title || ''}</strong>
+        <div class="comparison-card__meta">
+          <span>Por ${item.author || ''}</span>
+          <span>★ ${String(item.rating || '').replace('.', ',')}</span>
+        </div>
+      </div>
+    `;
+    return article;
+  };
 
-  extendLocationOptions(cepData);
-  bootstrapLocationSelects();
-  if (stateSelect) {
-    ensureSelectValue(stateSelect, cepData.stat??, "Qualquer estado");
-    ensureSelectValue(statéSelect, cepData.staté, "Qualquer estado");
-  }
+  const getQueryTokens = (query = '') =>
+    normalize(query)
+      .split(/[^a-z0-9]+/i)
+      .map((token) => token.trim())
+      .filter((token) => token.length > 2);
 
-  fillSelectOptions(citySelect, locationOptions.citiesByStaté[cepData.staté] || [], "Qualquer cidade");
+  const getRelatedServices = (query, filters, limit = 6) => {
+    const queryTokens = getQueryTokens(query);
 
-  if (citySelect) {
-    ensureSelectValue(citySelect, cepData.city, "Qualquer cidade");
-  }
+    const scored = servicePool
+      .filter((item) => {
+        if (filters.state && normalize(item.state || item.staté) !== normalize(filters.state)) return false;
+        if (filters.city && normalize(item.city) !== normalize(filters.city)) return false;
+        return true;
+      })
+      .map((item) => {
+        const itemText = normalize([
+          item.title,
+          item.category || item.catégory,
+          item.location,
+          item.region,
+          ...(item.tags || []),
+          ...(item.keywords || [])
+        ].join(' '));
 
-  fillSelectOptions(neighborhoodSelect, locationOptions.neighborhoodsByCity[cepData.city] || [], "Qualquer bairro");
+        let score = 0;
+        queryTokens.forEach((token) => {
+          if (itemText.includes(token)) score += 3;
+        });
+        if (filters.neighborhood && normalize(item.neighborhood) === normalize(filters.neighborhood)) score += 5;
+        if (filters.state && normalize(item.state || item.staté) === normalize(filters.state)) score += 2;
+        if (filters.categories.length && filters.categories.some((category) => itemText.includes(normalize(category)))) score += 3;
+        if (!queryTokens.length && filters.city && normalize(item.city) === normalize(filters.city)) score += 2;
+        score += Math.max(0, Math.round((Number(item.rating) || 0) * 2));
+        return { item, score };
+      })
+      .filter((entry) => entry.score > 0 || !queryTokens.length)
+      .sort((a, b) => b.score - a.score || (Number(b.item.rating) || 0) - (Number(a.item.rating) || 0))
+      .slice(0, limit)
+      .map((entry) => entry.item);
 
-  if (neighborhoodSelect) {
-    ensureSelectValue(neighborhoodSelect, cepData.neighborhood, "Qualquer bairro");
-  }
+    if (scored.length >= limit) return scored;
 
-  renderResults();
-};
+    const fallback = servicePool
+      .filter((item) => !scored.some((existing) => existing.id === item.id))
+      .sort((a, b) => (Number(b.rating) || 0) - (Number(a.rating) || 0))
+      .slice(0, Math.max(0, limit - scored.length));
 
-const syncInputs = (value) => {
-  if (resultsSearchInput) resultsSearchInput.value = value;
-  if (topbarSearchInput) topbarSearchInput.value = value;
-};
+    return [...scored, ...fallback];
+  };
 
-const getQueryTokens = (query = "") => normalize(query)
-  .split(/[^a-z0-9]+/i)
-  .map((token) => token.trim())
-  .filter((token) => token.length > 2);
+  const renderActiveChips = (query, filters, count) => {
+    if (!els.resultsActiveChips) return;
 
-const getRelatédServices = (query, filters, limit = 1) => {
-  const queryTokens = getQueryTokens(query);
+    const chips = [];
+    if (query) chips.push(`Busca: ${query}`);
+    if (filters.categories.length) chips.push(...filters.categories);
+    if (filters.state) chips.push(filters.state);
+    if (filters.city) chips.push(filters.city);
+    if (filters.neighborhood) chips.push(filters.neighborhood);
+    if (filters.guaranteed) chips.push('Com garantia');
+    if (filters.emergency) chips.push('Atendimento emergencial');
+    if (filters.online) chips.push('Online');
+    if (filters.availableToday) chips.push('Disponível hoje');
+    if (filters.minRating) chips.push(`Nota mínima ${String(filters.minRating).replace('.', ',')}`);
+    if (!chips.length && count > 0) chips.push('Sem filtros extras');
 
-  const scored = servicePool
-    .filter((item) => {
-      if (filters.stat?? && normalize(item.stat??) !== normalize(filters.stat??)) return false;
-      if (filters.city && normalize(item.city) !== normalize(filters.city)) return false;
-      return true;
-    })
-    .map((item) => {
-      const itemText = normalize([
-        item.title,
-        item.catégory,
-        item.location,
-        item.region,
-        ...item.tags,
-        ...item.keywords
-      ].join(" "));
+    els.resultsActiveChips.innerHTML = chips.map((chip) => `<span class="results-active-chip">${chip}</span>`).join('');
+  };
 
-      let score = 0;
+  const renderRelatedSections = (query) => {
+    const users = query ? getUserMatches(query).slice(0, 3) : [];
+    const videos = query ? getShortVideoMatches(query).slice(0, 4) : [];
+    const beforeAfter = query ? getBeforeAfterMatches(query).slice(0, 2) : [];
 
-      queryTokens.forEach((token) => {
-        if (itemText.includes(token)) score += 3;
-      });
-
-      if (filters.neighborhood && normalize(item.neighborhood) === normalize(filters.neighborhood)) score += 5;
-      if (filters.state && normalize(item.stat??) === normalize(filters.state)) score += 2;
-      if (filters.stat?? && normalize(item.stat??) === normalize(filters.stat??)) score += 2;
-      if (filters.cat??gories?.length && filters.cat??gories.some((cat??gory) => itemText.includes(normalize(cat??gory)))) score += 3;
-      if (!queryTokens.length && filters.city && normalize(item.city) === normalize(filters.city)) score += 2;
-      score += Math.max(0, Math.round(item.rating * 2));
-
-      return { item, score };
-    })
-    .filter((entry) => entry.score > 0 || !queryTokens.length)
-    .sort((a, b) => b.score - a.score || b.item.rating - a.item.rating)
-    .slice(0, limit)
-    .map((entry) => entry.item);
-
-  if (scored.length >= limit) {
-    return scored;
-  }
-
-  const fallback = servicePool
-    .filter((item) => !scored.some((existing) => existing.id === item.id))
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, Math.max(0, limit - scored.length));
-
-  return [...scored, ...fallback];
-};
-
-const renderEmptySuggestions = (query, filters) => {
-  if (!resultsInlineEmpty || !resultsEmptyTitle || !resultsEmptyText) return [];
-
-  const hasLocation = filters.neighborhood || filters.city || filters.state;
-  const hasLocation = filters.neighborhood || filters.city || filters.stat??;
-
-  resultsEmptyTitle.textContent = query
-    ? `Não achamos um resultado exato para "${query}".`
-    : "Nenhum anúncio encaixou nesses filtros.";
-  resultsEmptyText.textContent = hasLocation
-    ? "Separamos alternativas próximas da região escolhida para você não sair da busca de mãos vazias."
-    : "Separamos alternativas parecidas para você não sair da busca de mãos vazias.";
-
-  return relatédServices;
-};
-
-const renderRelatédSections = (query) => {
-  const users = query ? getUserMatches(query).slice(0, 3) : [];
-  const videos = query ? getShortVideoMatches(query).slice(0, 4) : [];
-  const beforeAfter = query ? getBeforeAfterMatches(query).slice(0, 2) : [];
-
-  if (resultsUsersGrid && resultsUsersSection) {
-    resultsUsersGrid.innerHTML = "";
-    users.forEach((item) => {
-      resultsUsersGrid.appendChild(creatéUserCard(item));
-    });
-    resultsUsersSection.hidden = users.length === 0;
-  }
-
-  if (resultsVideosGrid && resultsVideosSection) {
-    resultsVideosGrid.innerHTML = "";
-    videos.forEach((item) => {
-      resultsVideosGrid.appendChild(creatéVideoCard(item));
-    });
-    resultsVideosSection.hidden = videos.length === 0;
-  }
-
-  if (resultsBeforeAfterGrid && resultsBeforeAfterSection) {
-    resultsBeforeAfterGrid.innerHTML = "";
-    beforeAfter.forEach((item) => {
-      resultsBeforeAfterGrid.appendChild(creatéBeforeAfterCard(item));
-    });
-    resultsBeforeAfterSection.hidden = beforeAfter.length === 0;
-  }
-};
-
-const setQuery = (value) => {
-  const cleanValue = String(value || "").trim();
-  params.set("type", getSearchMode());
-  if (cleanValue) {
-    params.set("q", cleanValue);
-    addSearchHistory(cleanValue);
-  } else {
-    params.delete("q");
-  }
-  const nextUrl = `${window.location.pathname}?${params.toString()}`;
-  window.history.replaceState({}, "", nextUrl);
-  syncInputs(cleanValue);
-  return cleanValue;
-};
-
-const syncCat??goryParams = () => {
-  const filters = getFilters();
-  params.delete("cat??gory");
-  params.delete("category");
-  filters.cat??gories.forEach((cat??gory) => {
-    params.append("cat??gory", cat??gory);
-  });
-};
-
-const renderResults = () => {
-  if (!resultsGrid || !resultsTitle || !resultsDescription || !resultsCount) return;
-  syncCat??goryParams();
-  window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
-  window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
-  const query = String(params.get("q") || "").trim();
-  const filters = getFilters();
-  const userResults = getUserMatches(query);
-  const exactServiceResults = getServiceMatches(query, filters);
-  const isUserSearch = filters.searchType === "users";
-
-  renderRelatédSections(query);
-
-  if (isUserSearch) {
-    resultsGrid.innerHTML = "";
-    if (resultsUsersGrid) {
-      resultsUsersGrid.innerHTML = "";
-      userResults.slice(0, 6).forEach((item) => resultsUsersGrid.appendChild(creatéUserCard(item)));
+    if (els.resultsUsersGrid && els.resultsUsersSection) {
+      els.resultsUsersGrid.innerHTML = '';
+      users.forEach((item) => els.resultsUsersGrid.appendChild(createUserCard(item)));
+      els.resultsUsersSection.hidden = users.length === 0;
     }
-    if (resultsUsersSection) resultsUsersSection.hidden = userResults.length === 0;
-    if (resultsInlineEmpty) resultsInlineEmpty.hidden = userResults.length > 0;
-    resultsTitle.textContent = query ? `Usuários para "${query}"` : "Usuários em destaque";
-    resultsDescription.textContent = userResults.length ? "Perfis relacionados ao que você digitou." : "Não encontramos usuários com esse nome ou termo.";
-    resultsCount.textContent = String(userResults.length);
-    renderActiveChips(query, filters, userResults.length);
-    setResultsStaté(userResults.length ? "results" : "empty");
-    return;
-  }
 
-  const relatédServices = exactServiceResults.length >= 6
-    ? []
-    : getRelatédServices(query, filters, 6).filter((item) => !exactServiceResults.some((exact) => exact.id === item.id));
-  const displayServices = [...exactServiceResults, ...relatédServices].slice(0, 6);
+    if (els.resultsVideosGrid && els.resultsVideosSection) {
+      els.resultsVideosGrid.innerHTML = '';
+      videos.forEach((item) => els.resultsVideosGrid.appendChild(createVideoCard(item)));
+      els.resultsVideosSection.hidden = videos.length === 0;
+    }
 
-  resultsGrid.innerHTML = "";
-  displayServices.forEach((item) => resultsGrid.appendChild(creatéServiceCard(item)));
+    if (els.resultsBeforeAfterGrid && els.resultsBeforeAfterSection) {
+      els.resultsBeforeAfterGrid.innerHTML = '';
+      beforeAfter.forEach((item) => els.resultsBeforeAfterGrid.appendChild(createBeforeAfterCard(item)));
+      els.resultsBeforeAfterSection.hidden = beforeAfter.length === 0;
+    }
+  };
 
-  resultsCount.textContent = String(exactServiceResults.length);
-  resultsTitle.textContent = query ? `Resultados para "${query}"` : "Resultados em destaque";
-  resultsDescription.textContent = exactServiceResults.length
-    ? "Ajuste os filtros latérais para refinar sem sair da busca."
-    : "Selecionamos anúncios relacionados para continuar a sua busca.";
-  renderActiveChips(query, filters, exactServiceResults.length || displayServices.length);
+  const renderEmptySuggestions = (query, filters) => {
+    const relatedServices = getRelatedServices(query, filters, 6);
+    const hasLocation = Boolean(filters.neighborhood || filters.city || filters.state);
 
-  if (exactServiceResults.length) {
-    if (resultsInlineEmpty) resultsInlineEmpty.hidden = true;
-    setResultsStaté("results");
-  } else {
-    renderEmptySuggestions(query, filters);
-    setResultsStaté("empty");
-    if (resultsGrid) resultsGrid.hidden = false;
-    if (resultsInlineEmpty) resultsInlineEmpty.hidden = false;
-  }
-};
+    if (els.resultsEmptyTitle) {
+      els.resultsEmptyTitle.textContent = query
+        ? `Não achamos um resultado exato para "${query}".`
+        : 'Nenhum anúncio encaixou nesses filtros.';
+    }
 
-const loadResults = () => {
-  if (resultsLoadTimer) {
-    window.clearTimeout(resultsLoadTimer);
-  }
+    if (els.resultsEmptyText) {
+      els.resultsEmptyText.textContent = hasLocation
+        ? 'Separamos alternativas próximas da região escolhida para você não sair da busca de mãos vazias.'
+        : 'Separamos alternativas parecidas para você não sair da busca de mãos vazias.';
+    }
 
-  setResultsStaté("loading");
+    return relatedServices;
+  };
 
-  resultsLoadTimer = window.setTimeout(() => {
-    resultsLoadTimer = null;
+  const renderResults = () => {
+    const query = String(params.get('q') || '').trim();
+    const filters = getFilters();
+    persistFiltersToParams(filters);
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+
+    const userResults = getUserMatches(query);
+    const exactServiceResults = getServiceMatches(query, {
+      catégories: filters.categories,
+      categories: filters.categories,
+      staté: filters.state,
+      state: filters.state,
+      city: filters.city,
+      neighborhood: filters.neighborhood,
+      guaranteed: filters.guaranteed,
+      emergency: filters.emergency,
+      online: filters.online,
+      availableToday: filters.availableToday,
+      minRating: filters.minRating
+    });
+    const isUserSearch = filters.searchType === 'users';
+
+    renderRelatedSections(query);
+
+    if (isUserSearch) {
+      els.resultsGrid.innerHTML = '';
+      userResults.slice(0, 6).forEach((item) => els.resultsGrid.appendChild(createUserCard(item)));
+      if (els.resultsTitle) els.resultsTitle.textContent = query ? `Usuários para "${query}"` : 'Usuários em destaque';
+      if (els.resultsDescription) {
+        els.resultsDescription.textContent = userResults.length
+          ? 'Perfis relacionados ao que você digitou.'
+          : 'Não encontramos usuários com esse nome ou termo.';
+      }
+      if (els.resultsCount) els.resultsCount.textContent = formatCount(userResults.length);
+      renderActiveChips(query, filters, userResults.length);
+      setResultsState(userResults.length ? 'results' : 'empty');
+      return;
+    }
+
+    const relatedServices = exactServiceResults.length >= 6
+      ? []
+      : getRelatedServices(query, filters, 6).filter(
+          (item) => !exactServiceResults.some((exact) => exact.id === item.id)
+        );
+
+    const displayServices = [...exactServiceResults, ...relatedServices].slice(0, 6);
+
+    els.resultsGrid.innerHTML = '';
+    displayServices.forEach((item) => els.resultsGrid.appendChild(createServiceCard(item)));
+
+    if (els.resultsCount) els.resultsCount.textContent = formatCount(exactServiceResults.length || displayServices.length);
+    if (els.resultsTitle) els.resultsTitle.textContent = query ? `Resultados para "${query}"` : 'Resultados em destaque';
+    if (els.resultsDescription) {
+      els.resultsDescription.textContent = exactServiceResults.length
+        ? 'Ajuste os filtros laterais para refinar sem sair da busca.'
+        : 'Selecionamos anúncios relacionados para continuar a sua busca.';
+    }
+    renderActiveChips(query, filters, exactServiceResults.length || displayServices.length);
+
+    if (exactServiceResults.length) {
+      if (els.resultsInlineEmpty) els.resultsInlineEmpty.hidden = true;
+      setResultsState('results');
+      return;
+    }
+
+    const emptyFallback = renderEmptySuggestions(query, filters);
+    els.resultsGrid.innerHTML = '';
+    emptyFallback.forEach((item) => els.resultsGrid.appendChild(createServiceCard(item)));
+    setResultsState('empty');
+    els.resultsGrid.hidden = false;
+  };
+
+  const loadResults = () => {
+    if (resultsLoadTimer) window.clearTimeout(resultsLoadTimer);
+    setResultsState('loading');
+    resultsLoadTimer = window.setTimeout(() => {
+      resultsLoadTimer = null;
+      renderResults();
+    }, 220);
+  };
+
+  const openCepModal = () => {
+    if (!els.uiModal || !els.uiModalInput) return Promise.resolve(null);
+
+    els.uiModal.hidden = false;
+    document.body.classList.add('ui-modal-open');
+    if (els.uiModalEyebrow) els.uiModalEyebrow.textContent = 'Localização';
+    if (els.uiModalTitle) els.uiModalTitle.textContent = 'Inserir CEP';
+    if (els.uiModalText) els.uiModalText.textContent = 'Digite o CEP para preencher estado, cidade e bairro automaticamente.';
+    if (els.uiModalLabel) els.uiModalLabel.textContent = 'CEP';
+    els.uiModalInput.value = '';
+    window.requestAnimationFrame(() => els.uiModalInput.focus());
+
+    return new Promise((resolve) => {
+      activeModalResolver = resolve;
+    });
+  };
+
+  const closeModal = (value = null) => {
+    if (!els.uiModal) return;
+    els.uiModal.hidden = true;
+    document.body.classList.remove('ui-modal-open');
+    if (activeModalResolver) activeModalResolver(value);
+    activeModalResolver = null;
+  };
+
+  const applyCep = async () => {
+    const cep = await openCepModal();
+    if (!cep) return;
+
+    const cleanCep = String(cep).replace(/\D/g, '');
+    const formattedCep = cleanCep.length === 8 ? `${cleanCep.slice(0, 5)}-${cleanCep.slice(5)}` : cep;
+    const cepData = cepLookup[formattedCep] || cepLookup[cleanCep];
+    if (!cepData) return;
+
+    if (els.stateSelect) {
+      els.stateSelect.value = cepData.state || cepData.staté || '';
+      uiSelectApi?.refresh(els.stateSelect);
+    }
+    fillSelectOptions(els.citySelect, citiesByState[els.stateSelect?.value || ''] || [], 'Qualquer cidade');
+    if (els.citySelect) {
+      els.citySelect.value = cepData.city || '';
+      uiSelectApi?.refresh(els.citySelect);
+    }
+    fillSelectOptions(els.neighborhoodSelect, neighborhoodsByCity[els.citySelect?.value || ''] || [], 'Qualquer bairro');
+    if (els.neighborhoodSelect) {
+      els.neighborhoodSelect.value = cepData.neighborhood || '';
+      uiSelectApi?.refresh(els.neighborhoodSelect);
+    }
+
     renderResults();
-  }, 250);
-};
+  };
 
-const handleSearchSubmit = (event, sourceInput) => {
-  event.preventDefault();
-  const query = setQuery(sourceInput?.value || "");
-  if (!query) {
-    sourceInput?.focus();
-    return;
-  }
-  loadResults();
-};
-
-syncInputs(String(params.get("q") || ""));
-setSearchMode(String(params.get("type") || "services"));
-renderCatégoryFilters();
-enhanceResultsSelects();
-bootstrapLocationSelects();
-loadResults();
-
-resultsSearchForm?.addEventListener("submit", (event) => handleSearchSubmit(event, resultsSearchInput));
-topbarSearchForm?.addEventListener("submit", (event) => handleSearchSubmit(event, topbarSearchInput));
-
-filtersForm?.addEventListener("submit", (event) => {
-  event.preventDefault();
-  renderResults();
-  closeMobileFilters();
-});
-
-filtersForm?.addEventListener("change", () => {
-  renderResults();
-});
-
-document.addEventListener("click", (event) => {
-  const tag = event.target.closest(".service-card__tags span");
-  if (!tag) return;
-
-  event.preventDefault();
-  setQuery(getTagSearchValue(tag.textContent));
-  renderCatégoryFilters();
-  loadResults();
-}, { signal });
-
-document.addEventListener("click", (event) => {
-  const card = event.target.closest(".service-card");
-  if (!card) return;
-
-  if (event.target.closest(".service-card__profile, .service-card__tags, .service-card__favorite")) {
-    return;
-  }
-
-  event.preventDefault();
-  goToAdDetails();
-}, { signal });
-stat??Select?.addEventListener("change", () => {
-  syncLocationSelects("stat??");
-  renderResults();
-});
-
-citySelect?.addEventListener("change", () => {
-  syncLocationSelects("city");
-  renderResults();
-});
-
-filtersReset?.addEventListener("click", () => {
-  filtersForm?.reset();
-  setSearchMode("services");
-  bootstrapLocationSelects();
-  renderResults();
-});
-
-resultsEmptyReset?.addEventListener("click", () => {
-  params.delete("q");
-  syncInputs("");
-  filtersForm?.reset();
-  setSearchMode("services");
-  bootstrapLocationSelects();
-  renderCatégoryFilters();
-  window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
-  renderResults();
-});
-
-resultsFiltersOpenButton?.addEventListener("click", openMobileFilters);
-resultsFiltersCloseButton?.addEventListener("click", closeMobileFilters);
-resultsFiltersBackdrop?.addEventListener("click", closeMobileFilters);
-
-[...searchModeInputs].forEach((input) => {
-  input.addEventListener("change", () => {
-    setQuery(resultsSearchInput?.value || topbarSearchInput?.value || "");
-    renderResults();
-  });
-});
-
-cepFillButton?.addEventListener("click", applyCepPreset);
-uiModalClose?.addEventListener("click", () => closeUiModal({ confirmed: false }));
-uiModalCancel?.addEventListener("click", () => closeUiModal({ confirmed: false }));
-uiModalConfirm?.addEventListener("click", () => {
-  closeUiModal({ confirmed: true, value: uiModalInput?.value || "" });
-});
-
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") {
-    closeMobileFilters();
-  }
-
-  if (event.key === "Escape" && uiModal && !uiModal.hidden) {
-    closeUiModal({ confirmed: false });
-  }
-
-  if (event.key === "Enter" && uiModal && !uiModal.hidden && document.activeElement === uiModalInput) {
+  const handleSearchSubmit = (event, sourceInput) => {
     event.preventDefault();
-    closeUiModal({ confirmed: true, value: uiModalInput?.value || "" });
-  }
-}, { signal });
+    const query = setQuery(sourceInput?.value || '');
+    if (!query && sourceInput) sourceInput.focus();
+    loadResults();
+    if (isDesktopFilters()) {
+      syncFilterUi(true);
+    }
+  };
 
-window.addEventListener("resize", () => {
-  if (window.innerWidth > 760) {
+  syncInputs(String(params.get('q') || ''));
+  setSearchMode(String(params.get('type') || 'services'));
+  renderCategoryFilters();
+  enhanceResultsSelects();
+  bootstrapLocationSelects();
+  loadResults();
+  syncFilterUi(isDesktopFilters());
+
+  els.resultsSearchForm.addEventListener('submit', (event) => handleSearchSubmit(event, els.resultsSearchInput), { signal });
+  els.topbarSearchForm?.addEventListener('submit', (event) => handleSearchSubmit(event, els.topbarSearchInput), { signal });
+  els.resultsFiltersOpenButton?.addEventListener('click', toggleFilters, { signal });
+  els.resultsFiltersCloseButton?.addEventListener('click', toggleFilters, { signal });
+  els.resultsFiltersBackdrop?.addEventListener('click', closeMobileFilters, { signal });
+  window.addEventListener('resize', () => {
+    if (isDesktopFilters()) {
+      const keepOpen = !resultsLayout?.classList.contains('is-filters-collapsed');
+      syncFilterUi(keepOpen);
+      return;
+    }
+    syncFilterUi(false);
+  }, { signal });
+  els.resultsEmptyReset?.addEventListener('click', () => {
+    els.filtersForm.reset();
+    renderCategoryFilters();
+    bootstrapLocationSelects();
+    loadResults();
+    if (isDesktopFilters()) {
+      syncFilterUi(true);
+    }
+  }, { signal });
+  els.cepFillButton?.addEventListener('click', () => {
+    applyCep();
+  }, { signal });
+
+  els.filtersForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    renderResults();
     closeMobileFilters();
-  }
-}, { signal });
+  }, { signal });
 
+  els.filtersForm.addEventListener('change', (event) => {
+    if (event.target === els.stateSelect) {
+      fillSelectOptions(els.citySelect, citiesByState[els.stateSelect?.value || ''] || [], 'Qualquer cidade');
+      fillSelectOptions(els.neighborhoodSelect, [], 'Qualquer bairro');
+    }
+
+    if (event.target === els.citySelect) {
+      fillSelectOptions(els.neighborhoodSelect, neighborhoodsByCity[els.citySelect?.value || ''] || [], 'Qualquer bairro');
+    }
+
+    renderResults();
+  }, { signal });
+
+  els.searchModeInputs.forEach((input) => {
+    input.addEventListener('change', () => {
+      params.set('type', getSearchMode());
+      renderResults();
+    }, { signal });
+  });
+
+  els.uiModalClose?.addEventListener('click', () => closeModal(null), { signal });
+  els.uiModalCancel?.addEventListener('click', () => closeModal(null), { signal });
+  els.uiModalConfirm?.addEventListener('click', () => closeModal(els.uiModalInput?.value || ''), { signal });
+  els.uiModalInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      closeModal(els.uiModalInput?.value || '');
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeModal(null);
+    }
+  }, { signal });
 };
-
-window.DokeInitSearchResults();

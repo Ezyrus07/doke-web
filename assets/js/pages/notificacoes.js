@@ -500,3 +500,44 @@
   window.DokeInitNotifications = initNotifications;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initNotifications, { once: true }); else initNotifications();
 })();
+
+
+(() => {
+  const initInternalMobileHeaderMenu = () => {
+    const toggle = document.querySelector('[data-internal-mobile-menu-toggle]');
+    const menu = document.querySelector('[data-internal-mobile-menu]');
+    if (!toggle || !menu || toggle.dataset.bound === 'true') return;
+    toggle.dataset.bound = 'true';
+
+    const close = () => {
+      menu.hidden = true;
+      toggle.setAttribute('aria-expanded', 'false');
+    };
+
+    toggle.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const willOpen = menu.hidden;
+      menu.hidden = !willOpen;
+      toggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    });
+
+    menu.addEventListener('click', (event) => event.stopPropagation());
+
+    document.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest('[data-internal-mobile-menu]') || target.closest('[data-internal-mobile-menu-toggle]')) return;
+      close();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') close();
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initInternalMobileHeaderMenu, { once: true });
+  } else {
+    initInternalMobileHeaderMenu();
+  }
+})();

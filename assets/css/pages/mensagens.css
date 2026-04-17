@@ -40,9 +40,7 @@ body.messages-page-shell .messages-shell-content {
   min-height: calc(100dvh - var(--header-height)) !important;
   background: transparent !important;
 }
-
-.messages-mobile-hero { display: none !important; }
-
+`r`n
 .messages-sidebar {
   min-height: 100% !important;
   padding: 20px !important;
@@ -680,25 +678,6 @@ body.messages-page-shell .messages-shell-content {
   .message-bubble { max-width: min(620px, 82%) !important; }
 }
 
-@media (max-width: 1024px) {
-  .messages-mobile-hero { display: grid !important; gap: 14px !important; padding: 20px 18px 12px !important; background: #eef5fb !important; }
-  .messages-mobile-hero__heading { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:12px !important; }
-  .messages-mobile-hero__heading h1 { margin:0 !important; color:#173a67 !important; font-size:1.7rem !important; }
-  .messages-mobile-hero__badge { min-width:28px !important; height:28px !important; padding:0 10px !important; border-radius:999px !important; background:#35b5a6 !important; color:#fff !important; display:inline-flex !important; align-items:center !important; justify-content:center !important; font-weight:800 !important; }
-  .messages-mobile-hero__actions { display:flex !important; gap:10px !important; overflow-x:auto !important; padding-bottom:4px !important; }
-  .messages-mobile-hero__button { min-height:44px !important; padding:0 14px !important; border:1px solid rgba(197,211,225,0.96) !important; border-radius:14px !important; background:#fff !important; color:#19497b !important; display:inline-flex !important; align-items:center !important; gap:8px !important; text-decoration:none !important; white-space:nowrap !important; }
-  .messages-mobile-hero__button svg { width:20px !important; height:20px !important; fill:none !important; stroke:currentColor !important; stroke-width:1.9 !important; }
-  .messages-app { grid-template-columns: 1fr !important; height: auto !important; min-height: calc(100dvh - var(--header-height)) !important; }
-  .messages-sidebar { border-right: 0 !important; }
-  .messages-thread { display:none !important; }
-  .messages-app.is-thread-open .messages-sidebar { display:none !important; }
-  .messages-app.is-thread-open .messages-thread { display:grid !important; }
-  .messages-thread__back {
-    width:42px !important; height:42px !important; min-width:42px !important; min-height:42px !important; border:1px solid rgba(197,211,225,0.96) !important; border-radius:14px !important; background:#fff !important; color:#1f588f !important; display:inline-flex !important; align-items:center !important; justify-content:center !important;
-  }
-  .messages-thread__header { grid-template-columns: auto minmax(0, 1fr) !important; }
-  .messages-thread__actions { grid-column: 1 / -1 !important; justify-content: flex-end !important; }
-}
 
 /* refinamento visual */
 body.messages-page-shell{--messages-sidebar-width:330px!important}
@@ -754,29 +733,687 @@ body.messages-page-shell{--messages-sidebar-width:330px!important}
 }
 
 
-/* PATCH CIRÚRGICO: refresh do mensagens sem faixa superior */
+/* Final shell consistency: keep the internal header visible and avoid zoom drift */
 body.messages-page-shell .page > .topbar,
 body.messages-page-shell .internal-app-topbar {
-  display: none !important;
+  display: flex !important;
 }
 
 body.messages-page-shell .page__content {
-  padding-top: 0 !important;
+  padding-top: 8px !important;
   margin-top: 0 !important;
-  min-height: 100dvh !important;
+  min-height: calc(100dvh - var(--header-height) - 8px) !important;
 }
 
 body.messages-page-shell .page__content-inner,
 body.messages-page-shell .shell-home__workspace,
-body.messages-page-shell .messages-shell-content,
-body.messages-page-shell .messages-app,
-body.messages-page-shell .messages-sidebar,
-body.messages-page-shell .messages-thread {
+body.messages-page-shell .messages-shell-content {
   margin-top: 0 !important;
+  min-height: calc(100dvh - var(--header-height) - 8px) !important;
 }
 
-body.messages-page-shell .messages-app,
+body.messages-page-shell .messages-app {
+  grid-template-columns: clamp(300px, 22vw, 360px) minmax(0, 1fr) !important;
+  min-height: calc(100dvh - var(--header-height) - 8px) !important;
+  height: calc(100dvh - var(--header-height) - 8px) !important;
+}
+
 body.messages-page-shell .messages-sidebar,
 body.messages-page-shell .messages-thread {
+  min-height: calc(100dvh - var(--header-height) - 8px) !important;
+}
+
+body.messages-page-shell .messages-thread__body {
+  padding: 18px 24px !important;
+}
+
+body.messages-page-shell .message-bubble {
+  max-width: min(880px, 78%) !important;
+}
+
+@media (max-width: 760px) {
+  body.messages-page-shell .page__content {
+    padding-top: 0 !important;
+    min-height: calc(100dvh - var(--header-height)) !important;
+  }
+
+  body.messages-page-shell .messages-app,
+  body.messages-page-shell .messages-sidebar,
+  body.messages-page-shell .messages-thread,
+  body.messages-page-shell .page__content-inner,
+  body.messages-page-shell .messages-shell-content {
+    min-height: calc(100dvh - var(--header-height)) !important;
+    height: auto !important;
+  }
+}
+
+
+/* Messages final desktop width alignment with pedidos */
+body.messages-page-shell {
+  --home-desktop-content-width: min(1280px, calc(100vw - var(--sidebar-width) - 56px));
+}
+
+body.messages-page-shell .page__content {
+  padding-top: 14px !important;
+  padding-inline: 26px !important;
+  padding-bottom: 28px !important;
+  overflow: visible !important;
+}
+
+body.messages-page-shell .page__content-inner,
+body.messages-page-shell .shell-home__workspace,
+body.messages-page-shell .messages-shell-content {
+  width: min(100%, var(--home-desktop-content-width)) !important;
+  max-width: min(100%, var(--home-desktop-content-width)) !important;
+  margin-inline: auto !important;
+  min-height: calc(100dvh - var(--header-height) - 14px) !important;
+}
+
+body.messages-page-shell .messages-app {
+  width: min(100%, var(--home-desktop-content-width)) !important;
+  max-width: min(100%, var(--home-desktop-content-width)) !important;
+  margin-inline: auto !important;
+  border-radius: 28px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(200, 214, 229, 0.96) !important;
+  box-shadow: 0 22px 44px rgba(31, 58, 93, 0.08) !important;
+  background: rgba(255,255,255,0.72) !important;
+}
+
+body.messages-page-shell .messages-sidebar {
+  min-width: 0 !important;
+}
+
+body.messages-page-shell .messages-thread {
+  background: rgba(255,255,255,0.86) !important;
+}
+
+@media (max-width: 1024px) {
+  body.messages-page-shell .page__content {
+    padding-inline: 18px !important;
+    padding-top: 12px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body.messages-page-shell .page__content {
+    padding-inline: 14px !important;
+    padding-top: 0 !important;
+    padding-bottom: 18px !important;
+  }
+
+  body.messages-page-shell .page__content-inner,
+  body.messages-page-shell .messages-shell-content,
+  body.messages-page-shell .messages-app {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  body.messages-page-shell .messages-app {
+    border-radius: 20px !important;
+  }
+}
+
+
+/* Messages full-width desktop restore */
+
+body.messages-page-shell .page__content {
+  padding-top: 0 !important;
+  padding-inline: 0 !important;
+  padding-bottom: 0 !important;
+}
+body.messages-page-shell .page__content-inner,
+body.messages-page-shell .messages-shell-content,
+body.messages-page-shell .messages-app {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+body.messages-page-shell .messages-app {
+  height: calc(100dvh - var(--header-height) - 8px) !important;
+  min-height: calc(100dvh - var(--header-height) - 8px) !important;
+}
+
+/* 2026-04-14 fix: mensagens must occupy the full desktop shell */
+body.messages-page-shell {
+  --messages-sidebar-width: 392px;
+}
+
+body.messages-page-shell .page,
+body.messages-page-shell .page__content,
+body.messages-page-shell .page__content-inner,
+body.messages-page-shell .messages-shell-content {
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+body.messages-page-shell .page__content {
+  padding-top: 0 !important;
   min-height: 100dvh !important;
 }
+
+body.messages-page-shell .page__content-inner,
+body.messages-page-shell .messages-shell-content,
+body.messages-page-shell .messages-app {
+  min-height: 100dvh !important;
+  height: 100dvh !important;
+}
+
+.messages-app {
+  grid-template-columns: 392px minmax(0, 1fr) !important;
+}
+
+.messages-thread {
+  width: 100% !important;
+}
+
+.messages-thread__body {
+  padding-inline: 22px !important;
+}
+
+.message-bubble {
+  max-width: min(760px, 78%) !important;
+}
+
+@media (max-width: 1024px) {
+  body.messages-page-shell .page__content,
+  body.messages-page-shell .page__content-inner,
+  body.messages-page-shell .messages-shell-content,
+  body.messages-page-shell .messages-app {
+    min-height: calc(100dvh - var(--header-height)) !important;
+    height: calc(100dvh - var(--header-height)) !important;
+  }
+
+  body.messages-page-shell .page__content {
+    padding-top: var(--header-height) !important;
+  }
+
+  .messages-app {
+    grid-template-columns: 320px minmax(0, 1fr) !important;
+  }
+}
+
+
+/* 2026-04-14 final corrections: full-width desktop thread and no empty top strip */
+@media (min-width: 761px) {
+  body.messages-page-shell .topbar {
+    display: none !important;
+  }
+
+  body.messages-page-shell .page {
+    min-height: 100dvh !important;
+  }
+
+  body.messages-page-shell .page__content {
+    padding: 0 !important;
+    min-height: 100dvh !important;
+  }
+
+  body.messages-page-shell .page__content-inner,
+  body.messages-page-shell .messages-shell-content,
+  body.messages-page-shell .messages-app {
+    min-height: 100dvh !important;
+    height: 100dvh !important;
+  }
+
+  body.messages-page-shell .messages-app {
+    grid-template-columns: 380px minmax(0, 1fr) !important;
+  }
+
+  body.messages-page-shell .messages-thread__body {
+    padding-right: 28px !important;
+    padding-left: 24px !important;
+  }
+
+  body.messages-page-shell .message-bubble,
+  body.messages-page-shell .thread-message__bubble,
+  body.messages-page-shell .messages-thread__message {
+    max-width: min(860px, 78%) !important;
+  }
+}
+
+
+/* 2026-04-14 authoritative desktop full-screen layout */
+@media (min-width: 761px) {
+  body.messages-page-shell .page > .topbar,
+  body.messages-page-shell .internal-page-topbar,
+  body.messages-page-shell .topbar.topbar--location.internal-page-topbar {
+    display: none !important;
+  }
+
+  body.messages-page-shell .page {
+    min-height: 100vh !important;
+    display: block !important;
+  }
+
+  body.messages-page-shell .page__content,
+  body.messages-page-shell .page__content-inner,
+  body.messages-page-shell .messages-shell-content,
+  body.messages-page-shell .messages-app {
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 100vh !important;
+    height: 100vh !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  body.messages-page-shell .page__content {
+    overflow: hidden !important;
+    background: var(--messages-bg) !important;
+  }
+
+  body.messages-page-shell .messages-app {
+    display: grid !important;
+    grid-template-columns: 430px minmax(0, 1fr) !important;
+    align-items: stretch !important;
+    background: transparent !important;
+  }
+
+  body.messages-page-shell .messages-sidebar,
+  body.messages-page-shell .messages-thread {
+    min-height: 100vh !important;
+    height: 100vh !important;
+  }
+
+  body.messages-page-shell .messages-thread {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+    border-left: 1px solid rgba(214, 226, 238, 0.96) !important;
+    background: #fff !important;
+  }
+
+  body.messages-page-shell .messages-thread__body {
+    min-height: 0 !important;
+    padding: 22px 28px !important;
+  }
+
+  body.messages-page-shell .message-bubble,
+  body.messages-page-shell .thread-message__bubble,
+  body.messages-page-shell .messages-thread__message {
+    max-width: min(980px, 82%) !important;
+  }
+}
+
+
+/* 2026-04-14 messaging polish:
+   own the modal, desktop rail width, right-aligned thread actions and image drafts/bubbles.
+   This block is authoritative for the current mensagens visual contract. */
+body.messages-page-shell {
+  --messages-sidebar-width: clamp(316px, 22vw, 360px);
+}
+
+@media (min-width: 761px) {
+  body.messages-page-shell .messages-app {
+    grid-template-columns: var(--messages-sidebar-width) minmax(0, 1fr) !important;
+  }
+
+  body.messages-page-shell .messages-sidebar {
+    padding: 16px !important;
+    gap: 10px !important;
+  }
+
+  body.messages-page-shell .messages-thread__header {
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+    gap: 20px !important;
+    padding: 18px 28px !important;
+  }
+
+  body.messages-page-shell .messages-thread__actions {
+    justify-self: end !important;
+    margin-left: auto !important;
+    gap: 14px !important;
+  }
+
+  body.messages-page-shell .messages-thread__body {
+    padding: 22px 26px !important;
+  }
+}
+
+.message-item,
+.messages-thread__action,
+.messages-thread__link,
+.messages-composer__tool,
+.messages-composer__emoji-inside,
+.messages-composer__send,
+.messages-empty__button,
+.messages-selection-bar__button,
+.messages-selection-bar__close,
+.messages-reply-preview__close,
+.messages-audio-draft__cancel,
+.messages-image-draft__cancel,
+.message-context-menu__item {
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease !important;
+}
+
+.message-item:hover,
+.message-item:focus-visible {
+  transform: translateY(-2px) !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 18px 34px rgba(14, 40, 72, 0.16) !important;
+}
+
+.messages-thread__action:hover,
+.messages-thread__action:focus-visible,
+.messages-composer__tool:hover,
+.messages-composer__tool:focus-visible,
+.messages-composer__emoji-inside:hover,
+.messages-composer__emoji-inside:focus-visible,
+.messages-selection-bar__button:hover,
+.messages-selection-bar__button:focus-visible,
+.messages-selection-bar__close:hover,
+.messages-selection-bar__close:focus-visible,
+.messages-reply-preview__close:hover,
+.messages-reply-preview__close:focus-visible,
+.messages-audio-draft__cancel:hover,
+.messages-audio-draft__cancel:focus-visible,
+.messages-image-draft__cancel:hover,
+.messages-image-draft__cancel:focus-visible {
+  transform: translateY(-1px) !important;
+  border-color: rgba(157, 185, 214, 0.96) !important;
+  background: #f7fbff !important;
+  box-shadow: 0 12px 24px rgba(26, 59, 96, 0.08) !important;
+}
+
+.messages-thread__action--charge:hover,
+.messages-thread__action--charge:focus-visible {
+  background: #def4ed !important;
+  border-color: rgba(140, 213, 197, 0.92) !important;
+  color: #187763 !important;
+}
+
+.messages-thread__link:hover,
+.messages-thread__link:focus-visible {
+  transform: translateY(-1px) !important;
+  border-color: rgba(156, 182, 208, 0.96) !important;
+  background: #f7fbff !important;
+  box-shadow: 0 14px 28px rgba(25, 56, 92, 0.08) !important;
+}
+
+.messages-composer__send:hover,
+.messages-composer__send:focus-visible {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 20px 34px rgba(28, 84, 141, 0.22) !important;
+  filter: saturate(1.05);
+}
+
+.messages-image-draft {
+  align-items: stretch !important;
+  padding: 14px !important;
+  background: linear-gradient(180deg, #f8fbff 0%, #f3f8fd 100%) !important;
+}
+
+.messages-image-draft__preview {
+  width: 72px !important;
+  height: 72px !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(198, 212, 227, 0.96) !important;
+  box-shadow: 0 10px 24px rgba(25, 56, 92, 0.08) !important;
+}
+
+.messages-image-draft__meta strong {
+  color: #173a67 !important;
+  font-size: 0.96rem !important;
+}
+
+.messages-image-draft__meta span {
+  color: #6982a0 !important;
+  font-size: 0.86rem !important;
+}
+
+.message-bubble__image {
+  width: 100% !important;
+}
+
+.message-bubble__image img {
+  width: min(100%, 340px) !important;
+  max-height: 320px !important;
+  object-fit: cover !important;
+  border: 1px solid rgba(197, 211, 225, 0.72) !important;
+  box-shadow: 0 16px 28px rgba(25, 56, 92, 0.12) !important;
+  transition: transform 180ms ease, box-shadow 180ms ease !important;
+}
+
+.message-bubble__image img:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 18px 32px rgba(25, 56, 92, 0.16) !important;
+}
+
+/* Charge modal */
+.charge-modal {
+  width: min(100% - 28px, 480px) !important;
+  max-width: 480px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 28px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.charge-modal::backdrop {
+  background: rgba(14, 28, 46, 0.42) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.charge-modal__surface {
+  display: grid !important;
+  gap: 18px !important;
+  margin: 0 !important;
+  padding: 26px !important;
+  border-radius: 28px !important;
+  border: 1px solid rgba(191, 211, 228, 0.96) !important;
+  background:
+    radial-gradient(circle at top right, rgba(73, 215, 182, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(255,255,255,0.99), rgba(246,250,253,0.98)) !important;
+  box-shadow: 0 34px 64px rgba(19, 41, 68, 0.22) !important;
+}
+
+.charge-modal__header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  gap: 12px !important;
+}
+
+.charge-modal__header strong {
+  display: block !important;
+  margin: 0 !important;
+  color: #122640 !important;
+  font-size: 1.5rem !important;
+  line-height: 1.05 !important;
+  letter-spacing: -0.04em !important;
+}
+
+.charge-modal__header p {
+  margin: 6px 0 0 !important;
+  color: #6c829f !important;
+  font-size: 0.96rem !important;
+  line-height: 1.55 !important;
+}
+
+.charge-modal__close {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  border: 1px solid rgba(197, 211, 225, 0.96) !important;
+  border-radius: 16px !important;
+  background: rgba(255,255,255,0.9) !important;
+  color: #173a67 !important;
+  font: inherit !important;
+  font-size: 1.3rem !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease !important;
+}
+
+.charge-modal__close:hover,
+.charge-modal__close:focus-visible {
+  transform: translateY(-1px) !important;
+  background: #f7fbff !important;
+  border-color: rgba(157, 185, 214, 0.96) !important;
+  box-shadow: 0 12px 24px rgba(26, 59, 96, 0.08) !important;
+}
+
+.charge-modal__field {
+  display: grid !important;
+  gap: 10px !important;
+}
+
+.charge-modal__field > span {
+  color: #203553 !important;
+  font-size: 0.96rem !important;
+  font-weight: 700 !important;
+}
+
+.charge-modal__money-field {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 12px !important;
+  min-height: 60px !important;
+  padding: 0 16px !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(197, 211, 225, 0.96) !important;
+  background: rgba(255,255,255,0.94) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.72) !important;
+}
+
+.charge-modal__money-field span {
+  color: #173a67 !important;
+  font-size: 1.1rem !important;
+  font-weight: 800 !important;
+}
+
+.charge-modal__money-field input,
+.charge-modal__field select {
+  width: 100% !important;
+  min-width: 0 !important;
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  color: #13284a !important;
+  font: inherit !important;
+  font-size: 1.02rem !important;
+}
+
+.charge-modal__field select {
+  min-height: 58px !important;
+  padding: 0 16px !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(197, 211, 225, 0.96) !important;
+  background: rgba(255,255,255,0.94) !important;
+  appearance: none !important;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #557594 50%),
+    linear-gradient(135deg, #557594 50%, transparent 50%);
+  background-position:
+    calc(100% - 22px) calc(50% - 3px),
+    calc(100% - 16px) calc(50% - 3px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+.charge-modal__money-field:focus-within,
+.charge-modal__field select:focus {
+  border-color: rgba(93, 143, 190, 0.96) !important;
+  box-shadow: 0 0 0 4px rgba(62, 128, 198, 0.12) !important;
+}
+
+.charge-modal__actions {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  padding-top: 4px !important;
+}
+
+.charge-modal__button {
+  min-height: 54px !important;
+  padding: 0 18px !important;
+  border-radius: 18px !important;
+  border: 0 !important;
+  background: linear-gradient(180deg, #3e80c6 0%, #275c95 100%) !important;
+  color: #fff !important;
+  font: inherit !important;
+  font-size: 1rem !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  box-shadow: 0 16px 28px rgba(28, 84, 141, 0.18) !important;
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease !important;
+}
+
+.charge-modal__button:hover,
+.charge-modal__button:focus-visible {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 22px 34px rgba(28, 84, 141, 0.22) !important;
+  filter: saturate(1.05);
+}
+
+.charge-modal__button--ghost {
+  border: 1px solid rgba(197, 211, 225, 0.96) !important;
+  background: rgba(255,255,255,0.96) !important;
+  color: #173a67 !important;
+  box-shadow: none !important;
+}
+
+.charge-modal__button--ghost:hover,
+.charge-modal__button--ghost:focus-visible {
+  background: #f7fbff !important;
+  box-shadow: 0 12px 24px rgba(26, 59, 96, 0.08) !important;
+}
+
+@media (max-width: 640px) {
+  .charge-modal {
+    width: min(100% - 20px, 100%) !important;
+  }
+
+  .charge-modal__surface {
+    padding: 22px 18px !important;
+  }
+
+  .charge-modal__actions {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* 2026-04-16 restore: keep the left conversation rail in the original blue shell */
+@media (min-width: 761px) {
+  body.messages-page-shell {
+    --messages-bg: #eef5fb;
+  }
+
+  body.messages-page-shell .page__content,
+  body.messages-page-shell .page__content-inner,
+  body.messages-page-shell .messages-shell-content,
+  body.messages-page-shell .messages-app {
+    background: var(--messages-bg) !important;
+  }
+
+  body.messages-page-shell .messages-app {
+    grid-template-columns: 430px minmax(0, 1fr) !important;
+  }
+
+  body.messages-page-shell .messages-sidebar {
+    min-height: 100vh !important;
+    height: 100vh !important;
+    background: linear-gradient(180deg, #2a5f90 0%, #285885 100%) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.08) !important;
+  }
+
+  body.messages-page-shell .messages-thread {
+    background: #ffffff !important;
+  }
+}
+

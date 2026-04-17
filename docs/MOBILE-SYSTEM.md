@@ -10,7 +10,7 @@
    - título + badge
    - ações compactas à direita
    - busca expansível
-2. **Dashboard**: carteira, home, perfil
+2. **Dashboard**: home, perfil
    - título + badge
    - ações secundárias em ícones
 3. **Detalhe**: páginas profundas

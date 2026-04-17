@@ -22,10 +22,7 @@ Essas telas definem a maior parte do sistema visual: shell, cards, hero, overlay
 
 ## Prioridade 3 — Consolidação
 - `notificacoes.html`
-- `carteira.html`
 - `pagamento.html`
-- `adicionar-cartao.html`
-- `conta-bancaria.html`
 
 ## Regras operacionais
 - nenhum HTML cria sua própria sidebar;

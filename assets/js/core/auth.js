@@ -1,5 +1,5 @@
 (function(){
-  const protectedPages = new Set(['carteira.html','conta-bancaria.html','adicionar-cartao.html']);
+  const protectedPages = new Set([]);
   const current = window.location.pathname.split('/').pop();
   const SESSION_KEY = 'doke.auth.session';
 

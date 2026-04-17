@@ -260,7 +260,7 @@
       threadBody.innerHTML = conversation.messages.map((message, index) => `
         <article class="message-row${message.mine ? " message-row--me" : ""}" data-message-index="${index}">
           ${message.mine ? "" : `<img class="message-row__avatar" src="${conversation.avatar}" alt="Foto de perfil de ${conversation.name}">`}
-          <div class="message-bubble${message.mine ? " message-bubble--me" : ""}${selectedMessageIndexes.has(index) ? " is-selected" : ""}" data-message-bubble data-message-index="${index}">
+          <div class="message-bubble${message.mine ? " message-bubble--me" : ""}${message.type === "image" ? " message-bubble--image-only" : ""}${selectedMessageIndexes.has(index) ? " is-selected" : ""}" data-message-bubble data-message-index="${index}">
             <div class="message-bubble__meta">
               <span>${message.author}</span>
               <span>${message.time}</span>
@@ -806,5 +806,46 @@
     document.addEventListener("DOMContentLoaded", initMessagesPage, { once: true });
   } else {
     initMessagesPage();
+  }
+})();
+
+
+(() => {
+  const initInternalMobileHeaderMenu = () => {
+    const toggle = document.querySelector('[data-internal-mobile-menu-toggle]');
+    const menu = document.querySelector('[data-internal-mobile-menu]');
+    if (!toggle || !menu || toggle.dataset.bound === 'true') return;
+    toggle.dataset.bound = 'true';
+
+    const close = () => {
+      menu.hidden = true;
+      toggle.setAttribute('aria-expanded', 'false');
+    };
+
+    toggle.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const willOpen = menu.hidden;
+      menu.hidden = !willOpen;
+      toggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    });
+
+    menu.addEventListener('click', (event) => event.stopPropagation());
+
+    document.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest('[data-internal-mobile-menu]') || target.closest('[data-internal-mobile-menu-toggle]')) return;
+      close();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') close();
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initInternalMobileHeaderMenu, { once: true });
+  } else {
+    initInternalMobileHeaderMenu();
   }
 })();

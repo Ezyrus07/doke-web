@@ -14,7 +14,6 @@
 
 ## CSS por página/contexto
 - `assets/css/pages/auth.css`
-- `assets/css/pages/carteira.css`
 - `assets/css/pages/detalhe-anuncio.css`
 - `assets/css/pages/home.css`
 - `assets/css/pages/home-refresh.css`
@@ -29,7 +28,6 @@
 - `assets/css/pages/post-service.css`
 - `assets/css/pages/search-results.css`
 - `assets/css/pages/ui-kit.css`
-- `assets/css/pages/wallet-manage.css`
 
 ## JS compartilhado
 - `assets/js/core/app.js`
@@ -40,7 +38,6 @@
 ## JS por página
 - `assets/js/pages/auth.js`
 - `assets/js/pages/avaliacao.js`
-- `assets/js/pages/carteira.js`
 - `assets/js/pages/detalhe-anuncio.js`
 - `assets/js/pages/finalizar-pedido.js`
 - `assets/js/pages/home.js`

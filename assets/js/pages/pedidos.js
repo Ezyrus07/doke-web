@@ -58,6 +58,23 @@
     const plannerCalendarSummary = root.querySelector('[data-orders-calendar-summary]');
     const plannerCalendarSummaryLabel = root.querySelector('[data-orders-calendar-summary-label]');
     const plannerCalendarSummaryAction = root.querySelector('[data-orders-calendar-summary-action]');
+
+    const mobileMenuToggle = document.querySelector('[data-orders-mobile-menu-toggle]');
+    const mobileMenu = document.querySelector('[data-orders-mobile-menu]');
+
+    const closeMobileMenu = () => {
+      if (!mobileMenu || !mobileMenuToggle) return;
+      mobileMenu.hidden = true;
+      mobileMenuToggle.setAttribute('aria-expanded', 'false');
+    };
+
+    const toggleMobileMenu = () => {
+      if (!mobileMenu || !mobileMenuToggle) return;
+      const willOpen = mobileMenu.hidden;
+      mobileMenu.hidden = !willOpen;
+      mobileMenuToggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    };
+
     const mobileCalendarQuery = window.matchMedia('(max-width: 760px)');
     let longPressTimer = null;
 

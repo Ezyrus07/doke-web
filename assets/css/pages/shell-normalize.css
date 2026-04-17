@@ -216,9 +216,15 @@ body.shell-home .nav-link.is-active {
   box-shadow: 0 18px 34px rgba(27, 75, 121, 0.22) !important;
 }
 
+body.app-shell-page .sidebar > .sidebar__group--account,
+body.shell-home .sidebar > .sidebar__group--account {
+  margin-top: auto !important;
+  padding-top: 14px !important;
+}
+
 body.app-shell-page .sidebar__footer,
 body.shell-home .sidebar__footer {
-  margin-top: auto !important;
+  margin-top: 0 !important;
   padding-top: 10px !important;
 }
 
@@ -229,38 +235,46 @@ body.shell-home .sidebar__group--footer .nav-link {
   color: #58708d !important;
 }
 
-/* Disable the collapsed desktop mode until the shell is fully refactored. */
+/* Desktop collapsed sidebar mode. */
 body.sidebar-collapsed {
-  --sidebar-width: 272px !important;
+  --sidebar-width: 96px !important;
 }
 
 body.sidebar-collapsed .sidebar {
-  width: 272px !important;
-  padding-inline: 16px !important;
-}
-
-body.sidebar-collapsed .sidebar__brand,
-body.sidebar-collapsed .brand-logo,
-body.sidebar-collapsed .sidebar__label,
-body.sidebar-collapsed .nav-link__count,
-body.sidebar-collapsed .nav-link__start > span:last-child {
-  display: revert !important;
-  opacity: 1 !important;
-}
-
-body.sidebar-collapsed .nav-link {
-  justify-content: space-between !important;
+  width: 96px !important;
   padding-inline: 12px !important;
 }
 
+body.sidebar-collapsed .sidebar__brand,
+body.sidebar-collapsed .brand-logo {
+  display: flex !important;
+}
+
+body.sidebar-collapsed .sidebar__label,
+body.sidebar-collapsed .nav-link__count,
+body.sidebar-collapsed .nav-link__start > span:last-child {
+  display: none !important;
+  opacity: 0 !important;
+}
+
+body.sidebar-collapsed .nav-link {
+  justify-content: center !important;
+  padding-inline: 10px !important;
+}
+
 body.sidebar-collapsed .nav-link__start {
-  gap: 10px !important;
+  justify-content: center !important;
+  gap: 0 !important;
+}
+
+body.sidebar-collapsed .sidebar__collapse-button svg {
+  transform: rotate(180deg);
 }
 
 body.sidebar-collapsed .page {
-  margin-left: 272px !important;
-  width: calc(100% - 272px) !important;
-  max-width: calc(100% - 272px) !important;
+  margin-left: 96px !important;
+  width: calc(100% - 96px) !important;
+  max-width: calc(100% - 96px) !important;
 }
 
 @media (max-width: 1024px) {
@@ -417,4 +431,14 @@ body.sidebar-collapsed .page {
     width: 100% !important;
     max-width: 100% !important;
   }
+}
+
+
+/* 2026-04-14 final corrections: home internal shell must not diverge from shared sidebar */
+body.home-index-shell.internal-shell-page .sidebar__group {
+  margin-bottom: 0 !important;
+}
+
+body.home-index-shell.internal-shell-page .sidebar__label {
+  padding-inline: 8px !important;
 }

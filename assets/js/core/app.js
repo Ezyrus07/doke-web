@@ -4,26 +4,31 @@ const SIDEBAR_STORAGE_KEY = "doke.sidebar.collapsed";
 const THEME_STORAGE_KEY = "doke.theme";
 const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", "mobile-search-active"];
 const INTERNAL_PROFILE_PATH = "/perfil.html";
-const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/comunidade.html", "/pagamento.html", "/finalizar-pedido.html", "/avaliacao.html", "/carteira.html", "/adicionar-cartao.html", "/conta-bancaria.html", INTERNAL_PROFILE_PATH, "/mais.html", "/"]);
+const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/comunidade.html", "/pagamento.html", "/finalizar-pedido.html", "/avaliacao.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/mais.html", "/"]);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
-const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/mais.html", "/carteira.html"];
+const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
 const isMobileSidebarViewport = () => window.innerWidth <= 760;
 
-if (body.classList.contains("sidebar-collapsed")) {
-  body.classList.remove("sidebar-collapsed");
-}
-
-try {
-  window.localStorage.removeItem(SIDEBAR_STORAGE_KEY);
-} catch {}
 
 if (window.localStorage.getItem(THEME_STORAGE_KEY) === "dark") {
   body.classList.add("theme-dark");
 }
 
+const readStoredSidebarCollapsed = () => {
+  try {
+    return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+};
+
 const syncSidebarCollapsedState = () => {
-  body.classList.remove("sidebar-collapsed");
+  if (isMobileSidebarViewport()) {
+    body.classList.remove("sidebar-collapsed");
+    return;
+  }
+  body.classList.toggle("sidebar-collapsed", readStoredSidebarCollapsed());
 };
 
 window.addEventListener("resize", syncSidebarCollapsedState, { passive: true });
@@ -46,6 +51,9 @@ const isInternalViewUrl = (href) => {
 };
 
 const shouldBypassShellSwap = (_href) => false;
+
+// home-specific cascade and UI bootstrap than the internal pages. For now, transitions that
+// enter or leave index.html use normal document navigation instead of shell swapping.
 
 
 const SHARED_SIDEBAR_MARKUP = `
@@ -102,15 +110,12 @@ const SHARED_SIDEBAR_MARKUP = `
     </a>
   </div>
 
-  <div class="sidebar__group">
+  <div class="sidebar__group sidebar__group--account">
     <div class="sidebar__label">Conta</div>
     <a class="nav-link nav-link--profile" href="perfil.html">
       <span class="nav-link__start"><span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.2-3.2 3.7-4.8 7-4.8s5.8 1.6 7 4.8"></path></svg></span><span>Meu perfil</span></span>
     </a>
-    <a class="nav-link nav-link--wallet" href="carteira.html">
-      <span class="nav-link__start"><span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.5 8.5A2.5 2.5 0 0 1 7 6h11.5v12H7a2.5 2.5 0 1 1 0-5h12"></path><path d="M16 13h3"></path></svg></span><span>Carteira</span></span>
-    </a>
-    <a class="nav-link nav-link--settings" href="mais.html">
+    <a class="nav-link nav-link--settings" href="configuracoes.html">
       <span class="nav-link__start"><span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 3.8v2.1"></path><path d="M12 18.1v2.1"></path><path d="m18.2 5.8-1.5 1.5"></path><path d="m7.3 16.7-1.5 1.5"></path><path d="M20.2 12h-2.1"></path><path d="M5.9 12H3.8"></path><path d="m18.2 18.2-1.5-1.5"></path><path d="m7.3 7.3-1.5-1.5"></path></svg></span><span>Configurações</span></span>
     </a>
   </div>
@@ -130,6 +135,7 @@ const renderSharedSidebar = () => {
   if (sidebar.dataset.shellRendered === 'true') return;
   sidebar.innerHTML = SHARED_SIDEBAR_MARKUP;
   sidebar.dataset.shellRendered = 'true';
+  sidebar.setAttribute('data-internal-sidebar', 'true');
 };
 
 const updateSidebarActiveState = () => {
@@ -139,19 +145,30 @@ const updateSidebarActiveState = () => {
   const messagesActive = path === "/mensagens.html" || path === "/pagamento.html" || path === "/finalizar-pedido.html" || path === "/avaliacao.html";
   const notificationsActive = path === "/notificacoes.html";
   const communitiesActive = path === "/comunidade.html";
-  const walletActive = path === "/carteira.html" || path === "/adicionar-cartao.html" || path === "/conta-bancaria.html";
   const profileActive = path === INTERNAL_PROFILE_PATH;
-  const settingsActive = path === "/mais.html";
+  const settingsActive = path === "/configuracoes.html" || path === "/mais.html";
 
-  document.querySelectorAll(".sidebar .nav-link").forEach((link) => link.classList.remove("is-active"));
-  document.querySelector(".nav-link--home")?.classList.toggle("is-active", homeActive);
-  document.querySelector(".nav-link--orders")?.classList.toggle("is-active", ordersActive);
-  document.querySelector(".nav-link--messages")?.classList.toggle("is-active", messagesActive);
-  document.querySelector(".nav-link--notifications")?.classList.toggle("is-active", notificationsActive);
-  document.querySelector(".nav-link--communities")?.classList.toggle("is-active", communitiesActive);
-  document.querySelector(".nav-link--wallet")?.classList.toggle("is-active", walletActive);
-  document.querySelector(".nav-link--profile")?.classList.toggle("is-active", profileActive);
-  document.querySelector(".nav-link--settings")?.classList.toggle("is-active", settingsActive);
+  const stateMap = new Map([
+    [".nav-link--home", homeActive],
+    [".nav-link--orders", ordersActive],
+    [".nav-link--messages", messagesActive],
+    [".nav-link--notifications", notificationsActive],
+    [".nav-link--communities", communitiesActive],
+    [".nav-link--profile", profileActive],
+    [".nav-link--settings", settingsActive]
+  ]);
+
+  document.querySelectorAll(".sidebar .nav-link").forEach((link) => {
+    link.classList.remove("is-active");
+    link.removeAttribute("aria-current");
+  });
+
+  stateMap.forEach((isActive, selector) => {
+    const node = document.querySelector(selector);
+    if (!node) return;
+    node.classList.toggle("is-active", isActive);
+    if (isActive) node.setAttribute("aria-current", "page");
+  });
 };
 
 const syncSettingsLinks = () => {
@@ -159,7 +176,7 @@ const syncSettingsLinks = () => {
     const text = (link.textContent || '').trim().toLowerCase();
 
     if (link.classList.contains('nav-link--settings') || text.includes('configurações')) {
-      if (link.tagName === 'A') link.setAttribute('href', 'mais.html');
+      if (link.tagName === 'A') link.setAttribute('href', 'configuracoes.html');
     }
 
     if (link.classList.contains('nav-link--profile') || text.includes('meu perfil') || text === 'perfil') {
@@ -168,32 +185,8 @@ const syncSettingsLinks = () => {
   });
 };
 
-const ensureWalletProfileItem = () => {
-  const dropdownBody = document.querySelector(".profile-dropdown__body");
-  if (!dropdownBody) return;
-
-  const hasWallet = [...dropdownBody.querySelectorAll(".profile-dropdown__item")].some((item) =>
-    item.textContent?.trim().toLowerCase().includes("carteira")
-  );
-
-  if (hasWallet) return;
-
-  const walletLink = document.createElement("a");
-  walletLink.className = "profile-dropdown__item";
-  walletLink.href = "carteira.html";
-  walletLink.innerHTML =
-    '<span class="profile-dropdown__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.5 8.5A2.5 2.5 0 0 1 7 6h11.5v12H7a2.5 2.5 0 1 1 0-5h12"></path><path d="M16 13h3"></path></svg></span><span>Carteira</span>';
-
-  const firstItem = dropdownBody.querySelector(".profile-dropdown__item");
-  if (firstItem) {
-    firstItem.insertAdjacentElement("afterend", walletLink);
-  } else {
-    dropdownBody.appendChild(walletLink);
-  }
-};
 
 const syncAuthUi = () => {
-  ensureWalletProfileItem();
   syncSettingsLinks();
   if (!authService) return;
 
@@ -291,12 +284,11 @@ const INTERNAL_VIEW_STYLE_HINTS = {
     "assets/css/pages/search-results.css"
   ],
   "/resultados.html": [
-    "assets/css/pages/home-shared.css",
+    "assets/css/pages/internal-shell.css",
     "assets/css/pages/search-results.css"
   ],
   "/pedidos.html": [
-    "assets/css/pages/home-shared.css",
-    "assets/css/pages/home.css",
+    "assets/css/pages/internal-shell.css",
     "assets/css/pages/pedidos.css"
   ],
   "/mensagens.html": [
@@ -305,8 +297,7 @@ const INTERNAL_VIEW_STYLE_HINTS = {
     "assets/css/pages/mensagens.css"
   ],
   "/notificacoes.html": [
-    "assets/css/pages/home-shared.css",
-    "assets/css/pages/home.css",
+    "assets/css/pages/internal-shell.css",
     "assets/css/pages/pedidos.css",
     "assets/css/pages/notificacoes.css"
   ],
@@ -328,34 +319,24 @@ const INTERNAL_VIEW_STYLE_HINTS = {
     "assets/css/pages/home.css",
     "assets/css/pages/post-service.css"
   ],
-  "/carteira.html": [
-    "assets/css/pages/home-shared.css",
-    "assets/css/pages/home.css",
-    "assets/css/pages/carteira.css"
-  ],
   "/perfil.html": [
     "assets/css/pages/perfil.css"
   ],
   "/perfil-profissional.html": [
     "assets/css/pages/perfil-profissional.css"
   ],
+  "/configuracoes.html": [
+    "assets/css/pages/internal-shell.css",
+    "assets/css/pages/configuracoes.css",
+    "assets/js/pages/configuracoes.js"
+  ],
   "/mais.html": [
     "assets/css/pages/internal-shell.css",
-    "assets/css/pages/mais.css"
-  ],
-  "/adicionar-cartao.html": [
-    "assets/css/pages/home-shared.css",
-    "assets/css/pages/home.css",
-    "assets/css/pages/wallet-manage.css"
-  ],
-  "/conta-bancaria.html": [
-    "assets/css/pages/home-shared.css",
-    "assets/css/pages/home.css",
-    "assets/css/pages/wallet-manage.css"
+    "assets/css/pages/configuracoes.css",
+    "assets/js/pages/configuracoes.js"
   ],
   "/detalhe-anuncio.html": [
-    "assets/css/pages/home-shared.css",
-    "assets/css/pages/home-refresh.css",
+    "assets/css/pages/internal-shell.css",
     "assets/css/pages/search-results.css",
     "assets/css/pages/orcamento.css",
     "assets/css/pages/detalhe-anuncio.css"
@@ -363,6 +344,29 @@ const INTERNAL_VIEW_STYLE_HINTS = {
 };
 
 const preloadedStyleHrefs = new Set();
+
+const INTERNAL_VIEW_SCRIPT_HINTS = {
+  "/index.html": [
+    "assets/js/pages/search-data.js",
+    "assets/js/pages/home/drawer.js",
+    "assets/js/pages/home/filters.js",
+    "assets/js/pages/home/search.js",
+    "assets/js/pages/home.js"
+  ],
+  "/pedidos.html": ["assets/js/pages/pedidos.js"],
+  "/mensagens.html": ["assets/js/pages/mensagens.js"],
+  "/notificacoes.html": ["assets/js/pages/notificacoes.js"],
+  "/pagamento.html": ["assets/js/pages/pagamento.js"],
+  "/finalizar-pedido.html": ["assets/js/pages/finalizar-pedido.js"],
+  "/avaliacao.html": ["assets/js/pages/avaliacao.js"],
+  "/perfil.html": ["assets/js/pages/perfil.js"],
+  "/perfil-profissional.html": ["assets/js/pages/perfil-base.js"],
+  "/detalhe-anuncio.html": ["assets/js/pages/detalhe-anuncio.js"]
+};
+
+const preloadedScriptHrefs = new Set();
+const prefetchedInternalViews = new Map();
+
 
 const hintInternalViewStyles = (href) => {
   const path = getCurrentPath(href);
@@ -388,12 +392,56 @@ const hintInternalViewStyles = (href) => {
   });
 };
 
+
+const hintInternalViewScripts = (href) => {
+  const path = getCurrentPath(href);
+  const hints = INTERNAL_VIEW_SCRIPT_HINTS[path] || [];
+
+  hints.forEach((scriptHref) => {
+    const absolute = new URL(scriptHref, window.location.href).href;
+    if (preloadedScriptHrefs.has(absolute)) return;
+
+    const preload = document.createElement("link");
+    preload.rel = "preload";
+    preload.as = "script";
+    preload.href = scriptHref;
+    preload.setAttribute("data-doke-script-hint", "true");
+    document.head.appendChild(preload);
+    preloadedScriptHrefs.add(absolute);
+  });
+};
+
+const prefetchInternalViewDocument = (href) => {
+  try {
+    const url = new URL(href, window.location.href);
+    const key = url.pathname + url.search;
+    if (prefetchedInternalViews.has(key)) return;
+
+    const request = fetch(key, {
+      headers: { "X-Requested-With": "doke-shell" }
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Falha ao pré-carregar ${key}`);
+        }
+        return response.text();
+      })
+      .catch(() => null);
+
+    prefetchedInternalViews.set(key, request);
+  } catch {}
+};
+
 const scheduleSidebarViewHints = () => {
   if (sidebarViewsHinted) return;
   sidebarViewsHinted = true;
 
   const run = () => {
-    SIDEBAR_PRIMARY_VIEWS.forEach((path) => hintInternalViewStyles(path));
+    SIDEBAR_PRIMARY_VIEWS.forEach((path) => {
+      hintInternalViewStyles(path);
+      hintInternalViewScripts(path);
+      prefetchInternalViewDocument(path);
+    });
   };
 
   if (typeof window.requestIdleCallback === "function") {
@@ -672,6 +720,15 @@ const syncBodyClassesFromDocument = (nextDoc) => {
   preserved.forEach((className) => body.classList.add(className));
 };
 
+const runViewInitializer = (label, initializer) => {
+  if (typeof initializer !== "function") return;
+  try {
+    initializer();
+  } catch (error) {
+    console.error(`[Doke:init:${label}]`, error);
+  }
+};
+
 const initializeCurrentView = () => {
   body.dataset.currentViewPath = getCurrentPath();
   renderSharedSidebar();
@@ -682,21 +739,31 @@ const initializeCurrentView = () => {
   if (usesPageSearchOnlyMobile()) {
     closeMobileSearch();
   }
-  window.DokeInitHome?.();
-  window.DokeInitSearchResults?.();
-  window.DokeInitDetailPage?.();
-  window.DokeInitBudget?.();
-  window.DokeInitOrders?.();
-  window.DokeInitMessages?.();
-  window.DokeInitPayment?.();
-  window.DokeInitOrderFinalize?.();
-  window.DokeInitReview?.();
-  window.DokeInitNotifications?.();
-  window.DokeInitWallet?.();
-  window.DokeInitProfile?.();
-  window.DokeInitProfessionalProfile?.();
-  initChipRails();
-  scheduleSidebarViewHints();
+  runViewInitializer("home", window.DokeInitHome);
+  runViewInitializer("search-results", window.DokeInitSearchResults);
+  runViewInitializer("detail", window.DokeInitDetailPage);
+  runViewInitializer("budget", window.DokeInitBudget);
+  runViewInitializer("orders", window.DokeInitOrders);
+  runViewInitializer("messages", window.DokeInitMessages);
+  runViewInitializer("payment", window.DokeInitPayment);
+  runViewInitializer("order-finalize", window.DokeInitOrderFinalize);
+  runViewInitializer("review", window.DokeInitReview);
+  runViewInitializer("notifications", window.DokeInitNotifications);
+  runViewInitializer("wallet", window.DokeInitWallet);
+  runViewInitializer("profile", window.DokeInitProfile);
+  runViewInitializer("professional-profile", window.DokeInitProfessionalProfile);
+
+  try {
+    initChipRails();
+  } catch (error) {
+    console.error("[Doke:init:chip-rails]", error);
+  }
+
+  try {
+    scheduleSidebarViewHints();
+  } catch (error) {
+    console.error("[Doke:init:view-hints]", error);
+  }
 };
 
 const waitForNextPaint = () =>
@@ -710,15 +777,22 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
   const url = new URL(href, window.location.href);
   hintInternalViewStyles(url.toString());
 
-  const response = await fetch(url.pathname + url.search, {
-    headers: { "X-Requested-With": "doke-shell" }
-  });
+  const cacheKey = url.pathname + url.search;
+  let html = await prefetchedInternalViews.get(cacheKey);
 
-  if (!response.ok) {
-    throw new Error(`Falha ao carregar ${url.pathname}`);
+  if (!html) {
+    const response = await fetch(cacheKey, {
+      headers: { "X-Requested-With": "doke-shell" }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Falha ao carregar ${url.pathname}`);
+    }
+
+    html = await response.text();
+  } else {
+    prefetchedInternalViews.delete(cacheKey);
   }
-
-  const html = await response.text();
   const parser = new DOMParser();
   const nextDoc = parser.parseFromString(html, "text/html");
   const nextPage = nextDoc.querySelector(".page");
@@ -759,9 +833,14 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
     window.scrollTo({ top: 0, behavior: "auto" });
   }
 
-  initializeCurrentView();
-  await waitForNextPaint();
-  body.classList.remove("is-shell-swapping");
+  try {
+    initializeCurrentView();
+    await waitForNextPaint();
+  } catch (error) {
+    console.error("[Doke:swap:init-after-replace]", error);
+  } finally {
+    body.classList.remove("is-shell-swapping");
+  }
 };
 
 window.DokeNavigate = async (href, options = {}) => {
@@ -777,8 +856,18 @@ window.DokeNavigate = async (href, options = {}) => {
   try {
     await swapView(href, options);
   } catch (error) {
-    console.error(error);
-    window.location.href = href;
+    console.error("[Doke:navigate:swap-failed]", error);
+    const nextUrl = new URL(href, window.location.href);
+    const currentUrl = new URL(window.location.href);
+    const isSameOriginInternal = nextUrl.origin === currentUrl.origin && INTERNAL_VIEW_PATHS.has(getCurrentPath(nextUrl.href));
+
+    if (!isSameOriginInternal) {
+      window.location.href = href;
+      return;
+    }
+
+    // Keep the app in shell navigation mode for internal pages whenever possible.
+    // A hard reload here was masking initializer/runtime issues as navigation jank.
   }
 };
 
@@ -904,9 +993,28 @@ document.addEventListener("touchstart", (event) => {
   const link = event.target.closest("a[href]");
   if (!link || !isInternalViewUrl(link.href)) return;
   hintInternalViewStyles(link.href);
+  hintInternalViewScripts(link.href);
+  prefetchInternalViewDocument(link.href);
 }, { passive: true });
 
+document.addEventListener("mouseover", (event) => {
+  const link = event.target.closest("a[href]");
+  if (!link || !isInternalViewUrl(link.href)) return;
+  hintInternalViewStyles(link.href);
+  hintInternalViewScripts(link.href);
+  prefetchInternalViewDocument(link.href);
+}, { passive: true });
+
+document.addEventListener("focusin", (event) => {
+  const link = event.target.closest("a[href]");
+  if (!link || !isInternalViewUrl(link.href)) return;
+  hintInternalViewStyles(link.href);
+  hintInternalViewScripts(link.href);
+  prefetchInternalViewDocument(link.href);
+});
+
 hintInternalViewStyles(window.location.href);
+hintInternalViewScripts(window.location.href);
 
 window.addEventListener("popstate", () => {
   swapView(window.location.href, { replace: true, preserveScroll: true }).catch((error) => {

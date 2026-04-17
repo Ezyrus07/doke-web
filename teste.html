@@ -1,932 +1,233 @@
 <!doctype html>
 <html lang="pt-BR">
- <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Doke Mobile Concept</title>
-  <style>
-   :root {
-    --bg: #eef3f8;
-    --surface: #ffffff;
-    --surface-soft: #f6f8fb;
-    --line: #d8e3f0;
-    --text: #123b6d;
-    --text-soft: #5f7fa3;
-    --primary: #2a5f90;
-    --primary-strong: #1f4d77;
-    --accent: #eaf2fb;
-    --shadow: 0 16px 40px rgba(19, 54, 97, 0.12);
-    --radius-xl: 28px;
-    --radius-lg: 22px;
-    --radius-md: 16px;
-    --radius-sm: 12px;
-    --container: 430px;
-   }
-
-   * {
-    box-sizing: border-box;
-   }
-
-   body {
-    margin: 0;
-    font-family:
-     Inter,
-     ui-sans-serif,
-     system-ui,
-     -apple-system,
-     BlinkMacSystemFont,
-     "Segoe UI",
-     sans-serif;
-    background: linear-gradient(180deg, #eaf1f8 0%, #f4f7fb 100%);
-    color: var(--text);
-    display: flex;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 24px 16px;
-   }
-
-   .app {
-    position: relative;
-    width: 100%;
-    max-width: var(--container);
-    min-height: 920px;
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: 34px;
-    overflow: hidden;
-    box-shadow: var(--shadow);
-   }
-
-   .mobile-shell {
-    position: relative;
-    min-height: 100%;
-    padding: 20px 18px 116px;
-    background:
-     radial-gradient(
-      circle at top right,
-      rgba(42, 95, 144, 0.08),
-      transparent 28%
-     ),
-     linear-gradient(180deg, #eff4f9 0%, #f6f9fc 100%);
-   }
-
-   .topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 18px;
-   }
-
-   .profile-trigger {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: transparent;
-    border: 0;
-    padding: 0;
-    color: inherit;
-    cursor: pointer;
-   }
-
-   .avatar {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #d7e3ef, #bccfe0);
-    border: 2px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 0 8px 20px rgba(42, 95, 144, 0.14);
-    flex-shrink: 0;
-   }
-
-   .hello small {
-    display: block;
-    color: var(--text-soft);
-    font-size: 12px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: 3px;
-    font-weight: 700;
-   }
-
-   .hello strong {
-    font-size: 1.55rem;
-    line-height: 1.1;
-    font-weight: 800;
-    color: var(--text);
-   }
-
-   .topbar-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-   }
-
-   .chip {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px 12px;
-    border-radius: 999px;
-    background: var(--surface);
-    color: var(--primary);
-    border: 1px solid var(--line);
-    font-size: 12px;
-    font-weight: 800;
-    box-shadow: 0 8px 18px rgba(22, 55, 94, 0.06);
-   }
-
-   .icon-btn {
-    width: 46px;
-    height: 46px;
-    border-radius: 50%;
-    border: 1px solid var(--line);
-    background: var(--surface);
-    display: grid;
-    place-items: center;
-    box-shadow: 0 8px 18px rgba(22, 55, 94, 0.06);
-    cursor: pointer;
-   }
-
-   .hero {
-    background: linear-gradient(135deg, #2a5f90 0%, #214d75 100%);
-    border-radius: var(--radius-xl);
-    padding: 18px;
-    color: white;
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 16px;
-   }
-
-   .hero::before,
-   .hero::after {
-    content: "";
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.08);
-   }
-
-   .hero::before {
-    width: 180px;
-    height: 180px;
-    right: -40px;
-    top: -70px;
-   }
-
-   .hero::after {
-    width: 120px;
-    height: 120px;
-    left: -30px;
-    bottom: -50px;
-   }
-
-   .hero-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.14);
-    backdrop-filter: blur(10px);
-    font-size: 12px;
-    font-weight: 700;
-    margin-bottom: 14px;
-    position: relative;
-    z-index: 1;
-   }
-
-   .hero h1 {
-    margin: 0 0 8px;
-    font-size: 1.8rem;
-    line-height: 1.05;
-    position: relative;
-    z-index: 1;
-   }
-
-   .hero p {
-    margin: 0 0 18px;
-    color: rgba(255, 255, 255, 0.85);
-    line-height: 1.45;
-    position: relative;
-    z-index: 1;
-    max-width: 88%;
-   }
-
-   .hero-cta {
-    display: flex;
-    gap: 10px;
-    position: relative;
-    z-index: 1;
-   }
-
-   .btn {
-    border: 0;
-    border-radius: 999px;
-    padding: 13px 18px;
-    font-size: 0.95rem;
-    font-weight: 800;
-    cursor: pointer;
-   }
-
-   .btn-primary {
-    background: white;
-    color: var(--primary-strong);
-   }
-
-   .btn-secondary {
-    background: rgba(255, 255, 255, 0.14);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-   }
-
-   .search-card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-xl);
-    padding: 12px;
-    box-shadow: 0 12px 32px rgba(22, 55, 94, 0.08);
-    margin-top: -18px;
-    margin-bottom: 16px;
-    position: relative;
-    z-index: 2;
-   }
-
-   .search-field {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-height: 58px;
-    border: 1px solid var(--line);
-    border-radius: 18px;
-    padding: 0 16px;
-    background: var(--surface-soft);
-    color: var(--text);
-    font-weight: 700;
-    margin-bottom: 12px;
-   }
-
-   .search-field .muted {
-    color: var(--text-soft);
-    font-weight: 600;
-   }
-
-   .quick-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-   }
-
-   .quick-pill {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 14px;
-    border-radius: 16px;
-    background: #f8fbff;
-    border: 1px solid var(--line);
-    color: var(--text);
-    font-weight: 700;
-    font-size: 0.95rem;
-   }
-
-   .section {
-    margin-bottom: 18px;
-   }
-
-   .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-   }
-
-   .section-header h2 {
-    margin: 0;
-    font-size: 1.2rem;
-    line-height: 1.2;
-   }
-
-   .section-header a {
-    color: var(--text-soft);
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 0.95rem;
-   }
-
-   .service-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-   }
-
-   .service-card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 22px;
-    overflow: hidden;
-    box-shadow: 0 12px 28px rgba(22, 55, 94, 0.08);
-   }
-
-   .thumb {
-    height: 112px;
-    background: linear-gradient(135deg, #c7d7e8 0%, #9ab6d0 100%);
-    position: relative;
-   }
-
-   .thumb::after {
-    content: "Destaque";
-    position: absolute;
-    left: 10px;
-    top: 10px;
-    padding: 6px 9px;
-    font-size: 11px;
-    font-weight: 800;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.86);
-    color: var(--primary);
-   }
-
-   .card-body {
-    padding: 12px;
-   }
-
-   .card-body h3 {
-    margin: 0 0 4px;
-    font-size: 1rem;
-    line-height: 1.2;
-   }
-
-   .card-body p {
-    margin: 0 0 8px;
-    color: var(--text-soft);
-    font-size: 0.88rem;
-    line-height: 1.35;
-   }
-
-   .meta-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    font-size: 0.88rem;
-    font-weight: 700;
-    color: var(--text);
-   }
-
-   .rating {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 10px;
-    border-radius: 999px;
-    background: var(--accent);
-    color: var(--primary);
-   }
-
-   .categories {
-    display: flex;
-    gap: 8px;
-    overflow: auto;
-    padding-bottom: 4px;
-    scrollbar-width: none;
-   }
-
-   .categories::-webkit-scrollbar {
-    display: none;
-   }
-
-   .category {
-    flex: 0 0 auto;
-    padding: 10px 14px;
-    border-radius: 999px;
-    border: 1px solid var(--line);
-    background: var(--surface);
-    color: var(--text);
-    font-weight: 700;
-    font-size: 0.92rem;
-   }
-
-   .promo {
-    background: linear-gradient(135deg, #f7fbff 0%, #e8f0fa 100%);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-xl);
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    box-shadow: 0 12px 28px rgba(22, 55, 94, 0.06);
-   }
-
-   .promo h3 {
-    margin: 0 0 6px;
-    font-size: 1.05rem;
-   }
-
-   .promo p {
-    margin: 0;
-    color: var(--text-soft);
-    line-height: 1.4;
-    font-size: 0.92rem;
-   }
-
-   .promo .btn {
-    background: var(--primary);
-    color: white;
-    white-space: nowrap;
-   }
-
-   .bottom-nav {
-    position: absolute;
-    left: 16px;
-    right: 16px;
-    bottom: 14px;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    padding: 10px;
-    border-radius: 24px;
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(18px);
-    border: 1px solid rgba(216, 227, 240, 0.9);
-    box-shadow: 0 18px 40px rgba(17, 52, 91, 0.12);
-   }
-
-   .nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    min-height: 62px;
-    border-radius: 18px;
-    color: var(--text-soft);
-    font-size: 0.8rem;
-    font-weight: 700;
-    background: transparent;
-    border: 0;
-    cursor: pointer;
-   }
-
-   .nav-item.active {
-    color: var(--primary);
-    background: var(--accent);
-   }
-
-   .nav-icon,
-   .menu-icon,
-   .search-icon,
-   .small-icon {
-    width: 20px;
-    height: 20px;
-    display: inline-block;
-    position: relative;
-    flex-shrink: 0;
-    color: currentColor;
-   }
-
-   .search-icon::before {
-    content: "";
-    position: absolute;
-    width: 12px;
-    height: 12px;
-    border: 2px solid currentColor;
-    border-radius: 50%;
-    left: 1px;
-    top: 1px;
-   }
-
-   .search-icon::after {
-    content: "";
-    position: absolute;
-    width: 8px;
-    height: 2px;
-    background: currentColor;
-    border-radius: 999px;
-    right: 0;
-    bottom: 2px;
-    transform: rotate(45deg);
-    transform-origin: center;
-   }
-
-   .menu-icon::before,
-   .menu-icon::after,
-   .menu-icon span {
-    content: "";
-    position: absolute;
-    left: 2px;
-    right: 2px;
-    height: 2px;
-    background: currentColor;
-    border-radius: 999px;
-   }
-
-   .menu-icon::before {
-    top: 4px;
-   }
-   .menu-icon span {
-    top: 9px;
-   }
-   .menu-icon::after {
-    top: 14px;
-   }
-
-   .small-icon.pin::before,
-   .small-icon.pin::after,
-   .nav-icon.home::before,
-   .nav-icon.home::after,
-   .nav-icon.grid::before,
-   .nav-icon.chat::before,
-   .nav-icon.chat::after,
-   .nav-icon.user::before,
-   .nav-icon.user::after {
-    content: "";
-    position: absolute;
-   }
-
-   .small-icon.pin::before {
-    width: 12px;
-    height: 12px;
-    border: 2px solid currentColor;
-    border-radius: 50% 50% 50% 0;
-    transform: rotate(-45deg);
-    left: 4px;
-    top: 1px;
-   }
-
-   .small-icon.pin::after {
-    width: 4px;
-    height: 4px;
-    background: currentColor;
-    border-radius: 50%;
-    left: 8px;
-    top: 6px;
-   }
-
-   .nav-icon.home::before {
-    width: 14px;
-    height: 10px;
-    border: 2px solid currentColor;
-    border-top: 0;
-    left: 3px;
-    bottom: 2px;
-    border-radius: 2px;
-   }
-
-   .nav-icon.home::after {
-    width: 12px;
-    height: 12px;
-    border-left: 2px solid currentColor;
-    border-top: 2px solid currentColor;
-    transform: rotate(45deg);
-    left: 4px;
-    top: 1px;
-   }
-
-   .nav-icon.grid::before {
-    width: 5px;
-    height: 5px;
-    background: currentColor;
-    left: 3px;
-    top: 3px;
-    box-shadow:
-     9px 0 0 currentColor,
-     0 9px 0 currentColor,
-     9px 9px 0 currentColor;
-    border-radius: 2px;
-   }
-
-   .nav-icon.chat::before {
-    width: 15px;
-    height: 11px;
-    border: 2px solid currentColor;
-    border-radius: 8px;
-    left: 2px;
-    top: 2px;
-   }
-
-   .nav-icon.chat::after {
-    width: 7px;
-    height: 7px;
-    border-left: 2px solid currentColor;
-    border-bottom: 2px solid currentColor;
-    left: 6px;
-    bottom: 1px;
-    transform: skew(-20deg);
-    background: transparent;
-   }
-
-   .nav-icon.user::before {
-    width: 8px;
-    height: 8px;
-    border: 2px solid currentColor;
-    border-radius: 50%;
-    left: 5px;
-    top: 1px;
-   }
-
-   .nav-icon.user::after {
-    width: 14px;
-    height: 8px;
-    border: 2px solid currentColor;
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
-    border-bottom: 0;
-    left: 2px;
-    bottom: 2px;
-   }
-
-   .drawer-backdrop {
-    position: absolute;
-    inset: 0;
-    background: rgba(10, 29, 50, 0.28);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease;
-    z-index: 15;
-   }
-
-   .drawer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: min(86%, 340px);
-    height: 100%;
-    background: rgba(255, 255, 255, 0.97);
-    backdrop-filter: blur(18px);
-    border-right: 1px solid rgba(216, 227, 240, 0.9);
-    box-shadow: 18px 0 40px rgba(18, 50, 88, 0.14);
-    padding: 24px 18px 26px;
-    transform: translateX(-102%);
-    transition: transform 0.28s ease;
-    z-index: 20;
-    overflow: auto;
-   }
-
-   .app.menu-open .drawer-backdrop {
-    opacity: 1;
-    pointer-events: auto;
-   }
-
-   .app.menu-open .drawer {
-    transform: translateX(0);
-   }
-
-   .drawer-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-   }
-
-   .drawer-user h3 {
-    margin: 0 0 4px;
-    font-size: 1.35rem;
-    line-height: 1.1;
-   }
-
-   .drawer-user p {
-    margin: 0;
-    color: var(--text-soft);
-    font-weight: 600;
-   }
-
-   .drawer-banner {
-    background: linear-gradient(135deg, #f3f8ff 0%, #e2edf9 100%);
-    border: 1px solid var(--line);
-    border-radius: 22px;
-    padding: 16px;
-    margin-bottom: 18px;
-   }
-
-   .drawer-banner strong {
-    display: block;
-    font-size: 1rem;
-    margin-bottom: 4px;
-   }
-
-   .drawer-banner span {
-    color: var(--text-soft);
-    font-size: 0.92rem;
-    line-height: 1.4;
-   }
-
-   .drawer-list {
-    display: grid;
-    gap: 10px;
-   }
-
-   .drawer-link {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-height: 52px;
-    padding: 10px 12px;
-    border-radius: 16px;
-    color: var(--text);
-    text-decoration: none;
-    font-weight: 700;
-   }
-
-   .drawer-link:hover {
-    background: var(--accent);
-   }
-
-   .drawer-separator {
-    height: 1px;
-    background: var(--line);
-    margin: 12px 0;
-   }
-  </style>
- </head>
- <body>
-  <div class="app" id="app">
-   <div class="drawer-backdrop" id="backdrop"></div>
-
-   <aside class="drawer" aria-label="Menu do perfil">
-    <div class="drawer-header">
-     <div class="avatar"></div>
-     <div class="drawer-user">
-      <h3>Gabriel</h3>
-      <p>Editar perfil e preferências</p>
-     </div>
-    </div>
-
-    <div class="drawer-banner">
-     <strong>Conta profissional em evolução</strong>
-     <span
-      >Centralize pedidos, pagamentos, reputação e acesso rápido às áreas
-      principais do app.</span
-     >
-    </div>
-
-    <nav class="drawer-list">
-     <a class="drawer-link" href="#">Meu perfil</a>
-     <a class="drawer-link" href="#">Mensagens</a>
-     <a class="drawer-link" href="#">Pedidos</a>
-     <a class="drawer-link" href="#">Favoritos</a>
-     <a class="drawer-link" href="#">Pagamentos</a>
-     <a class="drawer-link" href="#">Segurança</a>
-     <a class="drawer-link" href="#">Configurações</a>
-
-     <div class="drawer-separator"></div>
-
-     <a class="drawer-link" href="#">Seja um profissional</a>
-     <a class="drawer-link" href="#">Ajuda</a>
-     <a class="drawer-link" href="#">Sair</a>
-    </nav>
-   </aside>
-
-   <main class="mobile-shell">
-    <header class="topbar">
-     <button
-      class="profile-trigger"
-      id="openMenu"
-      aria-label="Abrir menu do perfil"
-     >
-      <div class="avatar"></div>
-      <div class="hello">
-       <small>Olá</small>
-       <strong>Gabriel!</strong>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      :root {
+        /* SUAS VARIÁVEIS EXATAS */
+        --font-sans:
+          "Poppins", ui-sans-serif, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        --color-bg: #f4f7fa;
+        --color-surface: #ffffff;
+        --color-text: #111827;
+        --color-text-soft: #455468;
+        --color-primary: #2a5f90;
+        --color-secondary: #298f7f;
+        --gradient-brand: linear-gradient(
+          180deg,
+          color-mix(in srgb, var(--color-primary) 80%, white) 0%,
+          var(--color-primary) 100%
+        );
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: var(--font-sans);
+      }
+
+      body {
+        background-color: var(--color-bg);
+        padding: 15px;
+        display: flex;
+        justify-content: center;
+      }
+
+      /* AREA COM FUNDO AZUL (ESTRUTURA MOBILE) */
+      .demo-topbar-sandbox {
+        width: 100%;
+        max-width: 400px;
+        background: var(--gradient-brand); /* Seu gradiente primário */
+        border-radius: 32px;
+        padding: 24px 20px 40px 20px;
+        color: var(--color-surface);
+        box-shadow: 0 12px 24px rgba(42, 95, 144, 0.2);
+      }
+
+      /* TOPO: PERFIL E NOTIFICAÇÃO */
+      .demo-header-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+      }
+
+      .demo-user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      /* Avatar DK usando seu --color-secondary */
+      .avatar-dk-circle {
+        width: 48px;
+        height: 48px;
+        background-color: var(--color-secondary);
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: 700;
+        font-size: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        color: white;
+      }
+
+      .user-text-box b {
+        display: block;
+        font-size: 15px;
+        letter-spacing: -0.3px;
+      }
+
+      .user-text-box span {
+        font-size: 11px;
+        opacity: 0.8;
+      }
+
+      /* Botão de Notificação Branco (Referência Mobile) */
+      .notif-button-white {
+        background-color: var(--color-surface);
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .notif-button-white svg {
+        fill: var(--color-primary);
+      }
+
+      /* CONTEÚDO CENTRAL */
+      .demo-hero-content h1 {
+        font-size: 26px;
+        font-weight: 600;
+        line-height: 1.2;
+        margin-bottom: 12px;
+      }
+
+      .demo-location-badge {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.12);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 13px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        margin-bottom: 30px;
+      }
+
+      /* BARRA DE BUSCA (ESTILO DO SEU SITE + ESTRUTURA DO EXEMPLO) */
+      .demo-search-bar {
+        background-color: var(--color-surface);
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        padding: 6px 10px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      }
+
+      .demo-search-bar input {
+        flex: 1;
+        border: none;
+        outline: none;
+        padding: 12px;
+        font-size: 15px;
+        color: var(--color-text);
+        background: transparent;
+      }
+
+      .demo-search-bar input::placeholder {
+        color: var(--color-text-soft);
+        opacity: 0.6;
+      }
+
+      /* Botão de Filtro lateral */
+      .demo-filter-btn {
+        background-color: var(--color-bg);
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+      }
+
+      .demo-filter-btn svg {
+        stroke: var(--color-primary);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="demo-topbar-sandbox">
+      <div class="demo-header-nav">
+        <div class="demo-user-info">
+          <div class="avatar-dk-circle">DK</div>
+          <div class="user-text-box">
+            <b>Gabriel</b>
+            <span>230 pontos acumulados</span>
+          </div>
+        </div>
+        <div class="notif-button-white">
+          <svg width="22" height="22" viewBox="0 0 24 24">
+            <path
+              d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"
+            />
+          </svg>
+        </div>
       </div>
-     </button>
 
-     <div class="topbar-actions">
-      <span class="chip">Profissional</span>
-      <button class="icon-btn" aria-label="Abrir menu">
-       <span class="menu-icon"><span></span></span>
-      </button>
-     </div>
+      <div class="demo-hero-content">
+        <h1>Encontre o serviço<br />que você procura</h1>
+        <div class="demo-location-badge">
+          <span style="color: #4ade80; margin-right: 8px">●</span> Adicionar
+          endereço ⌵
+        </div>
+      </div>
+
+      <div class="demo-search-bar">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#94a3b8"
+          stroke-width="2.5"
+          style="margin-left: 8px"
+        >
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" placeholder="Ex: Pintor, Encanador..." />
+
+        <button class="demo-filter-btn">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="4" y1="21" x2="4" y2="14"></line>
+            <line x1="4" y1="10" x2="4" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12" y2="3"></line>
+            <line x1="20" y1="21" x2="20" y2="16"></line>
+            <line x1="20" y1="12" x2="20" y2="3"></line>
+            <line x1="1" y1="14" x2="7" y2="14"></line>
+            <line x1="9" y1="8" x2="15" y2="8"></line>
+            <line x1="17" y1="16" x2="23" y2="16"></line>
+          </svg>
+        </button>
+      </div>
     </header>
-
-    <section class="hero">
-     <div class="hero-badge">Plataforma local de serviços</div>
-     <h1>Encontre ajuda confiável perto de você</h1>
-     <p>
-      Uma home mobile mais limpa, vertical e preparada para crescer sem
-      herdar os vícios do desktop.
-     </p>
-     <div class="hero-cta">
-      <button class="btn btn-primary">Buscar serviço</button>
-      <button class="btn btn-secondary">Anunciar</button>
-     </div>
-    </section>
-
-    <section class="search-card">
-     <div class="search-field">
-      <span class="search-icon"></span>
-      <span>O que você precisa?</span>
-      <span class="muted">Ex: pintor residencial</span>
-     </div>
-
-     <div class="quick-actions">
-      <div class="quick-pill">
-       <span class="small-icon pin"></span>
-       Serviços próximos
-      </div>
-      <div class="quick-pill">
-       <span class="small-icon pin"></span>
-       Inserir CEP
-      </div>
-     </div>
-    </section>
-
-    <section class="section">
-     <div class="section-header">
-      <h2>Categorias</h2>
-      <a href="#">Ver todas</a>
-     </div>
-     <div class="categories">
-      <div class="category">Elétrica</div>
-      <div class="category">Pintura</div>
-      <div class="category">Montagem</div>
-      <div class="category">Limpeza</div>
-      <div class="category">Fretes</div>
-      <div class="category">Reformas</div>
-     </div>
-    </section>
-
-    <section class="section">
-     <div class="section-header">
-      <h2>Profissionais em destaque</h2>
-      <a href="#">Mais</a>
-     </div>
-
-     <div class="service-grid">
-      <article class="service-card">
-       <div class="thumb"></div>
-       <div class="card-body">
-        <h3>Carlos Andrade</h3>
-        <p>Pintor residencial • Centro, Salvador</p>
-        <div class="meta-row">
-         <span class="rating">★ 4,9</span>
-         <span>R$ 120</span>
-        </div>
-       </div>
-      </article>
-
-      <article class="service-card">
-       <div class="thumb"></div>
-       <div class="card-body">
-        <h3>Mariana Luz</h3>
-        <p>Limpeza fina • Pituba, Salvador</p>
-        <div class="meta-row">
-         <span class="rating">★ 4,8</span>
-         <span>R$ 95</span>
-        </div>
-       </div>
-      </article>
-     </div>
-    </section>
-
-    <section class="promo">
-     <div>
-      <h3>Quer vender na Doke?</h3>
-      <p>
-       Crie seu perfil profissional e aumente sua exposição local com uma
-       estrutura mais objetiva no mobile.
-      </p>
-     </div>
-     <button class="btn">Começar</button>
-    </section>
-   </main>
-
-   <nav class="bottom-nav" aria-label="Navegação inferior">
-    <button class="nav-item active">
-     <span class="nav-icon home"></span>
-     Início
-    </button>
-    <button class="nav-item">
-     <span class="nav-icon grid"></span>
-     Explorar
-    </button>
-    <button class="nav-item">
-     <span class="nav-icon chat"></span>
-     Mensagens
-    </button>
-    <button class="nav-item">
-     <span class="nav-icon user"></span>
-     Perfil
-    </button>
-   </nav>
-  </div>
-
-  <script>
-   const app = document.getElementById("app");
-   const openMenu = document.getElementById("openMenu");
-   const backdrop = document.getElementById("backdrop");
-
-   function toggleMenu(force) {
-    const shouldOpen =
-     typeof force === "boolean"
-      ? force
-      : !app.classList.contains("menu-open");
-
-    app.classList.toggle("menu-open", shouldOpen);
-   }
-
-   openMenu.addEventListener("click", () => toggleMenu());
-   backdrop.addEventListener("click", () => toggleMenu(false));
-  </script>
- </body>
+  </body>
 </html>

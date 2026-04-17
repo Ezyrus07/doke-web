@@ -568,3 +568,34 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+
+/* 2026-04-14 profile zoom-resilience:
+   prevent hero/content compression and horizontal overflow when the user changes browser zoom. */
+.profile-shell,
+.profile-hero,
+.profile-hero__card,
+.profile-panels,
+.profile-panel {
+  min-width: 0;
+}
+
+.profile-shell {
+  overflow-x: clip;
+}
+
+@media (max-width: 1400px) {
+  .profile-hero__card {
+    grid-template-columns: 132px minmax(0, 1fr);
+  }
+
+  .profile-hero__aside {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 1180px) {
+  .profile-shell {
+    width: min(100%, calc(100% - 24px));
+  }
+}

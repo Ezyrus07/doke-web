@@ -4,36 +4,23 @@ window.DokeHomeCleanup?.();
 window.DokeHomeCleanup = () => {
   document.body.classList.remove("home-search-overlay-active");
   document.body.classList.remove("home-search-has-query");
+  document.body.classList.remove("home-mobile-filters-open");
+  document.body.classList.remove("mobile-home-drawer-open");
   routeController.abort();
 };
 const { signal } = routeController;
-/* Home page interactions: search suggestions, tabs and rails. */
+/* Home page interactions: filters, location, tabs and rails. */
 const searchData = window.DokeSearchData || {};
-const searchBox = document.querySelector("[data-searchbox]");
-const searchInput = document.querySelector("[data-search-input]") || document.querySelector("#main-site-search");
-const searchDropdown = document.querySelector("[data-search-dropdown]");
-const searchRecommendationList = document.querySelector("[data-search-recommendation-list]");
-const searchHistoryList = document.querySelector("[data-search-history-list]");
-const searchResultsList = document.querySelector("[data-search-results-list]");
-const searchResultsSection = document.querySelector("[data-search-results-section]");
-const searchHistorySection = document.querySelector("[data-search-history-section]");
-const searchRefineSection = document.querySelector("[data-search-refine-section]");
-const searchClearButton = document.querySelector("[data-search-clear]");
-const searchEmptyStaté = document.querySelector("[data-search-empty]");
-const searchPrimaryCta = document.querySelector(".home-search-hero__cta--primary");
-
-const searchRecommendations = searchData.recommendations || [];
-const getSearchHistory = searchData.getSearchHistory || (() => []);
-const saveSearchHistory = searchData.saveSearchHistory || (() => {});
-const addSearchHistory = searchData.addSearchHistory || (() => {});
-const getSuggestionMatches = searchData.getSuggestionMatches || (() => []);
 const locationOptions = searchData.locationOptions || { statés: [], citiesByStaté: {}, neighborhoodsByCity: {}, cepLookup: {} };
 const moreFiltersToggles = document.querySelectorAll("[data-more-filters-toggle]");
 const moreFiltersPanel = document.querySelector("[data-more-filters-panel]");
-const moreFiltersClose = document.querySelector("[data-more-filters-close]");
+const moreFiltersCloseButtons = document.querySelectorAll("[data-more-filters-close]");
 const moreFiltersApply = document.querySelector("[data-more-filters-apply]");
 const moreFiltersTabsHost = document.querySelector("[data-more-filters-tabs-host]");
 const moreFiltersSearchHost = document.querySelector("[data-more-filters-search-host]");
+const moreFiltersNavButtons = document.querySelectorAll("[data-more-filters-nav]");
+const moreFiltersSections = document.querySelectorAll("[data-more-filters-section]");
+const mobileMoreFiltersMedia = window.matchMedia("(max-width: 760px)");
 const leadingHeroFiltersButton = document.querySelector(".home-search-hero__leading-filter");
 const homeStatéSelect = document.querySelector("[data-home-staté-select]");
 const homeCitySelect = document.querySelector("[data-home-city-select]");
@@ -62,6 +49,10 @@ const orderFeedbackUrgency = document.querySelector("[data-order-feedback-urgenc
 const uiSelectApi = window.DokeUiSelect;
 let activeModalResolver = null;
 
+const initMobileHomeDrawer = window.DokeHomeDrawer?.create({ signal }) || (() => {});
+const initHomeSearch = window.DokeHomeSearch?.create({ signal }) || (() => {});
+
+
 const sideMeta = document.querySelector(".home-side-meta");
 const sideMetaSearchButton = document.querySelector(".home-side-meta__search");
 const sideMetaSearchInput = document.querySelector(".home-side-meta__search-input");
@@ -70,8 +61,9 @@ const homeAccountMenuToggle = document.querySelector("[data-home-account-menu-to
 const homeProfileMenu = document.querySelector("[data-home-profile-menu]");
 const homeAccountMenu = document.querySelector("[data-home-account-menu]");
 const desktopLocationTrigger = document.querySelector(".home-side-meta__location");
-const mobileLocationTrigger = document.querySelector(".mobile-header-location[data-location-trigger]");
-const locationTriggers = [desktopLocationTrigger, mobileLocationTrigger].filter(Boolean);
+const locationTriggers = [
+  ...document.querySelectorAll(".home-side-meta__location, .mobile-header-location[data-location-trigger], .home-mobile-hero__location[data-location-trigger]")
+].filter(Boolean);
 const locationMenu = document.querySelector("[data-home-location-menu]");
 const locationMenuContent = document.querySelector("[data-home-location-content]");
 const locationMenuClose = document.querySelector("[data-home-location-close]");
@@ -465,291 +457,6 @@ if (!searchBox || !searchInput) {
   return;
 }
 
-const searchItemIcon = (type = "search") => {
-  if (type === "history") {
-    return '<svg viewBox="0 0 24 24"><path d="M12 7.5v5l3 2"></path><path d="M4.8 12a7.2 7.2 0 1 0 2.1-5.1"></path><path d="M4.8 5.7v3.6h3.6"></path></svg>';
-  }
-  return '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg>';
-};
-
-let activeSearchIndex = -1;
-const isMobileSearchViewport = () => window.innerWidth <= 760;
-const shouldUseSearchDropdown = () => !isMobileSearchViewport();
-const syncSearchOverlayStaté = (query = "") => {
-  document.body.classList.toggle("home-search-has-query", isMobileSearchViewport() && String(query || "").trim().length >= 2);
-};
-
-const creatéSuggestionButton = ({ label, meta, badge, value, type = "search" }) => {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "search-suggestion";
-  button.dataset.value = value || label;
-  button.innerHTML = `
-    <span class="search-suggestion__main">
-      <span class="search-suggestion__icon" aria-hidden="true">${searchItemIcon(type)}</span>
-      <span class="search-suggestion__text">
-        <span class="search-suggestion__label">${label}</span>
-        <span class="search-suggestion__meta">${meta}</span>
-      </span>
-    </span>
-    <span class="search-suggestion__badge">${badge}</span>
-  `;
-  return button;
-};
-
-const renderRecommendationChips = () => {
-  if (!searchRecommendationList) return;
-  searchRecommendationList.innerHTML = "";
-  searchRecommendations.forEach((item) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "search-chip";
-    button.dataset.value = item;
-    button.innerHTML = `${searchItemIcon()}<span>${item}</span>`;
-    searchRecommendationList.appendChild(button);
-  });
-};
-
-const renderSearchHistory = () => {
-  if (!searchHistoryList || !searchHistorySection) return;
-  const history = getSearchHistory();
-  searchHistoryList.innerHTML = "";
-
-  if (!history.length) {
-    searchHistorySection.hidden = true;
-    return;
-  }
-
-  searchHistorySection.hidden = false;
-  const visibleHistory = isMobileSearchViewport() ? history.slice(0, 2) : history;
-  visibleHistory.forEach((item) => {
-    searchHistoryList.appendChild(creatéSuggestionButton({
-      label: item,
-      meta: "Pesquisa recente",
-      badge: "Historico",
-      value: item,
-      type: "history"
-    }));
-  });
-};
-
-const renderSearchSuggestions = (query = "") => {
-  if (!searchResultsList || !searchResultsSection) return;
-
-  searchResultsList.innerHTML = "";
-  activeSearchIndex = -1;
-  if (searchEmptyStaté) searchEmptyStaté.hidden = true;
-
-  const cleanQuery = String(query || "").trim();
-  if (searchRefineSection) {
-    searchRefineSection.hidden = cleanQuery.length < 2;
-  }
-
-  if (cleanQuery.length < 2) {
-    searchResultsSection.hidden = true;
-    return;
-  }
-
-  const matches = getSuggestionMatches(cleanQuery);
-  if (!matches.length) {
-    searchResultsSection.hidden = false;
-    if (searchEmptyStaté) searchEmptyStaté.hidden = false;
-    return;
-  }
-
-  matches.forEach((item) => {
-    searchResultsList.appendChild(creatéSuggestionButton(item));
-  });
-  searchResultsSection.hidden = false;
-};
-
-const openSearchDropdown = () => {
-  if (!searchDropdown || !searchInput) return;
-  if (!shouldUseSearchDropdown()) {
-    closeSearchDropdown();
-    return;
-  }
-  searchDropdown.hidden = false;
-  searchInput.setAttribute("aria-expanded", "true");
-  if (isMobileSearchViewport()) {
-    document.body.classList.add("home-search-overlay-active");
-  }
-  syncSearchOverlayStaté(searchInput.value);
-};
-
-const closeSearchDropdown = () => {
-  if (!searchDropdown || !searchInput) return;
-  searchDropdown.hidden = true;
-  searchInput.setAttribute("aria-expanded", "false");
-  activeSearchIndex = -1;
-  document.body.classList.remove("home-search-overlay-active");
-  document.body.classList.remove("home-search-has-query");
-};
-
-const goToSearchResults = (value) => {
-  const cleanValue = String(value || "").trim();
-  if (!cleanValue) return;
-  addSearchHistory(cleanValue);
-  const nextUrl = new URL("resultados.html", window.location.href);
-  nextUrl.searchParams.set("q", cleanValue);
-  if (window.DokeNavigate) {
-    window.DokeNavigate(nextUrl.toString());
-    return;
-  }
-
-  window.location.href = nextUrl.toString();
-};
-
-const getTagSearchValue = (value) => String(value || "").replace(/^#/, "").trim();
-const goToAdDetails = () => {
-  const nextUrl = new URL("detalhe-anuncio.html", window.location.href);
-
-  if (window.DokeNavigate) {
-    window.DokeNavigate(nextUrl.toString());
-    return;
-  }
-
-  window.location.href = nextUrl.toString();
-};
-
-const getVisibleSearchOptions = () => {
-  if (!searchDropdown || searchDropdown.hidden) return [];
-  return [...searchDropdown.querySelectorAll(".search-suggestion:not([hidden])")];
-};
-
-renderRecommendationChips();
-renderSearchHistory();
-renderSearchSuggestions("");
-if (searchDropdown) searchDropdown.hidden = true;
-
-if (searchBox && searchInput && searchDropdown) {
-  const syncSearchDropdown = () => {
-    if (!shouldUseSearchDropdown()) {
-      closeSearchDropdown();
-      return;
-    }
-
-    const query = searchInput.value.trim();
-    renderSearchHistory();
-    renderSearchSuggestions(query);
-    syncSearchOverlayStaté(query);
-
-    if (!query.length) {
-      const hasRecommendations = !!searchRecommendationList?.children.length;
-      const hasHistory = !!searchHistoryList?.children.length;
-      if (hasRecommendations || hasHistory) {
-        openSearchDropdown();
-        return;
-      }
-    }
-
-    if (query.length >= 2) {
-      openSearchDropdown();
-      return;
-    }
-
-    closeSearchDropdown();
-  };
-
-  searchInput.addEventListener("focus", syncSearchDropdown);
-  searchInput.addEventListener("click", syncSearchDropdown);
-  searchInput.addEventListener("input", syncSearchDropdown);
-
-  searchInput.addEventListener("keydown", (event) => {
-    if (!shouldUseSearchDropdown()) return;
-    const options = getVisibleSearchOptions();
-
-    if (event.key === "ArrowDown" && options.length) {
-      event.preventDefault();
-      activeSearchIndex = Math.min(activeSearchIndex + 1, options.length - 1);
-      options.forEach((option, index) => option.classList.toggle("is-active", index === activeSearchIndex));
-      options[activeSearchIndex].scrollIntoView({ block: "nearest" });
-    }
-
-    if (event.key === "ArrowUp" && options.length) {
-      event.preventDefault();
-      activeSearchIndex = Math.max(activeSearchIndex - 1, 0);
-      options.forEach((option, index) => option.classList.toggle("is-active", index === activeSearchIndex));
-      options[activeSearchIndex].scrollIntoView({ block: "nearest" });
-    }
-
-    if (event.key === "Enter") {
-      event.preventDefault();
-      if (activeSearchIndex >= 0 && options[activeSearchIndex]) {
-        goToSearchResults(options[activeSearchIndex].dataset.value || options[activeSearchIndex].textContent);
-        return;
-      }
-      goToSearchResults(searchInput.value);
-    }
-
-    if (event.key === "Escape") {
-      closeSearchDropdown();
-    }
-  });
-
-  searchDropdown.addEventListener("click", (event) => {
-    if (!shouldUseSearchDropdown()) return;
-    const suggestion = event.target.closest(".search-suggestion, .search-chip");
-    if (!suggestion) return;
-    goToSearchResults(suggestion.dataset.value || suggestion.textContent);
-  });
-
-  document.addEventListener("click", (event) => {
-    if (!event.target.closest("[data-searchbox]")) {
-      closeSearchDropdown();
-    }
-  }, { signal });
-
-  searchBox.addEventListener("submit", (event) => {
-    event.preventDefault();
-    goToSearchResults(searchInput.value);
-  });
-}
-
-if (searchPrimaryCta && searchInput) {
-  searchPrimaryCta.addEventListener("click", (event) => {
-    event.preventDefault();
-    goToSearchResults(searchInput.value);
-  });
-}
-
-document.addEventListener("click", (event) => {
-  const tag = event.target.closest(".service-card__tags span");
-  if (!tag) return;
-
-  event.preventDefault();
-  goToSearchResults(getTagSearchValue(tag.textContent));
-}, { signal });
-
-document.addEventListener("click", (event) => {
-  const card = event.target.closest(".service-card");
-  if (!card) return;
-
-  if (event.target.closest(".service-card__profile, .service-card__tags, .service-card__favorite")) {
-    return;
-  }
-
-  event.preventDefault();
-  goToAdDetails();
-}, { signal });
-
-window.addEventListener("resize", () => {
-  if (!isMobileSearchViewport()) {
-    document.body.classList.remove("home-search-overlay-active");
-    document.body.classList.remove("home-search-has-query");
-  } else if (!searchDropdown.hidden) {
-    document.body.classList.add("home-search-overlay-active");
-    syncSearchOverlayStaté(searchInput?.value || "");
-  }
-}, { signal });
-
-if (searchClearButton) {
-  searchClearButton.addEventListener("click", () => {
-    saveSearchHistory([]);
-    renderSearchHistory();
-  });
-}
-
 const enhanceHomeSelects = () => {
   uiSelectApi?.enhanceAll(document);
 };
@@ -993,83 +700,79 @@ document.querySelectorAll("[data-chip-group]").forEach((group) => {
   });
 });
 
-const mountMoreFiltersPanel = (source = "tabs") => {
-  if (!moreFiltersPanel) return;
-  const nextHost = source === "search-dropdown" ? moreFiltersSearchHost : moreFiltersTabsHost;
-  if (nextHost && moreFiltersPanel.parentElement !== nextHost) {
-    nextHost.appendChild(moreFiltersPanel);
-  }
-};
+document.querySelectorAll(".mini-tabs").forEach((group) => {
+  group.addEventListener("click", (event) => {
+    const tab = event.target.closest(".mini-tab");
+    if (!tab) return;
 
-const openMoreFilters = (source = "tabs") => {
-  if (!moreFiltersToggles.length || !moreFiltersPanel) return;
-  mountMoreFiltersPanel(source);
-  if (source === "search-dropdown") {
-    closeSearchDropdown();
-    moreFiltersSearchHost?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-  moreFiltersPanel.hidden = false;
-  moreFiltersToggles.forEach((toggle) => {
-    const sameSource = (toggle.dataset.moreFiltersSource || "tabs") === source;
-    toggle.setAttribute("aria-expanded", sameSource ? "true" : "false");
-    toggle.classList.toggle("is-active", sameSource);
-  });
-};
-
-const closeMoreFilters = () => {
-  if (!moreFiltersToggles.length || !moreFiltersPanel) return;
-  moreFiltersPanel.hidden = true;
-  mountMoreFiltersPanel("tabs");
-  moreFiltersToggles.forEach((toggle) => {
-    toggle.setAttribute("aria-expanded", "false");
-    toggle.classList.remove("is-active");
-  });
-};
-
-if (moreFiltersToggles.length && moreFiltersPanel) {
-  closeMoreFilters();
-
-  moreFiltersToggles.forEach((toggle) => {
-    toggle.addEventListener("click", (event) => {
-      const isOpen = toggle.getAttribute("aria-expanded") === "true";
-      const source = toggle.dataset.moreFiltersSource || "tabs";
-      if (isOpen) {
-        closeMoreFilters();
-        return;
-      }
-      openMoreFilters(source);
+    group.querySelectorAll(".mini-tab").forEach((item) => {
+      item.classList.remove("is-active");
+      item.setAttribute("aria-pressed", "false");
     });
-  });
 
-  moreFiltersClose?.addEventListener("click", closeMoreFilters);
-  moreFiltersApply?.addEventListener("click", closeMoreFilters);
-
-  leadingHeroFiltersButton?.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    const isOpen = leadingHeroFiltersButton.getAttribute("aria-expanded") === "true";
-    if (isOpen) {
-      closeMoreFilters();
-      return;
-    }
-    openMoreFilters("hero-field");
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      closeMoreFilters();
-    }
-
-    if (event.key === "Escape" && uiModal && !uiModal.hidden) {
-      closeUiModal({ confirmed: false });
-    }
-
-    if (event.key === "Enter" && uiModal && !uiModal.hidden && document.activeElement === uiModalInput) {
-      event.preventDefault();
-      closeUiModal({ confirmed: true, value: uiModalInput?.value || "" });
-    }
+    tab.classList.add("is-active");
+    tab.setAttribute("aria-pressed", "true");
   }, { signal });
-}
+});
+
+document.querySelectorAll(".search-dropdown__refine-chips").forEach((group) => {
+  group.addEventListener("click", (event) => {
+    const chip = event.target.closest(".search-refine-chip");
+    if (!chip) return;
+    chip.classList.toggle("is-active");
+    chip.setAttribute("aria-pressed", chip.classList.contains("is-active") ? "true" : "false");
+  }, { signal });
+});
+
+document.querySelectorAll(".service-card__favorite").forEach((button) => {
+  button.setAttribute("aria-pressed", "false");
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    const isActive = button.classList.toggle("is-active");
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    button.setAttribute("aria-label", isActive ? "Remover anúncio dos salvos" : "Salvar anúncio");
+  }, { signal });
+});
+
+const homeFiltersApi = window.DokeHomeFilters?.create({
+  signal,
+  toggles: moreFiltersToggles,
+  panel: moreFiltersPanel,
+  closeButtons: moreFiltersCloseButtons,
+  applyButton: moreFiltersApply,
+  tabsHost: moreFiltersTabsHost,
+  searchHost: moreFiltersSearchHost,
+  navButtons: moreFiltersNavButtons,
+  sections: moreFiltersSections,
+  mobileMedia: mobileMoreFiltersMedia,
+  leadingButton: leadingHeroFiltersButton
+}) || {
+  open: () => {},
+  close: () => {},
+  setSection: () => {},
+  mountPanel: () => {}
+};
+
+const setMoreFiltersSection = homeFiltersApi.setSection;
+const mountMoreFiltersPanel = homeFiltersApi.mountPanel;
+const openMoreFilters = (source = "tabs") => {
+  if (source === "search-dropdown" || source === "hero-field") {
+    closeSearchDropdown();
+  }
+  homeFiltersApi.open(source);
+};
+const closeMoreFilters = homeFiltersApi.close;
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && uiModal && !uiModal.hidden) {
+    closeUiModal({ confirmed: false });
+  }
+
+  if (event.key === "Enter" && uiModal && !uiModal.hidden && document.activeElement === uiModalInput) {
+    event.preventDefault();
+    closeUiModal({ confirmed: true, value: uiModalInput?.value || "" });
+  }
+}, { signal });
 
 const bindScrollRail = ({ track, arrows, directionAttr, amountFactor }) => {
   if (!track || !arrows.length) return;
@@ -1130,6 +833,47 @@ const openOrderFeedback = (payload) => {
 };
 
 orderFeedbackClose?.addEventListener("click", closeOrderFeedback);
+
+initMobileHomeDrawer();
+initHomeSearch();
+
+const desktopSearchInput = document.querySelector("[data-search-input]");
+const desktopSearchBox = document.querySelector("[data-searchbox]");
+const desktopSearchDropdown = document.querySelector("[data-search-dropdown]");
+const desktopSearchField = document.querySelector(".home-search-hero__field");
+const desktopSearchRecommendationList = document.querySelector("[data-search-recommendation-list]");
+
+if (desktopSearchInput && desktopSearchBox && desktopSearchDropdown) {
+  const openDesktopSearchFallback = () => {
+    if (window.innerWidth <= 760) return;
+    if (!desktopSearchRecommendationList?.children.length) return;
+    desktopSearchDropdown.hidden = false;
+    desktopSearchBox.classList.add("is-search-open");
+    desktopSearchField?.classList.add("is-search-open");
+    desktopSearchInput.setAttribute("aria-expanded", "true");
+  };
+
+  const closeDesktopSearchFallback = () => {
+    desktopSearchDropdown.hidden = true;
+    desktopSearchBox.classList.remove("is-search-open");
+    desktopSearchField?.classList.remove("is-search-open");
+    desktopSearchInput.setAttribute("aria-expanded", "false");
+  };
+
+  desktopSearchInput.addEventListener("focus", openDesktopSearchFallback, { signal });
+  desktopSearchInput.addEventListener("click", openDesktopSearchFallback, { signal });
+
+  desktopSearchBox.addEventListener("click", (event) => {
+    if (event.target.closest("[data-search-dropdown]")) return;
+    openDesktopSearchFallback();
+  }, { signal });
+
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest("[data-searchbox]")) {
+      closeDesktopSearchFallback();
+    }
+  }, { signal });
+}
 
 try {
   const shouldShowOrderFeedback = new URLSearchParams(window.location.search).get("quote") === "sent";

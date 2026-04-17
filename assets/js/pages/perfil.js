@@ -146,7 +146,8 @@ window.DokeInitProfile = () => {
     editBio: document.querySelector("[data-profile-edit-bio]"),
     editHighlight: document.querySelector("[data-profile-edit-highlight]"),
     editAvatar: document.querySelector("[data-profile-edit-avatar]"),
-    editHighlightField: document.querySelector("[data-profile-edit-highlight-field]")
+    editHighlightField: document.querySelector("[data-profile-edit-highlight-field]"),
+    editCategoryField: document.querySelector("[data-profile-edit-category-field]")
   };
 
   const panelMap = Object.fromEntries(els.panels.map((panel) => [panel.dataset.profilePanel, panel]));
@@ -313,6 +314,18 @@ window.DokeInitProfile = () => {
     if (els.editHighlight) els.editHighlight.value = normalize(firstHighlight.detail || "");
     if (els.editAvatar) els.editAvatar.textContent = normalize(hero.avatar || "GA");
     if (els.editHighlightField) els.editHighlightField.hidden = isClientProfile;
+    if (els.editCategoryField) els.editCategoryField.hidden = isClientProfile;
+    document.querySelectorAll("[data-profile-edit-preview-name]").forEach((node) => {
+      node.textContent = els.editName?.value || normalize(hero.name || "Gabriel Antonio");
+    });
+    document.querySelectorAll("[data-profile-edit-preview-username]").forEach((node) => {
+      const usernameField = document.querySelector("[data-profile-edit-username]");
+      node.textContent = usernameField?.value || normalize(hero.username || "@gabriel");
+    });
+    document.querySelectorAll("[data-profile-edit-preview-city]").forEach((node) => {
+      const cityField = document.querySelector("[data-profile-edit-city]");
+      node.textContent = cityField?.value || normalize(hero.location || "Salvador, BA");
+    });
     els.editModal.hidden = false;
     body.classList.add("has-modal-open");
     window.setTimeout(() => {
@@ -398,8 +411,18 @@ window.DokeInitProfile = () => {
     });
   };
 
+  const escapeAttr = (value) => String(value || "").replace(/"/g, "&quot;");
+
   const actionMarkup = (item) => {
     const classes = `profile-action ${item.tone === "primary" || item.style === "primary" ? "profile-action--success" : ""}`.trim();
+    const labelKey = normalizeActionLabel(item.label);
+    if (labelKey.includes("solicitar orcamento")) {
+      return `
+        <button class="${classes}" type="button" data-budget-open data-budget-provider="${escapeAttr(item.provider || "Studio Aquarela")}" data-budget-service="${escapeAttr(item.service || "reforma residencial de alto padrao")}">
+          ${normalize(item.label)}
+        </button>
+      `;
+    }
     if (item.href) {
       return `
         <a class="${classes}" href="${item.href}">
@@ -636,13 +659,21 @@ window.DokeInitProfile = () => {
       </div>
       <div class="profile-review-hub" data-profile-review-hub data-review-ads='${JSON.stringify(reviewAds).replace(/'/g, "&apos;")}'>
         <div class="profile-review-hub__summary"></div>
-        <div class="profile-review-toolbar" role="tablist" aria-label="Filtrar avaliações do anúncio">
-          <div class="profile-review-toolbar__filters">
-            <button class="profile-review-filter is-active" type="button" data-profile-review-filter="all">Todas</button>
-            <button class="profile-review-filter" type="button" data-profile-review-filter="positive">Positivas</button>
-            <button class="profile-review-filter" type="button" data-profile-review-filter="negative">Críticas</button>
+        <div class="profile-review-toolbar" aria-label="Filtros das avaliações do anúncio">
+          <div class="profile-review-toolbar__left">
+            <div class="profile-review-toolbar__copy">
+              <strong>Leitura das avaliações</strong>
+              <span>Selecione um critério para comparar a percepção dos clientes.</span>
+            </div>
+            <div class="profile-review-toolbar__filters" role="tablist" aria-label="Filtrar avaliações do anúncio">
+              <button class="profile-review-filter is-active" type="button" data-profile-review-filter="all">Todas</button>
+              <button class="profile-review-filter" type="button" data-profile-review-filter="positive">Positivas</button>
+              <button class="profile-review-filter" type="button" data-profile-review-filter="negative">Críticas</button>
+            </div>
           </div>
-          <div class="profile-review-toolbar__distribution" data-profile-review-distribution></div>
+          <div class="profile-review-toolbar__meta">
+            <span data-profile-review-visible-count>0 avaliações visíveis</span>
+          </div>
         </div>
         <div class="profile-review-hub__list"></div>
       </div>
@@ -1273,7 +1304,8 @@ window.DokeInitProfile = () => {
     const hero = baseProfile.hero || {};
     const stats = (hero.stats || []).map((item) => ({ value: item.value, label: item.label })) || [];
     const categories = (hero.badges || []).map((item) => ({ label: item.label, accent: item.tone === "accent" })) || [];
-    const actions = (hero.actions || []).filter((item) => item.label !== "Compartilhar");
+    const primaryService = categories.find((item) => !normalizeActionLabel(item.label).includes("verificado"))?.label || "reforma residencial de alto padrao";
+    const actions = (hero.actions || []).filter((item) => item.label !== "Compartilhar").map((item) => ({ ...item, provider: hero.name || "Studio Aquarela", service: item.service || primaryService }));
     const followAction = { label: "Seguir" };
     const rotatingHighlights = hero.rotatingHighlights || [];
 
@@ -1408,6 +1440,24 @@ window.DokeInitProfile = () => {
       panelMap.about?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
+    document.querySelector("[data-profile-edit-name]")?.addEventListener("input", (event) => {
+      document.querySelectorAll("[data-profile-edit-preview-name]").forEach((node) => {
+        node.textContent = event.currentTarget.value || "Studio Aquarela";
+      });
+    });
+
+    document.querySelector("[data-profile-edit-username]")?.addEventListener("input", (event) => {
+      document.querySelectorAll("[data-profile-edit-preview-username]").forEach((node) => {
+        node.textContent = event.currentTarget.value || "@studioaquarela";
+      });
+    });
+
+    document.querySelector("[data-profile-edit-city]")?.addEventListener("input", (event) => {
+      document.querySelectorAll("[data-profile-edit-preview-city]").forEach((node) => {
+        node.textContent = event.currentTarget.value || "Salvador, BA";
+      });
+    });
+
     root.querySelector('[data-profile-follow]')?.addEventListener('click', (event) => {
       const button = event.currentTarget;
       const active = button.getAttribute('aria-pressed') === 'true';
@@ -1444,7 +1494,7 @@ window.DokeInitProfile = () => {
       const summary = hub.querySelector(".profile-review-hub__summary");
       const list = hub.querySelector(".profile-review-hub__list");
       const filters = [...hub.querySelectorAll("[data-profile-review-filter]")];
-      const distribution = hub.querySelector("[data-profile-review-distribution]");
+      const visibleCountLabel = hub.querySelector("[data-profile-review-visible-count]");
       const raw = hub.dataset.reviewAds || "[]";
       const avatarPool = [
         "assets/img/auth/carpinteira.png",
@@ -1454,65 +1504,232 @@ window.DokeInitProfile = () => {
       ];
       let ads = [];
       let activeFilter = "all";
+      let activeMetricKey = "overview";
 
       try {
         ads = JSON.parse(raw.replace(/&apos;/g, "'"));
       } catch {}
+
+      const toNumber = (value) => Number(String(value || 0).replace(",", ".")) || 0;
+      const toMetricKey = (value) =>
+        normalize(value)
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[̀-ͯ]/g, "")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "metric";
+
+      const buildDistributionRows = (ratings = []) => {
+        const total = ratings.length || 1;
+        return [
+          { label: "5 estrelas", percent: Math.round((ratings.filter((value) => value >= 4.8).length / total) * 100) },
+          { label: "4 estrelas", percent: Math.round((ratings.filter((value) => value >= 4 && value < 4.8).length / total) * 100) },
+          { label: "3 estrelas", percent: Math.round((ratings.filter((value) => value < 4).length / total) * 100) }
+        ];
+      };
+
+      const deriveDistributionRows = (score) => {
+        if (score >= 4.95) return [
+          { label: "5 estrelas", percent: 100 },
+          { label: "4 estrelas", percent: 0 },
+          { label: "3 estrelas", percent: 0 }
+        ];
+        if (score >= 4.9) return [
+          { label: "5 estrelas", percent: 88 },
+          { label: "4 estrelas", percent: 12 },
+          { label: "3 estrelas", percent: 0 }
+        ];
+        if (score >= 4.8) return [
+          { label: "5 estrelas", percent: 74 },
+          { label: "4 estrelas", percent: 26 },
+          { label: "3 estrelas", percent: 0 }
+        ];
+        if (score >= 4.7) return [
+          { label: "5 estrelas", percent: 62 },
+          { label: "4 estrelas", percent: 30 },
+          { label: "3 estrelas", percent: 8 }
+        ];
+        if (score >= 4.6) return [
+          { label: "5 estrelas", percent: 50 },
+          { label: "4 estrelas", percent: 34 },
+          { label: "3 estrelas", percent: 16 }
+        ];
+        return [
+          { label: "5 estrelas", percent: 40 },
+          { label: "4 estrelas", percent: 36 },
+          { label: "3 estrelas", percent: 24 }
+        ];
+      };
+
+      const updateVisibleMeta = (visibleCount, totalCount) => {
+        if (!visibleCountLabel) return;
+        visibleCountLabel.textContent = `${visibleCount} de ${totalCount} avaliações visíveis`;
+      };
+
+      const renderDistribution = (element, payload) => {
+        if (!element) return;
+        element.dataset.reviewDistributionMode = payload.mode || "overview";
+        element.innerHTML = `
+          <div class="profile-review-distribution-card__eyebrow">${payload.eyebrow}</div>
+          <div class="profile-review-distribution-card__head">
+            <div>
+              <strong>${payload.title}</strong>
+              <span>${payload.caption}</span>
+            </div>
+            <b>${payload.badge}</b>
+          </div>
+          <div class="profile-review-distribution-card__rows">
+            ${payload.rows
+              .map(
+                (item) => `
+                  <div class="profile-review-distribution-card__row">
+                    <span>${item.label}</span>
+                    <i><b style="width:${item.percent}%"></b></i>
+                    <strong>${item.percent}%</strong>
+                  </div>
+                `
+              )
+              .join("")}
+          </div>
+        `;
+      };
+
+      const bindMetricCards = (active, distributionCard) => {
+        const metricCards = [...summary.querySelectorAll("[data-profile-review-metric]")];
+        const ratings = active.reviews.map((item) => toNumber(item.rating));
+        const overviewRows = buildDistributionRows(ratings);
+
+        const syncMetricState = () => {
+          metricCards.forEach((card) => {
+            const isActive = card.dataset.profileReviewMetric === activeMetricKey;
+            card.classList.toggle("is-active", isActive);
+            card.setAttribute("aria-pressed", String(isActive));
+          });
+        };
+
+        const showOverview = () => {
+          activeMetricKey = "overview";
+          syncMetricState();
+          renderDistribution(distributionCard, {
+            mode: "overview",
+            eyebrow: "Visão geral do anúncio",
+            title: "Distribuição das avaliações",
+            caption: `${normalize(active.count)} neste anúncio`,
+            badge: `nota ${active.score}`,
+            rows: overviewRows
+          });
+        };
+
+        const showMetric = (card) => {
+          const score = toNumber(card.dataset.profileReviewValue);
+          const label = normalize(card.dataset.profileReviewLabel);
+          const detail = normalize(card.dataset.profileReviewText);
+          const key = card.dataset.profileReviewMetric || toMetricKey(label);
+
+          activeMetricKey = activeMetricKey === key ? "overview" : key;
+          syncMetricState();
+
+          if (activeMetricKey === "overview") {
+            showOverview();
+            return;
+          }
+
+          renderDistribution(distributionCard, {
+            mode: "metric",
+            eyebrow: "Critério selecionado",
+            title: label,
+            caption: detail,
+            badge: `nota ${card.dataset.profileReviewValue}`,
+            rows: deriveDistributionRows(score)
+          });
+        };
+
+        const overviewCard = summary.querySelector("[data-profile-review-overview]");
+        overviewCard?.addEventListener("click", showOverview);
+        overviewCard?.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          showOverview();
+        });
+        metricCards.forEach((card) => {
+          card.addEventListener("click", () => showMetric(card));
+          card.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter" && event.key !== " ") return;
+            event.preventDefault();
+            showMetric(card);
+          });
+        });
+
+        syncMetricState();
+        if (activeMetricKey === "overview") {
+          showOverview();
+          return;
+        }
+
+        const currentMetric = metricCards.find((card) => card.dataset.profileReviewMetric === activeMetricKey);
+        if (currentMetric) {
+          showMetric(currentMetric);
+        } else {
+          showOverview();
+        }
+      };
 
       const draw = (id) => {
         const active = ads.find((item) => item.id === id) || ads[0];
         if (!active || !summary || !list) return;
 
         summary.innerHTML = `
-          <article class="profile-review-metric profile-review-metric--score">
-            <span>Nota m?dia</span>
+          <article class="profile-review-metric profile-review-metric--score profile-review-scorecard" data-profile-review-overview tabindex="0" role="button" aria-pressed="${activeMetricKey === "overview"}">
+            <span>Nota média</span>
             <strong>${active.score}</strong>
             <div class="profile-review-metric__stars">${active.stars}</div>
             <small>${active.count}</small>
+            <div class="profile-review-scorecard__footer">
+              <span>Base recente</span>
+              <b>Visão geral</b>
+            </div>
           </article>
-          <div class="profile-review-hub__metrics">
-            ${(active.metrics || [])
-              .slice(0, 4)
-              .map(
-                (metric) => `
-              <article class="profile-review-metric profile-review-metric--compact">
-                <span>${metric.label}</span>
-                <strong>${metric.value}</strong>
-                <small>${metric.text}</small>
-              </article>
-            `
-              )
-              .join("")}
-          </div>
+          <section class="profile-review-metric-panel">
+            <div class="profile-review-metric-panel__head">
+              <strong>Critérios avaliados</strong>
+              <span>Troque a leitura das estrelas sem sair da lista de comentários.</span>
+            </div>
+            <div class="profile-review-hub__metrics">
+              ${(active.metrics || [])
+                .slice(0, 4)
+                .map((metric) => {
+                  const metricKey = toMetricKey(metric.label);
+                  const isActive = activeMetricKey === metricKey;
+                  return `
+                    <article
+                      class="profile-review-metric profile-review-metric--compact ${isActive ? "is-active" : ""}"
+                      tabindex="0"
+                      role="button"
+                      aria-pressed="${isActive}"
+                      data-profile-review-metric="${metricKey}"
+                      data-profile-review-label="${metric.label}"
+                      data-profile-review-value="${metric.value}"
+                      data-profile-review-text="${metric.text}"
+                    >
+                      <span>${metric.label}</span>
+                      <strong>${metric.value}</strong>
+                      <small>${metric.text}</small>
+                    </article>
+                  `;
+                })
+                .join("")}
+            </div>
+          </section>
+          <aside class="profile-review-distribution-card" data-profile-review-distribution></aside>
         `;
 
-        const ratings = active.reviews.map((item) => Number(String(item.rating).replace(",", ".")) || 0);
-        const totalReviews = ratings.length || 1;
-        const distributionMap = [
-          { label: "5 estrelas", count: ratings.filter((value) => value >= 4.8).length },
-          { label: "4 estrelas", count: ratings.filter((value) => value >= 4 && value < 4.8).length },
-          { label: "3 estrelas", count: ratings.filter((value) => value < 4).length }
-        ];
-
-        if (distribution) {
-          distribution.innerHTML = distributionMap
-            .map((item) => {
-              const percent = Math.round((item.count / totalReviews) * 100);
-              return `
-                <div>
-                  <span>${item.label}</span>
-                  <i><b style="width:${percent}%"></b></i>
-                  <strong>${percent}%</strong>
-                </div>
-              `;
-            })
-            .join("");
-        }
+        const distributionCard = summary.querySelector("[data-profile-review-distribution]");
+        bindMetricCards(active, distributionCard);
 
         list.innerHTML = active.reviews
           .map(
             (item, index) => `
-          <article class="profile-review-entry" data-review-tone="${Number(String(item.rating).replace(",", ".")) >= 4.8 ? "positive" : "negative"}">
+          <article class="profile-review-entry" data-review-tone="${toNumber(item.rating) >= 4.8 ? "positive" : "negative"}">
             <div class="profile-review-entry__head">
               <div class="profile-review-entry__identity">
                 <img class="profile-review-entry__avatar" src="${avatarPool[index % avatarPool.length]}" alt="Foto de perfil de ${item.name}">
@@ -1541,12 +1758,14 @@ window.DokeInitProfile = () => {
           if (visible) visibleCount += 1;
         });
 
+        updateVisibleMeta(visibleCount, active.reviews.length);
+
         const oldEmpty = list.querySelector(".profile-review-empty");
         if (!visibleCount) {
           if (!oldEmpty) {
             list.insertAdjacentHTML(
               "beforeend",
-              `<article class="profile-review-empty"><strong>Nenhuma avalia??o neste filtro</strong><p>Troque o filtro ou selecione outro an?ncio para ver mais coment?rios.</p></article>`
+              `<article class="profile-review-empty"><strong>Nenhuma avaliação neste filtro</strong><p>Troque o filtro ou selecione outro anúncio para ver mais comentários.</p></article>`
             );
           }
         } else if (oldEmpty) {
@@ -1555,7 +1774,10 @@ window.DokeInitProfile = () => {
       };
 
       draw(select?.value);
-      select?.addEventListener("change", () => draw(select.value));
+      select?.addEventListener("change", () => {
+        activeMetricKey = "overview";
+        draw(select.value);
+      });
       filters.forEach((button) => {
         button.addEventListener("click", () => {
           activeFilter = button.dataset.profileReviewFilter || "all";

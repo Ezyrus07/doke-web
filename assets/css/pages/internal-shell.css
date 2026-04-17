@@ -1,33 +1,39 @@
 @import url("../components/shell/internal-workspace.css");
-
+@import url("../components/internal/list-page-toolbar.css");
+@import url("./home-shared.css");
 
 /* Padronização visual da sidebar interna entre páginas */
 .internal-sidebar,
 .sidebar[data-internal-sidebar],
+.internal-shell-page .sidebar,
 .shell-home .sidebar {
   width: 258px;
 }
 
 .internal-sidebar .sidebar__header,
 .sidebar[data-internal-sidebar] .sidebar__header,
+.internal-shell-page .sidebar .sidebar__header,
 .shell-home .sidebar .sidebar__header {
   padding: 20px 18px 16px;
 }
 
 .internal-sidebar .sidebar__nav,
 .sidebar[data-internal-sidebar] .sidebar__nav,
+.internal-shell-page .sidebar .sidebar__nav,
 .shell-home .sidebar .sidebar__nav {
   gap: 10px;
 }
 
 .internal-sidebar .sidebar__group,
 .sidebar[data-internal-sidebar] .sidebar__group,
+.internal-shell-page .sidebar .sidebar__group,
 .shell-home .sidebar .sidebar__group {
   margin-bottom: 18px;
 }
 
 .internal-sidebar .sidebar__toggle,
 .sidebar[data-internal-sidebar] .sidebar__toggle,
+.internal-shell-page .sidebar .sidebar__toggle,
 .shell-home .sidebar .sidebar__toggle {
   width: 40px;
   height: 40px;
@@ -36,6 +42,7 @@
 
 .internal-sidebar .sidebar__link,
 .sidebar[data-internal-sidebar] .sidebar__link,
+.internal-shell-page .sidebar .sidebar__link,
 .shell-home .sidebar .sidebar__link {
   min-height: 56px;
   border-radius: 18px;
@@ -43,6 +50,7 @@
 
 .internal-sidebar .sidebar__link-icon,
 .sidebar[data-internal-sidebar] .sidebar__link-icon,
+.internal-shell-page .sidebar .sidebar__link-icon,
 .shell-home .sidebar .sidebar__link-icon {
   width: 36px;
   height: 36px;
@@ -51,6 +59,7 @@
 
 .internal-sidebar .sidebar__footer,
 .sidebar[data-internal-sidebar] .sidebar__footer,
+.internal-shell-page .sidebar .sidebar__footer,
 .shell-home .sidebar .sidebar__footer {
   padding-top: 18px;
 }
@@ -60,4 +69,219 @@
 .messages-page-shell .page__content-inner,
 .notifications-page-shell .page__content-inner {
   max-width: none;
+}
+
+@media (max-width: 760px) {
+  body.internal-shell-page {
+    --header-height: 62px;
+  }
+
+  body.internal-shell-page .topbar {
+    background: linear-gradient(180deg, #f7fbff 0%, #eef5fb 100%) !important;
+  }
+}
+
+
+
+/* Consistência fina do cabeçalho interno entre páginas */
+body.internal-shell-page .internal-page-topbar {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+@media (min-width: 1025px) {
+  body.internal-shell-page .internal-page-topbar {
+    left: var(--sidebar-width);
+    right: 0;
+    padding-left: 26px;
+    padding-right: 26px;
+    min-height: var(--header-height);
+  }
+}
+
+@media (max-width: 760px) {
+  body.internal-shell-page .internal-page-topbar {
+    left: 0;
+    right: 0;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
+    padding-bottom: 10px !important;
+  }
+}
+
+
+/* 2026-04-13 internal consistency: same sidebar rhythm and topbar baseline */
+body.internal-shell-page .sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
+body.internal-shell-page .sidebar__group + .sidebar__group {
+  margin-top: 2px;
+}
+
+body.internal-shell-page .sidebar__footer {
+  margin-top: auto;
+}
+
+body.internal-shell-page .topbar {
+  top: 0;
+}
+
+
+/* 2026-04-13 final shell audit: lock internal header/sidebar baseline across pages */
+body.internal-shell-page {
+  --internal-topbar-desktop-pad-y: 14px;
+  --internal-topbar-mobile-pad-y: 10px;
+  --internal-content-offset-desktop: 8px;
+  --internal-content-offset-mobile: 8px;
+}
+
+body.internal-shell-page .page {
+  min-width: 0;
+}
+
+body.internal-shell-page .internal-page-topbar,
+body.internal-shell-page .topbar.topbar--location.internal-page-topbar {
+  min-height: var(--header-height) !important;
+  padding-top: var(--internal-topbar-desktop-pad-y) !important;
+  padding-bottom: var(--internal-topbar-desktop-pad-y) !important;
+  align-items: center !important;
+}
+
+body.internal-shell-page .page__content {
+  padding-top: var(--internal-content-offset-desktop) !important;
+}
+
+body.internal-shell-page .sidebar {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+  padding: 18px 16px 16px !important;
+  gap: 16px !important;
+}
+
+body.internal-shell-page .sidebar__collapse-button {
+  top: 18px !important;
+  right: 10px !important;
+}
+
+body.internal-shell-page .sidebar__brand {
+  flex: 0 0 auto;
+  padding: 4px 0 10px !important;
+}
+
+body.internal-shell-page .sidebar__group {
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 10px !important;
+}
+
+body.internal-shell-page .sidebar__group + .sidebar__group {
+  margin-top: 0 !important;
+  padding-top: 6px !important;
+}
+
+body.internal-shell-page .sidebar__footer {
+  margin-top: auto !important;
+  padding-top: 12px !important;
+}
+
+body.internal-shell-page .sidebar__group--footer {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+body.internal-shell-page .sidebar__label {
+  margin: 0 !important;
+  padding: 0 8px !important;
+}
+
+body.internal-shell-page .nav-link {
+  min-height: 52px !important;
+}
+
+@media (max-width: 760px) {
+  body.internal-shell-page .internal-page-topbar,
+  body.internal-shell-page .topbar.topbar--location.internal-page-topbar {
+    min-height: var(--header-height) !important;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
+    padding-bottom: var(--internal-topbar-mobile-pad-y) !important;
+  }
+
+  body.internal-shell-page .page__content {
+    padding-top: var(--internal-content-offset-mobile) !important;
+  }
+}
+
+
+
+/* 2026-04-13 canonical sidebar unification:
+   home and mensagens must use the exact same shared sidebar contract as the other internal pages.
+   Keep only home-specific topbar spacing here; sidebar layout remains owned by sidebar-unified.css + shell-normalize.css. */
+body.home-index-shell {
+  --internal-topbar-desktop-pad-y: 14px;
+  --internal-topbar-mobile-pad-y: 10px;
+}
+
+body.home-index-shell .internal-page-topbar,
+body.home-index-shell .topbar.topbar--location.internal-page-topbar {
+  min-height: var(--header-height) !important;
+  padding-top: var(--internal-topbar-desktop-pad-y) !important;
+  padding-bottom: var(--internal-topbar-desktop-pad-y) !important;
+  align-items: center !important;
+}
+
+@media (max-width: 760px) {
+  body.home-index-shell .internal-page-topbar,
+  body.home-index-shell .topbar.topbar--location.internal-page-topbar {
+    min-height: var(--header-height) !important;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
+    padding-bottom: var(--internal-topbar-mobile-pad-y) !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  body.internal-shell-page .page {
+    margin-left: var(--sidebar-width) !important;
+    width: calc(100% - var(--sidebar-width)) !important;
+    max-width: calc(100% - var(--sidebar-width)) !important;
+  }
+
+  body.internal-shell-page .sidebar {
+    transform: none !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: var(--sidebar-width) !important;
+    max-width: var(--sidebar-width) !important;
+  }
+
+  body.internal-shell-page .topbar {
+    left: var(--sidebar-width) !important;
+    right: 0 !important;
+    display: flex !important;
+    min-height: var(--header-height) !important;
+    flex-wrap: nowrap !important;
+    padding-inline: 26px !important;
+  }
+
+  body.internal-shell-page .topbar__left,
+  body.internal-shell-page .topbar__center,
+  body.internal-shell-page .topbar__right {
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  body.internal-shell-page .topbar__left .topbar-search,
+  body.internal-shell-page .topbar-points,
+  body.internal-shell-page .topbar-account-cluster,
+  body.internal-shell-page .topbar-profile {
+    display: flex !important;
+  }
+
+  body.internal-shell-page .page__content {
+    padding-inline: 26px !important;
+  }
 }
