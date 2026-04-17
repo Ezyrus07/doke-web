@@ -48,7 +48,7 @@
 - `assets/js/pages/pedidos.js`
 - `assets/js/pages/perfil.js`
 - `assets/js/pages/search-data.js`
-- `assets/js/pages/search-results.js`
+- `assets/js/pages/results/index.js`
 
 ## Limpeza já aplicada
 - remoção de `profilefix/`

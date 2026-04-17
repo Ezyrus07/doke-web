@@ -51,7 +51,7 @@
 - `assets/js/pages/home/filters.js`
 - `assets/js/pages/home/search.js`
 - `assets/js/pages/search-data.js`
-- `assets/js/pages/search-results.js`
+- `assets/js/pages/results/index.js`
 
 ## Home archived parallels
 - `archive/legacy-home-css/*`

@@ -1,9 +1,9 @@
-@import url("../components/internal/results-shell.css");
-@import url("../components/internal/results-states.css");
-@import url("../components/internal/results-collection.css");
-@import url("../components/internal/results-filters.css");
-@import url("../components/internal/results-discovery-rails.css");
-@import url("../components/cards/service-card.css");
+@import url("../../components/results/collection.css");
+@import url("shell.css");
+@import url("states.css");
+@import url("filters.css");
+@import url("discovery-rails.css");
+@import url("../../components/cards/service-card.css");
 
 .search-results-body {
   background: var(--shell-content-bg);
@@ -68,8 +68,6 @@
     min-height: 196px;
   }
 }
-
-
 
 .results-layout:not(.is-filters-collapsed) .results-grid,
 .results-layout:not(.is-filters-collapsed) .results-empty__grid {
@@ -196,85 +194,5 @@ body.results-filters-open .results-searchbar__mobile-filter {
   .results-grid .service-card__media,
   .results-empty__grid .service-card__media {
     min-height: 228px;
-  }
-}
-
-
-/* 2026-04-17 authoritative results desktop envelope.
-   The results page was still stretching on zoom-out because its workspace clamp
-   was weaker than the profile/home clamp. Use the same ownership model here,
-   with explicit !important width control on the canonical page wrapper. */
-.search-results-body {
-  --results-desktop-content-width: min(1240px, calc(100vw - var(--sidebar-width) - 56px));
-}
-
-.search-results-body .page__content {
-  padding-inline: 28px !important;
-}
-
-.search-results-body .page__content-inner,
-.search-results-body .page__content-inner.container.app-shell-page__workspace.search-results-workspace.search-results-workspace--internal,
-.search-results-body .search-results-workspace,
-.search-results-body .search-results-workspace--internal {
-  width: var(--results-desktop-content-width) !important;
-  max-width: var(--results-desktop-content-width) !important;
-  margin-inline: auto !important;
-  min-width: 0 !important;
-}
-
-.search-results-body .results-searchbar,
-.search-results-body .results-layout,
-.search-results-body .results-main,
-.search-results-body .results-related,
-.search-results-body .results-loading,
-.search-results-body .results-inline-empty,
-.search-results-body .results-summary,
-.search-results-body .results-grid,
-.search-results-body .results-empty__grid,
-.search-results-body .results-users-grid,
-.search-results-body .results-videos-grid,
-.search-results-body .results-before-after-grid {
-  width: 100%;
-  max-width: none;
-  min-width: 0;
-}
-
-.search-results-body .results-searchbar__form,
-.search-results-body .results-layout,
-.search-results-body .results-grid,
-.search-results-body .results-empty__grid,
-.search-results-body .results-users-grid,
-.search-results-body .results-main,
-.search-results-body .results-filters,
-.search-results-body .results-summary__content,
-.search-results-body .results-summary__stats {
-  min-width: 0;
-}
-
-@media (max-width: 1180px) {
-  .search-results-body .page__content {
-    padding-inline: 18px !important;
-  }
-
-  .search-results-body .page__content-inner,
-  .search-results-body .page__content-inner.container.app-shell-page__workspace.search-results-workspace.search-results-workspace--internal,
-  .search-results-body .search-results-workspace,
-  .search-results-body .search-results-workspace--internal {
-    width: min(100%, calc(100vw - var(--sidebar-width) - 36px)) !important;
-    max-width: none !important;
-  }
-}
-
-@media (max-width: 900px) {
-  .search-results-body .page__content {
-    padding-inline: 12px !important;
-  }
-
-  .search-results-body .page__content-inner,
-  .search-results-body .page__content-inner.container.app-shell-page__workspace.search-results-workspace.search-results-workspace--internal,
-  .search-results-body .search-results-workspace,
-  .search-results-body .search-results-workspace--internal {
-    width: min(100%, calc(100vw - 24px)) !important;
-    max-width: none !important;
   }
 }

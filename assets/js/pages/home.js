@@ -453,10 +453,6 @@ window.addEventListener("scroll", () => {
   }
 }, { signal, passive: true });
 
-if (!searchBox || !searchInput) {
-  return;
-}
-
 const enhanceHomeSelects = () => {
   uiSelectApi?.enhanceAll(document);
 };
@@ -757,7 +753,7 @@ const setMoreFiltersSection = homeFiltersApi.setSection;
 const mountMoreFiltersPanel = homeFiltersApi.mountPanel;
 const openMoreFilters = (source = "tabs") => {
   if (source === "search-dropdown" || source === "hero-field") {
-    closeSearchDropdown();
+    document.dispatchEvent(new CustomEvent("doke:home-search-close"));
   }
   homeFiltersApi.open(source);
 };
@@ -836,44 +832,6 @@ orderFeedbackClose?.addEventListener("click", closeOrderFeedback);
 
 initMobileHomeDrawer();
 initHomeSearch();
-
-const desktopSearchInput = document.querySelector("[data-search-input]");
-const desktopSearchBox = document.querySelector("[data-searchbox]");
-const desktopSearchDropdown = document.querySelector("[data-search-dropdown]");
-const desktopSearchField = document.querySelector(".home-search-hero__field");
-const desktopSearchRecommendationList = document.querySelector("[data-search-recommendation-list]");
-
-if (desktopSearchInput && desktopSearchBox && desktopSearchDropdown) {
-  const openDesktopSearchFallback = () => {
-    if (window.innerWidth <= 760) return;
-    if (!desktopSearchRecommendationList?.children.length) return;
-    desktopSearchDropdown.hidden = false;
-    desktopSearchBox.classList.add("is-search-open");
-    desktopSearchField?.classList.add("is-search-open");
-    desktopSearchInput.setAttribute("aria-expanded", "true");
-  };
-
-  const closeDesktopSearchFallback = () => {
-    desktopSearchDropdown.hidden = true;
-    desktopSearchBox.classList.remove("is-search-open");
-    desktopSearchField?.classList.remove("is-search-open");
-    desktopSearchInput.setAttribute("aria-expanded", "false");
-  };
-
-  desktopSearchInput.addEventListener("focus", openDesktopSearchFallback, { signal });
-  desktopSearchInput.addEventListener("click", openDesktopSearchFallback, { signal });
-
-  desktopSearchBox.addEventListener("click", (event) => {
-    if (event.target.closest("[data-search-dropdown]")) return;
-    openDesktopSearchFallback();
-  }, { signal });
-
-  document.addEventListener("click", (event) => {
-    if (!event.target.closest("[data-searchbox]")) {
-      closeDesktopSearchFallback();
-    }
-  }, { signal });
-}
 
 try {
   const shouldShowOrderFeedback = new URLSearchParams(window.location.search).get("quote") === "sent";

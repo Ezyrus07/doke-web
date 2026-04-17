@@ -6,7 +6,7 @@
         if (!drawer) return;
 
         const panel = drawer.querySelector('.home-mobile-drawer__panel');
-        const openButtons = document.querySelectorAll('[data-mobile-home-menu-open]');
+        const shouldUseDrawer = () => window.innerWidth <= 760;
 
         const setOpen = (isOpen) => {
           drawer.hidden = false;
@@ -24,6 +24,7 @@
         };
 
         const openMenu = (event) => {
+          if (!shouldUseDrawer()) return;
           event?.preventDefault();
           event?.stopPropagation();
           setOpen(true);
@@ -35,9 +36,23 @@
           setOpen(false);
         };
 
-        openButtons.forEach((button) => {
-          button.addEventListener('click', openMenu, { signal });
-        });
+        document.addEventListener('click', (event) => {
+          const openTrigger = event.target.closest('[data-mobile-home-menu-open], .home-mobile-hero__profile, [data-home-profile-menu-toggle]');
+          if (openTrigger && shouldUseDrawer()) {
+            openMenu(event);
+            return;
+          }
+
+          const closeTrigger = event.target.closest('[data-mobile-home-menu-close]');
+          if (closeTrigger) {
+            closeMenu(event);
+            return;
+          }
+
+          if (drawer.classList.contains('is-open') && panel && !panel.contains(event.target)) {
+            closeMenu(event);
+          }
+        }, { signal });
 
         drawer.addEventListener('click', (event) => {
           const closeTrigger = event.target.closest('[data-mobile-home-menu-close]');
@@ -58,7 +73,7 @@
         }, { signal });
 
         window.addEventListener('resize', () => {
-          if (window.innerWidth > 768 && drawer.classList.contains('is-open')) {
+          if (window.innerWidth > 760 && drawer.classList.contains('is-open')) {
             setOpen(false);
           }
         }, { signal });

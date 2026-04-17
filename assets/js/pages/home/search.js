@@ -33,7 +33,7 @@
 
         let activeSearchIndex = -1;
         const isMobileSearchViewport = () => window.innerWidth <= 760;
-        const shouldUseSearchDropdown = () => !isMobileSearchViewport();
+        const shouldUseSearchDropdown = () => Boolean(searchDropdown && searchInput);
 
         const syncSearchOverlayState = (query = "") => {
           document.body.classList.toggle(
@@ -352,6 +352,10 @@
             document.body.classList.add("home-search-overlay-active");
             syncSearchOverlayState(searchInput?.value || "");
           }
+        }, { signal });
+
+        document.addEventListener("doke:home-search-close", () => {
+          closeSearchDropdown();
         }, { signal });
 
         if (searchClearButton) {

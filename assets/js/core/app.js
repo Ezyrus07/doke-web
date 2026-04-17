@@ -285,7 +285,7 @@ const INTERNAL_VIEW_STYLE_HINTS = {
   ],
   "/resultados.html": [
     "assets/css/pages/internal-shell.css",
-    "assets/css/pages/search-results.css"
+    "assets/css/pages/results/index.css"
   ],
   "/pedidos.html": [
     "assets/css/pages/internal-shell.css",
@@ -352,6 +352,10 @@ const INTERNAL_VIEW_SCRIPT_HINTS = {
     "assets/js/pages/home/filters.js",
     "assets/js/pages/home/search.js",
     "assets/js/pages/home.js"
+  ],
+  "/resultados.html": [
+    "assets/js/pages/search-data.js",
+    "assets/js/pages/results/index.js"
   ],
   "/pedidos.html": ["assets/js/pages/pedidos.js"],
   "/mensagens.html": ["assets/js/pages/mensagens.js"],

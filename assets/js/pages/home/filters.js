@@ -56,6 +56,7 @@
         mountPanel(source);
 
         if (source === 'search-dropdown' || source === 'hero-field') {
+          document.dispatchEvent(new CustomEvent('doke:home-search-close'));
           document.body.classList.add('home-mobile-filters-open');
           if (mobileMedia?.matches) {
             searchHost?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -133,17 +134,6 @@
           safeSections.forEach((pane) => {
             pane.hidden = false;
           });
-        }, { signal });
-
-        leadingButton?.addEventListener('click', (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          const isOpen = leadingButton.getAttribute('aria-expanded') === 'true';
-          if (isOpen) {
-            close();
-            return;
-          }
-          open('hero-field');
         }, { signal });
 
         document.addEventListener('keydown', (event) => {

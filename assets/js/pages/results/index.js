@@ -26,16 +26,6 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   const els = {
     resultsSearchForm: queryAny('[data-results-search-form]'),
     resultsSearchInput: queryAny('[data-results-search-input]'),
-    resultsSearchBox: queryAny('[data-results-searchbox]'),
-    resultsSearchDropdown: queryAny('[data-results-search-dropdown]'),
-    resultsRecommendationList: queryAny('[data-results-recommendation-list]'),
-    resultsRecommendationsSection: queryAny('[data-results-recommendations-section]'),
-    resultsHistorySection: queryAny('[data-results-history-section]'),
-    resultsSearchHistoryList: queryAny('[data-results-search-history-list]'),
-    resultsSuggestionsSection: queryAny('[data-results-suggestions-section]'),
-    resultsSearchResultsList: queryAny('[data-results-search-results-list]'),
-    resultsSearchEmpty: queryAny('[data-results-search-empty]'),
-    resultsSearchClear: queryAny('[data-results-search-clear]'),
     topbarSearchForm: queryAny('[data-global-topbar-search]', '[data-results-topbar-search]'),
     topbarSearchInput: queryAny('[data-global-topbar-search] input[type="search"]', '[data-results-topbar-input]'),
     resultsFiltersOpenButton: queryAny('[data-results-filters-open]'),
@@ -89,10 +79,6 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   const getShortVideoMatches = searchData.getShortVideoMatches || (() => []);
   const getBeforeAfterMatches = searchData.getBeforeAfterMatches || (() => []);
   const addSearchHistory = searchData.addSearchHistory || (() => {});
-  const getSearchHistory = searchData.getSearchHistory || (() => []);
-  const saveSearchHistory = searchData.saveSearchHistory || (() => {});
-  const getSuggestionMatches = searchData.getSuggestionMatches || (() => []);
-  const recommendations = searchData.recommendations || [];
   const categories = searchData.categories || searchData.catégories || [];
   const locationOptions = searchData.locationOptions || {};
   const states = locationOptions.states || locationOptions.statés || [];
@@ -102,154 +88,12 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
 
   let activeModalResolver = null;
   let resultsLoadTimer = null;
-  let activeSearchIndex = -1;
 
   window.DokeSearchResultsCleanup = () => {
     routeController.abort();
     document.body.classList.remove('results-filters-open');
     if (resultsLoadTimer) window.clearTimeout(resultsLoadTimer);
-    closeResultsSearchDropdown();
     closeModal(false);
-  };
-
-
-  const searchItemIcon = (type = 'search') => {
-    if (type === 'history') {
-      return '<svg viewBox="0 0 24 24"><path d="M12 7.5v5l3 2"></path><path d="M4.8 12a7.2 7.2 0 1 0 2.1-5.1"></path><path d="M4.8 5.7v3.6h3.6"></path></svg>';
-    }
-    return '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg>';
-  };
-
-  const createSuggestionButton = ({ label, meta, badge, value, type = 'search' }) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'search-suggestion';
-    button.dataset.value = value || label;
-    button.innerHTML = `
-      <span class="search-suggestion__main">
-        <span class="search-suggestion__icon" aria-hidden="true">${searchItemIcon(type)}</span>
-        <span class="search-suggestion__text">
-          <span class="search-suggestion__label">${label}</span>
-          <span class="search-suggestion__meta">${meta || ''}</span>
-        </span>
-      </span>
-      <span class="search-suggestion__badge">${badge || ''}</span>
-    `;
-    return button;
-  };
-
-  const renderResultsRecommendations = () => {
-    if (!els.resultsRecommendationList) return;
-    els.resultsRecommendationList.innerHTML = '';
-    recommendations.forEach((item) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'search-chip';
-      button.dataset.value = item;
-      button.innerHTML = `${searchItemIcon()}<span>${item}</span>`;
-      els.resultsRecommendationList.appendChild(button);
-    });
-  };
-
-  const renderResultsHistory = () => {
-    if (!els.resultsSearchHistoryList) return 0;
-    const history = getSearchHistory();
-    els.resultsSearchHistoryList.innerHTML = '';
-    history.forEach((item) => {
-      els.resultsSearchHistoryList.appendChild(
-        createSuggestionButton({
-          label: item,
-          meta: 'Pesquisa recente',
-          badge: 'Histórico',
-          value: item,
-          type: 'history'
-        })
-      );
-    });
-    return history.length;
-  };
-
-  const renderResultsSuggestions = (query = '') => {
-    if (!els.resultsSearchResultsList) return 0;
-    els.resultsSearchResultsList.innerHTML = '';
-    activeSearchIndex = -1;
-
-    const cleanQuery = String(query || '').trim();
-    if (cleanQuery.length < 2) {
-      return 0;
-    }
-
-    const matches = getSuggestionMatches(cleanQuery);
-    matches.forEach((item) => {
-      els.resultsSearchResultsList.appendChild(createSuggestionButton(item));
-    });
-
-    return matches.length;
-  };
-
-  const syncResultsSearchSections = (query = '') => {
-    const cleanQuery = String(query || '').trim();
-    const recommendationCount = els.resultsRecommendationList?.children.length || 0;
-    const historyCount = els.resultsSearchHistoryList?.children.length || 0;
-    const suggestionCount = els.resultsSearchResultsList?.children.length || 0;
-    const hasQuery = cleanQuery.length >= 2;
-
-    if (els.resultsRecommendationsSection) {
-      els.resultsRecommendationsSection.hidden = recommendationCount === 0 || hasQuery;
-    }
-
-    if (els.resultsHistorySection) {
-      els.resultsHistorySection.hidden = historyCount === 0 || hasQuery;
-    }
-
-    if (els.resultsSuggestionsSection) {
-      els.resultsSuggestionsSection.hidden = suggestionCount === 0;
-    }
-
-    if (els.resultsSearchEmpty) {
-      els.resultsSearchEmpty.hidden = !hasQuery || suggestionCount > 0;
-    }
-  };
-
-  const openResultsSearchDropdown = () => {
-    if (!els.resultsSearchDropdown || !els.resultsSearchInput) return;
-    els.resultsSearchDropdown.hidden = false;
-    els.resultsSearchBox?.classList.add('is-search-open');
-    els.resultsSearchInput.setAttribute('aria-expanded', 'true');
-  };
-
-  function closeResultsSearchDropdown() {
-    if (!els.resultsSearchDropdown || !els.resultsSearchInput) return;
-    els.resultsSearchDropdown.hidden = true;
-    els.resultsSearchBox?.classList.remove('is-search-open');
-    els.resultsSearchInput.setAttribute('aria-expanded', 'false');
-    activeSearchIndex = -1;
-  }
-
-  const syncResultsSearchDropdown = () => {
-    if (!els.resultsSearchDropdown || !els.resultsSearchInput) return;
-
-    renderResultsRecommendations();
-    renderResultsHistory();
-    renderResultsSuggestions(els.resultsSearchInput.value);
-    syncResultsSearchSections(els.resultsSearchInput.value);
-
-    const shouldOpen =
-      (els.resultsSearchInput.value || '').trim().length >= 2 ||
-      (els.resultsRecommendationList?.children.length || 0) > 0 ||
-      (els.resultsSearchHistoryList?.children.length || 0) > 0;
-
-    if (shouldOpen) {
-      openResultsSearchDropdown();
-      return;
-    }
-
-    closeResultsSearchDropdown();
-  };
-
-  const getVisibleResultsSearchOptions = () => {
-    if (!els.resultsSearchDropdown || els.resultsSearchDropdown.hidden) return [];
-    return [...els.resultsSearchDropdown.querySelectorAll('.search-suggestion:not([hidden]), .search-chip:not([hidden])')];
   };
 
   const getSearchMode = () =>
@@ -349,15 +193,6 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   const syncInputs = (value) => {
     if (els.resultsSearchInput) els.resultsSearchInput.value = value;
     if (els.topbarSearchInput) els.topbarSearchInput.value = value;
-  };
-
-  const applySearchSuggestion = (value) => {
-    const cleanValue = String(value || '').trim();
-    if (!cleanValue) return;
-    syncInputs(cleanValue);
-    closeResultsSearchDropdown();
-    setQuery(cleanValue);
-    loadResults();
   };
 
   const setResultsState = (state) => {
@@ -788,7 +623,6 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     event.preventDefault();
     const query = setQuery(sourceInput?.value || '');
     if (!query && sourceInput) sourceInput.focus();
-    closeResultsSearchDropdown();
     loadResults();
     if (isDesktopFilters()) {
       syncFilterUi(true);
@@ -800,62 +634,11 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   renderCategoryFilters();
   enhanceResultsSelects();
   bootstrapLocationSelects();
-  syncResultsSearchDropdown();
   loadResults();
   syncFilterUi(isDesktopFilters());
 
   els.resultsSearchForm.addEventListener('submit', (event) => handleSearchSubmit(event, els.resultsSearchInput), { signal });
   els.topbarSearchForm?.addEventListener('submit', (event) => handleSearchSubmit(event, els.topbarSearchInput), { signal });
-
-  els.resultsSearchInput?.addEventListener('focus', syncResultsSearchDropdown, { signal });
-  els.resultsSearchInput?.addEventListener('click', syncResultsSearchDropdown, { signal });
-  els.resultsSearchInput?.addEventListener('input', () => {
-    syncResultsSearchDropdown();
-  }, { signal });
-
-  els.resultsSearchInput?.addEventListener('keydown', (event) => {
-    const options = getVisibleResultsSearchOptions();
-
-    if (event.key === 'ArrowDown' && options.length) {
-      event.preventDefault();
-      activeSearchIndex = Math.min(activeSearchIndex + 1, options.length - 1);
-      options.forEach((option, index) => option.classList.toggle('is-active', index === activeSearchIndex));
-      options[activeSearchIndex]?.scrollIntoView({ block: 'nearest' });
-    }
-
-    if (event.key === 'ArrowUp' && options.length) {
-      event.preventDefault();
-      activeSearchIndex = Math.max(activeSearchIndex - 1, 0);
-      options.forEach((option, index) => option.classList.toggle('is-active', index === activeSearchIndex));
-      options[activeSearchIndex]?.scrollIntoView({ block: 'nearest' });
-    }
-
-    if (event.key === 'Enter' && activeSearchIndex >= 0 && options[activeSearchIndex]) {
-      event.preventDefault();
-      applySearchSuggestion(options[activeSearchIndex].dataset.value || options[activeSearchIndex].textContent || '');
-    }
-
-    if (event.key === 'Escape') {
-      closeResultsSearchDropdown();
-    }
-  }, { signal });
-
-  els.resultsSearchDropdown?.addEventListener('click', (event) => {
-    const action = event.target.closest('.search-suggestion, .search-chip');
-    if (!action) return;
-    applySearchSuggestion(action.dataset.value || action.textContent || '');
-  }, { signal });
-
-  document.addEventListener('click', (event) => {
-    if (!event.target.closest('[data-results-searchbox]')) {
-      closeResultsSearchDropdown();
-    }
-  }, { signal });
-
-  els.resultsSearchClear?.addEventListener('click', () => {
-    saveSearchHistory([]);
-    syncResultsSearchDropdown();
-  }, { signal });
   els.resultsFiltersOpenButton?.addEventListener('click', toggleFilters, { signal });
   els.resultsFiltersCloseButton?.addEventListener('click', toggleFilters, { signal });
   els.resultsFiltersBackdrop?.addEventListener('click', closeMobileFilters, { signal });
@@ -920,6 +703,3 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     }
   }, { signal });
 };
-
-
-window.DokeInitSearchResults();

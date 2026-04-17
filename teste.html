@@ -3,231 +3,431 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <style>
-      :root {
-        /* SUAS VARIÁVEIS EXATAS */
-        --font-sans:
-          "Poppins", ui-sans-serif, -apple-system, BlinkMacSystemFont,
-          "Segoe UI", sans-serif;
-        --color-bg: #f4f7fa;
-        --color-surface: #ffffff;
-        --color-text: #111827;
-        --color-text-soft: #455468;
-        --color-primary: #2a5f90;
-        --color-secondary: #298f7f;
-        --gradient-brand: linear-gradient(
-          180deg,
-          color-mix(in srgb, var(--color-primary) 80%, white) 0%,
-          var(--color-primary) 100%
-        );
-      }
-
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: var(--font-sans);
-      }
-
-      body {
-        background-color: var(--color-bg);
-        padding: 15px;
-        display: flex;
-        justify-content: center;
-      }
-
-      /* AREA COM FUNDO AZUL (ESTRUTURA MOBILE) */
-      .demo-topbar-sandbox {
-        width: 100%;
-        max-width: 400px;
-        background: var(--gradient-brand); /* Seu gradiente primário */
-        border-radius: 32px;
-        padding: 24px 20px 40px 20px;
-        color: var(--color-surface);
-        box-shadow: 0 12px 24px rgba(42, 95, 144, 0.2);
-      }
-
-      /* TOPO: PERFIL E NOTIFICAÇÃO */
-      .demo-header-nav {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 32px;
-      }
-
-      .demo-user-info {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      /* Avatar DK usando seu --color-secondary */
-      .avatar-dk-circle {
-        width: 48px;
-        height: 48px;
-        background-color: var(--color-secondary);
-        border-radius: 50%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-weight: 700;
-        font-size: 14px;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        color: white;
-      }
-
-      .user-text-box b {
-        display: block;
-        font-size: 15px;
-        letter-spacing: -0.3px;
-      }
-
-      .user-text-box span {
-        font-size: 11px;
-        opacity: 0.8;
-      }
-
-      /* Botão de Notificação Branco (Referência Mobile) */
-      .notif-button-white {
-        background-color: var(--color-surface);
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      }
-
-      .notif-button-white svg {
-        fill: var(--color-primary);
-      }
-
-      /* CONTEÚDO CENTRAL */
-      .demo-hero-content h1 {
-        font-size: 26px;
-        font-weight: 600;
-        line-height: 1.2;
-        margin-bottom: 12px;
-      }
-
-      .demo-location-badge {
-        display: inline-flex;
-        align-items: center;
-        background: rgba(255, 255, 255, 0.12);
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 13px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        margin-bottom: 30px;
-      }
-
-      /* BARRA DE BUSCA (ESTILO DO SEU SITE + ESTRUTURA DO EXEMPLO) */
-      .demo-search-bar {
-        background-color: var(--color-surface);
-        border-radius: 18px;
-        display: flex;
-        align-items: center;
-        padding: 6px 10px;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-      }
-
-      .demo-search-bar input {
-        flex: 1;
-        border: none;
-        outline: none;
-        padding: 12px;
-        font-size: 15px;
-        color: var(--color-text);
-        background: transparent;
-      }
-
-      .demo-search-bar input::placeholder {
-        color: var(--color-text-soft);
-        opacity: 0.6;
-      }
-
-      /* Botão de Filtro lateral */
-      .demo-filter-btn {
-        background-color: var(--color-bg);
-        border: none;
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-      }
-
-      .demo-filter-btn svg {
-        stroke: var(--color-primary);
-      }
-    </style>
+    <title>Layout Mobile - Serviços</title>
+    <link rel="stylesheet" href="style.css" />
   </head>
+  <style>
+    /* Variáveis de cores baseadas na imagem */
+    :root {
+      --bg-color: #f4f7f6;
+      --white: #ffffff;
+      --primary: #3b5b7e; /* Azul dos botões */
+      --secondary: #16886e; /* Verde dos botões de anúncio */
+      --text-dark: #1a202c;
+      --text-light: #718096;
+      --border-radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+        sans-serif;
+    }
+
+    body {
+      background-color: #e2e8f0; /* Fundo mais escuro fora do app */
+      display: flex;
+      justify-content: center;
+    }
+
+    /* Simulando a tela do celular no desktop */
+    .mobile-app {
+      width: 100%;
+      max-width: 480px;
+      background-color: var(--bg-color);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      background-color: var(--white);
+    }
+
+    .location {
+      font-weight: 600;
+      font-size: 14px;
+      border: 1px solid #e2e8f0;
+      padding: 6px 12px;
+      border-radius: 20px;
+    }
+
+    .profile {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .icon-circle,
+    .avatar {
+      width: 32px;
+      height: 32px;
+      background-color: #e2e8f0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    /* Busca */
+    .search-section {
+      padding: 16px;
+      background-color: var(--white);
+    }
+
+    .search-bar {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 24px;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Botões */
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 24px;
+      font-weight: bold;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--white);
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+    }
+    .btn-secondary {
+      background-color: var(--secondary);
+    }
+    .btn-small {
+      padding: 8px 16px;
+      border-radius: 16px;
+      background-color: var(--secondary);
+    }
+
+    /* Utilitários de Scroll Horizontal (Crucial para Mobile) */
+    .scroll-horizontal {
+      display: flex;
+      overflow-x: auto;
+      gap: 16px;
+      padding: 0 16px 16px 16px;
+      scrollbar-width: none; /* Firefox */
+    }
+    .scroll-horizontal::-webkit-scrollbar {
+      display: none; /* Chrome/Safari */
+    }
+    .snap-x {
+      scroll-snap-type: x mandatory;
+    }
+
+    /* Categorias */
+    .categories {
+      display: flex;
+      overflow-x: auto;
+      gap: 16px;
+      padding: 20px 16px;
+      background-color: var(--bg-color);
+      scrollbar-width: none;
+    }
+    .categories::-webkit-scrollbar {
+      display: none;
+    }
+
+    .cat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      min-width: 70px;
+    }
+
+    .cat-icon {
+      width: 50px;
+      height: 50px;
+      background-color: var(--white);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .cat-item span {
+      font-size: 12px;
+      color: var(--text-dark);
+    }
+
+    /* Seções Gerais */
+    .section {
+      margin-bottom: 24px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 16px 12px 16px;
+    }
+
+    .section-header h2 {
+      font-size: 16px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--primary);
+      letter-spacing: 0.5px;
+    }
+
+    .link-mais {
+      font-size: 12px;
+      color: var(--text-light);
+      text-decoration: none;
+      background: #e2e8f0;
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    /* Cards de Anúncio */
+    .card {
+      background-color: var(--white);
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .ad-card {
+      min-width: 85%; /* Faz o card ocupar quase toda a tela, deixando o próximo "espiando" */
+      scroll-snap-align: start;
+    }
+
+    .ad-card.full-width {
+      min-width: 100%; /* Para a lista vertical final */
+    }
+
+    .placeholder-img {
+      height: 140px;
+      background-color: #cbd5e1;
+      display: flex;
+      align-items: flex-end;
+      padding: 12px;
+      color: white;
+      font-weight: bold;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    }
+
+    .card-body {
+      padding: 12px;
+    }
+
+    .card-body h3 {
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+    .rating {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-bottom: 8px;
+    }
+
+    .tags {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .tags span {
+      font-size: 10px;
+      padding: 4px 8px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      color: var(--text-light);
+    }
+
+    .price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Cards Workers (Stories) */
+    .worker-card {
+      min-width: 140px;
+      height: 220px;
+      border-radius: var(--border-radius);
+      scroll-snap-align: start;
+      background-color: #475569;
+    }
+
+    /* Filtros */
+    .filters {
+      padding-bottom: 12px;
+    }
+    .filter-pill {
+      padding: 8px 16px;
+      background-color: var(--white);
+      border-radius: 20px;
+      font-size: 12px;
+      white-space: nowrap;
+      color: var(--text-dark);
+      font-weight: 500;
+    }
+    .filter-pill.active {
+      background-color: var(--primary);
+      color: var(--white);
+    }
+
+    /* Lista Vertical */
+    .vertical-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 0 16px;
+    }
+  </style>
   <body>
-    <header class="demo-topbar-sandbox">
-      <div class="demo-header-nav">
-        <div class="demo-user-info">
-          <div class="avatar-dk-circle">DK</div>
-          <div class="user-text-box">
-            <b>Gabriel</b>
-            <span>230 pontos acumulados</span>
+    <div class="mobile-app">
+      <header class="header">
+        <div class="location">📍 Salvador, BA</div>
+        <div class="profile">
+          <div class="icon-circle"></div>
+          <div class="icon-circle"></div>
+          <div class="avatar">G</div>
+        </div>
+      </header>
+
+      <section class="search-section">
+        <input
+          type="text"
+          class="search-bar"
+          placeholder="🔍 Ex: Pintor, Encanador..."
+        />
+        <div class="action-buttons">
+          <button class="btn btn-primary">Procurar serviços</button>
+          <button class="btn btn-secondary">Anunciar meu serviço</button>
+        </div>
+      </section>
+
+      <nav class="categories">
+        <div class="cat-item">
+          <div class="cat-icon">💡</div>
+          <span>Eletricista</span>
+        </div>
+        <div class="cat-item">
+          <div class="cat-icon">🔧</div>
+          <span>Encanador</span>
+        </div>
+        <div class="cat-item">
+          <div class="cat-icon">🖌️</div>
+          <span>Pintura</span>
+        </div>
+        <div class="cat-item">
+          <div class="cat-icon">🧹</div>
+          <span>Limpeza</span>
+        </div>
+        <div class="cat-item">
+          <div class="cat-icon">🚚</div>
+          <span>Frete</span>
+        </div>
+      </nav>
+
+      <section class="section">
+        <div class="section-header">
+          <h2>Anúncios em Destaque</h2>
+          <a href="#" class="link-mais">Ver todos</a>
+        </div>
+        <div class="scroll-horizontal snap-x">
+          <div class="card ad-card">
+            <div class="card-img placeholder-img">Pintura Residencial</div>
+            <div class="card-body">
+              <h3>Carlos Andrade</h3>
+              <p class="rating">⭐ 4.9 (129 avaliações)</p>
+              <div class="tags">
+                <span>#pintura</span><span>#residencial</span>
+              </div>
+              <div class="price-row">
+                <strong>R$ 120</strong>
+                <button class="btn btn-small">Ver anúncio</button>
+              </div>
+            </div>
+          </div>
+          <div class="card ad-card">
+            <div class="card-img placeholder-img">Elétrica 24h</div>
+            <div class="card-body">
+              <h3>Marcos Luz</h3>
+              <p class="rating">⭐ 4.8 (86 avaliações)</p>
+              <div class="tags"><span>#elétrica</span><span>#24h</span></div>
+              <div class="price-row">
+                <strong>R$ 90</strong>
+                <button class="btn btn-small">Ver anúncio</button>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="notif-button-white">
-          <svg width="22" height="22" viewBox="0 0 24 24">
-            <path
-              d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"
-            />
-          </svg>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <h2>Workers</h2>
         </div>
-      </div>
-
-      <div class="demo-hero-content">
-        <h1>Encontre o serviço<br />que você procura</h1>
-        <div class="demo-location-badge">
-          <span style="color: #4ade80; margin-right: 8px">●</span> Adicionar
-          endereço ⌵
+        <div class="scroll-horizontal snap-x">
+          <div class="worker-card placeholder-img">Como renovar parede...</div>
+          <div class="worker-card placeholder-img">
+            Antes e depois cozinha...
+          </div>
+          <div class="worker-card placeholder-img">5 erros elétricos...</div>
         </div>
-      </div>
+      </section>
 
-      <div class="demo-search-bar">
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#94a3b8"
-          stroke-width="2.5"
-          style="margin-left: 8px"
-        >
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        <input type="text" placeholder="Ex: Pintor, Encanador..." />
-
-        <button class="demo-filter-btn">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <line x1="4" y1="21" x2="4" y2="14"></line>
-            <line x1="4" y1="10" x2="4" y2="3"></line>
-            <line x1="12" y1="21" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12" y2="3"></line>
-            <line x1="20" y1="21" x2="20" y2="16"></line>
-            <line x1="20" y1="12" x2="20" y2="3"></line>
-            <line x1="1" y1="14" x2="7" y2="14"></line>
-            <line x1="9" y1="8" x2="15" y2="8"></line>
-            <line x1="17" y1="16" x2="23" y2="16"></line>
-          </svg>
-        </button>
-      </div>
-    </header>
+      <section class="section">
+        <div class="section-header">
+          <h2>Mais Anúncios</h2>
+        </div>
+        <div class="scroll-horizontal filters">
+          <span class="filter-pill active">Para você</span>
+          <span class="filter-pill">Seguindo</span>
+          <span class="filter-pill">Bem avaliados</span>
+          <span class="filter-pill">Com garantia</span>
+        </div>
+        <div class="vertical-list">
+          <div class="card ad-card full-width">
+            <div class="card-img placeholder-img">Montador de móveis</div>
+            <div class="card-body">
+              <h3>Montador de móveis</h3>
+              <p class="rating">⭐ 4.8 (53 avaliações)</p>
+              <div class="price-row">
+                <strong>R$ 80</strong>
+                <button class="btn btn-small">Ver anúncio</button>
+              </div>
+            </div>
+          </div>
+          <div class="card ad-card full-width">
+            <div class="card-img placeholder-img">Suporte para notebook</div>
+            <div class="card-body">
+              <h3>Suporte Técnico</h3>
+              <p class="rating">⭐ 4.7 (41 avaliações)</p>
+              <div class="price-row">
+                <strong>R$ 70</strong>
+                <button class="btn btn-small">Ver anúncio</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
   </body>
 </html>
