@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doke • Mobile Home Disruptivo v2</title>
+  <style>
+    :root {
+      --bg: #eef3f8;
+      --surface: rgba(255,255,255,.88);
+      --surface-strong: #ffffff;
+      --line: #cfe0ef;
+      --line-strong: #bdd3e6;
+      --text: #143b67;
+      --text-soft: #5d728e;
+      --blue: #2f6faa;
+      --blue-2: #4f89c1;
+      --teal: #1f9f8a;
+      --mint: #77d5a9;
+      --navy: #102d4d;
+      --shadow: 0 24px 60px rgba(21, 52, 87, 0.12);
+      --radius-xl: 30px;
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --radius-sm: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: linear-gradient(180deg, #f7fafc 0%, var(--bg) 28%, #eef4f8 100%); color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    body { padding: 28px; }
+    .wrap { max-width: 1520px; margin: 0 auto; }
+    .hero { display: grid; gap: 18px; margin-bottom: 28px; }
+    .hero h1 { margin: 0; font-size: clamp(2rem, 3.5vw, 3.4rem); line-height: .94; letter-spacing: -0.04em; }
+    .hero p { max-width: 960px; margin: 0; color: var(--text-soft); font-size: 1.02rem; }
+    .badge-row { display: flex; flex-wrap: wrap; gap: 10px; }
+    .badge { display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border:1px solid var(--line); border-radius:999px; background: rgba(255,255,255,.72); color: var(--text); font-weight: 700; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(320px, 1fr)); gap: 28px; }
+    @media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } }
+
+    .concept { position: relative; padding: 26px; border: 1px solid rgba(189,211,230,.85); border-radius: 32px; background: linear-gradient(180deg, rgba(255,255,255,.76), rgba(255,255,255,.94)); box-shadow: var(--shadow); overflow: hidden; }
+    .concept::before { content: ''; position:absolute; inset:0; pointer-events:none; background: radial-gradient(circle at top right, rgba(91, 171, 255, 0.16), transparent 30%), radial-gradient(circle at left bottom, rgba(20,177,143,.12), transparent 28%); }
+    .concept-head { position: relative; z-index: 1; display:flex; flex-wrap:wrap; gap: 12px 16px; align-items:flex-start; justify-content:space-between; margin-bottom: 20px; }
+    .concept-tag { display:inline-flex; padding: 8px 12px; border-radius:999px; background: rgba(47,111,170,.1); color: var(--blue); font-size:.82rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
+    .concept-title { margin: 10px 0 8px; font-size: 1.7rem; letter-spacing:-.03em; }
+    .concept-copy { margin: 0; max-width: 460px; color: var(--text-soft); line-height: 1.55; }
+    .pills { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+    .pill { padding: 9px 12px; border-radius:999px; border:1px solid var(--line); background: rgba(255,255,255,.86); font-size:.8rem; font-weight:700; color: var(--text-soft); }
+
+    .phone { position: relative; z-index: 1; width: min(100%, 430px); margin: 0 auto; padding: 16px; border-radius: 42px; background: linear-gradient(180deg, #0f1925, #151d29); box-shadow: 0 26px 52px rgba(15,25,37,.28); }
+    .screen { position: relative; overflow: hidden; min-height: 880px; border-radius: 30px; background: linear-gradient(180deg, #f7fbff 0%, #edf4f8 100%); }
+    .notch { width: 130px; height: 30px; border-radius: 0 0 22px 22px; background: #0f1925; margin: 0 auto; }
+    .screen-pad { padding: 18px 16px 28px; }
+    .topline { display:flex; align-items:center; justify-content:space-between; color:var(--navy); font-weight:800; font-size:.84rem; margin-bottom: 14px; }
+    .icon-btn { width: 44px; height:44px; display:grid; place-items:center; border-radius:16px; border:1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.88); box-shadow: 0 12px 22px rgba(17, 54, 91, .08); color: var(--blue); }
+    .icon-btn svg { width:20px; height:20px; }
+    .small-icon { width:18px; height:18px; }
+    .header-band { position:relative; margin: -18px -16px 18px; padding: 18px 16px 20px; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; background: linear-gradient(135deg, #245f9e 0%, #41b9d2 55%, #7ce3b3 100%); color:white; }
+    .header-band.soft { background: linear-gradient(180deg, #ffffff 0%, #f2f7fb 100%); color: var(--text); border-bottom: 1px solid var(--line); }
+    .user-row { display:flex; align-items:center; justify-content:space-between; gap: 12px; }
+    .user { display:flex; align-items:center; gap:12px; }
+    .avatar { width: 48px; height:48px; border-radius:16px; display:grid; place-items:center; background: linear-gradient(135deg, rgba(255,255,255,.3), rgba(255,255,255,.12)); border:1px solid rgba(255,255,255,.26); font-weight:800; }
+    .avatar.soft { background:#eaf2f8; border-color: var(--line); color: var(--blue); }
+    .title { margin:0; font-size:1.5rem; letter-spacing:-.04em; line-height:1.02; }
+    .muted { color: rgba(255,255,255,.78); font-size:.9rem; }
+    .muted.soft { color: var(--text-soft); }
+    .location-pill { display:inline-flex; align-items:center; gap:8px; padding: 10px 14px; border-radius: 999px; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.22); color: inherit; font-weight: 700; }
+    .location-pill.soft { background: #fff; color: var(--text); border-color: var(--line); }
+
+    .search-shell { margin-top: 18px; display:grid; grid-template-columns: 1fr auto; gap: 12px; }
+    .search-box { display:flex; align-items:center; gap: 10px; min-height: 58px; padding: 0 16px; border-radius: 18px; background: rgba(255,255,255,.95); border: 1px solid rgba(255,255,255,.26); color: var(--text-soft); box-shadow: 0 12px 26px rgba(18, 51, 82, .12); }
+    .search-box.soft { border-color: var(--line); background: #fff; box-shadow:none; }
+    .search-box strong { color: var(--text); }
+
+    .section { margin-top: 18px; }
+    .section-head { display:flex; align-items:center; justify-content:space-between; gap: 12px; margin-bottom: 14px; }
+    .section-title { margin:0; font-size:1.02rem; font-weight:800; letter-spacing:-.02em; }
+    .section-link { color: var(--blue); font-weight:800; font-size:.9rem; }
+
+    .hero-card { position:relative; overflow:hidden; padding: 20px; border-radius: 26px; background: linear-gradient(135deg, #2766f0 0%, #1f7dbb 40%, #38c2d4 100%); color:white; min-height: 170px; box-shadow: 0 18px 30px rgba(32, 95, 164, .18); }
+    .hero-card.green { background: linear-gradient(135deg, #16aa62, #1cbf72 50%, #6ce0a6 100%); }
+    .hero-card.purple { background: linear-gradient(135deg, #4438ff, #7b52ff 55%, #af8cff 100%); }
+    .hero-card h3 { margin:0 0 8px; font-size:1.5rem; line-height:1; letter-spacing:-.04em; max-width: 220px; }
+    .hero-card p { margin:0; max-width: 220px; color: rgba(255,255,255,.85); font-size:.92rem; line-height:1.45; }
+    .hero-card .cta { position:absolute; left:20px; bottom:20px; display:inline-flex; align-items:center; gap:8px; padding: 12px 16px; border-radius: 999px; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.24); font-weight: 800; }
+    .hero-card .shape { position:absolute; right:-12px; bottom:-12px; width: 150px; height:150px; border-radius: 34px; background: rgba(255,255,255,.12); transform: rotate(18deg); }
+
+    .category-grid { display:grid; gap:12px; grid-template-columns: repeat(4, 1fr); }
+    .cat { padding: 14px 10px 12px; border-radius: 22px; background: rgba(255,255,255,.94); border:1px solid var(--line); min-height: 110px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap: 10px; text-align:center; box-shadow: 0 14px 20px rgba(22, 61, 102, .06); }
+    .cat .glyph { width:52px; height:52px; display:grid; place-items:center; border-radius: 18px; }
+    .cat .glyph svg { width: 24px; height:24px; }
+    .cat span { font-size:.82rem; font-weight:800; color: var(--navy); line-height:1.15; }
+
+    .rail { display:flex; gap:12px; overflow:hidden; }
+    .mini-card { flex:1; min-width: 0; padding: 12px; border-radius: 22px; background: rgba(255,255,255,.94); border:1px solid var(--line); }
+    .mini-thumb { height: 118px; border-radius: 18px; background: linear-gradient(135deg, #d7e8f7, #adcbe6); margin-bottom: 12px; }
+    .mini-card h4 { margin:0 0 6px; font-size: 1rem; letter-spacing:-.03em; }
+    .mini-card p { margin:0; color:var(--text-soft); font-size:.85rem; line-height:1.42; }
+
+    .list { display:grid; gap:12px; }
+    .tile { display:flex; align-items:center; gap:12px; padding: 14px; border-radius: 22px; background: rgba(255,255,255,.96); border:1px solid var(--line); }
+    .tile-avatar { width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(135deg, #d9ebfb, #b6d8f0); }
+    .tile h4 { margin:0; font-size:1rem; }
+    .tile p { margin:4px 0 0; color:var(--text-soft); font-size:.84rem; }
+    .price { margin-left:auto; font-weight:800; color: var(--teal); }
+
+    .dock { position:absolute; left: 14px; right: 14px; bottom: 16px; display:grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 12px; border-radius: 22px; background: rgba(255,255,255,.92); border:1px solid var(--line); backdrop-filter: blur(16px); }
+    .dock-item { display:flex; flex-direction:column; align-items:center; gap:6px; color: var(--text-soft); font-size:.72rem; font-weight:800; }
+    .dock-item.active { color: var(--blue); }
+    .dock-item svg { width: 20px; height:20px; }
+
+    .chips { display:flex; gap:8px; overflow:hidden; }
+    .chip { padding: 10px 14px; border-radius: 999px; border:1px solid var(--line); background: #fff; color: var(--text); font-size:.82rem; font-weight:800; }
+    .chip.active { background: linear-gradient(135deg, #2e6cab, #2ea893); color: white; border-color: transparent; }
+
+    .orbit { position: relative; height: 250px; display:grid; place-items:center; }
+    .orbit-core { width: 128px; height:128px; display:grid; place-items:center; text-align:center; padding:18px; border-radius: 32px; color:white; background: linear-gradient(135deg, #2668a5, #2bb59e); box-shadow: 0 22px 36px rgba(35, 104, 164, .24); }
+    .orbit-item { position:absolute; width: 84px; height:84px; display:grid; place-items:center; border-radius: 24px; background: #fff; border:1px solid var(--line); box-shadow: 0 14px 26px rgba(17, 54, 91, .08); }
+    .orbit-item svg { width:28px; height:28px; }
+    .orbit-item.one { top: 10px; left: 50%; transform: translateX(-50%); }
+    .orbit-item.two { right: 22px; top: 78px; }
+    .orbit-item.three { right: 72px; bottom: 10px; }
+    .orbit-item.four { left: 72px; bottom: 10px; }
+    .orbit-item.five { left: 22px; top: 78px; }
+
+    .footer-note { margin-top: 28px; padding: 18px 20px; border-radius: 24px; border: 1px solid var(--line); background: rgba(255,255,255,.76); color: var(--text-soft); }
+    .footer-note strong { color: var(--text); }
+
+    .icon-system { margin-top: 34px; padding: 28px; border:1px solid rgba(189,211,230,.85); border-radius: 32px; background: linear-gradient(180deg, rgba(255,255,255,.8), rgba(255,255,255,.95)); box-shadow: var(--shadow); }
+    .icon-system h2 { margin:0 0 8px; font-size: 2rem; letter-spacing:-.04em; }
+    .icon-system p { margin:0 0 18px; color:var(--text-soft); max-width: 900px; }
+    .icon-grid { display:grid; grid-template-columns: repeat(5, minmax(180px, 1fr)); gap: 16px; }
+    @media (max-width: 1200px) { .icon-grid { grid-template-columns: repeat(3, minmax(180px, 1fr)); } }
+    @media (max-width: 760px) { body { padding: 16px; } .icon-grid { grid-template-columns: 1fr 1fr; } }
+    .icon-card { padding: 18px; border-radius: 24px; background: white; border: 1px solid var(--line); }
+    .icon-card .glyph { width: 58px; height:58px; border-radius: 18px; display:grid; place-items:center; margin-bottom: 14px; }
+    .icon-card .glyph svg { width: 26px; height:26px; }
+    .icon-card h3 { margin: 0 0 6px; font-size: 1rem; }
+    .icon-card p { margin: 0; color:var(--text-soft); font-size: .86rem; line-height:1.42; }
+
+    .c-blue { background: linear-gradient(135deg, rgba(66,126,255,.12), rgba(66,195,255,.08)); color:#2f6faa; }
+    .c-green { background: linear-gradient(135deg, rgba(16,191,126,.14), rgba(103,222,181,.08)); color:#1f9f8a; }
+    .c-purple { background: linear-gradient(135deg, rgba(123,82,255,.13), rgba(195,151,255,.08)); color:#7750ff; }
+    .c-orange { background: linear-gradient(135deg, rgba(255,141,65,.15), rgba(255,199,97,.08)); color:#f07e1f; }
+    .c-pink { background: linear-gradient(135deg, rgba(255,96,162,.14), rgba(255,174,214,.08)); color:#d94d8c; }
+
+    .legend { display:flex; flex-wrap:wrap; gap:10px; margin-top: 16px; }
+    .legend .pill { background: rgba(255,255,255,.86); }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute; left:-9999px;">
+    <defs>
+      <symbol id="i-location" viewBox="0 0 24 24"><path fill="currentColor" d="M12 21s6-5.3 6-11a6 6 0 1 0-12 0c0 5.7 6 11 6 11Zm0-8.2a2.8 2.8 0 1 1 0-5.6 2.8 2.8 0 0 1 0 5.6Z"/></symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24"><path fill="currentColor" d="M12 22a2.8 2.8 0 0 0 2.7-2h-5.4A2.8 2.8 0 0 0 12 22Zm7-4H5l1.6-1.9V11a5.4 5.4 0 0 1 4.4-5.3V5a1 1 0 1 1 2 0v.7a5.4 5.4 0 0 1 4.4 5.3v5.1L19 18Z"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><path fill="currentColor" d="M10.5 4a6.5 6.5 0 0 1 5.1 10.5l4 4a1 1 0 0 1-1.4 1.4l-4-4A6.5 6.5 0 1 1 10.5 4Zm0 2a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z"/></symbol>
+      <symbol id="i-filter" viewBox="0 0 24 24"><path fill="currentColor" d="M4 7a2 2 0 1 1 4 0h12a1 1 0 1 1 0 2H8a2 2 0 1 1-4-2Zm10 10a2 2 0 1 1 4 0h2a1 1 0 1 1 0 2h-2a2 2 0 1 1-4-2Zm-8-5a2 2 0 1 1 4 0h10a1 1 0 1 1 0 2H10a2 2 0 1 1-4-2Z"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path fill="currentColor" d="m13.2 5.8 5.5 5.5a1 1 0 0 1 0 1.4l-5.5 5.5a1 1 0 1 1-1.4-1.4l3.8-3.8H6a1 1 0 1 1 0-2h9.6l-3.8-3.8a1 1 0 1 1 1.4-1.4Z"/></symbol>
+      <symbol id="i-home" viewBox="0 0 24 24"><path fill="currentColor" d="M4.7 11.3 12 5l7.3 6.3v8.2a1 1 0 0 1-1 1H5.7a1 1 0 0 1-1-1v-8.2Zm4.8 8.2h5v-5.7h-5v5.7Z"/></symbol>
+      <symbol id="i-orders" viewBox="0 0 24 24"><path fill="currentColor" d="M6 4.5h12a2 2 0 0 1 2 2V20l-4-2-4 2-4-2-4 2V6.5a2 2 0 0 1 2-2Zm2 4a1 1 0 0 0 0 2h8a1 1 0 1 0 0-2H8Zm0 4a1 1 0 1 0 0 2h5a1 1 0 1 0 0-2H8Z"/></symbol>
+      <symbol id="i-chat" viewBox="0 0 24 24"><path fill="currentColor" d="M6 5h12a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H10l-4.8 3.6c-.6.5-1.5 0-1.5-.8V8a3 3 0 0 1 3-3Zm1.5 5a1 1 0 1 0 0 2h9a1 1 0 1 0 0-2h-9Z"/></symbol>
+      <symbol id="i-profile" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.1 0-7.5 2.4-7.5 5.3 0 .7.6 1.2 1.2 1.2h12.6c.7 0 1.2-.5 1.2-1.2C19.5 16.4 16.1 14 12 14Z"/></symbol>
+      <symbol id="i-electric" viewBox="0 0 24 24"><path fill="currentColor" d="M10 2h4v7h2.4c.9 0 1.4 1 .8 1.8L12 18v-6H9.6c-.9 0-1.4-1-.8-1.8L10 8V2Zm-4 9a1 1 0 0 1 1 1v5h2v-4a1 1 0 1 1 2 0v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1Zm12 0a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-5a1 1 0 1 1 2 0v4h2v-5a1 1 0 0 1 1-1Z"/></symbol>
+      <symbol id="i-plumbing" viewBox="0 0 24 24"><path fill="currentColor" d="M6 4h4v4H8v3a4 4 0 0 0 4 4h1v-2h4v7h-4v-2h-1a6 6 0 0 1-6-6V8H4V4h2Zm10 0h4v4h-2v5h-2V8h-2V4Z"/></symbol>
+      <symbol id="i-paint" viewBox="0 0 24 24"><path fill="currentColor" d="M4 15.5 14.8 4.7a2.5 2.5 0 0 1 3.5 0l1 1a2.5 2.5 0 0 1 0 3.5L8.5 20H4v-4.5Zm3 .5h.7l9.2-9.2-1.4-1.4L6.3 14.6v1.4Zm11.4 3.5H9.8a1 1 0 1 1 0-2h8.6a1 1 0 1 1 0 2Z"/></symbol>
+      <symbol id="i-clean" viewBox="0 0 24 24"><path fill="currentColor" d="M13.4 4.3a1 1 0 0 1 1.4 0l4.9 4.9a1 1 0 0 1-1.4 1.4l-.6-.6-2.5 2.5 1.4 1.4a1 1 0 1 1-1.4 1.4l-5-5a1 1 0 0 1 0-1.4l3.2-3.2Zm-8.1 9.6c.4-.4 1-.4 1.4 0l3.4 3.4a1 1 0 0 1 0 1.4l-1.7 1.7a3 3 0 1 1-4.3-4.3l1.2-1.2Zm12.9 2.6a1 1 0 0 1 .7 1.7l-1.2 1.2a1 1 0 0 1-1.7-.7v-1.5h-1.5a1 1 0 0 1-.7-1.7l1.2-1.2a1 1 0 0 1 1.7.7v1.5h1.5Z"/></symbol>
+      <symbol id="i-frete" viewBox="0 0 24 24"><path fill="currentColor" d="M3 6.5A2.5 2.5 0 0 1 5.5 4h8A2.5 2.5 0 0 1 16 6.5V7h2.6c.7 0 1.4.4 1.7 1l1.6 2.8c.1.3.2.5.2.8V16a2 2 0 0 1-2 2h-.8a2.8 2.8 0 0 1-5.4 0H10a2.8 2.8 0 0 1-5.4 0H4a1 1 0 0 1-1-1V6.5Zm15 2.5H16v3h4.7l-1.1-2H18Zm-10 8a.8.8 0 1 0 0 1.6.8.8 0 0 0 0-1.6Zm8.6 0a.8.8 0 1 0 0 1.6.8.8 0 0 0 0-1.6Z"/></symbol>
+      <symbol id="i-tech" viewBox="0 0 24 24"><path fill="currentColor" d="M9 3h6l1 2.3 2 .9 2.4-.6 3 5.2-1.5 1.8v2.8l1.5 1.8-3 5.2-2.4-.6-2 .9L15 25H9l-1-2.3-2-.9-2.4.6-3-5.2 1.5-1.8v-2.8L.6 10.8l3-5.2 2.4.6 2-.9L9 3Zm3 6a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></symbol>
+      <symbol id="i-class" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4 3 8.3 12 12l7-2.9v5.4h2V8.3L12 4Zm-5 9.4V17c0 1.7 2.3 3 5 3s5-1.3 5-3v-3.6l-5 2-5-2Z"/></symbol>
+      <symbol id="i-beauty" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2c1.7 2.7 4.3 4.2 7 5-1.3 4.7-4.3 7.7-7 9-2.7-1.3-5.7-4.3-7-9 2.7-.8 5.3-2.3 7-5Zm0 17c2.4 0 4.4 1.2 5 3H7c.6-1.8 2.6-3 5-3Z"/></symbol>
+      <symbol id="i-reform" viewBox="0 0 24 24"><path fill="currentColor" d="M20.6 7.5 16.5 3.4l-2 2 1.6 1.6-3.2 3.2-1.8-1.8-8 8V21h4.6l8-8-1.8-1.8 3.2-3.2 1.6 1.6 1.9-2.1ZM6 18.5l4.9-4.9 1.5 1.5-4.9 4.9H6v-1.5Z"/></symbol>
+      <symbol id="i-star" viewBox="0 0 24 24"><path fill="currentColor" d="m12 2 2.8 5.7 6.2.9-4.5 4.4 1 6.2-5.5-2.9-5.5 2.9 1-6.2L3 8.6l6.2-.9L12 2Z"/></symbol>
+    </defs>
+  </svg>
+
+  <div class="wrap">
+    <section class="hero">
+      <div class="badge-row">
+        <span class="badge">Mobile home</span>
+        <span class="badge">Direção mais disruptiva</span>
+        <span class="badge">Busca como protagonista</span>
+        <span class="badge">Novo sistema de símbolos globais</span>
+      </div>
+      <h1>Nova rodada: menos “site comprimido”, mais produto com assinatura.</h1>
+      <p>Eu abandonei a lógica tímida do topo azul com categorias em fileira e trouxe quatro caminhos com mais identidade: hero mais editorial, busca com peso real, hierarquia mais ousada e ícones novos para todas as telas. Todos os conceitos abaixo já respeitam teu contexto de marketplace de serviços, não de app médico.</p>
+    </section>
+
+    <section class="grid">
+      <article class="concept">
+        <div class="concept-head">
+          <div>
+            <span class="concept-tag">Conceito 01</span>
+            <h2 class="concept-title">Pulse Deck</h2>
+            <p class="concept-copy">Hero forte com faixa gradiente curta, busca “flutuando” para quebrar a rigidez do topo e categorias em grid premium. É a melhor direção se você quer mobile com cara de produto grande, não de versão reduzida do desktop.</p>
+          </div>
+          <div class="pills">
+            <span class="pill">Busca dominante</span>
+            <span class="pill">Banner editorial</span>
+            <span class="pill">Grid premium</span>
+          </div>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="notch"></div>
+            <div class="header-band">
+              <div class="screen-pad" style="padding: 0;">
+                <div class="topline"><span>9:41</span><span>5G • 100%</span></div>
+                <div class="user-row">
+                  <div class="user">
+                    <div class="avatar">DK</div>
+                    <div>
+                      <h3 class="title">Olá, Gabriel</h3>
+                      <div class="muted">Novos serviços em Salvador hoje</div>
+                    </div>
+                  </div>
+                  <button class="icon-btn" aria-label="Notificações"><svg><use href="#i-bell"/></svg></button>
+                </div>
+                <div style="margin-top: 16px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                  <span class="location-pill"><svg class="small-icon"><use href="#i-location"/></svg> Salvador, BA</span>
+                  <span class="location-pill" style="padding-inline:12px;"><svg class="small-icon"><use href="#i-star"/></svg> Destaques</span>
+                </div>
+                <div class="search-shell">
+                  <div class="search-box"><svg class="small-icon"><use href="#i-search"/></svg><strong>Buscar pintor, encanador...</strong></div>
+                  <button class="icon-btn" aria-label="Filtros"><svg><use href="#i-filter"/></svg></button>
+                </div>
+              </div>
+            </div>
+            <div class="screen-pad" style="padding-top: 6px;">
+              <div class="hero-card">
+                <div class="shape"></div>
+                <h3>Reforma, limpeza e manutenção num só fluxo.</h3>
+                <p>Uma home mobile menos fragmentada, com entrada mais clara para descoberta e decisão.</p>
+                <span class="cta">Explorar agora <svg class="small-icon"><use href="#i-arrow"/></svg></span>
+              </div>
+
+              <section class="section">
+                <div class="section-head">
+                  <h4 class="section-title">Categorias prioritárias</h4>
+                  <span class="section-link">Ver todas</span>
+                </div>
+                <div class="category-grid">
+                  <div class="cat"><div class="glyph c-blue"><svg><use href="#i-electric"/></svg></div><span>Eletricista</span></div>
+                  <div class="cat"><div class="glyph c-green"><svg><use href="#i-plumbing"/></svg></div><span>Encanador</span></div>
+                  <div class="cat"><div class="glyph c-orange"><svg><use href="#i-paint"/></svg></div><span>Pintura</span></div>
+                  <div class="cat"><div class="glyph c-purple"><svg><use href="#i-clean"/></svg></div><span>Limpeza</span></div>
+                  <div class="cat"><div class="glyph c-blue"><svg><use href="#i-frete"/></svg></div><span>Frete</span></div>
+                  <div class="cat"><div class="glyph c-green"><svg><use href="#i-tech"/></svg></div><span>Tecnologia</span></div>
+                  <div class="cat"><div class="glyph c-orange"><svg><use href="#i-class"/></svg></div><span>Aulas</span></div>
+                  <div class="cat"><div class="glyph c-pink"><svg><use href="#i-beauty"/></svg></div><span>Beleza</span></div>
+                </div>
+              </section>
+
+              <section class="section">
+                <div class="section-head"><h4 class="section-title">Serviços em alta</h4><span class="section-link">Ver mais</span></div>
+                <div class="rail">
+                  <div class="mini-card"><div class="mini-thumb"></div><h4>Instalação rápida</h4><p>Cards mais editoriais, menos “quadradinhos soltos”.</p></div>
+                  <div class="mini-card"><div class="mini-thumb" style="background:linear-gradient(135deg, #d9f0ea, #9fd4c7);"></div><h4>Limpeza recorrente</h4><p>A home respira melhor e cria ritmo visual.</p></div>
+                </div>
+              </section>
+            </div>
+            <div class="dock">
+              <div class="dock-item active"><svg><use href="#i-home"/></svg><span>Início</span></div>
+              <div class="dock-item"><svg><use href="#i-orders"/></svg><span>Pedidos</span></div>
+              <div class="dock-item"><svg><use href="#i-chat"/></svg><span>Mensagens</span></div>
+              <div class="dock-item"><svg><use href="#i-profile"/></svg><span>Perfil</span></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="concept">
+        <div class="concept-head">
+          <div>
+            <span class="concept-tag">Conceito 02</span>
+            <h2 class="concept-title">Orbit Search</h2>
+            <p class="concept-copy">Aqui a descoberta de categorias não fica numa faixa sem alma. Ela gira em torno da busca principal, com um núcleo central que destaca intenção de uso e ícones mais memoráveis.</p>
+          </div>
+          <div class="pills">
+            <span class="pill">Busca no centro</span>
+            <span class="pill">Órbita funcional</span>
+            <span class="pill">Mais assinatura</span>
+          </div>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="notch"></div>
+            <div class="screen-pad">
+              <div class="topline"><span>9:41</span><span>5G • 100%</span></div>
+              <div class="user-row" style="margin-bottom: 18px;">
+                <div class="avatar soft">DK</div>
+                <span class="location-pill soft"><svg class="small-icon"><use href="#i-location"/></svg> Salvador</span>
+                <button class="icon-btn" aria-label="Notificações"><svg><use href="#i-bell"/></svg></button>
+              </div>
+              <h3 class="title" style="font-size:2rem; margin-bottom: 10px;">Ache seu próximo serviço sem perder tempo.</h3>
+              <div class="muted soft" style="max-width: 290px;">Menos ruído no topo. Mais foco em descoberta, localização e categorias com leitura imediata.</div>
+              <div class="search-shell" style="margin-top: 20px;">
+                <div class="search-box soft"><svg class="small-icon"><use href="#i-search"/></svg><strong>Eletricista perto de mim</strong></div>
+                <button class="icon-btn" aria-label="Filtros"><svg><use href="#i-filter"/></svg></button>
+              </div>
+              <section class="section">
+                <div class="orbit">
+                  <div class="orbit-core"><strong>Buscar por categoria</strong></div>
+                  <div class="orbit-item one c-blue"><svg><use href="#i-electric"/></svg></div>
+                  <div class="orbit-item two c-green"><svg><use href="#i-plumbing"/></svg></div>
+                  <div class="orbit-item three c-orange"><svg><use href="#i-paint"/></svg></div>
+                  <div class="orbit-item four c-purple"><svg><use href="#i-clean"/></svg></div>
+                  <div class="orbit-item five c-pink"><svg><use href="#i-beauty"/></svg></div>
+                </div>
+              </section>
+              <section class="section">
+                <div class="hero-card green">
+                  <div class="shape"></div>
+                  <h3>Atalhos para urgência, confiança e localização.</h3>
+                  <p>Essa linha funciona muito bem se você quiser puxar lógica de “serviço agora”, “perto de mim” e “mais avaliados”.</p>
+                  <span class="cta">Abrir radar <svg class="small-icon"><use href="#i-arrow"/></svg></span>
+                </div>
+              </section>
+              <section class="section">
+                <div class="chips">
+                  <span class="chip active">Disponível hoje</span>
+                  <span class="chip">Melhor avaliados</span>
+                  <span class="chip">Mais próximos</span>
+                </div>
+              </section>
+              <section class="section">
+                <div class="list">
+                  <div class="tile"><div class="tile-avatar"></div><div><h4>Reparo elétrico</h4><p>Atende em 35 min • Barra</p></div><div class="price">R$ 90</div></div>
+                  <div class="tile"><div class="tile-avatar" style="background:linear-gradient(135deg, #d4f0e6, #a7d9cb);"></div><div><h4>Diarista premium</h4><p>Hoje • 4.9 avaliações</p></div><div class="price">R$ 160</div></div>
+                </div>
+              </section>
+            </div>
+            <div class="dock">
+              <div class="dock-item active"><svg><use href="#i-home"/></svg><span>Radar</span></div>
+              <div class="dock-item"><svg><use href="#i-orders"/></svg><span>Pedidos</span></div>
+              <div class="dock-item"><svg><use href="#i-chat"/></svg><span>Chat</span></div>
+              <div class="dock-item"><svg><use href="#i-profile"/></svg><span>Conta</span></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="concept">
+        <div class="concept-head">
+          <div>
+            <span class="concept-tag">Conceito 03</span>
+            <h2 class="concept-title">Layered Feed</h2>
+            <p class="concept-copy">Mistura card hero, chips de modo e cards de serviço com hierarquia mais editorial. É a direção mais equilibrada entre ousadia e facilidade de implementação dentro do teu front atual.</p>
+          </div>
+          <div class="pills">
+            <span class="pill">Mais viável</span>
+            <span class="pill">Editorial</span>
+            <span class="pill">Pronto para produção</span>
+          </div>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="notch"></div>
+            <div class="header-band soft">
+              <div class="screen-pad" style="padding:0;">
+                <div class="topline"><span>9:41</span><span>5G • 100%</span></div>
+                <div class="user-row">
+                  <div class="user">
+                    <div class="avatar soft">DK</div>
+                    <div>
+                      <div class="muted soft">Bom dia</div>
+                      <h3 class="title" style="font-size:1.45rem;">Vamos encontrar o serviço ideal?</h3>
+                    </div>
+                  </div>
+                  <button class="icon-btn" aria-label="Notificações"><svg><use href="#i-bell"/></svg></button>
+                </div>
+                <div class="search-shell">
+                  <div class="search-box soft"><svg class="small-icon"><use href="#i-search"/></svg><strong>Buscar pintor, diarista, frete...</strong></div>
+                  <button class="icon-btn" aria-label="Filtros"><svg><use href="#i-filter"/></svg></button>
+                </div>
+                <div class="chips" style="margin-top: 14px;">
+                  <span class="chip active">Serviços</span>
+                  <span class="chip">Profissionais</span>
+                  <span class="chip">Orçamentos</span>
+                </div>
+              </div>
+            </div>
+            <div class="screen-pad" style="padding-top: 8px;">
+              <div class="section-head"><h4 class="section-title">Blocos de descoberta</h4><span class="section-link">Personalizar</span></div>
+              <div class="hero-card purple">
+                <div class="shape"></div>
+                <h3>Combine busca, filtros e intenção logo no primeiro scroll.</h3>
+                <p>Esse conceito tem mais cara de feed premium e encaixa melhor com cards grandes na home.</p>
+                <span class="cta">Começar <svg class="small-icon"><use href="#i-arrow"/></svg></span>
+              </div>
+              <section class="section">
+                <div class="section-head"><h4 class="section-title">Atalhos por contexto</h4><span class="section-link">Editar</span></div>
+                <div class="category-grid" style="grid-template-columns: repeat(3, 1fr);">
+                  <div class="cat"><div class="glyph c-blue"><svg><use href="#i-electric"/></svg></div><span>Urgência</span></div>
+                  <div class="cat"><div class="glyph c-green"><svg><use href="#i-clean"/></svg></div><span>Casa</span></div>
+                  <div class="cat"><div class="glyph c-orange"><svg><use href="#i-frete"/></svg></div><span>Entrega</span></div>
+                </div>
+              </section>
+              <section class="section">
+                <div class="list">
+                  <div class="tile"><div class="tile-avatar"></div><div><h4>Montagem de móveis</h4><p>Profissional verificado • 4.9</p></div><div class="price">R$ 120</div></div>
+                  <div class="tile"><div class="tile-avatar" style="background:linear-gradient(135deg, #f2e0ef, #e6bfdc);"></div><div><h4>Designer e aulas</h4><p>Online • resposta rápida</p></div><div class="price">R$ 80</div></div>
+                  <div class="tile"><div class="tile-avatar" style="background:linear-gradient(135deg, #d7e8f7, #c2d9ee);"></div><div><h4>Reforma leve</h4><p>Orçamento em até 2h</p></div><div class="price">R$ 150</div></div>
+                </div>
+              </section>
+            </div>
+            <div class="dock">
+              <div class="dock-item active"><svg><use href="#i-home"/></svg><span>Início</span></div>
+              <div class="dock-item"><svg><use href="#i-orders"/></svg><span>Pedidos</span></div>
+              <div class="dock-item"><svg><use href="#i-chat"/></svg><span>Mensagens</span></div>
+              <div class="dock-item"><svg><use href="#i-profile"/></svg><span>Perfil</span></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="concept">
+        <div class="concept-head">
+          <div>
+            <span class="concept-tag">Conceito 04</span>
+            <h2 class="concept-title">Split Command</h2>
+            <p class="concept-copy">Mais ousado. O topo vira quase um painel operacional compacto: busca, cidade, urgência e ação rápida. Serve bem se você quer um Doke mais proprietário e menos parecido com marketplaces genéricos.</p>
+          </div>
+          <div class="pills">
+            <span class="pill">Mais autoral</span>
+            <span class="pill">Mais experimental</span>
+            <span class="pill">Alta identidade</span>
+          </div>
+        </div>
+        <div class="phone">
+          <div class="screen">
+            <div class="notch"></div>
+            <div class="screen-pad">
+              <div class="topline"><span>9:41</span><span>5G • 100%</span></div>
+              <div style="display:grid; grid-template-columns: 1fr auto; gap: 12px; align-items:center; margin-bottom: 16px;">
+                <div>
+                  <div class="muted soft">Sua base</div>
+                  <h3 class="title" style="font-size:2.05rem;">Serviços para hoje.</h3>
+                </div>
+                <button class="icon-btn"><svg><use href="#i-bell"/></svg></button>
+              </div>
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="search-box soft" style="min-height: 78px; align-items:flex-start; padding-top: 14px; flex-direction:column; gap: 6px;">
+                  <span class="muted soft">Localização</span>
+                  <strong>Salvador, BA</strong>
+                </div>
+                <div class="search-box soft" style="min-height: 78px; align-items:flex-start; padding-top: 14px; flex-direction:column; gap: 6px;">
+                  <span class="muted soft">Prioridade</span>
+                  <strong>Atendimento rápido</strong>
+                </div>
+              </div>
+              <div class="search-shell" style="margin-top: 12px;">
+                <div class="search-box soft"><svg class="small-icon"><use href="#i-search"/></svg><strong>O que você precisa agora?</strong></div>
+                <button class="icon-btn"><svg><use href="#i-filter"/></svg></button>
+              </div>
+              <section class="section">
+                <div class="section-head"><h4 class="section-title">Modos de entrada</h4><span class="section-link">Configurar</span></div>
+                <div class="chips">
+                  <span class="chip active">Explorar</span>
+                  <span class="chip">Urgência</span>
+                  <span class="chip">Orçar</span>
+                </div>
+              </section>
+              <section class="section">
+                <div class="hero-card green" style="min-height: 150px;">
+                  <div class="shape"></div>
+                  <h3>Primeira dobra com decisão.</h3>
+                  <p>Menos decorativa. Mais orientada a ação, comparação e conversão.</p>
+                  <span class="cta">Abrir painel <svg class="small-icon"><use href="#i-arrow"/></svg></span>
+                </div>
+              </section>
+              <section class="section">
+                <div class="category-grid" style="grid-template-columns: repeat(4, 1fr);">
+                  <div class="cat"><div class="glyph c-blue"><svg><use href="#i-electric"/></svg></div><span>Elétrica</span></div>
+                  <div class="cat"><div class="glyph c-green"><svg><use href="#i-plumbing"/></svg></div><span>Hidráulica</span></div>
+                  <div class="cat"><div class="glyph c-orange"><svg><use href="#i-tech"/></svg></div><span>Tech</span></div>
+                  <div class="cat"><div class="glyph c-pink"><svg><use href="#i-reform"/></svg></div><span>Reforma</span></div>
+                </div>
+              </section>
+            </div>
+            <div class="dock">
+              <div class="dock-item active"><svg><use href="#i-home"/></svg><span>Base</span></div>
+              <div class="dock-item"><svg><use href="#i-orders"/></svg><span>Fluxos</span></div>
+              <div class="dock-item"><svg><use href="#i-chat"/></svg><span>Inbox</span></div>
+              <div class="dock-item"><svg><use href="#i-profile"/></svg><span>Conta</span></div>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="icon-system">
+      <span class="concept-tag">Sistema novo de símbolos</span>
+      <h2>Ícones de categorias com mais leitura, menos improviso.</h2>
+      <p>Troquei os símbolos genéricos por metáforas mais próprias para cada serviço. A regra aqui é simples: cada categoria precisa ser reconhecida rápido em home, resultados, perfil, chips, filtros e bottom sheets. O mesmo desenho deve sobreviver em 20px, 24px e 32px sem perder leitura.</p>
+      <div class="icon-grid">
+        <div class="icon-card"><div class="glyph c-blue"><svg><use href="#i-electric"/></svg></div><h3>Eletricista</h3><p>Tomada + raio. Mais específico do que lâmpada isolada e funciona melhor em contexto de serviço técnico.</p></div>
+        <div class="icon-card"><div class="glyph c-green"><svg><use href="#i-plumbing"/></svg></div><h3>Encanador</h3><p>Junção de tubo. Mais forte para hidráulica do que chave inglesa genérica.</p></div>
+        <div class="icon-card"><div class="glyph c-orange"><svg><use href="#i-paint"/></svg></div><h3>Pintura</h3><p>Rolo com base horizontal. Melhor leitura em chips e cards pequenos.</p></div>
+        <div class="icon-card"><div class="glyph c-purple"><svg><use href="#i-clean"/></svg></div><h3>Limpeza</h3><p>Spray com brilho. Mais moderno do que balde ou ondas abstratas.</p></div>
+        <div class="icon-card"><div class="glyph c-blue"><svg><use href="#i-frete"/></svg></div><h3>Frete</h3><p>Mini-caminhão compacto com rodas legíveis. Melhor para cards e resultados.</p></div>
+        <div class="icon-card"><div class="glyph c-green"><svg><use href="#i-tech"/></svg></div><h3>Tecnologia</h3><p>Engrenagem/circuito híbrido. Passa suporte, instalação e reparo digital.</p></div>
+        <div class="icon-card"><div class="glyph c-orange"><svg><use href="#i-class"/></svg></div><h3>Aulas</h3><p>Capelo minimalista. Mais universal do que livro puro e ainda funciona em educação online.</p></div>
+        <div class="icon-card"><div class="glyph c-pink"><svg><use href="#i-beauty"/></svg></div><h3>Beleza</h3><p>Símbolo de cuidado/estética com leitura mais sofisticada do que tesoura clichê.</p></div>
+        <div class="icon-card"><div class="glyph c-green"><svg><use href="#i-reform"/></svg></div><h3>Reforma</h3><p>Ferramenta + construção no mesmo gesto. Mais próprio para obra leve e manutenção.</p></div>
+        <div class="icon-card"><div class="glyph c-blue"><svg><use href="#i-star"/></svg></div><h3>Destaques</h3><p>Ícone de apoio para chips e seções editoriais, mantendo a mesma família visual.</p></div>
+      </div>
+      <div class="legend">
+        <span class="pill">Aplicar a mesma família em home, resultados, perfil e filtros</span>
+        <span class="pill">Evitar misturar outline antigo com símbolos novos</span>
+        <span class="pill">Conservar stroke/volume consistente</span>
+      </div>
+    </section>
+
+    <div class="footer-note"><strong>Minha recomendação de produto:</strong> a melhor linha para virar implementação real é <strong>Conceito 03</strong> como base estrutural, com a força visual do <strong>Conceito 01</strong> no hero e o sistema de símbolos novo aplicado globalmente. Essa combinação te dá assinatura sem cair em overdesign ou piorar manutenção.</div>
+  </div>
+</body>
+</html>

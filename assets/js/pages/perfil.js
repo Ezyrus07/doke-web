@@ -197,18 +197,15 @@ window.DokeInitProfile = () => {
   const chipMarkup = (text, accent = false) =>
     `<span class="profile-chip ${accent ? "profile-chip--accent" : ""}">${normalize(text)}</span>`;
 
-  const categoryIcons = {
-    painting: `<svg viewBox="0 0 24 24"><path d="m14.7 5.8 3.5 3.5"></path><path d="m10.2 15.3 5.6-5.6 2.1 2.1-5.6 5.6"></path><path d="M8 17.5 6.8 20l2.5-1.2"></path><path d="M4.8 20h3.6"></path></svg>`,
-    electrician: `<svg viewBox="0 0 24 24"><path d="M12 4.8a4 4 0 0 0-4 4c0 1.6.8 2.9 1.9 3.8.9.7 1.6 1.8 1.8 2.9h.6c.2-1.1.9-2.2 1.8-2.9A5 5 0 0 0 16 8.8a4 4 0 0 0-4-4Z"></path><path d="M10.3 17.3h3.4"></path><path d="M10.8 19.4h2.4"></path></svg>`,
-    plumbing: `<svg viewBox="0 0 24 24"><path d="m14.6 7.2 2.2-2.2a2.1 2.1 0 0 1 3 3l-2.2 2.2"></path><path d="m13.3 8.5 2.2 2.2"></path><path d="m6.2 15.6 7.1-7.1 4 4-7.1 7.1H6.2z"></path></svg>`,
-    cleaning: `<svg viewBox="0 0 24 24"><path d="M7 7.6c1.2 1.2 2.8 1.8 5 1.8s3.8-.6 5-1.8"></path><path d="M7 11.6c1.2 1.2 2.8 1.8 5 1.8s3.8-.6 5-1.8"></path><path d="M7 15.6c1.2 1.2 2.8 1.8 5 1.8s3.8-.6 5-1.8"></path></svg>`,
-    freight: `<svg viewBox="0 0 24 24"><path d="M5 9h9.5v6H5z"></path><path d="M14.5 10.5h2.7l1.8 1.8v2.7h-4.5"></path><circle cx="8" cy="17" r="1.1"></circle><circle cx="17.2" cy="17" r="1.1"></circle></svg>`
-  };
-
   const getCategoryIcon = (item) => {
     const label = normalize(item?.label).toLowerCase();
-    const key = item?.iconKey || (label.includes('pint') || label.includes('acabamento') ? 'painting' : '');
-    return categoryIcons[key] || categoryIcons.painting;
+    const preferredKey = item?.iconKey || label;
+
+    if (window.DokeCategoryIcons && typeof window.DokeCategoryIcons.iconMarkup === "function") {
+      return window.DokeCategoryIcons.iconMarkup(preferredKey);
+    }
+
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h10a2 2 0 0 0 0-4H9"></path><path d="M15 7v3"></path><path d="M15 10h-4a2 2 0 0 0-2 2v2"></path><path d="M9 14v5"></path></svg>`;
   };
 
   const categoryMarkup = (item) => {

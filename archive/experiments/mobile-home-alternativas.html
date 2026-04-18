@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doke • Alternativas mobile para header e categorias</title>
+  <style>
+    :root {
+      --bg: #edf3f8;
+      --surface: rgba(255,255,255,0.92);
+      --surface-2: #f8fbfe;
+      --text: #173b67;
+      --muted: #6f7f95;
+      --line: #d8e5f1;
+      --line-strong: #c7d8e7;
+      --brand: linear-gradient(135deg, #6f9ccc 0%, #2f6ea8 100%);
+      --brand-solid: #2f6ea8;
+      --accent: linear-gradient(135deg, #25b49e 0%, #177d6d 100%);
+      --accent-solid: #1b8b79;
+      --shadow: 0 24px 50px rgba(40, 78, 116, 0.08);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 18px;
+      --radius-sm: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(122, 165, 206, 0.15), transparent 30%),
+        linear-gradient(180deg, #f5f8fb 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+
+    .page {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 40px 24px 64px;
+    }
+
+    .intro {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 32px;
+      padding: 26px 28px;
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #6b86a5;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 2vw, 34px);
+      line-height: 1.08;
+    }
+
+    .intro p {
+      margin: 0;
+      max-width: 900px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .recommendation {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      width: fit-content;
+      margin-top: 6px;
+      padding: 12px 16px;
+      border-radius: 999px;
+      border: 1px solid #c6dcda;
+      background: #eff9f7;
+      color: #176e61;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      align-items: start;
+    }
+
+    .concept {
+      background: rgba(255,255,255,0.58);
+      border: 1px solid rgba(199, 216, 231, 0.9);
+      border-radius: 32px;
+      padding: 18px;
+      box-shadow: 0 16px 40px rgba(47, 84, 122, 0.06);
+      backdrop-filter: blur(18px);
+    }
+
+    .concept__head {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 4px 6px 0;
+    }
+
+    .concept__titlebar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .concept h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #f8fbfe;
+      color: #56718f;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .concept p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .phone {
+      width: min(100%, 390px);
+      margin: 0 auto;
+      border-radius: 34px;
+      border: 1px solid #d3dfeb;
+      background: linear-gradient(180deg, #f6f9fc 0%, #edf3f8 100%);
+      box-shadow: 0 24px 48px rgba(43, 73, 105, 0.12);
+      overflow: hidden;
+    }
+
+    .statusbar {
+      height: 34px;
+      background: #fbfcfe;
+      border-bottom: 1px solid rgba(216,229,241,0.9);
+    }
+
+    .screen {
+      padding: 14px;
+      display: grid;
+      gap: 14px;
+      min-height: 720px;
+      position: relative;
+    }
+
+    .headerA,
+    .headerB,
+    .headerC,
+    .headerD {
+      border-radius: 26px;
+      border: 1px solid rgba(199, 216, 231, 0.86);
+      background: linear-gradient(180deg, rgba(75, 133, 190, 0.96) 0%, rgba(47, 110, 168, 0.96) 100%);
+      padding: 14px;
+      box-shadow: 0 14px 28px rgba(29, 76, 122, 0.14);
+      color: white;
+    }
+
+    .row { display: flex; align-items: center; gap: 10px; }
+    .between { justify-content: space-between; }
+    .grow { flex: 1; }
+
+    .avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,0.16);
+      border: 1px solid rgba(255,255,255,0.22);
+      color: white;
+      font-weight: 900;
+      font-size: 20px;
+      backdrop-filter: blur(8px);
+      flex: 0 0 auto;
+    }
+
+    .greet {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .greet strong { font-size: 14px; }
+    .greet span { font-size: 12px; color: rgba(255,255,255,0.78); }
+
+    .chip-light {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.22);
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.22);
+      display: grid;
+      place-items: center;
+      color: white;
+      flex: 0 0 auto;
+      font-size: 16px;
+    }
+
+    .search-shell {
+      margin-top: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .searchbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 56px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.95);
+      border: 1px solid rgba(215, 228, 240, 0.98);
+      padding: 8px 10px 8px 14px;
+      color: #6f7f95;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+    }
+
+    .searchbar .placeholder {
+      flex: 1;
+      min-width: 0;
+      font-size: 15px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .searchbar .action,
+    .searchbar .cta {
+      width: 42px;
+      height: 42px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #f7fbfe;
+      display: grid;
+      place-items: center;
+      color: #58718f;
+      flex: 0 0 auto;
+    }
+
+    .searchbar .cta {
+      background: var(--accent);
+      border-color: transparent;
+      color: white;
+    }
+
+    .sub-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .sub-actions .mini {
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.1);
+      padding: 10px 12px;
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .section {
+      display: grid;
+      gap: 10px;
+    }
+
+    .section__title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 0 4px;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .section__link {
+      color: #56718f;
+      font-weight: 800;
+      font-size: 12px;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .category-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .category-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+    .category-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+    .category-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+
+    .cat-card {
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.92);
+      min-height: 92px;
+      padding: 12px 10px;
+      display: grid;
+      justify-items: center;
+      align-content: center;
+      gap: 10px;
+      text-align: center;
+      box-shadow: 0 10px 22px rgba(39, 79, 120, 0.05);
+    }
+
+    .cat-card--compact {
+      min-height: 76px;
+      gap: 8px;
+      border-radius: 18px;
+    }
+
+    .cat-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: #f1f7fc;
+      border: 1px solid var(--line);
+      color: var(--brand-solid);
+      font-weight: 900;
+      font-size: 13px;
+    }
+
+    .cat-card strong {
+      font-size: 12px;
+      line-height: 1.2;
+      color: #38567a;
+    }
+
+    .pill-rail,
+    .tag-rail {
+      display: flex;
+      gap: 10px;
+      overflow: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+
+    .pill-rail::-webkit-scrollbar,
+    .tag-rail::-webkit-scrollbar { display: none; }
+
+    .category-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.92);
+      color: #31567f;
+      font-weight: 800;
+      white-space: nowrap;
+      box-shadow: 0 8px 18px rgba(39,79,120,0.04);
+    }
+
+    .category-pill .cat-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 10px;
+      font-size: 11px;
+    }
+
+    .promo-card {
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      overflow: hidden;
+      background: white;
+      box-shadow: 0 12px 30px rgba(45, 79, 114, 0.08);
+    }
+
+    .promo-card__media {
+      height: 148px;
+      background:
+        linear-gradient(135deg, rgba(21, 56, 90, 0.65), rgba(22, 80, 118, 0.15)),
+        radial-gradient(circle at 20% 25%, rgba(255,255,255,0.18), transparent 20%),
+        linear-gradient(120deg, #8f9dab 0%, #d3dde8 48%, #8fa8bf 100%);
+      position: relative;
+    }
+
+    .promo-card__badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      background: rgba(23, 59, 103, 0.72);
+      color: white;
+      backdrop-filter: blur(8px);
+    }
+
+    .promo-card__body {
+      padding: 14px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .promo-card__body h3 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    .promo-card__body p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .meta-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .meta {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: #f6fbfe;
+      border: 1px solid var(--line);
+      font-size: 11px;
+      font-weight: 800;
+      color: #54718f;
+    }
+
+    .split-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 10px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .sheet-card {
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.95);
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      box-shadow: 0 12px 28px rgba(46,77,108,0.06);
+    }
+
+    .sheet-card h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .tag {
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #f8fbfe;
+      color: #4f6b8c;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .footer-note {
+      margin-top: 10px;
+      padding: 0 6px 4px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 1100px) {
+      .gallery { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    }
+
+    @media (max-width: 680px) {
+      .page { padding: 24px 14px 48px; }
+      .intro { padding: 20px; border-radius: 24px; }
+      .concept { padding: 14px; border-radius: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="intro">
+      <span class="eyebrow">Exploração visual mobile</span>
+      <h1>Alternativas para refazer o header mobile e a área de categorias da home</h1>
+      <p>
+        O problema atual não é só “ficou feio”. O layout está tentando concentrar greeting, localização,
+        busca, filtro e carrossel num bloco apertado demais. Isso cria ruído, pouco respiro e uma hierarquia
+        visual fraca. Então organizei <strong>4 rotas diferentes</strong>, todas já com linguagem próxima do teu sistema.
+      </p>
+      <div class="recommendation">Recomendação principal: começar da Alternativa 2 e combinar com a área de categorias da Alternativa 4.</div>
+    </section>
+
+    <section class="gallery">
+      <article class="concept">
+        <div class="concept__head">
+          <div class="concept__titlebar">
+            <h2>Alternativa 1 · Compacta e segura</h2>
+            <span class="pill">Mais próxima do padrão atual</span>
+          </div>
+          <p>Reduz a poluição sem mudar demais a lógica da home. Melhor opção para migrar rápido sem quebrar a identidade.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"></div>
+          <div class="screen">
+            <section class="headerA">
+              <div class="row between">
+                <div class="row grow" style="min-width:0;">
+                  <div class="avatar">DK</div>
+                  <div class="greet">
+                    <strong>Olá Gabriel</strong>
+                    <span>Encontre um serviço em poucos toques</span>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="chip-light">● Salvador, BA</div>
+                  <div class="icon-btn">🔔</div>
+                </div>
+              </div>
+              <div class="search-shell">
+                <div class="searchbar">
+                  <span>⌕</span>
+                  <span class="placeholder">Ex: Pintor, Encanador...</span>
+                  <button class="action">⚙</button>
+                  <button class="cta">→</button>
+                </div>
+                <div class="sub-actions">
+                  <span class="mini">Serviços</span>
+                  <span class="mini">Usuários</span>
+                  <span class="mini">Disponível hoje</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="section">
+              <div class="section__title">
+                <span>Categorias rápidas</span>
+                <span class="section__link">Ver todas</span>
+              </div>
+              <div class="category-grid cols-4">
+                <div class="cat-card cat-card--compact"><div class="cat-icon">EL</div><strong>Elétrica</strong></div>
+                <div class="cat-card cat-card--compact"><div class="cat-icon">EN</div><strong>Encanador</strong></div>
+                <div class="cat-card cat-card--compact"><div class="cat-icon">PI</div><strong>Pintura</strong></div>
+                <div class="cat-card cat-card--compact"><div class="cat-icon">LI</div><strong>Limpeza</strong></div>
+                <div class="cat-card cat-card--compact"><div class="cat-icon">FR</div><strong>Frete</strong></div>
+                <div class="cat-card cat-card--compact"><div class="cat-icon">TC</div><strong>Tecnologia</strong></div>
+                <div class="cat-card cat-card--compact"><div class="cat-icon">AU</div><strong>Aulas</strong></div>
+                <div class="cat-card cat-card--compact"><div class="cat-icon">RM</div><strong>Reforma</strong></div>
+              </div>
+            </section>
+
+            <section class="promo-card">
+              <div class="promo-card__media"><span class="promo-card__badge">Disponível hoje</span></div>
+              <div class="promo-card__body">
+                <h3>Limpeza residencial com resposta rápida</h3>
+                <p>Card de destaque abaixo da dobra inicial, sem competir com a busca.</p>
+                <div class="meta-row">
+                  <span class="meta">4.9 avaliação</span>
+                  <span class="meta">Chega hoje</span>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+        <div class="footer-note">Boa para transição curta. Resolve a sensação de aperto, mas ainda mantém bastante informação no topo.</div>
+      </article>
+
+      <article class="concept">
+        <div class="concept__head">
+          <div class="concept__titlebar">
+            <h2>Alternativa 2 · Search first</h2>
+            <span class="pill">Melhor equilíbrio</span>
+          </div>
+          <p>A busca vira protagonista. O header fica mais leve e a navegação ganha clareza. É a solução mais escalável para mobile.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"></div>
+          <div class="screen">
+            <section class="headerB" style="padding-bottom:16px;">
+              <div class="row between" style="margin-bottom:12px;">
+                <div class="row grow" style="min-width:0;">
+                  <div class="avatar">DK</div>
+                  <div class="greet">
+                    <strong>Bom te ver, Gabriel</strong>
+                    <span>Descubra serviços perto de você</span>
+                  </div>
+                </div>
+                <div class="icon-btn">☰</div>
+              </div>
+              <div class="searchbar" style="border-radius:24px;">
+                <span>⌕</span>
+                <span class="placeholder">O que você precisa hoje?</span>
+                <button class="action">⚙</button>
+                <button class="cta">→</button>
+              </div>
+            </section>
+
+            <section class="sheet-card">
+              <div class="row between">
+                <h3>Atalhos inteligentes</h3>
+                <span class="pill">Localização ativa</span>
+              </div>
+              <div class="tag-rail">
+                <span class="tag">Salvador, BA</span>
+                <span class="tag">Serviços</span>
+                <span class="tag">Usuários</span>
+                <span class="tag">Disponível hoje</span>
+              </div>
+            </section>
+
+            <section class="section">
+              <div class="section__title">
+                <span>Categorias</span>
+                <span class="section__link">Explorar</span>
+              </div>
+              <div class="pill-rail">
+                <span class="category-pill"><span class="cat-icon">EL</span> Eletricista</span>
+                <span class="category-pill"><span class="cat-icon">EN</span> Encanador</span>
+                <span class="category-pill"><span class="cat-icon">PI</span> Pintura</span>
+                <span class="category-pill"><span class="cat-icon">LI</span> Limpeza</span>
+                <span class="category-pill"><span class="cat-icon">FR</span> Frete</span>
+              </div>
+            </section>
+
+            <section class="split-grid">
+              <div class="promo-card">
+                <div class="promo-card__media"><span class="promo-card__badge">Destaque</span></div>
+                <div class="promo-card__body">
+                  <h3>Serviços residenciais</h3>
+                  <p>Um bloco principal com mais presença para orientar a home.</p>
+                </div>
+              </div>
+              <div class="stack">
+                <div class="sheet-card">
+                  <h3>Filtros rápidos</h3>
+                  <div class="tag-rail"><span class="tag">Preço</span><span class="tag">Entrega</span><span class="tag">Distância</span></div>
+                </div>
+                <div class="sheet-card">
+                  <h3>Continuar buscando</h3>
+                  <div class="meta-row"><span class="meta">Marceneiro</span><span class="meta">Frete</span></div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+        <div class="footer-note">Arquiteturalmente é a melhor. Separa utilidades, busca e descoberta sem amontoar tudo no mesmo bloco.</div>
+      </article>
+
+      <article class="concept">
+        <div class="concept__head">
+          <div class="concept__titlebar">
+            <h2>Alternativa 3 · Mais editorial</h2>
+            <span class="pill">Maior apelo visual</span>
+          </div>
+          <p>Boa quando você quer uma home com personalidade mais forte e sensação premium. Exige disciplina para não poluir depois.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"></div>
+          <div class="screen">
+            <section class="headerC">
+              <div class="row between" style="margin-bottom:12px;">
+                <div class="chip-light">● Salvador, BA</div>
+                <div class="row">
+                  <div class="icon-btn">♡</div>
+                  <div class="icon-btn">☰</div>
+                </div>
+              </div>
+              <div class="greet" style="margin-bottom:14px;">
+                <strong style="font-size:22px; line-height:1.05;">Encontre profissionais com cara de app premium</strong>
+                <span>Busca forte, contexto enxuto e categorias com presença.</span>
+              </div>
+              <div class="searchbar">
+                <span>⌕</span>
+                <span class="placeholder">Busque serviços e inspirações</span>
+                <button class="cta">→</button>
+              </div>
+            </section>
+
+            <section class="sheet-card">
+              <div class="section__title" style="padding:0;">
+                <span>Explorar por tipo</span>
+                <span class="section__link">Ver mais</span>
+              </div>
+              <div class="category-grid cols-2">
+                <div class="cat-card"><div class="cat-icon">RS</div><strong>Reforma e serviços</strong></div>
+                <div class="cat-card"><div class="cat-icon">LV</div><strong>Limpeza e cuidados</strong></div>
+                <div class="cat-card"><div class="cat-icon">TC</div><strong>Tecnologia</strong></div>
+                <div class="cat-card"><div class="cat-icon">AU</div><strong>Aulas e apoio</strong></div>
+              </div>
+            </section>
+
+            <section class="promo-card">
+              <div class="promo-card__media"><span class="promo-card__badge">Coleção da semana</span></div>
+              <div class="promo-card__body">
+                <h3>Profissionais mais salvos perto de você</h3>
+                <p>Formato melhor para trabalhar com descoberta, curadoria e campanhas sazonais.</p>
+                <div class="meta-row">
+                  <span class="meta">Trending</span>
+                  <span class="meta">Alta reputação</span>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+        <div class="footer-note">Visualmente forte, mas pode virar overdesign se o resto das telas permanecer muito utilitário.</div>
+      </article>
+
+      <article class="concept">
+        <div class="concept__head">
+          <div class="concept__titlebar">
+            <h2>Alternativa 4 · Minimalista e muito usável</h2>
+            <span class="pill">Melhor UX de categorias</span>
+          </div>
+          <p>O header fica só com o que importa. A área de categorias ganha leitura mais sólida e menos cara de grade improvisada.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"></div>
+          <div class="screen">
+            <section class="headerD" style="padding:12px 12px 14px;">
+              <div class="row between" style="margin-bottom:10px;">
+                <div class="row grow" style="min-width:0;">
+                  <div class="avatar">DK</div>
+                  <div class="greet">
+                    <strong>Olá, Gabriel</strong>
+                    <span>Serviços perto de Salvador, BA</span>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="icon-btn">🔔</div>
+                  <div class="icon-btn">☰</div>
+                </div>
+              </div>
+              <div class="searchbar" style="background:#fff;">
+                <span>⌕</span>
+                <span class="placeholder">Busque um profissional ou serviço</span>
+                <button class="action">⚙</button>
+              </div>
+            </section>
+
+            <section class="section">
+              <div class="section__title">
+                <span>Categorias principais</span>
+                <span class="section__link">Ver todas</span>
+              </div>
+              <div class="category-grid cols-3">
+                <div class="cat-card"><div class="cat-icon">EL</div><strong>Elétrica</strong></div>
+                <div class="cat-card"><div class="cat-icon">EN</div><strong>Encanador</strong></div>
+                <div class="cat-card"><div class="cat-icon">PI</div><strong>Pintura</strong></div>
+                <div class="cat-card"><div class="cat-icon">LI</div><strong>Limpeza</strong></div>
+                <div class="cat-card"><div class="cat-icon">FR</div><strong>Frete</strong></div>
+                <div class="cat-card"><div class="cat-icon">RM</div><strong>Reforma</strong></div>
+              </div>
+            </section>
+
+            <section class="sheet-card">
+              <div class="row between">
+                <h3>Atalhos úteis</h3>
+                <span class="pill">Uso diário</span>
+              </div>
+              <div class="tag-rail">
+                <span class="tag">Disponível hoje</span>
+                <span class="tag">Mais avaliados</span>
+                <span class="tag">Mais próximos</span>
+              </div>
+            </section>
+
+            <section class="promo-card">
+              <div class="promo-card__media"><span class="promo-card__badge">Mais pedidos</span></div>
+              <div class="promo-card__body">
+                <h3>Seleção rápida para começar</h3>
+                <p>Boa para manter a home limpa e abrir espaço para cards realmente importantes.</p>
+              </div>
+            </section>
+          </div>
+        </div>
+        <div class="footer-note">A melhor área de categorias entre as quatro. Menos ruído, mais clareza e mais previsibilidade no mobile.</div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
