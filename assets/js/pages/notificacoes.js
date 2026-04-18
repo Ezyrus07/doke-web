@@ -10,17 +10,14 @@
     const empty = root.querySelector('[data-notifications-empty]');
     const countNodes = [...document.querySelectorAll('[data-notifications-unread-count], [data-notifications-hero-count]')];
     const pageTitle = root.querySelector('.notifications-page-header__heading h2');
-    const searchInputs = Array.from(root.querySelectorAll('[data-notifications-search]'));
-    const searchForms = searchInputs.map((input) => input.closest('form')).filter(Boolean);
-    const searchTriggers = [
-      ...root.querySelectorAll('[data-notifications-mobile-search-toggle]'),
-      ...searchForms.map((form) => form.querySelector('.orders-header-search__icon')).filter(Boolean),
-    ];
-    const searchCloses = searchForms.map((form) => form.querySelector('.orders-header-search__close')).filter(Boolean);
-    const filterToggles = Array.from(root.querySelectorAll('[data-notifications-filters-toggle]'));
+    const searchInput = root.querySelector('[data-notifications-search]');
+    const searchForm = searchInput?.closest('form');
+    const searchTrigger = searchForm?.querySelector('.orders-header-search__icon');
+    const searchClose = searchForm?.querySelector('.orders-header-search__close');
+    const filtersToggle = root.querySelector('[data-notifications-filters-toggle]');
     const filtersPanel = root.querySelector('[data-notifications-filters-panel]');
     const headerControls = root.querySelector('.notifications-page-header__controls');
-    const selectToggles = Array.from(root.querySelectorAll('[data-notifications-select-toggle]'));
+    const selectToggle = root.querySelector('[data-notifications-select-toggle]');
     const selectPanel = root.querySelector('[data-notifications-select-panel]');
     const selectModeButtons = [...root.querySelectorAll('[data-notifications-select-mode]')];
     const markSelectedButton = root.querySelector('[data-notifications-mark-selected]');
@@ -54,15 +51,8 @@
     let currentFilter = 'all';
     let currentTimeFilter = 'all';
     let selectionEnabled = false;
-    const mobileSearchQuery = window.matchMedia('(max-width: 760px)');
+    const mobileSearchQuery = window.matchMedia('(max-width: 640px)');
     let longPressTimer = null;
-
-    const getActiveSearchInput = () => searchInputs.find((input) => input.offsetParent !== null) || searchInputs[0] || null;
-    const syncSearchValues = (value) => {
-      searchInputs.forEach((input) => {
-        if (input.value !== value) input.value = value;
-      });
-    };
 
     if (pageTitle) pageTitle.textContent = 'Notificações';
 
@@ -84,21 +74,23 @@
     const closeFiltersPanel = () => {
       if (!filtersPanel) return;
       filtersPanel.hidden = true;
-      filterToggles.forEach((toggle) => toggle.setAttribute('aria-expanded', 'false'));
+      filtersToggle?.setAttribute('aria-expanded', 'false');
       syncHeaderControls();
     };
 
     const closeSelectPanel = () => {
       if (!selectPanel) return;
       selectPanel.hidden = true;
-      selectToggles.forEach((toggle) => toggle.setAttribute('aria-expanded', 'false'));
+      selectToggle?.setAttribute('aria-expanded', 'false');
+      syncHeaderControls();
     };
 
     const openSelectPanel = () => {
       if (!selectPanel) return;
-      selectPanel.hidden = false;
-      selectToggles.forEach((toggle) => toggle.setAttribute('aria-expanded', 'true'));
       closeFiltersPanel();
+      selectPanel.hidden = false;
+      selectToggle?.setAttribute('aria-expanded', 'true');
+      syncHeaderControls();
     };
 
     const clearSelection = () => {
@@ -119,9 +111,9 @@
 
     const openFiltersPanel = () => {
       if (!filtersPanel) return;
-      filtersPanel.hidden = false;
-      filterToggles.forEach((toggle) => toggle.setAttribute('aria-expanded', 'true'));
       closeSelectPanel();
+      filtersPanel.hidden = false;
+      filtersToggle?.setAttribute('aria-expanded', 'true');
       closeSettingsPanel();
       syncHeaderControls();
     };
@@ -184,14 +176,18 @@
         || (clearFilterButton && !clearFilterButton.hidden)
       );
       if (filterStatusStack) filterStatusStack.hidden = !showStatusStack && (!filtersPanel || filtersPanel.hidden);
-      const showControls = Boolean((filtersPanel && !filtersPanel.hidden) || showStatusStack);
+      const showControls = Boolean(
+        (filtersPanel && !filtersPanel.hidden)
+        || (selectPanel && !selectPanel.hidden)
+        || showStatusStack
+      );
       headerControls.hidden = !showControls;
     };
 
     const applyFilter = (filter = currentFilter, timeFilter = currentTimeFilter) => {
       currentFilter = filter;
       currentTimeFilter = timeFilter;
-      const query = (getActiveSearchInput()?.value || searchInputs[0]?.value || '').trim().toLowerCase();
+      const query = (searchInput?.value || '').trim().toLowerCase();
       let visible = 0;
 
       const matchTimeWindow = (card) => {
@@ -240,18 +236,25 @@
       if (mobileSearchQuery.matches) closeFiltersPanel();
     }));
 
-    filterToggles.forEach((toggle) => toggle.addEventListener('click', () => {
+    filtersToggle?.addEventListener('click', () => {
       if (!filtersPanel) return;
-      if (filtersPanel.hidden) openFiltersPanel();
-      else closeFiltersPanel();
-    }));
+      if (filtersPanel.hidden) {
+        setSelectionEnabled(false);
+        openFiltersPanel();
+      } else {
+        closeFiltersPanel();
+      }
+    });
 
-    selectToggles.forEach((toggle) => toggle.addEventListener('click', () => {
-      const nextStaté = !selectionEnabled;
+    selectToggle?.addEventListener('click', () => {
+      const nextStaté = !selectionEnabled || Boolean(selectPanel?.hidden);
       setSelectionEnabled(nextStaté);
-      if (nextStaté) openSelectPanel();
-      else closeSelectPanel();
-    }));
+      if (nextStaté) {
+        openSelectPanel();
+      } else {
+        closeSelectPanel();
+      }
+    });
 
     selectModeButtons.forEach((button) => button.addEventListener('click', () => {
       const mode = button.dataset.notificationsSelectMode || 'single';
@@ -301,41 +304,36 @@
       closeFiltersPanel();
     });
 
-    searchInputs.forEach((input) => input.addEventListener('input', () => {
-      syncSearchValues(input.value);
-      applyFilter(currentFilter, currentTimeFilter);
-    }));
-
-    searchForms.forEach((form) => form.addEventListener('submit', (event) => {
+    searchInput?.addEventListener('input', () => applyFilter(currentFilter));
+    searchForm?.addEventListener('submit', (event) => {
       event.preventDefault();
-      const activeSearchInput = getActiveSearchInput();
       if (mobileSearchQuery.matches && !root.classList.contains('is-search-open')) {
         setSearchExpanded(true);
-        activeSearchInput?.focus();
+        searchInput?.focus();
         return;
       }
       applyFilter(currentFilter, currentTimeFilter);
-    }));
+    });
 
-    searchTriggers.forEach((trigger) => trigger.addEventListener('click', (event) => {
+    searchTrigger?.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
       if (!root.classList.contains('is-search-open')) setSearchExpanded(true);
-      window.setTimeout(() => getActiveSearchInput()?.focus(), 0);
-    }));
+      window.setTimeout(() => searchInput?.focus(), 0);
+    });
 
-    searchInputs.forEach((input) => input.addEventListener('focus', () => {
+    searchInput?.addEventListener('focus', () => {
       setSearchExpanded(true);
-    }));
+    });
 
-    searchCloses.forEach((closeButton) => closeButton?.addEventListener('click', (event) => {
+    searchClose?.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      syncSearchValues('');
+      if (searchInput) searchInput.value = '';
       setSearchExpanded(false);
-      searchInputs.forEach((input) => input.blur());
+      searchInput?.blur();
       applyFilter(currentFilter, currentTimeFilter);
-    }));
+    });
 
     root.querySelectorAll('[data-mark-read]').forEach((button) => button.addEventListener('click', () => {
       button.closest('.notification-card')?.classList.remove('is-unread');
@@ -361,6 +359,8 @@
       applyFilter(currentFilter, currentTimeFilter);
       setSelectionEnabled(false);
       closeSelectPanel();
+      syncHeaderControls();
+      syncHeaderControls();
     });
 
     root.querySelectorAll('[data-dismiss-notification]').forEach((button) => button.addEventListener('click', () => {
@@ -384,6 +384,8 @@
       applyFilter(currentFilter, currentTimeFilter);
       setSelectionEnabled(false);
       closeSelectPanel();
+      syncHeaderControls();
+      syncHeaderControls();
     });
 
     cards.forEach((card) => card.addEventListener('click', (event) => {
@@ -470,7 +472,7 @@
 
       if (mobileSearchQuery.matches && root.classList.contains('is-search-open')) {
         const clickedInsideSearch = target.closest('.notifications-page-header__search');
-        if (!clickedInsideSearch && !(getActiveSearchInput()?.value || searchInputs[0]?.value || '').trim()) setSearchExpanded(false);
+        if (!clickedInsideSearch && !(searchInput?.value || '').trim()) setSearchExpanded(false);
       }
 
       if (settingsPanel && !settingsPanel.hidden) {

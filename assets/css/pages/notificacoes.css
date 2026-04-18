@@ -987,171 +987,32 @@ body.notifications-page-shell .notifications-filters-panel .filter-chip span {
   }
 }
 
-
-/* 2026-04-18 notifications parity + shell normalization */
-body.notifications-page-shell .page-header-context__action,
-body.notifications-page-shell .orders-page-header__search-toggle,
-body.notifications-page-shell .orders-page-header__hero-chip,
-body.notifications-page-shell .home-side-meta__search,
-body.notifications-page-shell .home-side-meta__alert,
-body.notifications-page-shell .home-side-meta__location {
+/* 2026-04-18 header active state: no entry tween */
+body.notifications-page-shell [data-notifications-filters-toggle],
+body.notifications-page-shell [data-notifications-select-toggle],
+body.notifications-page-shell [data-notifications-settings-toggle] {
   transition: none !important;
 }
-
-body.notifications-page-shell .page-header-context__action[aria-expanded="true"],
-body.notifications-page-shell .orders-page-header__hero-chip[aria-expanded="true"] {
+body.notifications-page-shell [data-notifications-filters-toggle] svg,
+body.notifications-page-shell [data-notifications-select-toggle] svg,
+body.notifications-page-shell [data-notifications-settings-toggle] svg {
+  transition: none !important;
+}
+body.notifications-page-shell [data-notifications-filters-toggle][aria-expanded="true"],
+body.notifications-page-shell [data-notifications-select-toggle][aria-expanded="true"],
+body.notifications-page-shell [data-notifications-settings-toggle][aria-expanded="true"] {
   background: var(--color-secondary) !important;
   border-color: var(--color-secondary) !important;
-  color: #ffffff !important;
+  color: #fff !important;
   box-shadow: none !important;
+  transform: none !important;
 }
-
-body.notifications-page-shell .page-header-context__action[aria-expanded="true"] svg,
-body.notifications-page-shell .orders-page-header__hero-chip[aria-expanded="true"] svg {
-  color: currentColor;
-  stroke: currentColor;
-}
-
-body.notifications-page-shell .notifications-page-header__controls[hidden] {
-  display: none !important;
-}
-
-@media (max-width: 760px) {
-  body.notifications-page-shell .page__content,
-  body.notifications-page-shell .page__content-inner,
-  body.notifications-page-shell .orders-shell-content,
-  body.notifications-page-shell .notifications-page,
-  body.notifications-page-shell .notifications-list,
-  body.notifications-page-shell .notifications-group,
-  body.notifications-page-shell .notification-card {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    box-sizing: border-box;
-  }
-
-  body.notifications-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-inline: 0 !important;
-    padding: 0 12px 18px !important;
-  }
-
-  body.notifications-page-shell .orders-shell-content.shell-home__workspace--clean {
-    padding-top: 8px !important;
-  }
-
-  body.notifications-page-shell .home-side-meta {
-    display: none !important;
-  }
-
-  body.notifications-page-shell .notifications-page {
-    gap: 12px;
-    padding: 0;
-  }
-
-  body.notifications-page-shell .notifications-shell-header {
-    display: grid;
-    gap: 8px;
-  }
-
-  body.notifications-page-shell .orders-page-header__hero {
-    display: grid !important;
-  }
-
-  body.notifications-page-shell .orders-page-header__count {
-    display: none !important;
-  }
-
-  body.notifications-page-shell .orders-page-header__hero-name {
-    font-size: 1rem;
-  }
-
-  body.notifications-page-shell .orders-page-header__hero-strip {
-    justify-self: end;
-  }
-
-  body.notifications-page-shell .notifications-page-header__controls {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    gap: 8px;
-  }
-
-  body.notifications-page-shell .notifications-filter-stack,
-  body.notifications-page-shell .orders-active-filter-row {
-    width: 100%;
-    min-width: 0;
-  }
-
-  body.notifications-page-shell .notifications-filters-panel,
-  body.notifications-page-shell .notifications-select-panel {
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 14px 12px;
-    border: 1px solid rgba(203, 217, 232, 0.92);
-    border-radius: 22px;
-    background: rgba(255, 255, 255, 0.96);
-    box-shadow: none;
-    overflow: hidden;
-  }
-
-  body.notifications-page-shell .notifications-filters-panel__group,
-  body.notifications-page-shell .notifications-filters-panel__chips {
-    width: 100%;
-    min-width: 0;
-  }
-
-  body.notifications-page-shell .notifications-filters-panel__chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  body.notifications-page-shell .notifications-select-panel {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  body.notifications-page-shell .notifications-select-panel .filter-chip {
-    width: 100%;
-    justify-content: center;
-    text-align: center;
-  }
-
-  body.notifications-page-shell .notifications-page.is-search-open .orders-page-header__search.orders-page-header__search--hero {
-    display: flex;
-    grid-column: 1 / -1;
-    margin-top: 2px;
-  }
-
-  body.notifications-page-shell .notification-card {
-    border-radius: 22px;
-  }
-}
-
-@media (max-width: 760px) {
-  body.notifications-page-shell .notifications-page.is-search-open .orders-page-header__search.orders-page-header__search--hero input {
-    display: block;
-    opacity: 1;
-    pointer-events: auto;
-    min-width: 0;
-    width: 100%;
-    font-size: 0.92rem;
-  }
-
-  body.notifications-page-shell .notifications-page.is-search-open .orders-page-header__search.orders-page-header__search--hero .orders-header-search__close {
-    display: inline-flex;
-    opacity: 1;
-    pointer-events: auto;
-  }
+body.notifications-page-shell [data-notifications-filters-toggle][aria-expanded="true"]:hover,
+body.notifications-page-shell [data-notifications-select-toggle][aria-expanded="true"]:hover,
+body.notifications-page-shell [data-notifications-settings-toggle][aria-expanded="true"]:hover {
+  background: var(--color-secondary) !important;
+  border-color: var(--color-secondary) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
