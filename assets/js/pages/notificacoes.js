@@ -10,14 +10,17 @@
     const empty = root.querySelector('[data-notifications-empty]');
     const countNodes = [...document.querySelectorAll('[data-notifications-unread-count], [data-notifications-hero-count]')];
     const pageTitle = root.querySelector('.notifications-page-header__heading h2');
-    const searchInput = root.querySelector('[data-notifications-search]');
-    const searchForm = searchInput?.closest('form');
-    const searchTrigger = searchForm?.querySelector('.orders-header-search__icon');
-    const searchClose = searchForm?.querySelector('.orders-header-search__close');
-    const filtersToggle = root.querySelector('[data-notifications-filters-toggle]');
+    const searchInputs = Array.from(root.querySelectorAll('[data-notifications-search]'));
+    const searchForms = searchInputs.map((input) => input.closest('form')).filter(Boolean);
+    const searchTriggers = [
+      ...root.querySelectorAll('[data-notifications-mobile-search-toggle]'),
+      ...searchForms.map((form) => form.querySelector('.orders-header-search__icon')).filter(Boolean),
+    ];
+    const searchCloses = searchForms.map((form) => form.querySelector('.orders-header-search__close')).filter(Boolean);
+    const filterToggles = Array.from(root.querySelectorAll('[data-notifications-filters-toggle]'));
     const filtersPanel = root.querySelector('[data-notifications-filters-panel]');
     const headerControls = root.querySelector('.notifications-page-header__controls');
-    const selectToggle = root.querySelector('[data-notifications-select-toggle]');
+    const selectToggles = Array.from(root.querySelectorAll('[data-notifications-select-toggle]'));
     const selectPanel = root.querySelector('[data-notifications-select-panel]');
     const selectModeButtons = [...root.querySelectorAll('[data-notifications-select-mode]')];
     const markSelectedButton = root.querySelector('[data-notifications-mark-selected]');
@@ -51,8 +54,15 @@
     let currentFilter = 'all';
     let currentTimeFilter = 'all';
     let selectionEnabled = false;
-    const mobileSearchQuery = window.matchMedia('(max-width: 640px)');
+    const mobileSearchQuery = window.matchMedia('(max-width: 760px)');
     let longPressTimer = null;
+
+    const getActiveSearchInput = () => searchInputs.find((input) => input.offsetParent !== null) || searchInputs[0] || null;
+    const syncSearchValues = (value) => {
+      searchInputs.forEach((input) => {
+        if (input.value !== value) input.value = value;
+      });
+    };
 
     if (pageTitle) pageTitle.textContent = 'Notificações';
 
@@ -74,20 +84,20 @@
     const closeFiltersPanel = () => {
       if (!filtersPanel) return;
       filtersPanel.hidden = true;
-      filtersToggle?.setAttribute('aria-expanded', 'false');
+      filterToggles.forEach((toggle) => toggle.setAttribute('aria-expanded', 'false'));
       syncHeaderControls();
     };
 
     const closeSelectPanel = () => {
       if (!selectPanel) return;
       selectPanel.hidden = true;
-      selectToggle?.setAttribute('aria-expanded', 'false');
+      selectToggles.forEach((toggle) => toggle.setAttribute('aria-expanded', 'false'));
     };
 
     const openSelectPanel = () => {
       if (!selectPanel) return;
       selectPanel.hidden = false;
-      selectToggle?.setAttribute('aria-expanded', 'true');
+      selectToggles.forEach((toggle) => toggle.setAttribute('aria-expanded', 'true'));
       closeFiltersPanel();
     };
 
@@ -110,7 +120,7 @@
     const openFiltersPanel = () => {
       if (!filtersPanel) return;
       filtersPanel.hidden = false;
-      filtersToggle?.setAttribute('aria-expanded', 'true');
+      filterToggles.forEach((toggle) => toggle.setAttribute('aria-expanded', 'true'));
       closeSelectPanel();
       closeSettingsPanel();
       syncHeaderControls();
@@ -181,7 +191,7 @@
     const applyFilter = (filter = currentFilter, timeFilter = currentTimeFilter) => {
       currentFilter = filter;
       currentTimeFilter = timeFilter;
-      const query = (searchInput?.value || '').trim().toLowerCase();
+      const query = (getActiveSearchInput()?.value || searchInputs[0]?.value || '').trim().toLowerCase();
       let visible = 0;
 
       const matchTimeWindow = (card) => {
@@ -230,18 +240,18 @@
       if (mobileSearchQuery.matches) closeFiltersPanel();
     }));
 
-    filtersToggle?.addEventListener('click', () => {
+    filterToggles.forEach((toggle) => toggle.addEventListener('click', () => {
       if (!filtersPanel) return;
       if (filtersPanel.hidden) openFiltersPanel();
       else closeFiltersPanel();
-    });
+    }));
 
-    selectToggle?.addEventListener('click', () => {
+    selectToggles.forEach((toggle) => toggle.addEventListener('click', () => {
       const nextStaté = !selectionEnabled;
       setSelectionEnabled(nextStaté);
       if (nextStaté) openSelectPanel();
       else closeSelectPanel();
-    });
+    }));
 
     selectModeButtons.forEach((button) => button.addEventListener('click', () => {
       const mode = button.dataset.notificationsSelectMode || 'single';
@@ -291,36 +301,41 @@
       closeFiltersPanel();
     });
 
-    searchInput?.addEventListener('input', () => applyFilter(currentFilter));
-    searchForm?.addEventListener('submit', (event) => {
+    searchInputs.forEach((input) => input.addEventListener('input', () => {
+      syncSearchValues(input.value);
+      applyFilter(currentFilter, currentTimeFilter);
+    }));
+
+    searchForms.forEach((form) => form.addEventListener('submit', (event) => {
       event.preventDefault();
+      const activeSearchInput = getActiveSearchInput();
       if (mobileSearchQuery.matches && !root.classList.contains('is-search-open')) {
         setSearchExpanded(true);
-        searchInput?.focus();
+        activeSearchInput?.focus();
         return;
       }
       applyFilter(currentFilter, currentTimeFilter);
-    });
+    }));
 
-    searchTrigger?.addEventListener('click', (event) => {
+    searchTriggers.forEach((trigger) => trigger.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
       if (!root.classList.contains('is-search-open')) setSearchExpanded(true);
-      window.setTimeout(() => searchInput?.focus(), 0);
-    });
+      window.setTimeout(() => getActiveSearchInput()?.focus(), 0);
+    }));
 
-    searchInput?.addEventListener('focus', () => {
+    searchInputs.forEach((input) => input.addEventListener('focus', () => {
       setSearchExpanded(true);
-    });
+    }));
 
-    searchClose?.addEventListener('click', (event) => {
+    searchCloses.forEach((closeButton) => closeButton?.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      if (searchInput) searchInput.value = '';
+      syncSearchValues('');
       setSearchExpanded(false);
-      searchInput?.blur();
+      searchInputs.forEach((input) => input.blur());
       applyFilter(currentFilter, currentTimeFilter);
-    });
+    }));
 
     root.querySelectorAll('[data-mark-read]').forEach((button) => button.addEventListener('click', () => {
       button.closest('.notification-card')?.classList.remove('is-unread');
@@ -455,7 +470,7 @@
 
       if (mobileSearchQuery.matches && root.classList.contains('is-search-open')) {
         const clickedInsideSearch = target.closest('.notifications-page-header__search');
-        if (!clickedInsideSearch && !(searchInput?.value || '').trim()) setSearchExpanded(false);
+        if (!clickedInsideSearch && !(getActiveSearchInput()?.value || searchInputs[0]?.value || '').trim()) setSearchExpanded(false);
       }
 
       if (settingsPanel && !settingsPanel.hidden) {
