@@ -33,6 +33,47 @@ body.notifications-page-shell .notifications-filters-panel__group p {
   background: var(--shell-page-bg);
 }
 
+body.notifications-page-shell {
+  --home-desktop-content-width: min(1280px, calc(100vw - var(--sidebar-width) - 56px));
+}
+
+body.notifications-page-shell .page__content {
+  padding-top: 8px;
+  padding-inline: 26px;
+  padding-bottom: 40px;
+}
+
+body.notifications-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content,
+body.notifications-page-shell .notifications-page,
+body.notifications-page-shell .notifications-mobile-header,
+body.notifications-page-shell .notifications-page-header--auxiliary,
+body.notifications-page-shell .notifications-list {
+  width: min(100%, var(--home-desktop-content-width));
+  max-width: min(100%, var(--home-desktop-content-width));
+  margin-inline: auto;
+}
+
+body.notifications-page-shell .notifications-page-header__search:not(.notifications-page-header__search--hero) {
+  order: -1;
+}
+
+body.notifications-page-shell .notifications-page-header__search--hero {
+  order: 3;
+}
+
+.notifications-filters-panel__group {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.notifications-filters-panel__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 .notifications-page {
   display: grid;
   gap: 12px;
@@ -765,7 +806,6 @@ body.notifications-page-shell .notifications-filters-panel__group p {
 }
 
 .notifications-page-header__search {
-  order: -1;
   width: 64px;
   min-width: 64px;
   max-width: 64px;
@@ -987,32 +1027,142 @@ body.notifications-page-shell .notifications-filters-panel .filter-chip span {
   }
 }
 
-/* 2026-04-18 header active state: no entry tween */
-body.notifications-page-shell [data-notifications-filters-toggle],
-body.notifications-page-shell [data-notifications-select-toggle],
-body.notifications-page-shell [data-notifications-settings-toggle] {
-  transition: none !important;
+/* 2026-04-17 notifications mobile header aligned with pedidos */
+.notifications-mobile-header {
+  display: none;
 }
-body.notifications-page-shell [data-notifications-filters-toggle] svg,
-body.notifications-page-shell [data-notifications-select-toggle] svg,
-body.notifications-page-shell [data-notifications-settings-toggle] svg {
-  transition: none !important;
-}
+
 body.notifications-page-shell [data-notifications-filters-toggle][aria-expanded="true"],
-body.notifications-page-shell [data-notifications-select-toggle][aria-expanded="true"],
-body.notifications-page-shell [data-notifications-settings-toggle][aria-expanded="true"] {
-  background: var(--color-secondary) !important;
-  border-color: var(--color-secondary) !important;
-  color: #fff !important;
-  box-shadow: none !important;
-  transform: none !important;
+body.notifications-page-shell [data-notifications-select-toggle][aria-expanded="true"] {
+  background: linear-gradient(135deg, #1b8c7d 0%, #2b5f94 100%);
+  border-color: transparent;
+  color: #fff;
 }
-body.notifications-page-shell [data-notifications-filters-toggle][aria-expanded="true"]:hover,
-body.notifications-page-shell [data-notifications-select-toggle][aria-expanded="true"]:hover,
-body.notifications-page-shell [data-notifications-settings-toggle][aria-expanded="true"]:hover {
-  background: var(--color-secondary) !important;
-  border-color: var(--color-secondary) !important;
-  color: #fff !important;
-  box-shadow: none !important;
-  transform: none !important;
+
+body.notifications-page-shell [data-notifications-filters-toggle][aria-expanded="true"] span,
+body.notifications-page-shell [data-notifications-select-toggle][aria-expanded="true"] span {
+  color: inherit;
+}
+
+@media (max-width: 760px) {
+  body.notifications-page-shell .notifications-mobile-header {
+    display: grid;
+    gap: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero {
+    display: grid !important;
+    width: 100%;
+  }
+
+  body.notifications-page-shell .notifications-page-header__search--hero {
+    display: none;
+    order: 3;
+  }
+
+  body.notifications-page-shell .notifications-page.is-search-open .notifications-mobile-header .orders-page-header__hero {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  body.notifications-page-shell .notifications-page.is-search-open .notifications-page-header__search--hero {
+    display: flex;
+    order: 3;
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    min-height: 46px;
+    margin-top: 8px;
+    padding-inline: 12px;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: none;
+  }
+
+  body.notifications-page-shell .notifications-page.is-search-open .notifications-page-header__search--hero input {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    opacity: 1;
+    pointer-events: auto;
+    font-size: 0.92rem;
+  }
+
+  body.notifications-page-shell .notifications-page.is-search-open .notifications-page-header__search--hero .orders-header-search__close {
+    display: inline-flex;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  body.notifications-page-shell .notifications-page-header--auxiliary,
+  body.notifications-page-shell .notifications-list {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body.notifications-page-shell .notifications-page-header__controls:not([hidden]) {
+    display: grid !important;
+    gap: 12px;
+    width: 100%;
+    margin-top: 8px;
+    padding: 14px;
+    border-radius: 22px;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  body.notifications-page-shell .notifications-filters-panel:not([hidden]) {
+    display: grid !important;
+    gap: 12px;
+    width: 100%;
+    overflow: visible;
+  }
+
+  body.notifications-page-shell .notifications-filters-panel__group {
+    width: 100%;
+  }
+
+  body.notifications-page-shell .notifications-filters-panel__chips {
+    width: 100%;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  body.notifications-page-shell .notifications-filters-panel .filter-chip {
+    min-height: 42px;
+    padding-inline: 14px;
+  }
+
+  body.notifications-page-shell .notifications-select-panel:not([hidden]) {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+}
+
+@media (min-width: 421px) and (max-width: 760px) {
+  body.notifications-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content {
+    padding-inline: 14px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  body.notifications-page-shell .page__content {
+    padding-inline: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  body.notifications-page-shell .notifications-page,
+  body.notifications-page-shell .notifications-mobile-header,
+  body.notifications-page-shell .notifications-page-header--auxiliary,
+  body.notifications-page-shell .notifications-list {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
 }

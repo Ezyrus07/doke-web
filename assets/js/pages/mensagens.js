@@ -84,6 +84,7 @@
     const composerInput = root.querySelector("[data-messages-composer-input]");
     const backButton = root.querySelector("[data-messages-back]");
     const chargeButton = root.querySelector("[data-messages-charge]");
+    const threadOrderLink = root.querySelector(".messages-thread__link");
     const mobileSearchButton = root.querySelector("[data-messages-mobile-search]");
     const mobileChargeButton = root.querySelector("[data-messages-mobile-charge]");
     const imageInput = root.querySelector("[data-messages-image-input]");
@@ -173,6 +174,11 @@
       } else {
         window.location.href = nextUrl;
       }
+    };
+
+    const syncResponsiveThreadHeader = () => {
+      if (!threadOrderLink) return;
+      threadOrderLink.textContent = window.innerWidth <= 420 ? "Pedido" : "Ver pedido";
     };
 
     const syncCounts = () => {
@@ -780,11 +786,13 @@
 
     window.addEventListener("resize", () => {
       hideMessageMenu();
+      syncResponsiveThreadHeader();
       if (window.innerWidth > 767) {
         root.classList.remove("messages-app--thread-open");
       }
     });
 
+    syncResponsiveThreadHeader();
     syncCounts();
     syncVisibility();
     syncPaymentFlowFromQuery();

@@ -19,6 +19,14 @@
     const activeChip = root.querySelector('[data-orders-active-chip]');
     const filterStatusStack = root.querySelector('.orders-filter-status-stack');
     const clearFilterButton = root.querySelector('[data-orders-clear-filter]');
+    const filterCountNodes = {
+      all: root.querySelector('[data-orders-filter-count="all"]'),
+      pending: root.querySelector('[data-orders-filter-count="pending"]'),
+      conversation: root.querySelector('[data-orders-filter-count="conversation"]'),
+      responded: root.querySelector('[data-orders-filter-count="responded"]'),
+      completed: root.querySelector('[data-orders-filter-count="completed"]'),
+      cancelled: root.querySelector('[data-orders-filter-count="cancelled"]')
+    };
     const emptyStaté = root.querySelector('[data-orders-empty]');
     const emptyText = root.querySelector('[data-orders-empty-text]');
     const resetEmptyButton = root.querySelector('[data-orders-reset-empty]');
@@ -53,8 +61,6 @@
     const plannerAgendaEmpty = root.querySelector('[data-orders-agenda-empty]');
     const plannerCalendarDays = root.querySelector('[data-orders-calendar-days]');
     const plannerMonthLabel = root.querySelector('[data-orders-month-label]');
-    const plannerMonthPrev = root.querySelector('[data-orders-month-prev]');
-    const plannerMonthNext = root.querySelector('[data-orders-month-next]');
     const plannerMonthPopover = root.querySelector('[data-orders-month-popover]');
     const plannerMonthSelect = root.querySelector('[data-orders-month-select]');
     const plannerYearInput = root.querySelector('[data-orders-year-input]');
@@ -109,16 +115,23 @@
         if (node) node.textContent = String(counts[key] ?? 0);
       });
 
+      Object.entries(filterCountNodes).forEach(([key, node]) => {
+        if (node) node.textContent = String(counts[key] ?? 0);
+      });
+
       filterButtons.forEach((button) => {
         const filter = button.dataset.filter;
-        button.textContent = `${labels[filter]} (${counts[filter] ?? 0})`;
+        const labelNode = button.childNodes[0];
+        if (labelNode && labelNode.nodeType === Node.TEXT_NODE) {
+          labelNode.textContent = `${labels[filter]} `;
+        }
       });
     };
 
     const syncActiveChip = () => {
       const active = root.dataset.activeFilter || 'all';
       if (activeChip) {
-        activeChip.textContent = `${labels[active]} (${counts[active] ?? 0})`;
+        activeChip.textContent = `${labels[active]} ${counts[active] ?? 0}`;
         activeChip.hidden = active === 'all';
       }
       if (clearFilterButton) clearFilterButton.hidden = active === 'all';
@@ -132,27 +145,12 @@
         || (clearFilterButton && !clearFilterButton.hidden)
       );
       if (filterStatusStack) filterStatusStack.hidden = !showStatusStack;
-      const showSelectPanel = Boolean(selectPanel && !selectPanel.hidden);
-      const showControls = Boolean((popover && !popover.hidden) || showStatusStack || showSelectPanel);
+      const showControls = Boolean(
+        (popover && !popover.hidden)
+        || (selectPanel && !selectPanel.hidden)
+        || showStatusStack
+      );
       headerControls.hidden = !showControls;
-    };
-
-    const syncToolbarStates = () => {
-      const filterOpen = Boolean(popover && !popover.hidden);
-      const selectOpen = Boolean(selectPanel && !selectPanel.hidden);
-      const agendaOpen = !root.classList.contains('is-agenda-collapsed');
-      const searchOpen = root.classList.contains('is-search-open');
-
-      filterToggles.forEach((toggle) => {
-        toggle.classList.toggle('is-toggled', filterOpen);
-      });
-      selectToggles.forEach((toggle) => {
-        toggle.classList.toggle('is-toggled', selectOpen);
-      });
-      agendaToggles.forEach((toggle) => {
-        toggle.classList.toggle('is-toggled', agendaOpen);
-      });
-      if (searchTrigger) searchTrigger.classList.toggle('is-toggled', searchOpen);
     };
 
     const applyFilters = () => {
@@ -182,7 +180,6 @@
       if (popover) popover.hidden = true;
       filterToggles.forEach((toggle) => toggle.setAttribute('aria-expanded', 'false'));
       syncHeaderControls();
-      syncToolbarStates();
     };
 
     const closeContextMenu = () => {
@@ -209,6 +206,7 @@
       sidePanels.forEach((panel) => {
         panel.hidden = panel.dataset.ordersPanel !== type;
       });
+      document.body.classList.add('orders-overlay-open');
       if (panelScrim) panelScrim.hidden = false;
 
       if (card && type === 'details') {
@@ -252,9 +250,7 @@
     const updatéPlannerMonthLabel = () => {
       const labelDaté = new Date(currentPlannerMonth.year, currentPlannerMonth.month, 1, 12);
       if (plannerMonthLabel) {
-        const monthLabel = labelDaté.toLocaleDateString('pt-BR', { month: 'long' });
-        const yearLabel = labelDaté.toLocaleDateString('pt-BR', { year: 'numeric' });
-        plannerMonthLabel.textContent = `${monthLabel} de ${yearLabel}`;
+        plannerMonthLabel.textContent = labelDaté.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
       }
     };
 
@@ -280,8 +276,15 @@
     };
 
     const syncCalendarPresentation = () => {
-      setCalendarExpanded(true);
-      delete root.dataset.calendarMobileReady;
+      if (mobileCalendarQuery.matches) {
+        if (!root.dataset.calendarMobileReady) {
+          setCalendarExpanded(false);
+          root.dataset.calendarMobileReady = 'true';
+        }
+      } else {
+        setCalendarExpanded(true);
+        delete root.dataset.calendarMobileReady;
+      }
       syncCalendarSummary();
     };
 
@@ -368,20 +371,28 @@
 
     const setSearchExpanded = (expanded) => {
       root.classList.toggle('is-search-open', expanded);
-      syncToolbarStates();
     };
+
+    if (panelScrim && panelScrim.parentElement !== document.body) {
+      document.body.appendChild(panelScrim);
+    }
+    sidePanels.forEach((panel) => {
+      if (panel.parentElement !== document.body) {
+        document.body.appendChild(panel);
+      }
+    });
 
     const closePanels = () => {
       sidePanels.forEach((panel) => {
         panel.hidden = true;
       });
+      document.body.classList.remove('orders-overlay-open');
       if (panelScrim) panelScrim.hidden = true;
     };
 
     const setAgendaExpanded = (expanded) => {
       root.classList.toggle('is-agenda-collapsed', !expanded);
       agendaToggles.forEach((toggle) => toggle.setAttribute('aria-expanded', String(expanded)));
-      syncToolbarStates();
     };
 
     filterButtons.forEach((button) => {
@@ -397,12 +408,11 @@
     filterToggles.forEach((toggle) => {
       toggle.addEventListener('click', (event) => {
         event.preventDefault();
+        closeSelectPanel();
         const next = popover?.hidden !== false;
         if (popover) popover.hidden = !next;
         filterToggles.forEach((item) => item.setAttribute('aria-expanded', String(next)));
-        if (next) closeSelectPanel();
         syncHeaderControls();
-        syncToolbarStates();
       });
     });
 
@@ -489,7 +499,6 @@
       if (selectPanel) selectPanel.hidden = true;
       selectToggles.forEach((toggle) => toggle.setAttribute('aria-expanded', 'false'));
       syncHeaderControls();
-      syncToolbarStates();
     };
 
     const openSelectPanel = () => {
@@ -497,7 +506,6 @@
       selectToggles.forEach((toggle) => toggle.setAttribute('aria-expanded', 'true'));
       closePopover();
       syncHeaderControls();
-      syncToolbarStates();
     };
 
     const syncSelectState = () => {
@@ -522,22 +530,9 @@
       });
     });
 
-    plannerMonthPrev?.addEventListener('click', () => {
-      currentPlannerMonth = currentPlannerMonth.month === 0
-        ? { year: currentPlannerMonth.year - 1, month: 11 }
-        : { year: currentPlannerMonth.year, month: currentPlannerMonth.month - 1 };
-      renderPlannerCalendar();
-    });
-
-    plannerMonthNext?.addEventListener('click', () => {
-      currentPlannerMonth = currentPlannerMonth.month === 11
-        ? { year: currentPlannerMonth.year + 1, month: 0 }
-        : { year: currentPlannerMonth.year, month: currentPlannerMonth.month + 1 };
-      renderPlannerCalendar();
-    });
-
     plannerCalendarSummary?.addEventListener('click', () => {
-      setCalendarExpanded(true);
+      if (!mobileCalendarQuery.matches) return;
+      setCalendarExpanded(!root.classList.contains('is-calendar-expanded'));
     });
 
     root.querySelectorAll('[data-orders-select-mode]').forEach((button) => {

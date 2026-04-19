@@ -733,6 +733,15 @@ const runViewInitializer = (label, initializer) => {
   }
 };
 
+const syncLucideIcons = () => {
+  if (!window.lucide?.createIcons) return;
+  try {
+    window.lucide.createIcons();
+  } catch (error) {
+    console.error("[Doke:init:lucide]", error);
+  }
+};
+
 const initializeCurrentView = () => {
   body.dataset.currentViewPath = getCurrentPath();
   renderSharedSidebar();
@@ -756,6 +765,7 @@ const initializeCurrentView = () => {
   runViewInitializer("wallet", window.DokeInitWallet);
   runViewInitializer("profile", window.DokeInitProfile);
   runViewInitializer("professional-profile", window.DokeInitProfessionalProfile);
+  syncLucideIcons();
 
   try {
     initChipRails();
