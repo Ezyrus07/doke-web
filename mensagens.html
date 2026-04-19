@@ -10,7 +10,7 @@
  <link rel="stylesheet" href="assets/css/core/index.css">
  <link rel="stylesheet" href="assets/css/pages/app-shell.css">
  <link rel="stylesheet" href="assets/css/pages/internal-shell.css">
-  <link rel="stylesheet" href="assets/css/pages/mensagens.css?v=20260418m1">
+  <link rel="stylesheet" href="assets/css/pages/mensagens.css?v=20260419m2">
 
 
 </head>
@@ -68,25 +68,39 @@
      <section class="messages-app" data-messages-page>
       <section class="messages-sidebar">
        <div class="messages-mobile-top" aria-label="Atalhos de mensagens no mobile">
-        <button class="messages-mobile-profile" type="button" data-internal-mobile-menu-toggle aria-expanded="false" aria-haspopup="true" aria-label="Abrir menu do perfil">
-         <span class="messages-mobile-profile__avatar">DK</span>
-         <span class="messages-mobile-profile__meta">
-          <strong>Mensagens</strong>
-          <span>Gabriel</span>
-         </span>
-        </button>
+        <div class="messages-mobile-top__main">
+         <button class="messages-mobile-profile" type="button" data-internal-mobile-menu-toggle aria-expanded="false" aria-haspopup="true" aria-label="Abrir menu do perfil">
+          <span class="messages-mobile-profile__avatar">DK</span>
+          <span class="messages-mobile-profile__meta">
+           <strong>Mensagens</strong>
+           <span>Gabriel</span>
+          </span>
+         </button>
+         <div class="messages-mobile-toolbar" aria-label="Ações rápidas de mensagens">
+          <button class="messages-mobile-action" type="button" data-messages-mobile-search aria-expanded="false" aria-controls="messages-mobile-search-panel" aria-label="Abrir busca nas mensagens">
+           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="5.75"></circle><path d="m16 16 4 4"></path></svg>
+          </button>
+          <button class="messages-mobile-action" type="button" data-messages-mobile-archived aria-pressed="false" aria-label="Ver arquivados">
+           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="4.5" rx="1.5"></rect><path d="M6.5 9.5v7.5a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2V9.5"></path><path d="M10 13h4"></path></svg>
+          </button>
+          <button class="messages-mobile-action" type="button" data-messages-mobile-select aria-pressed="false" aria-label="Selecionar conversas">
+           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="m8.5 12 2.5 2.5 4.5-5"></path></svg>
+          </button>
+          <span class="messages-mobile-count" data-messages-mobile-count>0</span>
+         </div>
+        </div>
         <div class="messages-mobile-menu" data-internal-mobile-menu hidden>
          <a href="perfil.html">Meu perfil</a>
          <a href="configuracoes.html">Configurações</a>
          <a href="index.html">Início</a>
         </div>
-       <form class="messages-search" data-messages-search-form aria-label="Buscar conversa">
-        <button class="messages-search__icon" type="submit" aria-label="Pesquisar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg></button>
-        <input type="search" placeholder="Buscar" data-messages-search-input id="messages-search-input">
-       </form>
+        <form class="messages-search messages-search--mobile-panel" id="messages-mobile-search-panel" data-messages-search-form data-messages-mobile-search-panel aria-label="Buscar conversa" hidden>
+         <button class="messages-search__icon" type="submit" aria-label="Pesquisar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg></button>
+         <input type="search" placeholder="Buscar" data-messages-search-input id="messages-search-input">
+        </form>
        </div>
 
-       <section class="messages-block">
+       <section class="messages-block" data-messages-orders-block>
         <div class="messages-block__header">
          <h2>Pedidos</h2>
          <span class="messages-block__count" data-messages-orders-count>0</span>
@@ -121,7 +135,7 @@
         </div>
        </section>
 
-       <section class="messages-block">
+       <section class="messages-block" data-messages-contacts-block>
         <div class="messages-block__header">
          <h2>Conversas</h2>
          <span class="messages-block__count" data-messages-contacts-count>0</span>

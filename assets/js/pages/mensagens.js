@@ -86,7 +86,11 @@
     const chargeButton = root.querySelector("[data-messages-charge]");
     const threadOrderLink = root.querySelector(".messages-thread__link");
     const mobileSearchButton = root.querySelector("[data-messages-mobile-search]");
-    const mobileChargeButton = root.querySelector("[data-messages-mobile-charge]");
+    const mobileArchiveButton = root.querySelector("[data-messages-mobile-archived]");
+    const mobileSelectButton = root.querySelector("[data-messages-mobile-select]");
+    const mobileSearchPanel = root.querySelector("[data-messages-mobile-search-panel]");
+    const ordersBlock = root.querySelector("[data-messages-orders-block]");
+    const contactsBlock = root.querySelector("[data-messages-contacts-block]");
     const imageInput = root.querySelector("[data-messages-image-input]");
     const emojiButton = root.querySelector("[data-messages-emoji]");
     const audioButton = root.querySelector("[data-messages-audio]");
@@ -178,7 +182,12 @@
 
     const syncResponsiveThreadHeader = () => {
       if (!threadOrderLink) return;
-      threadOrderLink.textContent = window.innerWidth <= 420 ? "Pedido" : "Ver pedido";
+      threadOrderLink.textContent = window.innerWidth <= 760 ? "Pedido" : "Ver pedido";
+    };
+
+    const syncResponsiveComposer = () => {
+      if (!composerInput) return;
+      composerInput.placeholder = window.innerWidth <= 760 ? "Mensagem..." : "Digite sua mensagem...";
     };
 
     const syncCounts = () => {
@@ -237,13 +246,58 @@
     };
 
 
+    let archivedFilterActive = false;
+    let listSelectMode = false;
+
+    const setMobileSearchOpen = (isOpen) => {
+      const open = Boolean(isOpen) && window.innerWidth <= 767;
+      root.classList.toggle("messages-app--search-open", open);
+      if (mobileSearchButton) {
+        mobileSearchButton.setAttribute("aria-expanded", open ? "true" : "false");
+        mobileSearchButton.classList.toggle("messages-mobile-action--active", open);
+      }
+      if (mobileSearchPanel) {
+        mobileSearchPanel.hidden = !open;
+        if (!open) {
+          mobileSearchPanel.scrollTop = 0;
+        }
+      }
+    };
+
+    const syncMobileArchiveState = () => {
+      mobileArchiveButton?.setAttribute("aria-pressed", archivedFilterActive ? "true" : "false");
+      mobileArchiveButton?.classList.toggle("messages-mobile-action--active", archivedFilterActive);
+    };
+
+    const syncMobileSelectState = () => {
+      mobileSelectButton?.setAttribute("aria-pressed", listSelectMode ? "true" : "false");
+      mobileSelectButton?.classList.toggle("messages-mobile-action--active", listSelectMode);
+    };
+
     mobileSearchButton?.addEventListener("click", () => {
-      searchInput?.focus();
-      searchInput?.scrollIntoView({ block: "nearest" });
+      const willOpen = !root.classList.contains("messages-app--search-open");
+      setMobileSearchOpen(willOpen);
+      if (willOpen) {
+        searchInput?.focus();
+        searchInput?.scrollIntoView({ block: "nearest" });
+      }
     });
 
-    mobileChargeButton?.addEventListener("click", () => {
-      chargeButton?.click();
+    mobileArchiveButton?.addEventListener("click", () => {
+      archivedFilterActive = !archivedFilterActive;
+      listSelectMode = false;
+      setMobileSearchOpen(false);
+      syncMobileArchiveState();
+      syncMobileSelectState();
+      syncVisibility();
+    });
+
+    mobileSelectButton?.addEventListener("click", () => {
+      listSelectMode = !listSelectMode;
+      archivedFilterActive = false;
+      setMobileSearchOpen(false);
+      syncMobileArchiveState();
+      syncMobileSelectState();
     });
 
     const renderThread = (id) => {
@@ -254,6 +308,8 @@
       contextMessageIndex = -1;
       if (!isSameThread) clearSelection();
       clearReplyPreview();
+      resetAudioDraft();
+      resetImageDraft();
       messageMenu?.setAttribute("hidden", "");
       activeBubble?.classList.remove("is-context-target");
       activeBubble = null;
@@ -329,7 +385,11 @@
       });
       syncSelectionBar();
       refreshConversationCards();
+      window.requestAnimationFrame(() => {
+        if (threadBody) threadBody.scrollTop = threadBody.scrollHeight;
+      });
       if (window.innerWidth <= 767) {
+        setMobileSearchOpen(false);
         root.classList.add("messages-app--thread-open");
       }
     };
@@ -465,12 +525,40 @@
     const syncVisibility = () => {
       const query = normalize(searchInput?.value);
       let visibleCount = 0;
-      items.forEach((item) => {
-        const visible = !query || normalize(item.textContent).includes(query);
-        item.hidden = !visible;
-        if (visible) visibleCount += 1;
-      });
+
+      if (archivedFilterActive) {
+        items.forEach((item) => {
+          item.hidden = true;
+        });
+        visibleCount = 0;
+        if (emptyStaté) {
+          const emptyBadge = emptyStaté.querySelector(".messages-empty__badge");
+          const emptyTitle = emptyStaté.querySelector("h3");
+          const emptyText = emptyStaté.querySelector("p");
+          if (emptyBadge) emptyBadge.textContent = "Arquivados";
+          if (emptyTitle) emptyTitle.textContent = "Nenhuma conversa arquivada.";
+          if (emptyText) emptyText.textContent = "Quando você arquivar mensagens, elas vão aparecer aqui.";
+        }
+      } else {
+        items.forEach((item) => {
+          const visible = !query || normalize(item.textContent).includes(query);
+          item.hidden = !visible;
+          if (visible) visibleCount += 1;
+        });
+        if (emptyStaté) {
+          const emptyBadge = emptyStaté.querySelector(".messages-empty__badge");
+          const emptyTitle = emptyStaté.querySelector("h3");
+          const emptyText = emptyStaté.querySelector("p");
+          if (emptyBadge) emptyBadge.textContent = "Sem resultado";
+          if (emptyTitle) emptyTitle.textContent = "Nada apareceu com essa busca.";
+          if (emptyText) emptyText.textContent = "Limpe o termo para voltar a ver pedidos e conversas.";
+        }
+      }
+
       if (emptyStaté) emptyStaté.hidden = visibleCount !== 0;
+      if (!query) {
+        setMobileSearchOpen(false);
+      }
     };
 
     searchForm?.addEventListener("submit", (event) => {
@@ -478,7 +566,12 @@
       syncVisibility();
     });
 
-    searchInput?.addEventListener("input", syncVisibility);
+    searchInput?.addEventListener("input", () => {
+      if (window.innerWidth <= 767 && String(searchInput.value || "").trim()) {
+        setMobileSearchOpen(true);
+      }
+      syncVisibility();
+    });
 
     resetSearchButton?.addEventListener("click", () => {
       if (searchInput) searchInput.value = "";
@@ -764,7 +857,12 @@
 
     backButton?.addEventListener("click", () => {
       hideMessageMenu();
+      clearSelection();
+      clearReplyPreview();
+      resetAudioDraft();
+      resetImageDraft();
       root.classList.remove("messages-app--thread-open");
+      setMobileSearchOpen(false);
     });
 
     document.querySelectorAll('.sidebar a[href="mensagens.html"], .mobile-header-shortcut[href="mensagens.html"]').forEach((link) => {
@@ -787,12 +885,17 @@
     window.addEventListener("resize", () => {
       hideMessageMenu();
       syncResponsiveThreadHeader();
+      syncResponsiveComposer();
       if (window.innerWidth > 767) {
         root.classList.remove("messages-app--thread-open");
+        setMobileSearchOpen(false);
       }
+      syncMobileArchiveState();
+      syncMobileSelectState();
     });
 
     syncResponsiveThreadHeader();
+    syncResponsiveComposer();
     syncCounts();
     syncVisibility();
     syncPaymentFlowFromQuery();
@@ -801,10 +904,13 @@
     clearSelection();
     resetAudioDraft();
     resetImageDraft();
+    syncMobileArchiveState();
+    syncMobileSelectState();
     if (copyToast) copyToast.hidden = true;
     renderThread(activeId);
     if (window.innerWidth <= 767) {
       root.classList.remove("messages-app--thread-open");
+      setMobileSearchOpen(false);
     }
   };
 
