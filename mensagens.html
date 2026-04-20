@@ -10,7 +10,8 @@
  <link rel="stylesheet" href="assets/css/core/index.css">
  <link rel="stylesheet" href="assets/css/pages/app-shell.css">
  <link rel="stylesheet" href="assets/css/pages/internal-shell.css">
-  <link rel="stylesheet" href="assets/css/pages/mensagens.css?v=20260419m2">
+ <link rel="stylesheet" href="assets/css/pages/pedidos.css">
+  <link rel="stylesheet" href="assets/css/pages/mensagens.css?v=20260418m1">
 
 
 </head>
@@ -67,40 +68,74 @@
     <div class="page__content-inner app-shell-page__workspace app-shell-page__workspace--clean shell-home__workspace shell-home__workspace--clean shell-home__workspace shell-home__workspace--clean messages-shell-content">
      <section class="messages-app" data-messages-page>
       <section class="messages-sidebar">
-       <div class="messages-mobile-top" aria-label="Atalhos de mensagens no mobile">
-        <div class="messages-mobile-top__main">
-         <button class="messages-mobile-profile" type="button" data-internal-mobile-menu-toggle aria-expanded="false" aria-haspopup="true" aria-label="Abrir menu do perfil">
-          <span class="messages-mobile-profile__avatar">DK</span>
-          <span class="messages-mobile-profile__meta">
-           <strong>Mensagens</strong>
-           <span>Gabriel</span>
-          </span>
-         </button>
-         <div class="messages-mobile-toolbar" aria-label="Ações rápidas de mensagens">
-          <button class="messages-mobile-action" type="button" data-messages-mobile-search aria-expanded="false" aria-controls="messages-mobile-search-panel" aria-label="Abrir busca nas mensagens">
+
+       <section class="orders-page-header messages-mobile-header" aria-label="Cabeçalho mobile das mensagens">
+        <div class="orders-page-header__hero">
+         <div class="orders-page-header__hero-top">
+          <button class="orders-page-header__hero-profile home-mobile-hero__profile" type="button" data-mobile-home-menu-open aria-label="Abrir menu lateral">
+           <span class="orders-page-header__hero-avatar">DK</span>
+           <span class="orders-page-header__hero-usercopy">
+            <span class="orders-page-header__hero-name">Mensagens</span>
+           </span>
+          </button>
+         </div>
+         <div class="orders-page-header__hero-strip">
+          <button class="orders-page-header__search-toggle" type="button" aria-label="Abrir busca" data-messages-mobile-search-toggle>
            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="5.75"></circle><path d="m16 16 4 4"></path></svg>
           </button>
-          <button class="messages-mobile-action" type="button" data-messages-mobile-archived aria-pressed="false" aria-label="Ver arquivados">
-           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="4.5" rx="1.5"></rect><path d="M6.5 9.5v7.5a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2V9.5"></path><path d="M10 13h4"></path></svg>
-          </button>
-          <button class="messages-mobile-action" type="button" data-messages-mobile-select aria-pressed="false" aria-label="Selecionar conversas">
-           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="m8.5 12 2.5 2.5 4.5-5"></path></svg>
-          </button>
-          <span class="messages-mobile-count" data-messages-mobile-count>0</span>
+          <div class="orders-page-header__hero-chips" aria-label="Atalhos de mensagens">
+           <button class="orders-page-header__hero-chip orders-page-header__hero-chip--ghost" type="button" data-messages-filter-toggle aria-expanded="false" aria-controls="messages-filters-panel">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6.5h14"></path><path d="M5 12h14"></path><path d="M5 17.5h14"></path><circle cx="9" cy="6.5" r="1.75"></circle><circle cx="15" cy="12" r="1.75"></circle><circle cx="11" cy="17.5" r="1.75"></circle></svg>
+            <span>Filtros</span>
+           </button>
+           <button class="orders-page-header__hero-chip orders-page-header__hero-chip--ghost" type="button" data-messages-archive-toggle aria-expanded="false" aria-label="Mostrar arquivadas">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14"></path><path d="M7 7v10h10V7"></path><path d="M9 11h6"></path><path d="M4 4h16v3H4z"></path></svg>
+            <span>Arquivadas</span>
+           </button>
+           <button class="orders-page-header__hero-chip orders-page-header__hero-chip--ghost" type="button" data-messages-select-toggle aria-expanded="false" aria-controls="messages-select-panel">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="m8.5 12 2.5 2.5 4.5-5"></path></svg>
+            <span>Selecionar</span>
+           </button>
+          </div>
+         </div>
+         <form class="orders-header-search messages-mobile-search" data-messages-search-form autocomplete="off" aria-label="Buscar conversa">
+          <button class="orders-header-search__icon" type="submit" aria-label="Pesquisar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="5.75"></circle><path d="m16 16 4 4"></path></svg></button>
+          <input type="search" placeholder="Buscar conversa" data-messages-search-input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+          <button class="orders-header-search__close" type="button" aria-label="Fechar busca"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button>
+         </form>
+        </div>
+        <div class="orders-page-header__controls messages-header-controls" hidden>
+         <div class="orders-active-filter-row">
+          <span class="orders-active-filter-chip" data-messages-active-chip hidden>Tudo</span>
+          <button class="orders-active-filter-clear" type="button" data-messages-clear-filter hidden>Limpar filtros</button>
+         </div>
+         <div class="orders-filters-popover orders-filters-panel messages-filters-panel" id="messages-filters-panel" data-messages-filters-panel hidden>
+          <div class="orders-filters-panel__group">
+           <p>Conversas</p>
+           <div class="orders-filters-panel__chips" role="group" aria-label="Filtrar mensagens">
+            <button class="filter-chip orders-filter-item is-active" type="button" data-messages-filter="all">Tudo</button>
+            <button class="filter-chip orders-filter-item" type="button" data-messages-filter="unread">Não lidas</button>
+            <button class="filter-chip orders-filter-item" type="button" data-messages-filter="orders">Pedidos</button>
+            <button class="filter-chip orders-filter-item" type="button" data-messages-filter="contacts">Conversas</button>
+            <button class="filter-chip orders-filter-item" type="button" data-messages-filter="archived">Arquivadas</button>
+           </div>
+          </div>
+         </div>
+         <div class="orders-select-panel" id="messages-select-panel" data-messages-select-panel hidden>
+          <button class="orders-select-option" type="button" data-messages-select-mode="all">Selecionar visíveis</button>
+          <button class="orders-select-option" type="button" data-messages-select-mode="manual">Seleção manual</button>
+          <button class="orders-select-option orders-select-option--danger" type="button" data-messages-delete-conversations>Excluir selecionados</button>
          </div>
         </div>
-        <div class="messages-mobile-menu" data-internal-mobile-menu hidden>
-         <a href="perfil.html">Meu perfil</a>
-         <a href="configuracoes.html">Configurações</a>
-         <a href="index.html">Início</a>
-        </div>
-        <form class="messages-search messages-search--mobile-panel" id="messages-mobile-search-panel" data-messages-search-form data-messages-mobile-search-panel aria-label="Buscar conversa" hidden>
-         <button class="messages-search__icon" type="submit" aria-label="Pesquisar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg></button>
-         <input type="search" placeholder="Buscar" data-messages-search-input id="messages-search-input">
-        </form>
-       </div>
+       </section>
 
-       <section class="messages-block" data-messages-orders-block>
+       <form class="messages-search messages-search--desktop" data-messages-search-form aria-label="Buscar conversa">
+        <button class="messages-search__icon" type="submit" aria-label="Pesquisar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg></button>
+        <input type="search" placeholder="Buscar" data-messages-search-input id="messages-search-input">
+       </form>
+
+
+       <section class="messages-block">
         <div class="messages-block__header">
          <h2>Pedidos</h2>
          <span class="messages-block__count" data-messages-orders-count>0</span>
@@ -135,7 +170,7 @@
         </div>
        </section>
 
-       <section class="messages-block" data-messages-contacts-block>
+       <section class="messages-block">
         <div class="messages-block__header">
          <h2>Conversas</h2>
          <span class="messages-block__count" data-messages-contacts-count>0</span>
@@ -186,8 +221,7 @@
          </button>
          <button class="messages-thread__action" type="button" aria-label="Ligar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.8 4.5h2.3l1.3 4-1.7 1.7a14.4 14.4 0 0 0 5.1 5.1l1.7-1.7 4 1.3v2.3a1.7 1.7 0 0 1-1.9 1.7A16.8 16.8 0 0 1 5.1 6.4 1.7 1.7 0 0 1 6.8 4.5z"></path></svg></button>
          <button class="messages-thread__action" type="button" aria-label="Videochamada"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6.5" width="11" height="11" rx="2"></rect><path d="m14.5 10.5 5-3v9l-5-3z"></path></svg></button>
-         <a class="messages-thread__link" href="pedidos.html">Ver pedido</a>
-        </div>
+                 </div>
        </header>
 
        <div class="messages-selection-bar" data-messages-selection hidden>
@@ -263,6 +297,35 @@
   </div>
  </div>
 
+
+ <aside class="home-mobile-drawer" data-mobile-home-drawer hidden aria-hidden="true">
+  <div class="home-mobile-drawer__backdrop" data-mobile-home-menu-close></div>
+  <div class="home-mobile-drawer__panel" role="dialog" aria-modal="true" aria-label="Menu da conta">
+   <div class="home-mobile-drawer__header">
+    <a class="home-mobile-drawer__profile" href="perfil.html?mode=owner&panel=posts">
+     <span class="home-mobile-drawer__avatar">DK</span>
+     <span class="home-mobile-drawer__profile-copy">
+      <strong>Gabriel</strong>
+      <span>Editar meu perfil</span>
+     </span>
+     <span class="home-mobile-drawer__profile-arrow" aria-hidden="true"></span>
+    </a>
+   </div>
+   <nav class="home-mobile-drawer__nav" aria-label="Menu principal mobile">
+    <a class="home-mobile-drawer__item" href="index.html"><span class="home-mobile-drawer__item-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5.5 9.5V20h13V9.5"></path></svg></span><span class="home-mobile-drawer__item-label">Início</span></a>
+    <a class="home-mobile-drawer__item" href="pedidos.html"><span class="home-mobile-drawer__item-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg></span><span class="home-mobile-drawer__item-label">Pedidos</span></a>
+    <a class="home-mobile-drawer__item home-mobile-drawer__item--active" href="mensagens.html"><span class="home-mobile-drawer__item-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg></span><span class="home-mobile-drawer__item-label">Mensagens</span></a>
+    <a class="home-mobile-drawer__item" href="notificacoes.html"><span class="home-mobile-drawer__item-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4.75a4 4 0 0 0-4 4v2.1c0 .7-.24 1.38-.68 1.92L5.9 14.5h12.2l-1.42-1.73a3 3 0 0 1-.68-1.92v-2.1a4 4 0 0 0-4-4Z"></path><path d="M10 17.2a2.3 2.3 0 0 0 4 0"></path></svg></span><span class="home-mobile-drawer__item-label">Notificações</span><span class="home-mobile-drawer__item-badge">3</span></a>
+   </nav>
+   <div class="home-mobile-drawer__divider" aria-hidden="true"></div>
+   <nav class="home-mobile-drawer__nav" aria-label="Conta">
+    <a class="home-mobile-drawer__item" href="perfil.html?mode=owner&panel=posts"><span class="home-mobile-drawer__item-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.2-3.2 3.7-4.8 7-4.8s5.8 1.6 7 4.8"></path></svg></span><span class="home-mobile-drawer__item-label">Meu perfil</span></a>
+    <a class="home-mobile-drawer__item" href="configuracoes.html"><span class="home-mobile-drawer__item-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 3.8v2.1"></path><path d="M12 18.1v2.1"></path><path d="m18.2 5.8-1.5 1.5"></path><path d="m7.3 16.7-1.5 1.5"></path><path d="M20.2 12h-2.1"></path><path d="M5.9 12H3.8"></path><path d="m18.2 18.2-1.5-1.5"></path><path d="m7.3 7.3-1.5-1.5"></path></svg></span><span class="home-mobile-drawer__item-label">Configurações</span></a>
+    <button class="home-mobile-drawer__item home-mobile-drawer__item--button" type="button" data-profile-logout><span class="home-mobile-drawer__item-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M15 7.5V5.8A1.8 1.8 0 0 0 13.2 4H7.8A1.8 1.8 0 0 0 6 5.8v12.4A1.8 1.8 0 0 0 7.8 20h5.4a1.8 1.8 0 0 0 1.8-1.8v-1.7"></path><path d="M10 12h10"></path><path d="m17 8 3 4-3 4"></path></svg></span><span class="home-mobile-drawer__item-label">Sair</span></button>
+   </nav>
+  </div>
+ </aside>
+
  <dialog class="image-lightbox" data-image-lightbox>
   <div class="image-lightbox__surface">
    <button class="image-lightbox__close" type="button" data-image-lightbox-close aria-label="Fechar imagem">×</button>
@@ -304,6 +367,7 @@
  </dialog>
 
  <script src="assets/js/core/app.js?v=20260407a"></script>
+ <script src="assets/js/pages/home/drawer.js"></script>
  <script src="assets/js/pages/mensagens.js?v=20260419a"></script>
 </body>
 </html>

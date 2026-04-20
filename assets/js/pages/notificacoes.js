@@ -4,6 +4,9 @@
     if (!root || root.dataset.ready === 'true') return;
     root.dataset.ready = 'true';
 
+    const drawerController = new AbortController();
+    window.DokeHomeDrawer?.create({ signal: drawerController.signal })?.();
+
     const buttons = [...root.querySelectorAll('[data-filter]')];
     const timeButtons = [...root.querySelectorAll('[data-time-filter]')];
     const cards = [...root.querySelectorAll('.notification-card')];

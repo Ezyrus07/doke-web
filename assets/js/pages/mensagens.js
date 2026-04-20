@@ -62,14 +62,22 @@
     }
   };
 
+
+  conversations.marcos.archived = true;
+  conversations.electrical.archived = false;
+
   const initMessagesPage = () => {
     const root = document.querySelector("[data-messages-page]");
     if (!root || root.dataset.messagesReady === "true") return;
     root.dataset.messagesReady = "true";
 
+    const drawerController = new AbortController();
+    window.DokeHomeDrawer?.create({ signal: drawerController.signal })?.();
+
     const items = Array.from(root.querySelectorAll(".message-item[data-message-id]"));
-    const searchForm = root.querySelector("[data-messages-search-form]");
-    const searchInput = root.querySelector("[data-messages-search-input]");
+    const searchForms = Array.from(root.querySelectorAll("[data-messages-search-form]"));
+    const searchInputs = Array.from(root.querySelectorAll("[data-messages-search-input]"));
+    const searchInput = searchInputs[0] || null;
     const resetSearchButton = root.querySelector("[data-messages-reset-search]");
     const emptyStaté = root.querySelector("[data-messages-empty]");
     const ordersCount = root.querySelector("[data-messages-orders-count]");
@@ -84,13 +92,19 @@
     const composerInput = root.querySelector("[data-messages-composer-input]");
     const backButton = root.querySelector("[data-messages-back]");
     const chargeButton = root.querySelector("[data-messages-charge]");
-    const threadOrderLink = root.querySelector(".messages-thread__link");
-    const mobileSearchButton = root.querySelector("[data-messages-mobile-search]");
-    const mobileArchiveButton = root.querySelector("[data-messages-mobile-archived]");
-    const mobileSelectButton = root.querySelector("[data-messages-mobile-select]");
-    const mobileSearchPanel = root.querySelector("[data-messages-mobile-search-panel]");
-    const ordersBlock = root.querySelector("[data-messages-orders-block]");
-    const contactsBlock = root.querySelector("[data-messages-contacts-block]");
+    const searchCloseButtons = Array.from(root.querySelectorAll(".orders-header-search__close"));
+    const mobileSearchButton = root.querySelector("[data-messages-mobile-search-toggle]");
+    const filterToggles = Array.from(root.querySelectorAll("[data-messages-filter-toggle]"));
+    const filtersPanel = root.querySelector("[data-messages-filters-panel]");
+    const filterButtons = Array.from(root.querySelectorAll("[data-messages-filter]"));
+    const archiveToggles = Array.from(root.querySelectorAll("[data-messages-archive-toggle]"));
+    const clearFilterButton = root.querySelector("[data-messages-clear-filter]");
+    const activeChip = root.querySelector("[data-messages-active-chip]");
+    const headerControls = root.querySelector('.messages-header-controls');
+    const selectToggles = Array.from(root.querySelectorAll("[data-messages-select-toggle]"));
+    const selectPanel = root.querySelector("[data-messages-select-panel]");
+    const selectModeButtons = Array.from(root.querySelectorAll("[data-messages-select-mode]"));
+    const deleteConversationButton = root.querySelector("[data-messages-delete-conversations]");
     const imageInput = root.querySelector("[data-messages-image-input]");
     const emojiButton = root.querySelector("[data-messages-emoji]");
     const audioButton = root.querySelector("[data-messages-audio]");
@@ -124,6 +138,9 @@
     let longPressTimer = null;
     let activeBubble = null;
     let selectedMessageIndexes = new Set();
+    let selectedConversationIds = new Set();
+    let currentFilter = "all";
+    let selectionMode = false;
     let replyToMessage = null;
     let copyToastTimer = null;
     let audioDraftSeconds = 0;
@@ -180,23 +197,82 @@
       }
     };
 
-    const syncResponsiveThreadHeader = () => {
-      if (!threadOrderLink) return;
-      threadOrderLink.textContent = window.innerWidth <= 760 ? "Pedido" : "Ver pedido";
-    };
-
-    const syncResponsiveComposer = () => {
-      if (!composerInput) return;
-      composerInput.placeholder = window.innerWidth <= 760 ? "Mensagem..." : "Digite sua mensagem...";
-    };
 
     const syncCounts = () => {
-      const entries = Object.values(conversations);
-      const orders = entries.filter((item) => item.group === "orders").length;
-      const contacts = entries.filter((item) => item.group === "contacts").length;
+      const visibleItems = items.filter((item) => !item.hidden && item.dataset.deleted !== "true");
+      const orders = visibleItems.filter((item) => conversations[item.dataset.messageId]?.group === "orders").length;
+      const contacts = visibleItems.filter((item) => conversations[item.dataset.messageId]?.group === "contacts").length;
+      const unread = visibleItems.reduce((total, item) => total + Number(conversations[item.dataset.messageId]?.unread || 0), 0);
       if (ordersCount) ordersCount.textContent = String(orders);
       if (contactsCount) contactsCount.textContent = String(contacts);
-      if (mobileCount) mobileCount.textContent = String(orders + contacts);
+      if (mobileCount) mobileCount.textContent = String(unread);
+    };
+
+    const setSearchExpanded = (expanded) => {
+      root.classList.toggle("is-search-open", expanded);
+      mobileSearchButton?.setAttribute("aria-expanded", expanded ? "true" : "false");
+      if (!expanded) {
+        searchCloseButtons.forEach((button) => button.blur());
+      }
+    };
+
+    const setToggleExpanded = (toggles, expanded) => {
+      toggles.forEach((toggle) => toggle.setAttribute("aria-expanded", expanded ? "true" : "false"));
+    };
+
+    const syncHeaderControls = () => {
+      if (!headerControls) return;
+      const showStatus = activeChip && !activeChip.hidden;
+      headerControls.hidden = !Boolean(showStatus || (filtersPanel && !filtersPanel.hidden) || (selectPanel && !selectPanel.hidden));
+    };
+
+    const closeFiltersPanel = () => {
+      if (filtersPanel) filtersPanel.hidden = true;
+      setToggleExpanded(filterToggles, false);
+      syncHeaderControls();
+    };
+
+    const closeSelectPanel = () => {
+      if (selectPanel) selectPanel.hidden = true;
+      setToggleExpanded(selectToggles, false);
+      syncHeaderControls();
+    };
+
+    const setSelectionMode = (enabled) => {
+      selectionMode = enabled;
+      root.classList.toggle("is-selection-mode", enabled);
+      if (!enabled) {
+        selectedConversationIds.clear();
+        items.forEach((item) => item.classList.remove("is-selected"));
+      }
+    };
+
+    const syncActiveFilterChip = () => {
+      if (!activeChip || !clearFilterButton) return;
+      const labels = {
+        all: "Tudo",
+        unread: "Não lidas",
+        orders: "Pedidos",
+        contacts: "Conversas",
+        archived: "Arquivadas"
+      };
+      activeChip.textContent = labels[currentFilter] || "Tudo";
+      activeChip.hidden = currentFilter === "all";
+      clearFilterButton.hidden = currentFilter === "all";
+      archiveToggles.forEach((button) => button.setAttribute("aria-pressed", currentFilter === "archived" ? "true" : "false"));
+      syncHeaderControls();
+    };
+
+    const getSearchQuery = () => normalize(searchInputs.find((input) => String(input.value || "").trim())?.value || "");
+
+    const matchesConversationFilter = (conversation) => {
+      if (!conversation) return false;
+      if (currentFilter === "all") return true;
+      if (currentFilter === "unread") return Number(conversation.unread || 0) > 0;
+      if (currentFilter === "orders") return conversation.group === "orders";
+      if (currentFilter === "contacts") return conversation.group === "contacts";
+      if (currentFilter === "archived") return conversation.archived === true;
+      return true;
     };
 
     const getMessagePreview = (message) => {
@@ -246,60 +322,6 @@
     };
 
 
-    let archivedFilterActive = false;
-    let listSelectMode = false;
-
-    const setMobileSearchOpen = (isOpen) => {
-      const open = Boolean(isOpen) && window.innerWidth <= 767;
-      root.classList.toggle("messages-app--search-open", open);
-      if (mobileSearchButton) {
-        mobileSearchButton.setAttribute("aria-expanded", open ? "true" : "false");
-        mobileSearchButton.classList.toggle("messages-mobile-action--active", open);
-      }
-      if (mobileSearchPanel) {
-        mobileSearchPanel.hidden = !open;
-        if (!open) {
-          mobileSearchPanel.scrollTop = 0;
-        }
-      }
-    };
-
-    const syncMobileArchiveState = () => {
-      mobileArchiveButton?.setAttribute("aria-pressed", archivedFilterActive ? "true" : "false");
-      mobileArchiveButton?.classList.toggle("messages-mobile-action--active", archivedFilterActive);
-    };
-
-    const syncMobileSelectState = () => {
-      mobileSelectButton?.setAttribute("aria-pressed", listSelectMode ? "true" : "false");
-      mobileSelectButton?.classList.toggle("messages-mobile-action--active", listSelectMode);
-    };
-
-    mobileSearchButton?.addEventListener("click", () => {
-      const willOpen = !root.classList.contains("messages-app--search-open");
-      setMobileSearchOpen(willOpen);
-      if (willOpen) {
-        searchInput?.focus();
-        searchInput?.scrollIntoView({ block: "nearest" });
-      }
-    });
-
-    mobileArchiveButton?.addEventListener("click", () => {
-      archivedFilterActive = !archivedFilterActive;
-      listSelectMode = false;
-      setMobileSearchOpen(false);
-      syncMobileArchiveState();
-      syncMobileSelectState();
-      syncVisibility();
-    });
-
-    mobileSelectButton?.addEventListener("click", () => {
-      listSelectMode = !listSelectMode;
-      archivedFilterActive = false;
-      setMobileSearchOpen(false);
-      syncMobileArchiveState();
-      syncMobileSelectState();
-    });
-
     const renderThread = (id) => {
       const conversation = conversations[id];
       if (!conversation || !threadBody) return;
@@ -308,8 +330,6 @@
       contextMessageIndex = -1;
       if (!isSameThread) clearSelection();
       clearReplyPreview();
-      resetAudioDraft();
-      resetImageDraft();
       messageMenu?.setAttribute("hidden", "");
       activeBubble?.classList.remove("is-context-target");
       activeBubble = null;
@@ -385,11 +405,7 @@
       });
       syncSelectionBar();
       refreshConversationCards();
-      window.requestAnimationFrame(() => {
-        if (threadBody) threadBody.scrollTop = threadBody.scrollHeight;
-      });
       if (window.innerWidth <= 767) {
-        setMobileSearchOpen(false);
         root.classList.add("messages-app--thread-open");
       }
     };
@@ -523,65 +539,133 @@
     };
 
     const syncVisibility = () => {
-      const query = normalize(searchInput?.value);
+      const query = getSearchQuery();
       let visibleCount = 0;
-
-      if (archivedFilterActive) {
-        items.forEach((item) => {
-          item.hidden = true;
-        });
-        visibleCount = 0;
-        if (emptyStaté) {
-          const emptyBadge = emptyStaté.querySelector(".messages-empty__badge");
-          const emptyTitle = emptyStaté.querySelector("h3");
-          const emptyText = emptyStaté.querySelector("p");
-          if (emptyBadge) emptyBadge.textContent = "Arquivados";
-          if (emptyTitle) emptyTitle.textContent = "Nenhuma conversa arquivada.";
-          if (emptyText) emptyText.textContent = "Quando você arquivar mensagens, elas vão aparecer aqui.";
-        }
-      } else {
-        items.forEach((item) => {
-          const visible = !query || normalize(item.textContent).includes(query);
-          item.hidden = !visible;
-          if (visible) visibleCount += 1;
-        });
-        if (emptyStaté) {
-          const emptyBadge = emptyStaté.querySelector(".messages-empty__badge");
-          const emptyTitle = emptyStaté.querySelector("h3");
-          const emptyText = emptyStaté.querySelector("p");
-          if (emptyBadge) emptyBadge.textContent = "Sem resultado";
-          if (emptyTitle) emptyTitle.textContent = "Nada apareceu com essa busca.";
-          if (emptyText) emptyText.textContent = "Limpe o termo para voltar a ver pedidos e conversas.";
-        }
-      }
-
+      items.forEach((item) => {
+        const conversation = conversations[item.dataset.messageId];
+        const notDeleted = item.dataset.deleted !== "true";
+        const matchesFilter = matchesConversationFilter(conversation);
+        const visible = notDeleted && matchesFilter && (!query || normalize(item.textContent).includes(query));
+        item.hidden = !visible;
+        if (visible) visibleCount += 1;
+      });
       if (emptyStaté) emptyStaté.hidden = visibleCount !== 0;
-      if (!query) {
-        setMobileSearchOpen(false);
-      }
+      syncCounts();
+      syncActiveFilterChip();
     };
 
-    searchForm?.addEventListener("submit", (event) => {
+    searchForms.forEach((form) => form.addEventListener("submit", (event) => {
       event.preventDefault();
+      syncVisibility();
+    }));
+
+    searchInputs.forEach((input) => input.addEventListener("input", () => {
+      const value = input.value;
+      searchInputs.forEach((node) => {
+        if (node !== input) node.value = value;
+      });
+      syncVisibility();
+    }));
+
+    searchCloseButtons.forEach((button) => button.addEventListener("click", () => {
+      setSearchExpanded(false);
+    }));
+
+    mobileSearchButton?.addEventListener("click", () => {
+      const willOpen = !root.classList.contains("is-search-open");
+      setSearchExpanded(willOpen);
+      if (willOpen) {
+        window.setTimeout(() => searchInputs[0]?.focus(), 20);
+      }
+      closeFiltersPanel();
+      closeSelectPanel();
+    });
+
+    filterToggles.forEach((toggle) => toggle.addEventListener("click", () => {
+      const willOpen = filtersPanel?.hidden !== false;
+      if (filtersPanel) filtersPanel.hidden = !willOpen;
+      setToggleExpanded(filterToggles, willOpen);
+      closeSelectPanel();
+      setSearchExpanded(false);
+      syncHeaderControls();
+    }));
+
+    archiveToggles.forEach((toggle) => toggle.addEventListener("click", () => {
+      currentFilter = currentFilter === "archived" ? "all" : "archived";
+      closeFiltersPanel();
+      closeSelectPanel();
+      setSearchExpanded(false);
+      syncVisibility();
+    }));
+
+    filterButtons.forEach((button) => button.addEventListener("click", () => {
+      currentFilter = button.dataset.messagesFilter || "all";
+      filterButtons.forEach((node) => node.classList.toggle("is-active", node === button));
+      syncVisibility();
+      closeFiltersPanel();
+    }));
+
+    clearFilterButton?.addEventListener("click", () => {
+      currentFilter = "all";
+      filterButtons.forEach((node) => node.classList.toggle("is-active", node.dataset.messagesFilter === "all"));
       syncVisibility();
     });
 
-    searchInput?.addEventListener("input", () => {
-      if (window.innerWidth <= 767 && String(searchInput.value || "").trim()) {
-        setMobileSearchOpen(true);
+    selectToggles.forEach((toggle) => toggle.addEventListener("click", () => {
+      const willOpen = selectPanel?.hidden !== false;
+      if (selectPanel) selectPanel.hidden = !willOpen;
+      setToggleExpanded(selectToggles, willOpen);
+      closeFiltersPanel();
+      setSearchExpanded(false);
+      syncHeaderControls();
+    }));
+
+    selectModeButtons.forEach((button) => button.addEventListener("click", () => {
+      const mode = button.dataset.messagesSelectMode;
+      setSelectionMode(true);
+      if (mode === "all") {
+        selectedConversationIds = new Set(items.filter((item) => !item.hidden && item.dataset.deleted !== "true").map((item) => item.dataset.messageId));
+        items.forEach((item) => item.classList.toggle("is-selected", selectedConversationIds.has(item.dataset.messageId)));
+      } else {
+        selectedConversationIds.clear();
+        items.forEach((item) => item.classList.remove("is-selected"));
       }
+      closeSelectPanel();
+    }));
+
+    deleteConversationButton?.addEventListener("click", () => {
+      if (!selectedConversationIds.size) return;
+      items.forEach((item) => {
+        if (selectedConversationIds.has(item.dataset.messageId)) {
+          item.dataset.deleted = "true";
+          item.hidden = true;
+        }
+      });
+      setSelectionMode(false);
       syncVisibility();
     });
 
     resetSearchButton?.addEventListener("click", () => {
-      if (searchInput) searchInput.value = "";
+      searchInputs.forEach((node) => { node.value = ""; });
+      currentFilter = "all";
+      filterButtons.forEach((node) => node.classList.toggle("is-active", node.dataset.messagesFilter === "all"));
       syncVisibility();
     });
 
     items.forEach((item) => {
       item.addEventListener("click", () => {
         const id = item.dataset.messageId;
-        if (!id) return;
+        if (!id || item.dataset.deleted === "true") return;
+        if (selectionMode) {
+          if (selectedConversationIds.has(id)) {
+            selectedConversationIds.delete(id);
+            item.classList.remove("is-selected");
+          } else {
+            selectedConversationIds.add(id);
+            item.classList.add("is-selected");
+          }
+          return;
+        }
         renderThread(id);
       });
     });
@@ -701,6 +785,14 @@
       if (event.target.closest("[data-message-menu]")) return;
       if (event.target.closest("[data-message-bubble]")) return;
       hideMessageMenu();
+    });
+
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest('.messages-mobile-header') || target.closest('.messages-header-controls')) return;
+      closeFiltersPanel();
+      closeSelectPanel();
     });
 
     messageMenu?.addEventListener("click", async (event) => {
@@ -857,12 +949,10 @@
 
     backButton?.addEventListener("click", () => {
       hideMessageMenu();
-      clearSelection();
-      clearReplyPreview();
-      resetAudioDraft();
-      resetImageDraft();
       root.classList.remove("messages-app--thread-open");
-      setMobileSearchOpen(false);
+      replyPreview?.setAttribute("hidden", "");
+      audioDraft?.setAttribute("hidden", "");
+      imageDraft?.setAttribute("hidden", "");
     });
 
     document.querySelectorAll('.sidebar a[href="mensagens.html"], .mobile-header-shortcut[href="mensagens.html"]').forEach((link) => {
@@ -884,19 +974,18 @@
 
     window.addEventListener("resize", () => {
       hideMessageMenu();
-      syncResponsiveThreadHeader();
-      syncResponsiveComposer();
       if (window.innerWidth > 767) {
         root.classList.remove("messages-app--thread-open");
-        setMobileSearchOpen(false);
+        setSearchExpanded(false);
+        closeFiltersPanel();
+        closeSelectPanel();
       }
-      syncMobileArchiveState();
-      syncMobileSelectState();
     });
 
-    syncResponsiveThreadHeader();
-    syncResponsiveComposer();
-    syncCounts();
+    filterButtons.forEach((node) => node.classList.toggle("is-active", node.dataset.messagesFilter === "all"));
+    setSearchExpanded(false);
+    closeFiltersPanel();
+    closeSelectPanel();
     syncVisibility();
     syncPaymentFlowFromQuery();
     refreshConversationCards();
@@ -904,13 +993,10 @@
     clearSelection();
     resetAudioDraft();
     resetImageDraft();
-    syncMobileArchiveState();
-    syncMobileSelectState();
     if (copyToast) copyToast.hidden = true;
     renderThread(activeId);
     if (window.innerWidth <= 767) {
       root.classList.remove("messages-app--thread-open");
-      setMobileSearchOpen(false);
     }
   };
 
