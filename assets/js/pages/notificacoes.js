@@ -62,6 +62,7 @@
 
     const setSearchExpanded = (expanded) => {
       root.classList.toggle('is-search-open', expanded);
+      mobileSearchToggle?.setAttribute('aria-expanded', expanded ? 'true' : 'false');
     };
 
     const closeContextMenu = () => {
@@ -108,6 +109,7 @@
     const setSelectionEnabled = (enabled) => {
       selectionEnabled = enabled;
       root.classList.toggle('is-selection-mode', enabled);
+      if (!enabled) setToggleExpanded(selectToggles, false);
       if (!enabled) clearSelection();
     };
 

@@ -1,4 +1,30 @@
 (function () {
+  const normalizePath = (value) => String(value || '').split('?')[0].split('#')[0].toLowerCase();
+
+  const syncActiveDrawerItem = (drawer) => {
+    if (!drawer) return;
+
+    const currentPath = normalizePath(window.location.pathname.split('/').pop() || 'index.html');
+    const items = [...drawer.querySelectorAll('.home-mobile-drawer__item[href]')];
+
+    items.forEach((item) => {
+      item.classList.remove('home-mobile-drawer__item--active');
+      item.removeAttribute('aria-current');
+
+      const href = item.getAttribute('href');
+      const itemPath = normalizePath(href);
+      if (!itemPath) return;
+
+      const isProfileRoute = currentPath === 'perfil.html' && itemPath.startsWith('perfil.html');
+      const isMatch = itemPath === currentPath || isProfileRoute;
+
+      if (isMatch) {
+        item.classList.add('home-mobile-drawer__item--active');
+        item.setAttribute('aria-current', 'page');
+      }
+    });
+  };
+
   window.DokeHomeDrawer = {
     create({ signal }) {
       return function initMobileHomeDrawer() {
@@ -7,6 +33,7 @@
 
         const panel = drawer.querySelector('.home-mobile-drawer__panel');
         const shouldUseDrawer = () => window.innerWidth <= 760;
+        syncActiveDrawerItem(drawer);
 
         const setOpen = (isOpen) => {
           drawer.hidden = false;

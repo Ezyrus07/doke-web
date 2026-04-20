@@ -3422,14 +3422,16 @@ body.orders-page-shell .orders-page:not(.is-agenda-collapsed) [data-orders-agend
     width: min(82vw, 304px);
     max-width: 304px;
     height: 100%;
-    background: #f7f9fc;
-    box-shadow: 12px 0 34px rgba(13, 29, 49, 0.22);
+    background:
+      radial-gradient(circle at top right, rgba(126, 180, 224, 0.16), transparent 32%),
+      linear-gradient(180deg, #fbfdff 0%, #f2f6fb 100%);
+    box-shadow: 16px 0 42px rgba(13, 29, 49, 0.24);
     transform: translateX(-100%);
     transition: transform 240ms ease;
     display: grid;
     align-content: start;
-    gap: 10px;
-    padding: calc(env(safe-area-inset-top, 0px) + 8px) 10px calc(env(safe-area-inset-bottom, 0px) + 10px);
+    gap: 12px;
+    padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px calc(env(safe-area-inset-bottom, 0px) + 14px);
     overflow-y: auto;
   }
 
@@ -3520,7 +3522,7 @@ body.orders-page-shell .orders-page:not(.is-agenda-collapsed) [data-orders-agend
   body.orders-page-shell .home-mobile-drawer__nav,
   body.notifications-page-shell .home-mobile-drawer__nav {
     display: grid;
-    gap: 2px;
+    gap: 6px;
   }
 
   body.orders-page-shell .home-mobile-drawer__item,
@@ -3529,15 +3531,16 @@ body.orders-page-shell .orders-page:not(.is-agenda-collapsed) [data-orders-agend
     grid-template-columns: 36px 1fr auto;
     align-items: center;
     gap: 10px;
-    min-height: 40px;
-    padding: 0 4px 0 0;
+    min-height: 46px;
+    padding: 0 8px 0 0;
     border: 0;
-    border-radius: 15px;
-    background: transparent;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.52);
     text-decoration: none;
     color: #324a66;
     font: inherit;
     text-align: left;
+    transition: background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
   }
 
   body.orders-page-shell .home-mobile-drawer__item--button,
@@ -3548,20 +3551,21 @@ body.orders-page-shell .orders-page:not(.is-agenda-collapsed) [data-orders-agend
 
   body.orders-page-shell .home-mobile-drawer__item-icon,
   body.notifications-page-shell .home-mobile-drawer__item-icon {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     display: inline-grid;
     place-items: center;
-    border-radius: 11px;
-    background: #eaf0f6;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #eef4fa 0%, #e6edf5 100%);
     color: #4272a2;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.96);
   }
 
   body.orders-page-shell .home-mobile-drawer__item-label,
   body.notifications-page-shell .home-mobile-drawer__item-label {
     font-size: 0.92rem;
-    font-weight: 600;
-    color: #405775;
+    font-weight: 700;
+    color: #3c5677;
   }
 
   body.orders-page-shell .home-mobile-drawer__item-badge,
@@ -3580,9 +3584,10 @@ body.orders-page-shell .orders-page:not(.is-agenda-collapsed) [data-orders-agend
 
   body.orders-page-shell .home-mobile-drawer__item--active,
   body.notifications-page-shell .home-mobile-drawer__item--active {
-    padding: 4px 7px;
-    background: linear-gradient(180deg, #5f8fbc 0%, #2c669b 100%);
-    box-shadow: 0 8px 18px rgba(38, 84, 130, 0.18);
+    padding: 4px 10px 4px 6px;
+    background: linear-gradient(135deg, #4b84bc 0%, #2d679d 100%);
+    box-shadow: 0 10px 24px rgba(38, 84, 130, 0.22);
+    transform: translateX(0);
   }
 
   body.orders-page-shell .home-mobile-drawer__item--active .home-mobile-drawer__item-icon,
@@ -3601,6 +3606,12 @@ body.orders-page-shell .orders-page:not(.is-agenda-collapsed) [data-orders-agend
   body.orders-page-shell .home-mobile-drawer__item--active .home-mobile-drawer__item-badge,
   body.notifications-page-shell .home-mobile-drawer__item--active .home-mobile-drawer__item-badge {
     background: rgba(255, 255, 255, 0.18);
+  }
+
+  body.orders-page-shell .home-mobile-drawer__item:not(.home-mobile-drawer__item--active):hover,
+  body.notifications-page-shell .home-mobile-drawer__item:not(.home-mobile-drawer__item--active):hover {
+    background: rgba(255, 255, 255, 0.8);
+    transform: translateX(2px);
   }
 
   body.orders-page-shell .home-mobile-drawer__divider,

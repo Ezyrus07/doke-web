@@ -371,6 +371,7 @@
 
     const setSearchExpanded = (expanded) => {
       root.classList.toggle('is-search-open', expanded);
+      if (searchTrigger) searchTrigger.setAttribute('aria-expanded', expanded ? 'true' : 'false');
     };
 
     if (panelScrim && panelScrim.parentElement !== document.body) {

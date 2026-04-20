@@ -1023,7 +1023,7 @@ body.notifications-page-shell .notifications-filters-panel .filter-chip span {
 @media (max-width: 760px) {
   body.notifications-page-shell .orders-page-header__hero,
   body.notifications-page-shell .notifications-page-header__hero {
-    margin-top: 4px;
+    margin-top: 0;
   }
 }
 
@@ -1033,8 +1033,9 @@ body.notifications-page-shell .notifications-filters-panel .filter-chip span {
 }
 
 body.notifications-page-shell [data-notifications-filters-toggle][aria-expanded="true"],
-body.notifications-page-shell [data-notifications-select-toggle][aria-expanded="true"] {
-  background: linear-gradient(135deg, #1b8c7d 0%, #2b5f94 100%);
+body.notifications-page-shell [data-notifications-select-toggle][aria-expanded="true"],
+body.notifications-page-shell [data-notifications-dismiss-toggle][aria-expanded="true"] {
+  background: #1f9d74;
   border-color: transparent;
   color: #fff;
 }
@@ -1047,24 +1048,127 @@ body.notifications-page-shell [data-notifications-select-toggle][aria-expanded="
 @media (max-width: 760px) {
   body.notifications-page-shell .notifications-mobile-header {
     display: grid;
-    gap: 0;
+    gap: 6px;
     width: 100%;
     max-width: 100%;
   }
 
   body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero {
-    display: grid !important;
+    display: grid;
     width: 100%;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px 10px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero-top {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    align-self: start;
+  }
+
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero-profile {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #173d6c;
+  }
+
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero-avatar {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    border-radius: 14px;
+    display: inline-grid;
+    place-items: center;
+    background: linear-gradient(135deg, #2b5f94 0%, #1b8c7d 100%);
+    color: #fff;
+    font-size: .98rem;
+    font-weight: 800;
+    letter-spacing: -.02em;
+  }
+
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero-usercopy {
+    display: inline-flex;
+    min-width: 0;
+  }
+
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero-name {
+    color: #173d6c;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.05;
+    display: block;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero-strip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    flex: 0 0 auto;
+    justify-self: end;
+    align-self: start;
+    margin-top: 0;
+  }
+
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__search-toggle,
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero-chip {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border: 1px solid rgba(189, 207, 225, 0.96);
+    border-radius: 16px;
+    background: #fff;
+    color: #1f4f84;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    box-shadow: none;
+    gap: 0;
+  }
+
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero-chip svg,
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__search-toggle svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero-chip span {
+    display: none;
+  }
+
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero-chip[aria-expanded="true"],
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero-chip[aria-pressed="true"],
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__search-toggle[aria-expanded="true"] {
+    border-color: #1f9d74;
+    background: #1f9d74;
+    color: #fff;
   }
 
   body.notifications-page-shell .notifications-page-header__search--hero {
     display: none;
     order: 3;
-  }
-
-  body.notifications-page-shell .notifications-page.is-search-open .notifications-mobile-header .orders-page-header__hero {
-    grid-template-columns: 1fr;
-    align-items: stretch;
   }
 
   body.notifications-page-shell .notifications-page.is-search-open .notifications-page-header__search--hero {
@@ -1075,7 +1179,7 @@ body.notifications-page-shell [data-notifications-select-toggle][aria-expanded="
     min-width: 0;
     max-width: none;
     min-height: 46px;
-    margin-top: 8px;
+    margin-top: 2px;
     padding-inline: 12px;
     border-radius: 16px;
     background: #fff;
@@ -1095,6 +1199,19 @@ body.notifications-page-shell [data-notifications-select-toggle][aria-expanded="
     display: inline-flex;
     opacity: 1;
     pointer-events: auto;
+  }
+
+  body.notifications-page-shell .orders-header-search {
+    gap: 8px;
+    justify-content: flex-start;
+  }
+
+  body.notifications-page-shell .orders-page-header__hero-chips {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    flex: 0 0 auto;
   }
 
   body.notifications-page-shell .notifications-page-header--auxiliary,
@@ -1141,6 +1258,17 @@ body.notifications-page-shell [data-notifications-select-toggle][aria-expanded="
     grid-template-columns: 1fr;
     gap: 8px;
     width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero {
+    gap: 6px 8px;
+  }
+
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero-strip,
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero-chips {
+    gap: 6px;
   }
 }
 

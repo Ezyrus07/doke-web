@@ -147,6 +147,11 @@
     let audioDraftTimer = null;
     let imageDraftSrc = "";
 
+    const syncComposerPlaceholder = () => {
+      if (!composerInput) return;
+      composerInput.placeholder = window.innerWidth <= 760 ? "Mensagem..." : "Digite sua mensagem...";
+    };
+
     const pageParams = new URLSearchParams(window.location.search);
     let activeId = pageParams.get("conversation") && conversations[pageParams.get("conversation")] ? pageParams.get("conversation") : "painting";
     const normalize = (value) => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -241,6 +246,7 @@
     const setSelectionMode = (enabled) => {
       selectionMode = enabled;
       root.classList.toggle("is-selection-mode", enabled);
+      if (!enabled) setToggleExpanded(selectToggles, false);
       if (!enabled) {
         selectedConversationIds.clear();
         items.forEach((item) => item.classList.remove("is-selected"));
@@ -261,6 +267,12 @@
       clearFilterButton.hidden = currentFilter === "all";
       archiveToggles.forEach((button) => button.setAttribute("aria-pressed", currentFilter === "archived" ? "true" : "false"));
       syncHeaderControls();
+    };
+
+    const resetActionSurfaces = () => {
+      closeFiltersPanel();
+      closeSelectPanel();
+      setSelectionMode(false);
     };
 
     const getSearchQuery = () => normalize(searchInputs.find((input) => String(input.value || "").trim())?.value || "");
@@ -617,6 +629,7 @@
       setToggleExpanded(selectToggles, willOpen);
       closeFiltersPanel();
       setSearchExpanded(false);
+      setSelectionMode(willOpen);
       syncHeaderControls();
     }));
 
@@ -791,8 +804,14 @@
       const target = event.target;
       if (!(target instanceof Element)) return;
       if (target.closest('.messages-mobile-header') || target.closest('.messages-header-controls')) return;
-      closeFiltersPanel();
-      closeSelectPanel();
+      resetActionSurfaces();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      setSearchExpanded(false);
+      resetActionSurfaces();
+      hideMessageMenu();
     });
 
     messageMenu?.addEventListener("click", async (event) => {
@@ -974,6 +993,7 @@
 
     window.addEventListener("resize", () => {
       hideMessageMenu();
+      syncComposerPlaceholder();
       if (window.innerWidth > 767) {
         root.classList.remove("messages-app--thread-open");
         setSearchExpanded(false);
@@ -994,6 +1014,7 @@
     resetAudioDraft();
     resetImageDraft();
     if (copyToast) copyToast.hidden = true;
+    syncComposerPlaceholder();
     renderThread(activeId);
     if (window.innerWidth <= 767) {
       root.classList.remove("messages-app--thread-open");
