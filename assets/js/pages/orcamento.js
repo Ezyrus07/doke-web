@@ -483,7 +483,7 @@ const initBudgetPage = () => {
       const selected = list.querySelectorAll('.orders-card__check:checked').length;
       if (deleteSelectedButton) {
         deleteSelectedButton.hidden = !(pageRoot.classList.contains('is-selecting') && selected > 0);
-        deleteSelectedButton.textContent = selected > 0 ? `Excluir selecionados (${selected})` : 'Excluir selecionados';
+        deleteSelectedButton.textContent = selected > 0 ? `Limpar selecionados (${selected})` : 'Limpar selecionados';
       }
     };
 

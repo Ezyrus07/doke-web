@@ -24,3 +24,9 @@ Princípio adotado:
 - consolidado o `service-card` em `assets/css/components/cards/service-card.css` e removido o bloco proprietário duplicado de `home-sections.css`
 - arquivadas telas experimentais órfãs (`dssadas.html`, `hero-comparativo.html`) fora da base ativa
 - normalizados textos e identificadores com encoding corrompido nas áreas críticas de shell, busca e perfil
+
+## Faxina conservadora — 2026-04-21
+- removidos diretórios arquivados sem uso em runtime (`archive/experiments`, `archive/legacy-css`, `archive/legacy-home-css`, `archive/legacy-home-js`, `archive/legacy-home-mobile`)
+- simplificada a classe duplicada do workspace em `mensagens.html`
+- removidos bindings/constantes descartáveis em `assets/js/pages/mensagens.js`
+- consolidado o controle de toggles e painéis de filtro/seleção em `assets/js/pages/mensagens.js` para reduzir repetição sem alterar o comportamento esperado

@@ -38,7 +38,10 @@
     };
     const selectToggles = Array.from(root.querySelectorAll('[data-orders-select-toggle]'));
     const selectPanel = root.querySelector('[data-orders-select-panel]');
-    const deleteSelectedButton = root.querySelector('[data-orders-delete-selected]');
+    const clearSelectedButton = root.querySelector('[data-orders-clear-selected]');
+    const openSelectedButton = root.querySelector('[data-orders-open-selected]');
+    const openChatSelectedButton = root.querySelector('[data-orders-open-chat-selected]');
+    const selectSummary = root.querySelector('[data-orders-select-summary]');
     const agendaToggles = Array.from(root.querySelectorAll('[data-orders-agenda-toggle]'));
     const panelScrim = root.querySelector('.orders-panel-scrim');
     const sidePanels = Array.from(root.querySelectorAll('.orders-sidepanel'));
@@ -138,7 +141,7 @@
         activeChip.textContent = `${labels[active]} ${counts[active] ?? 0}`;
         activeChip.hidden = active === 'all';
       }
-      if (clearFilterButton) clearFilterButton.hidden = active === 'all' && !hasOpenPanels;
+      if (clearFilterButton) clearFilterButton.hidden = selecting || (active === 'all' && !hasOpenPanels);
       syncHeaderControls();
     };
 
@@ -500,6 +503,17 @@
 
     const clearSelectedCards = () => cards.forEach((card) => card.classList.remove('is-selected'));
 
+    const selectedCards = () => cards.filter((card) => !card.hidden && card.classList.contains('is-selected'));
+
+    const syncSelectedActions = () => {
+      const selected = selectedCards();
+      const count = selected.length;
+      if (selectSummary) selectSummary.textContent = `${count} selecionado${count === 1 ? '' : 's'}`;
+      if (openSelectedButton) openSelectedButton.disabled = count === 0;
+      if (openChatSelectedButton) openChatSelectedButton.disabled = count === 0;
+      if (clearSelectedButton) clearSelectedButton.disabled = count === 0;
+    };
+
     const closeSelectPanel = () => {
       if (selectPanel) selectPanel.hidden = true;
       selectToggles.forEach((toggle) => toggle.setAttribute('aria-expanded', 'false'));
@@ -520,6 +534,7 @@
         closeSelectPanel();
         clearSelectedCards();
       }
+      syncSelectedActions();
     };
     selectToggles.forEach((toggle) => {
       toggle.addEventListener('click', () => {
@@ -549,6 +564,7 @@
         if (mode === 'all') {
           cards.filter((card) => !card.hidden).forEach((card) => card.classList.add('is-selected'));
         }
+        syncSelectedActions();
         syncHeaderControls();
       });
     });
@@ -559,16 +575,25 @@
         event.stopPropagation();
         if (!selecting) return;
         button.closest('.order-card')?.classList.toggle('is-selected');
+        syncSelectedActions();
       });
     });
 
-    deleteSelectedButton?.addEventListener('click', () => {
-      cards.filter((card) => card.classList.contains('is-selected')).forEach((card) => card.remove());
-      recountCards();
-      syncStats();
-      selecting = false;
-      syncSelectState();
-      applyFilters();
+    clearSelectedButton?.addEventListener('click', () => {
+      clearSelectedCards();
+      syncSelectedActions();
+    });
+
+    openSelectedButton?.addEventListener('click', () => {
+      const card = selectedCards()[0];
+      if (!card) return;
+      openPanel('details', card);
+    });
+
+    openChatSelectedButton?.addEventListener('click', () => {
+      const card = selectedCards()[0];
+      if (!card) return;
+      openPanel('chat', card);
     });
 
     panelScrim?.addEventListener('click', closePanels);
@@ -617,6 +642,7 @@
             selecting = false;
             syncSelectState();
           }
+          syncSelectedActions();
           closeContextMenu();
         });
 

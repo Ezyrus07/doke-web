@@ -3751,3 +3751,276 @@ body.home-index-shell .page__content-inner {
 .home-catégory__icon > * {
   display: block;
 }
+
+
+/* 2026-04-21 stage 1 responsive pass for index.html.
+   Goal: stabilize tablet and small-notebook layouts without changing the desktop-large behavior.
+   - reduce compression in 1025-1365 widths
+   - make hero actions and rails breathe on tablet/notebook
+   - keep horizontal rails but size cards for the viewport instead of forcing desktop ratios */
+@media (min-width: 1025px) and (max-width: 1365px) {
+  body.home-index-shell {
+    --home-desktop-content-width: min(100%, calc(100vw - var(--sidebar-width) - 34px));
+  }
+
+  body.home-index-shell .page__content {
+    padding-inline: 16px;
+    padding-bottom: 28px;
+  }
+
+  body.home-index-shell .home-side-meta {
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  body.home-index-shell .home-side-meta__group--primary {
+    gap: 10px;
+  }
+
+  body.home-index-shell .home-side-meta__group--secondary {
+    gap: 8px;
+  }
+
+  body.home-index-shell .home-side-meta.is-search-open .home-side-meta__search-form {
+    width: 180px;
+  }
+
+  body.home-index-shell .home-side-meta__location {
+    min-width: 0;
+    max-width: 220px;
+  }
+
+  body.home-index-shell .home-side-meta__location-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  body.home-index-shell .home-side-meta__identity strong {
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.home-index-shell .home-search-hero,
+  body.home-index-shell .home-catégories,
+  body.home-index-shell .featured-services,
+  body.home-index-shell .short-videos,
+  body.home-index-shell .before-after,
+  body.home-index-shell .more-services,
+  body.home-index-shell .featured-pros {
+    margin-bottom: 20px;
+  }
+
+  body.home-index-shell .home-search-hero__card {
+    padding: 22px 22px 20px;
+    border-radius: 26px;
+  }
+
+  body.home-index-shell .home-search-hero__field {
+    min-height: 66px;
+    padding: 10px 78px 10px 58px;
+  }
+
+  body.home-index-shell .home-search-hero__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    justify-content: stretch;
+  }
+
+  body.home-index-shell .home-search-hero__cta {
+    width: 100%;
+    min-width: 0;
+    min-height: 54px;
+    padding-inline: 18px;
+  }
+
+  body.home-index-shell .home-catégories .section-heading,
+  body.home-index-shell .short-videos .section-heading,
+  body.home-index-shell .featured-services .section-heading,
+  body.home-index-shell .before-after .section-heading,
+  body.home-index-shell .more-services .section-heading,
+  body.home-index-shell .featured-pros .section-heading {
+    margin-left: 0;
+  }
+
+  body.home-index-shell .home-catégories__rail,
+  body.home-index-shell .content-rail {
+    width: 100%;
+    max-width: 100%;
+    padding-inline: 0;
+  }
+
+  body.home-index-shell .home-catégories__arrow,
+  body.home-index-shell .content-rail__arrow {
+    display: none;
+  }
+
+  body.home-index-shell .home-catégories__track,
+  body.home-index-shell .featured-services .service-grid,
+  body.home-index-shell .comparison-grid,
+  body.home-index-shell .more-services .service-grid--compact,
+  body.home-index-shell .featured-pros__grid,
+  body.home-index-shell .short-videos__track,
+  body.home-index-shell .mini-tabs {
+    scrollbar-width: none;
+  }
+
+  body.home-index-shell .home-catégories__track::-webkit-scrollbar,
+  body.home-index-shell .featured-services .service-grid::-webkit-scrollbar,
+  body.home-index-shell .comparison-grid::-webkit-scrollbar,
+  body.home-index-shell .more-services .service-grid--compact::-webkit-scrollbar,
+  body.home-index-shell .featured-pros__grid::-webkit-scrollbar,
+  body.home-index-shell .short-videos__track::-webkit-scrollbar,
+  body.home-index-shell .mini-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  body.home-index-shell .home-catégory {
+    flex: 0 0 100px;
+    min-width: 100px;
+    max-width: 100px;
+  }
+
+  body.home-index-shell .home-catégory__icon {
+    width: 88px;
+    height: 88px;
+  }
+
+  body.home-index-shell .featured-services .service-card--feed,
+  body.home-index-shell .more-services .service-card--feed {
+    flex: 0 0 calc((100% - 18px) / 2);
+    width: calc((100% - 18px) / 2);
+    min-width: calc((100% - 18px) / 2);
+    max-width: calc((100% - 18px) / 2);
+  }
+
+  body.home-index-shell .comparison-card {
+    flex: 0 0 min(420px, calc((100% - 18px) / 2));
+    width: min(420px, calc((100% - 18px) / 2));
+    min-width: min(420px, calc((100% - 18px) / 2));
+    max-width: min(420px, calc((100% - 18px) / 2));
+  }
+
+  body.home-index-shell .featured-pros .pro-card {
+    flex: 0 0 calc((100% - 24px) / 3);
+    width: calc((100% - 24px) / 3);
+    min-width: calc((100% - 24px) / 3);
+    max-width: calc((100% - 24px) / 3);
+  }
+
+  body.home-index-shell .short-videos .video-card {
+    flex: 0 0 calc((100% - 32px) / 3);
+    width: calc((100% - 32px) / 3);
+    min-width: calc((100% - 32px) / 3);
+    max-width: calc((100% - 32px) / 3);
+  }
+
+  body.home-index-shell .more-filters__grid,
+  body.home-index-shell .more-filters__grid--dense,
+  body.home-index-shell .more-filters__location-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  body.home-index-shell .page__content {
+    padding-top: calc(var(--header-height) + 12px);
+  }
+
+  body.home-index-shell .page__content-inner.shell-home__workspace,
+  body.home-index-shell .page__content-inner.shell-home__workspace--clean {
+    padding-inline: 18px;
+    padding-bottom: 24px;
+    gap: 18px;
+  }
+
+  body.home-index-shell .home-search-hero__card {
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  body.home-index-shell .home-search-hero__field {
+    min-height: 60px;
+    padding: 10px 72px 10px 18px;
+  }
+
+  body.home-index-shell .home-search-hero__actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  body.home-index-shell .home-search-hero__cta {
+    min-height: 50px;
+    padding-inline: 16px;
+  }
+
+  body.home-index-shell .section-heading,
+  body.home-index-shell .section-heading--spread {
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  body.home-index-shell .section-heading__title {
+    font-size: 0.88rem;
+    letter-spacing: 0.12em;
+  }
+
+  body.home-index-shell .section-heading__link {
+    min-height: 38px;
+    padding-inline: 12px;
+    font-size: 0.88rem;
+  }
+
+  body.home-index-shell .home-catégories,
+  body.home-index-shell .featured-services,
+  body.home-index-shell .short-videos,
+  body.home-index-shell .before-after,
+  body.home-index-shell .more-services,
+  body.home-index-shell .featured-pros {
+    margin-bottom: 18px;
+  }
+
+  body.home-index-shell .featured-services .service-card--feed,
+  body.home-index-shell .more-services .service-card--feed {
+    flex-basis: min(340px, calc(100vw - 96px));
+    min-width: min(340px, calc(100vw - 96px));
+    max-width: min(340px, calc(100vw - 96px));
+    width: min(340px, calc(100vw - 96px));
+  }
+
+  body.home-index-shell .comparison-card {
+    flex-basis: min(360px, calc(100vw - 120px));
+    min-width: min(360px, calc(100vw - 120px));
+    max-width: min(360px, calc(100vw - 120px));
+    width: min(360px, calc(100vw - 120px));
+  }
+
+  body.home-index-shell .featured-pros .pro-card {
+    flex-basis: min(248px, calc((100vw - 84px) / 2.2));
+    min-width: min(248px, calc((100vw - 84px) / 2.2));
+    max-width: min(248px, calc((100vw - 84px) / 2.2));
+    width: min(248px, calc((100vw - 84px) / 2.2));
+  }
+
+  body.home-index-shell .short-videos .video-card {
+    flex-basis: min(210px, calc((100vw - 76px) / 2.6));
+    min-width: min(210px, calc((100vw - 76px) / 2.6));
+    max-width: min(210px, calc((100vw - 76px) / 2.6));
+    width: min(210px, calc((100vw - 76px) / 2.6));
+  }
+
+  body.home-index-shell .mini-tabs {
+    padding: 4px 2px 8px;
+  }
+
+  body.home-index-shell .mini-tab,
+  body.home-index-shell .filter-toggle {
+    min-height: 40px;
+    padding-inline: 13px;
+    font-size: 0.85rem;
+  }
+}

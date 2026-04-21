@@ -25,7 +25,7 @@
     const selectPanel = root.querySelector('[data-notifications-select-panel]');
     const selectModeButtons = [...root.querySelectorAll('[data-notifications-select-mode]')];
     const markSelectedButton = root.querySelector('[data-notifications-mark-selected]');
-    const dismissSelectedButton = root.querySelector('[data-notifications-dismiss-selected]');
+    const clearSelectedButton = root.querySelector('[data-notifications-clear-selected]');
     const settingsToggle = root.querySelector('[data-notifications-settings-toggle]');
     const settingsPanel = root.querySelector('[data-notifications-settings-panel]');
     const settingsClose = root.querySelector('[data-notifications-settings-close]');
@@ -106,11 +106,19 @@
       cards.forEach((card) => card.classList.remove('is-selected'));
     };
 
+    const syncSelectedActions = () => {
+      const count = selectedCards().length;
+      if (selectSummary) selectSummary.textContent = `${count} selecionada${count === 1 ? '' : 's'}`;
+      if (markSelectedButton) markSelectedButton.disabled = count === 0;
+      if (clearSelectedButton) clearSelectedButton.disabled = count === 0;
+    };
+
     const setSelectionEnabled = (enabled) => {
       selectionEnabled = enabled;
       root.classList.toggle('is-selection-mode', enabled);
       if (!enabled) setToggleExpanded(selectToggles, false);
       if (!enabled) clearSelection();
+      syncSelectedActions();
     };
 
     const closeSettingsPanel = () => {
@@ -391,17 +399,9 @@
       applyFilter(currentFilter, currentTimeFilter);
     }));
 
-    dismissSelectedButton?.addEventListener('click', () => {
-      const targetCards = selectionEnabled ? selectedCards() : cards.filter((card) => !card.hidden && card.dataset.dismissed !== 'true');
-      targetCards.forEach((card) => {
-        card.dataset.dismissed = 'true';
-        card.hidden = true;
-      });
-      updatéUnread();
-      updatéStats();
-      applyFilter(currentFilter, currentTimeFilter);
-      setSelectionEnabled(false);
-      closeSelectPanel();
+    clearSelectedButton?.addEventListener('click', () => {
+      clearSelection();
+      syncSelectedActions();
     });
 
     cards.forEach((card) => card.addEventListener('click', (event) => {
@@ -411,6 +411,7 @@
       if (selectionEnabled) {
         event.preventDefault();
         card.classList.toggle('is-selected');
+        syncSelectedActions();
         return;
       }
 
@@ -445,6 +446,7 @@
             setSelectionEnabled(false);
             closeSelectPanel();
           }
+          syncSelectedActions();
           closeContextMenu();
         });
 

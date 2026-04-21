@@ -8,7 +8,7 @@
       group: "orders",
       messages: [
         { author: "Studio Aquarela", time: "09:12", text: "Recebemos seu pedido e já separamos uma proposta base para pintura interna com pequenos reparos.", mine: false },
-        { author: "Você", time: "09:18", text: "Perfeito. Quero entender prazo, matériais incluídos e se vocês conseguem começar ainda esta semana.", mine: true },
+        { author: "Você", time: "09:18", text: "Perfeito. Quero entender prazo, materiais incluídos e se vocês conseguem começar ainda esta semana.", mine: true },
         { author: "Studio Aquarela", time: "09:26", text: "Conseguimos iniciar em até 7 dias. Tinta, proteção e acabamento já entram no orçamento.", mine: false },
         { author: "Studio Aquarela", time: "09:27", text: "Se fizer sentido, posso te enviar agora a versão fechada da proposta para aprovação.", mine: false }
       ]
@@ -77,9 +77,8 @@
     const items = Array.from(root.querySelectorAll(".message-item[data-message-id]"));
     const searchForms = Array.from(root.querySelectorAll("[data-messages-search-form]"));
     const searchInputs = Array.from(root.querySelectorAll("[data-messages-search-input]"));
-    const searchInput = searchInputs[0] || null;
     const resetSearchButton = root.querySelector("[data-messages-reset-search]");
-    const emptyStaté = root.querySelector("[data-messages-empty]");
+    const emptyState = root.querySelector("[data-messages-empty]");
     const ordersCount = root.querySelector("[data-messages-orders-count]");
     const contactsCount = root.querySelector("[data-messages-contacts-count]");
     const mobileCount = root.querySelector("[data-messages-mobile-count]");
@@ -96,7 +95,6 @@
     const searchToggleButtons = Array.from(root.querySelectorAll("[data-messages-mobile-search-toggle]"));
     const filterToggles = Array.from(root.querySelectorAll("[data-messages-filter-toggle]"));
     const desktopFilterToggle = root.querySelector("[data-messages-desktop-filter-toggle]");
-    const filtersPanels = Array.from(root.querySelectorAll("[data-messages-filters-panel]"));
     const filterButtons = Array.from(root.querySelectorAll("[data-messages-filter]"));
     const archiveToggles = Array.from(root.querySelectorAll("[data-messages-archive-toggle]"));
     const clearFilterButtons = Array.from(root.querySelectorAll("[data-messages-clear-filter]"));
@@ -104,10 +102,7 @@
     const headerControls = Array.from(root.querySelectorAll("[data-messages-header-controls], .messages-header-controls"));
     const selectToggles = Array.from(root.querySelectorAll("[data-messages-select-toggle]"));
     const desktopSelectToggle = root.querySelector("[data-messages-desktop-select-toggle]");
-    const selectPanels = Array.from(root.querySelectorAll("[data-messages-select-panel]"));
     const selectModeButtons = Array.from(root.querySelectorAll("[data-messages-select-mode]"));
-    const deleteConversationButtons = Array.from(root.querySelectorAll("[data-messages-delete-conversations]"));
-    const desktopControls = root.querySelector("[data-messages-desktop-controls]");
     const desktopFiltersPanel = root.querySelector("[data-messages-desktop-filters-panel]");
     const desktopSelectPanel = root.querySelector("[data-messages-desktop-select-panel]");
     const imageInput = root.querySelector("[data-messages-image-input]");
@@ -117,7 +112,6 @@
     const replyPreview = root.querySelector("[data-messages-reply-preview]");
     const replyAuthor = root.querySelector("[data-messages-reply-author]");
     const replyText = root.querySelector("[data-messages-reply-text]");
-    const replyClose = root.querySelector("[data-messages-reply-close]");
     const copyToast = root.querySelector("[data-messages-copy-toast]");
     const selectionBar = root.querySelector("[data-messages-selection]");
     const selectionCount = root.querySelector("[data-messages-selection-count]");
@@ -138,13 +132,25 @@
     const chargeAmountInput = document.querySelector("[data-charge-amount]");
     const chargeInstallments = document.querySelector("[data-charge-installments]");
     const chargeCancelButtons = document.querySelectorAll("[data-charge-cancel]");
+    const mobileControls = root.querySelector("[data-messages-mobile-controls]");
+    const desktopControls = root.querySelector("[data-messages-desktop-controls]");
+    const mobileFiltersPanel = root.querySelector("[data-messages-filters-panel]");
+    const mobileSelectPanel = root.querySelector("[data-messages-select-panel]");
+    const filterToggleButtons = [...filterToggles, desktopFilterToggle].filter(Boolean);
+    const selectToggleButtons = [...selectToggles, desktopSelectToggle].filter(Boolean);
+    const filterPanels = [mobileFiltersPanel, desktopFiltersPanel].filter(Boolean);
+    const conversationSelectPanels = [mobileSelectPanel, desktopSelectPanel].filter(Boolean);
+    const filterSummaryRows = Array.from(root.querySelectorAll("[data-messages-filter-summary]"));
+    const cardSelectionCountNodes = Array.from(root.querySelectorAll("[data-messages-card-selection-count]"));
+    const archiveConversationButtons = Array.from(root.querySelectorAll("[data-messages-archive-conversations]"));
+    const clearSelectedButtons = Array.from(root.querySelectorAll("[data-messages-clear-selected]"));
 
     let contextMessageIndex = -1;
     let longPressTimer = null;
     let activeBubble = null;
     let selectedMessageIndexes = new Set();
     let selectedConversationIds = new Set();
-    let currentFilter = "all";
+    let selectedFilterKeys = new Set();
     let selectionMode = false;
     let replyToMessage = null;
     let copyToastTimer = null;
@@ -152,15 +158,31 @@
     let audioDraftTimer = null;
     let imageDraftSrc = "";
 
+    const filterLabels = {
+      all: "Tudo",
+      unread: "Não lidas",
+      orders: "Pedidos",
+      contacts: "Conversas",
+      archived: "Arquivadas"
+    };
+
+    const isMobileViewport = () => window.innerWidth <= 760;
+    const getActiveFilterKeys = () => Array.from(selectedFilterKeys);
+    const getActiveFilterLabels = () => getActiveFilterKeys().map((key) => filterLabels[key]).filter(Boolean);
+
     const syncComposerPlaceholder = () => {
       if (!composerInput) return;
       composerInput.placeholder = window.innerWidth <= 760 ? "Mensagem..." : "Digite sua mensagem...";
     };
 
+    const getVisibleSearchInput = () => {
+      return searchInputs.find((input) => input.offsetParent !== null) || searchInputs[0] || null;
+    };
+
     const pageParams = new URLSearchParams(window.location.search);
     let activeId = pageParams.get("conversation") && conversations[pageParams.get("conversation")] ? pageParams.get("conversation") : "painting";
-    const normalize = (value) => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const getLatéstChargeMessage = (conversationId) => {
+    const normalize = (value) => String(value || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    const getLatestChargeMessage = (conversationId) => {
       const messages = conversations[conversationId]?.messages || [];
       for (let index = messages.length - 1; index >= 0; index -= 1) {
         if (messages[index]?.type === "charge") return messages[index];
@@ -170,7 +192,7 @@
     const syncPaymentFlowFromQuery = () => {
       const conversationId = pageParams.get("conversation");
       if (!conversationId || !conversations[conversationId]) return;
-      const charge = getLatéstChargeMessage(conversationId);
+      const charge = getLatestChargeMessage(conversationId);
       if (!charge) return;
 
       if (pageParams.get("payment") === "success") {
@@ -207,7 +229,6 @@
       }
     };
 
-
     const syncCounts = () => {
       const visibleItems = items.filter((item) => !item.hidden && item.dataset.deleted !== "true");
       const orders = visibleItems.filter((item) => conversations[item.dataset.messageId]?.group === "orders").length;
@@ -227,96 +248,165 @@
     };
 
     const setToggleExpanded = (toggles, expanded) => {
-      toggles.forEach((toggle) => toggle.setAttribute("aria-expanded", expanded ? "true" : "false"));
+      toggles.forEach((toggle) => toggle?.setAttribute("aria-expanded", expanded ? "true" : "false"));
     };
 
-    const syncHeaderControls = () => {
-      if (!headerControls.length) return;
-      const showStatus = activeChips.some((chip) => !chip.hidden);
-      const hasFilterPanelOpen = filtersPanels.some((panel) => !panel.hidden);
-      const hasSelectPanelOpen = selectPanels.some((panel) => !panel.hidden);
-      const hasDesktopFilterPanelOpen = Boolean(desktopFiltersPanel && !desktopFiltersPanel.hidden);
-      const hasDesktopSelectPanelOpen = Boolean(desktopSelectPanel && !desktopSelectPanel.hidden);
-      headerControls.forEach((controls) => {
-        controls.hidden = !Boolean(
-          showStatus ||
-          hasFilterPanelOpen ||
-          hasSelectPanelOpen ||
-          hasDesktopFilterPanelOpen ||
-          hasDesktopSelectPanelOpen
-        );
+    const updateConversationSelectionUI = () => {
+      const total = selectedConversationIds.size;
+      items.forEach((item) => item.classList.toggle("is-selected", selectedConversationIds.has(item.dataset.messageId)));
+      cardSelectionCountNodes.forEach((node) => {
+        node.textContent = `${total} ${total === 1 ? "selecionada" : "selecionadas"}`;
       });
+      archiveConversationButtons.forEach((button) => {
+        button.disabled = total === 0;
+      });
+      clearSelectedButtons.forEach((button) => {
+        button.disabled = total === 0;
+      });
+    };
+
+    const setSelectionMode = (enabled, options = {}) => {
+      const { preserveSelection = false } = options;
+      selectionMode = enabled;
+      root.classList.toggle("is-selection-mode", enabled);
+      if (!enabled) {
+        setToggleExpanded(selectToggles, false);
+        desktopSelectToggle?.setAttribute("aria-expanded", "false");
+        if (!preserveSelection) {
+          selectedConversationIds.clear();
+          updateConversationSelectionUI();
+        }
+      }
+      if (enabled) {
+        updateConversationSelectionUI();
+      }
     };
 
     const closeFiltersPanel = () => {
-      filtersPanels.forEach((panel) => {
+      filterPanels.forEach((panel) => {
         panel.hidden = true;
       });
-      if (desktopFiltersPanel) desktopFiltersPanel.hidden = true;
-      if (desktopFilterToggle) desktopFilterToggle.setAttribute("aria-expanded", "false");
-      setToggleExpanded(filterToggles, false);
-      syncHeaderControls();
+      setToggleExpanded(filterToggleButtons, false);
     };
 
-    const closeSelectPanel = () => {
-      selectPanels.forEach((panel) => {
+    const closeSelectPanel = (options = {}) => {
+      const { preserveSelectionMode = false } = options;
+      conversationSelectPanels.forEach((panel) => {
         panel.hidden = true;
       });
-      if (desktopSelectPanel) desktopSelectPanel.hidden = true;
-      if (desktopSelectToggle) desktopSelectToggle.setAttribute("aria-expanded", "false");
-      setToggleExpanded(selectToggles, false);
-      syncHeaderControls();
-    };
-
-    const setSelectionMode = (enabled) => {
-      selectionMode = enabled;
-      root.classList.toggle("is-selection-mode", enabled);
-      if (!enabled) setToggleExpanded(selectToggles, false);
-      if (!enabled) {
-        selectedConversationIds.clear();
-        items.forEach((item) => item.classList.remove("is-selected"));
+      setToggleExpanded(selectToggleButtons, false);
+      if (!preserveSelectionMode) {
+        setSelectionMode(false);
       }
+    };
+
+    const openFiltersPanel = () => {
+      closeSelectPanel();
+      setSearchExpanded(false);
+      if (isMobileViewport()) {
+        if (mobileControls) mobileControls.hidden = false;
+        if (mobileFiltersPanel) mobileFiltersPanel.hidden = false;
+      } else {
+        if (desktopControls) desktopControls.hidden = false;
+        if (desktopFiltersPanel) desktopFiltersPanel.hidden = false;
+      }
+      setToggleExpanded(filterToggleButtons, true);
+      syncHeaderControls();
+    };
+
+    const openSelectPanel = () => {
+      closeFiltersPanel();
+      setSearchExpanded(false);
+      setSelectionMode(true, { preserveSelection: true });
+      if (isMobileViewport()) {
+        if (mobileControls) mobileControls.hidden = false;
+        if (mobileSelectPanel) mobileSelectPanel.hidden = false;
+      } else {
+        if (desktopControls) desktopControls.hidden = false;
+        if (desktopSelectPanel) desktopSelectPanel.hidden = false;
+      }
+      setToggleExpanded(selectToggleButtons, true);
+      syncHeaderControls();
+    };
+
+    const syncFilterButtons = () => {
+      filterButtons.forEach((button) => {
+        const key = button.dataset.messagesFilter || "all";
+        const isActive = key === "all" ? selectedFilterKeys.size === 0 : selectedFilterKeys.has(key);
+        button.classList.toggle("is-active", isActive);
+      });
+      archiveToggles.forEach((button) => button.setAttribute("aria-pressed", selectedFilterKeys.has("archived") ? "true" : "false"));
     };
 
     const syncActiveFilterChip = () => {
-      if (!activeChips.length || !clearFilterButtons.length) return;
-      const labels = {
-        all: "Tudo",
-        unread: "Não lidas",
-        orders: "Pedidos",
-        contacts: "Conversas",
-        archived: "Arquivadas"
-      };
+      const activeLabels = getActiveFilterLabels();
+      const showSummary = activeLabels.length > 0 && !selectionMode && !filterPanels.some((panel) => !panel.hidden);
       activeChips.forEach((chip) => {
-        chip.textContent = labels[currentFilter] || "Tudo";
-        chip.hidden = currentFilter === "all";
+        chip.textContent = activeLabels.join(" • ") || filterLabels.all;
+        chip.hidden = !showSummary;
       });
       clearFilterButtons.forEach((button) => {
-        button.hidden = currentFilter === "all";
+        button.hidden = !showSummary;
       });
-      archiveToggles.forEach((button) => button.setAttribute("aria-pressed", currentFilter === "archived" ? "true" : "false"));
-      if (desktopControls) {
-        desktopControls.hidden = !(currentFilter !== "all" || (desktopFiltersPanel && !desktopFiltersPanel.hidden) || (desktopSelectPanel && !desktopSelectPanel.hidden));
+      filterSummaryRows.forEach((row) => {
+        row.hidden = !showSummary;
+      });
+    };
+
+    const syncHeaderControls = () => {
+      const mobileFilterOpen = Boolean(mobileFiltersPanel && !mobileFiltersPanel.hidden);
+      const mobileSelectOpen = Boolean(mobileSelectPanel && !mobileSelectPanel.hidden);
+      const desktopFilterOpen = Boolean(desktopFiltersPanel && !desktopFiltersPanel.hidden);
+      const desktopSelectOpen = Boolean(desktopSelectPanel && !desktopSelectPanel.hidden);
+      const hasFilterSummary = getActiveFilterLabels().length > 0 && !selectionMode && !mobileFilterOpen && !desktopFilterOpen;
+
+      syncActiveFilterChip();
+      updateConversationSelectionUI();
+
+      if (mobileControls) {
+        mobileControls.hidden = !isMobileViewport() || !(mobileFilterOpen || mobileSelectOpen || hasFilterSummary);
       }
-      syncHeaderControls();
+      if (desktopControls) {
+        desktopControls.hidden = isMobileViewport() || !(desktopFilterOpen || desktopSelectOpen || hasFilterSummary);
+      }
     };
 
     const resetActionSurfaces = () => {
       closeFiltersPanel();
       closeSelectPanel();
-      setSelectionMode(false);
+      setSearchExpanded(false);
+      syncHeaderControls();
     };
 
     const getSearchQuery = () => normalize(searchInputs.find((input) => String(input.value || "").trim())?.value || "");
 
     const matchesConversationFilter = (conversation) => {
       if (!conversation) return false;
-      if (currentFilter === "all") return true;
-      if (currentFilter === "unread") return Number(conversation.unread || 0) > 0;
-      if (currentFilter === "orders") return conversation.group === "orders";
-      if (currentFilter === "contacts") return conversation.group === "contacts";
-      if (currentFilter === "archived") return conversation.archived === true;
+      if (selectedFilterKeys.size === 0) return true;
+      const scopeKeys = ["orders", "contacts"].filter((key) => selectedFilterKeys.has(key));
+      if (scopeKeys.length && !scopeKeys.includes(conversation.group)) {
+        return false;
+      }
+      if (selectedFilterKeys.has("unread") && Number(conversation.unread || 0) <= 0) {
+        return false;
+      }
+      if (selectedFilterKeys.has("archived") && conversation.archived !== true) {
+        return false;
+      }
       return true;
+    };
+
+    const toggleFilterKey = (key) => {
+      if (!key || key === "all") {
+        selectedFilterKeys.clear();
+      } else if (selectedFilterKeys.has(key)) {
+        selectedFilterKeys.delete(key);
+      } else {
+        selectedFilterKeys.add(key);
+      }
+      syncFilterButtons();
+      syncVisibility();
+      syncHeaderControls();
     };
 
     const getMessagePreview = (message) => {
@@ -365,6 +455,15 @@
       selectionCount.textContent = `${total} ${total === 1 ? "selecionada" : "selecionadas"}`;
     };
 
+    const scrollThreadToBottom = (smooth = false) => {
+      if (!threadBody) return;
+      window.requestAnimationFrame(() => {
+        threadBody.scrollTo({
+          top: threadBody.scrollHeight,
+          behavior: smooth ? "smooth" : "auto"
+        });
+      });
+    };
 
     const renderThread = (id) => {
       const conversation = conversations[id];
@@ -452,6 +551,7 @@
       if (window.innerWidth <= 767) {
         root.classList.add("messages-app--thread-open");
       }
+      scrollThreadToBottom(false);
     };
 
     const hideMessageMenu = () => {
@@ -591,11 +691,15 @@
         const matchesFilter = matchesConversationFilter(conversation);
         const visible = notDeleted && matchesFilter && (!query || normalize(item.textContent).includes(query));
         item.hidden = !visible;
+        if (!visible && selectedConversationIds.has(item.dataset.messageId)) {
+          selectedConversationIds.delete(item.dataset.messageId);
+        }
         if (visible) visibleCount += 1;
       });
-      if (emptyStaté) emptyStaté.hidden = visibleCount !== 0;
+      if (emptyState) emptyState.hidden = visibleCount !== 0;
       syncCounts();
-      syncActiveFilterChip();
+      updateConversationSelectionUI();
+      syncHeaderControls();
     };
 
     searchForms.forEach((form) => form.addEventListener("submit", (event) => {
@@ -619,109 +723,108 @@
       const willOpen = !root.classList.contains("is-search-open");
       setSearchExpanded(willOpen);
       if (willOpen) {
-        window.setTimeout(() => searchInputs[0]?.focus(), 20);
+        window.setTimeout(() => getVisibleSearchInput()?.focus(), 20);
       }
       closeFiltersPanel();
       closeSelectPanel();
+      syncHeaderControls();
     }));
 
     filterToggles.forEach((toggle) => toggle.addEventListener("click", () => {
-      const willOpen = !filtersPanels.some((panel) => !panel.hidden);
-      filtersPanels.forEach((panel) => {
-        panel.hidden = !willOpen;
-      });
-      setToggleExpanded(filterToggles, willOpen);
-      closeSelectPanel();
-      setSearchExpanded(false);
-      syncHeaderControls();
+      const panelOpen = isMobileViewport() ? Boolean(mobileFiltersPanel && !mobileFiltersPanel.hidden) : Boolean(desktopFiltersPanel && !desktopFiltersPanel.hidden);
+      if (panelOpen) {
+        closeFiltersPanel();
+        syncHeaderControls();
+        return;
+      }
+      openFiltersPanel();
     }));
 
     desktopFilterToggle?.addEventListener("click", () => {
-      const willOpen = desktopFiltersPanel?.hidden !== false;
-      if (desktopControls) desktopControls.hidden = false;
-      if (desktopFiltersPanel) desktopFiltersPanel.hidden = !willOpen;
-      if (desktopSelectPanel) desktopSelectPanel.hidden = true;
-      desktopFilterToggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
-      desktopSelectToggle?.setAttribute("aria-expanded", "false");
-      setSearchExpanded(false);
-      syncHeaderControls();
+      const panelOpen = Boolean(desktopFiltersPanel && !desktopFiltersPanel.hidden);
+      if (panelOpen) {
+        closeFiltersPanel();
+        syncHeaderControls();
+        return;
+      }
+      openFiltersPanel();
     });
 
     archiveToggles.forEach((toggle) => toggle.addEventListener("click", () => {
-      currentFilter = currentFilter === "archived" ? "all" : "archived";
-      closeFiltersPanel();
       closeSelectPanel();
       setSearchExpanded(false);
-      syncVisibility();
+      toggleFilterKey("archived");
     }));
 
     filterButtons.forEach((button) => button.addEventListener("click", () => {
-      currentFilter = button.dataset.messagesFilter || "all";
-      filterButtons.forEach((node) => node.classList.toggle("is-active", node === button));
-      syncVisibility();
-      syncHeaderControls();
+      toggleFilterKey(button.dataset.messagesFilter || "all");
     }));
 
     clearFilterButtons.forEach((clearFilterButton) => clearFilterButton.addEventListener("click", () => {
-      currentFilter = "all";
-      filterButtons.forEach((node) => node.classList.toggle("is-active", node.dataset.messagesFilter === "all"));
+      selectedFilterKeys.clear();
+      syncFilterButtons();
       syncVisibility();
+      closeFiltersPanel();
+      syncHeaderControls();
     }));
 
     selectToggles.forEach((toggle) => toggle.addEventListener("click", () => {
-      const willOpen = !selectPanels.some((panel) => !panel.hidden);
-      selectPanels.forEach((panel) => {
-        panel.hidden = !willOpen;
-      });
-      setToggleExpanded(selectToggles, willOpen);
-      closeFiltersPanel();
-      setSearchExpanded(false);
-      setSelectionMode(willOpen);
-      syncHeaderControls();
+      const panelOpen = isMobileViewport() ? Boolean(mobileSelectPanel && !mobileSelectPanel.hidden) : Boolean(desktopSelectPanel && !desktopSelectPanel.hidden);
+      if (panelOpen) {
+        closeSelectPanel();
+        syncHeaderControls();
+        return;
+      }
+      openSelectPanel();
     }));
 
     desktopSelectToggle?.addEventListener("click", () => {
-      const willOpen = desktopSelectPanel?.hidden !== false;
-      if (desktopControls) desktopControls.hidden = false;
-      if (desktopSelectPanel) desktopSelectPanel.hidden = !willOpen;
-      if (desktopFiltersPanel) desktopFiltersPanel.hidden = true;
-      desktopSelectToggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
-      desktopFilterToggle?.setAttribute("aria-expanded", "false");
-      setSearchExpanded(false);
-      setSelectionMode(willOpen);
-      syncHeaderControls();
+      const panelOpen = Boolean(desktopSelectPanel && !desktopSelectPanel.hidden);
+      if (panelOpen) {
+        closeSelectPanel();
+        syncHeaderControls();
+        return;
+      }
+      openSelectPanel();
     });
 
     selectModeButtons.forEach((button) => button.addEventListener("click", () => {
       const mode = button.dataset.messagesSelectMode;
-      setSelectionMode(true);
+      openSelectPanel();
       if (mode === "all") {
         selectedConversationIds = new Set(items.filter((item) => !item.hidden && item.dataset.deleted !== "true").map((item) => item.dataset.messageId));
-        items.forEach((item) => item.classList.toggle("is-selected", selectedConversationIds.has(item.dataset.messageId)));
       } else {
         selectedConversationIds.clear();
-        items.forEach((item) => item.classList.remove("is-selected"));
       }
+      updateConversationSelectionUI();
       syncHeaderControls();
     }));
 
-    deleteConversationButtons.forEach((deleteConversationButton) => deleteConversationButton.addEventListener("click", () => {
+    archiveConversationButtons.forEach((button) => button.addEventListener("click", () => {
       if (!selectedConversationIds.size) return;
-      items.forEach((item) => {
-        if (selectedConversationIds.has(item.dataset.messageId)) {
-          item.dataset.deleted = "true";
-          item.hidden = true;
+      selectedConversationIds.forEach((id) => {
+        if (conversations[id]) {
+          conversations[id].archived = true;
         }
       });
-      setSelectionMode(false);
+      selectedConversationIds.clear();
+      updateConversationSelectionUI();
       syncVisibility();
+      syncHeaderControls();
+    }));
+
+    clearSelectedButtons.forEach((button) => button.addEventListener("click", () => {
+      selectedConversationIds.clear();
+      updateConversationSelectionUI();
+      syncHeaderControls();
     }));
 
     resetSearchButton?.addEventListener("click", () => {
       searchInputs.forEach((node) => { node.value = ""; });
-      currentFilter = "all";
-      filterButtons.forEach((node) => node.classList.toggle("is-active", node.dataset.messagesFilter === "all"));
+      selectedFilterKeys.clear();
+      syncFilterButtons();
       syncVisibility();
+      syncHeaderControls();
     });
 
     items.forEach((item) => {
@@ -731,11 +834,11 @@
         if (selectionMode) {
           if (selectedConversationIds.has(id)) {
             selectedConversationIds.delete(id);
-            item.classList.remove("is-selected");
           } else {
             selectedConversationIds.add(id);
-            item.classList.add("is-selected");
           }
+          updateConversationSelectionUI();
+          syncHeaderControls();
           return;
         }
         renderThread(id);
@@ -865,9 +968,16 @@
       if (
         target.closest('.messages-mobile-header') ||
         target.closest('.messages-header-controls') ||
-        target.closest('.messages-desktop-toolbar')
+        target.closest('.messages-desktop-toolbar') ||
+        target.closest('.message-item') ||
+        target.closest('.messages-thread')
       ) return;
-      resetActionSurfaces();
+      closeFiltersPanel();
+      setSearchExpanded(false);
+      if (!selectionMode) {
+        closeSelectPanel();
+      }
+      syncHeaderControls();
     });
 
     document.addEventListener("keydown", (event) => {
@@ -1059,13 +1169,18 @@
       syncComposerPlaceholder();
       if (window.innerWidth > 767) {
         root.classList.remove("messages-app--thread-open");
-        setSearchExpanded(false);
-        closeFiltersPanel();
+      }
+      closeFiltersPanel();
+      if (selectionMode) {
+        openSelectPanel();
+      } else {
         closeSelectPanel();
       }
+      setSearchExpanded(false);
+      syncHeaderControls();
     });
 
-    filterButtons.forEach((node) => node.classList.toggle("is-active", node.dataset.messagesFilter === "all"));
+    syncFilterButtons();
     setSearchExpanded(false);
     closeFiltersPanel();
     closeSelectPanel();

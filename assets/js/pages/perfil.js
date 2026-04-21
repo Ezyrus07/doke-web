@@ -1314,10 +1314,14 @@ window.DokeInitProfile = () => {
     els.username.textContent = normalize(hero.username || "@gabriel");
     els.city.textContent = normalize(hero.location || "Salvador, BA");
     els.avatar.textContent = normalize(hero.avatar || "GA");
-    const shortHeadline = normalize(
+    const baseHeadline = normalize(
       hero.headline ||
         "Especialista em ambientes residenciais com foco em leitura visual limpa, acabamento consistente e comunicação objetiva do início ao fim."
     );
+    const isPhoneHero = window.matchMedia('(max-width: 760px)').matches && body.dataset.profileView === 'visitor' && body.dataset.profileType === 'professional';
+    const shortHeadline = isPhoneHero && baseHeadline.length > 72
+      ? `${baseHeadline.slice(0, 69).trimEnd()}...`
+      : baseHeadline;
     els.headline.innerHTML = `${shortHeadline} <button class="profile-bio__more" type="button" data-profile-more>Ver mais</button>`;
     els.categories.innerHTML = profileMode === "client" || profileMode === "client-owner" ? "" : categories.map(categoryMarkup).join("");
     els.verified.hidden = !hero.verified;
