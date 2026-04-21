@@ -93,18 +93,23 @@
     const backButton = root.querySelector("[data-messages-back]");
     const chargeButton = root.querySelector("[data-messages-charge]");
     const searchCloseButtons = Array.from(root.querySelectorAll(".orders-header-search__close"));
-    const mobileSearchButton = root.querySelector("[data-messages-mobile-search-toggle]");
+    const searchToggleButtons = Array.from(root.querySelectorAll("[data-messages-mobile-search-toggle]"));
     const filterToggles = Array.from(root.querySelectorAll("[data-messages-filter-toggle]"));
-    const filtersPanel = root.querySelector("[data-messages-filters-panel]");
+    const desktopFilterToggle = root.querySelector("[data-messages-desktop-filter-toggle]");
+    const filtersPanels = Array.from(root.querySelectorAll("[data-messages-filters-panel]"));
     const filterButtons = Array.from(root.querySelectorAll("[data-messages-filter]"));
     const archiveToggles = Array.from(root.querySelectorAll("[data-messages-archive-toggle]"));
-    const clearFilterButton = root.querySelector("[data-messages-clear-filter]");
-    const activeChip = root.querySelector("[data-messages-active-chip]");
-    const headerControls = root.querySelector('.messages-header-controls');
+    const clearFilterButtons = Array.from(root.querySelectorAll("[data-messages-clear-filter]"));
+    const activeChips = Array.from(root.querySelectorAll("[data-messages-active-chip]"));
+    const headerControls = Array.from(root.querySelectorAll("[data-messages-header-controls], .messages-header-controls"));
     const selectToggles = Array.from(root.querySelectorAll("[data-messages-select-toggle]"));
-    const selectPanel = root.querySelector("[data-messages-select-panel]");
+    const desktopSelectToggle = root.querySelector("[data-messages-desktop-select-toggle]");
+    const selectPanels = Array.from(root.querySelectorAll("[data-messages-select-panel]"));
     const selectModeButtons = Array.from(root.querySelectorAll("[data-messages-select-mode]"));
-    const deleteConversationButton = root.querySelector("[data-messages-delete-conversations]");
+    const deleteConversationButtons = Array.from(root.querySelectorAll("[data-messages-delete-conversations]"));
+    const desktopControls = root.querySelector("[data-messages-desktop-controls]");
+    const desktopFiltersPanel = root.querySelector("[data-messages-desktop-filters-panel]");
+    const desktopSelectPanel = root.querySelector("[data-messages-desktop-select-panel]");
     const imageInput = root.querySelector("[data-messages-image-input]");
     const emojiButton = root.querySelector("[data-messages-emoji]");
     const audioButton = root.querySelector("[data-messages-audio]");
@@ -215,7 +220,7 @@
 
     const setSearchExpanded = (expanded) => {
       root.classList.toggle("is-search-open", expanded);
-      mobileSearchButton?.setAttribute("aria-expanded", expanded ? "true" : "false");
+      searchToggleButtons.forEach((button) => button.setAttribute("aria-expanded", expanded ? "true" : "false"));
       if (!expanded) {
         searchCloseButtons.forEach((button) => button.blur());
       }
@@ -226,19 +231,39 @@
     };
 
     const syncHeaderControls = () => {
-      if (!headerControls) return;
-      const showStatus = activeChip && !activeChip.hidden;
-      headerControls.hidden = !Boolean(showStatus || (filtersPanel && !filtersPanel.hidden) || (selectPanel && !selectPanel.hidden));
+      if (!headerControls.length) return;
+      const showStatus = activeChips.some((chip) => !chip.hidden);
+      const hasFilterPanelOpen = filtersPanels.some((panel) => !panel.hidden);
+      const hasSelectPanelOpen = selectPanels.some((panel) => !panel.hidden);
+      const hasDesktopFilterPanelOpen = Boolean(desktopFiltersPanel && !desktopFiltersPanel.hidden);
+      const hasDesktopSelectPanelOpen = Boolean(desktopSelectPanel && !desktopSelectPanel.hidden);
+      headerControls.forEach((controls) => {
+        controls.hidden = !Boolean(
+          showStatus ||
+          hasFilterPanelOpen ||
+          hasSelectPanelOpen ||
+          hasDesktopFilterPanelOpen ||
+          hasDesktopSelectPanelOpen
+        );
+      });
     };
 
     const closeFiltersPanel = () => {
-      if (filtersPanel) filtersPanel.hidden = true;
+      filtersPanels.forEach((panel) => {
+        panel.hidden = true;
+      });
+      if (desktopFiltersPanel) desktopFiltersPanel.hidden = true;
+      if (desktopFilterToggle) desktopFilterToggle.setAttribute("aria-expanded", "false");
       setToggleExpanded(filterToggles, false);
       syncHeaderControls();
     };
 
     const closeSelectPanel = () => {
-      if (selectPanel) selectPanel.hidden = true;
+      selectPanels.forEach((panel) => {
+        panel.hidden = true;
+      });
+      if (desktopSelectPanel) desktopSelectPanel.hidden = true;
+      if (desktopSelectToggle) desktopSelectToggle.setAttribute("aria-expanded", "false");
       setToggleExpanded(selectToggles, false);
       syncHeaderControls();
     };
@@ -254,7 +279,7 @@
     };
 
     const syncActiveFilterChip = () => {
-      if (!activeChip || !clearFilterButton) return;
+      if (!activeChips.length || !clearFilterButtons.length) return;
       const labels = {
         all: "Tudo",
         unread: "Não lidas",
@@ -262,10 +287,17 @@
         contacts: "Conversas",
         archived: "Arquivadas"
       };
-      activeChip.textContent = labels[currentFilter] || "Tudo";
-      activeChip.hidden = currentFilter === "all";
-      clearFilterButton.hidden = currentFilter === "all";
+      activeChips.forEach((chip) => {
+        chip.textContent = labels[currentFilter] || "Tudo";
+        chip.hidden = currentFilter === "all";
+      });
+      clearFilterButtons.forEach((button) => {
+        button.hidden = currentFilter === "all";
+      });
       archiveToggles.forEach((button) => button.setAttribute("aria-pressed", currentFilter === "archived" ? "true" : "false"));
+      if (desktopControls) {
+        desktopControls.hidden = !(currentFilter !== "all" || (desktopFiltersPanel && !desktopFiltersPanel.hidden) || (desktopSelectPanel && !desktopSelectPanel.hidden));
+      }
       syncHeaderControls();
     };
 
@@ -583,7 +615,7 @@
       setSearchExpanded(false);
     }));
 
-    mobileSearchButton?.addEventListener("click", () => {
+    searchToggleButtons.forEach((button) => button.addEventListener("click", () => {
       const willOpen = !root.classList.contains("is-search-open");
       setSearchExpanded(willOpen);
       if (willOpen) {
@@ -591,16 +623,29 @@
       }
       closeFiltersPanel();
       closeSelectPanel();
-    });
+    }));
 
     filterToggles.forEach((toggle) => toggle.addEventListener("click", () => {
-      const willOpen = filtersPanel?.hidden !== false;
-      if (filtersPanel) filtersPanel.hidden = !willOpen;
+      const willOpen = !filtersPanels.some((panel) => !panel.hidden);
+      filtersPanels.forEach((panel) => {
+        panel.hidden = !willOpen;
+      });
       setToggleExpanded(filterToggles, willOpen);
       closeSelectPanel();
       setSearchExpanded(false);
       syncHeaderControls();
     }));
+
+    desktopFilterToggle?.addEventListener("click", () => {
+      const willOpen = desktopFiltersPanel?.hidden !== false;
+      if (desktopControls) desktopControls.hidden = false;
+      if (desktopFiltersPanel) desktopFiltersPanel.hidden = !willOpen;
+      if (desktopSelectPanel) desktopSelectPanel.hidden = true;
+      desktopFilterToggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
+      desktopSelectToggle?.setAttribute("aria-expanded", "false");
+      setSearchExpanded(false);
+      syncHeaderControls();
+    });
 
     archiveToggles.forEach((toggle) => toggle.addEventListener("click", () => {
       currentFilter = currentFilter === "archived" ? "all" : "archived";
@@ -614,24 +659,38 @@
       currentFilter = button.dataset.messagesFilter || "all";
       filterButtons.forEach((node) => node.classList.toggle("is-active", node === button));
       syncVisibility();
-      closeFiltersPanel();
+      syncHeaderControls();
     }));
 
-    clearFilterButton?.addEventListener("click", () => {
+    clearFilterButtons.forEach((clearFilterButton) => clearFilterButton.addEventListener("click", () => {
       currentFilter = "all";
       filterButtons.forEach((node) => node.classList.toggle("is-active", node.dataset.messagesFilter === "all"));
       syncVisibility();
-    });
+    }));
 
     selectToggles.forEach((toggle) => toggle.addEventListener("click", () => {
-      const willOpen = selectPanel?.hidden !== false;
-      if (selectPanel) selectPanel.hidden = !willOpen;
+      const willOpen = !selectPanels.some((panel) => !panel.hidden);
+      selectPanels.forEach((panel) => {
+        panel.hidden = !willOpen;
+      });
       setToggleExpanded(selectToggles, willOpen);
       closeFiltersPanel();
       setSearchExpanded(false);
       setSelectionMode(willOpen);
       syncHeaderControls();
     }));
+
+    desktopSelectToggle?.addEventListener("click", () => {
+      const willOpen = desktopSelectPanel?.hidden !== false;
+      if (desktopControls) desktopControls.hidden = false;
+      if (desktopSelectPanel) desktopSelectPanel.hidden = !willOpen;
+      if (desktopFiltersPanel) desktopFiltersPanel.hidden = true;
+      desktopSelectToggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
+      desktopFilterToggle?.setAttribute("aria-expanded", "false");
+      setSearchExpanded(false);
+      setSelectionMode(willOpen);
+      syncHeaderControls();
+    });
 
     selectModeButtons.forEach((button) => button.addEventListener("click", () => {
       const mode = button.dataset.messagesSelectMode;
@@ -643,10 +702,10 @@
         selectedConversationIds.clear();
         items.forEach((item) => item.classList.remove("is-selected"));
       }
-      closeSelectPanel();
+      syncHeaderControls();
     }));
 
-    deleteConversationButton?.addEventListener("click", () => {
+    deleteConversationButtons.forEach((deleteConversationButton) => deleteConversationButton.addEventListener("click", () => {
       if (!selectedConversationIds.size) return;
       items.forEach((item) => {
         if (selectedConversationIds.has(item.dataset.messageId)) {
@@ -656,7 +715,7 @@
       });
       setSelectionMode(false);
       syncVisibility();
-    });
+    }));
 
     resetSearchButton?.addEventListener("click", () => {
       searchInputs.forEach((node) => { node.value = ""; });
@@ -803,7 +862,11 @@
     document.addEventListener("click", (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-      if (target.closest('.messages-mobile-header') || target.closest('.messages-header-controls')) return;
+      if (
+        target.closest('.messages-mobile-header') ||
+        target.closest('.messages-header-controls') ||
+        target.closest('.messages-desktop-toolbar')
+      ) return;
       resetActionSurfaces();
     });
 

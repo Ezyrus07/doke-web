@@ -406,7 +406,7 @@
         button.classList.add('is-active');
         root.dataset.activeFilter = button.dataset.filter || 'all';
         applyFilters();
-        closePopover();
+        syncHeaderControls();
       });
     });
 
@@ -549,6 +549,7 @@
         if (mode === 'all') {
           cards.filter((card) => !card.hidden).forEach((card) => card.classList.add('is-selected'));
         }
+        syncHeaderControls();
       });
     });
 
@@ -571,6 +572,13 @@
     });
 
     panelScrim?.addEventListener('click', closePanels);
+    document.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (!target.closest('[data-orders-panel-close]')) return;
+      event.preventDefault();
+      closePanels();
+    });
     root.querySelectorAll('[data-orders-panel-close]').forEach((button) => {
       button.addEventListener('click', closePanels);
     });

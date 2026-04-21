@@ -12,7 +12,7 @@
  <link rel="stylesheet" href="assets/css/pages/internal-shell.css">
  <link rel="stylesheet" href="assets/css/pages/pedidos.css">
  <link rel="stylesheet" href="assets/css/pages/internal-action-surfaces.css">
-  <link rel="stylesheet" href="assets/css/pages/mensagens.css?v=20260418m1">
+  <link rel="stylesheet" href="assets/css/pages/mensagens.css?v=20260420-desktop-toolbar-8">
 
 
 </head>
@@ -130,10 +130,56 @@
         </div>
        </section>
 
-       <form class="messages-search messages-search--desktop" data-messages-search-form aria-label="Buscar conversa">
-        <button class="messages-search__icon" type="submit" aria-label="Pesquisar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg></button>
-        <input type="search" placeholder="Buscar" data-messages-search-input id="messages-search-input">
-       </form>
+       <section class="messages-desktop-toolbar" aria-label="Atalhos das mensagens">
+        <div class="orders-page-header__hero-strip">
+         <button class="orders-page-header__search-toggle" type="button" aria-label="Abrir busca" data-messages-mobile-search-toggle>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="5.75"></circle><path d="m16 16 4 4"></path></svg>
+         </button>
+         <div class="orders-page-header__hero-chips" aria-label="Atalhos de mensagens no desktop">
+          <button class="orders-page-header__hero-chip orders-page-header__hero-chip--ghost" type="button" data-messages-desktop-filter-toggle aria-expanded="false" aria-controls="messages-desktop-filters-panel">
+           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6.5h14"></path><path d="M5 12h14"></path><path d="M5 17.5h14"></path><circle cx="9" cy="6.5" r="1.75"></circle><circle cx="15" cy="12" r="1.75"></circle><circle cx="11" cy="17.5" r="1.75"></circle></svg>
+           <span>Filtros</span>
+          </button>
+          <button class="orders-page-header__hero-chip orders-page-header__hero-chip--ghost" type="button" data-messages-archive-toggle aria-expanded="false" aria-label="Mostrar arquivadas">
+           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14"></path><path d="M7 7v10h10V7"></path><path d="M9 11h6"></path><path d="M4 4h16v3H4z"></path></svg>
+           <span>Arquivadas</span>
+          </button>
+          <button class="orders-page-header__hero-chip orders-page-header__hero-chip--ghost" type="button" data-messages-desktop-select-toggle aria-expanded="false" aria-controls="messages-desktop-select-panel">
+           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="m8.5 12 2.5 2.5 4.5-5"></path></svg>
+           <span>Selecionar</span>
+          </button>
+         </div>
+        </div>
+       <form class="orders-header-search messages-desktop-search" data-messages-search-form autocomplete="off" aria-label="Buscar conversa">
+        <button class="orders-header-search__icon" type="submit" aria-label="Pesquisar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="5.75"></circle><path d="m16 16 4 4"></path></svg></button>
+        <input type="search" placeholder="Buscar conversa" data-messages-search-input id="messages-search-input" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <button class="orders-header-search__close" type="button" aria-label="Fechar busca"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button>
+        </form>
+       </section>
+
+       <div class="orders-page-header__controls messages-header-controls messages-header-controls--desktop" data-messages-desktop-controls hidden>
+        <div class="orders-active-filter-row">
+         <span class="orders-active-filter-chip" data-messages-active-chip hidden>Tudo</span>
+         <button class="orders-active-filter-clear" type="button" data-messages-clear-filter hidden>Limpar filtros</button>
+        </div>
+        <div class="orders-filters-popover orders-filters-panel messages-filters-panel" id="messages-desktop-filters-panel" data-messages-desktop-filters-panel hidden>
+         <div class="orders-filters-panel__group">
+          <p>Conversas</p>
+          <div class="orders-filters-panel__chips" role="group" aria-label="Filtrar mensagens no desktop">
+           <button class="filter-chip orders-filter-item is-active" type="button" data-messages-filter="all">Tudo</button>
+           <button class="filter-chip orders-filter-item" type="button" data-messages-filter="unread">NÃ£o lidas</button>
+           <button class="filter-chip orders-filter-item" type="button" data-messages-filter="orders">Pedidos</button>
+           <button class="filter-chip orders-filter-item" type="button" data-messages-filter="contacts">Conversas</button>
+           <button class="filter-chip orders-filter-item" type="button" data-messages-filter="archived">Arquivadas</button>
+          </div>
+         </div>
+        </div>
+        <div class="orders-select-panel" id="messages-desktop-select-panel" data-messages-desktop-select-panel hidden>
+         <button class="orders-select-option" type="button" data-messages-select-mode="all">Selecionar visÃ­veis</button>
+         <button class="orders-select-option" type="button" data-messages-select-mode="manual">SeleÃ§Ã£o manual</button>
+         <button class="orders-select-option orders-select-option--danger" type="button" data-messages-delete-conversations>Excluir selecionados</button>
+        </div>
+       </div>
 
 
        <section class="messages-block">
@@ -222,7 +268,13 @@
          </button>
          <button class="messages-thread__action" type="button" aria-label="Ligar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.8 4.5h2.3l1.3 4-1.7 1.7a14.4 14.4 0 0 0 5.1 5.1l1.7-1.7 4 1.3v2.3a1.7 1.7 0 0 1-1.9 1.7A16.8 16.8 0 0 1 5.1 6.4 1.7 1.7 0 0 1 6.8 4.5z"></path></svg></button>
          <button class="messages-thread__action" type="button" aria-label="Videochamada"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6.5" width="11" height="11" rx="2"></rect><path d="m14.5 10.5 5-3v9l-5-3z"></path></svg></button>
-                 </div>
+         <button class="messages-thread__action messages-thread__action--desktop-only" type="button" data-messages-filter-toggle aria-expanded="false" aria-controls="messages-filters-panel" aria-label="Filtrar conversas">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14"></path><path d="M7.5 12h9"></path><path d="M10 17h4"></path><circle cx="9" cy="7" r="1.6"></circle><circle cx="15" cy="12" r="1.6"></circle><circle cx="12" cy="17" r="1.6"></circle></svg>
+         </button>
+         <button class="messages-thread__action messages-thread__action--desktop-only" type="button" data-messages-select-toggle aria-expanded="false" aria-controls="messages-select-panel" aria-label="Selecionar conversas">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="m8.5 12 2.5 2.5 4.5-5"></path></svg>
+         </button>
+        </div>
        </header>
 
        <div class="messages-selection-bar" data-messages-selection hidden>
@@ -369,7 +421,6 @@
 
  <script src="assets/js/core/app.js?v=20260407a"></script>
  <script src="assets/js/pages/home/drawer.js"></script>
- <script src="assets/js/pages/mensagens.js?v=20260419a"></script>
+ <script src="assets/js/pages/mensagens.js?v=20260420-desktop-toolbar-11"></script>
 </body>
 </html>
-
