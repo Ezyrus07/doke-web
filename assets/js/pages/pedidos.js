@@ -130,11 +130,15 @@
 
     const syncActiveChip = () => {
       const active = root.dataset.activeFilter || 'all';
+      const hasOpenPanels = Boolean(
+        (popover && !popover.hidden)
+        || (selectPanel && !selectPanel.hidden)
+      );
       if (activeChip) {
         activeChip.textContent = `${labels[active]} ${counts[active] ?? 0}`;
         activeChip.hidden = active === 'all';
       }
-      if (clearFilterButton) clearFilterButton.hidden = active === 'all';
+      if (clearFilterButton) clearFilterButton.hidden = active === 'all' && !hasOpenPanels;
       syncHeaderControls();
     };
 
