@@ -410,32 +410,41 @@ window.DokeInitProfile = () => {
 
   const escapeAttr = (value) => String(value || "").replace(/"/g, "&quot;");
 
+  const actionRole = (label = "") => {
+    const key = normalizeActionLabel(label);
+    if (key.includes("solicitar orcamento")) return "primary";
+    if (key.includes("seguir")) return "follow";
+    if (key.includes("mensagem")) return "message";
+    return "secondary";
+  };
+
   const actionMarkup = (item) => {
     const classes = `profile-action ${item.tone === "primary" || item.style === "primary" ? "profile-action--success" : ""}`.trim();
     const labelKey = normalizeActionLabel(item.label);
+    const role = actionRole(item.label);
     if (labelKey.includes("solicitar orcamento")) {
       return `
-        <button class="${classes}" type="button" data-budget-open data-budget-provider="${escapeAttr(item.provider || "Studio Aquarela")}" data-budget-service="${escapeAttr(item.service || "reforma residencial de alto padrao")}">
+        <button class="${classes}" type="button" data-profile-action-role="${role}" data-budget-open data-budget-provider="${escapeAttr(item.provider || "Studio Aquarela")}" data-budget-service="${escapeAttr(item.service || "reforma residencial de alto padrao")}">
           ${normalize(item.label)}
         </button>
       `;
     }
     if (item.href) {
       return `
-        <a class="${classes}" href="${item.href}">
+        <a class="${classes}" href="${item.href}" data-profile-action-role="${role}">
           ${normalize(item.label)}
         </a>
       `;
     }
     return `
-      <button class="${classes}" type="button">
+      <button class="${classes}" type="button" data-profile-action-role="${role}">
         ${normalize(item.label)}
       </button>
     `;
   };
 
   const followActionMarkup = (item) => `
-    <button class="profile-follow-action" type="button" data-profile-follow aria-pressed="false">${normalize(item.label)}</button>
+    <button class="profile-follow-action" type="button" data-profile-follow data-profile-action-role="follow" aria-pressed="false">${normalize(item.label)}</button>
   `;
 
   const renderPanelShell = (content) => `
@@ -585,11 +594,7 @@ window.DokeInitProfile = () => {
           </div>
         </section>
 
-        <section class="before-after" aria-labelledby="profile-before-after-title">
-          ${profileMode === "owner" ? "" : `<div class="section-heading section-heading--spread home-section-header">
-            <div><h2 class="section-heading__title home-section-title" id="profile-before-after-title">ANTES E DEPOIS</h2></div>
-            <a class="section-heading__link" href="#">Ver mais casos</a>
-          </div>`}
+        <section class="before-after">
           <div class="content-rail">
             <button class="home-categories__arrow content-rail__arrow content-rail__arrow--prev" type="button" aria-label="Ver casos anteriores" data-rail-arrow="prev" data-rail-target="profile-before-after-track">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6.5-5 5 5 5"></path></svg>
@@ -1319,16 +1324,19 @@ window.DokeInitProfile = () => {
         "Especialista em ambientes residenciais com foco em leitura visual limpa, acabamento consistente e comunicação objetiva do início ao fim."
     );
     const isPhoneHero = window.matchMedia('(max-width: 760px)').matches && body.dataset.profileView === 'visitor' && body.dataset.profileType === 'professional';
-    const shortHeadline = isPhoneHero && baseHeadline.length > 72
-      ? `${baseHeadline.slice(0, 69).trimEnd()}...`
+    const shortHeadline = isPhoneHero && baseHeadline.length > 54
+      ? `${baseHeadline.slice(0, 51).trimEnd()}...`
       : baseHeadline;
     els.headline.innerHTML = `${shortHeadline} <button class="profile-bio__more" type="button" data-profile-more>Ver mais</button>`;
     els.categories.innerHTML = profileMode === "client" || profileMode === "client-owner" ? "" : categories.map(categoryMarkup).join("");
     els.verified.hidden = !hero.verified;
     els.verified.dataset.tooltip = 'Selo de perfil verificado pela Doke.';
+    const heroActions = isPhoneHero
+      ? actions.filter((item) => normalizeActionLabel(item.label) !== "seguir")
+      : actions;
     els.stats.innerHTML = stats.map(statMarkup).join("");
-    els.nameActions.innerHTML = profileMode === "client" ? followActionMarkup({ label: "Seguir" }) : "";
-    els.actions.innerHTML = actions.map(actionMarkup).join("");
+    els.nameActions.innerHTML = profileMode === "client" || isPhoneHero ? followActionMarkup(followAction) : "";
+    els.actions.innerHTML = heroActions.map((item) => item.label === "Seguir" ? followActionMarkup(item) : actionMarkup(item)).join("");
     bindHeroHighlights(rotatingHighlights);
 
     const labels = baseProfile.tabs || {};
@@ -1463,7 +1471,7 @@ window.DokeInitProfile = () => {
       const button = event.currentTarget;
       const active = button.getAttribute('aria-pressed') === 'true';
       button.setAttribute('aria-pressed', String(!active));
-      button.textContent = active ? 'Seguir' : '✓ Seguindo';
+      button.textContent = active ? 'Seguir' : 'Seguindo';
       button.classList.toggle('is-active', !active);
     });
 
