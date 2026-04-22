@@ -64,7 +64,7 @@ qsa('.detail-faq__item').forEach((item) => {
     const open = !item.classList.contains('is-open');
     item.classList.toggle('is-open', open);
     trigger.setAttribute('aria-expanded', String(open));
-    if (symbol) symbol.textContent = open ? '−' : '+';
+    if (symbol) symbol.textContent = open ? '-' : '+';
   });
 });
 
@@ -100,8 +100,12 @@ qs('.detail-form')?.addEventListener('submit', (event) => {
   const submit = qs('.detail-form .detail-button--primary');
   if (submit) {
     submit.disabled = true;
-    submit.textContent = 'Solicitação enviada';
+    submit.textContent = 'Solicitacao enviada';
   }
+});
+
+qsa('.detail-strip__item, .detail-room, .detail-offer-item, .detail-review, .detail-feature').forEach((node) => {
+  node.tabIndex = 0;
 });
 
 const openSidebar = () => document.body.classList.add('sidebar-open');
