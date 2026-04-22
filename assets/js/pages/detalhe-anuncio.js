@@ -18,11 +18,10 @@ const setGalleryImage = (src, alt) => {
     lightboxImage.src = src;
     lightboxImage.alt = alt || '';
   }
+  thumbs.forEach((thumb) => thumb.classList.toggle('is-active', thumb.dataset.src === src));
 };
 
-thumbs.forEach((thumb) => {
-  thumb.addEventListener('click', () => setGalleryImage(thumb.dataset.src, thumb.dataset.alt));
-});
+thumbs.forEach((thumb) => thumb.addEventListener('click', () => setGalleryImage(thumb.dataset.src, thumb.dataset.alt)));
 
 qsa('[data-lightbox-open]').forEach((trigger) => {
   trigger.addEventListener('click', () => {
