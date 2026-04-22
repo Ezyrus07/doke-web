@@ -8,7 +8,7 @@ const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalh
 const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
-const isMobileSidebarViewport = () => window.innerWidth <= 760;
+const isMobileSidebarViewport = () => window.innerWidth <= 1024;
 
 
 if (window.localStorage.getItem(THEME_STORAGE_KEY) === "dark") {
@@ -241,6 +241,27 @@ const closeProfileMenu = () => {
   if (!profileMenu || !profileMenuToggle) return;
   profileMenu.hidden = true;
   profileMenuToggle.setAttribute("aria-expanded", "false");
+};
+
+const closeSecondaryHeaderMenus = () => {
+  const homeProfileMenu = document.querySelector("[data-home-profile-menu]");
+  const homeAccountMenu = document.querySelector("[data-home-account-menu]");
+  const homeProfileToggle = document.querySelector("[data-home-profile-menu-toggle]");
+  const homeAccountToggle = document.querySelector("[data-home-account-menu-toggle]");
+
+  if (homeProfileMenu) homeProfileMenu.hidden = true;
+  if (homeAccountMenu) homeAccountMenu.hidden = true;
+  homeProfileToggle?.setAttribute("aria-expanded", "false");
+  homeAccountToggle?.setAttribute("aria-expanded", "false");
+};
+
+const toggleSecondaryHeaderMenu = (menuSelector, toggle) => {
+  const menu = document.querySelector(menuSelector);
+  if (!menu || !toggle) return;
+  const shouldOpen = menu.hidden;
+  closeSecondaryHeaderMenus();
+  menu.hidden = !shouldOpen;
+  toggle.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
 };
 
 const closeMobileSearch = () => {
@@ -981,6 +1002,16 @@ document.addEventListener("click", (event) => {
     return;
   }
 
+  const headerNavTrigger = event.target.closest("[data-header-nav]");
+  if (headerNavTrigger) {
+    event.preventDefault();
+    const href = headerNavTrigger.getAttribute("data-header-nav") || "";
+    if (href) {
+      window.DokeNavigate?.(href);
+    }
+    return;
+  }
+
   const link = event.target.closest("a[href]");
   if (!link) return;
   if (link.target && link.target !== "_self") return;
@@ -1088,12 +1119,29 @@ document.addEventListener("click", (event) => {
     return;
   }
 
-  if (event.target.closest("[data-profile-menu]")) {
+  const homeProfileMenuToggle = event.target.closest("[data-home-profile-menu-toggle]");
+  if (homeProfileMenuToggle) {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleSecondaryHeaderMenu("[data-home-profile-menu]", homeProfileMenuToggle);
+    return;
+  }
+
+  const homeAccountMenuToggle = event.target.closest("[data-home-account-menu-toggle]");
+  if (homeAccountMenuToggle) {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleSecondaryHeaderMenu("[data-home-account-menu]", homeAccountMenuToggle);
+    return;
+  }
+
+  if (event.target.closest("[data-profile-menu], [data-home-profile-menu], [data-home-account-menu]")) {
     event.stopPropagation();
     return;
   }
 
   closeProfileMenu();
+  closeSecondaryHeaderMenus();
 
   const sidebarLogoutButton = document.querySelector("[data-sidebar-logout]");
   if (event.target.closest("[data-profile-logout]") && sidebarLogoutButton) {
@@ -1134,6 +1182,7 @@ window.addEventListener("scroll", syncTopbarScrollState, { passive: true });
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     closeProfileMenu();
+    closeSecondaryHeaderMenus();
     closeMobileSearch();
   }
 });

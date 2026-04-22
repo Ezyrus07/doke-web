@@ -353,46 +353,180 @@ if (authService && recoveryForm) {
 const quoteText = document.querySelector("[data-auth-quote]");
 const quoteAuthor = document.querySelector("[data-auth-author]");
 const quoteRole = document.querySelector("[data-auth-role]");
+const visualKicker = document.querySelector("[data-auth-kicker]");
+const visualHeading = document.querySelector("[data-auth-heading]");
+const visualImage = document.querySelector("[data-auth-image]");
+const cardTitle = document.querySelector("[data-auth-card-title]");
+const cardText = document.querySelector("[data-auth-card-text]");
+const cardValue = document.querySelector("[data-auth-card-value]");
+const cardLabel = document.querySelector("[data-auth-card-label]");
 const prevButton = document.querySelector("[data-auth-prev]");
 const nextButton = document.querySelector("[data-auth-next]");
 
 if (quoteText && quoteAuthor && quoteRole && prevButton && nextButton) {
-  const quotes = [
-    {
-      text: "Entre para acompanhar pedidos, mensagens e oportunidades em um fluxo mais organizado dentro do Doke.",
-      author: "Area centralizada",
-      role: "Gestao mais clara para quem usa a plataforma"
-    },
-    {
-      text: "O cadastro foi pensado para ser direto, profissional e pronto para conectar clientes, profissionais e negocios.",
-      author: "Entrada profissional",
-      role: "Onboarding alinhado com a identidade do site"
-    },
-    {
-      text: "Com uma camada de acesso mais clara, o Doke transmite confianca antes mesmo do usuario comecar a navegar.",
-      author: "Experiencia Doke",
-      role: "Base preparada para crescer com o produto"
-    }
-  ];
+  const pageScene = document.body.classList.contains("auth-page--signup")
+    ? "signup"
+    : document.querySelector("[data-auth-recovery]")
+      ? "recovery"
+      : "login";
 
+  const slidesByScene = {
+    login: [
+      {
+        kicker: "Fluxo centralizado",
+        heading: "Pedidos, mensagens e acesso organizados desde a primeira entrada.",
+        image: "../assets/img/auth/pintor-cutout.png",
+        imageAlt: "Profissional utilizando a plataforma Doke",
+        quote: "Entre para acompanhar pedidos, mensagens e oportunidades em um fluxo mais organizado dentro do Doke.",
+        author: "Área centralizada",
+        role: "Gestão mais clara para quem usa a plataforma",
+        cardTitle: "Painel claro",
+        cardText: "acompanhe conta, conversas e pedidos sem ruído visual.",
+        cardValue: "1 acesso",
+        cardLabel: "para reunir a experiência principal do usuário"
+      },
+      {
+        kicker: "Conta segura",
+        heading: "Acesso com cara de produto sólido, não de tela improvisada.",
+        image: "../assets/img/auth/carpinteira-cutout.png",
+        imageAlt: "Profissional utilizando a plataforma Doke",
+        quote: "Com uma camada de acesso mais clara, o Doke transmite confiança antes mesmo do usuário começar a navegar.",
+        author: "Experiência Doke",
+        role: "Primeira impressão alinhada com a proposta do produto",
+        cardTitle: "Leitura rápida",
+        cardText: "o usuário entende o que fazer sem procurar demais.",
+        cardValue: "+ clareza",
+        cardLabel: "menos atrito no momento de entrar"
+      },
+      {
+        kicker: "Entrada profissional",
+        heading: "O login prepara a navegação sem competir com o conteúdo principal.",
+        image: "../assets/img/auth/pintor-cutout.png",
+        imageAlt: "Profissional utilizando a plataforma Doke",
+        quote: "O acesso foi desenhado para abrir caminho ao produto, não para criar mais uma camada visual confusa.",
+        author: "Base consistente",
+        role: "Fluxo mais limpo para cliente e profissional",
+        cardTitle: "Foco no essencial",
+        cardText: "campos, ações e suporte visíveis no momento certo.",
+        cardValue: "Sem ruído",
+        cardLabel: "o visual ajuda em vez de competir"
+      }
+    ],
+    signup: [
+      {
+        kicker: "Entrada profissional",
+        heading: "Cadastro simples para começar bem e manter a experiência coerente.",
+        image: "../assets/img/auth/carpinteira-cutout.png",
+        imageAlt: "Profissional utilizando a plataforma Doke",
+        quote: "O cadastro foi pensado para ser direto, profissional e pronto para conectar clientes, profissionais e negócios.",
+        author: "Entrada profissional",
+        role: "Onboarding alinhado com a identidade do site",
+        cardTitle: "Onboarding limpo",
+        cardText: "menos ruído visual e mais clareza para concluir o acesso.",
+        cardValue: "+ confiança",
+        cardLabel: "quando o primeiro contato parece sólido e profissional"
+      },
+      {
+        kicker: "Base pronta",
+        heading: "Primeiro contato enxuto, sem sensação de formulário genérico.",
+        image: "../assets/img/auth/pintor-cutout.png",
+        imageAlt: "Profissional utilizando a plataforma Doke",
+        quote: "Quando o cadastro parece resolvido e bem hierarquizado, o produto já começa transmitindo credibilidade.",
+        author: "Percepção de qualidade",
+        role: "O design ajuda a reduzir abandono no primeiro passo",
+        cardTitle: "Conclusão mais fácil",
+        cardText: "o usuário entende rapidamente como finalizar o acesso.",
+        cardValue: "1 minuto",
+        cardLabel: "para concluir sem sobrecarga visual"
+      },
+      {
+        kicker: "Produto escalável",
+        heading: "Uma tela de cadastro boa precisa ser clara hoje e sustentável amanhã.",
+        image: "../assets/img/auth/carpinteira-cutout.png",
+        imageAlt: "Profissional utilizando a plataforma Doke",
+        quote: "A entrada do produto precisa parecer parte do sistema, não um bloco isolado sem relação com a marca.",
+        author: "Coerência visual",
+        role: "Base melhor para evolução futura do fluxo de acesso",
+        cardTitle: "Estrutura estável",
+        cardText: "mais fácil de expandir sem remendos visuais depois.",
+        cardValue: "+ consistência",
+        cardLabel: "entre identidade, UX e manutenção"
+      }
+    ],
+    recovery: [
+      {
+        kicker: "Recuperação segura",
+        heading: "Volte para a plataforma sem tornar o fluxo mais pesado do que precisa.",
+        image: "../assets/img/auth/carpinteira-cutout.png",
+        imageAlt: "Profissional utilizando a plataforma Doke",
+        quote: "Recupere o acesso de forma simples para voltar aos seus pedidos, mensagens e oportunidades dentro do Doke.",
+        author: "Retorno rápido",
+        role: "Fluxo claro para usuários que precisam voltar à conta",
+        cardTitle: "Retorno rápido",
+        cardText: "um caminho claro para recuperar conta e seguir o uso normal.",
+        cardValue: "Fluxo seguro",
+        cardLabel: "sem esconder o próximo passo do usuário"
+      },
+      {
+        kicker: "Sem fricção",
+        heading: "Recuperar acesso não pode parecer punição para quem só quer voltar ao produto.",
+        image: "../assets/img/auth/pintor-cutout.png",
+        imageAlt: "Profissional utilizando a plataforma Doke",
+        quote: "Um bom fluxo de recuperação reduz ansiedade porque deixa claro o que acontece agora e o que vem depois.",
+        author: "UX funcional",
+        role: "Menos atrito em uma etapa sensível do produto",
+        cardTitle: "Próximo passo visível",
+        cardText: "o usuário entende o processo e continua sem hesitação.",
+        cardValue: "+ previsibilidade",
+        cardLabel: "quando a interface não esconde a lógica"
+      },
+      {
+        kicker: "Retorno ao uso",
+        heading: "A página de recuperação precisa resolver o problema e sair do caminho.",
+        image: "../assets/img/auth/carpinteira-cutout.png",
+        imageAlt: "Profissional utilizando a plataforma Doke",
+        quote: "Fluxos de senha eficientes reforçam confiança porque tratam um momento crítico com objetividade e ordem.",
+        author: "Confiança operacional",
+        role: "Importante para não quebrar a percepção de qualidade do produto",
+        cardTitle: "Objetividade",
+        cardText: "campos e ações no ponto certo para concluir mais rápido.",
+        cardValue: "Sem excesso",
+        cardLabel: "somente o que ajuda a resolver"
+      }
+    ]
+  };
+
+  const slides = slidesByScene[pageScene] || slidesByScene.login;
   let current = 0;
 
-  const renderQuote = () => {
-    const quote = quotes[current];
-    quoteText.textContent = quote.text;
-    quoteAuthor.textContent = quote.author;
-    quoteRole.textContent = quote.role;
+  const renderSlide = () => {
+    const slide = slides[current];
+
+    quoteText.textContent = slide.quote;
+    quoteAuthor.textContent = slide.author;
+    quoteRole.textContent = slide.role;
+
+    if (visualKicker) visualKicker.textContent = slide.kicker;
+    if (visualHeading) visualHeading.textContent = slide.heading;
+    if (visualImage) {
+      visualImage.src = slide.image;
+      visualImage.alt = slide.imageAlt;
+    }
+    if (cardTitle) cardTitle.textContent = slide.cardTitle;
+    if (cardText) cardText.textContent = slide.cardText;
+    if (cardValue) cardValue.textContent = slide.cardValue;
+    if (cardLabel) cardLabel.textContent = slide.cardLabel;
   };
 
   prevButton.addEventListener("click", () => {
-    current = (current - 1 + quotes.length) % quotes.length;
-    renderQuote();
+    current = (current - 1 + slides.length) % slides.length;
+    renderSlide();
   });
 
   nextButton.addEventListener("click", () => {
-    current = (current + 1) % quotes.length;
-    renderQuote();
+    current = (current + 1) % slides.length;
+    renderSlide();
   });
 
-  renderQuote();
+  renderSlide();
 }

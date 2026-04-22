@@ -32,7 +32,7 @@
         if (!drawer) return;
 
         const panel = drawer.querySelector('.home-mobile-drawer__panel');
-        const shouldUseDrawer = () => window.innerWidth <= 760;
+        const shouldUseDrawer = () => window.innerWidth <= 1024;
         syncActiveDrawerItem(drawer);
 
         const setOpen = (isOpen) => {
@@ -100,7 +100,7 @@
         }, { signal });
 
         window.addEventListener('resize', () => {
-          if (window.innerWidth > 760 && drawer.classList.contains('is-open')) {
+          if (window.innerWidth > 1024 && drawer.classList.contains('is-open')) {
             setOpen(false);
           }
         }, { signal });

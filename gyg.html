@@ -3,501 +3,360 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard de Avaliações</title>
+    <title>Detalhes do Serviço</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <style>
-    /* --- Variáveis e Reset --- */
-    :root {
-      --bg-color: #f4f7f9;
-      --card-bg: #ffffff;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      --primary: #14b8a6;
-      --primary-light: #ccfbf1;
-      --border-color: #e2e8f0;
-      --star-color: #f59e0b;
-      --accent-blue: #e0f2fe;
-      --accent-blue-text: #0284c7;
-      --radius-lg: 16px;
-      --radius-md: 12px;
-      --shadow:
-        0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    }
+    /* Variáveis para padronizar cores e espaçamentos */
+:root {
+    --primary-color: #0d3b66; /* Azul escuro do título */
+    --text-main: #334155;
+    --text-muted: #64748b;
+    --border-color: #cbd5e1;
+    --bg-light: #f8fafc;
+    --bg-card: #ffffff;
+    --radius: 12px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+}
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
 
-    body {
-      font-family:
-        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-        sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      padding: 24px;
-      line-height: 1.5;
-    }
+body {
+    background-color: #f1f5f9;
+    color: var(--text-main);
+    padding: 20px;
+}
 
-    /* --- Layout Principal --- */
-    .reviews-dashboard {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
+/* Container Principal */
+.service-details {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
 
-    /* --- Topo / Select --- */
-    .header-select .label-sm {
-      margin-bottom: 8px;
-    }
-    .custom-select {
-      padding: 12px 16px;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--border-color);
-      background-color: var(--card-bg);
-      font-size: 16px;
-      font-weight: 500;
-      color: var(--text-main);
-      width: 100%;
-      max-width: 400px;
-      cursor: pointer;
-    }
+/* Estilo Base dos Cards */
+.card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: var(--spacing-lg);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
 
-    /* --- Cards Base --- */
-    .card {
-      background: var(--card-bg);
-      border-radius: var(--radius-lg);
-      padding: 24px;
-      border: 1px solid var(--border-color);
-      box-shadow: var(--shadow);
-    }
+.card.bg-light {
+    background-color: var(--bg-light);
+}
 
-    .text-muted {
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-    .label-sm {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .stars {
-      color: var(--star-color);
-      font-size: 14px;
-      letter-spacing: 2px;
-    }
-    .divider {
-      border: none;
-      border-top: 1px solid var(--border-color);
-      margin: 16px 0;
-    }
+.section-title {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: var(--spacing-md);
+}
 
-    /* --- Grid de Métricas (Desktop) --- */
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: 220px 1fr 320px;
-      gap: 20px;
-    }
+.text-muted {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
 
-    /* Nota Geral */
-    .bg-highlight {
-      background-color: #f8fafc;
-      border: 1px solid #cbd5e1;
-    }
-    .overall-card {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .score-large {
-      font-size: 48px;
-      font-weight: 800;
-      line-height: 1;
-      color: var(--text-main);
-      margin-top: 8px;
-    }
+.small {
+    font-size: 0.85rem;
+}
 
-    /* Critérios Avaliados */
-    .criteria-card {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    .criteria-items {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-    .criteria-box {
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 16px;
-    }
-    .score-medium {
-      font-size: 28px;
-      font-weight: 800;
-      margin: 4px 0;
-    }
+/* Grid de duas colunas (Incluso e Infos Rápidas) */
+.grid-2-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-lg);
+}
 
-    /* Distribuição */
-    .distribution-card {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .title-with-badge {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 8px 0;
-    }
-    .title-with-badge h3 {
-      font-size: 18px;
-    }
-    .progress-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-top: 8px;
-    }
-    .progress-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 13px;
-      font-weight: 500;
-    }
-    .progress-bar {
-      flex: 1;
-      height: 6px;
-      background-color: var(--border-color);
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    .progress-bar .fill {
-      height: 100%;
-      background-color: var(--primary);
-      border-radius: 4px;
-    }
+/* Lista do que está incluso */
+.included-list {
+    list-style: none;
+}
 
-    /* --- Badges --- */
-    .badge {
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      display: inline-block;
-    }
-    .badge-outline {
-      border: 1px solid var(--primary);
-      color: var(--primary);
-    }
-    .badge-success {
-      background-color: var(--primary-light);
-      color: #0d9488;
-    }
-    .badge-blue {
-      background-color: var(--accent-blue);
-      color: var(--accent-blue-text);
-    }
+.included-list li {
+    position: relative;
+    padding-left: 20px;
+    margin-bottom: 8px;
+}
 
-    /* --- Seção de Avaliações (Filtros) --- */
-    .reviews-section {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      margin-top: 16px;
-    }
-    .reviews-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-    .filter-group {
-      display: flex;
-      align-items: center;
-      gap: 24px;
-      flex-wrap: wrap;
-    }
-    .filters {
-      display: flex;
-      gap: 8px;
-    }
-    .btn-filter {
-      padding: 8px 16px;
-      border-radius: 20px;
-      border: 1px solid var(--border-color);
-      background: var(--card-bg);
-      color: var(--text-muted);
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-filter.active {
-      border-color: var(--primary);
-      color: var(--primary);
-      background-color: #f0fdfa;
-    }
+.included-list li::before {
+    content: "✓"; /* Você pode trocar por um ícone SVG */
+    position: absolute;
+    left: 0;
+    color: var(--primary-color);
+    font-weight: bold;
+}
 
-    /* --- Grid de Comentários --- */
-    .comments-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    .comment-card {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .comment-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-    }
-    .user-info {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-    }
-    .avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      color: white;
-    }
-    .bg-blue {
-      background-color: #3b82f6;
-    }
-    .bg-orange {
-      background-color: #f97316;
-    }
-    .user-info h4 {
-      font-size: 15px;
-      margin-bottom: 2px;
-    }
-    .user-rating {
-      text-align: right;
-    }
-    .score-small {
-      font-size: 18px;
-      font-weight: 800;
-      display: block;
-    }
-    .comment-text {
-      font-size: 14px;
-      color: #334155;
-      line-height: 1.6;
-    }
-    .tags {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
+/* Grid das Informações Rápidas */
+.quick-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+}
 
-    /* --- Responsividade (Mobile e Tablets) --- */
-    @media (max-width: 1024px) {
-      .metrics-grid {
+.info-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-md);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.info-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.info-value {
+    color: var(--text-main);
+    font-size: 0.95rem;
+}
+
+/* Seção de Avaliações */
+.reviews-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+}
+
+.filter-pills {
+    display: flex;
+    gap: 8px;
+}
+
+.pill {
+    padding: 6px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.pill.active, .pill:hover {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.reviews-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.review-box {
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-md);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.review-box h4 {
+    font-size: 0.95rem;
+    color: var(--text-main);
+}
+
+.review-author {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-top: auto; /* Empurra o autor para o final do card */
+}
+
+/* Accordion Nativo (Dúvidas Comuns) */
+.faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.faq-item {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-card);
+    overflow: hidden;
+}
+
+.faq-item summary {
+    padding: var(--spacing-md);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none; /* Remove a seta padrão em alguns navegadores */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.faq-item summary::-webkit-details-marker {
+    display: none; /* Remove a seta no Safari/Chrome */
+}
+
+.faq-item summary::after {
+    content: "+";
+    font-size: 1.2rem;
+    color: var(--text-muted);
+}
+
+.faq-item[open] summary::after {
+    content: "-";
+}
+
+.faq-answer {
+    padding: 0 var(--spacing-md) var(--spacing-md);
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+/* Responsividade para telas menores (Mobile) */
+@media (max-width: 768px) {
+    .grid-2-cols {
         grid-template-columns: 1fr;
-      }
-      .criteria-items {
-        grid-template-columns: 1fr 1fr;
-      }
-      .filter-group {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
-      }
     }
 
-    @media (max-width: 768px) {
-      body {
-        padding: 16px;
-      }
-      .comments-grid {
+    .quick-info-grid {
         grid-template-columns: 1fr;
-      }
-      .criteria-items {
-        grid-template-columns: 1fr;
-      }
-      .reviews-header {
-        flex-direction: column;
-        align-items: flex-start;
-      }
     }
-  </style>
+}
+</style>
   <body>
-    <div class="reviews-dashboard">
-      <div class="header-select">
-        <p class="label-sm">ANÚNCIO</p>
-        <select class="custom-select">
-          <option>Pintura premium para sala e quartos</option>
-        </select>
+    <main class="service-details">
+      <section class="card">
+        <h2 class="section-title">Sobre este serviço</h2>
+        <p class="text-muted">
+          Serviço pensado para quem quer resultado com cara de obra bem feita,
+          sem transformar a casa em um canteiro confuso. A proposta combina
+          preparação correta da superfície, proteção do ambiente, execução limpa
+          e acabamento uniforme.<br />Ideal para repintura de salas, quartos e
+          corredores, com visita técnica rápida para estimar metragem, condições
+          da parede e materiais recomendados.
+        </p>
+      </section>
+
+      <div class="grid-2-cols">
+        <section class="card">
+          <h2 class="section-title">O que está incluso</h2>
+          <ul class="included-list text-muted">
+            <li>Proteção básica do ambiente</li>
+            <li>Preparação leve da superfície</li>
+            <li>Pintura com acabamento uniforme</li>
+            <li>Limpeza final da área trabalhada</li>
+          </ul>
+        </section>
+
+        <section class="card bg-light">
+          <h2 class="section-title">Informações rápidas</h2>
+          <div class="quick-info-grid">
+            <div class="info-box">
+              <span class="info-label">Prazo médio</span>
+              <strong class="info-value">1 a 2 dias</strong>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Atendimento</span>
+              <strong class="info-value">Residencial</strong>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Cobrança</span>
+              <strong class="info-value">Visita + execução</strong>
+            </div>
+            <div class="info-box">
+              <span class="info-label">Área atendida</span>
+              <strong class="info-value">Salvador e região</strong>
+            </div>
+          </div>
+        </section>
       </div>
 
-      <div class="metrics-grid">
-        <div class="card overall-card bg-highlight">
-          <h3 class="card-title">NOTA MÉDIA</h3>
-          <div class="score-large">4,9</div>
-          <div class="stars">★★★★★</div>
-          <p class="text-muted">28 avaliações recentes</p>
-          <hr class="divider" />
-          <p class="label-sm">BASE RECENTE</p>
-          <span class="badge badge-outline">Visão geral</span>
-        </div>
+      <section class="card">
+        <header class="reviews-header">
+          <div>
+            <h2 class="section-title">Avaliações</h2>
+            <p class="text-muted small">
+              Feedbacks reais de clientes sobre acabamento, organização e
+              comunicação.
+            </p>
+          </div>
+          <div class="filter-pills">
+            <button class="pill active">Todas</button>
+            <button class="pill">Recentes</button>
+            <button class="pill">Positivas</button>
+          </div>
+        </header>
 
-        <div class="card criteria-card">
-          <div class="criteria-header">
-            <h3>Critérios avaliados</h3>
+        <div class="reviews-grid">
+          <div class="review-box">
+            <h4>Excelente acabamento</h4>
             <p class="text-muted">
-              Troque a leitura das estrelas sem sair da lista de comentários.
+              Chegou no horário, protegeu bem a área e entregou um resultado
+              acima do esperado.
             </p>
+            <span class="review-author">Marina • há 8 dias</span>
           </div>
-          <div class="criteria-items">
-            <div class="criteria-box">
-              <span class="label-sm">ACABAMENTO</span>
-              <div class="score-medium">4,9</div>
-              <p class="text-muted">resultado final</p>
-            </div>
-            <div class="criteria-box">
-              <span class="label-sm">PRAZO</span>
-              <div class="score-medium">4,8</div>
-              <p class="text-muted">entrega combinada</p>
-            </div>
-            <div class="criteria-box">
-              <span class="label-sm">ORGANIZAÇÃO</span>
-              <div class="score-medium">4,9</div>
-              <p class="text-muted">obra organizada</p>
-            </div>
-            <div class="criteria-box">
-              <span class="label-sm">PREÇO</span>
-              <div class="score-medium">4,7</div>
-              <p class="text-muted">custo-benefício</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="card distribution-card">
-          <div class="distribution-header">
-            <h3 class="label-sm">VISÃO GERAL DO ANÚNCIO</h3>
-            <div class="title-with-badge">
-              <h3>Distribuição das avaliações</h3>
-              <span class="badge badge-success">nota 4,9</span>
-            </div>
-            <p class="text-muted">28 avaliações recentes neste anúncio</p>
-          </div>
-          <div class="progress-list">
-            <div class="progress-item">
-              <span>5 estrelas</span>
-              <div class="progress-bar">
-                <div class="fill" style="width: 100%"></div>
-              </div>
-              <span>100%</span>
-            </div>
-            <div class="progress-item">
-              <span>4 estrelas</span>
-              <div class="progress-bar">
-                <div class="fill" style="width: 0%"></div>
-              </div>
-              <span>0%</span>
-            </div>
-            <div class="progress-item">
-              <span>3 estrelas</span>
-              <div class="progress-bar">
-                <div class="fill" style="width: 0%"></div>
-              </div>
-              <span>0%</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="reviews-section">
-        <div class="reviews-header">
-          <div class="filter-group">
-            <div>
-              <h2>Leitura das avaliações</h2>
-              <p class="text-muted">
-                Selecione um critério para comparar a percepção dos clientes.
-              </p>
-            </div>
-            <div class="filters">
-              <button class="btn-filter active">Todas</button>
-              <button class="btn-filter">Positivas</button>
-              <button class="btn-filter">Críticas</button>
-            </div>
-          </div>
-          <div class="review-count">
-            <p class="text-muted">2 de 2 avaliações visíveis</p>
-          </div>
-        </div>
-
-        <div class="comments-grid">
-          <div class="card comment-card">
-            <div class="comment-header">
-              <div class="user-info">
-                <div class="avatar bg-blue">MA</div>
-                <div>
-                  <h4>Marina Alves</h4>
-                  <p class="text-muted">
-                    Apartamento 72 m² • cliente verificada
-                  </p>
-                </div>
-              </div>
-              <div class="user-rating">
-                <span class="score-small">5,0</span>
-                <div class="stars">★★★★★</div>
-              </div>
-            </div>
-            <p class="comment-text">
-              A proteção foi muito bem feita, o cronograma foi respeitado e o
-              resultado final ficou uniforme sem correria.
+          <div class="review-box">
+            <h4>Bom custo-benefício</h4>
+            <p class="text-muted">
+              Explicou o processo, fez a visita técnica e não inventou surpresa
+              no preço.
             </p>
-            <div class="tags">
-              <span class="badge badge-blue">Pintura interna</span>
-              <span class="badge badge-blue">Cliente verificada</span>
-            </div>
+            <span class="review-author">Lucas • há 3 semanas</span>
           </div>
-
-          <div class="card comment-card">
-            <div class="comment-header">
-              <div class="user-info">
-                <div class="avatar bg-orange">BC</div>
-                <div>
-                  <h4>Bruno Costa</h4>
-                  <p class="text-muted">
-                    Cobertura duplex • atendimento recente
-                  </p>
-                </div>
-              </div>
-              <div class="user-rating">
-                <span class="score-small">4,8</span>
-                <div class="stars">★★★★★</div>
-              </div>
-            </div>
-            <p class="comment-text">
-              Gostei da clareza no escopo, do cuidado com a limpeza e da forma
-              de sinalizar cada etapa antes da execução.
+          <div class="review-box">
+            <h4>Atendimento rápido</h4>
+            <p class="text-muted">
+              Respondeu rápido e organizou bem a execução. Voltaria a contratar.
             </p>
-            <div class="tags">
-              <span class="badge badge-blue">Escopo claro</span>
-              <span class="badge badge-blue">Boa comunicação</span>
-            </div>
+            <span class="review-author">Bruna • há 6 dias</span>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+
+      <section class="card">
+        <h2 class="section-title">Dúvidas comuns</h2>
+        <div class="faq-list">
+          <details class="faq-item">
+            <summary>O material está incluso?</summary>
+            <p class="faq-answer">
+              O orçamento padrão inclui apenas a mão de obra. Materiais podem
+              ser cotados à parte caso desejado.
+            </p>
+          </details>
+          <details class="faq-item">
+            <summary>Atende fim de semana?</summary>
+            <p class="faq-answer">
+              Sim, realizamos atendimentos aos sábados mediante agendamento
+              prévio.
+            </p>
+          </details>
+          <details class="faq-item">
+            <summary>Faz visita antes de fechar?</summary>
+            <p class="faq-answer">
+              Sim, a visita técnica é o primeiro passo para garantir um
+              orçamento preciso.
+            </p>
+          </details>
+        </div>
+      </section>
+    </main>
   </body>
 </html>
