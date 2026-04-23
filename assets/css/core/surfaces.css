@@ -1,0 +1,126 @@
+/* Shared surface contract: unify border weight, border color and radius
+   without forcing new backgrounds or shadows across pages. */
+
+:root {
+  --surface-card-border-standard: rgba(203, 214, 226, 0.92);
+  --surface-card-border-strong: rgba(194, 208, 223, 0.96);
+  --surface-card-divider-standard: rgba(208, 219, 231, 0.92);
+  --surface-card-radius-standard: 22px;
+  --surface-card-radius-strong: 28px;
+}
+
+:where(
+  .surface-card,
+  .quote-card,
+  .page-header-card,
+  .page-header-context,
+  .orders-card,
+  .orders-panel,
+  .activity-card,
+  .community-post-card,
+  .message-thread-card,
+  .payment-card,
+  .payment-summary__card,
+  .payment-success,
+  .wallet-success-panel,
+  .service-card,
+  .notification-card,
+  .order-card,
+  .wallet-finance-card,
+  .wallet-panel,
+  .wallet-board,
+  .budget-panel,
+  .profile-panel,
+  .settings-card,
+  .settings-toggle-card,
+  .results-panel,
+  .detail-strip__item,
+  .detail-scoreboard,
+  .detail-review,
+  .detail-booking,
+  .detail-modal__card,
+  .detail-map,
+  .detail-offer-item,
+  .detail-room,
+  .detail-feature,
+  .auth-card
+) {
+  border: 1px solid var(--surface-card-border-standard) !important;
+  border-radius: var(--surface-card-radius-standard) !important;
+}
+
+:where(
+  .page-header-card,
+  .page-header-context,
+  .wallet-board,
+  .detail-booking,
+  .detail-modal__card,
+  .budget-panel,
+  .auth-card
+) {
+  border-color: var(--surface-card-border-strong) !important;
+  border-radius: var(--surface-card-radius-strong) !important;
+}
+
+:where(
+  .detail-booking__profile,
+  .order-card__top,
+  .order-card__body,
+  .order-card__actions,
+  .order-card__footer
+) {
+  border-color: var(--surface-card-divider-standard);
+}
+
+@media (max-width: 720px) {
+  :where(
+    .surface-card,
+    .quote-card,
+    .page-header-card,
+    .page-header-context,
+    .orders-card,
+    .orders-panel,
+    .activity-card,
+    .community-post-card,
+    .message-thread-card,
+    .payment-card,
+    .payment-summary__card,
+    .payment-success,
+    .wallet-success-panel,
+    .service-card,
+    .notification-card,
+    .order-card,
+    .wallet-finance-card,
+    .wallet-panel,
+    .wallet-board,
+    .budget-panel,
+    .profile-panel,
+    .settings-card,
+    .settings-toggle-card,
+    .results-panel,
+    .detail-strip__item,
+    .detail-scoreboard,
+    .detail-review,
+    .detail-booking,
+    .detail-modal__card,
+    .detail-map,
+    .detail-offer-item,
+    .detail-room,
+    .detail-feature,
+    .auth-card
+  ) {
+    border-radius: 18px !important;
+  }
+
+  :where(
+    .page-header-card,
+    .page-header-context,
+    .wallet-board,
+    .detail-booking,
+    .detail-modal__card,
+    .budget-panel,
+    .auth-card
+  ) {
+    border-radius: 20px !important;
+  }
+}
