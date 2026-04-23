@@ -8,7 +8,7 @@
 .sidebar[data-internal-sidebar],
 .internal-shell-page .sidebar,
 .shell-home .sidebar {
-  width: 258px;
+  width: var(--sidebar-width);
 }
 
 .internal-sidebar .sidebar__header,
@@ -104,7 +104,7 @@ body.internal-shell-page .internal-page-topbar {
   body.internal-shell-page .internal-page-topbar {
     left: 0;
     right: 0;
-    padding-top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 6px) !important;
     padding-bottom: 10px !important;
   }
 }
@@ -128,13 +128,21 @@ body.internal-shell-page .topbar {
   top: 0;
 }
 
+body.internal-shell-page .topbar,
+body.internal-shell-page .internal-page-topbar,
+body.internal-shell-page .topbar.topbar--location.internal-page-topbar {
+  top: 0 !important;
+  inset-block-start: 0 !important;
+  margin-top: 0 !important;
+}
+
 
 /* 2026-04-13 final shell audit: lock internal header/sidebar baseline across pages */
 body.internal-shell-page {
-  --internal-topbar-desktop-pad-y: 14px;
-  --internal-topbar-mobile-pad-y: 10px;
-  --internal-content-offset-desktop: 8px;
-  --internal-content-offset-mobile: 8px;
+  --internal-topbar-desktop-pad-y: 8px;
+  --internal-topbar-mobile-pad-y: 8px;
+  --internal-content-offset-desktop: 6px;
+  --internal-content-offset-mobile: 6px;
 }
 
 body.internal-shell-page .page {
@@ -149,11 +157,20 @@ body.internal-shell-page .topbar.topbar--location.internal-page-topbar {
   align-items: center !important;
 }
 
+body.internal-shell-page .topbar,
+body.internal-shell-page .internal-page-topbar,
+body.internal-shell-page .topbar.topbar--location.internal-page-topbar {
+  box-sizing: border-box !important;
+}
+
 body.internal-shell-page .page__content {
   padding-top: var(--internal-content-offset-desktop) !important;
 }
 
 body.internal-shell-page .sidebar {
+  width: var(--sidebar-width) !important;
+  min-width: var(--sidebar-width) !important;
+  max-width: var(--sidebar-width) !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: flex-start !important;
@@ -206,7 +223,7 @@ body.internal-shell-page .nav-link {
   body.internal-shell-page .internal-page-topbar,
   body.internal-shell-page .topbar.topbar--location.internal-page-topbar {
     min-height: var(--header-height) !important;
-    padding-top: calc(env(safe-area-inset-top, 0px) + 8px) !important;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 6px) !important;
     padding-bottom: var(--internal-topbar-mobile-pad-y) !important;
   }
 
@@ -221,8 +238,8 @@ body.internal-shell-page .nav-link {
    home and mensagens must use the exact same shared sidebar contract as the other internal pages.
    Keep only home-specific topbar spacing here; sidebar layout remains owned by sidebar-unified.css + shell-normalize.css. */
 body.home-index-shell {
-  --internal-topbar-desktop-pad-y: 14px;
-  --internal-topbar-mobile-pad-y: 10px;
+  --internal-topbar-desktop-pad-y: 8px;
+  --internal-topbar-mobile-pad-y: 8px;
 }
 
 body.home-index-shell .internal-page-topbar,
@@ -231,6 +248,12 @@ body.home-index-shell .topbar.topbar--location.internal-page-topbar {
   padding-top: var(--internal-topbar-desktop-pad-y) !important;
   padding-bottom: var(--internal-topbar-desktop-pad-y) !important;
   align-items: center !important;
+}
+
+body.home-index-shell .topbar,
+body.home-index-shell .internal-page-topbar,
+body.home-index-shell .topbar.topbar--location.internal-page-topbar {
+  box-sizing: border-box !important;
 }
 
 @media (max-width: 1024px) {
