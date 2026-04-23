@@ -1,0 +1,181 @@
+/* Border Consolidation Layer
+   Purpose: Override remaining hardcoded border values across page-specific CSS
+   with the unified neutral border token: --doke-card-border (rgba(24, 75, 118, 0.1))
+
+   Strategy: Use higher specificity and attribute selectors to catch hardcoded borders
+   in home, results, and other page contexts that escaped the initial surface-normalize layer.
+
+   This layer is intentionally aggressive with !important to ensure consistency,
+   prioritizing design system coherence over edge-case overrides.
+
+   Scope: Neutral borders on surfaces, containers, cards, controls
+   Non-scope: Semantic colors (success, error, warning), focus rings, active states
+*/
+
+/* Home page and tablet overrides */
+[class*="home-"][class*="card"],
+[class*="home-"][class*="rail"],
+[class*="home-"][class*="panel"],
+[class*="home-"][class*="section"],
+[class*="home-section"],
+[class*="home-categories"],
+[class*="home-category"],
+[class*="home-filter"],
+[class*="home-side-meta"],
+.home-hero,
+.home-results-filter {
+  border-color: var(--doke-card-border) !important;
+}
+
+/* Override specific hardcoded RGBA values used in home-refresh.css, home-chrome.css, etc. */
+[style*="rgba(214, 224, 235"],
+[style*="rgba(214, 225, 238"],
+[style*="rgba(211, 223, 236"],
+[style*="rgba(220, 229, 239"],
+[style*="rgba(188, 205, 224"],
+[style*="rgba(191, 209, 228"],
+[style*="rgba(203, 214, 226"],
+[style*="rgba(190, 207, 227"],
+[style*="rgba(194, 211, 226"],
+[style*="rgba(222, 229, 238"],
+[style*="rgba(162, 187, 214"],
+[style*="rgba(182, 196, 211"],
+[style*="rgba(192, 209, 225"],
+[style*="rgba(199, 214, 229"],
+[style*="rgba(201, 216, 232"],
+[style*="rgba(212, 222, 234"],
+[style*="rgba(205, 217, 232"],
+[style*="rgba(191, 207, 223"],
+[style*="rgba(198, 214, 229"],
+[style*="rgba(197, 214, 228"],
+[style*="rgba(194, 212, 228"],
+[style*="rgba(196, 212, 228"],
+[style*="rgba(180, 204, 227"],
+[style*="rgba(192, 210, 229"],
+[style*="rgba(197, 211, 225"],
+[style*="rgba(221, 231, 241"],
+[style*="rgba(205, 214, 224"],
+[style*="rgba(210, 218, 228"],
+[style*="rgba(211, 220, 229"],
+[style*="rgba(226, 232, 240"],
+[style*="rgba(196, 212, 228"],
+[style*="rgba(191, 211, 228"],
+[style*="rgba(186, 206, 226"],
+[style*="rgba(193, 212, 231"],
+[style*="rgba(171, 223, 213"],
+[style*="rgba(162, 223, 213"] {
+  border-color: var(--doke-card-border) !important;
+}
+
+/* Results page and components */
+[class*="results-"][class*="card"],
+[class*="results-"][class*="rail"],
+[class*="results-"][class*="panel"],
+[class*="results-shell"],
+[class*="results-filter"],
+[class*="discovery-rail"],
+[class*="results-discovery"] {
+  border-color: var(--doke-card-border) !important;
+}
+
+/* Profile components */
+[class*="profile-"][class*="card"],
+[class*="profile-"][class*="rail"],
+[class*="profile-achievement"],
+[class*="profile-review"],
+[class*="profile-portfolio"],
+[class*="profile-content-rail"] {
+  border-color: var(--doke-card-border) !important;
+}
+
+/* Orders, Wallet, and other internal pages */
+[class*="orders-"][class*="card"],
+[class*="orders-"][class*="panel"],
+[class*="wallet-"][class*="card"],
+[class*="wallet-"][class*="panel"],
+[class*="notification-card"],
+[class*="message-thread"],
+[class*="budget-"] {
+  border-color: var(--doke-card-border) !important;
+}
+
+/* Detail and listing pages */
+[class*="detail-"][class*="card"],
+[class*="detail-"][class*="panel"],
+[class*="order-card"],
+[class*="quote-card"],
+[class*="activity-card"],
+[class*="community-post"] {
+  border-color: var(--doke-card-border) !important;
+}
+
+/* Inset shadows used as borders */
+[style*="inset 0 0 0 1px rgba("] {
+  box-shadow: inset 0 0 0 1px var(--doke-card-border) !important;
+}
+
+/* Additional specificity for elements that may have both border and border-color */
+[class*="__card"]:not(.is-active):not(.is-selected):not([aria-selected="true"]),
+[class*="__panel"]:not(.is-active):not(.is-selected):not(
+    [aria-selected="true"]
+  ),
+[class*="__sheet"]:not(.is-active):not(.is-selected):not(
+    [aria-selected="true"]
+  ),
+[class*="__rail"]:not(.is-active):not(.is-selected):not(
+    [aria-selected="true"]
+  ) {
+  --surface-card-border-standard: var(--doke-card-border);
+  --surface-card-border-strong: var(--doke-card-border);
+  --surface-card-divider-standard: var(--doke-card-border);
+  border-color: var(--doke-card-border) !important;
+}
+
+/* Specific overrides for known problem areas */
+.home-search-hero__input,
+.home-results-filter,
+.results-shell__search,
+.results-shell__filter,
+.results-shell__toolbar,
+.topbar-search,
+.topbar-profile {
+  border-color: var(--doke-card-border) !important;
+}
+
+/* Pills, chips, and small controls - preserve semantic states */
+[class*="pill"]:not(.is-active):not([aria-pressed="true"]),
+[class*="chip"]:not(.is-active):not([aria-selected="true"]),
+[class*="tab"]:not(.is-active):not([aria-selected="true"]),
+[class*="tab-item"]:not(.is-active):not([aria-selected="true"]) {
+  border-color: var(--doke-card-border) !important;
+}
+
+/* Dividers that use border or box-shadow */
+[class*="divider"],
+[class*="separator"] {
+  border-color: var(--doke-card-border) !important;
+  background: var(--doke-card-border);
+}
+
+/* Toolbar and action bar components */
+[class*="toolbar"]:not(.is-active),
+[class*="action-bar"],
+[class*="header-"] {
+  border-color: var(--doke-card-border) !important;
+}
+
+/* Ensure tokens are enforced for all surface containers */
+:where(
+  .surface,
+  .surface-card,
+  .surface-panel,
+  .surface-control,
+  .surface-shell,
+  .internal-surface
+) {
+  --surface-outline-color: var(--doke-card-border);
+  --color-border: var(--doke-card-border);
+  --internal-surface-border: var(--doke-card-border);
+  --internal-control-border: var(--doke-card-border);
+  --surface-shell-border: var(--doke-card-border);
+}
