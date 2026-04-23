@@ -15,118 +15,127 @@
     <link rel="stylesheet" href="assets/css/pages/internal-shell.css" />
     <link
       rel="stylesheet"
-      href="assets/css/pages/configuracoes.css?v=20260421-full"
+      href="assets/css/pages/configuracoes.css?v=20260423-mobile-swap-in-place"
     />
   </head>
-  <body class="app-shell-page internal-shell-page settings-page-shell">
+  <body class="app-shell-page internal-shell-page settings-page-shell settings-mobile-menu-mode">
     <div class="app-shell">
       <aside class="sidebar" data-shell-sidebar></aside>
 
       <div class="page">
-        <header class="topbar topbar--location internal-page-topbar settings-standard-topbar" aria-label="Cabeçalho da página">
-          <div class="topbar__left settings-standard-topbar__left">
-            <button class="settings-standard-topbar__search" type="button" aria-label="Buscar">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="11" cy="11" r="6"></circle>
-                <path d="m20 20-4.2-4.2"></path>
-              </svg>
-            </button>
-            <button class="settings-standard-topbar__location" type="button" aria-label="Alterar localização">
-              <span class="settings-standard-topbar__location-text">Adicionar endereço</span>
-              <span class="settings-standard-topbar__location-caret" aria-hidden="true"></span>
-            </button>
+        <header class="topbar internal-page-topbar settings-topbar" aria-label="Cabeçalho da página">
+          <div class="topbar__left">
+            <form class="topbar-search topbar-search--subtle settings-topbar__search" autocomplete="off" aria-label="Buscar nas configurações">
+              <button class="topbar-search__icon" type="submit" aria-label="Pesquisar">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="11" cy="11" r="6"></circle>
+                  <path d="m20 20-4.2-4.2"></path>
+                </svg>
+              </button>
+              <label class="sr-only" for="settings-topbar-search">Buscar nas configurações</label>
+              <input
+                id="settings-topbar-search"
+                type="search"
+                name="settings-topbar-search"
+                placeholder="Buscar nas configurações"
+                autocomplete="off"
+                autocapitalize="off"
+                autocorrect="off"
+                spellcheck="false"
+                data-settings-search-input
+              />
+            </form>
           </div>
-          <div class="topbar__right settings-standard-topbar__right" aria-label="Ações rápidas">
-            <a class="settings-standard-topbar__action" href="pedidos.html" aria-label="Pedidos">
+
+          <div class="topbar__right">
+            <a class="settings-topbar__action" href="pedidos.html" aria-label="Pedidos">
               <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 5.5h12v13H6z"></path>
-                <path d="M9 9h6"></path>
-                <path d="M9 12h6"></path>
-                <path d="M9 15h4"></path>
+                <path d="M7 5.5h10"></path>
+                <path d="M7 9.5h10"></path>
+                <path d="M7 13.5h6"></path>
+                <path d="M5 4h14v16H5z"></path>
               </svg>
             </a>
-            <a class="settings-standard-topbar__action" href="comunidade.html" aria-label="Comunidade">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M5 13.5V10l10-4v12l-10-4z"></path>
-                <path d="M15 9.5h2.2A2.8 2.8 0 0 1 20 12.3v.4a2.8 2.8 0 0 1-2.8 2.8H15"></path>
-                <path d="M7.5 14.5v2.2a1.8 1.8 0 0 0 1.8 1.8h1.2"></path>
-              </svg>
-            </a>
-            <a class="settings-standard-topbar__action" href="notificacoes.html" aria-label="Notificações">
+            <a class="settings-topbar__action" href="notificacoes.html" aria-label="Notificações">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 4.75a4 4 0 0 0-4 4v2.1c0 .7-.24 1.38-.68 1.92L5.9 14.5h12.2l-1.42-1.73a3 3 0 0 1-.68-1.92v-2.1a4 4 0 0 0-4-4Z"></path>
                 <path d="M10 17.2a2.3 2.3 0 0 0 4 0"></path>
               </svg>
             </a>
-            <div class="settings-standard-topbar__profile-wrap">
-              <button class="settings-standard-topbar__profile" type="button" aria-label="Perfil do usuário">
-                <span class="settings-standard-topbar__avatar">DK</span>
-                <span class="settings-standard-topbar__identity">
-                  <strong>Gabriel</strong>
-                  <span>Pontos: 230</span>
-                </span>
+            <div class="topbar-profile" aria-label="Perfil do usuário">
+              <button class="topbar-profile__button" type="button" data-profile-menu-toggle aria-expanded="false" aria-haspopup="true" aria-label="Abrir menu do perfil">
+                <div class="avatar">DK</div>
               </button>
-              <button class="settings-standard-topbar__profile-caret-button" type="button" aria-label="Abrir menu de conta">
-                <span class="settings-standard-topbar__profile-caret" aria-hidden="true"></span>
-              </button>
+              <div class="profile-dropdown" data-profile-menu hidden>
+                <div class="profile-dropdown__header">@gabriel</div>
+                <div class="profile-dropdown__body">
+                  <a class="profile-dropdown__item" href="perfil.html?mode=owner&panel=posts">
+                    <span class="profile-dropdown__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.2-3.2 3.7-4.8 7-4.8s5.8 1.6 7 4.8"></path></svg></span>
+                    <span>Meu perfil</span>
+                  </a>
+                  <a class="profile-dropdown__item" href="configuracoes.html">
+                    <span class="profile-dropdown__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 3.8v2.1"></path><path d="M12 18.1v2.1"></path><path d="m18.2 5.8-1.5 1.5"></path><path d="m7.3 16.7-1.5 1.5"></path><path d="M20.2 12h-2.1"></path><path d="M5.9 12H3.8"></path><path d="m18.2 18.2-1.5-1.5"></path><path d="m7.3 7.3-1.5-1.5"></path></svg></span>
+                    <span>Configurações</span>
+                  </a>
+                </div>
+                <div class="profile-dropdown__footer">
+                  <button class="profile-dropdown__item profile-dropdown__item--danger" type="button" data-profile-logout>
+                    <span class="profile-dropdown__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M15 7.5V5.8A1.8 1.8 0 0 0 13.2 4H7.8A1.8 1.8 0 0 0 6 5.8v12.4A1.8 1.8 0 0 0 7.8 20h5.4a1.8 1.8 0 0 0 1.8-1.8v-1.7"></path><path d="M10 12h10"></path><path d="m17 8 3 4-3 4"></path></svg></span>
+                    <span>Sair</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </header>
+
+        <section class="settings-mobile-header" aria-label="Cabeçalho mobile das configurações">
+          <div class="settings-mobile-header__row">
+            <button class="settings-mobile-header__profile" type="button" data-mobile-home-menu-open aria-label="Abrir menu lateral">
+              <span class="settings-mobile-header__avatar">DK</span>
+              <span class="settings-mobile-header__title">Configurações</span>
+            </button>
+            <button class="settings-mobile-header__action" type="button" data-settings-mobile-search-toggle aria-expanded="false" aria-controls="settings-mobile-search" aria-label="Abrir busca">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="5.75"></circle>
+                <path d="m16 16 4 4"></path>
+              </svg>
+            </button>
+          </div>
+          <form class="settings-mobile-header__search" id="settings-mobile-search" role="search" aria-label="Buscar nas configurações" hidden>
+            <button class="settings-mobile-header__search-icon" type="submit" aria-label="Pesquisar">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="5.75"></circle>
+                <path d="m16 16 4 4"></path>
+              </svg>
+            </button>
+            <label class="sr-only" for="settings-mobile-search-input">Buscar nas configurações</label>
+            <input
+              id="settings-mobile-search-input"
+              class="settings-mobile-header__search-input"
+              type="search"
+              name="settings-mobile-search"
+              placeholder="Buscar nas configurações"
+              autocomplete="off"
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck="false"
+              data-settings-search-input
+            />
+            <button class="settings-mobile-header__search-close" type="button" data-settings-mobile-search-close aria-label="Fechar busca">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 6l12 12"></path>
+                <path d="M18 6 6 18"></path>
+              </svg>
+            </button>
+          </form>
+        </section>
 
         <main class="page__content">
           <div
             class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean shell-home__workspace shell-home__workspace--clean settings-shell-content"
           >
             <section class="settings-page">
-              <!-- Settings Navigation (Mobile) -->
-              <nav
-                class="settings-mobile-nav"
-                aria-label="Abas de configuração"
-              >
-                <button
-                  class="settings-mobile-nav__item is-active"
-                  data-settings-tab="account"
-                  aria-selected="true"
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="12" cy="8" r="3.5"></circle>
-                    <path d="M5 19c1.2-3.2 3.7-4.8 7-4.8s5.8 1.6 7 4.8"></path>
-                  </svg>
-                  <span>Conta</span>
-                </button>
-                <button
-                  class="settings-mobile-nav__item"
-                  data-settings-tab="notifications"
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      d="M5 17h14M12 3c-2.5 0-4.5 2.2-4.5 5v3l-2 2v1.5h13v-1.5l-2-2v-3c0-2.8-2-5-4.5-5z"
-                    ></path>
-                  </svg>
-                  <span>Notificações</span>
-                </button>
-                <button
-                  class="settings-mobile-nav__item"
-                  data-settings-tab="privacy"
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      d="M12 2c0 0-8 3-8 9v8c0 0 8 4 8 4s8-4 8-4v-8c0-6-8-9-8-9z"
-                    ></path>
-                  </svg>
-                  <span>Privacidade</span>
-                </button>
-                <button
-                  class="settings-mobile-nav__item"
-                  data-settings-tab="payment"
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M3 7h18v11H3z"></path>
-                    <path d="M3 10h18M6 15h4"></path>
-                  </svg>
-                  <span>Pagamento</span>
-                </button>
-              </nav>
 
               <!-- Settings Content Grid -->
               <div class="settings-grid">
@@ -135,6 +144,28 @@
                   class="settings-sidebar"
                   aria-label="Menu de configurações"
                 >
+                  <form class="settings-sidebar-search" role="search" aria-label="Pesquisar nas configurações">
+                    <span class="settings-sidebar-search__icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="6"></circle>
+                        <path d="m20 20-4.2-4.2"></path>
+                      </svg>
+                    </span>
+                    <label class="sr-only" for="settings-sidebar-search">Pesquisar configurações</label>
+                    <input
+                      id="settings-sidebar-search"
+                      class="settings-sidebar-search__input"
+                      type="search"
+                      name="settings-search"
+                      enterkeyhint="search"
+                      placeholder="Pesquisar"
+                      autocomplete="off"
+                      autocapitalize="off"
+                      autocorrect="off"
+                      spellcheck="false"
+                    />
+                  </form>
+
                   <div class="settings-sidebar__section">
                     <div class="settings-sidebar__label">Minha conta</div>
                     <button
@@ -142,10 +173,8 @@
                       data-settings-tab="account"
                     >
                       <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <circle cx="12" cy="8" r="3.5"></circle>
-                        <path
-                          d="M5 19c1.2-3.2 3.7-4.8 7-4.8s5.8 1.6 7 4.8"
-                        ></path>
+                        <path d="M15.5 7.5a3.5 3.5 0 1 1-7 0a3.5 3.5 0 0 1 7 0Z"></path>
+                        <path d="M4.75 19.25c1.35-3.45 4.08-5.25 7.25-5.25s5.9 1.8 7.25 5.25"></path>
                       </svg>
                       <span>Perfil</span>
                     </button>
@@ -154,10 +183,8 @@
                       data-settings-tab="account-security"
                     >
                       <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                          d="M12 2c0 0-8 3-8 9v8c0 0 8 4 8 4s8-4 8-4v-8c0-6-8-9-8-9z"
-                        ></path>
-                        <circle cx="12" cy="14" r="2.5"></circle>
+                        <path d="M12 4.5 6.75 6.75v5.1c0 3.25 2.1 6.1 5.25 7.15 3.15-1.05 5.25-3.9 5.25-7.15v-5.1L12 4.5Z"></path>
+                        <path d="m9.6 12.25 1.7 1.7 3.1-3.35"></path>
                       </svg>
                       <span>Segurança</span>
                     </button>
@@ -166,10 +193,36 @@
                       data-settings-tab="payment"
                     >
                       <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M3 7h18v11H3z"></path>
-                        <path d="M3 10h18M6 15h4"></path>
+                        <rect x="3.75" y="6.75" width="16.5" height="10.5" rx="2.25"></rect>
+                        <path d="M3.75 10.5h16.5"></path>
+                        <path d="M7 14.25h3.5"></path>
                       </svg>
                       <span>Formas de pagamento</span>
+                    </button>
+                  </div>
+
+                  <div class="settings-sidebar__section">
+                    <div class="settings-sidebar__label">Profissional</div>
+                    <button
+                      class="settings-sidebar__item"
+                      data-settings-tab="professional-profile"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="4.75" y="7.25" width="14.5" height="10.5" rx="2.25"></rect>
+                        <path d="M9 7.25V6A1.75 1.75 0 0 1 10.75 4.25h2.5A1.75 1.75 0 0 1 15 6v1.25"></path>
+                        <path d="M4.75 11.5h14.5"></path>
+                      </svg>
+                      <span>Perfil profissional</span>
+                    </button>
+                    <button
+                      class="settings-sidebar__item"
+                      data-settings-tab="professional-operations"
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <circle cx="12" cy="12" r="7"></circle>
+                        <path d="M12 8.5v4l2.75 1.75"></path>
+                      </svg>
+                      <span>Atendimento</span>
                     </button>
                   </div>
 
@@ -180,9 +233,8 @@
                       data-settings-tab="notifications"
                     >
                       <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                          d="M5 17h14M12 3c-2.5 0-4.5 2.2-4.5 5v3l-2 2v1.5h13v-1.5l-2-2v-3c0-2.8-2-5-4.5-5z"
-                        ></path>
+                        <path d="M12 4.75a4 4 0 0 0-4 4v2.1c0 .7-.24 1.38-.68 1.92L5.9 14.5h12.2l-1.42-1.73a3 3 0 0 1-.68-1.92v-2.1a4 4 0 0 0-4-4Z"></path>
+                        <path d="M10 17.2a2.3 2.3 0 0 0 4 0"></path>
                       </svg>
                       <span>Notificações</span>
                     </button>
@@ -191,9 +243,8 @@
                       data-settings-tab="privacy"
                     >
                       <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                          d="M12 2c0 0-8 3-8 9v8c0 0 8 4 8 4s8-4 8-4v-8c0-6-8-9-8-9z"
-                        ></path>
+                        <rect x="7.25" y="10.25" width="9.5" height="8.5" rx="2"></rect>
+                        <path d="M9 10.25V8.6a3 3 0 0 1 6 0v1.65"></path>
                       </svg>
                       <span>Privacidade</span>
                     </button>
@@ -202,8 +253,7 @@
                       data-settings-tab="appearance"
                     >
                       <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <path d="M12 6v12M6 12h12"></path>
+                        <path d="M12 4.75a6.25 6.25 0 1 0 6.25 6.25A5 5 0 1 1 12 4.75Z"></path>
                       </svg>
                       <span>Aparência</span>
                     </button>
@@ -212,6 +262,13 @@
 
                 <!-- Main Content Area -->
                 <div class="settings-content">
+                  <button class="settings-mobile-back" type="button" data-settings-mobile-back aria-label="Voltar para o menu de áreas">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M15 18 9 12l6-6"></path>
+                    </svg>
+                    <span>Voltar para áreas</span>
+                  </button>
+
                   <!-- Account Tab -->
                   <div
                     class="settings-panel is-active"
@@ -298,6 +355,213 @@
                           <p class="settings-avatar-upload__hint">
                             PNG ou JPG. Max 5MB
                           </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Professional Profile Tab -->
+                  <div
+                    class="settings-panel"
+                    data-settings-panel="professional-profile"
+                  >
+                    <div class="settings-card">
+                      <div class="settings-card__header">
+                        <h2>Perfil profissional</h2>
+                        <p>Defina como o seu perfil será visto por clientes na Doke</p>
+                      </div>
+                      <div class="settings-card__body">
+                        <div class="settings-form">
+                          <div class="settings-form__row">
+                            <label class="settings-field">
+                              <span class="settings-field__label">Nome profissional</span>
+                              <input
+                                type="text"
+                                value="Gabriel Oliveira Studio"
+                                class="settings-field__input"
+                              />
+                            </label>
+                            <label class="settings-field">
+                              <span class="settings-field__label">Categoria principal</span>
+                              <select class="settings-field__input">
+                                <option selected>Design e identidade visual</option>
+                                <option>Desenvolvimento web</option>
+                                <option>Fotografia e vídeo</option>
+                                <option>Marketing e tráfego</option>
+                              </select>
+                            </label>
+                          </div>
+                          <div class="settings-form__row">
+                            <label class="settings-field">
+                              <span class="settings-field__label">Cidade-base</span>
+                              <input
+                                type="text"
+                                value="Salvador, BA"
+                                class="settings-field__input"
+                              />
+                            </label>
+                            <label class="settings-field">
+                              <span class="settings-field__label">Modalidade</span>
+                              <select class="settings-field__input">
+                                <option selected>Presencial e online</option>
+                                <option>Somente online</option>
+                                <option>Somente presencial</option>
+                              </select>
+                            </label>
+                          </div>
+                          <div class="settings-form__row settings-form__row--single">
+                            <label class="settings-field">
+                              <span class="settings-field__label">Bio profissional</span>
+                              <textarea class="settings-field__input" rows="5">Especialista em identidade visual e experiência digital para marcas de serviço. Atendo projetos com foco em clareza comercial, consistência visual e execução profissional.</textarea>
+                              <span class="settings-field__hint">Use uma descrição curta, objetiva e orientada para conversão.</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="settings-card__footer">
+                        <button class="button button--ghost">Cancelar</button>
+                        <button class="button button--primary">Salvar perfil profissional</button>
+                      </div>
+                    </div>
+
+                    <div class="settings-card">
+                      <div class="settings-card__header">
+                        <h2>Portfólio e presença digital</h2>
+                        <p>Conecte canais que reforçam sua autoridade profissional</p>
+                      </div>
+                      <div class="settings-card__body">
+                        <div class="settings-form">
+                          <div class="settings-form__row">
+                            <label class="settings-field">
+                              <span class="settings-field__label">Site ou portfólio</span>
+                              <input type="url" value="https://gabrieloliveira.studio" class="settings-field__input" />
+                            </label>
+                            <label class="settings-field">
+                              <span class="settings-field__label">Instagram profissional</span>
+                              <input type="url" value="https://instagram.com/gabrieloliveira" class="settings-field__input" />
+                            </label>
+                          </div>
+                          <div class="settings-form__row">
+                            <label class="settings-field">
+                              <span class="settings-field__label">Behance / LinkedIn</span>
+                              <input type="url" value="https://behance.net/gabrieloliveira" class="settings-field__input" />
+                            </label>
+                            <label class="settings-field">
+                              <span class="settings-field__label">WhatsApp comercial</span>
+                              <input type="tel" value="(71) 98888-7777" class="settings-field__input" />
+                            </label>
+                          </div>
+                        </div>
+                        <div class="settings-chip-list" aria-label="Áreas de atuação">
+                          <span class="settings-chip">Branding</span>
+                          <span class="settings-chip">Landing pages</span>
+                          <span class="settings-chip">Social media</span>
+                          <span class="settings-chip">Consultoria visual</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Professional Operations Tab -->
+                  <div
+                    class="settings-panel"
+                    data-settings-panel="professional-operations"
+                  >
+                    <div class="settings-card">
+                      <div class="settings-card__header">
+                        <h2>Atendimento e disponibilidade</h2>
+                        <p>Controle como você recebe clientes, pedidos e orçamentos</p>
+                      </div>
+                      <div class="settings-card__body">
+                        <div class="settings-toggle-item">
+                          <div class="settings-toggle-item__content">
+                            <h3>Aceitar novos pedidos</h3>
+                            <p>Mantenha seu perfil aberto para novas solicitações</p>
+                          </div>
+                          <label class="toggle-switch">
+                            <input type="checkbox" class="toggle-switch__input" checked />
+                            <span class="toggle-switch__slider"></span>
+                          </label>
+                        </div>
+                        <div class="settings-toggle-item">
+                          <div class="settings-toggle-item__content">
+                            <h3>Atendimento remoto</h3>
+                            <p>Permita contratação online sem visita presencial</p>
+                          </div>
+                          <label class="toggle-switch">
+                            <input type="checkbox" class="toggle-switch__input" checked />
+                            <span class="toggle-switch__slider"></span>
+                          </label>
+                        </div>
+                        <div class="settings-toggle-item">
+                          <div class="settings-toggle-item__content">
+                            <h3>Atendimento urgente</h3>
+                            <p>Receba pedidos com prazo reduzido e maior prioridade</p>
+                          </div>
+                          <label class="toggle-switch">
+                            <input type="checkbox" class="toggle-switch__input" />
+                            <span class="toggle-switch__slider"></span>
+                          </label>
+                        </div>
+                        <div class="settings-form">
+                          <div class="settings-form__row">
+                            <label class="settings-field">
+                              <span class="settings-field__label">Prazo médio de resposta</span>
+                              <select class="settings-field__input">
+                                <option selected>Até 1 hora</option>
+                                <option>Até 4 horas</option>
+                                <option>Até 24 horas</option>
+                              </select>
+                            </label>
+                            <label class="settings-field">
+                              <span class="settings-field__label">Raio de atendimento</span>
+                              <input type="text" value="15 km" class="settings-field__input" />
+                            </label>
+                          </div>
+                          <div class="settings-form__row">
+                            <label class="settings-field">
+                              <span class="settings-field__label">Horário inicial</span>
+                              <input type="time" value="08:00" class="settings-field__input" />
+                            </label>
+                            <label class="settings-field">
+                              <span class="settings-field__label">Horário final</span>
+                              <input type="time" value="18:00" class="settings-field__input" />
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="settings-card__footer">
+                        <button class="button button--ghost">Cancelar</button>
+                        <button class="button button--primary">Salvar atendimento</button>
+                      </div>
+                    </div>
+
+                    <div class="settings-card">
+                      <div class="settings-card__header">
+                        <h2>Regras comerciais</h2>
+                        <p>Defina parâmetros básicos para manter operação consistente</p>
+                      </div>
+                      <div class="settings-card__body">
+                        <div class="settings-form">
+                          <div class="settings-form__row">
+                            <label class="settings-field">
+                              <span class="settings-field__label">Ticket mínimo</span>
+                              <input type="text" value="R$ 180,00" class="settings-field__input" />
+                            </label>
+                            <label class="settings-field">
+                              <span class="settings-field__label">Capacidade semanal</span>
+                              <input type="text" value="8 projetos" class="settings-field__input" />
+                            </label>
+                          </div>
+                          <div class="settings-form__row settings-form__row--single">
+                            <label class="settings-field">
+                              <span class="settings-field__label">Observações para o cliente</span>
+                              <textarea class="settings-field__input" rows="4">Envie referências e objetivo do projeto já no primeiro contato para agilizar análise e orçamento.</textarea>
+                            </label>
+                          </div>
+                        </div>
+                        <div class="settings-inline-note">
+                          Essas informações ajudam a manter seu perfil profissional mais claro, filtram leads fracos e reduzem atrito no fechamento.
                         </div>
                       </div>
                     </div>
@@ -578,7 +842,13 @@
                       <div class="settings-card__body">
                         <div class="settings-payment-list">
                           <div class="settings-payment-item">
-                            <div class="settings-payment-item__icon">💳</div>
+                            <div class="settings-payment-item__icon" aria-hidden="true">
+                              <svg viewBox="0 0 24 24">
+                                <rect x="3.75" y="6.75" width="16.5" height="10.5" rx="2.25"></rect>
+                                <path d="M3.75 10.5h16.5"></path>
+                                <path d="M7 14.25h3.5"></path>
+                              </svg>
+                            </div>
                             <div class="settings-payment-item__content">
                               <h3>Cartão de crédito</h3>
                               <p>Visa final •••• 4242</p>
@@ -591,7 +861,16 @@
                             </button>
                           </div>
                           <div class="settings-payment-item">
-                            <div class="settings-payment-item__icon">🏦</div>
+                            <div class="settings-payment-item__icon" aria-hidden="true">
+                              <svg viewBox="0 0 24 24">
+                                <path d="M4.5 9 12 5l7.5 4"></path>
+                                <path d="M6.5 10.25v6.5"></path>
+                                <path d="M10 10.25v6.5"></path>
+                                <path d="M14 10.25v6.5"></path>
+                                <path d="M17.5 10.25v6.5"></path>
+                                <path d="M4 17.75h16"></path>
+                              </svg>
+                            </div>
                             <div class="settings-payment-item__content">
                               <h3>Conta bancária</h3>
                               <p>Banco Inter • final 2049</p>
@@ -697,8 +976,68 @@
       </div>
     </div>
 
+    <aside class="home-mobile-drawer" data-mobile-home-drawer hidden aria-hidden="true">
+      <div class="home-mobile-drawer__backdrop" data-mobile-home-menu-close></div>
+      <div class="home-mobile-drawer__panel" role="dialog" aria-modal="true" aria-label="Menu da conta">
+        <div class="home-mobile-drawer__header">
+          <a class="home-mobile-drawer__profile" href="perfil.html?mode=owner&panel=posts">
+            <span class="home-mobile-drawer__avatar">DK</span>
+            <span class="home-mobile-drawer__profile-copy">
+              <strong>Gabriel</strong>
+              <span>Editar meu perfil</span>
+            </span>
+            <span class="home-mobile-drawer__profile-arrow" aria-hidden="true"></span>
+          </a>
+        </div>
+
+        <nav class="home-mobile-drawer__nav" aria-label="Menu principal mobile">
+          <a class="home-mobile-drawer__item" href="index.html">
+            <span class="home-mobile-drawer__item-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5.5 9.5V20h13V9.5"></path></svg></span>
+            <span class="home-mobile-drawer__item-label">Início</span>
+          </a>
+          <a class="home-mobile-drawer__item" href="pedidos.html">
+            <span class="home-mobile-drawer__item-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg></span>
+            <span class="home-mobile-drawer__item-label">Pedidos</span>
+          </a>
+          <a class="home-mobile-drawer__item" href="mensagens.html">
+            <span class="home-mobile-drawer__item-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg></span>
+            <span class="home-mobile-drawer__item-label">Mensagens</span>
+          </a>
+          <a class="home-mobile-drawer__item" href="notificacoes.html">
+            <span class="home-mobile-drawer__item-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4.75a4 4 0 0 0-4 4v2.1c0 .7-.24 1.38-.68 1.92L5.9 14.5h12.2l-1.42-1.73a3 3 0 0 1-.68-1.92v-2.1a4 4 0 0 0-4-4Z"></path><path d="M10 17.2a2.3 2.3 0 0 0 4 0"></path></svg></span>
+            <span class="home-mobile-drawer__item-label">Notificações</span>
+            <span class="home-mobile-drawer__item-badge">3</span>
+          </a>
+          <a class="home-mobile-drawer__item" href="comunidade.html">
+            <span class="home-mobile-drawer__item-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 13.5V10l10-4v12l-10-4z"></path><path d="M15 9.5h2.2A2.8 2.8 0 0 1 20 12.3v.4a2.8 2.8 0 0 1-2.8 2.8H15"></path><path d="M7.5 14.5v2.2a1.8 1.8 0 0 0 1.8 1.8h1.2"></path></svg></span>
+            <span class="home-mobile-drawer__item-label">Comunidade</span>
+          </a>
+        </nav>
+
+        <div class="home-mobile-drawer__divider" aria-hidden="true"></div>
+
+        <nav class="home-mobile-drawer__nav" aria-label="Conta">
+          <a class="home-mobile-drawer__item" href="perfil.html?mode=owner&panel=posts">
+            <span class="home-mobile-drawer__item-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.2-3.2 3.7-4.8 7-4.8s5.8 1.6 7 4.8"></path></svg></span>
+            <span class="home-mobile-drawer__item-label">Meu perfil</span>
+          </a>
+          <a class="home-mobile-drawer__item home-mobile-drawer__item--active" href="configuracoes.html">
+            <span class="home-mobile-drawer__item-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 3.8v2.1"></path><path d="M12 18.1v2.1"></path><path d="m18.2 5.8-1.5 1.5"></path><path d="m7.3 16.7-1.5 1.5"></path><path d="M20.2 12h-2.1"></path><path d="M5.9 12H3.8"></path><path d="m18.2 18.2-1.5-1.5"></path><path d="m7.3 7.3-1.5-1.5"></path></svg></span>
+            <span class="home-mobile-drawer__item-label">Configurações</span>
+          </a>
+          <button class="home-mobile-drawer__item home-mobile-drawer__item--button" type="button" data-profile-logout>
+            <span class="home-mobile-drawer__item-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M15 7.5V5.8A1.8 1.8 0 0 0 13.2 4H7.8A1.8 1.8 0 0 0 6 5.8v12.4A1.8 1.8 0 0 0 7.8 20h5.4a1.8 1.8 0 0 0 1.8-1.8v-1.7"></path><path d="M10 12h10"></path><path d="m17 8 3 4-3 4"></path></svg></span>
+            <span class="home-mobile-drawer__item-label">Sair</span>
+          </button>
+        </nav>
+      </div>
+    </aside>
+
+    <div class="mobile-scrim" data-sidebar-scrim></div>
+
     <script src="assets/js/core/auth.js"></script>
     <script src="assets/js/core/app.js"></script>
-    <script src="assets/js/pages/configuracoes.js"></script>
+    <script src="assets/js/pages/home/drawer.js"></script>
+    <script src="assets/js/pages/configuracoes.js?v=20260423-mobile-swap-in-place"></script>
   </body>
 </html>
