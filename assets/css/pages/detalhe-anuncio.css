@@ -1,19 +1,19 @@
 :root {
-  --d-bg: #f7f7f7;
-  --d-surface: #ffffff;
-  --d-line: #dddddd;
-  --d-line-soft: #ebebeb;
-  --d-text: #222222;
-  --d-soft: #6a6a6a;
-  --d-muted: #717171;
+  --d-bg: var(--shell-content-bg);
+  --d-surface: rgba(255, 255, 255, 0.96);
+  --d-line: var(--doke-card-border);
+  --d-line-soft: rgba(24, 75, 118, 0.08);
+  --d-text: var(--color-heading);
+  --d-soft: var(--color-text-soft);
+  --d-muted: var(--color-text-muted);
   --d-accent: #ff385c;
   --d-accent-strong: #e31c5f;
-  --d-chip: #f2f2f2;
-  --d-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+  --d-chip: rgba(245, 249, 252, 0.98);
+  --d-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
 }
 
 body.detalhe-shell-page {
-  background: var(--d-bg);
+  background: var(--shell-page-bg);
   color: var(--d-text);
 }
 
@@ -27,7 +27,7 @@ body.detalhe-shell-page {
   justify-content: space-between;
   gap: 18px;
   padding: 14px 24px;
-  background: rgba(247, 247, 247, 0.9);
+  background: var(--shell-topbar-bg);
   border-bottom: 0;
   backdrop-filter: blur(10px);
 }
@@ -156,6 +156,7 @@ body.detalhe-shell-page {
   max-width: 1280px;
   margin: 0 auto;
   padding: 32px 24px 56px;
+  min-width: 0;
 }
 
 .detail-head {
@@ -379,8 +380,13 @@ body.detalhe-shell-page {
 }
 
 .detail-aside {
+  position: relative;
+  align-self: start;
+}
+
+.detail-booking {
   position: sticky;
-  top: 94px;
+  top: calc(var(--header-height) + 18px);
 }
 
 .detail-summary,
@@ -1257,7 +1263,8 @@ body.detalhe-shell-page {
     gap: 40px;
   }
 
-  .detail-aside {
+  .detail-aside,
+  .detail-booking {
     position: static;
   }
 }
