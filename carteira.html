@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="assets/css/pages/app-shell.css" />
   <link rel="stylesheet" href="assets/css/pages/internal-shell.css" />
   <link rel="stylesheet" href="assets/css/pages/internal-action-surfaces.css" />
-  <link rel="stylesheet" href="assets/css/pages/carteira.css?v=20260423-wallet-topbar-standard-v1" />
+  <link rel="stylesheet" href="assets/css/pages/carteira.css?v=20260424-wallet-clean-v12" />
  </head>
  <body class="app-shell-page internal-shell-page wallet-page-shell">
   <div class="app-shell">
@@ -92,17 +92,17 @@
          </form>
          <div class="page-header-context" aria-label="Atalhos financeiros">
           <button class="home-side-meta__location page-header-context__action" type="button" data-wallet-open-withdraw>
-           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16"></path><path d="m6 10 6-6 6 6"></path></svg>
+           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16"></path><path d="m6 10 6-6 6 6"></path></svg>
            <span>Sacar saldo</span>
           </button>
-          <button class="home-side-meta__location page-header-context__action" type="button" data-wallet-scroll-to="wallet-statement-title">
-           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg>
+          <button class="home-side-meta__location page-header-context__action is-view-active" type="button" data-wallet-view-toggle="overview" data-wallet-scroll-to="wallet-statement-title">
+           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg>
            <span>Extrato</span>
           </button>
-          <a class="home-side-meta__location page-header-context__action" href="conta-bancaria.html">
-           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="3"></rect><path d="M3 10h18"></path></svg>
-           <span>Conta bancária</span>
-          </a>
+          <button class="home-side-meta__location page-header-context__action" type="button" data-wallet-view-toggle="statistics">
+           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19V9"></path><path d="M12 19V5"></path><path d="M19 19v-7"></path></svg>
+           <span>Estatísticas</span>
+          </button>
          </div>
         </div>
 
@@ -156,18 +156,7 @@
          </div>
         </div>
        </div>
-
-
-       <header class="wallet-page-header">
-        <div>
-         <span class="wallet-eyebrow">Financeiro</span>
-         <h1 id="wallet-title">Carteira</h1>
-         <p>Controle seu saldo, saques, repasses e métodos de recebimento em uma tela simples.</p>
-        </div>
-
-       </header>
-
-       <section class="wallet-summary" aria-label="Resumo financeiro">
+<section class="wallet-summary" aria-label="Resumo financeiro" data-wallet-view-panel="overview">
         <article class="wallet-summary-card wallet-summary-card--balance">
          <span>Saldo disponível</span>
          <strong>R$ 4.860,00</strong>
@@ -190,7 +179,7 @@
         </article>
        </section>
 
-       <section class="wallet-layout">
+       <section class="wallet-layout" data-wallet-view-panel="overview">
         <section class="wallet-panel wallet-panel--statement" aria-labelledby="wallet-statement-title">
          <div class="wallet-panel__header">
           <div>
@@ -244,52 +233,156 @@
         </section>
 
         <aside class="wallet-side">
-         <section class="wallet-panel" aria-labelledby="wallet-bank-title">
-          <div class="wallet-panel__header">
+         <section class="wallet-panel wallet-bank-panel" aria-labelledby="wallet-bank-title">
+          <div class="wallet-panel__header wallet-bank-panel__header">
            <div>
             <span class="wallet-eyebrow">Recebimento</span>
             <h2 id="wallet-bank-title">Conta bancária</h2>
            </div>
-           <a class="wallet-link-button" href="conta-bancaria.html">Editar</a>
+           <span class="wallet-link-button wallet-link-button--static">Gerenciado na carteira</span>
           </div>
 
-          <article class="wallet-bank-card">
-           <span>PIX</span>
-           <div>
+          <article class="wallet-bank-card wallet-bank-card--featured">
+           <div class="wallet-bank-card__mark">PIX</div>
+           <div class="wallet-bank-card__content">
+            <span class="wallet-bank-card__label">Conta principal</span>
             <strong>Banco Inter • final 2341</strong>
-            <p>Repasse automático toda terça às 08:00.</p>
+            <p>Repasse automático toda terça-feira às 08:00.</p>
            </div>
           </article>
 
-          <div class="wallet-chip-row">
+          <div class="wallet-bank-details" aria-label="Detalhes da conta bancária">
+           <div class="wallet-bank-detail">
+            <span>Tipo</span>
+            <strong>Conta corrente</strong>
+           </div>
+           <div class="wallet-bank-detail">
+            <span>Chave PIX</span>
+            <strong>CPF verificado</strong>
+           </div>
+           <div class="wallet-bank-detail">
+            <span>Próximo envio</span>
+            <strong>12 abr • 08:00</strong>
+           </div>
+          </div>
+
+          <div class="wallet-chip-row wallet-chip-row--bank">
            <span>PIX verificado</span>
+           <span>Repasse automático</span>
            <span>Sem pendências</span>
           </div>
          </section>
-
-         <section class="wallet-panel" aria-labelledby="wallet-method-title">
-          <div class="wallet-panel__header">
-           <div>
-            <span class="wallet-eyebrow">Métodos</span>
-            <h2 id="wallet-method-title">Cartões salvos</h2>
-           </div>
-           <a class="wallet-link-button" href="adicionar-cartao.html">Adicionar</a>
-          </div>
-
-          <div class="wallet-card-stack">
-           <button class="wallet-payment-card is-primary" type="button">
-            <span>Visa</span>
-            <strong>•••• 9142</strong>
-            <small>Principal</small>
-           </button>
-           <button class="wallet-payment-card" type="button">
-            <span>Mastercard</span>
-            <strong>•••• 5590</strong>
-            <small>Reserva</small>
-           </button>
-          </div>
-         </section>
         </aside>
+       </section>
+
+       <section class="wallet-analytics" aria-label="Gráficos financeiros" data-wallet-view-panel="statistics" hidden>
+        <article class="wallet-panel wallet-panel--chart" aria-labelledby="wallet-chart-balance-title">
+         <div class="wallet-panel__header wallet-panel__header--chart">
+          <div>
+           <span class="wallet-eyebrow">Análise</span>
+           <h2 id="wallet-chart-balance-title">Entradas e saídas</h2>
+           <p class="wallet-chart-copy">Visão rápida da evolução semanal da carteira.</p>
+          </div>
+          <div class="wallet-chart-legend" aria-label="Legenda do gráfico">
+           <span><i class="wallet-chart-legend__dot wallet-chart-legend__dot--income"></i>Entradas</span>
+           <span><i class="wallet-chart-legend__dot wallet-chart-legend__dot--withdraw"></i>Saídas</span>
+          </div>
+         </div>
+
+         <div class="wallet-line-chart" role="img" aria-label="Gráfico de linhas com entradas e saídas entre seg, ter, qua, qui, sex e sáb">
+          <div class="wallet-line-chart__levels" aria-hidden="true">
+           <span>R$ 1.200</span>
+           <span>R$ 900</span>
+           <span>R$ 600</span>
+           <span>R$ 300</span>
+          </div>
+          <div class="wallet-line-chart__plot">
+           <svg viewBox="0 0 640 260" aria-hidden="true">
+            <g class="wallet-line-chart__grid">
+             <line x1="36" y1="30" x2="604" y2="30"></line>
+             <line x1="36" y1="86" x2="604" y2="86"></line>
+             <line x1="36" y1="142" x2="604" y2="142"></line>
+             <line x1="36" y1="198" x2="604" y2="198"></line>
+             <line x1="36" y1="254" x2="604" y2="254"></line>
+            </g>
+            <polyline class="wallet-line-chart__area" points="36,180 132,154 228,102 324,124 420,78 516,90 604,54 604,254 36,254"></polyline>
+            <polyline class="wallet-line-chart__line wallet-line-chart__line--income" points="36,180 132,154 228,102 324,124 420,78 516,90 604,54"></polyline>
+            <polyline class="wallet-line-chart__line wallet-line-chart__line--withdraw" points="36,212 132,192 228,170 324,186 420,144 516,158 604,132"></polyline>
+            <g class="wallet-line-chart__points wallet-line-chart__points--income">
+             <circle cx="36" cy="180" r="5"></circle>
+             <circle cx="132" cy="154" r="5"></circle>
+             <circle cx="228" cy="102" r="5"></circle>
+             <circle cx="324" cy="124" r="5"></circle>
+             <circle cx="420" cy="78" r="5"></circle>
+             <circle cx="516" cy="90" r="5"></circle>
+             <circle cx="604" cy="54" r="5"></circle>
+            </g>
+            <g class="wallet-line-chart__points wallet-line-chart__points--withdraw">
+             <circle cx="36" cy="212" r="4.5"></circle>
+             <circle cx="132" cy="192" r="4.5"></circle>
+             <circle cx="228" cy="170" r="4.5"></circle>
+             <circle cx="324" cy="186" r="4.5"></circle>
+             <circle cx="420" cy="144" r="4.5"></circle>
+             <circle cx="516" cy="158" r="4.5"></circle>
+             <circle cx="604" cy="132" r="4.5"></circle>
+            </g>
+           </svg>
+           <div class="wallet-line-chart__labels" aria-hidden="true">
+            <span>Seg</span>
+            <span>Ter</span>
+            <span>Qua</span>
+            <span>Qui</span>
+            <span>Sex</span>
+            <span>Sáb</span>
+            <span>Hoje</span>
+           </div>
+          </div>
+         </div>
+        </article>
+
+        <article class="wallet-panel wallet-panel--chart" aria-labelledby="wallet-chart-distribution-title">
+         <div class="wallet-panel__header wallet-panel__header--chart">
+          <div>
+           <span class="wallet-eyebrow">Distribuição</span>
+           <h2 id="wallet-chart-distribution-title">Origem da receita</h2>
+           <p class="wallet-chart-copy">Quais frentes mais movimentaram a carteira nesta semana.</p>
+          </div>
+         </div>
+
+         <div class="wallet-distribution">
+          <div class="wallet-donut-chart" role="img" aria-label="Gráfico de rosca com 52% pintura, 28% elétrica e 20% taxas e ajustes">
+           <div class="wallet-donut-chart__ring"></div>
+           <div class="wallet-donut-chart__center">
+            <strong>R$ 6,4k</strong>
+            <span>7 dias</span>
+           </div>
+          </div>
+
+          <div class="wallet-distribution__legend">
+           <article class="wallet-distribution__item">
+            <div class="wallet-distribution__meta">
+             <span><i class="wallet-chart-legend__dot wallet-chart-legend__dot--income"></i>Pintura residencial</span>
+             <strong>52%</strong>
+            </div>
+            <div class="wallet-progress"><span style="width: 52%"></span></div>
+           </article>
+           <article class="wallet-distribution__item">
+            <div class="wallet-distribution__meta">
+             <span><i class="wallet-chart-legend__dot wallet-chart-legend__dot--withdraw"></i>Elétrica residencial</span>
+             <strong>28%</strong>
+            </div>
+            <div class="wallet-progress"><span style="width: 28%"></span></div>
+           </article>
+           <article class="wallet-distribution__item">
+            <div class="wallet-distribution__meta">
+             <span><i class="wallet-chart-legend__dot wallet-chart-legend__dot--fee"></i>Taxas e ajustes</span>
+             <strong>20%</strong>
+            </div>
+            <div class="wallet-progress"><span style="width: 20%"></span></div>
+           </article>
+          </div>
+         </div>
+        </article>
        </section>
 
       </section>
@@ -333,6 +426,6 @@
   </div>
 
   <script src="assets/js/core/app.js"></script>
-  <script src="assets/js/pages/carteira.js?v=20260423-wallet-topbar-standard-v1"></script>
+  <script src="assets/js/pages/carteira.js?v=20260424-wallet-clean-v12"></script>
  </body>
 </html>

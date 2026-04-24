@@ -115,18 +115,14 @@ const SHARED_SIDEBAR_MARKUP = `
     <a class="nav-link nav-link--profile" href="perfil.html">
       <span class="nav-link__start"><span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.2-3.2 3.7-4.8 7-4.8s5.8 1.6 7 4.8"></path></svg></span><span>Meu perfil</span></span>
     </a>
+    <a class="nav-link nav-link--wallet" href="carteira.html">
+      <span class="nav-link__start"><span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.8" y="6.5" width="16.4" height="11" rx="2.4"></rect><path d="M6 9.5h12"></path><path d="M15.2 13.2h2"></path></svg></span><span>Carteira</span></span>
+    </a>
     <a class="nav-link nav-link--settings" href="configuracoes.html">
       <span class="nav-link__start"><span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 3.8v2.1"></path><path d="M12 18.1v2.1"></path><path d="m18.2 5.8-1.5 1.5"></path><path d="m7.3 16.7-1.5 1.5"></path><path d="M20.2 12h-2.1"></path><path d="M5.9 12H3.8"></path><path d="m18.2 18.2-1.5-1.5"></path><path d="m7.3 7.3-1.5-1.5"></path></svg></span><span>Configurações</span></span>
     </a>
   </div>
 
-  <div class="sidebar__footer">
-    <div class="sidebar__group sidebar__group--footer">
-      <button class="nav-link nav-link--footer-action" type="button" data-sidebar-logout aria-label="Sair">
-        <span class="nav-link__start"><span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M15 7.5V5.8A1.8 1.8 0 0 0 13.2 4H7.8A1.8 1.8 0 0 0 6 5.8v12.4A1.8 1.8 0 0 0 7.8 20h5.4a1.8 1.8 0 0 0 1.8-1.8v-1.7"></path><path d="M10 12h10"></path><path d="m17 8 3 4-3 4"></path></svg></span><span>Sair</span></span>
-      </button>
-    </div>
-  </div>
 `;
 
 const renderSharedSidebar = () => {
@@ -146,6 +142,7 @@ const updateSidebarActiveState = () => {
   const notificationsActive = path === "/notificacoes.html";
   const communitiesActive = path === "/comunidade.html" || path === "/comunidade-interna.html";
   const profileActive = path === INTERNAL_PROFILE_PATH;
+  const walletActive = path === "/carteira.html" || path === "/adicionar-cartao.html";
   const settingsActive = path === "/configuracoes.html" || path === "/mais.html";
 
   const stateMap = new Map([
@@ -155,6 +152,7 @@ const updateSidebarActiveState = () => {
     [".nav-link--notifications", notificationsActive],
     [".nav-link--communities", communitiesActive],
     [".nav-link--profile", profileActive],
+    [".nav-link--wallet", walletActive],
     [".nav-link--settings", settingsActive]
   ]);
 

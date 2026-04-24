@@ -6,6 +6,8 @@ window.DokeHomeCleanup = () => {
   document.body.classList.remove("home-search-has-query");
   document.body.classList.remove("home-mobile-filters-open");
   document.body.classList.remove("mobile-home-drawer-open");
+  document.body.classList.remove("worker-preview-open");
+  document.body.classList.remove("before-after-preview-open");
   routeController.abort();
 };
 const { signal } = routeController;
@@ -51,6 +53,8 @@ let activeModalResolver = null;
 
 const initMobileHomeDrawer = window.DokeHomeDrawer?.create({ signal }) || (() => {});
 const initHomeSearch = window.DokeHomeSearch?.create({ signal }) || (() => {});
+const initHomeBeforeAfter = window.DokeHomeBeforeAfter?.create({ signal }) || (() => {});
+const initHomeWorkers = window.DokeHomeWorkers?.create({ signal }) || (() => {});
 
 
 const sideMeta = document.querySelector(".home-side-meta");
@@ -832,6 +836,7 @@ orderFeedbackClose?.addEventListener("click", closeOrderFeedback);
 
 initMobileHomeDrawer();
 initHomeSearch();
+initHomeWorkers();
 
 try {
   const shouldShowOrderFeedback = new URLSearchParams(window.location.search).get("quote") === "sent";

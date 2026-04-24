@@ -6,6 +6,8 @@
   const filterButtons = document.querySelectorAll('[data-wallet-filter]');
   const transactions = document.querySelectorAll('[data-wallet-type]');
   const scrollButtons = document.querySelectorAll('[data-wallet-scroll-to]');
+  const viewButtons = document.querySelectorAll('[data-wallet-view-toggle]');
+  const viewPanels = document.querySelectorAll('[data-wallet-view-panel]');
 
   const openModal = () => {
     if (!modal) return;
@@ -39,6 +41,48 @@
       target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
+
+  let currentView = 'overview';
+
+  const setView = (view) => {
+    if (!viewPanels.length) return;
+
+    currentView = view;
+
+    viewPanels.forEach((panel) => {
+      panel.hidden = panel.dataset.walletViewPanel !== view;
+    });
+
+    viewButtons.forEach((button) => {
+      button.classList.toggle('is-view-active', button.dataset.walletViewToggle === view);
+      button.setAttribute('aria-pressed', String(button.dataset.walletViewToggle === view));
+    });
+  };
+
+  viewButtons.forEach((button) => {
+    button.setAttribute('aria-pressed', 'false');
+
+    button.addEventListener('click', () => {
+      const requestedView = button.dataset.walletViewToggle || 'overview';
+      const view = requestedView === 'statistics' && currentView === 'statistics'
+        ? 'overview'
+        : requestedView;
+
+      setView(view);
+
+      const scrollTargetId = view === 'overview' ? 'wallet-statement-title' : button.dataset.walletScrollTo;
+      const targetPanel = document.querySelector(`[data-wallet-view-panel="${view}"]`);
+      const target = scrollTargetId ? document.getElementById(scrollTargetId) : targetPanel;
+
+      requestAnimationFrame(() => {
+        target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  });
+
+  if (viewPanels.length) {
+    setView('overview');
+  }
 
   filterButtons.forEach((button) => {
     button.addEventListener('click', () => {
