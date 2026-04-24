@@ -37,21 +37,25 @@
 }
 
 body.orders-page-shell .page__content,
-body.notifications-page-shell .page__content {
+body.notifications-page-shell .page__content,
+body.wallet-page-shell .page__content {
   padding-top: calc(var(--header-height) + 22px);
   padding-inline: 26px;
   padding-bottom: 40px;
 }
 
 body.notifications-page-shell,
-body.orders-page-shell {
+body.orders-page-shell,
+body.wallet-page-shell {
   --home-desktop-content-width: min(1280px, calc(100vw - var(--sidebar-width) - 56px));
 }
 
 body.orders-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content,
 body.orders-page-shell .orders-page,
 body.notifications-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content,
-body.notifications-page-shell .notifications-page {
+body.notifications-page-shell .notifications-page,
+body.wallet-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.wallet-shell-content,
+body.wallet-page-shell .wallet-page {
   width: min(100%, var(--home-desktop-content-width));
   max-width: min(100%, var(--home-desktop-content-width));
   margin-inline: auto;
@@ -59,7 +63,8 @@ body.notifications-page-shell .notifications-page {
 }
 
 body.orders-page-shell .home-side-meta,
-body.notifications-page-shell .home-side-meta {
+body.notifications-page-shell .home-side-meta,
+body.wallet-page-shell .home-side-meta {
   width: min(100%, var(--home-desktop-content-width));
   max-width: min(100%, var(--home-desktop-content-width));
   margin-inline: auto;
@@ -82,7 +87,8 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
 
 @media (max-width: 760px) {
   body.orders-page-shell .home-side-meta,
-  body.notifications-page-shell .home-side-meta {
+  body.notifications-page-shell .home-side-meta,
+  body.wallet-page-shell .home-side-meta {
     display: none;
   }
 
@@ -108,7 +114,8 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
    Shared by internal list pages so they no longer depend on home.css. */
 @media (min-width: 1025px) {
   body.orders-page-shell .home-side-meta,
-  body.notifications-page-shell .home-side-meta {
+  body.notifications-page-shell .home-side-meta,
+  body.wallet-page-shell .home-side-meta {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -117,20 +124,23 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   }
 
   body.orders-page-shell .home-side-meta__group,
-  body.notifications-page-shell .home-side-meta__group {
+  body.notifications-page-shell .home-side-meta__group,
+  body.wallet-page-shell .home-side-meta__group {
     display: inline-flex;
     align-items: center;
   }
 
   body.orders-page-shell .home-side-meta__group--primary,
-  body.notifications-page-shell .home-side-meta__group--primary {
+  body.notifications-page-shell .home-side-meta__group--primary,
+  body.wallet-page-shell .home-side-meta__group--primary {
     gap: 14px;
     min-width: 0;
     flex: 1 1 auto;
   }
 
   body.orders-page-shell .home-side-meta__group--secondary,
-  body.notifications-page-shell .home-side-meta__group--secondary {
+  body.notifications-page-shell .home-side-meta__group--secondary,
+  body.wallet-page-shell .home-side-meta__group--secondary {
     gap: 10px;
     flex: 0 0 auto;
   }
@@ -142,7 +152,11 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   body.notifications-page-shell .home-side-meta__search,
   body.notifications-page-shell .home-side-meta__alert,
   body.notifications-page-shell .home-side-meta__profile,
-  body.notifications-page-shell .home-side-meta__location {
+  body.notifications-page-shell .home-side-meta__location,
+  body.wallet-page-shell .home-side-meta__search,
+  body.wallet-page-shell .home-side-meta__alert,
+  body.wallet-page-shell .home-side-meta__profile,
+  body.wallet-page-shell .home-side-meta__location {
     border: 1px solid var(--internal-surface-border);
     background: var(--internal-surface-bg);
     box-shadow: var(--internal-surface-shadow);
@@ -152,7 +166,9 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   body.orders-page-shell .home-side-meta__search,
   body.orders-page-shell .home-side-meta__alert,
   body.notifications-page-shell .home-side-meta__search,
-  body.notifications-page-shell .home-side-meta__alert {
+  body.notifications-page-shell .home-side-meta__alert,
+  body.wallet-page-shell .home-side-meta__search,
+  body.wallet-page-shell .home-side-meta__alert {
     width: 44px;
     height: 44px;
     border-radius: 16px;
@@ -163,14 +179,17 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   }
 
   body.orders-page-shell .home-side-meta__alert,
-  body.notifications-page-shell .home-side-meta__alert {
+  body.notifications-page-shell .home-side-meta__alert,
+  body.wallet-page-shell .home-side-meta__alert {
     color: #2f7a7d;
   }
 
   body.orders-page-shell .home-side-meta__search svg,
   body.orders-page-shell .home-side-meta__alert svg,
   body.notifications-page-shell .home-side-meta__search svg,
-  body.notifications-page-shell .home-side-meta__alert svg {
+  body.notifications-page-shell .home-side-meta__alert svg,
+  body.wallet-page-shell .home-side-meta__search svg,
+  body.wallet-page-shell .home-side-meta__alert svg {
     width: 18px;
     height: 18px;
     stroke: currentColor;
@@ -184,7 +203,9 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   body.orders-page-shell .home-side-meta__search:hover,
   body.orders-page-shell .home-side-meta__alert:hover,
   body.notifications-page-shell .home-side-meta__search:hover,
-  body.notifications-page-shell .home-side-meta__alert:hover {
+  body.notifications-page-shell .home-side-meta__alert:hover,
+  body.wallet-page-shell .home-side-meta__search:hover,
+  body.wallet-page-shell .home-side-meta__alert:hover {
     transform: translateY(-2px);
     border-color: var(--surface-outline-hover);
     background: #ffffff;
@@ -194,12 +215,15 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   body.orders-page-shell .home-side-meta__search:hover svg,
   body.orders-page-shell .home-side-meta__alert:hover svg,
   body.notifications-page-shell .home-side-meta__search:hover svg,
-  body.notifications-page-shell .home-side-meta__alert:hover svg {
+  body.notifications-page-shell .home-side-meta__alert:hover svg,
+  body.wallet-page-shell .home-side-meta__search:hover svg,
+  body.wallet-page-shell .home-side-meta__alert:hover svg {
     transform: scale(1.06);
   }
 
   body.orders-page-shell .home-side-meta__search-form,
-  body.notifications-page-shell .home-side-meta__search-form {
+  body.notifications-page-shell .home-side-meta__search-form,
+  body.wallet-page-shell .home-side-meta__search-form {
     transform: translateX(-6px);
     transition: width 180ms ease, opacity 160ms ease, transform 180ms ease;
   }
@@ -207,12 +231,15 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   body.orders-page-shell .home-side-meta.is-search-open .home-side-meta__search-form,
   body.orders-page-shell .home-side-meta__search-form.is-expanded,
   body.notifications-page-shell .home-side-meta.is-search-open .home-side-meta__search-form,
-  body.notifications-page-shell .home-side-meta__search-form.is-expanded {
+  body.notifications-page-shell .home-side-meta__search-form.is-expanded,
+  body.wallet-page-shell .home-side-meta.is-search-open .home-side-meta__search-form,
+  body.wallet-page-shell .home-side-meta__search-form.is-expanded {
     transform: none;
   }
 
   body.orders-page-shell .home-side-meta__search-label,
-  body.notifications-page-shell .home-side-meta__search-label {
+  body.notifications-page-shell .home-side-meta__search-label,
+  body.wallet-page-shell .home-side-meta__search-label {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -225,7 +252,8 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   }
 
   body.orders-page-shell .home-side-meta__search-input,
-  body.notifications-page-shell .home-side-meta__search-input {
+  body.notifications-page-shell .home-side-meta__search-input,
+  body.wallet-page-shell .home-side-meta__search-input {
     min-height: 44px;
     padding: 0 16px;
     border-radius: 16px;
@@ -237,14 +265,17 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   body.orders-page-shell .home-side-meta__search-input:hover,
   body.notifications-page-shell .home-side-meta__search-input:hover,
   body.orders-page-shell .home-side-meta__search-input:focus-visible,
-  body.notifications-page-shell .home-side-meta__search-input:focus-visible {
+  body.notifications-page-shell .home-side-meta__search-input:focus-visible,
+  body.wallet-page-shell .home-side-meta__search-input:hover,
+  body.wallet-page-shell .home-side-meta__search-input:focus-visible {
     border-color: var(--surface-outline-hover);
     background: #ffffff;
     box-shadow: 0 14px 28px rgba(39, 58, 86, 0.12);
   }
 
   body.orders-page-shell .home-side-meta__location,
-  body.notifications-page-shell .home-side-meta__location {
+  body.notifications-page-shell .home-side-meta__location,
+  body.wallet-page-shell .home-side-meta__location {
     min-height: 44px;
     padding: 0 16px;
     border-radius: 16px;
@@ -259,7 +290,8 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   }
 
   body.orders-page-shell .home-side-meta__location:hover,
-  body.notifications-page-shell .home-side-meta__location:hover {
+  body.notifications-page-shell .home-side-meta__location:hover,
+  body.wallet-page-shell .home-side-meta__location:hover {
     transform: translateY(-2px);
     border-color: var(--surface-outline-hover);
     background: #ffffff;
@@ -267,14 +299,16 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   }
 
   body.orders-page-shell .home-side-meta__location-text,
-  body.notifications-page-shell .home-side-meta__location-text {
+  body.notifications-page-shell .home-side-meta__location-text,
+  body.wallet-page-shell .home-side-meta__location-text {
     position: relative;
     padding-left: 14px;
     white-space: nowrap;
   }
 
   body.orders-page-shell .home-side-meta__location-text::before,
-  body.notifications-page-shell .home-side-meta__location-text::before {
+  body.notifications-page-shell .home-side-meta__location-text::before,
+  body.wallet-page-shell .home-side-meta__location-text::before {
     content: "";
     position: absolute;
     left: 0;
@@ -288,14 +322,16 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   }
 
   body.orders-page-shell .home-side-meta__profile-wrap,
-  body.notifications-page-shell .home-side-meta__profile-wrap {
+  body.notifications-page-shell .home-side-meta__profile-wrap,
+  body.wallet-page-shell .home-side-meta__profile-wrap {
     position: relative;
     display: inline-flex;
     align-items: stretch;
   }
 
   body.orders-page-shell .home-side-meta__profile,
-  body.notifications-page-shell .home-side-meta__profile {
+  body.notifications-page-shell .home-side-meta__profile,
+  body.wallet-page-shell .home-side-meta__profile {
     min-height: 52px;
     padding: 8px 10px 8px 8px;
     border-radius: 20px 0 0 20px;
@@ -307,7 +343,8 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   }
 
   body.orders-page-shell .home-side-meta__profile-caret-button,
-  body.notifications-page-shell .home-side-meta__profile-caret-button {
+  body.notifications-page-shell .home-side-meta__profile-caret-button,
+  body.wallet-page-shell .home-side-meta__profile-caret-button {
     min-height: 52px;
     width: 38px;
     border: 1px solid var(--internal-surface-border);
@@ -323,7 +360,9 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   body.orders-page-shell .home-side-meta__profile-wrap:hover .home-side-meta__profile,
   body.orders-page-shell .home-side-meta__profile-wrap:hover .home-side-meta__profile-caret-button,
   body.notifications-page-shell .home-side-meta__profile-wrap:hover .home-side-meta__profile,
-  body.notifications-page-shell .home-side-meta__profile-wrap:hover .home-side-meta__profile-caret-button {
+  body.notifications-page-shell .home-side-meta__profile-wrap:hover .home-side-meta__profile-caret-button,
+  body.wallet-page-shell .home-side-meta__profile-wrap:hover .home-side-meta__profile,
+  body.wallet-page-shell .home-side-meta__profile-wrap:hover .home-side-meta__profile-caret-button {
     transform: translateY(-2px);
     border-color: var(--surface-outline-hover);
     background: #ffffff;
@@ -331,7 +370,8 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   }
 
   body.orders-page-shell .home-side-meta__avatar,
-  body.notifications-page-shell .home-side-meta__avatar {
+  body.notifications-page-shell .home-side-meta__avatar,
+  body.wallet-page-shell .home-side-meta__avatar {
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -344,20 +384,23 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   }
 
   body.orders-page-shell .home-side-meta__identity,
-  body.notifications-page-shell .home-side-meta__identity {
+  body.notifications-page-shell .home-side-meta__identity,
+  body.wallet-page-shell .home-side-meta__identity {
     display: grid;
     gap: 1px;
     text-align: left;
   }
 
   body.orders-page-shell .home-side-meta__identity strong,
-  body.notifications-page-shell .home-side-meta__identity strong {
+  body.notifications-page-shell .home-side-meta__identity strong,
+  body.wallet-page-shell .home-side-meta__identity strong {
     font-size: 0.9rem;
     line-height: 1.1;
   }
 
   body.orders-page-shell .home-side-meta__identity span,
-  body.notifications-page-shell .home-side-meta__identity span {
+  body.notifications-page-shell .home-side-meta__identity span,
+  body.wallet-page-shell .home-side-meta__identity span {
     font-size: 0.7rem;
     color: #2b5f94;
     font-weight: 700;
@@ -367,7 +410,9 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   body.orders-page-shell .home-side-meta__caret,
   body.orders-page-shell .home-side-meta__profile-caret,
   body.notifications-page-shell .home-side-meta__caret,
-  body.notifications-page-shell .home-side-meta__profile-caret {
+  body.notifications-page-shell .home-side-meta__profile-caret,
+  body.wallet-page-shell .home-side-meta__caret,
+  body.wallet-page-shell .home-side-meta__profile-caret {
     width: 8px;
     height: 8px;
     border-right: 1.8px solid #6d88a6;

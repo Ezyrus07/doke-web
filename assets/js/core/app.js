@@ -4,9 +4,9 @@ const SIDEBAR_STORAGE_KEY = "doke.sidebar.collapsed";
 const THEME_STORAGE_KEY = "doke.theme";
 const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", "mobile-search-active"];
 const INTERNAL_PROFILE_PATH = "/perfil.html";
-const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/comunidade.html", "/pagamento.html", "/finalizar-pedido.html", "/avaliacao.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/mais.html", "/"]);
+const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento.html", "/finalizar-pedido.html", "/avaliacao.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/mais.html", "/"]);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
-const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
+const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", "/comunidade-interna.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
 const isMobileSidebarViewport = () => window.innerWidth <= 1024;
 
@@ -144,7 +144,7 @@ const updateSidebarActiveState = () => {
   const ordersActive = path === "/pedidos.html";
   const messagesActive = path === "/mensagens.html" || path === "/pagamento.html" || path === "/finalizar-pedido.html" || path === "/avaliacao.html";
   const notificationsActive = path === "/notificacoes.html";
-  const communitiesActive = path === "/comunidade.html";
+  const communitiesActive = path === "/comunidade.html" || path === "/comunidade-interna.html";
   const profileActive = path === INTERNAL_PROFILE_PATH;
   const settingsActive = path === "/configuracoes.html" || path === "/mais.html";
 
@@ -323,6 +323,9 @@ const INTERNAL_VIEW_STYLE_HINTS = {
     "assets/css/pages/notificacoes.css"
   ],
   "/comunidade.html": [
+    "assets/css/pages/comunidade.css"
+  ],
+  "/comunidade-interna.html": [
     "assets/css/pages/comunidade.css"
   ],
   "/pagamento.html": [

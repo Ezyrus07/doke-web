@@ -12,7 +12,9 @@
   />
   <link rel="stylesheet" href="assets/css/core/index.css" />
   <link rel="stylesheet" href="assets/css/pages/app-shell.css" />
-  <link rel="stylesheet" href="assets/css/pages/carteira.css?v=20260422-border-sync" />
+  <link rel="stylesheet" href="assets/css/pages/internal-shell.css" />
+  <link rel="stylesheet" href="assets/css/pages/internal-action-surfaces.css" />
+  <link rel="stylesheet" href="assets/css/pages/carteira.css?v=20260423-wallet-topbar-standard-v1" />
  </head>
  <body class="app-shell-page internal-shell-page wallet-page-shell">
   <div class="app-shell">
@@ -75,236 +77,221 @@
 
     <main class="page__content">
      <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean shell-home__workspace shell-home__workspace--clean wallet-shell-content">
-      <section class="wallet-page" data-wallet-page data-wallet-mode="overview">
-       <div class="home-side-meta" aria-label="Atalhos e contexto da carteira">
+      <section class="wallet-page" aria-labelledby="wallet-title">
+       <div class="home-side-meta" aria-label="Ações rápidas da carteira">
         <div class="home-side-meta__group home-side-meta__group--primary">
-         <button class="home-side-meta__search" type="button" aria-label="Buscar movimentação" data-wallet-search-toggle>
+         <button class="home-side-meta__search" type="button" aria-label="Buscar na carteira">
           <svg viewBox="0 0 24 24" aria-hidden="true">
            <circle cx="11" cy="11" r="5.75"></circle>
            <path d="m16 16 4 4"></path>
           </svg>
          </button>
-         <form class="home-side-meta__search-form is-expanded wallet-header-search-form" action="carteira.html" role="search" aria-label="Buscar movimentação financeira">
-          <label class="home-side-meta__search-label" for="wallet-quick-search">Buscar movimentação</label>
-          <input id="wallet-quick-search" class="home-side-meta__search-input" type="text" name="q" placeholder="Buscar saque, cartão ou transação" autocomplete="off">
+         <form class="home-side-meta__search-form" role="search" aria-label="Buscar na carteira">
+          <label class="home-side-meta__search-label" for="wallet-search-input">Buscar</label>
+          <input id="wallet-search-input" class="home-side-meta__search-input" type="search" placeholder="Buscar na carteira" autocomplete="off">
          </form>
-         <div class="page-header-context" aria-label="Ações rápidas da carteira">
-          <button class="home-side-meta__location page-header-context__action wallet-header-action wallet-header-action--primary" type="button" data-wallet-open-withdraw>
-           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 4v16"></path>
-            <path d="m6 10 6-6 6 6"></path>
-           </svg>
-           <span>Sacar</span>
+         <div class="page-header-context" aria-label="Atalhos financeiros">
+          <button class="home-side-meta__location page-header-context__action" type="button" data-wallet-open-withdraw>
+           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16"></path><path d="m6 10 6-6 6 6"></path></svg>
+           <span>Sacar saldo</span>
           </button>
-          <button class="home-side-meta__location page-header-context__action wallet-header-action" type="button" data-wallet-mode-trigger="statement">
-           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M7 5.5h10"></path>
-            <path d="M7 9.5h10"></path>
-            <path d="M7 13.5h6"></path>
-            <path d="M5 4h14v16H5z"></path>
-           </svg>
+          <button class="home-side-meta__location page-header-context__action" type="button" data-wallet-scroll-to="wallet-statement-title">
+           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg>
            <span>Extrato</span>
           </button>
-          <button class="home-side-meta__location page-header-context__action wallet-header-action" type="button" data-wallet-mode-trigger="settings">
-           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="3.2"></circle>
-            <path d="M12 3.8v2.1"></path>
-            <path d="M12 18.1v2.1"></path>
-            <path d="m18.2 5.8-1.5 1.5"></path>
-            <path d="m7.3 16.7-1.5 1.5"></path>
-            <path d="M20.2 12h-2.1"></path>
-            <path d="M5.9 12H3.8"></path>
-            <path d="m18.2 18.2-1.5-1.5"></path>
-            <path d="m7.3 7.3-1.5-1.5"></path>
-           </svg>
-           <span>Configurar</span>
-          </button>
+          <a class="home-side-meta__location page-header-context__action" href="conta-bancaria.html">
+           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="3"></rect><path d="M3 10h18"></path></svg>
+           <span>Conta bancária</span>
+          </a>
          </div>
         </div>
+
         <div class="home-side-meta__group home-side-meta__group--secondary">
-         <button class="home-side-meta__alert" type="button" aria-label="Repasse previsto">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-           <path d="M12 4v16"></path>
-           <path d="m16 8-4-4-4 4"></path>
-          </svg>
+         <button class="home-side-meta__alert" type="button" aria-label="Pedidos" data-header-nav="pedidos.html">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5.5h12v13H6z"></path><path d="M9 9h6"></path><path d="M9 12h6"></path><path d="M9 15h4"></path></svg>
          </button>
-         <button class="home-side-meta__alert" type="button" aria-label="Métodos de recebimento">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-           <rect x="3" y="6" width="18" height="12" rx="3"></rect>
-           <path d="M3 10h18"></path>
-          </svg>
+         <button class="home-side-meta__alert" type="button" aria-label="Comunidade" data-header-nav="comunidade.html">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13.5V10l10-4v12l-10-4z"></path><path d="M15 9.5h2.2A2.8 2.8 0 0 1 20 12.3v.4a2.8 2.8 0 0 1-2.8 2.8H15"></path><path d="M7.5 14.5v2.2a1.8 1.8 0 0 0 1.8 1.8h1.2"></path></svg>
          </button>
-         <button class="home-side-meta__alert" type="button" aria-label="Segurança financeira">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-           <path d="M12 4 5.5 7v5.1c0 4 2.7 6.8 6.5 8.9 3.8-2.1 6.5-4.9 6.5-8.9V7L12 4z"></path>
-           <path d="m9.5 12.5 1.7 1.7 3.5-3.9"></path>
-          </svg>
+         <button class="home-side-meta__alert" type="button" aria-label="Notificações" data-header-nav="notificacoes.html">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.75a4 4 0 0 0-4 4v2.1c0 .7-.24 1.38-.68 1.92L5.9 14.5h12.2l-1.42-1.73a3 3 0 0 1-.68-1.92v-2.1a4 4 0 0 0-4-4Z"></path><path d="M10 17.2a2.3 2.3 0 0 0 4 0"></path></svg>
          </button>
+         <div class="home-side-meta__profile-wrap">
+          <button class="home-side-meta__profile" type="button" data-home-profile-menu-toggle aria-label="Abrir menu da conta" aria-expanded="false" aria-haspopup="true">
+           <span class="home-side-meta__avatar">DK</span>
+           <span class="home-side-meta__identity">
+            <strong>Gabriel</strong>
+            <span>Pontos: 230</span>
+           </span>
+          </button>
+          <button class="home-side-meta__profile-caret-button" type="button" data-home-account-menu-toggle aria-label="Abrir menu de contas" aria-expanded="false" aria-haspopup="true">
+           <span class="home-side-meta__profile-caret" aria-hidden="true"></span>
+          </button>
+          <div class="profile-dropdown profile-dropdown--home profile-dropdown--home-main" data-home-profile-menu hidden>
+           <div class="profile-dropdown__header">@gabriel</div>
+           <div class="profile-dropdown__body">
+            <a class="profile-dropdown__item" href="perfil.html">
+             <span class="profile-dropdown__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.2-3.2 3.7-4.8 7-4.8s5.8 1.6 7 4.8"></path></svg></span>
+             <span>Perfil</span>
+            </a>
+            <a class="profile-dropdown__item" href="configuracoes.html">
+             <span class="profile-dropdown__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 3.8v2.1"></path><path d="M12 18.1v2.1"></path><path d="m18.2 5.8-1.5 1.5"></path><path d="m7.3 16.7-1.5 1.5"></path><path d="M20.2 12h-2.1"></path><path d="M5.9 12H3.8"></path><path d="m18.2 18.2-1.5-1.5"></path><path d="m7.3 7.3-1.5-1.5"></path></svg></span>
+             <span>Configurações</span>
+            </a>
+           </div>
+           <div class="profile-dropdown__footer">
+            <button class="profile-dropdown__item profile-dropdown__item--danger" type="button" data-profile-logout>
+             <span class="profile-dropdown__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M15 7.5V5.8A1.8 1.8 0 0 0 13.2 4H7.8A1.8 1.8 0 0 0 6 5.8v12.4A1.8 1.8 0 0 0 7.8 20h5.4a1.8 1.8 0 0 0 1.8-1.8v-1.7"></path><path d="M10 12h10"></path><path d="m17 8 3 4-3 4"></path></svg></span>
+             <span>Sair</span>
+            </button>
+           </div>
+          </div>
+          <div class="profile-dropdown profile-dropdown--home profile-dropdown--home-accounts" data-home-account-menu hidden>
+           <div class="profile-dropdown__header">Contas</div>
+           <div class="profile-dropdown__body">
+            <a class="profile-dropdown__item" href="perfil.html"><span class="profile-dropdown__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.2-3.2 3.7-4.8 7-4.8s5.8 1.6 7 4.8"></path></svg></span><span>Pessoal</span></a>
+            <a class="profile-dropdown__item" href="perfil.html?mode=owner&panel=posts"><span class="profile-dropdown__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="2"></rect><path d="M8 10h8"></path><path d="M8 14h5"></path></svg></span><span>Profissional</span></a>
+           </div>
+          </div>
+         </div>
         </div>
        </div>
 
-       <section class="wallet-page-header" aria-label="Cabeçalho da carteira">
-        <div class="wallet-page-header__copy">
-          <span class="wallet-page-header__eyebrow">Financeiro</span>
-          <h1>Carteira</h1>
-          <p>Gerencie saldos, saques, repasses e histórico sem perder ritmo operacional.</p>
-        </div>
-       </section>
 
-       <section class="wallet-finance-strip" aria-label="Resumo financeiro">
-        <article class="wallet-finance-card is-accent">
+       <header class="wallet-page-header">
+        <div>
+         <span class="wallet-eyebrow">Financeiro</span>
+         <h1 id="wallet-title">Carteira</h1>
+         <p>Controle seu saldo, saques, repasses e métodos de recebimento em uma tela simples.</p>
+        </div>
+
+       </header>
+
+       <section class="wallet-summary" aria-label="Resumo financeiro">
+        <article class="wallet-summary-card wallet-summary-card--balance">
          <span>Saldo disponível</span>
-         <strong data-wallet-balance-available>R$ 4.860</strong>
+         <strong>R$ 4.860,00</strong>
          <p>Pronto para saque imediato</p>
         </article>
-        <article class="wallet-finance-card">
+        <article class="wallet-summary-card">
          <span>Saldo pendente</span>
-         <strong data-wallet-balance-pending>R$ 1.280</strong>
-         <p>Liberação em até 2 dias</p>
+         <strong>R$ 1.280,00</strong>
+         <p>Liberação prevista em até 2 dias</p>
         </article>
-        <article class="wallet-finance-card">
-         <span>Ganhos no mês</span>
-         <strong data-wallet-balance-month>R$ 9.420</strong>
-         <p>+12% sobre o mês anterior</p>
-        </article>
-        <article class="wallet-finance-card">
+        <article class="wallet-summary-card">
          <span>Próximo repasse</span>
-         <strong data-wallet-next-transfer>12 abr</strong>
+         <strong>12 abr</strong>
          <p>PIX automático • Banco Inter</p>
         </article>
+        <article class="wallet-summary-card">
+         <span>Status</span>
+         <strong>Regular</strong>
+         <p>Conta validada e sem pendências</p>
+        </article>
        </section>
 
-       <section class="wallet-board" data-wallet-overview>
-        <div class="wallet-board__grid">
-         <article class="wallet-panel wallet-panel--evolution">
-          <div class="wallet-panel__top">
-           <div>
-            <span class="wallet-section__eyebrow">Fluxo</span>
-            <h2>Evolução de leads</h2>
-           </div>
-           <div class="wallet-period-switch" role="tablist" aria-label="Período da evolução">
-            <button class="wallet-period-switch__button is-active" type="button" role="tab" aria-selected="true" data-wallet-period="7d">7d</button>
-            <button class="wallet-period-switch__button" type="button" role="tab" aria-selected="false" data-wallet-period="30d">30d</button>
-            <button class="wallet-period-switch__button" type="button" role="tab" aria-selected="false" data-wallet-period="90d">90d</button>
-           </div>
+       <section class="wallet-layout">
+        <section class="wallet-panel wallet-panel--statement" aria-labelledby="wallet-statement-title">
+         <div class="wallet-panel__header">
+          <div>
+           <span class="wallet-eyebrow">Extrato</span>
+           <h2 id="wallet-statement-title">Movimentações recentes</h2>
           </div>
-          <div class="wallet-evolution-metric">
-           <strong data-wallet-leads-total>38</strong>
-           <p data-wallet-leads-label>Leads no período selecionado</p>
+          <div class="wallet-tabs" role="tablist" aria-label="Filtrar extrato">
+           <button class="wallet-tab is-active" type="button" data-wallet-filter="all">Tudo</button>
+           <button class="wallet-tab" type="button" data-wallet-filter="income">Entradas</button>
+           <button class="wallet-tab" type="button" data-wallet-filter="withdraw">Saques</button>
           </div>
-          <div class="wallet-evolution-chart" data-wallet-chart aria-label="Gráfico de evolução"></div>
-          <div class="wallet-evolution-days" data-wallet-day-strip></div>
-         </article>
+         </div>
 
-         <article class="wallet-panel wallet-panel--funnel">
-          <div class="wallet-panel__top">
+         <div class="wallet-list">
+          <article class="wallet-transaction" data-wallet-type="income">
+           <span class="wallet-transaction__icon wallet-transaction__icon--income">+</span>
            <div>
-            <span class="wallet-section__eyebrow">Funil</span>
-            <h2>Conversão por etapa</h2>
+            <strong>Pedido concluído • Pintura residencial</strong>
+            <p>Gabriel Pinturas • hoje, 09:14</p>
            </div>
-          </div>
-          <div class="wallet-funnel" data-wallet-funnel></div>
-         </article>
+           <b>+R$ 820,00</b>
+          </article>
 
-         <article class="wallet-panel wallet-panel--origin">
-          <div class="wallet-panel__top">
+          <article class="wallet-transaction" data-wallet-type="withdraw">
+           <span class="wallet-transaction__icon wallet-transaction__icon--withdraw">↗</span>
            <div>
-            <span class="wallet-section__eyebrow">Origem</span>
-            <h2>De onde chegam os contatos</h2>
+            <strong>Saque solicitado</strong>
+            <p>PIX para Banco Inter • ontem, 08:01</p>
            </div>
-          </div>
-          <div class="wallet-origin-ring" data-wallet-origin-ring>
-           <div class="wallet-origin-ring__center">
-            <strong data-wallet-origin-total>100%</strong>
-            <span>do tráfego</span>
-           </div>
-          </div>
-          <div class="wallet-origin-list" data-wallet-origin-list></div>
-         </article>
-        </div>
+           <b>-R$ 1.200,00</b>
+          </article>
 
-        <div class="wallet-secondary-grid">
-         <article class="wallet-panel">
-          <div class="wallet-panel__top">
+          <article class="wallet-transaction" data-wallet-type="income">
+           <span class="wallet-transaction__icon wallet-transaction__icon--income">+</span>
            <div>
-            <span class="wallet-section__eyebrow">Recebimento</span>
-            <h2>Conta bancária</h2>
+            <strong>Pedido concluído • Elétrica residencial</strong>
+            <p>Luz Técnica • sábado, 17:08</p>
            </div>
-           <button class="wallet-text-action" type="button" data-wallet-mode-trigger="settings">Editar</button>
-          </div>
-          <div class="wallet-account-card">
-           <strong>Banco Inter • Conta final 2341</strong>
-           <p>Repasse automático toda terça às 08:00.</p>
-           <div class="wallet-account-card__meta">
-            <span>PIX verificado</span>
-            <span>Sem pendências</span>
-           </div>
-          </div>
-         </article>
+           <b>+R$ 420,00</b>
+          </article>
 
-         <article class="wallet-panel">
-          <div class="wallet-panel__top">
+          <article class="wallet-transaction" data-wallet-type="fee">
+           <span class="wallet-transaction__icon wallet-transaction__icon--fee">%</span>
            <div>
-            <span class="wallet-section__eyebrow">Métodos</span>
-            <h2>Cartões e proteção</h2>
+            <strong>Taxa de intermediação</strong>
+            <p>Proteção operacional • sexta, 18:22</p>
            </div>
-           <button class="wallet-text-action" type="button">Adicionar</button>
+           <b>-R$ 48,00</b>
+          </article>
+         </div>
+        </section>
+
+        <aside class="wallet-side">
+         <section class="wallet-panel" aria-labelledby="wallet-bank-title">
+          <div class="wallet-panel__header">
+           <div>
+            <span class="wallet-eyebrow">Recebimento</span>
+            <h2 id="wallet-bank-title">Conta bancária</h2>
+           </div>
+           <a class="wallet-link-button" href="conta-bancaria.html">Editar</a>
           </div>
-          <div class="wallet-methods-grid">
-           <button class="wallet-method-card is-primary" type="button">
-            <strong>Visa •••• 9142</strong>
-            <span>Principal para taxas e assinaturas</span>
+
+          <article class="wallet-bank-card">
+           <span>PIX</span>
+           <div>
+            <strong>Banco Inter • final 2341</strong>
+            <p>Repasse automático toda terça às 08:00.</p>
+           </div>
+          </article>
+
+          <div class="wallet-chip-row">
+           <span>PIX verificado</span>
+           <span>Sem pendências</span>
+          </div>
+         </section>
+
+         <section class="wallet-panel" aria-labelledby="wallet-method-title">
+          <div class="wallet-panel__header">
+           <div>
+            <span class="wallet-eyebrow">Métodos</span>
+            <h2 id="wallet-method-title">Cartões salvos</h2>
+           </div>
+           <a class="wallet-link-button" href="adicionar-cartao.html">Adicionar</a>
+          </div>
+
+          <div class="wallet-card-stack">
+           <button class="wallet-payment-card is-primary" type="button">
+            <span>Visa</span>
+            <strong>•••• 9142</strong>
+            <small>Principal</small>
            </button>
-           <button class="wallet-method-card" type="button">
-            <strong>Mastercard •••• 5590</strong>
-            <span>Reserva para cobranças adicionais</span>
+           <button class="wallet-payment-card" type="button">
+            <span>Mastercard</span>
+            <strong>•••• 5590</strong>
+            <small>Reserva</small>
            </button>
           </div>
-         </article>
-        </div>
+         </section>
+        </aside>
        </section>
 
-       <section class="wallet-panel wallet-statement-panel" data-wallet-statement>
-        <div class="wallet-panel__top">
-         <div>
-          <span class="wallet-section__eyebrow">Extrato</span>
-          <h2>Movimentações recentes</h2>
-         </div>
-         <div class="wallet-history-filters" role="tablist" aria-label="Filtrar extrato">
-          <button class="wallet-history-filter is-active" type="button" data-wallet-filter="all">Tudo</button>
-          <button class="wallet-history-filter" type="button" data-wallet-filter="income">Entradas</button>
-          <button class="wallet-history-filter" type="button" data-wallet-filter="withdraw">Saques</button>
-          <button class="wallet-history-filter" type="button" data-wallet-filter="fee">Taxas</button>
-         </div>
-        </div>
-        <div class="wallet-history-list" data-wallet-history-list></div>
-       </section>
-
-       <section class="wallet-panel wallet-settings-panel" data-wallet-settings hidden>
-        <div class="wallet-panel__top">
-         <div>
-          <span class="wallet-section__eyebrow">Configuração</span>
-          <h2>Recebimentos e automações</h2>
-         </div>
-        </div>
-        <div class="wallet-settings-grid">
-         <article class="wallet-setting-card is-active">
-          <strong>Repasse automático</strong>
-          <p>Transferir saldo toda terça-feira às 08:00.</p>
-          <button type="button">Ativado</button>
-         </article>
-         <article class="wallet-setting-card">
-          <strong>Notificação de saldo</strong>
-          <p>Enviar alerta quando houver saldo acima de R$ 1.000.</p>
-          <button type="button">Configurar</button>
-         </article>
-         <article class="wallet-setting-card">
-          <strong>Reserva operacional</strong>
-          <p>Separar 8% dos ganhos para fluxo de caixa recorrente.</p>
-          <button type="button">Editar</button>
-         </article>
-        </div>
-       </section>
       </section>
      </div>
     </main>
@@ -312,44 +299,40 @@
 
   </div>
 
-  <div class="wallet-overlay" data-wallet-withdraw-overlay hidden>
-   <div class="wallet-overlay__backdrop" data-wallet-withdraw-close></div>
-   <div class="wallet-overlay__dialog wallet-withdraw-dialog" role="dialog" aria-modal="true" aria-labelledby="wallet-withdraw-title">
-    <div class="wallet-panel wallet-panel--modal">
-     <div class="wallet-panel__top">
-      <div>
-       <span class="wallet-section__eyebrow">Saque</span>
-       <h2 id="wallet-withdraw-title">Solicitar transferência</h2>
-      </div>
-      <button class="wallet-inline-close" type="button" data-wallet-withdraw-close>Fechar</button>
+  <div class="wallet-modal" data-wallet-withdraw-modal hidden>
+   <div class="wallet-modal__scrim" data-wallet-close-withdraw></div>
+   <section class="wallet-modal__card" role="dialog" aria-modal="true" aria-labelledby="wallet-withdraw-title">
+    <button class="wallet-modal__close" type="button" data-wallet-close-withdraw aria-label="Fechar">×</button>
+    <span class="wallet-eyebrow">Saque</span>
+    <h2 id="wallet-withdraw-title">Solicitar transferência</h2>
+    <p>Informe o valor que deseja transferir para a conta bancária cadastrada.</p>
+
+    <form class="wallet-withdraw-form" data-wallet-withdraw-form>
+     <label>
+      <span>Valor do saque</span>
+      <input type="text" inputmode="decimal" value="R$ 1.200,00">
+     </label>
+
+     <div class="wallet-withdraw-summary">
+      <article>
+       <span>Destino</span>
+       <strong>PIX • Banco Inter</strong>
+      </article>
+      <article>
+       <span>Disponível</span>
+       <strong>R$ 4.860,00</strong>
+      </article>
      </div>
-     <form class="wallet-withdraw-form" data-wallet-withdraw-form>
-      <label class="wallet-field">
-       <span>Valor do saque</span>
-       <input type="text" inputmode="decimal" value="R$ 1.200,00" aria-label="Valor do saque">
-      </label>
-      <div class="wallet-withdraw-grid">
-       <article class="wallet-withdraw-card">
-        <span class="wallet-section__eyebrow">Destino</span>
-        <strong>PIX • Banco Inter</strong>
-        <p>Crédito previsto em até 10 minutos após aprovação.</p>
-       </article>
-       <article class="wallet-withdraw-card">
-        <span class="wallet-section__eyebrow">Disponível</span>
-        <strong>R$ 4.860,00</strong>
-        <p>Sem retenções operacionais no momento.</p>
-       </article>
-      </div>
-      <div class="wallet-withdraw-actions">
-       <button class="wallet-inline-close" type="button" data-wallet-withdraw-close>Cancelar</button>
-       <button class="wallet-submit" type="submit">Confirmar saque</button>
-      </div>
-     </form>
-    </div>
-   </div>
+
+     <div class="wallet-modal__actions">
+      <button class="wallet-button wallet-button--ghost" type="button" data-wallet-close-withdraw>Cancelar</button>
+      <button class="wallet-button wallet-button--primary" type="submit">Confirmar saque</button>
+     </div>
+    </form>
+   </section>
   </div>
 
   <script src="assets/js/core/app.js"></script>
-  <script src="assets/js/pages/carteira.js"></script>
+  <script src="assets/js/pages/carteira.js?v=20260423-wallet-topbar-standard-v1"></script>
  </body>
 </html>

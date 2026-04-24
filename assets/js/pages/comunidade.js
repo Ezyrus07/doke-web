@@ -13,7 +13,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const codeForm = page.querySelector('[data-community-code-form]');
   const codeInput = page.querySelector('[data-community-code-input]');
   const codeFeedback = page.querySelector('[data-community-code-feedback]');
-
+  const requestModal = document.querySelector('[data-community-request-modal]');
+  const customSelects = [...document.querySelectorAll('[data-community-select]')];
+  const requestTitle = document.querySelector('#community-request-title');
+  const requestCopy = document.querySelector('[data-community-request-copy]');
+  const requestForm = document.querySelector('[data-community-request-form]');
+  const requestSuccess = document.querySelector('[data-community-request-success]');
+  const requestMessage = document.querySelector('[data-community-request-message]');
+  const codeModal = document.querySelector('[data-community-code-modal]');
+  const createModal = document.querySelector('[data-community-create-modal]');
+  let activeRequestButton = null;
   let currentFilter = 'all';
 
   const getSearchTerm = () => {
@@ -46,6 +55,50 @@ document.addEventListener('DOMContentLoaded', () => {
     if (emptyState) emptyState.hidden = visibleCount > 0;
   };
 
+  const openRequestModal = (button) => {
+    if (!requestModal) return;
+    const card = button.closest('[data-community-card]');
+    const communityName = card?.dataset.title || 'esta comunidade';
+    activeRequestButton = button;
+
+    if (requestTitle) requestTitle.textContent = `Solicitar entrada em ${communityName}`;
+    if (requestCopy) {
+      requestCopy.textContent = `Conte rapidamente por que você quer participar de ${communityName}. Em condomínios, informe bloco, torre ou unidade se fizer sentido.`;
+    }
+    if (requestForm) requestForm.hidden = false;
+    if (requestSuccess) requestSuccess.hidden = true;
+    if (requestMessage) requestMessage.value = '';
+
+    requestModal.hidden = false;
+    requestModal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('community-modal-open');
+    window.setTimeout(() => requestMessage?.focus(), 80);
+  };
+
+  const closeRequestModal = () => {
+    if (!requestModal) return;
+    requestModal.hidden = true;
+    requestModal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('community-modal-open');
+  };
+
+  const openActionModal = (modal) => {
+    if (!modal) return;
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('community-modal-open');
+    window.setTimeout(() => modal.querySelector('input, select, textarea, button')?.focus(), 80);
+  };
+
+  const closeActionModals = () => {
+    [codeModal, createModal].forEach((modal) => {
+      if (!modal) return;
+      modal.hidden = true;
+      modal.setAttribute('aria-hidden', 'true');
+    });
+    if (!requestModal || requestModal.hidden) document.body.classList.remove('community-modal-open');
+  };
+
   filters.forEach((filter) => {
     filter.addEventListener('click', () => {
       currentFilter = filter.dataset.communityFilter || 'all';
@@ -61,17 +114,104 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  codeTriggers.forEach((trigger) => {
-    trigger.addEventListener('click', () => {
-      document.getElementById('community-code-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      window.setTimeout(() => codeInput?.focus(), 260);
+  document.querySelectorAll('[data-community-enter]').forEach((button) => {
+    button.addEventListener('click', () => {
+      window.location.href = 'comunidade-interna.html';
     });
   });
 
-  createTriggers.forEach((trigger) => {
-    trigger.addEventListener('click', () => {
-      window.alert('Fluxo de criação de comunidade ainda será conectado.');
+  document.querySelectorAll('[data-community-request]').forEach((button) => {
+    button.addEventListener('click', () => openRequestModal(button));
+  });
+
+  document.querySelectorAll('[data-community-request-close]').forEach((button) => {
+    button.addEventListener('click', closeRequestModal);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    if (requestModal && !requestModal.hidden) closeRequestModal();
+    closeActionModals();
+  });
+
+  if (requestForm && requestSuccess) {
+    requestForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      requestForm.hidden = true;
+      requestSuccess.hidden = false;
+      if (activeRequestButton) {
+        activeRequestButton.textContent = 'Solicitação enviada';
+        activeRequestButton.classList.remove('community-card__action--request');
+        activeRequestButton.classList.add('community-card__action--pending');
+        activeRequestButton.disabled = true;
+      }
+      window.setTimeout(closeRequestModal, 1800);
     });
+  }
+
+  codeTriggers.forEach((trigger) => {
+    trigger.addEventListener('click', () => openActionModal(codeModal));
+  });
+
+  createTriggers.forEach((trigger) => {
+    trigger.addEventListener('click', () => openActionModal(createModal));
+  });
+
+  document.querySelectorAll('[data-community-action-close]').forEach((button) => {
+    button.addEventListener('click', closeActionModals);
+  });
+
+  document.querySelectorAll('[data-community-code-modal-form], [data-community-create-modal-form]').forEach((form) => {
+    form.addEventListener('submit', (event) => event.preventDefault());
+  });
+
+  const closeCustomSelects = (except = null) => {
+    customSelects.forEach((select) => {
+      if (except && select === except) return;
+      select.classList.remove('is-open');
+      const trigger = select.querySelector('[data-community-select-trigger]');
+      const menu = select.querySelector('.community-select__menu');
+      if (trigger) trigger.setAttribute('aria-expanded', 'false');
+      if (menu) menu.hidden = true;
+    });
+  };
+
+  customSelects.forEach((select) => {
+    const trigger = select.querySelector('[data-community-select-trigger]');
+    const menu = select.querySelector('.community-select__menu');
+    const label = select.querySelector('[data-community-select-label]');
+    const valueInput = select.querySelector('[data-community-select-value]');
+    const options = [...select.querySelectorAll('[data-community-select-option]')];
+
+    if (!trigger || !menu || !label || !valueInput || !options.length) return;
+
+    trigger.addEventListener('click', () => {
+      const isOpen = select.classList.contains('is-open');
+      closeCustomSelects(select);
+      select.classList.toggle('is-open', !isOpen);
+      menu.hidden = isOpen;
+      trigger.setAttribute('aria-expanded', String(!isOpen));
+    });
+
+    options.forEach((option) => {
+      option.addEventListener('click', () => {
+        const nextValue = option.dataset.value || option.textContent.trim();
+        valueInput.value = nextValue;
+        label.textContent = nextValue;
+        options.forEach((item) => {
+          const selected = item === option;
+          item.classList.toggle('is-selected', selected);
+          item.setAttribute('aria-selected', String(selected));
+        });
+        closeCustomSelects();
+        trigger.focus();
+      });
+    });
+  });
+
+  document.addEventListener('click', (event) => {
+    if (event.target.closest('[data-community-select]')) return;
+    closeCustomSelects();
   });
 
   if (mobileSearchToggle && mobileSearchPanel) {
@@ -79,9 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const hidden = mobileSearchPanel.hasAttribute('hidden');
       mobileSearchPanel.toggleAttribute('hidden');
       mobileSearchToggle.setAttribute('aria-expanded', String(hidden));
-      if (hidden) {
-        mobileSearchPanel.querySelector('input')?.focus();
-      }
+      if (hidden) mobileSearchPanel.querySelector('input')?.focus();
     });
   }
 
