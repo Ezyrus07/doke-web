@@ -331,6 +331,8 @@ window.DokeHomeWorkers = (() => {
         syncCommentsVisibility();
       };
 
+      window.DokeOpenWorkerPreview = open;
+
       const close = () => {
         if (root.hidden) return;
         pauseAll();

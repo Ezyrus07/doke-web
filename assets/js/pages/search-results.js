@@ -104,11 +104,14 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   let resultsLoadTimer = null;
   let activeSearchIndex = -1;
   let activeSearchMode = 'services';
+  let previewController = null;
 
   window.DokeSearchResultsCleanup = () => {
     routeController.abort();
     document.body.classList.remove('results-filters-open');
     if (resultsLoadTimer) window.clearTimeout(resultsLoadTimer);
+    previewController?.abort();
+    previewController = null;
     closeResultsSearchDropdown();
     closeModal(false);
   };
@@ -261,6 +264,33 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     els.searchModeInputs.forEach((input) => {
       input.checked = input.value === activeSearchMode;
     });
+    syncResultsMode(activeSearchMode);
+  };
+
+  const syncResultsMode = (mode = getSearchMode()) => {
+    const safeMode = ['services', 'users', 'workers', 'before-after'].includes(mode) ? mode : 'services';
+    resultsLayout?.setAttribute('data-results-mode', safeMode);
+    els.resultsGrid?.setAttribute('data-results-mode', safeMode);
+  };
+
+  const refreshResultPreviews = () => {
+    previewController?.abort();
+    previewController = new AbortController();
+    const previewSignal = previewController.signal;
+    window.DokeHomeBeforeAfter?.create({ signal: previewSignal });
+    window.DokeHomeWorkers?.create({ signal: previewSignal });
+  };
+
+  const BEFORE_AFTER_PREVIEW_IDS = {
+    'ba-sala': 'case-reforma',
+    'ba-banheiro': 'case-bathroom'
+  };
+
+  const getBeforeAfterPreviewId = (item = {}) => {
+    if (item.previewId) return item.previewId;
+    if (BEFORE_AFTER_PREVIEW_IDS[item.id]) return BEFORE_AFTER_PREVIEW_IDS[item.id];
+    if (String(item.visualClass || '').includes('bathroom')) return 'case-bathroom';
+    return 'case-reforma';
   };
 
   const fillSelectOptions = (select, values, placeholder) => {
@@ -522,6 +552,12 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   const createVideoCard = (item) => {
     const article = document.createElement('article');
     article.className = `video-card ${item.mediaClass || ''}`;
+    article.dataset.workerTrigger = '';
+    article.dataset.workerId = item.id || '';
+    article.setAttribute('role', 'button');
+    article.setAttribute('tabindex', '0');
+    article.setAttribute('aria-haspopup', 'dialog');
+    article.setAttribute('aria-label', `Abrir worker: ${item.title || 'vídeo'}`);
     article.innerHTML = `
       <span class="video-card__play">▶</span>
       <div class="video-card__content">
@@ -534,17 +570,25 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
 
   const createBeforeAfterCard = (item) => {
     const article = document.createElement('article');
+    const previewId = getBeforeAfterPreviewId(item);
+    const rating = String(item.rating || '').replace('.', ',');
     article.className = 'comparison-card';
+    article.dataset.beforeAfterTrigger = '';
+    article.dataset.beforeAfterId = previewId;
+    article.setAttribute('role', 'button');
+    article.setAttribute('tabindex', '0');
+    article.setAttribute('aria-haspopup', 'dialog');
+    article.setAttribute('aria-label', `Abrir caso: ${item.title || 'antes e depois'}`);
     article.innerHTML = `
       <div class="comparison-card__visual ${item.visualClass || ''}">
         <div class="comparison-card__half comparison-card__half--before"><span>Antes</span></div>
         <div class="comparison-card__half comparison-card__half--after"><span>Depois</span></div>
       </div>
       <div class="comparison-card__body">
-        <strong>${item.title || ''}</strong>
+        <strong class="comparison-card__title">${item.title || ''}</strong>
         <div class="comparison-card__meta">
-          <span>Por ${item.author || ''}</span>
-          <span>★ ${String(item.rating || '').replace('.', ',')}</span>
+          <span class="comparison-card__provider">Por <span>${item.author || ''}</span></span>
+          <span class="comparison-card__rating" aria-label="Avaliação ${rating} de 5">★ <strong>${rating}</strong></span>
         </div>
       </div>
     `;
@@ -668,6 +712,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   const renderResults = () => {
     const query = String(params.get('q') || '').trim();
     const filters = getFilters();
+    syncResultsMode(filters.searchType);
     persistFiltersToParams(filters);
     window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
 
@@ -704,6 +749,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       if (els.resultsCount) els.resultsCount.textContent = formatCount(displayUsers.length);
       renderActiveChips(query, filters, displayUsers.length);
       setResultsState(displayUsers.length ? 'results' : 'empty');
+      refreshResultPreviews();
       return;
     }
 
@@ -720,6 +766,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       if (els.resultsCount) els.resultsCount.textContent = formatCount(workerResults.length);
       renderActiveChips(query, filters, workerResults.length);
       setResultsState(workerResults.length ? 'results' : 'empty');
+      refreshResultPreviews();
       return;
     }
 
@@ -736,6 +783,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       if (els.resultsCount) els.resultsCount.textContent = formatCount(beforeAfterResults.length);
       renderActiveChips(query, filters, beforeAfterResults.length);
       setResultsState(beforeAfterResults.length ? 'results' : 'empty');
+      refreshResultPreviews();
       return;
     }
 
@@ -762,6 +810,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     if (exactServiceResults.length) {
       if (els.resultsInlineEmpty) els.resultsInlineEmpty.hidden = true;
       setResultsState('results');
+      refreshResultPreviews();
       return;
     }
 
@@ -770,6 +819,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     emptyFallback.forEach((item) => els.resultsGrid.appendChild(createServiceCard(item)));
     setResultsState('empty');
     els.resultsGrid.hidden = false;
+    refreshResultPreviews();
   };
 
   const loadResults = () => {
@@ -904,10 +954,45 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     applySearchSuggestion(action.dataset.value || action.textContent || '');
   }, { signal });
 
+  const isResultsPreviewTrigger = (trigger) => Boolean(
+    trigger?.closest?.('[data-results-grid], [data-results-videos-grid], [data-results-before-after-grid]')
+  );
+
+  const openResultsPreviewTrigger = (trigger, event) => {
+    if (!trigger || !isResultsPreviewTrigger(trigger)) return false;
+
+    const workerTrigger = trigger.closest('[data-worker-trigger]');
+    if (workerTrigger) {
+      event?.preventDefault?.();
+      if (!window.DokeOpenWorkerPreview) refreshResultPreviews();
+      window.DokeOpenWorkerPreview?.(workerTrigger.dataset.workerId || '', workerTrigger);
+      return true;
+    }
+
+    const beforeAfterTrigger = trigger.closest('[data-before-after-trigger]');
+    if (beforeAfterTrigger) {
+      event?.preventDefault?.();
+      if (!window.DokeOpenBeforeAfterPreview) refreshResultPreviews();
+      window.DokeOpenBeforeAfterPreview?.(beforeAfterTrigger.dataset.beforeAfterId || '', beforeAfterTrigger);
+      return true;
+    }
+
+    return false;
+  };
+
   document.addEventListener('click', (event) => {
+    const previewTrigger = event.target.closest('[data-worker-trigger], [data-before-after-trigger]');
+    if (openResultsPreviewTrigger(previewTrigger, event)) return;
+
     if (!event.target.closest('[data-results-searchbox]')) {
       closeResultsSearchDropdown();
     }
+  }, { signal });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const previewTrigger = event.target.closest('[data-worker-trigger], [data-before-after-trigger]');
+    openResultsPreviewTrigger(previewTrigger, event);
   }, { signal });
 
   els.resultsSearchClear?.addEventListener('click', () => {

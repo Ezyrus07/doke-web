@@ -12,7 +12,8 @@
     />
     <link rel="stylesheet" href="assets/css/core/index.css" />
     <link rel="stylesheet" href="assets/css/pages/app-shell.css" />
-    <link rel="stylesheet" href="assets/css/pages/search-results.css?v=20260425-result-card-parity" />
+    <link rel="stylesheet" href="assets/css/pages/search-results.css?v=20260425-final-card-modal-fix" />
+    <link rel="stylesheet" href="assets/css/components/before-after-workers-preview.css?v=20260425-final-card-modal-fix" />
   </head>
   <body class="app-shell-page internal-shell-page search-results-body">
     <div class="app-shell">
@@ -464,6 +465,46 @@
 
     </div>
 
+
+    <section class="before-after-preview" data-before-after-preview hidden aria-hidden="true">
+      <div class="before-after-preview__scrim" data-before-after-close></div>
+      <div class="before-after-preview__dialog" role="dialog" aria-modal="true" aria-label="Detalhes do caso antes e depois"></div>
+    </section>
+
+    <section class="worker-preview" data-worker-preview hidden aria-hidden="true">
+      <div class="worker-preview__scrim"></div>
+
+      <button class="worker-preview__close worker-preview__close--fixed" type="button" data-worker-preview-close aria-label="Fechar workers">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6l12 12M18 6 6 18"></path>
+        </svg>
+      </button>
+
+      <div class="worker-preview__stage" role="dialog" aria-modal="true" aria-label="Workers em vídeo">
+        <aside class="worker-preview__comments" data-worker-preview-comments aria-label="Comentários do worker">
+          <div class="worker-preview__comments-head">
+            <span class="worker-preview__comments-count" data-worker-preview-comment-count>255 comentários</span>
+            <button type="button" data-worker-preview-comments-toggle aria-label="Ocultar comentários">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+            </button>
+          </div>
+
+          <div class="worker-preview__comments-list" data-worker-preview-comments-list></div>
+
+          <div class="worker-preview__comment-input">
+            <span class="worker-preview__mini-avatar">DK</span>
+            <input type="text" placeholder="Adicionar comentário..." aria-label="Adicionar comentário">
+          </div>
+        </aside>
+
+        <div class="worker-preview__feed" data-worker-preview-feed aria-label="Feed vertical de workers"></div>
+
+        <div class="worker-preview__scroll-hint" aria-hidden="true">
+          <span>Role para o próximo vídeo</span>
+        </div>
+      </div>
+    </section>
+
     <div class="ui-modal" data-ui-modal hidden>
       <div class="ui-modal__backdrop" data-ui-modal-close></div>
       <div
@@ -512,7 +553,9 @@
     <script src="assets/js/core/supabase-config.js"></script>
     <script src="assets/js/core/auth-service.js"></script>
     <script src="assets/js/core/app.js"></script>
-    <script src="assets/js/pages/search-data.js?v=20260425-workers-search"></script>
-    <script src="assets/js/pages/search-results.js?v=20260425-workers-search"></script>
+    <script src="assets/js/pages/search-data.js?v=20260425-final-card-modal-fix"></script>
+    <script src="assets/js/pages/home/before-after.js?v=20260425-final-card-modal-fix"></script>
+    <script src="assets/js/pages/home/workers.js?v=20260425-final-card-modal-fix"></script>
+    <script src="assets/js/pages/search-results.js?v=20260425-final-card-modal-fix"></script>
   </body>
 </html>

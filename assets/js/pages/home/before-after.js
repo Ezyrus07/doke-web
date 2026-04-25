@@ -507,6 +507,8 @@ window.DokeHomeBeforeAfter = (() => {
         root.querySelector('.before-after-preview__close')?.focus({ preventScroll: true });
       };
 
+      window.DokeOpenBeforeAfterPreview = open;
+
       const close = () => {
         if (root.hidden) return;
         root.hidden = true;
