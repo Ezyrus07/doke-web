@@ -13,8 +13,9 @@
   <link rel="stylesheet" href="assets/css/pages/internal-page-header.css">
   <link rel="stylesheet" href="assets/css/pages/pedidos.css">
   <link rel="stylesheet" href="assets/css/pages/internal-action-surfaces.css">
-  <link rel="stylesheet" href="assets/css/pages/comunidade.css?v=20260423-community-composer-standard-v2">
+  <link rel="stylesheet" href="assets/css/pages/comunidade-interna.css?v=20260425-composer-media-v3">
   <link rel="stylesheet" href="assets/css/components/chat-composer.css?v=20260424-shared-composer-1">
+  <link rel="stylesheet" href="assets/css/components/media-lightbox.css?v=20260425-shared-media-lightbox-v1">
 </head>
 <body class="app-shell-page internal-shell-page communities-page-shell orders-page-shell community-room-shell">
   <div class="app-shell">
@@ -85,30 +86,39 @@
 
               <main class="community-room__chat" aria-label="Canal de avisos">
                 <header class="community-chat-header">
-                  <div>
+                  <div class="community-chat-header__title">
                     <strong># avisos</strong>
                     <span>Comunicados oficiais do condomínio</span>
                   </div>
-                  <button type="button">Fixados</button>
+
+                  <div class="community-chat-header__actions">
+                    <button class="community-chat-header__icon" type="button" aria-label="Pesquisar mensagens" aria-expanded="false" data-community-search-toggle>
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m16.5 16.5 4 4"></path></svg>
+                    </button>
+                    <button class="community-chat-header__icon" type="button" aria-label="Mostrar membros online" aria-expanded="false" aria-controls="community-members-panel" data-community-members-toggle>
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.5 19c-.3-2-1.8-3.2-4.5-3.2S7.8 17 7.5 19"></path><circle cx="12" cy="9" r="3"></circle><path d="M20 18c-.2-1.5-1.2-2.5-3-2.9"></path><path d="M17.5 7.2a2.4 2.4 0 0 1 0 4.6"></path><path d="M4 18c.2-1.5 1.2-2.5 3-2.9"></path><path d="M6.5 7.2a2.4 2.4 0 0 0 0 4.6"></path></svg>
+                    </button>
+                    <button class="community-chat-header__pin" type="button">Fixados</button>
+                  </div>
+
+                  <form class="community-message-search" role="search" hidden data-community-search-form>
+                    <label>
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m16.5 16.5 4 4"></path></svg>
+                      <input type="search" placeholder="Pesquisar nesta conversa..." autocomplete="off" data-community-search-input>
+                    </label>
+                    <button type="button" data-community-search-clear>Limpar</button>
+                  </form>
                 </header>
 
                 <div class="community-message-list" data-community-room-messages>
-                  <article class="community-message community-message--notice community-message--official">
-                    <span class="community-message__avatar">AP</span>
-                    <div class="community-message__content">
-                      <div class="community-message__meta"><strong>Ana Paula</strong><span>Síndica • há 25 min</span></div>
-                      <p><strong>Manutenção preventiva na garagem</strong></p>
-                      <p>A equipe de manutenção fará vistoria nas vagas do subsolo amanhã, das 9h às 12h. Evitem deixar objetos fora das vagas demarcadas.</p>
-                      <div class="community-message__actions"><button type="button">👍 12</button><button type="button">Responder</button><button type="button">Salvar</button></div>
-                    </div>
-                  </article>
+                  <div class="community-day-divider"><span>Ontem</span></div>
 
-                  <article class="community-message community-message--help">
-                    <span class="community-message__avatar">CS</span>
+                  <article class="community-message community-message--reservation">
+                    <span class="community-message__avatar">JM</span>
                     <div class="community-message__content">
-                      <div class="community-message__meta"><strong>Carlos Silva</strong><span>Morador • há 2 h</span></div>
-                      <p>Alguém indica um eletricista de confiança para revisar tomadas da cozinha? Preferência para atendimento no fim da tarde.</p>
-                      <div class="community-message__actions"><button type="button">👍 4</button><button type="button">Responder</button></div>
+                      <div class="community-message__meta"><strong>João Martins</strong><span>Morador • ontem</span></div>
+                      <p>Liberei minha reserva do salão para sábado à noite. Quem estava procurando esse horário pode verificar disponibilidade.</p>
+                      <div class="community-message__actions"><button type="button">👍 5</button><button type="button">Responder</button></div>
                     </div>
                   </article>
 
@@ -121,32 +131,58 @@
                     </div>
                   </article>
 
-                  <div class="community-day-divider"><span>Ontem</span></div>
-
-                  <article class="community-message community-message--reservation">
-                    <span class="community-message__avatar">JM</span>
+                  <article class="community-message community-message--help">
+                    <span class="community-message__avatar">CS</span>
                     <div class="community-message__content">
-                      <div class="community-message__meta"><strong>João Martins</strong><span>Morador • ontem</span></div>
-                      <p>Liberei minha reserva do salão para sábado à noite. Quem estava procurando esse horário pode verificar disponibilidade.</p>
-                      <div class="community-message__actions"><button type="button">👍 5</button><button type="button">Responder</button></div>
+                      <div class="community-message__meta"><strong>Carlos Silva</strong><span>Morador • há 2 h</span></div>
+                      <p>Alguém indica um eletricista de confiança para revisar tomadas da cozinha? Preferência para atendimento no fim da tarde.</p>
+                      <div class="community-message__actions"><button type="button">👍 4</button><button type="button">Responder</button></div>
+                    </div>
+                  </article>
+
+                  <article class="community-message community-message--notice community-message--official">
+                    <span class="community-message__avatar">AP</span>
+                    <div class="community-message__content">
+                      <div class="community-message__meta"><strong>Ana Paula</strong><span>Síndica • há 25 min</span></div>
+                      <p><strong>Manutenção preventiva na garagem</strong></p>
+                      <p>A equipe de manutenção fará vistoria nas vagas do subsolo amanhã, das 9h às 12h. Evitem deixar objetos fora das vagas demarcadas.</p>
+                      <div class="community-message__actions"><button type="button">👍 12</button><button type="button">Responder</button><button type="button">Salvar</button></div>
                     </div>
                   </article>
                 </div>
 
                 <form class="community-chat-composer doke-chat-composer" aria-label="Enviar mensagem" data-community-room-form>
+                  <div class="community-composer-draft community-composer-draft--audio" data-community-audio-draft hidden>
+                    <div class="community-composer-draft__pulse" aria-hidden="true"></div>
+                    <div class="community-composer-draft__meta">
+                      <strong>Gravando áudio</strong>
+                      <span data-community-audio-time>00:00</span>
+                    </div>
+                    <button class="community-composer-draft__cancel" type="button" data-community-audio-cancel>Cancelar</button>
+                  </div>
+
+                  <div class="community-composer-draft community-composer-draft--image" data-community-image-draft hidden>
+                    <img class="community-composer-draft__image" data-community-image-preview src="" alt="Preview da imagem anexada">
+                    <div class="community-composer-draft__meta">
+                      <strong>Imagem pronta para envio</strong>
+                      <span>Preview do anexo</span>
+                    </div>
+                    <button class="community-composer-draft__cancel" type="button" data-community-image-cancel>Cancelar</button>
+                  </div>
+
                   <div class="community-chat-composer__tools doke-chat-composer__tools" aria-label="Ferramentas da mensagem">
-                    <label class="community-chat-composer__tool doke-chat-composer__tool" aria-label="Anexar arquivo">
-                      <input type="file" hidden tabindex="-1" aria-hidden="true">
+                    <label class="community-chat-composer__tool doke-chat-composer__tool" aria-label="Anexar imagem">
+                      <input type="file" accept="image/*" hidden data-community-image-input>
                       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 13.5 15.8 8.2a3 3 0 1 1 4.2 4.2l-7.4 7.4a5 5 0 0 1-7.1-7.1l8.2-8.2"></path></svg>
                     </label>
-                    <button class="community-chat-composer__tool doke-chat-composer__tool" type="button" aria-label="Gravar áudio">
+                    <button class="community-chat-composer__tool doke-chat-composer__tool" type="button" aria-label="Gravar áudio" data-community-audio>
                       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="4.5" width="6" height="10" rx="3"></rect><path d="M7 11.5a5 5 0 0 0 10 0"></path><path d="M12 16.5v3"></path><path d="M9 19.5h6"></path></svg>
                     </button>
                   </div>
 
                   <label class="community-chat-composer__field doke-chat-composer__field" aria-label="Mensagem">
                     <textarea rows="1" placeholder="Digite sua mensagem..." autocomplete="off" data-community-room-input class="doke-chat-composer__input"></textarea>
-                    <button class="community-chat-composer__emoji doke-chat-composer__emoji" type="button" aria-label="Adicionar emoji">
+                    <button class="community-chat-composer__emoji doke-chat-composer__emoji" type="button" aria-label="Adicionar emoji" data-community-emoji>
                       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M8.5 14.2c1 1.2 2.3 1.8 3.5 1.8s2.5-.6 3.5-1.8"></path></svg>
                     </button>
                   </label>
@@ -157,16 +193,128 @@
                 </form>
               </main>
 
-              <aside class="community-room__members" aria-label="Membros da comunidade">
-                <section class="community-member-panel">
-                  <div class="community-member-panel__head">
-                    <strong>Online agora</strong>
+              <aside class="community-room__members" id="community-members-panel" aria-label="Membros da comunidade" aria-hidden="true" data-community-members-panel>
+                <section class="community-member-panel community-member-panel--presence">
+                  <div class="community-member-panel__head community-member-panel__head--detail">
+                    <div>
+                      <strong>Online agora</strong>
+                      <small>Organizado por cargo</small>
+                    </div>
                     <span>24</span>
                   </div>
-                  <article><span class="community-member__avatar">AP</span><div><strong>Ana Paula</strong><span>Síndica</span></div></article>
-                  <article><span class="community-member__avatar">LT</span><div><strong>Luiza Torres</strong><span>Portaria</span></div></article>
-                  <article><span class="community-member__avatar">CS</span><div><strong>Carlos Silva</strong><span>Morador</span></div></article>
-                  <article><span class="community-member__avatar">JM</span><div><strong>João Martins</strong><span>Morador</span></div></article>
+
+                  <div class="community-member-group">
+                    <div class="community-member-group__header">
+                      <strong>Gestão</strong>
+                      <span>2</span>
+                    </div>
+
+                    <article class="community-member-card community-member-card--admin">
+                      <span class="community-member__avatar">AP</span>
+                      <div class="community-member-card__body">
+                        <div class="community-member-card__identity">
+                          <strong>Ana Paula</strong>
+                          <span>Síndica</span>
+                        </div>
+                        <div class="community-member-card__meta">
+                          <span class="community-member-role-badge community-member-role-badge--admin">Controle total</span>
+                          <span class="community-member-status"><i></i>online</span>
+                        </div>
+                      </div>
+                    </article>
+
+                    <article class="community-member-card community-member-card--ops">
+                      <span class="community-member__avatar">LT</span>
+                      <div class="community-member-card__body">
+                        <div class="community-member-card__identity">
+                          <strong>Luiza Torres</strong>
+                          <span>Portaria</span>
+                        </div>
+                        <div class="community-member-card__meta">
+                          <span class="community-member-role-badge community-member-role-badge--ops">Suporte e avisos</span>
+                          <span class="community-member-status"><i></i>online</span>
+                        </div>
+                      </div>
+                    </article>
+                  </div>
+
+                  <div class="community-member-group">
+                    <div class="community-member-group__header">
+                      <strong>Comunidade</strong>
+                      <span>22</span>
+                    </div>
+
+                    <article class="community-member-card community-member-card--mod">
+                      <span class="community-member__avatar">CS</span>
+                      <div class="community-member-card__body">
+                        <div class="community-member-card__identity">
+                          <strong>Carlos Silva</strong>
+                          <span>Moderador</span>
+                        </div>
+                        <div class="community-member-card__meta">
+                          <span class="community-member-role-badge community-member-role-badge--mod">Modera canais</span>
+                          <span class="community-member-status"><i></i>online</span>
+                        </div>
+                      </div>
+                    </article>
+
+                    <article class="community-member-card community-member-card--member">
+                      <span class="community-member__avatar">JM</span>
+                      <div class="community-member-card__body">
+                        <div class="community-member-card__identity">
+                          <strong>João Martins</strong>
+                          <span>Morador</span>
+                        </div>
+                        <div class="community-member-card__meta">
+                          <span class="community-member-role-badge community-member-role-badge--member">Acesso padrão</span>
+                          <span class="community-member-status"><i></i>online</span>
+                        </div>
+                      </div>
+                    </article>
+                  </div>
+                </section>
+
+                <section class="community-member-panel community-member-panel--hierarchy">
+                  <div class="community-member-panel__head community-member-panel__head--detail">
+                    <div>
+                      <strong>Exemplo de hierarquia</strong>
+                      <small>Base para criação de cargos</small>
+                    </div>
+                  </div>
+
+                  <div class="community-hierarchy-list" aria-label="Exemplo de cargos da comunidade">
+                    <article class="community-hierarchy-item community-hierarchy-item--admin">
+                      <span class="community-hierarchy-item__level">1</span>
+                      <div>
+                        <strong>Administrador</strong>
+                        <span>Cria cargos, edita permissões, fixa avisos e gerencia canais.</span>
+                      </div>
+                    </article>
+
+                    <article class="community-hierarchy-item community-hierarchy-item--ops">
+                      <span class="community-hierarchy-item__level">2</span>
+                      <div>
+                        <strong>Operação</strong>
+                        <span>Equipe de portaria ou suporte com foco em comunicados e atendimento.</span>
+                      </div>
+                    </article>
+
+                    <article class="community-hierarchy-item community-hierarchy-item--mod">
+                      <span class="community-hierarchy-item__level">3</span>
+                      <div>
+                        <strong>Moderador</strong>
+                        <span>Organiza conversas, orienta moradores e mantém canais em ordem.</span>
+                      </div>
+                    </article>
+
+                    <article class="community-hierarchy-item community-hierarchy-item--member">
+                      <span class="community-hierarchy-item__level">4</span>
+                      <div>
+                        <strong>Membro</strong>
+                        <span>Participa da comunidade, envia mensagens e interage nos canais permitidos.</span>
+                      </div>
+                    </article>
+                  </div>
                 </section>
 
                 <section class="community-member-panel community-member-panel--compact">
@@ -183,6 +331,7 @@
 
   <script src="assets/js/core/app.js"></script>
   <script src="assets/js/pages/home/drawer.js"></script>
-  <script src="assets/js/pages/comunidade-interna.js?v=20260423-community-composer-standard-v2"></script>
+  <script src="assets/js/components/media-lightbox.js?v=20260425-shared-media-lightbox-v1"></script>
+  <script src="assets/js/pages/comunidade-interna.js?v=20260425-shared-media-lightbox-v1"></script>
 </body>
 </html>

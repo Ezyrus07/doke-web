@@ -2,7 +2,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const page = document.querySelector('[data-communities-page]');
   if (!page) return;
 
-  const cards = [...page.querySelectorAll('[data-community-card]')];
+  const cards = [...page.querySelectorAll('[data-community-discover-card]')];
+  const extraCards = cards.filter((card) => card.hasAttribute('data-community-extra'));
+  const loadMoreWrap = page.querySelector('[data-community-load-more-wrap]');
+  const loadMoreButton = page.querySelector('[data-community-load-more]');
+  let loadedExtraCount = 0;
+  const LOAD_MORE_STEP = 3;
   const filters = [...page.querySelectorAll('[data-community-filter]')];
   const emptyState = page.querySelector('[data-community-empty]');
   const searchInputs = [...page.querySelectorAll('[data-community-search], [data-community-search-mobile]')];
@@ -37,9 +42,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
+  const getMatchingExtraCards = () => {
+    const query = getSearchTerm();
+
+    return extraCards.filter((card) => {
+      const category = card.dataset.category || '';
+      const title = (card.dataset.title || '').toLowerCase();
+      const text = card.textContent.toLowerCase();
+      const matchesFilter = currentFilter === 'all' || category === currentFilter;
+      const matchesQuery = !query || title.includes(query) || text.includes(query);
+      return matchesFilter && matchesQuery;
+    });
+  };
+
+  const updateLoadMoreState = () => {
+    if (!loadMoreWrap || !loadMoreButton) return;
+    const matchingExtras = getMatchingExtraCards();
+    const hasMore = matchingExtras.length > loadedExtraCount;
+    loadMoreWrap.hidden = !hasMore;
+    loadMoreButton.hidden = !hasMore;
+  };
+
   const applyFilters = () => {
     const query = getSearchTerm();
     let visibleCount = 0;
+    const matchingExtras = getMatchingExtraCards();
 
     cards.forEach((card) => {
       const category = card.dataset.category || '';
@@ -47,12 +74,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const text = card.textContent.toLowerCase();
       const matchesFilter = currentFilter === 'all' || category === currentFilter;
       const matchesQuery = !query || title.includes(query) || text.includes(query);
-      const isVisible = matchesFilter && matchesQuery;
+      const isMatch = matchesFilter && matchesQuery;
+      const isExtra = card.hasAttribute('data-community-extra');
+      const extraIndex = matchingExtras.indexOf(card);
+      const extraIsLoaded = !isExtra || (extraIndex > -1 && extraIndex < loadedExtraCount);
+      const isVisible = isMatch && extraIsLoaded;
+
       card.hidden = !isVisible;
       if (isVisible) visibleCount += 1;
     });
 
-    if (emptyState) emptyState.hidden = visibleCount > 0;
+    if (emptyState) emptyState.hidden = visibleCount > 0 || matchingExtras.length > 0;
+    updateLoadMoreState();
   };
 
   const openRequestModal = (button) => {
@@ -102,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
   filters.forEach((filter) => {
     filter.addEventListener('click', () => {
       currentFilter = filter.dataset.communityFilter || 'all';
+      loadedExtraCount = 0;
       filters.forEach((item) => item.classList.toggle('is-active', item === filter));
       applyFilters();
     });
@@ -110,9 +144,17 @@ document.addEventListener('DOMContentLoaded', () => {
   searchInputs.forEach((input) => {
     input.addEventListener('input', () => {
       syncSearchInputs(input);
+      loadedExtraCount = 0;
       applyFilters();
     });
   });
+
+  if (loadMoreButton) {
+    loadMoreButton.addEventListener('click', () => {
+      loadedExtraCount += LOAD_MORE_STEP;
+      applyFilters();
+    });
+  }
 
   document.querySelectorAll('[data-community-enter]').forEach((button) => {
     button.addEventListener('click', () => {

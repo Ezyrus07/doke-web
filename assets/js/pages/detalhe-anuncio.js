@@ -4,8 +4,6 @@ const qsa = (s, c = document) => [...c.querySelectorAll(s)];
 
 const mainImage = qs('[data-gallery-main]');
 const thumbs = qsa('[data-gallery-thumb]');
-const lightbox = qs('[data-lightbox]');
-const lightboxImage = qs('[data-lightbox-image]');
 const budgetModal = qs('[data-budget-modal]');
 const saveButton = qs('[data-save-toggle]');
 const followButton = qs('[data-follow-toggle]');
@@ -14,32 +12,10 @@ const setGalleryImage = (src, alt) => {
   if (!mainImage) return;
   mainImage.src = src;
   mainImage.alt = alt || '';
-  if (lightboxImage) {
-    lightboxImage.src = src;
-    lightboxImage.alt = alt || '';
-  }
   thumbs.forEach((thumb) => thumb.classList.toggle('is-active', thumb.dataset.src === src));
 };
 
 thumbs.forEach((thumb) => thumb.addEventListener('click', () => setGalleryImage(thumb.dataset.src, thumb.dataset.alt)));
-
-qsa('[data-lightbox-open]').forEach((trigger) => {
-  trigger.addEventListener('click', () => {
-    if (!lightbox || !mainImage || !lightboxImage) return;
-    lightbox.hidden = false;
-    lightboxImage.src = mainImage.src;
-    lightboxImage.alt = mainImage.alt;
-    document.body.style.overflow = 'hidden';
-  });
-});
-
-qsa('[data-lightbox-close]').forEach((trigger) => {
-  trigger.addEventListener('click', () => {
-    if (!lightbox) return;
-    lightbox.hidden = true;
-    document.body.style.overflow = '';
-  });
-});
 
 qsa('[data-budget-open]').forEach((trigger) => {
   trigger.addEventListener('click', () => {
@@ -121,10 +97,6 @@ document.addEventListener('click', (event) => {
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
     closeSidebar();
-    if (lightbox && !lightbox.hidden) {
-      lightbox.hidden = true;
-      document.body.style.overflow = '';
-    }
     if (budgetModal && !budgetModal.hidden) {
       budgetModal.hidden = true;
       document.body.style.overflow = '';

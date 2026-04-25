@@ -1575,3 +1575,35 @@ body.detalhe-shell-page {
   border-color: rgba(182, 196, 211, 0.94);
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
 }
+
+/* 2026-04-24 | detalhe-anuncio: sticky orçamento sidebar
+   Mantém o card "Solicitar serviço" acompanhando a rolagem no desktop,
+   sem transformar a área em fixed e sem quebrar o fluxo do layout. */
+@media (min-width: 1241px) {
+  body.detalhe-shell-page .app-shell,
+  body.detalhe-shell-page .page,
+  body.detalhe-shell-page .detail-page,
+  body.detalhe-shell-page .detail-layout {
+    overflow: visible;
+  }
+
+  body.detalhe-shell-page .detail-layout {
+    align-items: start;
+  }
+
+  body.detalhe-shell-page .detail-aside {
+    position: sticky;
+    top: calc(var(--header-height, 76px) + 24px);
+    align-self: start;
+    height: max-content;
+    z-index: 5;
+  }
+
+  body.detalhe-shell-page .detail-booking {
+    position: relative;
+    top: auto;
+    max-height: calc(100vh - var(--header-height, 76px) - 48px);
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+}
