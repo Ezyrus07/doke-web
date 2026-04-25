@@ -3019,3 +3019,133 @@ body.home-index-shell .featured-pros .pro-card__cta:hover,
 body.home-index-shell .featured-pros .pro-card__cta:focus-visible {
   box-shadow: 0 6px 14px rgba(18, 42, 72, 0.1) !important;
 }
+
+/* 2026-04-25 before/after compact card
+   Owner: home-sections.css, because this is the canonical card structure for
+   the landing feed. Keeps the component close to the reference: white card,
+   tighter body, no gray media gutter and rating as a compact pill. */
+body.home-index-shell .comparison-card {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid var(--doke-card-border);
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 10px 26px rgba(25, 49, 77, 0.055);
+}
+
+body.home-index-shell .comparison-card__visual {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  min-height: 0;
+  height: clamp(202px, 15.5vw, 258px);
+  background: transparent;
+}
+
+body.home-index-shell .comparison-card__half {
+  position: relative;
+  min-width: 0;
+  padding: 0;
+  border-radius: 22px;
+  overflow: hidden;
+  background: #eef3f8;
+}
+
+body.home-index-shell .comparison-card__half::before {
+  inset: 0;
+  border-radius: inherit;
+  transform: translateZ(0);
+}
+
+body.home-index-shell .comparison-card__half span {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #132f4f;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 8px 18px rgba(15, 35, 57, 0.10);
+  backdrop-filter: blur(8px);
+}
+
+body.home-index-shell .comparison-card__body {
+  display: grid;
+  gap: 8px;
+  padding: 0 8px 4px;
+}
+
+body.home-index-shell .comparison-card__body > strong,
+body.home-index-shell .comparison-card__title {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: #132f4f;
+  font-size: clamp(1rem, 1.05vw, 1.18rem);
+  font-weight: 800;
+  line-height: 1.22;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+body.home-index-shell .comparison-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  color: #64758a;
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+body.home-index-shell .comparison-card__provider {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.home-index-shell .comparison-card__provider > span {
+  color: #075bab;
+  font-weight: 600;
+}
+
+body.home-index-shell .comparison-card__rating {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(24, 75, 118, 0.08);
+  border-radius: 12px;
+  background: rgba(248, 251, 255, 0.96);
+  color: #075bab;
+  font-weight: 800;
+  box-shadow: 0 6px 16px rgba(25, 49, 77, 0.045);
+}
+
+body.home-index-shell .comparison-card__rating strong {
+  color: #132238;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+body.theme-dark.home-index-shell .comparison-card {
+  background: rgba(16, 28, 43, 0.98);
+  border-color: rgba(135, 167, 201, 0.18);
+}
+
+body.theme-dark.home-index-shell .comparison-card__provider > span,
+body.theme-dark.home-index-shell .comparison-card__rating {
+  color: #8ec7ff;
+}
