@@ -103,6 +103,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   let activeModalResolver = null;
   let resultsLoadTimer = null;
   let activeSearchIndex = -1;
+  let activeSearchMode = 'services';
 
   window.DokeSearchResultsCleanup = () => {
     routeController.abort();
@@ -253,11 +254,12 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   };
 
   const getSearchMode = () =>
-    els.searchModeInputs.find((input) => input.checked)?.value || 'services';
+    els.searchModeInputs.find((input) => input.checked)?.value || activeSearchMode || 'services';
 
   const setSearchMode = (mode = 'services') => {
+    activeSearchMode = ['services', 'users', 'workers', 'before-after'].includes(mode) ? mode : 'services';
     els.searchModeInputs.forEach((input) => {
-      input.checked = input.value === mode;
+      input.checked = input.value === activeSearchMode;
     });
   };
 
@@ -484,13 +486,24 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
 
   const createUserCard = (item) => {
     const article = document.createElement('article');
+    const normalizedText = normalize(`${item.id || ''} ${item.name || ''} ${item.role || ''}`);
+    let avatarClass = item.avatarClass || '';
+    if (!avatarClass.includes('pro-card__avatar--')) {
+      if (normalizedText.includes('elaine') || normalizedText.includes('diarista')) {
+        avatarClass = 'pro-card__avatar--cleaner';
+      } else if (normalizedText.includes('renata') || normalizedText.includes('marina') || normalizedText.includes('professora')) {
+        avatarClass = 'pro-card__avatar--teacher';
+      } else {
+        avatarClass = 'pro-card__avatar--painter';
+      }
+    }
+
     article.className = 'pro-card pro-card--compact';
     article.innerHTML = `
       <div class="pro-card__header">
-        <div class="pro-card__avatar ${item.avatarClass || ''}" aria-hidden="true"></div>
+        <div class="pro-card__avatar ${avatarClass}" aria-hidden="true"></div>
         <div class="pro-card__identity">
           <strong>${item.name || ''}</strong>
-          <span>${item.handle || ''}</span>
         </div>
         <span class="pro-card__score">★ ${(Number(item.rating) || 0).toFixed(1).replace('.', ',')}</span>
       </div>
@@ -609,6 +622,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   };
 
   const renderRelatedSections = (query) => {
+    const searchMode = getSearchMode();
     const users = query ? getUserMatches(query).slice(0, 3) : [];
     const videos = query ? getShortVideoMatches(query).slice(0, 4) : [];
     const beforeAfter = query ? getBeforeAfterMatches(query).slice(0, 2) : [];
@@ -616,19 +630,19 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     if (els.resultsUsersGrid && els.resultsUsersSection) {
       els.resultsUsersGrid.innerHTML = '';
       users.forEach((item) => els.resultsUsersGrid.appendChild(createUserCard(item)));
-      els.resultsUsersSection.hidden = users.length === 0;
+      els.resultsUsersSection.hidden = searchMode === 'users' || users.length === 0;
     }
 
     if (els.resultsVideosGrid && els.resultsVideosSection) {
       els.resultsVideosGrid.innerHTML = '';
       videos.forEach((item) => els.resultsVideosGrid.appendChild(createVideoCard(item)));
-      els.resultsVideosSection.hidden = videos.length === 0;
+      els.resultsVideosSection.hidden = searchMode === 'workers' || videos.length === 0;
     }
 
     if (els.resultsBeforeAfterGrid && els.resultsBeforeAfterSection) {
       els.resultsBeforeAfterGrid.innerHTML = '';
       beforeAfter.forEach((item) => els.resultsBeforeAfterGrid.appendChild(createBeforeAfterCard(item)));
-      els.resultsBeforeAfterSection.hidden = beforeAfter.length === 0;
+      els.resultsBeforeAfterSection.hidden = searchMode === 'before-after' || beforeAfter.length === 0;
     }
   };
 
@@ -672,21 +686,56 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       minRating: filters.minRating
     });
     const isUserSearch = filters.searchType === 'users';
+    const isWorkerSearch = filters.searchType === 'workers';
+    const isBeforeAfterSearch = filters.searchType === 'before-after';
 
     renderRelatedSections(query);
 
     if (isUserSearch) {
+      const displayUsers = query ? userResults : (searchData.userPool || []);
       els.resultsGrid.innerHTML = '';
-      userResults.slice(0, 6).forEach((item) => els.resultsGrid.appendChild(createUserCard(item)));
+      displayUsers.slice(0, 6).forEach((item) => els.resultsGrid.appendChild(createUserCard(item)));
       if (els.resultsTitle) els.resultsTitle.textContent = query ? `Usuários para "${query}"` : 'Usuários em destaque';
       if (els.resultsDescription) {
-        els.resultsDescription.textContent = userResults.length
+        els.resultsDescription.textContent = displayUsers.length
           ? 'Perfis relacionados ao que você digitou.'
           : 'Não encontramos usuários com esse nome ou termo.';
       }
-      if (els.resultsCount) els.resultsCount.textContent = formatCount(userResults.length);
-      renderActiveChips(query, filters, userResults.length);
-      setResultsState(userResults.length ? 'results' : 'empty');
+      if (els.resultsCount) els.resultsCount.textContent = formatCount(displayUsers.length);
+      renderActiveChips(query, filters, displayUsers.length);
+      setResultsState(displayUsers.length ? 'results' : 'empty');
+      return;
+    }
+
+    if (isWorkerSearch) {
+      const workerResults = query ? getShortVideoMatches(query) : (searchData.shortVideoPool || []);
+      els.resultsGrid.innerHTML = '';
+      workerResults.slice(0, 8).forEach((item) => els.resultsGrid.appendChild(createVideoCard(item)));
+      if (els.resultsTitle) els.resultsTitle.textContent = query ? `Workers para "${query}"` : 'Workers em destaque';
+      if (els.resultsDescription) {
+        els.resultsDescription.textContent = workerResults.length
+          ? 'Vídeos curtos de profissionais relacionados ao que você pesquisou.'
+          : 'Não encontramos workers com esse termo.';
+      }
+      if (els.resultsCount) els.resultsCount.textContent = formatCount(workerResults.length);
+      renderActiveChips(query, filters, workerResults.length);
+      setResultsState(workerResults.length ? 'results' : 'empty');
+      return;
+    }
+
+    if (isBeforeAfterSearch) {
+      const beforeAfterResults = query ? getBeforeAfterMatches(query) : (searchData.beforeAfterPool || []);
+      els.resultsGrid.innerHTML = '';
+      beforeAfterResults.slice(0, 8).forEach((item) => els.resultsGrid.appendChild(createBeforeAfterCard(item)));
+      if (els.resultsTitle) els.resultsTitle.textContent = query ? `Antes e depois para "${query}"` : 'Casos de antes e depois';
+      if (els.resultsDescription) {
+        els.resultsDescription.textContent = beforeAfterResults.length
+          ? 'Casos visuais para comparar o trabalho antes e depois.'
+          : 'Não encontramos casos de antes e depois com esse termo.';
+      }
+      if (els.resultsCount) els.resultsCount.textContent = formatCount(beforeAfterResults.length);
+      renderActiveChips(query, filters, beforeAfterResults.length);
+      setResultsState(beforeAfterResults.length ? 'results' : 'empty');
       return;
     }
 
@@ -795,8 +844,17 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     }
   };
 
-  syncInputs(String(params.get('q') || ''));
-  setSearchMode(String(params.get('type') || 'services'));
+  const initialQuery = String(params.get('q') || '');
+  const initialType = String(params.get('type') || '').trim();
+  const inferredType = (() => {
+    const normalizedQuery = normalize(initialQuery);
+    if (initialType) return initialType;
+    if (/\bworkers?\b|\bvideos?\b/.test(normalizedQuery)) return 'workers';
+    if (normalizedQuery.includes('antes e depois') || normalizedQuery.includes('antes depois')) return 'before-after';
+    return 'services';
+  })();
+  syncInputs(initialQuery);
+  setSearchMode(inferredType);
   renderCategoryFilters();
   enhanceResultsSelects();
   bootstrapLocationSelects();

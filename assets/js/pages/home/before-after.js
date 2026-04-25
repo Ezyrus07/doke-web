@@ -319,10 +319,15 @@ window.DokeHomeBeforeAfter = (() => {
       let currentState = null;
       let replyTargetId = null;
       let lockedScrollY = 0;
+      let lockedAnchor = null;
       let lastTrigger = null;
 
-      const lockViewport = () => {
+      const lockViewport = (anchor = null) => {
         lockedScrollY = window.scrollY || window.pageYOffset || 0;
+        lockedAnchor = anchor ? {
+          node: anchor,
+          top: anchor.getBoundingClientRect().top
+        } : null;
         document.body.style.top = `-${lockedScrollY}px`;
         document.body.classList.add('before-after-preview-open');
       };
@@ -332,7 +337,23 @@ window.DokeHomeBeforeAfter = (() => {
         document.body.classList.remove('before-after-preview-open');
         document.body.style.top = '';
         const nextScrollY = top ? Math.abs(parseInt(top, 10)) || lockedScrollY : lockedScrollY;
-        window.scrollTo(0, nextScrollY);
+        const restore = () => window.scrollTo({ top: nextScrollY, behavior: 'auto' });
+        const restoreAnchor = () => {
+          if (!lockedAnchor?.node?.isConnected) return;
+          const currentTop = lockedAnchor.node.getBoundingClientRect().top;
+          window.scrollTo({ top: Math.max(0, window.scrollY + currentTop - lockedAnchor.top), behavior: 'auto' });
+        };
+        restore();
+        window.requestAnimationFrame(restore);
+        window.setTimeout(restore, 50);
+        window.setTimeout(() => {
+          restore();
+          restoreAnchor();
+        }, 180);
+        window.setTimeout(() => {
+          restoreAnchor();
+          lockedAnchor = null;
+        }, 420);
       };
 
       const syncFormState = () => {
@@ -479,7 +500,7 @@ window.DokeHomeBeforeAfter = (() => {
         const item = CASES_BY_ID[id];
         if (!item) return;
         lastTrigger = trigger || lastTrigger;
-        if (!document.body.classList.contains('before-after-preview-open')) lockViewport();
+        if (!document.body.classList.contains('before-after-preview-open')) lockViewport(lastTrigger);
         render(item);
         root.hidden = false;
         root.setAttribute('aria-hidden', 'false');

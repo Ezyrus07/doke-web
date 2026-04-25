@@ -308,28 +308,28 @@ window.DokeSearchData = (() => {
       title: "Como renovar parede sem sujeira",
       author: "Carlos Andrade",
       mediaClass: "video-card--one",
-      keywords: ["pintura", "parede", "acabamento", "reforma", "carlos"]
+      keywords: ["worker", "workers", "video", "pintura", "parede", "acabamento", "reforma", "carlos"]
     },
     {
       id: "vid-cozinha",
       title: "Antes e depois de cozinha planejada",
       author: "Studio Casa Viva",
       mediaClass: "video-card--two",
-      keywords: ["cozinha", "planejada", "marcenaria", "reforma", "antes e depois"]
+      keywords: ["worker", "workers", "video", "cozinha", "planejada", "marcenaria", "reforma", "antes e depois"]
     },
     {
       id: "vid-eletrica",
       title: "5 erros elétricos que custam caro",
       author: "Marcos Luz",
       mediaClass: "video-card--three",
-      keywords: ["eletrica", "eletricista", "fiacao", "seguranca", "marcos"]
+      keywords: ["worker", "workers", "video", "eletrica", "eletricista", "fiacao", "seguranca", "marcos"]
     },
     {
       id: "vid-limpeza",
       title: "Limpeza pós-obra em 40 segundos",
       author: "Elaine Santos",
       mediaClass: "video-card--four",
-      keywords: ["limpeza", "pos-obra", "diarista", "faxina", "elaine"]
+      keywords: ["worker", "workers", "video", "limpeza", "pos-obra", "diarista", "faxina", "elaine"]
     }
   ];
 
@@ -457,7 +457,17 @@ window.DokeSearchData = (() => {
         value: item.name
       }));
 
-    return [...baseMatches, ...userMatches].slice(0, 5);
+    const workerMatches = shortVideoPool
+      .filter((item) => normalize(`${item.title} ${item.author} ${item.keywords.join(" ")}`).includes(normalizedQuery))
+      .slice(0, 2)
+      .map((item) => ({
+        label: item.title,
+        meta: `${item.author} • Worker em vídeo`,
+        badge: "Worker",
+        value: item.title
+      }));
+
+    return [...baseMatches, ...workerMatches, ...userMatches].slice(0, 6);
   };
 
   const getUserMatches = (query = "") => {
@@ -481,6 +491,9 @@ window.DokeSearchData = (() => {
   const getBeforeAfterMatches = (query = "") => {
     const normalizedQuery = normalize(query.trim());
     if (!normalizedQuery) return [];
+    if (normalizedQuery.includes("antes e depois") || normalizedQuery.includes("antes depois")) {
+      return beforeAfterPool;
+    }
 
     return beforeAfterPool.filter((item) => normalize(
       `${item.title} ${item.author} ${item.keywords.join(" ")}`

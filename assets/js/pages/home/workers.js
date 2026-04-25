@@ -170,6 +170,7 @@ window.DokeHomeWorkers = (() => {
       let lastTrigger = null;
       let activeIndex = 0;
       let lockedScrollY = 0;
+      let lockedAnchor = null;
 
       const parseCompactCount = (value) => {
         if (typeof value === 'number') return value;
@@ -199,8 +200,12 @@ window.DokeHomeWorkers = (() => {
         });
       };
 
-      const lockViewport = () => {
+      const lockViewport = (anchor = null) => {
         lockedScrollY = window.scrollY || window.pageYOffset || 0;
+        lockedAnchor = anchor ? {
+          node: anchor,
+          top: anchor.getBoundingClientRect().top
+        } : null;
         document.body.style.top = `-${lockedScrollY}px`;
         document.body.classList.add('worker-preview-open');
       };
@@ -210,7 +215,23 @@ window.DokeHomeWorkers = (() => {
         document.body.classList.remove('worker-preview-open');
         document.body.style.top = '';
         const nextScrollY = top ? Math.abs(parseInt(top, 10)) || lockedScrollY : lockedScrollY;
-        window.scrollTo(0, nextScrollY);
+        const restore = () => window.scrollTo({ top: nextScrollY, behavior: 'auto' });
+        const restoreAnchor = () => {
+          if (!lockedAnchor?.node?.isConnected) return;
+          const currentTop = lockedAnchor.node.getBoundingClientRect().top;
+          window.scrollTo({ top: Math.max(0, window.scrollY + currentTop - lockedAnchor.top), behavior: 'auto' });
+        };
+        restore();
+        window.requestAnimationFrame(restore);
+        window.setTimeout(restore, 50);
+        window.setTimeout(() => {
+          restore();
+          restoreAnchor();
+        }, 180);
+        window.setTimeout(() => {
+          restoreAnchor();
+          lockedAnchor = null;
+        }, 420);
       };
 
       const renderComments = (item) => {
@@ -301,7 +322,7 @@ window.DokeHomeWorkers = (() => {
         if (!match) return;
         lastTrigger = trigger || lastTrigger;
         if (!document.body.classList.contains('worker-preview-open')) {
-          lockViewport();
+          lockViewport(lastTrigger);
         }
         root.hidden = false;
         root.setAttribute('aria-hidden', 'false');
@@ -319,7 +340,7 @@ window.DokeHomeWorkers = (() => {
         syncCommentsVisibility();
         unlockViewport();
         triggers.forEach((trigger) => trigger.classList.remove('is-active'));
-        if (lastTrigger) lastTrigger.focus();
+        if (lastTrigger) lastTrigger.focus({ preventScroll: true });
       };
 
       const observer = new IntersectionObserver((entries) => {

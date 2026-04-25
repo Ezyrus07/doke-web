@@ -81,6 +81,7 @@ const defaultServiceLocationKey = "doke.defaultServiceLocation";
 const savedServiceLocationsKey = "doke.savedServiceLocations";
 let activeLocationTrigger = null;
 let lockedLocationScrollY = 0;
+let lockedLocationAnchor = null;
 
 if (sideMeta && sideMetaSearchButton && sideMetaSearchInput) {
   const closeSideMetaSearch = () => sideMeta.classList.remove("is-search-open");
@@ -307,6 +308,10 @@ const openLocationMenu = (trigger) => {
 
 const lockAddressViewport = () => {
   lockedLocationScrollY = window.scrollY || window.pageYOffset || 0;
+  lockedLocationAnchor = activeLocationTrigger ? {
+    node: activeLocationTrigger,
+    top: activeLocationTrigger.getBoundingClientRect().top
+  } : null;
   document.body.style.top = `-${lockedLocationScrollY}px`;
   document.body.classList.add("home-address-modal-open");
 };
@@ -316,7 +321,23 @@ const unlockAddressViewport = () => {
   document.body.classList.remove("home-address-modal-open");
   document.body.style.top = "";
   const nextScrollY = top ? Math.abs(parseInt(top, 10)) || lockedLocationScrollY : lockedLocationScrollY;
-  window.scrollTo(0, nextScrollY);
+  const restore = () => window.scrollTo({ top: nextScrollY, behavior: "auto" });
+  const restoreAnchor = () => {
+    if (!lockedLocationAnchor?.node?.isConnected) return;
+    const currentTop = lockedLocationAnchor.node.getBoundingClientRect().top;
+    window.scrollTo({ top: Math.max(0, window.scrollY + currentTop - lockedLocationAnchor.top), behavior: "auto" });
+  };
+  restore();
+  window.requestAnimationFrame(restore);
+  window.setTimeout(restore, 50);
+  window.setTimeout(() => {
+    restore();
+    restoreAnchor();
+  }, 180);
+  window.setTimeout(() => {
+    restoreAnchor();
+    lockedLocationAnchor = null;
+  }, 420);
 };
 
 const openAddressModal = () => {
