@@ -132,7 +132,7 @@
     const chargeAmountInput = document.querySelector("[data-charge-amount]");
     const chargeInstallments = document.querySelector("[data-charge-installments]");
     const chargeCancelButtons = document.querySelectorAll("[data-charge-cancel]");
-    const mobileControls = root.querySelector("[data-messages-mobile-controls]");
+    const mobileControls = root.querySelector("[data-messages-mobile-controls]") || root.querySelector(".messages-header-controls:not(.messages-header-controls--desktop)");
     const desktopControls = root.querySelector("[data-messages-desktop-controls]");
     const mobileFiltersPanel = root.querySelector("[data-messages-filters-panel]");
     const mobileSelectPanel = root.querySelector("[data-messages-select-panel]");

@@ -720,6 +720,7 @@ const createUiSelectApi = () => {
   };
 
   document.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) return;
     if (event.target.closest(".ui-select")) return;
     closeAll();
   });
@@ -944,6 +945,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 document.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) return;
   const submitButton = event.target.closest("[data-global-topbar-submit]");
   if (submitButton) {
     const searchForm = submitButton.closest("[data-global-topbar-search]");
@@ -1024,12 +1026,14 @@ document.addEventListener("click", (event) => {
 });
 
 document.addEventListener("pointerenter", (event) => {
+  if (!(event.target instanceof Element)) return;
   const link = event.target.closest("a[href]");
   if (!link || !isInternalViewUrl(link.href)) return;
   hintInternalViewStyles(link.href);
 }, true);
 
 document.addEventListener("focusin", (event) => {
+  if (!(event.target instanceof Element)) return;
   const link = event.target.closest("a[href]");
   if (!link || !isInternalViewUrl(link.href)) return;
   hintInternalViewStyles(link.href);
@@ -1070,6 +1074,7 @@ window.addEventListener("popstate", () => {
 });
 
 document.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) return;
   const toggleButton = event.target.closest("[data-sidebar-toggle]");
   if (toggleButton) {
     if (isMobileSidebarViewport()) {
