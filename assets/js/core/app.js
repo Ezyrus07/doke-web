@@ -909,6 +909,7 @@ window.DokeNavigate = async (href, options = {}) => {
 };
 
 document.addEventListener("submit", (event) => {
+  if (document.body.classList.contains("search-results-body")) return;
   const searchForm = event.target.closest("[data-global-topbar-search]");
   if (!searchForm) return;
 
@@ -922,6 +923,7 @@ document.addEventListener("submit", (event) => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (document.body.classList.contains("search-results-body")) return;
   const activeInput = event.target.closest('[data-global-topbar-search] input[type="search"], [data-global-topbar-search] input[type="text"]');
   if (!activeInput) return;
 
@@ -946,6 +948,9 @@ document.addEventListener("keydown", (event) => {
 
 document.addEventListener("click", (event) => {
   if (!(event.target instanceof Element)) return;
+  if (document.body.classList.contains("search-results-body")) {
+    document.body.classList.remove("mobile-search-active", "home-search-overlay-active");
+  }
   const submitButton = event.target.closest("[data-global-topbar-submit]");
   if (submitButton) {
     const searchForm = submitButton.closest("[data-global-topbar-search]");
@@ -1156,7 +1161,7 @@ document.addEventListener("click", (event) => {
   }
 
   if (event.target.closest("[data-mobile-search-open]")) {
-    if (usesPageSearchOnlyMobile()) {
+    if (document.body.classList.contains("search-results-body") || usesPageSearchOnlyMobile()) {
       closeMobileSearch();
       return;
     }
