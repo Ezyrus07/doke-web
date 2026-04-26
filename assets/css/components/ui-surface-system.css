@@ -1,0 +1,1029 @@
+/* Doke UI Surface System — camada final compartilhada para overlays, popovers, drawers, modais e controles internos.
+   Intencionalmente carregada por último: neutraliza CSS legado divergente sem criar padrões locais por página. */
+:root {
+  --doke-surface-bg: #ffffff;
+  --doke-surface-muted: #f7fbff;
+  --doke-surface-muted-strong: #eef5fc;
+  --doke-surface-border: rgba(24, 75, 118, 0.12);
+  --doke-surface-radius: 22px;
+  --doke-surface-radius-lg: 28px;
+  --doke-surface-radius-sm: 16px;
+  --doke-surface-shadow: 0 20px 52px rgba(16, 43, 74, 0.14);
+  --doke-surface-shadow-soft: 0 10px 28px rgba(27, 58, 93, 0.075);
+  --doke-overlay-bg: rgba(10, 28, 49, 0.48);
+  --doke-overlay-blur: 10px;
+  --doke-close-button-size: 52px;
+  --doke-close-button-size-mobile: 44px;
+  --doke-close-button-icon-size: 22px;
+  --doke-control-height: 52px;
+  --doke-control-radius: 16px;
+  --doke-action-height: 46px;
+  --doke-surface-padding: 28px;
+  --doke-surface-padding-mobile: 18px;
+  --doke-surface-max-width: 640px;
+  --doke-surface-wide-max-width: 940px;
+  --doke-drawer-width: 390px;
+  --doke-icon-button-size: 52px;
+  --doke-icon-button-size-mobile: 44px;
+  --doke-icon-button-radius: 16px;
+  --doke-chip-height: 34px;
+  --doke-primary-action-bg: #1f5d92;
+  --doke-primary-action-color: #ffffff;
+  --doke-secondary-action-bg: #eef5fc;
+  --doke-secondary-action-color: #184f87;
+  --doke-danger-action-bg: #fff1f1;
+  --doke-danger-action-color: #b42318;
+}
+
+html:has(:is(dialog[open], .wallet-modal:not([hidden]), .ui-modal:not([hidden]), .community-request-modal:not([hidden]), .community-action-modal:not([hidden]), .payment-overlay:not([hidden]), .detail-modal:not([hidden]), .orders-sidepanel:not([hidden]), .home-mobile-drawer.is-open, .doke-media-lightbox.is-open)) {
+  overflow: hidden;
+}
+
+:is(
+  .wallet-modal,
+  .ui-modal,
+  .community-request-modal,
+  .community-action-modal,
+  .payment-overlay,
+  .detail-modal,
+  .home-address-modal,
+  .address-modal,
+  .profile-followers-modal,
+  .profile-edit-modal,
+  .detail-budget-modal,
+  .image-lightbox,
+  .charge-modal,
+  .doke-media-lightbox,
+  .detail-lightbox,
+  .before-after-preview,
+  .worker-preview,
+  .home-mobile-drawer,
+  .orders-panel-scrim,
+  .results-filters-backdrop
+) {
+  box-sizing: border-box;
+}
+
+:is(
+  .wallet-modal__scrim,
+  .ui-modal__backdrop,
+  .community-request-modal__backdrop,
+  .community-action-modal__backdrop,
+  .payment-overlay__backdrop,
+  .detail-modal__scrim,
+  .doke-media-lightbox,
+  .detail-lightbox,
+  .before-after-preview,
+  .worker-preview,
+  .home-mobile-drawer__backdrop,
+  .orders-panel-scrim,
+  .results-filters-backdrop
+),
+.home-address-modal::backdrop,
+.address-modal::backdrop,
+.profile-followers-modal::backdrop,
+.profile-edit-modal::backdrop,
+.detail-budget-modal::backdrop,
+.image-lightbox::backdrop,
+.charge-modal::backdrop {
+  background: var(--doke-overlay-bg) !important;
+  backdrop-filter: blur(var(--doke-overlay-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--doke-overlay-blur)) !important;
+}
+
+:is(
+  .wallet-modal:not([hidden]),
+  .ui-modal:not([hidden]),
+  .community-request-modal:not([hidden]),
+  .community-action-modal:not([hidden]),
+  .payment-overlay:not([hidden]),
+  .detail-modal:not([hidden])
+) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1200 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)) !important;
+  overflow: hidden !important;
+}
+
+:is(dialog.address-modal, dialog.home-address-modal, dialog.profile-followers-modal, dialog.profile-edit-modal, dialog.detail-budget-modal, dialog.image-lightbox, dialog.charge-modal) {
+  max-width: none !important;
+  max-height: none !important;
+  width: auto !important;
+  height: auto !important;
+  margin: auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: inherit !important;
+  overflow: visible !important;
+}
+
+:is(dialog.address-modal, dialog.home-address-modal, dialog.profile-followers-modal, dialog.profile-edit-modal, dialog.detail-budget-modal, dialog.image-lightbox, dialog.charge-modal)[open] {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-width: 100vw !important;
+  max-height: 100dvh !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)) !important;
+  overflow: hidden !important;
+}
+
+:is(
+  .wallet-modal__card,
+  .ui-modal__dialog,
+  .home-address-modal__dialog,
+  .address-modal__dialog,
+  .community-request-modal__dialog,
+  .community-action-modal__dialog,
+  .payment-overlay__dialog,
+  .detail-modal__card,
+  .profile-followers-modal__dialog,
+  .profile-edit-modal__dialog,
+  .detail-budget-modal__dialog,
+  .charge-modal__surface,
+  .image-lightbox__surface,
+  .doke-media-lightbox__surface,
+  .detail-lightbox__image,
+  .before-after-preview__dialog,
+  .worker-preview__dialog,
+  .orders-sidepanel,
+  .home-mobile-drawer__panel,
+  .orders-select-panel,
+  .notifications-select-panel,
+  .search-dropdown,
+  .community-select__menu,
+  .profile-dropdown
+) {
+  box-sizing: border-box !important;
+  border: 1px solid var(--doke-surface-border) !important;
+  border-radius: var(--doke-surface-radius-lg) !important;
+  background: var(--doke-surface-bg) !important;
+  box-shadow: var(--doke-surface-shadow) !important;
+  color: #103b66 !important;
+}
+
+:is(
+  .wallet-modal__card,
+  .ui-modal__dialog,
+  .home-address-modal__dialog,
+  .address-modal__dialog,
+  .community-request-modal__dialog,
+  .community-action-modal__dialog,
+  .payment-overlay__dialog,
+  .detail-modal__card,
+  .profile-followers-modal__dialog,
+  .profile-edit-modal__dialog,
+  .detail-budget-modal__dialog,
+  .charge-modal__surface
+) {
+  width: min(var(--doke-surface-max-width), calc(100vw - 48px)) !important;
+  max-width: min(var(--doke-surface-max-width), calc(100vw - 48px)) !important;
+  max-height: min(86vh, 760px) !important;
+  padding: var(--doke-surface-padding) !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable both-edges !important;
+}
+
+:is(.community-action-modal__dialog--create, .detail-budget-modal__dialog, .profile-edit-modal__dialog, .worker-preview__dialog, .before-after-preview__dialog) {
+  width: min(var(--doke-surface-wide-max-width), calc(100vw - 48px)) !important;
+  max-width: min(var(--doke-surface-wide-max-width), calc(100vw - 48px)) !important;
+}
+
+:is(.image-lightbox__surface, .doke-media-lightbox__surface) {
+  width: min(980px, calc(100vw - 48px)) !important;
+  max-width: min(980px, calc(100vw - 48px)) !important;
+  max-height: min(88vh, 820px) !important;
+  padding: var(--doke-surface-padding-mobile) !important;
+  overflow: hidden !important;
+}
+
+:is(.orders-sidepanel, .home-mobile-drawer__panel) {
+  width: min(var(--doke-drawer-width), calc(100vw - 28px)) !important;
+  max-width: calc(100vw - 28px) !important;
+  max-height: calc(100dvh - 28px) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+:is(.orders-sidepanel__header, .home-mobile-drawer__header, .wallet-modal__card > .wallet-modal__close + *, .ui-modal__header, .profile-edit-modal__head, .address-modal__head, .charge-modal__header, .community-request-modal__dialog > h2, .community-action-modal__dialog > h2) {
+  box-sizing: border-box !important;
+}
+
+:is(.orders-sidepanel__body, .home-mobile-drawer__nav, .profile-followers-modal__list, .profile-edit-modal__body, .detail-budget-modal__flow, .community-action-form, .community-request-form, .wallet-withdraw-form) {
+  overscroll-behavior: contain !important;
+}
+
+:is(.orders-sidepanel__body, .home-mobile-drawer__panel) {
+  overflow-y: auto !important;
+  scrollbar-gutter: stable !important;
+}
+
+:is(
+  .wallet-withdraw-summary article,
+  .orders-detail-summary,
+  .orders-sidepanel__section,
+  .community-action-modal__preview,
+  .community-action-cover > div,
+  .home-location-option
+) {
+  box-sizing: border-box !important;
+  border: 1px solid var(--doke-surface-border) !important;
+  border-radius: var(--doke-surface-radius) !important;
+  background: var(--doke-surface-bg) !important;
+  box-shadow: var(--doke-surface-shadow-soft) !important;
+}
+
+:is(.wallet-withdraw-summary article, .community-action-modal__preview, .community-action-cover > div, .home-location-option) {
+  background: var(--doke-surface-muted) !important;
+  box-shadow: none !important;
+}
+
+:is(
+  button[aria-label^="Fechar"],
+  button[aria-label*="Fechar "],
+  button[aria-label^="Cancelar seleção"],
+  button[aria-label^="Cancelar selecao"],
+  button[aria-label^="Cancelar resposta"],
+  button[aria-label^="Ocultar comentários"],
+  .wallet-modal__close,
+  .ui-modal__close,
+  .home-address-modal__close,
+  .address-modal__close,
+  .community-request-modal__close,
+  .community-action-modal__close,
+  .payment-overlay__close,
+  .detail-modal__close,
+  .detail-lightbox__close,
+  .profile-followers-modal__close,
+  .profile-edit-modal__close,
+  .detail-budget-modal__close,
+  .before-after-preview__close,
+  .before-after-preview__close--fixed,
+  .worker-preview__close,
+  .worker-preview__close--fixed,
+  .media-lightbox__close,
+  .doke-media-lightbox__close,
+  .orders-sidepanel__close,
+  .charge-modal__close,
+  .image-lightbox__close,
+  .bank-modal__close,
+  .results-filters__close,
+  .orders-header-search__close,
+  .topbar-search-close,
+  .settings-mobile-header__search-close,
+  .home-location-popover__close,
+  .home-mobile-drawer__close,
+  .more-filters__dismiss,
+  .messages-selection-bar__close,
+  .messages-reply-preview__close,
+  .budget-success-card__close
+) {
+  box-sizing: border-box !important;
+  width: var(--doke-close-button-size) !important;
+  height: var(--doke-close-button-size) !important;
+  min-width: var(--doke-close-button-size) !important;
+  min-height: var(--doke-close-button-size) !important;
+  max-width: var(--doke-close-button-size) !important;
+  max-height: var(--doke-close-button-size) !important;
+  border: 1px solid rgba(31, 93, 146, 0.10) !important;
+  border-radius: 999px !important;
+  background: var(--doke-secondary-action-bg) !important;
+  color: var(--doke-secondary-action-color) !important;
+  box-shadow: none !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  flex: 0 0 var(--doke-close-button-size) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  font-size: var(--doke-close-button-icon-size) !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  transform: none !important;
+  appearance: none !important;
+}
+
+:is(
+  button[aria-label^="Fechar"],
+  button[aria-label*="Fechar "],
+  .wallet-modal__close,
+  .ui-modal__close,
+  .home-address-modal__close,
+  .address-modal__close,
+  .community-request-modal__close,
+  .community-action-modal__close,
+  .payment-overlay__close,
+  .detail-modal__close,
+  .profile-edit-modal__close,
+  .orders-sidepanel__close,
+  .charge-modal__close,
+  .image-lightbox__close,
+  .results-filters__close,
+  .home-mobile-drawer__close,
+  .more-filters__dismiss
+):is(:hover, :focus-visible) {
+  background: #e5f0fa !important;
+  border-color: rgba(31, 93, 146, 0.18) !important;
+  color: #123f68 !important;
+  outline: none !important;
+}
+
+:is(
+  button[aria-label^="Fechar"],
+  button[aria-label*="Fechar "],
+  .wallet-modal__close,
+  .ui-modal__close,
+  .home-address-modal__close,
+  .address-modal__close,
+  .community-request-modal__close,
+  .community-action-modal__close,
+  .payment-overlay__close,
+  .detail-modal__close,
+  .detail-lightbox__close,
+  .profile-followers-modal__close,
+  .profile-edit-modal__close,
+  .detail-budget-modal__close,
+  .before-after-preview__close,
+  .before-after-preview__close--fixed,
+  .worker-preview__close,
+  .worker-preview__close--fixed,
+  .media-lightbox__close,
+  .doke-media-lightbox__close,
+  .orders-sidepanel__close,
+  .charge-modal__close,
+  .image-lightbox__close,
+  .bank-modal__close,
+  .results-filters__close,
+  .orders-header-search__close,
+  .topbar-search-close,
+  .settings-mobile-header__search-close,
+  .home-location-popover__close,
+  .home-mobile-drawer__close,
+  .more-filters__dismiss,
+  .messages-selection-bar__close,
+  .messages-reply-preview__close,
+  .budget-success-card__close
+) :is(svg, img) {
+  width: var(--doke-close-button-icon-size) !important;
+  height: var(--doke-close-button-icon-size) !important;
+  min-width: var(--doke-close-button-icon-size) !important;
+  min-height: var(--doke-close-button-icon-size) !important;
+  display: block !important;
+  stroke: currentColor !important;
+  color: currentColor !important;
+  fill: none !important;
+  stroke-width: 2.35 !important;
+  margin: 0 !important;
+}
+
+:is(
+  .home-location-popover__close,
+  .results-filters__close,
+  .orders-header-search__close,
+  .topbar-search-close,
+  .settings-mobile-header__search-close,
+  .messages-selection-bar__close,
+  .messages-reply-preview__close
+) {
+  --doke-close-button-size: 40px;
+  --doke-close-button-icon-size: 18px;
+}
+
+body.home-index-shell .home-location-popover {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+body.home-index-shell .home-location-popover__panel {
+  border: 1px solid var(--doke-surface-border) !important;
+  border-radius: var(--doke-surface-radius) !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  box-shadow: var(--doke-surface-shadow) !important;
+}
+
+:is(
+  .messages-thread__action,
+  .topbar__right > a,
+  .topbar__right > button,
+  .community-action-modal__icon,
+  .community-request-modal__icon,
+  .home-mobile-drawer__item-icon,
+  .orders-page-header__search-toggle,
+  .orders-page-header__hero-chip,
+  .service-card__favorite,
+  .favorite-button,
+  .heart-button,
+  .video-card__play
+) {
+  box-sizing: border-box !important;
+  min-width: var(--doke-icon-button-size) !important;
+  min-height: var(--doke-icon-button-size) !important;
+  border-radius: var(--doke-icon-button-radius) !important;
+  display: inline-grid !important;
+  place-items: center !important;
+}
+
+:is(
+  .wallet-withdraw-form input,
+  .wallet-withdraw-form select,
+  .wallet-withdraw-form textarea,
+  .ui-modal__input,
+  .home-address-modal__field input,
+  .home-address-modal__field select,
+  .home-address-modal__field textarea,
+  .address-modal input,
+  .address-modal select,
+  .address-modal textarea,
+  .community-request-modal__dialog input,
+  .community-request-modal__dialog select,
+  .community-request-modal__dialog textarea,
+  .community-action-modal__dialog input,
+  .community-action-modal__dialog select,
+  .community-action-modal__dialog textarea,
+  .payment-overlay__dialog input,
+  .payment-overlay__dialog select,
+  .payment-overlay__dialog textarea,
+  .profile-edit-modal__dialog input,
+  .profile-edit-modal__dialog textarea,
+  .profile-edit-modal__dialog select,
+  .profile-followers-modal__search input,
+  .detail-budget-modal__dialog input,
+  .detail-budget-modal__dialog textarea,
+  .detail-budget-modal__dialog select,
+  .card-form input,
+  .card-form select,
+  .card-form textarea,
+  .wallet-manage-field input,
+  .wallet-manage-field select,
+  .bank-form input,
+  .bank-form select,
+  .messages-mobile-search input,
+  .messages-desktop-search input,
+  .orders-header-search input,
+  .charge-modal__money-field,
+  .charge-modal__money-field input,
+  .charge-modal__field select,
+  .community-action-form input,
+  .community-action-form textarea,
+  .community-select__trigger,
+  .budget-flow input,
+  .budget-flow textarea,
+  .budget-flow select,
+  .filter-field__select
+) {
+  box-sizing: border-box !important;
+  min-height: var(--doke-control-height) !important;
+  border: 1px solid rgba(31, 93, 146, 0.12) !important;
+  border-radius: var(--doke-control-radius) !important;
+  background: var(--doke-surface-muted) !important;
+  color: #123f68 !important;
+  box-shadow: none !important;
+  padding: 0 16px !important;
+  font: inherit !important;
+}
+
+:is(textarea, .community-action-form textarea, .address-modal textarea, .profile-edit-modal__dialog textarea, .detail-budget-modal__dialog textarea) {
+  min-height: 112px !important;
+  padding-block: 14px !important;
+  resize: vertical !important;
+}
+
+.charge-modal__money-field {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 0 16px !important;
+}
+
+.charge-modal__money-field input {
+  min-height: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+:is(
+  .wallet-button,
+  .ui-modal__button,
+  .home-address-modal__button,
+  .budget-button,
+  .payment-button,
+  .community-action-modal__button,
+  .community-request-modal__button,
+  .community-request-form__button,
+  .profile-edit-modal__button,
+  .profile-edit-modal__action,
+  .detail-budget-modal__button,
+  .before-after-preview-modal__button,
+  .worker-preview-modal__button,
+  .card-form button,
+  .wallet-page__button,
+  .messages-selection-bar__button,
+  .messages-empty__button,
+  .charge-modal__button,
+  .orders-empty__button,
+  .orders-action,
+  .orders-planner__mobile-summary-action,
+  .orders-select-option,
+  .community-select__option,
+  .home-location-option
+) {
+  box-sizing: border-box !important;
+  min-height: var(--doke-action-height) !important;
+  border-radius: var(--doke-control-radius) !important;
+  padding-inline: 18px !important;
+  font-weight: 800 !important;
+  line-height: 1.1 !important;
+}
+
+:is(
+  .wallet-button--primary,
+  .ui-modal__button--primary,
+  .home-address-modal__button--primary,
+  .budget-button--primary,
+  .payment-button--primary,
+  .community-action-modal__button:not(.community-action-modal__button--ghost),
+  .community-request-form__button:not(.community-request-form__button--ghost),
+  .profile-edit-modal__button--primary,
+  .profile-edit-modal__action--primary,
+  .detail-budget-modal__button--primary,
+  .charge-modal__button:not(.charge-modal__button--ghost),
+  .orders-empty__button--primary,
+  .orders-action--primary
+) {
+  border: 1px solid var(--doke-primary-action-bg) !important;
+  background: var(--doke-primary-action-bg) !important;
+  color: var(--doke-primary-action-color) !important;
+  box-shadow: none !important;
+}
+
+:is(
+  .wallet-button--ghost,
+  .ui-modal__button:not(.ui-modal__button--primary),
+  .home-address-modal__button:not(.home-address-modal__button--primary),
+  .budget-button--ghost,
+  .payment-button--ghost,
+  .community-action-modal__button--ghost,
+  .community-request-form__button--ghost,
+  .profile-edit-modal__button:not(.profile-edit-modal__button--primary),
+  .profile-edit-modal__action:not(.profile-edit-modal__action--primary),
+  .charge-modal__button--ghost
+) {
+  border: 1px solid rgba(31, 93, 146, 0.10) !important;
+  background: var(--doke-secondary-action-bg) !important;
+  color: var(--doke-secondary-action-color) !important;
+  box-shadow: none !important;
+}
+
+:is(
+  .wallet-modal__actions,
+  .ui-modal__actions,
+  .home-address-modal__actions,
+  .address-modal__actions,
+  .community-request-modal__actions,
+  .community-request-form__actions,
+  .community-action-modal__actions,
+  .payment-overlay__actions,
+  .profile-edit-modal__actions,
+  .detail-budget-modal__actions,
+  .orders-sidepanel__actions,
+  .charge-modal__actions,
+  .budget-actions
+) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+}
+
+:is(
+  .wallet-eyebrow,
+  .ui-modal__eyebrow,
+  .home-address-modal__eyebrow,
+  .address-modal__eyebrow,
+  .community-request-modal__eyebrow,
+  .community-action-modal__eyebrow,
+  .payment-overlay__eyebrow,
+  .detail-modal__eyebrow,
+  .orders-sidepanel__eyebrow,
+  .results-panel__eyebrow,
+  .orders-active-filter-chip,
+  .filter-chip,
+  .panel-chip,
+  .orders-detail-summary__status,
+  .orders-detail-summary__next
+) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: var(--doke-chip-height) !important;
+  border: 1px solid rgba(31, 93, 146, 0.10) !important;
+  border-radius: 999px !important;
+  background: var(--doke-surface-muted-strong) !important;
+  color: var(--doke-secondary-action-color) !important;
+  padding: 0 14px !important;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.01em !important;
+}
+
+:is(
+  .wallet-modal__card,
+  .ui-modal__dialog,
+  .home-address-modal__dialog,
+  .address-modal__dialog,
+  .community-request-modal__dialog,
+  .community-action-modal__dialog,
+  .payment-overlay__dialog,
+  .detail-modal__card,
+  .profile-followers-modal__dialog,
+  .profile-edit-modal__dialog,
+  .detail-budget-modal__dialog,
+  .charge-modal__surface,
+  .orders-sidepanel,
+  .home-mobile-drawer__panel
+) :is(h1, h2, h3) {
+  color: #103b66 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.12 !important;
+  font-weight: 800 !important;
+}
+
+:is(.orders-select-panel, .notifications-select-panel, .search-dropdown, .community-select__menu, .profile-dropdown) {
+  padding: 14px !important;
+  max-width: min(420px, calc(100vw - 28px)) !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+.community-select__menu {
+  width: 100% !important;
+}
+
+:is(.profile-dropdown__item, .home-mobile-drawer__item, .orders-select-option, .community-select__option) {
+  border-radius: var(--doke-control-radius) !important;
+}
+
+:is(.wallet-modal__close, .ui-modal__close, .community-request-modal__close, .community-action-modal__close, .detail-modal__close, .profile-edit-modal__close, .address-modal__close, .charge-modal__close) {
+  position: absolute !important;
+  top: 18px !important;
+  right: 18px !important;
+  z-index: 3 !important;
+}
+
+:is(.wallet-modal__card, .ui-modal__dialog, .community-request-modal__dialog, .community-action-modal__dialog, .detail-modal__card, .profile-edit-modal__dialog, .address-modal__dialog, .charge-modal__surface) {
+  position: relative !important;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --doke-surface-radius: 20px;
+    --doke-surface-radius-lg: 22px;
+    --doke-surface-radius-sm: 14px;
+    --doke-control-height: 50px;
+    --doke-action-height: 44px;
+    --doke-icon-button-size: var(--doke-icon-button-size-mobile);
+    --doke-close-button-size: var(--doke-close-button-size-mobile);
+    --doke-close-button-icon-size: 20px;
+    --doke-chip-height: 32px;
+  }
+
+  :is(
+    .home-location-popover__close,
+    .results-filters__close,
+    .orders-header-search__close,
+    .topbar-search-close,
+    .settings-mobile-header__search-close,
+    .messages-selection-bar__close,
+    .messages-reply-preview__close
+  ) {
+    --doke-close-button-size: 38px;
+    --doke-close-button-icon-size: 18px;
+  }
+
+  html,
+  body {
+    min-height: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  :is(
+    .wallet-modal:not([hidden]),
+    .ui-modal:not([hidden]),
+    .community-request-modal:not([hidden]),
+    .community-action-modal:not([hidden]),
+    .payment-overlay:not([hidden]),
+    .detail-modal:not([hidden])
+  ) {
+    padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)) !important;
+  }
+
+  :is(
+    .wallet-modal__card,
+    .ui-modal__dialog,
+    .home-address-modal__dialog,
+    .address-modal__dialog,
+    .community-request-modal__dialog,
+    .community-action-modal__dialog,
+    .payment-overlay__dialog,
+    .detail-modal__card,
+    .profile-followers-modal__dialog,
+    .profile-edit-modal__dialog,
+    .detail-budget-modal__dialog,
+    .charge-modal__surface,
+    .image-lightbox__surface,
+    .doke-media-lightbox__surface,
+    .home-mobile-drawer__panel
+  ) {
+    width: calc(100vw - 28px) !important;
+    max-width: calc(100vw - 28px) !important;
+    max-height: calc(100dvh - 28px) !important;
+    border-radius: var(--doke-surface-radius-lg) !important;
+    padding: var(--doke-surface-padding-mobile) !important;
+    overflow: auto !important;
+  }
+
+  :is(.orders-sidepanel, .home-mobile-drawer__panel) {
+    width: calc(100vw - 28px) !important;
+    max-width: calc(100vw - 28px) !important;
+    max-height: calc(100dvh - 28px) !important;
+  }
+
+  :is(.wallet-modal__close, .ui-modal__close, .community-request-modal__close, .community-action-modal__close, .detail-modal__close, .profile-edit-modal__close, .address-modal__close, .charge-modal__close) {
+    top: 14px !important;
+    right: 14px !important;
+  }
+
+  :is(
+    .wallet-modal__actions,
+    .ui-modal__actions,
+    .home-address-modal__actions,
+    .address-modal__actions,
+    .community-request-modal__actions,
+    .community-request-form__actions,
+    .community-action-modal__actions,
+    .payment-overlay__actions,
+    .profile-edit-modal__actions,
+    .detail-budget-modal__actions,
+    .orders-sidepanel__actions,
+    .charge-modal__actions,
+    .budget-actions
+  ) {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+  }
+
+  :is(
+    .wallet-button,
+    .ui-modal__button,
+    .home-address-modal__button,
+    .budget-button,
+    .payment-button,
+    .community-action-modal__button,
+    .community-request-form__button,
+    .profile-edit-modal__button,
+    .profile-edit-modal__action,
+    .detail-budget-modal__button,
+    .card-form button,
+    .charge-modal__button
+  ) {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  :is(.orders-select-panel, .notifications-select-panel, .search-dropdown, .community-select__menu, .profile-dropdown) {
+    max-width: calc(100vw - 28px) !important;
+    border-radius: var(--doke-surface-radius) !important;
+  }
+
+  body.profile-page-shell .page__content {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Damage control for page-level filter bars: they are not modal surfaces. */
+:is(
+  .orders-filters-panel,
+  .orders-filters-popover,
+  .notifications-filters-panel,
+  .messages-filters-panel,
+  .notifications-select-panel,
+  .messages-select-panel,
+  .orders-select-panel
+) {
+  width: fit-content !important;
+  min-width: 0 !important;
+  max-width: min(100%, 560px) !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+:is(
+  .notifications-filters-panel:not([hidden]),
+  .messages-filters-panel:not([hidden]),
+  .orders-filters-panel:not([hidden]),
+  .orders-filters-popover:not([hidden])
+) {
+  display: inline-grid !important;
+}
+
+:is(
+  .notifications-filters-panel__chips,
+  .orders-filters-panel__chips,
+  .notifications-select-panel__actions
+) {
+  width: auto !important;
+  max-width: 100% !important;
+}
+
+body.home-index-shell .home-address-modal__dialog {
+  width: min(780px, calc(100vw - 48px)) !important;
+  max-width: min(780px, calc(100vw - 48px)) !important;
+  overflow-x: hidden !important;
+  scrollbar-gutter: auto !important;
+}
+
+body.home-index-shell .home-address-modal__grid,
+body.home-index-shell .home-address-modal__field,
+body.home-index-shell .home-address-modal__check {
+  min-width: 0 !important;
+}
+
+body.home-index-shell .home-address-modal__field input {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+body.home-index-shell .home-address-modal__grid--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+body.home-index-shell .home-address-modal__grid--3 {
+  grid-template-columns: minmax(0, 1fr) minmax(84px, 0.72fr) minmax(0, 1fr) !important;
+}
+
+body.search-results-body .results-filters {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+body.search-results-body .results-filters__close {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  max-width: 32px !important;
+  max-height: 32px !important;
+  border-radius: 12px !important;
+}
+
+body.search-results-body .results-filters__close span {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+}
+
+body.search-results-body .results-check {
+  display: grid !important;
+  grid-template-columns: 18px minmax(0, 1fr) !important;
+  align-items: center !important;
+  column-gap: 8px !important;
+  min-height: 28px !important;
+  padding: 0 !important;
+}
+
+body.search-results-body .results-check input[type="checkbox"] {
+  appearance: none !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  margin: 0 !important;
+  border: 1px solid rgba(31, 93, 146, 0.2) !important;
+  border-radius: 6px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+body.search-results-body .results-check input[type="checkbox"]:checked {
+  background: #1f9d8a !important;
+  border-color: #1f9d8a !important;
+  box-shadow: inset 0 0 0 4px #fff !important;
+}
+
+body.search-results-body .results-check span {
+  min-width: 0 !important;
+  color: #355675 !important;
+  font-size: 0.82rem !important;
+  line-height: 1.2 !important;
+}
+
+body.search-results-body .results-filters__actions {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+}
+
+body.search-results-body .results-filters__actions .results-button {
+  min-height: 34px !important;
+  border-radius: 12px !important;
+  padding: 0 10px !important;
+  font-size: 0.78rem !important;
+}
+
+/* Final budget modal contract: the dialog is the overlay, the inner card is centered. */
+dialog.profile-budget-modal,
+dialog.profile-budget-modal[open] {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-width: 100vw !important;
+  max-height: 100dvh !important;
+  margin: 0 !important;
+  padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)) !important;
+  transform: none !important;
+  background: transparent !important;
+  overflow: hidden !important;
+}
+
+dialog.profile-budget-modal[open] {
+  display: grid !important;
+  place-items: center !important;
+}
+
+dialog.profile-budget-modal .detail-budget-modal__dialog {
+  width: min(940px, calc(100vw - 48px)) !important;
+  max-width: min(940px, calc(100vw - 48px)) !important;
+  max-height: calc(100dvh - 48px) !important;
+  margin: 0 !important;
+  transform: none !important;
+  scrollbar-gutter: auto !important;
+}
+
+dialog.profile-budget-modal .quote-main,
+dialog.profile-budget-modal .detail-budget-modal__flow {
+  min-height: 0 !important;
+  max-height: 100% !important;
+}
+
+@media (max-width: 760px) {
+  body.home-index-shell .home-address-modal__dialog {
+    width: calc(100vw - 28px) !important;
+    max-width: calc(100vw - 28px) !important;
+  }
+
+  body.home-index-shell :is(.home-address-modal__grid--2, .home-address-modal__grid--3) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  :is(
+    .orders-filters-panel,
+    .orders-filters-popover,
+    .notifications-filters-panel,
+    .messages-filters-panel,
+    .notifications-select-panel,
+    .messages-select-panel,
+    .orders-select-panel
+  ) {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  dialog.profile-budget-modal,
+  dialog.profile-budget-modal[open] {
+    padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)) !important;
+  }
+
+  dialog.profile-budget-modal .detail-budget-modal__dialog {
+    width: min(640px, calc(100vw - 28px)) !important;
+    max-width: min(640px, calc(100vw - 28px)) !important;
+    max-height: calc(100dvh - 28px) !important;
+  }
+
+  dialog.profile-budget-modal .quote-main,
+  dialog.profile-budget-modal .detail-budget-modal__flow {
+    max-height: calc(100dvh - 84px) !important;
+  }
+}

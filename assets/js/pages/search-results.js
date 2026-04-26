@@ -674,28 +674,14 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   };
 
   const renderRelatedSections = (query) => {
-    const searchMode = getSearchMode();
-    const users = query ? getUserMatches(query).slice(0, 3) : [];
-    const videos = query ? getShortVideoMatches(query).slice(0, 4) : [];
-    const beforeAfter = query ? getBeforeAfterMatches(query).slice(0, 2) : [];
+    const hide = (section, grid) => {
+      if (grid) grid.innerHTML = '';
+      if (section) section.hidden = true;
+    };
 
-    if (els.resultsUsersGrid && els.resultsUsersSection) {
-      els.resultsUsersGrid.innerHTML = '';
-      users.forEach((item) => els.resultsUsersGrid.appendChild(createUserCard(item)));
-      els.resultsUsersSection.hidden = searchMode === 'users' || users.length === 0;
-    }
-
-    if (els.resultsVideosGrid && els.resultsVideosSection) {
-      els.resultsVideosGrid.innerHTML = '';
-      videos.forEach((item) => els.resultsVideosGrid.appendChild(createVideoCard(item)));
-      els.resultsVideosSection.hidden = searchMode === 'workers' || videos.length === 0;
-    }
-
-    if (els.resultsBeforeAfterGrid && els.resultsBeforeAfterSection) {
-      els.resultsBeforeAfterGrid.innerHTML = '';
-      beforeAfter.forEach((item) => els.resultsBeforeAfterGrid.appendChild(createBeforeAfterCard(item)));
-      els.resultsBeforeAfterSection.hidden = searchMode === 'before-after' || beforeAfter.length === 0;
-    }
+    hide(els.resultsUsersSection, els.resultsUsersGrid);
+    hide(els.resultsVideosSection, els.resultsVideosGrid);
+    hide(els.resultsBeforeAfterSection, els.resultsBeforeAfterGrid);
   };
 
   const renderEmptySuggestions = (query, filters) => {
