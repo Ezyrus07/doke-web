@@ -33,12 +33,13 @@
 
         let activeSearchIndex = -1;
         const isMobileSearchViewport = () => window.innerWidth <= 760;
-        const shouldUseSearchDropdown = () => Boolean(searchDropdown && searchInput);
+        const shouldUseSearchDropdown = () => Boolean(searchDropdown && searchInput && !isMobileSearchViewport());
 
         const syncSearchOverlayState = (query = "") => {
+          const canShowDropdown = shouldUseSearchDropdown();
           document.body.classList.toggle(
             "home-search-has-query",
-            isMobileSearchViewport() && String(query || "").trim().length >= 2
+            canShowDropdown && String(query || "").trim().length >= 2
           );
         };
 
@@ -181,6 +182,7 @@
         const goToSearchResults = (value) => {
           const cleanValue = String(value || "").trim();
           if (!cleanValue) return;
+          closeSearchDropdown();
           addSearchHistory(cleanValue);
           const nextUrl = new URL("resultados.html", window.location.href);
           nextUrl.searchParams.set("q", cleanValue);

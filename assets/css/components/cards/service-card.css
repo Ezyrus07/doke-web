@@ -551,3 +551,32 @@
 .service-card--result .service-card__tags span:nth-child(n + 3) {
   display: none;
 }
+
+/* 2026-04-26 shared mobile service-card contract. Page files may compose, but must not resize the component differently. */
+@media (max-width: 760px) {
+  :is(.service-card, .service-card--feed, .service-card--result) {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    border-radius: var(--doke-mobile-card-radius, 22px);
+  }
+
+  :is(.service-card, .service-card--feed, .service-card--result) .service-card__media {
+    min-height: var(--doke-mobile-card-media, clamp(168px, 49vw, 206px));
+    aspect-ratio: 16 / 10;
+    padding: var(--doke-mobile-card-padding, 14px);
+  }
+
+  :is(.service-card, .service-card--feed, .service-card--result) .service-card__body {
+    padding: var(--doke-mobile-card-padding, 14px);
+    gap: 10px;
+  }
+
+  :is(.service-card, .service-card--feed, .service-card--result) .service-card__favorite {
+    width: var(--doke-mobile-action-size, 44px);
+    height: var(--doke-mobile-action-size, 44px);
+    top: 12px;
+    right: 12px;
+    border-radius: 999px;
+  }
+}

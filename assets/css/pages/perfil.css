@@ -5887,3 +5887,22 @@ body.profile-page-shell .profile-review-detail {
 .profile-budget-modal .doke-select-menu {
   position: absolute !important;
 }
+
+/* 2026-04-26 mobile end-spacing fix: profile inherits the shared bottom-nav contract, no phantom footer gap. */
+@media (max-width: 760px) {
+  body.profile-body,
+  body.profile-page-body {
+    min-height: 100%;
+  }
+
+  body.profile-body :is(.page__content, .main-content, .profile-page, .profile-shell, .profile-layout),
+  body.profile-page-body :is(.page__content, .main-content, .profile-page, .profile-shell, .profile-layout) {
+    min-height: 0 !important;
+    padding-bottom: var(--doke-mobile-page-bottom, calc(78px + env(safe-area-inset-bottom, 0px))) !important;
+  }
+
+  body.profile-body :is(.profile-page, .profile-shell, .profile-layout) > :last-child,
+  body.profile-page-body :is(.profile-page, .profile-shell, .profile-layout) > :last-child {
+    margin-bottom: 0 !important;
+  }
+}

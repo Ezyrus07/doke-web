@@ -1,0 +1,751 @@
+/* Final shared surface contract.
+   Keeps modals, inner cards, form fields and action buttons visually consistent across pages. */
+:root {
+  --doke-surface-radius: 22px;
+  --doke-surface-radius-lg: 26px;
+  --doke-surface-radius-sm: 16px;
+  --doke-surface-card-padding: 18px;
+  --doke-surface-border: var(--doke-card-border, rgba(24, 75, 118, 0.1));
+  --doke-surface-bg: #fff;
+  --doke-surface-muted: #f7fbff;
+  --doke-surface-muted-strong: #eef5fc;
+  --doke-surface-shadow: 0 18px 44px rgba(18, 50, 85, 0.12);
+  --doke-surface-shadow-modal: 0 28px 70px rgba(16, 31, 48, 0.22);
+  --doke-control-height: 52px;
+  --doke-control-radius: 16px;
+  --doke-action-height: 46px;
+  --doke-icon-button-size: 52px;
+  --doke-icon-button-radius: 18px;
+  --doke-close-button-size: 52px;
+  --doke-close-button-icon-size: 22px;
+  --doke-close-button-bg: #eef5fc;
+  --doke-close-button-color: #184f87;
+  --doke-close-button-border: rgba(31, 93, 146, 0.1);
+}
+
+:is(
+  button[aria-label^="Fechar"],
+  button[aria-label*="Fechar "],
+  button[aria-label^="Cancelar selecao"],
+  button[aria-label^="Cancelar seleção"],
+  button[aria-label^="Cancelar resposta"],
+  button[aria-label^="Ocultar comentários"],
+  .wallet-modal__close,
+  .ui-modal__close,
+  .home-address-modal__close,
+  .address-modal__close,
+  .community-request-modal__close,
+  .community-action-modal__close,
+  .payment-overlay__close,
+  .detail-modal__close,
+  .detail-lightbox__close,
+  .profile-followers-modal__close,
+  .profile-edit-modal__close,
+  .detail-budget-modal__close,
+  .before-after-preview__close,
+  .before-after-preview__close--fixed,
+  .worker-preview__close,
+  .worker-preview__close--fixed,
+  .media-lightbox__close,
+  .doke-media-lightbox__close,
+  .orders-sidepanel__close,
+  .charge-modal__close,
+  .image-lightbox__close,
+  .bank-modal__close,
+  .results-filters__close,
+  .orders-header-search__close,
+  .topbar-search-close,
+  .settings-mobile-header__search-close,
+  .home-location-popover__close,
+  .home-mobile-drawer__close,
+  .messages-selection-bar__close,
+  .messages-reply-preview__close,
+  .budget-success-card__close
+) {
+  width: var(--doke-close-button-size) !important;
+  height: var(--doke-close-button-size) !important;
+  min-width: var(--doke-close-button-size) !important;
+  min-height: var(--doke-close-button-size) !important;
+  max-width: var(--doke-close-button-size) !important;
+  max-height: var(--doke-close-button-size) !important;
+  border: 1px solid var(--doke-close-button-border) !important;
+  border-radius: 999px !important;
+  background: var(--doke-close-button-bg) !important;
+  color: var(--doke-close-button-color) !important;
+  box-shadow: none !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  flex: 0 0 var(--doke-close-button-size) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  font-size: var(--doke-close-button-icon-size) !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  transform: none !important;
+}
+
+:is(
+  button[aria-label^="Fechar"],
+  button[aria-label*="Fechar "],
+  button[aria-label^="Cancelar selecao"],
+  button[aria-label^="Cancelar seleção"],
+  button[aria-label^="Cancelar resposta"],
+  button[aria-label^="Ocultar comentários"],
+  .wallet-modal__close,
+  .ui-modal__close,
+  .home-address-modal__close,
+  .address-modal__close,
+  .community-request-modal__close,
+  .community-action-modal__close,
+  .payment-overlay__close,
+  .detail-modal__close,
+  .detail-lightbox__close,
+  .profile-followers-modal__close,
+  .profile-edit-modal__close,
+  .detail-budget-modal__close,
+  .before-after-preview__close,
+  .before-after-preview__close--fixed,
+  .worker-preview__close,
+  .worker-preview__close--fixed,
+  .media-lightbox__close,
+  .doke-media-lightbox__close,
+  .orders-sidepanel__close,
+  .charge-modal__close,
+  .image-lightbox__close,
+  .bank-modal__close,
+  .results-filters__close,
+  .orders-header-search__close,
+  .topbar-search-close,
+  .settings-mobile-header__search-close,
+  .home-location-popover__close,
+  .home-mobile-drawer__close,
+  .messages-selection-bar__close,
+  .messages-reply-preview__close,
+  .budget-success-card__close
+) :is(svg, img) {
+  width: var(--doke-close-button-icon-size) !important;
+  height: var(--doke-close-button-icon-size) !important;
+  min-width: var(--doke-close-button-icon-size) !important;
+  min-height: var(--doke-close-button-icon-size) !important;
+  display: block !important;
+  stroke: currentColor !important;
+  color: currentColor !important;
+  fill: none !important;
+  stroke-width: 2.4 !important;
+  margin: 0 !important;
+}
+
+:is(
+  .wallet-summary-card,
+  .wallet-panel,
+  .wallet-bank-card,
+  .wallet-payment-card,
+  .wallet-transaction,
+  .wallet-withdraw-summary article,
+  .payment-card,
+  .payment-summary__card,
+  .order-card,
+  .notification-card,
+  .community-post-card,
+  .message-thread-card,
+  .settings-card,
+  .settings-toggle-card,
+  .request-card,
+  .chat-card,
+  .review-card,
+  .rating-card,
+  .checkout-card,
+  .checkout-summary,
+  .card-form,
+  .wallet-manage-card,
+  .bank-card,
+  .bank-side-card,
+  .bank-form-panel,
+  .messages-block,
+  .message-item,
+  .messages-empty__card,
+  .messages-thread,
+  .profile-service-card,
+  .profile-content-card,
+  .profile-info-card,
+  .profile-review-card,
+  .detail-budget-card,
+  .detail-info-card,
+  .detail-provider-card,
+  .orders-detail-summary,
+  .orders-sidepanel__section,
+  .community-action-modal__preview,
+  .community-action-cover,
+  .budget-progress,
+  .budget-panel,
+  .quote-main
+) {
+  border: 1px solid var(--doke-surface-border) !important;
+  border-radius: var(--doke-surface-radius) !important;
+  background: var(--doke-surface-bg) !important;
+  box-shadow: 0 10px 24px rgba(27, 58, 93, 0.055) !important;
+}
+
+body.messages-page-shell .message-item {
+  border: 1px solid var(--doke-surface-border) !important;
+  border-radius: var(--doke-surface-radius) !important;
+  background: var(--doke-surface-bg) !important;
+  box-shadow: 0 10px 24px rgba(27, 58, 93, 0.055) !important;
+  padding: var(--doke-surface-card-padding) !important;
+}
+
+body.messages-page-shell .messages-list > .message-item,
+body.messages-page-shell .messages-list > .message-item.is-active {
+  background: var(--doke-surface-bg) !important;
+}
+
+body.wallet-manage-shell .wallet-manage-field input,
+body.wallet-manage-shell .wallet-manage-field select {
+  width: 100% !important;
+  padding: 0 14px !important;
+}
+
+:is(
+  .wallet-summary-card,
+  .wallet-panel,
+  .wallet-bank-card,
+  .wallet-payment-card,
+  .wallet-transaction,
+  .payment-card,
+  .payment-summary__card,
+  .order-card,
+  .notification-card,
+  .community-post-card,
+  .message-thread-card,
+  .settings-card,
+  .settings-toggle-card,
+  .request-card,
+  .chat-card,
+  .review-card,
+  .rating-card,
+  .checkout-card,
+  .checkout-summary,
+  .card-form,
+  .wallet-manage-card,
+  .bank-card,
+  .bank-side-card,
+  .bank-form-panel,
+  .messages-block,
+  .message-item,
+  .messages-empty__card
+) {
+  padding: var(--doke-surface-card-padding) !important;
+}
+
+:is(
+  .wallet-modal__card,
+  .ui-modal__dialog,
+  .home-address-modal__dialog,
+  .address-modal__dialog,
+  .community-request-modal__dialog,
+  .community-action-modal__dialog,
+  .payment-overlay__dialog,
+  .detail-modal__card,
+  .profile-edit-modal__dialog,
+  .detail-budget-modal__dialog,
+  .before-after-preview-modal__dialog,
+  .worker-preview-modal__dialog,
+  .media-lightbox__dialog,
+  .orders-sidepanel,
+  .charge-modal__surface,
+  .image-lightbox__surface
+) {
+  border: 1px solid var(--doke-surface-border) !important;
+  border-radius: var(--doke-surface-radius-lg) !important;
+  background: var(--doke-surface-bg) !important;
+  box-shadow: var(--doke-surface-shadow-modal) !important;
+}
+
+:is(
+  .wallet-modal__card,
+  .ui-modal__dialog,
+  .home-address-modal__dialog,
+  .address-modal__dialog,
+  .community-request-modal__dialog,
+  .community-action-modal__dialog,
+  .payment-overlay__dialog,
+  .detail-modal__card,
+  .profile-edit-modal__dialog,
+  .detail-budget-modal__dialog,
+  .before-after-preview-modal__dialog,
+  .worker-preview-modal__dialog,
+  .orders-sidepanel,
+  .charge-modal__surface
+) {
+  padding: clamp(22px, 4vw, 30px) !important;
+}
+
+:is(
+  .wallet-modal__card,
+  .ui-modal__dialog,
+  .home-address-modal__dialog,
+  .address-modal__dialog,
+  .community-request-modal__dialog,
+  .community-action-modal__dialog,
+  .payment-overlay__dialog,
+  .detail-modal__card,
+  .profile-edit-modal__dialog,
+  .detail-budget-modal__dialog,
+  .orders-sidepanel,
+  .charge-modal__surface
+) :is(h1, h2, h3) {
+  color: #103b66 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.12 !important;
+  font-weight: 800 !important;
+}
+
+:is(
+  .wallet-eyebrow,
+  .ui-modal__eyebrow,
+  .home-address-modal__eyebrow,
+  .address-modal__eyebrow,
+  .community-request-modal__eyebrow,
+  .community-action-modal__eyebrow,
+  .payment-overlay__eyebrow,
+  .detail-modal__eyebrow
+) {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 32px !important;
+  padding: 0 14px !important;
+  border-radius: 999px !important;
+  background: var(--doke-surface-muted-strong) !important;
+  color: #1f5d92 !important;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+}
+
+:is(
+  .wallet-modal__close,
+  .ui-modal__close,
+  .home-address-modal__close,
+  .address-modal__close,
+  .community-request-modal__close,
+  .community-action-modal__close,
+  .payment-overlay__close,
+  .detail-modal__close,
+  .profile-edit-modal__close,
+  .detail-budget-modal__close,
+  .before-after-preview-modal__close,
+  .worker-preview-modal__close,
+  .media-lightbox__close,
+  .orders-sidepanel__close,
+  .charge-modal__close,
+  .image-lightbox__close,
+  .bank-modal__close
+) {
+  width: var(--doke-icon-button-size) !important;
+  height: var(--doke-icon-button-size) !important;
+  min-width: var(--doke-icon-button-size) !important;
+  min-height: var(--doke-icon-button-size) !important;
+  border: 1px solid rgba(31, 93, 146, 0.08) !important;
+  border-radius: 999px !important;
+  background: #eef5fc !important;
+  color: #184f87 !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+  flex: 0 0 var(--doke-icon-button-size) !important;
+}
+
+:is(
+  .messages-thread__action,
+  .topbar__right > a,
+  .topbar__right > button,
+  .community-action-modal__icon,
+  .home-mobile-drawer__item-icon
+) {
+  width: var(--doke-icon-button-size) !important;
+  height: var(--doke-icon-button-size) !important;
+  min-width: var(--doke-icon-button-size) !important;
+  min-height: var(--doke-icon-button-size) !important;
+  border-radius: var(--doke-icon-button-radius) !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+}
+
+:is(
+  .wallet-withdraw-form input,
+  .ui-modal__input,
+  .home-address-modal__field input,
+  .address-modal input,
+  .address-modal select,
+  .community-request-modal__dialog input,
+  .community-action-modal__dialog input,
+  .payment-overlay__dialog input,
+  .profile-edit-modal__dialog input,
+  .profile-edit-modal__dialog textarea,
+  .profile-edit-modal__dialog select,
+  .detail-budget-modal__dialog input,
+  .detail-budget-modal__dialog textarea,
+  .detail-budget-modal__dialog select,
+  .card-form input,
+  .card-form select,
+  .wallet-manage-field input,
+  .wallet-manage-field select,
+  .bank-form input,
+  .bank-form select,
+  .messages-mobile-search input,
+  .messages-desktop-search input,
+  .charge-modal__money-field,
+  .charge-modal__money-field input,
+  .charge-modal__field select,
+  .community-action-form input,
+  .community-action-form textarea,
+  .community-select__trigger,
+  .budget-flow input,
+  .budget-flow textarea,
+  .budget-flow select
+) {
+  min-height: var(--doke-control-height) !important;
+  border: 1px solid rgba(31, 93, 146, 0.12) !important;
+  border-radius: var(--doke-control-radius) !important;
+  background: var(--doke-surface-muted) !important;
+  box-shadow: none !important;
+}
+
+.wallet-withdraw-summary {
+  gap: 12px !important;
+}
+
+.wallet-withdraw-summary article {
+  min-height: 84px !important;
+  padding: 14px 16px !important;
+  gap: 6px !important;
+  background: var(--doke-surface-muted) !important;
+}
+
+:is(
+  .wallet-button,
+  .ui-modal__button,
+  .home-address-modal__button,
+  .budget-button,
+  .payment-button,
+  .community-action-modal__button,
+  .community-request-modal__button,
+  .profile-edit-modal__button,
+  .detail-budget-modal__button,
+  .before-after-preview-modal__button,
+  .worker-preview-modal__button,
+  .order-card button,
+  .notification-card button,
+  .message-thread-card button,
+  .settings-card button,
+  .settings-toggle-card button,
+  .card-form button,
+  .wallet-page__button,
+  .message-item,
+  .messages-thread__action,
+  .messages-selection-bar__button,
+  .messages-empty__button,
+  .charge-modal__button,
+  .orders-empty__button,
+  .orders-action
+) {
+  min-height: var(--doke-action-height) !important;
+  border-radius: var(--doke-control-radius) !important;
+  padding-inline: 18px !important;
+  font-weight: 800 !important;
+}
+
+:is(
+  .wallet-modal__actions,
+  .ui-modal__actions,
+  .home-address-modal__actions,
+  .address-modal__actions,
+  .community-request-modal__actions,
+  .community-action-modal__actions,
+  .payment-overlay__actions,
+  .profile-edit-modal__actions,
+  .detail-budget-modal__actions,
+  .orders-sidepanel__actions,
+  .charge-modal__actions
+) {
+  gap: 12px !important;
+}
+
+.charge-modal__money-field {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 0 16px !important;
+}
+
+.charge-modal__money-field input {
+  min-height: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.community-action-cover > div,
+.community-action-modal__preview {
+  background: var(--doke-surface-muted) !important;
+  border: 1px solid rgba(31, 93, 146, 0.1) !important;
+  border-radius: var(--doke-surface-radius) !important;
+}
+
+.orders-sidepanel__body {
+  scrollbar-color: rgba(31, 93, 146, 0.28) transparent !important;
+}
+
+.charge-modal__surface {
+  border-radius: var(--doke-surface-radius-lg) !important;
+}
+
+body.messages-page-shell .charge-modal__surface {
+  border-radius: var(--doke-surface-radius-lg) !important;
+}
+
+.orders-detail-summary,
+.orders-sidepanel__section {
+  padding: var(--doke-surface-card-padding) !important;
+}
+
+[data-community-code-modal] .community-action-modal__preview,
+[data-community-create-modal] .community-action-cover > div {
+  background: var(--doke-surface-muted) !important;
+  box-shadow: none !important;
+}
+
+.messages-thread__action,
+.topbar__right > a,
+.topbar__right > button {
+  width: var(--doke-icon-button-size) !important;
+  height: var(--doke-icon-button-size) !important;
+  min-width: var(--doke-icon-button-size) !important;
+  min-height: var(--doke-icon-button-size) !important;
+  border-radius: var(--doke-icon-button-radius) !important;
+  padding: 0 !important;
+  flex: 0 0 var(--doke-icon-button-size) !important;
+}
+
+body.messages-page-shell .messages-thread__action {
+  width: var(--doke-icon-button-size) !important;
+  height: var(--doke-icon-button-size) !important;
+  min-width: var(--doke-icon-button-size) !important;
+  min-height: var(--doke-icon-button-size) !important;
+  border-radius: var(--doke-icon-button-radius) !important;
+  padding: 0 !important;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --doke-surface-radius: 20px;
+    --doke-surface-radius-lg: 22px;
+    --doke-surface-radius-sm: 14px;
+    --doke-surface-card-padding: 16px;
+    --doke-control-height: 50px;
+    --doke-action-height: 44px;
+    --doke-icon-button-size: 44px;
+    --doke-icon-button-radius: 16px;
+  }
+
+  html,
+  body {
+    min-height: 100% !important;
+  }
+
+  body {
+    overflow-x: hidden !important;
+  }
+
+  body.profile-page-shell .page__content {
+    padding-bottom: 72px !important;
+  }
+
+  body.profile-page-shell .page__content-inner {
+    padding-bottom: 18px !important;
+  }
+
+  :is(
+    .wallet-modal__card,
+    .ui-modal__dialog,
+    .home-address-modal__dialog,
+    .address-modal__dialog,
+    .community-request-modal__dialog,
+    .community-action-modal__dialog,
+    .payment-overlay__dialog,
+    .detail-modal__card,
+    .profile-edit-modal__dialog,
+    .detail-budget-modal__dialog,
+    .before-after-preview-modal__dialog,
+    .worker-preview-modal__dialog,
+    .orders-sidepanel,
+    .charge-modal__surface
+  ) {
+    width: min(100%, calc(100vw - 28px)) !important;
+    max-width: calc(100vw - 28px) !important;
+    border-radius: var(--doke-surface-radius-lg) !important;
+    padding: 22px 18px 18px !important;
+  }
+
+  :is(
+    .wallet-modal__actions,
+    .ui-modal__actions,
+    .home-address-modal__actions,
+    .address-modal__actions,
+    .community-request-modal__actions,
+    .community-action-modal__actions,
+    .payment-overlay__actions,
+    .profile-edit-modal__actions,
+    .detail-budget-modal__actions,
+    .orders-sidepanel__actions,
+    .charge-modal__actions
+  ) {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  :is(
+    .wallet-button,
+    .ui-modal__button,
+    .home-address-modal__button,
+    .budget-button,
+    .payment-button,
+    .community-action-modal__button,
+    .community-request-modal__button,
+    .profile-edit-modal__button,
+    .detail-budget-modal__button,
+    .card-form button,
+    .charge-modal__button
+  ) {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --doke-close-button-size: 44px;
+    --doke-close-button-icon-size: 20px;
+  }
+}
+
+:is(
+  button[aria-label^="Fechar"],
+  button[aria-label*="Fechar "],
+  button[aria-label^="Cancelar selecao"],
+  button[aria-label^="Cancelar seleção"],
+  button[aria-label^="Cancelar resposta"],
+  button[aria-label^="Ocultar comentários"],
+  .wallet-modal__close,
+  .ui-modal__close,
+  .home-address-modal__close,
+  .address-modal__close,
+  .community-request-modal__close,
+  .community-action-modal__close,
+  .payment-overlay__close,
+  .detail-modal__close,
+  .detail-lightbox__close,
+  .profile-followers-modal__close,
+  .profile-edit-modal__close,
+  .detail-budget-modal__close,
+  .before-after-preview__close,
+  .before-after-preview__close--fixed,
+  .worker-preview__close,
+  .worker-preview__close--fixed,
+  .media-lightbox__close,
+  .doke-media-lightbox__close,
+  .orders-sidepanel__close,
+  .charge-modal__close,
+  .image-lightbox__close,
+  .bank-modal__close,
+  .results-filters__close,
+  .orders-header-search__close,
+  .topbar-search-close,
+  .settings-mobile-header__search-close,
+  .home-location-popover__close,
+  .home-mobile-drawer__close,
+  .messages-selection-bar__close,
+  .messages-reply-preview__close,
+  .budget-success-card__close
+) {
+  width: var(--doke-close-button-size) !important;
+  height: var(--doke-close-button-size) !important;
+  min-width: var(--doke-close-button-size) !important;
+  min-height: var(--doke-close-button-size) !important;
+  max-width: var(--doke-close-button-size) !important;
+  max-height: var(--doke-close-button-size) !important;
+  border: 1px solid var(--doke-close-button-border) !important;
+  border-radius: 999px !important;
+  background: var(--doke-close-button-bg) !important;
+  color: var(--doke-close-button-color) !important;
+  box-shadow: none !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  flex: 0 0 var(--doke-close-button-size) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  font-size: var(--doke-close-button-icon-size) !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  transform: none !important;
+}
+
+:is(
+  button[aria-label^="Fechar"],
+  button[aria-label*="Fechar "],
+  button[aria-label^="Cancelar selecao"],
+  button[aria-label^="Cancelar seleção"],
+  button[aria-label^="Cancelar resposta"],
+  button[aria-label^="Ocultar comentários"],
+  .wallet-modal__close,
+  .ui-modal__close,
+  .home-address-modal__close,
+  .address-modal__close,
+  .community-request-modal__close,
+  .community-action-modal__close,
+  .payment-overlay__close,
+  .detail-modal__close,
+  .detail-lightbox__close,
+  .profile-followers-modal__close,
+  .profile-edit-modal__close,
+  .detail-budget-modal__close,
+  .before-after-preview__close,
+  .before-after-preview__close--fixed,
+  .worker-preview__close,
+  .worker-preview__close--fixed,
+  .media-lightbox__close,
+  .doke-media-lightbox__close,
+  .orders-sidepanel__close,
+  .charge-modal__close,
+  .image-lightbox__close,
+  .bank-modal__close,
+  .results-filters__close,
+  .orders-header-search__close,
+  .topbar-search-close,
+  .settings-mobile-header__search-close,
+  .home-location-popover__close,
+  .home-mobile-drawer__close,
+  .messages-selection-bar__close,
+  .messages-reply-preview__close,
+  .budget-success-card__close
+) :is(svg, img) {
+  width: var(--doke-close-button-icon-size) !important;
+  height: var(--doke-close-button-icon-size) !important;
+  min-width: var(--doke-close-button-icon-size) !important;
+  min-height: var(--doke-close-button-icon-size) !important;
+  display: block !important;
+  stroke: currentColor !important;
+  color: currentColor !important;
+  fill: none !important;
+  stroke-width: 2.4 !important;
+  margin: 0 !important;
+}
