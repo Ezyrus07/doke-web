@@ -2,6 +2,7 @@ window.DokeInitProfile = () => {
   const root = document.querySelector("[data-profile-root]");
   if (!root) return;
 
+
   const params = new URLSearchParams(window.location.search);
   const body = document.body;
   const data = window.DokeProfileData || {};
@@ -116,6 +117,19 @@ window.DokeInitProfile = () => {
         : profileMode === "client-owner"
           ? clientOwnerProfile
         : publicProfile;
+  if (baseProfile.tabs?.posts) {
+    const nextTabs = {};
+    Object.entries(baseProfile.tabs).forEach(([key, label]) => {
+      if (key === "posts") {
+        nextTabs.workers = "Workers";
+        nextTabs.beforeAfter = "Antes x Depois";
+        return;
+      }
+      nextTabs[key] = label;
+    });
+    baseProfile.tabs = nextTabs;
+  }
+
   const servicePool = window.DokeSearchData?.servicePool || [];
   const shortVideoPool = window.DokeSearchData?.shortVideoPool || [];
   const beforeAfterPool = window.DokeSearchData?.beforeAfterPool || [];
@@ -152,7 +166,8 @@ window.DokeInitProfile = () => {
 
   const panelMap = Object.fromEntries(els.panels.map((panel) => [panel.dataset.profilePanel, panel]));
   const availableTabs = Object.keys(baseProfile.tabs || {});
-  const requestedPanel = params.get("panel");
+  const requestedPanelRaw = params.get("panel");
+  const requestedPanel = requestedPanelRaw === "posts" ? "workers" : requestedPanelRaw;
   const state = {
     activeTab: availableTabs.includes(requestedPanel) ? requestedPanel : availableTabs[0] || "services",
     selectingServices: false,
@@ -160,6 +175,8 @@ window.DokeInitProfile = () => {
     selectingPosts: false,
     selectedPosts: []
   };
+
+  let postsPreviewController = null;
 
   const followerDemo = [
     { name: "Marina Alves", handle: "@marinaalves", meta: "Arquiteta", initials: "MA", tone: "blue", following: false },
@@ -187,6 +204,43 @@ window.DokeInitProfile = () => {
       .replace(/â˜…/g, "★")
       .replace(/â–¶/g, "▶")
       .trim();
+
+
+  const mediaTabs = new Set(["services", "workers", "beforeAfter"]);
+
+  const switchProfileTab = (nextTab) => {
+    if (!nextTab || nextTab === state.activeTab) return;
+
+    const panels = root.querySelector('[data-profile-section="panels"]');
+    const previousScrollY = window.scrollY || window.pageYOffset || 0;
+    const previousScrollX = window.scrollX || window.pageXOffset || 0;
+    const lockMediaPanel = panels && mediaTabs.has(state.activeTab) && mediaTabs.has(nextTab);
+
+    if (lockMediaPanel) {
+      panels.style.minHeight = `${Math.max(panels.offsetHeight, 620)}px`;
+      body.classList.add("is-profile-tab-switching");
+    }
+
+    state.activeTab = nextTab;
+    render();
+
+    if (lockMediaPanel) {
+      const releasePanelLock = () => {
+        panels.style.minHeight = "";
+        body.classList.remove("is-profile-tab-switching");
+      };
+
+      window.requestAnimationFrame(() => {
+        if (Math.abs((window.scrollY || window.pageYOffset || 0) - previousScrollY) > 2) {
+          window.scrollTo({ top: previousScrollY, left: previousScrollX, behavior: "auto" });
+        }
+        window.requestAnimationFrame(releasePanelLock);
+      });
+      return;
+    }
+
+    body.classList.remove("is-profile-tab-switching");
+  };
 
   const updateUrl = () => {
     const url = new URL(window.location.href);
@@ -278,9 +332,10 @@ window.DokeInitProfile = () => {
 
   const openReviewsPanel = () => {
     closeFollowersModal();
-    state.activeTab = "reviews";
-    render();
-    panelMap.reviews?.scrollIntoView({ behavior: "smooth", block: "start" });
+    preserveProfileViewport(() => {
+      state.activeTab = "reviews";
+      render();
+    });
   };
 
   const openFollowersPanel = () => {
@@ -557,77 +612,127 @@ window.DokeInitProfile = () => {
     `;
   };
 
-  const renderPosts = () =>
-    profileMode === "client"
-      ? renderClientReferences()
-      : renderPanelShell(`
+  const BEFORE_AFTER_PREVIEW_IDS = {
+    "ba-sala": "case-reforma",
+    "ba-banheiro": "case-bathroom"
+  };
+
+  const getBeforeAfterPreviewId = (item = {}) => {
+    if (item.previewId) return item.previewId;
+    if (BEFORE_AFTER_PREVIEW_IDS[item.id]) return BEFORE_AFTER_PREVIEW_IDS[item.id];
+    if (String(item.visualClass || "").includes("bathroom")) return "case-bathroom";
+    return "case-reforma";
+  };
+
+  const refreshPostPreviews = () => {
+    postsPreviewController?.abort();
+    postsPreviewController = null;
+
+    if (!["workers", "beforeAfter"].includes(state.activeTab) || state.selectingPosts) return;
+    if (!document.querySelector('[data-worker-preview]') && !document.querySelector('[data-before-after-preview]')) return;
+
+    postsPreviewController = new AbortController();
+    const signal = postsPreviewController.signal;
+
+    window.DokeHomeWorkers?.create({ signal });
+    window.DokeHomeBeforeAfter?.create({ signal });
+  };
+
+  const renderPosts = () => {
+    if (profileMode === "client") return renderClientReferences();
+
+    const showWorkers = state.activeTab === "workers";
+    const showBeforeAfter = state.activeTab === "beforeAfter";
+    const toolbarLabel = showWorkers ? "worker" : "caso";
+    const toolbarLabelPlural = showWorkers ? "workers" : "casos";
+
+    return renderPanelShell(`
       <div class="profile-posts-stack ${profileMode === "owner" ? "profile-posts-stack--owner" : ""}">
         ${profileMode === "owner" ? `
         <div class="profile-services-toolbar">
           <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Novo</button>
           <button class="profile-services-toolbar__action ${state.selectingPosts ? "is-active" : ""}" type="button" data-profile-posts-select-toggle>${state.selectingPosts ? "Cancelar" : "Selecionar"}</button>
-          ${state.selectedPosts.length === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-posts-edit>Editar an?ncio</button>` : ""}
-          ${state.selectedPosts.length > 1 ? `<span class="profile-services-toolbar__hint">S? d? para editar um an?ncio por vez.</span>` : ""}
+          ${state.selectedPosts.length === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-posts-edit>Editar ${toolbarLabel}</button>` : ""}
+          ${state.selectedPosts.length > 1 ? `<span class="profile-services-toolbar__hint">Só dá para editar um ${toolbarLabel} por vez.</span>` : ""}
         </div>
         ` : ""}
-        <section class="short-videos" aria-labelledby="profile-short-videos-title">
-          <div class="content-rail">
-            <button class="home-categories__arrow content-rail__arrow content-rail__arrow--prev" type="button" aria-label="Ver v?deos anteriores" data-rail-arrow="prev" data-rail-target="profile-short-videos-track">
+
+        ${showWorkers ? `
+        <section class="profile-post-section profile-post-section--workers" aria-labelledby="profile-workers-title">
+<div class="content-rail profile-post-section__rail">
+            <button class="home-categories__arrow content-rail__arrow content-rail__arrow--prev" type="button" aria-label="Ver workers anteriores" data-rail-arrow="prev" data-rail-target="profile-short-videos-track">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6.5-5 5 5 5"></path></svg>
             </button>
             <div class="short-videos__track profile-posts-videos" id="profile-short-videos-track" data-rail-track>
               ${shortVideoPool
-                .map(
-                  (item, index) => `
-                <article class="video-card ${item.mediaClass} ${state.selectingPosts ? "is-selecting" : ""} ${state.selectedPosts.includes(`video-${index}`) ? "is-selected" : ""}" data-profile-post-card="video-${index}">
-                  ${profileMode === "owner" && state.selectingPosts ? `<button class="profile-post-select-indicator ${state.selectedPosts.includes(`video-${index}`) ? "is-selected" : ""}" type="button" data-profile-post-select="video-${index}" aria-label="Selecionar publica??o">${state.selectedPosts.includes(`video-${index}`) ? "?" : ""}</button>` : ""}
-                  <span class="video-card__play">?</span>
+                .map((item, index) => {
+                  const postId = `video-${index}`;
+                  const isSelected = state.selectedPosts.includes(postId);
+                  const interactiveAttrs = state.selectingPosts
+                    ? ""
+                    : `data-worker-trigger data-worker-id="${item.id}" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Abrir worker: ${normalize(item.title)}"`;
+
+                  return `
+                <article class="video-card ${item.mediaClass} ${state.selectingPosts ? "is-selecting" : ""} ${isSelected ? "is-selected" : ""}" data-profile-post-card="${postId}" ${interactiveAttrs}>
+                  ${profileMode === "owner" && state.selectingPosts ? `<button class="profile-post-select-indicator ${isSelected ? "is-selected" : ""}" type="button" data-profile-post-select="${postId}" aria-label="Selecionar worker">${isSelected ? "✓" : ""}</button>` : ""}
+                  <span class="video-card__play">▶</span>
                   <div class="video-card__content"><strong>${normalize(item.title)}</strong></div>
                 </article>
-              `
-                )
+              `;
+                })
                 .join("")}
             </div>
-            <button class="home-categories__arrow content-rail__arrow content-rail__arrow--next" type="button" aria-label="Ver pr?ximos v?deos" data-rail-arrow="next" data-rail-target="profile-short-videos-track">
+            <button class="home-categories__arrow content-rail__arrow content-rail__arrow--next" type="button" aria-label="Ver próximos workers" data-rail-arrow="next" data-rail-target="profile-short-videos-track">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6.5 5 5-5 5"></path></svg>
             </button>
           </div>
         </section>
+        ` : ""}
 
-        <section class="before-after">
-          <div class="content-rail">
+        ${showBeforeAfter ? `
+        <section class="profile-post-section profile-post-section--before-after" aria-labelledby="profile-before-after-title">
+<div class="content-rail profile-post-section__rail">
             <button class="home-categories__arrow content-rail__arrow content-rail__arrow--prev" type="button" aria-label="Ver casos anteriores" data-rail-arrow="prev" data-rail-target="profile-before-after-track">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6.5-5 5 5 5"></path></svg>
             </button>
             <div class="comparison-grid profile-posts-comparison" id="profile-before-after-track" data-rail-track>
               ${beforeAfterPool
-                .map(
-                  (item, index) => `
-                <article class="comparison-card ${state.selectingPosts ? "is-selecting" : ""} ${state.selectedPosts.includes(`compare-${index}`) ? "is-selected" : ""}" data-profile-post-card="compare-${index}">
-                  ${profileMode === "owner" && state.selectingPosts ? `<button class="profile-post-select-indicator ${state.selectedPosts.includes(`compare-${index}`) ? "is-selected" : ""}" type="button" data-profile-post-select="compare-${index}" aria-label="Selecionar publica??o">${state.selectedPosts.includes(`compare-${index}`) ? "?" : ""}</button>` : ""}
+                .map((item, index) => {
+                  const postId = `compare-${index}`;
+                  const isSelected = state.selectedPosts.includes(postId);
+                  const previewId = getBeforeAfterPreviewId(item);
+                  const interactiveAttrs = state.selectingPosts
+                    ? ""
+                    : `data-before-after-trigger data-before-after-id="${previewId}" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Abrir caso: ${normalize(item.title)}"`;
+
+                  return `
+                <article class="comparison-card ${state.selectingPosts ? "is-selecting" : ""} ${isSelected ? "is-selected" : ""}" data-profile-post-card="${postId}" ${interactiveAttrs}>
+                  ${profileMode === "owner" && state.selectingPosts ? `<button class="profile-post-select-indicator ${isSelected ? "is-selected" : ""}" type="button" data-profile-post-select="${postId}" aria-label="Selecionar caso">${isSelected ? "✓" : ""}</button>` : ""}
                   <div class="comparison-card__visual ${item.visualClass}">
                     <div class="comparison-card__half comparison-card__half--before"><span>Antes</span></div>
                     <div class="comparison-card__half comparison-card__half--after"><span>Depois</span></div>
                   </div>
                   <div class="comparison-card__body">
-                    <strong>${normalize(item.title)}</strong>
+                    <strong class="comparison-card__title">${normalize(item.title)}</strong>
                     <div class="comparison-card__meta">
-                      <span>Por ${normalize(item.author)}</span>
-                      <span>? ${String(item.rating).replace(".", ",")}</span>
+                      <span class="comparison-card__provider">Por <span>${normalize(item.author)}</span></span>
+                      <span class="comparison-card__rating" aria-label="Avaliação ${String(item.rating).replace(".", ",")} de 5">★ <strong>${String(item.rating).replace(".", ",")}</strong></span>
                     </div>
                   </div>
                 </article>
-              `
-                )
+              `;
+                })
                 .join("")}
             </div>
-            <button class="home-categories__arrow content-rail__arrow content-rail__arrow--next" type="button" aria-label="Ver pr?ximos casos" data-rail-arrow="next" data-rail-target="profile-before-after-track">
+            <button class="home-categories__arrow content-rail__arrow content-rail__arrow--next" type="button" aria-label="Ver próximos casos" data-rail-arrow="next" data-rail-target="profile-before-after-track">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6.5 5 5-5 5"></path></svg>
             </button>
           </div>
         </section>
+        ` : ""}
       </div>
     `);
+  };
 
   const renderReviews = () => {
     const groups = baseProfile.sections?.reviews?.groups || [];
@@ -666,11 +771,7 @@ window.DokeInitProfile = () => {
             </select>
           </div>
         ` : ''}
-        <div class="profile-review-section-head">
-          <span>${reviewAds[0]?.score || '5,0'} de 5</span>
-          <h3>Preferido pelos clientes</h3>
-        </div>
-        <div class="profile-review-hub" data-profile-review-hub data-review-ads='${JSON.stringify(reviewAds).replace(/'/g, '&apos;')}'></div>
+<div class="profile-review-hub profile-review-hub--trust" data-profile-review-hub data-review-ads='${JSON.stringify(reviewAds).replace(/'/g, '&apos;')}'></div>
       </div>
     `);
   };
@@ -1266,7 +1367,8 @@ window.DokeInitProfile = () => {
     switch (key) {
       case "services":
         return renderPanelShell(renderServiceCards());
-      case "posts":
+      case "workers":
+      case "beforeAfter":
         return renderPosts();
       case "reviews":
         return renderReviews();
@@ -1437,10 +1539,10 @@ window.DokeInitProfile = () => {
     });
 
     root.querySelector('[data-profile-more]')?.addEventListener('click', () => {
-      state.activeTab = 'about';
-      render();
-      panelMap.about?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      switchProfileTab('about');
     });
+
+    refreshPostPreviews();
 
     document.querySelector("[data-profile-edit-name]")?.addEventListener("input", (event) => {
       document.querySelectorAll("[data-profile-edit-preview-name]").forEach((node) => {
@@ -1509,48 +1611,107 @@ window.DokeInitProfile = () => {
 
       const metricIcons = ["★", "✦", "◔", "⌁", "$", "✓"];
       const toneGroup = (review) => review.groups || "all";
+      const getInitials = (name = "") => {
+        const parts = normalize(name).split(/\s+/).filter(Boolean);
+        const initials = parts.slice(0, 2).map((part) => part[0]).join("");
+        return initials.toUpperCase() || "DK";
+      };
+      const formatStars = (rating = "5,0") => {
+        const numeric = Number(String(rating).replace(",", ".")) || 5;
+        const filled = Math.max(1, Math.min(5, Math.round(numeric)));
+        return "★".repeat(filled) + "☆".repeat(5 - filled);
+      };
 
       const draw = (id) => {
         const active = ads.find((item) => item.id === id) || ads[0];
         if (!active) return;
 
         const metricsMarkup = (active.metrics || []).slice(0, 6).map((metric, index) => `
-          <div>
-            <span><i class="detail-scoreboard__metric-icon">${metric.icon || metricIcons[index] || '✦'}</i>${metric.label}</span>
+          <article class="profile-review-trust-metric">
+            <span><i>${metric.icon || metricIcons[index] || '✦'}</i>${metric.label}</span>
             <strong>${metric.value}</strong>
-          </div>
-        `).join('');
-
-        const reviewsMarkup = active.reviews.map((item, index) => `
-          <article class="detail-review" data-review-group="${toneGroup(item)}">
-            <strong>${item.tags?.[0] || item.name}</strong>
-            <p>${item.text}</p>
-            <div class="detail-review__author">
-              <img src="${avatarPool[index % avatarPool.length]}" alt="Foto de perfil de ${item.name}">
-              <span>${item.name} - ${item.meta}</span>
-            </div>
           </article>
         `).join('');
 
+        const distributionMarkup = [
+          { label: "5 estrelas", value: 92 },
+          { label: "4 estrelas", value: 8 },
+          { label: "3 estrelas", value: 0 }
+        ].map((row) => `
+          <div class="profile-review-distribution-row">
+            <span>${row.label}</span>
+            <i><b style="width:${row.value}%"></b></i>
+            <strong>${row.value}%</strong>
+          </div>
+        `).join('');
+
+        const reviewsMarkup = active.reviews.map((item, index) => {
+          const tags = (item.tags || []).slice(0, 3);
+          return `
+            <article class="profile-review-card" data-review-group="${toneGroup(item)}">
+              <header class="profile-review-card__head">
+                <div class="profile-review-card__client">
+                  <span class="profile-review-card__avatar" aria-hidden="true">${getInitials(item.name)}</span>
+                  <div>
+                    <strong>${item.name}</strong>
+                    <span>${item.meta}</span>
+                  </div>
+                </div>
+                <div class="profile-review-card__rating" aria-label="Avaliação ${item.rating} de 5">
+                  <strong>${item.rating}</strong>
+                  <span>${formatStars(item.rating)}</span>
+                </div>
+              </header>
+              <p>${item.text}</p>
+              <footer class="profile-review-card__footer">
+                <span>${active.label}</span>
+                ${tags.map((tag) => `<span>${tag}</span>`).join('')}
+              </footer>
+            </article>
+          `;
+        }).join('');
+
         hub.innerHTML = `
-          <div class="detail-scoreboard">
-            <div class="detail-scoreboard__hero">
+          <section class="profile-review-summary-card" aria-label="Resumo das avaliações">
+            <div class="profile-review-summary-card__score">
               <strong>${active.score}</strong>
-              <span>${active.count}</span>
+              <span class="profile-review-summary-card__stars">★★★★★</span>
+              <small>${active.count}</small>
+              <b>Cliente verificado</b>
             </div>
-            <div class="detail-scoreboard__grid">${metricsMarkup}</div>
+
+            <div class="profile-review-summary-card__content">
+              <div class="profile-review-summary-card__topline">
+                <div>
+                  <span>Resumo do anúncio</span>
+                  <h4>${active.label}</h4>
+                </div>
+                <p>Excelente reputação em acabamento, comunicação e execução limpa. As notas abaixo ajudam o cliente a entender onde o profissional se destaca.</p>
+              </div>
+
+              <div class="profile-review-trust-metrics">${metricsMarkup}</div>
+            </div>
+
+            <aside class="profile-review-summary-card__distribution" aria-label="Distribuição de notas">
+              <strong>Distribuição</strong>
+              ${distributionMarkup}
+            </aside>
+          </section>
+
+          <div class="profile-review-toolbar profile-review-toolbar--trust">
+            <div class="detail-filter-chips">
+              <button class="detail-chip detail-chip--filter ${activeFilter === 'all' ? 'is-active' : ''}" type="button" data-profile-review-filter="all">Todas</button>
+              <button class="detail-chip detail-chip--filter ${activeFilter === 'recentes' ? 'is-active' : ''}" type="button" data-profile-review-filter="recentes">Recentes</button>
+              <button class="detail-chip detail-chip--filter ${activeFilter === 'positivas' ? 'is-active' : ''}" type="button" data-profile-review-filter="positivas">Positivas</button>
+              <button class="detail-chip detail-chip--filter ${activeFilter === 'contexto' ? 'is-active' : ''}" type="button" data-profile-review-filter="all">Com contexto</button>
+            </div>
+            <span>${active.reviews.length} comentários exibidos</span>
           </div>
 
-          <div class="detail-filter-chips">
-            <button class="detail-chip detail-chip--filter ${activeFilter === 'all' ? 'is-active' : ''}" type="button" data-profile-review-filter="all">Todas</button>
-            <button class="detail-chip detail-chip--filter ${activeFilter === 'recentes' ? 'is-active' : ''}" type="button" data-profile-review-filter="recentes">Recentes</button>
-            <button class="detail-chip detail-chip--filter ${activeFilter === 'positivas' ? 'is-active' : ''}" type="button" data-profile-review-filter="positivas">Positivas</button>
-          </div>
-
-          <div class="detail-review-grid">${reviewsMarkup}</div>
+          <div class="profile-review-grid">${reviewsMarkup}</div>
         `;
 
-        const cards = [...hub.querySelectorAll('.detail-review')];
+        const cards = [...hub.querySelectorAll('.profile-review-card')];
         let visibleCount = 0;
         cards.forEach((card) => {
           const visible = activeFilter === 'all' || card.dataset.reviewGroup?.includes(activeFilter);
@@ -1558,7 +1719,7 @@ window.DokeInitProfile = () => {
           if (visible) visibleCount += 1;
         });
 
-        const grid = hub.querySelector('.detail-review-grid');
+        const grid = hub.querySelector('.profile-review-grid');
         if (grid && !visibleCount) {
           grid.innerHTML = '<article class="profile-review-empty"><strong>Nenhuma avaliação neste filtro</strong><p>Troque o filtro ou selecione outro anúncio para ver mais comentários.</p></article>';
         }
@@ -1580,9 +1741,12 @@ window.DokeInitProfile = () => {
   };
 
   els.tabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
-      state.activeTab = tab.dataset.profileTab;
-      render();
+    tab.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      tab.blur();
+
+      switchProfileTab(tab.dataset.profileTab);
     });
   });
 
@@ -1630,6 +1794,48 @@ window.DokeInitProfile = () => {
     closeEditModal();
   });
 
+
+  const openPostPreviewFromTrigger = (trigger) => {
+    if (!trigger || state.selectingPosts) return false;
+
+    const workerTrigger = trigger.closest?.("[data-worker-trigger]");
+    if (workerTrigger) {
+      refreshPostPreviews();
+      window.DokeOpenWorkerPreview?.(workerTrigger.dataset.workerId || "", workerTrigger);
+      return true;
+    }
+
+    const beforeAfterTrigger = trigger.closest?.("[data-before-after-trigger]");
+    if (beforeAfterTrigger) {
+      refreshPostPreviews();
+      window.DokeOpenBeforeAfterPreview?.(beforeAfterTrigger.dataset.beforeAfterId || "", beforeAfterTrigger);
+      return true;
+    }
+
+    return false;
+  };
+
+  root.addEventListener("click", (event) => {
+    const trigger = event.target.closest("[data-worker-trigger], [data-before-after-trigger]");
+    if (!trigger || !root.contains(trigger) || state.selectingPosts) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation?.();
+    openPostPreviewFromTrigger(trigger);
+  }, true);
+
+  root.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const trigger = event.target.closest("[data-worker-trigger], [data-before-after-trigger]");
+    if (!trigger || !root.contains(trigger) || state.selectingPosts) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation?.();
+    openPostPreviewFromTrigger(trigger);
+  }, true);
+
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeFollowersModal();
@@ -1644,6 +1850,9 @@ window.DokeInitProfile = () => {
       url: window.location.href
     }));
   }
+
+
+
 
   render();
 };

@@ -13,9 +13,10 @@
     <link rel="stylesheet" href="assets/css/core/index.css" />
     <link rel="stylesheet" href="assets/css/pages/app-shell.css" />
     <link rel="stylesheet" href="assets/css/pages/internal-shell.css" />
-    <link rel="stylesheet" href="assets/css/pages/perfil.css?v=workspace0421mobile" />
+    <link rel="stylesheet" href="assets/css/pages/perfil.css?v=modal-centered-select-aligned-0425" />
     <link rel="stylesheet" href="assets/css/pages/orcamento.css" />
     <link rel="stylesheet" href="assets/css/pages/perfil-budget-modal.css" />
+    <link rel="stylesheet" href="assets/css/components/before-after-workers-preview.css?v=20260425-profile-tabs-no-scroll-bg-clean" />
   </head>
   <body
     class="app-shell-page internal-shell-page profile-page-shell"
@@ -239,9 +240,16 @@
                 <button
                   class="profile-tab"
                   type="button"
-                  data-profile-tab="posts"
+                  data-profile-tab="workers"
                 >
-                  Publicações
+                  Workers
+                </button>
+                <button
+                  class="profile-tab"
+                  type="button"
+                  data-profile-tab="beforeAfter"
+                >
+                  Antes x Depois
                 </button>
                 <button
                   class="profile-tab"
@@ -301,7 +309,12 @@
                 ></section>
                 <section
                   class="profile-panel"
-                  data-profile-panel="posts"
+                  data-profile-panel="workers"
+                  hidden
+                ></section>
+                <section
+                  class="profile-panel"
+                  data-profile-panel="beforeAfter"
                   hidden
                 ></section>
                 <section
@@ -511,8 +524,8 @@
           <form class="budget-flow detail-budget-modal__flow" data-budget-form>
             <div class="detail-budget-modal__topbar">
               <div class="detail-budget-modal__title">
-                <h1>Orçamento</h1>
-                <p><strong data-budget-provider>Studio Aquarela</strong> <span data-budget-service>Reforma residencial de alto padrao</span></p>
+                <h1>Pedido rápido</h1>
+                <p><strong data-budget-provider>Studio Aquarela</strong> <span data-budget-service>Reforma residencial de alto padrao</span></p><small class="budget-quick-note">Escreva o essencial agora. O restante pode ser alinhado no chat.</small>
               </div>
               <div class="detail-budget-modal__actions">
                 <button class="budget-button budget-button--ghost budget-button--sm" type="button" data-budget-close aria-label="Retornar ao perfil">Retornar</button>
@@ -521,8 +534,8 @@
 
             <div class="budget-progress" data-step-indicators>
               <div class="budget-progress__meta">
-                <strong data-step-progress-label>Passo 1 de 5</strong>
-                <span>Preencha por partes para enviar um pedido mais claro.</span>
+                <strong data-step-progress-label>Pedido em poucos segundos</strong>
+                <span>Comece só com uma descrição. Fotos, endereço e prazo são opcionais depois.</span>
               </div>
               <div class="budget-progress__bar" aria-hidden="true">
                 <span class="budget-progress__fill" data-step-progress-fill style="width: 20%;"></span>
@@ -553,29 +566,29 @@
 
             <section class="budget-panel is-active" data-step-panel="0">
               <div class="budget-panel__head">
-                <h2>Conte um pouco do pedido</h2>
-                <p>Quanto mais claro, melhor o profissional consegue responder.</p>
+                <h2>O que você precisa?</h2>
+                <p>Não precisa preencher tudo agora. Uma frase bem simples já ajuda o profissional a responder.</p>
               </div>
               <label class="budget-field budget-field--textarea">
                 <span>Descreva o pedido</span>
-                <textarea rows="6" name="detalhes" maxlength="600" required data-details-input placeholder="Ex.: pintura interna de sala e corredor, com pequenos reparos e acabamento mais limpo."></textarea>
+                <textarea rows="6" name="detalhes" maxlength="600" required data-details-input placeholder="Ex.: Quero pintar sala e corredor. Preciso saber preço e prazo."></textarea>
                 <small><span data-details-count>0</span>/600 caracteres</small>
               </label>
               <div class="budget-grid budget-grid--2 budget-grid--compact">
                 <label class="budget-field">
                   <span>Categoria</span>
-                  <select name="catégoria" data-ui-select required>
+                  <select name="catégoria">
                     <option value="">Selecione</option>
-                    <option value="Pintura e acabamento">Pintura e acabamento</option>
+                    <option value="Pintura e acabamento" selected>Pintura e acabamento</option>
                     <option value="Reforma leve">Reforma leve</option>
                     <option value="Consultoria">Consultoria</option>
                   </select>
                 </label>
                 <label class="budget-field">
                   <span>Tipo de pedido</span>
-                  <select name="tipo" data-ui-select required>
+                  <select name="tipo">
                     <option value="">Selecione</option>
-                    <option value="Orçamento para execução">Orçamento para execução</option>
+                    <option value="Orçamento para execução" selected>Orçamento para execução</option>
                     <option value="Visita técnica">Visita técnica</option>
                     <option value="Alinhamento inicial">Alinhamento inicial</option>
                   </select>
@@ -589,11 +602,11 @@
                 <p>Ajuda o profissional a entender melhor o estado atual.</p>
               </div>
               <label class="budget-upload budget-upload--detail">
-                <span>Adicionar imagens</span>
                 <input type="file" accept="image/*" multiple />
-                <span>Opcional - ajuda o profissional a entender melhor o pedido</span>
+                <span class="budget-upload__title">Adicionar imagens</span>
+                <span class="budget-upload__hint">Opcional - ajuda o profissional a entender melhor o pedido</span>
+                <div class="budget-files" data-files-list hidden></div>
               </label>
-              <div class="budget-files" data-files-list hidden></div>
             </section>
 
             <section class="budget-panel" data-step-panel="2" hidden>
@@ -604,7 +617,7 @@
               <div class="budget-grid budget-grid--2 budget-grid--compact">
                 <label class="budget-field">
                   <span>O ambiente esta vazio ou ocupado?</span>
-                  <select name="triagem_ocupacao" data-ui-select required>
+                  <select name="triagem_ocupacao">
                     <option value="">Selecione</option>
                     <option value="Vazio">Vazio</option>
                     <option value="Ocupado">Ocupado</option>
@@ -613,7 +626,7 @@
                 </label>
                 <label class="budget-field">
                   <span>Qual seu objetivo principal com essa reforma?</span>
-                  <select name="escopo" data-ui-select required>
+                  <select name="escopo">
                     <option value="">Selecione</option>
                     <option value="Melhorar acabamento">Melhorar acabamento</option>
                     <option value="Corrigir desgaste">Corrigir desgaste</option>
@@ -624,7 +637,7 @@
               <div class="budget-grid budget-grid--2 budget-grid--compact">
                 <label class="budget-field">
                   <span>Existe restricao de horario no local?</span>
-                  <select name="triagem_medidas" data-ui-select required>
+                  <select name="triagem_medidas">
                     <option value="">Selecione</option>
                     <option value="Sem restricao">Sem restricao</option>
                     <option value="Horario comercial">Horario comercial</option>
@@ -634,7 +647,7 @@
                 </label>
                 <label class="budget-field">
                   <span>Ja existe material comprado?</span>
-                  <select name="triagem_observacoes" data-ui-select required>
+                  <select name="triagem_observacoes">
                     <option value="">Selecione</option>
                     <option value="Nao">Nao</option>
                     <option value="Parcialmente">Parcialmente</option>
@@ -677,7 +690,7 @@
               <div class="budget-grid budget-grid--3 budget-grid--compact">
                 <label class="budget-field">
                   <span>Urgencia</span>
-                  <select name="urgencia" data-ui-select required>
+                  <select name="urgencia">
                     <option value="">Selecione</option>
                     <option value="Sem pressa">Sem pressa</option>
                     <option value="Esta semana">Esta semana</option>
@@ -686,11 +699,11 @@
                 </label>
                 <label class="budget-field">
                   <span>Data ideal</span>
-                  <input type="date" name="data" required />
+                  <input type="date" name="data" />
                 </label>
                 <label class="budget-field">
                   <span>Turno</span>
-                  <select name="turno" data-ui-select required>
+                  <select name="turno">
                     <option value="">Selecione</option>
                     <option value="Manha">Manha</option>
                     <option value="Tarde">Tarde</option>
@@ -719,7 +732,7 @@
                   <span>Voltar</span>
                 </button>
                 <button class="budget-button budget-button--primary budget-button--nav" type="button" data-step-next aria-label="Proximo">
-                  <span>Proximo</span>
+                  <span>Continuar</span>
                 </button>
                 <button class="budget-button budget-button--success budget-button--nav" type="submit" data-step-submit hidden aria-label="Enviar pedido">
                   <span>Enviar pedido</span>
@@ -793,13 +806,160 @@
       </div>
     </dialog>
 
+
+
+    <section class="before-after-preview" data-before-after-preview hidden aria-hidden="true">
+      <div class="before-after-preview__scrim" data-before-after-close></div>
+
+      <div class="before-after-preview__dialog" role="dialog" aria-modal="true" aria-label="Detalhes do caso antes e depois">
+        <button class="before-after-preview__close" type="button" data-before-after-close aria-label="Fechar caso antes e depois">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18"></path>
+          </svg>
+        </button>
+
+        <div class="before-after-preview__stage">
+          <div class="before-after-preview__media-shell">
+            <div class="before-after-preview__media-card">
+              <div class="before-after-preview__media" data-before-after-preview-media></div>
+              <div class="before-after-preview__stats">
+                <article class="before-after-preview__stat">
+                  <span>Prazo</span>
+                  <strong data-before-after-preview-timeline>—</strong>
+                </article>
+                <article class="before-after-preview__stat">
+                  <span>Ganhos</span>
+                  <strong data-before-after-preview-gain>—</strong>
+                </article>
+                <article class="before-after-preview__stat">
+                  <span>Nível</span>
+                  <strong data-before-after-preview-impact>—</strong>
+                </article>
+              </div>
+            </div>
+          </div>
+
+          <aside class="before-after-preview__panel">
+            <div class="before-after-preview__eyebrow">Antes e depois</div>
+            <h2 class="before-after-preview__title" data-before-after-preview-title>—</h2>
+
+            <div class="before-after-preview__provider">
+              <span class="before-after-preview__avatar" data-before-after-preview-avatar>DK</span>
+              <div class="before-after-preview__provider-copy">
+                <strong data-before-after-preview-provider>—</strong>
+                <span data-before-after-preview-meta>—</span>
+              </div>
+            </div>
+
+            <p class="before-after-preview__description" data-before-after-preview-description>—</p>
+
+            <div class="before-after-preview__actions" aria-label="Ações do caso">
+              <button class="before-after-preview__action before-after-preview__action--like" type="button" data-before-after-like-button data-like-count="0" aria-label="Curtir caso">
+                <span class="before-after-preview__action-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M20.8 4.7a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21.2l7.8-7.7 1-1a5.5 5.5 0 0 0 0-7.8Z"></path></svg>
+                </span>
+                <strong data-before-after-like-count>0</strong>
+              </button>
+              <button class="before-after-preview__action before-after-preview__action--comments" type="button" data-before-after-comments-button aria-label="Abrir comentários">
+                <span class="before-after-preview__action-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.7 8.2 9.2 9.2 0 0 1-3.7-.8L3 20l1.4-4.8A8 8 0 0 1 3.6 12 8.4 8.4 0 0 1 12.3 3.8 8.4 8.4 0 0 1 21 11.5Z"></path></svg>
+                </span>
+                <strong data-before-after-comment-count>0</strong>
+              </button>
+              <button class="before-after-preview__action" type="button" data-before-after-save-button aria-label="Salvar caso">
+                <span class="before-after-preview__action-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M6.5 4.5h11A1.5 1.5 0 0 1 19 6v14l-7-4-7 4V6a1.5 1.5 0 0 1 1.5-1.5Z"></path></svg>
+                </span>
+                <strong data-before-after-save-count>0</strong>
+              </button>
+              <button class="before-after-preview__action" type="button" aria-label="Compartilhar caso">
+                <span class="before-after-preview__action-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M22 2 11 13"></path><path d="m22 2-7 20-4-9-9-4 20-7Z"></path></svg>
+                </span>
+                <strong>Enviar</strong>
+              </button>
+            </div>
+
+            <div class="before-after-preview__section">
+              <span class="before-after-preview__section-label">O que mudou</span>
+              <ul class="before-after-preview__highlights" data-before-after-preview-highlights></ul>
+            </div>
+
+            <div class="before-after-preview__section">
+              <span class="before-after-preview__section-label">Destaques</span>
+              <div class="before-after-preview__tags" data-before-after-preview-tags></div>
+            </div>
+
+            <div class="before-after-preview__footer">
+              <a class="before-after-preview__cta before-after-preview__cta--primary" data-before-after-preview-service href="detalhe-anuncio.html">Ver serviço</a>
+              <a class="before-after-preview__cta before-after-preview__cta--ghost" data-before-after-preview-profile href="perfil.html">Ver perfil</a>
+            </div>
+          </aside>
+
+          <aside class="before-after-preview__comments" data-before-after-comments aria-label="Comentários do antes e depois">
+            <div class="before-after-preview__comments-head">
+              <span class="before-after-preview__comments-count" data-before-after-comments-label>0 comentários</span>
+              <button type="button" data-before-after-comments-close aria-label="Ocultar comentários">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+              </button>
+            </div>
+
+            <div class="before-after-preview__comments-list" data-before-after-comments-list></div>
+
+            <div class="before-after-preview__comment-input">
+              <span class="before-after-preview__mini-avatar">DK</span>
+              <input type="text" placeholder="Adicionar comentário..." aria-label="Adicionar comentário">
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="worker-preview" data-worker-preview hidden aria-hidden="true">
+      <div class="worker-preview__scrim"></div>
+
+      <button class="worker-preview__close worker-preview__close--fixed" type="button" data-worker-preview-close aria-label="Fechar workers">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6l12 12M18 6 6 18"></path>
+        </svg>
+      </button>
+
+      <div class="worker-preview__stage" role="dialog" aria-modal="true" aria-label="Workers em vídeo">
+        <aside class="worker-preview__comments" data-worker-preview-comments aria-label="Comentários do worker">
+          <div class="worker-preview__comments-head">
+            <span class="worker-preview__comments-count" data-worker-preview-comment-count>255 comentários</span>
+            <button type="button" data-worker-preview-comments-toggle aria-label="Ocultar comentários">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+            </button>
+          </div>
+
+          <div class="worker-preview__comments-list" data-worker-preview-comments-list></div>
+
+          <div class="worker-preview__comment-input">
+            <span class="worker-preview__mini-avatar">DK</span>
+            <input type="text" placeholder="Adicionar comentário..." aria-label="Adicionar comentário">
+          </div>
+        </aside>
+
+        <div class="worker-preview__feed" data-worker-preview-feed aria-label="Feed vertical de workers"></div>
+
+        <div class="worker-preview__scroll-hint" aria-hidden="true">
+          <span>Role para o próximo vídeo</span>
+        </div>
+      </div>
+    </section>
+
     <script src="assets/js/core/app.js"></script>
     <script src="assets/data/mocks/profile-data.js"></script>
     <script src="assets/js/pages/search-data.js"></script>
     <script src="assets/js/features/profile/profile-tabs.js"></script>
     <script src="assets/js/features/profile/profile-share.js"></script>
-    <script src="assets/js/pages/perfil.js?v=modalfix0414b"></script>
+    <script src="assets/js/pages/home/workers.js?v=20260425-profile-tabs-no-scroll-bg-clean"></script>
+    <script src="assets/js/pages/home/before-after.js?v=20260425-profile-tabs-no-scroll-bg-clean"></script>
+    <script src="assets/js/components/doke-lite-select.js?v=select-align-trigger-0425"></script>
+    <script src="assets/js/pages/perfil.js?v=doke-select-standard-0425"></script>
     <script src="assets/js/pages/orcamento.js"></script>
     <script src="assets/js/pages/perfil-budget.js"></script>
+    <script src="assets/js/pages/perfil-budget-success.js?v=upload-inside-success-clean-0425"></script>
   </body>
 </html>

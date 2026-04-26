@@ -21,10 +21,12 @@
     const filtersToggles = [...root.querySelectorAll('[data-notifications-filters-toggle]')];
     const filtersPanel = root.querySelector('[data-notifications-filters-panel]');
     const headerControls = root.querySelector('.notifications-page-header__controls');
-    const selectToggles = [...root.querySelectorAll('[data-notifications-select-toggle]')];
+    const selectToggles = [...document.querySelectorAll('[data-notifications-select-toggle]')];
     const selectPanel = root.querySelector('[data-notifications-select-panel]');
+    const selectSummary = root.querySelector('[data-notifications-select-summary]');
     const selectModeButtons = [...root.querySelectorAll('[data-notifications-select-mode]')];
-    const markSelectedButton = root.querySelector('[data-notifications-mark-selected]');
+    const openSelectedButton = root.querySelector('[data-notifications-open-selected]');
+    const openChatSelectedButton = root.querySelector('[data-notifications-open-chat-selected]');
     const clearSelectedButton = root.querySelector('[data-notifications-clear-selected]');
     const settingsToggle = root.querySelector('[data-notifications-settings-toggle]');
     const settingsPanel = root.querySelector('[data-notifications-settings-panel]');
@@ -77,7 +79,10 @@
     const selectedCards = () => cards.filter((card) => card.classList.contains('is-selected') && card.dataset.dismissed !== 'true');
 
     const setToggleExpanded = (toggles, expanded) => {
-      toggles.forEach((toggle) => toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false'));
+      toggles.forEach((toggle) => {
+        toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        toggle.classList.toggle('is-active', expanded);
+      });
     };
 
     const closeFiltersPanel = () => {
@@ -90,15 +95,19 @@
     const closeSelectPanel = () => {
       if (!selectPanel) return;
       selectPanel.hidden = true;
+      selectPanel.setAttribute('hidden', '');
       setToggleExpanded(selectToggles, false);
       syncHeaderControls();
     };
 
     const openSelectPanel = () => {
       if (!selectPanel) return;
+      if (headerControls) headerControls.hidden = false;
       selectPanel.hidden = false;
+      selectPanel.removeAttribute('hidden');
       setToggleExpanded(selectToggles, true);
       closeFiltersPanel();
+      if (headerControls) headerControls.hidden = false;
       syncHeaderControls();
     };
 
@@ -107,18 +116,22 @@
     };
 
     const syncSelectedActions = () => {
-      const count = selectedCards().length;
-      if (selectSummary) selectSummary.textContent = `${count} selecionada${count === 1 ? '' : 's'}`;
-      if (markSelectedButton) markSelectedButton.disabled = count === 0;
+      const selected = selectedCards();
+      const count = selected.length;
+      const hasConversation = selected.some((card) => (card.dataset.catégory || '').split(/\s+/).includes('messages'));
+      if (selectSummary) selectSummary.textContent = `${count} selecionado${count === 1 ? '' : 's'}`;
+      if (openSelectedButton) openSelectedButton.disabled = count === 0;
+      if (openChatSelectedButton) openChatSelectedButton.disabled = count === 0 || !hasConversation;
       if (clearSelectedButton) clearSelectedButton.disabled = count === 0;
     };
 
     const setSelectionEnabled = (enabled) => {
       selectionEnabled = enabled;
       root.classList.toggle('is-selection-mode', enabled);
-      if (!enabled) setToggleExpanded(selectToggles, false);
+      setToggleExpanded(selectToggles, enabled);
       if (!enabled) clearSelection();
       syncSelectedActions();
+      syncHeaderControls();
     };
 
     const closeSettingsPanel = () => {
@@ -260,7 +273,9 @@
       else closeFiltersPanel();
     }));
 
-    selectToggles.forEach((toggle) => toggle.addEventListener('click', () => {
+    selectToggles.forEach((toggle) => toggle.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
       const nextStaté = !selectionEnabled;
       setSelectionEnabled(nextStaté);
       if (nextStaté) openSelectPanel();
@@ -276,6 +291,8 @@
           if (card.dataset.dismissed !== 'true' && !card.hidden) card.classList.add('is-selected');
         });
       }
+      syncSelectedActions();
+      openSelectPanel();
     }));
 
     settingsToggle?.addEventListener('click', () => {
@@ -379,14 +396,24 @@
       applyFilter(currentFilter, currentTimeFilter);
     }));
 
-    markSelectedButton?.addEventListener('click', () => {
-      const targetCards = selectionEnabled ? selectedCards() : cards.filter((card) => !card.hidden && card.dataset.dismissed !== 'true');
-      targetCards.forEach((card) => card.classList.remove('is-unread'));
-      updatéUnread();
-      updatéStats();
-      applyFilter(currentFilter, currentTimeFilter);
-      setSelectionEnabled(false);
-      closeSelectPanel();
+    const getPrimaryHref = (card) => card?.querySelector('.notification-card__inline-actions a[href]')?.getAttribute('href') || '';
+
+    const openSelectedCard = (preferredToken = '') => {
+      const selected = selectedCards();
+      const target = preferredToken
+        ? selected.find((card) => (card.dataset.catégory || '').split(/\s+/).includes(preferredToken))
+        : selected.find(Boolean);
+
+      const href = getPrimaryHref(target);
+      if (href) window.location.href = href;
+    };
+
+    openSelectedButton?.addEventListener('click', () => {
+      openSelectedCard('orders');
+    });
+
+    openChatSelectedButton?.addEventListener('click', () => {
+      openSelectedCard('messages');
     });
 
     root.querySelectorAll('[data-dismiss-notification]').forEach((button) => button.addEventListener('click', () => {
@@ -510,6 +537,7 @@
         const clickedSelectToggle = target.closest('[data-notifications-select-toggle]');
         if (!clickedInsideSelect && !clickedSelectToggle) {
           closeSelectPanel();
+          setSelectionEnabled(false);
         }
       }
 

@@ -484,30 +484,38 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
 
   const createServiceCard = (item) => {
     const article = document.createElement('article');
-    article.className = 'service-card service-card--featured service-card--feed';
+    const rating = (Number(item.rating) || 0).toFixed(1).replace('.', ',');
+    const reviews = item.reviews || '0 avaliações';
+    const tags = (item.tags || []).slice(0, 2);
+    const detailHref = item.href || 'detalhe-anuncio.html';
+
+    article.className = 'service-card service-card--result';
     article.innerHTML = `
-      <div class="service-card__media ${item.mediaClass || ''}">
-        <button class="service-card__favorite" type="button" aria-label="Salvar anúncio">
-          <svg viewBox="0 0 24 24"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
-        </button>
+      <a class="service-card__media ${item.mediaClass || ''}" href="${detailHref}" aria-label="Ver anúncio de ${item.title || 'profissional'}">
         <span class="service-card__badge ${item.badgeModifier || ''}">${item.badge || 'Em destaque'}</span>
-        <div class="service-card__media-content">
-          <span class="service-card__category">${item.category || item.catégory || ''}</span>
-          <strong>${item.title || ''}</strong>
-        </div>
-      </div>
+        <button class="service-card__favorite" type="button" aria-label="Salvar anúncio">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
+        </button>
+      </a>
+
       <div class="service-card__body">
-        <div class="service-card__rating">★ ${(Number(item.rating) || 0).toFixed(1).replace('.', ',')} <span>(${item.reviews || '0 avaliações'})</span></div>
-        <div class="service-card__meta-row">
-          <div class="service-card__profile">
-            <span class="service-card__avatar ${item.avatarClass || ''}" aria-hidden="true"></span>
-            <span class="service-card__location">${item.location || ''}</span>
-          </div>
+        <span class="service-card__category service-card__category--body">${item.category || item.catégory || ''}</span>
+        <h3 class="service-card__title">${item.title || ''}</h3>
+
+        <div class="service-card__rating">
+          <strong>★ ${rating}</strong>
+          <span>${reviews}</span>
         </div>
-        <div class="service-card__tags">${(item.tags || []).map((tag) => `<span>${tag}</span>`).join('')}</div>
+
+        <p class="service-card__location">${item.location || ''}</p>
+
+        <div class="service-card__tags">
+          ${tags.map((tag) => `<span>${tag}</span>`).join('')}
+        </div>
+
         <div class="service-card__footer">
-          <div><strong class="service-card__price">${item.price || ''}</strong></div>
-          <a class="service-card__cta" href="detalhe-anuncio.html" aria-label="Ver anúncio">Ver anúncio</a>
+          <strong class="service-card__price">${item.price || ''}</strong>
+          <a class="service-card__cta" href="${detailHref}" aria-label="Ver anúncio">Ver anúncio</a>
         </div>
       </div>
     `;
