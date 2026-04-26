@@ -3,209 +3,273 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modal Padronizado Perfeito</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+
     <style>
+      /* =========================================
+           1. DESIGN TOKENS (Variáveis Globais)
+           ========================================= */
       :root {
-        --brand-gradient: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-        --accent-green: #10b981;
+        --primary-color: #154b77;
+        --primary-hover: #0d3252;
+        --bg-secondary: #f4f7f9;
+        --text-main: #154b77;
+        --text-muted: #647b8d;
+        --border-color: #e2e8f0;
         --white: #ffffff;
-        --soft-shadow:
-          0 10px 25px -5px rgba(0, 0, 0, 0.1),
-          0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+        /* Padronização de Bordas e Espaços */
+        --radius-modal: 24px;
+        --radius-input: 12px;
+        --space-padding: 32px;
+        --font-main: "Plus Jakarta Sans", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
 
       body {
-        margin: 0;
-        font-family:
-          "Inter",
-          system-ui,
-          -apple-system,
-          sans-serif;
-        background-color: #f8fafc;
-      }
-
-      /* Header com curvatura moderna */
-      .header-premium {
-        background: var(--brand-gradient);
-        padding: 30px 24px 60px 24px;
-        border-bottom-left-radius: 40px;
-        border-bottom-right-radius: 40px;
-        position: relative;
-      }
-
-      /* Barra superior */
-      .nav-row {
+        background-color: #cbd5e1;
+        font-family: var(--font-main);
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 32px;
-      }
-
-      .profile-section {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-      }
-
-      .avatar-box {
-        width: 48px;
-        height: 48px;
-        background: var(--accent-green);
-        color: white;
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
         justify-content: center;
-        font-weight: 800;
-        font-size: 18px;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-      }
-
-      .welcome-text {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 14px;
-        margin: 0;
-      }
-
-      .user-name {
-        color: var(--white);
-        font-size: 20px;
-        font-weight: 700;
-        margin: 0;
-        display: block;
-      }
-
-      /* Botões de Ação Superior */
-      .actions-row {
-        display: flex;
         align-items: center;
-        gap: 12px;
+        min-height: 100vh;
       }
 
-      .location-pill {
-        background: rgba(255, 255, 255, 0.12);
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        padding: 8px 16px;
-        border-radius: 50px;
-        color: white;
-        font-size: 13px;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        transition: all 0.2s;
-      }
-
-      .location-pill:hover {
-        background: rgba(255, 255, 255, 0.2);
-      }
-
-      .notif-icon {
-        background: white;
-        width: 42px;
-        height: 42px;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        position: relative;
-      }
-
-      .notif-dot {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 8px;
-        height: 8px;
-        background: #ef4444;
-        border-radius: 50%;
-        border: 2px solid white;
-      }
-
-      /* Barra de Busca - O destaque do design */
-      .search-wrapper {
-        position: absolute;
-        bottom: -28px;
-        left: 24px;
-        right: 24px;
+      /* =========================================
+           2. ESTRUTURA DO MODAL
+           ========================================= */
+      .modal {
         background: var(--white);
-        height: 56px;
-        border-radius: 20px;
-        display: flex;
-        align-items: center;
-        padding: 0 20px;
-        box-shadow: var(--soft-shadow);
-        border: 1px solid rgba(226, 232, 240, 0.8);
+        width: 100%;
+        max-width: 560px;
+        border-radius: var(--radius-modal);
+        padding: var(--space-padding);
+        position: relative;
+        box-shadow:
+          0 20px 25px -5px rgba(0, 0, 0, 0.1),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
       }
 
-      .search-wrapper input {
-        flex: 1;
+      /* Botão Fechar (X) */
+      .close-button {
+        position: absolute;
+        top: 24px;
+        right: 24px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--bg-secondary);
         border: none;
-        outline: none;
-        font-size: 16px;
-        color: #1e293b;
-        font-weight: 500;
-        margin-left: 12px;
-      }
-
-      .search-wrapper input::placeholder {
-        color: #94a3b8;
-      }
-
-      .search-tools {
+        color: var(--primary-color);
+        cursor: pointer;
         display: flex;
         align-items: center;
-        gap: 16px;
-        padding-left: 16px;
-        border-left: 2px solid #f1f5f9;
-      }
-
-      .icon-btn {
-        cursor: pointer;
-        opacity: 0.6;
+        justify-content: center;
+        font-size: 18px;
         transition: 0.2s;
       }
 
-      .icon-btn:hover {
-        opacity: 1;
-        color: #1e40af;
+      .close-button:hover {
+        background: #e2e8f0;
+      }
+
+      /* =========================================
+           3. CABEÇALHO
+           ========================================= */
+      .badge {
+        display: inline-block;
+        background: var(--bg-secondary);
+        color: var(--primary-color);
+        padding: 6px 14px;
+        border-radius: 100px;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 16px;
+      }
+
+      .modal-title {
+        font-size: 32px;
+        font-weight: 800;
+        color: var(--text-main);
+        line-height: 1.1;
+        margin-bottom: 8px;
+        letter-spacing: -0.02em;
+      }
+
+      .modal-description {
+        font-size: 15px;
+        color: var(--text-muted);
+        line-height: 1.5;
+        margin-bottom: 32px;
+      }
+
+      /* =========================================
+           4. FORMULÁRIO E INPUTS
+           ========================================= */
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      label {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        letter-spacing: 0.02em;
+      }
+
+      /* Container para inputs com prefixo (R$) */
+      .input-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .input-prefix {
+        position: absolute;
+        left: 16px;
+        font-weight: 600;
+        color: var(--text-muted);
+        pointer-events: none;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 14px 16px;
+        font-size: 15px;
+        font-family: inherit;
+        color: var(--text-main);
+        background-color: var(--white);
+        border: 1.5px solid var(--border-color);
+        border-radius: var(--radius-input);
+        transition: all 0.2s ease;
+      }
+
+      /* Ajuste de padding para inputs que têm prefixo */
+      .has-prefix {
+        padding-left: 42px;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 4px rgba(21, 75, 119, 0.1);
+      }
+
+      input:disabled {
+        background-color: var(--bg-secondary);
+        border-color: transparent;
+        cursor: not-allowed;
+        font-weight: 600;
+      }
+
+      /* =========================================
+           5. RODAPÉ E BOTÕES
+           ========================================= */
+      .modal-footer {
+        margin-top: 32px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+      }
+
+      .btn {
+        padding: 14px 28px;
+        border-radius: var(--radius-input);
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.2s;
+        border: none;
+      }
+
+      .btn-cancel {
+        background-color: var(--bg-secondary);
+        color: var(--text-main);
+      }
+
+      .btn-cancel:hover {
+        background-color: #e2e8f0;
+      }
+
+      .btn-confirm {
+        background-color: var(--primary-color);
+        color: var(--white);
+      }
+
+      .btn-confirm:hover {
+        background-color: var(--primary-hover);
+        transform: translateY(-1px);
       }
     </style>
   </head>
   <body>
-    <header class="header-premium">
-      <div class="nav-row">
-        <div class="profile-section">
-          <div class="avatar-box">DK</div>
-          <div>
-            <p class="welcome-text">Bom dia,</p>
-            <span class="user-name">Gabriel Santos</span>
+    <div class="modal">
+      <button class="close-button">&times;</button>
+
+      <header>
+        <span class="badge">Saque</span>
+        <h2 class="modal-title">Solicitar transferência</h2>
+        <p class="modal-description">
+          Informe o valor que deseja transferir para a conta bancária
+          cadastrada.
+        </p>
+      </header>
+
+      <main>
+        <div class="form-group">
+          <label>Valor do saque</label>
+          <div class="input-container">
+            <span class="input-prefix">R$</span>
+            <input
+              type="text"
+              class="has-prefix"
+              placeholder="0,00"
+              value="1.200,00"
+            />
           </div>
         </div>
 
-        <div class="actions-row">
-          <div class="location-pill">
-            <span style="color: #10b981">●</span>
-            Salvar localização
-            <span style="font-size: 10px">▼</span>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Destino</label>
+            <input type="text" value="PIX • Banco Inter" disabled />
           </div>
-          <div class="notif-icon">
-            🔔
-            <div class="notif-dot"></div>
+          <div class="form-group">
+            <label>Disponível</label>
+            <div class="input-container">
+              <span class="input-prefix">R$</span>
+              <input type="text" class="has-prefix" value="4.860,00" disabled />
+            </div>
           </div>
         </div>
-      </div>
+      </main>
 
-      <div class="search-wrapper">
-        <span style="font-size: 20px">🔍</span>
-        <input type="text" placeholder="O que você precisa hoje?" />
-        <div class="search-tools">
-          <span class="icon-btn">🎙️</span>
-          <span class="icon-btn" style="color: #10b981">⚖️</span>
-        </div>
-      </div>
-    </header>
+      <footer class="modal-footer">
+        <button class="btn btn-cancel">Cancelar</button>
+        <button class="btn btn-confirm">Confirmar saque</button>
+      </footer>
+    </div>
   </body>
 </html>

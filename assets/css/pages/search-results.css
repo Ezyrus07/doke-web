@@ -1835,3 +1835,135 @@ body.results-filters-open .results-searchbar__mobile-filter {
     padding-bottom: var(--doke-mobile-page-bottom, calc(78px + env(safe-area-inset-bottom, 0px))) !important;
   }
 }
+
+
+/* 2026-04-26 patch: results workers were still oversized on desktop because a
+   late page rule forced a 2-column layout. Re-align them to the shared search
+   rhythm (3-up with filters, 4-up when filters collapse) so cards stop looking
+   inflated compared with services. */
+@media (min-width: 1181px) {
+  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 24px !important;
+  }
+
+  body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="workers"] .results-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card {
+    min-height: clamp(280px, 24vw, 340px) !important;
+    aspect-ratio: 9 / 14 !important;
+    border-radius: 24px !important;
+    padding: 16px !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card__play {
+    width: 46px !important;
+    height: 46px !important;
+    top: 16px !important;
+    right: 16px !important;
+  }
+}
+
+
+/* 2026-04-26 refinement: tighten results card rhythm. Workers were leaving too
+   much white space, and before/after cards were too narrow for the available
+   desktop area. */
+@media (min-width: 1181px) {
+  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid {
+    grid-template-columns: repeat(3, minmax(260px, 1fr)) !important;
+    gap: 18px !important;
+    align-items: start !important;
+  }
+
+  body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="workers"] .results-grid {
+    grid-template-columns: repeat(4, minmax(240px, 1fr)) !important;
+    gap: 18px !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid {
+    grid-template-columns: repeat(2, minmax(380px, 1fr)) !important;
+    gap: 18px !important;
+    align-items: start !important;
+  }
+
+  body.search-results-body :is(.results-grid, .results-before-after-grid) .comparison-card[data-before-after-trigger] {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  body.search-results-body :is(.results-grid, .results-before-after-grid) .comparison-card__visual {
+    height: clamp(226px, 17.5vw, 282px) !important;
+  }
+}
+
+
+/* 2026-04-26 final normalization: resultado.html must follow index sizing.
+   Use stable card tracks instead of stretching each mode with different local
+   scales. This removes oversized/undersized cards and tightens white space. */
+@media (min-width: 1181px) {
+  body.search-results-body .results-layout[data-results-mode="services"] .results-grid,
+  body.search-results-body .results-layout[data-results-mode="services"] .results-empty__grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 320px)) !important;
+    justify-content: start !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="services"] :is(.service-card, .service-card--feed, .service-card--result),
+  body.search-results-body .results-layout[data-results-mode="services"] .results-empty__grid :is(.service-card, .service-card--feed, .service-card--result) {
+    width: 320px !important;
+    min-width: 320px !important;
+    max-width: 320px !important;
+    margin: 0 !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="services"] :is(.service-card, .service-card--feed, .service-card--result) .service-card__media,
+  body.search-results-body .results-layout[data-results-mode="services"] .results-empty__grid :is(.service-card, .service-card--feed, .service-card--result) .service-card__media {
+    min-height: 208px !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 220px)) !important;
+    justify-content: start !important;
+    align-items: start !important;
+    gap: 16px !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card {
+    width: 220px !important;
+    min-width: 220px !important;
+    max-width: 220px !important;
+    min-height: 0 !important;
+    aspect-ratio: 9 / 15 !important;
+    border-radius: 22px !important;
+    margin: 0 !important;
+    padding: 16px !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card__play {
+    width: 46px !important;
+    height: 46px !important;
+    top: 16px !important;
+    right: 16px !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid {
+    grid-template-columns: repeat(auto-fit, minmax(420px, 420px)) !important;
+    justify-content: start !important;
+    align-items: start !important;
+    gap: 16px !important;
+  }
+
+  body.search-results-body :is(.results-grid, .results-before-after-grid) .comparison-card[data-before-after-trigger] {
+    width: 420px !important;
+    min-width: 420px !important;
+    max-width: 420px !important;
+    margin: 0 !important;
+  }
+
+  body.search-results-body :is(.results-grid, .results-before-after-grid) .comparison-card__visual {
+    height: clamp(220px, 18vw, 272px) !important;
+  }
+}
