@@ -1,0 +1,1483 @@
+/* Perfil: serviços, Workers, Antes x Depois e publicações.
+   Extracted from perfil.css to reduce page-file responsibility. */
+
+/* 2026-04-13 consistency pass: unify profile tab rail, card media and sidebar rhythm */
+.profile-shell-content {
+  width: min(1440px, calc(100% - 40px));
+  margin: 0 auto;
+}
+
+.profile-panels {
+  min-width: 0;
+}
+
+.profile-services-results {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 320px));
+}
+
+.profile-services-results .service-card--feed {
+  width: 100%;
+  max-width: 320px;
+}
+
+.profile-services-results .service-card__media {
+  position: relative;
+  overflow: hidden;
+  min-height: 208px;
+}
+
+.profile-posts-stack .content-rail__arrow {
+  z-index: 3;
+}
+
+@media (max-width: 1100px) {
+  .profile-shell-content {
+    width: min(100%, calc(100% - 28px));
+  }
+}
+
+@media (max-width: 900px) {
+  .profile-posts-stack .content-rail__arrow {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .profile-shell-content {
+    width: min(100%, calc(100% - 20px));
+  }
+
+  .profile-tabs {
+    padding: 6px;
+    border-radius: 24px;
+  }
+
+  .profile-services-results {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .profile-services-results .service-card--feed {
+    max-width: none;
+  }
+}
+
+
+/* 2026-04-13 final profile polish: fix service cards, tabs and rail overflow */
+.profile-page-shell .page__content {
+  padding-top: 8px !important;
+  padding-inline: 26px;
+}
+
+body.profile-page-shell {
+  --profile-desktop-content-width: min(1360px, calc(100vw - var(--sidebar-width) - 40px));
+}
+
+body.profile-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.profile-shell-content,
+.profile-page-shell .profile-screen {
+  width: min(100%, var(--profile-desktop-content-width));
+  max-width: min(100%, var(--profile-desktop-content-width));
+  min-width: 0;
+  margin-inline: auto;
+}
+
+.profile-screen,
+.profile-hero-shell,
+.profile-card,
+.profile-card__content,
+.profile-main-column,
+.profile-side-column {
+  min-width: 0;
+}
+
+.profile-card__content {
+  grid-template-columns: 136px minmax(0, 1fr) minmax(300px, 520px);
+}
+
+.profile-side-column {
+  min-width: 0;
+  width: min(100%, 520px);
+}
+
+.profile-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  width: 100%;
+}
+
+.profile-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.profile-tab {
+  flex: 0 0 auto;
+}
+
+.profile-services-results .service-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,250,253,0.98));
+  border: 1px solid var(--doke-card-border);
+}
+
+.profile-posts-stack,
+.profile-posts-stack .short-videos,
+.profile-posts-stack .before-after {
+  min-width: 0;
+}
+
+.profile-posts-stack .content-rail {
+  overflow: hidden;
+  padding-inline: 24px;
+}
+
+.profile-posts-stack .short-videos__track,
+.profile-posts-stack .comparison-grid {
+  min-width: 0;
+}
+
+.profile-posts-stack .short-videos__track {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 16px;
+  width: auto;
+  max-width: none;
+  padding: 4px 0 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+}
+
+.profile-posts-stack .short-videos__track::-webkit-scrollbar,
+.profile-posts-stack .comparison-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.profile-posts-stack .video-card {
+  flex: 0 0 clamp(220px, calc((100% - 56px) / 4), 272px);
+  width: clamp(220px, calc((100% - 56px) / 4), 272px);
+  min-width: clamp(220px, calc((100% - 56px) / 4), 272px);
+  max-width: clamp(220px, calc((100% - 56px) / 4), 272px);
+  aspect-ratio: 9 / 15;
+  min-height: 0;
+  margin: 0;
+  border-radius: 22px;
+  scroll-snap-align: start;
+}
+
+.profile-posts-stack .comparison-grid {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0 8px;
+  scroll-snap-type: x proximity;
+}
+
+.profile-posts-stack .comparison-card {
+  flex: 0 0 calc((100% - 16px) / 2);
+  width: calc((100% - 16px) / 2);
+  min-width: calc((100% - 16px) / 2);
+  max-width: calc((100% - 16px) / 2);
+  scroll-snap-align: start;
+}
+
+.profile-posts-stack .comparison-card__visual {
+  min-height: clamp(210px, 18vw, 272px);
+}
+
+.profile-posts-stack .content-rail__arrow--prev {
+  left: 4px;
+}
+
+.profile-posts-stack .content-rail__arrow--next {
+  right: 4px;
+}
+
+.profile-posts-stack .content-rail__arrow {
+  display: none;
+}
+
+@media (max-width: 1320px) {
+  body.profile-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.profile-shell-content,
+  .profile-page-shell .profile-screen {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 1200px) {
+  .profile-card__content {
+    grid-template-columns: 118px minmax(0, 1fr);
+  }
+
+  .profile-side-column {
+    grid-column: 2;
+    justify-items: start;
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  body.profile-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.profile-shell-content,
+  .profile-page-shell .profile-screen {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .profile-posts-stack .content-rail {
+    padding-inline: 0;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 760px) {
+  .profile-page-shell .page__content {
+    padding-top: 8px !important;
+  }
+
+  .profile-tabs {
+    padding: 6px;
+    border-radius: 24px;
+  }
+}
+
+
+/* 2026-04-23 workspace alignment: profile must occupy the same visual width language as the other internal pages */
+body.profile-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.profile-shell-content {
+  width: min(100%, var(--profile-desktop-content-width)) !important;
+  max-width: min(100%, var(--profile-desktop-content-width)) !important;
+  margin-inline: auto !important;
+  padding-inline: 0 !important;
+}
+
+.profile-page-shell .profile-screen {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* 2026-04-14 fix: guarantee bottom breathing room on profile */
+.profile-page-shell .page__content {
+  padding-bottom: 28px !important;
+}
+
+.profile-page-shell .page__content-inner {
+  padding-bottom: 28px;
+}
+
+.profile-shell-content,
+.profile-page main.page__content,
+.profile-page-shell .profile-overview,
+.profile-page-shell .profile-page-layout {
+  padding-bottom: 12px;
+}
+
+@media (max-width: 760px) {
+  .profile-page-shell .page__content {
+    padding-bottom: 18px !important;
+  }
+
+  .profile-page-shell .page__content-inner {
+    padding-bottom: 18px;
+  }
+}
+
+/* 2026-04-21 rebuild: clean public profile hero on phones */
+@media (max-width: 760px) {
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-hero-shell {
+    width: 100%;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-hero-shell__cover {
+    min-height: 116px;
+    border-radius: 26px 26px 0 0;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-card {
+    margin-top: 0;
+    border-radius: 0 0 26px 26px;
+    overflow: visible;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-card__content {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "avatar"
+      "main"
+      "side";
+    gap: 12px;
+    padding: 0 16px 22px;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-avatar-column {
+    grid-area: avatar;
+    justify-content: center;
+    align-items: center;
+    margin-top: -58px;
+    margin-bottom: 2px;
+    z-index: 3;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-avatar-frame {
+    transform: none;
+    margin-top: 0;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-avatar {
+    width: 84px;
+    height: 84px;
+    border-radius: 22px;
+    border-width: 5px;
+    font-size: 1.9rem;
+    box-shadow: 0 10px 22px rgba(24, 57, 95, 0.14);
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-main-column {
+    grid-area: main;
+    justify-items: center;
+    text-align: center;
+    gap: 9px;
+    padding-top: 0;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-name-row {
+    justify-content: center;
+    display: grid;
+    grid-template-columns: minmax(0, max-content) auto auto;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-name {
+    font-size: 1.6rem;
+    line-height: 1.02;
+    letter-spacing: -0.05em;
+    text-align: left;
+    justify-self: start;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-verified-badge {
+    width: 24px;
+    height: 24px;
+    transform: translateY(1px);
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-name-actions {
+    margin-left: 0;
+    justify-self: start;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-name-row .profile-follow-action {
+    width: 96px;
+    min-width: 96px;
+    min-height: 34px;
+    padding: 0 14px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    box-shadow: none;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-meta-row {
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.88rem;
+    margin-top: -2px;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-category-row {
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 4px;
+    width: auto;
+    max-width: 100%;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-category-pill {
+    min-height: 28px;
+    padding: 0 8px;
+    font-size: 0.66rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    flex: 0 1 auto;
+    letter-spacing: -0.01em;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-bio {
+    margin-top: 0;
+    max-width: 270px;
+    font-size: 0.92rem;
+    line-height: 1.38;
+    text-align: center;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-side-column {
+    grid-area: side;
+    justify-items: stretch;
+    width: 100%;
+    max-width: none;
+    gap: 10px;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-hero-highlights {
+    display: none;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-stats-row {
+    gap: 0;
+    width: min(100%, 292px);
+    justify-self: center;
+    border: 1px solid var(--doke-card-border);
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fff;
+    margin-top: -2px;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-stat {
+    border: 0;
+    border-right: 0;
+    border-radius: 0;
+    padding: 9px 4px 8px;
+    min-width: 0;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-stat:last-child {
+    border-right: 0;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-stat__value {
+    font-size: 1.38rem;
+    line-height: 0.96;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-stat__label {
+    margin-top: 5px;
+    font-size: 0.53rem;
+    letter-spacing: 0.08em;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-actions-row {
+    grid-template-columns: minmax(0, 1fr) 48px;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-action {
+    min-height: 48px;
+    border-radius: 15px;
+    padding: 0 14px;
+    font-size: 0.88rem;
+    white-space: nowrap;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-actions-row [data-profile-action-role="primary"] {
+    grid-column: 1;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-actions-row [data-profile-action-role="message"] {
+    grid-column: 2;
+    min-width: 48px;
+    padding: 0;
+    font-size: 0;
+    color: transparent;
+    position: relative;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-actions-row [data-profile-action-role="message"]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 18px;
+    height: 18px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 18px 18px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23245a8e' stroke-width='2.15' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 4c4.97 0 9 3.43 9 7.65 0 4.23-4.03 7.65-9 7.65-1.17 0-2.29-.19-3.3-.54L4 20l1.37-4.01C4.52 14.73 4 13.24 4 11.65 4 7.43 7.58 4 12 4Z'/%3E%3C/svg%3E");
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-name-row,
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-meta-row,
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-category-row,
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-bio {
+    width: 100%;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-tabs {
+    padding: 5px;
+    border-radius: 22px;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-tab {
+    min-height: 40px;
+    padding-inline: 14px;
+    font-size: 0.88rem;
+  }
+}
+
+@media (max-width: 360px) {
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-card__content {
+    padding: 0 10px 18px;
+    gap: 8px;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-main-column {
+    gap: 6px;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-name-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: "name badge follow";
+    gap: 4px 6px;
+    width: min(100%, 268px);
+    justify-content: center;
+    justify-items: start;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-name {
+    grid-area: name;
+    font-size: 1.45rem;
+    justify-self: end;
+    text-align: right;
+    max-width: 132px;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-verified-badge {
+    grid-area: badge;
+    justify-self: start;
+    align-self: center;
+    width: 22px;
+    height: 22px;
+    transform: none;
+    margin-left: 2px;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-name-actions {
+    grid-area: follow;
+    justify-self: end;
+    margin-top: 0;
+    align-self: center;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-name-row .profile-follow-action {
+    width: 88px;
+    min-width: 88px;
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 0.76rem;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-meta-row {
+    gap: 5px;
+    font-size: 0.8rem;
+    margin-top: -1px;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-category-row {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    max-width: 268px;
+    margin-inline: auto;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-category-pill {
+    min-height: 26px;
+    padding: 0 7px;
+    font-size: 0.61rem;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-bio {
+    max-width: 100%;
+    font-size: 0.84rem;
+    line-height: 1.32;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-stats-row {
+    width: min(100%, 268px);
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-stat__value {
+    font-size: 1.22rem;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-stat__label {
+    margin-top: 4px;
+    font-size: 0.47rem;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-actions-row {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    width: min(100%, 268px);
+    justify-self: center;
+    gap: 6px;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-action {
+    min-height: 44px;
+    padding: 0 10px;
+    font-size: 0.78rem;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-actions-row [data-profile-action-role="message"] {
+    min-width: 44px;
+  }
+}
+
+/* 2026-04-23 responsive unification: all profile modes must inherit the same mobile hero contract */
+@media (max-width: 760px) {
+  body.profile-page-shell .page__content {
+    padding-inline: 10px !important;
+  }
+
+  body.profile-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.profile-shell-content,
+  body.profile-page-shell .profile-screen,
+  body.profile-page-shell .profile-hero-shell,
+  body.profile-page-shell .profile-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body.profile-page-shell .profile-hero-shell__cover {
+    min-height: 116px;
+    border-radius: 26px 26px 0 0;
+  }
+
+  body.profile-page-shell .profile-card {
+    margin-top: 0;
+    border-radius: 0 0 26px 26px;
+    overflow: visible;
+  }
+
+  body.profile-page-shell .profile-card__content {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "avatar"
+      "main"
+      "side";
+    gap: 12px;
+    padding: 0 16px 22px;
+  }
+
+  body.profile-page-shell .profile-avatar-column {
+    grid-area: avatar;
+    justify-content: center;
+    align-items: center;
+    margin-top: -58px;
+    margin-bottom: 2px;
+    z-index: 3;
+  }
+
+  body.profile-page-shell .profile-avatar-frame {
+    transform: none;
+    margin-top: 0;
+  }
+
+  body.profile-page-shell .profile-avatar {
+    width: 84px;
+    height: 84px;
+    border-radius: 22px;
+    border-width: 5px;
+    font-size: 1.9rem;
+    box-shadow: 0 10px 22px rgba(24, 57, 95, 0.14);
+  }
+
+  body.profile-page-shell .profile-main-column {
+    grid-area: main;
+    justify-items: center;
+    text-align: center;
+    gap: 9px;
+    padding-top: 0;
+  }
+
+  body.profile-page-shell .profile-name-row {
+    justify-content: center;
+    display: grid;
+    grid-template-columns: minmax(0, max-content) auto auto;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    max-width: 100%;
+    margin-inline: auto;
+  }
+
+  body.profile-page-shell .profile-name {
+    font-size: clamp(1.45rem, 7vw, 1.7rem);
+    line-height: 1.02;
+    letter-spacing: -0.05em;
+    text-align: center;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  body.profile-page-shell .profile-verified-badge {
+    width: 24px;
+    height: 24px;
+    transform: translateY(1px);
+  }
+
+  body.profile-page-shell .profile-name-actions {
+    margin-left: 0;
+    justify-self: center;
+  }
+
+  body.profile-page-shell .profile-meta-row {
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.88rem;
+    margin-top: -2px;
+    flex-wrap: wrap;
+  }
+
+  body.profile-page-shell .profile-category-row {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body.profile-page-shell .profile-category-pill {
+    min-height: 28px;
+    padding: 0 10px;
+    font-size: 0.68rem;
+    border-radius: 999px;
+    white-space: normal;
+    text-align: center;
+  }
+
+  body.profile-page-shell .profile-bio {
+    margin-top: 0;
+    max-width: 290px;
+    font-size: 0.92rem;
+    line-height: 1.42;
+    text-align: center;
+  }
+
+  body.profile-page-shell .profile-side-column {
+    grid-area: side;
+    justify-items: stretch;
+    width: 100%;
+    max-width: none;
+    gap: 10px;
+  }
+
+  body.profile-page-shell .profile-hero-highlights {
+    display: none;
+  }
+
+  body.profile-page-shell .profile-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    width: min(100%, 292px);
+    justify-self: center;
+    border: 1px solid var(--doke-card-border);
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fff;
+    margin-top: -2px;
+  }
+
+  body.profile-page-shell .profile-stat {
+    border: 0;
+    border-radius: 0;
+    padding: 9px 4px 8px;
+    min-width: 0;
+  }
+
+  body.profile-page-shell .profile-stat__value {
+    font-size: 1.38rem;
+    line-height: 0.96;
+  }
+
+  body.profile-page-shell .profile-stat__label {
+    margin-top: 5px;
+    font-size: 0.53rem;
+    letter-spacing: 0.08em;
+  }
+
+  body.profile-page-shell .profile-actions-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-actions-row {
+    grid-template-columns: minmax(0, 1fr) 48px;
+  }
+
+  body.profile-page-shell .profile-action {
+    min-height: 48px;
+    border-radius: 15px;
+    padding: 0 14px;
+    font-size: 0.88rem;
+    white-space: normal;
+    text-align: center;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-actions-row [data-profile-action-role="primary"] {
+    grid-column: 1;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-actions-row [data-profile-action-role="message"] {
+    grid-column: 2;
+    min-width: 48px;
+    padding: 0;
+    font-size: 0;
+    color: transparent;
+    position: relative;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-actions-row [data-profile-action-role="message"]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 18px;
+    height: 18px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 18px 18px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23245a8e' stroke-width='2.15' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 4c4.97 0 9 3.43 9 7.65 0 4.23-4.03 7.65-9 7.65-1.17 0-2.29-.19-3.3-.54L4 20l1.37-4.01C4.52 14.73 4 13.24 4 11.65 4 7.43 7.58 4 12 4Z'/%3E%3C/svg%3E");
+  }
+
+  body.profile-page-shell .profile-tabs {
+    padding: 5px;
+    border-radius: 22px;
+  }
+
+  body.profile-page-shell .profile-tab {
+    min-height: 40px;
+    padding-inline: 14px;
+    font-size: 0.88rem;
+  }
+}
+
+@media (max-width: 360px) {
+  body.profile-page-shell .profile-card__content {
+    padding: 0 10px 18px;
+    gap: 8px;
+  }
+
+  body.profile-page-shell .profile-bio {
+    max-width: 250px;
+  }
+
+  body.profile-page-shell .profile-stats-row {
+    width: 100%;
+  }
+}
+
+/* 2026-04-25 profile posts parity: before/after cards must use the same grid/card geometry from index.html. */
+.profile-posts-stack .comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 0;
+  scroll-snap-type: none;
+}
+
+.profile-posts-stack .comparison-card {
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  flex: initial;
+  scroll-snap-align: unset;
+}
+
+.profile-posts-stack .comparison-card__visual {
+  min-height: 250px;
+}
+
+@media (max-width: 1180px) {
+  .profile-posts-stack .comparison-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .profile-posts-stack .comparison-grid {
+    grid-template-columns: minmax(250px, 78vw);
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(250px, 78vw);
+    overflow-x: auto;
+  }
+
+  .profile-posts-stack .comparison-card__visual {
+    min-height: 220px;
+  }
+}
+
+/* 2026-04-25 v2 — Perfil Antes/Depois precisa reutilizar a aparência compacta do index.html.
+   Este bloco substitui o ajuste anterior, que igualou apenas a grid e deixou o card com o visual antigo. */
+body.profile-page-shell .profile-posts-stack .comparison-card {
+  display: grid !important;
+  gap: 14px !important;
+  padding: 14px !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid var(--doke-card-border) !important;
+  border-radius: 28px !important;
+  overflow: hidden !important;
+  box-shadow: 0 10px 26px rgba(25, 49, 77, 0.055) !important;
+}
+
+body.profile-page-shell .profile-posts-stack .comparison-card:hover,
+body.profile-page-shell .profile-posts-stack .comparison-card:focus-within {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 18px 34px rgba(21, 45, 73, 0.14) !important;
+  border-color: rgba(76, 133, 198, 0.22) !important;
+}
+
+body.profile-page-shell .profile-posts-stack .comparison-card__visual {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  min-height: 0 !important;
+  height: clamp(202px, 15.5vw, 258px) !important;
+  background: transparent !important;
+}
+
+body.profile-page-shell .profile-posts-stack .comparison-card__half {
+  position: relative !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  border-radius: 22px !important;
+  overflow: hidden !important;
+  background: #eef3f8 !important;
+}
+
+body.profile-page-shell .profile-posts-stack .comparison-card__half::before {
+  inset: 0 !important;
+  border-radius: inherit !important;
+  transform: translateZ(0) !important;
+}
+
+body.profile-page-shell .profile-posts-stack .comparison-card__half span {
+  position: absolute !important;
+  top: 12px !important;
+  left: 12px !important;
+  z-index: 1 !important;
+  padding: 8px 14px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: #132f4f !important;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  box-shadow: 0 8px 18px rgba(15, 35, 57, 0.10) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+body.profile-page-shell .profile-posts-stack .comparison-card__body {
+  display: grid !important;
+  gap: 8px !important;
+  padding: 0 8px 4px !important;
+}
+
+body.profile-page-shell .profile-posts-stack .comparison-card__body > strong,
+body.profile-page-shell .profile-posts-stack .comparison-card__title {
+  display: -webkit-box !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  color: #132f4f !important;
+  font-size: clamp(1rem, 1.05vw, 1.18rem) !important;
+  font-weight: 800 !important;
+  line-height: 1.22 !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+}
+
+body.profile-page-shell .profile-posts-stack .comparison-card__meta {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  min-width: 0 !important;
+  color: #64758a !important;
+  font-size: 0.88rem !important;
+  font-weight: 500 !important;
+  line-height: 1.25 !important;
+}
+
+body.profile-page-shell .profile-posts-stack .comparison-card__provider {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+body.profile-page-shell .profile-posts-stack .comparison-card__provider > span {
+  color: #075bab !important;
+  font-weight: 600 !important;
+}
+
+body.profile-page-shell .profile-posts-stack .comparison-card__rating {
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-height: 34px !important;
+  padding: 0 12px !important;
+  border: 1px solid rgba(24, 75, 118, 0.08) !important;
+  border-radius: 12px !important;
+  background: rgba(248, 251, 255, 0.96) !important;
+  color: #075bab !important;
+  font-weight: 800 !important;
+  box-shadow: 0 6px 16px rgba(25, 49, 77, 0.045) !important;
+}
+
+body.profile-page-shell .profile-posts-stack .comparison-card__rating strong {
+  color: #132238 !important;
+  font-size: 0.95rem !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+}
+
+@media (min-width: 561px) and (max-width: 767px) {
+  body.profile-page-shell .profile-posts-stack .comparison-grid {
+    display: flex !important;
+    gap: 14px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 0 2px 4px !important;
+    scroll-snap-type: x proximity !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  body.profile-page-shell .profile-posts-stack .comparison-card {
+    flex: 0 0 min(360px, calc(100vw - 74px)) !important;
+    width: min(360px, calc(100vw - 74px)) !important;
+    min-width: min(360px, calc(100vw - 74px)) !important;
+    max-width: min(360px, calc(100vw - 74px)) !important;
+    border-radius: 26px !important;
+    scroll-snap-align: start !important;
+  }
+
+  body.profile-page-shell .profile-posts-stack .comparison-card__visual {
+    height: 236px !important;
+  }
+}
+
+@media (max-width: 560px) {
+  body.profile-page-shell .profile-posts-stack .comparison-grid {
+    display: flex !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    gap: 12px !important;
+    padding: 2px 0 6px !important;
+    scroll-snap-type: x proximity !important;
+  }
+
+  body.profile-page-shell .profile-posts-stack .comparison-card {
+    flex: 0 0 calc(100vw - 68px) !important;
+    width: calc(100vw - 68px) !important;
+    min-width: calc(100vw - 68px) !important;
+    max-width: calc(100vw - 68px) !important;
+    border-radius: 24px !important;
+    scroll-snap-align: start !important;
+  }
+
+  body.profile-page-shell .profile-posts-stack .comparison-card__visual {
+    height: 216px !important;
+  }
+
+  body.profile-page-shell .profile-posts-stack .comparison-card__body {
+    padding: 0 4px 2px !important;
+  }
+}
+
+
+/* 2026-04 profile publications split: Workers and Antes x Depois are now separate content areas. */
+.profile-posts-stack {
+  gap: 24px;
+}
+
+.profile-post-section {
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid rgba(211, 225, 239, 0.9);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 14px 32px rgba(25, 56, 92, 0.06);
+}
+
+.profile-post-section__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 18px;
+  padding: 2px 4px 0;
+}
+
+.profile-post-section__eyebrow {
+  display: block;
+  margin-bottom: 6px;
+  color: #6f86a1;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.profile-post-section__title {
+  margin: 0;
+  color: #132c4a;
+  font-size: clamp(1.2rem, 1.7vw, 1.7rem);
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+}
+
+.profile-post-section__description {
+  max-width: 460px;
+  margin: 0;
+  color: #657b97;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  font-weight: 650;
+  text-align: right;
+}
+
+.profile-post-section__rail {
+  padding-inline: 0;
+}
+
+.profile-post-section .content-rail__arrow--prev {
+  left: -24px;
+}
+
+.profile-post-section .content-rail__arrow--next {
+  right: -24px;
+}
+
+.profile-post-section--workers .short-videos__track {
+  gap: 14px;
+}
+
+.profile-post-section--before-after .profile-posts-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  overflow: visible;
+}
+
+.profile-post-section--before-after .comparison-card {
+  width: 100%;
+}
+
+@media (max-width: 980px) {
+  .profile-post-section__head {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .profile-post-section__description {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .profile-post-section--before-after .profile-posts-comparison {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+  }
+
+  .profile-post-section--before-after .comparison-card {
+    flex: 0 0 min(520px, 86vw);
+    scroll-snap-align: start;
+  }
+}
+
+@media (max-width: 760px) {
+  .profile-post-section {
+    padding: 14px;
+    border-radius: 24px;
+  }
+
+  .profile-post-section .content-rail__arrow {
+    display: none;
+  }
+}
+
+
+/* 2026-04-25 profile media tabs: no forced scroll and no section card background. */
+body.profile-page-shell .profile-post-section {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.profile-page-shell .profile-post-section__head {
+  padding: 0 0 12px !important;
+}
+
+body.profile-page-shell .profile-post-section--workers .short-videos,
+body.profile-page-shell .profile-post-section--before-after .before-after {
+  margin-top: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.profile-page-shell .profile-post-section__rail {
+  padding-inline: 0 !important;
+}
+
+body.profile-page-shell .profile-post-section .content-rail__arrow--prev {
+  left: -20px !important;
+}
+
+body.profile-page-shell .profile-post-section .content-rail__arrow--next {
+  right: -20px !important;
+}
+
+@media (max-width: 760px) {
+  body.profile-page-shell .profile-post-section__head {
+    padding-bottom: 10px !important;
+  }
+}
+
+
+/* 2026-04-25 profile viewport + detail parity refinement.
+   Profile tab changes must not pull the page to the top, and the visual surface now matches detalhe-anuncio. */
+body.profile-page-shell {
+  --profile-shell-page-bg: var(--shell-page-bg, #f7f9fc);
+  --profile-shell-content-bg: var(--shell-content-bg, #eef4f9);
+  background: var(--profile-shell-page-bg) !important;
+}
+
+body.profile-page-shell .app-shell,
+body.profile-page-shell .page {
+  background: transparent !important;
+}
+
+body.profile-page-shell .page__content {
+  background: var(--profile-shell-content-bg) !important;
+  scroll-padding-top: calc(var(--header-height, 76px) + 20px);
+  overflow-anchor: none;
+}
+
+body.profile-page-shell .page__content::before {
+  opacity: 0.36 !important;
+}
+
+body.profile-page-shell .profile-shell-content.shell-home__workspace--clean {
+  background: transparent !important;
+}
+
+body.profile-page-shell .profile-panels {
+  min-height: max(640px, calc(100dvh - 170px));
+}
+
+body.profile-page-shell .profile-panel {
+  overflow-anchor: none;
+}
+
+/* Remove the remaining surface feeling from Workers and Antes x Depois. */
+body.profile-page-shell .profile-post-section,
+body.profile-page-shell .profile-post-section--workers,
+body.profile-page-shell .profile-post-section--before-after {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.profile-page-shell .profile-post-section__head {
+  padding: 0 0 18px !important;
+}
+
+
+/* 2026-04-25: stop media-tab jank between Serviços, Workers and Antes x Depois.
+   The panels keep their height during the swap and the browser must not use
+   media cards as scroll anchors. */
+body.profile-page-shell .profile-tabs,
+body.profile-page-shell .profile-panels,
+body.profile-page-shell .profile-panel,
+body.profile-page-shell .profile-post-section,
+body.profile-page-shell .profile-services-results {
+  overflow-anchor: none !important;
+}
+
+body.profile-page-shell.is-profile-tab-switching,
+body.profile-page-shell.is-profile-tab-switching * {
+  scroll-behavior: auto !important;
+}
+
+body.profile-page-shell .profile-tabs {
+  scroll-behavior: auto !important;
+}
+
+body.profile-page-shell .profile-tab,
+body.profile-page-shell .profile-tab:hover,
+body.profile-page-shell .profile-tab:focus-visible,
+body.profile-page-shell .profile-tab.is-active {
+  transform: none !important;
+}
+
+body.profile-page-shell .profile-tab {
+  transition: background-color 140ms ease, color 140ms ease, box-shadow 140ms ease, border-color 140ms ease !important;
+}
+
+body.profile-page-shell .profile-panels[data-profile-section="panels"] {
+  transition: none !important;
+  will-change: min-height;
+}
+
+
+/* 2026-04-26 patch: keep profile "Antes x Depois" aligned to the left with
+   stable card widths. The previous 2-column stretch left a huge dead area when
+   there were only a couple of cases. Desktop now uses an intrinsic card grid,
+   while tablet/mobile keep the existing rail behavior. */
+@media (min-width: 981px) {
+  body.profile-page-shell .profile-post-section--before-after .profile-posts-comparison,
+  body.profile-page-shell .profile-posts-stack .comparison-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 356px)) !important;
+    justify-content: start !important;
+    align-items: start !important;
+    gap: 24px !important;
+    width: 100% !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  body.profile-page-shell .profile-post-section--before-after .comparison-card,
+  body.profile-page-shell .profile-posts-stack .comparison-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 356px !important;
+    margin: 0 !important;
+  }
+
+  body.profile-page-shell .profile-post-section--before-after .comparison-card__meta,
+  body.profile-page-shell .profile-posts-stack .comparison-card__meta {
+    align-items: flex-end !important;
+  }
+
+  body.profile-page-shell .profile-post-section--before-after .comparison-card__provider,
+  body.profile-page-shell .profile-posts-stack .comparison-card__provider {
+    display: -webkit-box !important;
+    white-space: normal !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important;
+    max-width: 100% !important;
+  }
+}
+
+
+/* 2026-04-26 refinement: profile service cards should not float with excess
+   horizontal air. Keep the grid denser and let the cards occupy the available
+   column width instead of behaving like fixed 320px islands. */
+@media (min-width: 1280px) {
+  body.profile-page-shell .profile-services-results {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    justify-content: stretch !important;
+    gap: 16px !important;
+  }
+
+  body.profile-page-shell .profile-services-results .service-card--feed,
+  body.profile-page-shell .profile-services-results .service-card {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+  }
+}
+
+
+/* 2026-04-26 final normalization: perfil tabs must reuse the same desktop card
+   rhythm from index instead of stretching cards by available space. */
+@media (min-width: 981px) {
+  body.profile-page-shell .profile-services-results {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 320px)) !important;
+    justify-content: start !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+  }
+
+  body.profile-page-shell .profile-services-results .service-card--feed,
+  body.profile-page-shell .profile-services-results .service-card {
+    width: 320px !important;
+    min-width: 320px !important;
+    max-width: 320px !important;
+    margin: 0 !important;
+  }
+
+  body.profile-page-shell .profile-services-results .service-card__media {
+    min-height: 208px !important;
+  }
+
+  body.profile-page-shell .profile-posts-stack .short-videos__track {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 220px)) !important;
+    justify-content: start !important;
+    gap: 16px !important;
+    width: 100% !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  body.profile-page-shell .profile-posts-stack .video-card {
+    width: 220px !important;
+    min-width: 220px !important;
+    max-width: 220px !important;
+    aspect-ratio: 9 / 15 !important;
+    margin: 0 !important;
+  }
+
+  body.profile-page-shell .profile-posts-stack .comparison-grid,
+  body.profile-page-shell .profile-post-section--before-after .profile-posts-comparison {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 420px)) !important;
+    justify-content: start !important;
+    align-items: start !important;
+    gap: 16px !important;
+    width: 100% !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  body.profile-page-shell .profile-posts-stack .comparison-card,
+  body.profile-page-shell .profile-post-section--before-after .comparison-card {
+    width: 420px !important;
+    min-width: 420px !important;
+    max-width: 420px !important;
+    margin: 0 !important;
+  }
+
+  body.profile-page-shell .profile-posts-stack .comparison-card__visual,
+  body.profile-page-shell .profile-post-section--before-after .comparison-card__visual {
+    height: clamp(220px, 18vw, 272px) !important;
+  }
+}

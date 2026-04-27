@@ -1,0 +1,163 @@
+/* Budget modal simplification: optional fields, soft steps and lightweight UX. */
+/* 2026-04 budget modal simplification: make the quote flow feel lightweight instead of a long form. */
+dialog.profile-budget-modal {
+  width: min(920px, calc(100vw - 56px));
+  max-width: min(920px, calc(100vw - 56px));
+}
+
+.profile-budget-modal .detail-budget-modal__dialog,
+.profile-budget-modal .quote-main,
+.profile-budget-modal .detail-budget-modal__flow {
+  max-height: min(84dvh, 720px);
+}
+
+.profile-budget-modal .detail-budget-modal__topbar {
+  padding: 22px 26px 18px;
+}
+
+.profile-budget-modal .detail-budget-modal__title h1 {
+  font-size: clamp(1.85rem, 3.2vw, 2.65rem);
+}
+
+.profile-budget-modal .detail-budget-modal__title p {
+  margin-top: 8px;
+}
+
+.profile-budget-modal .budget-quick-note {
+  display: block;
+  margin-top: 6px;
+  color: #71849b;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  font-weight: 650;
+}
+
+.profile-budget-modal .budget-progress {
+  padding: 14px 26px;
+  gap: 0;
+  background: rgba(248, 251, 255, 0.78);
+}
+
+.profile-budget-modal .budget-progress__meta {
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-budget-modal .budget-progress__meta strong {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(229, 241, 251, 0.96);
+  color: #1d5588;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.profile-budget-modal .budget-progress__meta span {
+  font-size: 0.88rem;
+}
+
+.profile-budget-modal .budget-progress__bar,
+.profile-budget-modal .budget-progress__steps {
+  display: none !important;
+}
+
+.profile-budget-modal .budget-panel {
+  padding: 26px;
+  overflow-y: auto;
+}
+
+.profile-budget-modal .budget-panel__head {
+  margin-bottom: 16px;
+}
+
+.profile-budget-modal .budget-panel__head h2 {
+  font-size: clamp(1.45rem, 2.8vw, 1.95rem);
+}
+
+.profile-budget-modal .budget-panel__head p {
+  max-width: 620px;
+  font-size: 0.94rem;
+}
+
+.profile-budget-modal .budget-field--textarea {
+  gap: 9px;
+}
+
+.profile-budget-modal .budget-field--textarea > span {
+  font-size: 0.9rem;
+}
+
+.profile-budget-modal .budget-field textarea {
+  min-height: 118px;
+  max-height: 148px;
+  border-radius: 22px;
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+/* First step: hide advanced classification fields. They stay prefilled in HTML, but do not burden the user. */
+.profile-budget-modal [data-step-panel="0"] .budget-grid {
+  display: none !important;
+}
+
+.profile-budget-modal [data-step-panel="0"] .budget-field small {
+  font-size: 0.78rem;
+}
+
+.profile-budget-modal .budget-actions {
+  padding: 16px 26px 20px;
+}
+
+.profile-budget-modal .budget-button--nav {
+  min-width: 118px;
+  min-height: 48px;
+}
+
+.profile-budget-modal [data-step-next] {
+  min-width: 148px;
+}
+
+/* Make following steps feel optional too, not like a bureaucratic funnel. */
+.profile-budget-modal .budget-panel:not([data-step-panel="0"]) .budget-panel__head p::after {
+  content: " Você pode pular e combinar depois.";
+  color: #7c8fa6;
+}
+
+@media (max-width: 860px) {
+  .profile-budget-modal {
+    width: min(100vw - 20px, 640px);
+    max-width: min(100vw - 20px, 640px);
+  }
+
+  .profile-budget-modal .detail-budget-modal__dialog,
+  .profile-budget-modal .quote-main,
+  .profile-budget-modal .detail-budget-modal__flow {
+    max-height: calc(100dvh - 20px);
+  }
+
+  .profile-budget-modal .detail-budget-modal__topbar,
+  .profile-budget-modal .budget-progress,
+  .profile-budget-modal .budget-panel,
+  .profile-budget-modal .budget-actions {
+    padding-inline: 18px;
+  }
+
+  .profile-budget-modal .budget-progress__meta {
+    display: grid;
+    align-items: start;
+  }
+
+  .profile-budget-modal .budget-actions {
+    gap: 10px;
+  }
+
+  .profile-budget-modal .budget-field textarea {
+    min-height: 112px;
+  }
+}
+
+

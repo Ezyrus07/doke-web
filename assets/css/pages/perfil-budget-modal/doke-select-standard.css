@@ -1,0 +1,297 @@
+/* DokeLiteSelect standard and top-layer dropdown fixes. */
+/* 2026-04 Doke Select Standard
+   Fast custom select: visually consistent, no heavy blur/transitions, one lightweight global menu. */
+.doke-select {
+  position: relative;
+  width: 100%;
+}
+
+.doke-select__native {
+  position: absolute !important;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  appearance: none;
+}
+
+.doke-select__trigger {
+  width: 100%;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px 0 18px;
+  border: 1px solid rgba(199, 218, 236, 0.96);
+  border-radius: 18px;
+  background: #fff;
+  color: #183958;
+  font: inherit;
+  font-size: 0.98rem;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: none;
+  transition: none;
+}
+
+.doke-select__trigger:hover {
+  border-color: rgba(128, 162, 198, 0.96);
+  background: #fbfdff;
+}
+
+.doke-select.is-open .doke-select__trigger {
+  border-color: rgba(45, 103, 162, 0.58);
+  box-shadow: 0 0 0 3px rgba(45, 103, 162, 0.08);
+}
+
+.doke-select__value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doke-select__chevron {
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  color: #5f7792;
+}
+
+.doke-select__chevron svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.doke-select.is-open .doke-select__chevron svg {
+  transform: rotate(180deg);
+}
+
+.doke-select-menu {
+  position: fixed;
+  z-index: 9999;
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid rgba(196, 215, 234, 0.98);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 16px 36px rgba(15, 43, 73, 0.14);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(118, 146, 176, 0.45) transparent;
+}
+
+.doke-select-menu[hidden] {
+  display: none !important;
+}
+
+.doke-select-menu::-webkit-scrollbar {
+  width: 8px;
+}
+
+.doke-select-menu::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(118, 146, 176, 0.45);
+}
+
+.doke-select-menu__option {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 13px;
+  background: transparent;
+  color: #183958;
+  font: inherit;
+  font-size: 0.94rem;
+  font-weight: 780;
+  text-align: left;
+  cursor: pointer;
+  transition: none;
+}
+
+.doke-select-menu__option:hover,
+.doke-select-menu__option:focus-visible {
+  background: #edf5fc;
+  color: #164f81;
+  outline: none;
+}
+
+.doke-select-menu__option.is-selected {
+  background: #f4f8fc;
+  color: #10385f;
+}
+
+.doke-select-menu__option.is-placeholder {
+  color: #7a8da3;
+}
+
+.doke-select-menu__option:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.profile-budget-modal select:not(.doke-select__native) {
+  min-height: 54px;
+  border: 1px solid rgba(199, 218, 236, 0.96);
+  border-radius: 18px;
+  background: #fff;
+  color: #183958;
+  font: inherit;
+  font-weight: 800;
+  padding: 0 44px 0 18px;
+}
+
+/* Neutralize old custom-select experiments inside the budget modal. */
+.profile-budget-modal .ui-select,
+.profile-budget-modal .ui-select__menu,
+.profile-budget-modal .ui-select__option {
+  transition: none !important;
+}
+
+
+/* 2026-04 DokeLiteSelect top-layer fix: dropdown appears inside dialog/top layer. */
+.profile-budget-modal .doke-select-menu,
+.doke-select-menu {
+  position: fixed;
+  z-index: 2147483647;
+}
+
+.profile-budget-modal .doke-select-menu {
+  pointer-events: auto;
+}
+
+
+/* 2026-04 success notice refinement:
+   No auto-redirect, no white veil behind the card, explicit close button, smooth exit. */
+.budget-success-state {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(39, 179, 149, 0.18), transparent 32%),
+    rgba(13, 35, 58, 0.12) !important;
+  backdrop-filter: none;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.budget-success-state.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.budget-success-state.is-leaving {
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+}
+
+.budget-success-card {
+  position: relative;
+  width: min(500px, 100%);
+  padding: 36px 30px 32px !important;
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(239, 249, 247, 0.96), transparent 38%),
+    rgba(255, 255, 255, 0.98) !important;
+  box-shadow:
+    0 28px 68px rgba(15, 43, 73, 0.17),
+    0 0 0 1px rgba(193, 218, 234, 0.7);
+  transform: translateY(14px) scale(0.975);
+  opacity: 0;
+  transition: transform 240ms cubic-bezier(.2,.9,.24,1), opacity 180ms ease;
+}
+
+.budget-success-state.is-visible .budget-success-card {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.budget-success-state.is-leaving .budget-success-card {
+  transform: translateY(16px) scale(0.975);
+  opacity: 0;
+}
+
+.budget-success-card__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 38px;
+  height: 38px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(202, 219, 236, 0.92);
+  border-radius: 999px;
+  background: rgba(248, 251, 255, 0.96);
+  color: #315d86;
+  cursor: pointer;
+  transition: none;
+}
+
+.budget-success-card__close:hover {
+  background: #edf5fc;
+  color: #164f81;
+}
+
+.budget-success-card__close svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.budget-success-card__eyebrow {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(232, 248, 244, 0.98);
+  color: #176d60;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.budget-success-card__meta {
+  display: none !important;
+}
+
+.budget-success-card__actions {
+  margin-top: 8px !important;
+}
+
+.budget-success-card__button--primary {
+  min-width: 190px;
+}
+
+.budget-success-sparkles i {
+  animation-duration: 680ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .budget-success-state,
+  .budget-success-card {
+    transition: none;
+    transform: none;
+  }
+}
+
+
+

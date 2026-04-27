@@ -1,0 +1,38 @@
+/* Perfil: ajustes finais compartilhados entre abas e espaçamento mobile. */
+
+/* 2026-04 clean profile media/review headers: section titles removed per layout review. */
+body.profile-page-shell .profile-post-section__head,
+body.profile-page-shell .profile-review-section-head--trust {
+  display: none !important;
+}
+
+body.profile-page-shell .profile-post-section {
+  gap: 0;
+}
+
+body.profile-page-shell .profile-review-detail {
+  gap: 16px;
+}
+
+/* Budget modal rules were moved to assets/css/pages/perfil-budget-modal.css to keep perfil.css focused on page layout. */
+
+/* 2026-04-26 mobile end-spacing fix: profile inherits the shared bottom-nav contract, no phantom footer gap. */
+@media (max-width: 760px) {
+  body.profile-body,
+  body.profile-page-body {
+    min-height: 100%;
+  }
+
+  body.profile-body :is(.page__content, .main-content, .profile-page, .profile-shell, .profile-layout),
+  body.profile-page-body :is(.page__content, .main-content, .profile-page, .profile-shell, .profile-layout) {
+    min-height: 0 !important;
+    padding-bottom: var(--doke-mobile-page-bottom, calc(78px + env(safe-area-inset-bottom, 0px))) !important;
+  }
+
+  body.profile-body :is(.profile-page, .profile-shell, .profile-layout) > :last-child,
+  body.profile-page-body :is(.profile-page, .profile-shell, .profile-layout) > :last-child {
+    margin-bottom: 0 !important;
+  }
+}
+
+

@@ -1,0 +1,211 @@
+/* Internal list-page semantic aliases.
+   Purpose: allow non-order pages to move away from legacy orders-* class names
+   without changing the rendered UI in one risky pass.
+
+   Rule:
+   - keep orders-* classes only as legacy bridges for JS/CSS compatibility;
+   - new shared markup should prefer internal-* names;
+   - pedidos.html may keep orders-* for order-specific modules. */
+
+.internal-list-page-shell {
+  background: var(--shell-page-bg);
+}
+
+.internal-shell-content.shell-home__workspace--clean {
+  padding-top: 0;
+  padding-bottom: 28px;
+}
+
+body.internal-list-page-shell {
+  --home-desktop-content-width: min(1280px, calc(100vw - var(--sidebar-width) - 56px));
+}
+
+body.internal-list-page-shell .page__content {
+  padding-top: 8px;
+  padding-inline: 26px;
+  padding-bottom: 40px;
+}
+
+body.internal-list-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.internal-shell-content,
+body.internal-list-page-shell .internal-page {
+  width: min(100%, var(--home-desktop-content-width));
+  max-width: min(100%, var(--home-desktop-content-width));
+  margin-inline: auto;
+  padding-inline: 0;
+}
+
+.internal-page-header {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+
+.internal-page-header__controls[hidden],
+.internal-select-panel[hidden],
+.internal-filters-popover[hidden] {
+  display: none !important;
+}
+
+.internal-header-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  border-radius: 18px;
+  border: 1px solid var(--internal-control-border);
+  background: var(--internal-surface-bg);
+  color: #173a67;
+}
+
+.internal-header-search__icon,
+.internal-header-search__close {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--quote-blue-deep);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.internal-header-search__icon svg,
+.internal-header-search__close svg,
+.internal-page-header__search-toggle svg,
+.internal-page-header__hero-chip svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.internal-header-search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #173a67;
+  font: inherit;
+}
+
+.internal-active-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.internal-filter-item,
+.internal-select-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--doke-card-border);
+  background: rgba(255, 255, 255, .94);
+  color: var(--quote-blue-deep);
+  font: inherit;
+  font-size: .94rem;
+  font-weight: 700;
+}
+
+.internal-select-option--danger {
+  color: #8a3144;
+  background: rgba(255, 255, 255, .94);
+}
+
+.internal-select-panel {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  position: relative;
+  z-index: 4;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.internal-filters-popover {
+  position: relative;
+  z-index: 4;
+}
+
+.internal-filters-panel {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+
+.internal-filters-panel__group {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.internal-filters-panel__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.internal-page-header__menu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.internal-page-header__menu .internal-select-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 220px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--doke-card-border);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 20px 34px rgba(24, 49, 79, 0.12);
+  z-index: 20;
+}
+
+.internal-page-header__menu .internal-select-option {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
+  text-align: left;
+}
+
+@media (max-width: 760px) {
+  body.internal-list-page-shell .page__content {
+    padding-inline: 14px;
+    padding-top: 8px;
+    padding-bottom: 24px;
+  }
+
+  .internal-shell-content.shell-home__workspace--clean {
+    padding-bottom: 24px;
+  }
+
+  .internal-page-header__controls {
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .internal-page-header__menu .internal-select-panel {
+    top: calc(100% + 8px);
+    min-width: min(248px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+    padding: 10px;
+    border-radius: 18px;
+  }
+}

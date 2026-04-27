@@ -1,0 +1,166 @@
+/* 2026-04-25 - Composer da comunidade: anexar imagem e gravar áudio */
+body.community-room-shell .community-composer-draft {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(203, 220, 238, .95);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #f7fbff, #eef6fd);
+}
+
+body.community-room-shell [data-community-audio-draft][hidden],
+body.community-room-shell [data-community-image-draft][hidden] {
+  display: none !important;
+}
+
+body.community-room-shell .community-composer-draft__meta {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: grid;
+  gap: 3px;
+}
+
+body.community-room-shell .community-composer-draft__meta strong {
+  color: #143a66;
+  font-size: .84rem;
+  line-height: 1.15;
+}
+
+body.community-room-shell .community-composer-draft__meta span {
+  color: #6f89a8;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+body.community-room-shell .community-composer-draft__pulse {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #2fbda6;
+  box-shadow: 0 0 0 0 rgba(47, 189, 166, .42);
+  animation: communityComposerPulse 1.2s infinite;
+}
+
+@keyframes communityComposerPulse {
+  0% { box-shadow: 0 0 0 0 rgba(47, 189, 166, .42); }
+  70% { box-shadow: 0 0 0 12px rgba(47, 189, 166, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(47, 189, 166, 0); }
+}
+
+body.community-room-shell .community-composer-draft__image {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  object-fit: cover;
+  border-radius: 15px;
+  border: 1px solid rgba(203, 220, 238, .9);
+}
+
+body.community-room-shell .community-composer-draft__cancel {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(203, 220, 238, .95);
+  border-radius: 13px;
+  background: #fff;
+  color: #173d6c;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+body.community-room-shell .community-chat-composer__tool.is-recording {
+  background: rgba(47, 189, 166, .14);
+  border-color: rgba(47, 189, 166, .36);
+  color: #168774;
+}
+
+body.community-room-shell .community-chat-composer__tool.is-recording svg {
+  stroke: #168774;
+}
+
+body.community-room-shell .community-message--media .community-message__content,
+body.community-room-shell .community-message--audio .community-message__content {
+  max-width: min(520px, 100%);
+}
+
+body.community-room-shell .community-message__image {
+  margin: 8px 0 0;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(203, 220, 238, .85);
+  background: #edf5fb;
+}
+
+body.community-room-shell .community-message__image img {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  max-height: 280px;
+  object-fit: cover;
+}
+
+body.community-room-shell .community-message-audio {
+  display: grid;
+  grid-template-columns: auto minmax(120px, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(226, 239, 250, .92);
+}
+
+body.community-room-shell .community-message-audio__play {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: #205289;
+  font-size: .78rem;
+  font-weight: 900;
+}
+
+body.community-room-shell .community-message-audio__track {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(151, 178, 209, .42);
+  overflow: hidden;
+}
+
+body.community-room-shell .community-message-audio__track::after {
+  content: "";
+  position: absolute;
+  inset: 0 42% 0 0;
+  border-radius: inherit;
+  background: #2d6eb0;
+}
+
+body.community-room-shell .community-message-audio__duration {
+  color: #5f7898;
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+@media (max-width: 720px) {
+  body.community-room-shell .community-composer-draft {
+    align-items: flex-start;
+    border-radius: 16px;
+  }
+
+  body.community-room-shell .community-composer-draft__cancel {
+    min-height: 32px;
+    padding-inline: 10px;
+  }
+}
+

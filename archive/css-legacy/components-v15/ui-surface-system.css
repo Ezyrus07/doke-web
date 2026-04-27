@@ -1,0 +1,628 @@
+/*
+  Doke UI Surface System — fonte única de verdade para superfícies, botões,
+  inputs, cards reutilizáveis, popovers, drawers e modais.
+
+  Regras de manutenção:
+  1. Este arquivo é carregado por último nos HTMLs principais.
+  2. CSS de página só pode controlar layout específico da página.
+  3. Não crie visual local para botão/card/modal/input em arquivos de página.
+  4. Componentes normais de página não entram em contrato de modal por seletores genéricos.
+*/
+
+:root {
+  --doke-ui-blue-900: #103b66;
+  --doke-ui-blue-800: #17467a;
+  --doke-ui-blue-700: #1f5d92;
+  --doke-ui-blue-600: #21639b;
+  --doke-ui-text: #23445f;
+  --doke-ui-muted: #6f86a5;
+  --doke-ui-line: #d6e4f2;
+  --doke-ui-line-soft: rgba(24, 75, 118, 0.12);
+  --doke-ui-bg: #ffffff;
+  --doke-ui-bg-soft: #f7fbff;
+  --doke-ui-bg-blue: #eef5fc;
+  --doke-ui-danger: #b42318;
+  --doke-ui-danger-bg: #fff1f1;
+
+  --doke-surface-radius-sm: 16px;
+  --doke-surface-radius: 22px;
+  --doke-surface-radius-lg: 30px;
+  --doke-surface-shadow: 0 24px 60px rgba(16, 43, 74, 0.16);
+  --doke-surface-shadow-soft: 0 10px 28px rgba(27, 58, 93, 0.075);
+  --doke-surface-padding: 28px;
+  --doke-surface-padding-mobile: 18px;
+  --doke-surface-width: 760px;
+  --doke-surface-width-wide: 940px;
+  --doke-drawer-width: 390px;
+
+  --doke-overlay-bg: rgba(10, 28, 49, 0.48);
+  --doke-overlay-blur: 10px;
+
+  --doke-control-height: 50px;
+  --doke-control-radius: 16px;
+  --doke-button-height: 46px;
+  --doke-button-radius: 16px;
+  --doke-icon-button-size: 44px;
+  --doke-close-button-size: 44px;
+  --doke-close-button-size-mobile: 40px;
+  --doke-chip-height: 34px;
+
+  --doke-card-radius: 24px;
+  --doke-card-border: rgba(24, 75, 118, 0.12);
+  --doke-card-shadow: 0 14px 34px rgba(16, 43, 74, 0.10);
+  --doke-service-card-width: 284px;
+  --doke-service-card-media-height: 172px;
+  --doke-worker-card-width: 210px;
+  --doke-worker-card-height: 292px;
+  --doke-comparison-card-width: 286px;
+
+  --doke-surface-accent-soft: #eef5fc;
+  --doke-surface-accent-line: #d6e4f2;
+  --doke-surface-accent-text: #17467a;
+}
+
+:where(.charge-modal, dialog.charge-modal) {
+  --doke-surface-accent-soft: #f3efff;
+  --doke-surface-accent-line: rgba(122, 92, 221, 0.24);
+  --doke-surface-accent-text: #6b45cc;
+}
+
+:where(.community-action-modal, .community-request-modal) {
+  --doke-surface-accent-soft: #edf8f4;
+  --doke-surface-accent-line: rgba(78, 178, 149, 0.30);
+  --doke-surface-accent-text: #0f7b68;
+}
+
+/* -------------------------------------------------------------------------
+   Overlay/root behavior
+------------------------------------------------------------------------- */
+html:has(:is(dialog[open], .wallet-modal:not([hidden]), .ui-modal:not([hidden]), .community-request-modal:not([hidden]), .community-action-modal:not([hidden]), .payment-overlay:not([hidden]), .detail-modal:not([hidden]), .orders-sidepanel:not([hidden]), .home-mobile-drawer.is-open, .doke-media-lightbox.is-open, .before-after-preview:not([hidden]), .worker-preview:not([hidden]))) {
+  overflow: hidden;
+}
+
+:is(
+  .wallet-modal,
+  .ui-modal,
+  .community-request-modal,
+  .community-action-modal,
+  .payment-overlay,
+  .detail-modal,
+  .home-address-modal,
+  .address-modal,
+  .profile-followers-modal,
+  .profile-edit-modal,
+  .detail-budget-modal,
+  .profile-budget-modal,
+  .image-lightbox,
+  .charge-modal,
+  .doke-media-lightbox,
+  .detail-lightbox,
+  .before-after-preview,
+  .worker-preview,
+  .home-mobile-drawer,
+  .orders-panel-scrim,
+  .results-filters-backdrop
+),
+:is(
+  .wallet-modal,
+  .ui-modal,
+  .community-request-modal,
+  .community-action-modal,
+  .payment-overlay,
+  .detail-modal,
+  .home-address-modal,
+  .address-modal,
+  .profile-followers-modal,
+  .profile-edit-modal,
+  .detail-budget-modal,
+  .profile-budget-modal,
+  .image-lightbox,
+  .charge-modal,
+  .doke-media-lightbox,
+  .detail-lightbox,
+  .before-after-preview,
+  .worker-preview,
+  .home-mobile-drawer,
+  .orders-panel-scrim,
+  .results-filters-backdrop
+) * {
+  box-sizing: border-box;
+}
+
+:is(
+  .wallet-modal__scrim,
+  .ui-modal__backdrop,
+  .community-request-modal__backdrop,
+  .community-action-modal__backdrop,
+  .payment-overlay__backdrop,
+  .detail-modal__scrim,
+  .doke-media-lightbox,
+  .detail-lightbox,
+  .before-after-preview,
+  .worker-preview,
+  .home-mobile-drawer__backdrop,
+  .orders-panel-scrim,
+  .results-filters-backdrop
+),
+:is(.home-address-modal, .address-modal, .profile-followers-modal, .profile-edit-modal, .detail-budget-modal, .profile-budget-modal, .image-lightbox, .charge-modal)::backdrop {
+  background: var(--doke-overlay-bg) !important;
+  backdrop-filter: blur(var(--doke-overlay-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--doke-overlay-blur)) !important;
+}
+
+:is(.wallet-modal:not([hidden]), .ui-modal:not([hidden]), .community-request-modal:not([hidden]), .community-action-modal:not([hidden]), .payment-overlay:not([hidden]), .detail-modal:not([hidden])) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1200 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)) !important;
+  overflow: hidden !important;
+}
+
+:is(dialog.address-modal, dialog.home-address-modal, dialog.profile-followers-modal, dialog.profile-edit-modal, dialog.detail-budget-modal, dialog.profile-budget-modal, dialog.image-lightbox, dialog.charge-modal) {
+  max-width: none !important;
+  max-height: none !important;
+  width: auto !important;
+  height: auto !important;
+  margin: auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: inherit !important;
+  overflow: visible !important;
+}
+
+:is(dialog.address-modal, dialog.home-address-modal, dialog.profile-followers-modal, dialog.profile-edit-modal, dialog.detail-budget-modal, dialog.profile-budget-modal, dialog.image-lightbox, dialog.charge-modal)[open] {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1200 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-width: 100vw !important;
+  max-height: 100dvh !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)) !important;
+  overflow: hidden !important;
+}
+
+/* -------------------------------------------------------------------------
+   Surface contract: somente superfícies reais. Nunca usar seletores genéricos de card aqui.
+------------------------------------------------------------------------- */
+:is(
+  .wallet-modal__card,
+  .ui-modal__dialog,
+  .home-address-modal__dialog,
+  .address-modal__dialog,
+  .community-request-modal__dialog,
+  .community-action-modal__dialog,
+  .payment-overlay__dialog,
+  .detail-modal__card,
+  .profile-followers-modal__dialog,
+  .profile-edit-modal__dialog,
+  .detail-budget-modal__dialog,
+  .charge-modal__surface,
+  .image-lightbox__surface,
+  .doke-media-lightbox__surface,
+  .before-after-preview__dialog,
+  .worker-preview__dialog,
+  .orders-sidepanel,
+  .home-mobile-drawer__panel,
+  .orders-select-panel,
+  .notifications-select-panel,
+  .messages-select-panel,
+  .search-dropdown,
+  .community-select__menu,
+  .profile-dropdown
+) {
+  border: 1px solid var(--doke-ui-line-soft) !important;
+  border-radius: var(--doke-surface-radius-lg) !important;
+  background: var(--doke-ui-bg) !important;
+  box-shadow: var(--doke-surface-shadow) !important;
+  color: var(--doke-ui-blue-900) !important;
+}
+
+:is(
+  .wallet-modal__card,
+  .ui-modal__dialog,
+  .home-address-modal__dialog,
+  .address-modal__dialog,
+  .community-request-modal__dialog,
+  .community-action-modal__dialog,
+  .payment-overlay__dialog,
+  .detail-modal__card,
+  .profile-followers-modal__dialog,
+  .profile-edit-modal__dialog,
+  .detail-budget-modal__dialog,
+  .charge-modal__surface
+) {
+  position: relative !important;
+  width: min(var(--doke-surface-width), calc(100vw - 48px)) !important;
+  max-width: min(var(--doke-surface-width), calc(100vw - 48px)) !important;
+  max-height: calc(100dvh - 48px) !important;
+  padding: var(--doke-surface-padding) !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-gutter: stable both-edges !important;
+}
+
+:is(.community-action-modal__dialog--create, .detail-budget-modal__dialog, .profile-edit-modal__dialog, .worker-preview__dialog, .before-after-preview__dialog) {
+  width: min(var(--doke-surface-width-wide), calc(100vw - 48px)) !important;
+  max-width: min(var(--doke-surface-width-wide), calc(100vw - 48px)) !important;
+}
+
+:is(.image-lightbox__surface, .doke-media-lightbox__surface) {
+  width: min(980px, calc(100vw - 48px)) !important;
+  max-width: min(980px, calc(100vw - 48px)) !important;
+  max-height: calc(100dvh - 48px) !important;
+  padding: var(--doke-surface-padding-mobile) !important;
+  overflow: hidden !important;
+}
+
+:is(.orders-sidepanel, .home-mobile-drawer__panel) {
+  width: min(var(--doke-drawer-width), calc(100vw - 28px)) !important;
+  max-width: calc(100vw - 28px) !important;
+  max-height: calc(100dvh - 28px) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Dropdowns/menus recebem superfície, mas filtros inline não viram card/modal. */
+:is(.orders-select-panel, .notifications-select-panel, .messages-select-panel, .search-dropdown, .community-select__menu, .profile-dropdown) {
+  padding: 12px !important;
+  max-width: min(420px, calc(100vw - 28px)) !important;
+  overflow: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+:is(.orders-filters-panel, .orders-filters-popover, .notifications-filters-panel, .messages-filters-panel, .results-filters) {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+/* -------------------------------------------------------------------------
+   Header, title, badge and close button
+------------------------------------------------------------------------- */
+:is(.home-address-modal__head, .address-modal__head, .community-request-modal__header, .community-action-modal__header, .charge-modal__header, .profile-edit-modal__head, .detail-budget-modal__topbar, .ui-modal__header) {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  margin: 0 0 20px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+:is(.surface-modal__intro, .detail-budget-modal__intro) {
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+  padding-right: 58px !important;
+}
+
+:is(.surface-modal__meta, .detail-budget-modal__intro .surface-modal__meta) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  flex-wrap: nowrap !important;
+  gap: 10px !important;
+  max-width: 100% !important;
+}
+
+:is(.surface-modal__icon, .community-action-modal__icon) {
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  border-radius: 15px !important;
+  border: 1px solid var(--doke-surface-accent-line) !important;
+  background: var(--doke-surface-accent-soft) !important;
+  color: var(--doke-surface-accent-text) !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  flex: 0 0 40px !important;
+  box-shadow: none !important;
+}
+
+:is(.surface-modal__icon, .community-action-modal__icon) :is(svg, img) {
+  width: 19px !important;
+  height: 19px !important;
+  display: block !important;
+  stroke: currentColor !important;
+  fill: none !important;
+  stroke-width: 2.2 !important;
+}
+
+:is(.wallet-eyebrow, .wallet-withdraw-eyebrow, .ui-modal__eyebrow, .home-address-modal__eyebrow, .address-modal__eyebrow, .community-request-modal__eyebrow, .community-action-modal__eyebrow, .payment-overlay__eyebrow, .detail-modal__eyebrow, .charge-modal__eyebrow, .detail-budget-modal__eyebrow, .surface-contract-eyebrow, .budget-progress__meta strong, .filter-chip, .panel-chip) {
+  width: fit-content !important;
+  min-height: var(--doke-chip-height) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 14px !important;
+  border: 1px solid var(--doke-surface-accent-line) !important;
+  border-radius: 999px !important;
+  background: var(--doke-surface-accent-soft) !important;
+  color: var(--doke-surface-accent-text) !important;
+  font-size: 0.78rem !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.02em !important;
+  line-height: 1 !important;
+  text-transform: uppercase !important;
+}
+
+:is(.wallet-modal__card h2, .ui-modal__title, .home-address-modal__head h2, .address-modal__head h2, .community-request-modal__dialog h2, .community-action-modal__header h2, .payment-overlay__dialog h2, .detail-modal__card h2, .profile-followers-modal__dialog h2, .profile-edit-modal__head h2, .detail-budget-modal__title h1, .charge-modal__header strong, .surface-contract-title) {
+  margin: 0 !important;
+  color: var(--doke-ui-blue-800) !important;
+  font-size: clamp(2rem, 4vw, 3.2rem) !important;
+  font-weight: 900 !important;
+  line-height: 1.02 !important;
+  letter-spacing: -0.045em !important;
+}
+
+:is(.wallet-modal__card p, .ui-modal__description, .home-address-modal__head p, .address-modal__head p, .community-request-modal__dialog p, .community-action-modal__header p, .payment-overlay__dialog p, .detail-modal__card p, .profile-edit-modal__head p, .detail-budget-modal__title p, .budget-quick-note, .charge-modal__header p) {
+  margin: 0 !important;
+  max-width: 70ch !important;
+  color: var(--doke-ui-muted) !important;
+  font-size: 1rem !important;
+  line-height: 1.45 !important;
+  font-weight: 500 !important;
+}
+
+:is(button[aria-label^="Fechar"], button[aria-label*="Fechar "], button[aria-label^="Cancelar seleção"], button[aria-label^="Cancelar selecao"], button[aria-label^="Cancelar resposta"], button[aria-label^="Ocultar comentários"], .wallet-modal__close, .ui-modal__close, .home-address-modal__close, .address-modal__close, .community-request-modal__close, .community-action-modal__close, .payment-overlay__close, .detail-modal__close, .detail-lightbox__close, .profile-followers-modal__close, .profile-edit-modal__close, .detail-budget-modal__close, .before-after-preview__close, .before-after-preview__close--fixed, .worker-preview__close, .worker-preview__close--fixed, .media-lightbox__close, .doke-media-lightbox__close, .orders-sidepanel__close, .charge-modal__close, .image-lightbox__close, .bank-modal__close, .results-filters__close, .orders-header-search__close, .topbar-search-close, .settings-mobile-header__search-close, .home-location-popover__close, .home-mobile-drawer__close, .more-filters__dismiss, .messages-selection-bar__close, .messages-reply-preview__close, .budget-success-card__close) {
+  width: var(--doke-close-button-size) !important;
+  height: var(--doke-close-button-size) !important;
+  min-width: var(--doke-close-button-size) !important;
+  min-height: var(--doke-close-button-size) !important;
+  max-width: var(--doke-close-button-size) !important;
+  max-height: var(--doke-close-button-size) !important;
+  border: 1px solid var(--doke-ui-line) !important;
+  border-radius: 999px !important;
+  background: var(--doke-ui-bg-blue) !important;
+  color: var(--doke-ui-blue-800) !important;
+  box-shadow: none !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  flex: 0 0 var(--doke-close-button-size) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  font-size: 0 !important;
+  font-weight: 800 !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  transform: none !important;
+  appearance: none !important;
+}
+
+:is(.wallet-modal__close, .ui-modal__close, .home-address-modal__close, .address-modal__close, .community-request-modal__close, .community-action-modal__close, .payment-overlay__close, .detail-modal__close, .profile-edit-modal__close, .detail-budget-modal__close, .charge-modal__close, .image-lightbox__close) {
+  position: absolute !important;
+  top: 22px !important;
+  right: 22px !important;
+  z-index: 5 !important;
+}
+
+:is(button[aria-label^="Fechar"], button[aria-label*="Fechar "], .wallet-modal__close, .ui-modal__close, .home-address-modal__close, .address-modal__close, .community-request-modal__close, .community-action-modal__close, .payment-overlay__close, .detail-modal__close, .detail-lightbox__close, .profile-followers-modal__close, .profile-edit-modal__close, .detail-budget-modal__close, .before-after-preview__close, .before-after-preview__close--fixed, .worker-preview__close, .worker-preview__close--fixed, .media-lightbox__close, .doke-media-lightbox__close, .orders-sidepanel__close, .charge-modal__close, .image-lightbox__close, .bank-modal__close, .results-filters__close, .orders-header-search__close, .topbar-search-close, .settings-mobile-header__search-close, .home-location-popover__close, .home-mobile-drawer__close, .more-filters__dismiss, .messages-selection-bar__close, .messages-reply-preview__close, .budget-success-card__close) :is(svg, img) {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  display: block !important;
+  stroke: currentColor !important;
+  fill: none !important;
+  stroke-width: 2.45 !important;
+  margin: 0 !important;
+}
+
+:is(button[aria-label^="Fechar"], button[aria-label*="Fechar "], .wallet-modal__close, .ui-modal__close, .home-address-modal__close, .address-modal__close, .community-request-modal__close, .community-action-modal__close, .payment-overlay__close, .detail-modal__close, .profile-edit-modal__close, .detail-budget-modal__close, .charge-modal__close):is(:hover, :focus-visible) {
+  background: #e5f0fa !important;
+  border-color: rgba(31, 93, 146, 0.20) !important;
+  outline: none !important;
+}
+
+/* -------------------------------------------------------------------------
+   Buttons and form controls
+------------------------------------------------------------------------- */
+:is(.doke-button, .wallet-button, .ui-modal__button, .home-address-modal__button, .budget-button, .payment-button, .community-action-modal__button, .community-request-modal__button, .community-request-form__button, .profile-edit-modal__button, .profile-edit-modal__action, .detail-budget-modal__button, .charge-modal__button, .results-button, .orders-button) {
+  min-height: var(--doke-button-height) !important;
+  border-radius: var(--doke-button-radius) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 0 20px !important;
+  border: 1px solid var(--doke-ui-line) !important;
+  background: var(--doke-ui-bg-blue) !important;
+  color: var(--doke-ui-blue-800) !important;
+  font: inherit !important;
+  font-size: 0.95rem !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+}
+
+:is(.doke-button--primary, .wallet-button--primary, .ui-modal__button--primary, .home-address-modal__button--primary, .budget-button--primary, .payment-button--primary, .profile-edit-modal__button--primary, .profile-edit-modal__action--primary, .results-button--primary, .orders-button--primary, .community-action-modal__button:not(.community-action-modal__button--ghost), .community-request-form__button:not(.community-request-form__button--ghost), .charge-modal__button:not(.charge-modal__button--ghost)) {
+  border-color: var(--doke-ui-blue-600) !important;
+  background: var(--doke-ui-blue-600) !important;
+  color: #fff !important;
+}
+
+:is(.doke-button--danger, .wallet-button--danger, .ui-modal__button--danger) {
+  border-color: rgba(180, 35, 24, 0.18) !important;
+  background: var(--doke-ui-danger-bg) !important;
+  color: var(--doke-ui-danger) !important;
+}
+
+:is(.wallet-modal__card, .ui-modal__dialog, .home-address-modal__dialog, .address-modal__dialog, .community-request-modal__dialog, .community-action-modal__dialog, .payment-overlay__dialog, .detail-modal__card, .profile-followers-modal__dialog, .profile-edit-modal__dialog, .detail-budget-modal__dialog, .charge-modal__surface, .orders-sidepanel, .home-mobile-drawer__panel) :is(input, select, textarea, .ui-select__trigger, .charge-modal__money-field),
+:is(.doke-input, .doke-select, .doke-textarea) {
+  width: 100% !important;
+  min-height: var(--doke-control-height) !important;
+  border: 1px solid var(--doke-ui-line) !important;
+  border-radius: var(--doke-control-radius) !important;
+  background: var(--doke-ui-bg-soft) !important;
+  color: var(--doke-ui-blue-900) !important;
+  box-shadow: none !important;
+  font: inherit !important;
+}
+
+:is(.wallet-modal__card, .ui-modal__dialog, .home-address-modal__dialog, .address-modal__dialog, .community-request-modal__dialog, .community-action-modal__dialog, .payment-overlay__dialog, .detail-modal__card, .profile-followers-modal__dialog, .profile-edit-modal__dialog, .detail-budget-modal__dialog, .charge-modal__surface, .orders-sidepanel, .home-mobile-drawer__panel) :is(input, select, textarea, .ui-select__trigger, .charge-modal__money-field):focus-visible,
+:is(.doke-input, .doke-select, .doke-textarea):focus-visible {
+  border-color: rgba(33, 99, 155, 0.45) !important;
+  outline: 3px solid rgba(33, 99, 155, 0.14) !important;
+  outline-offset: 0 !important;
+}
+
+:is(.wallet-modal__card, .ui-modal__dialog, .home-address-modal__dialog, .address-modal__dialog, .community-request-modal__dialog, .community-action-modal__dialog, .payment-overlay__dialog, .detail-modal__card, .profile-edit-modal__dialog, .detail-budget-modal__dialog, .charge-modal__surface) label > span,
+:is(.home-address-modal__field span, .home-address-modal__check > span:last-child, .charge-modal__field > span, .budget-field > span) {
+  color: #6b7f9b !important;
+  font-size: 0.88rem !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+}
+
+/* -------------------------------------------------------------------------
+   Reusable page cards: announcement/media/profile cards. Scoped by class.
+------------------------------------------------------------------------- */
+:is(.service-card, .result-card, .profile-service-card, .pro-card, .comparison-card, .video-card, .media-card, .profile-card) {
+  box-sizing: border-box !important;
+  border: 1px solid var(--doke-card-border) !important;
+  border-radius: var(--doke-card-radius) !important;
+  background: var(--doke-ui-bg) !important;
+  box-shadow: var(--doke-card-shadow) !important;
+  overflow: hidden !important;
+}
+
+:is(.service-card, .result-card, .profile-service-card) {
+  width: min(100%, var(--doke-service-card-width)) !important;
+  min-width: 0 !important;
+}
+
+:is(.service-card__media, .result-card__media, .profile-service-card__media) {
+  min-height: var(--doke-service-card-media-height) !important;
+  border-radius: calc(var(--doke-card-radius) - 8px) !important;
+  overflow: hidden !important;
+}
+
+:is(.service-card__favorite, .favorite-button, .heart-button, .video-card__play) {
+  width: var(--doke-icon-button-size) !important;
+  height: var(--doke-icon-button-size) !important;
+  min-width: var(--doke-icon-button-size) !important;
+  min-height: var(--doke-icon-button-size) !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255, 255, 255, 0.56) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: var(--doke-ui-blue-800) !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  box-shadow: 0 10px 22px rgba(16, 43, 74, 0.12) !important;
+}
+
+:is(.service-card__favorite, .favorite-button, .heart-button, .video-card__play) :is(svg, img) {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+:is(.video-card) {
+  width: min(100%, var(--doke-worker-card-width)) !important;
+  min-height: var(--doke-worker-card-height) !important;
+}
+
+:is(.comparison-card) {
+  width: min(100%, var(--doke-comparison-card-width)) !important;
+}
+
+:is(.comparison-card__visual) {
+  min-height: 156px !important;
+}
+
+:is(.profile-card, .pro-card) {
+  border-radius: 22px !important;
+}
+
+/* -------------------------------------------------------------------------
+   Responsive contract
+------------------------------------------------------------------------- */
+@media (max-width: 760px) {
+  :root {
+    --doke-surface-radius-lg: 24px;
+    --doke-surface-padding: var(--doke-surface-padding-mobile);
+    --doke-control-height: 48px;
+    --doke-button-height: 44px;
+    --doke-icon-button-size: 40px;
+    --doke-close-button-size: var(--doke-close-button-size-mobile);
+    --doke-service-card-width: 100%;
+    --doke-service-card-media-height: 154px;
+    --doke-worker-card-width: 100%;
+    --doke-worker-card-height: 250px;
+  }
+
+  html,
+  body {
+    min-height: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  :is(.wallet-modal:not([hidden]), .ui-modal:not([hidden]), .community-request-modal:not([hidden]), .community-action-modal:not([hidden]), .payment-overlay:not([hidden]), .detail-modal:not([hidden])),
+  :is(dialog.address-modal, dialog.home-address-modal, dialog.profile-followers-modal, dialog.profile-edit-modal, dialog.detail-budget-modal, dialog.profile-budget-modal, dialog.image-lightbox, dialog.charge-modal)[open] {
+    padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)) !important;
+  }
+
+  :is(.wallet-modal__card, .ui-modal__dialog, .home-address-modal__dialog, .address-modal__dialog, .community-request-modal__dialog, .community-action-modal__dialog, .payment-overlay__dialog, .detail-modal__card, .profile-followers-modal__dialog, .profile-edit-modal__dialog, .detail-budget-modal__dialog, .charge-modal__surface, .image-lightbox__surface, .doke-media-lightbox__surface) {
+    width: calc(100vw - 28px) !important;
+    max-width: calc(100vw - 28px) !important;
+    max-height: calc(100dvh - 28px) !important;
+    padding: var(--doke-surface-padding-mobile) !important;
+    border-radius: var(--doke-surface-radius-lg) !important;
+    overflow: auto !important;
+    scrollbar-gutter: auto !important;
+  }
+
+  :is(.surface-modal__intro, .detail-budget-modal__intro) {
+    padding-right: 50px !important;
+  }
+
+  :is(.wallet-modal__card h2, .ui-modal__title, .home-address-modal__head h2, .address-modal__head h2, .community-request-modal__dialog h2, .community-action-modal__header h2, .payment-overlay__dialog h2, .detail-modal__card h2, .profile-followers-modal__dialog h2, .profile-edit-modal__head h2, .detail-budget-modal__title h1, .charge-modal__header strong, .surface-contract-title) {
+    font-size: clamp(1.75rem, 8vw, 2.35rem) !important;
+    line-height: 1.04 !important;
+  }
+
+  :is(.wallet-modal__close, .ui-modal__close, .home-address-modal__close, .address-modal__close, .community-request-modal__close, .community-action-modal__close, .payment-overlay__close, .detail-modal__close, .profile-edit-modal__close, .detail-budget-modal__close, .charge-modal__close, .image-lightbox__close) {
+    top: 18px !important;
+    right: 18px !important;
+  }
+
+  :is(.wallet-modal__actions, .ui-modal__actions, .home-address-modal__actions, .address-modal__actions, .community-request-modal__actions, .community-request-form__actions, .community-action-modal__actions, .payment-overlay__actions, .profile-edit-modal__actions, .detail-budget-modal__actions, .orders-sidepanel__actions, .charge-modal__actions, .budget-actions) {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    gap: 10px !important;
+  }
+
+  :is(.doke-button, .wallet-button, .ui-modal__button, .home-address-modal__button, .budget-button, .payment-button, .community-action-modal__button, .community-request-form__button, .profile-edit-modal__button, .profile-edit-modal__action, .detail-budget-modal__button, .charge-modal__button, .results-button, .orders-button) {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  :is(.orders-select-panel, .notifications-select-panel, .messages-select-panel, .search-dropdown, .community-select__menu, .profile-dropdown) {
+    max-width: calc(100vw - 28px) !important;
+    border-radius: var(--doke-surface-radius) !important;
+  }
+
+  :is(.service-card__media, .result-card__media, .profile-service-card__media) {
+    min-height: var(--doke-service-card-media-height) !important;
+  }
+
+  body.profile-page-shell .page__content {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+  }
+}

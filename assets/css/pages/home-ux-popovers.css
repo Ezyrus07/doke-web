@@ -1,0 +1,213 @@
+/* v25 home popovers UX pass.
+   Keeps search autocomplete attached to the full search field and makes More filters a compact popover.
+   Owner: pages/home.css. Do not move these rules into a random page file. */
+
+body.home-index-shell .home-search-hero,
+body.home-index-shell .home-search-hero__panel,
+body.home-index-shell .home-search-hero__card,
+body.home-index-shell .home-search-hero__form {
+  overflow: visible !important;
+}
+
+body.home-index-shell .home-search-hero__form {
+  position: relative !important;
+  z-index: 90 !important;
+}
+
+body.home-index-shell .home-search-hero__dropdown,
+body.home-index-shell [data-search-dropdown] {
+  position: absolute !important;
+  inset-inline: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: calc(100% + 12px) !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  max-height: min(52vh, 460px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  border-radius: 26px !important;
+  z-index: 110 !important;
+  box-sizing: border-box !important;
+}
+
+body.home-index-shell .home-search-hero__dropdown:not([hidden]),
+body.home-index-shell [data-search-dropdown]:not([hidden]) {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 8px !important;
+  padding: 16px !important;
+}
+
+body.home-index-shell .search-dropdown__chips,
+body.home-index-shell .search-dropdown__refine-chips {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+}
+
+body.home-index-shell .search-dropdown__list {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px 12px !important;
+}
+
+body.home-index-shell .search-suggestion {
+  min-width: 0 !important;
+}
+
+body.home-index-shell .more-services__filters-host,
+body.home-index-shell .home-search-hero__filters-host {
+  position: relative !important;
+  z-index: 95 !important;
+}
+
+body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] {
+  position: absolute !important;
+  top: calc(100% + 12px) !important;
+  right: 0 !important;
+  left: auto !important;
+  width: min(720px, calc(100vw - 84px)) !important;
+  max-height: min(72vh, 620px) !important;
+  margin: 0 !important;
+  padding: 18px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  border-radius: 28px !important;
+  border: 1px solid rgba(204, 221, 238, 0.9) !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  box-shadow: 0 26px 64px rgba(20, 44, 72, 0.18) !important;
+  z-index: 120 !important;
+}
+
+body.home-index-shell .home-search-hero__filters-host .more-filters.more-filters--section[data-more-filters-panel] {
+  top: 12px !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  width: min(720px, calc(100vw - 84px)) !important;
+}
+
+body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel][hidden],
+body.home-index-shell .more-filters__pane[hidden] {
+  display: none !important;
+}
+
+body.home-index-shell .more-filters__dismiss,
+body.home-index-shell .more-filters__split-nav {
+  display: flex !important;
+}
+
+body.home-index-shell .more-filters__split-body {
+  display: grid !important;
+  grid-template-columns: 132px minmax(0, 1fr) !important;
+  gap: 16px !important;
+  align-items: start !important;
+}
+
+body.home-index-shell .more-filters__split-nav {
+  flex-direction: column !important;
+  gap: 8px !important;
+  padding: 6px !important;
+  border-radius: 20px !important;
+  background: #f5f9fc !important;
+}
+
+body.home-index-shell .more-filters__nav-button {
+  width: 100% !important;
+  min-height: 42px !important;
+  padding: 0 12px !important;
+  border: 0 !important;
+  border-radius: 16px !important;
+  background: transparent !important;
+  color: #5f7896 !important;
+  font: inherit !important;
+  font-weight: 800 !important;
+  text-align: left !important;
+  cursor: pointer !important;
+}
+
+body.home-index-shell .more-filters__nav-button.is-active {
+  background: #ffffff !important;
+  color: #174b7f !important;
+  box-shadow: 0 8px 18px rgba(30, 65, 104, 0.08) !important;
+}
+
+body.home-index-shell .more-filters__split-content {
+  min-width: 0 !important;
+  display: block !important;
+}
+
+body.home-index-shell .more-filters__pane {
+  display: none !important;
+}
+
+body.home-index-shell .more-filters__pane.is-active:not([hidden]) {
+  display: block !important;
+}
+
+body.home-index-shell .more-filters--section .more-filters__quick-toggles {
+  margin-bottom: 0 !important;
+}
+
+body.home-index-shell .more-filters__grid--dense,
+body.home-index-shell .more-filters__location-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+body.home-index-shell .more-filters__actions {
+  margin-top: 14px !important;
+  padding-top: 14px !important;
+  border-top: 1px solid rgba(218, 230, 242, 0.8) !important;
+}
+
+@media (max-width: 760px) {
+  body.home-index-shell .home-search-hero__dropdown,
+  body.home-index-shell [data-search-dropdown] {
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    top: 96px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 124px) !important;
+  }
+
+  body.home-index-shell .search-dropdown__list {
+    grid-template-columns: 1fr !important;
+  }
+
+  body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel],
+  body.home-index-shell .home-search-hero__filters-host .more-filters.more-filters--section[data-more-filters-panel] {
+    position: fixed !important;
+    inset: auto 12px 12px 12px !important;
+    top: auto !important;
+    width: auto !important;
+    max-height: min(82dvh, 680px) !important;
+    transform: none !important;
+    border-radius: 26px !important;
+  }
+
+  body.home-index-shell .more-filters__split-body {
+    grid-template-columns: 1fr !important;
+  }
+
+  body.home-index-shell .more-filters__split-nav {
+    flex-direction: row !important;
+    overflow-x: auto !important;
+  }
+
+  body.home-index-shell .more-filters__nav-button {
+    width: auto !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+  }
+
+  body.home-index-shell .more-filters__grid--dense,
+  body.home-index-shell .more-filters__location-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

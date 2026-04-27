@@ -1,0 +1,309 @@
+/* Comunidade: modais de entrada por código e criação */
+.community-action-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1450;
+  display: grid;
+  place-items: start center;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.community-action-modal[hidden] {
+  display: none !important;
+}
+
+.community-action-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(9, 22, 38, .38);
+  backdrop-filter: blur(9px);
+}
+
+.community-action-modal__dialog {
+  position: relative;
+  z-index: 1;
+  width: min(92vw, 620px);
+  margin: auto 0;
+  padding: 28px;
+  border-radius: 32px;
+  background: rgba(255,255,255,.99);
+  box-shadow: 0 30px 76px rgba(21, 48, 82, .22);
+  display: grid;
+  gap: 14px;
+  overflow: visible;
+}
+
+.community-action-modal__dialog--create {
+  width: min(92vw, 720px);
+}
+
+.community-action-modal__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 46px;
+  height: 46px;
+  border: 0;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  color: #24598f;
+  background: #edf4fb;
+  cursor: pointer;
+}
+
+.community-action-modal__close svg,
+.community-action-modal__icon svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.community-action-modal__icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  color: #205289;
+  background: rgba(217, 233, 250, .95);
+}
+
+.community-action-modal__icon--green {
+  color: #238264;
+  background: rgba(219, 243, 233, .95);
+}
+
+.community-action-modal__eyebrow {
+  color: #718aaa;
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.community-action-modal h2 {
+  margin: 0;
+  color: #123a68;
+  font-size: clamp(1.55rem, 3vw, 2.08rem);
+  line-height: 1.14;
+}
+
+.community-action-modal p {
+  margin: 0;
+  max-width: 560px;
+  color: #6b84a3;
+  line-height: 1.65;
+}
+
+.community-action-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.community-action-form--grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.community-action-form__full {
+  grid-column: 1 / -1;
+}
+
+.community-action-form label,
+.community-action-cover {
+  display: grid;
+  gap: 8px;
+  color: #5f7a9d;
+  font-weight: 700;
+}
+
+.community-action-form input,
+.community-action-form select,
+.community-action-form textarea {
+  width: 100%;
+  border: 0;
+  border-radius: 18px;
+  background: #f4f8fc;
+  color: #173d6c;
+  font: inherit;
+  padding: 15px 16px;
+  box-shadow: inset 0 0 0 1px rgba(198, 212, 228, .72);
+  outline: none;
+}
+
+.community-action-form input:focus,
+.community-action-form select:focus,
+.community-action-form textarea:focus {
+  background: #fff;
+  box-shadow: inset 0 0 0 2px rgba(47, 118, 186, .34);
+}
+
+.community-action-form textarea {
+  resize: vertical;
+}
+
+.community-action-form__select-field {
+  position: relative;
+}
+
+.community-select {
+  position: relative;
+}
+
+.community-select__trigger {
+  width: 100%;
+  min-height: 56px;
+  border: 0;
+  border-radius: 18px;
+  background: #f4f8fc;
+  color: #173d6c;
+  font: inherit;
+  font-weight: 700;
+  padding: 15px 18px;
+  box-shadow: inset 0 0 0 1px rgba(198, 212, 228, .72);
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  transition: background .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+
+.community-select__trigger:hover,
+.community-select.is-open .community-select__trigger {
+  background: #fff;
+  box-shadow: inset 0 0 0 2px rgba(47, 118, 186, .28), 0 14px 28px rgba(29, 65, 106, .08);
+}
+
+.community-select__trigger:focus-visible {
+  background: #fff;
+  box-shadow: inset 0 0 0 2px rgba(47, 118, 186, .34), 0 14px 28px rgba(29, 65, 106, .08);
+}
+
+.community-select__trigger svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform .2s ease;
+}
+
+.community-select.is-open .community-select__trigger svg {
+  transform: rotate(180deg);
+}
+
+.community-select__menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  padding: 8px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .98);
+  box-shadow: 0 26px 48px rgba(29, 65, 106, .18);
+  display: grid;
+  gap: 4px;
+}
+
+.community-select__menu[hidden] {
+  display: none !important;
+}
+
+.community-select__option {
+  min-height: 48px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: #173d6c;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  padding: 0 14px;
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease, transform .2s ease;
+}
+
+.community-select__option:hover,
+.community-select__option:focus-visible {
+  background: #edf4fb;
+  color: #205289;
+}
+
+.community-select__option.is-selected {
+  background: linear-gradient(135deg, #2f76ba, #21538f);
+  color: #fff;
+}
+
+.community-action-modal__preview,
+.community-action-cover div {
+  padding: 16px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(237,244,251,.96), rgba(222,245,238,.72));
+  color: #5f7a9d;
+  display: grid;
+  gap: 4px;
+}
+
+.community-action-modal__preview strong {
+  color: #123a68;
+}
+
+.community-action-cover div {
+  min-height: 96px;
+  place-items: center;
+  color: #2c67a8;
+  font-weight: 800;
+}
+
+.community-action-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.community-action-modal__button {
+  min-height: 50px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #2f76ba, #21538f);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.community-action-modal__button--ghost {
+  background: #edf4fb;
+  color: #205289;
+}
+
+@media (max-width: 640px) {
+  .community-action-modal {
+    padding: 12px;
+  }
+
+  .community-action-modal__dialog {
+    padding: 22px 16px;
+    border-radius: 26px;
+  }
+
+  .community-action-form--grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+

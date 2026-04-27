@@ -1,0 +1,2122 @@
+
+.profile-budget-modal {
+  z-index: 260;
+}
+
+.profile-budget-modal .detail-budget-modal__dialog {
+  width: min(1080px, calc(100vw - 24px));
+}
+
+.profile-budget-modal .detail-budget-modal__flow {
+  background: #ffffff;
+}
+
+body.profile-page-shell.detail-budget-open {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  overflow: hidden;
+  touch-action: none;
+}
+
+body.profile-page-shell .profile-budget-modal .budget-flow .ui-select__menu {
+  z-index: 12;
+}
+
+body.profile-page-shell .profile-budget-modal .detail-budget-modal__title p {
+  max-width: 720px;
+}
+
+@media (max-width: 760px) {
+  body.profile-page-shell .profile-budget-modal {
+    width: 100vw;
+    max-width: 100vw;
+    min-height: 100dvh;
+    height: 100dvh;
+    margin: 0;
+  }
+
+  body.profile-page-shell .profile-budget-modal .detail-budget-modal__dialog {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
+  body.profile-page-shell .profile-budget-modal .detail-budget-modal__flow {
+    min-height: 100dvh;
+    padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom) + 18px);
+    border-radius: 0;
+  }
+
+  body.profile-page-shell .profile-budget-modal .detail-budget-modal__topbar {
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+    gap: 10px;
+  }
+
+  body.profile-page-shell .profile-budget-modal .detail-budget-modal__title h1,
+  body.profile-page-shell .profile-budget-modal .detail-budget-modal__title p {
+    text-align: left;
+  }
+}
+
+
+/* 2026-04-26 profile-budget-modal extracted from perfil.css: owns the quote flow, selects, uploads and success states. */
+
+/* 2026-04 budget modal refinement: compact Doke-standard quote flow on profile. */
+dialog.profile-budget-modal {
+  width: min(1080px, calc(100vw - 56px));
+  max-width: min(1080px, calc(100vw - 56px));
+  max-height: min(88dvh, 820px);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 32px;
+  background: transparent;
+  color: #153252;
+  overflow: visible;
+  outline: none;
+}
+
+.profile-budget-modal::backdrop {
+  background:
+    radial-gradient(circle at 78% 12%, rgba(49, 197, 163, 0.28), transparent 34%),
+    rgba(16, 34, 55, 0.58);
+  backdrop-filter: blur(12px);
+}
+
+.profile-budget-modal .detail-budget-modal__dialog {
+  width: 100%;
+  max-height: min(88dvh, 820px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  border: 1px solid rgba(210, 225, 240, 0.92);
+  border-radius: 32px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.995), rgba(248, 251, 255, 0.985));
+  box-shadow: 0 34px 90px rgba(11, 30, 52, 0.28);
+  overflow: hidden;
+}
+
+.profile-budget-modal .quote-main {
+  min-width: 0;
+  max-height: min(88dvh, 820px);
+  overflow: hidden;
+}
+
+.profile-budget-modal .detail-budget-modal__flow {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 0;
+  max-height: min(88dvh, 820px);
+  padding: 0;
+  background: transparent;
+}
+
+.profile-budget-modal .detail-budget-modal__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 24px 28px 18px;
+  border-bottom: 1px solid rgba(216, 228, 240, 0.84);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.95), transparent 42%),
+    linear-gradient(135deg, rgba(244, 249, 255, 0.96), rgba(255, 255, 255, 0.98));
+}
+
+.profile-budget-modal .detail-budget-modal__title {
+  min-width: 0;
+}
+
+.profile-budget-modal .detail-budget-modal__title h1 {
+  margin: 0;
+  color: #102f52;
+  font-size: clamp(1.75rem, 3vw, 2.45rem);
+  line-height: 0.95;
+  letter-spacing: -0.065em;
+}
+
+.profile-budget-modal .detail-budget-modal__title p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin: 9px 0 0;
+  color: #566d88;
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
+
+.profile-budget-modal .detail-budget-modal__title strong {
+  color: #153252;
+  font-weight: 800;
+}
+
+.profile-budget-modal .detail-budget-modal__title span {
+  color: #60748d;
+  font-weight: 600;
+}
+
+.profile-budget-modal .detail-budget-modal__actions {
+  flex: none;
+}
+
+.profile-budget-modal .budget-button,
+.profile-budget-modal .budget-progress-step,
+.profile-budget-modal .budget-field input,
+.profile-budget-modal .budget-field textarea,
+.profile-budget-modal .budget-field select,
+.profile-budget-modal .ui-select__trigger {
+  font-family: inherit;
+}
+
+.profile-budget-modal .budget-button {
+  min-height: 44px;
+  border-radius: 999px;
+  font-weight: 800;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.profile-budget-modal .budget-button:hover {
+  transform: translateY(-1px);
+}
+
+.profile-budget-modal .budget-button--ghost {
+  border: 1px solid rgba(205, 221, 237, 0.98);
+  background: rgba(255, 255, 255, 0.96);
+  color: #214f7f;
+}
+
+.profile-budget-modal .budget-button--primary {
+  border: 0;
+  background: linear-gradient(135deg, #2b6fa9, #1f5689);
+  color: #fff;
+  box-shadow: 0 14px 28px rgba(34, 86, 138, 0.18);
+}
+
+.profile-budget-modal .budget-button--success {
+  border: 0;
+  background: linear-gradient(135deg, #1fa38f, #167c6e);
+  color: #fff;
+  box-shadow: 0 14px 28px rgba(24, 134, 116, 0.2);
+}
+
+.profile-budget-modal .budget-progress {
+  display: grid;
+  gap: 14px;
+  padding: 18px 28px;
+  border-bottom: 1px solid rgba(216, 228, 240, 0.82);
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.profile-budget-modal .budget-progress__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #5d718b;
+}
+
+.profile-budget-modal .budget-progress__meta strong {
+  color: #14375d;
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+
+.profile-budget-modal .budget-progress__meta span {
+  color: #637992;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.profile-budget-modal .budget-progress__bar {
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(214, 225, 238, 0.88);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(199, 214, 229, 0.72);
+}
+
+.profile-budget-modal .budget-progress__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2e6ea8, #26b397);
+}
+
+.profile-budget-modal .budget-progress__steps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.profile-budget-modal .budget-progress-step {
+  min-width: 0;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid rgba(211, 224, 238, 0.95);
+  border-radius: 999px;
+  background: rgba(250, 252, 255, 0.9);
+  color: #61758e;
+  cursor: pointer;
+}
+
+.profile-budget-modal .budget-progress-step__bullet {
+  width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(233, 241, 248, 0.98);
+  color: #315f8e;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.profile-budget-modal .budget-progress-step strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.profile-budget-modal .budget-progress-step.is-active {
+  border-color: rgba(43, 111, 169, 0.28);
+  background: rgba(232, 244, 255, 0.98);
+  color: #14375d;
+  box-shadow: 0 10px 22px rgba(32, 86, 140, 0.08);
+}
+
+.profile-budget-modal .budget-progress-step.is-active .budget-progress-step__bullet {
+  background: linear-gradient(135deg, #2b6fa9, #1f5689);
+  color: #fff;
+}
+
+.profile-budget-modal .budget-panel {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px 28px 18px;
+  background:
+    linear-gradient(180deg, rgba(248, 251, 255, 0.72), rgba(255, 255, 255, 0.94));
+}
+
+.profile-budget-modal .budget-panel[hidden] {
+  display: none !important;
+}
+
+.profile-budget-modal .budget-panel__head {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 18px;
+}
+
+.profile-budget-modal .budget-panel__head h2 {
+  margin: 0;
+  color: #12375f;
+  font-size: clamp(1.28rem, 2vw, 1.62rem);
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+}
+
+.profile-budget-modal .budget-panel__head p {
+  margin: 0;
+  color: #667b94;
+  font-size: 0.94rem;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+.profile-budget-modal .budget-field {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-budget-modal .budget-field > span,
+.profile-budget-modal .budget-check span {
+  color: #244766;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.profile-budget-modal .budget-field input,
+.profile-budget-modal .budget-field textarea,
+.profile-budget-modal .budget-field select,
+.profile-budget-modal .ui-select__trigger {
+  width: 100%;
+  min-height: 54px;
+  border: 1px solid rgba(204, 220, 236, 0.96);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  color: #1f3856;
+  font-size: 0.96rem;
+  font-weight: 650;
+  outline: none;
+  box-shadow: 0 10px 22px rgba(18, 50, 85, 0.035);
+}
+
+.profile-budget-modal .budget-field input,
+.profile-budget-modal .budget-field textarea {
+  padding: 15px 16px;
+}
+
+.profile-budget-modal .budget-field textarea {
+  min-height: 138px;
+  max-height: 180px;
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.profile-budget-modal .budget-field small {
+  color: #7b8da3;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.profile-budget-modal .budget-field input:focus,
+.profile-budget-modal .budget-field textarea:focus,
+.profile-budget-modal .budget-field select:focus,
+.profile-budget-modal .ui-select__trigger:focus-visible {
+  border-color: rgba(66, 132, 192, 0.95);
+  box-shadow: 0 0 0 4px rgba(66, 132, 192, 0.12);
+}
+
+.profile-budget-modal .budget-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.profile-budget-modal .budget-grid--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.profile-budget-modal .budget-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.profile-budget-modal .budget-grid--compact {
+  gap: 16px;
+}
+
+.profile-budget-modal .budget-upload,
+.profile-budget-modal .budget-address-card,
+.profile-budget-modal .saved-location-chip {
+  border: 1px solid rgba(204, 220, 236, 0.96);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 12px 26px rgba(18, 50, 85, 0.045);
+}
+
+.profile-budget-modal .budget-upload {
+  min-height: 170px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  padding: 22px;
+  color: #5f7590;
+  text-align: center;
+  cursor: pointer;
+}
+
+.profile-budget-modal .budget-upload span:first-child {
+  color: #183c65;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.profile-budget-modal .budget-address-card {
+  padding: 20px;
+}
+
+.profile-budget-modal .budget-address-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+}
+
+.profile-budget-modal .budget-address-card strong {
+  color: #173b61;
+}
+
+.profile-budget-modal .budget-address-card p {
+  margin: 5px 0 0;
+  color: #687d95;
+}
+
+.profile-budget-modal .saved-location-chip {
+  margin-top: 14px;
+  min-height: 54px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #1f4d7a;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.profile-budget-modal .saved-location-chip__label {
+  color: #7b8da3;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.profile-budget-modal .budget-check--simple {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid rgba(204, 220, 236, 0.96);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.profile-budget-modal .budget-check input {
+  width: 20px;
+  height: 20px;
+  accent-color: #246da4;
+}
+
+.profile-budget-modal .budget-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 28px 22px;
+  border-top: 1px solid rgba(216, 228, 240, 0.84);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.profile-budget-modal .budget-actions__right {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.profile-budget-modal .budget-button--nav {
+  min-width: 128px;
+  padding-inline: 22px;
+}
+
+/* Remove the browser/default black focus frame that was making the modal look broken. */
+.profile-budget-modal,
+.profile-budget-modal * {
+  outline-color: transparent;
+}
+
+@media (max-width: 860px) {
+  .profile-budget-modal {
+    width: min(100vw - 20px, 680px);
+    max-width: min(100vw - 20px, 680px);
+    max-height: calc(100dvh - 20px);
+    border-radius: 24px;
+  }
+
+  .profile-budget-modal .detail-budget-modal__dialog,
+  .profile-budget-modal .detail-budget-modal__flow,
+  .profile-budget-modal .quote-main {
+    max-height: calc(100dvh - 20px);
+    border-radius: 24px;
+  }
+
+  .profile-budget-modal .detail-budget-modal__topbar,
+  .profile-budget-modal .budget-progress,
+  .profile-budget-modal .budget-panel,
+  .profile-budget-modal .budget-actions {
+    padding-inline: 18px;
+  }
+
+  .profile-budget-modal .detail-budget-modal__topbar,
+  .profile-budget-modal .budget-progress__meta,
+  .profile-budget-modal .budget-address-card__head,
+  .profile-budget-modal .budget-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .profile-budget-modal .budget-progress__steps {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .profile-budget-modal .budget-progress__steps::-webkit-scrollbar {
+    display: none;
+  }
+
+  .profile-budget-modal .budget-progress-step {
+    flex: 0 0 auto;
+    min-width: 120px;
+  }
+
+  .profile-budget-modal .budget-grid--2,
+  .profile-budget-modal .budget-grid--3 {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-budget-modal .budget-actions__right,
+  .profile-budget-modal .budget-button--nav {
+    width: 100%;
+  }
+
+  .profile-budget-modal .budget-actions__right {
+    display: grid;
+  }
+
+  .profile-budget-modal .budget-button--nav {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .profile-budget-modal .detail-budget-modal__topbar {
+    padding-top: 20px;
+  }
+
+  .profile-budget-modal .detail-budget-modal__title p {
+    font-size: 0.9rem;
+  }
+
+  .profile-budget-modal .budget-panel {
+    padding-top: 20px;
+  }
+
+  .profile-budget-modal .budget-field textarea {
+    min-height: 120px;
+  }
+}
+
+
+/* 2026-04 budget modal simplification: make the quote flow feel lightweight instead of a long form. */
+dialog.profile-budget-modal {
+  width: min(920px, calc(100vw - 56px));
+  max-width: min(920px, calc(100vw - 56px));
+}
+
+.profile-budget-modal .detail-budget-modal__dialog,
+.profile-budget-modal .quote-main,
+.profile-budget-modal .detail-budget-modal__flow {
+  max-height: min(84dvh, 720px);
+}
+
+.profile-budget-modal .detail-budget-modal__topbar {
+  padding: 22px 26px 18px;
+}
+
+.profile-budget-modal .detail-budget-modal__title h1 {
+  font-size: clamp(1.85rem, 3.2vw, 2.65rem);
+}
+
+.profile-budget-modal .detail-budget-modal__title p {
+  margin-top: 8px;
+}
+
+.profile-budget-modal .budget-quick-note {
+  display: block;
+  margin-top: 6px;
+  color: #71849b;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  font-weight: 650;
+}
+
+.profile-budget-modal .budget-progress {
+  padding: 14px 26px;
+  gap: 0;
+  background: rgba(248, 251, 255, 0.78);
+}
+
+.profile-budget-modal .budget-progress__meta {
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-budget-modal .budget-progress__meta strong {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(229, 241, 251, 0.96);
+  color: #1d5588;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.profile-budget-modal .budget-progress__meta span {
+  font-size: 0.88rem;
+}
+
+.profile-budget-modal .budget-progress__bar,
+.profile-budget-modal .budget-progress__steps {
+  display: none !important;
+}
+
+.profile-budget-modal .budget-panel {
+  padding: 26px;
+  overflow-y: auto;
+}
+
+.profile-budget-modal .budget-panel__head {
+  margin-bottom: 16px;
+}
+
+.profile-budget-modal .budget-panel__head h2 {
+  font-size: clamp(1.45rem, 2.8vw, 1.95rem);
+}
+
+.profile-budget-modal .budget-panel__head p {
+  max-width: 620px;
+  font-size: 0.94rem;
+}
+
+.profile-budget-modal .budget-field--textarea {
+  gap: 9px;
+}
+
+.profile-budget-modal .budget-field--textarea > span {
+  font-size: 0.9rem;
+}
+
+.profile-budget-modal .budget-field textarea {
+  min-height: 118px;
+  max-height: 148px;
+  border-radius: 22px;
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+/* First step: hide advanced classification fields. They stay prefilled in HTML, but do not burden the user. */
+.profile-budget-modal [data-step-panel="0"] .budget-grid {
+  display: none !important;
+}
+
+.profile-budget-modal [data-step-panel="0"] .budget-field small {
+  font-size: 0.78rem;
+}
+
+.profile-budget-modal .budget-actions {
+  padding: 16px 26px 20px;
+}
+
+.profile-budget-modal .budget-button--nav {
+  min-width: 118px;
+  min-height: 48px;
+}
+
+.profile-budget-modal [data-step-next] {
+  min-width: 148px;
+}
+
+/* Make following steps feel optional too, not like a bureaucratic funnel. */
+.profile-budget-modal .budget-panel:not([data-step-panel="0"]) .budget-panel__head p::after {
+  content: " Você pode pular e combinar depois.";
+  color: #7c8fa6;
+}
+
+@media (max-width: 860px) {
+  .profile-budget-modal {
+    width: min(100vw - 20px, 640px);
+    max-width: min(100vw - 20px, 640px);
+  }
+
+  .profile-budget-modal .detail-budget-modal__dialog,
+  .profile-budget-modal .quote-main,
+  .profile-budget-modal .detail-budget-modal__flow {
+    max-height: calc(100dvh - 20px);
+  }
+
+  .profile-budget-modal .detail-budget-modal__topbar,
+  .profile-budget-modal .budget-progress,
+  .profile-budget-modal .budget-panel,
+  .profile-budget-modal .budget-actions {
+    padding-inline: 18px;
+  }
+
+  .profile-budget-modal .budget-progress__meta {
+    display: grid;
+    align-items: start;
+  }
+
+  .profile-budget-modal .budget-actions {
+    gap: 10px;
+  }
+
+  .profile-budget-modal .budget-field textarea {
+    min-height: 112px;
+  }
+}
+
+
+/* 2026-04 budget modal select layering fix:
+   custom selects must float above the modal content/footer instead of being trapped below the form. */
+.profile-budget-modal .budget-panel {
+  position: relative;
+  z-index: 2;
+}
+
+.profile-budget-modal .budget-actions {
+  position: relative;
+  z-index: 12;
+}
+
+.profile-budget-modal .ui-select {
+  position: relative;
+  z-index: 20;
+}
+
+.profile-budget-modal .ui-select.is-open {
+  z-index: 4000;
+}
+
+.profile-budget-modal .ui-select__menu {
+  z-index: 4001 !important;
+  max-height: min(260px, 42vh);
+  overflow-y: auto;
+  border: 1px solid rgba(194, 215, 234, 0.96);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.995) !important;
+  box-shadow: 0 24px 54px rgba(17, 48, 82, 0.18);
+  backdrop-filter: blur(8px);
+}
+
+.profile-budget-modal .ui-select__option {
+  background: transparent;
+  color: #173759;
+}
+
+.profile-budget-modal .ui-select__option:hover,
+.profile-budget-modal .ui-select__option.is-selected {
+  background: rgba(232, 243, 252, 0.98);
+  color: #174d7d;
+}
+
+/* When a select is open, allow its menu to escape the scroll panel and overlay the footer/neighbor fields. */
+.profile-budget-modal:has(.ui-select.is-open),
+.profile-budget-modal:has(.ui-select.is-open) .detail-budget-modal__dialog,
+.profile-budget-modal:has(.ui-select.is-open) .quote-main,
+.profile-budget-modal:has(.ui-select.is-open) .detail-budget-modal__flow,
+.profile-budget-modal:has(.ui-select.is-open) .budget-panel {
+  overflow: visible !important;
+}
+
+.profile-budget-modal:has(.ui-select.is-open) .budget-panel {
+  z-index: 100;
+}
+
+.profile-budget-modal:has(.ui-select.is-open) .budget-actions {
+  z-index: 40;
+}
+
+
+/* 2026-04 professional select behavior inside budget modal:
+   dropdowns stay inside the modal, preserve rounded corners, and flip upward near the footer. */
+.profile-budget-modal .detail-budget-modal__dialog,
+.profile-budget-modal .quote-main,
+.profile-budget-modal .detail-budget-modal__flow {
+  overflow: hidden !important;
+  border-radius: 32px;
+}
+
+.profile-budget-modal .budget-panel {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-bottom: 96px;
+}
+
+.profile-budget-modal:has(.ui-select.is-open) .detail-budget-modal__dialog,
+.profile-budget-modal:has(.ui-select.is-open) .quote-main,
+.profile-budget-modal:has(.ui-select.is-open) .detail-budget-modal__flow {
+  overflow: hidden !important;
+}
+
+.profile-budget-modal:has(.ui-select.is-open) .budget-panel {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.profile-budget-modal .ui-select {
+  position: relative;
+  z-index: 20;
+}
+
+.profile-budget-modal .ui-select.is-open {
+  z-index: 500;
+}
+
+.profile-budget-modal .ui-select__menu {
+  top: calc(100% + 8px) !important;
+  bottom: auto !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 501 !important;
+  max-height: min(228px, 34dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgba(193, 214, 235, 0.98);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.995) !important;
+  box-shadow: 0 22px 46px rgba(15, 43, 73, 0.16);
+  backdrop-filter: blur(10px);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(116, 145, 176, 0.58) transparent;
+}
+
+.profile-budget-modal .ui-select--drop-up .ui-select__menu {
+  top: auto !important;
+  bottom: calc(100% + 8px) !important;
+}
+
+.profile-budget-modal .ui-select__menu::-webkit-scrollbar {
+  width: 8px;
+}
+
+.profile-budget-modal .ui-select__menu::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(116, 145, 176, 0.5);
+}
+
+.profile-budget-modal .ui-select__option {
+  min-height: 48px;
+  padding: 0 18px;
+  border: 0;
+  background: transparent;
+  color: #173759;
+  font-weight: 800;
+  text-align: left;
+}
+
+.profile-budget-modal .ui-select__option:hover,
+.profile-budget-modal .ui-select__option:focus-visible,
+.profile-budget-modal .ui-select__option.is-selected {
+  background: rgba(232, 243, 252, 0.98);
+  color: #174d7d;
+  outline: none;
+}
+
+.profile-budget-modal .budget-actions {
+  z-index: 60;
+  border-radius: 0 0 32px 32px;
+}
+
+@media (max-width: 860px) {
+  .profile-budget-modal .detail-budget-modal__dialog,
+  .profile-budget-modal .quote-main,
+  .profile-budget-modal .detail-budget-modal__flow,
+  .profile-budget-modal .budget-actions {
+    border-radius: 24px;
+  }
+
+  .profile-budget-modal .budget-actions {
+    border-radius: 0 0 24px 24px;
+  }
+
+  .profile-budget-modal .ui-select__menu {
+    max-height: min(220px, 32dvh);
+  }
+}
+
+
+/* 2026-04 final select placement: fixed dropdown, downward-first, no clipping and no unwanted upward overlap. */
+.profile-budget-modal .ui-select {
+  position: relative;
+}
+
+.profile-budget-modal .ui-select.is-open {
+  z-index: 700;
+}
+
+.profile-budget-modal .ui-select.is-open .ui-select__menu {
+  position: fixed !important;
+  left: var(--doke-select-left, auto) !important;
+  top: var(--doke-select-top, auto) !important;
+  bottom: auto !important;
+  width: var(--doke-select-width, auto) !important;
+  max-height: var(--doke-select-max-height, 260px) !important;
+  z-index: 9999 !important;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 22px;
+  border: 1px solid rgba(193, 214, 235, 0.98);
+  background: rgba(255, 255, 255, 0.995) !important;
+  box-shadow: 0 24px 54px rgba(15, 43, 73, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+/* Keep previous drop-up class harmless unless JS explicitly chooses it. */
+.profile-budget-modal .ui-select--drop-up .ui-select__menu {
+  top: var(--doke-select-top, auto) !important;
+  bottom: auto !important;
+}
+
+.profile-budget-modal .detail-budget-modal__dialog,
+.profile-budget-modal .quote-main,
+.profile-budget-modal .detail-budget-modal__flow {
+  overflow: hidden !important;
+}
+
+.profile-budget-modal .budget-panel {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-bottom: 120px;
+}
+
+
+/* 2026-04 budget modal no internal scroll:
+   desktop quote steps now fit naturally without the ugly panel scrollbar. */
+@media (min-width: 861px) {
+  .profile-budget-modal {
+    max-height: none;
+  }
+
+  .profile-budget-modal .detail-budget-modal__dialog,
+  .profile-budget-modal .quote-main,
+  .profile-budget-modal .detail-budget-modal__flow {
+    max-height: none !important;
+  }
+
+  .profile-budget-modal .detail-budget-modal__flow {
+    grid-template-rows: auto auto auto auto !important;
+  }
+
+  .profile-budget-modal .budget-panel {
+    overflow: visible !important;
+    padding-bottom: 22px !important;
+    min-height: 0 !important;
+  }
+
+  .profile-budget-modal .budget-panel::-webkit-scrollbar {
+    display: none;
+  }
+
+  .profile-budget-modal .budget-panel {
+    scrollbar-width: none;
+  }
+
+  .profile-budget-modal .budget-actions {
+    position: relative;
+  }
+}
+
+/* Keep controlled scroll only on small screens where the viewport can actually be shorter. */
+@media (max-width: 860px) {
+  .profile-budget-modal .budget-panel {
+    padding-bottom: 88px;
+  }
+}
+
+
+/* 2026-04 clean select interaction: remove heavy visual effects and slow hover feeling. */
+.profile-budget-modal .ui-select,
+.profile-budget-modal .ui-select *,
+.profile-budget-modal .ui-select__trigger,
+.profile-budget-modal .ui-select__menu,
+.profile-budget-modal .ui-select__option {
+  transition: none !important;
+}
+
+.profile-budget-modal .ui-select__trigger {
+  box-shadow: none !important;
+}
+
+.profile-budget-modal .ui-select__trigger:hover {
+  border-color: rgba(149, 178, 209, 0.95);
+  background: rgba(250, 252, 255, 0.98);
+  transform: none !important;
+}
+
+.profile-budget-modal .ui-select.is-open .ui-select__trigger {
+  border-color: rgba(49, 109, 169, 0.55);
+  box-shadow: 0 0 0 3px rgba(49, 109, 169, 0.08) !important;
+}
+
+.profile-budget-modal .ui-select.is-open .ui-select__menu {
+  border-radius: 18px;
+  background: #fff !important;
+  box-shadow: 0 14px 34px rgba(15, 43, 73, 0.12) !important;
+  backdrop-filter: none !important;
+}
+
+.profile-budget-modal .ui-select__option {
+  min-height: 44px;
+  padding: 0 16px;
+}
+
+.profile-budget-modal .ui-select__option:hover,
+.profile-budget-modal .ui-select__option:focus-visible {
+  background: #edf5fc !important;
+  color: #164f81 !important;
+}
+
+.profile-budget-modal .ui-select__option.is-selected {
+  background: #f4f8fc !important;
+  color: #153a61 !important;
+}
+
+
+/* 2026-04 orçamento final polish:
+   native selects for faster interaction, styled checkbox, and success state. */
+.profile-budget-modal {
+  width: min(860px, calc(100vw - 56px));
+  max-width: min(860px, calc(100vw - 56px));
+}
+
+.profile-budget-modal .detail-budget-modal__dialog,
+.profile-budget-modal .quote-main,
+.profile-budget-modal .detail-budget-modal__flow {
+  max-height: none !important;
+  overflow: hidden !important;
+}
+
+.profile-budget-modal .detail-budget-modal__flow {
+  grid-template-rows: auto auto auto auto !important;
+}
+
+.profile-budget-modal .budget-panel {
+  overflow: visible !important;
+  padding-bottom: 22px !important;
+}
+
+.profile-budget-modal .budget-field select {
+  appearance: none;
+  -webkit-appearance: none;
+  min-height: 54px;
+  padding: 0 48px 0 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(204, 220, 236, 0.96);
+  background-color: #fff;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #55708d 50%),
+    linear-gradient(135deg, #55708d 50%, transparent 50%);
+  background-position:
+    calc(100% - 22px) 50%,
+    calc(100% - 15px) 50%;
+  background-size: 7px 7px, 7px 7px;
+  background-repeat: no-repeat;
+  color: #173759;
+  font: inherit;
+  font-size: 0.96rem;
+  font-weight: 800;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.profile-budget-modal .budget-field select:hover {
+  border-color: rgba(143, 173, 205, 0.98);
+  background-color: #fbfdff;
+}
+
+.profile-budget-modal .budget-field select:focus {
+  border-color: rgba(49, 109, 169, 0.68);
+  box-shadow: 0 0 0 3px rgba(49, 109, 169, 0.08);
+  outline: none;
+}
+
+.profile-budget-modal .budget-field select option {
+  color: #173759;
+  font-weight: 700;
+}
+
+/* The old custom select is not used in this modal anymore; keep any accidental wrapper light. */
+.profile-budget-modal .ui-select,
+.profile-budget-modal .ui-select *,
+.profile-budget-modal .ui-select__trigger,
+.profile-budget-modal .ui-select__menu,
+.profile-budget-modal .ui-select__option {
+  transition: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Checkbox visual standard. */
+.profile-budget-modal .budget-check--simple {
+  position: relative;
+  min-height: 58px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(204, 220, 236, 0.96);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: none;
+}
+
+.profile-budget-modal .budget-check--simple:hover {
+  border-color: rgba(143, 173, 205, 0.98);
+  background: #fbfdff;
+}
+
+.profile-budget-modal .budget-check--simple input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 8px;
+  border: 2px solid rgba(39, 111, 170, 0.9);
+  background: #fff;
+  cursor: pointer;
+  margin: 0;
+}
+
+.profile-budget-modal .budget-check--simple input[type="checkbox"]::after {
+  content: "";
+  width: 11px;
+  height: 6px;
+  border-left: 3px solid #fff;
+  border-bottom: 3px solid #fff;
+  transform: rotate(-45deg) scale(0);
+  transform-origin: center;
+}
+
+.profile-budget-modal .budget-check--simple input[type="checkbox"]:checked {
+  border-color: #256da7;
+  background: linear-gradient(135deg, #2c73af, #1f5b8f);
+}
+
+.profile-budget-modal .budget-check--simple input[type="checkbox"]:checked::after {
+  transform: rotate(-45deg) scale(1);
+}
+
+.profile-budget-modal .budget-check--simple input[type="checkbox"]:focus-visible {
+  outline: 3px solid rgba(44, 115, 175, 0.18);
+  outline-offset: 3px;
+}
+
+.profile-budget-modal .budget-check--simple span {
+  color: #18385b;
+  line-height: 1.35;
+}
+
+/* Success state after sending the quote request. */
+.budget-success-state {
+  position: absolute;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(45, 179, 148, 0.12), transparent 34%),
+    rgba(255, 255, 255, 0.985);
+}
+
+.budget-success-state[hidden] {
+  display: none !important;
+}
+
+.budget-success-card {
+  width: min(520px, 100%);
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 34px 30px;
+  border-radius: 30px;
+  border: 1px solid rgba(194, 220, 235, 0.94);
+  background: #fff;
+  text-align: center;
+  box-shadow: 0 24px 58px rgba(16, 54, 90, 0.12);
+}
+
+.budget-success-card__icon {
+  width: 82px;
+  height: 82px;
+  display: grid;
+  place-items: center;
+  border-radius: 28px;
+  background: linear-gradient(135deg, #2db394, #1f7e70);
+  color: #fff;
+  box-shadow: 0 18px 36px rgba(31, 126, 112, 0.22);
+  animation: budget-success-pop 420ms cubic-bezier(.18,.89,.32,1.28);
+}
+
+.budget-success-card__icon svg {
+  width: 42px;
+  height: 42px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.budget-success-card h2 {
+  margin: 6px 0 0;
+  color: #12375f;
+  font-size: clamp(1.75rem, 4vw, 2.35rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.budget-success-card p {
+  margin: 0;
+  max-width: 36ch;
+  color: #60758e;
+  font-size: 1rem;
+  line-height: 1.55;
+  font-weight: 650;
+}
+
+.budget-success-card__meta {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 13px;
+  border-radius: 999px;
+  background: rgba(235, 248, 245, 0.98);
+  color: #176d60;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.budget-success-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.budget-success-card__button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(204, 220, 236, 0.96);
+  background: #fff;
+  color: #1f5486;
+  font: inherit;
+  font-weight: 850;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.budget-success-card__button--primary {
+  border-color: transparent;
+  background: linear-gradient(135deg, #2c73af, #1f5b8f);
+  color: #fff;
+  box-shadow: 0 14px 28px rgba(31, 91, 143, 0.18);
+}
+
+.budget-success-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.budget-success-sparkles i {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #2db394;
+  opacity: 0;
+  animation: budget-success-sparkle 820ms ease-out forwards;
+}
+
+.budget-success-sparkles i:nth-child(1) { left: 22%; top: 28%; animation-delay: 40ms; }
+.budget-success-sparkles i:nth-child(2) { left: 74%; top: 30%; animation-delay: 120ms; background: #2c73af; }
+.budget-success-sparkles i:nth-child(3) { left: 30%; top: 70%; animation-delay: 190ms; background: #f0b547; }
+.budget-success-sparkles i:nth-child(4) { left: 69%; top: 68%; animation-delay: 260ms; }
+
+@keyframes budget-success-pop {
+  from { transform: scale(.72); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes budget-success-sparkle {
+  0% { transform: translateY(8px) scale(.4); opacity: 0; }
+  35% { opacity: .95; }
+  100% { transform: translateY(-26px) scale(1.1); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .budget-success-card__icon,
+  .budget-success-sparkles i {
+    animation: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .profile-budget-modal {
+    width: min(100vw - 20px, 640px);
+    max-width: min(100vw - 20px, 640px);
+  }
+
+  .profile-budget-modal .detail-budget-modal__dialog,
+  .profile-budget-modal .quote-main,
+  .profile-budget-modal .detail-budget-modal__flow {
+    max-height: calc(100dvh - 20px) !important;
+  }
+
+  .profile-budget-modal .budget-panel {
+    overflow-y: auto !important;
+    padding-bottom: 88px !important;
+  }
+
+  .budget-success-card {
+    padding: 28px 22px;
+    border-radius: 24px;
+  }
+}
+
+.profile-budget-modal [data-budget-page] { position: relative; }
+
+
+/* 2026-04 Doke Select Standard
+   Fast custom select: visually consistent, no heavy blur/transitions, one lightweight global menu. */
+.doke-select {
+  position: relative;
+  width: 100%;
+}
+
+.doke-select__native {
+  position: absolute !important;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  appearance: none;
+}
+
+.doke-select__trigger {
+  width: 100%;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px 0 18px;
+  border: 1px solid rgba(199, 218, 236, 0.96);
+  border-radius: 18px;
+  background: #fff;
+  color: #183958;
+  font: inherit;
+  font-size: 0.98rem;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: none;
+  transition: none;
+}
+
+.doke-select__trigger:hover {
+  border-color: rgba(128, 162, 198, 0.96);
+  background: #fbfdff;
+}
+
+.doke-select.is-open .doke-select__trigger {
+  border-color: rgba(45, 103, 162, 0.58);
+  box-shadow: 0 0 0 3px rgba(45, 103, 162, 0.08);
+}
+
+.doke-select__value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doke-select__chevron {
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  color: #5f7792;
+}
+
+.doke-select__chevron svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.doke-select.is-open .doke-select__chevron svg {
+  transform: rotate(180deg);
+}
+
+.doke-select-menu {
+  position: fixed;
+  z-index: 9999;
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid rgba(196, 215, 234, 0.98);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 16px 36px rgba(15, 43, 73, 0.14);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(118, 146, 176, 0.45) transparent;
+}
+
+.doke-select-menu[hidden] {
+  display: none !important;
+}
+
+.doke-select-menu::-webkit-scrollbar {
+  width: 8px;
+}
+
+.doke-select-menu::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(118, 146, 176, 0.45);
+}
+
+.doke-select-menu__option {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 13px;
+  background: transparent;
+  color: #183958;
+  font: inherit;
+  font-size: 0.94rem;
+  font-weight: 780;
+  text-align: left;
+  cursor: pointer;
+  transition: none;
+}
+
+.doke-select-menu__option:hover,
+.doke-select-menu__option:focus-visible {
+  background: #edf5fc;
+  color: #164f81;
+  outline: none;
+}
+
+.doke-select-menu__option.is-selected {
+  background: #f4f8fc;
+  color: #10385f;
+}
+
+.doke-select-menu__option.is-placeholder {
+  color: #7a8da3;
+}
+
+.doke-select-menu__option:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.profile-budget-modal select:not(.doke-select__native) {
+  min-height: 54px;
+  border: 1px solid rgba(199, 218, 236, 0.96);
+  border-radius: 18px;
+  background: #fff;
+  color: #183958;
+  font: inherit;
+  font-weight: 800;
+  padding: 0 44px 0 18px;
+}
+
+/* Neutralize old custom-select experiments inside the budget modal. */
+.profile-budget-modal .ui-select,
+.profile-budget-modal .ui-select__menu,
+.profile-budget-modal .ui-select__option {
+  transition: none !important;
+}
+
+
+/* 2026-04 DokeLiteSelect top-layer fix: dropdown appears inside dialog/top layer. */
+.profile-budget-modal .doke-select-menu,
+.doke-select-menu {
+  position: fixed;
+  z-index: 2147483647;
+}
+
+.profile-budget-modal .doke-select-menu {
+  pointer-events: auto;
+}
+
+
+/* 2026-04 success notice refinement:
+   No auto-redirect, no white veil behind the card, explicit close button, smooth exit. */
+.budget-success-state {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(39, 179, 149, 0.18), transparent 32%),
+    rgba(13, 35, 58, 0.12) !important;
+  backdrop-filter: none;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.budget-success-state.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.budget-success-state.is-leaving {
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+}
+
+.budget-success-card {
+  position: relative;
+  width: min(500px, 100%);
+  padding: 36px 30px 32px !important;
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(239, 249, 247, 0.96), transparent 38%),
+    rgba(255, 255, 255, 0.98) !important;
+  box-shadow:
+    0 28px 68px rgba(15, 43, 73, 0.17),
+    0 0 0 1px rgba(193, 218, 234, 0.7);
+  transform: translateY(14px) scale(0.975);
+  opacity: 0;
+  transition: transform 240ms cubic-bezier(.2,.9,.24,1), opacity 180ms ease;
+}
+
+.budget-success-state.is-visible .budget-success-card {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.budget-success-state.is-leaving .budget-success-card {
+  transform: translateY(16px) scale(0.975);
+  opacity: 0;
+}
+
+.budget-success-card__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 38px;
+  height: 38px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(202, 219, 236, 0.92);
+  border-radius: 999px;
+  background: rgba(248, 251, 255, 0.96);
+  color: #315d86;
+  cursor: pointer;
+  transition: none;
+}
+
+.budget-success-card__close:hover {
+  background: #edf5fc;
+  color: #164f81;
+}
+
+.budget-success-card__close svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.budget-success-card__eyebrow {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(232, 248, 244, 0.98);
+  color: #176d60;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.budget-success-card__meta {
+  display: none !important;
+}
+
+.budget-success-card__actions {
+  margin-top: 8px !important;
+}
+
+.budget-success-card__button--primary {
+  min-width: 190px;
+}
+
+.budget-success-sparkles i {
+  animation-duration: 680ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .budget-success-state,
+  .budget-success-card {
+    transition: none;
+    transform: none;
+  }
+}
+
+
+
+/* 2026-04 budget modal centering, upload cards and success-only state */
+dialog.profile-budget-modal[open] {
+  display: grid;
+  place-items: center;
+}
+
+dialog.profile-budget-modal .detail-budget-modal__dialog {
+  margin: 0 auto;
+}
+
+.profile-budget-modal [data-budget-page] {
+  position: relative;
+}
+
+.profile-budget-modal .budget-upload {
+  min-height: 160px;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 28px 24px;
+}
+
+.profile-budget-modal .budget-upload input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.profile-budget-modal .budget-files {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.profile-budget-modal .budget-files[hidden] {
+  display: none !important;
+}
+
+.profile-budget-modal .budget-file-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 132px;
+  display: grid;
+  grid-template-rows: 88px auto;
+  gap: 0;
+  border: 1px solid rgba(204, 220, 236, 0.96);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 10px 24px rgba(18, 50, 85, 0.06);
+}
+
+.profile-budget-modal .budget-file-card__thumb {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(242, 247, 253, 0.98), rgba(233, 242, 251, 0.98));
+}
+
+.profile-budget-modal .budget-file-card__thumb img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.profile-budget-modal .budget-file-card__body {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px 12px;
+}
+
+.profile-budget-modal .budget-file-card__name {
+  color: #173b61;
+  font-size: 0.88rem;
+  font-weight: 850;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.profile-budget-modal .budget-file-card__meta {
+  color: #6a7f98;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.profile-budget-modal .budget-file-card__remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(202, 219, 236, 0.96);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #315d86;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.profile-budget-modal .budget-file-card__remove:hover {
+  background: #edf5fc;
+  color: #164f81;
+}
+
+.profile-budget-modal .budget-file-card__empty {
+  display: grid;
+  place-items: center;
+  color: #7c8ea2;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.profile-budget-modal [data-budget-page].is-success-active .quote-main {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(0.985);
+}
+
+.profile-budget-modal [data-budget-page].is-success-active .detail-budget-modal__dialog {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.profile-budget-modal .quote-main {
+  transition: opacity 180ms ease, transform 180ms ease, visibility 180ms ease;
+}
+
+.budget-success-state {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  padding: 24px;
+  border-radius: 0;
+  background: rgba(10, 24, 40, 0.36) !important;
+}
+
+.budget-success-card {
+  width: min(520px, calc(100vw - 48px));
+}
+
+@media (max-width: 860px) {
+  .profile-budget-modal .budget-files {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .budget-success-state {
+    padding: 18px;
+  }
+
+  .budget-success-card {
+    width: min(100%, 460px);
+  }
+}
+
+
+/* 2026-04 upload previews inside upload card + clean success background */
+.profile-budget-modal .budget-upload.budget-upload--detail {
+  min-height: 170px;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  grid-template-areas:
+    "title files"
+    "hint files";
+  align-items: center;
+  justify-items: start;
+  column-gap: 18px;
+  row-gap: 6px;
+  padding: 22px 24px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-budget-modal .budget-upload.budget-upload--detail input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.profile-budget-modal .budget-upload__title,
+.profile-budget-modal .budget-upload.budget-upload--detail > span:first-of-type {
+  grid-area: title;
+  color: #183c65;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.profile-budget-modal .budget-upload__hint,
+.profile-budget-modal .budget-upload.budget-upload--detail > span:last-of-type {
+  grid-area: hint;
+  color: #667b94;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  font-weight: 650;
+}
+
+.profile-budget-modal .budget-upload.budget-upload--detail .budget-files {
+  grid-area: files;
+  width: min(420px, 44vw);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(78px, 1fr));
+  gap: 10px;
+  margin: 0;
+  align-self: stretch;
+}
+
+.profile-budget-modal .budget-upload.budget-upload--detail .budget-files[hidden] {
+  display: none !important;
+}
+
+.profile-budget-modal .budget-upload.budget-upload--detail:has(.budget-files:not([hidden])) {
+  align-items: stretch;
+}
+
+.profile-budget-modal .budget-upload.budget-upload--detail:has(.budget-files:not([hidden])) .budget-upload__title,
+.profile-budget-modal .budget-upload.budget-upload--detail:has(.budget-files:not([hidden])) > span:first-of-type {
+  align-self: end;
+}
+
+.profile-budget-modal .budget-upload.budget-upload--detail:has(.budget-files:not([hidden])) .budget-upload__hint,
+.profile-budget-modal .budget-upload.budget-upload--detail:has(.budget-files:not([hidden])) > span:last-of-type {
+  align-self: start;
+}
+
+.profile-budget-modal .budget-file-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 112px;
+  display: grid;
+  grid-template-rows: 72px auto;
+  border: 1px solid rgba(204, 220, 236, 0.96);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 8px 18px rgba(18, 50, 85, 0.055);
+  cursor: default;
+}
+
+.profile-budget-modal .budget-file-card__thumb {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(242, 247, 253, 0.98), rgba(233, 242, 251, 0.98));
+}
+
+.profile-budget-modal .budget-file-card__thumb img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.profile-budget-modal .budget-file-card__body {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+  padding: 7px 9px 8px;
+}
+
+.profile-budget-modal .budget-file-card__name {
+  overflow: hidden;
+  color: #173b61;
+  font-size: 0.76rem;
+  font-weight: 850;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-budget-modal .budget-file-card__meta {
+  color: #6a7f98;
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+.profile-budget-modal .budget-file-card__remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(202, 219, 236, 0.96);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #315d86;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.profile-budget-modal .budget-file-card__remove:hover {
+  background: #edf5fc;
+  color: #164f81;
+}
+
+.profile-budget-modal .budget-file-card__empty {
+  display: grid;
+  place-items: center;
+  color: #7c8ea2;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+/* Correct selector: data-budget-page is the dialog card itself, not a parent. */
+.profile-budget-modal .detail-budget-modal__dialog.is-success-active {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.profile-budget-modal .detail-budget-modal__dialog.is-success-active .quote-main {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: scale(0.985);
+}
+
+.profile-budget-modal .detail-budget-modal__dialog.is-success-active .budget-success-state {
+  background: transparent !important;
+}
+
+.profile-budget-modal .detail-budget-modal__dialog.is-success-active::before,
+.profile-budget-modal .detail-budget-modal__dialog.is-success-active::after {
+  display: none !important;
+}
+
+@media (max-width: 920px) {
+  .profile-budget-modal .budget-upload.budget-upload--detail {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "title"
+      "hint"
+      "files";
+  }
+
+  .profile-budget-modal .budget-upload.budget-upload--detail .budget-files {
+    width: 100%;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 560px) {
+  .profile-budget-modal .budget-upload.budget-upload--detail .budget-files {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+/* 2026-04 budget modal viewport centering:
+   The dialog element is the overlay; only the inner card is visually centered. */
+.profile-budget-modal {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-width: 100vw !important;
+  max-height: 100dvh !important;
+  margin: 0 !important;
+  padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)) !important;
+  transform: none !important;
+  background: transparent !important;
+  overflow: hidden !important;
+}
+
+dialog.profile-budget-modal[open] {
+  display: grid !important;
+  place-items: center !important;
+}
+
+dialog.profile-budget-modal .detail-budget-modal__dialog {
+  width: min(940px, calc(100vw - 48px)) !important;
+  max-width: min(940px, calc(100vw - 48px)) !important;
+  max-height: calc(100dvh - 48px) !important;
+  margin: 0 !important;
+  transform: none !important;
+}
+
+dialog.profile-budget-modal .quote-main,
+dialog.profile-budget-modal .detail-budget-modal__flow {
+  min-height: 0 !important;
+  max-height: 100% !important;
+}
+
+/* The address step has less content, so keep it visually centered instead of stuck to the top-left. */
+.profile-budget-modal [data-step-panel="3"] {
+  display: grid;
+  align-content: center;
+}
+
+.profile-budget-modal [data-step-panel="3"] .budget-panel__head,
+.profile-budget-modal [data-step-panel="3"] .budget-address-card,
+.profile-budget-modal [data-step-panel="3"] .saved-location-chip {
+  width: min(100%, 940px);
+  margin-inline: auto;
+}
+
+@media (max-width: 860px) {
+  dialog.profile-budget-modal {
+    width: 100vw !important;
+    padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom)) !important;
+  }
+
+  dialog.profile-budget-modal .detail-budget-modal__dialog {
+    width: min(640px, calc(100vw - 28px)) !important;
+    max-width: min(640px, calc(100vw - 28px)) !important;
+    max-height: calc(100dvh - 28px) !important;
+  }
+
+  dialog.profile-budget-modal .quote-main,
+  dialog.profile-budget-modal .detail-budget-modal__flow {
+    max-height: calc(100dvh - 84px) !important;
+  }
+
+  .profile-budget-modal [data-step-panel="3"] {
+    align-content: start;
+  }
+}
+
+
+/* 2026-04 keep modal centered, but align Doke select menu to its own trigger. */
+.profile-budget-modal .doke-select-menu {
+  position: absolute !important;
+}
