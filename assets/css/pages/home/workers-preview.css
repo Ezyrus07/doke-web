@@ -1,0 +1,122 @@
+/* DOKE — Workers preview
+   Responsabilidade: visual dos cards de vídeo/Workers e layout 2x2 mobile.
+   Escopo limitado à seção marcada via JS com data-doke-workers-preview="1".
+*/
+
+section[data-doke-workers-preview="1"] .dp-reelCard,
+section[data-doke-workers-preview="1"] .tiktok-card,
+section[data-doke-workers-preview="1"] .worker-card,
+section[data-doke-workers-preview="1"] .short-video-card {
+  position: relative !important;
+  overflow: hidden !important;
+  isolation: isolate !important;
+  background: #0f172a !important;
+}
+
+section[data-doke-workers-preview="1"] .doke-worker-preview-video,
+section[data-doke-workers-preview="1"] .dp-reelCard > video,
+section[data-doke-workers-preview="1"] .tiktok-card > video,
+section[data-doke-workers-preview="1"] .worker-card > video,
+section[data-doke-workers-preview="1"] .short-video-card > video {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  opacity: .9 !important;
+  filter: saturate(.96) contrast(1.03) !important;
+}
+
+section[data-doke-workers-preview="1"] .dp-reelCard::after,
+section[data-doke-workers-preview="1"] .tiktok-card::after,
+section[data-doke-workers-preview="1"] .worker-card::after,
+section[data-doke-workers-preview="1"] .short-video-card::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+  background:
+    linear-gradient(to bottom, rgba(255,255,255,.12), rgba(15,23,42,.1) 35%, rgba(15,23,42,.82)),
+    radial-gradient(circle at 50% 10%, rgba(255,255,255,.18), transparent 44%) !important;
+}
+
+section[data-doke-workers-preview="1"] .dp-reelOverlay,
+section[data-doke-workers-preview="1"] .video-ui-layer,
+section[data-doke-workers-preview="1"] .worker-card__body,
+section[data-doke-workers-preview="1"] .short-video-card__body,
+section[data-doke-workers-preview="1"] .provider-info,
+section[data-doke-workers-preview="1"] .tiktok-title,
+section[data-doke-workers-preview="1"] h3,
+section[data-doke-workers-preview="1"] p,
+section[data-doke-workers-preview="1"] .dp-reelPlay,
+section[data-doke-workers-preview="1"] .play-btn,
+section[data-doke-workers-preview="1"] .gv-play {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+section[data-doke-workers-preview="1"] .doke-worker-preview-hint {
+  position: absolute !important;
+  left: 14px !important;
+  top: 14px !important;
+  z-index: 3 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 7px 11px !important;
+  border-radius: 999px !important;
+  background: rgba(255,255,255,.92) !important;
+  color: #174a7c !important;
+  font-size: .78rem !important;
+  font-weight: 900 !important;
+  box-shadow: 0 10px 22px rgba(15,23,42,.12) !important;
+  opacity: 0 !important;
+  transform: translateY(-4px) !important;
+  transition: opacity .18s ease, transform .18s ease !important;
+}
+
+section[data-doke-workers-preview="1"] .dp-reelCard:hover .doke-worker-preview-hint,
+section[data-doke-workers-preview="1"] .tiktok-card:hover .doke-worker-preview-hint,
+section[data-doke-workers-preview="1"] .worker-card:hover .doke-worker-preview-hint,
+section[data-doke-workers-preview="1"] .short-video-card:hover .doke-worker-preview-hint {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+/* Mobile: 2 vídeos em cima e 2 embaixo, estilo Shorts compacto. */
+@media (max-width: 760px) {
+  section[data-doke-workers-preview="1"] #galeria-dinamica,
+  section[data-doke-workers-preview="1"] .workers-grid,
+  section[data-doke-workers-preview="1"] .tiktok-scroll-wrapper,
+  section[data-doke-workers-preview="1"] .shorts-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    overflow: visible !important;
+    padding-inline: 2px !important;
+  }
+
+  section[data-doke-workers-preview="1"] .dp-reelCard,
+  section[data-doke-workers-preview="1"] .tiktok-card,
+  section[data-doke-workers-preview="1"] .worker-card,
+  section[data-doke-workers-preview="1"] .short-video-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    aspect-ratio: 9 / 16 !important;
+    margin: 0 !important;
+    flex: initial !important;
+  }
+}/* v31: quando o vídeo ainda demora para pintar, usa poster/gradiente menos "cinza vazio". */
+section[data-doke-workers-preview="1"] .dp-reelCard,
+section[data-doke-workers-preview="1"] .tiktok-card,
+section[data-doke-workers-preview="1"] .worker-card,
+section[data-doke-workers-preview="1"] .short-video-card {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.9), rgba(69,85,105,.8)),
+    url("https://images.unsplash.com/photo-1581094794329-c8112a89af12?q=80&w=900&auto=format&fit=crop") center/cover no-repeat !important;
+}

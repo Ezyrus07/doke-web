@@ -10,7 +10,7 @@ window.DokeHomeWorkers = (() => {
       category: "Pintura residencial",
       duration: "48 segundos",
       mediaClass: "video-card--one",
-      poster: "https://images.pexels.com/photos/7492582/pexels-photo-7492582.jpeg?cs=srgb&dl=pexels-cottonbro-7492582.jpg&fm=jpg&w=900&fit=crop&auto=compress",
+      poster: "https://images.pexels.com/photos/6474475/pexels-photo-6474475.jpeg?auto=compress&cs=tinysrgb&w=1200&q=80",
       videoSrc: DEMO_VIDEO,
       likes: "12,4k",
       saves: "3,8k",
@@ -32,7 +32,7 @@ window.DokeHomeWorkers = (() => {
       category: "Marcenaria e reforma",
       duration: "56 segundos",
       mediaClass: "video-card--two",
-      poster: "https://images.pexels.com/photos/4933252/pexels-photo-4933252.jpeg?cs=srgb&dl=pexels-curtis-adams-1694007-4933252.jpg&fm=jpg&w=900&fit=crop&auto=compress",
+      poster: "https://images.pexels.com/photos/5824519/pexels-photo-5824519.jpeg?auto=compress&cs=tinysrgb&w=1200&q=80",
       videoSrc: DEMO_VIDEO,
       likes: "9,1k",
       saves: "2,2k",
@@ -54,7 +54,7 @@ window.DokeHomeWorkers = (() => {
       category: "Elétrica residencial",
       duration: "41 segundos",
       mediaClass: "video-card--three",
-      poster: "https://images.pexels.com/photos/7647233/pexels-photo-7647233.jpeg?cs=srgb&dl=pexels-anastasia-shuraeva-7647233.jpg&fm=jpg&w=900&fit=crop&auto=compress",
+      poster: "https://images.pexels.com/photos/8005397/pexels-photo-8005397.jpeg?auto=compress&cs=tinysrgb&w=1200&q=80",
       videoSrc: DEMO_VIDEO,
       likes: "15,7k",
       saves: "4,6k",
@@ -76,7 +76,7 @@ window.DokeHomeWorkers = (() => {
       category: "Limpeza pós-obra",
       duration: "40 segundos",
       mediaClass: "video-card--four",
-      poster: "https://images.pexels.com/photos/6195951/pexels-photo-6195951.jpeg?cs=srgb&dl=pexels-tima-miroshnichenko-6195951.jpg&fm=jpg&w=900&fit=crop&auto=compress",
+      poster: "https://images.pexels.com/photos/6197120/pexels-photo-6197120.jpeg?auto=compress&cs=tinysrgb&w=1200&q=80",
       videoSrc: DEMO_VIDEO,
       likes: "8,8k",
       saves: "2,9k",
@@ -93,6 +93,14 @@ window.DokeHomeWorkers = (() => {
   ];
 
   const WORKERS_BY_ID = Object.fromEntries(WORKERS.map((item, index) => [item.id, { item, index }]));
+  const PREVIEW_HOVER_DELAY = 140;
+  const previewTimes = new Map();
+
+  const getSavedPreviewTime = (id) => Number(previewTimes.get(id) || 0);
+  const setSavedPreviewTime = (id, time) => {
+    if (!id || !Number.isFinite(time)) return;
+    previewTimes.set(id, Math.max(0, time));
+  };
 
   const iconHeart = '<svg viewBox="0 0 24 24"><path d="M20.8 4.7a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21.2l7.8-7.7 1-1a5.5 5.5 0 0 0 0-7.8Z"></path></svg>';
   const iconComment = '<svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.7 8.2 9.2 9.2 0 0 1-3.7-.8L3 20l1.4-4.8A8 8 0 0 1 3.6 12 8.4 8.4 0 0 1 12.3 3.8 8.4 8.4 0 0 1 21 11.5Z"></path></svg>';
@@ -146,8 +154,85 @@ window.DokeHomeWorkers = (() => {
     </article>
   `;
 
+  const hydratePreviewCards = ({ signal } = {}) => {
+    const cards = [...document.querySelectorAll('.video-card[data-worker-trigger]')];
+    const eagerProfilePreview = document.body.classList.contains('profile-page-shell');
+    cards.forEach((card) => {
+      const record = WORKERS_BY_ID[card.dataset.workerId || '']?.item;
+      if (!record || card.dataset.workerPreviewHydrated === '1') return;
+      card.dataset.workerPreviewHydrated = '1';
+      card.style.setProperty('--worker-card-poster', `url("${record.poster}")`);
+
+      const poster = document.createElement('img');
+      poster.className = 'video-card__poster';
+      poster.src = record.poster;
+      poster.alt = '';
+      poster.loading = 'lazy';
+      poster.decoding = 'async';
+      poster.setAttribute('aria-hidden', 'true');
+
+      const video = document.createElement('video');
+      video.className = 'video-card__preview';
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.preload = 'metadata';
+      video.poster = record.poster;
+      video.setAttribute('aria-hidden', 'true');
+
+      card.prepend(video);
+      card.prepend(poster);
+
+      let hoverTimer = 0;
+
+      const loadVideo = () => {
+        if (!video.getAttribute('src')) {
+          video.setAttribute('src', record.videoSrc);
+          video.load();
+        }
+      };
+
+      if (eagerProfilePreview) {
+        loadVideo();
+      }
+
+      const start = () => {
+        window.clearTimeout(hoverTimer);
+        hoverTimer = window.setTimeout(() => {
+          loadVideo();
+          const savedTime = getSavedPreviewTime(record.id);
+          if (savedTime > 0 && Math.abs(video.currentTime - savedTime) > 0.35) {
+            try { video.currentTime = savedTime; } catch (_) {}
+          }
+          video.muted = true;
+          const playback = video.play();
+          if (playback?.catch) playback.catch(() => {});
+          card.classList.add('is-previewing');
+        }, PREVIEW_HOVER_DELAY);
+      };
+
+      const stop = () => {
+        window.clearTimeout(hoverTimer);
+        if (!video.paused) setSavedPreviewTime(record.id, video.currentTime);
+        video.pause();
+        card.classList.remove('is-previewing');
+      };
+
+      video.addEventListener('timeupdate', () => setSavedPreviewTime(record.id, video.currentTime), { signal });
+      card.addEventListener('mouseenter', start, { signal });
+      card.addEventListener('pointerenter', start, { signal });
+      card.addEventListener('focusin', start, { signal });
+      card.addEventListener('mouseleave', stop, { signal });
+      card.addEventListener('pointerleave', stop, { signal });
+      card.addEventListener('focusout', stop, { signal });
+    });
+  };
+
   return {
+    hydratePreviewCards,
+    getWorker(id) { return WORKERS_BY_ID[id]?.item || null; },
     create({ signal } = {}) {
+      hydratePreviewCards({ signal });
       const triggers = [...document.querySelectorAll('[data-worker-trigger]')];
       const root = document.querySelector('[data-worker-preview]');
       const feed = root?.querySelector('[data-worker-preview-feed]');
@@ -275,6 +360,14 @@ window.DokeHomeWorkers = (() => {
         }
       };
 
+      const resumeFromPreview = (video, item) => {
+        const savedTime = getSavedPreviewTime(item.id);
+        if (savedTime <= 0) return;
+        try {
+          if (Math.abs(video.currentTime - savedTime) > 0.35) video.currentTime = savedTime;
+        } catch (_) {}
+      };
+
       const updateActive = (index, { autoplay = false } = {}) => {
         activeIndex = Math.max(0, Math.min(WORKERS.length - 1, index));
         const item = WORKERS[activeIndex];
@@ -286,9 +379,13 @@ window.DokeHomeWorkers = (() => {
         if (autoplay) {
           const video = videos[activeIndex];
           ensureVideoLoaded(video, item);
+          resumeFromPreview(video, item);
           pauseAll();
           const playback = video.play();
           if (playback?.catch) playback.catch(() => {});
+          playButtons[activeIndex]?.classList.add('is-playing');
+          const activeIcon = playButtons[activeIndex]?.querySelector('span');
+          if (activeIcon) activeIcon.textContent = '❚❚';
         }
       };
 
@@ -300,6 +397,7 @@ window.DokeHomeWorkers = (() => {
 
         if (video.paused) {
           ensureVideoLoaded(video, item);
+          resumeFromPreview(video, item);
           pauseAll();
           const playback = video.play();
           if (playback?.catch) playback.catch(() => {});
@@ -327,7 +425,7 @@ window.DokeHomeWorkers = (() => {
         root.hidden = false;
         root.setAttribute('aria-hidden', 'false');
         root.classList.remove('comments-visible');
-        scrollToIndex(match.index);
+        scrollToIndex(match.index, { autoplay: true });
         syncCommentsVisibility();
       };
 
@@ -351,7 +449,7 @@ window.DokeHomeWorkers = (() => {
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
         if (!visible) return;
         const index = Number(visible.target.dataset.workerIndex);
-        updateActive(index);
+        if (!root.hidden) updateActive(index, { autoplay: true });
       }, {
         root: feed,
         threshold: [0.35, 0.6, 0.82]
@@ -376,6 +474,7 @@ window.DokeHomeWorkers = (() => {
 
       videos.forEach((video, index) => {
         video.addEventListener('click', () => togglePlayback(index), { signal });
+        video.addEventListener('timeupdate', () => setSavedPreviewTime(WORKERS[index]?.id, video.currentTime), { signal });
         video.addEventListener('play', () => {
           playButtons[index]?.classList.add('is-playing');
           playButtons[index].querySelector('span').textContent = '❚❚';

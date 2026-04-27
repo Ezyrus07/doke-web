@@ -1,38 +1,50 @@
-/* Perfil: ajustes finais compartilhados entre abas e espaçamento mobile. */
-
-/* 2026-04 clean profile media/review headers: section titles removed per layout review. */
-body.profile-page-shell .profile-post-section__head,
-body.profile-page-shell .profile-review-section-head--trust {
-  display: none !important;
+/* v27 — Perfil: limite de rolagem/sobra final e densidade segura. */
+body[data-page="perfil"],
+body.profile-page,
+body.perfil-page {
+  overscroll-behavior-y: contain;
 }
 
-body.profile-page-shell .profile-post-section {
-  gap: 0;
+body[data-page="perfil"] main,
+body.profile-page main,
+body.perfil-page main,
+body[data-page="perfil"] .page-shell,
+body[data-page="perfil"] .profile-shell {
+  padding-bottom: clamp(88px, 14vh, 132px) !important;
 }
 
-body.profile-page-shell .profile-review-detail {
-  gap: 16px;
+@media (min-width: 761px) {
+  body[data-page="perfil"] main,
+  body.profile-page main,
+  body.perfil-page main {
+    padding-bottom: 56px !important;
+  }
 }
 
-/* Budget modal rules were moved to assets/css/pages/perfil-budget-modal.css to keep perfil.css focused on page layout. */
+body[data-page="perfil"] .profile-page-spacer,
+body.profile-page .profile-page-spacer,
+body.perfil-page .profile-page-spacer {
+  min-height: 0 !important;
+  height: auto !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+}
 
-/* 2026-04-26 mobile end-spacing fix: profile inherits the shared bottom-nav contract, no phantom footer gap. */
-@media (max-width: 760px) {
-  body.profile-body,
-  body.profile-page-body {
-    min-height: 100%;
+/* v28 — reduz sobra inferior sem mexer no contrato dos cards do perfil. */
+@media (min-width: 761px) {
+  body[data-page="perfil"] .page__content,
+  body.profile-page .page__content,
+  body.perfil-page .page__content {
+    padding-bottom: 28px !important;
   }
 
-  body.profile-body :is(.page__content, .main-content, .profile-page, .profile-shell, .profile-layout),
-  body.profile-page-body :is(.page__content, .main-content, .profile-page, .profile-shell, .profile-layout) {
-    min-height: 0 !important;
-    padding-bottom: var(--doke-mobile-page-bottom, calc(78px + env(safe-area-inset-bottom, 0px))) !important;
-  }
-
-  body.profile-body :is(.profile-page, .profile-shell, .profile-layout) > :last-child,
-  body.profile-page-body :is(.profile-page, .profile-shell, .profile-layout) > :last-child {
+  body[data-page="perfil"] main,
+  body.profile-page main,
+  body.perfil-page main,
+  body[data-page="perfil"] .profile-shell,
+  body.profile-page .profile-shell,
+  body.perfil-page .profile-shell {
+    padding-bottom: 32px !important;
     margin-bottom: 0 !important;
   }
 }
-
-

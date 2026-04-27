@@ -567,8 +567,8 @@ window.DokeInitProfile = () => {
       <div class="profile-services-toolbar">
         <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Novo</button>
         <button class="profile-services-toolbar__action ${state.selectingServices ? "is-active" : ""}" type="button" data-profile-services-select-toggle>${state.selectingServices ? "Cancelar" : "Selecionar"}</button>
-        ${selectedCount === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-services-edit>Editar anúncio</button>` : ""}
-        ${selectedCount > 1 ? `<span class="profile-services-toolbar__hint">Só dá para editar um anúncio por vez.</span>` : ""}
+        ${selectedCount === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-services-edit>Editar Servi�o</button>` : ""}
+        ${selectedCount > 1 ? `<span class="profile-services-toolbar__hint">Só dá para editar um Servi�o por vez.</span>` : ""}
       </div>
       ` : ""}
       <div class="results-grid profile-services-results">
@@ -578,8 +578,8 @@ window.DokeInitProfile = () => {
           <article class="service-card service-card--featured service-card--feed ${state.selectedServices.includes(index) ? "is-selected" : ""} ${state.selectingServices ? "is-selecting" : ""}" data-profile-service-card="${index}">
             <div class="service-card__media ${item.mediaClass}">
               ${profileMode === "owner" && state.selectingServices
-                ? `<button class="service-card__favorite profile-service-select-indicator ${state.selectedServices.includes(index) ? "is-selected" : ""}" type="button" aria-label="Selecionar anúncio" data-profile-service-select="${index}">${state.selectedServices.includes(index) ? "✓" : ""}</button>`
-                : `<button class="service-card__favorite" type="button" aria-label="Salvar anúncio">
+                ? `<button class="service-card__favorite profile-service-select-indicator ${state.selectedServices.includes(index) ? "is-selected" : ""}" type="button" aria-label="Selecionar Servi�o" data-profile-service-select="${index}">${state.selectedServices.includes(index) ? "✓" : ""}</button>`
+                : `<button class="service-card__favorite" type="button" aria-label="Salvar Servi�o">
                 <svg viewBox="0 0 24 24"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
               </button>`}
               <span class="service-card__badge ${item.badgeModifier || ""}">${normalize(item.badge)}</span>
@@ -601,7 +601,7 @@ window.DokeInitProfile = () => {
                 <div>
                   <strong class="service-card__price">${normalize(item.price)}</strong>
                 </div>
-                <span class="service-card__cta" aria-label="Ver anúncio">Ver anúncio</span>
+                <span class="service-card__cta" aria-label="Ver Servi�o">Ver Servi�o</span>
               </div>
             </div>
           </article>
@@ -765,7 +765,7 @@ window.DokeInitProfile = () => {
       <div class="profile-review-detail">
         ${reviewAds.length > 1 ? `
           <div class="profile-review-switcher">
-            <label class="profile-review-switcher__label" for="profile-review-ad">Anúncio</label>
+            <label class="profile-review-switcher__label" for="profile-review-ad">Servi�o</label>
             <select class="profile-review-switcher__select" id="profile-review-ad" data-profile-review-select data-ui-select>
               ${reviewAds.map((ad, index) => `<option value="${ad.id}" ${index === 0 ? 'selected' : ''}>${ad.label}</option>`).join('')}
             </select>
@@ -1626,24 +1626,13 @@ window.DokeInitProfile = () => {
         const active = ads.find((item) => item.id === id) || ads[0];
         if (!active) return;
 
-        const metricsMarkup = (active.metrics || []).slice(0, 6).map((metric, index) => `
+        const metricsMarkup = (active.metrics || []).slice(0, 3).map((metric, index) => `
           <article class="profile-review-trust-metric">
             <span><i>${metric.icon || metricIcons[index] || '✦'}</i>${metric.label}</span>
             <strong>${metric.value}</strong>
           </article>
         `).join('');
 
-        const distributionMarkup = [
-          { label: "5 estrelas", value: 92 },
-          { label: "4 estrelas", value: 8 },
-          { label: "3 estrelas", value: 0 }
-        ].map((row) => `
-          <div class="profile-review-distribution-row">
-            <span>${row.label}</span>
-            <i><b style="width:${row.value}%"></b></i>
-            <strong>${row.value}%</strong>
-          </div>
-        `).join('');
 
         const reviewsMarkup = active.reviews.map((item, index) => {
           const tags = (item.tags || []).slice(0, 3);
@@ -1683,19 +1672,14 @@ window.DokeInitProfile = () => {
             <div class="profile-review-summary-card__content">
               <div class="profile-review-summary-card__topline">
                 <div>
-                  <span>Resumo do anúncio</span>
-                  <h4>${active.label}</h4>
+                  <span>Resumo das avaliações</span>
+                  <h4>Resumo das avaliações</h4>
                 </div>
                 <p>Excelente reputação em acabamento, comunicação e execução limpa. As notas abaixo ajudam o cliente a entender onde o profissional se destaca.</p>
               </div>
 
               <div class="profile-review-trust-metrics">${metricsMarkup}</div>
             </div>
-
-            <aside class="profile-review-summary-card__distribution" aria-label="Distribuição de notas">
-              <strong>Distribuição</strong>
-              ${distributionMarkup}
-            </aside>
           </section>
 
           <div class="profile-review-toolbar profile-review-toolbar--trust">
@@ -1721,7 +1705,7 @@ window.DokeInitProfile = () => {
 
         const grid = hub.querySelector('.profile-review-grid');
         if (grid && !visibleCount) {
-          grid.innerHTML = '<article class="profile-review-empty"><strong>Nenhuma avaliação neste filtro</strong><p>Troque o filtro ou selecione outro anúncio para ver mais comentários.</p></article>';
+          grid.innerHTML = '<article class="profile-review-empty"><strong>Nenhuma avaliação neste filtro</strong><p>Troque o filtro ou selecione outro Servi�o para ver mais comentários.</p></article>';
         }
 
         hub.querySelectorAll('[data-profile-review-filter]').forEach((button) => {
@@ -1858,3 +1842,4 @@ window.DokeInitProfile = () => {
 };
 
 window.DokeInitProfile();
+

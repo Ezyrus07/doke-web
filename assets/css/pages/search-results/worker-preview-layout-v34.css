@@ -1,0 +1,250 @@
+/* v34 — Workers preview + results density contract.
+   Owner: pages/search-results + shared Worker card runtime.
+   Intenção: imagem real no card, preview com delay de 1s e grids que ocupam a largura útil sem cards gigantes. */
+
+.video-card[data-worker-trigger] {
+  position: relative !important;
+  overflow: hidden !important;
+  isolation: isolate !important;
+  background-image: none !important;
+  background-color: #dbe7f0 !important;
+}
+
+.video-card[data-worker-trigger] .video-card__poster,
+.video-card[data-worker-trigger] .video-card__preview {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  pointer-events: none !important;
+}
+
+.video-card[data-worker-trigger] .video-card__poster {
+  z-index: 0 !important;
+  opacity: 1 !important;
+  transform: scale(1.01) !important;
+  transition: opacity .22s ease, transform .28s ease !important;
+}
+
+.video-card[data-worker-trigger] .video-card__preview {
+  z-index: 1 !important;
+  opacity: 0 !important;
+  transform: scale(1.01) !important;
+  transition: opacity .22s ease, transform .28s ease !important;
+}
+
+.video-card[data-worker-trigger]::before {
+  z-index: 2 !important;
+}
+
+.video-card[data-worker-trigger]::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 3 !important;
+  pointer-events: none !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(14,35,56,.12) 42%, rgba(5,20,35,.91)) !important;
+}
+
+.video-card[data-worker-trigger].is-previewing .video-card__preview {
+  opacity: 1 !important;
+  transform: scale(1.04) !important;
+}
+
+.video-card[data-worker-trigger].is-previewing .video-card__poster {
+  opacity: 0 !important;
+  transform: scale(1.04) !important;
+}
+
+.video-card[data-worker-trigger]:hover .video-card__preview,
+.video-card[data-worker-trigger]:focus-within .video-card__preview {
+  /* O vídeo só aparece quando o JS adiciona .is-previewing após 1s. */
+  opacity: 0 !important;
+}
+
+.video-card[data-worker-trigger].is-previewing:hover .video-card__preview,
+.video-card[data-worker-trigger].is-previewing:focus-within .video-card__preview {
+  opacity: 1 !important;
+}
+
+.video-card[data-worker-trigger] > :not(.video-card__poster):not(.video-card__preview) {
+  position: relative !important;
+  z-index: 4 !important;
+}
+
+.video-card[data-worker-trigger] .video-card__play {
+  z-index: 5 !important;
+  top: 14px !important;
+  left: 14px !important;
+  right: auto !important;
+}
+
+@media (min-width: 1181px) {
+  body.search-results-body {
+    --results-filter-column: 252px;
+    --results-service-card-width: 280px;
+    --results-worker-card-width: 232px;
+    --results-card-gap: 18px;
+  }
+
+  body.search-results-body .results-layout {
+    grid-template-columns: var(--results-filter-column) minmax(0, 1fr) !important;
+    column-gap: 18px !important;
+    align-items: start !important;
+  }
+
+  body.search-results-body .results-layout.is-filters-collapsed {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body.search-results-body .results-filters,
+  body.search-results-body .results-panel {
+    width: var(--results-filter-column) !important;
+    max-width: var(--results-filter-column) !important;
+  }
+
+  body.search-results-body .results-panel {
+    padding: 16px !important;
+  }
+
+  body.search-results-body .results-panel__heading {
+    align-items: center !important;
+    margin-bottom: 14px !important;
+  }
+
+  body.search-results-body .results-filters__form {
+    gap: 14px !important;
+  }
+
+  body.search-results-body .results-category-list {
+    gap: 6px !important;
+    margin-top: 8px !important;
+  }
+
+  body.search-results-body .results-category-chip span {
+    min-height: 32px !important;
+    padding-inline: 10px !important;
+    font-size: 0.76rem !important;
+  }
+
+  body.search-results-body .results-location-group {
+    padding: 12px !important;
+  }
+
+  body.search-results-body .results-field {
+    gap: 6px !important;
+  }
+
+  body.search-results-body .results-field .ui-select__trigger,
+  body.search-results-body .results-location-group__cep {
+    min-height: 42px !important;
+  }
+
+  body.search-results-body .results-checks {
+    gap: 9px !important;
+  }
+
+  body.search-results-body .results-check {
+    gap: 8px !important;
+    font-size: 0.88rem !important;
+  }
+
+  body.search-results-body .results-filters__actions {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+
+  body.search-results-body .results-filters__actions .results-button {
+    min-width: 0 !important;
+    padding-inline: 12px !important;
+    font-size: 0.88rem !important;
+  }
+
+  body.search-results-body .results-panel__actions,
+  body.search-results-body .results-filters__actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    align-items: center !important;
+  }
+
+  body.search-results-body .results-panel__actions .button,
+  body.search-results-body .results-filters__actions .button,
+  body.search-results-body .results-panel__actions button,
+  body.search-results-body .results-filters__actions button {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding-inline: 12px !important;
+    white-space: nowrap !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="services"] .results-grid,
+  body.search-results-body .results-layout[data-results-mode="services"] .results-empty__grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: var(--results-card-gap) !important;
+    justify-content: stretch !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) :is(.service-card, .service-card--feed, .service-card--result) {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+
+  body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="services"] .results-grid,
+  body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="services"] .results-empty__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    justify-content: stretch !important;
+  }
+
+  body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .service-card--result {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(var(--results-worker-card-width), 1fr)) !important;
+    gap: 30px !important;
+    justify-content: stretch !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    aspect-ratio: 9 / 15 !important;
+  }
+
+  body.search-results-body .results-layout:not(.is-filters-collapsed)[data-results-mode="workers"] .results-grid {
+    grid-template-columns: repeat(3, minmax(var(--results-worker-card-width), 1fr)) !important;
+  }
+
+  body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="workers"] .results-grid {
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)) !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    justify-content: stretch !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid .comparison-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1180px) {
+  body.search-results-body .results-layout.is-filters-collapsed .results-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+    justify-content: stretch !important;
+  }
+}

@@ -18,7 +18,8 @@
     const headerControls = root.querySelector('.orders-page-header__controls');
     const activeChip = root.querySelector('[data-orders-active-chip]');
     const filterStatusStack = root.querySelector('.orders-filter-status-stack');
-    const clearFilterButton = root.querySelector('[data-orders-clear-filter]');
+    const clearFilterButtons = Array.from(root.querySelectorAll('[data-orders-clear-filter]'));
+    const clearFilterButton = clearFilterButtons[0] || null;
     const filterCountNodes = {
       all: root.querySelector('[data-orders-filter-count="all"]'),
       pending: root.querySelector('[data-orders-filter-count="pending"]'),
@@ -64,6 +65,8 @@
     const plannerAgendaEmpty = root.querySelector('[data-orders-agenda-empty]');
     const plannerCalendarDays = root.querySelector('[data-orders-calendar-days]');
     const plannerMonthLabel = root.querySelector('[data-orders-month-label]');
+    const plannerMonthPrev = root.querySelector('[data-orders-month-prev]');
+    const plannerMonthNext = root.querySelector('[data-orders-month-next]');
     const plannerMonthPopover = root.querySelector('[data-orders-month-popover]');
     const plannerMonthSelect = root.querySelector('[data-orders-month-select]');
     const plannerYearInput = root.querySelector('[data-orders-year-input]');
@@ -318,7 +321,7 @@
         );
       }
 
-      const totalCells = Math.ceil(cells.length / 7) * 7;
+      const totalCells = 42;
       const trailing = totalCells - cells.length;
       for (let index = 1; index <= trailing; index += 1) {
         cells.push(`<button class="orders-planner__day is-muted" type="button" disabled>${index}</button>`);
@@ -455,10 +458,10 @@
       }
     });
 
-    clearFilterButton?.addEventListener('click', () => {
+    clearFilterButtons.forEach((clearFilterButton) => clearFilterButton.addEventListener('click', () => {
       const allButton = filterButtons.find((button) => button.dataset.filter === 'all');
       allButton?.click();
-    });
+    }));
 
     resetEmptyButton?.addEventListener('click', () => {
       if (searchInput) searchInput.value = '';
@@ -688,8 +691,26 @@
       syncPlannerDay(currentPlannerDaté);
     };
 
+    const shiftPlannerMonth = (offset) => {
+      const nextMonthDate = new Date(currentPlannerMonth.year, currentPlannerMonth.month + offset, 1, 12);
+      currentPlannerMonth = {
+        year: nextMonthDate.getFullYear(),
+        month: nextMonthDate.getMonth(),
+      };
+      syncPlannerDatéToMonth();
+      setPlannerMonthPopover(false);
+    };
+
     plannerMonthLabel?.addEventListener('click', () => {
       setPlannerMonthPopover(plannerMonthPopover?.hidden !== true);
+    });
+
+    plannerMonthPrev?.addEventListener('click', () => {
+      shiftPlannerMonth(-1);
+    });
+
+    plannerMonthNext?.addEventListener('click', () => {
+      shiftPlannerMonth(1);
     });
 
     plannerMonthCancel?.addEventListener('click', () => {
