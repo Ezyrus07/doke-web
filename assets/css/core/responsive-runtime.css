@@ -1,0 +1,31 @@
+/*
+ * Stage 11 — Responsive Runtime Contract
+ * Runtime variables from responsive-interaction-guard.js.
+ * Mobile-scoped only. Desktop geometry must remain owned by existing desktop CSS.
+ */
+@media (max-width:760px){
+  html.doke-js-mobile{
+    --doke-bottom-nav-safe:calc(var(--doke-runtime-bottom-nav-height, 72px) + 24px + env(safe-area-inset-bottom, 0px));
+  }
+
+  html.doke-js-mobile body.app-shell-page,
+  html.doke-js-mobile body.profile-page-shell,
+  html.doke-js-mobile body.communities-page-shell,
+  html.doke-js-mobile body.community-room-page,
+  html.doke-js-mobile body.internal-page,
+  html.doke-js-mobile body.results-page-shell{
+    min-height:calc(var(--doke-js-vh, 1vh) * 100);
+  }
+
+  html.doke-js-mobile .bottom-nav a.is-active,
+  html.doke-js-mobile .mobile-bottom-nav a.is-active,
+  html.doke-js-mobile [data-bottom-nav] a.is-active{
+    pointer-events:auto;
+  }
+
+  html.doke-js-mobile :where(.tabs,.profile-tabs,.communities-v2-filters,.communities-filter,.results-active-chips,.orders-active-filter-row,.notifications-filters-panel__chips):focus-visible{
+    outline:0;
+    box-shadow:0 0 0 4px rgba(42,95,144,.14);
+    border-radius:16px;
+  }
+}

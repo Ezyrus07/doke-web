@@ -1,0 +1,172 @@
+/*
+ * Stage 20 — Index mobile alignment correction
+ * Escopo: somente index.html em mobile. Não altera desktop.
+ * Objetivo: todos os blocos principais da home mobile começam no mesmo eixo visual.
+ */
+
+@media (max-width: 760px) {
+  body.home-index-shell {
+    --index-stage20-axis: clamp(16px, 4.8vw, 22px);
+    --index-stage20-card: min(78vw, 300px);
+    --index-stage20-before-card: min(78vw, 292px);
+  }
+
+  /* Eixo único: hero, categorias, headers e rails usam o mesmo gutter. */
+  body.home-index-shell .home-search-hero,
+  body.home-index-shell .home-catégories,
+  body.home-index-shell .featured-services,
+  body.home-index-shell .short-videos,
+  body.home-index-shell .before-after,
+  body.home-index-shell .more-services {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding-inline: var(--index-stage20-axis) !important;
+    margin-inline: 0 !important;
+  }
+
+  body.home-index-shell .home-search-hero {
+    padding-top: 0 !important;
+  }
+
+  body.home-index-shell .home-search-hero__panel,
+  body.home-index-shell .home-search-hero__card {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+  }
+
+  /* Categorias: o primeiro item começa no mesmo ponto do hero/card. */
+  body.home-index-shell .home-catégories__rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.home-index-shell .home-catégories__track {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 0 8px 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-padding-left: 0 !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  body.home-index-shell .home-catégories__track::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Headers de seção não recebem padding interno extra. */
+  body.home-index-shell .featured-services .home-section-header,
+  body.home-index-shell .short-videos .home-section-header,
+  body.home-index-shell .before-after .home-section-header,
+  body.home-index-shell .more-services .home-section-header {
+    padding-inline: 0 !important;
+    margin-inline: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Anúncios e Antes/Depois continuam horizontais, mas deixam de ser full-bleed. */
+  body.home-index-shell .featured-services .content-rail,
+  body.home-index-shell .before-after .content-rail,
+  body.home-index-shell .short-videos .content-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell #featured-services-track,
+  body.home-index-shell #before-after-track {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    grid-template-columns: none !important;
+    grid-auto-flow: unset !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 0 12px 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior-x: contain !important;
+    scroll-snap-type: x mandatory !important;
+    scroll-padding-left: 0 !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell #featured-services-track::-webkit-scrollbar,
+  body.home-index-shell #before-after-track::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  body.home-index-shell #featured-services-track > .service-card,
+  body.home-index-shell #featured-services-track > .service-card--feed {
+    flex: 0 0 var(--index-stage20-card) !important;
+    width: var(--index-stage20-card) !important;
+    min-width: var(--index-stage20-card) !important;
+    max-width: var(--index-stage20-card) !important;
+    margin: 0 !important;
+    scroll-snap-align: start !important;
+  }
+
+  body.home-index-shell #before-after-track > .comparison-card {
+    flex: 0 0 var(--index-stage20-before-card) !important;
+    width: var(--index-stage20-before-card) !important;
+    min-width: var(--index-stage20-before-card) !important;
+    max-width: var(--index-stage20-before-card) !important;
+    margin: 0 !important;
+    scroll-snap-align: start !important;
+  }
+
+  /* Workers 2x2 alinhado ao mesmo eixo, sem padding próprio conflitante. */
+  body.home-index-shell #short-videos-track {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 0 8px 0 !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    overflow: visible !important;
+  }
+
+  body.home-index-shell #short-videos-track > .video-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  /* Ações/abas inferiores também não podem escapar do eixo visual da página. */
+  body.home-index-shell .more-services__controls,
+  body.home-index-shell .more-services__tabs-rail,
+  body.home-index-shell .more-services__tabs-track {
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (max-width: 380px) {
+  body.home-index-shell {
+    --index-stage20-axis: 14px;
+    --index-stage20-card: min(78vw, 286px);
+    --index-stage20-before-card: min(78vw, 274px);
+  }
+}
