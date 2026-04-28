@@ -2685,3 +2685,194 @@ body.orders-overlay-open {
     right: 12px !important;
   }
 }
+
+
+/* 2026-04-28 — mobile internal header simplificado para Pedidos.
+   Mantém o header no mesmo fundo da página e usa ações icon-only em linha única. */
+@media (max-width: 760px) {
+  body.orders-page-shell {
+    --orders-mobile-header-bg: #eef4f9;
+    --orders-mobile-header-text: #173d6c;
+    --orders-mobile-header-action: 42px;
+    --orders-mobile-header-radius: 15px;
+    background: var(--orders-mobile-header-bg) !important;
+  }
+
+  body.orders-page-shell .page,
+  body.orders-page-shell .page__content,
+  body.orders-page-shell .orders-page,
+  body.orders-page-shell .orders-page-header,
+  body.orders-page-shell .orders-page-header__hero {
+    background: var(--orders-mobile-header-bg) !important;
+  }
+
+  body.orders-page-shell .page__content {
+    padding-top: 0 !important;
+  }
+
+  body.orders-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 14px) !important;
+  }
+
+  body.orders-page-shell .orders-page-header {
+    margin: 0 0 18px !important;
+    padding: 0 !important;
+  }
+
+  body.orders-page-shell .orders-page-header__hero {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body.orders-page-shell .orders-page-header__hero-top {
+    display: flex !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    gap: 10px !important;
+  }
+
+  body.orders-page-shell .orders-page-header__hero-profile.home-mobile-hero__profile,
+  body.orders-page-shell .orders-page-header__hero-profile {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+    min-height: var(--orders-mobile-header-action) !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body.orders-page-shell .orders-page-header__hero-avatar {
+    width: var(--orders-mobile-header-action) !important;
+    height: var(--orders-mobile-header-action) !important;
+    flex: 0 0 var(--orders-mobile-header-action) !important;
+    border-radius: var(--orders-mobile-header-radius) !important;
+    background: linear-gradient(135deg, #1f66ad 0%, #1c8d83 100%) !important;
+    color: #fff !important;
+    font-size: 0.98rem !important;
+    font-weight: 850 !important;
+    box-shadow: 0 8px 18px rgba(31, 102, 173, 0.12) !important;
+  }
+
+  body.orders-page-shell .orders-page-header__hero-name {
+    color: var(--orders-mobile-header-text) !important;
+    font-size: 1.18rem !important;
+    line-height: 1 !important;
+    font-weight: 850 !important;
+    letter-spacing: -0.04em !important;
+    white-space: nowrap !important;
+  }
+
+  body.orders-page-shell .orders-page-header__count {
+    display: none !important;
+  }
+
+  body.orders-page-shell .orders-page-header__hero-strip {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    justify-self: end !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+    flex-wrap: nowrap !important;
+  }
+
+  body.orders-page-shell .orders-page-header__hero-chips {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+    flex: 0 0 auto !important;
+    flex-wrap: nowrap !important;
+  }
+
+  body.orders-page-shell .orders-page-header__search-toggle,
+  body.orders-page-shell .orders-page-header__hero-chip {
+    width: var(--orders-mobile-header-action) !important;
+    height: var(--orders-mobile-header-action) !important;
+    min-width: var(--orders-mobile-header-action) !important;
+    min-height: var(--orders-mobile-header-action) !important;
+    flex: 0 0 var(--orders-mobile-header-action) !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+    border-radius: var(--orders-mobile-header-radius) !important;
+    border: 1px solid rgba(34, 92, 147, 0.10) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    color: #174f86 !important;
+    box-shadow: 0 8px 18px rgba(27, 61, 98, 0.08) !important;
+  }
+
+  body.orders-page-shell .orders-page-header__hero-chip span {
+    display: none !important;
+  }
+
+  body.orders-page-shell .orders-page-header__search-toggle svg,
+  body.orders-page-shell .orders-page-header__hero-chip svg {
+    width: 18px !important;
+    height: 18px !important;
+    stroke: currentColor !important;
+    fill: none !important;
+    stroke-width: 2 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+  }
+
+  body.orders-page-shell .orders-page:not(.is-agenda-collapsed) [data-orders-agenda-toggle],
+  body.orders-page-shell [data-orders-agenda-toggle][aria-expanded="true"] {
+    border-color: transparent !important;
+    background: linear-gradient(135deg, #22b982 0%, #159a73 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 10px 22px rgba(21, 154, 115, 0.18) !important;
+  }
+
+  body.orders-page-shell .orders-page-header__search.orders-page-header__search--hero {
+    grid-column: 1 / -1 !important;
+  }
+
+  body.orders-page-shell .orders-page-header__controls,
+  body.orders-page-shell .orders-filter-status-stack,
+  body.orders-page-shell .orders-active-filter-row {
+    background: transparent !important;
+  }
+}
+
+@media (max-width: 420px) {
+  body.orders-page-shell {
+    --orders-mobile-header-action: 38px;
+    --orders-mobile-header-radius: 14px;
+  }
+
+  body.orders-page-shell .orders-page-header__hero {
+    gap: 8px !important;
+  }
+
+  body.orders-page-shell .orders-page-header__hero-profile.home-mobile-hero__profile,
+  body.orders-page-shell .orders-page-header__hero-profile {
+    gap: 8px !important;
+  }
+
+  body.orders-page-shell .orders-page-header__hero-name {
+    font-size: 1.02rem !important;
+  }
+
+  body.orders-page-shell .orders-page-header__hero-strip,
+  body.orders-page-shell .orders-page-header__hero-chips {
+    gap: 6px !important;
+  }
+
+  body.orders-page-shell .orders-page-header__search-toggle svg,
+  body.orders-page-shell .orders-page-header__hero-chip svg {
+    width: 17px !important;
+    height: 17px !important;
+  }
+}

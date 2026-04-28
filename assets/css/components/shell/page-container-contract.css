@@ -1,0 +1,73 @@
+/*
+ * Page Container Contract v1
+ * Objetivo: padronizar largura, gutters e eixo visual entre HTMLs desktop/tablet/mobile.
+ */
+:root{
+  --doke-page-gutter-desktop:32px;
+  --doke-page-gutter-tablet:24px;
+  --doke-page-gutter-mobile:16px;
+  --doke-page-max-narrow:960px;
+  --doke-page-max-default:1180px;
+  --doke-page-max-wide:1320px;
+  --doke-page-max-fluid:100%;
+}
+
+.page__content{
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  padding-inline:var(--doke-page-gutter-desktop);
+}
+
+.page__content-inner,
+.page-container,
+.internal-page-container{
+  width:min(100%,var(--doke-page-max-default));
+  max-width:var(--doke-page-max-default);
+  margin-inline:auto;
+  box-sizing:border-box;
+}
+
+.page__content[data-page-width="narrow"] .page__content-inner,
+[data-page-width="narrow"].page__content .page__content-inner,
+.page-container--narrow{
+  width:min(100%,var(--doke-page-max-narrow));
+  max-width:var(--doke-page-max-narrow);
+}
+
+.page__content[data-page-width="wide"] .page__content-inner,
+[data-page-width="wide"].page__content .page__content-inner,
+body.home-index-shell .page__content-inner,
+body.results-page-shell .page__content-inner,
+.page-container--wide{
+  width:min(100%,var(--doke-page-max-wide));
+  max-width:var(--doke-page-max-wide);
+}
+
+.page__content[data-page-width="fluid"] .page__content-inner,
+[data-page-width="fluid"].page__content .page__content-inner,
+body.messages-page-shell .page__content-inner,
+.page-container--fluid{
+  width:100%;
+  max-width:var(--doke-page-max-fluid);
+}
+
+body.notifications-page-shell .page__content-inner,
+body.settings-page-shell .page__content-inner,
+body.configuracoes-page-shell .page__content-inner{
+  width:min(100%,var(--doke-page-max-narrow));
+  max-width:var(--doke-page-max-narrow);
+}
+
+@media (max-width:1024px){
+  .page__content{padding-inline:var(--doke-page-gutter-tablet);}
+  .page__content-inner,.page-container,.internal-page-container{width:100%;max-width:100%;}
+}
+
+@media (max-width:760px){
+  .page__content{
+    padding-inline:var(--doke-page-gutter-mobile);
+    padding-bottom:calc(88px + env(safe-area-inset-bottom,0px));
+  }
+  .page__content-inner,.page-container,.internal-page-container{width:100%;max-width:100%;}
+}

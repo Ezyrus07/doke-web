@@ -33,14 +33,11 @@
 
         let activeSearchIndex = -1;
         const isMobileSearchViewport = () => window.innerWidth <= 760;
-        const shouldUseSearchDropdown = () => Boolean(searchDropdown && searchInput && !isMobileSearchViewport());
+        const shouldUseSearchDropdown = () => Boolean(searchDropdown && searchInput);
 
         const syncSearchOverlayState = (query = "") => {
-          const canShowDropdown = shouldUseSearchDropdown();
-          document.body.classList.toggle(
-            "home-search-has-query",
-            canShowDropdown && String(query || "").trim().length >= 2
-          );
+          const hasQuery = String(query || "").trim().length >= 2;
+          document.body.classList.toggle("home-search-has-query", hasQuery && window.innerWidth > 760);
         };
 
         const createSuggestionButton = ({ label, meta, badge, value, type = "search" }) => {
@@ -152,18 +149,12 @@
         };
 
         const openSearchDropdown = () => {
-          if (!searchDropdown || !searchInput) return;
-          if (!shouldUseSearchDropdown()) {
-            closeSearchDropdown();
-            return;
-          }
+          if (!searchDropdown || !searchInput || !shouldUseSearchDropdown()) return;
           searchDropdown.hidden = false;
           searchBox?.classList.add("is-search-open");
           searchField?.classList.add("is-search-open");
           searchInput.setAttribute("aria-expanded", "true");
-          if (isMobileSearchViewport()) {
-            document.body.classList.add("home-search-overlay-active");
-          }
+          document.body.classList.remove("home-search-overlay-active");
           syncSearchOverlayState(searchInput.value);
         };
 
@@ -347,13 +338,8 @@
         }, { signal });
 
         window.addEventListener("resize", () => {
-          if (!isMobileSearchViewport()) {
-            document.body.classList.remove("home-search-overlay-active");
-            document.body.classList.remove("home-search-has-query");
-          } else if (searchDropdown && !searchDropdown.hidden) {
-            document.body.classList.add("home-search-overlay-active");
-            syncSearchOverlayState(searchInput?.value || "");
-          }
+          document.body.classList.remove("home-search-overlay-active");
+          syncSearchOverlayState(searchInput?.value || "");
         }, { signal });
 
         document.addEventListener("doke:home-search-close", () => {

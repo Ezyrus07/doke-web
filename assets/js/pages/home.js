@@ -880,14 +880,22 @@ const initHomeSearchDropdown = () => {
 
   const buildHref = (value) => `resultados.html?q=${encodeURIComponent(value)}`;
 
+  const disableLegacySearchOverlay = () => {
+    document.body.classList.remove("home-search-overlay-active", "mobile-search-active");
+    form.classList.remove("is-search-open");
+    form.querySelector(".home-search-hero__field")?.classList.remove("is-search-open");
+  };
+
   const openDropdown = () => {
+    disableLegacySearchOverlay();
     dropdown.hidden = false;
-    form.classList.add("is-search-open");
+    form.classList.add("is-dropdown-open");
   };
 
   const closeDropdown = () => {
     dropdown.hidden = true;
-    form.classList.remove("is-search-open");
+    form.classList.remove("is-dropdown-open");
+    disableLegacySearchOverlay();
   };
 
   const renderRecommendations = () => {
@@ -923,6 +931,17 @@ const initHomeSearchDropdown = () => {
 
   renderRecommendations();
 
+  form.addEventListener("focusin", () => {
+    window.requestAnimationFrame(() => {
+      disableLegacySearchOverlay();
+      form.classList.add("is-dropdown-open");
+      dropdown.hidden = false;
+    });
+  }, { signal });
+
+  form.addEventListener("mouseenter", disableLegacySearchOverlay, { signal });
+  form.addEventListener("mouseover", disableLegacySearchOverlay, { signal });
+
   input.addEventListener("focus", () => {
     openDropdown();
     renderResults();
@@ -954,6 +973,44 @@ const initHomeSearchDropdown = () => {
 initMobileHomeDrawer();
 initHomeSearch();
 initHomeSearchDropdown();
+
+/* Final search dropdown guard: keep the new dropdown behavior active on both
+   desktop and mobile, and neutralize the legacy overlay classes after taps. */
+(() => {
+  const form = document.querySelector(".home-search-hero__form");
+  const input = document.querySelector("[data-search-input]");
+  const dropdown = document.querySelector("[data-search-dropdown]");
+  if (!form || !input || !dropdown) return;
+
+  const killLegacyOverlay = () => {
+    document.body.classList.remove("home-search-overlay-active", "mobile-search-active");
+    form.classList.remove("is-search-open");
+    form.querySelector(".home-search-hero__field")?.classList.remove("is-search-open");
+  };
+
+  const openCleanDropdown = () => {
+    killLegacyOverlay();
+    dropdown.hidden = false;
+    form.classList.add("is-dropdown-open");
+  };
+
+  ["pointerdown", "click", "focusin"].forEach((eventName) => {
+    form.addEventListener(eventName, () => {
+      window.requestAnimationFrame(openCleanDropdown);
+    }, { signal });
+  });
+
+  input.addEventListener("focus", openCleanDropdown, { signal });
+  input.addEventListener("input", openCleanDropdown, { signal });
+
+  document.addEventListener("click", (event) => {
+    if (form.contains(event.target) || dropdown.contains(event.target)) return;
+    dropdown.hidden = true;
+    form.classList.remove("is-dropdown-open");
+    killLegacyOverlay();
+  }, { signal });
+})();
+
 initHomeWorkers();
 
 try {
