@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Doke — Stage 13 Responsive QA</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --line: #dbe3ef;
+      --brand: #2563eb;
+      --danger: #dc2626;
+      --warn: #b45309;
+      --ok: #15803d;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background: var(--bg);
+    }
+    .qa-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+    }
+    .qa-sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      padding: 20px;
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+    }
+    .qa-title {
+      margin: 0 0 6px;
+      font-size: 20px;
+      line-height: 1.2;
+    }
+    .qa-subtitle {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    label {
+      display: block;
+      margin: 14px 0 6px;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #334155;
+    }
+    select, button {
+      width: 100%;
+      min-height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 0 12px;
+      color: var(--text);
+      font: inherit;
+    }
+    button {
+      margin-top: 10px;
+      border-color: transparent;
+      background: var(--brand);
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .qa-main { min-width: 0; padding: 24px; }
+    .qa-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    .qa-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #e0ecff;
+      color: #1d4ed8;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .qa-frame-wrap {
+      overflow: auto;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: #e8edf7;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.7);
+    }
+    .qa-device {
+      margin: 0 auto;
+      border: 10px solid #111827;
+      border-radius: 32px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, .22);
+    }
+    .qa-device.tablet,
+    .qa-device.desktop {
+      border-width: 8px;
+      border-radius: 20px;
+    }
+    iframe {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #fff;
+    }
+    .qa-results {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .qa-card {
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+    }
+    .qa-card strong { display: block; margin-bottom: 4px; }
+    .qa-card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .status-ok strong { color: var(--ok); }
+    .status-warn strong { color: var(--warn); }
+    .status-fail strong { color: var(--danger); }
+    .qa-list { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+    @media (max-width: 860px) {
+      .qa-shell { grid-template-columns: 1fr; }
+      .qa-sidebar { position: static; height: auto; }
+      .qa-main { padding: 14px; }
+      .qa-frame-wrap { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="qa-shell">
+    <aside class="qa-sidebar">
+      <h1 class="qa-title">Stage 13 — Responsive QA</h1>
+      <p class="qa-subtitle">Painel local para validar páginas do Doke em breakpoints reais sem alterar CSS de produção.</p>
+
+      <label for="pageSelect">Página</label>
+      <select id="pageSelect"></select>
+
+      <label for="breakpointSelect">Breakpoint</label>
+      <select id="breakpointSelect"></select>
+
+      <button id="reloadBtn" type="button">Recarregar e medir</button>
+      <button id="openBtn" type="button">Abrir página isolada</button>
+
+      <div class="qa-results" id="summary"></div>
+    </aside>
+
+    <main class="qa-main">
+      <div class="qa-toolbar">
+        <span class="qa-badge" id="currentLabel">—</span>
+        <span class="qa-badge" id="currentUrl">—</span>
+      </div>
+      <div class="qa-frame-wrap">
+        <div class="qa-device" id="device">
+          <iframe id="preview" title="Preview responsivo"></iframe>
+        </div>
+      </div>
+      <section class="qa-results" id="checks"></section>
+    </main>
+  </div>
+
+  <script>
+    const pages = [
+      'index.html',
+      'resultados.html',
+      'perfil.html',
+      'comunidade.html',
+      'comunidade-interna.html',
+      'pedidos.html',
+      'mensagens.html',
+      'notificacoes.html',
+      'carteira.html',
+      'configuracoes.html',
+      'detalhe-anuncio.html',
+      'finalizar-pedido.html',
+      'pagamento.html',
+      'adicionar-cartao.html',
+      'avaliacao.html',
+      'auth/login.html',
+      'auth/cadastro.html',
+      'auth/esqueci-senha.html'
+    ];
+
+    const breakpoints = [
+      { id: '320', label: '320 × 720 — iPhone SE crítico', width: 320, height: 720, type: 'mobile' },
+      { id: '342', label: '342 × 760 — mobile estreito', width: 342, height: 760, type: 'mobile' },
+      { id: '360', label: '360 × 800 — Android comum', width: 360, height: 800, type: 'mobile' },
+      { id: '375', label: '375 × 812 — iPhone padrão', width: 375, height: 812, type: 'mobile' },
+      { id: '390', label: '390 × 844 — iPhone moderno', width: 390, height: 844, type: 'mobile' },
+      { id: '414', label: '414 × 896 — mobile grande', width: 414, height: 896, type: 'mobile' },
+      { id: '768', label: '768 × 1024 — tablet', width: 768, height: 1024, type: 'tablet' },
+      { id: '1024', label: '1024 × 768 — desktop pequeno', width: 1024, height: 768, type: 'desktop' },
+      { id: '1366', label: '1366 × 900 — desktop padrão', width: 1366, height: 900, type: 'desktop' }
+    ];
+
+    const pageSelect = document.querySelector('#pageSelect');
+    const breakpointSelect = document.querySelector('#breakpointSelect');
+    const preview = document.querySelector('#preview');
+    const device = document.querySelector('#device');
+    const checks = document.querySelector('#checks');
+    const summary = document.querySelector('#summary');
+    const currentLabel = document.querySelector('#currentLabel');
+    const currentUrl = document.querySelector('#currentUrl');
+
+    pages.forEach((page) => pageSelect.add(new Option(page, page)));
+    breakpoints.forEach((bp) => breakpointSelect.add(new Option(bp.label, bp.id)));
+
+    function selectedBreakpoint() {
+      return breakpoints.find((bp) => bp.id === breakpointSelect.value) || breakpoints[0];
+    }
+
+    function card(status, title, text, items = []) {
+      const itemHtml = items.length ? `<ul class="qa-list">${items.map((item) => `<li>${item}</li>`).join('')}</ul>` : '';
+      return `<article class="qa-card status-${status}"><strong>${title}</strong><p>${text}</p>${itemHtml}</article>`;
+    }
+
+    function measure() {
+      const doc = preview.contentDocument;
+      const win = preview.contentWindow;
+      if (!doc || !win) return;
+
+      const vw = win.innerWidth;
+      const scrollWidth = Math.max(doc.documentElement.scrollWidth, doc.body?.scrollWidth || 0);
+      const overflowX = scrollWidth > vw + 1;
+      const visible = (el) => {
+        const cs = win.getComputedStyle(el);
+        const r = el.getBoundingClientRect();
+        return cs.display !== 'none' && cs.visibility !== 'hidden' && Number(cs.opacity) !== 0 && r.width > 0 && r.height > 0;
+      };
+      const selectorOf = (el) => {
+        if (el.id) return '#' + CSS.escape(el.id);
+        return `${el.tagName.toLowerCase()}${[...el.classList].slice(0, 3).map((c) => '.' + CSS.escape(c)).join('')}`;
+      };
+      const wide = [...doc.body.querySelectorAll('*')]
+        .filter(visible)
+        .map((el) => ({ el, r: el.getBoundingClientRect() }))
+        .filter(({ r }) => r.width > vw + 1 || r.left < -1 || r.right > vw + 1)
+        .slice(0, 8)
+        .map(({ el, r }) => `${selectorOf(el)} — ${Math.round(r.width)}px`);
+      const smallTargets = [...doc.querySelectorAll('button, a, input, select, textarea, [role="button"], .btn, .icon-btn, .close-btn')]
+        .filter(visible)
+        .map((el) => ({ el, r: el.getBoundingClientRect() }))
+        .filter(({ r }) => r.width < 36 || r.height < 36)
+        .slice(0, 8)
+        .map(({ el, r }) => `${selectorOf(el)} — ${Math.round(r.width)}×${Math.round(r.height)}px`);
+      const bottomNav = [...doc.querySelectorAll('.bottom-nav, .mobile-bottom-nav, .app-bottom-nav, [class*="bottom-nav"]')]
+        .filter(visible)[0];
+
+      checks.innerHTML = [
+        overflowX
+          ? card('fail', 'Overflow horizontal detectado', `A página mede ${scrollWidth}px dentro de uma viewport de ${vw}px.`, wide)
+          : card('ok', 'Sem overflow horizontal crítico', `Viewport ${vw}px, largura renderizada ${scrollWidth}px.`),
+        smallTargets.length
+          ? card('warn', 'Alvos de toque pequenos', 'Alguns controles visíveis estão abaixo de 36px. Corrigir apenas por componente.', smallTargets)
+          : card('ok', 'Alvos interativos aceitáveis', 'Nenhum controle visível abaixo de 36px foi detectado.'),
+        bottomNav
+          ? card('ok', 'Bottom nav detectado', `Altura: ${Math.round(bottomNav.getBoundingClientRect().height)}px. Verifique visualmente se não cobre o último bloco.`)
+          : card('warn', 'Bottom nav não detectado', 'Isso pode ser correto em páginas de auth ou desktop, mas confirme em páginas internas mobile.')
+      ].join('');
+
+      summary.innerHTML = card(
+        overflowX ? 'fail' : smallTargets.length ? 'warn' : 'ok',
+        overflowX ? 'Revisar antes de avançar' : smallTargets.length ? 'Ajuste fino necessário' : 'Breakpoint estável',
+        `${pageSelect.value} em ${breakpointSelect.options[breakpointSelect.selectedIndex].text}`
+      );
+    }
+
+    function load() {
+      const bp = selectedBreakpoint();
+      const page = pageSelect.value;
+      device.style.width = `${bp.width}px`;
+      device.style.height = `${bp.height}px`;
+      device.className = `qa-device ${bp.type}`;
+      preview.src = `../${page}?stage13=${Date.now()}`;
+      currentLabel.textContent = `${page} — ${bp.label}`;
+      currentUrl.textContent = `${bp.width}px`;
+      checks.innerHTML = card('warn', 'Carregando', 'Aguardando renderização da página...');
+    }
+
+    preview.addEventListener('load', () => setTimeout(measure, 600));
+    pageSelect.addEventListener('change', load);
+    breakpointSelect.addEventListener('change', load);
+    document.querySelector('#reloadBtn').addEventListener('click', load);
+    document.querySelector('#openBtn').addEventListener('click', () => window.open(`../${pageSelect.value}`, '_blank', 'noopener'));
+
+    load();
+  </script>
+</body>
+</html>

@@ -1,0 +1,454 @@
+/*
+ * Doke — Stage 9 Overlay Contract
+ * Scope: modals, dialogs, popovers, dropdowns, drawers and media lightboxes.
+ * Rule: pages may define content layout, but overlay geometry, safe-area, backdrop,
+ * close buttons, actions and scroll behavior live here.
+ */
+
+:root {
+  --doke-overlay-z-base: 900;
+  --doke-overlay-z-dialog: 920;
+  --doke-overlay-z-menu: 760;
+  --doke-overlay-z-drawer: 880;
+  --doke-overlay-scrim: rgba(15, 23, 42, .54);
+  --doke-overlay-scrim-strong: rgba(2, 6, 23, .72);
+  --doke-overlay-surface: #ffffff;
+  --doke-overlay-muted: #f8fafc;
+  --doke-overlay-border: rgba(148, 163, 184, .24);
+  --doke-overlay-shadow: 0 28px 80px rgba(15, 23, 42, .22);
+  --doke-overlay-radius: 28px;
+  --doke-overlay-radius-mobile: 24px;
+  --doke-overlay-gutter: clamp(16px, 3vw, 28px);
+  --doke-overlay-max: 720px;
+  --doke-overlay-wide: 1120px;
+  --doke-overlay-header-min: 64px;
+  --doke-overlay-action-h: 44px;
+}
+
+html:has(dialog[open]),
+body:has(.ui-modal:not([hidden])),
+body:has(.wallet-modal:not([hidden])),
+body:has(.media-lightbox:not([hidden])),
+body:has(.before-after-preview:not([hidden])),
+body:has(.worker-preview:not([hidden])),
+body:has(.home-mobile-drawer:not([hidden])) {
+  overflow: hidden;
+}
+
+/* =============================
+   Root overlays / scrims
+   ============================= */
+:where(.ui-modal, .wallet-modal, .media-lightbox, .before-after-preview, .worker-preview, .home-mobile-drawer) {
+  box-sizing: border-box;
+}
+
+:where(.ui-modal:not([hidden]), .wallet-modal:not([hidden]), .media-lightbox:not([hidden]), .before-after-preview:not([hidden]), .worker-preview:not([hidden])) {
+  position: fixed;
+  inset: 0;
+  z-index: var(--doke-overlay-z-base);
+  display: grid;
+  place-items: center;
+  padding: max(var(--doke-overlay-gutter), env(safe-area-inset-top)) var(--doke-overlay-gutter) max(var(--doke-overlay-gutter), env(safe-area-inset-bottom));
+  overflow: hidden;
+}
+
+:where(.ui-modal__backdrop, .wallet-modal__scrim, .media-lightbox__backdrop, .before-after-preview__backdrop, .worker-preview__backdrop, .home-mobile-drawer__backdrop) {
+  position: fixed;
+  inset: 0;
+  background: var(--doke-overlay-scrim);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  z-index: 0;
+}
+
+:where(.media-lightbox__backdrop, .before-after-preview__backdrop, .worker-preview__backdrop) {
+  background: var(--doke-overlay-scrim-strong);
+}
+
+/* Native dialog reset */
+:where(dialog.detail-budget-modal, dialog.address-modal, dialog[open].detail-budget-modal, dialog[open].address-modal) {
+  width: min(calc(100vw - (var(--doke-overlay-gutter) * 2)), var(--doke-overlay-max));
+  max-width: none;
+  max-height: calc(100dvh - (var(--doke-overlay-gutter) * 2));
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--doke-overlay-radius);
+  background: transparent;
+  color: inherit;
+  overflow: visible;
+}
+
+:where(dialog.detail-budget-modal::backdrop, dialog.address-modal::backdrop) {
+  background: var(--doke-overlay-scrim);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+/* =============================
+   Dialog cards
+   ============================= */
+:where(
+  .ui-modal__dialog,
+  .wallet-modal__card,
+  .profile-edit-modal__dialog,
+  .profile-followers-modal__dialog,
+  .detail-budget-modal__dialog,
+  .address-modal__dialog,
+  .media-lightbox__dialog,
+  .media-lightbox__panel,
+  .before-after-preview__dialog,
+  .worker-preview__stage
+) {
+  position: relative;
+  z-index: 1;
+  width: min(calc(100vw - (var(--doke-overlay-gutter) * 2)), var(--doke-overlay-max));
+  max-height: calc(100dvh - (var(--doke-overlay-gutter) * 2));
+  border: 1px solid var(--doke-overlay-border);
+  border-radius: var(--doke-overlay-radius);
+  background: var(--doke-overlay-surface);
+  box-shadow: var(--doke-overlay-shadow);
+  overflow: hidden;
+}
+
+:where(.profile-edit-modal__dialog, .detail-budget-modal__dialog, .before-after-preview__dialog, .worker-preview__stage) {
+  width: min(calc(100vw - (var(--doke-overlay-gutter) * 2)), var(--doke-overlay-wide));
+}
+
+:where(.media-lightbox__dialog, .media-lightbox__panel, .before-after-preview__dialog, .worker-preview__stage) {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, .12);
+  color: #ffffff;
+}
+
+/* Overlay header / body / footer rhythm */
+:where(
+  .ui-modal__header,
+  .profile-edit-modal__head,
+  .profile-followers-modal__head,
+  .address-modal__head,
+  .detail-budget-modal__topbar,
+  .wallet-modal__head
+) {
+  min-height: var(--doke-overlay-header-min);
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid var(--doke-overlay-border);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+:where(
+  .ui-modal__title,
+  .profile-edit-modal__title,
+  .profile-followers-modal__title,
+  .address-modal__title,
+  .detail-budget-modal__title,
+  .wallet-modal__title
+) {
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(1.05rem, 1vw + .9rem, 1.42rem);
+  line-height: 1.18;
+  font-weight: 800;
+  letter-spacing: -.03em;
+}
+
+:where(
+  .ui-modal__eyebrow,
+  .profile-edit-modal__eyebrow,
+  .address-modal__eyebrow,
+  .detail-budget-modal__eyebrow,
+  .wallet-modal__eyebrow
+) {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 8px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, .10);
+  color: #2563eb;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+
+:where(
+  .ui-modal__text,
+  .profile-edit-modal__intro,
+  .address-modal__intro,
+  .detail-budget-modal__intro,
+  .wallet-modal__text
+) {
+  max-width: 62ch;
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: .92rem;
+  line-height: 1.55;
+}
+
+:where(
+  .ui-modal__body,
+  .profile-edit-modal__body,
+  .profile-followers-modal__list,
+  .address-modal__body,
+  .wallet-modal__body,
+  .detail-budget-modal__flow
+) {
+  max-height: min(68dvh, 680px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+}
+
+:where(
+  .ui-modal__dialog > :not(.ui-modal__header):not(.ui-modal__actions),
+  .address-modal__body,
+  .wallet-modal__body
+) {
+  padding: 22px 24px;
+}
+
+:where(
+  .ui-modal__actions,
+  .address-modal__actions,
+  .profile-edit-modal__actions,
+  .wallet-modal__actions
+) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px 22px;
+  border-top: 1px solid var(--doke-overlay-border);
+  background: rgba(248, 250, 252, .94);
+}
+
+/* Close/action buttons should not change size from modal to modal */
+:where(
+  .ui-modal__close,
+  .profile-edit-modal__close,
+  .profile-followers-modal__close,
+  .address-modal__close,
+  .detail-budget-modal__close,
+  .wallet-modal__close,
+  .media-lightbox__close,
+  .before-after-preview__close,
+  .worker-preview__close
+) {
+  inline-size: 44px;
+  block-size: 44px;
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(148, 163, 184, .26);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .92);
+  color: #0f172a;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
+  cursor: pointer;
+}
+
+:where(.media-lightbox__close, .before-after-preview__close, .worker-preview__close) {
+  background: rgba(15, 23, 42, .72);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, .18);
+}
+
+:where(
+  .ui-modal__button,
+  .profile-edit-modal__action,
+  .address-modal__actions .budget-button,
+  .wallet-modal__actions button
+) {
+  min-height: var(--doke-overlay-action-h);
+  border-radius: 999px;
+  padding-inline: 18px;
+  font-weight: 800;
+}
+
+/* =============================
+   Form controls inside overlays
+   ============================= */
+:where(
+  .ui-modal__input,
+  .profile-edit-modal__input,
+  .profile-edit-modal__textarea,
+  .address-modal input,
+  .address-modal select,
+  .address-modal textarea,
+  .wallet-modal input,
+  .wallet-modal select,
+  .wallet-modal textarea
+) {
+  min-height: 46px;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, .32);
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+}
+
+/* =============================
+   Dropdowns / popovers
+   ============================= */
+:where(.profile-dropdown, .orders-filters-popover, .orders-filters-panel, .filters-popover, .search-popover, .dropdown-menu) {
+  z-index: var(--doke-overlay-z-menu);
+  border: 1px solid var(--doke-overlay-border);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .98);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, .16);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  overflow: hidden;
+}
+
+:where(.profile-dropdown) {
+  min-width: 220px;
+  padding: 8px;
+}
+
+:where(.profile-dropdown__item) {
+  min-height: 42px;
+  border-radius: 14px;
+}
+
+:where(.orders-filters-popover, .orders-filters-panel) {
+  padding: 14px;
+}
+
+/* =============================
+   Mobile drawers
+   ============================= */
+:where(.home-mobile-drawer:not([hidden])) {
+  position: fixed;
+  inset: 0;
+  z-index: var(--doke-overlay-z-drawer);
+  display: block;
+}
+
+:where(.home-mobile-drawer__panel) {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: min(88vw, 360px);
+  max-width: calc(100vw - 32px);
+  padding-block: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-bottom));
+  border-right: 1px solid var(--doke-overlay-border);
+  border-radius: 0 28px 28px 0;
+  background: #ffffff;
+  box-shadow: 24px 0 60px rgba(15, 23, 42, .24);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* =============================
+   Media overlay stabilization
+   ============================= */
+:where(.before-after-preview__dialog, .worker-preview__stage) {
+  max-height: calc(100dvh - 32px);
+}
+
+:where(.before-after-preview__media, .worker-preview__media, .media-lightbox__media) :where(img, video),
+:where(.before-after-preview__media img, .before-after-preview__media video, .worker-preview__media img, .worker-preview__media video, .media-lightbox img, .media-lightbox video) {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* =============================
+   Responsive contract
+   ============================= */
+@media (max-width: 768px) {
+  :root {
+    --doke-overlay-gutter: 12px;
+  }
+
+  :where(.ui-modal:not([hidden]), .wallet-modal:not([hidden]), .media-lightbox:not([hidden]), .before-after-preview:not([hidden]), .worker-preview:not([hidden])) {
+    align-items: end;
+    padding: 10px 10px max(10px, env(safe-area-inset-bottom));
+  }
+
+  :where(dialog.detail-budget-modal, dialog.address-modal, dialog[open].detail-budget-modal, dialog[open].address-modal) {
+    width: calc(100vw - 20px);
+    max-height: calc(100dvh - 20px);
+    border-radius: var(--doke-overlay-radius-mobile);
+  }
+
+  :where(
+    .ui-modal__dialog,
+    .wallet-modal__card,
+    .profile-edit-modal__dialog,
+    .profile-followers-modal__dialog,
+    .detail-budget-modal__dialog,
+    .address-modal__dialog,
+    .media-lightbox__dialog,
+    .media-lightbox__panel,
+    .before-after-preview__dialog,
+    .worker-preview__stage
+  ) {
+    width: calc(100vw - 20px);
+    max-height: calc(100dvh - 20px);
+    border-radius: var(--doke-overlay-radius-mobile);
+  }
+
+  :where(.ui-modal__header, .profile-edit-modal__head, .profile-followers-modal__head, .address-modal__head, .detail-budget-modal__topbar, .wallet-modal__head) {
+    padding: 18px 18px 14px;
+  }
+
+  :where(.ui-modal__dialog > :not(.ui-modal__header):not(.ui-modal__actions), .address-modal__body, .wallet-modal__body) {
+    padding: 18px;
+  }
+
+  :where(.ui-modal__body, .profile-edit-modal__body, .profile-followers-modal__list, .address-modal__body, .wallet-modal__body, .detail-budget-modal__flow) {
+    max-height: min(66dvh, 620px);
+  }
+
+  :where(.ui-modal__actions, .address-modal__actions, .profile-edit-modal__actions, .wallet-modal__actions) {
+    position: sticky;
+    bottom: 0;
+    flex-direction: column-reverse;
+    align-items: stretch;
+    padding: 14px 18px max(18px, env(safe-area-inset-bottom));
+  }
+
+  :where(.ui-modal__button, .profile-edit-modal__action, .address-modal__actions .budget-button, .wallet-modal__actions button) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  :where(.orders-filters-popover, .orders-filters-panel, .filters-popover, .search-popover) {
+    width: min(100%, calc(100vw - 24px));
+    max-height: 62dvh;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  :where(.profile-dropdown) {
+    max-width: calc(100vw - 24px);
+  }
+
+  :where(.before-after-preview__dialog, .worker-preview__stage, .media-lightbox__dialog, .media-lightbox__panel) {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border: 0;
+  }
+}
+
+@media (max-width: 430px) {
+  :where(.home-mobile-drawer__panel) {
+    width: min(92vw, 342px);
+    border-radius: 0 24px 24px 0;
+  }
+
+  :where(.ui-modal__title, .profile-edit-modal__title, .profile-followers-modal__title, .address-modal__title, .detail-budget-modal__title, .wallet-modal__title) {
+    font-size: 1.08rem;
+  }
+
+  :where(.ui-modal__text, .profile-edit-modal__intro, .address-modal__intro, .detail-budget-modal__intro, .wallet-modal__text) {
+    font-size: .86rem;
+  }
+}

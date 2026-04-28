@@ -1,0 +1,136 @@
+/*
+ * Stage 16 — Index mobile surgical fixes
+ * Escopo: somente index.html em mobile. Não altera desktop.
+ * Correções:
+ * 1) Busca menos alta dentro do hero.
+ * 2) Rail de anúncios alinhado ao gutter visual da página.
+ * 3) Antes x Depois forçado como carrossel horizontal real.
+ */
+
+@media (max-width: 560px) {
+  body.home-index-shell {
+    --home-stage16-rail-inset: 8px;
+  }
+
+  /* Busca mobile: reduz altura sem quebrar alvo de toque */
+  body.home-index-shell .home-search-hero__card {
+    gap: 9px !important;
+    padding: 9px 10px 10px !important;
+  }
+
+  body.home-index-shell .home-search-hero__field {
+    min-height: 48px !important;
+    height: 48px !important;
+    padding: 7px 76px 7px 44px !important;
+    border-radius: 18px !important;
+  }
+
+  body.home-index-shell .home-search-hero__mobile-submit {
+    left: 13px !important;
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  body.home-index-shell .home-search-hero__audio-button {
+    right: 52px !important;
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  body.home-index-shell .home-search-hero__filter-button {
+    right: 4px !important;
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 15px !important;
+  }
+
+  /* Anúncios: mantém carrossel, mas devolve respiro no lado esquerdo */
+  body.home-index-shell .featured-services .content-rail {
+    margin-inline: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.home-index-shell .featured-services .service-grid {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    grid-template-columns: none !important;
+    grid-auto-flow: unset !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 0 var(--home-stage16-rail-inset) 10px var(--home-stage16-rail-inset) !important;
+    scroll-padding-left: var(--home-stage16-rail-inset) !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  body.home-index-shell .featured-services .service-grid > .service-card--feed {
+    flex: 0 0 min(82vw, 300px) !important;
+    width: min(82vw, 300px) !important;
+    min-width: min(82vw, 300px) !important;
+    max-width: min(82vw, 300px) !important;
+    scroll-snap-align: start !important;
+  }
+
+  /* Antes x Depois: carrossel horizontal de verdade no mobile */
+  body.home-index-shell .before-after .content-rail {
+    margin-inline: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.home-index-shell .before-after .comparison-grid,
+  body.shell-home.home-index-shell .before-after .comparison-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    grid-template-columns: none !important;
+    grid-auto-flow: unset !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 0 var(--home-stage16-rail-inset) 10px var(--home-stage16-rail-inset) !important;
+    scroll-padding-left: var(--home-stage16-rail-inset) !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  body.home-index-shell .before-after .comparison-grid::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  body.home-index-shell .before-after .comparison-grid > .comparison-card,
+  body.shell-home.home-index-shell .before-after .comparison-grid > .comparison-card {
+    flex: 0 0 min(78vw, 286px) !important;
+    width: min(78vw, 286px) !important;
+    min-width: min(78vw, 286px) !important;
+    max-width: min(78vw, 286px) !important;
+    scroll-snap-align: start !important;
+    margin: 0 !important;
+  }
+
+  body.home-index-shell .before-after .comparison-card__visual {
+    min-height: 148px !important;
+    aspect-ratio: 16 / 10 !important;
+  }
+}
+
+@media (max-width: 380px) {
+  body.home-index-shell .featured-services .service-grid > .service-card--feed {
+    flex-basis: min(82vw, 284px) !important;
+    width: min(82vw, 284px) !important;
+    min-width: min(82vw, 284px) !important;
+  }
+
+  body.home-index-shell .before-after .comparison-grid > .comparison-card {
+    flex-basis: min(78vw, 272px) !important;
+    width: min(78vw, 272px) !important;
+    min-width: min(78vw, 272px) !important;
+  }
+}

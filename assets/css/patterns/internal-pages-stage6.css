@@ -1,0 +1,400 @@
+/*
+ * Stage 6 — Internal pages responsive contract
+ * Owner: shared mobile/desktop structure for internal app pages.
+ * Scope: pedidos, mensagens, notificações, carteira and configurações.
+ * Do not place card-specific or modal-specific visual rules here.
+ */
+
+body.internal-shell-page {
+  --internal-stage6-page-max: 1180px;
+  --internal-stage6-gutter: clamp(16px, 3vw, 28px);
+  --internal-stage6-mobile-gutter: 14px;
+  --internal-stage6-safe-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  --internal-stage6-surface: rgba(255, 255, 255, 0.94);
+  --internal-stage6-surface-strong: #ffffff;
+  --internal-stage6-border: var(--doke-card-border, rgba(32, 74, 116, 0.12));
+  --internal-stage6-shadow: 0 18px 42px rgba(25, 55, 92, 0.07);
+  --internal-stage6-text: var(--quote-blue-deep, #12375f);
+  --internal-stage6-muted: #6682a3;
+  --internal-stage6-accent: #1f4f84;
+  --internal-stage6-action: #1f9d74;
+}
+
+@media (min-width: 1025px) {
+  body.internal-shell-page .page__content-inner {
+    width: min(100%, var(--internal-stage6-page-max));
+    margin-inline: auto;
+  }
+
+  body.orders-page-shell .orders-shell-content,
+  body.messages-page-shell .messages-shell-content,
+  body.notifications-page-shell .orders-shell-content,
+  body.wallet-page-shell .wallet-shell-content,
+  body.settings-page-shell .settings-shell-content {
+    padding-inline: var(--internal-stage6-gutter) !important;
+  }
+}
+
+/* Shared desktop page context actions. Keeps top actions aligned with the desktop shell. */
+body.internal-shell-page .page-header-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+body.internal-shell-page .page-header-context__action,
+body.internal-shell-page .home-side-meta__alert,
+body.settings-page-shell .settings-topbar__action {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 16px;
+}
+
+/* Shared internal mobile hero contract. Orders, messages and notifications already reuse these classes. */
+@media (max-width: 760px) {
+  body.internal-shell-page {
+    overflow-x: hidden;
+    background: linear-gradient(180deg, #f7fbff 0%, #eef5fb 46%, #f8fbff 100%);
+  }
+
+  body.internal-shell-page .page,
+  body.internal-shell-page .page__content,
+  body.internal-shell-page .page__content-inner {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow-x: clip;
+  }
+
+  body.internal-shell-page .page__content {
+    padding-top: 0 !important;
+    padding-bottom: var(--internal-stage6-safe-bottom) !important;
+  }
+
+  body.orders-page-shell .orders-shell-content,
+  body.messages-page-shell .messages-shell-content,
+  body.notifications-page-shell .orders-shell-content,
+  body.wallet-page-shell .wallet-shell-content,
+  body.settings-page-shell .settings-shell-content {
+    width: 100% !important;
+    padding-inline: var(--internal-stage6-mobile-gutter) !important;
+    padding-bottom: var(--internal-stage6-safe-bottom) !important;
+    box-sizing: border-box;
+  }
+
+  body.internal-shell-page .internal-page-topbar,
+  body.internal-shell-page .topbar.internal-page-topbar,
+  body.internal-shell-page .topbar.topbar--location.internal-page-topbar {
+    display: none !important;
+  }
+
+  body.internal-shell-page .orders-page-header,
+  body.settings-page-shell .settings-mobile-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    width: calc(100% + (var(--internal-stage6-mobile-gutter) * 2));
+    margin-inline: calc(var(--internal-stage6-mobile-gutter) * -1);
+    margin-bottom: 14px;
+    padding: calc(env(safe-area-inset-top, 0px) + 10px) var(--internal-stage6-mobile-gutter) 12px;
+    border-bottom: 1px solid rgba(32, 74, 116, 0.08);
+    background: rgba(247, 251, 255, 0.92);
+    box-shadow: 0 14px 26px rgba(20, 48, 82, 0.06);
+    backdrop-filter: blur(18px);
+    box-sizing: border-box;
+  }
+
+  body.internal-shell-page .orders-page-header__hero,
+  body.settings-page-shell .settings-mobile-header {
+    display: grid;
+    gap: 10px;
+  }
+
+  body.internal-shell-page .orders-page-header__hero-top,
+  body.settings-page-shell .settings-mobile-header__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  body.internal-shell-page .orders-page-header__hero-profile,
+  body.settings-page-shell .settings-mobile-header__profile {
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: 0;
+    background: transparent;
+    color: var(--internal-stage6-text);
+    padding: 0;
+    text-align: left;
+  }
+
+  body.internal-shell-page .orders-page-header__hero-avatar,
+  body.settings-page-shell .settings-mobile-header__avatar {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1f4f84 0%, #2874b8 100%);
+    color: #fff;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    box-shadow: 0 10px 22px rgba(31, 79, 132, 0.16);
+  }
+
+  body.internal-shell-page .orders-page-header__hero-usercopy,
+  body.settings-page-shell .settings-mobile-header__title {
+    min-width: 0;
+    display: grid;
+    gap: 1px;
+  }
+
+  body.internal-shell-page .orders-page-header__hero-name,
+  body.settings-page-shell .settings-mobile-header__title {
+    color: var(--internal-stage6-text);
+    font-size: 1rem;
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+  }
+
+  body.internal-shell-page .orders-page-header__hero-location,
+  body.internal-shell-page .orders-page-header__count-label {
+    color: var(--internal-stage6-muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.15;
+  }
+
+  body.internal-shell-page .orders-page-header__count {
+    min-width: 40px;
+    height: 40px;
+    border-radius: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1px solid var(--internal-stage6-border);
+    color: var(--internal-stage6-accent);
+    font-size: 0.95rem;
+    font-weight: 900;
+    box-shadow: 0 10px 20px rgba(20, 48, 82, 0.06);
+  }
+
+  body.internal-shell-page .orders-page-header__hero-strip {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  body.internal-shell-page .orders-page-header__search-toggle,
+  body.settings-page-shell .settings-mobile-header__action,
+  body.settings-page-shell .settings-mobile-header__search-close {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 1px solid var(--internal-stage6-border);
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    color: var(--internal-stage6-accent);
+    box-shadow: 0 10px 20px rgba(20, 48, 82, 0.06);
+  }
+
+  body.internal-shell-page .orders-page-header__search-toggle svg,
+  body.internal-shell-page .orders-page-header__hero-chip svg,
+  body.settings-page-shell .settings-mobile-header__action svg,
+  body.settings-page-shell .settings-mobile-header__search-close svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.15;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  body.internal-shell-page .orders-page-header__hero-chips {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding: 1px 2px 3px;
+  }
+
+  body.internal-shell-page .orders-page-header__hero-chips::-webkit-scrollbar {
+    display: none;
+  }
+
+  body.internal-shell-page .orders-page-header__hero-chip {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 13px;
+    border: 1px solid var(--internal-stage6-border);
+    border-radius: 16px;
+    background: #fff;
+    color: var(--internal-stage6-accent);
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 850;
+    line-height: 1;
+    white-space: nowrap;
+    box-shadow: 0 10px 20px rgba(20, 48, 82, 0.055);
+  }
+
+  body.internal-shell-page .orders-page-header__hero-chip[aria-expanded="true"],
+  body.internal-shell-page .orders-page-header__hero-chip.is-active,
+  body.internal-shell-page .orders-page-header__search-toggle[aria-expanded="true"],
+  body.settings-page-shell .settings-mobile-header__action[aria-expanded="true"] {
+    border-color: transparent;
+    background: var(--internal-stage6-action);
+    color: #fff;
+  }
+
+  body.internal-shell-page .orders-header-search,
+  body.settings-page-shell .settings-mobile-header__search {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) 42px;
+    align-items: center;
+    gap: 0;
+    min-height: 46px;
+    width: 100%;
+    border: 1px solid var(--internal-stage6-border);
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 12px 24px rgba(20, 48, 82, 0.06);
+    overflow: hidden;
+  }
+
+  body.internal-shell-page .orders-header-search[hidden],
+  body.settings-page-shell .settings-mobile-header__search[hidden] {
+    display: none !important;
+  }
+
+  body.internal-shell-page .orders-header-search__icon,
+  body.internal-shell-page .orders-header-search__close,
+  body.settings-page-shell .settings-mobile-header__search-icon,
+  body.settings-page-shell .settings-mobile-header__search-close {
+    width: 42px;
+    height: 42px;
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--internal-stage6-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: none;
+  }
+
+  body.internal-shell-page .orders-header-search input,
+  body.internal-shell-page .orders-header-search__input,
+  body.settings-page-shell .settings-mobile-header__search-input {
+    min-width: 0;
+    width: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--internal-stage6-text);
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 750;
+  }
+
+  body.internal-shell-page .orders-page-header__controls:not([hidden]),
+  body.notifications-page-shell .notifications-page-header__controls:not([hidden]),
+  body.messages-page-shell .messages-header-controls:not([hidden]) {
+    display: grid !important;
+    gap: 12px;
+    width: 100%;
+    margin-top: 10px;
+    padding: 14px;
+    border: 1px solid var(--internal-stage6-border);
+    border-radius: 22px;
+    background: var(--internal-stage6-surface-strong);
+    box-shadow: var(--internal-stage6-shadow);
+    box-sizing: border-box;
+  }
+
+  body.internal-shell-page .page-header-context {
+    display: none !important;
+  }
+
+  body.orders-page-shell .orders-page,
+  body.notifications-page-shell .notifications-page,
+  body.wallet-page-shell .wallet-page,
+  body.settings-page-shell .settings-page {
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  body.messages-page-shell .messages-app {
+    min-width: 0;
+  }
+
+  body.internal-shell-page .orders-planner,
+  body.internal-shell-page .wallet-grid,
+  body.internal-shell-page .settings-layout,
+  body.internal-shell-page .messages-layout,
+  body.internal-shell-page .notifications-layout {
+    max-width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  body.internal-shell-page {
+    --internal-stage6-mobile-gutter: 12px;
+  }
+
+  body.internal-shell-page .orders-page-header__hero-chip span {
+    max-width: 9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  body.internal-shell-page .orders-page-header__hero-name,
+  body.settings-page-shell .settings-mobile-header__title {
+    font-size: 0.98rem;
+  }
+}
+
+@media (max-width: 360px) {
+  body.internal-shell-page {
+    --internal-stage6-mobile-gutter: 10px;
+  }
+
+  body.internal-shell-page .orders-page-header__hero-strip {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  body.internal-shell-page .orders-page-header__search-toggle,
+  body.internal-shell-page .orders-page-header__hero-chip,
+  body.settings-page-shell .settings-mobile-header__action {
+    min-width: 42px;
+    min-height: 42px;
+    border-radius: 15px;
+  }
+}
