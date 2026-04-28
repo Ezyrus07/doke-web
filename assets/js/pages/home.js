@@ -218,16 +218,17 @@ const formatLocationSummary = (item) => {
 };
 
 const formatLocationTriggerValue = (item) => {
-  if (!item) return "Adicionar endereço";
+  if (!item) return "";
   if (item.cidade && item.uf) return `${item.cidade}, ${item.uf}`;
-  return item.titulo || item.rua || "Adicionar endereço";
+  return item.titulo || item.rua || "";
 };
 
 const syncTopbarLocationValues = () => {
   const currentLocation = readDefaultLocation();
   const value = formatLocationTriggerValue(currentLocation);
   topbarLocationValues.forEach((node) => {
-    node.textContent = value;
+    const fallback = node.dataset.locationFallback || node.textContent.trim() || "Adicionar endereço";
+    node.textContent = value || fallback;
   });
 };
 
@@ -855,8 +856,104 @@ const openOrderFeedback = (payload) => {
 
 orderFeedbackClose?.addEventListener("click", closeOrderFeedback);
 
+
+const initHomeSearchDropdown = () => {
+  const form = document.querySelector(".home-search-hero__form");
+  const input = document.querySelector("[data-search-input]");
+  const dropdown = document.querySelector("[data-search-dropdown]");
+  if (!form || !input || !dropdown) return;
+
+  const recommendationsHost = dropdown.querySelector("[data-search-recommendation-list]");
+  const resultsSection = dropdown.querySelector("[data-search-results-section]");
+  const resultsList = dropdown.querySelector("[data-search-results-list]");
+  const emptyState = dropdown.querySelector("[data-search-empty]");
+  const refineSection = dropdown.querySelector("[data-search-refine-section]");
+
+  const suggestions = [
+    { label: "Pintor", meta: "Serviços de pintura" },
+    { label: "Encanador", meta: "Vazamentos e reparos" },
+    { label: "Eletricista", meta: "Instalações e manutenção" },
+    { label: "Limpeza", meta: "Diarista e pós-obra" },
+    { label: "Frete", meta: "Mudanças e transporte" },
+    { label: "Montador", meta: "Móveis e instalação" }
+  ];
+
+  const buildHref = (value) => `resultados.html?q=${encodeURIComponent(value)}`;
+
+  const openDropdown = () => {
+    dropdown.hidden = false;
+    form.classList.add("is-search-open");
+  };
+
+  const closeDropdown = () => {
+    dropdown.hidden = true;
+    form.classList.remove("is-search-open");
+  };
+
+  const renderRecommendations = () => {
+    if (!recommendationsHost || recommendationsHost.dataset.ready === "true") return;
+    recommendationsHost.innerHTML = suggestions.map((item) => (
+      `<a class="search-suggestion-chip" href="${buildHref(item.label)}">${item.label}</a>`
+    )).join("");
+    recommendationsHost.dataset.ready = "true";
+  };
+
+  const renderResults = () => {
+    if (!resultsSection || !resultsList) return;
+    const query = input.value.trim().toLowerCase();
+    const matches = query
+      ? suggestions.filter((item) => item.label.toLowerCase().includes(query) || item.meta.toLowerCase().includes(query))
+      : [];
+
+    resultsSection.hidden = !query;
+    if (refineSection) refineSection.hidden = !query;
+
+    if (!query) {
+      resultsList.innerHTML = "";
+      if (emptyState) emptyState.hidden = true;
+      return;
+    }
+
+    resultsList.innerHTML = matches.map((item) => (
+      `<a class="search-dropdown__item" href="${buildHref(item.label)}"><span>${item.label}</span><small>${item.meta}</small></a>`
+    )).join("");
+
+    if (emptyState) emptyState.hidden = matches.length > 0;
+  };
+
+  renderRecommendations();
+
+  input.addEventListener("focus", () => {
+    openDropdown();
+    renderResults();
+  }, { signal });
+
+  input.addEventListener("input", () => {
+    openDropdown();
+    renderResults();
+  }, { signal });
+
+  form.addEventListener("submit", (event) => {
+    const query = input.value.trim();
+    if (!query) return;
+    event.preventDefault();
+    window.location.href = buildHref(query);
+  }, { signal });
+
+  document.addEventListener("click", (event) => {
+    if (!form.contains(event.target)) closeDropdown();
+  }, { signal });
+
+  document.addEventListener("doke:home-search-close", closeDropdown, { signal });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeDropdown();
+  }, { signal });
+};
+
 initMobileHomeDrawer();
 initHomeSearch();
+initHomeSearchDropdown();
 initHomeWorkers();
 
 try {
