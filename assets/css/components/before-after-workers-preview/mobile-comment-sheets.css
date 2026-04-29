@@ -1,0 +1,518 @@
+/*
+ * Doke mobile media overlays contract
+ * Clean contract. Scope:
+ * - Workers: comments keep bottom-sheet behavior.
+ * - Antes/Depois: media and footer stay in a 55/45 split.
+ * - Antes/Depois comments now use the same bottom-sheet pattern as workers.
+ * - Remove ghost borders/frames that were exposing the dark background.
+ */
+
+@media (max-width: 760px) {
+  /* =============================
+     Workers comments bottom sheet
+     ============================= */
+  body.worker-preview-open .worker-preview__comments {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 1600 !important;
+    width: 100% !important;
+    height: min(68dvh, 540px) !important;
+    max-height: min(68dvh, 540px) !important;
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+    padding: 0 !important;
+    border: 1px solid rgba(208, 220, 233, 0.96) !important;
+    border-bottom: 0 !important;
+    border-radius: 24px 24px 0 0 !important;
+    background: rgba(255, 255, 255, 0.99) !important;
+    box-shadow: 0 -22px 44px rgba(12, 28, 46, 0.24) !important;
+    overflow: hidden !important;
+    transform: translateY(calc(100% + 20px)) !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transition: transform 0.26s ease, opacity 0.2s ease, visibility 0.2s ease !important;
+  }
+
+  body.worker-preview-open .worker-preview.comments-visible .worker-preview__comments {
+    transform: translateY(0) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  body.worker-preview-open .worker-preview__comments-head {
+    min-height: 58px !important;
+    padding: 12px 16px !important;
+    border-bottom: 1px solid rgba(227, 236, 244, 0.96) !important;
+    background: #fff !important;
+  }
+
+  body.worker-preview-open .worker-preview__comments-count {
+    color: #143a63 !important;
+    font-size: 0.92rem !important;
+    font-weight: 900 !important;
+  }
+
+  body.worker-preview-open .worker-preview__comments-head button {
+    width: 40px !important;
+    height: 40px !important;
+    border: 1px solid rgba(217, 228, 239, 0.95) !important;
+    border-radius: 999px !important;
+    background: #eef5fb !important;
+  }
+
+  body.worker-preview-open .worker-preview__comments-list {
+    min-height: 0 !important;
+    padding: 14px 14px 18px !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  body.worker-preview-open .worker-preview__comment-input {
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom)) !important;
+    border-top: 1px solid rgba(227, 236, 244, 0.96) !important;
+    background: #fff !important;
+  }
+
+  body.worker-preview-open .worker-preview.comments-visible .worker-preview__scroll-hint {
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+
+  /* =========================================
+     Antes/Depois main contract (55 / 45 split)
+     ========================================= */
+  body.before-after-preview-open {
+    overflow: hidden !important;
+  }
+
+  body.before-after-preview-open .before-after-preview {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 1450 !important;
+    display: block !important;
+    padding: 0 !important;
+    background: #07121f !important;
+  }
+
+  body.before-after-preview-open .before-after-preview__scrim {
+    display: none !important;
+  }
+
+  body.before-after-preview-open .before-after-preview__dialog {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    border: 0 !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #07121f !important;
+  }
+
+  body.before-after-preview-open .before-after-preview__close--fixed {
+    position: fixed !important;
+    top: max(12px, env(safe-area-inset-top)) !important;
+    right: 12px !important;
+    z-index: 90 !important;
+    width: 40px !important;
+    height: 40px !important;
+    border: 1px solid rgba(214, 228, 241, 0.95) !important;
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #12385f !important;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22) !important;
+  }
+
+  body.before-after-preview-open .before-after-post {
+    --ba-footer-h: clamp(350px, 45dvh, 400px);
+    width: 100vw !important;
+    height: 100dvh !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: minmax(0, calc(100dvh - var(--ba-footer-h))) var(--ba-footer-h) !important;
+    overflow: hidden !important;
+    border: 0 !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    background: #07121f !important;
+    box-shadow: none !important;
+  }
+
+  body.before-after-preview-open .before-after-post__viewer {
+    grid-row: 1 !important;
+    position: relative !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    display: block !important;
+    overflow: hidden !important;
+    border: 0 !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    background: #07121f !important;
+  }
+
+  body.before-after-preview-open .before-after-post__media,
+  body.before-after-preview-open .before-after-post__media-frame,
+  body.before-after-preview-open .before-after-post__media .comparison-card__visual,
+  body.before-after-preview-open .before-after-post__media .comparison-card__half {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body.before-after-preview-open .before-after-post__media-frame {
+    position: relative !important;
+    overflow: hidden !important;
+    background: #07121f !important;
+  }
+
+  body.before-after-preview-open .before-after-post__media .comparison-card__visual::before,
+  body.before-after-preview-open .before-after-post__media .comparison-card__visual::after,
+  body.before-after-preview-open .before-after-post__media-frame::before,
+  body.before-after-preview-open .before-after-post__media-frame::after {
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body.before-after-preview-open .before-after-post__media .comparison-card__half::before {
+    background-size: cover !important;
+    background-position: center center !important;
+  }
+
+  body.before-after-preview-open .before-after-post__media .comparison-card__half span {
+    top: max(14px, env(safe-area-inset-top)) !important;
+    left: 14px !important;
+    min-height: 32px !important;
+    padding: 0 13px !important;
+    font-size: 0.78rem !important;
+    z-index: 35 !important;
+  }
+
+  body.before-after-preview-open .before-after-post__media-switch {
+    position: absolute !important;
+    top: calc(max(14px, env(safe-area-inset-top)) + 48px) !important;
+    bottom: auto !important;
+    left: 50% !important;
+    z-index: 42 !important;
+    width: auto !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+    display: inline-grid !important;
+    grid-template-columns: repeat(3, auto) !important;
+    align-items: center !important;
+    gap: 3px !important;
+    padding: 4px !important;
+    border-radius: 999px !important;
+    background: rgba(17, 34, 56, 0.78) !important;
+    border: 1px solid rgba(255, 255, 255, 0.22) !important;
+    box-shadow: 0 16px 34px rgba(4, 16, 30, 0.28) !important;
+    transform: translateX(-50%) !important;
+    overflow: hidden !important;
+  }
+
+  body.before-after-preview-open .before-after-post__media-switch button {
+    width: auto !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    padding: 0 12px !important;
+    border-radius: 999px !important;
+    font-size: 0.74rem !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  body.before-after-preview-open .before-after-post__media-nav {
+    top: 50% !important;
+    width: 44px !important;
+    height: 44px !important;
+    z-index: 38 !important;
+  }
+
+  body.before-after-preview-open .before-after-post__media-nav--before { left: 12px !important; }
+  body.before-after-preview-open .before-after-post__media-nav--after { right: 12px !important; }
+
+  body.before-after-preview-open .before-after-post__sidebar {
+    grid-row: 2 !important;
+    position: relative !important;
+    z-index: 20 !important;
+    min-height: 0 !important;
+    height: var(--ba-footer-h) !important;
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    background: #fff !important;
+    border: 0 !important;
+    outline: 0 !important;
+    border-radius: 24px 24px 0 0 !important;
+    box-shadow: 0 -16px 34px rgba(7, 20, 34, 0.18) !important;
+  }
+
+  body.before-after-preview-open .before-after-post__header {
+    min-height: 62px !important;
+    padding: 11px 12px 6px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 8px !important;
+    align-items: center !important;
+    border: 0 !important;
+    background: #fff !important;
+  }
+
+  body.before-after-preview-open .before-after-post__author {
+    min-width: 0 !important;
+    display: grid !important;
+    grid-template-columns: 40px minmax(0, 1fr) !important;
+    gap: 9px !important;
+    align-items: center !important;
+  }
+
+  body.before-after-preview-open .before-after-post__avatar {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 0.78rem !important;
+  }
+
+  body.before-after-preview-open .before-after-post__author-copy {
+    min-width: 0 !important;
+    display: grid !important;
+    gap: 2px !important;
+  }
+
+  body.before-after-preview-open .before-after-post__author-copy strong {
+    color: #123b67 !important;
+    font-size: 0.92rem !important;
+    line-height: 1.1 !important;
+    font-weight: 900 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  body.before-after-preview-open .before-after-post__author-copy small {
+    color: #6a7f9a !important;
+    font-size: 0.72rem !important;
+    line-height: 1.1 !important;
+    font-weight: 800 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  body.before-after-preview-open .before-after-post__follow { display: none !important; }
+  body.before-after-preview-open .before-after-post__more { width: 34px !important; height: 34px !important; }
+
+  /* White area content stays clean. Comments are not inline anymore. */
+  body.before-after-preview-open .before-after-post__comments-sheet {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 1600 !important;
+    width: 100% !important;
+    height: min(68dvh, 540px) !important;
+    max-height: min(68dvh, 540px) !important;
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+    padding: 0 !important;
+    border: 1px solid rgba(208, 220, 233, 0.96) !important;
+    border-bottom: 0 !important;
+    border-radius: 24px 24px 0 0 !important;
+    background: rgba(255, 255, 255, 0.99) !important;
+    box-shadow: 0 -22px 44px rgba(12, 28, 46, 0.24) !important;
+    overflow: hidden !important;
+    transform: translateY(calc(100% + 20px)) !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transition: transform 0.26s ease, opacity 0.2s ease, visibility 0.2s ease !important;
+  }
+
+  body.before-after-preview-open .before-after-preview.comments-visible .before-after-post__comments-sheet {
+    transform: translateY(0) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  body.before-after-preview-open .before-after-post__comments-head {
+    min-height: 58px !important;
+    padding: 12px 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    border-bottom: 1px solid rgba(227, 236, 244, 0.96) !important;
+    background: #fff !important;
+  }
+
+  body.before-after-preview-open .before-after-post__comments-head strong {
+    color: #143a63 !important;
+    font-size: 0.92rem !important;
+    font-weight: 900 !important;
+  }
+
+  body.before-after-preview-open .before-after-post__comments-close {
+    width: 40px !important;
+    height: 40px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 1px solid rgba(217, 228, 239, 0.95) !important;
+    border-radius: 999px !important;
+    background: #eef5fb !important;
+  }
+
+  body.before-after-preview-open .before-after-post__comments-scroll {
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 14px 14px 18px !important;
+    background: #fff !important;
+  }
+
+  body.before-after-preview-open .before-after-post__caption,
+  body.before-after-preview-open .before-after-post__changes,
+  body.before-after-preview-open .before-after-post__caption-copy time {
+    display: none !important;
+  }
+
+  body.before-after-preview-open .before-after-post__comments-list {
+    display: block !important;
+  }
+
+  body.before-after-preview-open .before-after-post__comment-input {
+    display: flex !important;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom)) !important;
+    border-top: 1px solid rgba(227, 236, 244, 0.96) !important;
+    background: #fff !important;
+  }
+
+  body.before-after-preview-open .before-after-post__footer {
+    min-height: 0 !important;
+    display: grid !important;
+    grid-template-rows: auto auto auto !important;
+    border-top: 1px solid rgba(229, 236, 244, 0.9) !important;
+    background: #fff !important;
+    overflow: hidden !important;
+  }
+
+  body.before-after-preview-open .before-after-post__actions {
+    min-height: 36px !important;
+    padding: 6px 12px 2px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  body.before-after-preview-open .before-after-post__actions-left {
+    display: inline-flex !important;
+    gap: 12px !important;
+    align-items: center !important;
+  }
+
+  body.before-after-preview-open .before-after-post__action {
+    width: 28px !important;
+    height: 28px !important;
+    color: #143a63 !important;
+  }
+
+  body.before-after-preview-open .before-after-post__action svg {
+    width: 23px !important;
+    height: 23px !important;
+  }
+
+  body.before-after-preview-open .before-after-post__engagement {
+    padding: 0 12px 5px !important;
+    display: grid !important;
+    gap: 4px !important;
+  }
+
+  body.before-after-preview-open .before-after-post__engagement strong,
+  body.before-after-preview-open .before-after-post__engagement button {
+    font-size: 0.78rem !important;
+    line-height: 1.15 !important;
+  }
+
+  body.before-after-preview-open .before-after-post__engagement strong {
+    color: #102f50 !important;
+    font-weight: 900 !important;
+  }
+
+  body.before-after-preview-open .before-after-post__engagement button {
+    color: #7a8fa7 !important;
+    font-weight: 800 !important;
+  }
+
+  body.before-after-preview-open .before-after-post__timestamp {
+    min-height: 25px !important;
+    padding: 0 12px 11px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  body.before-after-preview-open .before-after-post__timestamp span,
+  body.before-after-preview-open .before-after-post__timestamp a {
+    font-size: 0.75rem !important;
+    line-height: 1.1 !important;
+    font-weight: 900 !important;
+  }
+
+  body.before-after-preview-open .before-after-post__timestamp span { color: #8a9caf !important; }
+  body.before-after-preview-open .before-after-post__timestamp a { color: #0058a8 !important; }
+}
+
+@media (min-width: 761px) {
+  .before-after-preview .before-after-post__comments-sheet {
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .before-after-preview .before-after-post__comments-close {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  /* Hotfix: remove dark background bleed between media and white footer. */
+  body.before-after-preview-open .before-after-post {
+    background: #ffffff !important;
+  }
+
+  body.before-after-preview-open .before-after-post__viewer {
+    background: #07121f !important;
+  }
+
+  body.before-after-preview-open .before-after-post__sidebar {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body.before-after-preview-open .before-after-post__header {
+    border-radius: 0 !important;
+  }
+
+  body.before-after-preview-open .before-after-post__footer {
+    border-radius: 0 !important;
+  }
+}

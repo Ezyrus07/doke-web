@@ -1,25 +1,52 @@
-/* Mobile Overlay System v1 */
+/* Mobile Overlay System v1.1 — safe runtime
+   Fix: remove generic selectors (.is-open/.is-visible/.active) and avoid observing
+   the whole document continuously. This prevents false overlay locks/freezes. */
 (function(){
+  const mq = window.matchMedia('(max-width: 760px)');
   const overlaySelectors = [
-    'dialog[open]', '.is-open', '.is-visible', '.modal[open]',
-    '.ui-modal:not([hidden])', '.payment-overlay:not([hidden])', '.detail-modal:not([hidden])',
-    '.home-address-modal:not([hidden])', '.address-modal:not([hidden])', '.community-action-modal:not([hidden])',
-    '.community-request-modal:not([hidden])', '.orders-sidepanel.is-open', '.drawer.is-open'
+    'dialog[open]',
+    '.ui-modal:not([hidden])',
+    '.payment-overlay:not([hidden])',
+    '.detail-modal:not([hidden])',
+    '.home-address-modal:not([hidden])',
+    '.address-modal:not([hidden])',
+    '.community-action-modal:not([hidden])',
+    '.community-request-modal:not([hidden])',
+    '.orders-sidepanel.is-open',
+    '.drawer.is-open',
+    '[data-mobile-overlay="open"]'
   ];
 
-  const isMobile = () => window.matchMedia('(max-width: 760px)').matches;
+  let raf = 0;
+  const hasOpenOverlay = () => overlaySelectors.some((selector) => document.querySelector(selector));
+
   const sync = () => {
-    if (!isMobile()) {
+    raf = 0;
+    if (!mq.matches) {
       document.body.classList.remove('doke-mobile-overlay-open');
       return;
     }
-    const hasOverlay = overlaySelectors.some(selector => document.querySelector(selector));
-    document.body.classList.toggle('doke-mobile-overlay-open', hasOverlay);
+    document.body.classList.toggle('doke-mobile-overlay-open', hasOpenOverlay());
   };
 
-  const observer = new MutationObserver(sync);
-  observer.observe(document.documentElement, {subtree:true, childList:true, attributes:true, attributeFilter:['open','hidden','class','aria-hidden']});
-  window.addEventListener('resize', sync, {passive:true});
-  document.addEventListener('click', () => requestAnimationFrame(sync), true);
-  sync();
+  const requestSync = () => {
+    if (raf) return;
+    raf = window.requestAnimationFrame(sync);
+  };
+
+  const start = () => {
+    sync();
+    window.addEventListener('resize', requestSync, { passive: true });
+    document.addEventListener('click', requestSync, true);
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') requestSync();
+    }, true);
+    document.addEventListener('doke:overlay-sync', requestSync);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+  } else {
+    start();
+  }
 })();

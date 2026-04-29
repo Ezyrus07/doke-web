@@ -275,6 +275,8 @@ window.DokeHomeWorkers = (() => {
         return `${value}`;
       };
 
+      const isMobileCommentsSheet = () => window.matchMedia('(max-width: 760px)').matches;
+
       const syncCommentsVisibility = () => {
         const visible = root.classList.contains('comments-visible');
         commentsToggle?.setAttribute('aria-label', visible ? 'Ocultar comentários' : 'Mostrar comentários');
@@ -505,6 +507,11 @@ window.DokeHomeWorkers = (() => {
           updateActive(index);
           const shouldShow = !(wasVisible && wasSameItem);
           root.classList.toggle('comments-visible', shouldShow);
+          if (shouldShow && isMobileCommentsSheet()) {
+            window.requestAnimationFrame(() => {
+              commentsPanel?.querySelector('input')?.focus({ preventScroll: true });
+            });
+          }
           syncCommentsVisibility();
         }, { signal });
       });
@@ -518,7 +525,14 @@ window.DokeHomeWorkers = (() => {
 
       document.addEventListener('keydown', (event) => {
         if (root.hidden) return;
-        if (event.key === 'Escape') close();
+        if (event.key === 'Escape') {
+          if (root.classList.contains('comments-visible')) {
+            root.classList.remove('comments-visible');
+            syncCommentsVisibility();
+            return;
+          }
+          close();
+        }
         if (event.key === 'ArrowDown') {
           event.preventDefault();
           scrollToIndex(activeIndex + 1);

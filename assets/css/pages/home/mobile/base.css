@@ -13,7 +13,7 @@
   body.home-index-shell .page__content {
     padding-top: 0 !important;
     padding-inline: 0 !important;
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 132px) !important;
+    padding-bottom: 0 !important;
     background: linear-gradient(180deg, #eff4fa 0%, #f8fbff 100%) !important;
   }
 
@@ -93,28 +93,87 @@
 @media (max-width: 560px) {
   body.home-index-shell .app-footer {
     display: block !important;
-    margin-top: 10px !important;
-    padding-inline: var(--home-mobile-edge) !important;
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px) !important;
+    margin-top: 8px !important;
+    padding-inline: 0 !important;
+    padding-bottom: 0 !important;
   }
 
-  body.home-index-shell .home-footer__grid,
-  body.home-index-shell .home-footer__bottom {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 14px !important;
+  body.home-index-shell .home-footer {
+    margin-top: 10px !important;
+    margin-inline: 0 !important;
+    width: 100% !important;
+    padding: 16px var(--home-mobile-edge) calc(78px + env(safe-area-inset-bottom, 0px)) !important;
+    border-radius: 0 !important;
   }
 
   body.home-index-shell .home-footer__grid {
-    padding: 18px 16px !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px 12px !important;
+    padding: 0 !important;
+  }
+
+  body.home-index-shell .home-footer__brand {
+    grid-column: 1 / -1 !important;
+    max-width: none !important;
+    padding-bottom: 12px !important;
+    margin-bottom: 2px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.10) !important;
+  }
+
+  body.home-index-shell .home-footer__logo {
+    width: 84px !important;
+    margin-bottom: 8px !important;
+  }
+
+  body.home-index-shell .home-footer__text {
+    margin-bottom: 10px !important;
+    max-width: 28ch !important;
+    font-size: 0.89rem !important;
+    line-height: 1.42 !important;
+  }
+
+  body.home-index-shell .home-footer__cta {
+    min-height: 36px !important;
+    padding-inline: 14px !important;
+    font-size: 0.92rem !important;
+  }
+
+  body.home-index-shell .home-footer__grid > div:not(.home-footer__brand) {
+    min-width: 0 !important;
+  }
+
+  body.home-index-shell .home-footer__title {
+    margin-bottom: 8px !important;
+    font-size: 0.76rem !important;
+    letter-spacing: 0.06em !important;
+  }
+
+  body.home-index-shell .home-footer__list {
+    gap: 5px !important;
+  }
+
+  body.home-index-shell .home-footer__list li:nth-child(n + 4) {
+    display: none !important;
+  }
+
+  body.home-index-shell .home-footer__link {
+    font-size: 0.88rem !important;
+    line-height: 1.24 !important;
   }
 
   body.home-index-shell .home-footer__bottom {
-    padding: 16px !important;
-    margin-top: 0 !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    padding: 12px 0 0 !important;
+    margin-top: 12px !important;
+    font-size: 0.78rem !important;
   }
 
   body.home-index-shell .home-footer__bottom-links {
+    display: inline-flex !important;
+    flex-wrap: wrap !important;
     gap: 10px !important;
   }
 }
@@ -146,5 +205,22 @@
   body.home-index-shell .featured-pros .pro-grid {
     max-width: 100% !important;
     min-width: 0 !important;
+  }
+}
+
+
+/* Final mobile footer contract: no white gap below footer, docked bottom nav sits over footer safe area. */
+@media (max-width: 560px) {
+  body.home-index-shell .page__content {
+    padding-bottom: 0 !important;
+  }
+
+  body.home-index-shell .home-footer {
+    margin-bottom: 0 !important;
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body.home-index-shell .home-footer + * {
+    margin-top: 0 !important;
   }
 }

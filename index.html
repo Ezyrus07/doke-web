@@ -14,12 +14,13 @@
   <link rel="stylesheet" href="assets/css/core/index.css">
   <link rel="stylesheet" href="assets/css/pages/app-shell.css">
   <link rel="stylesheet" href="assets/css/pages/home.css?v=20260427-v34-workers-preview-grid">
-  <link rel="stylesheet" href="assets/css/components/before-after-workers-preview.css?v=20260425-v6-publication-modals">
+  <link rel="stylesheet" href="assets/css/components/before-after-workers-preview.css?v=20260429-index-recovery-comments">
   <link rel="stylesheet" href="assets/css/components/cards/mobile-card-contract.css?v=20260426-final-mobile-cards">
   <link rel="stylesheet" href="assets/css/components/ui-surface-system.css?v=20260427-modal-alignment-v22">
   <link rel="stylesheet" href="assets/css/core/responsive-foundation.css?v=20260428-architecture" />
   <link rel="stylesheet" href="assets/css/components/internal/topbar-standard.css?v=20260428-architecture" />
   <link rel="stylesheet" href="assets/css/components/cards/card-grid-contract.css?v=20260428-architecture" />
+  <link rel="stylesheet" href="assets/css/components/cards/recommendation-card.css?v=20260428-index-recommendations-v3">
   <link rel="stylesheet" href="assets/css/patterns/home-results-card.css?v=20260428-architecture" />
   <link rel="stylesheet" href="assets/css/components/overlays/overlay-contract.css?v=20260428-architecture" />
     <link rel="stylesheet" href="assets/css/components/forms-actions/form-action-contract.css?v=20260428-architecture">
@@ -30,12 +31,15 @@
   <link rel="stylesheet" href="assets/css/pages/home/mobile-composition.css?v=20260428-architecture">
   <link rel="stylesheet" href="assets/css/components/navigation/home-mobile-drawer.css?v=20260428-architecture">
   <link rel="stylesheet" href="assets/css/components/navigation/mobile-drawer-standard.css?v=20260428-architecture">
-  <link rel="stylesheet" href="assets/css/pages/home/mobile-alignment.css?v=20260428-architecture">
-  <link rel="stylesheet" href="assets/css/components/shell/page-container-contract.css?v=20260428-v1">
-  <link rel="stylesheet" href="assets/css/components/navigation/mobile-bottom-nav-system.css?v=20260428-v1">
-  <link rel="stylesheet" href="assets/css/components/navigation/mobile-internal-header.css?v=20260428-v1">
-  <link rel="stylesheet" href="assets/css/components/cards/mobile-list-card-system.css?v=20260428-v1">
-  <link rel="stylesheet" href="assets/css/components/overlays/mobile-overlay-system.css?v=20260428-v1">
+<link rel="stylesheet" href="assets/css/pages/home/mobile-alignment.css?v=20260428-architecture">
+  <link rel="stylesheet" href="assets/css/components/shell/page-container-contract.css?v=20260428-v1-hotfix">
+  <link rel="stylesheet" href="assets/css/components/navigation/mobile-bottom-nav-system.css?v=20260428-v1-hotfix">
+  <link rel="stylesheet" href="assets/css/components/navigation/mobile-internal-header.css?v=20260428-v1-hotfix">
+  <link rel="stylesheet" href="assets/css/components/cards/mobile-list-card-system.css?v=20260428-v1-hotfix">
+  <link rel="stylesheet" href="assets/css/components/overlays/mobile-overlay-system.css?v=20260428-overlay-hotfix">
+
+  <link rel="stylesheet" href="assets/css/components/navigation/mobile-bottom-nav.css?v=20260428-index-nav-docked-reference-v3">
+  <link rel="stylesheet" href="assets/css/pages/home/index-final-refinement.css?v=20260429-index-recovery-safe">
 </head>
 <body class="app-shell-page internal-shell-page shell-home home-index-shell">
   <div class="app-shell">
@@ -58,7 +62,7 @@
             </svg>
           </button>
           <button class="home-index-topbar__location" type="button" data-location-trigger aria-label="Alterar localização">
-            <span class="home-index-topbar__location-text" data-topbar-location-value>Belo Horizonte, MG</span>
+            <span class="home-index-topbar__location-text" data-topbar-location-value data-location-fallback="Belo Horizonte, MG">Belo Horizonte, MG</span>
             <span class="home-index-topbar__location-caret" aria-hidden="true"></span>
           </button>
           <form class="topbar-search topbar-search--subtle" data-global-topbar-search autocomplete="off" aria-label="Buscar no cabeçalho">
@@ -99,7 +103,7 @@
         </div>
         <button class="mobile-header-location" type="button" data-location-trigger aria-label="Selecionar localização">
           <span class="mobile-header-location__dot" aria-hidden="true"></span>
-          <strong class="mobile-header-location__value" data-topbar-location-value>Belo Horizonte, MG</strong>
+          <strong class="mobile-header-location__value" data-topbar-location-value data-location-fallback="Belo Horizonte, MG">Belo Horizonte, MG</strong>
           <span class="mobile-header-location__caret" aria-hidden="true"></span>
         </button>
         <div class="topbar__right">
@@ -194,7 +198,7 @@
               <input id="desktop-quick-search" class="home-side-meta__search-input" type="text" name="q" placeholder="Buscar serviço" autocomplete="off">
             </form>
             <button class="home-side-meta__location" type="button" aria-label="Alterar localização">
-              <span class="home-side-meta__location-text" data-topbar-location-value>Belo Horizonte, MG</span>
+              <span class="home-side-meta__location-text" data-topbar-location-value data-location-fallback="Belo Horizonte, MG">Belo Horizonte, MG</span>
               <span class="home-side-meta__caret" aria-hidden="true"></span>
             </button>
             </div>
@@ -272,7 +276,7 @@
                     <div class="home-mobile-hero__quick-actions">
                       <button class="home-mobile-hero__location" type="button" data-location-trigger aria-label="Selecionar localização">
                         <span class="home-mobile-hero__location-dot" aria-hidden="true"></span>
-                        <span class="home-mobile-hero__location-label" data-topbar-location-value>Adicionar endereço</span>
+                        <span class="home-mobile-hero__location-label" data-topbar-location-value data-location-fallback="Belo Horizonte, MG">Belo Horizonte, MG</span>
                         <span class="home-mobile-hero__location-caret" aria-hidden="true"></span>
                       </button>
                       <a class="home-mobile-hero__notification" href="notificacoes.html" aria-label="Abrir notificações">
@@ -435,7 +439,7 @@
           <section class="featured-services" aria-labelledby="featured-services-title">
             <div class="section-heading section-heading--spread home-section-header">
               <div>
-                <h2 class="section-heading__title home-section-title" id="featured-services-title">Anúncios em destaque</h2>
+                <h2 class="section-heading__title home-section-title" id="featured-services-title">Destaques para você</h2>
               </div>
               <a class="section-heading__link" href="resultados.html?type=services">Ver todos</a>
             </div>
@@ -550,6 +554,53 @@
                   <path d="m9.5 6.5 5 5-5 5"></path>
                 </svg>
               </button>
+            </div>
+          </section>
+
+          <section class="home-recommendations" aria-labelledby="home-recommendations-title">
+            <div class="section-heading section-heading--spread home-section-header home-recommendations__header">
+              <div>
+                <h2 class="section-heading__title home-section-title" id="home-recommendations-title">Recomendados para você</h2>
+              </div>
+              <a class="section-heading__link" href="resultados.html?type=services">Ver todos</a>
+            </div>
+
+            <div class="recommendation-list" aria-label="Serviços recomendados">
+              <article class="recommendation-card">
+                <a class="recommendation-card__media" href="detalhe-anuncio.html" aria-label="Ver detalhes de conserto de vazamento">
+                  <img src="assets/img/workers/worker-cozinha.png" alt="Profissional fazendo conserto de vazamento em pia" loading="lazy">
+                </a>
+                <div class="recommendation-card__content">
+                  <h3 class="recommendation-card__title">Conserto de vazamento</h3>
+                  <p class="recommendation-card__category">Encanador</p>
+                  <div class="recommendation-card__meta" aria-label="Avaliação e diferencial">
+                    <span class="recommendation-card__rating">★ 4,8 <small>(64)</small></span>
+                    <span class="recommendation-card__signal">⚡ Responde rápido</span>
+                  </div>
+                </div>
+                <div class="recommendation-card__aside">
+                  <p class="recommendation-card__price"><span>A partir de</span><strong>R$ 120</strong></p>
+                  <a class="recommendation-card__cta" href="detalhe-anuncio.html">Ver detalhes</a>
+                </div>
+              </article>
+
+              <article class="recommendation-card">
+                <a class="recommendation-card__media" href="detalhe-anuncio.html" aria-label="Ver detalhes de pintura de parede">
+                  <img src="assets/img/workers/worker-pintura.png" alt="Profissional pintando uma parede" loading="lazy">
+                </a>
+                <div class="recommendation-card__content">
+                  <h3 class="recommendation-card__title">Pintura de parede</h3>
+                  <p class="recommendation-card__category">Pintor</p>
+                  <div class="recommendation-card__meta" aria-label="Avaliação e diferencial">
+                    <span class="recommendation-card__rating">★ 4,9 <small>(210)</small></span>
+                    <span class="recommendation-card__signal recommendation-card__signal--quality">✺ Super prestativo</span>
+                  </div>
+                </div>
+                <div class="recommendation-card__aside">
+                  <p class="recommendation-card__price"><span>A partir de</span><strong>R$ 200</strong></p>
+                  <a class="recommendation-card__cta" href="detalhe-anuncio.html">Ver detalhes</a>
+                </div>
+              </article>
             </div>
           </section>
 
@@ -1010,7 +1061,7 @@
 
 
         <nav class="bottom-nav" aria-label="Navegação principal mobile">
-          <a class="bottom-nav__item bottom-nav__item--home is-active" href="index.html">
+          <a class="bottom-nav__item bottom-nav__item--home is-active" href="index.html" aria-current="page">
             <span class="bottom-nav__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5.5 9.5V20h13V9.5"></path></svg></span>
             <span>Início</span>
           </a>
@@ -1113,7 +1164,7 @@
             <path d="M12 5v14"></path>
             <path d="M5 12h14"></path>
           </svg>
-          <span>Adicionar endereço</span>
+          <span>Belo Horizonte, MG</span>
         </button>
       </div>
     </div>
@@ -1224,7 +1275,7 @@
       <div class="home-address-modal__head surface-modal__hero">
         <div class="surface-modal__intro">
 <span class="home-address-modal__eyebrow">Localização</span>
-<h2>Adicionar endereço</h2>
+<h2>Belo Horizonte, MG</h2>
           <p>Salve endereços para reutilizar neste topo e nos outros fluxos do site.</p>
         </div>
         <button class="home-address-modal__close" type="button" data-home-address-close aria-label="Fechar">
@@ -1476,8 +1527,8 @@
   <script src="assets/js/pages/home/drawer.js"></script>
   <script src="assets/js/pages/home/filters.js"></script>
   <script src="assets/js/pages/home/search.js"></script>
-  <script src="assets/js/pages/home/before-after.js?v=20260425-scroll-restore"></script>
-  <script src="assets/js/pages/home/workers.js?v=20260427-v34-workers-preview-grid"></script>
+  <script src="assets/js/pages/home/before-after.js?v=20260429-index-recovery-comments"></script>
+  <script src="assets/js/pages/home/workers.js?v=20260429-index-recovery-comments"></script>
   <script src="assets/js/pages/home.js?v=20260425-scroll-restore"></script>
   <script src="assets/js/pages/search-results.js"></script>
   <script src="assets/js/pages/home/filter-route.js?v=20260427-v26-filter-route"></script>
@@ -1485,7 +1536,7 @@
   <script>window.lucide?.createIcons();</script>
 
   <script src="assets/js/ui/mobile-drawer-standard.js?v=20260428-architecture"></script>
-  <script src="assets/js/ui/mobile-interaction-standard.js?v=20260428-v1"></script>
-  <script src="assets/js/ui/mobile-overlay-system.js?v=20260428-v1"></script>
+  <script src="assets/js/ui/mobile-interaction-standard.js?v=20260428-v1-hotfix"></script>
+  <script src="assets/js/ui/mobile-overlay-system.js?v=20260428-overlay-hotfix"></script>
 </body>
 </html>

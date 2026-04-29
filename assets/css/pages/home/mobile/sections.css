@@ -309,13 +309,30 @@
   }
 
   body.home-index-shell .featured-pros__grid .pro-card__header {
-    padding: 12px 12px 8px !important;
-    gap: 6px !important;
+    display: grid !important;
+    grid-template-columns: 48px minmax(0, 1fr) !important;
+    grid-template-areas:
+      "avatar score"
+      "avatar identity" !important;
+    align-items: start !important;
+    column-gap: 10px !important;
+    row-gap: 8px !important;
+    padding: 12px 12px 10px !important;
+    margin-bottom: 0 !important;
+    text-align: left !important;
   }
 
   body.home-index-shell .featured-pros__grid .pro-card__avatar {
+    grid-area: avatar !important;
     width: 48px !important;
     height: 48px !important;
+  }
+
+  body.home-index-shell .featured-pros__grid .pro-card__identity {
+    grid-area: identity !important;
+    min-width: 0 !important;
+    justify-items: start !important;
+    align-self: center !important;
   }
 
   body.home-index-shell .featured-pros__grid .pro-card__identity strong {
@@ -324,15 +341,20 @@
   }
 
   body.home-index-shell .featured-pros__grid .pro-card__score {
+    grid-area: score !important;
     display: inline-flex !important;
-    align-self: center !important;
-    min-height: 28px !important;
-    padding: 0 10px !important;
+    justify-self: end !important;
+    align-self: start !important;
+    min-height: 26px !important;
+    padding: 0 9px !important;
+    margin: 0 !important;
     font-size: 0.72rem !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
   }
 
   body.home-index-shell .featured-pros__grid .pro-card__footer {
-    padding: 0 12px 12px !important;
+    padding: 8px 12px 12px !important;
   }
 
   body.home-index-shell .featured-pros__grid .pro-card__cta {
@@ -1970,59 +1992,5 @@
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-  }
-}
-
-/* Final mobile fix — remove the phantom right gap in 'Mais anúncios' cards.
-   The section must stretch cards across the full available width instead of
-   centering a narrower contract. */
-@media (max-width: 560px) {
-  body.home-index-shell .more-services {
-    padding-inline: var(--home-mobile-edge) !important;
-    box-sizing: border-box !important;
-  }
-
-  body.home-index-shell .more-services .content-rail,
-  body.home-index-shell .more-services__cards-rail {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-sizing: border-box !important;
-    overflow: visible !important;
-  }
-
-  body.home-index-shell .more-services .service-grid--compact {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-sizing: border-box !important;
-    justify-items: stretch !important;
-    align-items: start !important;
-    row-gap: 12px !important;
-  }
-
-  body.home-index-shell .more-services .service-card--feed {
-    display: flex !important;
-    flex-direction: column !important;
-    align-self: stretch !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-    box-sizing: border-box !important;
-  }
-
-  body.home-index-shell .more-services .service-card--feed .service-card__media,
-  body.home-index-shell .more-services .service-card--feed .service-card__body,
-  body.home-index-shell .more-services .service-card--feed .service-card__footer,
-  body.home-index-shell .more-services .service-card--feed .service-card__cta {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
   }
 }

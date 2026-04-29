@@ -210,9 +210,10 @@ window.DokeHomeBeforeAfter = (() => {
             </button>
           </header>
 
+          <section class="before-after-post__comments-sheet" data-before-after-comments-sheet>
           <div class="before-after-post__comments-head">
             <strong><span data-before-after-comment-count>0</span> comentários</strong>
-            <button class="before-after-post__comments-close" type="button" data-before-after-close aria-label="Fechar comentários">
+            <button class="before-after-post__comments-close" type="button" data-before-after-comments-close aria-label="Fechar comentários">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
             </button>
           </div>
@@ -232,6 +233,19 @@ window.DokeHomeBeforeAfter = (() => {
 
             <div class="before-after-post__comments-list" data-before-after-comments-list></div>
           </div>
+
+          <form class="before-after-post__comment-input" data-before-after-comment-form autocomplete="off">
+            <span class="before-after-post__mini-avatar">DK</span>
+            <div class="before-after-post__comment-field">
+              <span class="before-after-post__replying" data-before-after-replying hidden>
+                Respondendo a <b></b>
+                <button type="button" data-before-after-cancel-reply aria-label="Cancelar resposta">cancelar</button>
+              </span>
+              <input type="text" data-before-after-comment-input placeholder="Adicione um comentário..." aria-label="Adicionar comentário" maxlength="220">
+            </div>
+            <button type="submit" data-before-after-comment-submit disabled>Publicar</button>
+          </form>
+        </section>
 
           <footer class="before-after-post__footer">
             <div class="before-after-post__actions" aria-label="Ações do antes e depois">
@@ -261,17 +275,6 @@ window.DokeHomeBeforeAfter = (() => {
               <a data-before-after-preview-service href="detalhe-anuncio.html">Ver serviço</a>
             </div>
 
-            <form class="before-after-post__comment-input" data-before-after-comment-form autocomplete="off">
-              <span class="before-after-post__mini-avatar">DK</span>
-              <div class="before-after-post__comment-field">
-                <span class="before-after-post__replying" data-before-after-replying hidden>
-                  Respondendo a <b></b>
-                  <button type="button" data-before-after-cancel-reply aria-label="Cancelar resposta">cancelar</button>
-                </span>
-                <input type="text" data-before-after-comment-input placeholder="Adicione um comentário..." aria-label="Adicionar comentário" maxlength="220">
-              </div>
-              <button type="submit" data-before-after-comment-submit disabled>Publicar</button>
-            </form>
           </footer>
         </aside>
       </article>
@@ -304,7 +307,9 @@ window.DokeHomeBeforeAfter = (() => {
       const commentCountNodes = [...root.querySelectorAll('[data-before-after-comment-count]')];
       const commentsRegion = root.querySelector('[data-before-after-comments]');
       const commentsList = root.querySelector('[data-before-after-comments-list]');
+      const commentsSheet = root.querySelector('[data-before-after-comments-sheet]');
       const commentsFocusButtons = [...root.querySelectorAll('[data-before-after-comments-focus]')];
+      const commentsCloseButtons = [...root.querySelectorAll('[data-before-after-comments-close]')];
       const closeButtons = [...root.querySelectorAll('[data-before-after-close]')];
       const followButton = root.querySelector('[data-before-after-follow]');
       const shareButton = root.querySelector('[data-before-after-share]');
@@ -321,6 +326,17 @@ window.DokeHomeBeforeAfter = (() => {
       let lockedScrollY = 0;
       let lockedAnchor = null;
       let lastTrigger = null;
+
+      const isMobileCommentsSheet = () => window.matchMedia('(max-width: 760px)').matches;
+
+      const setCommentsVisible = (visible, { focusInput = false } = {}) => {
+        const shouldShow = Boolean(visible && isMobileCommentsSheet());
+        root.classList.toggle('comments-visible', shouldShow);
+        if (!shouldShow && commentsRegion) commentsRegion.scrollTop = 0;
+        if (shouldShow && focusInput && commentsSheet?.querySelector('.before-after-post__comment-input:not([hidden])')) {
+          window.requestAnimationFrame(() => commentInput?.focus({ preventScroll: true }));
+        }
+      };
 
       const lockViewport = (anchor = null) => {
         lockedScrollY = window.scrollY || window.pageYOffset || 0;
@@ -376,6 +392,7 @@ window.DokeHomeBeforeAfter = (() => {
       const getReplyTarget = () => currentState ? findComment(currentState.comments, replyTargetId) : null;
 
       const focusCommentInput = () => {
+        if (isMobileCommentsSheet()) setCommentsVisible(true);
         commentsRegion?.scrollTo({ top: commentsRegion.scrollHeight, behavior: 'smooth' });
         window.requestAnimationFrame(() => commentInput?.focus({ preventScroll: true }));
       };
@@ -464,6 +481,7 @@ window.DokeHomeBeforeAfter = (() => {
         currentState = loadState(item);
         replyTargetId = null;
         currentMediaView = 'compare';
+        setCommentsVisible(false);
 
         if (mediaHost) {
           mediaHost.innerHTML = createMediaMarkup(item);
@@ -504,6 +522,7 @@ window.DokeHomeBeforeAfter = (() => {
         render(item);
         root.hidden = false;
         root.setAttribute('aria-hidden', 'false');
+        setCommentsVisible(false);
         root.querySelector('.before-after-preview__close')?.focus({ preventScroll: true });
       };
 
@@ -513,6 +532,7 @@ window.DokeHomeBeforeAfter = (() => {
         if (root.hidden) return;
         root.hidden = true;
         root.setAttribute('aria-hidden', 'true');
+        setCommentsVisible(false);
         triggers.forEach((trigger) => trigger.classList.remove('is-active'));
         unlockViewport();
         lastTrigger?.focus({ preventScroll: true });
@@ -569,7 +589,16 @@ window.DokeHomeBeforeAfter = (() => {
       }, { signal });
 
       commentsFocusButtons.forEach((button) => button.addEventListener('click', () => {
+        if (isMobileCommentsSheet()) {
+          setCommentsVisible(true);
+          commentsRegion?.scrollTo({ top: 0, behavior: 'smooth' });
+          return;
+        }
         focusCommentInput();
+      }, { signal }));
+
+      commentsCloseButtons.forEach((button) => button.addEventListener('click', () => {
+        setCommentsVisible(false);
       }, { signal }));
 
       commentsList?.addEventListener('click', (event) => {
@@ -655,12 +684,19 @@ window.DokeHomeBeforeAfter = (() => {
 
       document.addEventListener('keydown', (event) => {
         if (root.hidden) return;
-        if (event.key === 'Escape') close();
+        if (event.key === 'Escape') {
+          if (root.classList.contains('comments-visible')) {
+            setCommentsVisible(false);
+            return;
+          }
+          close();
+        }
       }, { signal });
 
       signal?.addEventListener('abort', () => {
         root.hidden = true;
         root.setAttribute('aria-hidden', 'true');
+        root.classList.remove('comments-visible');
         document.body.classList.remove('before-after-preview-open');
         document.body.style.top = '';
       });
