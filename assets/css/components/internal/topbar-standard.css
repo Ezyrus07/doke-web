@@ -1,19 +1,11 @@
 /*
- * Stage 2 — Topbar Standard
- * Aligns internal topbars with the desktop shell pattern.
+ * Topbar Standard Compatibility
+ * Mantém o nome antigo como ponte para HTMLs existentes. O contrato real do header
+ * agora está em components/navigation/header-desktop.css e header-mobile.css.
  */
-@media (min-width:761px){
-  .internal-page-topbar,.topbar{min-height:76px;display:grid;grid-template-columns:minmax(220px,1fr) auto minmax(220px,1fr);align-items:center;gap:18px;padding:14px var(--doke-desktop-gutter,32px);}
-  .topbar__left,.topbar__center,.topbar__right{min-width:0;display:flex;align-items:center;}
-  .topbar__center{justify-content:center;gap:12px;}
-  .topbar__right{justify-content:flex-end;gap:12px;}
-  .topbar-search{height:48px;min-width:220px;max-width:420px;border-radius:18px;display:flex;align-items:center;}
-  .topbar-search input{height:100%;min-width:0;}
-  .topbar-search__icon,.topbar-profile__button,.settings-topbar__action,.home-side-meta__alert{width:44px;height:44px;min-width:44px;min-height:44px;display:grid;place-items:center;}
-  .topbar-account-cluster{display:flex;align-items:center;justify-content:flex-end;gap:12px;min-width:0;}
-  .topbar-points{min-width:0;}
-}
-@media (max-width:760px){
-  .internal-page-topbar,.topbar.internal-page-topbar{display:none!important;}
-  .orders-page-header,.messages-mobile-header,.notifications-mobile-header,.wallet-mobile-header,.settings-mobile-header,.communities-mobile-header{position:sticky;top:0;z-index:30;margin-inline:calc(var(--doke-mobile-gutter,14px) * -1);padding-inline:var(--doke-mobile-gutter,14px);background:rgba(247,251,255,.92);backdrop-filter:blur(14px);}
+@media (min-width: 761px) {
+  .internal-page-topbar,
+  .topbar {
+    min-height: var(--doke-header-height, var(--header-height, 76px));
+  }
 }

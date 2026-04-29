@@ -10,8 +10,6 @@ body.app-shell-page {
   --shell-content-bg: #eef4f9;
   --shell-content-bg-flat: #eef4f9;
   --shell-content-bg-mobile: #f2f6fa;
-  --font-sans: "Poppins", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: "Poppins", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --color-bg: #ecedf2;
   --color-surface: rgba(255, 255, 255, 0.82);
   --color-heading: #13263f;
@@ -22,7 +20,7 @@ body.app-shell-page {
   --color-primary-strong: #164771;
   --color-primary-soft: #e7f1fb;
   --color-primary-border: var(--doke-card-border);
-  --gradient-button-primary: linear-gradient(135deg, #2f73b1 0%, #173f67 100%);
+  --gradient-button-primary: var(--gradient-button-primary-angle);
   --gradient-page: none;
   background: var(--shell-page-bg);
 }
@@ -90,7 +88,7 @@ body.app-shell-page .page__content-inner.shell-home__workspace--clean {
 body.app-shell-page .sidebar {
   background: #ffffff;
   border-right: 0;
-  box-shadow: 12px 0 28px rgba(16, 38, 60, 0.05);
+  box-shadow: var(--shell-sidebar-shadow);
 }
 
 body.app-shell-page .brand-logo img {
@@ -99,7 +97,7 @@ body.app-shell-page .brand-logo img {
 }
 
 body.app-shell-page .nav-link {
-  border-radius: 18px;
+  border-radius: var(--radius-md);
 }
 
 body.app-shell-page .nav-link.is-active {
@@ -109,7 +107,7 @@ body.app-shell-page .nav-link.is-active {
 body.app-shell-page .nav-link__icon {
   width: 34px;
   height: 34px;
-  border-radius: 12px;
+  border-radius: var(--space-3);
 }
 
 body.app-shell-page .mobile-header-shortcuts,
@@ -138,7 +136,7 @@ body.app-shell-page .mobile-header-logo {
     height: 56px;
     min-height: 56px;
     padding: 5px;
-    border-radius: 18px;
+    border-radius: var(--radius-md);
     border: 1px solid rgba(204, 218, 235, 0.86);
     background: rgba(255, 255, 255, 0.82);
     box-shadow: 0 16px 34px rgba(19, 42, 70, 0.18);
@@ -298,7 +296,7 @@ body.app-shell-page .mobile-header-logo {
   body.app-shell-page .nav-link {
     min-height: 52px;
     padding: 11px 12px;
-    border-radius: 18px;
+    border-radius: var(--radius-md);
     gap: 10px;
   }
 
@@ -817,5 +815,166 @@ body.app-shell-page .mobile-header-logo {
     min-height: 26px;
     padding: 3px 7px;
     font-size: 0.68rem;
+  }
+}
+
+/* Canonical responsive shell contract
+   Owns shared page geometry for home and internal pages: background, gutters,
+   container width, safe-area spacing and mobile/desktop shell behavior.
+   Page CSS may only adjust page-specific composition inside .page__content-inner. */
+:root {
+  --doke-shell-sidebar-width: var(--sidebar-width, 280px);
+  --doke-shell-header-height: var(--header-height, 72px);
+  --doke-shell-bg: #f7f9fc;
+  --doke-shell-surface-bg: #eef4f9;
+  --doke-shell-gutter-desktop: clamp(24px, 2.2vw, 36px);
+  --doke-shell-gutter-tablet: clamp(18px, 3vw, 28px);
+  --doke-shell-gutter-mobile: clamp(12px, 4vw, 16px);
+  --doke-shell-block-gap-desktop: 24px;
+  --doke-shell-block-gap-mobile: 16px;
+  --doke-shell-max-default: 1220px;
+  --doke-shell-max-wide: 1360px;
+  --doke-shell-max-narrow: 980px;
+  --doke-shell-bottom-safe: calc(88px + env(safe-area-inset-bottom, 0px));
+}
+
+html {
+  min-width: 320px;
+  overflow-x: clip;
+  background: var(--doke-shell-bg);
+}
+
+body.app-shell-page {
+  min-width: 320px;
+  min-height: 100dvh;
+  overflow-x: clip;
+  background: var(--doke-shell-bg);
+}
+
+body.app-shell-page .app-shell,
+body.app-shell-page .page,
+body.app-shell-page .page__content,
+body.app-shell-page .page__content-inner {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+body.app-shell-page .app-shell {
+  width: 100%;
+  min-height: 100dvh;
+  background: var(--doke-shell-bg);
+}
+
+body.app-shell-page .page {
+  min-height: 100dvh;
+  background: transparent;
+}
+
+body.app-shell-page .page__content {
+  position: relative;
+  width: 100%;
+  min-height: calc(100dvh - var(--doke-shell-header-height));
+  padding-block: calc(var(--doke-shell-header-height) + var(--doke-shell-block-gap-desktop)) 32px;
+  padding-inline: var(--doke-shell-gutter-desktop);
+  background: var(--shell-content-bg, var(--doke-shell-surface-bg));
+  overflow-x: clip;
+  scroll-padding-top: calc(var(--doke-shell-header-height) + 16px);
+}
+
+body.app-shell-page .page__content-inner,
+body.app-shell-page .page-container,
+body.app-shell-page .internal-page-container {
+  width: min(100%, var(--doke-shell-max-default));
+  max-width: var(--doke-shell-max-default);
+  margin-inline: auto;
+  padding-inline: 0;
+}
+
+body.home-index-shell .page__content-inner,
+body.results-page-shell .page__content-inner,
+body.search-results-body .page__content-inner,
+body.profile-page-shell .page__content-inner,
+body.communities-page-shell .page__content-inner,
+body.orders-page-shell .page__content-inner,
+body.wallet-page-shell .page__content-inner {
+  width: min(100%, var(--doke-shell-max-wide));
+  max-width: var(--doke-shell-max-wide);
+}
+
+body.messages-page-shell .page__content-inner,
+body.community-room-shell .page__content-inner {
+  width: 100%;
+  max-width: none;
+}
+
+body.settings-page-shell .page__content-inner,
+body.configuracoes-page-shell .page__content-inner,
+body.payment-page-shell .page__content-inner,
+body.post-service-shell .page__content-inner,
+body.wallet-manage-shell .page__content-inner {
+  width: min(100%, var(--doke-shell-max-narrow));
+  max-width: var(--doke-shell-max-narrow);
+}
+
+@media (min-width: 1025px) {
+  body.app-shell-page .page {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+    max-width: calc(100% - var(--sidebar-width));
+  }
+
+  body.app-shell-page .topbar,
+  body.app-shell-page .internal-page-topbar {
+    left: var(--sidebar-width);
+    right: 0;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1024px) {
+  body.app-shell-page {
+    --sidebar-width: 0px;
+  }
+
+  body.app-shell-page .page {
+    margin-left: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body.app-shell-page .page__content {
+    padding-block: calc(var(--header-height, 76px) + 16px) 28px;
+    padding-inline: var(--doke-shell-gutter-tablet);
+  }
+
+  body.app-shell-page .page__content-inner,
+  body.app-shell-page .page-container,
+  body.app-shell-page .internal-page-container {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  body.app-shell-page {
+    --sidebar-width: 0px;
+  }
+
+  body.app-shell-page .page {
+    margin-left: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body.app-shell-page .page__content {
+    min-height: calc(100dvh - var(--header-height, 68px));
+    padding-block: calc(var(--header-height, 68px) + 8px) var(--doke-shell-bottom-safe);
+    padding-inline: var(--doke-shell-gutter-mobile);
+  }
+
+  body.app-shell-page .page__content-inner,
+  body.app-shell-page .page-container,
+  body.app-shell-page .internal-page-container {
+    width: 100%;
+    max-width: 100%;
   }
 }

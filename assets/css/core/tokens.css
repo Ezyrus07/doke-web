@@ -1,57 +1,110 @@
-:root {
-  --font-sans: "Poppins", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+/*
+  Doke Global Design Tokens
+  Source of truth for visual primitives shared by core, components, patterns and pages.
+  Pages may consume these tokens, but must not redefine component contracts locally.
+*/
 
+:root {
+  /* Typography ---------------------------------------------------------- */
+  --font-sans: "Poppins", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: var(--font-sans);
+
+  --font-size-xs: 0.72rem;
+  --font-size-sm: 0.82rem;
+  --font-size-md: 0.94rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.08rem;
+  --font-size-xl: 1.22rem;
+  --font-size-2xl: 1.45rem;
+
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --line-height-tight: 1.1;
+  --line-height-normal: 1.45;
+  --letter-spacing-tight: -0.03em;
+
+  /* Colors -------------------------------------------------------------- */
+  --color-white: #ffffff;
+  --color-black: #0f172a;
   --color-bg: #f4f7fa;
   --color-bg-soft: #f7fafc;
   --color-surface: #ffffff;
   --color-surface-muted: #f8fafc;
-  --surface-outline-color: var(--doke-card-border);
-  --surface-outline-color-strong: var(--doke-card-border);
-  --surface-outline-color-soft: var(--doke-card-border);
-  --surface-outline-hover: rgba(111, 148, 186, 0.94);
-  --surface-outline-focus: rgba(43, 95, 148, 0.42);
-  --surface-outline-ring: rgba(43, 95, 148, 0.08);
-  --color-border: var(--surface-outline-color);
-  --color-border-strong: var(--surface-outline-color-strong);
+  --color-surface-raised: rgba(255, 255, 255, 0.96);
+  --color-surface-glass: rgba(255, 255, 255, 0.92);
+
   --color-text: #111827;
+  --color-text-strong: #0f172a;
   --color-text-soft: #455468;
   --color-text-muted: #69788b;
   --color-heading: #132238;
+  --color-heading-soft: #183d63;
 
   --color-primary: #2a5f90;
+  --color-primary-rgb: 42, 95, 144;
   --color-primary-strong: #234f78;
+  --color-primary-deep: #173f67;
+  --color-primary-bright: var(--color-primary);
   --color-primary-soft: #eaf2f8;
-  --color-primary-border: var(--doke-card-border);
+  --color-primary-soft-strong: #eaf2f8;
+  --color-primary-border: rgba(var(--color-primary-rgb), 0.12);
+  --color-primary-ring: rgba(var(--color-primary-rgb), 0.22);
 
   --color-secondary: #298f7f;
   --color-secondary-strong: #22786b;
   --color-secondary-soft: #e8f5f2;
-  --color-secondary-border: var(--doke-card-border);
+  --color-secondary-border: rgba(41, 143, 127, 0.22);
 
   --color-accent: #7c3aed;
+  --color-accent-soft: #f3efff;
   --color-warning: #f59e0b;
+  --color-warning-strong: #b45309;
   --color-warning-soft: #fffbeb;
   --color-danger: #ef4444;
+  --color-danger-strong: #b42318;
   --color-danger-soft: #fef2f2;
+  --color-success: #16a34a;
   --color-info-soft: #eef2ff;
 
+  --color-border: var(--color-primary-border);
+  --color-border-soft: rgba(24, 75, 118, 0.10);
+  --color-border-muted: rgba(214, 226, 238, 0.96);
+  --color-border-strong: rgba(15, 23, 42, 0.12);
+
+  /* Gradients ----------------------------------------------------------- */
   --gradient-brand: linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 80%, white) 0%, var(--color-primary) 100%);
   --gradient-button-primary: linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 80%, white) 0%, var(--color-primary) 100%);
-  --gradient-surface: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.88));
+  --gradient-button-primary-angle: linear-gradient(135deg, #2f73b1 0%, var(--color-primary-deep) 100%);
+  --gradient-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.88));
+  --gradient-avatar: linear-gradient(135deg, #1767ad 0%, #209886 100%);
   --gradient-page: #f5f6f8;
 
+  /* Shadows ------------------------------------------------------------- */
   --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
   --shadow-sm: 0 6px 18px rgba(15, 23, 42, 0.06);
   --shadow-md: 0 12px 28px rgba(15, 23, 42, 0.08);
   --shadow-lg: 0 18px 42px rgba(15, 23, 42, 0.10);
+  --shadow-xl: 0 24px 70px rgba(15, 23, 42, 0.16);
+  --shadow-card: 0 18px 45px rgba(15, 23, 42, 0.08);
+  --shadow-card-hover: 0 22px 56px rgba(15, 23, 42, 0.12);
+  --shadow-control: 0 8px 18px rgba(25, 54, 89, 0.08);
+  --shadow-dock: 0 18px 50px rgba(15, 23, 42, 0.14);
+  --shadow-focus: 0 0 0 3px rgba(var(--color-primary-rgb), 0.18);
 
+  /* Radius -------------------------------------------------------------- */
+  --radius-2xs: 8px;
   --radius-xs: 10px;
   --radius-sm: 14px;
   --radius-md: 18px;
   --radius-lg: 24px;
   --radius-xl: 28px;
+  --radius-2xl: 30px;
   --radius-pill: 999px;
 
+  /* Spacing ------------------------------------------------------------- */
+  --space-0: 0px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -64,51 +117,141 @@
   --space-12: 48px;
   --space-14: 56px;
 
+  --gutter-mobile: clamp(14px, 4vw, 22px);
+  --gutter-tablet: clamp(18px, 3vw, 32px);
+  --gutter-desktop: 32px;
+  --safe-gutter-inline: max(var(--gutter-mobile), env(safe-area-inset-left, 0px));
+
+  /* Component sizing ---------------------------------------------------- */
+  --size-control-sm: 38px;
+  --size-control-md: 42px;
+  --size-control-lg: 46px;
+  --size-control-xl: 50px;
+  --size-icon-sm: 18px;
+  --size-icon-md: 20px;
+  --size-icon-lg: 22px;
+  --size-avatar-sm: 40px;
+  --size-avatar-md: 42px;
+
+  --button-height: var(--size-control-lg);
+  --button-height-compact: var(--size-control-md);
+  --button-radius: var(--radius-sm);
+  --button-radius-pill: var(--radius-pill);
+  --icon-button-size: var(--size-control-md);
+  --close-button-size: var(--size-control-md);
+
+  /* Layout -------------------------------------------------------------- */
   --sidebar-width: 272px;
   --header-height: 76px;
+  --mobile-header-height: 64px;
+  --bottom-nav-height: 66px;
   --content-max: 1480px;
+  --content-max-wide: 1440px;
+  --content-max-readable: 760px;
+  --panel-max: 720px;
+  --drawer-width: 390px;
 
-  /* Shared shell system */
+  /* Breakpoints: custom properties document the contract; media queries
+     still use literal values because CSS variables are not valid there. */
+  --breakpoint-phone-sm: 360px;
+  --breakpoint-phone: 380px;
+  --breakpoint-mobile: 768px;
+  --breakpoint-tablet: 1024px;
+  --breakpoint-desktop: 1180px;
+
+  /* Shared shell system ------------------------------------------------- */
   --shell-page-bg: #f7f9fc;
   --shell-content-bg: #eef4f9;
   --shell-content-bg-flat: #eef4f9;
   --shell-content-bg-mobile: #f2f6fa;
-  --shell-sidebar-bg: #ffffff;
+  --shell-sidebar-bg: var(--color-white);
   --shell-sidebar-bg-elevated: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 249, 253, 0.98) 100%);
-  --shell-sidebar-border: var(--doke-card-border);
+  --shell-sidebar-border: var(--color-border-soft);
   --shell-sidebar-shadow: 12px 0 28px rgba(16, 38, 60, 0.05);
   --shell-sidebar-shadow-mobile: 20px 0 44px rgba(15, 33, 54, 0.12);
   --shell-sidebar-shadow-drawer: 20px 0 42px rgba(15, 23, 42, 0.16);
-  --shell-topbar-bg: rgba(255, 255, 255, 0.92);
-  --shell-topbar-border: var(--doke-card-border);
+  --shell-topbar-bg: var(--color-surface-glass);
+  --shell-topbar-border: var(--color-border-soft);
   --shell-topbar-shadow: var(--shadow-xs);
   --shell-control-bg: rgba(248, 251, 255, 0.92);
   --shell-control-bg-hover: rgba(255, 255, 255, 0.96);
-  --shell-control-border: var(--surface-outline-color);
+  --shell-control-border: var(--color-border-soft);
   --shell-drawer-scrim: rgba(15, 23, 42, 0.36);
-  --surface-card-bg: rgba(255, 255, 255, 0.96);
+
+  /* Surface and card aliases ------------------------------------------- */
+  --surface-outline-color: var(--color-border-soft);
+  --surface-outline-color-strong: var(--color-border-strong);
+  --surface-outline-color-soft: var(--color-border-soft);
+  --surface-outline-hover: rgba(111, 148, 186, 0.94);
+  --surface-outline-focus: rgba(43, 95, 148, 0.42);
+  --surface-outline-ring: rgba(43, 95, 148, 0.08);
+  --surface-card-bg: var(--color-surface-raised);
   --surface-card-bg-muted: rgba(247, 250, 253, 0.96);
   --surface-card-radius-sm: var(--radius-md);
   --surface-card-radius-md: var(--radius-lg);
   --surface-card-radius-lg: var(--radius-xl);
 
+  --doke-card-bg: var(--color-surface);
+  --doke-card-bg-soft: var(--color-surface-muted);
+  --doke-card-border: var(--color-border-soft);
+  --doke-card-border-strong: var(--color-border-strong);
+  --doke-card-shadow: var(--shadow-card);
+  --doke-card-shadow-hover: var(--shadow-card-hover);
+  --doke-card-radius-sm: var(--radius-sm);
+  --doke-card-radius: var(--radius-md);
+  --doke-card-radius-lg: var(--radius-lg);
+  --doke-card-padding-sm: var(--space-3);
+  --doke-card-padding: var(--space-4);
+  --doke-card-padding-lg: var(--space-5);
 
-  /* Internal surface contract: accepted white-card language used in
-     pedidos/carteira/notificacoes and other operational pages. */
-  --internal-surface-bg: rgba(255, 255, 255, 0.96);
-  --doke-card-border: rgba(24, 75, 118, 0.1);
+  /* Internal surface contract ------------------------------------------ */
+  --internal-surface-bg: var(--color-surface-raised);
   --internal-surface-border: var(--doke-card-border);
   --internal-surface-border-soft: var(--doke-card-border);
   --internal-control-border: var(--doke-card-border);
   --surface-shell-border: var(--doke-card-border);
-  --surface-shell-bg: rgba(255, 255, 255, 0.96);
+  --surface-shell-bg: var(--color-surface-raised);
   --surface-shell-shadow: 0 10px 24px rgba(39, 58, 86, 0.06);
   --surface-shell-radius: 22px;
-  --surface-shell-radius-compact: 18px;
+  --surface-shell-radius-compact: var(--radius-md);
   --internal-surface-shadow: 0 10px 24px rgba(39, 58, 86, 0.08);
   --internal-surface-radius: 20px;
-  --internal-surface-radius-lg: 28px;
+  --internal-surface-radius-lg: var(--radius-xl);
 
+  /* Legacy-compatible Doke UI aliases ---------------------------------- */
+  --doke-ui-blue-900: #103b66;
+  --doke-ui-blue-800: #17467a;
+  --doke-ui-blue-700: #1f5d92;
+  --doke-ui-blue-600: #21639b;
+  --doke-ui-text: #23445f;
+  --doke-ui-muted: #6f86a5;
+  --doke-ui-line: #d6e4f2;
+  --doke-ui-line-soft: var(--color-border-soft);
+  --doke-ui-bg: var(--color-white);
+  --doke-ui-bg-soft: #f7fbff;
+  --doke-ui-bg-blue: #eef5fc;
+  --doke-ui-danger: var(--color-danger-strong);
+  --doke-ui-danger-bg: #fff1f1;
+
+  --doke-control-height: var(--size-control-xl);
+  --doke-control-radius: var(--radius-sm);
+  --doke-button-height: var(--button-height);
+  --doke-button-radius: var(--button-radius);
+  --doke-icon-button-size: var(--icon-button-size);
+  --doke-close-button-size: var(--close-button-size);
+  --doke-close-button-size-mobile: var(--size-control-md);
+  --doke-chip-height: 34px;
+  --doke-drawer-width: var(--drawer-width);
+  --doke-surface-width: var(--content-max-readable);
+  --doke-surface-width-wide: 940px;
+  --doke-service-card-width: 284px;
+  --doke-service-card-media-height: 172px;
+  --doke-worker-card-width: 210px;
+  --doke-worker-card-height: 292px;
+  --doke-comparison-card-width: 286px;
+
+  /* Transitions --------------------------------------------------------- */
   --transition-fast: 180ms ease;
   --transition-base: 240ms ease;
+  --transition-card: 160ms ease;
 }

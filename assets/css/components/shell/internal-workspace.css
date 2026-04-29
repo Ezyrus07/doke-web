@@ -1,6 +1,6 @@
 /* Shared internal workspace surface.
-   Owns page-content width, breathing room and neutral background for inner pages.
-   Use on internal views that should not depend on home.css. */
+   Owns neutral internal-page background only.
+   Geometry, gutters, safe-area and container width are owned by components/shell/app-shell.css. */
 
 body.internal-shell-page,
 body.profile-page-shell {
@@ -19,7 +19,6 @@ body.profile-page-shell .page__content-inner {
 body.internal-shell-page .page__content,
 body.profile-page-shell .page__content {
   position: relative;
-  padding: 24px 18px 36px;
   background:
     radial-gradient(circle at 100% 0%, rgba(92, 170, 224, 0.08), transparent 34%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0));
@@ -41,41 +40,11 @@ body.internal-shell-page .page__content-inner,
 body.profile-page-shell .page__content-inner {
   position: relative;
   z-index: 1;
-  width: 100%;
-  max-width: 100%;
-  margin: 0 auto;
-}
-
-@media (max-width: 1024px) {
-  body.internal-shell-page .page__content,
-  body.profile-page-shell .page__content {
-    padding-inline: 14px;
-    padding-bottom: 28px;
-  }
-
-  body.internal-shell-page .page__content-inner,
-  body.profile-page-shell .page__content-inner {
-    width: 100%;
-    max-width: 100%;
-  }
 }
 
 @media (max-width: 760px) {
-  body.internal-shell-page .page__content,
-  body.profile-page-shell .page__content {
-    padding-top: 14px;
-    padding-inline: 12px;
-    padding-bottom: 94px;
-  }
-
   body.internal-shell-page .page__content::before,
   body.profile-page-shell .page__content::before {
     opacity: 0.8;
-  }
-
-  body.internal-shell-page .page__content-inner,
-  body.profile-page-shell .page__content-inner {
-    width: 100%;
-    max-width: 100%;
   }
 }

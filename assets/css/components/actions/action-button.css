@@ -1,0 +1,167 @@
+:root {
+  --doke-action-size: var(--icon-button-size);
+  --doke-action-radius: var(--button-radius-pill);
+  --doke-action-bg: var(--color-surface);
+  --doke-action-border: var(--color-border-soft);
+  --doke-action-text: var(--color-text-strong);
+  --doke-action-muted: var(--color-text-muted);
+  --doke-action-active-bg: var(--color-primary-soft-strong);
+  --doke-action-active-border: rgba(var(--color-primary-rgb), 0.24);
+  --doke-action-active-text: var(--color-primary);
+}
+
+.doke-action-button,
+.page-header-context__action,
+.orders-page-header__search-toggle,
+.orders-page-header__hero-chip,
+.orders-filter-button,
+.orders-select-button,
+.orders-agenda-toggle,
+.notifications-filter-button,
+.results-searchbar__mobile-filter,
+.filter-toggle,
+.home-search-hero__filter-button,
+.home-search-hero__leading-filter,
+.search-dropdown__filter-button,
+.settings-mobile-header__action,
+.community-chat-header__icon,
+.messages-thread__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-width: var(--doke-action-size);
+  min-height: var(--doke-action-size);
+  padding: 0 var(--radius-sm);
+  border: 1px solid var(--doke-action-border);
+  border-radius: var(--doke-action-radius);
+  background: var(--doke-action-bg);
+  color: var(--doke-action-text);
+  font: inherit;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.doke-action-button--icon,
+.orders-page-header__search-toggle,
+.results-searchbar__mobile-filter,
+.settings-mobile-header__action,
+.community-chat-header__icon,
+.messages-thread__action {
+  width: var(--doke-action-size);
+  height: var(--doke-action-size);
+  padding: 0;
+}
+
+.doke-action-button svg,
+.page-header-context__action svg,
+.orders-page-header__search-toggle svg,
+.orders-page-header__hero-chip svg,
+.results-searchbar__mobile-filter svg,
+.filter-toggle svg,
+.home-search-hero__filter-button svg,
+.home-search-hero__leading-filter svg,
+.search-dropdown__filter-button svg,
+.settings-mobile-header__action svg,
+.community-chat-header__icon svg,
+.messages-thread__action svg {
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+  flex: 0 0 var(--size-icon-sm);
+  stroke: currentColor;
+}
+
+.doke-action-button:hover,
+.page-header-context__action:hover,
+.orders-page-header__search-toggle:hover,
+.orders-page-header__hero-chip:hover,
+.results-searchbar__mobile-filter:hover,
+.filter-toggle:hover,
+.home-search-hero__filter-button:hover,
+.home-search-hero__leading-filter:hover,
+.search-dropdown__filter-button:hover,
+.settings-mobile-header__action:hover,
+.community-chat-header__icon:hover,
+.messages-thread__action:hover {
+  border-color: rgba(var(--color-primary-rgb), 0.20);
+  background: var(--doke-ui-bg-soft);
+  color: var(--doke-action-active-text);
+}
+
+.doke-action-button:focus-visible,
+.page-header-context__action:focus-visible,
+.orders-page-header__search-toggle:focus-visible,
+.orders-page-header__hero-chip:focus-visible,
+.results-searchbar__mobile-filter:focus-visible,
+.filter-toggle:focus-visible,
+.home-search-hero__filter-button:focus-visible,
+.home-search-hero__leading-filter:focus-visible,
+.search-dropdown__filter-button:focus-visible,
+.settings-mobile-header__action:focus-visible,
+.community-chat-header__icon:focus-visible,
+.messages-thread__action:focus-visible {
+  outline: 3px solid var(--color-primary-ring);
+  outline-offset: 3px;
+}
+
+.doke-action-button[aria-expanded="true"],
+.doke-action-button[aria-pressed="true"],
+.doke-action-button.is-active,
+.page-header-context__action[aria-expanded="true"],
+.page-header-context__action[aria-pressed="true"],
+.page-header-context__action.is-active,
+.orders-page-header__hero-chip[aria-expanded="true"],
+.orders-page-header__hero-chip[aria-pressed="true"],
+.orders-page-header__hero-chip.is-active,
+.results-searchbar__mobile-filter[aria-expanded="true"],
+.filter-toggle[aria-expanded="true"],
+.home-search-hero__filter-button[aria-expanded="true"],
+.home-search-hero__leading-filter[aria-expanded="true"],
+.search-dropdown__filter-button[aria-expanded="true"],
+.settings-mobile-header__action[aria-expanded="true"] {
+  border-color: var(--doke-action-active-border);
+  background: var(--doke-action-active-bg);
+  color: var(--doke-action-active-text);
+  box-shadow: 0 10px 24px rgba(var(--color-primary-rgb), 0.14);
+}
+
+.doke-action-button:disabled,
+.doke-action-button[aria-disabled="true"],
+.page-header-context__action:disabled,
+.orders-page-header__hero-chip:disabled {
+  opacity: .52;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.doke-action-button--alert {
+  color: var(--color-warning-strong);
+  background: var(--color-warning-soft);
+  border-color: rgba(245, 158, 11, 0.28);
+}
+
+/* Prompt 07 responsive QA: avoid squeezed action clusters on small screens. */
+@media (max-width: 768px) {
+  .doke-action-button,
+  .page-header-context__action,
+  .orders-page-header__search-toggle,
+  .orders-page-header__hero-chip,
+  .orders-filter-button,
+  .orders-select-button,
+  .orders-agenda-toggle,
+  .notifications-filter-button,
+  .results-searchbar__mobile-filter,
+  .filter-toggle,
+  .home-search-hero__filter-button,
+  .home-search-hero__leading-filter,
+  .search-dropdown__filter-button,
+  .settings-mobile-header__action,
+  .community-chat-header__icon,
+  .messages-thread__action {
+    flex: 0 0 auto;
+    max-width: 100%;
+  }
+}

@@ -1,0 +1,150 @@
+/*
+ * Doke Header Desktop Contract
+ * Componente compartilhado para o header desktop da home e páginas internas.
+ * A página pode definir apenas contexto/conteúdo; dimensões, gutters e alinhamento ficam aqui.
+ */
+@media (min-width: 761px) {
+  body.app-shell-page {
+    --doke-header-height: var(--header-height, 76px);
+    --doke-header-gutter: var(--doke-shell-gutter-desktop, var(--gutter-desktop));
+    --doke-header-content-max: var(--doke-shell-max-wide, 1180px);
+  }
+
+  body.app-shell-page .topbar,
+  body.app-shell-page .internal-page-topbar {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline-start: var(--sidebar-width, 0px);
+    inset-inline-end: 0;
+    z-index: 140;
+    display: grid;
+    grid-template-columns: minmax(260px, 420px) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--radius-md);
+    width: auto;
+    min-height: var(--doke-header-height);
+    padding-block: var(--radius-sm);
+    padding-inline: max(var(--doke-header-gutter), calc((100vw - var(--sidebar-width, 0px) - var(--doke-header-content-max)) / 2));
+    border: 0;
+    background: var(--color-white);
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  body.home-index-shell .home-index-topbar,
+  body.app-shell-page .internal-page-topbar {
+    grid-template-columns: minmax(260px, 420px) minmax(0, 1fr) auto;
+  }
+
+  body.app-shell-page .topbar__left,
+  body.app-shell-page .topbar__center,
+  body.app-shell-page .topbar__right {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  body.app-shell-page .topbar__left {
+    justify-content: flex-start;
+  }
+
+  body.app-shell-page .topbar__center {
+    justify-content: center;
+    gap: var(--space-3);
+  }
+
+  body.app-shell-page .topbar__right {
+    justify-content: flex-end;
+    gap: var(--radius-xs);
+    min-width: max-content;
+  }
+
+  body.app-shell-page .topbar-search {
+    width: min(100%, 420px);
+    max-width: 420px;
+    min-width: 220px;
+    min-height: var(--button-height);
+    padding: 0 var(--radius-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    border: 1px solid var(--doke-card-border, rgba(213, 225, 238, 0.9));
+    border-radius: var(--button-radius);
+    background: var(--shell-control-bg);
+    box-shadow: var(--shadow-xs, 0 8px 18px rgba(15, 23, 42, 0.06));
+  }
+
+  body.app-shell-page .topbar-search input {
+    min-width: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    outline: 0;
+    background: transparent;
+  }
+
+  body.app-shell-page .topbar-search__icon,
+  body.app-shell-page .topbar-search-icon,
+  body.app-shell-page .topbar-profile__button,
+  body.app-shell-page .settings-topbar__action,
+  body.app-shell-page .home-side-meta__alert,
+  body.app-shell-page .detail-topbar__icon {
+    width: var(--icon-button-size);
+    height: var(--icon-button-size);
+    min-width: var(--icon-button-size);
+    min-height: var(--icon-button-size);
+    display: inline-grid;
+    place-items: center;
+    border-radius: var(--radius-sm);
+  }
+
+  body.app-shell-page .topbar-account-cluster {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--radius-xs);
+    min-width: 0;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  body.app-shell-page .topbar-points {
+    min-width: 0;
+  }
+
+  body.app-shell-page .topbar-points__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  body.app-shell-page .avatar,
+  body.app-shell-page .topbar-profile__button .avatar,
+  body.app-shell-page .detail-topbar__avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-sm);
+  }
+
+  body.app-shell-page .mobile-toggle,
+  body.app-shell-page .topbar-search-close,
+  body.app-shell-page .mobile-header-logo,
+  body.app-shell-page .mobile-header-shortcuts,
+  body.app-shell-page .mobile-header-location {
+    display: none;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1024px) {
+  body.app-shell-page {
+    --doke-header-gutter: var(--doke-shell-gutter-tablet, var(--space-6));
+    --sidebar-width: 0px;
+  }
+
+  body.app-shell-page .topbar,
+  body.app-shell-page .internal-page-topbar {
+    inset-inline-start: 0;
+    grid-template-columns: minmax(220px, 360px) minmax(0, 1fr) auto;
+    padding-inline: var(--doke-header-gutter);
+  }
+}
