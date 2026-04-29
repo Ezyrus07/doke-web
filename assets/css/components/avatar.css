@@ -14,7 +14,9 @@
 .home-mobile-drawer__avatar,
 .topbar-profile__avatar,
 .topbar-profile__button .avatar,
+.wallet-topbar-profile__avatar,
 .orders-page-header__hero-avatar,
+.orders-profile__avatar,
 .settings-mobile-header__avatar,
 .detail-topbar__avatar,
 .detail-summary__avatar,
@@ -22,6 +24,9 @@
 .detail-booking__avatar,
 .profile-avatar,
 .profile-edit-media__avatar,
+.profile-follower-card__avatar,
+.profile-review-card__avatar,
+.profile-review-entry__avatar,
 .avatar-large,
 .message-item__avatar,
 .messages-thread__avatar,
@@ -29,6 +34,7 @@
 .community-member__avatar,
 .community-member-card__avatar,
 .community-leaders__avatar,
+.community-avatar-stack i,
 .before-after-preview__avatar,
 .before-after-preview__mini-avatar,
 .worker-preview__mini-avatar,
@@ -38,7 +44,8 @@
 .professional-card__avatar,
 .budget-professional__avatar,
 .detail-professional__avatar,
-.order-provider__avatar {
+.order-provider__avatar,
+.ui-hero-demo__avatar {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -78,12 +85,26 @@
 .home-side-meta__avatar,
 .orders-page-header__hero-avatar,
 .settings-mobile-header__avatar,
-.topbar-profile__avatar {
+.topbar-profile__avatar,
+.wallet-topbar-profile__avatar,
+.orders-profile__avatar {
   width: var(--doke-avatar-sm);
   height: var(--doke-avatar-sm);
   min-width: var(--doke-avatar-sm);
   min-height: var(--doke-avatar-sm);
   font-size: .78rem;
+}
+
+.home-mobile-hero__avatar,
+.home-side-meta__avatar,
+.orders-page-header__hero-avatar,
+.settings-mobile-header__avatar {
+  width: var(--doke-mobile-header-avatar, 42px) !important;
+  height: var(--doke-mobile-header-avatar, 42px) !important;
+  min-width: var(--doke-mobile-header-avatar, 42px) !important;
+  min-height: var(--doke-mobile-header-avatar, 42px) !important;
+  flex: 0 0 var(--doke-mobile-header-avatar, 42px) !important;
+  border-radius: 50% !important;
 }
 
 .profile-avatar,
@@ -98,7 +119,9 @@
 .message-item__avatar,
 .messages-thread__avatar,
 .before-after-preview__mini-avatar,
-.worker-preview__mini-avatar {
+.worker-preview__mini-avatar,
+.profile-review-card__avatar,
+.profile-review-entry__avatar {
   width: var(--doke-avatar-md);
   height: var(--doke-avatar-md);
   min-width: var(--doke-avatar-md);
@@ -116,4 +139,49 @@
   border-radius: 999px;
   border: 2px solid #fff;
   background: #22c55e;
+}
+
+/* Guard rail: legacy page CSS may still set rounded-square radii. Avatar classes remain circles. */
+:is(
+  .avatar,
+  .avatar--circle,
+  .home-mobile-hero__avatar,
+  .home-side-meta__avatar,
+  .home-mobile-drawer__avatar,
+  .topbar-profile__avatar,
+  .topbar-profile__button .avatar,
+  .wallet-topbar-profile__avatar,
+  .orders-page-header__hero-avatar,
+  .orders-profile__avatar,
+  .settings-mobile-header__avatar,
+  .detail-topbar__avatar,
+  .detail-summary__avatar,
+  .detail-host__avatar,
+  .detail-booking__avatar,
+  .profile-avatar,
+  .profile-edit-media__avatar,
+  .profile-follower-card__avatar,
+  .profile-review-card__avatar,
+  .profile-review-entry__avatar,
+  .avatar-large,
+  .message-item__avatar,
+  .messages-thread__avatar,
+  .community-message__avatar,
+  .community-member__avatar,
+  .community-member-card__avatar,
+  .community-leaders__avatar,
+  .community-avatar-stack i,
+  .before-after-preview__avatar,
+  .before-after-preview__mini-avatar,
+  .worker-preview__mini-avatar,
+  .service-card__avatar,
+  .order-card__avatar,
+  .pro-card__avatar,
+  .professional-card__avatar,
+  .budget-professional__avatar,
+  .detail-professional__avatar,
+  .order-provider__avatar,
+  .ui-hero-demo__avatar
+) {
+  border-radius: 50% !important;
 }

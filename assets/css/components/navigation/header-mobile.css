@@ -1,8 +1,41 @@
 /* Doke Mobile Header Contract: index como referência, sem superfície/card no header. */
 @media (max-width: 760px) {
   body.app-shell-page {
+    --doke-mobile-page-edge: 14px;
     --doke-mobile-header-gutter: clamp(16px, 5vw, 24px);
-    --doke-mobile-header-control: 44px;
+    --doke-mobile-header-identity-inset: 0px;
+    --doke-mobile-header-avatar: 42px;
+    --doke-mobile-header-control: 42px;
+  }
+
+  body.internal-shell-page .page,
+  body.internal-shell-page .page__content,
+  body.internal-shell-page .page__content-inner {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.internal-shell-page .page__content-inner {
+    padding-inline: var(--doke-mobile-page-edge) !important;
+    margin-inline: 0 !important;
+  }
+
+  body.internal-shell-page :is(
+    .orders-shell-content,
+    .messages-shell-content,
+    .settings-shell-content,
+    .profile-shell-content,
+    .search-results-workspace,
+    .communities-shell
+  ) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-left: var(--doke-mobile-page-edge) !important;
+    padding-right: var(--doke-mobile-page-edge) !important;
+    box-sizing: border-box !important;
   }
 
   body.app-shell-page :is(.topbar,.internal-page-topbar),
@@ -29,24 +62,30 @@
 
   body.orders-page-shell .orders-page-header,
   body.notifications-page-shell .notifications-mobile-header,
-  body.messages-page-shell .messages-mobile-header {
-    padding: max(14px, env(safe-area-inset-top)) var(--doke-mobile-header-gutter) 10px;
-    margin-inline: calc(var(--doke-mobile-header-gutter) * -1);
-    padding-inline: var(--doke-mobile-header-gutter);
+  body.messages-page-shell .messages-mobile-header,
+  body.settings-page-shell .settings-mobile-header {
+    padding: max(14px, env(safe-area-inset-top)) var(--doke-mobile-header-identity-inset) 10px !important;
+    margin-inline: 0 !important;
   }
 
   body.orders-page-shell .orders-page-header__hero,
   body.notifications-page-shell .orders-page-header__hero,
   body.messages-page-shell .orders-page-header__hero {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding: 0;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "identity actions"
+      "search search" !important;
+    align-items: center !important;
+    gap: 12px 10px !important;
+    width: 100% !important;
+    padding: 0 !important;
   }
 
   body.orders-page-shell .orders-page-header__hero-top,
   body.notifications-page-shell .orders-page-header__hero-top,
   body.messages-page-shell .orders-page-header__hero-top,
+  body.settings-page-shell .settings-mobile-header__row,
   body.home-index-shell .home-mobile-hero__top {
     display: flex;
     align-items: center;
@@ -55,9 +94,17 @@
     min-width: 0;
   }
 
+  body.orders-page-shell .orders-page-header__hero-top,
+  body.notifications-page-shell .orders-page-header__hero-top,
+  body.messages-page-shell .orders-page-header__hero-top {
+    grid-area: identity !important;
+    justify-content: flex-start !important;
+  }
+
   body.orders-page-shell .orders-page-header__hero-profile,
   body.notifications-page-shell .orders-page-header__hero-profile,
   body.messages-page-shell .orders-page-header__hero-profile,
+  body.settings-page-shell .settings-mobile-header__profile,
   body.home-index-shell .home-mobile-hero__profile {
     display: inline-flex;
     align-items: center;
@@ -70,28 +117,75 @@
     color: var(--color-heading, #082d55);
   }
 
-  body.app-shell-page :is(.orders-page-header__hero-name,.home-mobile-hero__greeting,.settings-mobile-header__title) {
-    display: block;
-    min-width: 0;
-    max-width: 150px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--color-heading, #082d55);
-    font-size: 1rem;
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -.03em;
+  body.app-shell-page :is(.home-mobile-hero__identity,.orders-page-header__hero-usercopy) {
+    display: block !important;
+    min-width: 0 !important;
+  }
+
+  body.app-shell-page :is(.home-mobile-hero__identity strong,.orders-page-header__hero-name,.settings-mobile-header__title) {
+    display: block !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    color: #173d63 !important;
+    font-size: 16px !important;
+    font-weight: 850 !important;
+    line-height: 1.05 !important;
+    letter-spacing: -0.03em !important;
   }
 
   body.app-shell-page :is(.orders-page-header__hero-avatar,.home-mobile-hero__avatar,.home-side-meta__avatar,.settings-mobile-header__avatar) {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    min-height: 36px;
-    border-radius: 50%;
+    width: var(--doke-mobile-header-avatar) !important;
+    height: var(--doke-mobile-header-avatar) !important;
+    min-width: var(--doke-mobile-header-avatar) !important;
+    min-height: var(--doke-mobile-header-avatar) !important;
+    flex: 0 0 var(--doke-mobile-header-avatar) !important;
+    border-radius: 50% !important;
     padding: 0;
     aspect-ratio: 1 / 1;
+  }
+
+  html.home-index-root body.home-index-shell .home-mobile-hero__avatar,
+  html.home-index-root body.home-index-shell .home-side-meta__avatar {
+    width: var(--doke-mobile-header-avatar, 42px) !important;
+    height: var(--doke-mobile-header-avatar, 42px) !important;
+    min-width: var(--doke-mobile-header-avatar, 42px) !important;
+    min-height: var(--doke-mobile-header-avatar, 42px) !important;
+    flex: 0 0 var(--doke-mobile-header-avatar, 42px) !important;
+    border-radius: 50% !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__avatar,
+  body.orders-page-shell .orders-page-header__hero-avatar,
+  body.messages-page-shell .orders-page-header__hero-avatar,
+  body.notifications-page-shell .orders-page-header__hero-avatar,
+  body.communities-page-shell .orders-page-header__hero-avatar,
+  body.settings-page-shell .settings-mobile-header__avatar {
+    width: var(--doke-mobile-header-avatar, 42px) !important;
+    height: var(--doke-mobile-header-avatar, 42px) !important;
+    min-width: var(--doke-mobile-header-avatar, 42px) !important;
+    min-height: var(--doke-mobile-header-avatar, 42px) !important;
+    flex: 0 0 var(--doke-mobile-header-avatar, 42px) !important;
+    border-radius: 999px !important;
+    clip-path: circle(50% at 50% 50%) !important;
+  }
+
+  body.app-shell-page :is(.home-mobile-hero__profile,.orders-page-header__hero-profile,.settings-mobile-header__profile) {
+    gap: 10px !important;
+    min-height: var(--doke-mobile-header-avatar, 42px) !important;
+    max-width: min(190px, 52vw) !important;
+    flex: 0 1 auto !important;
+    overflow: hidden !important;
+  }
+
+  body.orders-page-shell .orders-page-header__hero-profile,
+  body.messages-page-shell .orders-page-header__hero-profile,
+  body.notifications-page-shell .orders-page-header__hero-profile,
+  body.communities-page-shell .orders-page-header__hero-profile,
+  body.settings-page-shell .settings-mobile-header__profile {
+    justify-content: flex-start !important;
   }
 
   body.orders-page-shell .orders-page-header__hero-strip,
@@ -102,6 +196,8 @@
     justify-content: flex-end;
     gap: 10px;
     min-width: 0;
+    grid-area: actions !important;
+    padding-right: 0 !important;
   }
 
   body.orders-page-shell .orders-page-header__search-toggle,
@@ -116,11 +212,39 @@
     min-width: var(--doke-mobile-header-control);
     min-height: var(--doke-mobile-header-control);
     padding: 0;
-    border-radius: 16px;
-    border: 1px solid var(--color-border, #dbe8f4);
-    background: var(--color-surface, #fff);
-    color: var(--color-primary, #2a5f90);
-    box-shadow: 0 14px 30px rgba(22,67,115,.1);
+    border-radius: 14px;
+    border: 1px solid rgba(34, 92, 147, 0.10);
+    background: rgba(255, 255, 255, 0.98);
+    color: #1266b0;
+    box-shadow: 0 6px 16px rgba(27, 61, 98, 0.08);
+  }
+
+  body.orders-page-shell :is(.orders-page-header__search-toggle,.orders-page-header__hero-chip),
+  body.notifications-page-shell :is(.orders-page-header__search-toggle,.orders-page-header__hero-chip),
+  body.messages-page-shell :is(.orders-page-header__search-toggle,.orders-page-header__hero-chip),
+  body.communities-page-shell :is(.orders-page-header__search-toggle,.orders-page-header__hero-chip),
+  body.settings-page-shell .settings-mobile-header__action {
+    border-radius: 14px !important;
+    border: 1px solid rgba(34, 92, 147, 0.10) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    color: #1266b0 !important;
+    box-shadow: 0 6px 16px rgba(27, 61, 98, 0.08) !important;
+  }
+
+  body.app-shell-page :is(
+    .orders-page-header__search-toggle,
+    .orders-page-header__hero-chip,
+    .settings-mobile-header__action,
+    .mobile-toggle,
+    .mobile-header-location,
+    .home-mobile-hero__notification
+  ) svg {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    display: block !important;
+    stroke-width: 2.2 !important;
   }
 
   body.orders-page-shell .orders-page-header__hero-chip span,
@@ -140,8 +264,8 @@
   body.orders-page-shell .orders-page-header__hero-chip[aria-expanded="true"],
   body.notifications-page-shell .orders-page-header__hero-chip[aria-expanded="true"],
   body.messages-page-shell .orders-page-header__hero-chip[aria-expanded="true"] {
-    background: linear-gradient(135deg, var(--color-primary, #2a5f90), var(--color-secondary, #35c9a5));
-    border-color: transparent;
-    color: #fff;
+    background: linear-gradient(135deg, var(--color-primary, #2a5f90), var(--color-secondary, #35c9a5)) !important;
+    border-color: transparent !important;
+    color: #fff !important;
   }
 }

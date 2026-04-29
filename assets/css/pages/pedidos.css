@@ -1706,9 +1706,46 @@ border: 1px solid var(--doke-card-border);
     font-size: 0.86rem;
   }
 
+  .orders-planner__month-controls {
+    grid-template-columns: 40px minmax(0, 1fr) 40px;
+    gap: 12px;
+  }
+
+  .orders-planner__month-nav {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    border-radius: 10px;
+    box-shadow: 0 6px 16px rgba(27, 61, 98, 0.08);
+  }
+
+  .orders-planner__month-nav svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.25;
+  }
+
+  .orders-planner__days {
+    grid-auto-rows: 34px;
+    gap: 8px;
+  }
+
   .orders-planner__day {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
     border-radius: 999px;
     font-size: 0.8rem;
+    line-height: 1;
+  }
+
+  .orders-planner__day.is-active {
+    border-radius: 50%;
   }
 
   .orders-planner__event {
@@ -2651,7 +2688,7 @@ body.orders-overlay-open {
 /* Mobile header for pedidos: page-specific layout, loaded after shared components. */
 @media (max-width: 760px) {
   body.orders-page-shell {
-    --orders-mobile-gutter: clamp(16px, 4.8vw, 22px);
+    --orders-mobile-gutter: var(--doke-mobile-page-edge, 14px);
     background: #eef4f9;
   }
 
@@ -2675,7 +2712,7 @@ body.orders-overlay-open {
   }
 
   body.orders-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content {
-    padding: calc(env(safe-area-inset-top, 0px) + 24px) var(--orders-mobile-gutter) 84px;
+    padding: calc(env(safe-area-inset-top, 0px) + 12px) var(--orders-mobile-gutter) 84px !important;
   }
 
   body.orders-page-shell .orders-page {
@@ -2732,10 +2769,10 @@ body.orders-overlay-open {
   }
 
   body.orders-page-shell .orders-page-header__hero-avatar {
-    width: 42px;
-    height: 42px;
-    flex: 0 0 42px;
-    border-radius: 14px;
+    width: var(--doke-mobile-header-avatar, 42px);
+    height: var(--doke-mobile-header-avatar, 42px);
+    flex: 0 0 var(--doke-mobile-header-avatar, 42px);
+    border-radius: 50%;
     background: linear-gradient(135deg, #1ba7d7 0%, #18a88d 100%);
     color: #fff;
     font-size: 0.9rem;
@@ -2775,19 +2812,19 @@ body.orders-overlay-open {
 
   body.orders-page-shell .orders-page-header__search-toggle,
   body.orders-page-shell .orders-page-header__hero-chip {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    min-height: 36px;
-    flex: 0 0 36px;
+    width: var(--doke-mobile-header-control, 42px);
+    height: var(--doke-mobile-header-control, 42px);
+    min-width: var(--doke-mobile-header-control, 42px);
+    min-height: var(--doke-mobile-header-control, 42px);
+    flex: 0 0 var(--doke-mobile-header-control, 42px);
     display: inline-grid;
     place-items: center;
     padding: 0;
-    border: 0;
+    border: 1px solid rgba(34, 92, 147, 0.10);
     border-radius: 14px;
-    background: #fff;
-    color: #1767ad;
-    box-shadow: 0 10px 22px rgba(24, 65, 106, 0.08);
+    background: rgba(255, 255, 255, 0.98);
+    color: #1266b0;
+    box-shadow: 0 6px 16px rgba(27, 61, 98, 0.08);
   }
 
   body.orders-page-shell .orders-page-header__search-toggle {
@@ -2795,9 +2832,9 @@ body.orders-overlay-open {
   }
 
   body.orders-page-shell .orders-page-header__search-toggle[aria-expanded="true"] {
-    background: #fff;
-    color: #1767ad;
-    box-shadow: 0 10px 22px rgba(24, 65, 106, 0.08);
+    background: rgba(255, 255, 255, 0.98);
+    color: #1266b0;
+    box-shadow: 0 6px 16px rgba(27, 61, 98, 0.08);
   }
 
   body.orders-page-shell .orders-page-header__hero-chip span {
@@ -2819,9 +2856,10 @@ body.orders-overlay-open {
 
   body.orders-page-shell .orders-page:not(.is-agenda-collapsed) [data-orders-agenda-toggle],
   body.orders-page-shell [data-orders-agenda-toggle][aria-expanded="true"] {
-    background: linear-gradient(135deg, #21b984 0%, #179a73 100%);
-    color: #fff;
-    box-shadow: 0 10px 22px rgba(23, 154, 115, 0.18);
+    background: linear-gradient(135deg, #21b984 0%, #179a73 100%) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+    box-shadow: 0 6px 16px rgba(23, 154, 115, 0.16) !important;
   }
 
   body.orders-page-shell .orders-page-header__search.orders-page-header__search--hero {
