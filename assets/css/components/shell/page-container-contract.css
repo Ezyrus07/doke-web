@@ -57,3 +57,67 @@
     max-width: 100%;
   }
 }
+
+/*
+ * Mobile App Page Contract
+ * Single source of truth for mobile page gutters, bottom-nav spacing and reusable surfaces.
+ * Pages consume these primitives; page CSS should only define domain-specific layout.
+ */
+:root {
+  --doke-mobile-app-max: 430px;
+  --doke-mobile-page-edge: clamp(10px, 3.2vw, 14px);
+  --doke-mobile-page-top: max(14px, env(safe-area-inset-top, 0px));
+  --doke-mobile-bottom-nav-height: 64px;
+  --doke-surface-radius-lg: 24px;
+  --doke-surface-radius-xl: 28px;
+  --doke-surface-bg: rgba(255, 255, 255, 0.98);
+  --doke-surface-border: var(--doke-card-border, rgba(191, 207, 224, 0.72));
+  --doke-surface-shadow: 0 14px 34px rgba(22, 55, 91, 0.07);
+}
+
+.doke-surface-card,
+.surface-card {
+  min-width: 0;
+  border: 1px solid var(--doke-surface-border);
+  border-radius: var(--doke-surface-radius-xl);
+  background: var(--doke-surface-bg);
+  box-shadow: var(--doke-surface-shadow);
+  box-sizing: border-box;
+}
+
+@media (max-width: 760px) {
+  body.app-shell-page {
+    --doke-mobile-page-edge: clamp(10px, 3.2vw, 14px);
+    background: var(--color-bg-app, #eef4f9);
+  }
+
+  body.app-shell-page .page,
+  body.app-shell-page .page__content {
+    width: 100%;
+    min-width: 0;
+    background: var(--color-bg-app, #eef4f9);
+    box-sizing: border-box;
+  }
+
+  body.app-shell-page .page__content {
+    padding-top: 0;
+    padding-bottom: calc(var(--doke-mobile-bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+  }
+
+  body.app-shell-page .page__content-inner {
+    width: 100% !important;
+    max-width: var(--doke-mobile-app-max) !important;
+    margin-inline: auto !important;
+    padding: var(--doke-mobile-page-top) var(--doke-mobile-page-edge) calc(var(--doke-mobile-bottom-nav-height) + 20px) !important;
+    box-sizing: border-box !important;
+  }
+
+  body.app-shell-page :is(.orders-shell-content, .messages-shell-content, .settings-shell-content, .profile-shell-content, .search-results-workspace, .communities-shell) {
+    width: 100% !important;
+    max-width: var(--doke-mobile-app-max) !important;
+    margin-inline: auto !important;
+    padding-left: var(--doke-mobile-page-edge) !important;
+    padding-right: var(--doke-mobile-page-edge) !important;
+    box-sizing: border-box !important;
+  }
+}

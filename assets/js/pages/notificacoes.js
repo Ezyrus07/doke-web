@@ -267,19 +267,20 @@
       if (mobileSearchQuery.matches) closeFiltersPanel();
     }));
 
-    filtersToggles.forEach((toggle) => toggle.addEventListener('click', () => {
-      if (!filtersPanel) return;
-      if (filtersPanel.hidden) openFiltersPanel();
-      else closeFiltersPanel();
+    filtersToggles.forEach((toggle) => toggle.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      closeFiltersPanel();
+      closeSelectPanel();
+      setToggleExpanded(filtersToggles, false);
     }));
 
     selectToggles.forEach((toggle) => toggle.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      const nextStaté = !selectionEnabled;
-      setSelectionEnabled(nextStaté);
-      if (nextStaté) openSelectPanel();
-      else closeSelectPanel();
+      setSelectionEnabled(false);
+      closeSelectPanel();
+      setToggleExpanded(selectToggles, false);
     }));
 
     selectModeButtons.forEach((button) => button.addEventListener('click', () => {

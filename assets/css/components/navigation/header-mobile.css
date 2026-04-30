@@ -269,3 +269,57 @@
     color: #fff !important;
   }
 }
+
+/*
+ * Mobile App Header Contract v2
+ * Transparent identity row + optional toolbar. This prevents each page from inventing
+ * different header backgrounds, gutters and action sizing.
+ */
+@media (max-width: 760px) {
+  body.app-shell-page {
+    --doke-mobile-header-avatar: 42px;
+    --doke-mobile-header-control: 42px;
+    --doke-mobile-header-gap: 10px;
+    --doke-mobile-toolbar-radius: 20px;
+  }
+
+  body.app-shell-page :is(.home-mobile-hero__top, .orders-page-header__hero-top) {
+    min-height: var(--doke-mobile-header-avatar);
+  }
+
+  body.app-shell-page :is(.home-mobile-hero__profile, .orders-page-header__hero-profile) {
+    min-height: var(--doke-mobile-header-avatar) !important;
+    gap: var(--doke-mobile-header-gap) !important;
+  }
+
+  body.app-shell-page :is(.home-mobile-hero__avatar, .orders-page-header__hero-avatar, .home-side-meta__avatar, .topbar-profile__button .avatar) {
+    width: var(--doke-mobile-header-avatar) !important;
+    height: var(--doke-mobile-header-avatar) !important;
+    min-width: var(--doke-mobile-header-avatar) !important;
+    min-height: var(--doke-mobile-header-avatar) !important;
+    flex-basis: var(--doke-mobile-header-avatar) !important;
+    border-radius: 50% !important;
+    clip-path: circle(50% at 50% 50%) !important;
+  }
+
+  body.app-shell-page :is(.home-mobile-hero__quick-actions, .orders-page-header__hero-strip) {
+    min-width: 0;
+  }
+
+  body.app-shell-page :is(.home-mobile-hero__notification, .orders-page-header__search-toggle, .orders-page-header__hero-chip) {
+    width: var(--doke-mobile-header-control) !important;
+    height: var(--doke-mobile-header-control) !important;
+    min-width: var(--doke-mobile-header-control) !important;
+    min-height: var(--doke-mobile-header-control) !important;
+    border-radius: 14px !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+  }
+
+  body.app-shell-page :is(.orders-page-header, .home-mobile-hero) {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+}

@@ -1,0 +1,1161 @@
+/*
+ * Doke App Mobile Header Contract
+ * Owner: components/navigation
+ * Goal: same header geometry for index and internal pages.
+ * Rule: pages may change content, not gutter/avatar/action geometry.
+ */
+@media (max-width: 760px) {
+  body.app-shell-page {
+    --doke-mobile-app-max: 430px;
+    --doke-mobile-page-edge: clamp(12px, 3.6vw, 16px);
+    --doke-mobile-header-avatar: 36px;
+    --doke-mobile-header-action: 40px;
+    --doke-mobile-header-gap: 8px;
+    --doke-mobile-header-title: 15px;
+  }
+
+  body.app-shell-page .page {
+    background: var(--color-bg-app, #eef4f9) !important;
+  }
+
+  body.home-index-shell .home-search-hero,
+  body.orders-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content {
+    width: 100% !important;
+    max-width: var(--doke-mobile-app-max) !important;
+    margin-inline: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell .home-search-hero {
+    padding: max(12px, env(safe-area-inset-top, 0px)) var(--doke-mobile-page-edge) 0 !important;
+    background: transparent !important;
+  }
+
+  body.orders-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content {
+    padding: max(12px, env(safe-area-inset-top, 0px)) var(--doke-mobile-page-edge) calc(var(--doke-mobile-bottom-nav-height, 64px) + 22px) !important;
+  }
+
+  body.home-index-shell .home-search-hero__panel,
+  body.home-index-shell .home-search-hero__card {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  body.home-index-shell .home-search-hero__card::before,
+  body.home-index-shell .home-search-hero__card::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  body.home-index-shell .home-mobile-hero,
+  body.orders-page-shell .orders-page-header {
+    display: block !important;
+    margin: 0 0 10px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__top,
+  body.orders-page-shell .orders-page-header__hero {
+    width: 100% !important;
+    min-height: var(--doke-mobile-header-action) !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas: "identity actions" !important;
+    align-items: center !important;
+    gap: var(--doke-mobile-header-gap) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__profile,
+  body.orders-page-shell .orders-page-header__hero-top,
+  body.orders-page-shell .orders-page-header__hero-profile {
+    grid-area: identity !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: var(--doke-mobile-header-gap) !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: auto !important;
+    min-height: var(--doke-mobile-header-avatar) !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+  }
+
+  body.orders-page-shell .orders-page-header__hero-top {
+    display: flex !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__quick-actions,
+  body.orders-page-shell .orders-page-header__hero-strip {
+    grid-area: actions !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    margin-left: auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body.orders-page-shell .orders-page-header__hero-chips {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    min-width: 0 !important;
+  }
+
+  body.orders-page-shell .orders-page-header__count {
+    display: none !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__avatar,
+  body.orders-page-shell .orders-page-header__hero-avatar {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: var(--doke-mobile-header-avatar) !important;
+    height: var(--doke-mobile-header-avatar) !important;
+    min-width: var(--doke-mobile-header-avatar) !important;
+    min-height: var(--doke-mobile-header-avatar) !important;
+    flex: 0 0 var(--doke-mobile-header-avatar) !important;
+    aspect-ratio: 1 / 1 !important;
+    border-radius: 999px !important;
+    clip-path: circle(50% at 50% 50%) !important;
+    border: 0 !important;
+    background: linear-gradient(145deg, #18c7bd 0%, #1187c5 100%) !important;
+    color: #fff !important;
+    font-size: 13px !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.04em !important;
+    box-shadow: 0 8px 18px rgba(19, 124, 183, 0.14) !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__identity,
+  body.orders-page-shell .orders-page-header__hero-usercopy {
+    display: block !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__identity strong,
+  body.orders-page-shell .orders-page-header__hero-name {
+    display: block !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    color: #173d63 !important;
+    font-size: var(--doke-mobile-header-title) !important;
+    line-height: 1.05 !important;
+    font-weight: 850 !important;
+    letter-spacing: -0.03em !important;
+    text-shadow: none !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__notification,
+  body.orders-page-shell .orders-page-header__search-toggle,
+  body.orders-page-shell .orders-page-header__hero-chip {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: var(--doke-mobile-header-action) !important;
+    height: var(--doke-mobile-header-action) !important;
+    min-width: var(--doke-mobile-header-action) !important;
+    min-height: var(--doke-mobile-header-action) !important;
+    padding: 0 !important;
+    border-radius: 14px !important;
+    border: 1px solid rgba(34, 92, 147, 0.10) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    color: #1266b0 !important;
+    box-shadow: 0 6px 16px rgba(27, 61, 98, 0.08) !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__location {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    width: clamp(96px, 31vw, 120px) !important;
+    max-width: clamp(96px, 31vw, 120px) !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 10px !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(34, 92, 147, 0.08) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    color: #173d63 !important;
+    box-shadow: 0 6px 16px rgba(27, 61, 98, 0.07) !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__location-dot {
+    width: 8px !important;
+    height: 8px !important;
+    border-radius: 999px !important;
+    background: #20d4a3 !important;
+    flex: 0 0 8px !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__location-label {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    color: #57718a !important;
+    font-size: 10.5px !important;
+    line-height: 1 !important;
+    font-weight: 800 !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__notification svg,
+  body.orders-page-shell .orders-page-header__search-toggle svg,
+  body.orders-page-shell .orders-page-header__hero-chip svg {
+    width: 17px !important;
+    height: 17px !important;
+    min-width: 17px !important;
+    min-height: 17px !important;
+    stroke-width: 2.2 !important;
+  }
+
+  body.orders-page-shell [data-orders-agenda-toggle][aria-expanded="true"] {
+    background: #18a88d !important;
+    border-color: transparent !important;
+    color: #fff !important;
+    box-shadow: 0 8px 18px rgba(24, 168, 141, 0.16) !important;
+  }
+
+  body.orders-page-shell .orders-page-header__hero-chip span {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  body.orders-page-shell .orders-page-header__search.orders-page-header__search--hero {
+    display: none !important;
+    grid-column: 1 / -1 !important;
+    margin-top: 10px !important;
+  }
+
+  body.orders-page-shell .orders-page.is-search-open .orders-page-header__search.orders-page-header__search--hero,
+  body.orders-page-shell .orders-page-header__search.orders-page-header__search--hero:focus-within {
+    display: flex !important;
+  }
+
+  body.home-index-shell .home-search-hero__form {
+    margin-top: 10px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  body.app-shell-page {
+    --doke-mobile-page-edge: 12px;
+    --doke-mobile-header-avatar: 34px;
+    --doke-mobile-header-action: 38px;
+    --doke-mobile-header-title: 14px;
+  }
+
+  body.home-index-shell .home-mobile-hero__location {
+    width: 96px !important;
+    max-width: 96px !important;
+    padding-inline: 8px !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__location-label {
+    font-size: 10px !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__quick-actions,
+  body.orders-page-shell .orders-page-header__hero-strip,
+  body.orders-page-shell .orders-page-header__hero-chips {
+    gap: 5px !important;
+  }
+}
+
+/*
+ * Correction v4: hard-lock vertical origin and action box alignment.
+ * The top spacing belongs to the page shell; action buttons cannot add their own
+ * margin/transform/offset. Keeps index and pedidos starting at the same Y axis.
+ */
+@media (max-width: 760px) {
+  body.app-shell-page {
+    --doke-mobile-header-start-y: max(12px, env(safe-area-inset-top, 0px));
+    --doke-mobile-header-action: 40px;
+    --doke-mobile-header-avatar: 36px;
+  }
+
+  body.home-index-shell .home-search-hero,
+  body.orders-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content {
+    padding-top: var(--doke-mobile-header-start-y) !important;
+  }
+
+  body.home-index-shell .home-mobile-hero,
+  body.orders-page-shell .orders-page-header {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__top,
+  body.orders-page-shell .orders-page-header__hero {
+    height: var(--doke-mobile-header-action) !important;
+    min-height: var(--doke-mobile-header-action) !important;
+    max-height: var(--doke-mobile-header-action) !important;
+    align-items: center !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__quick-actions,
+  body.orders-page-shell .orders-page-header__hero-strip,
+  body.orders-page-shell .orders-page-header__hero-chips {
+    height: var(--doke-mobile-header-action) !important;
+    min-height: var(--doke-mobile-header-action) !important;
+    max-height: var(--doke-mobile-header-action) !important;
+    align-items: center !important;
+    align-self: center !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    transform: none !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__notification,
+  body.orders-page-shell .orders-page-header__search-toggle,
+  body.orders-page-shell .orders-page-header__hero-chip,
+  body.orders-page-shell [data-orders-agenda-toggle] {
+    box-sizing: border-box !important;
+    width: var(--doke-mobile-header-action) !important;
+    height: var(--doke-mobile-header-action) !important;
+    min-width: var(--doke-mobile-header-action) !important;
+    min-height: var(--doke-mobile-header-action) !important;
+    max-width: var(--doke-mobile-header-action) !important;
+    max-height: var(--doke-mobile-header-action) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    top: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    align-self: center !important;
+    vertical-align: top !important;
+    line-height: 1 !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__notification svg,
+  body.orders-page-shell .orders-page-header__search-toggle svg,
+  body.orders-page-shell .orders-page-header__hero-chip svg,
+  body.orders-page-shell [data-orders-agenda-toggle] svg {
+    display: block !important;
+    margin: 0 !important;
+  }
+}
+
+@media (max-width: 360px) {
+  body.app-shell-page {
+    --doke-mobile-header-action: 38px;
+    --doke-mobile-header-avatar: 34px;
+  }
+}
+
+/*
+ * Correction v5: desktop guard + home vertical origin.
+ * - Mobile-only header/bottom-nav cannot leak into desktop/tablet layouts.
+ * - Home top spacing must not be double-counted by page__content-inner + hero.
+ */
+@media (min-width: 761px) {
+  body.home-index-shell .home-mobile-hero,
+  body.app-shell-page .bottom-nav,
+  body.app-shell-page .mobile-bottom-nav,
+  body.app-shell-page .mobile-header-logo,
+  body.app-shell-page .mobile-header-shortcuts,
+  body.app-shell-page .mobile-header-location {
+    display: none !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body.home-index-shell {
+    --doke-mobile-header-start-y: max(8px, env(safe-area-inset-top, 0px));
+  }
+
+  body.home-index-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean {
+    padding-top: 0 !important;
+  }
+
+  body.home-index-shell .home-search-hero {
+    padding-top: var(--doke-mobile-header-start-y) !important;
+  }
+
+  body.home-index-shell .home-mobile-hero,
+  body.home-index-shell .home-mobile-hero__top {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+}
+
+/*
+ * Correction v6: one box-model for mobile header avatars/actions.
+ * This is intentionally loaded last to neutralize legacy page-level avatar/button sizes.
+ * Pages may change color/state only; not dimensions, radius, padding, or icon size.
+ */
+@media (max-width: 760px) {
+  body.app-shell-page {
+    --doke-mobile-header-avatar: 36px !important;
+    --doke-mobile-header-action: 40px !important;
+    --doke-mobile-header-action-radius: 14px !important;
+    --doke-mobile-header-icon: 17px !important;
+    --doke-mobile-header-icon-stroke: 2.2 !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__avatar,
+  body.orders-page-shell .orders-page-header__hero-avatar,
+  body.app-shell-page :is(.home-mobile-hero__avatar, .orders-page-header__hero-avatar, .home-side-meta__avatar, .topbar-profile__button .avatar) {
+    box-sizing: border-box !important;
+    width: var(--doke-mobile-header-avatar) !important;
+    height: var(--doke-mobile-header-avatar) !important;
+    min-width: var(--doke-mobile-header-avatar) !important;
+    min-height: var(--doke-mobile-header-avatar) !important;
+    max-width: var(--doke-mobile-header-avatar) !important;
+    max-height: var(--doke-mobile-header-avatar) !important;
+    flex: 0 0 var(--doke-mobile-header-avatar) !important;
+    aspect-ratio: 1 / 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    clip-path: circle(50% at 50% 50%) !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    font-size: 13px !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.04em !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__notification,
+  body.orders-page-shell .orders-page-header__search-toggle,
+  body.orders-page-shell .orders-page-header__hero-chip,
+  body.orders-page-shell [data-orders-agenda-toggle],
+  body.app-shell-page :is(.home-mobile-hero__notification, .orders-page-header__search-toggle, .orders-page-header__hero-chip) {
+    box-sizing: border-box !important;
+    width: var(--doke-mobile-header-action) !important;
+    height: var(--doke-mobile-header-action) !important;
+    min-width: var(--doke-mobile-header-action) !important;
+    min-height: var(--doke-mobile-header-action) !important;
+    max-width: var(--doke-mobile-header-action) !important;
+    max-height: var(--doke-mobile-header-action) !important;
+    flex: 0 0 var(--doke-mobile-header-action) !important;
+    aspect-ratio: 1 / 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: var(--doke-mobile-header-action-radius) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    align-self: center !important;
+    line-height: 1 !important;
+    vertical-align: top !important;
+    transform: none !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__notification svg,
+  body.orders-page-shell .orders-page-header__search-toggle svg,
+  body.orders-page-shell .orders-page-header__hero-chip svg,
+  body.orders-page-shell [data-orders-agenda-toggle] svg,
+  body.app-shell-page :is(.home-mobile-hero__notification, .orders-page-header__search-toggle, .orders-page-header__hero-chip) svg {
+    box-sizing: border-box !important;
+    display: block !important;
+    width: var(--doke-mobile-header-icon) !important;
+    height: var(--doke-mobile-header-icon) !important;
+    min-width: var(--doke-mobile-header-icon) !important;
+    min-height: var(--doke-mobile-header-icon) !important;
+    max-width: var(--doke-mobile-header-icon) !important;
+    max-height: var(--doke-mobile-header-icon) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    stroke-width: var(--doke-mobile-header-icon-stroke) !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__quick-actions,
+  body.orders-page-shell .orders-page-header__hero-strip,
+  body.orders-page-shell .orders-page-header__hero-chips {
+    height: var(--doke-mobile-header-action) !important;
+    min-height: var(--doke-mobile-header-action) !important;
+    max-height: var(--doke-mobile-header-action) !important;
+    align-items: center !important;
+  }
+}
+
+@media (max-width: 360px) {
+  body.app-shell-page {
+    --doke-mobile-header-avatar: 36px !important;
+    --doke-mobile-header-action: 40px !important;
+  }
+}
+
+/*
+ * Correction v7: shared mobile header vertical rhythm.
+ * Locks index and internal pages to the same top origin, header box height,
+ * and first-content offset. Search/calendar sections may differ only after
+ * this shared header rhythm.
+ */
+@media (max-width: 760px) {
+  body.app-shell-page {
+    --doke-mobile-header-start-y: max(10px, env(safe-area-inset-top, 0px)) !important;
+    --doke-mobile-header-row: 40px !important;
+    --doke-mobile-header-after: 10px !important;
+  }
+
+  body.home-index-shell .home-search-hero,
+  body.orders-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content {
+    padding-top: var(--doke-mobile-header-start-y) !important;
+  }
+
+  body.home-index-shell .home-mobile-hero,
+  body.orders-page-shell .orders-page-header {
+    height: var(--doke-mobile-header-row) !important;
+    min-height: var(--doke-mobile-header-row) !important;
+    max-height: var(--doke-mobile-header-row) !important;
+    margin: 0 0 var(--doke-mobile-header-after) !important;
+    padding: 0 !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__top,
+  body.orders-page-shell .orders-page-header__hero {
+    height: var(--doke-mobile-header-row) !important;
+    min-height: var(--doke-mobile-header-row) !important;
+    max-height: var(--doke-mobile-header-row) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    align-items: center !important;
+  }
+
+  body.home-index-shell .home-mobile-hero__profile,
+  body.orders-page-shell .orders-page-header__hero-top,
+  body.orders-page-shell .orders-page-header__hero-profile,
+  body.home-index-shell .home-mobile-hero__quick-actions,
+  body.orders-page-shell .orders-page-header__hero-strip,
+  body.orders-page-shell .orders-page-header__hero-chips {
+    height: var(--doke-mobile-header-row) !important;
+    min-height: var(--doke-mobile-header-row) !important;
+    max-height: var(--doke-mobile-header-row) !important;
+    align-items: center !important;
+    align-self: center !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    transform: none !important;
+  }
+
+  body.home-index-shell .home-search-hero__form {
+    margin-top: 0 !important;
+  }
+}
+
+
+/*
+ * Global internal mobile header propagation — 20260430.
+ * Applies the Pedidos/index mobile header contract to every internal page that
+ * still has a desktop topbar. Desktop remains untouched.
+ */
+@media (min-width: 761px) {
+  body.app-shell-page .doke-mobile-page-header {
+    display: none !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body.app-shell-page {
+    --doke-mobile-app-max: 430px;
+    --doke-mobile-page-edge: clamp(12px, 3.6vw, 16px);
+    --doke-mobile-header-start-y: max(10px, env(safe-area-inset-top, 0px)) !important;
+    --doke-mobile-header-row: 40px !important;
+    --doke-mobile-header-after: 10px !important;
+    --doke-mobile-header-avatar: 36px !important;
+    --doke-mobile-header-action: 40px !important;
+    --doke-mobile-header-action-radius: 14px !important;
+    --doke-mobile-header-icon: 17px !important;
+    --doke-mobile-header-title: 15px !important;
+  }
+
+  body.app-shell-page .topbar,
+  body.app-shell-page .topbar.internal-page-topbar,
+  body.app-shell-page > .app-shell > .page > .topbar.internal-page-topbar {
+    display: none !important;
+  }
+
+  body.app-shell-page .doke-mobile-page-header {
+    display: block !important;
+    width: 100% !important;
+    max-width: var(--doke-mobile-app-max) !important;
+    margin: 0 auto var(--doke-mobile-header-after) !important;
+    padding: var(--doke-mobile-header-start-y) var(--doke-mobile-page-edge) 0 !important;
+    box-sizing: border-box !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body.app-shell-page .doke-mobile-page-header__row {
+    width: 100% !important;
+    height: var(--doke-mobile-header-row) !important;
+    min-height: var(--doke-mobile-header-row) !important;
+    max-height: var(--doke-mobile-header-row) !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas: "identity actions" !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body.app-shell-page .doke-mobile-page-header__identity {
+    grid-area: identity !important;
+    min-width: 0 !important;
+    width: auto !important;
+    height: var(--doke-mobile-header-row) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: inherit !important;
+    font: inherit !important;
+    cursor: pointer !important;
+    overflow: hidden !important;
+  }
+
+  body.app-shell-page .doke-mobile-page-header__avatar,
+  body.app-shell-page :is(.orders-page-header__hero-avatar, .settings-mobile-header__avatar) {
+    box-sizing: border-box !important;
+    width: var(--doke-mobile-header-avatar) !important;
+    height: var(--doke-mobile-header-avatar) !important;
+    min-width: var(--doke-mobile-header-avatar) !important;
+    min-height: var(--doke-mobile-header-avatar) !important;
+    max-width: var(--doke-mobile-header-avatar) !important;
+    max-height: var(--doke-mobile-header-avatar) !important;
+    flex: 0 0 var(--doke-mobile-header-avatar) !important;
+    aspect-ratio: 1 / 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    clip-path: circle(50% at 50% 50%) !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    background: linear-gradient(145deg, #18c7bd 0%, #1187c5 100%) !important;
+    color: #fff !important;
+    font-size: 13px !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.04em !important;
+    box-shadow: 0 8px 18px rgba(19, 124, 183, 0.14) !important;
+  }
+
+  body.app-shell-page .doke-mobile-page-header__title,
+  body.app-shell-page .settings-mobile-header__title {
+    display: block !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    color: #173d63 !important;
+    font-size: var(--doke-mobile-header-title) !important;
+    line-height: 1.05 !important;
+    font-weight: 850 !important;
+    letter-spacing: -0.03em !important;
+    text-shadow: none !important;
+  }
+
+  body.app-shell-page .doke-mobile-page-header__actions {
+    grid-area: actions !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+    height: var(--doke-mobile-header-row) !important;
+    min-height: var(--doke-mobile-header-row) !important;
+    max-height: var(--doke-mobile-header-row) !important;
+    width: auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body.app-shell-page .doke-mobile-page-header__action,
+  body.app-shell-page :is(.orders-page-header__search-toggle, .orders-page-header__hero-chip, .settings-mobile-header__action) {
+    box-sizing: border-box !important;
+    width: var(--doke-mobile-header-action) !important;
+    height: var(--doke-mobile-header-action) !important;
+    min-width: var(--doke-mobile-header-action) !important;
+    min-height: var(--doke-mobile-header-action) !important;
+    max-width: var(--doke-mobile-header-action) !important;
+    max-height: var(--doke-mobile-header-action) !important;
+    flex: 0 0 var(--doke-mobile-header-action) !important;
+    aspect-ratio: 1 / 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: var(--doke-mobile-header-action-radius) !important;
+    border: 1px solid rgba(34, 92, 147, 0.10) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    color: #1266b0 !important;
+    box-shadow: 0 6px 16px rgba(27, 61, 98, 0.08) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    align-self: center !important;
+    line-height: 1 !important;
+    text-decoration: none !important;
+    vertical-align: top !important;
+    transform: none !important;
+  }
+
+  body.app-shell-page .doke-mobile-page-header__action svg,
+  body.app-shell-page :is(.orders-page-header__search-toggle, .orders-page-header__hero-chip, .settings-mobile-header__action) svg {
+    box-sizing: border-box !important;
+    display: block !important;
+    width: var(--doke-mobile-header-icon) !important;
+    height: var(--doke-mobile-header-icon) !important;
+    min-width: var(--doke-mobile-header-icon) !important;
+    min-height: var(--doke-mobile-header-icon) !important;
+    max-width: var(--doke-mobile-header-icon) !important;
+    max-height: var(--doke-mobile-header-icon) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2.2 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+  }
+
+  /* Normalize pages that already reused the Pedidos header markup. */
+  body.app-shell-page .orders-page-header {
+    display: block !important;
+    width: 100% !important;
+    max-width: var(--doke-mobile-app-max) !important;
+    margin: 0 auto var(--doke-mobile-header-after) !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  body.app-shell-page .orders-page-header__hero {
+    width: 100% !important;
+    height: var(--doke-mobile-header-row) !important;
+    min-height: var(--doke-mobile-header-row) !important;
+    max-height: var(--doke-mobile-header-row) !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas: "identity actions" !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body.app-shell-page .orders-page-header__hero-top,
+  body.app-shell-page .orders-page-header__hero-profile {
+    grid-area: identity !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+    width: auto !important;
+    height: var(--doke-mobile-header-row) !important;
+    min-height: var(--doke-mobile-header-row) !important;
+    max-height: var(--doke-mobile-header-row) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: inherit !important;
+    font: inherit !important;
+    overflow: hidden !important;
+  }
+
+  body.app-shell-page .orders-page-header__hero-strip,
+  body.app-shell-page .orders-page-header__hero-chips {
+    grid-area: actions !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+    height: var(--doke-mobile-header-row) !important;
+    min-height: var(--doke-mobile-header-row) !important;
+    max-height: var(--doke-mobile-header-row) !important;
+    margin: 0 0 0 auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  body.app-shell-page .orders-page-header__hero-name {
+    display: block !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    color: #173d63 !important;
+    font-size: var(--doke-mobile-header-title) !important;
+    line-height: 1.05 !important;
+    font-weight: 850 !important;
+    letter-spacing: -0.03em !important;
+  }
+
+  body.app-shell-page .orders-page-header__count,
+  body.app-shell-page .orders-page-header__hero-chip span {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  body.app-shell-page .settings-mobile-header {
+    display: none !important;
+  }
+
+  body.app-shell-page .page__content,
+  body.app-shell-page .detail-page {
+    padding-top: 0 !important;
+  }
+}
+
+/*
+ * Mobile Header Governance Contract — v2.
+ * Regra profissional: no mobile existe UMA origem de header por página.
+ * - Header mobile ocupa somente 1 linha fixa.
+ * - Superfícies de desktop/contexto lateral não podem aparecer no fluxo mobile.
+ * - Busca/filtros expansíveis só aparecem quando a página declara estado aberto.
+ * - Página pode trocar título/ícone/estado; não pode alterar box-model, gutter ou ritmo.
+ */
+@media (max-width: 760px) {
+  body.app-shell-page {
+    --doke-mobile-app-max: 430px !important;
+    --doke-mobile-page-edge: clamp(12px, 3.6vw, 16px) !important;
+    --doke-mobile-header-start-y: max(10px, env(safe-area-inset-top, 0px)) !important;
+    --doke-mobile-header-row: 40px !important;
+    --doke-mobile-header-after: 10px !important;
+    --doke-mobile-header-avatar: 36px !important;
+    --doke-mobile-header-action: 40px !important;
+    --doke-mobile-header-gap: 8px !important;
+    --doke-mobile-header-action-gap: 6px !important;
+    --doke-mobile-header-title: 15px !important;
+    --doke-mobile-header-action-radius: 14px !important;
+    --doke-mobile-header-icon: 17px !important;
+  }
+
+  /* Desktop-only context/side controls must never create a second mobile header. */
+  body.app-shell-page:not(.home-index-shell) :is(
+    .home-side-meta,
+    .page-header-context,
+    .internal-page-topbar,
+    .topbar,
+    .mobile-internal-header,
+    .mobile-header-shortcuts,
+    .mobile-header-location,
+    .mobile-header-logo
+  ) {
+    display: none !important;
+  }
+
+  body.app-shell-page .page,
+  body.app-shell-page .page__content {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    background: var(--color-bg-app, #eef4f9) !important;
+    box-sizing: border-box !important;
+  }
+
+  body.app-shell-page .page__content {
+    padding-top: 0 !important;
+    padding-bottom: calc(var(--doke-mobile-bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body.app-shell-page .page__content-inner,
+  body.app-shell-page :is(.orders-shell-content, .messages-shell-content, .settings-shell-content, .profile-shell-content, .search-results-workspace, .communities-shell) {
+    width: 100% !important;
+    max-width: var(--doke-mobile-app-max) !important;
+    margin-inline: auto !important;
+    padding-left: var(--doke-mobile-page-edge) !important;
+    padding-right: var(--doke-mobile-page-edge) !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Pages with the shared internal header receive the top origin from the content wrapper only. */
+  body.app-shell-page:not(.home-index-shell) .page__content-inner {
+    padding-top: var(--doke-mobile-header-start-y) !important;
+  }
+
+  body.home-index-shell .home-search-hero {
+    width: 100% !important;
+    max-width: var(--doke-mobile-app-max) !important;
+    margin-inline: auto !important;
+    padding: var(--doke-mobile-header-start-y) var(--doke-mobile-page-edge) 0 !important;
+    box-sizing: border-box !important;
+    background: transparent !important;
+  }
+
+  body.app-shell-page :is(.orders-page-header, .doke-mobile-page-header, .messages-mobile-header, .notifications-mobile-header, .communities-mobile-header),
+  body.home-index-shell .home-mobile-hero {
+    position: relative !important;
+    top: auto !important;
+    z-index: 20 !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: var(--doke-mobile-header-row) !important;
+    min-height: var(--doke-mobile-header-row) !important;
+    max-height: var(--doke-mobile-header-row) !important;
+    margin: 0 0 var(--doke-mobile-header-after) !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  body.app-shell-page :is(.orders-page-header__hero, .doke-mobile-page-header__row),
+  body.home-index-shell .home-mobile-hero__top {
+    width: 100% !important;
+    height: var(--doke-mobile-header-row) !important;
+    min-height: var(--doke-mobile-header-row) !important;
+    max-height: var(--doke-mobile-header-row) !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas: "identity actions" !important;
+    align-items: center !important;
+    gap: var(--doke-mobile-header-gap) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body.app-shell-page :is(.orders-page-header__hero-top, .orders-page-header__hero-profile, .doke-mobile-page-header__identity),
+  body.home-index-shell .home-mobile-hero__profile {
+    grid-area: identity !important;
+    width: auto !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: var(--doke-mobile-header-row) !important;
+    min-height: var(--doke-mobile-header-row) !important;
+    max-height: var(--doke-mobile-header-row) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: var(--doke-mobile-header-gap) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: inherit !important;
+    font: inherit !important;
+    overflow: hidden !important;
+  }
+
+  body.app-shell-page :is(.orders-page-header__hero-strip, .orders-page-header__hero-chips, .doke-mobile-page-header__actions),
+  body.home-index-shell .home-mobile-hero__quick-actions {
+    grid-area: actions !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: var(--doke-mobile-header-row) !important;
+    min-height: var(--doke-mobile-header-row) !important;
+    max-height: var(--doke-mobile-header-row) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: var(--doke-mobile-header-action-gap) !important;
+    margin: 0 0 0 auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body.app-shell-page :is(.orders-page-header__hero-avatar, .doke-mobile-page-header__avatar),
+  body.home-index-shell .home-mobile-hero__avatar {
+    box-sizing: border-box !important;
+    width: var(--doke-mobile-header-avatar) !important;
+    height: var(--doke-mobile-header-avatar) !important;
+    min-width: var(--doke-mobile-header-avatar) !important;
+    min-height: var(--doke-mobile-header-avatar) !important;
+    max-width: var(--doke-mobile-header-avatar) !important;
+    max-height: var(--doke-mobile-header-avatar) !important;
+    flex: 0 0 var(--doke-mobile-header-avatar) !important;
+    aspect-ratio: 1 / 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    clip-path: circle(50% at 50% 50%) !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    background: linear-gradient(145deg, #18c7bd 0%, #1187c5 100%) !important;
+    color: #fff !important;
+    font-size: 13px !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.04em !important;
+    box-shadow: 0 8px 18px rgba(19, 124, 183, 0.14) !important;
+  }
+
+  body.app-shell-page :is(.orders-page-header__hero-name, .doke-mobile-page-header__title),
+  body.home-index-shell .home-mobile-hero__identity strong {
+    display: block !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    color: #173d63 !important;
+    font-size: var(--doke-mobile-header-title) !important;
+    line-height: 1.05 !important;
+    font-weight: 850 !important;
+    letter-spacing: -0.03em !important;
+  }
+
+  body.app-shell-page :is(.orders-page-header__search-toggle, .orders-page-header__hero-chip, .doke-mobile-page-header__action),
+  body.home-index-shell .home-mobile-hero__notification {
+    box-sizing: border-box !important;
+    width: var(--doke-mobile-header-action) !important;
+    height: var(--doke-mobile-header-action) !important;
+    min-width: var(--doke-mobile-header-action) !important;
+    min-height: var(--doke-mobile-header-action) !important;
+    max-width: var(--doke-mobile-header-action) !important;
+    max-height: var(--doke-mobile-header-action) !important;
+    flex: 0 0 var(--doke-mobile-header-action) !important;
+    aspect-ratio: 1 / 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: var(--doke-mobile-header-action-radius) !important;
+    border: 1px solid rgba(34, 92, 147, 0.10) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    color: #1266b0 !important;
+    box-shadow: 0 6px 16px rgba(27, 61, 98, 0.08) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    align-self: center !important;
+    line-height: 1 !important;
+    text-decoration: none !important;
+    vertical-align: top !important;
+    transform: none !important;
+  }
+
+  body.app-shell-page :is(.orders-page-header__search-toggle, .orders-page-header__hero-chip, .doke-mobile-page-header__action) svg,
+  body.home-index-shell .home-mobile-hero__notification svg {
+    box-sizing: border-box !important;
+    display: block !important;
+    width: var(--doke-mobile-header-icon) !important;
+    height: var(--doke-mobile-header-icon) !important;
+    min-width: var(--doke-mobile-header-icon) !important;
+    min-height: var(--doke-mobile-header-icon) !important;
+    max-width: var(--doke-mobile-header-icon) !important;
+    max-height: var(--doke-mobile-header-icon) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2.2 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+  }
+
+  body.app-shell-page :is(.orders-page-header__hero-chip span, .orders-page-header__count) {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  /* Search panels are stateful overlays, not permanent second header rows. */
+  body.app-shell-page :is(
+    .orders-page-header__search,
+    .orders-page-header__search--hero,
+    .notifications-page-header__search,
+    .notifications-page-header__search--hero,
+    .messages-page-header__search,
+    .messages-page-header__search--hero
+  ) {
+    display: none !important;
+  }
+
+  body.orders-page-shell .orders-page.is-search-open :is(.orders-page-header__search, .orders-page-header__search--hero),
+  body.notifications-page-shell .notifications-page.is-search-open :is(.notifications-page-header__search, .notifications-page-header__search--hero),
+  body.messages-page-shell .messages-page.is-search-open :is(.messages-page-header__search, .messages-page-header__search--hero) {
+    display: flex !important;
+    grid-column: 1 / -1 !important;
+    margin-top: 10px !important;
+  }
+
+  body.orders-page-shell [data-orders-agenda-toggle][aria-expanded="true"] {
+    background: #18a88d !important;
+    border-color: transparent !important;
+    color: #fff !important;
+    box-shadow: 0 8px 18px rgba(24, 168, 141, 0.16) !important;
+  }
+}

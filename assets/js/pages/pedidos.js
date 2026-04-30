@@ -419,11 +419,10 @@
     filterToggles.forEach((toggle) => {
       toggle.addEventListener('click', (event) => {
         event.preventDefault();
+        event.stopPropagation();
+        closePopover();
         closeSelectPanel();
-        const next = popover?.hidden !== false;
-        if (popover) popover.hidden = !next;
-        filterToggles.forEach((item) => item.setAttribute('aria-expanded', String(next)));
-        syncHeaderControls();
+        filterToggles.forEach((item) => item.setAttribute('aria-expanded', 'false'));
       });
     });
 
@@ -540,9 +539,14 @@
       syncSelectedActions();
     };
     selectToggles.forEach((toggle) => {
-      toggle.addEventListener('click', () => {
-        selecting = !selecting;
-        syncSelectState();
+      toggle.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        selecting = false;
+        closeSelectPanel();
+        clearSelectedCards();
+        root.classList.remove('orders-is-selecting');
+        syncSelectedActions();
       });
     });
 

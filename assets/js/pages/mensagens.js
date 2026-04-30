@@ -301,31 +301,18 @@
     };
 
     const openFiltersPanel = () => {
+      closeFiltersPanel();
       closeSelectPanel();
       setSearchExpanded(false);
-      if (isMobileViewport()) {
-        if (mobileControls) mobileControls.hidden = false;
-        if (mobileFiltersPanel) mobileFiltersPanel.hidden = false;
-      } else {
-        if (desktopControls) desktopControls.hidden = false;
-        if (desktopFiltersPanel) desktopFiltersPanel.hidden = false;
-      }
-      setToggleExpanded(filterToggleButtons, true);
+      setToggleExpanded(filterToggleButtons, false);
       syncHeaderControls();
     };
 
     const openSelectPanel = () => {
       closeFiltersPanel();
       setSearchExpanded(false);
-      setSelectionMode(true, { preserveSelection: true });
-      if (isMobileViewport()) {
-        if (mobileControls) mobileControls.hidden = false;
-        if (mobileSelectPanel) mobileSelectPanel.hidden = false;
-      } else {
-        if (desktopControls) desktopControls.hidden = false;
-        if (desktopSelectPanel) desktopSelectPanel.hidden = false;
-      }
-      setToggleExpanded(selectToggleButtons, true);
+      setSelectionMode(false);
+      setToggleExpanded(selectToggleButtons, false);
       syncHeaderControls();
     };
 
