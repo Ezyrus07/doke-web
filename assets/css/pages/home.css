@@ -474,15 +474,15 @@
   }
 }
 
-/* 2026-05-01 index desktop width convergence
-   The index had a wider visual envelope than internal pages, which could clip
-   right-side controls at some desktop widths. This keeps the landing page
-   inside the same safe shell rhythm used by the other HTMLs. */
+/* 2026-05-01 — Home desktop width parity with internal pages
+   The home must use the same app frame as pedidos.html; sections may scroll
+   internally, but the page itself cannot exceed the available workspace. */
 @media (min-width: 1025px) {
   html body.home-index-shell.doke-app-shell-page {
     --sidebar-width: 272px !important;
+    --doke-home-sidebar-width: 272px !important;
     --doke-home-desktop-gutter: clamp(28px, 3vw, 48px);
-    --doke-home-desktop-workspace: min(1280px, calc(100vw - 272px - (var(--doke-home-desktop-gutter) * 2) - 32px)) !important;
+    --doke-home-desktop-workspace: min(1280px, calc(100vw - 272px - (var(--doke-home-desktop-gutter) * 2))) !important;
     --home-desktop-content-width: var(--doke-home-desktop-workspace) !important;
   }
 
@@ -491,70 +491,113 @@
     overflow-x: clip !important;
   }
 
-  html body.home-index-shell.doke-app-shell-page .sidebar {
-    width: 272px !important;
-    min-width: 272px !important;
-    max-width: 272px !important;
-    overflow: hidden !important;
-    scrollbar-width: none !important;
-  }
-
-  html body.home-index-shell.doke-app-shell-page .sidebar::-webkit-scrollbar {
-    display: none !important;
-  }
-
   html body.home-index-shell.doke-app-shell-page .page,
-  html body.home-index-shell.doke-app-shell-page .page__content {
+  html body.home-index-shell.doke-app-shell-page .page__content,
+  html body.home-index-shell.doke-app-shell-page .page__content-inner {
     min-width: 0 !important;
     max-width: 100% !important;
-    overflow-x: clip !important;
+    box-sizing: border-box !important;
   }
 
   html body.home-index-shell.doke-app-shell-page .page__content {
     padding-left: var(--doke-home-desktop-gutter) !important;
     padding-right: var(--doke-home-desktop-gutter) !important;
+    overflow-x: clip !important;
   }
 
-  html body.home-index-shell.doke-app-shell-page .page__content-inner,
   html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace,
-  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace--clean,
-  html body.home-index-shell.doke-app-shell-page .home-search-hero,
-  html body.home-index-shell.doke-app-shell-page .home-catégories,
-  html body.home-index-shell.doke-app-shell-page .featured-services,
-  html body.home-index-shell.doke-app-shell-page .short-videos,
-  html body.home-index-shell.doke-app-shell-page .before-after,
-  html body.home-index-shell.doke-app-shell-page .more-services,
-  html body.home-index-shell.doke-app-shell-page .featured-pros {
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace--clean {
     width: var(--doke-home-desktop-workspace) !important;
     max-width: var(--doke-home-desktop-workspace) !important;
     margin-left: auto !important;
     margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow-x: clip !important;
   }
 
-  html body.home-index-shell.doke-app-shell-page .home-search-hero__panel,
-  html body.home-index-shell.doke-app-shell-page .home-search-hero__card,
-  html body.home-index-shell.doke-app-shell-page .home-catégories__rail,
-  html body.home-index-shell.doke-app-shell-page .home-categories__rail,
-  html body.home-index-shell.doke-app-shell-page .content-rail {
+  body.home-index-shell .home-side-meta,
+  body.home-index-shell .home-search-hero,
+  body.home-index-shell .home-search-hero__panel,
+  body.home-index-shell .home-search-hero__card,
+  body.home-index-shell section[class*="home-cat"],
+  body.home-index-shell [class*="home-cat"][class*="__rail"],
+  body.home-index-shell .featured-services,
+  body.home-index-shell .short-videos,
+  body.home-index-shell .before-after,
+  body.home-index-shell .more-services,
+  body.home-index-shell .featured-pros,
+  body.home-index-shell .content-rail,
+  body.home-index-shell .section-heading {
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+    transform: none !important;
   }
 
-  html body.home-index-shell.doke-app-shell-page .topbar.topbar--location.internal-page-topbar,
-  html body.home-index-shell.doke-app-shell-page .home-index-topbar {
-    left: 272px !important;
-    right: 0 !important;
-    width: auto !important;
-    max-width: none !important;
-    padding-left: var(--doke-home-desktop-gutter) !important;
-    padding-right: max(var(--doke-home-desktop-gutter), 56px) !important;
-    box-sizing: border-box !important;
+  body.home-index-shell .home-side-meta {
     overflow: visible !important;
   }
 
-  html body.home-index-shell.doke-app-shell-page .home-tablet-topbar__right-clone,
-  html body.home-index-shell.doke-app-shell-page .topbar__right {
+  body.home-index-shell .home-side-meta__group--primary {
     min-width: 0 !important;
-    max-width: min(100%, 520px) !important;
+    flex: 1 1 auto !important;
+  }
+
+  body.home-index-shell .home-side-meta__group--secondary {
+    min-width: 0 !important;
+    flex: 0 1 auto !important;
+  }
+
+  body.home-index-shell .home-side-meta__profile-wrap {
+    max-width: 230px !important;
+    min-width: 0 !important;
+    flex: 0 1 auto !important;
+  }
+
+  body.home-index-shell .home-side-meta__profile {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+
+  body.home-index-shell .home-side-meta__identity {
+    min-width: 0 !important;
+  }
+
+  body.home-index-shell .home-side-meta__identity strong,
+  body.home-index-shell .home-side-meta__identity span {
+    max-width: 110px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  body.home-index-shell [class*="home-cat"][class*="__rail"],
+  body.home-index-shell .content-rail {
+    overflow-x: clip !important;
+    overflow-y: visible !important;
+  }
+
+  body.home-index-shell [class*="home-cat"][class*="__track"],
+  body.home-index-shell .featured-services .service-grid,
+  body.home-index-shell .comparison-grid,
+  body.home-index-shell .more-services .service-grid--compact,
+  body.home-index-shell .featured-pros__grid,
+  body.home-index-shell .short-videos__track {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior-inline: contain !important;
+  }
+
+  body.home-index-shell .section-heading__link,
+  body.home-index-shell .section-heading a,
+  body.home-index-shell .section-heading button {
+    flex: 0 0 auto !important;
+    max-width: max-content !important;
   }
 }
