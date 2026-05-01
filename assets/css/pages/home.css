@@ -31,3 +31,445 @@
 
 @import url("./search-results/results-density-preview-contract.css?v=20260427-v33-density-preview");
 @import url("./search-results/worker-preview-layout-v34.css?v=20260427-v34-workers-preview-grid");
+
+/* Home page dependencies
+   index.html must load only core/index.css, pages/app-shell.css and this file.
+   Keep home-specific ownership here so CSS order is visible in one place. */
+@import url("../components/before-after-workers-preview.css?v=20260429-index-recovery-comments");
+@import url("../components/cards/mobile-card-contract.css?v=20260426-final-mobile-cards");
+@import url("../components/ui-surface-system.css?v=20260427-modal-alignment-v22");
+@import url("../core/responsive-foundation.css?v=20260428-architecture");
+@import url("../components/internal/topbar-standard.css?v=20260428-architecture");
+@import url("../components/cards/card-grid-contract.css?v=20260428-architecture");
+@import url("../components/cards/recommendation-card.css?v=20260428-index-recommendations-v3");
+@import url("../patterns/home-results-card.css?v=20260428-architecture");
+@import url("../components/overlays/overlay-contract.css?v=20260428-architecture");
+@import url("../components/forms-actions/form-action-contract.css?v=20260428-architecture");
+@import url("../core/responsive-runtime.css?v=20260428-architecture");
+@import url("../patterns/responsive-polish.css?v=20260428-architecture");
+@import url("./home/mobile-layout.css?v=20260428-architecture");
+@import url("./home/mobile-interactions.css?v=20260428-architecture");
+@import url("./home/mobile-composition.css?v=20260428-architecture");
+@import url("../components/navigation/home-mobile-drawer.css?v=20260428-architecture");
+@import url("../components/navigation/mobile-drawer-standard.css?v=20260428-architecture");
+@import url("./home/mobile-alignment.css?v=20260428-architecture");
+@import url("../components/shell/page-container-contract.css?v=20260430-rhythm-v3");
+@import url("../components/cards/mobile-list-card-system.css?v=20260428-v1-hotfix");
+@import url("../components/overlays/mobile-overlay-system.css?v=20260428-overlay-hotfix");
+@import url("./home/index-final-refinement.css?v=20260429-index-recovery-safe");
+@import url("../components/avatar.css?v=20260429-avatar-circle-final");
+@import url("../components/internal/filter-select-standard.css?v=20260429-global-header-avatar");
+@import url("../patterns/mobile-app-shell.css?v=20260501-canonical-mobile-architecture");
+@import url("../components/navigation/app-header.css?v=20260501-canonical-mobile-architecture");
+@import url("../components/navigation/search-bar.css?v=20260501-canonical-mobile-architecture");
+@import url("../patterns/horizontal-rail.css?v=20260501-canonical-mobile-architecture");
+@import url("../components/shell/mobile-app-shell.css?v=20260501-app-shell-v2-governance");
+@import url("../components/ui/doke-ui-system.css?v=20260501-ui-contract-v2-components");
+@import url("../components/domain/doke-domain-cards.css?v=20260501-domain-cards-v1");
+@import url("../components/layout/doke-layout-system.css?v=20260501-layout-system-v1");
+@import url("../components/flows/doke-product-flows.css?v=20260501-product-flows-v1");
+@import url("../components/shell/desktop-shell.css?v=20260501-desktop-contract-v1");
+@import url("../components/shell/desktop-sidebar.css?v=20260501-desktop-contract-v1");
+@import url("../components/shell/desktop-topbar.css?v=20260501-desktop-contract-v1");
+@import url("../components/shell/desktop-search.css?v=20260501-desktop-contract-v1");
+@import url("../components/shell/responsive-boundary.css?v=20260501-responsive-boundary-v1");
+@import url("../components/shell/desktop-base-stability.css?v=20260501-desktop-base-stability-v1");
+@import url("../components/shell/mobile-base-stability.css?v=20260501-mobile-base-stability-v1");
+
+/* Home desktop recovery
+   Keeps the home workspace centered and restores the pre-contract search input. */
+@media (min-width: 761px) {
+  body.home-index-shell .page__content-inner.shell-home__workspace,
+  body.home-index-shell .page__content-inner.shell-home__workspace--clean {
+    width: min(100%, 1260px);
+    max-width: 1260px;
+    margin-inline: auto;
+    padding-inline: 0;
+  }
+
+  body.home-index-shell .home-search-hero,
+  body.home-index-shell .home-catégories,
+  body.home-index-shell .featured-services,
+  body.home-index-shell .short-videos,
+  body.home-index-shell .before-after,
+  body.home-index-shell .more-services,
+  body.home-index-shell .featured-pros {
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  body.home-index-shell .home-search-hero__desktop-search {
+    display: none !important;
+  }
+
+  body.home-index-shell .home-search-hero__form--restored {
+    display: grid;
+  }
+
+  body.home-index-shell .home-index-topbar .topbar-search-icon,
+  body.home-index-shell .home-index-topbar .home-tablet-topbar__right-clone .home-side-meta__alert,
+  body.home-index-shell .home-index-topbar .home-tablet-topbar__right-clone .home-side-meta__profile-caret-button {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+    border-radius: 14px !important;
+    display: inline-grid !important;
+    place-items: center !important;
+  }
+}
+
+/* Correct the desktop shell offset: the grid already reserves sidebar space. */
+@media (min-width: 761px) {
+  body.home-index-shell .page {
+    margin-left: 0 !important;
+    max-width: none !important;
+  }
+
+  body.home-index-shell .home-side-meta,
+  body.home-index-shell .home-search-hero,
+  body.home-index-shell .home-search-hero__panel,
+  body.home-index-shell .home-search-hero__card,
+  body.home-index-shell .featured-services,
+  body.home-index-shell .short-videos,
+  body.home-index-shell .before-after,
+  body.home-index-shell .more-services,
+  body.home-index-shell .featured-pros,
+  body.home-index-shell .content-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    transform: none !important;
+  }
+}
+
+/* Follow-up desktop alignment pass after restoring the legacy search field. */
+@media (min-width: 761px) {
+  html body.home-index-shell.doke-app-shell-page {
+    --doke-home-sidebar-width: var(--sidebar-width, 272px);
+    --doke-home-desktop-workspace: min(100%, 1360px);
+  }
+
+  html body.home-index-shell.doke-app-shell-page .app-shell {
+    display: grid !important;
+    grid-template-columns: var(--doke-home-sidebar-width) minmax(0, 1fr) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: clip !important;
+  }
+
+  html body.home-index-shell.doke-app-shell-page .app-shell > .page {
+    grid-column: 2 !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body.home-index-shell {
+    --doke-home-desktop-workspace: min(100%, 1360px);
+  }
+
+  body.home-index-shell .page__content {
+    padding-left: clamp(24px, 3vw, 48px) !important;
+    padding-right: clamp(24px, 3vw, 48px) !important;
+    overflow-x: visible !important;
+  }
+
+  body.home-index-shell .page__content-inner.shell-home__workspace,
+  body.home-index-shell .page__content-inner.shell-home__workspace--clean {
+    width: var(--doke-home-desktop-workspace) !important;
+    max-width: var(--doke-home-desktop-workspace) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  body.home-index-shell .home-search-hero,
+  body.home-index-shell .home-search-hero__panel,
+  body.home-index-shell .home-search-hero__card,
+  body.home-index-shell .home-catÃ©gories,
+  body.home-index-shell .home-categories,
+  body.home-index-shell .home-categories__rail,
+  body.home-index-shell .home-catégories__rail,
+  body.home-index-shell .featured-services,
+  body.home-index-shell .short-videos,
+  body.home-index-shell .before-after,
+  body.home-index-shell .more-services,
+  body.home-index-shell .featured-pros {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    transform: none !important;
+  }
+
+  body.home-index-shell .home-search-hero__form--restored .home-search-hero__leading-filter,
+  body.home-index-shell .home-search-hero__form--restored .home-search-hero__filter-button {
+    display: none !important;
+  }
+
+  body.home-index-shell .home-search-hero__form--restored .home-search-hero__field {
+    padding-left: 24px !important;
+    padding-right: 76px !important;
+  }
+
+  body.home-index-shell .home-search-hero__actions {
+    width: min(100%, 720px) !important;
+    max-width: 720px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  body.home-index-shell .home-search-hero__cta {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  body.home-index-shell .home-index-topbar .topbar-search-icon,
+  body.home-index-shell .home-index-topbar .home-tablet-topbar__right-clone .home-side-meta__alert,
+  body.home-index-shell .home-index-topbar .home-tablet-topbar__right-clone .home-side-meta__profile-caret-button {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    max-width: 48px !important;
+    max-height: 48px !important;
+    flex: 0 0 48px !important;
+    aspect-ratio: 1 / 1 !important;
+    padding: 0 !important;
+    border-radius: 16px !important;
+    display: inline-grid !important;
+    place-items: center !important;
+  }
+
+  body.home-index-shell .home-index-topbar .topbar-search-icon svg,
+  body.home-index-shell .home-index-topbar .home-tablet-topbar__right-clone .home-side-meta__alert svg,
+  body.home-index-shell .home-index-topbar .home-tablet-topbar__right-clone .home-side-meta__profile-caret-button svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+@media (min-width: 761px) {
+  body.home-index-shell .sidebar[data-shell-sidebar],
+  body.home-index-shell .sidebar {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  body.home-index-shell .sidebar[data-shell-sidebar]::-webkit-scrollbar,
+  body.home-index-shell .sidebar::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+  }
+}
+
+@media (min-width: 1025px) {
+  body.home-index-shell .home-side-meta__search,
+  body.home-index-shell .home-side-meta__alert,
+  body.home-index-shell .home-side-meta__profile-caret-button {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    max-width: 48px !important;
+    max-height: 48px !important;
+    flex: 0 0 48px !important;
+    aspect-ratio: 1 / 1 !important;
+    padding: 0 !important;
+    border-radius: 16px !important;
+    display: inline-grid !important;
+    place-items: center !important;
+  }
+
+  body.home-index-shell .home-side-meta__search svg,
+  body.home-index-shell .home-side-meta__alert svg,
+  body.home-index-shell .home-side-meta__profile-caret-button svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+@media (min-width: 761px) {
+  body.home-index-shell section[class*="home-cat"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  body.home-index-shell [class*="home-cat"][class*="__rail"] {
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 116px !important;
+    margin: 0 !important;
+    padding: 0 42px !important;
+    overflow: visible !important;
+  }
+
+  body.home-index-shell [class*="home-cat"][class*="__track"] {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 22px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 116px !important;
+    padding: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x proximity !important;
+  }
+
+  body.home-index-shell a[class*="home-cat"] {
+    flex: 0 0 96px !important;
+    width: 96px !important;
+    min-width: 96px !important;
+    max-width: 96px !important;
+    display: grid !important;
+    justify-items: center !important;
+    gap: 8px !important;
+    text-align: center !important;
+    text-decoration: none !important;
+    scroll-snap-align: start !important;
+  }
+
+  body.home-index-shell [class*="home-cat"][class*="__icon"] {
+    width: 82px !important;
+    height: 82px !important;
+    min-width: 82px !important;
+    min-height: 82px !important;
+    max-width: 82px !important;
+    max-height: 82px !important;
+    border-radius: 18px !important;
+    display: inline-grid !important;
+    place-items: center !important;
+  }
+
+  body.home-index-shell [class*="home-cat"][class*="__icon"] svg,
+  body.home-index-shell [class*="home-cat"][class*="__icon"] i {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  body.home-index-shell [class*="home-cat"][class*="__label"] {
+    display: block !important;
+    width: 100% !important;
+    max-width: 96px !important;
+    font-size: 0.76rem !important;
+    line-height: 1.2 !important;
+    white-space: normal !important;
+  }
+
+  body.home-index-shell [class*="home-cat"][class*="__arrow"] {
+    width: 46px !important;
+    height: 46px !important;
+    min-width: 46px !important;
+    min-height: 46px !important;
+    max-width: 46px !important;
+    max-height: 46px !important;
+    border-radius: 999px !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    z-index: 3 !important;
+  }
+}
+
+@media (min-width: 761px) {
+  body.home-index-shell .home-side-meta__profile-wrap,
+  body.home-index-shell .home-index-topbar .home-tablet-topbar__right-clone .home-side-meta__profile-wrap {
+    display: inline-flex !important;
+    align-items: stretch !important;
+    gap: 0 !important;
+    height: 58px !important;
+    min-height: 58px !important;
+    border-radius: 18px !important;
+    overflow: hidden !important;
+    box-shadow: 0 10px 24px rgba(39, 58, 86, 0.08) !important;
+  }
+
+  body.home-index-shell .home-side-meta__profile,
+  body.home-index-shell .home-index-topbar .home-tablet-topbar__right-clone .home-side-meta__profile {
+    height: 58px !important;
+    min-height: 58px !important;
+    max-height: 58px !important;
+    padding: 8px 14px 8px 10px !important;
+    border-radius: 18px 0 0 18px !important;
+    border: 1px solid var(--doke-card-border) !important;
+    border-right: 0 !important;
+    box-shadow: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+
+  body.home-index-shell .home-side-meta__profile-caret-button,
+  body.home-index-shell .home-index-topbar .home-tablet-topbar__right-clone .home-side-meta__profile-caret-button {
+    width: 58px !important;
+    height: 58px !important;
+    min-width: 58px !important;
+    min-height: 58px !important;
+    max-width: 58px !important;
+    max-height: 58px !important;
+    flex: 0 0 58px !important;
+    border-radius: 0 18px 18px 0 !important;
+    border: 1px solid var(--doke-card-border) !important;
+    border-left: 0 !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: none !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+  }
+
+  body.home-index-shell .home-side-meta__profile-wrap:hover .home-side-meta__profile,
+  body.home-index-shell .home-side-meta__profile-wrap:hover .home-side-meta__profile-caret-button {
+    transform: none !important;
+  }
+}
+
+/* Single desktop envelope for every visible home block. */
+@media (min-width: 761px) {
+  html body.home-index-shell.doke-app-shell-page {
+    --doke-home-desktop-workspace: min(100%, 1360px);
+    --doke-home-desktop-gutter: clamp(24px, 3vw, 48px);
+  }
+
+  html body.home-index-shell.doke-app-shell-page .page__content {
+    box-sizing: border-box !important;
+    padding-left: var(--doke-home-desktop-gutter) !important;
+    padding-right: var(--doke-home-desktop-gutter) !important;
+  }
+
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace,
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace--clean {
+    width: min(100%, var(--doke-home-desktop-workspace)) !important;
+    max-width: var(--doke-home-desktop-workspace) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace > .home-side-meta,
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace > .home-search-hero,
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace > section[class*="home-cat"],
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace > .featured-services,
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace > .short-videos,
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace > .before-after,
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace > .more-services,
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace > .featured-pros {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}

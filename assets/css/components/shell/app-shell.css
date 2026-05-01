@@ -917,16 +917,51 @@ body.wallet-manage-shell .page__content-inner {
 }
 
 @media (min-width: 1025px) {
+  body.app-shell-page {
+    --doke-app-shell-sidebar-width: var(--sidebar-width, 272px);
+    --doke-app-shell-workspace-max: var(--doke-shell-max-wide, 1360px);
+    --doke-app-shell-gutter: clamp(24px, 3vw, 48px);
+  }
+
+  body.app-shell-page .app-shell {
+    display: grid;
+    grid-template-columns: var(--doke-app-shell-sidebar-width) minmax(0, 1fr);
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  body.app-shell-page .app-shell > .sidebar {
+    grid-column: 1;
+  }
+
   body.app-shell-page .page {
-    margin-left: var(--sidebar-width);
-    width: calc(100% - var(--sidebar-width));
-    max-width: calc(100% - var(--sidebar-width));
+    grid-column: 2;
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0;
+  }
+
+  body.app-shell-page .page__content {
+    box-sizing: border-box;
+    padding-left: var(--doke-app-shell-gutter) !important;
+    padding-right: var(--doke-app-shell-gutter) !important;
   }
 
   body.app-shell-page .topbar,
   body.app-shell-page .internal-page-topbar {
-    left: var(--sidebar-width);
+    left: var(--doke-app-shell-sidebar-width);
     right: 0;
+  }
+
+  body.app-shell-page .page__content-inner,
+  body.app-shell-page .page-container,
+  body.app-shell-page .internal-page-container {
+    width: min(100%, var(--doke-app-shell-workspace-max));
+    max-width: var(--doke-app-shell-workspace-max);
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 

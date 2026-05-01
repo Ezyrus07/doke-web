@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
+const { getLoadedCssAssets } = require('./lib/css-assets');
 
 const root = process.cwd();
 const pages = [
@@ -33,8 +34,9 @@ requireText(cssPath, css, '.doke-mobile-shell__bottom-nav');
 
 for (const page of pages) {
   const html = fs.readFileSync(path.join(root, page), 'utf8');
-  if (!html.includes(cssPath)) failures.push(`${page} does not load ${cssPath}`);
-  if (!html.includes('assets/css/components/shell/responsive-boundary.css')) {
+  const loadedAssets = getLoadedCssAssets(html, root);
+  if (!loadedAssets.includes(cssPath)) failures.push(`${page} does not load ${cssPath}`);
+  if (!loadedAssets.includes('assets/css/components/shell/responsive-boundary.css')) {
     failures.push(`${page} missing responsive-boundary.css before desktop stability`);
   }
   if (!html.includes('data-shell-sidebar')) failures.push(`${page} missing data-shell-sidebar`);

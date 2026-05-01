@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { getLoadedCssAssets } = require('./lib/css-assets');
 
 const root = path.resolve(__dirname, '..');
 const pages = [
@@ -28,6 +29,7 @@ const requiredSnippets = [
 ];
 
 const errors = [];
+
 for (const snippet of requiredSnippets) {
   if (!contract.includes(snippet)) {
     errors.push(`Contrato responsivo não contém: ${snippet}`);
@@ -41,7 +43,7 @@ for (const page of pages) {
     continue;
   }
   const html = fs.readFileSync(file, 'utf8');
-  if (!html.includes(contractPath)) {
+  if (!getLoadedCssAssets(html, root).includes(contractPath)) {
     errors.push(`${page} não carrega ${contractPath}`);
   }
 }

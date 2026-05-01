@@ -11,6 +11,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { getLoadedCssAssets } = require('./lib/css-assets');
 
 const root = process.cwd();
 const strict = process.argv.includes('--strict');
@@ -31,6 +32,10 @@ const migratedPages = [
 const requiredShellCss = 'assets/css/components/shell/mobile-app-shell.css';
 const requiredShellJs = 'assets/js/components/mobile-app-shell.js';
 const requiredUiCss = 'assets/css/components/ui/doke-ui-system.css';
+const manifestPages = {
+  'index.html': 'assets/css/pages/home.css',
+  'resultados.html': 'assets/css/pages/search-results.css',
+};
 
 const deprecatedCssLinks = [
   'assets/css/components/navigation/mobile-chrome-lock.css',
@@ -67,6 +72,18 @@ function read(file) {
   return fs.readFileSync(path.join(root, file), 'utf8');
 }
 
+function getDirectCssLinks(html) {
+  const links = [];
+  const linkPattern = /<link[^>]+rel=["']stylesheet["'][^>]+href=["']([^"']+)["'][^>]*>/g;
+  let match;
+
+  while ((match = linkPattern.exec(html))) {
+    links.push(match[1].split('?')[0]);
+  }
+
+  return links;
+}
+
 function push(level, file, message) {
   if (level === 'critical') critical += 1;
   if (level === 'warning') warning += 1;
@@ -101,8 +118,21 @@ for (const page of migratedPages) {
   }
 
   const html = read(page);
+  const loadedCssAssets = getLoadedCssAssets(html);
+  const directCssLinks = getDirectCssLinks(html);
+  const pageManifest = manifestPages[page];
 
-  if (!html.includes(requiredShellCss)) {
+  if (pageManifest) {
+    const expectedLinks = ['assets/css/core/index.css', 'assets/css/pages/app-shell.css', pageManifest];
+    const matchesManifestContract = directCssLinks.length === expectedLinks.length
+      && expectedLinks.every((link, index) => directCssLinks[index] === link);
+
+    if (!matchesManifestContract) {
+      push('critical', page, `Deve carregar somente os CSS base e o manifesto da pÃ¡gina: ${expectedLinks.join(', ')}.`);
+    }
+  }
+
+  if (!loadedCssAssets.includes(requiredShellCss)) {
     push('critical', page, 'Não carrega o CSS oficial do Mobile App Shell.');
   }
 
@@ -110,13 +140,13 @@ for (const page of migratedPages) {
     push('critical', page, 'Não carrega o JS oficial do Mobile App Shell.');
   }
 
-  if (!html.includes(requiredUiCss)) {
+  if (!loadedCssAssets.includes(requiredUiCss)) {
     push('critical', page, 'Não carrega o CSS oficial do Doke UI System.');
   }
 
 
   for (const deprecated of deprecatedCssLinks) {
-    if (html.includes(deprecated)) {
+    if (loadedCssAssets.includes(deprecated)) {
       push('critical', page, `Carrega CSS depreciado de chrome mobile: ${deprecated}`);
     }
   }
