@@ -1,0 +1,168 @@
+/* STAGE22 DESKTOP SAFETY GUARD: scoped to mobile only to prevent desktop regressions. */
+@media (max-width: 760px) {
+/*
+  Doke Domain Cards v1
+  Contratos de componentes de domínio: serviço, worker, pedido, mensagem, comunidade,
+  carteira, notificação, perfil, mídia e métricas.
+  Regra: .doke-card governa a surface base; .doke-*-card governa apenas anatomia/domain rhythm.
+*/
+@layer doke.domain {
+  :where(
+    .doke-service-card,
+    .doke-worker-card,
+    .doke-order-card,
+    .doke-message-card,
+    .doke-community-card,
+    .doke-wallet-card,
+    .doke-notification-card,
+    .doke-profile-card,
+    .doke-media-card,
+    .doke-stat-card
+  ) {
+    box-sizing: border-box;
+    font-family: var(--doke-font-family, Poppins, Inter, system-ui, sans-serif);
+    min-width: 0;
+  }
+
+  :where(
+    .doke-service-card,
+    .doke-worker-card,
+    .doke-order-card,
+    .doke-message-card,
+    .doke-community-card,
+    .doke-wallet-card,
+    .doke-notification-card,
+    .doke-profile-card,
+    .doke-stat-card
+  ):not(.doke-card):not(.doke-surface) {
+    border: 1px solid var(--doke-color-line, rgba(23, 57, 95, .11));
+    border-radius: var(--doke-radius-xl, 28px);
+    background: var(--doke-color-surface, #fff);
+    box-shadow: var(--doke-shadow-sm, 0 12px 28px rgba(23, 57, 95, .08));
+  }
+
+  :where(.doke-service-card, .doke-worker-card, .doke-media-card) {
+    overflow: hidden;
+  }
+
+  :where(.doke-service-card__media, .doke-worker-card__media, .doke-media-card__media) {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    background: var(--doke-color-primary-soft, #eaf4fb);
+    aspect-ratio: 16 / 10;
+  }
+
+  :where(.doke-service-card__media, .doke-worker-card__media, .doke-media-card__media) img,
+  :where(.doke-service-card__media, .doke-worker-card__media, .doke-media-card__media) video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  :where(
+    .doke-service-card__body,
+    .doke-worker-card__body,
+    .doke-order-card__body,
+    .doke-message-card__body,
+    .doke-community-card__body,
+    .doke-wallet-card__body,
+    .doke-notification-card__body,
+    .doke-profile-card__body,
+    .doke-stat-card__body
+  ) {
+    display: grid;
+    gap: var(--doke-space-3, 12px);
+    min-width: 0;
+  }
+
+  :where(.doke-service-card__title, .doke-worker-card__title, .doke-order-card__title, .doke-message-card__title, .doke-community-card__title, .doke-wallet-card__title, .doke-notification-card__title, .doke-profile-card__title) {
+    margin: 0;
+    color: var(--doke-color-ink, #17395f);
+    font-size: 16px;
+    font-weight: 850;
+    letter-spacing: -.035em;
+    line-height: 1.18;
+  }
+
+  :where(.doke-service-card__text, .doke-worker-card__text, .doke-order-card__text, .doke-message-card__text, .doke-community-card__text, .doke-wallet-card__text, .doke-notification-card__text, .doke-profile-card__text) {
+    margin: 0;
+    color: var(--doke-color-muted, #7f93ac);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  :where(.doke-service-card__meta, .doke-worker-card__meta, .doke-order-card__meta, .doke-message-card__meta, .doke-community-card__meta, .doke-wallet-card__meta, .doke-notification-card__meta, .doke-profile-card__meta) {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--doke-space-2, 8px);
+    min-width: 0;
+    color: var(--doke-color-muted, #7f93ac);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  :where(.doke-service-card__actions, .doke-worker-card__actions, .doke-order-card__actions, .doke-message-card__actions, .doke-community-card__actions, .doke-wallet-card__actions, .doke-notification-card__actions, .doke-profile-card__actions) {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: var(--doke-space-2, 8px);
+    margin-top: var(--doke-space-3, 12px);
+  }
+
+  .doke-order-card,
+  .doke-message-card,
+  .doke-notification-card {
+    display: grid;
+    gap: var(--doke-space-3, 12px);
+  }
+
+  .doke-order-card[data-status="urgent"],
+  .doke-notification-card[data-priority="high"] {
+    border-color: rgba(224, 49, 49, .22);
+  }
+
+  .doke-wallet-card,
+  .doke-stat-card {
+    display: grid;
+    align-content: start;
+    gap: var(--doke-space-2, 8px);
+  }
+
+  .doke-wallet-card__value,
+  .doke-stat-card__value {
+    color: var(--doke-color-ink, #17395f);
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 900;
+    letter-spacing: -.055em;
+    line-height: 1;
+  }
+
+  .doke-community-card,
+  .doke-profile-card {
+    position: relative;
+  }
+
+  .doke-community-card__members,
+  .doke-profile-card__stats {
+    display: flex;
+    align-items: center;
+    gap: var(--doke-space-2, 8px);
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 760px) {
+    :where(.doke-service-card__actions, .doke-worker-card__actions, .doke-order-card__actions, .doke-message-card__actions, .doke-community-card__actions, .doke-wallet-card__actions, .doke-notification-card__actions, .doke-profile-card__actions) {
+      justify-content: stretch;
+    }
+
+    :where(.doke-service-card__actions, .doke-worker-card__actions, .doke-order-card__actions, .doke-message-card__actions, .doke-community-card__actions, .doke-wallet-card__actions, .doke-notification-card__actions, .doke-profile-card__actions) > .doke-btn {
+      flex: 1 1 auto;
+    }
+  }
+}
+
+}

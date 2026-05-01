@@ -1,0 +1,39 @@
+{
+  "name": "doke-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "audit:frontend": "node scripts/audit-frontend-contracts.js",
+    "audit:frontend:strict": "node scripts/audit-frontend-contracts.js --strict",
+    "audit:architecture": "node scripts/audit-project-architecture.js",
+    "audit:all": "npm run audit:frontend:strict && npm run audit:ui && npm run audit:domain && npm run audit:layout && npm run audit:flows && npm run audit:bridge && npm run audit:routes && npm run audit:mocks && npm run audit:architecture && npm run audit:backend-data && npm run audit:auth-session && npm run audit:desktop-shell && npm run audit:js-foundation && npm run audit:visual-baseline && npm run audit:controller-mocks && npm run audit:domain-services && npm run audit:runtime-flags && npm run audit:responsive-inventory && npm run audit:responsive-boundaries && npm run audit:desktop-base && npm run audit:mobile-base",
+    "audit:ui": "node scripts/audit-ui-canonical-classes.js",
+    "audit:bridge": "node scripts/audit-legacy-bridge-scope.js",
+    "audit:domain": "node scripts/audit-domain-card-contracts.js",
+    "audit:layout": "node scripts/audit-layout-contracts.js",
+    "audit:flows": "node scripts/audit-product-flow-contracts.js",
+    "audit:routes": "node scripts/audit-page-route-map.js",
+    "audit:mocks": "node scripts/audit-mock-data-contracts.js",
+    "test:e2e": "playwright test tests/e2e",
+    "test:visual": "playwright test tests/visual",
+    "audit:backend-data": "node scripts/audit-backend-data-contracts.js",
+    "audit:auth-session": "node scripts/audit-auth-session-contracts.js",
+    "audit:desktop-shell": "node scripts/audit-desktop-shell-contracts.js",
+    "audit:js-foundation": "node scripts/audit-js-foundation-contracts.js",
+    "audit:visual-baseline": "node scripts/audit-visual-qa-baseline.js",
+    "visual:baseline": "playwright test tests/visual --update-snapshots",
+    "visual:qa": "playwright test tests/visual tests/e2e/stage28-regression-guards.spec.js",
+    "audit:quality-pipeline": "node scripts/audit-quality-pipeline.js",
+    "quality:ci": "npm run audit:all && npm run audit:quality-pipeline && npm run test:e2e && npm run test:visual",
+    "audit:controller-mocks": "node scripts/audit-controller-mock-wiring.js",
+    "audit:domain-services": "node scripts/audit-domain-services.js",
+    "audit:runtime-flags": "node scripts/audit-runtime-flags.js",
+    "audit:responsive-inventory": "node scripts/audit-responsive-inventory.js",
+    "audit:responsive-boundaries": "node scripts/audit-responsive-boundaries.js",
+    "audit:desktop-base": "node scripts/audit-desktop-base-stability.js",
+    "audit:mobile-base": "node scripts/audit-mobile-base-stability.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.53.0"
+  }
+}

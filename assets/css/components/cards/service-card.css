@@ -182,12 +182,22 @@
 }
 
 .service-card__body {
-  display: grid;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(96px, 44%) !important;
+  grid-template-areas:
+    "rating rating"
+    "meta tags"
+    "footer footer" !important;
+  align-items: center;
   gap: 14px;
   padding: 18px 18px 20px;
 }
 
 .service-card__rating {
+  grid-area: rating;
+  grid-column: 1 / -1;
+  grid-row: 1;
+  justify-self: start;
   color: #203b5d;
   font-size: 0.96rem;
   font-weight: 800;
@@ -203,6 +213,14 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+}
+
+.service-card__meta-row {
+  grid-area: meta;
+  grid-column: 1;
+  grid-row: 2;
+  align-self: center;
 }
 
 .service-card__avatar {
@@ -241,12 +259,32 @@
   color: #61748e;
   font-size: 0.92rem;
   font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .service-card__tags {
+  grid-area: tags;
+  grid-column: 2;
+  grid-row: 2;
+  align-self: center;
+  justify-self: end;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
   gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  max-height: 32px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.service-card__tags span:nth-child(n + 3) {
+  display: none;
 }
 
 .service-card__tags span {
@@ -260,6 +298,7 @@
   color: #58708d;
   font-size: 0.84rem;
   font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
@@ -273,6 +312,10 @@
 
 .service-card__footer,
 .service-card__footer--compact {
+  grid-area: footer;
+  grid-column: 1 / -1;
+  grid-row: 3;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -570,6 +613,7 @@
   :is(.service-card, .service-card--feed, .service-card--result) .service-card__body {
     padding: var(--doke-mobile-card-padding, 14px);
     gap: 10px;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   :is(.service-card, .service-card--feed, .service-card--result) .service-card__favorite {

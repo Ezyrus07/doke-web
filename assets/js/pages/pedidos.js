@@ -192,6 +192,15 @@
       syncHeaderControls();
     };
 
+    const openPopover = () => {
+      if (!popover) return;
+      if (headerControls) headerControls.hidden = false;
+      popover.hidden = false;
+      filterToggles.forEach((toggle) => toggle.setAttribute('aria-expanded', 'true'));
+      closeSelectPanel();
+      syncHeaderControls();
+    };
+
     const closeContextMenu = () => {
       cards.forEach((card) => card.classList.remove('is-context-open'));
     };
@@ -420,9 +429,10 @@
       toggle.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
+        const willOpen = !popover || popover.hidden;
         closePopover();
         closeSelectPanel();
-        filterToggles.forEach((item) => item.setAttribute('aria-expanded', 'false'));
+        if (willOpen) openPopover();
       });
     });
 
@@ -523,6 +533,7 @@
     };
 
     const openSelectPanel = () => {
+      if (headerControls) headerControls.hidden = false;
       if (selectPanel) selectPanel.hidden = false;
       selectToggles.forEach((toggle) => toggle.setAttribute('aria-expanded', 'true'));
       closePopover();
@@ -542,11 +553,26 @@
       toggle.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        selecting = false;
-        closeSelectPanel();
-        clearSelectedCards();
-        root.classList.remove('orders-is-selecting');
+        const willOpen = !selectPanel || selectPanel.hidden;
+        closePopover();
+        if (willOpen) {
+          openSelectPanel();
+        } else {
+          selecting = false;
+          closeSelectPanel();
+          clearSelectedCards();
+          root.classList.remove('orders-is-selecting');
+        }
         syncSelectedActions();
+      });
+    });
+
+    root.querySelectorAll('[data-doke-panel-close]').forEach((button) => {
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        closePopover();
+        closeSelectPanel();
       });
     });
 

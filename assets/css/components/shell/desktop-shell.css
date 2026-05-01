@@ -1,0 +1,82 @@
+/*
+  Doke Stage 27 — Desktop Shell Contract
+  Responsabilidade: tokens e grade base do desktop.
+  Regra: este contrato só atua em >= 761px e não controla mobile.
+*/
+
+@media (min-width: 761px) {
+  :root {
+    --doke-desktop-sidebar-width: 280px;
+    --doke-desktop-page-gutter: clamp(28px, 3.2vw, 56px);
+    --doke-desktop-topbar-height: 96px;
+    --doke-desktop-search-height: 56px;
+    --doke-desktop-shell-bg: #eef6fb;
+    --doke-desktop-surface: #ffffff;
+    --doke-desktop-border: rgba(33, 86, 137, 0.14);
+    --doke-desktop-text: #0f2f56;
+    --doke-desktop-muted: #6f8198;
+    --doke-desktop-primary: #1f6fae;
+    --doke-desktop-success: #16997e;
+    --doke-desktop-radius-control: var(--doke-radius-lg, 18px);
+    --doke-desktop-radius-panel: var(--doke-radius-2xl, 28px);
+    --doke-desktop-shadow-soft: 0 18px 42px rgba(31, 111, 174, 0.08);
+  }
+
+  html.doke-mobile-shell-pending,
+  html.doke-mobile-shell-ready,
+  body.doke-mobile-shell-mounted {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .doke-mobile-shell,
+  .doke-mobile-shell__root,
+  .doke-mobile-shell__topbar,
+  .doke-mobile-shell__search,
+  .doke-mobile-shell__bottom-nav,
+  .doke-mobile-page-header {
+    display: none;
+  }
+
+  .app-shell {
+    width: 100%;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: var(--doke-desktop-sidebar-width) minmax(0, 1fr);
+    background: var(--doke-desktop-shell-bg);
+  }
+
+  .page {
+    grid-column: 2;
+    min-width: 0;
+    width: 100%;
+    background: var(--doke-desktop-shell-bg);
+  }
+
+  .page__content-inner,
+  .app-shell-page__workspace,
+  .shell-home__workspace,
+  .profile-shell-content {
+    width: min(100%, 1480px);
+    margin-inline: auto;
+    padding-inline: var(--doke-desktop-page-gutter);
+  }
+
+  .profile-hero-shell,
+  .wallet-shell,
+  .community-shell,
+  .orders-shell,
+  .messages-shell {
+    max-width: 1480px;
+    margin-inline: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .doke-desktop-search-panel,
+  .desktop-shell,
+  .desktop-app-shell,
+  .desktop-only {
+    display: none;
+  }
+}

@@ -73,7 +73,6 @@ body.internal-shell-page .bottom-nav {
   max-width: none !important;
   height: auto !important;
   min-height: var(--doke-bottom-nav-height) !important;
-  display: grid !important;
   grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   gap: 0 !important;
   padding: 0 max(10px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(10px, env(safe-area-inset-left)) !important;
@@ -188,8 +187,11 @@ body.app-shell-page .doke-bottom-nav .doke-bottom-nav__item[aria-current="page"]
 }
 
 @media (max-width: 767px) {
-  .doke-bottom-nav { display: flex; }
-  .bottom-nav { display: grid; }
+  .doke-bottom-nav { display: flex !important; }
+  .bottom-nav,
+  body.app-shell-page .bottom-nav,
+  body.home-index-shell .bottom-nav,
+  body.internal-shell-page .bottom-nav { display: grid !important; }
   body.app-shell-page { padding-block-end: calc(var(--doke-bottom-nav-height) + max(22px, env(safe-area-inset-bottom))); }
   body.app-shell-page .page,
   body.app-shell-page .page__content,
@@ -208,5 +210,13 @@ body.app-shell-page .doke-bottom-nav .doke-bottom-nav__item[aria-current="page"]
 
 @media (min-width: 768px) {
   .doke-bottom-nav,
-  .bottom-nav { display: none; }
+  .bottom-nav,
+  body.app-shell-page .doke-bottom-nav,
+  body.home-index-shell .doke-bottom-nav,
+  body.internal-shell-page .doke-bottom-nav,
+  body.app-shell-page .bottom-nav,
+  body.home-index-shell .bottom-nav,
+  body.internal-shell-page .bottom-nav {
+    display: none !important;
+  }
 }

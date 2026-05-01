@@ -1,0 +1,427 @@
+/*
+ * Doke Mobile Action Surface Contract v2
+ * Owner: components/overlays
+ * Purpose: shared bottom-sheet system for mobile search, filters and selection.
+ * Rule: pages own content; this file owns all surface sizing, spacing and visual rhythm.
+ */
+@media (max-width: 760px) {
+  body.app-shell-page {
+    --doke-action-blue: #176aa8;
+    --doke-action-blue-strong: #0f5f9f;
+    --doke-action-teal: #159a83;
+    --doke-action-text: #153b5f;
+    --doke-action-muted: #8193a9;
+    --doke-action-line: rgba(33, 92, 148, 0.13);
+    --doke-action-soft: #f3f8fc;
+    --doke-action-radius: 24px;
+    --doke-action-gutter: 14px;
+    --doke-action-shadow: 0 -22px 52px rgba(14, 35, 58, 0.20);
+  }
+
+  body.app-shell-page:has(:is([data-orders-filters-popover], [data-orders-select-panel], [data-notifications-filters-panel], [data-notifications-select-panel]):not([hidden])) {
+    overflow: hidden !important;
+  }
+
+  body.app-shell-page:has(:is([data-orders-filters-popover], [data-orders-select-panel], [data-notifications-filters-panel], [data-notifications-select-panel]):not([hidden]))::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 880;
+    background: rgba(9, 25, 40, 0.38);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  body.app-shell-page :is(.orders-page-header, .notifications-mobile-header) {
+    margin-bottom: var(--doke-mobile-header-after) !important;
+  }
+
+  body.app-shell-page :is(.orders-page-header__controls, .notifications-page-header__controls) {
+    display: contents !important;
+    width: auto !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body.app-shell-page :is(.orders-page-header__controls, .notifications-page-header__controls)[hidden] {
+    display: none !important;
+  }
+
+  body.app-shell-page :is(.orders-active-filter-row, .orders-filter-status-stack, .notifications-filter-stack) {
+    display: none !important;
+  }
+
+  body.app-shell-page :is([data-orders-filters-popover], [data-orders-select-panel], [data-notifications-filters-panel], [data-notifications-select-panel]) {
+    display: none !important;
+  }
+
+  body.app-shell-page :is([data-orders-filters-popover], [data-orders-select-panel], [data-notifications-filters-panel], [data-notifications-select-panel]):not([hidden]) {
+    display: flex !important;
+  }
+
+  /* Shared search surface: same component on pedidos and notificações. */
+  body.app-shell-page :is(.orders-page, .notifications-page) .orders-header-search {
+    grid-column: 1 / -1 !important;
+    display: none !important;
+    align-items: center !important;
+    grid-template-columns: 20px minmax(0, 1fr) 36px !important;
+    gap: 8px !important;
+    width: 100% !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    margin: 8px 0 0 !important;
+    padding: 0 8px 0 16px !important;
+    border: 1px solid var(--doke-action-line) !important;
+    border-radius: 18px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 10px 26px rgba(20, 54, 87, 0.08) !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+    inset: auto !important;
+    transform: none !important;
+    z-index: 4 !important;
+  }
+
+  body.app-shell-page :is(.orders-page.is-search-open, .notifications-page.is-search-open) .orders-header-search {
+    display: grid !important;
+  }
+
+  body.app-shell-page .orders-header-search__icon,
+  body.app-shell-page .orders-header-search__close {
+    display: inline-grid !important;
+    place-items: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    color: var(--doke-action-blue) !important;
+  }
+
+  body.app-shell-page .orders-header-search__icon {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body.app-shell-page .orders-header-search__close {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    border: 1px solid rgba(18, 102, 176, 0.12) !important;
+    border-radius: 999px !important;
+    background: #f6fbff !important;
+  }
+
+  body.app-shell-page .orders-header-search svg {
+    width: 17px !important;
+    height: 17px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2.25 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+  }
+
+  body.app-shell-page .orders-header-search input {
+    width: 100% !important;
+    min-width: 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    background: transparent !important;
+    color: var(--doke-action-text) !important;
+    font: 800 13px/1.2 Poppins, system-ui, sans-serif !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  body.app-shell-page .orders-header-search input::placeholder {
+    color: #98aabc !important;
+    opacity: 1 !important;
+  }
+
+  .doke-mobile-action-panel {
+    position: fixed !important;
+    left: max(0px, env(safe-area-inset-left)) !important;
+    right: max(0px, env(safe-area-inset-right)) !important;
+    bottom: 0 !important;
+    z-index: 900 !important;
+    flex-direction: column !important;
+    width: auto !important;
+    max-width: 430px !important;
+    max-height: min(78dvh, 640px) !important;
+    margin: 0 auto !important;
+    padding: 18px var(--doke-action-gutter) calc(14px + env(safe-area-inset-bottom)) !important;
+    border: 1px solid rgba(255, 255, 255, 0.78) !important;
+    border-bottom: 0 !important;
+    border-radius: 30px 30px 0 0 !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    box-shadow: var(--doke-action-shadow) !important;
+    box-sizing: border-box !important;
+    overflow: auto !important;
+    overscroll-behavior: contain !important;
+  }
+
+  .doke-mobile-action-panel__handle {
+    align-self: center !important;
+    width: 46px !important;
+    height: 5px !important;
+    min-height: 5px !important;
+    margin: -4px 0 16px !important;
+    border-radius: 999px !important;
+    background: #c8d2dd !important;
+  }
+
+  .doke-mobile-action-panel__head {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 46px !important;
+    align-items: start !important;
+    gap: 12px !important;
+    margin: 0 0 16px !important;
+    padding: 0 !important;
+  }
+
+  .doke-mobile-action-panel__eyebrow {
+    display: block !important;
+    margin: 0 0 6px !important;
+    color: #6f8198 !important;
+    font: 850 10px/1 Poppins, system-ui, sans-serif !important;
+    letter-spacing: 0.15em !important;
+    text-transform: uppercase !important;
+  }
+
+  .doke-mobile-action-panel__head strong {
+    display: block !important;
+    color: var(--doke-action-text) !important;
+    font: 850 22px/1.05 Poppins, system-ui, sans-serif !important;
+    letter-spacing: -0.045em !important;
+  }
+
+  .doke-mobile-action-panel__head p {
+    margin: 6px 0 0 !important;
+    color: var(--doke-action-muted) !important;
+    font: 700 12px/1.35 Poppins, system-ui, sans-serif !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  .doke-mobile-action-panel__close {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 46px !important;
+    height: 46px !important;
+    min-width: 46px !important;
+    border: 1px solid rgba(33, 92, 148, 0.14) !important;
+    border-radius: 16px !important;
+    background: #f7fbff !important;
+    color: var(--doke-action-blue) !important;
+    box-shadow: 0 8px 18px rgba(20, 54, 87, 0.06) !important;
+    padding: 0 !important;
+  }
+
+  .doke-mobile-action-panel__close svg {
+    width: 20px !important;
+    height: 20px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2.45 !important;
+    stroke-linecap: round !important;
+  }
+
+  .doke-mobile-action-panel__ghost { display: none !important; }
+
+  .doke-mobile-filter-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    margin: 0 !important;
+  }
+
+  .doke-mobile-filter-pill {
+    display: grid !important;
+    grid-template-columns: 30px minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 9px !important;
+    min-height: 58px !important;
+    padding: 10px 12px !important;
+    border: 1px solid var(--doke-action-line) !important;
+    border-radius: 18px !important;
+    background: #fff !important;
+    color: var(--doke-action-text) !important;
+    text-align: left !important;
+    box-shadow: 0 8px 18px rgba(20, 54, 87, 0.045) !important;
+    box-sizing: border-box !important;
+  }
+
+  .doke-mobile-filter-pill__icon {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    border-radius: 999px !important;
+    background: #edf5fc !important;
+    color: var(--doke-action-blue) !important;
+    font: 850 13px/1 Poppins, system-ui, sans-serif !important;
+  }
+
+  .doke-mobile-filter-pill strong {
+    display: block !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    color: inherit !important;
+    font: 850 12px/1.12 Poppins, system-ui, sans-serif !important;
+    letter-spacing: -0.025em !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .doke-mobile-filter-pill em {
+    display: inline-grid !important;
+    place-items: center !important;
+    min-width: 24px !important;
+    height: 24px !important;
+    padding: 0 7px !important;
+    border-radius: 999px !important;
+    background: #f1f7fc !important;
+    color: #2b679f !important;
+    font: 850 10px/1 Poppins, system-ui, sans-serif !important;
+    font-style: normal !important;
+  }
+
+  .doke-mobile-filter-pill.is-active {
+    border-color: rgba(21, 154, 131, 0.28) !important;
+    background: #eaf8f4 !important;
+    color: #0f7769 !important;
+    box-shadow: inset 0 0 0 1px rgba(21, 154, 131, 0.10), 0 10px 22px rgba(21, 154, 131, 0.08) !important;
+  }
+
+  .doke-mobile-filter-pill.is-active .doke-mobile-filter-pill__icon,
+  .doke-mobile-filter-pill.is-active em {
+    background: #d7f2ea !important;
+    color: #0f7769 !important;
+  }
+
+  .doke-mobile-filter-segment {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    margin: 12px 0 0 !important;
+    padding: 5px !important;
+    border: 1px solid rgba(33, 92, 148, 0.08) !important;
+    border-radius: 18px !important;
+    background: #f2f7fb !important;
+  }
+
+  .doke-mobile-filter-segment button {
+    height: 36px !important;
+    border: 0 !important;
+    border-radius: 13px !important;
+    background: transparent !important;
+    color: #6f86a0 !important;
+    font: 850 11px/1 Poppins, system-ui, sans-serif !important;
+  }
+
+  .doke-mobile-filter-segment button.is-active {
+    background: #fff !important;
+    color: var(--doke-action-blue) !important;
+    box-shadow: 0 5px 12px rgba(20, 54, 87, 0.08) !important;
+  }
+
+  .doke-mobile-selection-stack {
+    display: grid !important;
+    gap: 10px !important;
+  }
+
+  .doke-mobile-selection-action,
+  .doke-mobile-panel-button {
+    appearance: none !important;
+    width: 100% !important;
+    border: 1px solid var(--doke-action-line) !important;
+    border-radius: 18px !important;
+    background: #fff !important;
+    color: var(--doke-action-text) !important;
+    box-sizing: border-box !important;
+    box-shadow: 0 8px 18px rgba(20, 54, 87, 0.04) !important;
+  }
+
+  .doke-mobile-selection-action {
+    display: grid !important;
+    grid-template-columns: 66px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 10px !important;
+    min-height: 58px !important;
+    padding: 10px 12px !important;
+    text-align: left !important;
+  }
+
+  .doke-mobile-selection-action span {
+    display: inline-grid !important;
+    place-items: center !important;
+    height: 30px !important;
+    border-radius: 999px !important;
+    background: #edf5fc !important;
+    color: var(--doke-action-blue) !important;
+    font: 850 10px/1 Poppins, system-ui, sans-serif !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+  }
+
+  .doke-mobile-selection-action strong {
+    font: 850 13px/1.15 Poppins, system-ui, sans-serif !important;
+    letter-spacing: -0.025em !important;
+  }
+
+  .doke-mobile-action-panel__footer {
+    position: sticky !important;
+    bottom: calc(-14px - env(safe-area-inset-bottom)) !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    margin: 16px calc(var(--doke-action-gutter) * -1) calc((-14px - env(safe-area-inset-bottom))) !important;
+    padding: 12px var(--doke-action-gutter) calc(14px + env(safe-area-inset-bottom)) !important;
+    border-top: 1px solid rgba(33, 92, 148, 0.10) !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+  }
+
+  .doke-mobile-panel-button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 50px !important;
+    padding: 0 12px !important;
+    font: 850 13px/1 Poppins, system-ui, sans-serif !important;
+    letter-spacing: -0.025em !important;
+  }
+
+  .doke-mobile-panel-button--primary {
+    border-color: transparent !important;
+    background: linear-gradient(135deg, var(--doke-action-blue), var(--doke-action-blue-strong)) !important;
+    color: #fff !important;
+    box-shadow: 0 12px 24px rgba(23, 106, 168, 0.20) !important;
+  }
+
+  .doke-mobile-panel-button--ghost {
+    border-color: rgba(23, 106, 168, 0.30) !important;
+    background: #fff !important;
+    color: var(--doke-action-blue) !important;
+  }
+
+  .doke-mobile-panel-button:disabled {
+    opacity: 0.48 !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+  }
+
+  body.app-shell-page :is([data-orders-filter-toggle][aria-expanded="true"], [data-orders-select-toggle][aria-expanded="true"], [data-notifications-filters-toggle][aria-expanded="true"], [data-notifications-select-toggle][aria-expanded="true"]) {
+    background: var(--doke-action-blue) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+    box-shadow: 0 8px 18px rgba(23, 106, 168, 0.16) !important;
+  }
+}

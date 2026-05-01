@@ -270,18 +270,33 @@
     filtersToggles.forEach((toggle) => toggle.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
+      const willOpen = !filtersPanel || filtersPanel.hidden;
       closeFiltersPanel();
       closeSelectPanel();
-      setToggleExpanded(filtersToggles, false);
+      if (willOpen) openFiltersPanel();
     }));
 
     selectToggles.forEach((toggle) => toggle.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      setSelectionEnabled(false);
-      closeSelectPanel();
-      setToggleExpanded(selectToggles, false);
+      const willOpen = !selectPanel || selectPanel.hidden;
+      closeFiltersPanel();
+      if (willOpen) {
+        openSelectPanel();
+      } else {
+        setSelectionEnabled(false);
+        closeSelectPanel();
+      }
     }));
+
+    root.querySelectorAll('[data-doke-panel-close]').forEach((button) => {
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        closeFiltersPanel();
+        closeSelectPanel();
+      });
+    });
 
     selectModeButtons.forEach((button) => button.addEventListener('click', () => {
       const mode = button.dataset.notificationsSelectMode || 'single';
@@ -324,14 +339,14 @@
       }, 1200);
     });
 
-    clearFilterButton?.addEventListener('click', () => {
+    root.querySelectorAll('[data-notifications-clear-filter]').forEach((button) => button.addEventListener('click', () => {
       const allButton = root.querySelector('[data-filter="all"]');
       const allTimeButton = root.querySelector('[data-time-filter="all"]');
       if (allButton) { buttons.forEach((item) => item.classList.remove('is-active')); allButton.classList.add('is-active'); }
       if (allTimeButton) { timeButtons.forEach((item) => item.classList.remove('is-active')); allTimeButton.classList.add('is-active'); }
       applyFilter('all', 'all');
       closeFiltersPanel();
-    });
+    }));
 
     const syncSearchInputs = (source) => {
       const value = source?.value || '';
