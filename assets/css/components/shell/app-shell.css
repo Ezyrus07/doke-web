@@ -1013,3 +1013,49 @@ body.wallet-manage-shell .page__content-inner {
     max-width: 100%;
   }
 }
+
+/* 2026-05-01 global desktop shell width/stability patch
+   Contract: every desktop HTML uses the same sidebar width and content column math.
+   The sidebar must not show its own scrollbar on desktop; page content owns vertical scroll. */
+@media (min-width: 1025px) {
+  body.app-shell-page {
+    --sidebar-width: 272px;
+    --doke-app-shell-sidebar-width: 272px;
+    --doke-app-shell-workspace-max: var(--doke-shell-max-wide, 1360px);
+    --doke-app-shell-gutter: clamp(28px, 3vw, 48px);
+  }
+
+  body.app-shell-page .app-shell {
+    grid-template-columns: 272px minmax(0, 1fr) !important;
+  }
+
+  body.app-shell-page .sidebar {
+    width: 272px !important;
+    min-width: 272px !important;
+    max-width: 272px !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+    scrollbar-width: none !important;
+  }
+
+  body.app-shell-page .sidebar::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  body.app-shell-page .page,
+  body.app-shell-page .page__content {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow-x: clip !important;
+  }
+
+  body.app-shell-page .topbar,
+  body.app-shell-page .internal-page-topbar {
+    left: 272px !important;
+    right: 0 !important;
+    width: auto !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+  }
+}

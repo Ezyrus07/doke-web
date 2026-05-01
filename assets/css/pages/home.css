@@ -473,3 +473,88 @@
     margin-right: auto !important;
   }
 }
+
+/* 2026-05-01 index desktop width convergence
+   The index had a wider visual envelope than internal pages, which could clip
+   right-side controls at some desktop widths. This keeps the landing page
+   inside the same safe shell rhythm used by the other HTMLs. */
+@media (min-width: 1025px) {
+  html body.home-index-shell.doke-app-shell-page {
+    --sidebar-width: 272px !important;
+    --doke-home-desktop-gutter: clamp(28px, 3vw, 48px);
+    --doke-home-desktop-workspace: min(1280px, calc(100vw - 272px - (var(--doke-home-desktop-gutter) * 2) - 32px)) !important;
+    --home-desktop-content-width: var(--doke-home-desktop-workspace) !important;
+  }
+
+  html body.home-index-shell.doke-app-shell-page .app-shell {
+    grid-template-columns: 272px minmax(0, 1fr) !important;
+    overflow-x: clip !important;
+  }
+
+  html body.home-index-shell.doke-app-shell-page .sidebar {
+    width: 272px !important;
+    min-width: 272px !important;
+    max-width: 272px !important;
+    overflow: hidden !important;
+    scrollbar-width: none !important;
+  }
+
+  html body.home-index-shell.doke-app-shell-page .sidebar::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html body.home-index-shell.doke-app-shell-page .page,
+  html body.home-index-shell.doke-app-shell-page .page__content {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow-x: clip !important;
+  }
+
+  html body.home-index-shell.doke-app-shell-page .page__content {
+    padding-left: var(--doke-home-desktop-gutter) !important;
+    padding-right: var(--doke-home-desktop-gutter) !important;
+  }
+
+  html body.home-index-shell.doke-app-shell-page .page__content-inner,
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace,
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace--clean,
+  html body.home-index-shell.doke-app-shell-page .home-search-hero,
+  html body.home-index-shell.doke-app-shell-page .home-catégories,
+  html body.home-index-shell.doke-app-shell-page .featured-services,
+  html body.home-index-shell.doke-app-shell-page .short-videos,
+  html body.home-index-shell.doke-app-shell-page .before-after,
+  html body.home-index-shell.doke-app-shell-page .more-services,
+  html body.home-index-shell.doke-app-shell-page .featured-pros {
+    width: var(--doke-home-desktop-workspace) !important;
+    max-width: var(--doke-home-desktop-workspace) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  html body.home-index-shell.doke-app-shell-page .home-search-hero__panel,
+  html body.home-index-shell.doke-app-shell-page .home-search-hero__card,
+  html body.home-index-shell.doke-app-shell-page .home-catégories__rail,
+  html body.home-index-shell.doke-app-shell-page .home-categories__rail,
+  html body.home-index-shell.doke-app-shell-page .content-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  html body.home-index-shell.doke-app-shell-page .topbar.topbar--location.internal-page-topbar,
+  html body.home-index-shell.doke-app-shell-page .home-index-topbar {
+    left: 272px !important;
+    right: 0 !important;
+    width: auto !important;
+    max-width: none !important;
+    padding-left: var(--doke-home-desktop-gutter) !important;
+    padding-right: max(var(--doke-home-desktop-gutter), 56px) !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+
+  html body.home-index-shell.doke-app-shell-page .home-tablet-topbar__right-clone,
+  html body.home-index-shell.doke-app-shell-page .topbar__right {
+    min-width: 0 !important;
+    max-width: min(100%, 520px) !important;
+  }
+}
