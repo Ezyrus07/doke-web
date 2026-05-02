@@ -24,9 +24,9 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   };
 
   const els = {
-    resultsSearchForm: queryAny('[data-results-search-form]'),
-    resultsSearchInput: queryAny('[data-results-search-input]'),
-    resultsSearchBox: queryAny('[data-results-searchbox]'),
+    resultsSearchForm: queryAny('[data-results-search-form]', '[data-results-topbar-search]', '[data-global-topbar-search]'),
+    resultsSearchInput: queryAny('[data-results-search-input]', '[data-results-topbar-search] input[type="search"]', '[data-global-topbar-search] input[type="search"]'),
+    resultsSearchBox: queryAny('[data-results-searchbox]', '[data-results-topbar-search]', '[data-global-topbar-search]'),
     resultsSearchDropdown: queryAny('[data-results-search-dropdown]'),
     resultsRecommendationList: queryAny('[data-results-recommendation-list]'),
     resultsRecommendationsSection: queryAny('[data-results-recommendations-section]'),
@@ -199,19 +199,26 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     const hasQuery = cleanQuery.length >= 2;
 
     if (els.resultsRecommendationsSection) {
-      els.resultsRecommendationsSection.hidden = recommendationCount === 0 || hasQuery;
+      // Keep the same autocomplete behavior used on index.html: recommendations
+      // remain available even when the user typed a query. This prevents the
+      // results page from opening an empty white dropdown when there are no
+      // direct suggestion matches.
+      els.resultsRecommendationsSection.hidden = recommendationCount === 0;
     }
 
     if (els.resultsHistorySection) {
-      els.resultsHistorySection.hidden = historyCount === 0 || hasQuery;
+      // Keep parity with index.html: recent searches remain visible while typing.
+      els.resultsHistorySection.hidden = historyCount === 0;
     }
 
     if (els.resultsSuggestionsSection) {
-      els.resultsSuggestionsSection.hidden = suggestionCount === 0;
+      els.resultsSuggestionsSection.hidden = suggestionCount === 0 || !hasQuery;
     }
 
     if (els.resultsSearchEmpty) {
-      els.resultsSearchEmpty.hidden = !hasQuery || suggestionCount > 0;
+      // resultados.html already renders its own fallback cards/empty state.
+      // The autocomplete should stay compact and never duplicate an empty-results panel.
+      els.resultsSearchEmpty.hidden = true;
     }
   };
 
@@ -238,10 +245,11 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     renderResultsSuggestions(els.resultsSearchInput.value);
     syncResultsSearchSections(els.resultsSearchInput.value);
 
-    const shouldOpen =
-      (els.resultsSearchInput.value || '').trim().length >= 2 ||
-      (els.resultsRecommendationList?.children.length || 0) > 0 ||
-      (els.resultsSearchHistoryList?.children.length || 0) > 0;
+    const shouldOpen = Boolean(
+      (els.resultsRecommendationsSection && !els.resultsRecommendationsSection.hidden) ||
+      (els.resultsHistorySection && !els.resultsHistorySection.hidden) ||
+      (els.resultsSuggestionsSection && !els.resultsSuggestionsSection.hidden)
+    );
 
     if (shouldOpen) {
       openResultsSearchDropdown();
@@ -446,6 +454,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   };
 
   const persistFiltersToParams = (filters) => {
+    params.set('type', filters.searchType || getSearchMode());
     params.delete('category');
     params.delete('categories');
     params.delete('state');
@@ -792,25 +801,25 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     els.resultsGrid.innerHTML = '';
     displayServices.forEach((item) => els.resultsGrid.appendChild(createServiceCard(item)));
 
-    if (els.resultsCount) els.resultsCount.textContent = formatCount(exactServiceResults.length || displayServices.length);
+    if (els.resultsCount) els.resultsCount.textContent = formatCount(displayServices.length);
     if (els.resultsTitle) els.resultsTitle.textContent = query ? `Resultados para "${query}"` : 'Resultados em destaque';
     if (els.resultsDescription) {
       els.resultsDescription.textContent = exactServiceResults.length
         ? 'Ajuste os filtros laterais para refinar sem sair da busca.'
         : 'Selecionamos anúncios relacionados para continuar a sua busca.';
     }
-    renderActiveChips(query, filters, exactServiceResults.length || displayServices.length);
+    renderActiveChips(query, filters, displayServices.length);
 
-    if (exactServiceResults.length) {
+    if (displayServices.length) {
+      // Related cards are still useful results. Do not show the inline
+      // "não encontrado" block when the grid has cards to offer.
       if (els.resultsInlineEmpty) els.resultsInlineEmpty.hidden = true;
       setResultsState('results');
       refreshResultPreviews();
       return;
     }
 
-    const emptyFallback = renderEmptySuggestions(query, filters);
-    els.resultsGrid.innerHTML = '';
-    emptyFallback.forEach((item) => els.resultsGrid.appendChild(createServiceCard(item)));
+    renderEmptySuggestions(query, filters);
     setResultsState('empty');
     els.resultsGrid.hidden = false;
     refreshResultPreviews();
@@ -902,7 +911,11 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   renderCategoryFilters();
   enhanceResultsSelects();
   bootstrapLocationSelects();
-  syncResultsSearchDropdown();
+  renderResultsRecommendations();
+  renderResultsHistory();
+  renderResultsSuggestions(els.resultsSearchInput.value);
+  syncResultsSearchSections(els.resultsSearchInput.value);
+  closeResultsSearchDropdown();
   loadResults();
   syncFilterUi(isDesktopFilters());
 

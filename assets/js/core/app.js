@@ -50,7 +50,7 @@ const isInternalViewUrl = (href) => {
   }
 };
 
-const shouldBypassShellSwap = (_href) => false;
+const shouldBypassShellSwap = (_href) => true;
 
 // home-specific cascade and UI bootstrap than the internal pages. For now, transitions that
 // enter or leave index.html use normal document navigation instead of shell swapping.
@@ -459,23 +459,10 @@ const prefetchInternalViewDocument = (href) => {
 };
 
 const scheduleSidebarViewHints = () => {
-  if (sidebarViewsHinted) return;
+  // Disabled: preloading/prefetching internal HTML was causing visible skeleton/jank
+  // when moving from pedidos.html to other pages. Native navigation is now the
+  // stable contract until all page CSS is consolidated.
   sidebarViewsHinted = true;
-
-  const run = () => {
-    SIDEBAR_PRIMARY_VIEWS.forEach((path) => {
-      hintInternalViewStyles(path);
-      hintInternalViewScripts(path);
-      prefetchInternalViewDocument(path);
-    });
-  };
-
-  if (typeof window.requestIdleCallback === "function") {
-    window.requestIdleCallback(run, { timeout: 1200 });
-    return;
-  }
-
-  window.setTimeout(run, 180);
 };
 
 const syncStylesFromDocument = async (nextDoc) => {
@@ -880,32 +867,12 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
   }
 };
 
-window.DokeNavigate = async (href, options = {}) => {
-  if (!isInternalViewUrl(href) || shouldBypassShellSwap(href)) {
-    if (options.replace) {
-      window.location.replace(href);
-    } else {
-      window.location.href = href;
-    }
+window.DokeNavigate = (href, options = {}) => {
+  if (options.replace) {
+    window.location.replace(href);
     return;
   }
-
-  try {
-    await swapView(href, options);
-  } catch (error) {
-    console.error("[Doke:navigate:swap-failed]", error);
-    const nextUrl = new URL(href, window.location.href);
-    const currentUrl = new URL(window.location.href);
-    const isSameOriginInternal = nextUrl.origin === currentUrl.origin && INTERNAL_VIEW_PATHS.has(getCurrentPath(nextUrl.href));
-
-    if (!isSameOriginInternal) {
-      window.location.href = href;
-      return;
-    }
-
-    // Keep the app in shell navigation mode for internal pages whenever possible.
-    // A hard reload here was masking initializer/runtime issues as navigation jank.
-  }
+  window.location.href = href;
 };
 
 document.addEventListener("submit", (event) => {
@@ -1025,6 +992,7 @@ document.addEventListener("click", (event) => {
   if (link.target && link.target !== "_self") return;
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   if (!isInternalViewUrl(link.href)) return;
+  if (shouldBypassShellSwap(link.href)) return;
 
   event.preventDefault();
   window.DokeNavigate(link.href);
@@ -1033,20 +1001,20 @@ document.addEventListener("click", (event) => {
 document.addEventListener("pointerenter", (event) => {
   if (!(event.target instanceof Element)) return;
   const link = event.target.closest("a[href]");
-  if (!link || !isInternalViewUrl(link.href)) return;
+  if (!link || !isInternalViewUrl(link.href) || shouldBypassShellSwap(link.href)) return;
   hintInternalViewStyles(link.href);
 }, true);
 
 document.addEventListener("focusin", (event) => {
   if (!(event.target instanceof Element)) return;
   const link = event.target.closest("a[href]");
-  if (!link || !isInternalViewUrl(link.href)) return;
+  if (!link || !isInternalViewUrl(link.href) || shouldBypassShellSwap(link.href)) return;
   hintInternalViewStyles(link.href);
 });
 
 document.addEventListener("touchstart", (event) => {
   const link = event.target.closest("a[href]");
-  if (!link || !isInternalViewUrl(link.href)) return;
+  if (!link || !isInternalViewUrl(link.href) || shouldBypassShellSwap(link.href)) return;
   hintInternalViewStyles(link.href);
   hintInternalViewScripts(link.href);
   prefetchInternalViewDocument(link.href);
@@ -1054,7 +1022,7 @@ document.addEventListener("touchstart", (event) => {
 
 document.addEventListener("mouseover", (event) => {
   const link = event.target.closest("a[href]");
-  if (!link || !isInternalViewUrl(link.href)) return;
+  if (!link || !isInternalViewUrl(link.href) || shouldBypassShellSwap(link.href)) return;
   hintInternalViewStyles(link.href);
   hintInternalViewScripts(link.href);
   prefetchInternalViewDocument(link.href);
@@ -1062,20 +1030,16 @@ document.addEventListener("mouseover", (event) => {
 
 document.addEventListener("focusin", (event) => {
   const link = event.target.closest("a[href]");
-  if (!link || !isInternalViewUrl(link.href)) return;
+  if (!link || !isInternalViewUrl(link.href) || shouldBypassShellSwap(link.href)) return;
   hintInternalViewStyles(link.href);
   hintInternalViewScripts(link.href);
   prefetchInternalViewDocument(link.href);
 });
 
-hintInternalViewStyles(window.location.href);
-hintInternalViewScripts(window.location.href);
+// Internal style/script hints disabled to avoid route-change jank.
 
 window.addEventListener("popstate", () => {
-  swapView(window.location.href, { replace: true, preserveScroll: true }).catch((error) => {
-    console.error(error);
-    window.location.reload();
-  });
+  window.location.reload();
 });
 
 document.addEventListener("click", (event) => {

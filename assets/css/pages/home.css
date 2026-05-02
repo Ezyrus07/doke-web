@@ -16,9 +16,10 @@
    - do not recreate parallel owners under assets/css/pages/home/
    - legacy parallel modules were archived to archive/legacy-home-css/ in 2026-04 */
 @import url("./home-shell.css?v=20260428-architecture");
-@import url("./home-sections.css?v=20260425-compact-before-after");
+@import url("./home-sections.css?v=20260501-search-dropdown-v4");
 @import url("./home-refresh.css?v=20260426-home-refresh-split-v10");
 @import url("./home-overlays.css?v=20260427-modal-address-v22");
+@import url("../components/search/search-autocomplete.css?v=20260502-shared-search-autocomplete-v3");
 @import url("./home-search-chrome.css?v=20260428-architecture");
 @import url("./home-tablet.css?v=20260425-compact-before-after");
 @import url("./home/mobile/index.css?v=20260429-header-legacy-clean") screen and (max-width: 560px);
@@ -119,6 +120,269 @@
     border-radius: 14px !important;
     display: inline-grid !important;
     place-items: center !important;
+  }
+}
+
+/* Final compact card geometry override. */
+@media (min-width: 761px) {
+  body.home-index-shell :is(.featured-services, .more-services) .service-card {
+    display: grid !important;
+    grid-template-rows: 142px auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    border-radius: 20px !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__media {
+    min-height: 0 !important;
+    height: 142px !important;
+    padding: 12px !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__body {
+    min-height: 0 !important;
+    height: auto !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "rating rating"
+      "meta tags"
+      "footer footer" !important;
+    align-content: start !important;
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__rating,
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__meta-row,
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__tags,
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__footer {
+    margin: 0 !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__tags {
+    align-self: center !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__footer {
+    min-height: 36px !important;
+    padding-top: 0 !important;
+    align-items: center !important;
+  }
+}
+
+/* Compact service ad cards
+   Keeps the marketplace feed denser while preserving the existing markup. */
+@media (min-width: 761px) {
+  body.home-index-shell :is(.featured-services, .more-services) .service-grid,
+  body.home-index-shell :is(.featured-services, .more-services) .service-grid--compact {
+    gap: 14px !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card {
+    min-height: 0 !important;
+    border-radius: 18px !important;
+    overflow: hidden !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__media {
+    min-height: 126px !important;
+    height: 126px !important;
+    padding: 12px !important;
+    border-radius: 18px 18px 0 0 !important;
+    gap: 6px !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__media::before {
+    background: linear-gradient(180deg, rgba(16, 30, 46, 0.02) 8%, rgba(12, 24, 37, 0.56) 100%) !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__favorite {
+    top: 10px !important;
+    right: 10px !important;
+    width: 34px !important;
+    height: 34px !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__favorite svg {
+    width: 16px !important;
+    height: 16px !important;
+    stroke: #1f5f96 !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__badge {
+    top: 10px !important;
+    left: 10px !important;
+    min-height: 26px !important;
+    padding: 0 9px !important;
+    font-size: 0.66rem !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__media-content {
+    gap: 3px !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__category,
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__catégorie {
+    font-size: 0.68rem !important;
+    letter-spacing: 0.05em !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__media-content strong {
+    font-size: 1rem !important;
+    line-height: 1.08 !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__body {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "rating rating"
+      "meta tags"
+      "footer footer" !important;
+    gap: 9px 10px !important;
+    padding: 12px !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__rating {
+    font-size: 0.82rem !important;
+    line-height: 1.15 !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__avatar {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__location {
+    max-width: 132px !important;
+    font-size: 0.74rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__tags {
+    gap: 6px !important;
+    justify-content: flex-end !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__tags > span {
+    min-height: 24px !important;
+    padding: 0 8px !important;
+    font-size: 0.66rem !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__tags > span:nth-child(n+3) {
+    display: none !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__footer {
+    min-height: 42px !important;
+    gap: 10px !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__price {
+    font-size: 0.9rem !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__cta {
+    min-height: 36px !important;
+    padding: 0 14px !important;
+    border-radius: 12px !important;
+    font-size: 0.78rem !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body.home-index-shell :is(.featured-services, .more-services) .service-card {
+    display: grid !important;
+    grid-template-columns: 96px minmax(0, 1fr) !important;
+    min-height: 132px !important;
+    border-radius: 18px !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__media {
+    min-height: 132px !important;
+    height: 100% !important;
+    padding: 10px !important;
+    border-radius: 18px 0 0 18px !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__favorite {
+    top: 8px !important;
+    right: 8px !important;
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__badge,
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__category,
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__catégorie {
+    display: none !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__media-content strong {
+    font-size: 0.82rem !important;
+    line-height: 1.12 !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__body {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas:
+      "rating"
+      "meta"
+      "tags"
+      "footer" !important;
+    align-content: center !important;
+    gap: 7px !important;
+    padding: 10px 10px 10px 12px !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__rating {
+    font-size: 0.76rem !important;
+    line-height: 1.15 !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__avatar {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__location {
+    max-width: 100% !important;
+    font-size: 0.72rem !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__tags {
+    justify-content: flex-start !important;
+    gap: 5px !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__tags > span {
+    min-height: 22px !important;
+    padding: 0 7px !important;
+    font-size: 0.62rem !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__tags > span:nth-child(n+3) {
+    display: none !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__footer {
+    min-height: 34px !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__price {
+    font-size: 0.82rem !important;
+  }
+
+  body.home-index-shell :is(.featured-services, .more-services) .service-card__cta {
+    min-height: 32px !important;
+    padding: 0 10px !important;
+    border-radius: 11px !important;
+    font-size: 0.7rem !important;
   }
 }
 
@@ -599,5 +863,98 @@
   body.home-index-shell .section-heading button {
     flex: 0 0 auto !important;
     max-width: max-content !important;
+  }
+}
+
+/* Final compact service card pass - must stay after home shell width recovery. */
+@media (min-width: 761px) {
+  html body.home-index-shell :is(.featured-services, .more-services) .service-card {
+    display: grid !important;
+    grid-template-rows: 142px auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    border-radius: 20px !important;
+    overflow: hidden !important;
+  }
+
+  html body.home-index-shell :is(.featured-services, .more-services) .service-card__media {
+    min-height: 0 !important;
+    width: 100% !important;
+    height: 142px !important;
+    padding: 12px !important;
+    border-radius: 20px 20px 0 0 !important;
+    background-size: cover !important;
+    background-position: center !important;
+  }
+
+  html body.home-index-shell :is(.featured-services, .more-services) .service-card__body {
+    min-height: 0 !important;
+    height: auto !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "rating rating"
+      "meta tags"
+      "footer footer" !important;
+    align-content: start !important;
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+
+  html body.home-index-shell :is(.featured-services, .more-services) .service-card__rating,
+  html body.home-index-shell :is(.featured-services, .more-services) .service-card__meta-row,
+  html body.home-index-shell :is(.featured-services, .more-services) .service-card__tags,
+  html body.home-index-shell :is(.featured-services, .more-services) .service-card__footer {
+    margin: 0 !important;
+  }
+
+  html body.home-index-shell :is(.featured-services, .more-services) .service-card__avatar {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+    max-width: 30px !important;
+    max-height: 30px !important;
+    border-radius: 50% !important;
+    clip-path: circle(50% at 50% 50%) !important;
+  }
+
+  html body.home-index-shell :is(.featured-services, .more-services) .service-card__tags {
+    gap: 5px !important;
+  }
+
+  html body.home-index-shell :is(.featured-services, .more-services) .service-card__tags > span {
+    min-height: 22px !important;
+    padding: 0 7px !important;
+    border-radius: 999px !important;
+    font-size: 0.62rem !important;
+    line-height: 1 !important;
+  }
+
+  html body.home-index-shell :is(.featured-services, .more-services) .service-card__footer {
+    min-height: 36px !important;
+    padding-top: 0 !important;
+    align-items: center !important;
+  }
+}
+
+/* Collapsed sidebar must recenter the home workspace in the wider page column. */
+@media (min-width: 1025px) {
+  html body.sidebar-collapsed.home-index-shell.doke-app-shell-page {
+    --sidebar-width: 96px !important;
+    --doke-home-sidebar-width: 96px !important;
+    --doke-home-desktop-workspace: min(1280px, calc(100vw - 96px - (var(--doke-home-desktop-gutter) * 2))) !important;
+    --home-desktop-content-width: var(--doke-home-desktop-workspace) !important;
+  }
+
+  html body.sidebar-collapsed.home-index-shell.doke-app-shell-page .app-shell {
+    grid-template-columns: 96px minmax(0, 1fr) !important;
+  }
+
+  html body.sidebar-collapsed.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace,
+  html body.sidebar-collapsed.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace--clean {
+    width: var(--doke-home-desktop-workspace) !important;
+    max-width: var(--doke-home-desktop-workspace) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
   }
 }

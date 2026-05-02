@@ -1,0 +1,1939 @@
+/*
+  Doke Shell Contract — largura e header globais
+  Responsabilidade: centralizar matematicamente o conteúdo desktop e impedir
+  que cada HTML crie sua própria largura, gutter ou geometria de header.
+
+  Páginas cobertas: index, resultados, pedidos, comunidade, perfil,
+  mensagens, notificações, carteira e configurações.
+*/
+
+:root {
+  --doke-app-sidebar-width: 280px;
+  --doke-app-shell-max: 1180px;
+  --doke-app-shell-gutter: clamp(24px, 3vw, 40px);
+  --doke-app-topbar-height: 96px;
+  --doke-app-topbar-control: 54px;
+  --doke-app-header-gap: 14px;
+  --doke-app-bg: #eef6fb;
+}
+
+html,
+body {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+@media (min-width: 761px) {
+  body.doke-app-shell-page,
+  body.app-shell-page,
+  body.internal-shell-page {
+    min-height: 100vh;
+    background: var(--doke-app-bg) !important;
+  }
+
+  body.doke-app-shell-page .app-shell,
+  body.app-shell-page .app-shell,
+  body.internal-shell-page .app-shell {
+    width: 100%;
+    min-width: 0;
+    min-height: 100vh;
+    display: grid !important;
+    grid-template-columns: var(--doke-app-sidebar-width) minmax(0, 1fr) !important;
+    background: var(--doke-app-bg) !important;
+    overflow-x: clip;
+  }
+
+  body.doke-app-shell-page .sidebar,
+  body.app-shell-page .sidebar,
+  body.internal-shell-page .sidebar {
+    width: var(--doke-app-sidebar-width) !important;
+    min-width: var(--doke-app-sidebar-width) !important;
+    max-width: var(--doke-app-sidebar-width) !important;
+    grid-column: 1;
+  }
+
+  body.doke-app-shell-page .page,
+  body.app-shell-page .page,
+  body.internal-shell-page .page {
+    grid-column: 2;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    background: var(--doke-app-bg) !important;
+    overflow-x: clip;
+  }
+
+  body.doke-app-shell-page .topbar,
+  body.doke-app-shell-page .internal-page-topbar,
+  body.doke-app-shell-page .topbar--location,
+  body.app-shell-page .topbar,
+  body.app-shell-page .internal-page-topbar,
+  body.app-shell-page .topbar--location,
+  body.internal-shell-page .topbar,
+  body.internal-shell-page .internal-page-topbar,
+  body.internal-shell-page .topbar--location {
+    position: relative !important;
+    inset: auto !important;
+    width: min(100% - (var(--doke-app-shell-gutter) * 2), var(--doke-app-shell-max)) !important;
+    max-width: var(--doke-app-shell-max) !important;
+    min-height: var(--doke-app-topbar-height) !important;
+    margin-inline: auto !important;
+    padding: 26px 0 18px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: var(--doke-app-header-gap) !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+
+  body.doke-app-shell-page .topbar__left,
+  body.doke-app-shell-page .topbar__center,
+  body.doke-app-shell-page .topbar__right,
+  body.app-shell-page .topbar__left,
+  body.app-shell-page .topbar__center,
+  body.app-shell-page .topbar__right,
+  body.internal-shell-page .topbar__left,
+  body.internal-shell-page .topbar__center,
+  body.internal-shell-page .topbar__right {
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--doke-app-header-gap) !important;
+    min-width: 0;
+  }
+
+  body.doke-app-shell-page .topbar__left,
+  body.app-shell-page .topbar__left,
+  body.internal-shell-page .topbar__left {
+    flex: 1 1 auto;
+    justify-content: flex-start;
+  }
+
+  body.doke-app-shell-page .topbar__center,
+  body.app-shell-page .topbar__center,
+  body.internal-shell-page .topbar__center {
+    flex: 0 1 auto;
+    justify-content: center;
+  }
+
+  body.doke-app-shell-page .topbar__right,
+  body.app-shell-page .topbar__right,
+  body.internal-shell-page .topbar__right {
+    flex: 0 0 auto;
+    margin-left: auto !important;
+    justify-content: flex-end;
+  }
+
+  body.doke-app-shell-page .page__content,
+  body.app-shell-page .page__content,
+  body.internal-shell-page .page__content {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0 0 48px !important;
+    background: var(--doke-app-bg) !important;
+    overflow-x: clip;
+  }
+
+  body.doke-app-shell-page .page__content-inner,
+  body.doke-app-shell-page .app-shell-page__workspace,
+  body.doke-app-shell-page .shell-home__workspace,
+  body.doke-app-shell-page .orders-shell-content,
+  body.doke-app-shell-page .messages-shell-content,
+  body.doke-app-shell-page .profile-shell-content,
+  body.doke-app-shell-page .wallet-shell-content,
+  body.doke-app-shell-page .settings-shell-content,
+  body.doke-app-shell-page .search-results-workspace,
+  body.app-shell-page .page__content-inner,
+  body.app-shell-page .app-shell-page__workspace,
+  body.app-shell-page .shell-home__workspace,
+  body.app-shell-page .orders-shell-content,
+  body.app-shell-page .messages-shell-content,
+  body.app-shell-page .profile-shell-content,
+  body.app-shell-page .wallet-shell-content,
+  body.app-shell-page .settings-shell-content,
+  body.app-shell-page .search-results-workspace,
+  body.internal-shell-page .page__content-inner,
+  body.internal-shell-page .app-shell-page__workspace,
+  body.internal-shell-page .shell-home__workspace,
+  body.internal-shell-page .orders-shell-content,
+  body.internal-shell-page .messages-shell-content,
+  body.internal-shell-page .profile-shell-content,
+  body.internal-shell-page .wallet-shell-content,
+  body.internal-shell-page .settings-shell-content,
+  body.internal-shell-page .search-results-workspace {
+    width: min(100% - (var(--doke-app-shell-gutter) * 2), var(--doke-app-shell-max)) !important;
+    max-width: var(--doke-app-shell-max) !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+    padding-top: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body[data-page="home"] .page__content-inner,
+  body[data-page="home"] .shell-home__workspace,
+  body[data-page="home"] .doke-page-shell {
+    padding-top: 0 !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta,
+  body[data-page="comunidade"] .home-side-meta {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 0 22px !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta__group,
+  body[data-page="comunidade"] .home-side-meta__group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  body[data-page="pedidos"] .page-header-context,
+  body[data-page="comunidade"] .page-header-context {
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+    min-width: 0;
+  }
+
+  body[data-page="pedidos"] .page-header-context__action,
+  body[data-page="comunidade"] .page-header-context__action {
+    min-height: var(--doke-app-topbar-control) !important;
+    border-radius: 18px !important;
+  }
+
+  body.doke-app-shell-page :is(.topbar-search, .home-side-meta__search-form),
+  body.app-shell-page :is(.topbar-search, .home-side-meta__search-form),
+  body.internal-shell-page :is(.topbar-search, .home-side-meta__search-form) {
+    min-height: var(--doke-app-topbar-control);
+  }
+
+  body.doke-app-shell-page :is(.topbar-profile__button, .home-index-topbar__location, .home-side-meta__location, .home-side-meta__search),
+  body.app-shell-page :is(.topbar-profile__button, .home-index-topbar__location, .home-side-meta__location, .home-side-meta__search),
+  body.internal-shell-page :is(.topbar-profile__button, .home-index-topbar__location, .home-side-meta__location, .home-side-meta__search) {
+    min-height: var(--doke-app-topbar-control) !important;
+  }
+
+  body.doke-app-shell-page :is(.page, .page__content, .page__content-inner, .doke-page-shell, .doke-page-section, .topbar),
+  body.app-shell-page :is(.page, .page__content, .page__content-inner, .doke-page-shell, .doke-page-section, .topbar),
+  body.internal-shell-page :is(.page, .page__content, .page__content-inner, .doke-page-shell, .doke-page-section, .topbar) {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  body.doke-app-shell-page .app-shell,
+  body.app-shell-page .app-shell,
+  body.internal-shell-page .app-shell {
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  body.doke-app-shell-page .page,
+  body.doke-app-shell-page .page__content,
+  body.app-shell-page .page,
+  body.app-shell-page .page__content,
+  body.internal-shell-page .page,
+  body.internal-shell-page .page__content {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+}
+
+/*
+  Doke Shell Contract v2 — correção de paridade real de largura
+  Esta camada congela os mesmos limites horizontais para header e conteúdo.
+  Não cria margem local por página: força todos os envelopes principais a usar
+  o mesmo eixo matemático.
+*/
+
+:root {
+  --doke-app-sidebar-width: 280px;
+  --doke-app-shell-max: 1180px;
+  --doke-app-shell-gutter: clamp(24px, 3vw, 40px);
+  --doke-app-shell-width: min(calc(100% - (var(--doke-app-shell-gutter) * 2)), var(--doke-app-shell-max));
+
+  /* Neutraliza contratos antigos que davam larguras diferentes por página. */
+  --doke-shell-max-default: var(--doke-app-shell-max);
+  --doke-shell-max-wide: var(--doke-app-shell-max);
+  --doke-shell-max-narrow: var(--doke-app-shell-max);
+  --doke-app-shell-workspace-max: var(--doke-app-shell-max);
+  --doke-desktop-sidebar-width: var(--doke-app-sidebar-width);
+  --doke-desktop-page-gutter: 0px;
+}
+
+@media (min-width: 761px) {
+  html,
+  body {
+    overflow-x: hidden !important;
+  }
+
+  body.doke-app-shell-page .app-shell,
+  body.app-shell-page .app-shell,
+  body.internal-shell-page .app-shell {
+    display: grid !important;
+    grid-template-columns: var(--doke-app-sidebar-width) minmax(0, 1fr) !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 100vh !important;
+    overflow-x: clip !important;
+  }
+
+  body.doke-app-shell-page .sidebar,
+  body.doke-app-shell-page .sidebar[data-shell-sidebar],
+  body.app-shell-page .sidebar,
+  body.app-shell-page .sidebar[data-shell-sidebar],
+  body.internal-shell-page .sidebar,
+  body.internal-shell-page .sidebar[data-shell-sidebar] {
+    inline-size: var(--doke-app-sidebar-width) !important;
+    min-inline-size: var(--doke-app-sidebar-width) !important;
+    max-inline-size: var(--doke-app-sidebar-width) !important;
+  }
+
+  body.doke-app-shell-page .page,
+  body.app-shell-page .page,
+  body.internal-shell-page .page {
+    grid-column: 2 !important;
+    inline-size: 100% !important;
+    max-inline-size: 100% !important;
+    min-inline-size: 0 !important;
+    overflow-x: clip !important;
+  }
+
+  body.doke-app-shell-page .topbar,
+  body.doke-app-shell-page .internal-page-topbar,
+  body.doke-app-shell-page .topbar--location,
+  body.app-shell-page .topbar,
+  body.app-shell-page .internal-page-topbar,
+  body.app-shell-page .topbar--location,
+  body.internal-shell-page .topbar,
+  body.internal-shell-page .internal-page-topbar,
+  body.internal-shell-page .topbar--location,
+  body.doke-app-shell-page .page__content-inner,
+  body.doke-app-shell-page .app-shell-page__workspace,
+  body.doke-app-shell-page .shell-home__workspace,
+  body.doke-app-shell-page .orders-shell-content,
+  body.doke-app-shell-page .messages-shell-content,
+  body.doke-app-shell-page .profile-shell-content,
+  body.doke-app-shell-page .wallet-shell-content,
+  body.doke-app-shell-page .settings-shell-content,
+  body.doke-app-shell-page .search-results-workspace,
+  body.app-shell-page .page__content-inner,
+  body.app-shell-page .app-shell-page__workspace,
+  body.app-shell-page .shell-home__workspace,
+  body.app-shell-page .orders-shell-content,
+  body.app-shell-page .messages-shell-content,
+  body.app-shell-page .profile-shell-content,
+  body.app-shell-page .wallet-shell-content,
+  body.app-shell-page .settings-shell-content,
+  body.app-shell-page .search-results-workspace,
+  body.internal-shell-page .page__content-inner,
+  body.internal-shell-page .app-shell-page__workspace,
+  body.internal-shell-page .shell-home__workspace,
+  body.internal-shell-page .orders-shell-content,
+  body.internal-shell-page .messages-shell-content,
+  body.internal-shell-page .profile-shell-content,
+  body.internal-shell-page .wallet-shell-content,
+  body.internal-shell-page .settings-shell-content,
+  body.internal-shell-page .search-results-workspace {
+    inline-size: var(--doke-app-shell-width) !important;
+    width: var(--doke-app-shell-width) !important;
+    max-inline-size: var(--doke-app-shell-max) !important;
+    max-width: var(--doke-app-shell-max) !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.doke-app-shell-page .page__content,
+  body.app-shell-page .page__content,
+  body.internal-shell-page .page__content {
+    inline-size: 100% !important;
+    max-inline-size: 100% !important;
+    min-inline-size: 0 !important;
+    padding-inline: 0 !important;
+    overflow-x: clip !important;
+  }
+
+  /* Dentro do envelope, nenhuma página pode criar outro eixo horizontal. */
+  body.doke-app-shell-page :is(
+    .doke-page-shell,
+    .doke-page-stack,
+    .doke-page-section,
+    .home-search-hero,
+    .home-search-hero__panel,
+    .home-search-hero__card,
+    .home-catégories,
+    .home-highlights,
+    .home-section,
+    .results-layout,
+    .results-main,
+    .orders-page-header,
+    .orders-dashboard,
+    .orders-grid,
+    .orders-shell,
+    .communities-page,
+    .communities-discovery,
+    .communities-v2-shell,
+    .communities-v2-main,
+    .communities-v2-section,
+    .profile-shell,
+    .messages-shell,
+    .wallet-shell,
+    .settings-shell,
+    .notifications-shell
+  ),
+  body.app-shell-page :is(
+    .doke-page-shell,
+    .doke-page-stack,
+    .doke-page-section,
+    .home-search-hero,
+    .home-search-hero__panel,
+    .home-search-hero__card,
+    .home-catégories,
+    .home-highlights,
+    .home-section,
+    .results-layout,
+    .results-main,
+    .orders-page-header,
+    .orders-dashboard,
+    .orders-grid,
+    .orders-shell,
+    .communities-page,
+    .communities-discovery,
+    .communities-v2-shell,
+    .communities-v2-main,
+    .communities-v2-section,
+    .profile-shell,
+    .messages-shell,
+    .wallet-shell,
+    .settings-shell,
+    .notifications-shell
+  ),
+  body.internal-shell-page :is(
+    .doke-page-shell,
+    .doke-page-stack,
+    .doke-page-section,
+    .home-search-hero,
+    .home-search-hero__panel,
+    .home-search-hero__card,
+    .home-catégories,
+    .home-highlights,
+    .home-section,
+    .results-layout,
+    .results-main,
+    .orders-page-header,
+    .orders-dashboard,
+    .orders-grid,
+    .orders-shell,
+    .communities-page,
+    .communities-discovery,
+    .communities-v2-shell,
+    .communities-v2-main,
+    .communities-v2-section,
+    .profile-shell,
+    .messages-shell,
+    .wallet-shell,
+    .settings-shell,
+    .notifications-shell
+  ) {
+    inline-size: 100% !important;
+    max-inline-size: 100% !important;
+    min-inline-size: 0 !important;
+    margin-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.doke-app-shell-page .topbar,
+  body.app-shell-page .topbar,
+  body.internal-shell-page .topbar {
+    min-height: var(--doke-app-topbar-height) !important;
+    padding-block: 26px 18px !important;
+  }
+}
+
+/*
+  Doke Shell Contract v3 — HARD WIDTH LOCK
+  Motivo: alguns HTMLs internos ainda carregam contratos antigos com largura
+  ampla (ex.: 1360/1480px) e topbar em largura total da coluna. Esta camada
+  usa seletores diretos sobre a estrutura real do app para garantir que header
+  e conteúdo partam do mesmo eixo em todas as rotas desktop.
+*/
+
+@media (min-width: 761px) {
+  :root {
+    --doke-app-sidebar-width: 280px !important;
+    --doke-app-shell-max: 1180px !important;
+    --doke-shell-max-wide: var(--doke-app-shell-max) !important;
+    --doke-shell-max-default: var(--doke-app-shell-max) !important;
+    --doke-shell-max-narrow: var(--doke-app-shell-max) !important;
+    --doke-app-shell-gutter: clamp(24px, 3vw, 40px) !important;
+    --doke-desktop-page-gutter: 0px !important;
+  }
+
+  body[data-page].doke-app-shell-page > .app-shell,
+  body[data-page].app-shell-page > .app-shell,
+  body[data-page].internal-shell-page > .app-shell {
+    display: grid !important;
+    grid-template-columns: var(--doke-app-sidebar-width) minmax(0, 1fr) !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    overflow-x: clip !important;
+  }
+
+  body[data-page].doke-app-shell-page > .app-shell > .sidebar,
+  body[data-page].app-shell-page > .app-shell > .sidebar,
+  body[data-page].internal-shell-page > .app-shell > .sidebar {
+    width: var(--doke-app-sidebar-width) !important;
+    min-width: var(--doke-app-sidebar-width) !important;
+    max-width: var(--doke-app-sidebar-width) !important;
+    grid-column: 1 !important;
+  }
+
+  body[data-page].doke-app-shell-page > .app-shell > .page,
+  body[data-page].app-shell-page > .app-shell > .page,
+  body[data-page].internal-shell-page > .app-shell > .page {
+    grid-column: 2 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: clip !important;
+    padding-inline: 0 !important;
+  }
+
+  body[data-page].doke-app-shell-page > .app-shell > .page > .topbar,
+  body[data-page].app-shell-page > .app-shell > .page > .topbar,
+  body[data-page].internal-shell-page > .app-shell > .page > .topbar,
+  body[data-page].doke-app-shell-page > .app-shell > .page > .internal-page-topbar,
+  body[data-page].app-shell-page > .app-shell > .page > .internal-page-topbar,
+  body[data-page].internal-shell-page > .app-shell > .page > .internal-page-topbar {
+    width: min(calc(100% - (var(--doke-app-shell-gutter) * 2)), var(--doke-app-shell-max)) !important;
+    max-width: var(--doke-app-shell-max) !important;
+    min-width: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+    left: auto !important;
+    right: auto !important;
+  }
+
+  body[data-page].doke-app-shell-page > .app-shell > .page > .page__content,
+  body[data-page].app-shell-page > .app-shell > .page > .page__content,
+  body[data-page].internal-shell-page > .app-shell > .page > .page__content {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+    overflow-x: clip !important;
+    box-sizing: border-box !important;
+  }
+
+  body[data-page].doke-app-shell-page > .app-shell > .page > .page__content > .page__content-inner,
+  body[data-page].app-shell-page > .app-shell > .page > .page__content > .page__content-inner,
+  body[data-page].internal-shell-page > .app-shell > .page > .page__content > .page__content-inner,
+  body[data-page] .page__content-inner.container,
+  body[data-page] .app-shell-page__workspace,
+  body[data-page] .shell-home__workspace,
+  body[data-page] .orders-shell-content,
+  body[data-page] .messages-shell-content,
+  body[data-page] .profile-shell-content,
+  body[data-page] .wallet-shell-content,
+  body[data-page] .settings-shell-content,
+  body[data-page] .search-results-workspace {
+    width: min(calc(100% - (var(--doke-app-shell-gutter) * 2)), var(--doke-app-shell-max)) !important;
+    max-width: var(--doke-app-shell-max) !important;
+    min-width: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body[data-page] :is(
+    .orders-page,
+    .orders-planner,
+    .orders-list,
+    .communities-page,
+    .communities-discovery,
+    .profile-screen,
+    .wallet-page,
+    .settings-page,
+    .notifications-page,
+    .messages-app,
+    .results-layout,
+    .home-search-hero,
+    .home-catégories,
+    .featured-services,
+    .home-recommendations,
+    .short-videos,
+    .before-after,
+    .more-services
+  ) {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body[data-page] .topbar__left,
+  body[data-page] .topbar__right,
+  body[data-page] .topbar__center {
+    min-width: 0 !important;
+  }
+
+  body[data-page] .topbar__right {
+    margin-left: auto !important;
+  }
+}
+
+/*
+  Doke Shell Contract v4 — HEADER CONTROL STANDARD + SINGLE SCROLL OWNER
+  Responsabilidade: padronizar todos os botões do cabeçalho/toolbar e impedir
+  que app-shell/page/page__content criem scroll vertical concorrente no desktop.
+*/
+
+:root {
+  --doke-header-control-size: 48px;
+  --doke-header-control-height: 48px;
+  --doke-header-profile-height: 54px;
+  --doke-header-control-radius: 18px;
+  --doke-header-icon-size: 18px;
+  --doke-header-control-bg: #ffffff;
+  --doke-header-control-border: #dbe7f1;
+  --doke-header-control-text: #0b2b4c;
+  --doke-header-control-muted: #5f7896;
+  --doke-header-control-blue: #2b68a3;
+  --doke-header-control-teal: #13847d;
+  --doke-header-control-shadow: 0 14px 32px rgba(22, 52, 86, 0.08);
+  --doke-header-control-shadow-hover: 0 18px 38px rgba(22, 52, 86, 0.12);
+  --doke-header-control-ring: rgba(43, 104, 163, 0.22);
+}
+
+@media (min-width: 761px) {
+  /* A página inteira tem um único dono de scroll: o viewport. */
+  html {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  body.doke-app-shell-page,
+  body.app-shell-page,
+  body.internal-shell-page {
+    height: auto !important;
+    min-height: 100vh !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+  }
+
+  body[data-page].doke-app-shell-page > .app-shell,
+  body[data-page].app-shell-page > .app-shell,
+  body[data-page].internal-shell-page > .app-shell,
+  body[data-page].doke-app-shell-page > .app-shell > .page,
+  body[data-page].app-shell-page > .app-shell > .page,
+  body[data-page].internal-shell-page > .app-shell > .page,
+  body[data-page].doke-app-shell-page > .app-shell > .page > .page__content,
+  body[data-page].app-shell-page > .app-shell > .page > .page__content,
+  body[data-page].internal-shell-page > .app-shell > .page > .page__content,
+  body[data-page].doke-app-shell-page > .app-shell > .page > .page__content > .page__content-inner,
+  body[data-page].app-shell-page > .app-shell > .page > .page__content > .page__content-inner,
+  body[data-page].internal-shell-page > .app-shell > .page > .page__content > .page__content-inner {
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+  }
+
+  /* A sidebar pode rolar em telas baixas, mas sem exibir uma segunda barra visual. */
+  body[data-page].doke-app-shell-page > .app-shell > .sidebar,
+  body[data-page].app-shell-page > .app-shell > .sidebar,
+  body[data-page].internal-shell-page > .app-shell > .sidebar {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  body[data-page].doke-app-shell-page > .app-shell > .sidebar::-webkit-scrollbar,
+  body[data-page].app-shell-page > .app-shell > .sidebar::-webkit-scrollbar,
+  body[data-page].internal-shell-page > .app-shell > .sidebar::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+  }
+
+  /* Contrato visual único para botões quadrados do header/toolbar. */
+  body[data-page] :is(
+    .topbar-search-icon,
+    .mobile-toggle,
+    .topbar-search__icon,
+    .topbar-search-close,
+    .home-side-meta__search,
+    .home-side-meta__alert,
+    .settings-topbar__action
+  ) {
+    width: var(--doke-header-control-size) !important;
+    height: var(--doke-header-control-size) !important;
+    min-width: var(--doke-header-control-size) !important;
+    min-height: var(--doke-header-control-size) !important;
+    max-width: var(--doke-header-control-size) !important;
+    max-height: var(--doke-header-control-size) !important;
+    padding: 0 !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    border-radius: var(--doke-header-control-radius) !important;
+    border: 1px solid var(--doke-header-control-border) !important;
+    background: var(--doke-header-control-bg) !important;
+    color: var(--doke-header-control-blue) !important;
+    box-shadow: var(--doke-header-control-shadow) !important;
+    line-height: 1 !important;
+    text-decoration: none !important;
+    flex: 0 0 var(--doke-header-control-size) !important;
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, color 180ms ease, background-color 180ms ease !important;
+  }
+
+  body[data-page] :is(
+    .topbar-search-icon,
+    .mobile-toggle,
+    .topbar-search__icon,
+    .topbar-search-close,
+    .home-side-meta__search,
+    .home-side-meta__alert,
+    .settings-topbar__action,
+    .page-header-context__action,
+    .topbar-profile__button,
+    .home-side-meta__profile,
+    .home-side-meta__profile-caret-button,
+    .home-index-topbar__location,
+    .topbar-location,
+    .topbar-shortcut
+  ) svg {
+    width: var(--doke-header-icon-size) !important;
+    height: var(--doke-header-icon-size) !important;
+    min-width: var(--doke-header-icon-size) !important;
+    min-height: var(--doke-header-icon-size) !important;
+    stroke: currentColor !important;
+    stroke-width: 1.9 !important;
+    fill: none !important;
+    flex: 0 0 var(--doke-header-icon-size) !important;
+  }
+
+  body[data-page] :is(
+    .topbar-search-icon,
+    .mobile-toggle,
+    .topbar-search__icon,
+    .topbar-search-close,
+    .home-side-meta__search,
+    .home-side-meta__alert,
+    .settings-topbar__action,
+    .page-header-context__action,
+    .topbar-profile__button,
+    .home-side-meta__profile,
+    .home-side-meta__profile-caret-button,
+    .home-index-topbar__location,
+    .topbar-location,
+    .topbar-shortcut
+  ):hover {
+    transform: translateY(-1px) !important;
+    border-color: rgba(43, 104, 163, 0.28) !important;
+    box-shadow: var(--doke-header-control-shadow-hover) !important;
+  }
+
+  body[data-page] :is(
+    .topbar-search-icon,
+    .mobile-toggle,
+    .topbar-search__icon,
+    .topbar-search-close,
+    .home-side-meta__search,
+    .home-side-meta__alert,
+    .settings-topbar__action,
+    .page-header-context__action,
+    .topbar-profile__button,
+    .home-side-meta__profile,
+    .home-side-meta__profile-caret-button,
+    .home-index-topbar__location,
+    .topbar-location,
+    .topbar-shortcut
+  ):focus-visible {
+    outline: 3px solid var(--doke-header-control-ring) !important;
+    outline-offset: 3px !important;
+  }
+
+  /* Contrato visual único para pills de ação do header: filtros, selecionar, agenda, localização. */
+  body[data-page] :is(
+    .page-header-context__action,
+    .home-index-topbar__location,
+    .home-side-meta__location,
+    .topbar-location,
+    .topbar-shortcut
+  ) {
+    min-height: var(--doke-header-control-height) !important;
+    height: var(--doke-header-control-height) !important;
+    padding: 0 18px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    border-radius: var(--doke-header-control-radius) !important;
+    border: 1px solid var(--doke-header-control-border) !important;
+    background: var(--doke-header-control-bg) !important;
+    color: var(--doke-header-control-text) !important;
+    box-shadow: var(--doke-header-control-shadow) !important;
+    font: inherit !important;
+    font-size: 0.92rem !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    text-decoration: none !important;
+    flex: 0 0 auto !important;
+  }
+
+  body[data-page] :is(.page-header-context__action, .topbar-shortcut) span,
+  body[data-page] :is(.home-index-topbar__location-text, .home-side-meta__location-text, .topbar-location strong) {
+    font-weight: 800 !important;
+    line-height: 1 !important;
+  }
+
+  body[data-page] :is(
+    .page-header-context__action[aria-expanded="true"],
+    .page-header-context__action[aria-pressed="true"],
+    .page-header-context__action.is-active,
+    .home-side-meta__location.is-active,
+    .topbar-shortcut--primary
+  ) {
+    border-color: transparent !important;
+    background: linear-gradient(135deg, #2d73b7, #1f5a91) !important;
+    color: #ffffff !important;
+    box-shadow: 0 16px 32px rgba(31, 90, 145, 0.2) !important;
+  }
+
+  body[data-page] :is(
+    .page-header-context__action[data-orders-agenda-toggle],
+    .page-header-context__action[aria-label="Agenda"]
+  ) {
+    border-color: transparent !important;
+    background: linear-gradient(135deg, #21b982, #12826d) !important;
+    color: #ffffff !important;
+    box-shadow: 0 16px 32px rgba(18, 130, 109, 0.2) !important;
+  }
+
+  /* Perfil do header: mesmo formato em todos os HTMLs. */
+  body[data-page] :is(.topbar-account-cluster, .home-side-meta__profile-wrap) {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+  }
+
+  body[data-page] .topbar-points {
+    display: none !important;
+  }
+
+  body[data-page] :is(.topbar-profile__button, .home-side-meta__profile) {
+    min-height: var(--doke-header-profile-height) !important;
+    height: var(--doke-header-profile-height) !important;
+    min-width: var(--doke-header-profile-height) !important;
+    padding: 7px 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    border-radius: 20px !important;
+    border: 1px solid var(--doke-header-control-border) !important;
+    background: var(--doke-header-control-bg) !important;
+    color: var(--doke-header-control-text) !important;
+    box-shadow: var(--doke-header-control-shadow) !important;
+    text-decoration: none !important;
+  }
+
+  body[data-page] :is(.topbar-profile__button .avatar, .topbar-profile__button .doke-avatar, .home-side-meta__avatar) {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    border-radius: 999px !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    background: linear-gradient(135deg, #0b7d91, #075e73) !important;
+    color: #ffffff !important;
+    font-weight: 900 !important;
+    font-size: 0.86rem !important;
+    line-height: 1 !important;
+    overflow: hidden !important;
+  }
+
+  body[data-page] .topbar-profile__button .avatar {
+    margin: 0 !important;
+  }
+
+  body[data-page] .home-side-meta__identity {
+    display: inline-flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 1px !important;
+    min-width: 0 !important;
+    color: var(--doke-header-control-text) !important;
+  }
+
+  body[data-page] .home-side-meta__identity strong {
+    font-size: 0.88rem !important;
+    font-weight: 900 !important;
+    line-height: 1.05 !important;
+    color: var(--doke-header-control-text) !important;
+  }
+
+  body[data-page] .home-side-meta__identity span {
+    font-size: 0.72rem !important;
+    font-weight: 800 !important;
+    line-height: 1.05 !important;
+    color: #1f5a91 !important;
+  }
+
+  body[data-page] .home-side-meta__profile-caret-button {
+    width: var(--doke-header-control-size) !important;
+    height: var(--doke-header-control-size) !important;
+    min-width: var(--doke-header-control-size) !important;
+    min-height: var(--doke-header-control-size) !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    border-radius: var(--doke-header-control-radius) !important;
+    border: 1px solid var(--doke-header-control-border) !important;
+    background: var(--doke-header-control-bg) !important;
+    color: var(--doke-header-control-muted) !important;
+    box-shadow: var(--doke-header-control-shadow) !important;
+  }
+
+  body[data-page] .home-side-meta__profile-caret,
+  body[data-page] .home-index-topbar__location-caret,
+  body[data-page] .home-side-meta__caret {
+    width: 7px !important;
+    height: 7px !important;
+    border-right: 1.8px solid currentColor !important;
+    border-bottom: 1.8px solid currentColor !important;
+    transform: rotate(45deg) translateY(-1px) !important;
+    flex: 0 0 auto !important;
+  }
+
+  /* Organização dos grupos para impedir desalinhamento entre botões do header. */
+  body[data-page] :is(.topbar__left, .topbar__center, .topbar__right, .home-side-meta__group, .page-header-context) {
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  body[data-page] .topbar__right {
+    justify-content: flex-end !important;
+  }
+}
+
+/*
+  Doke Shell Contract v5 — TOPBAR POSITION + COMMUNITY HEADER + SCROLL OWNER
+  Responsabilidade: aproximar o header do topo em todas as páginas desktop,
+  promover o header real de comunidade para a mesma linha de ações do app e
+  eliminar barras verticais concorrentes criadas por wrappers internos.
+*/
+
+@media (min-width: 761px) {
+  :root {
+    --doke-app-topbar-height: 78px !important;
+    --doke-app-topbar-control: 48px !important;
+    --doke-header-control-height: 48px !important;
+  }
+
+  html {
+    overflow-y: scroll !important;
+    overflow-x: hidden !important;
+  }
+
+  body.doke-app-shell-page,
+  body.app-shell-page,
+  body.internal-shell-page {
+    height: auto !important;
+    min-height: 100vh !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+  }
+
+  body[data-page].doke-app-shell-page > .app-shell,
+  body[data-page].app-shell-page > .app-shell,
+  body[data-page].internal-shell-page > .app-shell,
+  body[data-page].doke-app-shell-page > .app-shell > .page,
+  body[data-page].app-shell-page > .app-shell > .page,
+  body[data-page].internal-shell-page > .app-shell > .page,
+  body[data-page].doke-app-shell-page > .app-shell > .page > .page__content,
+  body[data-page].app-shell-page > .app-shell > .page > .page__content,
+  body[data-page].internal-shell-page > .app-shell > .page > .page__content,
+  body[data-page] :is(
+    .page__content-inner,
+    .app-shell-page__workspace,
+    .shell-home__workspace,
+    .orders-shell-content,
+    .messages-shell-content,
+    .profile-shell-content,
+    .wallet-shell-content,
+    .settings-shell-content,
+    .search-results-workspace,
+    .doke-page,
+    .doke-page-shell,
+    .doke-page-stack,
+    .doke-page-section,
+    .communities-page,
+    .communities-discovery,
+    .communities-layout,
+    .communities-main,
+    .orders-page,
+    .orders-dashboard,
+    .orders-grid,
+    .orders-shell,
+    .results-layout,
+    .results-main
+  ) {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+  }
+
+  body[data-page].doke-app-shell-page > .app-shell > .page > .topbar,
+  body[data-page].app-shell-page > .app-shell > .page > .topbar,
+  body[data-page].internal-shell-page > .app-shell > .page > .topbar,
+  body[data-page].doke-app-shell-page > .app-shell > .page > .internal-page-topbar,
+  body[data-page].app-shell-page > .app-shell > .page > .internal-page-topbar,
+  body[data-page].internal-shell-page > .app-shell > .page > .internal-page-topbar {
+    min-height: var(--doke-app-topbar-height) !important;
+    padding-top: 14px !important;
+    padding-bottom: 10px !important;
+    align-items: center !important;
+  }
+
+  body[data-page].doke-app-shell-page > .app-shell > .page > .page__content,
+  body[data-page].app-shell-page > .app-shell > .page > .page__content,
+  body[data-page].internal-shell-page > .app-shell > .page > .page__content {
+    padding-top: 0 !important;
+  }
+
+  /* Comunidade usa home-side-meta como header desktop real. A topbar antiga
+     tinha só a lupa, empurrava o restante para baixo e criava uma segunda linha. */
+  body[data-page="comunidade"] > .app-shell > .page > .topbar {
+    display: none !important;
+  }
+
+  body[data-page="comunidade"] > .app-shell > .page > .page__content > .page__content-inner {
+    padding-top: 0 !important;
+  }
+
+  body[data-page="comunidade"] .home-side-meta {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: var(--doke-app-topbar-height) !important;
+    margin: 0 0 22px !important;
+    padding: 14px 0 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    overflow: visible !important;
+  }
+
+  body[data-page="comunidade"] .home-side-meta__group {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 12px !important;
+    min-width: 0 !important;
+  }
+
+  body[data-page="comunidade"] .home-side-meta__group--primary {
+    flex: 1 1 auto !important;
+    justify-content: flex-start !important;
+  }
+
+  body[data-page="comunidade"] .home-side-meta__group--secondary {
+    flex: 0 0 auto !important;
+    justify-content: flex-end !important;
+    margin-left: auto !important;
+  }
+
+  body[data-page="comunidade"] .home-side-meta__search-form {
+    display: none !important;
+  }
+
+  body[data-page="comunidade"] .page-header-context {
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 12px !important;
+    min-width: 0 !important;
+  }
+
+  body[data-page="comunidade"] .page-header-context__action {
+    min-height: var(--doke-header-control-height) !important;
+    height: var(--doke-header-control-height) !important;
+    padding-inline: 18px !important;
+  }
+
+  body[data-page="comunidade"] .home-side-meta__alert,
+  body[data-page="comunidade"] .home-side-meta__search,
+  body[data-page="comunidade"] .home-side-meta__profile-caret-button {
+    width: var(--doke-header-control-size) !important;
+    height: var(--doke-header-control-size) !important;
+    min-width: var(--doke-header-control-size) !important;
+    min-height: var(--doke-header-control-size) !important;
+  }
+
+  body[data-page="comunidade"] .home-side-meta__profile {
+    height: var(--doke-header-profile-height) !important;
+    min-height: var(--doke-header-profile-height) !important;
+  }
+
+  body[data-page="comunidade"] .communities-page {
+    padding-top: 0 !important;
+  }
+
+  /* Sidebar pode manter scroll interno sem mostrar barra visual. */
+  body[data-page] > .app-shell > .sidebar {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  body[data-page] > .app-shell > .sidebar::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+  }
+}
+
+
+/*
+  Doke Shell Contract v6 — HEADER PARITY + TOP OFFSET + SCROLL HARD LOCK
+  Responsabilidade: alinhar visualmente o header desktop entre home, pedidos e
+  comunidade, aproximar o bloco do topo e remover definitivamente owners
+  concorrentes de rolagem vertical no workspace.
+*/
+
+@media (min-width: 761px) {
+  :root {
+    --doke-app-topbar-height: 68px !important;
+    --doke-app-topbar-control: 48px !important;
+    --doke-header-control-height: 48px !important;
+    --doke-header-control-size: 48px !important;
+    --doke-header-profile-height: 54px !important;
+  }
+
+  html,
+  body {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  html {
+    overflow-y: auto !important;
+  }
+
+  body.doke-app-shell-page,
+  body.app-shell-page,
+  body.internal-shell-page,
+  body[data-page] > .app-shell,
+  body[data-page] > .app-shell > .page,
+  body[data-page] > .app-shell > .page > .page__content,
+  body[data-page] > .app-shell > .page > .page__content > .page__content-inner,
+  body[data-page] :is(
+    .app-shell-page__workspace,
+    .shell-home__workspace,
+    .orders-shell-content,
+    .messages-shell-content,
+    .profile-shell-content,
+    .wallet-shell-content,
+    .settings-shell-content,
+    .search-results-workspace,
+    .doke-page,
+    .doke-page-shell,
+    .doke-page-stack,
+    .doke-page-section,
+    .communities-page,
+    .communities-discovery,
+    .communities-layout,
+    .communities-main,
+    .orders-page,
+    .orders-dashboard,
+    .orders-grid,
+    .orders-shell,
+    .results-layout,
+    .results-main,
+    .profile-screen,
+    .wallet-page,
+    .settings-page,
+    .notifications-page,
+    .messages-app
+  ) {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+    overflow-x: clip !important;
+  }
+
+  body[data-page] > .app-shell > .page > .topbar,
+  body[data-page] > .app-shell > .page > .internal-page-topbar {
+    min-height: var(--doke-app-topbar-height) !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  body[data-page] > .app-shell > .page > .page__content {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  body[data-page] .topbar__left,
+  body[data-page] .topbar__center,
+  body[data-page] .topbar__right,
+  body[data-page] .home-side-meta__group,
+  body[data-page] .page-header-context {
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  body[data-page] .topbar__right,
+  body[data-page] .home-side-meta__group--secondary {
+    margin-left: auto !important;
+    justify-content: flex-end !important;
+  }
+
+  body[data-page] .home-side-meta {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: var(--doke-app-topbar-height) !important;
+    margin: 0 0 18px !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    overflow: visible !important;
+  }
+
+  body[data-page="home"] .home-side-meta,
+  body[data-page="pedidos"] .home-side-meta,
+  body[data-page="comunidade"] .home-side-meta {
+    margin-top: 0 !important;
+  }
+
+  body[data-page="home"] .home-side-meta__group--primary,
+  body[data-page="pedidos"] .home-side-meta__group--primary,
+  body[data-page="comunidade"] .home-side-meta__group--primary {
+    flex: 1 1 auto !important;
+    justify-content: flex-start !important;
+    min-width: 0 !important;
+  }
+
+  body[data-page] .page-header-context {
+    display: inline-flex !important;
+    flex-wrap: nowrap !important;
+    min-width: 0 !important;
+  }
+
+  body[data-page] .page-header-context__action {
+    height: var(--doke-header-control-height) !important;
+    min-height: var(--doke-header-control-height) !important;
+    padding-inline: 18px !important;
+    border-radius: 18px !important;
+  }
+
+  body[data-page] :is(
+    .topbar-search-icon,
+    .topbar-search__icon,
+    .home-side-meta__search,
+    .home-side-meta__alert,
+    .home-side-meta__profile-caret-button,
+    .settings-topbar__action,
+    .topbar-shortcut
+  ) {
+    width: var(--doke-header-control-size) !important;
+    height: var(--doke-header-control-size) !important;
+    min-width: var(--doke-header-control-size) !important;
+    min-height: var(--doke-header-control-size) !important;
+  }
+
+  body[data-page] :is(.home-side-meta__location, .home-index-topbar__location, .topbar-location) {
+    min-height: var(--doke-header-control-height) !important;
+    height: var(--doke-header-control-height) !important;
+    border-radius: 18px !important;
+  }
+
+  body[data-page] :is(.home-side-meta__profile, .topbar-profile__button) {
+    height: var(--doke-header-profile-height) !important;
+    min-height: var(--doke-header-profile-height) !important;
+    border-radius: 18px !important;
+  }
+
+  body[data-page="comunidade"] > .app-shell > .page > .topbar {
+    display: none !important;
+  }
+
+  body[data-page="comunidade"] .home-side-meta__search-form {
+    display: none !important;
+  }
+
+  body[data-page] > .app-shell > .sidebar {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  body[data-page] > .app-shell > .sidebar::-webkit-scrollbar,
+  body[data-page] :is(.page, .page__content, .page__content-inner, .app-shell-page__workspace)::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+  }
+}
+
+
+/*
+  Doke Shell Contract v7 — HOME HEADER PROFILE NORMALIZATION
+  Responsabilidade: neutralizar overrides locais do index que colavam o botão de
+  perfil com o caret e criavam sombra própria no wrapper. O objetivo é deixar o
+  mesmo padrão visual das páginas internas: pill principal + botão quadrado
+  separado, ambos com a mesma sombra/altura.
+*/
+
+@media (min-width: 761px) {
+  body[data-page="home"] .home-side-meta__profile-wrap,
+  body.home-index-shell .home-index-topbar .home-side-meta__profile-wrap,
+  body.home-index-shell .home-tablet-topbar__right-clone .home-side-meta__profile-wrap {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  body[data-page="home"] .home-side-meta__profile,
+  body.home-index-shell .home-index-topbar .home-side-meta__profile,
+  body.home-index-shell .home-tablet-topbar__right-clone .home-side-meta__profile {
+    height: var(--doke-header-profile-height) !important;
+    min-height: var(--doke-header-profile-height) !important;
+    max-height: var(--doke-header-profile-height) !important;
+    min-width: 0 !important;
+    padding: 7px 12px !important;
+    border-radius: 20px !important;
+    border: 1px solid var(--doke-header-control-border) !important;
+    background: var(--doke-header-control-bg) !important;
+    box-shadow: var(--doke-header-control-shadow) !important;
+    gap: 10px !important;
+    border-right: 1px solid var(--doke-header-control-border) !important;
+    color: var(--doke-header-control-text) !important;
+    transform: none !important;
+  }
+
+  body[data-page="home"] .home-side-meta__profile-caret-button,
+  body.home-index-shell .home-index-topbar .home-side-meta__profile-caret-button,
+  body.home-index-shell .home-tablet-topbar__right-clone .home-side-meta__profile-caret-button {
+    width: var(--doke-header-control-size) !important;
+    height: var(--doke-header-control-size) !important;
+    min-width: var(--doke-header-control-size) !important;
+    min-height: var(--doke-header-control-size) !important;
+    max-width: var(--doke-header-control-size) !important;
+    max-height: var(--doke-header-control-size) !important;
+    flex: 0 0 var(--doke-header-control-size) !important;
+    padding: 0 !important;
+    border-radius: var(--doke-header-control-radius) !important;
+    border: 1px solid var(--doke-header-control-border) !important;
+    border-left: 1px solid var(--doke-header-control-border) !important;
+    background: var(--doke-header-control-bg) !important;
+    box-shadow: var(--doke-header-control-shadow) !important;
+    color: var(--doke-header-control-muted) !important;
+    transform: none !important;
+  }
+
+  body[data-page="home"] .home-side-meta__profile-wrap:hover .home-side-meta__profile,
+  body[data-page="home"] .home-side-meta__profile-wrap:hover .home-side-meta__profile-caret-button {
+    transform: none !important;
+    box-shadow: var(--doke-header-control-shadow-hover) !important;
+  }
+
+  body[data-page="home"] :is(.home-side-meta__search, .home-side-meta__location, .home-side-meta__alert),
+  body.home-index-shell .home-index-topbar :is(.home-side-meta__search, .home-side-meta__location, .home-side-meta__alert) {
+    box-shadow: var(--doke-header-control-shadow) !important;
+    border: 1px solid var(--doke-header-control-border) !important;
+    background: var(--doke-header-control-bg) !important;
+  }
+}
+
+
+/*
+  Doke Shell Contract v8 — HEADER TOP LOCK + PROFILE CARD SINGLE CONTRACT
+  Responsabilidade: remover as diferenças restantes do card de perfil e trazer
+  o header desktop para o topo visual do shell sem mexer por HTML.
+*/
+
+@media (min-width: 761px) {
+  :root {
+    --doke-app-topbar-height: 60px !important;
+    --doke-app-topbar-control: 48px !important;
+    --doke-header-profile-height: 54px !important;
+    --doke-header-control-shadow: 0 12px 26px rgba(22, 52, 86, 0.075) !important;
+    --doke-header-control-shadow-hover: 0 16px 34px rgba(22, 52, 86, 0.11) !important;
+  }
+
+  body[data-page] > .app-shell > .page {
+    padding-top: 0 !important;
+  }
+
+  body[data-page] > .app-shell > .page > .topbar,
+  body[data-page] > .app-shell > .page > .internal-page-topbar {
+    min-height: var(--doke-app-topbar-height) !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    align-items: center !important;
+  }
+
+  body[data-page] > .app-shell > .page > .page__content,
+  body[data-page] > .app-shell > .page > .page__content > .page__content-inner {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  body[data-page] .home-side-meta {
+    min-height: var(--doke-app-topbar-height) !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+    margin-top: 0 !important;
+    margin-bottom: 16px !important;
+  }
+
+  /* Contrato único para o card de perfil em todas as páginas, inclusive index. */
+  body[data-page] .home-side-meta__profile-wrap,
+  body[data-page] .topbar-account-cluster,
+  body.home-index-shell .home-index-topbar .home-side-meta__profile-wrap,
+  body.home-index-shell .home-tablet-topbar__right-clone .home-side-meta__profile-wrap {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 10px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    transform: none !important;
+  }
+
+  body[data-page] .home-side-meta__profile,
+  body.home-index-shell .home-index-topbar .home-side-meta__profile,
+  body.home-index-shell .home-tablet-topbar__right-clone .home-side-meta__profile {
+    width: auto !important;
+    min-width: 0 !important;
+    height: var(--doke-header-profile-height) !important;
+    min-height: var(--doke-header-profile-height) !important;
+    max-height: var(--doke-header-profile-height) !important;
+    padding: 7px 12px !important;
+    border-radius: 20px !important;
+    border: 1px solid var(--doke-header-control-border) !important;
+    border-right: 1px solid var(--doke-header-control-border) !important;
+    background: var(--doke-header-control-bg) !important;
+    box-shadow: var(--doke-header-control-shadow) !important;
+    color: var(--doke-header-control-text) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    transform: none !important;
+  }
+
+  body[data-page] .home-side-meta__profile-caret-button,
+  body.home-index-shell .home-index-topbar .home-side-meta__profile-caret-button,
+  body.home-index-shell .home-tablet-topbar__right-clone .home-side-meta__profile-caret-button {
+    width: var(--doke-header-control-size) !important;
+    height: var(--doke-header-control-size) !important;
+    min-width: var(--doke-header-control-size) !important;
+    min-height: var(--doke-header-control-size) !important;
+    max-width: var(--doke-header-control-size) !important;
+    max-height: var(--doke-header-control-size) !important;
+    flex: 0 0 var(--doke-header-control-size) !important;
+    padding: 0 !important;
+    border-radius: var(--doke-header-control-radius) !important;
+    border: 1px solid var(--doke-header-control-border) !important;
+    border-left: 1px solid var(--doke-header-control-border) !important;
+    background: var(--doke-header-control-bg) !important;
+    box-shadow: var(--doke-header-control-shadow) !important;
+    color: var(--doke-header-control-muted) !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    transform: none !important;
+  }
+
+  body[data-page] :is(.home-side-meta__search, .home-side-meta__location, .home-side-meta__alert, .home-side-meta__profile, .home-side-meta__profile-caret-button, .topbar-search-icon, .topbar-search__icon) {
+    box-shadow: var(--doke-header-control-shadow) !important;
+  }
+
+  body[data-page] .home-side-meta__profile-wrap:hover :is(.home-side-meta__profile, .home-side-meta__profile-caret-button) {
+    box-shadow: var(--doke-header-control-shadow-hover) !important;
+    transform: none !important;
+  }
+
+  /* Evita sensação de travamento durante troca de telas por shell swap. */
+  body.is-shell-swapping .page {
+    opacity: 0.985;
+    pointer-events: none;
+  }
+}
+
+
+/*
+  Doke Shell Contract v9 — TOP LIFT + PROFILE CARET REMOVAL
+  Responsabilidade: colocar o header desktop novamente mais próximo do topo,
+  remover o botão de seta separado do card de perfil em todos os headers e
+  neutralizar qualquer efeito visual de transição introduzido anteriormente.
+*/
+
+@media (min-width: 761px) {
+  :root {
+    --doke-app-topbar-height: 54px !important;
+    --doke-app-header-lift: 38px;
+    --doke-header-profile-height: 54px !important;
+    --doke-header-control-size: 48px !important;
+    --doke-header-control-height: 48px !important;
+  }
+
+  body[data-page] > .app-shell > .page {
+    padding-top: 0 !important;
+    margin-top: calc(var(--doke-app-header-lift) * -1) !important;
+  }
+
+  body[data-page] > .app-shell > .page > .topbar,
+  body[data-page] > .app-shell > .page > .internal-page-topbar {
+    min-height: var(--doke-app-topbar-height) !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    align-items: center !important;
+  }
+
+  body[data-page] > .app-shell > .page > .page__content,
+  body[data-page] > .app-shell > .page > .page__content > .page__content-inner {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  body[data-page] .home-side-meta {
+    min-height: var(--doke-app-topbar-height) !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 14px !important;
+    align-items: center !important;
+  }
+
+  /* Remove o botão de seta separado do perfil em todas as páginas. */
+  body[data-page] .home-side-meta__profile-caret-button,
+  body.home-index-shell .home-index-topbar .home-side-meta__profile-caret-button,
+  body.home-index-shell .home-tablet-topbar__right-clone .home-side-meta__profile-caret-button {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    flex: 0 0 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    pointer-events: none !important;
+  }
+
+  body[data-page] .home-side-meta__profile-wrap,
+  body.home-index-shell .home-index-topbar .home-side-meta__profile-wrap,
+  body.home-index-shell .home-tablet-topbar__right-clone .home-side-meta__profile-wrap {
+    gap: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    background: transparent !important;
+  }
+
+  body[data-page] .home-side-meta__profile,
+  body.home-index-shell .home-index-topbar .home-side-meta__profile,
+  body.home-index-shell .home-tablet-topbar__right-clone .home-side-meta__profile {
+    height: var(--doke-header-profile-height) !important;
+    min-height: var(--doke-header-profile-height) !important;
+    max-height: var(--doke-header-profile-height) !important;
+    border-radius: 20px !important;
+    border: 1px solid var(--doke-header-control-border) !important;
+    background: var(--doke-header-control-bg) !important;
+    box-shadow: var(--doke-header-control-shadow) !important;
+    padding: 7px 14px 7px 12px !important;
+  }
+
+  body[data-page] .home-side-meta__profile-wrap:hover .home-side-meta__profile {
+    box-shadow: var(--doke-header-control-shadow-hover) !important;
+    transform: none !important;
+  }
+
+  /* Remove qualquer sensação visual de fade/trava durante navegação. */
+  body.is-shell-swapping .page {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+}
+
+
+/*
+  Doke Shell Contract v10 — HEADER HARD TOP LOCK + PROFILE SINGLE PILL
+  Responsabilidade: remover definitivamente a variação do card de perfil entre
+  páginas, subir o header desktop e neutralizar sobras visuais do antigo botão
+  de caret separado.
+*/
+
+@media (min-width: 761px) {
+  :root {
+    --doke-app-topbar-height: 50px !important;
+    --doke-app-header-lift: 58px !important;
+    --doke-header-profile-height: 54px !important;
+    --doke-header-profile-avatar: 38px !important;
+    --doke-header-control-size: 48px !important;
+    --doke-header-control-height: 48px !important;
+  }
+
+  body[data-page] > .app-shell > .page {
+    margin-top: calc(var(--doke-app-header-lift) * -1) !important;
+    padding-top: 0 !important;
+  }
+
+  body[data-page] > .app-shell > .page > .topbar,
+  body[data-page] > .app-shell > .page > .internal-page-topbar {
+    min-height: var(--doke-app-topbar-height) !important;
+    height: var(--doke-app-topbar-height) !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    align-items: center !important;
+  }
+
+  body[data-page] .home-side-meta {
+    min-height: var(--doke-app-topbar-height) !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 12px !important;
+    align-items: center !important;
+  }
+
+  /* O perfil do header agora é um único componente: sem caret externo, sem wrapper visual. */
+  body[data-page] .home-side-meta__profile-caret-button,
+  body[data-page] .home-side-meta__profile-caret,
+  body.home-index-shell .home-index-topbar .home-side-meta__profile-caret-button,
+  body.home-index-shell .home-tablet-topbar__right-clone .home-side-meta__profile-caret-button {
+    display: none !important;
+  }
+
+  body[data-page] .home-side-meta__profile-wrap,
+  body.home-index-shell .home-index-topbar .home-side-meta__profile-wrap,
+  body.home-index-shell .home-tablet-topbar__right-clone .home-side-meta__profile-wrap {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body[data-page] .home-side-meta__profile,
+  body.home-index-shell .home-index-topbar .home-side-meta__profile,
+  body.home-index-shell .home-tablet-topbar__right-clone .home-side-meta__profile {
+    height: var(--doke-header-profile-height) !important;
+    min-height: var(--doke-header-profile-height) !important;
+    max-height: var(--doke-header-profile-height) !important;
+    min-width: 0 !important;
+    width: auto !important;
+    padding: 7px 16px 7px 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    overflow: visible !important;
+    border-radius: 20px !important;
+    border: 1px solid var(--doke-header-control-border) !important;
+    border-right: 1px solid var(--doke-header-control-border) !important;
+    background: var(--doke-header-control-bg) !important;
+    box-shadow: var(--doke-header-control-shadow) !important;
+    color: var(--doke-header-control-text) !important;
+    transform: none !important;
+  }
+
+  body[data-page] .home-side-meta__avatar,
+  body[data-page] .topbar-profile__button .avatar,
+  body[data-page] .topbar-profile__button .doke-avatar {
+    width: var(--doke-header-profile-avatar) !important;
+    height: var(--doke-header-profile-avatar) !important;
+    min-width: var(--doke-header-profile-avatar) !important;
+    min-height: var(--doke-header-profile-avatar) !important;
+    max-width: var(--doke-header-profile-avatar) !important;
+    max-height: var(--doke-header-profile-avatar) !important;
+    border-radius: 999px !important;
+  }
+
+  body[data-page] .home-side-meta__profile:hover,
+  body[data-page] .home-side-meta__profile-wrap:hover .home-side-meta__profile {
+    transform: none !important;
+    box-shadow: var(--doke-header-control-shadow-hover) !important;
+  }
+
+  body.is-shell-swapping .page {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transition: none !important;
+  }
+}
+
+
+/*
+  Doke Shell Contract v11 — TOP BALANCE + ORDERS AGENDA REPAIR
+  Corrige o excesso de lift do v10, mantém o header próximo do topo sem cortar
+  controles e repara a agenda do pedidos para não perder borda superior nem
+  deixar o calendário parecer solto/incompleto dentro do card.
+*/
+
+@media (min-width: 761px) {
+  :root {
+    --doke-app-topbar-height: 64px !important;
+    --doke-app-header-lift: 34px !important;
+    --doke-header-profile-height: 54px !important;
+    --doke-header-control-size: 48px !important;
+    --doke-header-control-height: 48px !important;
+  }
+
+  body[data-page] > .app-shell > .page {
+    margin-top: calc(var(--doke-app-header-lift) * -1) !important;
+    padding-top: 0 !important;
+  }
+
+  body[data-page] > .app-shell > .page > .topbar,
+  body[data-page] > .app-shell > .page > .internal-page-topbar {
+    min-height: var(--doke-app-topbar-height) !important;
+    height: var(--doke-app-topbar-height) !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    align-items: center !important;
+  }
+
+  body[data-page] .home-side-meta {
+    min-height: var(--doke-app-topbar-height) !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+    margin-top: 0 !important;
+    margin-bottom: 18px !important;
+    align-items: center !important;
+  }
+
+  body.orders-page-shell .orders-planner {
+    margin-top: 22px !important;
+    margin-bottom: 34px !important;
+    align-items: stretch !important;
+    overflow: hidden !important;
+    border: 1px solid var(--doke-card-border) !important;
+    border-radius: 28px !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    box-shadow: 0 18px 44px rgba(22, 54, 88, 0.08) !important;
+  }
+
+  body.orders-page-shell .orders-planner__calendar,
+  body.orders-page-shell .orders-planner__agenda {
+    min-height: 100% !important;
+    display: grid !important;
+  }
+
+  body.orders-page-shell .orders-planner__calendar .orders-planner__card {
+    position: relative !important;
+    top: auto !important;
+    min-height: 100% !important;
+    height: 100% !important;
+    align-content: start !important;
+    border-right: 1px solid var(--doke-card-border) !important;
+    background: #fff !important;
+  }
+
+  body.orders-page-shell .orders-planner__agenda .orders-planner__card {
+    min-height: 100% !important;
+    height: 100% !important;
+    background: #fff !important;
+  }
+
+  body.orders-page-shell .orders-planner__days {
+    grid-auto-rows: 34px !important;
+    gap: 9px 10px !important;
+    align-content: start !important;
+    min-height: auto !important;
+  }
+
+  body.orders-page-shell .orders-planner__event:last-child {
+    padding-bottom: 0 !important;
+  }
+}
+
+
+/*
+  Doke Shell Contract v12 — COLLAPSED SIDEBAR GEOMETRY REPAIR
+  Responsabilidade: quando o usuário recolhe a sidebar no desktop, o grid
+  inteiro precisa recolher junto. Antes, a sidebar visual escondia textos, mas
+  o App Shell continuava reservando a coluna larga de 280px e o item ativo
+  mantinha largura de menu aberto.
+*/
+
+@media (min-width: 761px) {
+  body.sidebar-collapsed {
+    --doke-app-sidebar-width: 96px !important;
+    --sidebar-width: 96px !important;
+    --doke-desktop-sidebar-width: 96px !important;
+  }
+
+  body.sidebar-collapsed[data-page] > .app-shell,
+  body.sidebar-collapsed.doke-app-shell-page > .app-shell,
+  body.sidebar-collapsed.app-shell-page > .app-shell,
+  body.sidebar-collapsed.internal-shell-page > .app-shell {
+    grid-template-columns: 96px minmax(0, 1fr) !important;
+  }
+
+  body.sidebar-collapsed[data-page] > .app-shell > .sidebar,
+  body.sidebar-collapsed.doke-app-shell-page > .app-shell > .sidebar,
+  body.sidebar-collapsed.app-shell-page > .app-shell > .sidebar,
+  body.sidebar-collapsed.internal-shell-page > .app-shell > .sidebar {
+    width: 96px !important;
+    min-width: 96px !important;
+    max-width: 96px !important;
+    inline-size: 96px !important;
+    min-inline-size: 96px !important;
+    max-inline-size: 96px !important;
+    padding-inline: 14px !important;
+    align-items: center !important;
+    overflow-x: hidden !important;
+  }
+
+  body.sidebar-collapsed[data-page] > .app-shell > .page,
+  body.sidebar-collapsed.doke-app-shell-page > .app-shell > .page,
+  body.sidebar-collapsed.app-shell-page > .app-shell > .page,
+  body.sidebar-collapsed.internal-shell-page > .app-shell > .page {
+    grid-column: 2 !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  body.sidebar-collapsed .sidebar__brand,
+  body.sidebar-collapsed .brand-logo,
+  body.sidebar-collapsed .sidebar__label,
+  body.sidebar-collapsed .nav-link__count,
+  body.sidebar-collapsed .nav-link__start > span:last-child {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    max-width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.sidebar-collapsed .sidebar__nav,
+  body.sidebar-collapsed .sidebar__group,
+  body.sidebar-collapsed .nav-list {
+    width: 100% !important;
+    align-items: center !important;
+  }
+
+  body.sidebar-collapsed .nav-link {
+    width: 64px !important;
+    max-width: 64px !important;
+    min-width: 64px !important;
+    min-height: 56px !important;
+    padding: 10px !important;
+    justify-content: center !important;
+    border-radius: 20px !important;
+    margin-inline: auto !important;
+  }
+
+  body.sidebar-collapsed .nav-link__start {
+    width: 100% !important;
+    justify-content: center !important;
+    gap: 0 !important;
+  }
+
+  body.sidebar-collapsed .nav-link__icon {
+    margin: 0 !important;
+    flex: 0 0 auto !important;
+  }
+
+  body.sidebar-collapsed .sidebar__collapse-button {
+    right: 12px !important;
+    top: 22px !important;
+  }
+}
+
+/*
+  Doke Shell Contract v13 - COMMUNITY HEADER ALIGNMENT
+  A pagina Comunidade carrega uma composicao propria no topo; ela nao pode usar
+  o lift agressivo do shell global porque seus controles encostam no limite da
+  viewport.
+*/
+
+@media (min-width: 761px) {
+  body[data-page="comunidade"] {
+    --doke-app-header-lift: -46px !important;
+  }
+
+  body[data-page="comunidade"] > .app-shell > .page {
+    margin-top: calc(var(--doke-app-header-lift) * -1) !important;
+    padding-top: 0 !important;
+  }
+}

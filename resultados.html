@@ -12,9 +12,10 @@
     />
     <link rel="stylesheet" href="assets/css/core/index.css" />
     <link rel="stylesheet" href="assets/css/pages/app-shell.css?v=20260501-desktop-grid-shell-v1" />
-    <link rel="stylesheet" href="assets/css/pages/search-results.css?v=20260501-results-manifest-v1" />
+    <link rel="stylesheet" href="assets/css/pages/search-results.css?v=20260502-results-contract-v7" />
     <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
-  </head>
+    <link rel="stylesheet" href="assets/css/components/shell/doke-shell-contract.css?v=20260501-width-header-contract-v12">
+</head>
   <body data-page="resultados" class="doke-app-shell-page app-shell-page internal-shell-page search-results-body doke-flow doke-search-flow">
     <div class="app-shell">
       <aside class="sidebar" data-shell-sidebar></aside>
@@ -147,7 +148,89 @@
           <div
             class="page__content-inner container app-shell-page__workspace search-results-workspace search-results-workspace--internal doke-page-shell doke-page-stack"
           >
-<section class="results-layout doke-page-section" aria-label="Resultados da busca" data-results-layout data-results-state="ready" aria-busy="false">
+            <section class="results-searchbar doke-page-section" data-results-searchbox aria-label="Buscar resultados">
+              <form class="results-searchbar__form" data-results-search-form autocomplete="off">
+                <label class="results-searchbar__field" for="results-main-search">
+                  <span class="results-searchbar__field-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="11" cy="11" r="6"></circle>
+                      <path d="m20 20-4.2-4.2"></path>
+                    </svg>
+                  </span>
+                  <input
+                    id="results-main-search"
+                    type="search"
+                    placeholder="Ex: Pintor, Encanador..."
+                    data-results-search-input
+                    autocomplete="off"
+                    autocapitalize="off"
+                    autocorrect="off"
+                    spellcheck="false"
+                    aria-haspopup="dialog"
+                    aria-controls="results-main-search-dropdown"
+                    aria-expanded="false"
+                  />
+                </label>
+                <button
+                  class="results-searchbar__mobile-filter"
+                  type="button"
+                  data-results-filters-open
+                  aria-expanded="true"
+                  aria-controls="results-filters-panel"
+                  aria-label="Abrir filtros"
+                >
+                  Filtros
+                </button>
+                <button class="results-searchbar__button" type="submit" aria-label="Buscar">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 12h14"></path>
+                    <path d="m13 6 6 6-6 6"></path>
+                  </svg>
+                </button>
+                <div class="results-searchbar__dropdown search-dropdown" id="results-main-search-dropdown" data-results-search-dropdown hidden>
+                  <section class="search-dropdown__section" data-results-history-section>
+                    <div class="search-dropdown__section-header">
+                      <strong>Recentes</strong>
+                      <button type="button" data-results-search-clear>Limpar</button>
+                    </div>
+                    <div class="search-dropdown__list" data-results-search-history-list></div>
+                  </section>
+                  <section class="search-dropdown__section" data-results-recommendations-section>
+                    <div class="search-dropdown__section-header">
+                      <strong>Sugestoes</strong>
+                    </div>
+                    <div class="search-dropdown__chips" data-results-recommendation-list></div>
+                  </section>
+                  <section class="search-dropdown__section" data-results-suggestions-section>
+                    <div class="search-dropdown__section-header">
+                      <strong>Resultados</strong>
+                    </div>
+                    <div class="search-dropdown__list" data-results-search-results-list></div>
+                    <p class="search-dropdown__empty" data-results-search-empty hidden>Nenhum resultado encontrado.</p>
+                  </section>
+                </div>
+              </form>
+              <fieldset class="results-searchbar__scope search-scope" role="radiogroup" aria-label="Tipo de resultado">
+                <legend class="search-scope__legend">Procurar por</legend>
+                <label class="search-scope__option">
+                  <input type="radio" name="searchType" value="services" checked />
+                  <span>Anúncios</span>
+                </label>
+                <label class="search-scope__option">
+                  <input type="radio" name="searchType" value="workers" />
+                  <span>Workers</span>
+                </label>
+                <label class="search-scope__option">
+                  <input type="radio" name="searchType" value="before-after" />
+                  <span>Antes x Depois</span>
+                </label>
+                <label class="search-scope__option">
+                  <input type="radio" name="searchType" value="users" />
+                  <span>Usuários</span>
+                </label>
+              </fieldset>
+            </section>
+            <section class="results-layout doke-page-section" aria-label="Resultados da busca" data-results-layout data-results-state="ready" aria-busy="false">
               <aside class="results-filters" data-results-pane="filters" id="results-filters-panel" aria-label="Filtros da busca">
                 <div class="results-panel">
                   <div class="results-panel__heading">
@@ -479,7 +562,7 @@
     <script src="assets/js/pages/search-data.js?v=20260428-architecture"></script>
     <script src="assets/js/pages/home/before-after.js?v=20260428-comments-sheet"></script>
     <script src="assets/js/pages/home/workers.js?v=20260428-comments-sheet"></script>
-    <script src="assets/js/pages/search-results.js?v=service-card-result-compact-0425"></script>
+    <script src="assets/js/pages/search-results.js?v=20260502-results-contract-v7"></script>
     <script src="assets/js/pages/results/open-filters-from-url.js?v=20260427-v26-open-filters"></script>
     <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
   <script src="assets/js/ui/mobile-drawer-standard.js?v=20260428-architecture"></script>
