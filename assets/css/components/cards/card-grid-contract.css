@@ -18,3 +18,73 @@
   .workers-grid,.media-grid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));}
   .community-grid{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));}
 }
+
+
+/* Stage 4 — Card content overflow guard.
+   Owner: shared card contract. Prevents vertical letter wrapping and CTA/metadata overlap. */
+.service-card, .worker-card, .media-card, .profile-card, .community-card, .result-card, .order-card, .wallet-card,
+.service-card *, .worker-card *, .media-card *, .profile-card *, .community-card *, .result-card *, .order-card *, .wallet-card * {
+  min-width: 0;
+}
+
+.service-card :is(h2,h3,h4,strong,p,span),
+.worker-card :is(h2,h3,h4,strong,p,span),
+.profile-card :is(h2,h3,h4,strong,p,span),
+.result-card :is(h2,h3,h4,strong,p,span),
+.order-card :is(h2,h3,h4,strong,p,span) {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.service-card__title,
+.service-card__location,
+.service-card__rating span,
+.service-card__price,
+.pro-card__name,
+.pro-card__meta,
+.result-card__title,
+.profile-card__title {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.service-card__footer {
+  min-width: 0;
+}
+
+.service-card__cta {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  body.home-index-shell .featured-services .service-card--feed {
+    overflow: hidden !important;
+  }
+
+  body.home-index-shell .featured-services .service-card--feed .service-card__body {
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.home-index-shell .featured-services .service-card--feed .service-card__rating,
+  body.home-index-shell .featured-services .service-card--feed .service-card__profile,
+  body.home-index-shell .featured-services .service-card--feed .service-card__tags,
+  body.home-index-shell .featured-services .service-card--feed .service-card__footer {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  body.home-index-shell .featured-services .service-card--feed .service-card__tags {
+    overflow: hidden !important;
+  }
+
+  body.home-index-shell .featured-services .service-card--feed .service-card__tags span {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+}

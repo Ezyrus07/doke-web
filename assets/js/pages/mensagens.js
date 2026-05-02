@@ -1,7 +1,7 @@
 (() => {
   const conversations = {
     painting: {
-      avatar: "assets/img/auth/carpenter-cutout.png",
+      avatar: "",
       name: "Studio Aquarela",
       lastSeen: "Online agora",
       unread: 2,
@@ -14,7 +14,7 @@
       ]
     },
     "living-room": {
-      avatar: "assets/img/auth/marceneira-hero.png",
+      avatar: "",
       name: "Casa Viva Reformas",
       lastSeen: "Visto há 12 min",
       unread: 1,
@@ -26,7 +26,7 @@
       ]
     },
     electrical: {
-      avatar: "assets/img/auth/carpenter-cutout.png",
+      avatar: "",
       name: "Luz Técnica",
       lastSeen: "Visto ontem",
       unread: 0,
@@ -38,7 +38,7 @@
       ]
     },
     amanda: {
-      avatar: "assets/img/auth/marceneira-hero.png",
+      avatar: "",
       name: "Amanda Rocha",
       lastSeen: "Online há 5 min",
       unread: 0,
@@ -50,7 +50,7 @@
       ]
     },
     marcos: {
-      avatar: "assets/img/auth/carpenter-cutout.png",
+      avatar: "",
       name: "Marcos Lima",
       lastSeen: "Visto ontem às 20:18",
       unread: 0,
@@ -65,6 +65,15 @@
 
   conversations.marcos.archived = true;
   conversations.electrical.archived = false;
+
+
+  const getConversationInitials = (name) => String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("") || "DK";
 
   const initMessagesPage = () => {
     const root = document.querySelector("[data-messages-page]");
@@ -216,7 +225,7 @@
         installments: message.installments || "À vista",
         professional: conversations[activeId]?.name || "Profissional",
         description: message.text || "Cobrança enviada na conversa.",
-        avatar: conversations[activeId]?.avatar || "",
+        avatar: "",
         title: `Cobrança de ${conversations[activeId]?.name || "profissional"}`,
         conversation: activeId
       });
@@ -452,10 +461,23 @@
       });
     };
 
-    const renderThread = (id) => {
+    const scrollThreadToStart = () => {
+      if (!threadBody) return;
+      threadBody.scrollTop = 0;
+      window.requestAnimationFrame(() => {
+        threadBody.scrollTop = 0;
+        window.requestAnimationFrame(() => {
+          threadBody.scrollTop = 0;
+        });
+      });
+    };
+
+    const renderThread = (id, options = {}) => {
       const conversation = conversations[id];
       if (!conversation || !threadBody) return;
       const isSameThread = activeId === id;
+      const previousScrollTop = threadBody.scrollTop;
+      const { scrollTo = isSameThread ? "preserve" : "start" } = options;
       activeId = id;
       contextMessageIndex = -1;
       if (!isSameThread) clearSelection();
@@ -464,14 +486,13 @@
       activeBubble?.classList.remove("is-context-target");
       activeBubble = null;
       items.forEach((item) => item.classList.toggle("is-active", item.dataset.messageId === id));
-      if (threadAvatar) threadAvatar.src = conversation.avatar;
+      if (threadAvatar) threadAvatar.textContent = getConversationInitials(conversation.name);
       if (threadName) threadName.textContent = conversation.name;
       if (threadLastSeen) threadLastSeen.textContent = conversation.lastSeen;
       if (threadEmpty) threadEmpty.hidden = conversation.messages.length !== 0;
       if (threadBody) threadBody.hidden = conversation.messages.length === 0;
       threadBody.innerHTML = conversation.messages.map((message, index) => `
         <article class="message-row${message.mine ? " message-row--me" : ""}" data-message-index="${index}">
-          ${message.mine ? "" : `<img class="message-row__avatar" src="${conversation.avatar}" alt="Foto de perfil de ${conversation.name}">`}
           <div class="message-bubble${message.mine ? " message-bubble--me" : ""}${message.type === "image" ? " message-bubble--image-only" : ""}${selectedMessageIndexes.has(index) ? " is-selected" : ""}" data-message-bubble data-message-index="${index}">
             <div class="message-bubble__meta">
               <span>${message.author}</span>
@@ -538,7 +559,19 @@
       if (window.innerWidth <= 767) {
         root.classList.add("messages-app--thread-open");
       }
-      scrollThreadToBottom(false);
+
+      window.requestAnimationFrame(() => {
+        if (!threadBody) return;
+        if (scrollTo === "end") {
+          scrollThreadToBottom(false);
+          return;
+        }
+        if (scrollTo === "start") {
+          scrollThreadToStart();
+          return;
+        }
+        threadBody.scrollTop = previousScrollTop;
+      });
     };
 
     const hideMessageMenu = () => {
@@ -565,11 +598,13 @@
       audioDraftSeconds = 0;
       if (audioTime) audioTime.textContent = "00:00";
       audioDraft?.setAttribute("hidden", "");
+      audioButton?.classList.remove("is-recording");
     };
 
     const startAudioDraft = () => {
       if (!audioDraft) return;
       audioDraft.removeAttribute("hidden");
+      audioButton?.classList.add("is-recording");
       if (audioTime) audioTime.textContent = formatAudioTime(audioDraftSeconds);
       stopAudioDraft();
       audioDraftTimer = window.setInterval(() => {
@@ -828,7 +863,7 @@
           syncHeaderControls();
           return;
         }
-        renderThread(id);
+        renderThread(id, { scrollTo: "start" });
       });
     });
 
@@ -874,7 +909,7 @@
           amount: currentMessage.amount || "R$ 0,00",
           installments: currentMessage.installments || "À vista",
           description: currentMessage.text || "Finalize o pedido para liberar o atendimento.",
-          avatar: conversations[activeId]?.avatar || "",
+          avatar: "",
           title: `Finalizar pedido com ${conversations[activeId]?.name || "profissional"}`
         });
         const nextUrl = `finalizar-pedido.html?${query.toString()}`;
@@ -896,7 +931,7 @@
           conversation: activeId,
           professional: conversations[activeId]?.name || "Profissional",
           amount: currentMessage.amount || "R$ 0,00",
-          avatar: conversations[activeId]?.avatar || "",
+          avatar: "",
           title: `Avaliar ${conversations[activeId]?.name || "profissional"}`
         });
         const nextUrl = `avaliacao.html?${query.toString()}`;
@@ -1012,7 +1047,7 @@
       const value = String(composerInput?.value || "").trim();
       if (audioDraft && !audioDraft.hidden) {
         conversations[activeId].messages.push({ author: "Você", time: "agora", mine: true, type: "audio", duration: formatAudioTime(Math.max(audioDraftSeconds, 1)), speed: "1x", replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null });
-        renderThread(activeId);
+        renderThread(activeId, { scrollTo: "end" });
         composer.reset();
         clearReplyPreview();
         resetAudioDraft();
@@ -1021,7 +1056,7 @@
       }
       if (imageDraftSrc) {
         conversations[activeId].messages.push({ author: "Você", time: "agora", mine: true, type: "image", src: imageDraftSrc, replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null });
-        renderThread(activeId);
+        renderThread(activeId, { scrollTo: "end" });
         composer.reset();
         clearReplyPreview();
         resetImageDraft();
@@ -1030,7 +1065,7 @@
       }
       if (!value) return;
       conversations[activeId].messages.push({ author: "Você", time: "agora", text: value, mine: true, replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null });
-      renderThread(activeId);
+      renderThread(activeId, { scrollTo: "end" });
       composer.reset();
       clearReplyPreview();
       composerInput?.focus();
@@ -1055,7 +1090,7 @@
         paid: false
       });
       closeChargeModal();
-      renderThread(activeId);
+      renderThread(activeId, { scrollTo: "end" });
     });
 
     chargeCancelButtons.forEach((button) => {
@@ -1180,7 +1215,7 @@
     resetImageDraft();
     if (copyToast) copyToast.hidden = true;
     syncComposerPlaceholder();
-    renderThread(activeId);
+    renderThread(activeId, { scrollTo: "start" });
     if (window.innerWidth <= 767) {
       root.classList.remove("messages-app--thread-open");
     }

@@ -1,10 +1,29 @@
 /* Global shell interactions: sidebar, theme, auth avatar/profile menu and internal routing. */
 const body = document.body;
+
+const ensureInstantRouteStyle = () => {
+  if (document.getElementById("doke-instant-route-style")) return;
+  const style = document.createElement("style");
+  style.id = "doke-instant-route-style";
+  style.textContent = `
+    body.is-route-instant-swap .page,
+    body.is-route-instant-swap .page *,
+    body.is-route-instant-swap .orders-page,
+    body.is-route-instant-swap .orders-page * {
+      transition-duration: 0ms !important;
+      animation-duration: 0ms !important;
+      animation-delay: 0ms !important;
+      scroll-behavior: auto !important;
+    }
+  `;
+  document.head.appendChild(style);
+};
+ensureInstantRouteStyle();
 const SIDEBAR_STORAGE_KEY = "doke.sidebar.collapsed";
 const THEME_STORAGE_KEY = "doke.theme";
 const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", "mobile-search-active"];
 const INTERNAL_PROFILE_PATH = "/perfil.html";
-const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento.html", "/finalizar-pedido.html", "/avaliacao.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/mais.html", "/"]);
+const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/carteira.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento.html", "/finalizar-pedido.html", "/avaliacao.html", "/adicionar-cartao.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/mais.html", "/"]);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", "/comunidade-interna.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
@@ -50,10 +69,31 @@ const isInternalViewUrl = (href) => {
   }
 };
 
-const shouldBypassShellSwap = (_href) => true;
+const shouldBypassShellSwap = (href) => {
+  try {
+    const url = new URL(href, window.location.href);
+    const path = getCurrentPath(url.href);
 
-// home-specific cascade and UI bootstrap than the internal pages. For now, transitions that
-// enter or leave index.html use normal document navigation instead of shell swapping.
+    if (url.origin !== window.location.origin) return true;
+    if (!INTERNAL_VIEW_PATHS.has(path)) return true;
+    if (url.hash && url.pathname === window.location.pathname && url.search === window.location.search) return true;
+
+    // Keep highly transactional/payment subflows on native navigation until their
+    // lifecycle is fully normalized. The menu and main app views still use the
+    // app-shell router, which removes the heavy reload feeling in daily use.
+    const nativeOnlyPaths = new Set([
+      "/pagamento.html",
+      "/finalizar-pedido.html",
+      "/avaliacao.html",
+      "/adicionar-cartao.html"
+    ]);
+
+    return nativeOnlyPaths.has(path);
+  } catch {
+    return true;
+  }
+};
+
 
 
 const SHARED_SIDEBAR_MARKUP = `
@@ -134,8 +174,8 @@ const renderSharedSidebar = () => {
   sidebar.setAttribute('data-internal-sidebar', 'true');
 };
 
-const updateSidebarActiveState = () => {
-  const path = getCurrentPath();
+const updateSidebarActiveState = (pathOverride = null) => {
+  const path = pathOverride || getCurrentPath();
   const homeActive = path === "/index.html";
   const ordersActive = path === "/pedidos.html";
   const messagesActive = path === "/mensagens.html" || path === "/pagamento.html" || path === "/finalizar-pedido.html" || path === "/avaliacao.html";
@@ -320,6 +360,10 @@ const INTERNAL_VIEW_STYLE_HINTS = {
     "assets/css/pages/pedidos.css",
     "assets/css/pages/notificacoes.css"
   ],
+  "/carteira.html": [
+    "assets/css/pages/internal-shell.css",
+    "assets/css/pages/carteira.css"
+  ],
   "/comunidade.html": [
     "assets/css/pages/comunidade.css"
   ],
@@ -382,6 +426,7 @@ const INTERNAL_VIEW_SCRIPT_HINTS = {
   "/pedidos.html": ["assets/js/pages/pedidos.js"],
   "/mensagens.html": ["assets/js/pages/mensagens.js"],
   "/notificacoes.html": ["assets/js/pages/notificacoes.js"],
+  "/carteira.html": ["assets/js/pages/carteira.js"],
   "/pagamento.html": ["assets/js/pages/pagamento.js"],
   "/finalizar-pedido.html": ["assets/js/pages/finalizar-pedido.js"],
   "/avaliacao.html": ["assets/js/pages/avaliacao.js"],
@@ -458,11 +503,25 @@ const prefetchInternalViewDocument = (href) => {
   } catch {}
 };
 
+const warmInternalViewLink = (link) => {
+  if (!link || !isInternalViewUrl(link.href) || shouldBypassShellSwap(link.href)) return;
+  hintInternalViewStyles(link.href);
+  hintInternalViewScripts(link.href);
+  prefetchInternalViewDocument(link.href);
+};
+
+const getPrimaryNavigationLinks = () =>
+  document.querySelectorAll('.sidebar a[href], .bottom-nav a[href], .doke-bottom-nav a[href], [data-header-nav][href]');
+
 const scheduleSidebarViewHints = () => {
-  // Disabled: preloading/prefetching internal HTML was causing visible skeleton/jank
-  // when moving from pedidos.html to other pages. Native navigation is now the
-  // stable contract until all page CSS is consolidated.
+  if (sidebarViewsHinted) return;
   sidebarViewsHinted = true;
+
+  // Navegação de menu precisa parecer instantânea. Pré-aquecemos as telas
+  // principais cedo, não apenas em hover, para evitar o clique frio.
+  const warm = () => getPrimaryNavigationLinks().forEach(warmInternalViewLink);
+  warm();
+  window.setTimeout(warm, 350);
 };
 
 const syncStylesFromDocument = async (nextDoc) => {
@@ -507,7 +566,7 @@ const ensureScriptsFromDocument = async (nextDoc) => {
   const scripts = [...nextDoc.querySelectorAll('script[src]')]
     .map((node) => node.getAttribute('src'))
     .filter(Boolean)
-    .filter((src) => !/assets\/js\/core\/app\.js$/i.test(src));
+    .filter((src) => !/assets\/js\/core\/app\.js(?:\?.*)?$/i.test(src));
 
   for (const src of scripts) {
     const absolute = new URL(src, window.location.href).href;
@@ -706,7 +765,14 @@ const createUiSelectApi = () => {
     });
   };
 
-  document.addEventListener("click", (event) => {
+  document.addEventListener("pointerdown", (event) => {
+  if (!(event.target instanceof Element)) return;
+  const link = event.target.closest("a[href]");
+  if (!link || !isInternalViewUrl(link.href) || shouldBypassShellSwap(link.href)) return;
+  warmInternalViewLink(link);
+}, { passive: true, capture: true });
+
+document.addEventListener("click", (event) => {
     if (!(event.target instanceof Element)) return;
     if (event.target.closest(".ui-select")) return;
     closeAll();
@@ -732,6 +798,18 @@ const syncBodyClassesFromDocument = (nextDoc) => {
     }
   });
   preserved.forEach((className) => body.classList.add(className));
+
+  const nextPageName = nextDoc.body.getAttribute("data-page") || "";
+  if (nextPageName) {
+    body.setAttribute("data-page", nextPageName);
+  } else {
+    body.removeAttribute("data-page");
+  }
+};
+
+const suppressRouteTransitionsBriefly = () => {
+  body.classList.add("is-route-instant-swap");
+  window.setTimeout(() => body.classList.remove("is-route-instant-swap"), 90);
 };
 
 const runViewInitializer = (label, initializer) => {
@@ -821,8 +899,6 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
   const nextDoc = parser.parseFromString(html, "text/html");
   const nextPage = nextDoc.querySelector(".page");
   const currentPage = document.querySelector(".page");
-  const nextSidebar = nextDoc.querySelector(".app-shell > .sidebar");
-  const currentSidebar = document.querySelector(".app-shell > .sidebar");
 
   if (!nextPage || !currentPage) {
     window.location.href = url.toString();
@@ -832,13 +908,9 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
   await syncStylesFromDocument(nextDoc);
   await ensureScriptsFromDocument(nextDoc);
 
-  body.classList.add("is-shell-swapping");
+  suppressRouteTransitionsBriefly();
   syncBodyClassesFromDocument(nextDoc);
   syncStandaloneUiFromDocument(nextDoc);
-
-  if (currentSidebar && nextSidebar) {
-    currentSidebar.replaceWith(nextSidebar.cloneNode(true));
-  }
 
   currentPage.replaceWith(nextPage.cloneNode(true));
 
@@ -859,7 +931,6 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
 
   try {
     initializeCurrentView();
-    await waitForNextPaint();
   } catch (error) {
     console.error("[Doke:swap:init-after-replace]", error);
   } finally {
@@ -868,11 +939,29 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
 };
 
 window.DokeNavigate = (href, options = {}) => {
-  if (options.replace) {
-    window.location.replace(href);
+  if (shouldBypassShellSwap(href)) {
+    if (options.replace) {
+      window.location.replace(href);
+      return;
+    }
+    window.location.href = href;
     return;
   }
-  window.location.href = href;
+
+  try {
+    updateSidebarActiveState(getCurrentPath(href));
+    closeProfileMenu();
+    closeMobileSearch();
+  } catch {}
+
+  swapView(href, options).catch((error) => {
+    console.error('[Doke:navigation]', error);
+    if (options.replace) {
+      window.location.replace(href);
+      return;
+    }
+    window.location.href = href;
+  });
 };
 
 document.addEventListener("submit", (event) => {
@@ -1036,10 +1125,17 @@ document.addEventListener("focusin", (event) => {
   prefetchInternalViewDocument(link.href);
 });
 
-// Internal style/script hints disabled to avoid route-change jank.
-
 window.addEventListener("popstate", () => {
-  window.location.reload();
+  const href = window.location.href;
+  if (shouldBypassShellSwap(href)) {
+    window.location.reload();
+    return;
+  }
+
+  swapView(href, { replace: true, preserveScroll: true }).catch((error) => {
+    console.error('[Doke:navigation:popstate]', error);
+    window.location.reload();
+  });
 });
 
 document.addEventListener("click", (event) => {
