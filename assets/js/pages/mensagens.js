@@ -310,18 +310,25 @@
     };
 
     const openFiltersPanel = () => {
-      closeFiltersPanel();
+      const targetPanel = isMobileViewport() ? mobileFiltersPanel : desktopFiltersPanel;
+      filterPanels.forEach((panel) => {
+        panel.hidden = panel !== targetPanel;
+      });
       closeSelectPanel();
       setSearchExpanded(false);
-      setToggleExpanded(filterToggleButtons, false);
+      setToggleExpanded(filterToggleButtons, true);
       syncHeaderControls();
     };
 
     const openSelectPanel = () => {
       closeFiltersPanel();
+      const targetPanel = isMobileViewport() ? mobileSelectPanel : desktopSelectPanel;
+      conversationSelectPanels.forEach((panel) => {
+        panel.hidden = panel !== targetPanel;
+      });
       setSearchExpanded(false);
-      setSelectionMode(false);
-      setToggleExpanded(selectToggleButtons, false);
+      setSelectionMode(true, { preserveSelection: true });
+      setToggleExpanded(selectToggleButtons, true);
       syncHeaderControls();
     };
 
@@ -491,11 +498,13 @@
       if (threadLastSeen) threadLastSeen.textContent = conversation.lastSeen;
       if (threadEmpty) threadEmpty.hidden = conversation.messages.length !== 0;
       if (threadBody) threadBody.hidden = conversation.messages.length === 0;
+      const activeInitials = getConversationInitials(conversation.name);
       threadBody.innerHTML = conversation.messages.map((message, index) => `
         <article class="message-row${message.mine ? " message-row--me" : ""}" data-message-index="${index}">
+          ${message.mine ? "" : `<span class="message-row__avatar doke-avatar" aria-hidden="true">${activeInitials}</span>`}
           <div class="message-bubble${message.mine ? " message-bubble--me" : ""}${message.type === "image" ? " message-bubble--image-only" : ""}${selectedMessageIndexes.has(index) ? " is-selected" : ""}" data-message-bubble data-message-index="${index}">
             <div class="message-bubble__meta">
-              <span>${message.author}</span>
+              <span>${message.mine ? message.author : ""}</span>
               <span>${message.time}</span>
             </div>
             ${message.replyTo ? `

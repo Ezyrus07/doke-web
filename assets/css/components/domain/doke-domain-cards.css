@@ -166,3 +166,690 @@
 }
 
 }
+
+/* Canonical service ad card — shared across home, results and profile.
+   Owner: components/domain. This intentionally neutralizes old page-level card variants
+   so every service announcement uses one visual contract. */
+.service-card,
+.service-card.service-card--feed,
+.service-card.service-card--result,
+.doke-service-card {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto 1fr !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(23, 57, 95, 0.1) !important;
+  border-radius: clamp(24px, 2.4vw, 34px) !important;
+  background: #fff !important;
+  box-shadow: 0 18px 42px rgba(20, 50, 84, 0.1) !important;
+  color: #082747 !important;
+}
+
+.service-card__media {
+  position: relative !important;
+  display: block !important;
+  width: 100% !important;
+  min-height: clamp(188px, 15vw, 232px) !important;
+  height: clamp(188px, 15vw, 232px) !important;
+  aspect-ratio: 16 / 10 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border-radius: 0 !important;
+  background-size: cover !important;
+  background-position: center !important;
+  color: #fff !important;
+  isolation: isolate !important;
+}
+
+.service-card__media::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  background: linear-gradient(180deg, rgba(7, 18, 31, 0.08), rgba(7, 18, 31, 0.02)) !important;
+  pointer-events: none !important;
+}
+
+.service-card__favorite {
+  position: absolute !important;
+  top: clamp(14px, 1.3vw, 20px) !important;
+  right: clamp(14px, 1.3vw, 20px) !important;
+  z-index: 2 !important;
+  width: clamp(48px, 4.6vw, 64px) !important;
+  height: clamp(48px, 4.6vw, 64px) !important;
+  min-width: clamp(48px, 4.6vw, 64px) !important;
+  min-height: clamp(48px, 4.6vw, 64px) !important;
+  border: 1px solid rgba(23, 57, 95, 0.08) !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: 0 14px 30px rgba(8, 39, 71, 0.14) !important;
+  color: #0b9b8d !important;
+}
+
+.service-card__favorite svg {
+  width: clamp(20px, 2vw, 28px) !important;
+  height: clamp(20px, 2vw, 28px) !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2 !important;
+}
+
+.service-card__favorite:hover,
+.service-card__favorite:focus-visible {
+  transform: translateY(-2px) scale(1.03) !important;
+  background: #fff !important;
+  box-shadow: 0 18px 36px rgba(8, 39, 71, 0.18) !important;
+}
+
+.service-card__favorite.is-active {
+  color: #0b9b8d !important;
+  background: #fff !important;
+}
+
+.service-card__favorite.is-active svg {
+  fill: rgba(11, 155, 141, 0.12) !important;
+  stroke: currentColor !important;
+}
+
+.service-card__badge {
+  position: absolute !important;
+  top: clamp(14px, 1.3vw, 20px) !important;
+  left: clamp(14px, 1.3vw, 20px) !important;
+  z-index: 2 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: fit-content !important;
+  min-height: 38px !important;
+  padding: 0 16px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: rgba(26, 31, 37, 0.78) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 28px rgba(6, 17, 29, 0.22) !important;
+  font-size: 0.86rem !important;
+  font-weight: 850 !important;
+  letter-spacing: -0.015em !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.service-card__badge::before {
+  content: "" !important;
+  width: 9px !important;
+  height: 9px !important;
+  flex: none !important;
+  border-radius: 999px !important;
+  background: #15b8a6 !important;
+}
+
+.service-card__body {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-areas:
+    "heading"
+    "rating"
+    "tags"
+    "meta"
+    "footer" !important;
+  align-content: start !important;
+  align-items: start !important;
+  gap: clamp(12px, 1.2vw, 18px) !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding: clamp(22px, 2vw, 32px) !important;
+  background: #fff !important;
+}
+
+.service-card__media-content {
+  grid-area: heading !important;
+  display: grid !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  color: #082747 !important;
+  transform: none !important;
+}
+
+.service-card__category,
+.service-card__catégory {
+  display: block !important;
+  width: fit-content !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #7b8fa8 !important;
+  font-size: clamp(0.78rem, 0.9vw, 1rem) !important;
+  font-weight: 850 !important;
+  line-height: 1.1 !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase !important;
+}
+
+.service-card__media-content strong {
+  display: block !important;
+  color: #082747 !important;
+  font-size: clamp(1.45rem, 2.2vw, 2.35rem) !important;
+  font-weight: 900 !important;
+  line-height: 1.02 !important;
+  letter-spacing: -0.055em !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.service-card__rating {
+  grid-area: rating !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  color: #082747 !important;
+  font-size: clamp(1rem, 1.1vw, 1.25rem) !important;
+  font-weight: 900 !important;
+  line-height: 1.1 !important;
+}
+
+.service-card__rating::first-letter {
+  color: #0b9b8d !important;
+}
+
+.service-card__rating span {
+  color: #70849f !important;
+  font-weight: 700 !important;
+}
+
+.service-card__tags {
+  grid-area: tags !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  width: 100% !important;
+  max-height: none !important;
+  overflow: hidden !important;
+}
+
+.service-card__tags span {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 38px !important;
+  padding: 0 16px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: rgba(11, 155, 141, 0.09) !important;
+  color: #0b9184 !important;
+  font-size: clamp(0.85rem, 0.9vw, 1rem) !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+.service-card__tags span:nth-child(n + 3) {
+  display: none !important;
+}
+
+.service-card__meta-row,
+.service-card__profile {
+  min-width: 0 !important;
+}
+
+.service-card__meta-row {
+  grid-area: meta !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.service-card__profile {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+.service-card__avatar {
+  width: clamp(44px, 4.1vw, 58px) !important;
+  height: clamp(44px, 4.1vw, 58px) !important;
+  min-width: clamp(44px, 4.1vw, 58px) !important;
+  border: 3px solid #fff !important;
+  border-radius: 999px !important;
+  box-shadow: 0 10px 18px rgba(20, 50, 84, 0.12) !important;
+}
+
+.service-card__location {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  max-width: 100% !important;
+  color: #70849f !important;
+  font-size: clamp(0.95rem, 1vw, 1.12rem) !important;
+  font-weight: 750 !important;
+  line-height: 1.25 !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+
+.service-card__location::before {
+  content: "" !important;
+  width: 18px !important;
+  height: 18px !important;
+  flex: none !important;
+  background: currentColor !important;
+  opacity: 0.9 !important;
+  mask: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='black' d='M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z'/%3E%3C/svg%3E") center / contain no-repeat !important;
+}
+
+.service-card__footer,
+.service-card__footer--compact {
+  grid-area: footer !important;
+  display: grid !important;
+  grid-template-columns: minmax(72px, max-content) minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: clamp(14px, 1.8vw, 24px) !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding-top: clamp(12px, 1.2vw, 18px) !important;
+  border-top: 1px solid rgba(23, 57, 95, 0.12) !important;
+}
+
+.service-card__price {
+  display: block !important;
+  color: #082747 !important;
+  font-size: clamp(1.25rem, 1.55vw, 1.75rem) !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  letter-spacing: -0.055em !important;
+  white-space: nowrap !important;
+}
+
+.service-card__cta {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+  min-height: clamp(50px, 4.5vw, 62px) !important;
+  padding: 0 clamp(18px, 2vw, 28px) !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: linear-gradient(135deg, #13aa98 0%, #078779 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 16px 30px rgba(8, 135, 121, 0.22) !important;
+  font-size: clamp(0.95rem, 1.08vw, 1.18rem) !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+}
+
+.service-card__cta::after {
+  content: "›" !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.8em !important;
+  font-weight: 700 !important;
+  line-height: 0.75 !important;
+  transform: translateY(-1px) !important;
+}
+
+.service-card__cta:hover,
+.service-card__cta:focus-visible {
+  background: linear-gradient(135deg, #0f9f8f 0%, #057668 100%) !important;
+  box-shadow: 0 20px 36px rgba(8, 135, 121, 0.28) !important;
+  transform: translateY(-2px) !important;
+}
+
+@media (max-width: 760px) {
+  .service-card,
+  .service-card.service-card--feed,
+  .service-card.service-card--result,
+  .doke-service-card {
+    border-radius: 24px !important;
+  }
+
+  .service-card__media {
+    min-height: clamp(168px, 50vw, 208px) !important;
+    height: clamp(168px, 50vw, 208px) !important;
+  }
+
+  .service-card__body {
+    padding: 18px !important;
+    gap: 12px !important;
+  }
+
+  .service-card__media-content strong {
+    font-size: clamp(1.35rem, 6vw, 1.85rem) !important;
+  }
+
+  .service-card__footer,
+  .service-card__footer--compact {
+    grid-template-columns: minmax(68px, max-content) minmax(0, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  .service-card__cta {
+    min-height: 48px !important;
+    padding-inline: 16px !important;
+  }
+}
+
+/* 2026-05-03 — canonical compact service announcement card.
+   Ownership: reusable service/ad card anatomy. Page CSS owns only rail/grid placement. */
+@media (min-width: 761px) {
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell).doke-app-shell-page :is(.featured-services, .more-services, .results-grid, .results-empty__grid, .profile-services-results) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card),
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: 210px auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow: hidden !important;
+    border: 1px solid rgba(23, 57, 95, 0.08) !important;
+    border-radius: 28px !important;
+    background: #fff !important;
+    box-shadow: 0 18px 42px rgba(20, 50, 84, 0.10) !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell).doke-app-shell-page :is(.featured-services, .more-services, .results-grid, .results-empty__grid, .profile-services-results) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__media,
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__media {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    height: 210px !important;
+    min-height: 210px !important;
+    max-height: 210px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border-radius: 0 !important;
+    background-size: cover !important;
+    background-position: center !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell).doke-app-shell-page :is(.featured-services, .more-services, .results-grid, .results-empty__grid, .profile-services-results) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__body,
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__body {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas:
+      "category"
+      "title"
+      "rating"
+      "tags"
+      "location"
+      "footer" !important;
+    align-content: start !important;
+    align-items: start !important;
+    gap: 12px !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 24px 30px 28px !important;
+    background: #fff !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) :is(.service-card__category, .service-card__catégory, .service-card__category--body) {
+    grid-area: category !important;
+    display: block !important;
+    width: fit-content !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #7b8fa8 !important;
+    font-size: 0.86rem !important;
+    font-weight: 850 !important;
+    line-height: 1.12 !important;
+    letter-spacing: 0.16em !important;
+    text-transform: uppercase !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__title,
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__media-content strong {
+    grid-area: title !important;
+    display: block !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    color: #082747 !important;
+    font-size: clamp(1.75rem, 2vw, 2.05rem) !important;
+    font-weight: 900 !important;
+    line-height: 1.02 !important;
+    letter-spacing: -0.06em !important;
+    text-shadow: none !important;
+    white-space: normal !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__rating {
+    grid-area: rating !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    color: #082747 !important;
+    font-size: 1.08rem !important;
+    font-weight: 900 !important;
+    line-height: 1.1 !important;
+    white-space: normal !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__rating strong,
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__rating::first-letter {
+    color: #0b9b8d !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__rating span {
+    color: #70849f !important;
+    font-weight: 700 !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__tags {
+    grid-area: tags !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__tags > span {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 32px !important;
+    padding: 0 13px !important;
+    border-radius: 999px !important;
+    background: rgba(11, 155, 141, 0.09) !important;
+    color: #0b9184 !important;
+    font-size: 0.86rem !important;
+    font-weight: 850 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__tags > span:nth-child(n + 3) {
+    display: none !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) :is(.service-card__location-row, .service-card__meta-row) {
+    grid-area: location !important;
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__profile {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    min-width: 0 !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__avatar {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    max-width: 44px !important;
+    max-height: 44px !important;
+    border: 3px solid #fff !important;
+    border-radius: 999px !important;
+    clip-path: circle(50% at 50% 50%) !important;
+    box-shadow: 0 10px 18px rgba(20, 50, 84, 0.12) !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__location {
+    display: block !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    color: #70849f !important;
+    font-size: 1rem !important;
+    font-weight: 750 !important;
+    line-height: 1.2 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__footer,
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__footer--compact {
+    grid-area: footer !important;
+    display: grid !important;
+    grid-template-columns: minmax(76px, max-content) minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 18px !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding-top: 18px !important;
+    border-top: 1px solid rgba(23, 57, 95, 0.12) !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__price {
+    color: #082747 !important;
+    font-size: 1.45rem !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+    letter-spacing: -0.055em !important;
+    white-space: nowrap !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__cta {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 56px !important;
+    padding: 0 22px !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: linear-gradient(135deg, #13aa98 0%, #078779 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 16px 30px rgba(8, 135, 121, 0.22) !important;
+    font-size: 1.05rem !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+    text-align: center !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__cta::after {
+    content: "›" !important;
+    font-size: 1.5em !important;
+    font-weight: 900 !important;
+    line-height: 0 !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__favorite {
+    top: 22px !important;
+    right: 22px !important;
+    width: 70px !important;
+    height: 70px !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 16px 28px rgba(11, 25, 42, 0.18) !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__favorite svg {
+    width: 30px !important;
+    height: 30px !important;
+    stroke: #0b9b8d !important;
+    stroke-width: 2.3 !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__badge {
+    top: 26px !important;
+    left: 24px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: fit-content !important;
+    min-height: 42px !important;
+    padding: 0 18px !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: rgba(28, 34, 42, 0.76) !important;
+    color: #fff !important;
+    box-shadow: 0 10px 22px rgba(11, 25, 42, 0.20) !important;
+    font-size: 0.98rem !important;
+    font-weight: 850 !important;
+    letter-spacing: -0.015em !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__badge::before {
+    content: "" !important;
+    width: 14px !important;
+    height: 14px !important;
+    border-radius: 999px !important;
+    background: #14b8a6 !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) {
+    grid-template-rows: 180px auto !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__media {
+    height: 180px !important;
+    min-height: 180px !important;
+    max-height: 180px !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__body {
+    gap: 10px !important;
+    padding: 20px 22px 22px !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__title,
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__media-content strong {
+    font-size: 1.65rem !important;
+  }
+
+  html body:is(.home-index-shell, .search-results-body, .profile-page-shell) :is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card) .service-card__favorite {
+    width: 58px !important;
+    height: 58px !important;
+  }
+}

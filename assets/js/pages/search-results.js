@@ -497,29 +497,33 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     const reviews = item.reviews || '0 avaliações';
     const tags = (item.tags || []).slice(0, 2);
     const detailHref = item.href || 'detalhe-anuncio.html';
+    const category = item.category || item.catégory || '';
 
     article.className = 'service-card service-card--result';
     article.innerHTML = `
-      <a class="service-card__media ${item.mediaClass || ''}" href="${detailHref}" aria-label="Ver anúncio de ${item.title || 'profissional'}">
+      <div class="service-card__media ${item.mediaClass || ''}">
         <span class="service-card__badge ${item.badgeModifier || ''}">${item.badge || 'Em destaque'}</span>
         <button class="service-card__favorite" type="button" aria-label="Salvar anúncio">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
         </button>
-      </a>
+      </div>
 
       <div class="service-card__body">
-        <span class="service-card__category service-card__category--body">${item.category || item.catégory || ''}</span>
+        <span class="service-card__category service-card__category--body">${category}</span>
         <h3 class="service-card__title">${item.title || ''}</h3>
 
         <div class="service-card__rating">
           <strong>★ ${rating}</strong>
-          <span>${reviews}</span>
+          <span>(${reviews})</span>
         </div>
-
-        <p class="service-card__location">${item.location || ''}</p>
 
         <div class="service-card__tags">
           ${tags.map((tag) => `<span>${tag}</span>`).join('')}
+        </div>
+
+        <div class="service-card__location-row">
+          <span class="service-card__avatar ${item.avatarClass || ''}" aria-hidden="true"></span>
+          <p class="service-card__location">${item.location || ''}</p>
         </div>
 
         <div class="service-card__footer">
@@ -568,6 +572,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
 
   const createVideoCard = (item) => {
     const article = document.createElement('article');
+    const meta = searchData.getWorkerCardMeta ? searchData.getWorkerCardMeta(item) : item;
     article.className = `video-card ${item.mediaClass || ''}`;
     article.dataset.workerTrigger = '';
     article.dataset.workerId = item.id || '';
@@ -576,10 +581,33 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     article.setAttribute('aria-haspopup', 'dialog');
     article.setAttribute('aria-label', `Abrir worker: ${item.title || 'vídeo'}`);
     article.innerHTML = `
-      <span class="video-card__play">▶</span>
+      <div class="video-card__header">
+        <span class="video-card__badge">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="3"></rect><path d="m10 9 4 3-4 3Z"></path></svg>
+          <span>${meta.badgeLabel}</span>
+        </span>
+        <span class="video-card__save" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M6.5 4.5h11A1.5 1.5 0 0 1 19 6v14l-7-4-7 4V6a1.5 1.5 0 0 1 1.5-1.5Z"></path></svg>
+        </span>
+      </div>
       <div class="video-card__content">
-        <strong>${item.title || ''}</strong>
-        <span>${item.author || ''}</span>
+        <div class="video-card__identity">
+          <span class="video-card__avatar" aria-hidden="true">${meta.avatarInitials}</span>
+          <div class="video-card__text">
+            <strong>${meta.author}</strong>
+            <span>${meta.description}</span>
+          </div>
+        </div>
+        <div class="video-card__meta">
+          <span class="video-card__stat">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.8-6 10-6 10 6 10 6-3.8 6-10 6S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            ${meta.views}
+          </span>
+          <span class="video-card__stat">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>
+            ${meta.durationShort}
+          </span>
+        </div>
       </div>
     `;
     return article;

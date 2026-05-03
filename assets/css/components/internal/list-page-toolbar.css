@@ -39,7 +39,7 @@
 body.orders-page-shell .page__content,
 body.notifications-page-shell .page__content,
 body.wallet-page-shell .page__content {
-  padding-top: calc(var(--header-height) + 22px);
+  padding-top: var(--doke-context-header-top, 60px);
   padding-inline: 26px;
   padding-bottom: 40px;
 }
@@ -419,5 +419,314 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
     border-bottom: 1.8px solid #6d88a6;
     transform: rotate(45deg) translateY(-1px);
     margin-left: 2px;
+  }
+}
+
+
+/* Stage 10 — action toolbar hit-area fix
+   Buttons de filtros/selecionar/agenda não podem herdar a semântica de localização.
+   O visual fica no contrato de action toolbar; localização fica isolada ao seu próprio trigger. */
+@media (min-width: 761px) {
+  body.orders-page-shell .home-side-meta,
+  body.notifications-page-shell .home-side-meta {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin-bottom: 14px !important;
+  }
+
+  body.orders-page-shell .home-side-meta__group--primary,
+  body.notifications-page-shell .home-side-meta__group--primary {
+    gap: 12px !important;
+  }
+
+  body.orders-page-shell .home-side-meta__group--secondary,
+  body.notifications-page-shell .home-side-meta__group--secondary {
+    gap: 10px !important;
+  }
+
+  body.orders-page-shell .page-header-context,
+  body.notifications-page-shell .page-header-context {
+    gap: 12px !important;
+  }
+
+  body.orders-page-shell .page-header-context__action,
+  body.notifications-page-shell .page-header-context__action {
+    min-height: 46px !important;
+    padding: 0 18px !important;
+    border-radius: 18px !important;
+    border: 1px solid var(--internal-surface-border, rgba(203, 217, 232, 0.92)) !important;
+    background: var(--internal-surface-bg, rgba(255, 255, 255, 0.92)) !important;
+    color: #12355d !important;
+    box-shadow: 0 10px 24px rgba(39, 58, 86, 0.06) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+    position: relative !important;
+    z-index: 1 !important;
+  }
+
+  body.orders-page-shell .page-header-context__action:hover,
+  body.notifications-page-shell .page-header-context__action:hover {
+    transform: translateY(-1px);
+    border-color: var(--surface-outline-hover, rgba(151, 180, 214, 0.9)) !important;
+    background: #fff !important;
+    box-shadow: 0 14px 28px rgba(39, 58, 86, 0.10) !important;
+  }
+
+  body.orders-page-shell .page-header-context__action[aria-expanded="true"],
+  body.notifications-page-shell .page-header-context__action[aria-expanded="true"] {
+    background: linear-gradient(180deg, #1aa77a 0%, #148c69 100%) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+    box-shadow: 0 18px 34px rgba(20, 140, 105, 0.22) !important;
+  }
+
+  body.orders-page-shell .page-header-context__action svg,
+  body.notifications-page-shell .page-header-context__action svg {
+    width: 18px !important;
+    height: 18px !important;
+    stroke: currentColor !important;
+    fill: none !important;
+    stroke-width: 2 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    pointer-events: none !important;
+  }
+
+  body.orders-page-shell .home-side-meta__search,
+  body.notifications-page-shell .home-side-meta__search,
+  body.orders-page-shell .home-side-meta__alert,
+  body.notifications-page-shell .home-side-meta__alert {
+    position: relative !important;
+    z-index: 1 !important;
+  }
+}
+
+
+/* Stage 11 — compact balanced action toolbar
+   Corrige distribuição com excesso de espaço entre grupos em pedidos/notificações.
+   Mantém o contrato no componente compartilhado, sem alterar shell/sidebar/header global. */
+@media (min-width: 761px) {
+  body.orders-page-shell,
+  body.notifications-page-shell {
+    --doke-list-toolbar-width: min(100%, 1040px);
+  }
+
+  body.orders-page-shell .home-side-meta,
+  body.notifications-page-shell .home-side-meta {
+    width: var(--doke-list-toolbar-width) !important;
+    max-width: var(--doke-list-toolbar-width) !important;
+    margin-inline: auto !important;
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 24px !important;
+  }
+
+  body.orders-page-shell .home-side-meta__group--primary,
+  body.notifications-page-shell .home-side-meta__group--primary {
+    flex: 0 1 auto !important;
+    min-width: 0 !important;
+    gap: 10px !important;
+  }
+
+  body.orders-page-shell .home-side-meta__group--secondary,
+  body.notifications-page-shell .home-side-meta__group--secondary {
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
+    gap: 8px !important;
+  }
+
+  body.orders-page-shell .page-header-context,
+  body.notifications-page-shell .page-header-context {
+    flex: 0 0 auto !important;
+    gap: 10px !important;
+  }
+
+  body.orders-page-shell .home-side-meta__search,
+  body.notifications-page-shell .home-side-meta__search,
+  body.orders-page-shell .home-side-meta__alert,
+  body.notifications-page-shell .home-side-meta__alert {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 15px !important;
+  }
+
+  body.orders-page-shell .page-header-context__action,
+  body.notifications-page-shell .page-header-context__action {
+    min-height: 42px !important;
+    padding-inline: 15px !important;
+    border-radius: 16px !important;
+    gap: 8px !important;
+    font-size: 0.92rem !important;
+  }
+
+  body.orders-page-shell .home-side-meta__profile,
+  body.notifications-page-shell .home-side-meta__profile {
+    min-height: 46px !important;
+    padding: 7px 12px 7px 8px !important;
+    border-radius: 18px !important;
+    border-right: 1px solid var(--internal-surface-border, rgba(203, 217, 232, 0.92)) !important;
+  }
+
+  body.orders-page-shell .home-side-meta__profile-caret-button,
+  body.notifications-page-shell .home-side-meta__profile-caret-button {
+    display: none !important;
+  }
+
+  body.orders-page-shell .home-side-meta__avatar,
+  body.notifications-page-shell .home-side-meta__avatar {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.86rem !important;
+  }
+
+  body.orders-page-shell .home-side-meta__identity strong,
+  body.notifications-page-shell .home-side-meta__identity strong {
+    font-size: 0.82rem !important;
+  }
+
+  body.orders-page-shell .home-side-meta__identity span,
+  body.notifications-page-shell .home-side-meta__identity span {
+    font-size: 0.66rem !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  body.orders-page-shell,
+  body.notifications-page-shell {
+    --doke-list-toolbar-width: min(100%, 1080px);
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1100px) {
+  body.orders-page-shell,
+  body.notifications-page-shell {
+    --doke-list-toolbar-width: min(100%, 920px);
+  }
+
+  body.orders-page-shell .home-side-meta,
+  body.notifications-page-shell .home-side-meta {
+    gap: 14px !important;
+  }
+
+  body.orders-page-shell .home-side-meta__group--secondary,
+  body.notifications-page-shell .home-side-meta__group--secondary {
+    gap: 6px !important;
+  }
+}
+
+/* Stage 12 - match internal list chrome to the home/index desktop header. */
+@media (min-width: 1025px) {
+  body.orders-page-shell,
+  body.notifications-page-shell {
+    --doke-list-toolbar-width: 100%;
+  }
+
+  body.orders-page-shell .home-side-meta,
+  body.notifications-page-shell .home-side-meta {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
+    justify-content: space-between !important;
+    gap: 18px !important;
+  }
+
+  body.orders-page-shell .home-side-meta__group--primary,
+  body.notifications-page-shell .home-side-meta__group--primary {
+    flex: 0 1 auto !important;
+    gap: 12px !important;
+  }
+
+  body.orders-page-shell .home-side-meta__group--secondary,
+  body.notifications-page-shell .home-side-meta__group--secondary {
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
+    gap: 10px !important;
+  }
+
+  body.orders-page-shell .home-side-meta__search,
+  body.notifications-page-shell .home-side-meta__search,
+  body.orders-page-shell .home-side-meta__alert,
+  body.notifications-page-shell .home-side-meta__alert {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    border-radius: 16px !important;
+  }
+
+  body.orders-page-shell .page-header-context,
+  body.notifications-page-shell .page-header-context {
+    gap: 12px !important;
+  }
+
+  body.orders-page-shell .page-header-context__action,
+  body.notifications-page-shell .page-header-context__action {
+    min-height: 48px !important;
+    padding-inline: 18px !important;
+    border-radius: 16px !important;
+    font-size: 0.94rem !important;
+  }
+
+  body.orders-page-shell .home-side-meta__profile-wrap,
+  body.notifications-page-shell .home-side-meta__profile-wrap {
+    display: inline-flex !important;
+    align-items: stretch !important;
+    height: 58px !important;
+    min-height: 58px !important;
+    border-radius: 18px !important;
+    overflow: hidden !important;
+  }
+
+  body.orders-page-shell .home-side-meta__profile,
+  body.notifications-page-shell .home-side-meta__profile {
+    min-height: 58px !important;
+    height: 58px !important;
+    padding: 8px 14px 8px 10px !important;
+    border-radius: 18px 0 0 18px !important;
+    border-right: 0 !important;
+    gap: 10px !important;
+  }
+
+  body.orders-page-shell .home-side-meta__profile-caret-button,
+  body.notifications-page-shell .home-side-meta__profile-caret-button {
+    display: inline-grid !important;
+    width: 48px !important;
+    height: 58px !important;
+    min-width: 48px !important;
+    min-height: 58px !important;
+    border-radius: 0 18px 18px 0 !important;
+  }
+
+  body.orders-page-shell .home-side-meta__avatar,
+  body.notifications-page-shell .home-side-meta__avatar {
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 0.92rem !important;
+  }
+
+  body.orders-page-shell .home-side-meta__identity strong,
+  body.notifications-page-shell .home-side-meta__identity strong {
+    font-size: 0.9rem !important;
+  }
+
+  body.orders-page-shell .home-side-meta__identity span,
+  body.notifications-page-shell .home-side-meta__identity span {
+    font-size: 0.7rem !important;
+  }
+
+  body.orders-page-shell .orders-page,
+  body.notifications-page-shell .notifications-page,
+  body.wallet-page-shell .wallet-page {
+    gap: var(--doke-page-area-gap, 28px) !important;
   }
 }

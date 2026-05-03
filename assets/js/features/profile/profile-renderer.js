@@ -26,20 +26,18 @@
     <article class="service-card">
       <div class="service-card__media ${escapeHtml(item.mediaClass || '')}">
         <span class="service-card__badge ${item.badgeTone === 'mint' ? 'service-card__badge--mint' : ''}">${escapeHtml(item.badge || 'Destaque')}</span>
-        <div class="service-card__media-content">
-          <span class="service-card__category">${escapeHtml(item.category || item.catégory || '')}</span>
-          <strong>${escapeHtml(item.title || '')}</strong>
-        </div>
       </div>
       <div class="service-card__body">
+        <span class="service-card__category service-card__category--body">${escapeHtml(item.category || item.catégory || '')}</span>
+        <h3 class="service-card__title">${escapeHtml(item.title || '')}</h3>
         <div class="service-card__rating">★ ${escapeHtml(item.rating || '')} <span>(${escapeHtml(item.reviews || '')})</span></div>
+        <div class="service-card__tags">${(item.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</div>
         <div class="service-card__meta-row">
           <div class="service-card__profile">
             <span class="service-card__avatar ${escapeHtml(item.avatarClass || '')}" aria-hidden="true"></span>
             <span class="service-card__location">${escapeHtml(item.location || '')}</span>
           </div>
         </div>
-        <div class="service-card__tags">${(item.tags || []).map((tag) => `<span>${escapeHtml(tag)}</span>`).join('')}</div>
         <div class="service-card__footer">
           <strong class="service-card__price">${escapeHtml(item.price || '')}</strong>
           <a class="service-card__cta" href="${escapeHtml(item.ctaHref || 'detalhe-anuncio.html')}">Ver anúncio</a>

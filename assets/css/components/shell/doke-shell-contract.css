@@ -1921,19 +1921,304 @@ body {
 }
 
 /*
-  Doke Shell Contract v13 - COMMUNITY HEADER ALIGNMENT
-  A pagina Comunidade carrega uma composicao propria no topo; ela nao pode usar
-  o lift agressivo do shell global porque seus controles encostam no limite da
-  viewport.
+  Doke Shell Contract v13 - ROUTE SWAP STABILITY
+  A navegação interna não pode permitir que a página de saída receba geometria
+  da próxima rota. O controle de posição permanece compartilhado pelo shell;
+  não existe mais lift exclusivo para comunidade.
 */
 
 @media (min-width: 761px) {
-  body[data-page="comunidade"] {
-    --doke-app-header-lift: -46px !important;
+  body.is-shell-swapping :is(
+    .page,
+    .topbar,
+    .internal-page-topbar,
+    .home-side-meta,
+    .page__content,
+    .page__content-inner
+  ) {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
+/* Stage 12 — real toolbar geometry override
+   Este contrato fica no doke-shell-contract porque ele é carregado depois dos
+   componentes internos em pedidos/notificações e estava vencendo a cascata.
+   Escopo fechado: somente toolbar e largura útil dessas duas páginas. */
+@media (min-width: 761px) {
+  body[data-page="pedidos"],
+  body[data-page="notificacoes"] {
+    --doke-list-page-max: 1180px;
+    --doke-list-toolbar-max: 1040px;
+    --doke-list-toolbar-gap: 22px;
   }
 
-  body[data-page="comunidade"] > .app-shell > .page {
-    margin-top: calc(var(--doke-app-header-lift) * -1) !important;
-    padding-top: 0 !important;
+  body[data-page="pedidos"] > .app-shell > .page > .page__content,
+  body[data-page="notificacoes"] > .app-shell > .page > .page__content {
+    padding-inline: var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) !important;
+  }
+
+  body[data-page="pedidos"] .page__content-inner,
+  body[data-page="pedidos"] .orders-shell-content,
+  body[data-page="pedidos"] .orders-page,
+  body[data-page="notificacoes"] .page__content-inner,
+  body[data-page="notificacoes"] .orders-shell-content,
+  body[data-page="notificacoes"] .notifications-page {
+    width: min(100%, var(--doke-list-page-max)) !important;
+    max-width: var(--doke-list-page-max) !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta,
+  body[data-page="notificacoes"] .home-side-meta {
+    width: min(100%, var(--doke-list-toolbar-max)) !important;
+    max-width: var(--doke-list-toolbar-max) !important;
+    min-height: 56px !important;
+    margin: 0 auto 18px !important;
+    padding: 0 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, auto) minmax(0, auto) !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: var(--doke-list-toolbar-gap) !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta__group,
+  body[data-page="notificacoes"] .home-side-meta__group {
+    min-width: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta__group--primary,
+  body[data-page="notificacoes"] .home-side-meta__group--primary {
+    flex: 0 0 auto !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta__group--secondary,
+  body[data-page="notificacoes"] .home-side-meta__group--secondary {
+    flex: 0 0 auto !important;
+    margin-left: 0 !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+  }
+
+  body[data-page="pedidos"] .page-header-context,
+  body[data-page="notificacoes"] .page-header-context {
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta__search,
+  body[data-page="pedidos"] .home-side-meta__alert,
+  body[data-page="notificacoes"] .home-side-meta__search,
+  body[data-page="notificacoes"] .home-side-meta__alert {
+    width: 42px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    border-radius: 15px !important;
+  }
+
+  body[data-page="pedidos"] .page-header-context__action,
+  body[data-page="notificacoes"] .page-header-context__action {
+    height: 42px !important;
+    min-height: 42px !important;
+    padding-inline: 15px !important;
+    border-radius: 16px !important;
+    gap: 8px !important;
+    font-size: 0.92rem !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta__profile,
+  body[data-page="notificacoes"] .home-side-meta__profile {
+    height: 46px !important;
+    min-height: 46px !important;
+    max-height: 46px !important;
+    padding: 7px 12px 7px 8px !important;
+    border-radius: 18px !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta__avatar,
+  body[data-page="notificacoes"] .home-side-meta__avatar {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.86rem !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta__identity strong,
+  body[data-page="notificacoes"] .home-side-meta__identity strong {
+    font-size: 0.82rem !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta__identity span,
+  body[data-page="notificacoes"] .home-side-meta__identity span {
+    font-size: 0.66rem !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  body[data-page="pedidos"],
+  body[data-page="notificacoes"] {
+    --doke-list-toolbar-max: 980px;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1120px) {
+  body[data-page="pedidos"],
+  body[data-page="notificacoes"] {
+    --doke-list-page-max: 100%;
+    --doke-list-toolbar-max: 100%;
+    --doke-list-toolbar-gap: 14px;
+  }
+
+  body[data-page="pedidos"] .home-side-meta,
+  body[data-page="notificacoes"] .home-side-meta {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    justify-content: stretch !important;
+  }
+}
+
+
+/* Stage 13 — pedidos/notificacoes page rhythm correction
+   Corrige o que o print mostrou: espaço vertical excessivo entre toolbar e conteúdo,
+   e largura visual diferente entre toolbar e seção principal. */
+@media (min-width: 761px) {
+  body[data-page="pedidos"],
+  body[data-page="notificacoes"] {
+    --doke-internal-page-max: 1180px;
+    --doke-internal-toolbar-max: 1180px;
+  }
+
+  body[data-page="pedidos"] > .app-shell > .page > .page__content,
+  body[data-page="notificacoes"] > .app-shell > .page > .page__content {
+    padding-top: 10px !important;
+    padding-inline: var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) !important;
+  }
+
+  body[data-page="pedidos"] .page__content-inner,
+  body[data-page="pedidos"] .orders-shell-content,
+  body[data-page="pedidos"] .orders-page,
+  body[data-page="notificacoes"] .page__content-inner,
+  body[data-page="notificacoes"] .orders-shell-content,
+  body[data-page="notificacoes"] .notifications-page {
+    width: min(100%, var(--doke-internal-page-max)) !important;
+    max-width: var(--doke-internal-page-max) !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta,
+  body[data-page="notificacoes"] .home-side-meta {
+    width: min(100%, var(--doke-internal-toolbar-max)) !important;
+    max-width: var(--doke-internal-toolbar-max) !important;
+    min-height: 46px !important;
+    height: auto !important;
+    margin: 0 auto 8px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 14px !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta__group,
+  body[data-page="notificacoes"] .home-side-meta__group {
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta__group--primary,
+  body[data-page="notificacoes"] .home-side-meta__group--primary {
+    flex: 0 1 auto !important;
+    justify-content: flex-start !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta__group--secondary,
+  body[data-page="notificacoes"] .home-side-meta__group--secondary {
+    flex: 0 0 auto !important;
+    margin-left: 24px !important;
+    justify-content: flex-end !important;
+  }
+
+  body[data-page="pedidos"] .page-header-context,
+  body[data-page="notificacoes"] .page-header-context {
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta__search,
+  body[data-page="pedidos"] .home-side-meta__alert,
+  body[data-page="notificacoes"] .home-side-meta__search,
+  body[data-page="notificacoes"] .home-side-meta__alert {
+    width: 40px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    border-radius: 14px !important;
+  }
+
+  body[data-page="pedidos"] .page-header-context__action,
+  body[data-page="notificacoes"] .page-header-context__action {
+    height: 40px !important;
+    min-height: 40px !important;
+    padding-inline: 14px !important;
+    border-radius: 15px !important;
+    gap: 8px !important;
+    font-size: 0.9rem !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta__profile,
+  body[data-page="notificacoes"] .home-side-meta__profile {
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    padding: 6px 12px 6px 8px !important;
+    border-radius: 17px !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta__avatar,
+  body[data-page="notificacoes"] .home-side-meta__avatar {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  body[data-page="pedidos"] .orders-planner,
+  body[data-page="notificacoes"] .notifications-list {
+    margin-top: 10px !important;
+  }
+
+  body[data-page="pedidos"] .orders-page-header,
+  body[data-page="notificacoes"] .notifications-page-header {
+    margin-top: 0 !important;
+    margin-bottom: 10px !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  body[data-page="pedidos"] .home-side-meta,
+  body[data-page="notificacoes"] .home-side-meta {
+    gap: 10px !important;
+  }
+
+  body[data-page="pedidos"] .home-side-meta__group--secondary,
+  body[data-page="notificacoes"] .home-side-meta__group--secondary {
+    margin-left: 10px !important;
   }
 }

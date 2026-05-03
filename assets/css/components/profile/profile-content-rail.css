@@ -483,3 +483,186 @@ body.profile-page-shell .profile-posts-stack .video-card.video-card--four[data-w
   font-weight: 800;
   line-height: 1;
 }
+
+
+/* 2026-05 compact workers card contract.
+   Shared between home, profile and results so reels stop growing too tall and controls stay anchored. */
+.video-card {
+  flex: 0 0 218px !important;
+  width: 218px !important;
+  min-height: 0 !important;
+  aspect-ratio: 9 / 15 !important;
+  border-radius: 26px !important;
+  padding: 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+}
+
+.video-card__header {
+  position: relative !important;
+  z-index: 4 !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+}
+
+.video-card__badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: 38px !important;
+  padding: 0 14px !important;
+  border-radius: 999px !important;
+  background: rgba(20, 23, 28, 0.56) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  font-size: 0.82rem !important;
+  font-weight: 800 !important;
+}
+
+.video-card__badge svg,
+.video-card__save svg,
+.video-card__stat svg {
+  width: 16px !important;
+  height: 16px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 1.8 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+.video-card__save {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 50% !important;
+  display: grid !important;
+  place-items: center !important;
+  background: rgba(255,255,255,0.92) !important;
+  color: #215b90 !important;
+  box-shadow: 0 10px 22px rgba(11, 24, 40, 0.18) !important;
+}
+
+.video-card__play {
+  display: none !important;
+}
+
+.video-card__content {
+  position: relative !important;
+  z-index: 4 !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+.video-card__identity {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+}
+
+.video-card__avatar {
+  width: 38px !important;
+  height: 38px !important;
+  flex: 0 0 38px !important;
+  border-radius: 50% !important;
+  display: grid !important;
+  place-items: center !important;
+  background: rgba(255,255,255,0.95) !important;
+  color: #123354 !important;
+  font-size: 0.78rem !important;
+  font-weight: 900 !important;
+  box-shadow: 0 8px 18px rgba(9, 18, 30, 0.18) !important;
+}
+
+.video-card__text {
+  min-width: 0 !important;
+}
+
+.video-card__text strong,
+.video-card__content strong {
+  display: block !important;
+  margin: 0 !important;
+  color: #fff !important;
+  font-size: 0.98rem !important;
+  line-height: 1.08 !important;
+  font-weight: 900 !important;
+}
+
+.video-card__text span {
+  display: block !important;
+  margin-top: 4px !important;
+  color: rgba(255,255,255,0.88) !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.video-card__meta {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex: 0 0 auto !important;
+  color: rgba(255,255,255,0.96) !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+}
+
+.video-card__stat {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  white-space: nowrap !important;
+}
+
+@media (min-width: 1181px) {
+  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid {
+    grid-template-columns: repeat(auto-fit, minmax(214px, 1fr)) !important;
+    gap: 18px !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    padding: 14px !important;
+    aspect-ratio: 9 / 15 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .video-card {
+    width: 100% !important;
+    flex-basis: auto !important;
+    border-radius: 20px !important;
+    padding: 12px !important;
+  }
+
+  .video-card__badge {
+    min-height: 34px !important;
+    padding-inline: 12px !important;
+  }
+
+  .video-card__save {
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  .video-card__content {
+    gap: 10px !important;
+  }
+
+  .video-card__meta {
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    gap: 4px !important;
+  }
+}

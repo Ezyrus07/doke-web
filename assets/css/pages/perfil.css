@@ -1,4 +1,3 @@
-@import url("../components/cards/service-card.css?v=20260501-compact-announcement-card-v1");
 @import url("../components/tabs/profile-tabs.css");
 @import url("../components/profile/profile-content-rail.css?v=20260425-post-components");
 @import url("../components/internal/results-collection.css");
@@ -7,6 +6,7 @@
 @import url("../components/profile/profile-about.css");
 @import url("../components/profile/profile-achievements.css");
 
+@import url("../components/cards/service-card.css?v=20260503-canonical-card-contract-v2");
 html {
   scrollbar-gutter: stable;
 }
@@ -1338,3 +1338,66 @@ border: 1px solid var(--doke-card-border);
 
 
 /* Profile media, review and page refinement blocks were moved to dedicated page modules. */
+
+
+/* Stage 6 — profile alignment with shared page/card contracts. */
+body.profile-page-shell .profile-shell-content {
+  width: min(100% - (var(--doke-app-shell-gutter, 32px) * 2), var(--doke-app-shell-max, 1180px)) !important;
+  max-width: var(--doke-app-shell-max, 1180px) !important;
+  margin-inline: auto !important;
+}
+
+body.profile-page-shell .profile-hero-shell,
+body.profile-page-shell .profile-tabs,
+body.profile-page-shell .profile-section,
+body.profile-page-shell .profile-publications,
+body.profile-page-shell .profile-reviews-page {
+  max-width: 100%;
+  min-width: 0;
+}
+
+body.profile-page-shell .profile-hero-shell {
+  border-radius: var(--doke-card-radius-lg, 24px);
+  overflow: hidden;
+}
+
+body.profile-page-shell .profile-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--doke-card-border, rgba(32, 74, 116, .12));
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .76);
+  box-shadow: 0 12px 28px rgba(25, 55, 92, .05);
+}
+
+body.profile-page-shell .profile-tab {
+  min-height: 42px;
+  border-radius: 16px;
+  white-space: nowrap;
+}
+
+body.profile-page-shell .profile-tab.is-active,
+body.profile-page-shell .profile-tab[aria-selected="true"] {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-primary, #376cff) 84%, white), var(--color-primary-strong, #2457d6));
+  color: #fff;
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--color-primary, #376cff) 18%, transparent);
+}
+
+@media (max-width: 760px) {
+  body.profile-page-shell .profile-shell-content {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  body.profile-page-shell .profile-tabs {
+    overflow-x: auto;
+    justify-content: flex-start;
+    scrollbar-width: none;
+  }
+
+  body.profile-page-shell .profile-tabs::-webkit-scrollbar {
+    display: none;
+  }
+}

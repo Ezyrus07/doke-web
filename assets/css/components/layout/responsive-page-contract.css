@@ -1,7 +1,6 @@
 /*
   Doke Responsive Page Contract
-  Scope: cross-page composition guards for index.html, resultados.html,
-  mensagens.html and perfil.html.
+  Scope: cross-page composition guards for the main Doke HTML routes.
 
   Responsibility:
   - prevent horizontal overflow and vertical text collapse;
@@ -9,19 +8,19 @@
   - finish page-level responsive alignment without changing global shell.
 */
 
-body:is(.home-index-shell, .search-results-body, .messages-page-shell, .profile-page-shell) :where(.page__content, .page__content-inner, .app-shell-page__workspace, .shell-home__workspace, .doke-page-shell, .doke-page-stack) {
+body:is(.home-index-shell, .search-results-body, .messages-page-shell, .profile-page-shell, .orders-page-shell, .notifications-page-shell, .wallet-page-shell, .settings-page-shell, .communities-page-shell, .detalhe-shell-page) :where(.page__content, .page__content-inner, .app-shell-page__workspace, .shell-home__workspace, .doke-page-shell, .doke-page-stack) {
   min-width: 0 !important;
   max-width: 100% !important;
 }
 
-body:is(.home-index-shell, .search-results-body, .messages-page-shell, .profile-page-shell) :where(.service-card, .worker-card, .media-card, .profile-card, .community-card, .result-card, .order-card, .wallet-card, .message-card, .conversation-card, .results-summary, .profile-review-card, .profile-review-summary-card, .messages-card, .message-bubble) {
+body:is(.home-index-shell, .search-results-body, .messages-page-shell, .profile-page-shell, .orders-page-shell, .notifications-page-shell, .wallet-page-shell, .settings-page-shell, .communities-page-shell, .detalhe-shell-page) :where(.service-card, .worker-card, .media-card, .profile-card, .community-card, .result-card, .order-card, .wallet-card, .message-card, .conversation-card, .results-summary, .profile-review-card, .profile-review-summary-card, .messages-card, .message-bubble) {
   min-width: 0 !important;
   max-width: 100% !important;
   overflow-wrap: anywhere !important;
   word-break: normal !important;
 }
 
-body:is(.home-index-shell, .search-results-body, .messages-page-shell, .profile-page-shell) :where(.service-card *, .worker-card *, .media-card *, .profile-card *, .community-card *, .result-card *, .order-card *, .wallet-card *, .message-card *, .conversation-card *, .profile-review-card *, .profile-review-summary-card *, .message-bubble *) {
+body:is(.home-index-shell, .search-results-body, .messages-page-shell, .profile-page-shell, .orders-page-shell, .notifications-page-shell, .wallet-page-shell, .settings-page-shell, .communities-page-shell, .detalhe-shell-page) :where(.service-card *, .worker-card *, .media-card *, .profile-card *, .community-card *, .result-card *, .order-card *, .wallet-card *, .message-card *, .conversation-card *, .profile-review-card *, .profile-review-summary-card *, .message-bubble *) {
   min-width: 0;
   word-break: normal;
 }
@@ -128,11 +127,11 @@ body:is(.home-index-shell, .search-results-body) :where(.service-card__cta, .wor
 }
 
 @media (max-width: 760px) {
-  body:is(.home-index-shell, .search-results-body, .messages-page-shell, .profile-page-shell) {
+  body:is(.home-index-shell, .search-results-body, .messages-page-shell, .profile-page-shell, .orders-page-shell, .notifications-page-shell, .wallet-page-shell, .settings-page-shell, .communities-page-shell, .detalhe-shell-page) {
     overflow-x: hidden !important;
   }
 
-  body:is(.home-index-shell, .search-results-body, .messages-page-shell, .profile-page-shell) :where(.page__content, .page__content-inner, .app-shell-page__workspace, .shell-home__workspace, .doke-page-shell, .doke-page-stack) {
+  body:is(.home-index-shell, .search-results-body, .messages-page-shell, .profile-page-shell, .orders-page-shell, .notifications-page-shell, .wallet-page-shell, .settings-page-shell, .communities-page-shell, .detalhe-shell-page) :where(.page__content, .page__content-inner, .app-shell-page__workspace, .shell-home__workspace, .doke-page-shell, .doke-page-stack) {
     width: 100% !important;
     max-width: 100% !important;
     overflow-x: hidden !important;
@@ -240,5 +239,232 @@ body:is(.home-index-shell, .search-results-body) :where(.service-card__cta, .wor
   body.search-results-body .results-grid,
   body.profile-page-shell :where(.profile-review-grid, .detail-review-grid) {
     grid-template-columns: 1fr !important;
+  }
+}
+
+
+/* Stage 4 — shared page width and rhythm governance.
+   This is a layout contract, not a page-level visual patch. */
+:root {
+  --doke-page-section-gap: clamp(16px, 2vw, 24px);
+  --doke-page-area-gap: 28px;
+  --doke-page-section-gap-lg: var(--doke-page-area-gap);
+  --doke-context-header-top: 60px;
+}
+
+@media (min-width: 761px) {
+  body:is(.home-index-shell, .search-results-body, .messages-page-shell, .profile-page-shell, .orders-page-shell, .notifications-page-shell, .wallet-page-shell, .settings-page-shell, .communities-page-shell, .detalhe-shell-page) :where(.page__content-inner, .app-shell-page__workspace, .shell-home__workspace, .doke-page-shell) {
+    width: min(100% - (var(--doke-app-shell-gutter, 32px) * 2), var(--doke-app-shell-max, 1180px)) !important;
+    max-width: var(--doke-app-shell-max, 1180px) !important;
+    margin-inline: auto !important;
+  }
+
+  body:is(.home-index-shell, .search-results-body, .messages-page-shell, .profile-page-shell, .orders-page-shell, .notifications-page-shell, .wallet-page-shell, .settings-page-shell, .communities-page-shell, .detalhe-shell-page) :where(.doke-page-stack, .profile-layout, .orders-page, .notifications-page, .wallet-page, .settings-page, .community-room-page, .detail-page) {
+    display: grid;
+    gap: var(--doke-page-section-gap-lg);
+    min-width: 0;
+  }
+
+  body:is(.home-index-shell, .profile-page-shell, .search-results-body) :where(.service-grid, .service-cards-grid, .results-grid, .profile-services-grid, .workers-grid, .media-grid, .comparison-grid, .featured-pros__grid) {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  body:is(.home-index-shell, .search-results-body, .messages-page-shell, .profile-page-shell, .orders-page-shell, .notifications-page-shell, .wallet-page-shell, .settings-page-shell, .communities-page-shell, .detalhe-shell-page) :where(.page__content-inner, .app-shell-page__workspace, .shell-home__workspace, .doke-page-shell) {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-inline: var(--doke-mobile-page-gutter, 14px) !important;
+    margin-inline: auto !important;
+  }
+
+  body.messages-page-shell :where(.page__content-inner, .app-shell-page__workspace, .messages-shell-content),
+  body.communities-page-shell :where(.page__content-inner, .app-shell-page__workspace) {
+    padding-inline: 0 !important;
+  }
+}
+
+/* Stage 5 - desktop frame parity.
+   The page column owns the lateral gutter; inner workspaces fill that same frame. */
+@media (min-width: 1025px) {
+  body:is(.orders-page-shell, .messages-page-shell, .notifications-page-shell, .wallet-page-shell, .communities-page-shell) > .app-shell > .page > .internal-page-topbar,
+  body:is(.orders-page-shell, .messages-page-shell, .notifications-page-shell, .wallet-page-shell, .communities-page-shell) > .app-shell > .page > .topbar.topbar--location.internal-page-topbar {
+    display: none !important;
+  }
+
+  body:is(.home-index-shell, .orders-page-shell, .messages-page-shell, .notifications-page-shell, .wallet-page-shell, .search-results-body, .profile-page-shell, .settings-page-shell, .communities-page-shell, .detalhe-shell-page).doke-app-shell-page {
+    --doke-desktop-frame-gutter: clamp(28px, 3vw, 48px);
+    --doke-app-shell-gutter: var(--doke-desktop-frame-gutter) !important;
+    --doke-desktop-page-gutter: var(--doke-desktop-frame-gutter) !important;
+    --home-desktop-content-width: 100% !important;
+  }
+
+  body:is(.home-index-shell, .orders-page-shell, .messages-page-shell, .notifications-page-shell, .wallet-page-shell, .search-results-body, .profile-page-shell, .settings-page-shell, .communities-page-shell, .detalhe-shell-page).doke-app-shell-page > .app-shell > .page > .topbar,
+  body:is(.home-index-shell, .orders-page-shell, .messages-page-shell, .notifications-page-shell, .wallet-page-shell, .search-results-body, .profile-page-shell, .settings-page-shell, .communities-page-shell, .detalhe-shell-page).doke-app-shell-page > .app-shell > .page > .page__content {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: var(--doke-desktop-frame-gutter) !important;
+    padding-right: var(--doke-desktop-frame-gutter) !important;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell, .communities-page-shell).doke-app-shell-page > .app-shell > .page > .page__content,
+  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell, .communities-page-shell) .page__content {
+    padding-top: var(--doke-context-header-top) !important;
+    overflow: visible !important;
+  }
+
+  body.messages-page-shell.doke-app-shell-page > .app-shell > .page > .page__content {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  body:is(.home-index-shell, .orders-page-shell, .messages-page-shell, .notifications-page-shell, .wallet-page-shell, .search-results-body, .profile-page-shell, .settings-page-shell, .communities-page-shell, .detalhe-shell-page).doke-app-shell-page > .app-shell > .page > .page__content > :where(.page__content-inner, .app-shell-page__workspace, .shell-home__workspace, .doke-page-shell),
+  body:is(.home-index-shell, .orders-page-shell, .messages-page-shell, .notifications-page-shell, .wallet-page-shell, .search-results-body, .profile-page-shell, .settings-page-shell, .communities-page-shell, .detalhe-shell-page).doke-app-shell-page :where(.home-side-meta, .orders-page, .messages-app, .notifications-page, .wallet-page, .settings-page, .detail-page) {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
+
+/* Stage 6 - internal headers follow the index top context. */
+@media (min-width: 1025px) {
+  body.orders-page-shell .home-side-meta__location {
+    min-height: 48px;
+    padding: 0 18px;
+    border: 1px solid var(--internal-surface-border, rgba(203, 217, 232, 0.92));
+    border-radius: 18px;
+    background: var(--internal-surface-bg, rgba(255, 255, 255, 0.92));
+    color: #12355d;
+    box-shadow: 0 10px 24px rgba(39, 58, 86, 0.06);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.94rem;
+    font-weight: 850;
+    line-height: 1;
+  }
+
+  body.orders-page-shell .home-side-meta__location-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #24a486;
+    box-shadow: 0 0 0 5px rgba(36, 164, 134, 0.12);
+  }
+
+  body.orders-page-shell .home-side-meta__location-text {
+    white-space: nowrap;
+  }
+
+  body.orders-page-shell .home-side-meta__caret {
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg) translateY(-2px);
+  }
+
+  body.orders-page-shell .orders-page-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    flex: 0 0 auto;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell, .communities-page-shell) .home-side-meta {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    min-height: 60px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 18px !important;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell, .communities-page-shell) .home-side-meta__group {
+    display: inline-flex !important;
+    align-items: center !important;
+    min-width: 0 !important;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell, .communities-page-shell) .home-side-meta__group--primary {
+    flex: 0 1 auto !important;
+    flex-wrap: nowrap;
+    min-width: 0;
+    gap: 12px !important;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell, .communities-page-shell) .home-side-meta__group--secondary {
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
+    gap: 10px !important;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell, .communities-page-shell) .home-side-meta__search,
+  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell, .communities-page-shell) .home-side-meta__alert {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    border-radius: 16px !important;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell, .communities-page-shell) .page-header-context {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell, .communities-page-shell) .page-header-context__action {
+    min-height: 48px !important;
+    padding-inline: 18px !important;
+    border-radius: 16px !important;
+    font-size: 0.94rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell, .communities-page-shell) .home-side-meta__profile-wrap {
+    display: inline-flex !important;
+    align-items: stretch !important;
+    height: 58px !important;
+    min-height: 58px !important;
+    border-radius: 18px !important;
+    overflow: hidden !important;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell, .communities-page-shell) .home-side-meta__profile {
+    height: 58px !important;
+    min-height: 58px !important;
+    padding: 8px 14px 8px 10px !important;
+    border-radius: 18px 0 0 18px !important;
+    border-right: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell, .wallet-page-shell, .communities-page-shell) .home-side-meta__profile-caret-button {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 48px !important;
+    height: 58px !important;
+    min-width: 48px !important;
+    min-height: 58px !important;
+    border-left: 0 !important;
+    border-radius: 0 18px 18px 0 !important;
+    padding: 0 !important;
   }
 }

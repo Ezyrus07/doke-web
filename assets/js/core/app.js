@@ -6,14 +6,46 @@ const ensureInstantRouteStyle = () => {
   const style = document.createElement("style");
   style.id = "doke-instant-route-style";
   style.textContent = `
-    body.is-route-instant-swap .page,
-    body.is-route-instant-swap .page *,
-    body.is-route-instant-swap .orders-page,
-    body.is-route-instant-swap .orders-page * {
+    body.is-shell-swapping :is(
+      .page,
+      .page *,
+      .topbar,
+      .topbar *,
+      .home-side-meta,
+      .home-side-meta *,
+      .page__content,
+      .page__content *,
+      .orders-page,
+      .orders-page *,
+      .notifications-page,
+      .notifications-page *,
+      .communities-page,
+      .communities-page *
+    ),
+    body.is-route-instant-swap :is(
+      .page,
+      .page *,
+      .topbar,
+      .topbar *,
+      .home-side-meta,
+      .home-side-meta *,
+      .page__content,
+      .page__content *,
+      .orders-page,
+      .orders-page *,
+      .notifications-page,
+      .notifications-page *,
+      .communities-page,
+      .communities-page *
+    ) {
       transition-duration: 0ms !important;
       animation-duration: 0ms !important;
       animation-delay: 0ms !important;
       scroll-behavior: auto !important;
+    }
+
+    body.is-shell-swapping {
+      cursor: progress;
     }
   `;
   document.head.appendChild(style);
@@ -22,6 +54,8 @@ ensureInstantRouteStyle();
 const SIDEBAR_STORAGE_KEY = "doke.sidebar.collapsed";
 const THEME_STORAGE_KEY = "doke.theme";
 const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", "mobile-search-active"];
+const ROUTE_SWAP_STATE_CLASSES = ["is-shell-swapping", "is-route-instant-swap"];
+const PRESERVED_BODY_STATE_CLASSES = [...SHELL_STATE_CLASSES, ...ROUTE_SWAP_STATE_CLASSES];
 const INTERNAL_PROFILE_PATH = "/perfil.html";
 const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/carteira.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento.html", "/finalizar-pedido.html", "/avaliacao.html", "/adicionar-cartao.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/mais.html", "/"]);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
@@ -531,6 +565,7 @@ const syncStylesFromDocument = async (nextDoc) => {
   );
 
   const pending = [];
+  const staged = [];
 
   nextDoc.querySelectorAll('link[rel="stylesheet"]').forEach((link) => {
     const href = link.getAttribute('href');
@@ -542,23 +577,52 @@ const syncStylesFromDocument = async (nextDoc) => {
     if (existing.has(absolute)) return;
 
     const clone = document.createElement('link');
+    const originalMedia = link.getAttribute('media') || 'all';
     clone.rel = 'stylesheet';
     clone.href = href;
+    clone.media = 'not all';
     clone.setAttribute('data-doke-dynamic-style', 'true');
+    clone.setAttribute('data-doke-staged-style', 'true');
+    clone.setAttribute('data-doke-original-media', originalMedia);
 
     const loaded = new Promise((resolve) => {
-      clone.addEventListener('load', resolve, { once: true });
-      clone.addEventListener('error', resolve, { once: true });
+      const finish = () => {
+        window.clearTimeout(timeoutId);
+        resolve();
+      };
+      const timeoutId = window.setTimeout(finish, 1800);
+      clone.addEventListener('load', finish, { once: true });
+      clone.addEventListener('error', finish, { once: true });
     });
 
     currentHead.appendChild(clone);
     existing.add(absolute);
+    staged.push(clone);
     pending.push(loaded);
   });
 
   if (pending.length) {
     await Promise.all(pending);
   }
+
+  return staged;
+};
+
+const activateStagedStyles = (stagedStyles = []) => {
+  stagedStyles.forEach((node) => {
+    if (!node?.isConnected) return;
+    node.media = node.getAttribute('data-doke-original-media') || 'all';
+    node.removeAttribute('data-doke-staged-style');
+    node.removeAttribute('data-doke-original-media');
+  });
+};
+
+const discardStagedStyles = (stagedStyles = []) => {
+  stagedStyles.forEach((node) => {
+    if (node?.isConnected && node.getAttribute('data-doke-staged-style') === 'true') {
+      node.remove();
+    }
+  });
 };
 
 const ensureScriptsFromDocument = async (nextDoc) => {
@@ -790,10 +854,10 @@ document.addEventListener("click", (event) => {
 window.DokeUiSelect = window.DokeUiSelect || createUiSelectApi();
 
 const syncBodyClassesFromDocument = (nextDoc) => {
-  const preserved = SHELL_STATE_CLASSES.filter((className) => body.classList.contains(className));
+  const preserved = PRESERVED_BODY_STATE_CLASSES.filter((className) => body.classList.contains(className));
   body.className = "";
   nextDoc.body.classList.forEach((className) => {
-    if (!SHELL_STATE_CLASSES.includes(className)) {
+    if (!PRESERVED_BODY_STATE_CLASSES.includes(className)) {
       body.classList.add(className);
     }
   });
@@ -877,64 +941,80 @@ const waitForNextPaint = () =>
 
 const swapView = async (href, { replace = false, preserveScroll = false } = {}) => {
   const url = new URL(href, window.location.href);
+  const cacheKey = url.pathname + url.search;
+  let stagedStyles = [];
+
+  body.classList.add("is-shell-swapping");
+  suppressRouteTransitionsBriefly();
   hintInternalViewStyles(url.toString());
 
-  const cacheKey = url.pathname + url.search;
-  let html = await prefetchedInternalViews.get(cacheKey);
+  try {
+    let html = await prefetchedInternalViews.get(cacheKey);
 
-  if (!html) {
-    const response = await fetch(cacheKey, {
-      headers: { "X-Requested-With": "doke-shell" }
-    });
+    if (!html) {
+      const response = await fetch(cacheKey, {
+        headers: { "X-Requested-With": "doke-shell" }
+      });
 
-    if (!response.ok) {
-      throw new Error(`Falha ao carregar ${url.pathname}`);
+      if (!response.ok) {
+        throw new Error(`Falha ao carregar ${url.pathname}`);
+      }
+
+      html = await response.text();
+    } else {
+      prefetchedInternalViews.delete(cacheKey);
     }
 
-    html = await response.text();
-  } else {
-    prefetchedInternalViews.delete(cacheKey);
-  }
-  const parser = new DOMParser();
-  const nextDoc = parser.parseFromString(html, "text/html");
-  const nextPage = nextDoc.querySelector(".page");
-  const currentPage = document.querySelector(".page");
+    const parser = new DOMParser();
+    const nextDoc = parser.parseFromString(html, "text/html");
+    const nextPage = nextDoc.querySelector(".page");
+    const currentPage = document.querySelector(".page");
 
-  if (!nextPage || !currentPage) {
-    window.location.href = url.toString();
-    return;
-  }
+    if (!nextPage || !currentPage) {
+      window.location.href = url.toString();
+      return;
+    }
 
-  await syncStylesFromDocument(nextDoc);
-  await ensureScriptsFromDocument(nextDoc);
+    stagedStyles = await syncStylesFromDocument(nextDoc);
+    await ensureScriptsFromDocument(nextDoc);
 
-  suppressRouteTransitionsBriefly();
-  syncBodyClassesFromDocument(nextDoc);
-  syncStandaloneUiFromDocument(nextDoc);
+    const nextPageNode = nextPage.cloneNode(true);
 
-  currentPage.replaceWith(nextPage.cloneNode(true));
+    // Critical section: body classes, DOM and page CSS are switched together.
+    // This prevents the outgoing route from receiving selectors for the next
+    // data-page before its markup has been replaced.
+    syncBodyClassesFromDocument(nextDoc);
+    syncStandaloneUiFromDocument(nextDoc);
+    currentPage.replaceWith(nextPageNode);
+    activateStagedStyles(stagedStyles);
 
-  cleanupDynamicStyles(nextDoc);
-  document.title = nextDoc.title || document.title;
-  closeProfileMenu();
-  closeMobileSearch();
+    cleanupDynamicStyles(nextDoc);
+    document.title = nextDoc.title || document.title;
+    closeProfileMenu();
+    closeMobileSearch();
 
-  if (replace) {
-    window.history.replaceState({ href: url.toString() }, "", url.toString());
-  } else {
-    window.history.pushState({ href: url.toString() }, "", url.toString());
-  }
+    if (replace) {
+      window.history.replaceState({ href: url.toString() }, "", url.toString());
+    } else {
+      window.history.pushState({ href: url.toString() }, "", url.toString());
+    }
 
-  if (!preserveScroll) {
-    window.scrollTo({ top: 0, behavior: "auto" });
-  }
+    if (!preserveScroll) {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
 
-  try {
-    initializeCurrentView();
+    try {
+      initializeCurrentView();
+    } catch (error) {
+      console.error("[Doke:swap:init-after-replace]", error);
+    }
   } catch (error) {
-    console.error("[Doke:swap:init-after-replace]", error);
+    discardStagedStyles(stagedStyles);
+    throw error;
   } finally {
-    body.classList.remove("is-shell-swapping");
+    window.requestAnimationFrame(() => {
+      body.classList.remove("is-shell-swapping");
+    });
   }
 };
 

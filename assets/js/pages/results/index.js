@@ -287,6 +287,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
 
   const createServiceCard = (item) => {
     const article = document.createElement('article');
+    const category = item.category || item.catégory || '';
     article.className = 'service-card service-card--featured service-card--feed';
     article.innerHTML = `
       <div class="service-card__media ${item.mediaClass || ''}">
@@ -294,22 +295,18 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
           <svg viewBox="0 0 24 24"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
         </button>
         <span class="service-card__badge ${item.badgeModifier || ''}">${item.badge || 'Em destaque'}</span>
-        <div class="service-card__media-content">
-          <span class="service-card__category">${item.category || item.catégory || ''}</span>
-          <strong>${item.title || ''}</strong>
-        </div>
       </div>
       <div class="service-card__body">
-        <div class="service-card__rating">★ ${(Number(item.rating) || 0).toFixed(1).replace('.', ',')} <span>(${item.reviews || '0 avaliações'})</span></div>
-        <div class="service-card__meta-row">
-          <div class="service-card__profile">
-            <span class="service-card__avatar ${item.avatarClass || ''}" aria-hidden="true"></span>
-            <span class="service-card__location">${item.location || ''}</span>
-          </div>
+        <span class="service-card__category service-card__category--body">${category}</span>
+        <h3 class="service-card__title">${item.title || ''}</h3>
+        <div class="service-card__rating"><strong>★ ${(Number(item.rating) || 0).toFixed(1).replace('.', ',')}</strong> <span>(${item.reviews || '0 avaliações'})</span></div>
+        <div class="service-card__tags">${(item.tags || []).slice(0, 2).map((tag) => `<span>${tag}</span>`).join('')}</div>
+        <div class="service-card__location-row">
+          <span class="service-card__avatar ${item.avatarClass || ''}" aria-hidden="true"></span>
+          <span class="service-card__location">${item.location || ''}</span>
         </div>
-        <div class="service-card__tags">${(item.tags || []).map((tag) => `<span>${tag}</span>`).join('')}</div>
         <div class="service-card__footer">
-          <div><strong class="service-card__price">${item.price || ''}</strong></div>
+          <strong class="service-card__price">${item.price || ''}</strong>
           <a class="service-card__cta" href="detalhe-anuncio.html" aria-label="Ver anúncio">Ver anúncio</a>
         </div>
       </div>
@@ -343,12 +340,42 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
 
   const createVideoCard = (item) => {
     const article = document.createElement('article');
+    const meta = searchData.getWorkerCardMeta ? searchData.getWorkerCardMeta(item) : item;
     article.className = `video-card ${item.mediaClass || ''}`;
+    article.dataset.workerTrigger = '';
+    article.dataset.workerId = item.id || '';
+    article.setAttribute('role', 'button');
+    article.setAttribute('tabindex', '0');
+    article.setAttribute('aria-haspopup', 'dialog');
+    article.setAttribute('aria-label', `Abrir worker: ${item.title || 'vídeo'}`);
     article.innerHTML = `
-      <span class="video-card__play">▶</span>
+      <div class="video-card__header">
+        <span class="video-card__badge">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="3"></rect><path d="m10 9 4 3-4 3Z"></path></svg>
+          <span>${meta.badgeLabel}</span>
+        </span>
+        <span class="video-card__save" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M6.5 4.5h11A1.5 1.5 0 0 1 19 6v14l-7-4-7 4V6a1.5 1.5 0 0 1 1.5-1.5Z"></path></svg>
+        </span>
+      </div>
       <div class="video-card__content">
-        <strong>${item.title || ''}</strong>
-        <span>${item.author || ''}</span>
+        <div class="video-card__identity">
+          <span class="video-card__avatar" aria-hidden="true">${meta.avatarInitials}</span>
+          <div class="video-card__text">
+            <strong>${meta.author}</strong>
+            <span>${meta.description}</span>
+          </div>
+        </div>
+        <div class="video-card__meta">
+          <span class="video-card__stat">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.8-6 10-6 10 6 10 6-3.8 6-10 6S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            ${meta.views}
+          </span>
+          <span class="video-card__stat">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l3 2"></path></svg>
+            ${meta.durationShort}
+          </span>
+        </div>
       </div>
     `;
     return article;

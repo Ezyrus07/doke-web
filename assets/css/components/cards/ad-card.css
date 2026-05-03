@@ -1,0 +1,355 @@
+/* Doke canonical advertisement card.
+   Owns only the visual anatomy of service announcement cards.
+   Page CSS owns grid/rail placement. This component intentionally does not target
+   service-card, video-card, worker-card, shell, header or global wrappers. */
+.doke-ad-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(8, 39, 71, 0.08);
+  border-radius: 26px;
+  background: #fff;
+  box-shadow: 0 18px 42px rgba(17, 45, 78, 0.1);
+  color: #082747;
+  font-family: var(--doke-font-family, Poppins, Inter, system-ui, sans-serif);
+}
+
+.doke-ad-card__media {
+  position: relative;
+  height: clamp(148px, 12vw, 178px);
+  min-height: 148px;
+  overflow: hidden;
+  background-color: #dfeaf2;
+  background-position: center;
+  background-size: cover;
+  isolation: isolate;
+}
+
+.doke-ad-card__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(180deg, rgba(7, 18, 31, 0.03), rgba(7, 18, 31, 0.05));
+  pointer-events: none;
+}
+
+.doke-ad-card__media--painter {
+  background-image: linear-gradient(90deg, rgba(8, 23, 38, 0.02), rgba(8, 23, 38, 0.04)), url("https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=1100&q=82");
+  background-position: center 44%;
+}
+
+.doke-ad-card__media--electrician {
+  background-image: linear-gradient(145deg, rgba(8, 23, 38, 0.12), rgba(8, 23, 38, 0.03)), url("https://images.pexels.com/photos/7647233/pexels-photo-7647233.jpeg?cs=srgb&dl=pexels-anastasia-shuraeva-7647233.jpg&fm=jpg&w=900&fit=crop&auto=compress");
+}
+
+.doke-ad-card__media--cleaning {
+  background-image: linear-gradient(145deg, rgba(8, 23, 38, 0.10), rgba(8, 23, 38, 0.03)), url("https://images.pexels.com/photos/6195951/pexels-photo-6195951.jpeg?cs=srgb&dl=pexels-tima-miroshnichenko-6195951.jpg&fm=jpg&w=900&fit=crop&auto=compress");
+}
+
+.doke-ad-card__badge,
+.doke-ad-card__favorite {
+  position: absolute;
+  z-index: 2;
+}
+
+.doke-ad-card__badge {
+  top: 16px;
+  left: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  max-width: calc(100% - 108px);
+  padding: 0 13px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(38, 41, 47, 0.88);
+  color: #fff;
+  box-shadow: 0 9px 20px rgba(6, 18, 31, 0.18);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.025em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  backdrop-filter: blur(10px);
+}
+
+.doke-ad-card__badge::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 999px;
+  background: #19c8b8;
+  box-shadow: 0 0 0 3px rgba(25, 200, 184, 0.12);
+}
+
+.doke-ad-card__favorite {
+  top: 12px;
+  right: 16px;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #129f92;
+  box-shadow: 0 12px 26px rgba(7, 24, 41, 0.14);
+  cursor: pointer;
+}
+
+.doke-ad-card__favorite svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.25;
+}
+
+.doke-ad-card__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  padding: 18px 20px 20px;
+}
+
+.doke-ad-card__category {
+  display: block;
+  margin: 0 0 8px;
+  overflow: hidden;
+  color: #7a8ca4;
+  font-size: clamp(0.78rem, 0.9vw, 0.9rem);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.doke-ad-card__title {
+  margin: 0 0 10px;
+  overflow: hidden;
+  color: #082747;
+  font-size: clamp(1.35rem, 1.55vw, 1.62rem);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 1.02;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.doke-ad-card__rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0 0 12px;
+  color: #082747;
+  font-size: clamp(0.98rem, 1.08vw, 1.08rem);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.doke-ad-card__rating-star {
+  color: #129f92;
+  font-size: 1.08em;
+}
+
+.doke-ad-card__rating span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  color: #72839b;
+  font-weight: 700;
+  text-overflow: ellipsis;
+}
+
+.doke-ad-card__tags {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  margin: 0 0 14px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.doke-ad-card__tags span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #edf8f6;
+  color: #129f92;
+  font-size: clamp(0.78rem, 0.88vw, 0.86rem);
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.doke-ad-card__location {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  margin: 0 0 14px;
+  color: #72839b;
+  font-size: clamp(0.82rem, 0.96vw, 0.92rem);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.doke-ad-card__avatar {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  overflow: hidden;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: radial-gradient(circle at 70% 32%, #8be1c8 0 7px, transparent 8px), linear-gradient(135deg, #eff6ff, #d9edf8);
+  box-shadow: 0 8px 16px rgba(8, 39, 71, 0.09);
+}
+
+.doke-ad-card__avatar::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 13px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #082747;
+}
+
+.doke-ad-card__avatar::after {
+  content: "";
+  position: absolute;
+  bottom: 5px;
+  left: 10px;
+  width: 17px;
+  height: 20px;
+  border-radius: 9px 9px 5px 5px;
+  background: #f5a53f;
+  box-shadow: 7px -2px 0 -2px #239785;
+}
+
+.doke-ad-card__location-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.doke-ad-card__location-text svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  fill: currentColor;
+}
+
+.doke-ad-card__location-text span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.doke-ad-card__footer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid #dce5ee;
+}
+
+.doke-ad-card__price {
+  color: #082747;
+  font-size: clamp(1.16rem, 1.28vw, 1.3rem);
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.doke-ad-card__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  min-height: 46px;
+  min-width: 0;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #16a998, #078b7f);
+  color: #fff;
+  box-shadow: 0 16px 28px rgba(7, 139, 127, 0.16);
+  font-size: clamp(0.9rem, 1vw, 1rem);
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .doke-ad-card {
+    border-radius: 22px;
+  }
+
+  .doke-ad-card__media {
+    height: 170px;
+    min-height: 170px;
+  }
+
+  .doke-ad-card__badge {
+    top: 14px;
+    left: 14px;
+    min-height: 32px;
+    max-width: calc(100% - 98px);
+    padding: 0 12px;
+    font-size: 0.78rem;
+  }
+
+  .doke-ad-card__favorite {
+    top: 10px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .doke-ad-card__favorite svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .doke-ad-card__body {
+    padding: 18px;
+  }
+
+  .doke-ad-card__title {
+    white-space: normal;
+  }
+
+  .doke-ad-card__footer {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .doke-ad-card__cta {
+    min-height: 44px;
+    padding: 0 14px;
+  }
+}

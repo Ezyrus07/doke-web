@@ -472,3 +472,159 @@ body.messages-page-shell .messages-header-controls {
     border-radius: 22px;
   }
 }
+
+
+/* --- Doke unified action standard ---
+   Shared trigger/panel language for pedidos, notificacoes and mensagens. */
+:root {
+  --doke-action-trigger-height: 46px;
+  --doke-action-trigger-radius: 16px;
+  --doke-action-panel-radius: 24px;
+  --doke-action-panel-padding: 18px;
+  --doke-action-gap: 10px;
+}
+
+body.orders-page-shell,
+body.notifications-page-shell,
+body.messages-page-shell {
+  --doke-action-solid-bg: linear-gradient(180deg, color-mix(in srgb, var(--color-primary, #4a7de8) 84%, white), var(--color-primary-strong, #2f62c9));
+  --doke-action-solid-shadow: 0 18px 36px color-mix(in srgb, var(--color-primary, #4a7de8) 20%, transparent);
+  --doke-action-surface-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 249, 255, 0.96));
+  --doke-action-surface-border: color-mix(in srgb, var(--color-border, #dbe8f4) 82%, white);
+  --doke-action-surface-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88), 0 20px 44px rgba(16, 38, 74, 0.08);
+  --doke-action-chip-bg: rgba(247, 250, 255, 0.98);
+  --doke-action-chip-border: rgba(210, 223, 238, 0.96);
+  --doke-action-chip-active-bg: rgba(55, 108, 255, 0.10);
+  --doke-action-chip-active-border: color-mix(in srgb, var(--color-primary, #4a7de8) 24%, white);
+}
+
+body.orders-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip),
+body.notifications-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip),
+body.messages-page-shell :is(.orders-page-header__hero-chip, .messages-thread__action[data-messages-filter-toggle], .messages-thread__action[data-messages-select-toggle]) {
+  min-height: var(--doke-action-trigger-height);
+  padding-inline: 16px;
+  border-radius: var(--doke-action-trigger-radius);
+  border-color: var(--doke-action-chip-border);
+  background: var(--doke-action-chip-bg);
+  color: #173a67;
+  box-shadow: 0 12px 28px rgba(16, 38, 74, 0.06);
+}
+
+body.orders-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip):hover,
+body.notifications-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip):hover,
+body.messages-page-shell :is(.orders-page-header__hero-chip, .messages-thread__action[data-messages-filter-toggle], .messages-thread__action[data-messages-select-toggle]):hover {
+  border-color: color-mix(in srgb, var(--color-primary, #4a7de8) 26%, white);
+  background: #fff;
+  box-shadow: 0 16px 30px rgba(16, 38, 74, 0.10);
+}
+
+body.orders-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip)[aria-expanded="true"],
+body.orders-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip)[aria-pressed="true"],
+body.notifications-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip)[aria-expanded="true"],
+body.notifications-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip)[aria-pressed="true"],
+body.messages-page-shell :is(.orders-page-header__hero-chip, .messages-thread__action[data-messages-filter-toggle], .messages-thread__action[data-messages-select-toggle])[aria-expanded="true"],
+body.messages-page-shell :is(.orders-page-header__hero-chip, .messages-thread__action[data-messages-filter-toggle], .messages-thread__action[data-messages-select-toggle])[aria-pressed="true"] {
+  background: var(--doke-action-solid-bg);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: var(--doke-action-solid-shadow);
+}
+
+body.orders-page-shell .page-header-context__action[data-orders-agenda-toggle],
+body.orders-page-shell .orders-page-header__hero-chip[data-orders-agenda-toggle],
+body.notifications-page-shell .page-header-context__action[aria-label="Agenda"] {
+  background: var(--doke-action-solid-bg);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: var(--doke-action-solid-shadow);
+}
+
+body.orders-page-shell :is(.orders-page-header__controls, .notifications-page-header__controls):not([hidden]),
+body.notifications-page-shell .notifications-page-header__controls:not([hidden]),
+body.messages-page-shell .messages-header-controls:not([hidden]) {
+  margin-top: 14px;
+  padding: 18px;
+  border-radius: var(--doke-action-panel-radius);
+  border: 1px solid var(--doke-action-surface-border);
+  background: var(--doke-action-surface-bg);
+  box-shadow: var(--doke-action-surface-shadow);
+}
+
+body.orders-page-shell .orders-active-filter-chip,
+body.notifications-page-shell .orders-active-filter-chip,
+body.messages-page-shell .orders-active-filter-chip {
+  min-height: 36px;
+  border-color: var(--doke-action-chip-active-border);
+  background: var(--doke-action-chip-active-bg);
+  color: var(--color-primary-strong, #2f62c9);
+}
+
+body.orders-page-shell .orders-active-filter-clear,
+body.notifications-page-shell .orders-active-filter-clear,
+body.messages-page-shell .orders-active-filter-clear,
+body.orders-page-shell .orders-select-panel__heading,
+body.notifications-page-shell .notifications-select-panel__heading {
+  min-height: 38px;
+  border-color: var(--doke-action-chip-border);
+  background: rgba(255, 255, 255, 0.92);
+  color: #6983a3;
+  box-shadow: none;
+}
+
+body.orders-page-shell :is(.orders-filters-popover:not([hidden]), .orders-select-panel:not([hidden])),
+body.notifications-page-shell :is(.orders-filters-popover:not([hidden]), .orders-select-panel:not([hidden])),
+body.messages-page-shell :is(.orders-filters-popover:not([hidden]), .orders-select-panel:not([hidden])) {
+  padding: var(--doke-action-panel-padding);
+  border-radius: var(--doke-action-panel-radius);
+  border-color: var(--doke-action-surface-border);
+  background: var(--doke-action-surface-bg);
+  box-shadow: var(--doke-action-surface-shadow);
+}
+
+body.orders-page-shell .filter-chip,
+body.notifications-page-shell .filter-chip,
+body.messages-page-shell .filter-chip {
+  min-height: 38px;
+  border-color: var(--doke-action-chip-border);
+  background: var(--doke-action-chip-bg);
+}
+
+body.orders-page-shell .filter-chip.is-active,
+body.notifications-page-shell .filter-chip.is-active,
+body.messages-page-shell .filter-chip.is-active {
+  background: var(--doke-action-chip-active-bg);
+  border-color: var(--doke-action-chip-active-border);
+  color: var(--color-primary-strong, #2f62c9);
+}
+
+body.orders-page-shell .orders-select-option,
+body.notifications-page-shell .orders-select-option,
+body.messages-page-shell .orders-select-option {
+  min-height: 44px;
+  border-radius: 16px;
+  border-color: var(--doke-action-chip-border);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: none;
+}
+
+body.orders-page-shell .orders-select-option:not(:disabled):hover,
+body.notifications-page-shell .orders-select-option:not(:disabled):hover,
+body.messages-page-shell .orders-select-option:not(:disabled):hover {
+  border-color: color-mix(in srgb, var(--color-primary, #4a7de8) 24%, white);
+  background: #fff;
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip),
+  body.notifications-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip),
+  body.messages-page-shell :is(.orders-page-header__hero-chip, .messages-thread__action[data-messages-filter-toggle], .messages-thread__action[data-messages-select-toggle]) {
+    min-height: 44px;
+  }
+
+  body.orders-page-shell .orders-page-header__controls:not([hidden]),
+  body.notifications-page-shell .notifications-page-header__controls:not([hidden]),
+  body.messages-page-shell .messages-header-controls:not([hidden]) {
+    padding: 16px;
+    border-radius: 22px;
+  }
+}

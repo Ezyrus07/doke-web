@@ -118,6 +118,8 @@ window.DokeHomeWorkers = (() => {
         </button>
 
         <div class="worker-preview__caption">
+          <h3 class="worker-preview__title">${item.title}</h3>
+          <p class="worker-preview__subtitle">${item.category}</p>
           <div class="worker-preview__creator">
             <span class="worker-preview__avatar">${item.avatar}</span>
             <div class="worker-preview__creator-copy">
@@ -125,7 +127,7 @@ window.DokeHomeWorkers = (() => {
                 <strong>${item.author}</strong>
                 <a href="${item.secondaryHref}">Ver perfil</a>
               </div>
-              <span>${item.category} • ${item.duration}</span>
+              <span>${item.duration}</span>
             </div>
           </div>
 

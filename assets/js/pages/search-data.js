@@ -307,6 +307,9 @@ window.DokeSearchData = (() => {
       id: "vid-pintura",
       title: "Como renovar parede sem sujeira",
       author: "Carlos Andrade",
+      description: "Dicas rápidas de pintura",
+      views: "48 mil",
+      durationShort: "0:32",
       mediaClass: "video-card--one",
       keywords: ["worker", "workers", "video", "pintura", "parede", "acabamento", "reforma", "carlos"]
     },
@@ -314,6 +317,9 @@ window.DokeSearchData = (() => {
       id: "vid-cozinha",
       title: "Antes e depois de cozinha planejada",
       author: "Studio Casa Viva",
+      description: "Reforma e marcenaria",
+      views: "36 mil",
+      durationShort: "0:41",
       mediaClass: "video-card--two",
       keywords: ["worker", "workers", "video", "cozinha", "planejada", "marcenaria", "reforma", "antes e depois"]
     },
@@ -321,6 +327,9 @@ window.DokeSearchData = (() => {
       id: "vid-eletrica",
       title: "5 erros elétricos que custam caro",
       author: "Marcos Luz",
+      description: "Dicas rápidas de elétrica",
+      views: "52 mil",
+      durationShort: "0:28",
       mediaClass: "video-card--three",
       keywords: ["worker", "workers", "video", "eletrica", "eletricista", "fiacao", "seguranca", "marcos"]
     },
@@ -328,6 +337,9 @@ window.DokeSearchData = (() => {
       id: "vid-limpeza",
       title: "Limpeza pós-obra em 40 segundos",
       author: "Elaine Santos",
+      description: "Dicas rápidas de limpeza",
+      views: "29 mil",
+      durationShort: "0:24",
       mediaClass: "video-card--four",
       keywords: ["worker", "workers", "video", "limpeza", "pos-obra", "diarista", "faxina", "elaine"]
     }
@@ -500,6 +512,25 @@ window.DokeSearchData = (() => {
     ).includes(normalizedQuery));
   };
 
+  const getWorkerCardMeta = (item = {}) => {
+    const author = String(item.author || item.title || "Workers").trim();
+    const initials = author
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join("") || "WK";
+
+    return {
+      badgeLabel: item.badgeLabel || "Workers",
+      author,
+      description: item.description || item.title || "Dicas rápidas",
+      views: item.views || "48 mil",
+      durationShort: item.durationShort || item.duration || "0:32",
+      avatarInitials: item.avatarInitials || initials
+    };
+  };
+
   const getServiceMatches = (query = "", filters = {}) => {
     const normalizedQuery = normalize(query.trim());
 
@@ -561,6 +592,7 @@ window.DokeSearchData = (() => {
     getServiceMatches,
     getUserMatches,
     getShortVideoMatches,
-    getBeforeAfterMatches
+    getBeforeAfterMatches,
+    getWorkerCardMeta
   };
 })();
