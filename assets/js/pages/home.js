@@ -746,7 +746,7 @@ document.querySelectorAll(".search-dropdown__refine-chips").forEach((group) => {
   }, { signal });
 });
 
-document.querySelectorAll(".service-card__favorite").forEach((button) => {
+document.querySelectorAll(".service-card__favorite, .doke-ad-card__favorite").forEach((button) => {
   button.setAttribute("aria-pressed", "false");
   button.addEventListener("click", (event) => {
     event.preventDefault();
@@ -829,6 +829,38 @@ railArrows.forEach((arrow) => {
   });
 });
 
+
+const initMoreServicesProgressiveReveal = () => {
+  const grid = document.querySelector("[data-more-services-grid]");
+  if (!grid) return;
+
+  const cards = Array.from(grid.querySelectorAll(":scope > .doke-ad-card"));
+  const loadHost = document.querySelector("[data-more-services-load-host]");
+  const loadButton = document.querySelector("[data-more-services-load]");
+  const viewAllLink = document.querySelector("[data-more-services-view-all]");
+  const initialLimit = Number.parseInt(grid.dataset.moreServicesLimit || "6", 10);
+  const step = Number.parseInt(grid.dataset.moreServicesStep || "3", 10);
+  let visibleCount = Number.isFinite(initialLimit) ? initialLimit : 6;
+
+  const syncCards = () => {
+    cards.forEach((card, index) => {
+      card.hidden = index >= visibleCount;
+    });
+
+    const hasHiddenCards = visibleCount < cards.length;
+    if (loadHost) loadHost.hidden = cards.length <= initialLimit;
+    if (loadButton) loadButton.hidden = !hasHiddenCards;
+    if (viewAllLink) viewAllLink.hidden = hasHiddenCards || cards.length <= initialLimit;
+  };
+
+  loadButton?.addEventListener("click", () => {
+    visibleCount = Math.min(cards.length, visibleCount + step);
+    syncCards();
+  }, { signal });
+
+  syncCards();
+};
+
 const closeOrderFeedback = () => {
   if (!orderFeedback) return;
   orderFeedback.hidden = true;
@@ -859,6 +891,7 @@ orderFeedbackClose?.addEventListener("click", closeOrderFeedback);
 initMobileHomeDrawer();
 initHomeSearch();
 initHomeWorkers();
+initMoreServicesProgressiveReveal();
 
 try {
   const shouldShowOrderFeedback = new URLSearchParams(window.location.search).get("quote") === "sent";

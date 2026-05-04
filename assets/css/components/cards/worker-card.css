@@ -1,0 +1,437 @@
+/* Doke Worker card
+   Owns only the visual anatomy of short-video/Workers cards on feed rails.
+   It intentionally does not target ad cards, service cards, shell, sidebar or headers. */
+.short-videos .short-videos__track {
+  display: flex;
+  align-items: stretch;
+  gap: clamp(14px, 1.6vw, 20px);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 2px 12px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.short-videos .short-videos__track::-webkit-scrollbar {
+  display: none;
+}
+
+.short-videos .video-card {
+  position: relative;
+  display: flex;
+  flex: 0 0 clamp(188px, 18vw, 230px);
+  width: clamp(188px, 18vw, 230px);
+  min-height: clamp(292px, 28vw, 338px);
+  overflow: hidden;
+  border: 1px solid rgba(8, 39, 71, 0.08);
+  border-radius: 24px;
+  background-color: #15314a;
+  background-position: center;
+  background-size: cover;
+  color: #fff;
+  box-shadow: none;
+  isolation: isolate;
+  cursor: pointer;
+  scroll-snap-align: start;
+}
+
+.short-videos .video-card--one {
+  background-image: url("../../../img/workers/worker-pintura.png");
+}
+
+.short-videos .video-card--two {
+  background-image: url("../../../img/workers/worker-cozinha.png");
+}
+
+.short-videos .video-card--three {
+  background-image: url("../../../img/workers/worker-eletrica.png");
+}
+
+.short-videos .video-card--four {
+  background-image: url("../../../img/workers/worker-limpeza.png");
+}
+
+.short-videos .video-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(5, 17, 30, 0.04) 0%, rgba(5, 17, 30, 0.03) 38%, rgba(5, 17, 30, 0.62) 100%),
+    linear-gradient(90deg, rgba(5, 17, 30, 0.12), transparent 46%);
+  pointer-events: none;
+}
+
+.short-videos .video-card::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  z-index: 1;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 26px rgba(3, 14, 25, 0.2);
+  clip-path: polygon(35% 25%, 35% 75%, 76% 50%);
+  opacity: 0.94;
+}
+
+.short-videos .video-card__header,
+.short-videos .video-card__content {
+  position: relative;
+  z-index: 2;
+}
+
+.short-videos .video-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px;
+}
+
+.short-videos .video-card__badge,
+.short-videos .video-card__save,
+.short-videos .video-card__stat {
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+}
+
+.short-videos .video-card__badge {
+  gap: 6px;
+  min-height: 28px;
+  max-width: calc(100% - 44px);
+  padding: 0 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(8, 24, 40, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  backdrop-filter: blur(10px);
+}
+
+.short-videos .video-card__badge svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+
+.short-videos .video-card__save {
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #0d9f92;
+  box-shadow: 0 8px 18px rgba(5, 17, 30, 0.16);
+}
+
+.short-videos .video-card__save svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.short-videos .video-card__content {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: auto;
+  padding: 0 14px 14px;
+  gap: 12px;
+}
+
+.short-videos .video-card__identity {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.short-videos .video-card__avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.88);
+  background: linear-gradient(135deg, #f7fbff, #dceff8);
+  color: #123354;
+  font-size: 0.68rem;
+  font-weight: 900;
+  box-shadow: 0 8px 16px rgba(5, 17, 30, 0.16);
+}
+
+.short-videos .video-card__text {
+  min-width: 0;
+}
+
+.short-videos .video-card__text strong {
+  display: block;
+  overflow: hidden;
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.short-videos .video-card__text span {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.short-videos .video-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.short-videos .video-card__stat {
+  gap: 5px;
+  min-height: 20px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  backdrop-filter: none;
+}
+
+.short-videos .video-card__stat svg {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .short-videos .video-card {
+    transition: transform 180ms ease, border-color 180ms ease, filter 180ms ease;
+  }
+
+  .short-videos .video-card:hover,
+  .short-videos .video-card:focus-within {
+    transform: translateY(-4px);
+    border-color: rgba(18, 159, 146, 0.18);
+    filter: saturate(1.04);
+  }
+
+  .short-videos .video-card:hover::after,
+  .short-videos .video-card:focus-within::after {
+    transform: translate(-50%, -50%) scale(1.04);
+  }
+}
+
+@media (max-width: 760px) {
+  .short-videos .video-card {
+    flex-basis: min(64vw, 220px);
+    width: min(64vw, 220px);
+    min-height: 314px;
+    border-radius: 22px;
+  }
+}
+
+
+/* Hard override against legacy worker/video card styles loaded later in the home manifest.
+   We scope to the home workers rail and reset positioning so the anatomy stays stable. */
+body.home-index-shell .short-videos .short-videos__track > .video-card,
+body.home-index-shell .short-videos .short-videos__track > .video-card * {
+  box-sizing: border-box;
+}
+
+body.home-index-shell .short-videos .short-videos__track > .video-card {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+  padding: 0 !important;
+}
+
+body.home-index-shell .short-videos .short-videos__track > .video-card::after {
+  left: 50% !important;
+  top: 47% !important;
+}
+
+body.home-index-shell .short-videos .short-videos__track > .video-card > .video-card__header {
+  position: absolute !important;
+  inset: 12px 12px auto 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: auto !important;
+  padding: 0 !important;
+  gap: 10px !important;
+}
+
+body.home-index-shell .short-videos .short-videos__track > .video-card > .video-card__content {
+  position: absolute !important;
+  inset: auto 0 0 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;
+  width: 100% !important;
+  margin-top: 0 !important;
+  padding: 64px 14px 14px !important;
+  gap: 10px !important;
+}
+
+body.home-index-shell .short-videos .short-videos__track > .video-card .video-card__badge,
+body.home-index-shell .short-videos .short-videos__track > .video-card .video-card__save,
+body.home-index-shell .short-videos .short-videos__track > .video-card .video-card__identity,
+body.home-index-shell .short-videos .short-videos__track > .video-card .video-card__avatar,
+body.home-index-shell .short-videos .short-videos__track > .video-card .video-card__text,
+body.home-index-shell .short-videos .short-videos__track > .video-card .video-card__meta,
+body.home-index-shell .short-videos .short-videos__track > .video-card .video-card__stat {
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+}
+
+body.home-index-shell .short-videos .short-videos__track > .video-card .video-card__badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  max-width: calc(100% - 46px) !important;
+  min-height: 28px !important;
+  padding: 0 10px !important;
+  overflow: hidden !important;
+  border-radius: 999px !important;
+  background: rgba(8, 24, 40, 0.58) !important;
+  border: 1px solid rgba(255,255,255,.12) !important;
+  color: rgba(255,255,255,.92) !important;
+  font-size: .72rem !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+
+body.home-index-shell .short-videos .short-videos__track > .video-card .video-card__save {
+  display: inline-grid !important;
+  place-items: center !important;
+  flex: 0 0 34px !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 999px !important;
+  background: rgba(255,255,255,.9) !important;
+  color: #0d9f92 !important;
+  box-shadow: 0 8px 18px rgba(5,17,30,.16) !important;
+}
+
+body.home-index-shell .short-videos .short-videos__track > .video-card .video-card__identity {
+  display: grid !important;
+  grid-template-columns: 34px minmax(0,1fr) !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+}
+
+body.home-index-shell .short-videos .short-videos__track > .video-card .video-card__avatar {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 999px !important;
+  border: 2px solid rgba(255,255,255,.88) !important;
+  background: linear-gradient(135deg,#f7fbff,#dceff8) !important;
+  color: #123354 !important;
+  font-size: .68rem !important;
+  font-weight: 900 !important;
+}
+
+body.home-index-shell .short-videos .short-videos__track > .video-card .video-card__text strong {
+  display: block !important;
+  overflow: hidden !important;
+  color: #fff !important;
+  font-size: .92rem !important;
+  font-weight: 900 !important;
+  line-height: 1.08 !important;
+  letter-spacing: -.03em !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+
+body.home-index-shell .short-videos .short-videos__track > .video-card .video-card__text span {
+  display: block !important;
+  margin-top: 3px !important;
+  overflow: hidden !important;
+  color: rgba(255,255,255,.74) !important;
+  font-size: .72rem !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+
+body.home-index-shell .short-videos .short-videos__track > .video-card .video-card__meta {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  min-width: 0 !important;
+}
+
+body.home-index-shell .short-videos .short-videos__track > .video-card .video-card__stat {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  min-height: 20px !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: rgba(255,255,255,.84) !important;
+  font-size: .72rem !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  backdrop-filter: none !important;
+}
+
+@media (max-width: 760px) {
+  body.home-index-shell .short-videos .short-videos__track > .video-card > .video-card__header {
+    inset: 10px 10px auto 10px !important;
+  }
+
+  body.home-index-shell .short-videos .short-videos__track > .video-card > .video-card__content {
+    padding: 60px 12px 12px !important;
+  }
+
+  body.home-index-shell .short-videos .short-videos__track > .video-card::after {
+    width: 42px !important;
+    height: 42px !important;
+  }
+}

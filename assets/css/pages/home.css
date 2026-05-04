@@ -27,7 +27,8 @@
 @import url("./home-ux-popovers.css?v=20260427-home-popovers-v25");
 
 @import url("../components/cards/service-card-actions.css?v=20260427-v26-heart-contrast");
-@import url("../components/cards/ad-card.css?v=20260503-compact-polish-v3");
+@import url("../components/cards/ad-card.css?v=20260503-home-global-v6");
+@import url("../components/cards/worker-card.css?v=20260503-worker-card-clean-v3");
 
 @import url("./home/filter-route.css?v=20260427-v26-filter-route");
 
@@ -37,7 +38,7 @@
 /* Home page dependencies
    index.html must load only core/index.css, pages/app-shell.css and this file.
    Keep home-specific ownership here so CSS order is visible in one place. */
-@import url("../components/before-after-workers-preview.css?v=20260429-index-recovery-comments");
+@import url("../components/before-after-workers-preview.css?v=20260503-workers-viewer-final-recovery");
 @import url("../components/cards/mobile-card-contract.css?v=20260426-final-mobile-cards");
 @import url("../components/ui-surface-system.css?v=20260427-modal-alignment-v22");
 @import url("../core/responsive-foundation.css?v=20260428-architecture");
@@ -1059,3 +1060,148 @@ body.home-index-shell :where(.service-grid, .service-cards-grid, .featured-pros_
     scroll-snap-align: start !important;
   }
 }
+
+
+
+
+
+
+/* Home section header/card alignment and canonical ad-card rails.
+   Section titles start at the same x-position as the first visible card.
+   This deliberately excludes shell/header/sidebar and does not target Workers internals. */
+@media (min-width: 761px) {
+  body.home-index-shell :is(.featured-services, .short-videos, .before-after, .featured-pros) .home-section-header > :first-child {
+    padding-left: clamp(48px, 4vw, 64px) !important;
+  }
+
+  body.home-index-shell .more-services .home-section-header > :first-child {
+    padding-left: 0 !important;
+  }
+
+  body.home-index-shell .featured-services #featured-services-track,
+  body.home-index-shell .more-services .service-grid--compact {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    align-items: stretch !important;
+    gap: clamp(16px, 1.6vw, 22px) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+    padding: 4px 2px 10px !important;
+    scroll-snap-type: none !important;
+  }
+
+  body.home-index-shell .more-services .service-grid--compact > .doke-ad-card,
+  body.home-index-shell .featured-services #featured-services-track > .doke-ad-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  body.home-index-shell .featured-services #featured-services-track,
+  body.home-index-shell .more-services .service-grid--compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body.home-index-shell :is(.featured-services, .short-videos, .before-after, .featured-pros) .home-section-header > :first-child {
+    padding-left: 44px !important;
+  }
+
+  body.home-index-shell .more-services .home-section-header > :first-child {
+    padding-left: 0 !important;
+  }
+
+  body.home-index-shell .featured-services #featured-services-track,
+  body.home-index-shell .more-services .service-grid--compact {
+    display: flex !important;
+    grid-template-columns: none !important;
+    gap: 14px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 4px 2px 12px !important;
+    scroll-snap-type: x proximity !important;
+    scrollbar-width: none !important;
+  }
+
+  body.home-index-shell .featured-services #featured-services-track::-webkit-scrollbar,
+  body.home-index-shell .more-services .service-grid--compact::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  body.home-index-shell .featured-services #featured-services-track > .doke-ad-card,
+  body.home-index-shell .more-services .service-grid--compact > .doke-ad-card {
+    flex: 0 0 min(86vw, 340px) !important;
+    width: min(86vw, 340px) !important;
+    max-width: min(86vw, 340px) !important;
+    scroll-snap-align: start !important;
+  }
+}
+
+
+/* More services progressive reveal.
+   Keeps the home dense by showing a first batch and exposing more cards on demand. */
+body.home-index-shell .more-services__load {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 22px;
+}
+
+body.home-index-shell .more-services__load-button,
+body.home-index-shell .more-services__view-all {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: min(100%, 320px);
+  min-height: 50px;
+  padding: 0 34px;
+  border-radius: 999px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+body.home-index-shell .more-services__load-button {
+  border: 1px solid rgba(28, 93, 150, 0.18);
+  background: linear-gradient(135deg, #2f7fbe 0%, #175f9f 100%);
+  color: #fff;
+  box-shadow: 0 14px 28px rgba(23, 95, 159, 0.14);
+}
+
+body.home-index-shell .more-services__load-button:hover,
+body.home-index-shell .more-services__load-button:focus-visible {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #276fa9 0%, #14558e 100%);
+  box-shadow: 0 18px 34px rgba(23, 95, 159, 0.18);
+}
+
+body.home-index-shell .more-services__view-all {
+  border: 1px solid rgba(28, 93, 150, 0.18);
+  background: rgba(221, 235, 247, 0.95);
+  color: #175f9f;
+}
+
+body.home-index-shell .more-services__view-all:hover,
+body.home-index-shell .more-services__view-all:focus-visible {
+  transform: translateY(-1px);
+  background: rgba(207, 226, 243, 0.98);
+  box-shadow: 0 12px 24px rgba(23, 95, 159, 0.12);
+}
+
+body.home-index-shell .more-services__load[hidden],
+body.home-index-shell .more-services__view-all[hidden] {
+  display: none !important;
+}
+
+@import url("../components/cards/worker-card.css?v=20260503-worker-card-clean-v3"); /* late worker card override */

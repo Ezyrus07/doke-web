@@ -128,6 +128,7 @@ window.DokeHomeWorkers = (() => {
                 <a href="${item.secondaryHref}">Ver perfil</a>
               </div>
               <span>${item.duration}</span>
+              <span>${item.title}</span>
             </div>
           </div>
 

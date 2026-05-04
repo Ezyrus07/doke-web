@@ -1139,7 +1139,7 @@ document.addEventListener("click", (event) => {
     return;
   }
 
-  const cta = event.target.closest(".service-card__cta");
+  const cta = event.target.closest(".service-card__cta, .doke-ad-card__cta");
   if (cta) {
     event.preventDefault();
     window.DokeNavigate?.("detalhe-anuncio.html");
