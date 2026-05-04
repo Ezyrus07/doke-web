@@ -79,14 +79,16 @@
 @import url("../components/shell/mobile-base-stability.css?v=20260501-mobile-base-stability-v1");
 
 @import url("../components/search/search-filter-contract.css?v=20260502-stage3-search-filter-v1");
+@import url("../components/cards/publication-card.css?v=20260504-publication-card-v10");
+@import url("../components/cards/worker-card.css?v=20260504-worker-card-v10");
 
 /* Home desktop recovery
    Keeps the home workspace centered and restores the pre-contract search input. */
 @media (min-width: 761px) {
   body.home-index-shell .page__content-inner.shell-home__workspace,
   body.home-index-shell .page__content-inner.shell-home__workspace--clean {
-    width: min(100%, 1260px);
-    max-width: 1260px;
+    width: min(100%, 1480px);
+    max-width: 1480px;
     margin-inline: auto;
     padding-inline: 0;
   }
@@ -95,6 +97,7 @@
   body.home-index-shell .home-catégories,
   body.home-index-shell .featured-services,
   body.home-index-shell .short-videos,
+  body.home-index-shell .home-publications,
   body.home-index-shell .before-after,
   body.home-index-shell .more-services,
   body.home-index-shell .featured-pros {
@@ -402,6 +405,7 @@
   body.home-index-shell .home-search-hero__card,
   body.home-index-shell .featured-services,
   body.home-index-shell .short-videos,
+  body.home-index-shell .home-publications,
   body.home-index-shell .before-after,
   body.home-index-shell .more-services,
   body.home-index-shell .featured-pros,
@@ -466,6 +470,7 @@
   body.home-index-shell .home-catégories__rail,
   body.home-index-shell .featured-services,
   body.home-index-shell .short-videos,
+  body.home-index-shell .home-publications,
   body.home-index-shell .before-after,
   body.home-index-shell .more-services,
   body.home-index-shell .featured-pros {
@@ -749,7 +754,7 @@
     --sidebar-width: 272px !important;
     --doke-home-sidebar-width: 272px !important;
     --doke-home-desktop-gutter: clamp(28px, 3vw, 48px);
-    --doke-home-desktop-workspace: min(1280px, calc(100vw - 272px - (var(--doke-home-desktop-gutter) * 2))) !important;
+    --doke-home-desktop-workspace: min(1480px, calc(100vw - 272px - (var(--doke-home-desktop-gutter) * 2))) !important;
     --home-desktop-content-width: var(--doke-home-desktop-workspace) !important;
   }
 
@@ -791,6 +796,7 @@
   body.home-index-shell [class*="home-cat"][class*="__rail"],
   body.home-index-shell .featured-services,
   body.home-index-shell .short-videos,
+  body.home-index-shell .home-publications,
   body.home-index-shell .before-after,
   body.home-index-shell .more-services,
   body.home-index-shell .featured-pros,
@@ -1237,3 +1243,730 @@ body.home-index-shell :where(.service-grid, .service-cards-grid, .featured-pros_
 }
 
 /* =============== END HOME SECTIONS + MORE SERVICES CANONICAL FIX =============== */
+
+
+/* Home content width + media rail correction
+   Purpose: let Workers/Publications use the available desktop content area without touching shell/header/sidebar. */
+@media (min-width: 761px) {
+  body.home-index-shell .page__content-inner.shell-home__workspace,
+  body.home-index-shell .page__content-inner.shell-home__workspace--clean {
+    width: min(100%, 1480px) !important;
+    max-width: 1480px !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) :is(.section-heading, .home-section-header) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+  }
+
+  body.home-index-shell .short-videos .short-videos__track {
+    justify-content: space-between !important;
+  }
+
+  body.home-index-shell .home-publications .home-section-title {
+    color: #18395d !important;
+    font-size: clamp(1.25rem, 1.55vw, 1.52rem) !important;
+    font-weight: 900 !important;
+    line-height: 1.08 !important;
+    letter-spacing: -0.03em !important;
+    text-transform: none !important;
+  }
+}
+
+/* Home media rails correction.
+   Scope: Workers + Publicações only.
+   Purpose: align section titles with the first card, restore arrows, keep a tighter vertical rhythm,
+   and avoid leaking changes into Mais anúncios or other sections. */
+@media (min-width: 761px) {
+  body.home-index-shell .short-videos,
+  body.home-index-shell .home-publications {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+  }
+
+  body.home-index-shell .short-videos {
+    margin-top: 24px !important;
+  }
+
+  body.home-index-shell .home-publications {
+    margin-top: 24px !important;
+  }
+
+  body.home-index-shell .home-publications + .more-services {
+    margin-top: 24px !important;
+  }
+
+  body.home-index-shell .home-media-section__header,
+  body.home-index-shell .home-publications__header {
+    padding-inline: var(--home-media-header-offset) var(--home-media-header-offset) !important;
+    margin-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) .home-section-title {
+    color: #6d819a !important;
+    font-size: 0.84rem !important;
+    font-weight: 900 !important;
+    line-height: 1.15 !important;
+    letter-spacing: 0.18em !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+  }
+
+  body.home-index-shell .short-videos .short-videos__track {
+    justify-content: flex-start !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body.home-index-shell .home-media-section__header,
+  body.home-index-shell .home-publications__header {
+    padding-inline: 0 !important;
+  }
+}
+
+/* V10 media-section alignment contract.
+   Fixes the real issue: the title, arrows and first card must share one rail contract.
+   Scope stays restricted to Workers/Publicações, except the Mais anúncios repair below restores its grid after previous overrides. */
+@media (min-width: 761px) {
+  body.home-index-shell {
+    --home-media-arrow-size: 52px;
+    --home-media-rail-gap: 16px;
+    --home-media-rail-offset: calc(var(--home-media-arrow-size) + var(--home-media-rail-gap));
+  }
+
+  body.home-index-shell section.short-videos,
+  body.home-index-shell section.home-publications {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell section.short-videos {
+    margin-top: 28px !important;
+  }
+
+  body.home-index-shell section.home-publications {
+    margin-top: 28px !important;
+  }
+
+  body.home-index-shell section.home-publications + section.more-services {
+    margin-top: 28px !important;
+  }
+
+  body.home-index-shell section.short-videos > .section-heading.home-media-section__header,
+  body.home-index-shell section.home-publications > .section-heading.home-media-section__header,
+  body.home-index-shell section.home-publications > .section-heading.home-publications__header {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: var(--home-media-rail-offset) var(--home-media-rail-offset) !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell section.short-videos > .section-heading.home-media-section__header .home-section-title,
+  body.home-index-shell section.home-publications > .section-heading.home-media-section__header .home-section-title,
+  body.home-index-shell section.home-publications > .section-heading.home-publications__header .home-section-title {
+    margin: 0 !important;
+    color: #6d819a !important;
+    font-size: 0.84rem !important;
+    font-weight: 900 !important;
+    line-height: 1.15 !important;
+    letter-spacing: 0.18em !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+  }
+
+  body.home-index-shell section.short-videos > .content-rail.home-media-rail,
+  body.home-index-shell section.home-publications > .content-rail.home-media-rail {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: var(--home-media-rail-offset) !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+
+  body.home-index-shell section.short-videos > .content-rail.home-media-rail > .content-rail__arrow,
+  body.home-index-shell section.home-publications > .content-rail.home-media-rail > .content-rail__arrow {
+    position: absolute !important;
+    top: 50% !important;
+    z-index: 5 !important;
+    display: grid !important;
+    place-items: center !important;
+    width: var(--home-media-arrow-size) !important;
+    height: var(--home-media-arrow-size) !important;
+    transform: translateY(-50%) !important;
+  }
+
+  body.home-index-shell section.short-videos > .content-rail.home-media-rail > .content-rail__arrow--prev,
+  body.home-index-shell section.home-publications > .content-rail.home-media-rail > .content-rail__arrow--prev {
+    left: 0 !important;
+    right: auto !important;
+  }
+
+  body.home-index-shell section.short-videos > .content-rail.home-media-rail > .content-rail__arrow--next,
+  body.home-index-shell section.home-publications > .content-rail.home-media-rail > .content-rail__arrow--next {
+    right: 0 !important;
+    left: auto !important;
+  }
+
+  body.home-index-shell section.short-videos .short-videos__track {
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    gap: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+  }
+
+  body.home-index-shell section.home-publications .publication-grid {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: calc((100% - 32px) / 3) !important;
+    grid-template-columns: none !important;
+    justify-content: flex-start !important;
+    gap: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+  }
+
+  body.home-index-shell section.home-publications .publication-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    align-self: stretch !important;
+  }
+
+  /* Repair Mais anúncios after the accidental rail/card compression. */
+  body.home-index-shell section.more-services .content-rail.more-services__cards-rail,
+  body.home-index-shell section.more-services .more-services__cards-rail.doke-scroll-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] {
+    display: grid !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] > .doke-ad-card {
+    display: flex !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    flex: 0 1 auto !important;
+  }
+
+  body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] > .doke-ad-card:nth-child(n+7) {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1100px) and (min-width: 761px) {
+  body.home-index-shell section.home-publications .publication-grid {
+    grid-auto-columns: calc((100% - 16px) / 2) !important;
+  }
+
+  body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body.home-index-shell section.short-videos > .section-heading.home-media-section__header,
+  body.home-index-shell section.home-publications > .section-heading.home-media-section__header,
+  body.home-index-shell section.home-publications > .section-heading.home-publications__header,
+  body.home-index-shell section.short-videos > .content-rail.home-media-rail,
+  body.home-index-shell section.home-publications > .content-rail.home-media-rail {
+    padding-inline: 0 !important;
+  }
+}
+
+/* FINAL HOME MEDIA RAIL CONTRACT — Workers + Publicações only.
+   Prevents arrows from shrinking the cards and keeps titles aligned with the first card. */
+@media (min-width: 761px) {
+  body.home-index-shell {
+    --home-media-arrow-size: 52px !important;
+    --home-media-rail-inset: 68px !important;
+    --home-media-section-gap: 30px !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell .short-videos {
+    margin-top: 30px !important;
+  }
+
+  body.home-index-shell .home-publications {
+    margin-top: 30px !important;
+  }
+
+  body.home-index-shell .home-publications + .more-services {
+    margin-top: 30px !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) .home-media-section__header {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: var(--home-media-rail-inset) var(--home-media-rail-inset) !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) .home-section-title {
+    margin: 0 !important;
+    color: #6d819a !important;
+    font-size: 0.84rem !important;
+    font-weight: 900 !important;
+    line-height: 1.15 !important;
+    letter-spacing: 0.18em !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) .content-rail.home-media-rail {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: var(--home-media-rail-inset) !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) .content-rail__arrow {
+    position: absolute !important;
+    top: 50% !important;
+    width: var(--home-media-arrow-size) !important;
+    height: var(--home-media-arrow-size) !important;
+    transform: translateY(-50%) !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) .content-rail__arrow--prev {
+    left: 0 !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) .content-rail__arrow--next {
+    right: 0 !important;
+  }
+
+  body.home-index-shell .short-videos .short-videos__track {
+    display: flex !important;
+    justify-content: flex-start !important;
+    gap: 22px !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+  }
+
+  body.home-index-shell .home-publications .publication-grid {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: calc((100% - 36px) / 3) !important;
+    grid-template-columns: none !important;
+    gap: 18px !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+  }
+}
+
+/* FINAL HOME MEDIA ALIGNMENT CONTRACT — Workers + Publicações
+   Keeps arrows out of layout flow and forces title/card axes to match.
+   Does not target Mais anúncios card grid or global shell/header/sidebar. */
+@media (min-width: 761px) {
+  body.home-index-shell .short-videos,
+  body.home-index-shell .home-publications {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell .short-videos {
+    margin-top: 32px !important;
+  }
+
+  body.home-index-shell .home-publications,
+  body.home-index-shell .home-publications + .more-services {
+    margin-top: 32px !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) :is(.section-heading, .home-section-header, .home-media-section__header) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) .home-section-title {
+    margin: 0 !important;
+    color: #6d819a !important;
+    font-size: 0.84rem !important;
+    font-weight: 900 !important;
+    line-height: 1.15 !important;
+    letter-spacing: 0.18em !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) .content-rail.home-media-rail {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) .content-rail__arrow,
+  body.home-index-shell :is(.short-videos, .home-publications) .home-catégories__arrow {
+    position: absolute !important;
+    top: 50% !important;
+    z-index: 8 !important;
+    width: 52px !important;
+    height: 52px !important;
+    transform: translateY(-50%) !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) .content-rail__arrow--prev {
+    left: -26px !important;
+    right: auto !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) .content-rail__arrow--next {
+    right: -26px !important;
+    left: auto !important;
+  }
+
+  body.home-index-shell .short-videos .short-videos__track {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding: 4px 0 10px !important;
+    overflow: visible !important;
+    justify-content: stretch !important;
+    align-items: stretch !important;
+  }
+
+  body.home-index-shell .short-videos .short-videos__track > .video-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    flex: initial !important;
+    aspect-ratio: 9 / 16 !important;
+    min-height: 0 !important;
+    height: auto !important;
+  }
+
+  body.home-index-shell .home-publications .publication-grid {
+    display: grid !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding: 4px 0 10px !important;
+    overflow: visible !important;
+    align-items: stretch !important;
+  }
+
+  body.home-index-shell .home-publications .publication-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: 100% !important;
+  }
+}
+
+@media (max-width: 1100px) and (min-width: 761px) {
+  body.home-index-shell .short-videos .short-videos__track {
+    grid-template-columns: repeat(4, minmax(150px, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  body.home-index-shell .home-publications .publication-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body.home-index-shell :is(.short-videos, .home-publications) .content-rail.home-media-rail {
+    display: block !important;
+    padding-inline: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) .content-rail__arrow {
+    display: none !important;
+  }
+}
+
+/* Final correction v13: align Workers/Publicações titles with the same content start as
+   the sections above/below, while keeping arrows visible outside the content flow.
+   Scope intentionally limited to Workers/Publicações only. */
+@media (min-width: 761px) {
+  body.home-index-shell :is(.short-videos, .home-publications) {
+    --home-media-arrow-outset: 40px;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) > :is(.section-heading, .home-section-header, .home-media-section__header, .home-publications__header) {
+    padding-inline: 0 !important;
+    margin-inline: 0 !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) > .content-rail.home-media-rail {
+    padding-inline: 0 !important;
+    margin-inline: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) .content-rail__arrow,
+  body.home-index-shell :is(.short-videos, .home-publications) .home-catégories__arrow {
+    position: absolute !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: var(--home-media-arrow-size, 52px) !important;
+    height: var(--home-media-arrow-size, 52px) !important;
+    z-index: 8 !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) .content-rail__arrow--prev {
+    left: calc(var(--home-media-arrow-outset) * -1) !important;
+  }
+
+  body.home-index-shell :is(.short-videos, .home-publications) .content-rail__arrow--next {
+    right: calc(var(--home-media-arrow-outset) * -1) !important;
+  }
+
+  body.home-index-shell .short-videos .short-videos__track,
+  body.home-index-shell .home-publications .publication-grid {
+    padding-inline: 0 !important;
+  }
+}
+
+/* Final media-section alignment lock v14
+   Workers/Publicações devem começar no mesmo eixo das demais áreas da home.
+   As setas ficam fora do fluxo e não podem empurrar título/card. */
+@media (min-width: 761px) {
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace > section.short-videos,
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace > section.home-publications,
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace--clean > section.short-videos,
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace--clean > section.home-publications {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    transform: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos > .section-heading,
+  html.home-index-root body.home-index-shell section.home-publications > .section-heading {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    transform: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    transform: none !important;
+    overflow: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos .short-videos__track,
+  html.home-index-root body.home-index-shell section.home-publications .publication-grid {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    transform: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos .content-rail__arrow--prev,
+  html.home-index-root body.home-index-shell section.home-publications .content-rail__arrow--prev {
+    left: -64px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos .content-rail__arrow--next,
+  html.home-index-root body.home-index-shell section.home-publications .content-rail__arrow--next {
+    right: -64px !important;
+  }
+}
+
+/* HOME FEED STRUCTURAL LOCK v15
+   Fixes the remaining mismatch between Workers/Publicações/Anúncios.
+   Scope limited to home feed rails and their arrows. */
+@media (min-width: 761px) {
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace > :is(.featured-services, .short-videos, .home-publications, .more-services),
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace--clean > :is(.featured-services, .short-videos, .home-publications, .more-services) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(section.short-videos, section.home-publications) > :is(.section-heading, .home-section-header, .home-media-section__header, .home-publications__header) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications) > .content-rail {
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow: visible !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos .short-videos__track {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 4px 0 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos .short-videos__track > .video-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    flex: none !important;
+    aspect-ratio: 9 / 16 !important;
+    min-height: 0 !important;
+    height: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-grid {
+    display: grid !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 4px 0 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: 100% !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications) > .content-rail > .content-rail__arrow {
+    position: absolute !important;
+    top: 50% !important;
+    z-index: 10 !important;
+    transform: translateY(-50%) !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications) > .content-rail > .content-rail__arrow--prev {
+    left: -18px !important;
+    right: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications) > .content-rail > .content-rail__arrow--next {
+    right: -18px !important;
+    left: auto !important;
+  }
+}
+
+@media (max-width: 1100px) and (min-width: 761px) {
+  html.home-index-root body.home-index-shell section.short-videos .short-videos__track {
+    grid-template-columns: repeat(4, minmax(150px, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+}
