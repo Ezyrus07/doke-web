@@ -12,7 +12,7 @@
     />
     <link rel="stylesheet" href="assets/css/core/index.css" />
     <link rel="stylesheet" href="assets/css/pages/app-shell.css?v=20260501-desktop-grid-shell-v1" />
-    <link rel="stylesheet" href="assets/css/pages/search-results.css?v=20260502-stage4-responsive-v1" />
+    <link rel="stylesheet" href="assets/css/pages/search-results.css?v=20260505-results-search-parity-v6" />
     <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
     <link rel="stylesheet" href="assets/css/components/shell/doke-shell-contract.css?v=20260501-width-header-contract-v12">
 <link rel="stylesheet" href="assets/css/components/layout/responsive-page-contract.css?v=20260502-stage4-responsive-page-contract-v1">
@@ -154,45 +154,18 @@
             class="page__content-inner container app-shell-page__workspace search-results-workspace search-results-workspace--internal doke-page-shell doke-page-stack"
           >
             <section class="results-searchbar doke-page-section" data-results-searchbox aria-label="Buscar resultados">
-              <form class="results-searchbar__form" data-results-search-form autocomplete="off">
-                <label class="results-searchbar__field" for="results-main-search">
+              <form class="results-searchbar__form" action="resultados.html" role="search" data-results-search-form novalidate autocomplete="off" aria-label="Buscar resultados no Doke">
+                <label class="results-searchbar__field" for="results-page-search">
                   <span class="results-searchbar__field-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                      <circle cx="11" cy="11" r="6"></circle>
-                      <path d="m20 20-4.2-4.2"></path>
-                    </svg>
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg>
                   </span>
-                  <input
-                    id="results-main-search"
-                    type="search"
-                    placeholder="Ex: Pintor, Encanador..."
-                    data-results-search-input
-                    autocomplete="off"
-                    autocapitalize="off"
-                    autocorrect="off"
-                    spellcheck="false"
-                    aria-haspopup="dialog"
-                    aria-controls="results-main-search-dropdown"
-                    aria-expanded="false"
-                  />
+                  <input id="results-page-search" type="search" name="q" placeholder="Ex: Pintor, Encanador..." data-results-search-input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
                 </label>
-                <button
-                  class="results-searchbar__mobile-filter"
-                  type="button"
-                  data-results-filters-open
-                  aria-expanded="false"
-                  aria-controls="results-filters-panel"
-                  aria-label="Abrir filtros"
-                >
-                  Filtros
-                </button>
+                <button class="results-searchbar__mobile-filter" type="button" data-results-filters-open aria-controls="results-filters-panel" aria-label="Abrir filtros">Filtros</button>
                 <button class="results-searchbar__button" type="submit" aria-label="Buscar">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M5 12h14"></path>
-                    <path d="m13 6 6 6-6 6"></path>
-                  </svg>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>
                 </button>
-                <div class="results-searchbar__dropdown search-dropdown" id="results-main-search-dropdown" data-results-search-dropdown hidden>
+                <div class="search-dropdown results-searchbar__dropdown" data-results-search-dropdown hidden>
                   <section class="search-dropdown__section" data-results-history-section>
                     <div class="search-dropdown__section-header">
                       <strong>Recentes</strong>
@@ -200,16 +173,12 @@
                     </div>
                     <div class="search-dropdown__list" data-results-search-history-list></div>
                   </section>
-                  <section class="search-dropdown__section" data-results-recommendations-section>
-                    <div class="search-dropdown__section-header">
-                      <strong>Sugestoes</strong>
-                    </div>
+                  <section class="search-dropdown__section" data-results-suggestions-section>
+                    <div class="search-dropdown__section-header"><strong>Sugestões</strong></div>
                     <div class="search-dropdown__chips" data-results-recommendation-list></div>
                   </section>
-                  <section class="search-dropdown__section" data-results-suggestions-section>
-                    <div class="search-dropdown__section-header">
-                      <strong>Resultados</strong>
-                    </div>
+                  <section class="search-dropdown__section" data-results-recommendations-section>
+                    <div class="search-dropdown__section-header"><strong>Resultados</strong></div>
                     <div class="search-dropdown__list" data-results-search-results-list></div>
                     <p class="search-dropdown__empty" data-results-search-empty hidden>Nenhum resultado encontrado.</p>
                   </section>

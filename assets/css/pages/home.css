@@ -1858,7 +1858,7 @@ body.home-index-shell :where(.service-grid, .service-cards-grid, .featured-pros_
 }
 
 /* HOME FEED STRUCTURAL LOCK v15
-   Fixes the remaining mismatch between Workers/Publicações/Anúncios.
+   Keeps Workers/Publicações/Mais anúncios on the same section axis.
    Scope limited to home feed rails and their arrows. */
 @media (min-width: 761px) {
   html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace > :is(.featured-services, .short-videos, .home-publications, .more-services),
@@ -1933,40 +1933,923 @@ body.home-index-shell :where(.service-grid, .service-cards-grid, .featured-pros_
     overflow: visible !important;
     box-sizing: border-box !important;
   }
+}
 
-  html.home-index-root body.home-index-shell section.home-publications .publication-card {
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: none !important;
-    height: 100% !important;
+/* INDEX ARROW STANDARDIZATION v16
+   Removes Mais anúncios arrows and standardizes visible index rail arrows. */
+body.home-index-shell .more-services .more-services__tabs-rail > .content-rail__arrow,
+body.home-index-shell .more-services .more-services__tabs-arrow {
+  display: none !important;
+}
+
+body.home-index-shell .more-services .more-services__tabs-rail {
+  padding-inline: 0 !important;
+}
+
+@media (min-width: 761px) {
+  html.home-index-root body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications, section.featured-pros) > .content-rail {
+    position: relative !important;
+    overflow: visible !important;
   }
 
-  html.home-index-root body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications) > .content-rail > .content-rail__arrow {
+  html.home-index-root body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications, section.featured-pros) > .content-rail > .content-rail__arrow {
     position: absolute !important;
     top: 50% !important;
-    z-index: 10 !important;
+    z-index: 12 !important;
+    display: grid !important;
+    place-items: center !important;
+    width: 48px !important;
+    height: 48px !important;
     transform: translateY(-50%) !important;
   }
 
-  html.home-index-root body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications) > .content-rail > .content-rail__arrow--prev {
-    left: -18px !important;
+  html.home-index-root body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications, section.featured-pros) > .content-rail > .content-rail__arrow--prev {
+    left: -24px !important;
     right: auto !important;
   }
 
-  html.home-index-root body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications) > .content-rail > .content-rail__arrow--next {
-    right: -18px !important;
+  html.home-index-root body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications, section.featured-pros) > .content-rail > .content-rail__arrow--next {
+    right: -24px !important;
     left: auto !important;
   }
 }
 
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications, section.featured-pros) > .content-rail > .content-rail__arrow {
+    display: none !important;
+  }
+}
+
+/* FEATURED PROS ALIGNMENT LOCK v17
+   Aligns Profissionais em destaque with the same start axis used by the other index sections.
+   Scope intentionally limited to this section. */
+html.home-index-root body.home-index-shell section.featured-pros {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box !important;
+}
+
+html.home-index-root body.home-index-shell section.featured-pros > .section-heading {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  transform: none !important;
+  box-sizing: border-box !important;
+}
+
+html.home-index-root body.home-index-shell section.featured-pros > .content-rail {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  overflow: visible !important;
+  transform: none !important;
+  box-sizing: border-box !important;
+}
+
+html.home-index-root body.home-index-shell section.featured-pros :is(.featured-pros__grid, #featured-pros-track) {
+  justify-content: flex-start !important;
+  justify-items: start !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding: 4px 0 0 !important;
+  overflow: visible !important;
+  transform: none !important;
+  box-sizing: border-box !important;
+}
+
+html.home-index-root body.home-index-shell section.featured-pros .pro-card {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section.featured-pros,
+  html.home-index-root body.home-index-shell section.featured-pros > .section-heading,
+  html.home-index-root body.home-index-shell section.featured-pros > .content-rail,
+  html.home-index-root body.home-index-shell section.featured-pros :is(.featured-pros__grid, #featured-pros-track) {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros :is(.featured-pros__grid, #featured-pros-track) {
+    justify-content: flex-start !important;
+    justify-items: start !important;
+  }
+}
+
+
+/* INDEX RAIL ARROW GUTTER CONTRACT v18
+   Correct solution: arrows stay inside a reserved rail gutter, never with negative offsets.
+   This prevents clipping and gives the same contract to all index desktop rails. */
+@media (min-width: 761px) {
+  html.home-index-root body.home-index-shell {
+    --home-rail-arrow-size: 48px;
+    --home-rail-arrow-gutter: 64px;
+    --home-rail-arrow-edge: 8px;
+  }
+
+  html.home-index-root body.home-index-shell :is(.featured-services, .short-videos, .home-publications, .featured-pros) > :is(.section-heading, .home-section-header, .home-media-section__header, .home-publications__header) {
+    padding-inline: var(--home-rail-arrow-gutter) !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail {
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: var(--home-rail-arrow-gutter) !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow {
+    position: absolute !important;
+    top: 50% !important;
+    z-index: 20 !important;
+    display: grid !important;
+    place-items: center !important;
+    width: var(--home-rail-arrow-size) !important;
+    height: var(--home-rail-arrow-size) !important;
+    min-width: var(--home-rail-arrow-size) !important;
+    min-height: var(--home-rail-arrow-size) !important;
+    transform: translateY(-50%) !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow--prev {
+    left: var(--home-rail-arrow-edge) !important;
+    right: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow--next {
+    right: var(--home-rail-arrow-edge) !important;
+    left: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .service-grid,
+  html.home-index-root body.home-index-shell .short-videos .short-videos__track,
+  html.home-index-root body.home-index-shell .home-publications .publication-grid,
+  html.home-index-root body.home-index-shell .featured-pros .featured-pros__grid {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell :is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow {
+    display: none !important;
+  }
+}
+
+/* INDEX RAIL ARROWS FINAL PARITY v19
+   Unifies the non-media rails (Destaques/Profissionais) with Workers/Publicações.
+   Arrows live inside the reserved gutter, never with negative offsets. */
+@media (min-width: 761px) {
+  html.home-index-root body.home-index-shell {
+    --home-rail-arrow-size-final: 48px;
+    --home-rail-arrow-gutter-final: 64px;
+    --home-rail-arrow-edge-final: 8px;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) {
+    overflow: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail {
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: var(--home-rail-arrow-gutter-final) !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow {
+    position: absolute !important;
+    top: 50% !important;
+    z-index: 30 !important;
+    display: grid !important;
+    place-items: center !important;
+    width: var(--home-rail-arrow-size-final) !important;
+    height: var(--home-rail-arrow-size-final) !important;
+    min-width: var(--home-rail-arrow-size-final) !important;
+    min-height: var(--home-rail-arrow-size-final) !important;
+    margin: 0 !important;
+    transform: translateY(-50%) !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow--prev {
+    left: var(--home-rail-arrow-edge-final) !important;
+    right: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow--next {
+    right: var(--home-rail-arrow-edge-final) !important;
+    left: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .featured-pros) > .content-rail > :is(.service-grid, .featured-pros__grid, [data-rail-track]) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros > .content-rail > .featured-pros__grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+  }
+}
+
+/* FINAL HOME RAIL CONTRACT v20
+   Repairs the visual regressions from rail arrow standardization without touching shell/body/header.
+   - Arrows stay inside an internal gutter.
+   - Featured professionals keep a real card grid instead of collapsing.
+   - Workers keep four clean media cards at a controlled desktop scale. */
+@media (min-width: 761px) {
+  html.home-index-root body.home-index-shell {
+    --home-rail-gutter-v20: 64px;
+    --home-rail-arrow-v20: 48px;
+    --home-rail-arrow-edge-v20: 8px;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-inline: 0 !important;
+    padding-inline: var(--home-rail-gutter-v20) !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow {
+    position: absolute !important;
+    top: 50% !important;
+    z-index: 40 !important;
+    display: grid !important;
+    place-items: center !important;
+    width: var(--home-rail-arrow-v20) !important;
+    height: var(--home-rail-arrow-v20) !important;
+    min-width: var(--home-rail-arrow-v20) !important;
+    min-height: var(--home-rail-arrow-v20) !important;
+    margin: 0 !important;
+    transform: translateY(-50%) !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow--prev {
+    left: var(--home-rail-arrow-edge-v20) !important;
+    right: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow--next {
+    right: var(--home-rail-arrow-edge-v20) !important;
+    left: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(240px, 1fr)) !important;
+    gap: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 4px 0 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail > .short-videos__track {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 20px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 4px 0 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos .video-card {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    aspect-ratio: 3 / 4 !important;
+    flex: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(240px, 1fr)) !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    gap: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 4px 0 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros > .content-rail > .featured-pros__grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(220px, 1fr)) !important;
+    gap: 18px !important;
+    justify-content: stretch !important;
+    justify-items: stretch !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 4px 0 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .pro-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    min-height: 238px !important;
+    box-sizing: border-box !important;
+  }
+}
+
 @media (max-width: 1100px) and (min-width: 761px) {
-  html.home-index-root body.home-index-shell section.short-videos .short-videos__track {
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail > .short-videos__track {
     grid-template-columns: repeat(4, minmax(150px, 1fr)) !important;
     gap: 14px !important;
   }
 
-  html.home-index-root body.home-index-shell section.home-publications .publication-grid {
+  html.home-index-root body.home-index-shell section.featured-pros > .content-rail > .featured-pros__grid,
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid {
+    grid-template-columns: repeat(3, minmax(180px, 1fr)) !important;
+    gap: 14px !important;
+  }
+}
+
+
+/* STRUCTURAL RAIL CONTRACT v21 — definitive index rail normalization.
+   Purpose: match arrow placement across Destaques, Workers, Publicações and Profissionais
+   without negative offsets or clipping. The arrow center sits on the first/last card edge. */
+@media (min-width: 761px) {
+  html.home-index-root body.home-index-shell {
+    --doke-feed-rail-gutter: 56px;
+    --doke-feed-arrow-size: 48px;
+    --doke-feed-arrow-edge: calc(var(--doke-feed-rail-gutter) - (var(--doke-feed-arrow-size) / 2));
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) {
+    overflow: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-inline: 0 !important;
+    padding-inline: var(--doke-feed-rail-gutter) !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow {
+    position: absolute !important;
+    top: 50% !important;
+    z-index: 50 !important;
+    display: grid !important;
+    place-items: center !important;
+    width: var(--doke-feed-arrow-size) !important;
+    height: var(--doke-feed-arrow-size) !important;
+    min-width: var(--doke-feed-arrow-size) !important;
+    min-height: var(--doke-feed-arrow-size) !important;
+    margin: 0 !important;
+    transform: translateY(-50%) !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow--prev {
+    left: var(--doke-feed-arrow-edge) !important;
+    right: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow--next {
+    right: var(--doke-feed-arrow-edge) !important;
+    left: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid,
+  html.home-index-root body.home-index-shell section.featured-pros > .content-rail > .featured-pros__grid,
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail > .short-videos__track {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail > .short-videos__track {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 20px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos .video-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    aspect-ratio: 3 / 4 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    flex: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    gap: 18px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros > .content-rail > .featured-pros__grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .pro-card {
+    display: grid !important;
+    grid-template-rows: 1fr auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    min-height: 236px !important;
+    padding: 28px !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (max-width: 1100px) and (min-width: 761px) {
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail > .short-videos__track {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid,
+  html.home-index-root body.home-index-shell section.featured-pros > .content-rail > .featured-pros__grid {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     gap: 14px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow {
+    display: none !important;
+  }
+}
+
+/* HOME STRUCTURE FINAL RESET v22
+   Root fix after previous rail regressions:
+   - one rail contract for Destaques/Workers/Publicações/Profissionais
+   - no negative arrow offsets
+   - Mais anúncios tabs cannot clip the filter button
+   - no shell/body/sidebar/header changes */
+@media (min-width: 761px) {
+  html.home-index-root body.home-index-shell {
+    --home-rail-control-space-v22: 56px;
+    --home-rail-arrow-size-v22: 44px;
+    --home-rail-arrow-edge-v22: 6px;
+    --home-rail-gap-v22: 18px;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > :is(.section-heading, .home-section-header, .home-media-section__header, .home-publications__header) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: var(--home-rail-control-space-v22) !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail {
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: var(--home-rail-control-space-v22) !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow {
+    position: absolute !important;
+    top: 50% !important;
+    z-index: 25 !important;
+    display: grid !important;
+    place-items: center !important;
+    width: var(--home-rail-arrow-size-v22) !important;
+    height: var(--home-rail-arrow-size-v22) !important;
+    min-width: var(--home-rail-arrow-size-v22) !important;
+    min-height: var(--home-rail-arrow-size-v22) !important;
+    margin: 0 !important;
+    transform: translateY(-50%) !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow--prev {
+    left: var(--home-rail-arrow-edge-v22) !important;
+    right: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow--next {
+    right: var(--home-rail-arrow-edge-v22) !important;
+    left: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid,
+  html.home-index-root body.home-index-shell section.featured-pros > .content-rail > .featured-pros__grid,
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail > .short-videos__track {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding: 4px 0 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid,
+  html.home-index-root body.home-index-shell section.featured-pros > .content-rail > .featured-pros__grid {
+    display: grid !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: var(--home-rail-gap-v22) !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail > .short-videos__track {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: var(--home-rail-gap-v22) !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos .video-card {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    flex: none !important;
+    aspect-ratio: 4 / 5 !important;
+    min-height: 0 !important;
+    height: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .pro-card {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    min-height: 220px !important;
+    padding: 24px !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-arrow,
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-rail > .content-rail__arrow {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 10px !important;
+    padding: 6px !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .mini-tab {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle {
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    white-space: nowrap !important;
+  }
+}
+
+@media (max-width: 1100px) and (min-width: 761px) {
+  html.home-index-root body.home-index-shell {
+    --home-rail-control-space-v22: 48px;
+    --home-rail-gap-v22: 14px;
+  }
+}
+
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow {
+    display: none !important;
+  }
+}
+
+
+/* HOME RAIL ARROWS FINAL CLEANUP v23
+   The repeated regression was caused by floating arrows competing with section/card axes.
+   Keep category navigation arrows only; card rails stay aligned and scroll/swipe without side controls. */
+html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow,
+html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .home-catégories__arrow,
+html.home-index-root body.home-index-shell section.more-services .more-services__tabs-arrow,
+html.home-index-root body.home-index-shell section.more-services .more-services__tabs-rail > .content-rail__arrow {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+@media (min-width: 761px) {
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > :is(.service-grid, .short-videos__track, .publication-grid, .featured-pros__grid) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+}
+
+
+/* HOME RAIL CONTRACT v24
+   Restores arrows on the main card rails and keeps section titles aligned with the first card.
+   Scope limited to index feed rails only. */
+@media (min-width: 761px) {
+  html.home-index-root body.home-index-shell {
+    --home-rail-space-v24: 56px;
+    --home-rail-arrow-size-v24: 44px;
+    --home-rail-arrow-offset-v24: 6px;
+    --home-rail-gap-v24: 18px;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
+  > :is(.section-heading, .home-section-header, .home-media-section__header, .home-publications__header) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: var(--home-rail-space-v24) !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
+  > .content-rail {
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: var(--home-rail-space-v24) !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
+  > .content-rail > .content-rail__arrow,
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
+  > .content-rail > .home-catégories__arrow {
+    position: absolute !important;
+    top: 50% !important;
+    z-index: 60 !important;
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    place-items: center !important;
+    width: var(--home-rail-arrow-size-v24) !important;
+    height: var(--home-rail-arrow-size-v24) !important;
+    min-width: var(--home-rail-arrow-size-v24) !important;
+    min-height: var(--home-rail-arrow-size-v24) !important;
+    margin: 0 !important;
+    transform: translateY(-50%) !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
+  > .content-rail > .content-rail__arrow--prev {
+    left: var(--home-rail-arrow-offset-v24) !important;
+    right: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
+  > .content-rail > .content-rail__arrow--next {
+    right: var(--home-rail-arrow-offset-v24) !important;
+    left: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid,
+  html.home-index-root body.home-index-shell section.featured-pros > .content-rail > .featured-pros__grid,
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail > .short-videos__track {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding: 4px 0 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid,
+  html.home-index-root body.home-index-shell section.featured-pros > .content-rail > .featured-pros__grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: var(--home-rail-gap-v24) !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail > .short-videos__track {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: var(--home-rail-gap-v24) !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
+  > .content-rail > .content-rail__arrow,
+  html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
+  > .content-rail > .home-catégories__arrow {
+    display: none !important;
+  }
+}
+
+
+/* HOME RAIL FINAL v25
+   Approved decision: keep navigation arrows only on Categorias.
+   Card sections use scroll/swipe + section links, preserving the visual axis.
+   Scope: index home feed sections only. */
+html.home-index-root body.home-index-shell
+section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
+> .content-rail > :is(.content-rail__arrow, .home-catégories__arrow),
+html.home-index-root body.home-index-shell
+section.more-services :is(.more-services__tabs-arrow, .content-rail__arrow) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+@media (min-width: 761px) {
+  html.home-index-root body.home-index-shell
+  section:is(.featured-services, .short-videos, .home-publications, .featured-pros) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell
+  section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
+  > :is(.section-heading, .home-section-header, .home-media-section__header, .home-publications__header),
+  html.home-index-root body.home-index-shell
+  section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
+  > .content-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell
+  section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
+  > .content-rail > :is(.service-grid, .short-videos__track, .publication-grid, .featured-pros__grid) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid,
+  html.home-index-root body.home-index-shell section.featured-pros > .content-rail > .featured-pros__grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail > .short-videos__track {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell
+  section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
+  > .content-rail > :is(.content-rail__arrow, .home-catégories__arrow) {
+    display: none !important;
   }
 }

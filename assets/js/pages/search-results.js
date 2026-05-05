@@ -498,37 +498,39 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     const tags = (item.tags || []).slice(0, 2);
     const detailHref = item.href || 'detalhe-anuncio.html';
     const category = item.category || item.catégory || '';
+    const mediaClass = String(item.mediaClass || '').replace(/service-card__media/g, 'doke-ad-card__media');
 
-    article.className = 'service-card service-card--result';
+    article.className = 'doke-ad-card doke-ad-card--featured doke-ad-card--result';
     article.innerHTML = `
-      <div class="service-card__media ${item.mediaClass || ''}">
-        <span class="service-card__badge ${item.badgeModifier || ''}">${item.badge || 'Em destaque'}</span>
-        <button class="service-card__favorite" type="button" aria-label="Salvar anúncio">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
+      <div class="doke-ad-card__media ${mediaClass}">
+        <span class="doke-ad-card__badge ${item.badgeModifier || ''}">${item.badge || 'Em destaque'}</span>
+        <button class="doke-ad-card__favorite" type="button" aria-label="Salvar anúncio">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 5.9a5.1 5.1 0 0 0-7.2 0L12 7.5l-1.6-1.6a5.1 5.1 0 1 0-7.2 7.2L12 21l8.8-7.9a5.1 5.1 0 0 0 0-7.2Z"></path></svg>
         </button>
       </div>
 
-      <div class="service-card__body">
-        <span class="service-card__category service-card__category--body">${category}</span>
-        <h3 class="service-card__title">${item.title || ''}</h3>
+      <div class="doke-ad-card__body">
+        <span class="doke-ad-card__category">${category}</span>
+        <h3 class="doke-ad-card__title">${item.title || ''}</h3>
 
-        <div class="service-card__rating">
-          <strong>★ ${rating}</strong>
+        <div class="doke-ad-card__rating" aria-label="Avaliação ${rating} baseada em ${reviews}">
+          <span class="doke-ad-card__rating-star">★</span>
+          <strong>${rating}</strong>
           <span>(${reviews})</span>
         </div>
 
-        <div class="service-card__tags">
+        <div class="doke-ad-card__tags" aria-label="Tags do anúncio">
           ${tags.map((tag) => `<span>${tag}</span>`).join('')}
         </div>
 
-        <div class="service-card__location-row">
-          <span class="service-card__avatar ${item.avatarClass || ''}" aria-hidden="true"></span>
-          <p class="service-card__location">${item.location || ''}</p>
+        <div class="doke-ad-card__location">
+          <span class="doke-ad-card__avatar ${item.avatarClass || ''}" aria-hidden="true"></span>
+          <span class="doke-ad-card__location-text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.7A2.7 2.7 0 1 1 12 6.3a2.7 2.7 0 0 1 0 5.4Z"></path></svg><span>${item.location || ''}</span></span>
         </div>
 
-        <div class="service-card__footer">
-          <strong class="service-card__price">${item.price || ''}</strong>
-          <a class="service-card__cta" href="${detailHref}" aria-label="Ver anúncio">Ver anúncio</a>
+        <div class="doke-ad-card__footer">
+          <strong class="doke-ad-card__price">${item.price || ''}</strong>
+          <a class="doke-ad-card__cta" href="${detailHref}" aria-label="Ver anúncio">Ver anúncio</a>
         </div>
       </div>
     `;
