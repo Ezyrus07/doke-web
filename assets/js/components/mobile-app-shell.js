@@ -28,6 +28,8 @@
     search: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg>',
     mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5a2.8 2.8 0 0 0-2.8 2.8v4.2a2.8 2.8 0 1 0 5.6 0V7.8A2.8 2.8 0 0 0 12 5Z"></path><path d="M7.8 11.4a4.2 4.2 0 1 0 8.4 0"></path><path d="M12 17v2.2"></path><path d="M9.6 19.2h4.8"></path></svg>',
     sliders: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6.5h14"></path><path d="M5 12h14"></path><path d="M5 17.5h14"></path><circle cx="9" cy="6.5" r="1.75"></circle><circle cx="15" cy="12" r="1.75"></circle><circle cx="11" cy="17.5" r="1.75"></circle></svg>',
+    check: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="m8.5 12 2.5 2.5 4.5-5"></path></svg>',
+    calendar: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="5.5" width="15" height="14" rx="3"></rect><path d="M8 3.75v3.5M16 3.75v3.5M5 10h14"></path></svg>',
     home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5.5 9.5V20h13V9.5"></path></svg>',
     orders: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg>',
     messages: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v10H8l-4 4V6z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg>',
@@ -42,6 +44,10 @@
 
   function config() {
     return PAGE_CONFIG[pageName()] || { key: pageName().replace('.html', ''), active: '', search: false };
+  }
+
+  function usesContextActions(cfg) {
+    return Boolean(cfg && !cfg.search && ['pedidos', 'mensagens', 'comunidade', 'comunidade-interna', 'carteira', 'notificacoes', 'configuracoes', 'perfil'].indexOf(cfg.key) !== -1);
   }
 
   function queryValue() {
@@ -61,8 +67,111 @@
   }
 
   function clickFirst(selector) {
-    var node = document.querySelector(selector);
-    if (node) node.click();
+    var nodes = Array.prototype.slice.call(document.querySelectorAll(selector));
+    var node = nodes.find(function (candidate) {
+      if (!candidate || candidate.disabled) return false;
+      if (candidate.getAttribute('aria-hidden') === 'true') return false;
+      var rect = candidate.getBoundingClientRect ? candidate.getBoundingClientRect() : { width: 1, height: 1 };
+      var style = window.getComputedStyle ? window.getComputedStyle(candidate) : null;
+      return (!style || style.display !== 'none' && style.visibility !== 'hidden') && rect.width >= 0 && rect.height >= 0;
+    }) || nodes[0];
+
+    if (!node) return false;
+
+    node.dispatchEvent(new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      view: window
+    }));
+    return true;
+  }
+
+  function dispatchShellAction(name) {
+    document.dispatchEvent(new CustomEvent('doke:mobile-shell-action', {
+      detail: { action: name }
+    }));
+  }
+
+  function toggleBodyClass(className) {
+    document.body.classList.toggle(className);
+  }
+
+  function openHomeFiltersDirect() {
+    if (window.DokeHomeFiltersApi && typeof window.DokeHomeFiltersApi.open === 'function') {
+      window.DokeHomeFiltersApi.open('tabs');
+      return true;
+    }
+
+    var panel = document.querySelector('[data-more-filters-panel]');
+    var toggle = document.querySelector('[data-more-filters-toggle]');
+    if (!panel) return false;
+
+    panel.hidden = false;
+    panel.removeAttribute('hidden');
+    document.body.classList.remove('home-search-overlay-active', 'mobile-search-active');
+    document.body.classList.add('home-filter-sheet-open');
+    if (toggle) toggle.setAttribute('aria-expanded', 'true');
+    dispatchShellAction('filters');
+    return true;
+  }
+
+  function openResultsFiltersDirect() {
+    var panel = document.querySelector('[data-results-filters]');
+    var backdrop = document.querySelector('[data-results-filters-backdrop]');
+    if (!panel) return false;
+
+    panel.hidden = false;
+    panel.removeAttribute('hidden');
+    panel.setAttribute('aria-hidden', 'false');
+    if (backdrop) {
+      backdrop.hidden = false;
+      backdrop.removeAttribute('hidden');
+    }
+    document.body.classList.add('results-filters-open');
+    dispatchShellAction('filters');
+    return true;
+  }
+
+  function openMobileDrawerDirect() {
+    if (clickFirst('[data-mobile-home-menu-open], [data-mobile-menu-open], [data-sidebar-open], [data-sidebar-toggle], .mobile-toggle')) return true;
+
+    var drawer = document.querySelector('[data-mobile-home-drawer], .home-mobile-drawer, [data-mobile-drawer]');
+    if (drawer) {
+      drawer.hidden = false;
+      drawer.removeAttribute('hidden');
+      drawer.classList.add('is-open');
+      drawer.setAttribute('aria-hidden', 'false');
+    }
+
+    document.body.classList.add('mobile-home-drawer-open', 'doke-mobile-drawer-open', 'sidebar-open');
+    dispatchShellAction('profile-menu');
+    return true;
+  }
+
+  function createQuickActions(cfg) {
+    if (!usesContextActions(cfg)) {
+      return [
+        '    <button class="doke-mobile-shell__location" type="button" data-shell-location aria-label="Selecionar localização">',
+        '      <span class="doke-mobile-shell__location-dot" aria-hidden="true"></span>',
+        '      <span class="doke-mobile-shell__location-label">' + locationLabel() + '</span>',
+        '    </button>',
+        '    <a class="doke-mobile-shell__notification" href="notificacoes.html" aria-label="Abrir notificações">' + ICONS.bell + '</a>'
+      ].join('');
+    }
+
+    var buttons = [
+      '<a class="doke-mobile-shell__quick-action" href="resultados.html" aria-label="Buscar">' + ICONS.search + '</a>',
+      '<button class="doke-mobile-shell__quick-action" type="button" data-shell-filter aria-label="Abrir filtros">' + ICONS.sliders + '</button>',
+      '<button class="doke-mobile-shell__quick-action" type="button" data-shell-select aria-label="Selecionar">' + ICONS.check + '</button>'
+    ];
+
+    if (cfg.key === 'pedidos') {
+      buttons.push('<button class="doke-mobile-shell__quick-action doke-mobile-shell__quick-action--active" type="button" data-shell-agenda aria-label="Abrir agenda">' + ICONS.calendar + '</button>');
+    } else {
+      buttons.push('<a class="doke-mobile-shell__quick-action" href="notificacoes.html" aria-label="Notificações">' + ICONS.bell + '</a>');
+    }
+
+    return buttons.join('');
   }
 
   function createShell(cfg) {
@@ -75,12 +184,8 @@
       '    <span class="doke-mobile-shell__avatar">DK</span>',
       '    <span class="doke-mobile-shell__hello">Olá Gabriel</span>',
       '  </button>',
-      '  <div class="doke-mobile-shell__actions">',
-      '    <button class="doke-mobile-shell__location" type="button" data-shell-location aria-label="Selecionar localização">',
-      '      <span class="doke-mobile-shell__location-dot" aria-hidden="true"></span>',
-      '      <span class="doke-mobile-shell__location-label">' + locationLabel() + '</span>',
-      '    </button>',
-      '    <a class="doke-mobile-shell__notification" href="notificacoes.html" aria-label="Abrir notificações">' + ICONS.bell + '</a>',
+      '  <div class="doke-mobile-shell__actions" data-shell-context-actions>',
+      createQuickActions(cfg),
       '  </div>',
       '</header>',
       '<form class="doke-mobile-shell__search" action="resultados.html" role="search" data-shell-search autocomplete="off">',
@@ -97,14 +202,56 @@
     input.value = queryValue();
 
     shell.querySelector('[data-shell-profile]').addEventListener('click', function () {
-      clickFirst('[data-mobile-home-menu-open], [data-mobile-menu-open]');
+      openMobileDrawerDirect();
     });
-    shell.querySelector('[data-shell-location]').addEventListener('click', function () {
-      clickFirst('[data-location-trigger]');
-    });
-    shell.querySelector('[data-shell-filter]').addEventListener('click', function () {
-      clickFirst('[data-results-filters-open], [data-more-filters-toggle], [data-filter-toggle]');
-    });
+    var locationButton = shell.querySelector('[data-shell-location]');
+    if (locationButton) {
+      locationButton.addEventListener('click', function () {
+        clickFirst('[data-location-trigger]');
+      });
+    }
+
+    var filterButton = shell.querySelector('[data-shell-filter]');
+    if (filterButton) {
+      filterButton.addEventListener('click', function () {
+        var cfg = config();
+
+        if (cfg.key === 'home') {
+          if (window.DokeMoreServicesRepair && typeof window.DokeMoreServicesRepair.open === 'function') {
+            window.DokeMoreServicesRepair.open();
+            return;
+          }
+          if (window.DokeHomeFiltersApi && typeof window.DokeHomeFiltersApi.open === 'function') {
+            window.DokeHomeFiltersApi.open('tabs');
+            return;
+          }
+          if (clickFirst('[data-more-filters-toggle]')) return;
+          if (openHomeFiltersDirect()) return;
+        }
+
+        if (cfg.key === 'resultados') {
+          if (clickFirst('[data-results-filters-open]')) return;
+          if (openResultsFiltersDirect()) return;
+        }
+
+        if (clickFirst('[data-shell-filter-target], [data-home-search-filter], [data-home-search-filter-toggle], [data-filter-toggle], [data-orders-filter-toggle]')) return;
+        dispatchShellAction('filters');
+      });
+    }
+
+    var selectButton = shell.querySelector('[data-shell-select]');
+    if (selectButton) {
+      selectButton.addEventListener('click', function () {
+        clickFirst('[data-orders-select-toggle], [data-select-toggle], [data-bulk-select-toggle]');
+      });
+    }
+
+    var agendaButton = shell.querySelector('[data-shell-agenda]');
+    if (agendaButton) {
+      agendaButton.addEventListener('click', function () {
+        clickFirst('[data-orders-agenda-toggle]');
+      });
+    }
     shell.querySelector('[data-shell-search]').addEventListener('submit', function (event) {
       event.preventDefault();
       var value = input.value.trim();

@@ -347,19 +347,39 @@ window.DokeSearchData = (() => {
 
   const beforeAfterPool = [
     {
-      id: "ba-sala",
-      title: "Reforma completa de sala",
+      id: "ba-cozinha",
+      title: "Cozinha com marcenaria sob medida",
       author: "Studio Casa Viva",
       rating: 4.9,
+      previewId: "case-kitchen",
+      visualClass: "comparison-card__visual--kitchen",
+      likes: 142,
+      comments: 28,
+      saves: 36,
+      keywords: ["cozinha", "marcenaria", "foto", "publicacao", "reforma"]
+    },
+    {
+      id: "ba-sala",
+      title: "Tour rápido da reforma",
+      author: "Renato Acabamentos",
+      rating: 4.9,
+      previewId: "case-reforma",
       visualClass: "comparison-card__visual--reforma",
-      keywords: ["reforma", "sala", "acabamento", "antes", "depois"]
+      likes: 98,
+      comments: 19,
+      saves: 22,
+      keywords: ["reforma", "sala", "tour", "video", "acabamento", "antes", "depois"]
     },
     {
       id: "ba-banheiro",
       title: "Banheiro revitalizado sem quebra-quebra",
       author: "Renato Acabamentos",
       rating: 4.8,
+      previewId: "case-bathroom",
       visualClass: "comparison-card__visual--bathroom",
+      likes: 176,
+      comments: 31,
+      saves: 45,
       keywords: ["banheiro", "reforma", "acabamento", "antes", "depois"]
     }
   ];

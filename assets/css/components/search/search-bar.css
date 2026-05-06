@@ -1,0 +1,218 @@
+/* Shared Doke search pill contract.
+   Owner: components/search.
+   Purpose: keep the primary search input identical across index.html and resultados.html.
+   Page CSS may position the host/dropdown, but must not recreate the input/button anatomy. */
+
+:root {
+  --doke-search-pill-min-height: 60px;
+  --doke-search-pill-padding-y: 10px;
+  --doke-search-pill-padding-left: 24px;
+  --doke-search-pill-padding-right: 82px;
+  --doke-search-pill-radius: 999px;
+  --doke-search-pill-bg: #ffffff;
+  --doke-search-pill-border: var(--doke-card-border, rgba(191, 207, 224, 0.84));
+  --doke-search-pill-border-focus: rgba(77, 129, 186, 0.42);
+  --doke-search-pill-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 10px 22px rgba(57, 81, 111, 0.06);
+  --doke-search-pill-shadow-focus: 0 16px 32px rgba(33, 68, 108, 0.1);
+  --doke-search-pill-text: #64748b;
+  --doke-search-pill-placeholder: #7d848f;
+  --doke-search-pill-button-size: 48px;
+  --doke-search-pill-button-offset: 14px;
+  --doke-search-pill-button-bg: linear-gradient(135deg, #2b5f94 0%, #137d74 100%);
+  --doke-search-pill-button-bg-hover: linear-gradient(135deg, #2a5888 0%, #106961 100%);
+  --doke-search-pill-button-shadow: 0 10px 20px rgba(29, 104, 122, 0.14);
+  --doke-search-pill-button-shadow-hover: 0 14px 28px rgba(29, 104, 122, 0.2);
+}
+
+.doke-search-pill {
+  position: relative !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  display: block !important;
+  min-height: var(--doke-search-pill-min-height) !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  isolation: isolate !important;
+}
+
+.doke-search-pill *,
+.doke-search-pill *::before,
+.doke-search-pill *::after {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.doke-search-pill__field,
+.results-searchbar__field.doke-search-pill__field,
+.home-search-hero__field.doke-search-pill__field {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: var(--doke-search-pill-min-height) !important;
+  padding: var(--doke-search-pill-padding-y) var(--doke-search-pill-padding-right) var(--doke-search-pill-padding-y) var(--doke-search-pill-padding-left) !important;
+  border: 1px solid var(--doke-search-pill-border) !important;
+  border-radius: var(--doke-search-pill-radius) !important;
+  background: var(--doke-search-pill-bg) !important;
+  box-shadow: var(--doke-search-pill-shadow) !important;
+  transform: none !important;
+  transition: border-color var(--transition-fast, 160ms ease), box-shadow var(--transition-fast, 160ms ease), background-color var(--transition-fast, 160ms ease), transform var(--transition-fast, 160ms ease) !important;
+}
+
+.doke-search-pill:focus-within .doke-search-pill__field,
+.doke-search-pill.is-search-open .doke-search-pill__field,
+.results-searchbar.is-search-open .doke-search-pill__field {
+  border-color: var(--doke-search-pill-border-focus) !important;
+  background: var(--doke-search-pill-bg) !important;
+  box-shadow: var(--doke-search-pill-shadow-focus) !important;
+  transform: translateY(-1px) !important;
+}
+
+.doke-search-pill__input,
+.results-searchbar__field .doke-search-pill__input,
+.home-search-hero__input.doke-search-pill__input {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  outline: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--doke-search-pill-text) !important;
+  font: inherit !important;
+  font-size: clamp(0.98rem, 1.25vw, 1.14rem) !important;
+  font-weight: 500 !important;
+  line-height: 1.35 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.doke-search-pill__input::placeholder {
+  color: var(--doke-search-pill-placeholder) !important;
+  opacity: 1 !important;
+}
+
+.doke-search-pill__input:focus,
+.doke-search-pill__input:focus-visible {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
+.doke-search-pill__input::-webkit-search-decoration,
+.doke-search-pill__input::-webkit-search-cancel-button,
+.doke-search-pill__input::-webkit-search-results-button,
+.doke-search-pill__input::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
+.doke-search-pill__button,
+.results-searchbar__button.doke-search-pill__button,
+.home-search-hero__button.doke-search-pill__button {
+  position: absolute !important;
+  top: 50% !important;
+  right: var(--doke-search-pill-button-offset) !important;
+  transform: translateY(-50%) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: var(--doke-search-pill-button-size) !important;
+  height: var(--doke-search-pill-button-size) !important;
+  min-width: var(--doke-search-pill-button-size) !important;
+  min-height: var(--doke-search-pill-button-size) !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: var(--doke-search-pill-button-bg) !important;
+  color: #fff !important;
+  box-shadow: var(--doke-search-pill-button-shadow) !important;
+  cursor: pointer !important;
+  transition: transform var(--transition-fast, 160ms ease), box-shadow var(--transition-fast, 160ms ease), filter var(--transition-fast, 160ms ease), background var(--transition-fast, 160ms ease) !important;
+}
+
+.doke-search-pill__button:hover,
+.doke-search-pill__button:focus-visible {
+  background: var(--doke-search-pill-button-bg-hover) !important;
+  transform: translateY(-50%) scale(1.04) !important;
+  box-shadow: var(--doke-search-pill-button-shadow-hover) !important;
+  outline: 0 !important;
+}
+
+.doke-search-pill__button:active {
+  transform: translateY(-50%) scale(0.98) !important;
+}
+
+.doke-search-pill__button svg,
+.results-searchbar__button.doke-search-pill__button svg,
+.home-search-hero__button.doke-search-pill__button svg {
+  display: block !important;
+  width: 22px !important;
+  height: 22px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2.4 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+.results-searchbar__field-icon {
+  display: none !important;
+}
+
+.results-searchbar__mobile-filter {
+  display: none !important;
+}
+
+.results-searchbar__dropdown,
+.home-search-hero__dropdown {
+  top: calc(100% + 12px) !important;
+}
+
+/* Compact variant for dense result/search listing screens.
+   Still uses the same anatomy/tokens; only the scale changes intentionally. */
+.doke-search-pill--compact {
+  --doke-search-pill-min-height: 56px;
+  --doke-search-pill-padding-y: 7px;
+  --doke-search-pill-padding-left: 22px;
+  --doke-search-pill-padding-right: 68px;
+  --doke-search-pill-button-size: 44px;
+  --doke-search-pill-button-offset: 8px;
+  --doke-search-pill-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 8px 18px rgba(57, 81, 111, 0.05);
+  --doke-search-pill-shadow-focus: 0 12px 24px rgba(33, 68, 108, 0.08);
+}
+
+.doke-search-pill--compact .doke-search-pill__input {
+  font-size: 1rem !important;
+}
+
+.doke-search-pill--compact .doke-search-pill__button svg {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --doke-search-pill-min-height: 58px;
+    --doke-search-pill-padding-y: 8px;
+    --doke-search-pill-padding-left: 18px;
+    --doke-search-pill-padding-right: 72px;
+    --doke-search-pill-button-size: 46px;
+    --doke-search-pill-button-offset: 8px;
+  }
+
+  .search-results-body .results-searchbar__form.doke-search-pill {
+    display: none !important;
+  }
+}

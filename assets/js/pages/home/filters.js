@@ -119,11 +119,19 @@
         });
 
         document.addEventListener('click', (event) => {
-          if (!mobileMedia?.matches || panel.hidden || !document.body.classList.contains('home-filter-sheet-open')) return;
-          const clickedBackdrop = event.target === panel;
-          const clickedPanelContent = Boolean(event.target.closest('.more-filters__header, .more-filters__split-body, .more-filters__actions'));
+          if (!panel || panel.hidden) return;
+
           const clickedToggle = event.target.closest('[data-more-filters-toggle]');
-          if ((clickedBackdrop || (!clickedPanelContent && !clickedToggle)) && !clickedToggle) close();
+          const clickedInsidePanel = Boolean(event.target.closest('[data-more-filters-panel]'));
+
+          if (mobileMedia?.matches) {
+            const clickedBackdrop = event.target === panel;
+            const clickedPanelContent = Boolean(event.target.closest('.more-filters__header, .more-filters__split-body, .more-filters__actions'));
+            if ((clickedBackdrop || (!clickedPanelContent && !clickedToggle)) && !clickedToggle) close();
+            return;
+          }
+
+          if (!clickedInsidePanel && !clickedToggle) close();
         }, { signal });
 
         mobileMedia?.addEventListener('change', () => {
@@ -162,4 +170,119 @@
       return bind();
     }
   };
+})();
+
+
+
+/* More services defensive binder.
+   Keeps "Mais anúncios" usable even if another home initializer aborts before wiring filters. */
+(function () {
+  const state = {
+    initialized: false
+  };
+
+  const isMobile = () => window.matchMedia && window.matchMedia("(max-width: 760px)").matches;
+
+  const getEls = () => ({
+    section: document.querySelector("section.more-services"),
+    toggles: Array.from(document.querySelectorAll("[data-more-filters-toggle]")),
+    panel: document.querySelector("[data-more-filters-panel]"),
+    tabsHost: document.querySelector("[data-more-filters-tabs-host]"),
+    cardsRail: document.querySelector("section.more-services .more-services__cards-rail"),
+    grid: document.querySelector("[data-more-services-grid]")
+  });
+
+  const repairCards = () => {
+    const { section, tabsHost, cardsRail, grid } = getEls();
+    if (!section || !cardsRail || !grid) return;
+
+    if (tabsHost && tabsHost.contains(cardsRail)) {
+      section.insertBefore(cardsRail, section.querySelector(".featured-pros") || null);
+    }
+
+    const limit = Number.parseInt(grid.dataset.moreServicesLimit || "6", 10);
+    Array.from(grid.querySelectorAll(":scope > .doke-ad-card")).forEach((card, index) => {
+      if (index < limit) {
+        card.hidden = false;
+        card.removeAttribute("hidden");
+      }
+    });
+
+    section.classList.add("more-services--cards-ready");
+  };
+
+  const setOpen = (open, source = "tabs") => {
+    const { panel, toggles } = getEls();
+    if (!panel) return;
+
+    panel.hidden = !open;
+    if (open) {
+      panel.removeAttribute("hidden");
+    } else {
+      panel.setAttribute("hidden", "");
+    }
+    panel.classList.toggle("is-open", open);
+    panel.setAttribute("aria-hidden", open ? "false" : "true");
+
+    document.body.classList.toggle("home-filter-sheet-open", open && isMobile());
+    document.body.classList.toggle("home-inline-filters-open", open && !isMobile());
+    document.body.classList.remove("home-search-overlay-active", "mobile-search-active");
+
+    toggles.forEach((toggle) => {
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      toggle.classList.toggle("is-active", open && ((toggle.dataset.moreFiltersSource || "tabs") === source));
+    });
+  };
+
+  const bind = () => {
+    if (state.initialized) return;
+    state.initialized = true;
+
+    repairCards();
+
+    document.addEventListener("click", (event) => {
+      const toggle = event.target.closest("[data-more-filters-toggle]");
+      if (toggle) {
+        const { panel } = getEls();
+        if (!panel) return;
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+        repairCards();
+        setOpen(panel.hidden, toggle.dataset.moreFiltersSource || "tabs");
+        return;
+      }
+
+      if (event.target.closest("[data-more-filters-close], [data-more-filters-apply]")) {
+        setOpen(false);
+        return;
+      }
+
+      const { panel } = getEls();
+      if (!panel || panel.hidden) return;
+
+      if (!event.target.closest("[data-more-filters-panel]")) {
+        setOpen(false);
+      }
+    }, true);
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") setOpen(false);
+    });
+
+    window.DokeMoreServicesRepair = {
+      open: () => {
+        repairCards();
+        setOpen(true);
+      },
+      close: () => setOpen(false),
+      repairCards
+    };
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bind, { once: true });
+  } else {
+    bind();
+  }
 })();

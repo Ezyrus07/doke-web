@@ -1,41 +1,62 @@
 window.DokeHomeBeforeAfter = (() => {
+  const DEMO_VIDEO = 'assets/media/workers/worker-demo.mp4';
+
   const CASES = [
     {
-      id: 'case-reforma',
-      title: 'Reforma completa de sala',
+      id: 'case-kitchen',
+      mediaType: 'photo',
+      mediaImage: 'https://images.pexels.com/photos/6489127/pexels-photo-6489127.jpeg?auto=compress&cs=tinysrgb&w=1400',
+      title: 'Cozinha com marcenaria sob medida',
       provider: 'Studio Casa Viva',
       avatar: 'SC',
       rating: '4,9',
       meta: 'Marcenaria e reforma • Salvador, BA',
-      visualClass: 'comparison-card__visual--reforma',
-      description: 'Projeto completo com troca de marcenaria, acabamento mais claro e melhor aproveitamento da circulação. O antes e depois mostra a transformação visual sem poluir a leitura do serviço.',
+      description: 'Projeto com marcenaria sob medida, iluminação linear e bancada contínua para melhorar circulação e leitura visual do ambiente.',
+      likes: '4,2k',
+      commentsCount: '128',
+      saves: '860',
+      serviceHref: 'detalhe-anuncio.html',
+      profileHref: 'perfil.html',
+      highlights: [
+        'Marcenaria planejada para aumentar armazenamento sem sobrecarregar o volume visual.',
+        'Bancada contínua para simplificar o uso e melhorar a sensação de amplitude.',
+        'Iluminação de apoio integrada para destacar acabamento e funcionalidade.'
+      ],
+      comments: [
+        { avatar: 'LT', name: 'Lucas Torres', time: '6 min', text: 'Essa bancada contínua deixou a cozinha muito mais elegante.', likes: '4 curtidas' },
+        { avatar: 'SC', name: 'Studio Casa Viva', time: 'agora', text: 'Foi pensada para unir preparação, apoio e limpeza em uma só leitura.', likes: '5 curtidas' }
+      ]
+    },
+    {
+      id: 'case-reforma',
+      mediaType: 'video',
+      mediaPoster: 'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1400',
+      mediaVideo: DEMO_VIDEO,
+      title: 'Tour rápido da reforma',
+      provider: 'Renato Acabamentos',
+      avatar: 'RA',
+      rating: '4,9',
+      meta: 'Reformas e acabamentos • Salvador, BA',
+      description: 'Tour em vídeo mostrando acabamentos, integração da sala e leitura mais clara do espaço depois da reforma.',
       likes: '4,9k',
       commentsCount: '184',
       saves: '1,3k',
       serviceHref: 'detalhe-anuncio.html',
       profileHref: 'perfil.html',
       highlights: [
-        'Marcenaria redistribuída para liberar circulação e valorizar o uso vertical.',
-        'Paleta clara, bancada limpa e eletros integrados para reduzir ruído visual.',
-        'Acabamentos atualizados mantendo uma leitura mais premium e comercial.'
+        'Vídeo curto para apresentar o resultado real da reforma com mais contexto.',
+        'Acabamentos claros e escada em destaque para valorizar profundidade e circulação.',
+        'Formato ideal para gerar prova visual rápida sem deixar o card pesado.'
       ],
       comments: [
-        {
-          avatar: 'LT',
-          name: 'Lucas Torres',
-          time: '4 min',
-          text: 'A divisão dos armários ficou muito melhor.',
-          likes: '3 curtidas',
-          replies: [
-            { avatar: 'SC', name: 'Studio Casa Viva', time: 'agora', text: 'Esse foi o ponto principal do projeto: liberar circulação sem perder armazenamento.', likes: '2 curtidas' }
-          ]
-        },
-        { avatar: 'AM', name: 'Amanda Rocha', time: '16 min', text: 'Queria ver uma solução parecida para cozinha pequena.', likes: '6 curtidas' },
-        { avatar: 'SC', name: 'Studio Casa Viva', time: 'agora', text: 'Cozinha pequena funciona bem com torre única e bancada limpa.', likes: '9 curtidas' }
+        { avatar: 'LT', name: 'Lucas Torres', time: '4 min', text: 'O vídeo ajuda muito mais do que só uma foto.', likes: '3 curtidas' },
+        { avatar: 'AM', name: 'Amanda Rocha', time: '16 min', text: 'Queria ver uma solução parecida para sala integrada.', likes: '6 curtidas' },
+        { avatar: 'RA', name: 'Renato Acabamentos', time: 'agora', text: 'Posso mostrar um antes e depois parecido também.', likes: '9 curtidas' }
       ]
     },
     {
       id: 'case-bathroom',
+      mediaType: 'before-after',
       title: 'Banheiro revitalizado sem quebra-quebra',
       provider: 'Renato Acabamentos',
       avatar: 'RA',
@@ -153,32 +174,58 @@ window.DokeHomeBeforeAfter = (() => {
     if (document.querySelector('link[href*="before-after-workers-preview.css"]')) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = `${href}?v=20260425-instagram-modal-v5-comments`;
+    link.href = `${href}?v=20260505-publication-modal-v2`;
     document.head.appendChild(link);
   };
 
-  const createMediaMarkup = (item) => `
-    <div class="before-after-post__media-frame" data-before-after-media-frame data-before-after-view="compare">
-      <div class="comparison-card__visual ${item.visualClass}" aria-label="Comparação visual antes e depois">
-        <div class="comparison-card__half comparison-card__half--before"><span>Antes</span></div>
-        <div class="comparison-card__half comparison-card__half--after"><span>Depois</span></div>
-        <span class="before-after-post__split-line" aria-hidden="true"></span>
-      </div>
+  const createMediaMarkup = (item) => {
+    if (item.mediaType === 'photo') {
+      return `
+        <div class="before-after-post__media-frame before-after-post__media-frame--single" data-before-after-media-frame data-before-after-view="single">
+          <figure class="before-after-post__single-media before-after-post__single-media--photo" aria-label="Foto da publicação">
+            <span class="before-after-post__single-badge">Foto</span>
+            <img class="before-after-post__single-image" src="${item.mediaImage}" alt="${escapeHtml(item.title)}">
+          </figure>
+        </div>
+      `;
+    }
 
-      <button class="before-after-post__media-nav before-after-post__media-nav--before" type="button" data-before-after-media-mode="before" aria-label="Ver somente a imagem de antes">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg>
-      </button>
-      <button class="before-after-post__media-nav before-after-post__media-nav--after" type="button" data-before-after-media-mode="after" aria-label="Ver somente a imagem de depois">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
-      </button>
+    if (item.mediaType === 'video') {
+      return `
+        <div class="before-after-post__media-frame before-after-post__media-frame--single" data-before-after-media-frame data-before-after-view="single">
+          <figure class="before-after-post__single-media before-after-post__single-media--video" aria-label="Vídeo da publicação">
+            <span class="before-after-post__single-badge">Vídeo</span>
+            <video class="before-after-post__single-video" muted loop playsinline controls preload="metadata" poster="${item.mediaPoster}">
+              <source src="${item.mediaVideo}" type="video/mp4">
+            </video>
+          </figure>
+        </div>
+      `;
+    }
 
-      <div class="before-after-post__media-switch" role="group" aria-label="Alternar visualização do antes e depois">
-        <button type="button" data-before-after-media-mode="before">Antes</button>
-        <button class="is-active" type="button" data-before-after-media-mode="compare">Comparar</button>
-        <button type="button" data-before-after-media-mode="after">Depois</button>
+    return `
+      <div class="before-after-post__media-frame" data-before-after-media-frame data-before-after-view="compare">
+        <div class="comparison-card__visual ${item.visualClass}" aria-label="Comparação visual antes e depois">
+          <div class="comparison-card__half comparison-card__half--before"><span>Antes</span></div>
+          <div class="comparison-card__half comparison-card__half--after"><span>Depois</span></div>
+          <span class="before-after-post__split-line" aria-hidden="true"></span>
+        </div>
+
+        <button class="before-after-post__media-nav before-after-post__media-nav--before" type="button" data-before-after-media-mode="before" aria-label="Ver somente a imagem de antes">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg>
+        </button>
+        <button class="before-after-post__media-nav before-after-post__media-nav--after" type="button" data-before-after-media-mode="after" aria-label="Ver somente a imagem de depois">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
+        </button>
+
+        <div class="before-after-post__media-switch" role="group" aria-label="Alternar visualização do antes e depois">
+          <button type="button" data-before-after-media-mode="before">Antes</button>
+          <button class="is-active" type="button" data-before-after-media-mode="compare">Comparar</button>
+          <button type="button" data-before-after-media-mode="after">Depois</button>
+        </div>
       </div>
-    </div>
-  `;
+    `;
+  };
 
   const buildStructure = (root) => {
     const dialog = root.querySelector('.before-after-preview__dialog');
@@ -234,17 +281,6 @@ window.DokeHomeBeforeAfter = (() => {
             <div class="before-after-post__comments-list" data-before-after-comments-list></div>
           </div>
 
-          <form class="before-after-post__comment-input" data-before-after-comment-form autocomplete="off">
-            <span class="before-after-post__mini-avatar">DK</span>
-            <div class="before-after-post__comment-field">
-              <span class="before-after-post__replying" data-before-after-replying hidden>
-                Respondendo a <b></b>
-                <button type="button" data-before-after-cancel-reply aria-label="Cancelar resposta">cancelar</button>
-              </span>
-              <input type="text" data-before-after-comment-input placeholder="Adicione um comentário..." aria-label="Adicionar comentário" maxlength="220">
-            </div>
-            <button type="submit" data-before-after-comment-submit disabled>Publicar</button>
-          </form>
         </section>
 
           <footer class="before-after-post__footer">
@@ -275,19 +311,102 @@ window.DokeHomeBeforeAfter = (() => {
               <a data-before-after-preview-service href="detalhe-anuncio.html">Ver serviço</a>
             </div>
 
+            <form class="before-after-post__comment-input" data-before-after-comment-form autocomplete="off">
+              <span class="before-after-post__mini-avatar">DK</span>
+              <div class="before-after-post__comment-field">
+                <span class="before-after-post__replying" data-before-after-replying hidden>
+                  Respondendo a <b></b>
+                  <button type="button" data-before-after-cancel-reply aria-label="Cancelar resposta">cancelar</button>
+                </span>
+                <input type="text" data-before-after-comment-input placeholder="Adicione um comentário..." aria-label="Adicionar comentário" maxlength="220">
+              </div>
+              <button type="submit" data-before-after-comment-submit disabled>Publicar</button>
+            </form>
           </footer>
         </aside>
       </article>
     `;
   };
 
+  const hydratePublicationCards = ({ signal } = {}) => {
+    const cards = [...document.querySelectorAll('.publication-card--video[data-before-after-trigger]')];
+    const previewTimes = window.DokePublicationPreviewTimes || (window.DokePublicationPreviewTimes = new Map());
+    const PREVIEW_HOVER_DELAY = 140;
+
+    cards.forEach((card) => {
+      const media = card.querySelector('.publication-card__media');
+      const record = CASES_BY_ID[card.dataset.beforeAfterId || ''];
+      if (!media || !record || record.mediaType !== 'video' || card.dataset.publicationPreviewHydrated === '1') return;
+      card.dataset.publicationPreviewHydrated = '1';
+
+      const poster = document.createElement('img');
+      poster.className = 'publication-card__poster';
+      poster.src = record.mediaPoster;
+      poster.alt = '';
+      poster.loading = 'lazy';
+      poster.decoding = 'async';
+      poster.setAttribute('aria-hidden', 'true');
+
+      const video = document.createElement('video');
+      video.className = 'publication-card__preview';
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.preload = 'metadata';
+      video.poster = record.mediaPoster;
+      video.setAttribute('aria-hidden', 'true');
+
+      media.prepend(video);
+      media.prepend(poster);
+
+      let hoverTimer = 0;
+
+      const loadVideo = () => {
+        if (!video.getAttribute('src')) {
+          video.setAttribute('src', record.mediaVideo || DEMO_VIDEO);
+          video.load();
+        }
+      };
+
+      const start = () => {
+        window.clearTimeout(hoverTimer);
+        hoverTimer = window.setTimeout(() => {
+          loadVideo();
+          const savedTime = Number(previewTimes.get(record.id) || 0);
+          if (savedTime > 0 && Math.abs(video.currentTime - savedTime) > 0.35) {
+            try { video.currentTime = savedTime; } catch (_) {}
+          }
+          const playback = video.play();
+          if (playback?.catch) playback.catch(() => {});
+          card.classList.add('is-previewing');
+        }, PREVIEW_HOVER_DELAY);
+      };
+
+      const stop = () => {
+        window.clearTimeout(hoverTimer);
+        if (!video.paused) previewTimes.set(record.id, video.currentTime);
+        video.pause();
+        card.classList.remove('is-previewing');
+      };
+
+      video.addEventListener('timeupdate', () => previewTimes.set(record.id, video.currentTime), { signal });
+      card.addEventListener('mouseenter', start, { signal });
+      card.addEventListener('pointerenter', start, { signal });
+      card.addEventListener('focusin', start, { signal });
+      card.addEventListener('mouseleave', stop, { signal });
+      card.addEventListener('pointerleave', stop, { signal });
+      card.addEventListener('focusout', stop, { signal });
+    });
+  };
+
   return {
     create({ signal } = {}) {
       ensureStylesheet();
+      hydratePublicationCards({ signal });
 
       const triggers = [...document.querySelectorAll('[data-before-after-trigger]')];
       const root = document.querySelector('[data-before-after-preview]');
-      if (!triggers.length || !root) return () => {};
+      if (!root) return () => {};
 
       buildStructure(root);
 
@@ -462,7 +581,7 @@ window.DokeHomeBeforeAfter = (() => {
       };
 
       const setMediaView = (view = 'compare') => {
-        const safeView = ['before', 'compare', 'after'].includes(view) ? view : 'compare';
+        const safeView = ['before', 'compare', 'after', 'single'].includes(view) ? view : 'compare';
         currentMediaView = safeView;
 
         const frame = root.querySelector('[data-before-after-media-frame]');
@@ -485,7 +604,12 @@ window.DokeHomeBeforeAfter = (() => {
 
         if (mediaHost) {
           mediaHost.innerHTML = createMediaMarkup(item);
-          setMediaView(currentMediaView);
+          setMediaView(item.mediaType === 'before-after' ? currentMediaView : 'single');
+          const modalVideo = mediaHost.querySelector('.before-after-post__single-video');
+          if (modalVideo) {
+            const playback = modalVideo.play();
+            if (playback?.catch) playback.catch(() => {});
+          }
         }
 
         titles.forEach((title) => { title.textContent = item.title; });
@@ -530,6 +654,9 @@ window.DokeHomeBeforeAfter = (() => {
 
       const close = () => {
         if (root.hidden) return;
+        root.querySelectorAll('video').forEach((video) => {
+          try { video.pause(); } catch (_) {}
+        });
         root.hidden = true;
         root.setAttribute('aria-hidden', 'true');
         setCommentsVisible(false);

@@ -38,7 +38,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     resultsSearchClear: queryAny('[data-results-search-clear]'),
     topbarSearchForm: queryAny('[data-results-topbar-search]', '[data-global-topbar-search]'),
     topbarSearchInput: queryAny('[data-results-topbar-search] input[type="search"]', '[data-results-topbar-input]', '[data-global-topbar-search] input[type="search"]'),
-    resultsFiltersOpenButton: queryAny('[data-results-filters-open]'),
+    resultsFiltersOpenButtons: queryAllAny('[data-results-filters-open]'),
     resultsFiltersCloseButton: queryAny('[data-results-filters-close]'),
     resultsFiltersBackdrop: queryAny('[data-results-filters-backdrop]'),
     searchModeInputs: queryAllAny('input[name="searchType"]'),
@@ -290,6 +290,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   };
 
   const BEFORE_AFTER_PREVIEW_IDS = {
+    'ba-cozinha': 'case-kitchen',
     'ba-sala': 'case-reforma',
     'ba-banheiro': 'case-bathroom'
   };
@@ -418,10 +419,14 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   const isDesktopFilters = () => window.innerWidth > 960;
 
   const syncFilterUi = (isOpen) => {
-    if (els.resultsFiltersOpenButton) els.resultsFiltersOpenButton.setAttribute('aria-expanded', String(isOpen));
-    if (resultsLayout) resultsLayout.classList.toggle('is-filters-collapsed', !isOpen && isDesktopFilters());
+    els.resultsFiltersOpenButtons.forEach((button) => button.setAttribute('aria-expanded', String(isOpen)));
+    if (resultsLayout) {
+      resultsLayout.classList.toggle('is-filters-open', isOpen && isDesktopFilters());
+      resultsLayout.classList.toggle('is-filters-collapsed', !isOpen && isDesktopFilters());
+    }
     if (els.resultsFiltersBackdrop) els.resultsFiltersBackdrop.hidden = !(!isDesktopFilters() && isOpen);
     document.body.classList.toggle('results-filters-open', isOpen);
+    document.body.classList.toggle('results-filters-collapsed', !isOpen && isDesktopFilters());
   };
 
   const openMobileFilters = () => {
@@ -433,7 +438,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   };
 
   const toggleFilters = () => {
-    const currentlyOpen = els.resultsFiltersOpenButton?.getAttribute('aria-expanded') === 'true';
+    const currentlyOpen = els.resultsFiltersOpenButtons.some((button) => button.getAttribute('aria-expanded') === 'true');
     syncFilterUi(!currentlyOpen);
   };
 
@@ -500,7 +505,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     const category = item.category || item.catégory || '';
     const mediaClass = String(item.mediaClass || '').replace(/service-card__media/g, 'doke-ad-card__media');
 
-    article.className = 'doke-ad-card doke-ad-card--featured doke-ad-card--result';
+    article.className = 'doke-ad-card doke-ad-card--featured';
     article.innerHTML = `
       <div class="doke-ad-card__media ${mediaClass}">
         <span class="doke-ad-card__badge ${item.badgeModifier || ''}">${item.badge || 'Em destaque'}</span>
@@ -575,7 +580,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   const createVideoCard = (item) => {
     const article = document.createElement('article');
     const meta = searchData.getWorkerCardMeta ? searchData.getWorkerCardMeta(item) : item;
-    article.className = `video-card ${item.mediaClass || ''}`;
+    article.className = `video-card doke-card doke-worker-card doke-media-card ${item.mediaClass || ''}`;
     article.dataset.workerTrigger = '';
     article.dataset.workerId = item.id || '';
     article.setAttribute('role', 'button');
@@ -618,24 +623,50 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   const createBeforeAfterCard = (item) => {
     const article = document.createElement('article');
     const previewId = getBeforeAfterPreviewId(item);
-    const rating = String(item.rating || '').replace('.', ',');
-    article.className = 'comparison-card';
+    const normalizedId = normalize(`${item.id || ''} ${item.title || ''}`);
+    const isBeforeAfter = normalizedId.includes('banheiro') || normalizedId.includes('before') || normalizedId.includes('after') || normalizedId.includes('depois');
+    const isVideo = normalizedId.includes('sala') || normalizedId.includes('tour') || normalizedId.includes('video');
+    const title = isVideo ? 'Tour rápido da reforma' : (item.title || (isBeforeAfter ? 'Banheiro revitalizado sem quebra-quebra' : 'Cozinha com marcenaria sob medida'));
+    const author = item.author || (isVideo || isBeforeAfter ? 'Renato Acabamentos' : 'Studio Casa Viva');
+    const likes = item.likes || (isBeforeAfter ? 176 : isVideo ? 98 : 142);
+    const comments = item.comments || (isBeforeAfter ? 31 : isVideo ? 19 : 28);
+    const saves = item.saves || (isBeforeAfter ? 45 : isVideo ? 22 : 36);
+
+    article.className = `publication-card ${isBeforeAfter ? 'publication-card--before-after' : isVideo ? 'publication-card--video' : 'publication-card--photo'} doke-card`;
+    article.setAttribute('aria-label', `Publicação: ${title}`);
     article.dataset.beforeAfterTrigger = '';
     article.dataset.beforeAfterId = previewId;
+    article.dataset.publicationKind = isBeforeAfter ? 'before-after' : isVideo ? 'video' : 'photo';
     article.setAttribute('role', 'button');
     article.setAttribute('tabindex', '0');
     article.setAttribute('aria-haspopup', 'dialog');
-    article.setAttribute('aria-label', `Abrir caso: ${item.title || 'antes e depois'}`);
+
+    const mediaMarkup = isBeforeAfter
+      ? `<div class="publication-card__media publication-card__comparison">
+          <span class="publication-card__type publication-card__type--comparison">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="6" height="14" rx="1.5"></rect><rect x="14" y="5" width="6" height="14" rx="1.5"></rect></svg>
+            Antes e depois
+          </span>
+          <div class="publication-card__half publication-card__half--before"><span>Antes</span></div>
+          <div class="publication-card__half publication-card__half--after"><span>Depois</span></div>
+        </div>`
+      : `<div class="publication-card__media ${isVideo ? 'publication-card__media--living' : 'publication-card__media--kitchen'}">
+          <span class="publication-card__type">
+            <svg viewBox="0 0 24 24" aria-hidden="true">${isVideo ? '<rect x="4" y="6" width="13" height="12" rx="2"></rect><path d="m17 10 3-2v8l-3-2"></path>' : '<rect x="4" y="7" width="16" height="12" rx="2"></rect><path d="M8 7l1.5-2h5L16 7"></path><circle cx="12" cy="13" r="3"></circle>'}</svg>
+            ${isVideo ? 'Vídeo' : 'Foto'}
+          </span>
+          ${isVideo ? '<span class="publication-card__play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 7 8 5-8 5V7Z"></path></svg></span>' : ''}
+        </div>`;
+
     article.innerHTML = `
-      <div class="comparison-card__visual ${item.visualClass || ''}">
-        <div class="comparison-card__half comparison-card__half--before"><span>Antes</span></div>
-        <div class="comparison-card__half comparison-card__half--after"><span>Depois</span></div>
-      </div>
-      <div class="comparison-card__body">
-        <strong class="comparison-card__title">${item.title || ''}</strong>
-        <div class="comparison-card__meta">
-          <span class="comparison-card__provider">Por <span>${item.author || ''}</span></span>
-          <span class="comparison-card__rating" aria-label="Avaliação ${rating} de 5">★ <strong>${rating}</strong></span>
+      ${mediaMarkup}
+      <div class="publication-card__content">
+        <h3 class="publication-card__title">${title}</h3>
+        <p class="publication-card__author">Por <a href="perfil.html">${author}</a></p>
+        <div class="publication-card__actions" aria-label="Interações da publicação">
+          <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.6c0 5.4-8.8 10.2-8.8 10.2S3.2 14 3.2 8.6A4.7 4.7 0 0 1 12 6.2a4.7 4.7 0 0 1 8.8 2.4Z"></path></svg>${likes}</span>
+          <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 11.5a7.3 7.3 0 0 1 7.6-7.1 7.3 7.3 0 0 1 7.6 7.1 7.3 7.3 0 0 1-7.6 7.1 8.7 8.7 0 0 1-2.9-.5L5 19.4l1.2-3.2a6.7 6.7 0 0 1-2-4.7Z"></path></svg>${comments}</span>
+          <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5h11A1.5 1.5 0 0 1 19 6v14l-7-4-7 4V6a1.5 1.5 0 0 1 1.5-1.5Z"></path></svg>${saves}</span>
         </div>
       </div>
     `;
@@ -807,11 +838,11 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       const beforeAfterResults = query ? getBeforeAfterMatches(query) : (searchData.beforeAfterPool || []);
       els.resultsGrid.innerHTML = '';
       beforeAfterResults.slice(0, 8).forEach((item) => els.resultsGrid.appendChild(createBeforeAfterCard(item)));
-      if (els.resultsTitle) els.resultsTitle.textContent = query ? `Antes e depois para "${query}"` : 'Casos de antes e depois';
+      if (els.resultsTitle) els.resultsTitle.textContent = query ? `Publicações para "${query}"` : 'Publicações em destaque';
       if (els.resultsDescription) {
         els.resultsDescription.textContent = beforeAfterResults.length
-          ? 'Casos visuais para comparar o trabalho antes e depois.'
-          : 'Não encontramos casos de antes e depois com esse termo.';
+          ? 'Publicações visuais de profissionais relacionadas ao que você pesquisou.'
+          : 'Não encontramos publicações com esse termo.';
       }
       if (els.resultsCount) els.resultsCount.textContent = formatCount(beforeAfterResults.length);
       renderActiveChips(query, filters, beforeAfterResults.length);
@@ -933,7 +964,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     const normalizedQuery = normalize(initialQuery);
     if (initialType) return initialType;
     if (/\bworkers?\b|\bvideos?\b/.test(normalizedQuery)) return 'workers';
-    if (normalizedQuery.includes('antes e depois') || normalizedQuery.includes('antes depois')) return 'before-after';
+    if (normalizedQuery.includes('antes e depois') || normalizedQuery.includes('antes depois') || normalizedQuery.includes('publicacoes') || normalizedQuery.includes('publicações')) return 'before-after';
     return 'services';
   })();
   syncInputs(initialQuery);
@@ -1036,7 +1067,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     saveSearchHistory([]);
     syncResultsSearchDropdown();
   }, { signal });
-  els.resultsFiltersOpenButton?.addEventListener('click', toggleFilters, { signal });
+  els.resultsFiltersOpenButtons.forEach((button) => button.addEventListener('click', toggleFilters, { signal }));
   els.resultsFiltersCloseButton?.addEventListener('click', toggleFilters, { signal });
   els.resultsFiltersBackdrop?.addEventListener('click', closeMobileFilters, { signal });
   window.addEventListener('resize', () => {

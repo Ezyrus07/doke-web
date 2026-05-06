@@ -29,7 +29,7 @@
    resultados.html must load only core/index.css, pages/app-shell.css and this file.
    Keep results-specific ownership here so shared header/search/card CSS does not
    drift back into page HTML. */
-@import url("../components/before-after-workers-preview.css?v=20260428-comments-sheet");
+@import url("../components/before-after-workers-preview.css?v=20260505-publication-modal-v2");
 @import url("../components/cards/mobile-card-contract.css?v=20260426-final-mobile-cards");
 @import url("../components/ui-surface-system.css?v=20260427-modal-alignment-v22");
 @import url("./results/open-filters-from-url.css?v=20260427-v26-open-filters");
@@ -63,11 +63,17 @@
 @import url("../components/shell/mobile-base-stability.css?v=20260501-mobile-base-stability-v1");
 @import url("../components/search/search-autocomplete.css?v=20260502-shared-search-autocomplete-v3");
 @import url("../components/search/search-scope.css?v=20260502-search-scope-v1");
+@import url("../components/search/search-bar.css?v=20260505-shared-search-pill-v1");
 
 
 @import url("../components/search/search-filter-contract.css?v=20260502-stage3-search-filter-v1");
-@import url("../components/cards/ad-card.css?v=20260505-results-index-parity-v1");
+@import url("../components/cards/ad-card.css?v=20260505-ad-card-actions-v1");
+@import url("../components/cards/publication-card.css?v=20260505-publication-card-hover-v1");
 @import url("./search-results/index-parity.css?v=20260505-results-index-parity-v1");
+@import url("./search-results/workers-index-parity.css?v=20260505-workers-index-parity-v2");
+@import url("./search-results/filter-toggle-density.css?v=20260505-filter-toggle-density-v1");
+@import url("../components/cards/worker-card.css?v=20260505-results-worker-parity-v2");
+@import url("./search-results/display-density.css?v=20260505-results-display-density-v4");
 
 /* resultados.html composition contract v6
    Ownership: page-specific layout only. Shared autocomplete visuals live in
@@ -969,5 +975,457 @@
 @media (max-width: 760px) {
   body.search-results-body .results-searchbar__form {
     display: none !important;
+  }
+}
+
+/* RESULTS SEARCH INPUT INDEX PARITY v7
+   Match resultados.html desktop search with the index search pill.
+   Scope limited to results search; no shell/body/header/sidebar changes. */
+@media (min-width: 761px) {
+  body.search-results-body .results-searchbar {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 0 14px !important;
+  }
+
+  body.search-results-body .results-searchbar__form {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-height: 74px !important;
+    padding: 8px !important;
+    padding-left: 34px !important;
+    border: 1px solid rgba(190, 209, 225, 0.92) !important;
+    border-radius: 999px !important;
+    background: #ffffff !important;
+    box-shadow: 0 18px 42px rgba(31, 111, 174, 0.10) !important;
+    box-sizing: border-box !important;
+  }
+
+  body.search-results-body .results-searchbar__form:focus-within,
+  body.search-results-body .results-searchbar.is-search-open .results-searchbar__form {
+    border-color: rgba(190, 209, 225, 0.92) !important;
+    background: #ffffff !important;
+    box-shadow: 0 18px 42px rgba(31, 111, 174, 0.10) !important;
+  }
+
+  body.search-results-body .results-searchbar__field {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 58px !important;
+    padding: 0 !important;
+  }
+
+  body.search-results-body .results-searchbar__field-icon {
+    display: none !important;
+  }
+
+  body.search-results-body .results-searchbar__field input {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 58px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #18314f !important;
+    font: 800 1.08rem/1.2 Poppins, system-ui, sans-serif !important;
+  }
+
+  body.search-results-body .results-searchbar__field input::placeholder {
+    color: #7d8a9c !important;
+    opacity: 1 !important;
+  }
+
+  body.search-results-body .results-searchbar__mobile-filter {
+    display: none !important;
+  }
+
+  body.search-results-body .results-searchbar__button {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 58px !important;
+    height: 58px !important;
+    min-width: 58px !important;
+    min-height: 58px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: linear-gradient(135deg, #108a98, #0a7284) !important;
+    color: #ffffff !important;
+    box-shadow: 0 18px 34px rgba(15, 111, 142, 0.22) !important;
+  }
+
+  body.search-results-body .results-searchbar__button svg {
+    width: 23px !important;
+    height: 23px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2.4 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+  }
+
+  body.search-results-body .results-type-tabs {
+    margin-top: 12px !important;
+    margin-bottom: 22px !important;
+  }
+}
+
+
+/* Results search bridge to shared search-pill contract.
+   This is page-owned only to neutralize older result search declarations until the legacy parity layers are removed. */
+@media (min-width: 761px) {
+  body.search-results-body .results-searchbar__form.doke-search-pill {
+    position: relative !important;
+    display: block !important;
+    min-height: var(--doke-search-pill-min-height) !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body.search-results-body .results-searchbar__field.doke-search-pill__field {
+    display: flex !important;
+    align-items: center !important;
+    min-height: var(--doke-search-pill-min-height) !important;
+    padding: var(--doke-search-pill-padding-y) var(--doke-search-pill-padding-right) var(--doke-search-pill-padding-y) var(--doke-search-pill-padding-left) !important;
+    border: 1px solid var(--doke-search-pill-border) !important;
+    border-radius: var(--doke-search-pill-radius) !important;
+    background: var(--doke-search-pill-bg) !important;
+    box-shadow: var(--doke-search-pill-shadow) !important;
+  }
+
+  body.search-results-body .results-searchbar__form.doke-search-pill:focus-within .results-searchbar__field.doke-search-pill__field,
+  body.search-results-body .results-searchbar.is-search-open .results-searchbar__field.doke-search-pill__field {
+    border-color: var(--doke-search-pill-border-focus) !important;
+    box-shadow: var(--doke-search-pill-shadow-focus) !important;
+    transform: translateY(-1px) !important;
+  }
+
+  body.search-results-body .results-searchbar__field .doke-search-pill__input {
+    color: var(--doke-search-pill-text) !important;
+    font-size: clamp(0.98rem, 1.25vw, 1.14rem) !important;
+    font-weight: 500 !important;
+    line-height: 1.35 !important;
+  }
+
+  body.search-results-body .results-searchbar__field .doke-search-pill__input::placeholder {
+    color: var(--doke-search-pill-placeholder) !important;
+  }
+
+  body.search-results-body .results-searchbar__button.doke-search-pill__button {
+    position: absolute !important;
+    top: 50% !important;
+    right: var(--doke-search-pill-button-offset) !important;
+    transform: translateY(-50%) !important;
+    width: var(--doke-search-pill-button-size) !important;
+    height: var(--doke-search-pill-button-size) !important;
+    min-width: var(--doke-search-pill-button-size) !important;
+    min-height: var(--doke-search-pill-button-size) !important;
+    background: var(--doke-search-pill-button-bg) !important;
+    box-shadow: var(--doke-search-pill-button-shadow) !important;
+  }
+
+  body.search-results-body .results-searchbar__mobile-filter,
+  body.search-results-body .results-searchbar__field-icon {
+    display: none !important;
+  }
+}
+
+
+/* Results compact search scale.
+   The result page is a dense listing screen, so it consumes the shared search-pill
+   compact variant instead of recreating a larger hero input locally. */
+@media (min-width: 761px) {
+  body.search-results-body .results-searchbar__form.doke-search-pill--compact {
+    min-height: var(--doke-search-pill-min-height) !important;
+    height: auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body.search-results-body .results-searchbar__form.doke-search-pill--compact .results-searchbar__field.doke-search-pill__field {
+    min-height: var(--doke-search-pill-min-height) !important;
+    height: var(--doke-search-pill-min-height) !important;
+    padding: var(--doke-search-pill-padding-y) var(--doke-search-pill-padding-right) var(--doke-search-pill-padding-y) var(--doke-search-pill-padding-left) !important;
+  }
+
+  body.search-results-body .results-searchbar__form.doke-search-pill--compact .doke-search-pill__input {
+    min-height: 0 !important;
+    height: auto !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    line-height: 1.35 !important;
+  }
+
+  body.search-results-body .results-searchbar__form.doke-search-pill--compact .results-searchbar__button.doke-search-pill__button {
+    width: var(--doke-search-pill-button-size) !important;
+    height: var(--doke-search-pill-button-size) !important;
+    min-width: var(--doke-search-pill-button-size) !important;
+    min-height: var(--doke-search-pill-button-size) !important;
+    right: var(--doke-search-pill-button-offset) !important;
+  }
+
+  body.search-results-body .results-searchbar__scope.search-scope {
+    margin-top: 8px !important;
+  }
+}
+
+/* FINAL RESULTS CARD PARITY v13
+   Ownership: resultados.html cards rendered by search-results.js.
+   The result page must consume the same doke-ad-card component contract used by
+   index.html; page CSS controls only the grid. These rules neutralize legacy
+   result-only anatomy overrides that made cards look different. */
+body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) > .doke-ad-card {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  overflow: hidden !important;
+  border-radius: 26px !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .doke-ad-card__media {
+  height: clamp(148px, 12vw, 178px) !important;
+  min-height: 148px !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .doke-ad-card__body {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  padding: 18px 20px 20px !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .doke-ad-card__category,
+body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .doke-ad-card__title,
+body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .doke-ad-card__location-text span {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  overflow-wrap: normal !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .doke-ad-card__footer {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 14px !important;
+  margin-top: auto !important;
+  padding-top: 14px !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .doke-ad-card__cta {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  flex: initial !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .doke-ad-card__price {
+  flex: initial !important;
+}
+
+/* FINAL RESULTS WORKERS/PUBLICATIONS PARITY v13
+   Workers and Publicações in resultados.html must use the same media-card
+   contracts consumed by index.html. This block is intentionally last so legacy
+   density files cannot reintroduce overlay-heavy result cards. */
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(232px, 258px)) !important;
+  justify-content: start !important;
+  align-items: start !important;
+  gap: 22px !important;
+}
+
+body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="workers"] .results-grid {
+  grid-template-columns: repeat(auto-fit, minmax(232px, 258px)) !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card[data-worker-trigger] {
+  position: relative !important;
+  display: block !important;
+  width: clamp(232px, 18vw, 258px) !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  aspect-ratio: 9 / 16 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(15, 53, 88, 0.16) !important;
+  border-radius: 30px !important;
+  background-color: #15314a !important;
+  background-position: center !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+  box-shadow: 0 16px 34px rgba(15, 37, 60, 0.12) !important;
+  color: transparent !important;
+  isolation: isolate !important;
+  cursor: pointer !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card[data-worker-trigger]::before,
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card[data-worker-trigger]::after {
+  content: none !important;
+  display: none !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card[data-worker-trigger] > :not(.video-card__poster):not(.video-card__preview) {
+  display: none !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card__poster,
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card__preview {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: inherit !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card__poster {
+  z-index: 0 !important;
+  display: block !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card__preview {
+  z-index: 1 !important;
+  display: block !important;
+  opacity: 0 !important;
+  transition: opacity 180ms ease !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card.is-previewing .video-card__preview {
+  opacity: 1 !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+  gap: 22px !important;
+  align-items: stretch !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid .publication-card {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+/* Results publications density contract.
+   With the desktop filter rail open, publicações should stay in a stable 2-up grid.
+   When the rail is collapsed, the content can expand to 3-up. */
+@media (min-width: 1181px) {
+  body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 22px !important;
+  }
+
+  body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="before-after"] .results-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
+
+/* RESULTS MOBILE CONTENT AXIS CONTRACT
+   Scope: resultados.html mobile content only.
+   Goal: everything below the mobile shell/header uses the same horizontal axis
+   as the header search, instead of the previous 10px local gutter. */
+@media (max-width: 760px) {
+  body.search-results-body.doke-mobile-shell-mounted {
+    --results-mobile-content-edge: var(--doke-mobile-shell-edge, clamp(18px, 5.6vw, 24px));
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .page__content {
+    padding-inline: 0 !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .page__content-inner,
+  body.search-results-body.doke-mobile-shell-mounted .page__content-inner.container.app-shell-page__workspace.search-results-workspace.search-results-workspace--internal,
+  body.search-results-body.doke-mobile-shell-mounted .search-results-workspace,
+  body.search-results-body.doke-mobile-shell-mounted .search-results-workspace--internal {
+    width: 100% !important;
+    max-width: var(--doke-mobile-shell-max, min(430px, 100vw)) !important;
+    margin-inline: auto !important;
+    padding-inline: var(--results-mobile-content-edge) !important;
+    padding-top: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: clip !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-searchbar,
+  body.search-results-body.doke-mobile-shell-mounted .results-layout,
+  body.search-results-body.doke-mobile-shell-mounted .results-main,
+  body.search-results-body.doke-mobile-shell-mounted .results-summary,
+  body.search-results-body.doke-mobile-shell-mounted .results-active-chips,
+  body.search-results-body.doke-mobile-shell-mounted .results-grid,
+  body.search-results-body.doke-mobile-shell-mounted .results-empty__grid,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid,
+  body.search-results-body.doke-mobile-shell-mounted .results-videos-grid,
+  body.search-results-body.doke-mobile-shell-mounted .results-before-after-grid {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-searchbar {
+    padding-inline: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-searchbar__scope.search-scope {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-inline: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-padding-inline: 0 !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-searchbar__scope.search-scope > * {
+    flex: 0 0 auto !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-summary {
+    padding: 18px !important;
+    border-radius: 24px !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-grid .doke-ad-card,
+  body.search-results-body.doke-mobile-shell-mounted .results-grid .service-card,
+  body.search-results-body.doke-mobile-shell-mounted .results-grid .publication-card,
+  body.search-results-body.doke-mobile-shell-mounted .results-empty__grid .doke-ad-card,
+  body.search-results-body.doke-mobile-shell-mounted .results-empty__grid .service-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
   }
 }

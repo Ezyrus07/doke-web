@@ -21,10 +21,11 @@
 @import url("./home-overlays.css?v=20260427-modal-address-v22");
 @import url("../components/search/search-autocomplete.css?v=20260502-shared-search-autocomplete-v3");
 @import url("./home-search-chrome.css?v=20260428-architecture");
+@import url("../components/search/search-bar.css?v=20260505-shared-search-pill-v1");
 @import url("./home-tablet.css?v=20260425-compact-before-after");
 @import url("./home/mobile/index.css?v=20260429-header-legacy-clean") screen and (max-width: 560px);
 
-@import url("./home-ux-popovers.css?v=20260427-home-popovers-v25");
+@import url("./home-ux-popovers.css?v=20260505-more-filters-popover-v1");
 
 @import url("../components/cards/service-card-actions.css?v=20260427-v26-heart-contrast");
 
@@ -43,7 +44,7 @@
 @import url("../components/internal/topbar-standard.css?v=20260428-architecture");
 @import url("../components/cards/card-grid-contract.css?v=20260502-stage2-card-contract-v1");
 @import url("../components/cards/recommendation-card.css?v=20260428-index-recommendations-v3");
-@import url("../components/cards/ad-card.css?v=20260503-ad-card-v2-fit-rail");
+@import url("../components/cards/ad-card.css?v=20260505-ad-card-actions-v1");
 @import url("../patterns/home-results-card.css?v=20260428-architecture");
 @import url("../components/overlays/overlay-contract.css?v=20260428-architecture");
 @import url("../components/forms-actions/form-action-contract.css?v=20260428-architecture");
@@ -59,6 +60,7 @@
 @import url("../components/cards/mobile-list-card-system.css?v=20260428-v1-hotfix");
 @import url("../components/overlays/mobile-overlay-system.css?v=20260428-overlay-hotfix");
 @import url("./home/index-final-refinement.css?v=20260429-index-recovery-safe");
+@import url("./home/publications-no-arrows.css?v=20260505-publications-no-arrows-v1");
 @import url("../components/avatar.css?v=20260429-avatar-circle-final");
 @import url("../components/internal/filter-select-standard.css?v=20260429-global-header-avatar");
 @import url("../patterns/mobile-app-shell.css?v=20260501-canonical-mobile-architecture");
@@ -79,7 +81,7 @@
 @import url("../components/shell/mobile-base-stability.css?v=20260501-mobile-base-stability-v1");
 
 @import url("../components/search/search-filter-contract.css?v=20260502-stage3-search-filter-v1");
-@import url("../components/cards/publication-card.css?v=20260504-publication-card-v10");
+@import url("../components/cards/publication-card.css?v=20260505-publication-card-hover-v1");
 @import url("../components/cards/worker-card.css?v=20260504-worker-card-v10");
 
 /* Home desktop recovery
@@ -2851,5 +2853,1255 @@ section.more-services :is(.more-services__tabs-arrow, .content-rail__arrow) {
   section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
   > .content-rail > :is(.content-rail__arrow, .home-catégories__arrow) {
     display: none !important;
+  }
+}
+
+/* Home search bridge to shared search-pill contract.
+   Keeps index.html as the canonical visual reference without moving shell/header/sidebar. */
+body.home-index-shell .home-search-hero__form.doke-search-pill {
+  position: relative !important;
+  display: block !important;
+  min-height: var(--doke-search-pill-min-height) !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.home-index-shell .home-search-hero__field.doke-search-pill__field {
+  display: flex !important;
+  align-items: center !important;
+  min-height: var(--doke-search-pill-min-height) !important;
+  padding: var(--doke-search-pill-padding-y) var(--doke-search-pill-padding-right) var(--doke-search-pill-padding-y) var(--doke-search-pill-padding-left) !important;
+  border: 1px solid var(--doke-search-pill-border) !important;
+  border-radius: var(--doke-search-pill-radius) !important;
+  background: var(--doke-search-pill-bg) !important;
+  box-shadow: var(--doke-search-pill-shadow) !important;
+}
+
+body.home-index-shell .home-search-hero__form.doke-search-pill:focus-within .home-search-hero__field.doke-search-pill__field,
+body.home-index-shell .home-search-hero__field.doke-search-pill__field:focus-within {
+  border-color: var(--doke-search-pill-border-focus) !important;
+  box-shadow: var(--doke-search-pill-shadow-focus) !important;
+  transform: translateY(-1px) !important;
+}
+
+body.home-index-shell .home-search-hero__input.doke-search-pill__input {
+  color: var(--doke-search-pill-text) !important;
+  font-size: clamp(0.98rem, 1.25vw, 1.14rem) !important;
+  font-weight: 500 !important;
+  line-height: 1.35 !important;
+}
+
+body.home-index-shell .home-search-hero__input.doke-search-pill__input::placeholder {
+  color: var(--doke-search-pill-placeholder) !important;
+}
+
+body.home-index-shell .home-search-hero__button.doke-search-pill__button {
+  position: absolute !important;
+  top: 50% !important;
+  right: var(--doke-search-pill-button-offset) !important;
+  transform: translateY(-50%) !important;
+  width: var(--doke-search-pill-button-size) !important;
+  height: var(--doke-search-pill-button-size) !important;
+  min-width: var(--doke-search-pill-button-size) !important;
+  min-height: var(--doke-search-pill-button-size) !important;
+  background: var(--doke-search-pill-button-bg) !important;
+  box-shadow: var(--doke-search-pill-button-shadow) !important;
+}
+
+/* FINAL HOME MEDIA AXIS CONTRACT v27
+   Decision: category arrows stay; content-section rail arrows are removed.
+   Ownership: index.html section composition only. This prevents Workers,
+   Publicações and ad rails from reserving lateral gutter/arrow space and keeps
+   every section starting on the same content axis. */
+html.home-index-root body.home-index-shell
+section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
+> .content-rail > :is(.content-rail__arrow, .home-catégories__arrow) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+@media (min-width: 761px) {
+  html.home-index-root body.home-index-shell
+  section:is(.featured-services, .short-videos, .home-publications, .featured-pros) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell
+  section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
+  > :is(.section-heading, .home-section-header, .home-media-section__header, .home-publications__header),
+  html.home-index-root body.home-index-shell
+  section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
+  > .content-rail.home-media-rail,
+  html.home-index-root body.home-index-shell
+  section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
+  > .content-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell
+  section:is(.featured-services, .short-videos, .home-publications, .featured-pros)
+  > .content-rail > :is(.service-grid, .short-videos__track, .publication-grid, .featured-pros__grid) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid,
+  html.home-index-root body.home-index-shell section.featured-pros > .content-rail > .featured-pros__grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail > .short-videos__track {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+  }
+}
+
+/* FINAL HOME TAB ARROW REMOVAL v27
+   Mais anúncios uses visible filter chips; no lateral arrow should reserve or
+   overlap width. */
+html.home-index-root body.home-index-shell section.more-services :is(.more-services__tabs-arrow, .content-rail__arrow[data-chip-arrow]) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+
+/* MORE SERVICES FILTER BUTTON — parity with resultados filter toggle.
+   Responsibility: home Mais anúncios tab action only. This is a labeled action,
+   not an icon-only button, so it must not inherit square .doke-icon-btn sizing. */
+html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: max-content !important;
+  max-width: none !important;
+  min-height: 42px !important;
+  height: auto !important;
+  padding: 0 18px !important;
+  gap: 9px !important;
+  border: 1px solid rgba(191, 207, 224, 0.9) !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: #15598f !important;
+  box-shadow: 0 8px 20px rgba(29, 56, 88, 0.045) !important;
+  font-size: 0.9rem !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+}
+
+html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle .filter-toggle__icon {
+  display: inline-grid !important;
+  place-items: center !important;
+  flex: 0 0 auto !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: currentColor !important;
+}
+
+html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle .filter-toggle__icon svg {
+  width: 18px !important;
+  height: 18px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  stroke-width: 2 !important;
+}
+
+html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle[aria-expanded="true"] {
+  border-color: rgba(25, 200, 184, 0.34) !important;
+  background: #e8fbf5 !important;
+  color: #08796d !important;
+}
+
+html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle:focus-visible {
+  outline: 0 !important;
+  box-shadow:
+    0 0 0 3px rgba(31, 101, 173, 0.14),
+    0 10px 20px rgba(42, 115, 184, 0.12) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle:hover {
+    transform: translateY(-1px) !important;
+    border-color: rgba(31, 101, 173, 0.22) !important;
+    box-shadow: 0 12px 24px rgba(29, 56, 88, 0.075) !important;
+  }
+}
+
+@media (min-width: 761px) {
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track {
+    grid-template-columns: none !important;
+    padding-right: 8px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .mini-tab {
+    min-width: 0 !important;
+    padding-inline: clamp(12px, 1.4vw, 20px) !important;
+  }
+}
+
+
+
+/* MOBILE HOME FEED CARD RAIL FIX
+   Scope: home mobile only.
+   Reason: featured ad cards and home publications must not be squeezed into
+   3 equal columns on phones. Use horizontal rails with usable card widths. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding-inline: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    grid-auto-columns: minmax(220px, calc(72vw - 8px)) !important;
+    gap: 14px !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    padding-inline: 18px !important;
+    scroll-snap-type: x proximity !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    grid-auto-columns: minmax(280px, calc(86vw - 8px)) !important;
+    gap: 16px !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    padding-inline: 18px !important;
+    scroll-snap-type: x proximity !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid > *,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid > * {
+    min-width: 0 !important;
+    width: 100% !important;
+    scroll-snap-align: start !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card,
+  html.home-index-root body.home-index-shell section.home-publications .publication-card {
+    min-height: 100% !important;
+  }
+}
+
+
+
+/* HOME MORE SERVICES + MOBILE CARD RAIL REPAIR v3
+   Scope: index home only.
+   Fixes accidental disappearing cards in Mais anúncios and restores readable
+   mobile rails for featured ad/publication cards. */
+html.home-index-root body.home-index-shell section.more-services .more-services__cards-rail,
+html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] {
+  display: grid !important;
+}
+
+html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] > .doke-ad-card:not([hidden]) {
+  display: flex !important;
+}
+
+@media (min-width: 761px) {
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    overflow: visible !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail,
+  html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding-inline: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid]::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid,
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    grid-auto-columns: minmax(220px, calc(72vw - 8px)) !important;
+    gap: 14px !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    padding-inline: 18px !important;
+    scroll-snap-type: x proximity !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    grid-auto-columns: minmax(280px, calc(86vw - 8px)) !important;
+    gap: 16px !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    padding-inline: 18px !important;
+    scroll-snap-type: x proximity !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid > *,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid > *,
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] > * {
+    min-width: 0 !important;
+    width: 100% !important;
+    scroll-snap-align: start !important;
+  }
+}
+
+
+
+/* FINAL MOBILE/HOME REPAIR v4 — must stay last in home.css.
+   Fixes:
+   1) Mais anúncios cards disappearing after tabs.
+   2) Featured ad cards being squeezed into 3 mobile columns.
+   3) Publicações mobile card rail retaining readable width. */
+
+/* Desktop/tablet: never let Mais anúncios collapse into only tabs. */
+html.home-index-root body.home-index-shell section.more-services .more-services__cards-rail,
+html.home-index-root body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  height: auto !important;
+  min-height: 1px !important;
+  overflow: visible !important;
+}
+
+html.home-index-root body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 18px !important;
+}
+
+html.home-index-root body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] > .doke-ad-card:nth-child(-n + 6) {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Mobile: these sections are horizontal rails, never 3 squeezed columns. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail,
+  html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid]::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid,
+  html.home-index-root body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    grid-auto-columns: minmax(238px, 76vw) !important;
+    gap: 14px !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+    width: max-content !important;
+    max-width: none !important;
+    min-width: 100% !important;
+    overflow: visible !important;
+    padding: 0 18px !important;
+    margin: 0 !important;
+    scroll-snap-type: x proximity !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    grid-auto-columns: minmax(286px, 86vw) !important;
+    gap: 16px !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+    width: max-content !important;
+    max-width: none !important;
+    min-width: 100% !important;
+    overflow: visible !important;
+    padding: 0 18px !important;
+    margin: 0 !important;
+    scroll-snap-type: x proximity !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid > .doke-ad-card,
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] > .doke-ad-card,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid > .publication-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    scroll-snap-align: start !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] > .doke-ad-card:nth-child(-n + 6) {
+    display: flex !important;
+  }
+}
+
+
+
+/* MORE SERVICES DESKTOP STRUCTURE REPAIR v5 — keep as last home.css block.
+   Fixes:
+   - cards were inside the filter host, which has height:0 for the popover;
+   - filter button became clipped/visually smaller;
+   - Mais anúncios width drifted from the media/content axis. */
+@media (min-width: 761px) {
+  html.home-index-root body.home-index-shell section.more-services {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .section-heading,
+  html.home-index-root body.home-index-shell section.more-services .more-services__controls,
+  html.home-index-root body.home-index-shell section.more-services .more-services__cards-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__filters-host {
+    position: relative !important;
+    z-index: 140 !important;
+    width: 100% !important;
+    height: 0 !important;
+    overflow: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-rail {
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track {
+    display: grid !important;
+    grid-template-columns:
+      minmax(118px, 1fr)
+      minmax(118px, 1fr)
+      minmax(150px, 1.2fr)
+      minmax(145px, 1.15fr)
+      minmax(165px, 1.25fr)
+      minmax(94px, .8fr)
+      max-content !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 6px !important;
+    border-radius: 999px !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .mini-tab {
+    min-width: 0 !important;
+    width: 100% !important;
+    height: 46px !important;
+    padding-inline: 14px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    width: auto !important;
+    min-width: 118px !important;
+    height: 46px !important;
+    padding: 0 18px !important;
+    border: 1px solid rgba(164, 199, 229, 0.92) !important;
+    border-radius: 999px !important;
+    background: #fff !important;
+    color: #15538c !important;
+    box-shadow: 0 8px 18px rgba(28, 63, 104, 0.07) !important;
+    font-weight: 900 !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle .filter-toggle__icon {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle .filter-toggle__icon svg {
+    width: 18px !important;
+    height: 18px !important;
+    stroke-width: 2.2 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__cards-rail {
+    display: block !important;
+    height: auto !important;
+    min-height: 1px !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-top: 22px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] {
+    display: grid !important;
+    grid-auto-flow: row !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] > .doke-ad-card:nth-child(-n + 6) {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track {
+    grid-template-columns: repeat(6, max-content) max-content !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle {
+    min-width: 112px !important;
+    height: 44px !important;
+    padding-inline: 16px !important;
+    border-radius: 999px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__cards-rail {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    margin-top: 16px !important;
+  }
+}
+
+
+
+/* MAIS ANÚNCIOS AXIS + FILTER FUNCTION REPAIR v6
+   Owner: home.css. This section follows the same content axis as Workers/Publicações,
+   while keeping the filters popover contextual and the cards visible. */
+@media (min-width: 761px) {
+  html.home-index-root body.home-index-shell {
+    --more-services-axis-inset-v6: 68px;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services > .section-heading,
+  html.home-index-root body.home-index-shell section.more-services > .more-services__filters-host,
+  html.home-index-root body.home-index-shell section.more-services > .more-services__cards-rail,
+  html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: var(--more-services-axis-inset-v6) !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__controls,
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-inline: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__filters-host {
+    height: 0 !important;
+    overflow: visible !important;
+    position: relative !important;
+    z-index: 140 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-filters[data-more-filters-panel] {
+    right: var(--more-services-axis-inset-v6) !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track {
+    display: grid !important;
+    grid-template-columns:
+      minmax(104px, 1fr)
+      minmax(104px, 1fr)
+      minmax(142px, 1.15fr)
+      minmax(132px, 1.1fr)
+      minmax(154px, 1.2fr)
+      minmax(82px, .7fr)
+      max-content !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 6px !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    min-width: 118px !important;
+    height: 44px !important;
+    padding: 0 18px !important;
+    border: 1px solid rgba(164, 199, 229, 0.9) !important;
+    border-radius: 999px !important;
+    background: #ffffff !important;
+    color: #15538c !important;
+    box-shadow: 0 8px 18px rgba(28, 63, 104, 0.07) !important;
+    font-weight: 900 !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    cursor: pointer !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle[aria-expanded="true"],
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle.is-active {
+    background: #e9fbf6 !important;
+    border-color: #89e2d5 !important;
+    color: #08776e !important;
+    box-shadow: 0 0 0 5px rgba(135, 226, 213, 0.22) !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle .filter-toggle__icon,
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle svg {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__cards-rail {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    min-height: 1px !important;
+    overflow: visible !important;
+    margin-top: 22px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] {
+    display: grid !important;
+    grid-auto-flow: row !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] > .doke-ad-card:nth-child(-n + 6) {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  html.home-index-root body.home-index-shell {
+    --more-services-axis-inset-v6: 28px;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track {
+    grid-template-columns: repeat(6, max-content) max-content !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section.more-services .more-services__cards-rail {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    margin-top: 16px !important;
+  }
+}
+
+
+
+/* MAIS ANÚNCIOS FINAL AXIS + FILTER FIX v7
+   Must stay last. Removes the artificial inset that made "Mais anúncios" narrower
+   than the sections above, and guarantees the contextual filter panel is visible. */
+@media (min-width: 761px) {
+  html.home-index-root body.home-index-shell {
+    --more-services-axis-inset-v6: 0px !important;
+    --more-services-axis-inset-v7: 0px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services,
+  html.home-index-root body.home-index-shell section.more-services > .section-heading,
+  html.home-index-root body.home-index-shell section.more-services .more-services__controls,
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-rail,
+  html.home-index-root body.home-index-shell section.more-services > .more-services__cards-rail,
+  html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track {
+    width: 100% !important;
+    max-width: 100% !important;
+    grid-template-columns:
+      minmax(110px, 1fr)
+      minmax(110px, 1fr)
+      minmax(145px, 1.15fr)
+      minmax(140px, 1.1fr)
+      minmax(160px, 1.2fr)
+      minmax(86px, .7fr)
+      max-content !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle {
+    min-width: 122px !important;
+    height: 44px !important;
+    padding-inline: 18px !important;
+    flex: 0 0 auto !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-filters.more-filters--section[data-more-filters-panel] {
+    right: 0 !important;
+    display: block;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-filters.more-filters--section[data-more-filters-panel][hidden] {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-filters.more-filters--section[data-more-filters-panel].is-open {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__cards-rail {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    overflow: visible !important;
+    margin-top: 22px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track {
+    grid-template-columns: repeat(6, max-content) max-content !important;
+  }
+}
+
+
+
+/* HOME DESKTOP OPTICAL CENTER AXIS v8
+   Scope: index/home desktop only.
+   The shell grid is technically centered inside the post-sidebar column, but the
+   visible composition was reading shifted to the right because the sidebar
+   occupies a strong visual mass on the left. This applies a small optical
+   correction to the home workspace without touching sidebar, header, body or
+   internal pages. */
+@media (min-width: 1025px) {
+  body.home-index-shell {
+    --home-desktop-optical-center-shift-v8: clamp(20px, 1.65vw, 34px);
+  }
+
+  body.home-index-shell .page__content-inner.container.shell-home__workspace,
+  body.home-index-shell .page__content-inner.container.shell-home__workspace--clean {
+    position: relative !important;
+    left: calc(-1 * var(--home-desktop-optical-center-shift-v8)) !important;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1280px) {
+  body.home-index-shell {
+    --home-desktop-optical-center-shift-v8: 0px;
+  }
+}
+
+
+
+/* HOME DESKTOP CONTENT AXIS CONTRACT v9
+   Scope: index/home desktop only.
+   Replaces the previous optical left-shift with a real width contract aligned
+   to the internal pages rhythm, especially pedidos.html.
+   Do not move body, shell, sidebar, header or global wrappers for page-specific centering. */
+@media (min-width: 1025px) {
+  body.home-index-shell {
+    --home-desktop-optical-center-shift-v8: 0px !important;
+    --home-desktop-content-max-v9: 1280px;
+    --home-desktop-content-gutter-v9: 0px;
+  }
+
+  body.home-index-shell .page__content {
+    padding-left: var(--doke-app-shell-gutter, clamp(24px, 3vw, 48px)) !important;
+    padding-right: var(--doke-app-shell-gutter, clamp(24px, 3vw, 48px)) !important;
+  }
+
+  body.home-index-shell .page__content-inner.container.shell-home__workspace,
+  body.home-index-shell .page__content-inner.container.shell-home__workspace--clean {
+    left: auto !important;
+    transform: none !important;
+    width: min(100%, var(--home-desktop-content-max-v9)) !important;
+    max-width: var(--home-desktop-content-max-v9) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: var(--home-desktop-content-gutter-v9) !important;
+    padding-right: var(--home-desktop-content-gutter-v9) !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell .home-search-hero,
+  body.home-index-shell .home-catégories,
+  body.home-index-shell .featured-services,
+  body.home-index-shell .short-videos,
+  body.home-index-shell .home-publications,
+  body.home-index-shell .before-after,
+  body.home-index-shell .more-services,
+  body.home-index-shell .featured-pros {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell .home-search-hero .content-rail,
+  body.home-index-shell .home-catégories .content-rail,
+  body.home-index-shell .featured-services .content-rail,
+  body.home-index-shell .short-videos .content-rail,
+  body.home-index-shell .home-publications .content-rail,
+  body.home-index-shell .before-after .content-rail,
+  body.home-index-shell .more-services .content-rail,
+  body.home-index-shell .featured-pros .content-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell .home-search-hero__card {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  body.home-index-shell .home-index-topbar,
+  body.home-index-shell .home-side-meta {
+    width: 100% !important;
+    max-width: var(--home-desktop-content-max-v9) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (min-width: 1441px) {
+  body.home-index-shell {
+    --home-desktop-content-max-v9: 1280px;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1280px) {
+  body.home-index-shell {
+    --home-desktop-content-max-v9: 100%;
+  }
+}
+
+
+
+/* HOME DESKTOP HEADER AXIS CONTRACT v10
+   Scope: index/home desktop only.
+   Aligns the home desktop topbar/header controls to the same horizontal
+   contract used by HOME DESKTOP CONTENT AXIS CONTRACT v9.
+   Does not change body, sidebar, global header, shell or internal pages. */
+@media (min-width: 1025px) {
+  body.home-index-shell {
+    --home-desktop-header-max-v10: var(--home-desktop-content-max-v9, 1280px);
+  }
+
+  body.home-index-shell .home-index-topbar {
+    width: min(100%, var(--home-desktop-header-max-v10)) !important;
+    max-width: var(--home-desktop-header-max-v10) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell .home-side-meta {
+    width: min(100%, var(--home-desktop-header-max-v10)) !important;
+    max-width: var(--home-desktop-header-max-v10) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell .home-index-topbar .home-tablet-topbar__inner,
+  body.home-index-shell .home-index-topbar .topbar__inner,
+  body.home-index-shell .home-index-topbar .internal-page-topbar__inner,
+  body.home-index-shell .home-side-meta__inner {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell .home-side-meta {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+  }
+
+  body.home-index-shell .home-side-meta__group--primary {
+    justify-content: flex-start !important;
+  }
+
+  body.home-index-shell .home-side-meta__group--secondary {
+    justify-content: flex-end !important;
+    margin-left: auto !important;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1280px) {
+  body.home-index-shell {
+    --home-desktop-header-max-v10: 100%;
+  }
+}
+
+
+
+/* HOME MOBILE CAROUSEL CONTRACT v11
+   Scope: index/home mobile only.
+   Fixes the regression where ad cards were squeezed into 3 columns on phones.
+   Mobile sections below are horizontal carousels with usable card widths. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell {
+    --home-mobile-rail-gutter-v11: 18px;
+    --home-mobile-ad-card-width-v11: clamp(218px, 72vw, 270px);
+    --home-mobile-publication-card-width-v11: clamp(252px, 78vw, 312px);
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail,
+  html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail {
+    display: block !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin-left: calc(-1 * var(--doke-mobile-page-gutter, 14px)) !important;
+    margin-right: calc(-1 * var(--doke-mobile-page-gutter, 14px)) !important;
+    padding-inline: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    scroll-padding-inline: var(--home-mobile-rail-gutter-v11) !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid,
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    grid-auto-columns: var(--home-mobile-ad-card-width-v11) !important;
+    gap: 14px !important;
+    width: max-content !important;
+    max-width: none !important;
+    min-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 var(--home-mobile-rail-gutter-v11) !important;
+    overflow: visible !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+    scroll-snap-type: x proximity !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    grid-auto-columns: var(--home-mobile-publication-card-width-v11) !important;
+    gap: 14px !important;
+    width: max-content !important;
+    max-width: none !important;
+    min-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 var(--home-mobile-rail-gutter-v11) !important;
+    overflow: visible !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+    scroll-snap-type: x proximity !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid > .doke-ad-card,
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] > .doke-ad-card,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid > .publication-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    scroll-snap-align: start !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__media,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__media {
+    height: 148px !important;
+    min-height: 148px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card {
+    border-radius: 22px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__media {
+    height: 136px !important;
+    min-height: 136px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__body {
+    padding: 12px 14px 14px !important;
+    gap: 8px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__title {
+    font-size: 0.94rem !important;
+    line-height: 1.17 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__author,
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__meta {
+    font-size: 0.78rem !important;
+  }
+}
+
+
+
+/* HOME MOBILE AD RAIL FINAL OVERRIDE v12
+   Loaded after component/system CSS. Keeps home cards as true horizontal
+   carousels on phones and prevents 3-column squeeze. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell .featured-services .content-rail,
+  html.home-index-root body.home-index-shell .more-services .content-rail.more-services__cards-rail {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    scroll-padding-inline: 18px !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .content-rail::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell .more-services .content-rail.more-services__cards-rail::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .service-grid,
+  html.home-index-root body.home-index-shell .more-services .service-grid[data-more-services-grid] {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    gap: 14px !important;
+    width: max-content !important;
+    max-width: none !important;
+    min-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 18px !important;
+    overflow: visible !important;
+    scroll-snap-type: x proximity !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .service-grid > .doke-ad-card,
+  html.home-index-root body.home-index-shell .more-services .service-grid[data-more-services-grid] > .doke-ad-card {
+    flex: 0 0 clamp(224px, 74vw, 276px) !important;
+    width: clamp(224px, 74vw, 276px) !important;
+    max-width: clamp(224px, 74vw, 276px) !important;
+    min-width: 224px !important;
+    scroll-snap-align: start !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .doke-ad-card__body,
+  html.home-index-root body.home-index-shell .more-services .doke-ad-card__body {
+    padding: 16px 16px 18px !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .doke-ad-card__title,
+  html.home-index-root body.home-index-shell .more-services .doke-ad-card__title {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    font-size: 1.28rem !important;
+    line-height: 1.05 !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .doke-ad-card__rating,
+  html.home-index-root body.home-index-shell .more-services .doke-ad-card__rating,
+  html.home-index-root body.home-index-shell .featured-services .doke-ad-card__location,
+  html.home-index-root body.home-index-shell .more-services .doke-ad-card__location,
+  html.home-index-root body.home-index-shell .featured-services .doke-ad-card__footer,
+  html.home-index-root body.home-index-shell .more-services .doke-ad-card__footer {
+    min-width: 0 !important;
+    overflow: hidden !important;
   }
 }

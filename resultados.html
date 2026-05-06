@@ -12,7 +12,7 @@
     />
     <link rel="stylesheet" href="assets/css/core/index.css" />
     <link rel="stylesheet" href="assets/css/pages/app-shell.css?v=20260501-desktop-grid-shell-v1" />
-    <link rel="stylesheet" href="assets/css/pages/search-results.css?v=20260505-results-search-parity-v6" />
+    <link rel="stylesheet" href="assets/css/pages/search-results.css?v=20260505-ad-card-actions-v1" />
     <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
     <link rel="stylesheet" href="assets/css/components/shell/doke-shell-contract.css?v=20260501-width-header-contract-v12">
 <link rel="stylesheet" href="assets/css/components/layout/responsive-page-contract.css?v=20260502-stage4-responsive-page-contract-v1">
@@ -154,15 +154,15 @@
             class="page__content-inner container app-shell-page__workspace search-results-workspace search-results-workspace--internal doke-page-shell doke-page-stack"
           >
             <section class="results-searchbar doke-page-section" data-results-searchbox aria-label="Buscar resultados">
-              <form class="results-searchbar__form" action="resultados.html" role="search" data-results-search-form novalidate autocomplete="off" aria-label="Buscar resultados no Doke">
-                <label class="results-searchbar__field" for="results-page-search">
+              <form class="results-searchbar__form doke-search-pill doke-search-pill--compact" action="resultados.html" role="search" data-results-search-form novalidate autocomplete="off" aria-label="Buscar resultados no Doke">
+                <label class="results-searchbar__field doke-search-pill__field" for="results-page-search">
                   <span class="results-searchbar__field-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg>
                   </span>
-                  <input id="results-page-search" type="search" name="q" placeholder="Ex: Pintor, Encanador..." data-results-search-input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+                  <input id="results-page-search" class="doke-search-pill__input" type="search" name="q" placeholder="Ex: Pintor, Encanador..." data-results-search-input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
                 </label>
                 <button class="results-searchbar__mobile-filter" type="button" data-results-filters-open aria-controls="results-filters-panel" aria-label="Abrir filtros">Filtros</button>
-                <button class="results-searchbar__button" type="submit" aria-label="Buscar">
+                <button class="results-searchbar__button doke-search-pill__button" type="submit" aria-label="Buscar">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>
                 </button>
                 <div class="search-dropdown results-searchbar__dropdown" data-results-search-dropdown hidden>
@@ -196,12 +196,29 @@
                 </label>
                 <label class="search-scope__option">
                   <input type="radio" name="searchType" value="before-after" />
-                  <span>Antes x Depois</span>
+                  <span>Publicações</span>
                 </label>
                 <label class="search-scope__option">
                   <input type="radio" name="searchType" value="users" />
                   <span>Usuários</span>
                 </label>
+                <button
+                  class="search-scope__filter-toggle"
+                  type="button"
+                  data-results-filters-open
+                  aria-controls="results-filters-panel"
+                  aria-expanded="true"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M4 7h10"></path>
+                    <path d="M18 7h2"></path>
+                    <circle cx="16" cy="7" r="2"></circle>
+                    <path d="M4 17h2"></path>
+                    <path d="M10 17h10"></path>
+                    <circle cx="8" cy="17" r="2"></circle>
+                  </svg>
+                  <span>Filtros</span>
+                </button>
               </fieldset>
             </section>
             <section class="results-layout doke-page-section" aria-label="Resultados da busca" data-results-layout data-results-state="ready" aria-busy="false">
@@ -430,8 +447,8 @@
                 >
                   <div class="results-related__header">
                     <div>
-                      <span class="results-panel__eyebrow">Antes e depois</span>
-                      <h3>Transformações relacionadas</h3>
+                      <span class="results-panel__eyebrow">Publicações</span>
+                      <h3>Publicações relacionadas</h3>
                     </div>
                   </div>
                   <div
@@ -473,7 +490,7 @@
 
     <section class="before-after-preview doke-worker-card doke-media-card doke-card doke-page-section" data-before-after-preview hidden aria-hidden="true">
       <div class="before-after-preview__scrim" data-before-after-close></div>
-      <div class="before-after-preview__dialog" role="dialog" aria-modal="true" aria-label="Detalhes do caso antes e depois"></div>
+      <div class="before-after-preview__dialog" role="dialog" aria-modal="true" aria-label="Detalhes da publicação"></div>
     </section>
 
     <section class="worker-preview doke-worker-card doke-media-card doke-card doke-page-section" data-worker-preview hidden aria-hidden="true">
@@ -533,10 +550,10 @@
     <script src="assets/js/core/supabase-config.js"></script>
     <script src="assets/js/core/auth-service.js"></script>
     <script src="assets/js/core/app.js?v=20260502-spa-nav-v2"></script>
-    <script src="assets/js/pages/search-data.js?v=20260428-architecture"></script>
-    <script src="assets/js/pages/home/before-after.js?v=20260428-comments-sheet"></script>
+    <script src="assets/js/pages/search-data.js?v=20260505-publications-3up-v2"></script>
+    <script src="assets/js/pages/home/before-after.js?v=20260505-comment-composer-v1"></script>
     <script src="assets/js/pages/home/workers.js?v=20260428-comments-sheet"></script>
-    <script src="assets/js/pages/search-results.js?v=20260502-results-contract-v7"></script>
+    <script src="assets/js/pages/search-results.js?v=20260505-results-worker-tabs-v11"></script>
     <script src="assets/js/pages/results/open-filters-from-url.js?v=20260427-v26-open-filters"></script>
     <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
   <script src="assets/js/ui/mobile-drawer-standard.js?v=20260428-architecture"></script>
@@ -564,6 +581,7 @@
   <script src="assets/js/controllers/page-controller-registry.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/controllers/resultados-controller.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/controllers/controller-bootstrap.js?v=20260501-stage32-runtime-flags" defer></script>
-  <script src="assets/js/components/mobile-app-shell.js?v=20260501-stage32-runtime-flags" defer></script>
+  <script src="assets/js/components/mobile-app-shell.js?v=20260505-more-filters-v6" defer></script>
+    <script src="assets/js/components/ad-card-interactions.js?v=20260505-ad-card-actions-v1" defer></script>
 </body>
 </html>
