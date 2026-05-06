@@ -407,3 +407,65 @@
     border-radius: 18px;
   }
 }
+
+/* Mobile publication border refinement.
+   Final mobile contract: remove the oversized white frame and keep the card
+   visually closer to the desktop composition. */
+@media (max-width: 760px) {
+  .publication-card {
+    --publication-radius: 22px;
+    min-height: auto;
+    border-width: 1px;
+    border-color: rgba(196, 212, 228, 0.82);
+    box-shadow: 0 10px 22px rgba(19, 48, 82, 0.07);
+  }
+
+  .publication-card__media {
+    margin: 0;
+    min-height: 168px;
+    border-radius: 22px 22px 0 0;
+  }
+
+  .publication-card__type {
+    top: 10px;
+    left: 10px;
+  }
+
+  .publication-card__content {
+    gap: 6px;
+    padding: 12px 14px 14px;
+  }
+
+  .publication-card__actions {
+    margin-top: 0;
+    padding-top: 8px;
+  }
+}
+
+
+/* Mobile publication card frame contract v19.
+   Component-level rule: the media must not create a thick white inner frame. */
+@media (max-width: 760px) {
+  .publication-card {
+    --publication-radius: 22px;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .publication-card > .publication-card__media {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: 164px;
+    min-height: 164px;
+    margin: 0;
+    border-radius: 22px 22px 0 0;
+    background-size: cover;
+    background-position: center;
+  }
+
+  .publication-card > .publication-card__content {
+    padding: 11px 13px 13px;
+  }
+}
+

@@ -44,7 +44,7 @@
 @import url("../components/internal/topbar-standard.css?v=20260428-architecture");
 @import url("../components/cards/card-grid-contract.css?v=20260502-stage2-card-contract-v1");
 @import url("../components/cards/recommendation-card.css?v=20260428-index-recommendations-v3");
-@import url("../components/cards/ad-card.css?v=20260505-ad-card-actions-v1");
+@import url("../components/cards/ad-card.css?v=20260506-ad-card-mobile-density-v8");
 @import url("../patterns/home-results-card.css?v=20260428-architecture");
 @import url("../components/overlays/overlay-contract.css?v=20260428-architecture");
 @import url("../components/forms-actions/form-action-contract.css?v=20260428-architecture");
@@ -81,7 +81,7 @@
 @import url("../components/shell/mobile-base-stability.css?v=20260501-mobile-base-stability-v1");
 
 @import url("../components/search/search-filter-contract.css?v=20260502-stage3-search-filter-v1");
-@import url("../components/cards/publication-card.css?v=20260505-publication-card-hover-v1");
+@import url("../components/cards/publication-card.css?v=20260506-publication-card-frame-v19");
 @import url("../components/cards/worker-card.css?v=20260504-worker-card-v10");
 
 /* Home desktop recovery
@@ -3998,8 +3998,8 @@ html.home-index-root body.home-index-shell section.more-services .service-grid.s
 
   html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__media,
   html.home-index-root body.home-index-shell section.more-services .doke-ad-card__media {
-    height: 148px !important;
-    min-height: 148px !important;
+    height: 116px !important;
+    min-height: 116px !important;
   }
 
   html.home-index-root body.home-index-shell section.home-publications .publication-card {
@@ -4080,7 +4080,7 @@ html.home-index-root body.home-index-shell section.more-services .service-grid.s
 
   html.home-index-root body.home-index-shell .featured-services .doke-ad-card__body,
   html.home-index-root body.home-index-shell .more-services .doke-ad-card__body {
-    padding: 16px 16px 18px !important;
+    padding: 10px 12px 12px !important;
   }
 
   html.home-index-root body.home-index-shell .featured-services .doke-ad-card__title,
@@ -4091,8 +4091,8 @@ html.home-index-root body.home-index-shell section.more-services .service-grid.s
     display: -webkit-box !important;
     -webkit-line-clamp: 2 !important;
     -webkit-box-orient: vertical !important;
-    font-size: 1.28rem !important;
-    line-height: 1.05 !important;
+    font-size: 1.06rem !important;
+    line-height: 1.03 !important;
   }
 
   html.home-index-root body.home-index-shell .featured-services .doke-ad-card__rating,
@@ -4105,3 +4105,1547 @@ html.home-index-root body.home-index-shell section.more-services .service-grid.s
     overflow: hidden !important;
   }
 }
+
+/* Home mobile feed contract.
+   Final page-level mobile rules for section placement only: component internals stay in cards/*.css. */
+@media (max-width: 760px) {
+  body.home-index-shell .featured-services .service-grid,
+  body.home-index-shell .home-media-rail--publications .publication-grid,
+  body.home-index-shell .more-services .service-grid--compact {
+    scrollbar-width: none;
+  }
+
+  body.home-index-shell .featured-services .service-grid::-webkit-scrollbar,
+  body.home-index-shell .home-media-rail--publications .publication-grid::-webkit-scrollbar,
+  body.home-index-shell .more-services .service-grid--compact::-webkit-scrollbar {
+    display: none;
+  }
+
+  body.home-index-shell .featured-services .service-grid {
+    display: flex !important;
+    grid-template-columns: none !important;
+    gap: 12px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 2px 0 6px !important;
+    scroll-snap-type: x proximity !important;
+  }
+
+  body.home-index-shell .featured-services .doke-ad-card {
+    flex: 0 0 min(272px, calc(100vw - 82px)) !important;
+    width: min(272px, calc(100vw - 82px)) !important;
+    min-width: min(272px, calc(100vw - 82px)) !important;
+    max-width: min(272px, calc(100vw - 82px)) !important;
+    scroll-snap-align: start !important;
+  }
+
+  body.home-index-shell .more-services__cards-rail {
+    overflow: visible !important;
+    padding-inline: 0 !important;
+  }
+
+  body.home-index-shell .more-services .service-grid--compact {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    scroll-snap-type: none !important;
+  }
+
+  body.home-index-shell .more-services .service-grid--compact > .doke-ad-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    flex: none !important;
+  }
+
+  body.home-index-shell.home-filter-sheet-open .more-services__filters-host > .more-filters[data-more-filters-panel]:not([hidden]),
+  body.home-index-shell .more-services__filters-host > .more-filters[data-more-filters-panel].is-open {
+    display: block !important;
+  }
+}
+
+
+/* Home mobile announcement card density alignment.
+   Page-level only because previous home rail contracts already use final mobile overrides. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell .featured-services .doke-ad-card__media,
+  html.home-index-root body.home-index-shell .more-services .doke-ad-card__media {
+    height: 112px !important;
+    min-height: 112px !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .doke-ad-card__body,
+  html.home-index-root body.home-index-shell .more-services .doke-ad-card__body {
+    padding: 10px 12px 12px !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .doke-ad-card__category,
+  html.home-index-root body.home-index-shell .more-services .doke-ad-card__category {
+    margin-bottom: 4px !important;
+    font-size: 0.68rem !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .doke-ad-card__title,
+  html.home-index-root body.home-index-shell .more-services .doke-ad-card__title {
+    margin-bottom: 6px !important;
+    font-size: 1.04rem !important;
+    line-height: 1.02 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .doke-ad-card__rating,
+  html.home-index-root body.home-index-shell .more-services .doke-ad-card__rating {
+    margin-bottom: 7px !important;
+    font-size: 0.82rem !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .doke-ad-card__tags,
+  html.home-index-root body.home-index-shell .more-services .doke-ad-card__tags {
+    margin-bottom: 7px !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .doke-ad-card__location,
+  html.home-index-root body.home-index-shell .more-services .doke-ad-card__location {
+    grid-template-columns: 28px minmax(0, 1fr) !important;
+    margin-bottom: 8px !important;
+    font-size: 0.7rem !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .doke-ad-card__avatar,
+  html.home-index-root body.home-index-shell .more-services .doke-ad-card__avatar {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .doke-ad-card__footer,
+  html.home-index-root body.home-index-shell .more-services .doke-ad-card__footer {
+    gap: 8px !important;
+    padding-top: 8px !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .doke-ad-card__cta,
+  html.home-index-root body.home-index-shell .more-services .doke-ad-card__cta {
+    min-height: 36px !important;
+    font-size: 0.8rem !important;
+  }
+}
+
+
+/* Home mobile ad card runtime height contract.
+   Prevents carousel stretch after remote media/backgrounds finish loading.
+   Page owns rail alignment; component owns internal density. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell .featured-services .service-grid,
+  html.home-index-root body.home-index-shell .more-services .service-grid[data-more-services-grid] {
+    align-items: flex-start !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .service-grid > .doke-ad-card,
+  html.home-index-root body.home-index-shell .more-services .service-grid[data-more-services-grid] > .doke-ad-card {
+    align-self: flex-start !important;
+    height: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .doke-ad-card__body,
+  html.home-index-root body.home-index-shell .more-services .doke-ad-card__body {
+    flex: 0 0 auto !important;
+  }
+
+  html.home-index-root body.home-index-shell .featured-services .doke-ad-card__footer,
+  html.home-index-root body.home-index-shell .more-services .doke-ad-card__footer {
+    margin-top: 0 !important;
+  }
+}
+
+
+/* Home mobile featured ad card hydration lock.
+   Fixes the loaded-image state where flex card anatomy stretched after the
+   initial compact paint. This is page rail ownership: only the home mobile
+   featured/more ad cards are normalized, without touching shell/header/global wrappers. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track {
+    align-items: flex-start !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track > .doke-ad-card {
+    display: block !important;
+    align-self: flex-start !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track > .doke-ad-card .doke-ad-card__media {
+    height: 104px !important;
+    min-height: 104px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track > .doke-ad-card .doke-ad-card__body {
+    display: block !important;
+    flex: none !important;
+    min-height: 0 !important;
+    padding: 9px 11px 11px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track > .doke-ad-card .doke-ad-card__category {
+    margin-bottom: 3px !important;
+    font-size: 0.64rem !important;
+    letter-spacing: 0.12em !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track > .doke-ad-card .doke-ad-card__title {
+    display: block !important;
+    margin-bottom: 7px !important;
+    overflow: hidden !important;
+    font-size: 0.98rem !important;
+    line-height: 1.02 !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    -webkit-line-clamp: unset !important;
+    -webkit-box-orient: initial !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track > .doke-ad-card .doke-ad-card__rating {
+    margin-bottom: 7px !important;
+    gap: 4px !important;
+    font-size: 0.78rem !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track > .doke-ad-card .doke-ad-card__tags {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track > .doke-ad-card .doke-ad-card__location {
+    grid-template-columns: 24px minmax(0, 1fr) !important;
+    gap: 5px !important;
+    margin-bottom: 7px !important;
+    font-size: 0.66rem !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track > .doke-ad-card .doke-ad-card__avatar {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track > .doke-ad-card .doke-ad-card__location-text svg {
+    width: 14px !important;
+    height: 14px !important;
+    flex-basis: 14px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track > .doke-ad-card .doke-ad-card__footer {
+    margin-top: 0 !important;
+    gap: 7px !important;
+    padding-top: 7px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track > .doke-ad-card .doke-ad-card__price {
+    font-size: 0.9rem !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track > .doke-ad-card .doke-ad-card__cta {
+    min-height: 34px !important;
+    padding-inline: 10px !important;
+    font-size: 0.76rem !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track > .doke-ad-card .doke-ad-card__favorite {
+    width: 34px !important;
+    height: 34px !important;
+    aspect-ratio: 1 / 1 !important;
+    border-radius: 50% !important;
+  }
+}
+
+
+/* MOBILE AD CARD DENSITY LOCK v7 — keep as the last home.css block.
+   Scope: index mobile feed only.
+   Fixes the post-load expansion caused by rail stretch + flex body/footer auto. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid,
+  html.home-index-root body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] {
+    align-items: start !important;
+    justify-items: start !important;
+    grid-auto-columns: minmax(220px, 72vw) !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > .service-grid > .doke-ad-card,
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] > .doke-ad-card {
+    align-self: start !important;
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    border-radius: 16px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__media,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__media {
+    height: 104px !important;
+    min-height: 104px !important;
+    max-height: 104px !important;
+    flex: none !important;
+    background-size: cover !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__body,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__body {
+    display: block !important;
+    flex: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 8px 10px 10px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__body > *,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__body > * {
+    flex: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__category,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__category {
+    margin: 0 0 3px !important;
+    font-size: 0.62rem !important;
+    line-height: 1 !important;
+    letter-spacing: 0.12em !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__title,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__title {
+    margin: 0 0 7px !important;
+    font-size: 0.98rem !important;
+    line-height: 1.02 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__rating,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__rating {
+    margin: 0 0 7px !important;
+    gap: 5px !important;
+    font-size: 0.78rem !important;
+    line-height: 1 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__tags,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__tags {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__location,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__location {
+    grid-template-columns: 24px minmax(0, 1fr) !important;
+    gap: 5px !important;
+    margin: 0 0 7px !important;
+    font-size: 0.66rem !important;
+    line-height: 1.1 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__avatar,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__avatar {
+    width: 24px !important;
+    height: 24px !important;
+    border-width: 1px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__avatar::before,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__avatar::before {
+    top: 6px !important;
+    left: 8px !important;
+    width: 8px !important;
+    height: 8px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__avatar::after,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__avatar::after {
+    left: 6px !important;
+    bottom: 3px !important;
+    width: 13px !important;
+    height: 15px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__location-text,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__location-text {
+    gap: 5px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__location-text svg,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__location-text svg {
+    width: 14px !important;
+    height: 14px !important;
+    flex-basis: 14px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__footer,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__footer {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 7px !important;
+    margin-top: 0 !important;
+    padding-top: 7px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__price,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__price {
+    font-size: 0.88rem !important;
+    line-height: 1 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__cta,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__cta {
+    min-height: 32px !important;
+    padding-inline: 10px !important;
+    font-size: 0.72rem !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__badge,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__badge {
+    top: 8px !important;
+    left: 8px !important;
+    min-height: 24px !important;
+    max-width: calc(100% - 70px) !important;
+    padding-inline: 9px !important;
+    font-size: 0.64rem !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__favorite,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__favorite {
+    top: 7px !important;
+    right: 7px !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    aspect-ratio: 1 / 1 !important;
+    border-radius: 999px !important;
+  }
+}
+
+
+/* MOBILE AD CARD DENSITY LOCK v8 — final runtime contract.
+   The previous ZIP kept the same home.css cache key, so GitHub Pages/browser could
+   keep serving the older loaded-card contract. This block is intentionally last.
+   Scope: home mobile ad cards only. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track,
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] {
+    align-items: flex-start !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track > .doke-ad-card,
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] > .doke-ad-card {
+    display: grid !important;
+    grid-template-rows: 96px auto !important;
+    align-self: flex-start !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__media,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__media {
+    height: 96px !important;
+    min-height: 96px !important;
+    max-height: 96px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__body,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__body {
+    display: grid !important;
+    grid-template-rows: auto auto auto auto !important;
+    align-content: start !important;
+    row-gap: 6px !important;
+    flex: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 8px 10px 10px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__category,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__category,
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__title,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__title,
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__rating,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__rating,
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__location,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__location,
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__footer,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__footer {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__category,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__category {
+    font-size: 0.6rem !important;
+    line-height: 1 !important;
+    letter-spacing: 0.12em !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__title,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__title {
+    display: block !important;
+    overflow: hidden !important;
+    font-size: 0.96rem !important;
+    line-height: 1.02 !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    -webkit-line-clamp: unset !important;
+    -webkit-box-orient: initial !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__rating,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__rating {
+    gap: 4px !important;
+    font-size: 0.76rem !important;
+    line-height: 1 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__tags,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__tags {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__location,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__location {
+    grid-template-columns: 24px minmax(0, 1fr) !important;
+    gap: 5px !important;
+    font-size: 0.64rem !important;
+    line-height: 1.1 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__avatar,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__avatar {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__footer,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__footer {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 7px !important;
+    padding-top: 7px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__price,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__price {
+    font-size: 0.88rem !important;
+    line-height: 1 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__cta,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__cta {
+    min-height: 32px !important;
+    padding-inline: 10px !important;
+    font-size: 0.72rem !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__favorite,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__favorite {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    aspect-ratio: 1 / 1 !important;
+    border-radius: 50% !important;
+  }
+}
+
+/* MOBILE HOME AD CARD UNIFIED CONTRACT v12
+   Unifies featured and more-services mobile cards under the exact same visual system. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track,
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid] {
+    align-items: flex-start !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card {
+    display: grid !important;
+    grid-template-rows: 96px 170px !important;
+    width: 256px !important;
+    min-width: 256px !important;
+    max-width: 256px !important;
+    flex: 0 0 256px !important;
+    height: 266px !important;
+    min-height: 266px !important;
+    max-height: 266px !important;
+    align-self: flex-start !important;
+    overflow: hidden !important;
+    border-radius: 17px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__media,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__media {
+    height: 96px !important;
+    min-height: 96px !important;
+    max-height: 96px !important;
+    background-size: cover !important;
+    background-position: center !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__badge,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__badge {
+    top: 10px !important;
+    left: 10px !important;
+    min-height: 24px !important;
+    padding-inline: 9px !important;
+    font-size: 0.67rem !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__favorite,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__favorite {
+    top: 8px !important;
+    right: 8px !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    aspect-ratio: 1 / 1 !important;
+    border-radius: 50% !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__body,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__body {
+    display: grid !important;
+    grid-template-rows: 10px 17px 16px 29px 44px !important;
+    align-content: start !important;
+    row-gap: 2px !important;
+    height: 170px !important;
+    min-height: 170px !important;
+    max-height: 170px !important;
+    padding: 8px 10px 10px !important;
+    flex: 0 0 170px !important;
+    overflow: hidden !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__category,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__category {
+    margin: 0 !important;
+    font-size: 0.58rem !important;
+    line-height: 1 !important;
+    letter-spacing: 0.12em !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__title,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__title {
+    margin: 0 !important;
+    font-size: 0.96rem !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__rating,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__rating {
+    align-items: center !important;
+    gap: 4px !important;
+    margin: -1px 0 0 !important;
+    font-size: 0.74rem !important;
+    line-height: 1 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__tags,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__tags {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__location,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__location {
+    display: grid !important;
+    grid-template-columns: 24px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 5px !important;
+    margin: 0 !important;
+    font-size: 0.62rem !important;
+    line-height: 1.05 !important;
+    overflow: hidden !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__avatar,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__avatar {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+    max-width: 24px !important;
+    max-height: 24px !important;
+    flex: 0 0 24px !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__avatar::before,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__avatar::before {
+    top: 5px !important;
+    left: 8px !important;
+    width: 8px !important;
+    height: 8px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__avatar::after,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__avatar::after {
+    bottom: 3px !important;
+    left: 6px !important;
+    width: 13px !important;
+    height: 15px !important;
+    border-radius: 7px 7px 4px 4px !important;
+    box-shadow: 5px -2px 0 -2px #239785 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__location-text,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__location-text {
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__location-text span,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__location-text span {
+    display: block !important;
+    min-width: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__footer,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__footer {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 7px !important;
+    margin: 0 !important;
+    padding-top: 7px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__price,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__price {
+    font-size: 0.88rem !important;
+    line-height: 1 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__cta,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__cta {
+    min-height: 34px !important;
+    height: 34px !important;
+    padding-inline: 10px !important;
+    font-size: 0.72rem !important;
+    line-height: 1 !important;
+  }
+}
+
+
+/* MOBILE HOME AD CARD UNIFIED CONTRACT v13
+   Final corrective pass: both mobile ad rails use the same compact card anatomy
+   without fixed card clipping. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section.featured-services .content-rail,
+  html.home-index-root body.home-index-shell section.more-services .more-services__cards-rail,
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track,
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid] {
+    align-items: flex-start !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 256px !important;
+    min-width: 256px !important;
+    max-width: 256px !important;
+    flex: 0 0 256px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    align-self: flex-start !important;
+    overflow: hidden !important;
+    border-radius: 17px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__media,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__media {
+    height: 96px !important;
+    min-height: 96px !important;
+    max-height: 96px !important;
+    background-size: cover !important;
+    background-position: center !important;
+    flex: 0 0 96px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__badge,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__badge {
+    top: 10px !important;
+    left: 10px !important;
+    min-height: 24px !important;
+    padding-inline: 9px !important;
+    font-size: 0.67rem !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__favorite,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__favorite {
+    top: 8px !important;
+    right: 8px !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    aspect-ratio: 1 / 1 !important;
+    border-radius: 50% !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__body,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__body {
+    display: grid !important;
+    grid-template-rows: auto auto auto auto !important;
+    align-content: start !important;
+    row-gap: 4px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 8px 10px 10px !important;
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__category,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__category {
+    margin: 0 !important;
+    font-size: 0.58rem !important;
+    line-height: 1 !important;
+    letter-spacing: 0.12em !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__title,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__title {
+    margin: 0 !important;
+    font-size: 0.96rem !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__rating,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__rating {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin: 0 !important;
+    font-size: 0.74rem !important;
+    line-height: 1 !important;
+    min-height: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__tags,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__tags {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__location,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__location {
+    display: grid !important;
+    grid-template-columns: 24px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 5px !important;
+    margin: 0 !important;
+    font-size: 0.62rem !important;
+    line-height: 1.05 !important;
+    overflow: hidden !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__avatar,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__avatar {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+    max-width: 24px !important;
+    max-height: 24px !important;
+    flex: 0 0 24px !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__avatar::before,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__avatar::before {
+    top: 5px !important;
+    left: 8px !important;
+    width: 8px !important;
+    height: 8px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__avatar::after,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__avatar::after {
+    bottom: 3px !important;
+    left: 6px !important;
+    width: 13px !important;
+    height: 15px !important;
+    border-radius: 7px 7px 4px 4px !important;
+    box-shadow: 5px -2px 0 -2px #239785 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__location-text,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__location-text {
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__location-text span,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__location-text span {
+    display: block !important;
+    min-width: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__footer,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__footer {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 7px !important;
+    margin: 0 !important;
+    padding-top: 7px !important;
+    min-height: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__price,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__price {
+    font-size: 0.88rem !important;
+    line-height: 1 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services article.doke-ad-card .doke-ad-card__cta,
+  html.home-index-root body.home-index-shell section.more-services article.doke-ad-card .doke-ad-card__cta {
+    min-height: 34px !important;
+    height: 34px !important;
+    padding-inline: 10px !important;
+    font-size: 0.72rem !important;
+    line-height: 1 !important;
+  }
+}
+
+
+/* MOBILE HOME SECTION AXIS PARITY v14
+   Restores the same mobile width contract for section headers and rails,
+   especially between Mais anúncios and Profissionais em destaque. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell {
+    --home-mobile-section-gutter-v14: 16px;
+  }
+
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace,
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace--clean {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: var(--home-mobile-section-gutter-v14) !important;
+    padding-right: var(--home-mobile-section-gutter-v14) !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(section.featured-services, section.more-services, section.featured-pros) {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(section.featured-services, section.more-services, section.featured-pros) > :is(.section-heading, .home-section-header, .content-rail, .more-services__controls, .more-services__cards-rail),
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid],
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track,
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__load,
+  html.home-index-root body.home-index-shell section.featured-pros .content-rail,
+  html.home-index-root body.home-index-shell section.featured-services .content-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
+
+
+/* MOBILE HOME SECTION WIDTH CONTRACT v15
+   Unifies the mobile horizontal axis of the home feed with the top header/search contract.
+   Scope: only home sections and their direct rails/lists. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell {
+    --home-mobile-page-gutter-v15: 16px;
+  }
+
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace,
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace--clean {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: var(--home-mobile-page-gutter-v15) !important;
+    padding-right: var(--home-mobile-page-gutter-v15) !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(
+    section.featured-services,
+    section.home-recommendations,
+    section.short-videos,
+    section.home-publications,
+    section.more-services,
+    section.featured-pros
+  ) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(
+    section.featured-services,
+    section.home-recommendations,
+    section.short-videos,
+    section.home-publications,
+    section.more-services,
+    section.featured-pros
+  ) > :is(.section-heading, .home-section-header, .content-rail, .more-services__controls, .more-services__cards-rail, .recommendation-list, .more-services__load) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track,
+  html.home-index-root body.home-index-shell section.home-recommendations .recommendation-list,
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track,
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track,
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid],
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-recommendations .recommendation-card,
+  html.home-index-root body.home-index-shell section.featured-pros .pro-card {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
+
+/* HOME PUBLICATIONS MOBILE PARITY v16
+   Align the publication card on mobile with the desktop visual language.
+   Scope: only the home publications rail on phones. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell {
+    --home-mobile-publication-card-width-v16: clamp(272px, 84vw, 336px);
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid {
+    grid-auto-columns: var(--home-mobile-publication-card-width-v16) !important;
+    gap: 14px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid > .publication-card,
+  html.home-index-root body.home-index-shell section.home-publications .publication-card {
+    --publication-radius: 24px !important;
+    border-radius: 24px !important;
+    min-height: 0 !important;
+    box-shadow: 0 10px 22px rgba(19, 48, 82, 0.07) !important;
+    border-color: rgba(196, 212, 228, 0.82) !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__media {
+    height: 162px !important;
+    min-height: 162px !important;
+    margin: 10px 10px 0 !important;
+    border-radius: 18px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__content {
+    padding: 13px 15px 15px !important;
+    gap: 7px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__title {
+    font-size: 0.98rem !important;
+    line-height: 1.14 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__author {
+    font-size: 0.82rem !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__actions {
+    gap: 12px !important;
+    padding-top: 9px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__action {
+    font-size: 0.8rem !important;
+  }
+}
+
+
+/* HOME PUBLICATIONS MOBILE TIGHT FRAME v17
+   Home-only follow-up: reduce the oversized white frame of publication cards on mobile. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell {
+    --home-mobile-publication-card-width-v17: clamp(268px, 82vw, 320px);
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid {
+    grid-auto-columns: var(--home-mobile-publication-card-width-v17) !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card {
+    min-height: 286px !important;
+    height: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__media {
+    height: 154px !important;
+    min-height: 154px !important;
+    margin: 6px 6px 0 !important;
+    border-radius: 18px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__content {
+    padding: 10px 12px 12px !important;
+    gap: 6px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__actions {
+    margin-top: 0 !important;
+    padding-top: 8px !important;
+  }
+}
+
+
+/* HOME PUBLICATIONS MOBILE EDGE-TO-EDGE v18
+   Reduce the heavy white frame of publication cards on mobile.
+   Scope: only home publications on phones. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell {
+    --home-mobile-publication-card-width-v18: clamp(268px, 82vw, 320px);
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > .publication-grid {
+    grid-auto-columns: var(--home-mobile-publication-card-width-v18) !important;
+    gap: 14px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card {
+    --publication-radius: 22px !important;
+    min-height: 0 !important;
+    height: auto !important;
+    border-radius: 22px !important;
+    overflow: hidden !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__media {
+    height: 168px !important;
+    min-height: 168px !important;
+    margin: 0 !important;
+    border-radius: 22px 22px 0 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__content {
+    padding: 12px 14px 14px !important;
+    gap: 6px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__title {
+    font-size: 0.96rem !important;
+    line-height: 1.12 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__author {
+    font-size: 0.8rem !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__actions {
+    margin-top: 0 !important;
+    padding-top: 8px !important;
+  }
+}
+
+
+/* HOME PUBLICATIONS MOBILE FRAME CONTRACT v19
+   Final home override: remove the thick white image frame on mobile publication cards.
+   Scope: only home publications on phones. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section.home-publications .publication-card {
+    --publication-radius: 22px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border-radius: 22px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card > .publication-card__media,
+  html.home-index-root body.home-index-shell section.home-publications .publication-card .publication-card__media {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 164px !important;
+    min-height: 164px !important;
+    margin: 0 !important;
+    border-radius: 22px 22px 0 0 !important;
+    background-size: cover !important;
+    background-position: center !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__content {
+    padding: 11px 13px 13px !important;
+    gap: 6px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__type {
+    top: 10px !important;
+    left: 10px !important;
+  }
+}
+
+
+/* HOME MOBILE INTERACTION LAYER CONTRACT v20
+   Restores the index drawer and filter sheet interaction layers without changing
+   global shell/sidebar/header contracts. */
+@media (max-width: 1024px) {
+  html.home-index-root body.home-index-shell .home-mobile-drawer:not([hidden]) {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 12000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-mobile-drawer__backdrop {
+    position: absolute !important;
+    inset: 0 !important;
+    opacity: 0 !important;
+    background: rgba(8, 21, 35, 0.36) !important;
+    backdrop-filter: blur(8px) !important;
+    transition: opacity 180ms ease !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-mobile-drawer.is-open .home-mobile-drawer__backdrop {
+    opacity: 1 !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-mobile-drawer__panel {
+    position: absolute !important;
+    inset: 0 auto 0 0 !important;
+    width: min(84vw, 324px) !important;
+    max-width: 324px !important;
+    transform: translateX(-104%) !important;
+    transition: transform 220ms ease !important;
+    pointer-events: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-mobile-drawer.is-open .home-mobile-drawer__panel {
+    transform: translateX(0) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell.home-filter-sheet-open .page {
+    filter: blur(7px) !important;
+    pointer-events: none !important;
+  }
+
+  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel],
+  html.home-index-root body.home-index-shell [data-more-filters-panel].more-filters {
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 14px) !important;
+    top: auto !important;
+    z-index: 13000 !important;
+    display: none !important;
+    max-height: min(78vh, 640px) !important;
+    overflow: auto !important;
+    border-radius: 26px !important;
+    background: #f7fbff !important;
+    box-shadow: 0 28px 70px rgba(8, 28, 48, 0.28) !important;
+    transform: translateY(18px) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: transform 200ms ease, opacity 200ms ease !important;
+  }
+
+  html.home-index-root body.home-index-shell.home-filter-sheet-open [data-more-filters-panel].more-filters:not([hidden]),
+  html.home-index-root body.home-index-shell [data-more-filters-panel].more-filters.is-open:not([hidden]) {
+    display: block !important;
+    transform: translateY(0) !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell [data-more-filters-panel] .more-filters__split-body {
+    max-height: calc(min(78vh, 640px) - 148px) !important;
+    overflow: auto !important;
+  }
+}
+
+
+/* HOME MOBILE INTERACTION LAYER CONTRACT v21
+   Hardens drawer/filter visibility against stale hidden attributes and competing
+   mobile overlay contracts. Scope: index/home mobile interaction layers only. */
+@media (max-width: 1024px) {
+  html.home-index-root body.home-index-shell.mobile-home-drawer-open [data-mobile-home-drawer],
+  html.home-index-root body.home-index-shell [data-mobile-home-drawer].is-open {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 16000 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell.mobile-home-drawer-open [data-mobile-home-drawer] .home-mobile-drawer__backdrop,
+  html.home-index-root body.home-index-shell [data-mobile-home-drawer].is-open .home-mobile-drawer__backdrop {
+    position: absolute !important;
+    inset: 0 !important;
+    display: block !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    background: rgba(8, 21, 35, 0.38) !important;
+    backdrop-filter: blur(8px) !important;
+  }
+
+  html.home-index-root body.home-index-shell.mobile-home-drawer-open [data-mobile-home-drawer] .home-mobile-drawer__panel,
+  html.home-index-root body.home-index-shell [data-mobile-home-drawer].is-open .home-mobile-drawer__panel {
+    position: absolute !important;
+    inset: 0 auto 0 0 !important;
+    width: min(84vw, 324px) !important;
+    max-width: 324px !important;
+    transform: translateX(0) !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell.home-filter-sheet-open .page {
+    filter: blur(7px) !important;
+    pointer-events: none !important;
+  }
+
+  html.home-index-root body.home-index-shell.home-filter-sheet-open [data-more-filters-panel],
+  html.home-index-root body.home-index-shell [data-more-filters-panel].is-open,
+  html.home-index-root body.home-index-shell [data-more-filters-panel][data-filter-sheet-state="open"] {
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 14px) !important;
+    top: auto !important;
+    z-index: 17000 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    pointer-events: auto !important;
+    max-height: min(78vh, 640px) !important;
+    overflow: auto !important;
+    border-radius: 26px !important;
+    background: #f7fbff !important;
+    box-shadow: 0 28px 70px rgba(8, 28, 48, 0.28) !important;
+  }
+
+  html.home-index-root body.home-index-shell [data-more-filters-panel] .more-filters__split-body {
+    max-height: calc(min(78vh, 640px) - 148px) !important;
+    overflow: auto !important;
+  }
+}
+
+
+/* HOME MOBILE INTERACTION FIX v22
+   The visible right button in the mobile search pill is now the real filter trigger.
+   Do not disable pointer events for the page; stale filter state must not block drawer taps. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell.home-filter-sheet-open .page {
+    filter: blur(7px) !important;
+    pointer-events: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-search-hero__button[data-more-filters-toggle] {
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    cursor: pointer !important;
+  }
+
+  html.home-index-root body.home-index-shell.home-filter-sheet-open [data-more-filters-panel],
+  html.home-index-root body.home-index-shell [data-more-filters-panel].is-open,
+  html.home-index-root body.home-index-shell [data-more-filters-panel][data-filter-sheet-state="open"] {
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 14px) !important;
+    top: auto !important;
+    z-index: 19000 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    pointer-events: auto !important;
+    max-height: min(78vh, 640px) !important;
+    overflow: auto !important;
+    border-radius: 26px !important;
+    background: #f7fbff !important;
+    box-shadow: 0 28px 70px rgba(8, 28, 48, 0.28) !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  html.home-index-root body.home-index-shell [data-mobile-home-menu-open],
+  html.home-index-root body.home-index-shell [data-home-profile-menu-toggle] {
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    cursor: pointer !important;
+  }
+
+  html.home-index-root body.home-index-shell.mobile-home-drawer-open [data-mobile-home-drawer],
+  html.home-index-root body.home-index-shell [data-mobile-home-drawer].is-open {
+    z-index: 20000 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+}
+
+
+/* HOME MOBILE INTERACTION CONTRACT v23
+   Final visible layer contract for index mobile drawer and filter sheet.
+   Page-specific only: no global shell/sidebar/header changes. */
+@media (max-width: 1024px) {
+  html.home-index-root body.home-index-shell [data-mobile-home-menu-open],
+  html.home-index-root body.home-index-shell .home-index-topbar [data-home-profile-menu-toggle],
+  html.home-index-root body.home-index-shell .home-index-topbar .home-side-meta__profile,
+  html.home-index-root body.home-index-shell .home-index-topbar .home-side-meta__avatar {
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    cursor: pointer !important;
+  }
+
+  html.home-index-root body.home-index-shell.mobile-home-drawer-open [data-mobile-home-drawer],
+  html.home-index-root body.home-index-shell [data-mobile-home-drawer].is-open,
+  html.home-index-root body.home-index-shell [data-mobile-home-drawer][data-mobile-drawer-state="open"] {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 24000 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell.mobile-home-drawer-open [data-mobile-home-drawer] .home-mobile-drawer__backdrop,
+  html.home-index-root body.home-index-shell [data-mobile-home-drawer].is-open .home-mobile-drawer__backdrop {
+    position: absolute !important;
+    inset: 0 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    background: rgba(8, 21, 35, 0.38) !important;
+    backdrop-filter: blur(8px) !important;
+  }
+
+  html.home-index-root body.home-index-shell.mobile-home-drawer-open [data-mobile-home-drawer] .home-mobile-drawer__panel,
+  html.home-index-root body.home-index-shell [data-mobile-home-drawer].is-open .home-mobile-drawer__panel {
+    position: absolute !important;
+    inset: 0 auto 0 0 !important;
+    width: min(84vw, 324px) !important;
+    max-width: 324px !important;
+    transform: translateX(0) !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell .home-search-hero__button[data-more-filters-toggle],
+  html.home-index-root body.home-index-shell .home-search-hero__form .doke-search-pill__button {
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    cursor: pointer !important;
+  }
+
+  html.home-index-root body.home-index-shell.home-filter-sheet-open .page {
+    filter: blur(7px) !important;
+    pointer-events: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell.home-filter-sheet-open [data-more-filters-panel],
+  html.home-index-root body.home-index-shell [data-more-filters-panel].is-open,
+  html.home-index-root body.home-index-shell [data-more-filters-panel][data-filter-sheet-state="open"] {
+    position: fixed !important;
+    left: 12px !important;
+    right: 12px !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 14px) !important;
+    top: auto !important;
+    z-index: 25000 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    pointer-events: auto !important;
+    max-height: min(78vh, 640px) !important;
+    overflow: auto !important;
+    border-radius: 26px !important;
+    background: #f7fbff !important;
+    box-shadow: 0 28px 70px rgba(8, 28, 48, 0.28) !important;
+  }
+
+  html.home-index-root body.home-index-shell [data-more-filters-panel] .more-filters__split-body {
+    max-height: calc(min(78vh, 640px) - 148px) !important;
+    overflow: auto !important;
+  }
+}
+

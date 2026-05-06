@@ -286,3 +286,348 @@
     bind();
   }
 })();
+
+/* Home mobile filter sheet resilience contract.
+   The filter button must open a visible fixed sheet on mobile even if another
+   initializer moves the panel host or stops event propagation. */
+(function () {
+  const isHome = () => document.body?.classList.contains('home-index-shell');
+  const isMobile = () => window.matchMedia?.('(max-width: 760px)').matches ?? window.innerWidth <= 760;
+
+  const getPanel = () => document.querySelector('[data-more-filters-panel]');
+  const getToggles = () => Array.from(document.querySelectorAll('[data-more-filters-toggle]'));
+  const getTabsHost = () => document.querySelector('[data-more-filters-tabs-host]');
+
+  const setSection = (section = 'quick') => {
+    document.querySelectorAll('[data-more-filters-section]').forEach((pane) => {
+      const active = pane.dataset.moreFiltersSection === section;
+      pane.hidden = !active;
+      pane.classList.toggle('is-active', active);
+    });
+    document.querySelectorAll('[data-more-filters-nav]').forEach((button) => {
+      const active = button.dataset.moreFiltersNav === section;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+  };
+
+  const mountForMobile = () => {
+    const panel = getPanel();
+    if (!panel) return null;
+    if (isMobile() && panel.parentElement !== document.body) {
+      document.body.appendChild(panel);
+    } else if (!isMobile()) {
+      const host = getTabsHost();
+      if (host && panel.parentElement !== host) host.appendChild(panel);
+    }
+    return panel;
+  };
+
+  const setOpen = (open, source = 'tabs') => {
+    const panel = mountForMobile();
+    if (!panel) return;
+
+    if (open) {
+      panel.hidden = false;
+      panel.removeAttribute('hidden');
+      panel.classList.add('is-open');
+      panel.setAttribute('aria-hidden', 'false');
+      setSection('quick');
+    } else {
+      panel.hidden = true;
+      panel.setAttribute('hidden', '');
+      panel.classList.remove('is-open');
+      panel.setAttribute('aria-hidden', 'true');
+    }
+
+    document.body.classList.toggle('home-filter-sheet-open', open && isMobile());
+    document.body.classList.toggle('home-inline-filters-open', open && !isMobile());
+    document.body.classList.remove('home-search-overlay-active', 'mobile-search-active', 'home-mobile-filters-open');
+
+    getToggles().forEach((toggle) => {
+      const sameSource = (toggle.dataset.moreFiltersSource || 'tabs') === source;
+      toggle.setAttribute('aria-expanded', open && sameSource ? 'true' : 'false');
+      toggle.classList.toggle('is-active', open && sameSource);
+    });
+  };
+
+  const bind = () => {
+    if (!isHome() || document.documentElement.dataset.homeFilterSheetRescueBound === 'true') return;
+    document.documentElement.dataset.homeFilterSheetRescueBound = 'true';
+
+    document.addEventListener('click', (event) => {
+      const toggle = event.target.closest('[data-more-filters-toggle], .home-search-hero__filter-button, .filter-toggle');
+      if (toggle) {
+        const panel = getPanel();
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+        const shouldOpen = !panel || panel.hidden || !panel.classList.contains('is-open');
+        setOpen(shouldOpen, toggle.dataset.moreFiltersSource || 'tabs');
+        return;
+      }
+
+      if (event.target.closest('[data-more-filters-close], [data-more-filters-apply]')) {
+        event.preventDefault();
+        setOpen(false);
+        return;
+      }
+
+      const panel = getPanel();
+      if (!panel || panel.hidden || !isMobile()) return;
+      const clickedPanel = event.target.closest('[data-more-filters-panel]');
+      if (!clickedPanel) setOpen(false);
+    }, true);
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    });
+
+    window.addEventListener('resize', () => {
+      const panel = getPanel();
+      if (!panel || panel.hidden) return;
+      mountForMobile();
+      document.body.classList.toggle('home-filter-sheet-open', isMobile());
+      document.body.classList.toggle('home-inline-filters-open', !isMobile());
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bind, { once: true });
+  } else {
+    bind();
+  }
+})();
+
+
+/* HOME FILTER SHEET HARD BINDER v21
+   Pointer-first fallback. Opens the actual filter panel above the blurred page,
+   independent from the progressive home initializer. */
+(function () {
+  const isHome = () => document.body?.classList.contains('home-index-shell');
+  const isMobile = () => window.matchMedia?.('(max-width: 760px)').matches ?? window.innerWidth <= 760;
+  const toggleSelector = '[data-more-filters-toggle], .filter-toggle, .home-search-hero__filter-button';
+
+  const panel = () => document.querySelector('[data-more-filters-panel]');
+  const toggles = () => Array.from(document.querySelectorAll('[data-more-filters-toggle], .filter-toggle'));
+
+  const setSection = (section = 'quick') => {
+    const panes = Array.from(document.querySelectorAll('[data-more-filters-section]'));
+    const targetExists = panes.some((pane) => pane.dataset.moreFiltersSection === section);
+    const next = targetExists ? section : (panes[0]?.dataset.moreFiltersSection || section);
+
+    panes.forEach((pane) => {
+      const active = pane.dataset.moreFiltersSection === next;
+      pane.hidden = !active;
+      pane.classList.toggle('is-active', active);
+    });
+
+    document.querySelectorAll('[data-more-filters-nav]').forEach((button) => {
+      const active = button.dataset.moreFiltersNav === next;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+  };
+
+  const mount = () => {
+    const el = panel();
+    if (!el) return null;
+
+    if (isMobile() && el.parentElement !== document.body) {
+      document.body.appendChild(el);
+    } else if (!isMobile()) {
+      const host = document.querySelector('[data-more-filters-tabs-host]');
+      if (host && el.parentElement !== host) host.appendChild(el);
+    }
+
+    return el;
+  };
+
+  const setOpen = (open, source = 'tabs') => {
+    const el = mount();
+    if (!el) return false;
+
+    if (open) {
+      el.hidden = false;
+      el.removeAttribute('hidden');
+      el.classList.add('is-open');
+      el.dataset.filterSheetState = 'open';
+      el.setAttribute('aria-hidden', 'false');
+      setSection('quick');
+    } else {
+      el.classList.remove('is-open');
+      el.dataset.filterSheetState = 'closed';
+      el.setAttribute('aria-hidden', 'true');
+      el.hidden = true;
+      el.setAttribute('hidden', '');
+    }
+
+    document.body.classList.toggle('home-filter-sheet-open', open && isMobile());
+    document.body.classList.toggle('home-inline-filters-open', open && !isMobile());
+    document.body.classList.remove('mobile-home-drawer-open', 'home-search-overlay-active', 'mobile-search-active', 'home-mobile-filters-open');
+
+    toggles().forEach((toggle) => {
+      const sameSource = (toggle.dataset.moreFiltersSource || 'tabs') === source || toggle.classList.contains('filter-toggle');
+      toggle.setAttribute('aria-expanded', open && sameSource ? 'true' : 'false');
+      toggle.classList.toggle('is-active', open && sameSource);
+    });
+
+    return true;
+  };
+
+  const onToggle = (event) => {
+    if (!isHome()) return;
+    const trigger = event.target.closest(toggleSelector);
+    if (!trigger) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation?.();
+
+    const el = panel();
+    const shouldOpen = !el || el.hidden || !el.classList.contains('is-open') || el.dataset.filterSheetState !== 'open';
+    setOpen(shouldOpen, trigger.dataset.moreFiltersSource || 'tabs');
+  };
+
+  const onClose = (event) => {
+    if (!isHome()) return;
+
+    if (event.target.closest('[data-more-filters-close], [data-more-filters-apply]')) {
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+      return;
+    }
+
+    const el = panel();
+    if (!el || el.hidden || !isMobile()) return;
+
+    if (!event.target.closest('[data-more-filters-panel]') && !event.target.closest(toggleSelector)) {
+      setOpen(false);
+    }
+  };
+
+  const bind = () => {
+    if (!isHome() || document.documentElement.dataset.homeFilterHardBound === 'true') return;
+    document.documentElement.dataset.homeFilterHardBound = 'true';
+
+    document.addEventListener('pointerdown', onToggle, true);
+    document.addEventListener('click', onToggle, true);
+    document.addEventListener('click', onClose, true);
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    }, true);
+
+    window.DokeHomeFilterHardOpen = () => setOpen(true, 'tabs');
+    window.DokeHomeFilterHardClose = () => setOpen(false);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bind, { once: true });
+  } else {
+    bind();
+  }
+})();
+
+
+/* HOME SEARCH PILL FILTER DIRECT BINDER v22
+   Directly supports the mobile search pill filter button in index.html. */
+(function () {
+  const isHome = () => document.body?.classList.contains('home-index-shell');
+  const isMobile = () => window.matchMedia?.('(max-width: 760px)').matches ?? window.innerWidth <= 760;
+
+  const panel = () => document.querySelector('[data-more-filters-panel]');
+  const triggerSelector = '.home-search-hero__button[data-more-filters-toggle], [data-more-filters-toggle]';
+
+  const openPanel = () => {
+    const el = panel();
+    if (!el) return false;
+
+    if (isMobile() && el.parentElement !== document.body) {
+      document.body.appendChild(el);
+    }
+
+    el.hidden = false;
+    el.removeAttribute('hidden');
+    el.classList.add('is-open');
+    el.dataset.filterSheetState = 'open';
+    el.setAttribute('aria-hidden', 'false');
+
+    document.body.classList.add('home-filter-sheet-open');
+    document.body.classList.remove('home-inline-filters-open', 'home-search-overlay-active', 'mobile-search-active');
+
+    document.querySelectorAll('[data-more-filters-section]').forEach((pane, index) => {
+      const active = pane.dataset.moreFiltersSection === 'quick' || (index === 0 && !document.querySelector('[data-more-filters-section="quick"]'));
+      pane.hidden = !active;
+      pane.classList.toggle('is-active', active);
+    });
+
+    document.querySelectorAll(triggerSelector).forEach((button) => {
+      button.setAttribute('aria-expanded', 'true');
+      button.classList.add('is-active');
+    });
+
+    return true;
+  };
+
+  const closePanel = () => {
+    const el = panel();
+    if (!el) return;
+    el.classList.remove('is-open');
+    el.dataset.filterSheetState = 'closed';
+    el.setAttribute('aria-hidden', 'true');
+    el.hidden = true;
+    el.setAttribute('hidden', '');
+    document.body.classList.remove('home-filter-sheet-open', 'home-inline-filters-open');
+    document.querySelectorAll(triggerSelector).forEach((button) => {
+      button.setAttribute('aria-expanded', 'false');
+      button.classList.remove('is-active');
+    });
+  };
+
+  const bind = () => {
+    if (!isHome() || document.documentElement.dataset.homeSearchPillFilterBound === 'true') return;
+    document.documentElement.dataset.homeSearchPillFilterBound = 'true';
+
+    document.addEventListener('pointerdown', (event) => {
+      const trigger = event.target.closest(triggerSelector);
+      if (!trigger) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+
+      const el = panel();
+      const isOpen = el && !el.hidden && el.classList.contains('is-open');
+      if (isOpen) closePanel();
+      else openPanel();
+    }, true);
+
+    document.addEventListener('click', (event) => {
+      const trigger = event.target.closest(triggerSelector);
+      if (trigger) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+        return;
+      }
+
+      const el = panel();
+      if (!el || el.hidden || !isMobile()) return;
+      if (!event.target.closest('[data-more-filters-panel]')) closePanel();
+    }, true);
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closePanel();
+    }, true);
+
+    window.DokeOpenHomeFiltersDirect = openPanel;
+    window.DokeCloseHomeFiltersDirect = closePanel;
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bind, { once: true });
+  } else {
+    bind();
+  }
+})();
+

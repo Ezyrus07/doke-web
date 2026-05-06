@@ -471,3 +471,71 @@
     height: 40px !important;
   }
 }
+
+/* Mobile safe-area polish: keep the worker action rail fully inside the viewport.
+   This belongs to the workers fullscreen contract because the clipping only happens
+   in the immersive mobile preview, not in shared buttons or global shell. */
+@media (max-width: 760px) {
+  body.worker-preview-open .worker-preview__actions {
+    right: max(18px, calc(env(safe-area-inset-right) + 14px)) !important;
+    bottom: calc(max(94px, env(safe-area-inset-bottom)) + 60px) !important;
+    width: 42px !important;
+    gap: 12px !important;
+  }
+
+  body.worker-preview-open .worker-preview__action {
+    width: 42px !important;
+    max-width: 42px !important;
+  }
+
+  body.worker-preview-open .worker-preview__action-icon {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  body.worker-preview-open .worker-preview__action svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  body.worker-preview-open .worker-preview__action strong {
+    max-width: 46px !important;
+    font-size: 9.5px !important;
+    line-height: 1.05 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  body.worker-preview-open .worker-preview__caption {
+    right: 76px !important;
+  }
+
+  body.worker-preview-open .worker-preview__close--fixed {
+    right: max(18px, calc(env(safe-area-inset-right) + 14px)) !important;
+    width: 40px !important;
+    height: 40px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  body.worker-preview-open .worker-preview__actions {
+    right: max(16px, calc(env(safe-area-inset-right) + 12px)) !important;
+    width: 40px !important;
+    gap: 10px !important;
+  }
+
+  body.worker-preview-open .worker-preview__action {
+    width: 40px !important;
+    max-width: 40px !important;
+  }
+
+  body.worker-preview-open .worker-preview__action-icon {
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  body.worker-preview-open .worker-preview__caption {
+    right: 72px !important;
+  }
+}

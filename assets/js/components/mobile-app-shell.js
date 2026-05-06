@@ -133,6 +133,24 @@
   }
 
   function openMobileDrawerDirect() {
+    var sidebar = document.querySelector('.app-shell > .sidebar, [data-shell-sidebar], .sidebar');
+    var scrim = document.querySelector('[data-sidebar-scrim], .mobile-scrim');
+
+    document.body.classList.add('sidebar-open');
+    if (sidebar) {
+      sidebar.removeAttribute('hidden');
+      sidebar.setAttribute('aria-hidden', 'false');
+    }
+    if (scrim) {
+      scrim.removeAttribute('hidden');
+      scrim.setAttribute('aria-hidden', 'false');
+    }
+
+    if (sidebar) {
+      dispatchShellAction('profile-menu');
+      return true;
+    }
+
     if (clickFirst('[data-mobile-home-menu-open], [data-mobile-menu-open], [data-sidebar-open], [data-sidebar-toggle], .mobile-toggle')) return true;
 
     var drawer = document.querySelector('[data-mobile-home-drawer], .home-mobile-drawer, [data-mobile-drawer]');
@@ -217,16 +235,12 @@
         var cfg = config();
 
         if (cfg.key === 'home') {
+          if (openHomeFiltersDirect()) return;
           if (window.DokeMoreServicesRepair && typeof window.DokeMoreServicesRepair.open === 'function') {
             window.DokeMoreServicesRepair.open();
             return;
           }
-          if (window.DokeHomeFiltersApi && typeof window.DokeHomeFiltersApi.open === 'function') {
-            window.DokeHomeFiltersApi.open('tabs');
-            return;
-          }
           if (clickFirst('[data-more-filters-toggle]')) return;
-          if (openHomeFiltersDirect()) return;
         }
 
         if (cfg.key === 'resultados') {
@@ -298,4 +312,24 @@
   } else {
     mount();
   }
+}());
+
+
+/* Mobile shell sidebar fallback close contract. */
+(function () {
+  document.addEventListener('click', function (event) {
+    if (!document.body.classList.contains('sidebar-open')) return;
+    if (!event.target.closest('[data-sidebar-scrim], .mobile-scrim')) return;
+    document.body.classList.remove('sidebar-open');
+    var sidebar = document.querySelector('.app-shell > .sidebar, [data-shell-sidebar], .sidebar');
+    var scrim = document.querySelector('[data-sidebar-scrim], .mobile-scrim');
+    if (sidebar) sidebar.setAttribute('aria-hidden', 'true');
+    if (scrim) scrim.setAttribute('aria-hidden', 'true');
+  }, true);
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') return;
+    if (!document.body.classList.contains('sidebar-open')) return;
+    document.body.classList.remove('sidebar-open');
+  });
 }());

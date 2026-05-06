@@ -1,0 +1,231 @@
+/* resultados.html mobile refresh.
+   Ownership: page-specific mobile composition for the results experience.
+   Goal: improve hierarchy and density on phones without changing shared card systems.
+   Scope: only body.search-results-body on small screens. */
+
+@media (max-width: 760px) {
+  body.search-results-body {
+    --results-mobile-gap: 12px;
+  }
+
+  body.search-results-body .search-results-workspace {
+    gap: 14px !important;
+  }
+
+  body.search-results-body .results-searchbar__scope.search-scope {
+    gap: 8px !important;
+    padding-bottom: 2px !important;
+  }
+
+  body.search-results-body .results-searchbar__scope .search-scope__option span,
+  body.search-results-body .results-searchbar__scope .search-scope__filter-toggle {
+    min-height: 38px !important;
+    padding-inline: 14px !important;
+    border-radius: 999px !important;
+    font-size: 0.82rem !important;
+    white-space: nowrap !important;
+  }
+
+  body.search-results-body .results-summary {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: start !important;
+    gap: 12px !important;
+    padding: 16px !important;
+    border-radius: 22px !important;
+  }
+
+  body.search-results-body .results-summary__content {
+    min-width: 0 !important;
+  }
+
+  body.search-results-body .results-summary__content h2 {
+    margin-top: 6px !important;
+    font-size: 1.55rem !important;
+    line-height: 1.08 !important;
+  }
+
+  body.search-results-body .results-summary__content p {
+    margin-top: 6px !important;
+    font-size: 0.9rem !important;
+    line-height: 1.35 !important;
+    max-width: 26ch !important;
+  }
+
+  body.search-results-body .results-summary__stats {
+    display: grid !important;
+    justify-items: end !important;
+    gap: 2px !important;
+    min-width: 64px !important;
+    align-self: end !important;
+  }
+
+  body.search-results-body .results-summary__stats strong {
+    font-size: 2rem !important;
+    line-height: 1 !important;
+  }
+
+  body.search-results-body .results-summary__stats span {
+    font-size: 0.75rem !important;
+    line-height: 1 !important;
+  }
+
+  body.search-results-body .results-active-chips {
+    margin-top: -2px !important;
+    gap: 8px !important;
+  }
+
+  body.search-results-body .results-active-chip {
+    min-height: 30px !important;
+    padding-inline: 10px !important;
+    font-size: 0.76rem !important;
+  }
+
+  /* Workers: force a dense 2-up rail instead of tall single-column cards. */
+  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid,
+  body.search-results-body .results-videos-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    align-items: start !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid > .video-card,
+  body.search-results-body .results-videos-grid > .video-card,
+  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid > .video-card[data-worker-trigger],
+  body.search-results-body .results-videos-grid > .video-card[data-worker-trigger] {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    grid-column: auto !important;
+    aspect-ratio: 3 / 4.9 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 22px !important;
+    overflow: hidden !important;
+    box-shadow: 0 12px 28px rgba(15, 37, 60, 0.12) !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid > .video-card .video-card__poster,
+  body.search-results-body .results-videos-grid > .video-card .video-card__poster,
+  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid > .video-card .video-card__preview,
+  body.search-results-body .results-videos-grid > .video-card .video-card__preview {
+    border-radius: inherit !important;
+    object-fit: cover !important;
+  }
+
+  /* Users: convert the stacked sparse cards into compact horizontal list cards. */
+  body.search-results-body .results-layout[data-results-mode="users"] .results-grid,
+  body.search-results-body .results-users-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="users"] .results-grid .pro-card,
+  body.search-results-body .results-users-grid .pro-card {
+    display: grid !important;
+    grid-template-columns: 48px minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      'avatar identity score'
+      'avatar meta score'
+      'cta cta cta' !important;
+    align-items: center !important;
+    gap: 4px 10px !important;
+    min-height: 0 !important;
+    padding: 12px !important;
+    border-radius: 20px !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="users"] .results-grid .pro-card__header,
+  body.search-results-body .results-users-grid .pro-card__header {
+    display: contents !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="users"] .results-grid .pro-card__avatar,
+  body.search-results-body .results-users-grid .pro-card__avatar {
+    grid-area: avatar !important;
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 14px !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="users"] .results-grid .pro-card__identity,
+  body.search-results-body .results-users-grid .pro-card__identity {
+    grid-area: identity !important;
+    min-width: 0 !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="users"] .results-grid .pro-card__identity strong,
+  body.search-results-body .results-users-grid .pro-card__identity strong {
+    display: block !important;
+    margin: 0 !important;
+    font-size: 0.92rem !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="users"] .results-grid .pro-card__score,
+  body.search-results-body .results-users-grid .pro-card__score {
+    grid-area: score !important;
+    align-self: start !important;
+    justify-self: end !important;
+    min-height: 28px !important;
+    padding: 0 10px !important;
+    border-radius: 999px !important;
+    font-size: 0.78rem !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="users"] .results-grid .pro-card__body,
+  body.search-results-body .results-users-grid .pro-card__body {
+    grid-area: meta !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 4px 8px !important;
+    min-width: 0 !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="users"] .results-grid .pro-card__body p,
+  body.search-results-body .results-users-grid .pro-card__body p {
+    margin: 0 !important;
+    font-size: 0.78rem !important;
+    line-height: 1.2 !important;
+    color: #42627f !important;
+    font-weight: 600 !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="users"] .results-grid .pro-card__body span,
+  body.search-results-body .results-layout[data-results-mode="users"] .results-grid .pro-card__body small,
+  body.search-results-body .results-users-grid .pro-card__body span,
+  body.search-results-body .results-users-grid .pro-card__body small {
+    margin: 0 !important;
+    font-size: 0.72rem !important;
+    line-height: 1.2 !important;
+    color: #6d7f98 !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="users"] .results-grid .pro-card__footer,
+  body.search-results-body .results-users-grid .pro-card__footer {
+    grid-area: cta !important;
+    margin-top: 6px !important;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="users"] .results-grid .pro-card__cta,
+  body.search-results-body .results-users-grid .pro-card__cta {
+    width: 100% !important;
+    min-height: 38px !important;
+    border-radius: 14px !important;
+    font-size: 0.8rem !important;
+    padding-inline: 14px !important;
+  }
+
+  /* Services main grid: slightly denser but still readable. */
+  body.search-results-body .results-grid .doke-ad-card {
+    border-radius: 20px !important;
+  }
+}
