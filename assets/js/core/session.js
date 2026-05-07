@@ -1,54 +1,77 @@
+/* Doke Session Store
+   Responsibility: persist and broadcast the authenticated user/session.
+   Provider-agnostic, currently safe for mock auth and future Supabase/Firebase wiring. */
 (function () {
-  'use strict';
+  const ns = (window.DokeAuth = window.DokeAuth || {});
+  const STORAGE_KEY = 'doke.auth.session.v1';
+  const listeners = new Set();
 
-  var Doke = window.Doke || (window.Doke = {});
-  var STORAGE_KEY = 'doke.session.v1';
-
-  function safeParse(value) {
-    try { return JSON.parse(value); } catch (_) { return null; }
-  }
-
-  function read() {
-    var raw = window.localStorage ? window.localStorage.getItem(STORAGE_KEY) : null;
-    var session = raw ? safeParse(raw) : null;
-    if (!session || !session.user) return null;
-    return session;
-  }
-
-  function write(session) {
-    if (!window.localStorage) return session;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-    return session;
-  }
-
-  function clear() {
-    if (window.localStorage) window.localStorage.removeItem(STORAGE_KEY);
-  }
-
-  function currentRole(session) {
-    return session && session.profile && session.profile.role ? session.profile.role : 'guest';
-  }
-
-  function apply(session) {
-    var role = currentRole(session);
-    var permissions = Doke.permissions ? Doke.permissions.permissionsForRole(role) : [];
-    if (Doke.state) {
-      Doke.state.merge('auth', {
-        status: session ? 'authenticated' : 'anonymous',
-        user: session ? session.user : null,
-        profile: session ? session.profile : null,
-        role: role,
-        permissions: permissions
-      });
+  const safeParse = (value) => {
+    try {
+      return value ? JSON.parse(value) : null;
+    } catch {
+      return null;
     }
-    document.documentElement.setAttribute('data-auth-state', session ? 'authenticated' : 'anonymous');
-    document.documentElement.setAttribute('data-user-role', role);
-    return session;
+  };
+
+  const nowIso = () => new Date().toISOString();
+
+  const read = () => safeParse(window.localStorage.getItem(STORAGE_KEY));
+
+  const write = (session) => {
+    if (!session) {
+      window.localStorage.removeItem(STORAGE_KEY);
+      notify(null);
+      return null;
+    }
+
+    const normalized = {
+      ...session,
+      provider: session.provider || 'mock',
+      issuedAt: session.issuedAt || nowIso(),
+      updatedAt: nowIso()
+    };
+
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+    notify(normalized);
+    return normalized;
+  };
+
+  const clear = () => write(null);
+
+  const getUser = () => read()?.user || null;
+
+  const isAuthenticated = () => Boolean(getUser());
+
+  const subscribe = (listener) => {
+    if (typeof listener !== 'function') return () => {};
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+  };
+
+  function notify(session) {
+    listeners.forEach((listener) => listener(session));
+    document.dispatchEvent(new CustomEvent('doke:auth-session-change', {
+      detail: {
+        session,
+        user: session?.user || null,
+        authenticated: Boolean(session?.user)
+      }
+    }));
   }
 
-  function bootstrap() {
-    return apply(read());
-  }
+  window.addEventListener('storage', (event) => {
+    if (event.key !== STORAGE_KEY) return;
+    notify(safeParse(event.newValue));
+  });
 
-  Doke.session = { read: read, write: write, clear: clear, apply: apply, bootstrap: bootstrap };
+  ns.session = Object.freeze({
+    STORAGE_KEY,
+    read,
+    write,
+    clear,
+    getUser,
+    isAuthenticated,
+    subscribe
+  });
 })();

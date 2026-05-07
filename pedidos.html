@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-auth-guard="observe">
  <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -31,8 +31,13 @@
   <link rel="stylesheet" href="assets/css/components/overlays/mobile-overlay-system.css?v=20260428-v1">
   <link rel="stylesheet" href="assets/css/pages/pedidos.css?v=20260429-mobile-edge-final">
   <link rel="stylesheet" href="assets/css/pages/pedidos/mobile-longterm-normalization.css?v=20260505-agenda-arrows-v4">
+<link rel="stylesheet" href="assets/css/pages/pedidos/orders-details.css?v=20260506-orders-mobile-polish-v2">
+  <link rel="stylesheet" href="assets/css/pages/pedidos/orders-chat.css?v=20260506-orders-mobile-polish-v2">
+  <link rel="stylesheet" href="assets/css/components/ai/doke-ai-assistant.css?v=20260506-orders-responsive-v1">
   <link rel="stylesheet" href="assets/css/components/avatar.css?v=20260429-avatar-circle-final">
   <link rel="stylesheet" href="assets/css/components/internal/filter-select-standard.css?v=20260429-global-header-avatar">
+  <link rel="stylesheet" href="assets/css/components/internal/selection-panel-standard.css?v=20260506-selection-card-select-v7">
+  <link rel="stylesheet" href="assets/css/components/internal/action-panel-standard.css?v=20260506-filter-panel-polish-v4">
 <link rel="stylesheet" href="assets/css/components/overlays/mobile-action-surface-contract.css?v=20260430-action-surfaces-v1">
   <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <link rel="stylesheet" href="assets/css/components/shell/mobile-app-shell.css?v=20260505-mobile-actions-v4">
@@ -47,6 +52,7 @@
   <link rel="stylesheet" href="assets/css/components/shell/mobile-base-stability.css?v=20260501-mobile-base-stability-v1">
   <link rel="stylesheet" href="assets/css/components/shell/doke-shell-contract.css?v=20260503-route-swap-stability-v13">
   <link rel="stylesheet" href="assets/css/components/layout/responsive-page-contract.css?v=20260502-single-header-contract-v6">
+  <link rel="stylesheet" href="assets/css/pages/pedidos/orders-command-center.css?v=20260506-filter-panel-polish-v4">
 </head>
  <body data-page="pedidos" class="doke-app-shell-page app-shell-page internal-shell-page orders-page-shell doke-flow doke-order-flow">
   <div class="app-shell">
@@ -114,7 +120,7 @@
       <section class="orders-page doke-page-section">
      <div class="home-side-meta" aria-label="Atalhos e contexto">
       <div class="home-side-meta__group home-side-meta__group--primary">
-      <button class="home-side-meta__search" type="button" aria-label="Buscar">
+      <button class="home-side-meta__search" type="button" aria-label="Abrir busca de pedidos" aria-expanded="false" aria-controls="desktop-quick-search-orders">
        <svg viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="11" cy="11" r="5.75"></circle>
         <path d="m16 16 4 4"></path>
@@ -300,8 +306,9 @@
           </button>
          </form>
         </div>
+       </section>
 
-        <div class="orders-page-header__controls" id="orders-action-controls" hidden>
+               <div class="orders-page-header__controls" id="orders-action-controls" hidden>
          <div class="orders-filter-status-stack">
           <div class="orders-active-filter-row">
            <span class="orders-active-filter-chip doke-chip" data-orders-active-chip hidden>Todos 0</span>
@@ -324,12 +331,12 @@
            </button>
           </div>
           <div class="doke-mobile-filter-grid doke-grid" role="list" aria-label="Filtros de pedidos">
-           <button class="orders-filter-item doke-mobile-filter-pill is-active doke-chip doke-btn" type="button" data-filter="all"><span class="doke-mobile-filter-pill__icon doke-chip">✓</span><strong>Todos</strong><em data-orders-filter-count="all">0</em></button>
-           <button class="orders-filter-item doke-mobile-filter-pill doke-chip doke-btn" type="button" data-filter="pending"><span class="doke-mobile-filter-pill__icon doke-chip">⏳</span><strong>Aguardando</strong><em data-orders-filter-count="pending">0</em></button>
-           <button class="orders-filter-item doke-mobile-filter-pill doke-chip doke-btn" type="button" data-filter="conversation"><span class="doke-mobile-filter-pill__icon doke-chip">💬</span><strong>Em conversa</strong><em data-orders-filter-count="conversation">0</em></button>
-           <button class="orders-filter-item doke-mobile-filter-pill doke-chip doke-btn" type="button" data-filter="responded"><span class="doke-mobile-filter-pill__icon doke-chip">↩</span><strong>Respondidos</strong><em data-orders-filter-count="responded">0</em></button>
-           <button class="orders-filter-item doke-mobile-filter-pill doke-chip doke-btn" type="button" data-filter="completed"><span class="doke-mobile-filter-pill__icon doke-chip">✓</span><strong>Concluídos</strong><em data-orders-filter-count="completed">0</em></button>
-           <button class="orders-filter-item doke-mobile-filter-pill doke-chip doke-btn" type="button" data-filter="cancelled"><span class="doke-mobile-filter-pill__icon doke-chip">×</span><strong>Cancelados</strong><em data-orders-filter-count="cancelled">0</em></button>
+           <button class="orders-filter-item doke-mobile-filter-pill is-active doke-chip doke-btn" type="button" data-filter="all"><span class="doke-mobile-filter-pill__icon doke-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 12 3 3 7-7"></path></svg></span><strong>Todos</strong><em data-orders-filter-count="all">0</em></button>
+           <button class="orders-filter-item doke-mobile-filter-pill doke-chip doke-btn" type="button" data-filter="pending"><span class="doke-mobile-filter-pill__icon doke-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10"></path><path d="M7 20h10"></path><path d="M8 4c0 4 8 4 8 8s-8 4-8 8"></path><path d="M16 4c0 4-8 4-8 8s8 4 8 8"></path></svg></span><strong>Aguardando</strong><em data-orders-filter-count="pending">0</em></button>
+           <button class="orders-filter-item doke-mobile-filter-pill doke-chip doke-btn" type="button" data-filter="conversation"><span class="doke-mobile-filter-pill__icon doke-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6.5h14v9H9l-4 3v-12Z"></path></svg></span><strong>Em conversa</strong><em data-orders-filter-count="conversation">0</em></button>
+           <button class="orders-filter-item doke-mobile-filter-pill doke-chip doke-btn" type="button" data-filter="responded"><span class="doke-mobile-filter-pill__icon doke-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7 5 11l4 4"></path><path d="M5 11h9a5 5 0 0 1 5 5v1"></path></svg></span><strong>Respondidos</strong><em data-orders-filter-count="responded">0</em></button>
+           <button class="orders-filter-item doke-mobile-filter-pill doke-chip doke-btn" type="button" data-filter="completed"><span class="doke-mobile-filter-pill__icon doke-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 12 3 3 7-7"></path></svg></span><strong>Concluídos</strong><em data-orders-filter-count="completed">0</em></button>
+           <button class="orders-filter-item doke-mobile-filter-pill doke-chip doke-btn" type="button" data-filter="cancelled"><span class="doke-mobile-filter-pill__icon doke-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10"></path><path d="M17 7 7 17"></path></svg></span><strong>Cancelados</strong><em data-orders-filter-count="cancelled">0</em></button>
           </div>
           <div class="doke-mobile-action-panel__footer">
            <button class="doke-mobile-panel-button doke-mobile-panel-button--ghost doke-btn doke-btn--ghost" type="button" data-orders-clear-filter>Limpar</button>
@@ -361,6 +368,49 @@
          </div>
 
         </div>
+
+
+       <section class="orders-command-summary doke-page-section" aria-label="Resumo inteligente dos pedidos">
+        <article class="orders-command-summary__card orders-command-summary__card--attention">
+         <span class="orders-command-summary__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v5"></path><path d="M12 16h.01"></path></svg>
+         </span>
+         <span class="orders-command-summary__content">
+          <strong class="orders-command-summary__value" data-orders-command-value="action">0</strong>
+          <span class="orders-command-summary__label">Aguardando você</span>
+          <span class="orders-command-summary__hint">Pedidos precisam da sua ação</span>
+         </span>
+        </article>
+        <article class="orders-command-summary__card orders-command-summary__card--today">
+         <span class="orders-command-summary__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14" rx="3"></rect><path d="M8 3.5v4"></path><path d="M16 3.5v4"></path><path d="M4 10h16"></path></svg>
+         </span>
+         <span class="orders-command-summary__content">
+          <strong class="orders-command-summary__value" data-orders-command-value="today">0</strong>
+          <span class="orders-command-summary__label">Compromissos hoje</span>
+          <span class="orders-command-summary__hint">Próximos eventos da agenda</span>
+         </span>
+        </article>
+        <article class="orders-command-summary__card orders-command-summary__card--risk">
+         <span class="orders-command-summary__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="m12 3 9 16H3L12 3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+         </span>
+         <span class="orders-command-summary__content">
+          <strong class="orders-command-summary__value" data-orders-command-value="risk">0</strong>
+          <span class="orders-command-summary__label">Em risco</span>
+          <span class="orders-command-summary__hint">Prazos exigem atenção</span>
+         </span>
+        </article>
+        <article class="orders-command-summary__card orders-command-summary__card--budget">
+         <span class="orders-command-summary__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M7 3.5h7l4 4V20H7V3.5Z"></path><path d="M14 3.5V8h4"></path><path d="M9.5 12h5"></path><path d="M9.5 15.5h5"></path></svg>
+         </span>
+         <span class="orders-command-summary__content">
+          <strong class="orders-command-summary__value" data-orders-command-value="budget">0</strong>
+          <span class="orders-command-summary__label">Orçamentos abertos</span>
+          <span class="orders-command-summary__hint">Pedidos ativos em negociação</span>
+         </span>
+        </article>
        </section>
 
        <section
@@ -607,7 +657,34 @@
         </div>
        </section>
 
-       <section class="orders-list doke-page-section doke-list" aria-label="Lista de pedidos">
+       <section class="orders-command-insights doke-page-section" aria-label="Insights inteligentes dos pedidos">
+        <article class="orders-command-insight">
+         <span class="orders-command-insight__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6.5h16v10H8.2L4 20V6.5Z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg></span>
+         <span>
+          <strong data-orders-insight-title="action">Responder cliente</strong>
+          <p data-orders-insight-text="action">Pedidos que precisam de retorno aparecem aqui.</p>
+          <a class="orders-command-insight__link" href="#orders-action-controls">Ver ações ›</a>
+         </span>
+        </article>
+        <article class="orders-command-insight">
+         <span class="orders-command-insight__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14" rx="3"></rect><path d="M8 3.5v4"></path><path d="M16 3.5v4"></path><path d="M4 10h16"></path></svg></span>
+         <span>
+          <strong data-orders-insight-title="risk">Prazo em atenção</strong>
+          <p data-orders-insight-text="risk">O sistema destaca pedidos com etapa próxima.</p>
+          <a class="orders-command-insight__link" href="#orders-planner">Ver agenda ›</a>
+         </span>
+        </article>
+        <article class="orders-command-insight">
+         <span class="orders-command-insight__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"></path></svg></span>
+         <span>
+          <strong data-orders-insight-title="done">Pós-serviço</strong>
+          <p data-orders-insight-text="done">Concluídos podem gerar avaliação, garantia ou recompra.</p>
+          <a class="orders-command-insight__link" href="#orders-list">Ver pedidos ›</a>
+         </span>
+        </article>
+       </section>
+
+       <section class="orders-list doke-page-section doke-list" id="orders-list" aria-label="Lista de pedidos">
         <article
          class="order-card doke-card doke-order-card"
          data-id="painting"
@@ -1054,104 +1131,6 @@
        ></div>
 
        <aside
-        class="orders-sidepanel orders-sidepanel--details"
-        data-orders-panel="details"
-        hidden
-        aria-label="Detalhes do pedido"
-       >
-        <div class="orders-sidepanel__header">
-         <div>
-          <p class="orders-sidepanel__eyebrow">Pedido selecionado</p>
-          <h2>Resumo do pedido</h2>
-         </div>
-         <button
-          class="orders-sidepanel__close doke-icon-btn doke-icon-btn--flat"
-          type="button"
-          data-orders-panel-close
-          aria-label="Fechar painel"
-         >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-           <path d="M7 7l10 10"></path>
-           <path d="M17 7 7 17"></path>
-          </svg>
-         </button>
-        </div>
-        <div
-         class="orders-sidepanel__body orders-sidepanel__body--details"
-        >
-         <section class="orders-detail-summary doke-order-card doke-stat-card doke-card doke-page-section">
-          <div class="orders-detail-summary__meta">
-           <span
-            class="orders-detail-summary__status"
-            data-orders-detail-status
-            >Aguardando resposta</span
-           >
-           <span
-            class="orders-detail-summary__next"
-            data-orders-detail-next
-            >Responder até 22/04</span
-           >
-          </div>
-          <h3 data-orders-detail-title>Orçamento para pintura</h3>
-          <p data-orders-detail-summary>
-           Pedido em acompanhamento, aguardando próxima resposta.
-          </p>
-         </section>
-
-         <div class="orders-detail-grid doke-grid">
-          <div class="orders-sidepanel__section">
-           <h3>Profissional</h3>
-           <p data-orders-detail-pro>Studio Aquarela</p>
-          </div>
-          <div class="orders-sidepanel__section">
-           <h3>Endereço</h3>
-           <p data-orders-detail-address>
-            Avenida Paulista, São Paulo - SP
-           </p>
-          </div>
-          <div class="orders-sidepanel__section">
-           <h3>Escopo</h3>
-           <p data-orders-detail-scope>
-            Pintura interna de sala e corredor com pequenos reparos.
-           </p>
-          </div>
-          <div class="orders-sidepanel__section">
-           <h3>Prazo</h3>
-           <p data-orders-detail-timeline>
-            Execução prevista em até 7 dias após aprovação.
-           </p>
-          </div>
-          <div class="orders-sidepanel__section">
-           <h3>Matériais</h3>
-           <p data-orders-detail-matérials>
-            Tintas premium, proteção de piso e acabamento
-            inclusos.
-           </p>
-          </div>
-          <div class="orders-sidepanel__section">
-           <h3>Faixa de orçamento</h3>
-           <p data-orders-detail-budget>
-            Faixa estimada de R$ 3.200 a R$ 4.100.
-           </p>
-          </div>
-          <div class="orders-sidepanel__section">
-           <h3>Pagamento</h3>
-           <p data-orders-detail-payment>
-            Entrada de 30% e restante na conclusão.
-           </p>
-          </div>
-          <div class="orders-sidepanel__section">
-           <h3>Status do fluxo</h3>
-           <p data-orders-detail-flow>
-            Aguardando retorno do profissional para seguir com
-            aprovação.
-           </p>
-          </div>
-         </div>
-        </div>
-       </aside>
-
-       <aside
         class="orders-sidepanel"
         data-orders-panel="chat"
         hidden
@@ -1288,10 +1267,25 @@
   <script src="assets/js/core/app.js?v=20260503-atomic-route-swap-v1"></script>
   <script src="assets/js/pages/home/drawer.js"></script>
  <script src="assets/js/pages/pedidos.js?v=20260430-no-filter-select-cards"></script>
+ <script src="assets/js/pages/pedidos/orders-data.js?v=20260506-orders-data-v2" defer></script>
+<script src="assets/js/pages/pedidos/orders-intelligence.js?v=20260506-orders-intelligence-v2" defer></script>
+<script src="assets/js/pages/pedidos/orders-state.js?v=20260506-orders-state-v2" defer></script>
+<script src="assets/js/pages/pedidos/orders-render.js?v=20260506-orders-card-minimal-v4" defer></script>
+<script src="assets/js/pages/pedidos/orders-header-search.js?v=20260506-search-compact-v9" defer></script>
+<script src="assets/js/pages/pedidos/orders-filters.js?v=20260506-orders-filters-v2" defer></script>
+<script src="assets/js/pages/pedidos/orders-bootstrap.js?v=20260506-orders-bootstrap-v2" defer></script>
+  <script src="assets/js/pages/pedidos/orders-action-panels.js?v=20260506-filter-toggle-force-v3" defer></script>
+<script src="assets/js/pages/pedidos/orders-details.js?v=20260506-orders-ai-embedded-v2" defer></script>
+<script src="assets/js/pages/pedidos/orders-chat.js?v=20260506-orders-ai-embedded-v2" defer></script>
+<script src="assets/js/pages/pedidos/orders-ai-assistant.js?v=20260506-orders-ai-assistant-v1" defer></script>
    <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
   <script src="assets/js/ui/mobile-drawer-standard.js?v=20260428-architecture"></script>
   <script src="assets/js/ui/mobile-interaction-standard.js?v=20260428-v1"></script>
   <script src="assets/js/ui/mobile-overlay-system.js?v=20260428-v1"></script>
+  <script src="assets/js/core/auth-route-map.js?v=20260506-auth-foundation-v1" defer></script>
+<script src="assets/js/core/session.js?v=20260506-auth-foundation-v1" defer></script>
+<script src="assets/js/services/auth-service.js?v=20260506-auth-foundation-v1" defer></script>
+<script src="assets/js/core/route-guard.js?v=20260506-auth-foundation-v1" defer></script>
   <script src="assets/js/core/runtime-config.js?v=20260501-stage32-runtime-flags" defer></script>
 <script src="assets/js/core/feature-flags.js?v=20260501-stage32-runtime-flags" defer></script>
 <script src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags" defer></script>

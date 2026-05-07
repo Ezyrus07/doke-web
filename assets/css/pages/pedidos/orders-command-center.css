@@ -1,0 +1,2927 @@
+/* Pedidos Command Center
+   Page-specific intelligent orders layer.
+   Responsibility: pedidos.html summary, insight cards and next-action surfaces only. */
+
+body.orders-page-shell .orders-command-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+body.orders-page-shell .orders-command-summary__card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  min-height: 118px;
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(188, 207, 226, 0.82);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 32px rgba(18, 55, 95, 0.055);
+}
+
+body.orders-page-shell .orders-command-summary__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  color: #1d64b1;
+  background: linear-gradient(135deg, rgba(29, 100, 177, 0.12), rgba(29, 100, 177, 0.04));
+}
+
+body.orders-page-shell .orders-command-summary__icon svg {
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body.orders-page-shell .orders-command-summary__content {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+body.orders-page-shell .orders-command-summary__value {
+  color: #06345f;
+  font-size: clamp(1.65rem, 2.3vw, 2.25rem);
+  font-weight: 850;
+  line-height: 1;
+}
+
+body.orders-page-shell .orders-command-summary__label {
+  color: #14385f;
+  font-size: 0.94rem;
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+body.orders-page-shell .orders-command-summary__hint {
+  margin: 0;
+  color: #6b7e99;
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+body.orders-page-shell .orders-command-summary__card--risk .orders-command-summary__icon {
+  color: #c06613;
+  background: linear-gradient(135deg, rgba(255, 147, 64, 0.18), rgba(255, 147, 64, 0.05));
+}
+
+body.orders-page-shell .orders-command-summary__card--budget .orders-command-summary__icon {
+  color: #1f8e5f;
+  background: linear-gradient(135deg, rgba(31, 142, 95, 0.16), rgba(31, 142, 95, 0.05));
+}
+
+body.orders-page-shell .orders-command-insights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+body.orders-page-shell .orders-command-insight {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  min-height: 92px;
+  padding: 14px;
+  border: 1px solid rgba(188, 207, 226, 0.78);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 10px 24px rgba(18, 55, 95, 0.045);
+}
+
+body.orders-page-shell .orders-command-insight__icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 15px;
+  background: #eef6ff;
+  color: #1d64b1;
+}
+
+body.orders-page-shell .orders-command-insight__icon svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body.orders-page-shell .orders-command-insight strong {
+  display: block;
+  color: #12375f;
+  font-size: 0.88rem;
+  font-weight: 850;
+  line-height: 1.15;
+}
+
+body.orders-page-shell .orders-command-insight p {
+  margin: 4px 0 0;
+  color: #637995;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.32;
+}
+
+body.orders-page-shell .orders-command-insight__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  color: #1d64b1;
+  font-size: 0.76rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+body.orders-page-shell .order-card[data-command-enhanced="true"] {
+  align-content: start;
+}
+
+body.orders-page-shell .order-card__smart-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(29, 100, 177, 0.1);
+  color: #1d64b1;
+  font-size: 0.7rem;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+body.orders-page-shell .order-card__top .order-card__smart-badge {
+  margin-left: auto;
+}
+
+body.orders-page-shell .order-card__next-action {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid rgba(199, 217, 235, 0.78);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(238, 246, 255, 0.98), rgba(255, 255, 255, 0.94));
+}
+
+body.orders-page-shell .order-card__next-action-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 15px;
+  background: rgba(29, 100, 177, 0.1);
+  color: #1d64b1;
+}
+
+body.orders-page-shell .order-card__next-action-icon svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body.orders-page-shell .order-card__next-action-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+body.orders-page-shell .order-card__next-action-label {
+  color: #1d64b1;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+body.orders-page-shell .order-card__next-action-title {
+  color: #12375f;
+  font-size: 0.9rem;
+  font-weight: 850;
+  line-height: 1.15;
+}
+
+body.orders-page-shell .order-card__next-action-note {
+  color: #6b7e99;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+body.orders-page-shell .order-card__next-action-button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 12px;
+  background: #1d64b1;
+  color: #fff;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+body.orders-page-shell .order-card[data-smart-risk="high"] .order-card__next-action {
+  border-color: rgba(255, 147, 64, 0.34);
+  background: linear-gradient(135deg, rgba(255, 246, 235, 0.98), rgba(255, 255, 255, 0.94));
+}
+
+body.orders-page-shell .order-card[data-smart-risk="high"] .order-card__next-action-icon,
+body.orders-page-shell .order-card[data-smart-risk="high"] .order-card__smart-badge {
+  color: #bc6414;
+  background: rgba(255, 147, 64, 0.16);
+}
+
+body.orders-page-shell .order-card[data-smart-status="completed"] .order-card__next-action {
+  border-color: rgba(31, 142, 95, 0.26);
+  background: linear-gradient(135deg, rgba(237, 251, 244, 0.98), rgba(255, 255, 255, 0.94));
+}
+
+body.orders-page-shell .order-card[data-smart-status="completed"] .order-card__next-action-icon,
+body.orders-page-shell .order-card[data-smart-status="completed"] .order-card__smart-badge {
+  color: #1f8e5f;
+  background: rgba(31, 142, 95, 0.13);
+}
+
+@media (max-width: 960px) {
+  body.orders-page-shell .orders-command-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.orders-page-shell .orders-command-insights {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell .orders-command-summary {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 2px 0 8px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  body.orders-page-shell .orders-command-summary::-webkit-scrollbar {
+    display: none;
+  }
+
+  body.orders-page-shell .orders-command-summary__card {
+    flex: 0 0 min(72vw, 244px);
+    grid-template-columns: 44px minmax(0, 1fr);
+    min-height: 104px;
+    padding: 14px;
+    border-radius: 20px;
+    scroll-snap-align: start;
+  }
+
+  body.orders-page-shell .orders-command-summary__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 15px;
+  }
+
+  body.orders-page-shell .orders-command-summary__value {
+    font-size: 1.55rem;
+  }
+
+  body.orders-page-shell .orders-command-insights {
+    gap: 10px;
+  }
+
+  body.orders-page-shell .orders-command-insight {
+    min-height: 0;
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  body.orders-page-shell .order-card__top {
+    gap: 8px;
+  }
+
+  body.orders-page-shell .order-card__smart-badge {
+    min-height: 24px;
+    padding: 0 8px;
+    font-size: 0.64rem;
+  }
+
+  body.orders-page-shell .order-card__next-action {
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  body.orders-page-shell .order-card__next-action-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 13px;
+  }
+
+  body.orders-page-shell .order-card__next-action-button {
+    display: none;
+  }
+
+  body.orders-page-shell .order-card__next-action-title {
+    font-size: 0.84rem;
+  }
+
+  body.orders-page-shell .order-card__next-action-note {
+    font-size: 0.72rem;
+  }
+}
+
+
+/* Orders command center technical states v2.
+   Small page-scoped additions for the deterministic state/filter layer. */
+.orders-page-shell .orders-list .order-card[hidden] {
+  display: none !important;
+}
+
+.orders-page-shell .orders-empty-state {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  border-radius: 22px;
+  color: var(--color-text, #17314f);
+}
+
+.orders-page-shell .orders-empty-state[hidden] {
+  display: none !important;
+}
+
+.orders-page-shell .orders-empty-state span {
+  color: var(--color-muted, #64758b);
+  font-size: 0.88rem;
+}
+
+
+/* Pedidos Soft Border Contract v1
+   Page-scoped visual refinement: lighter, more neutral strokes for pedidos.html.
+   Keeps semantic meaning in icon/background instead of heavy colored outlines. */
+body.orders-page-shell {
+  --orders-surface-border-soft: rgba(20, 56, 95, 0.075);
+  --orders-surface-border-subtle: rgba(20, 56, 95, 0.055);
+  --orders-surface-shadow-soft: 0 10px 28px rgba(18, 55, 95, 0.045);
+  --orders-surface-shadow-card: 0 14px 34px rgba(18, 55, 95, 0.055);
+  --orders-warning-bg-soft: linear-gradient(135deg, rgba(255, 249, 241, 0.94), rgba(255, 255, 255, 0.94));
+  --orders-success-bg-soft: linear-gradient(135deg, rgba(242, 252, 247, 0.94), rgba(255, 255, 255, 0.94));
+  --orders-info-bg-soft: linear-gradient(135deg, rgba(244, 249, 255, 0.94), rgba(255, 255, 255, 0.94));
+}
+
+body.orders-page-shell .orders-command-summary__card,
+body.orders-page-shell .orders-command-insight,
+body.orders-page-shell .orders-planner__card,
+body.orders-page-shell .order-card {
+  border-color: var(--orders-surface-border-soft);
+  box-shadow: var(--orders-surface-shadow-card);
+}
+
+body.orders-page-shell .orders-command-summary__card,
+body.orders-page-shell .orders-command-insight {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+body.orders-page-shell .order-card {
+  background: rgba(255, 255, 255, 0.94);
+}
+
+body.orders-page-shell .order-card__progress-summary,
+body.orders-page-shell .order-card__meta,
+body.orders-page-shell .order-card__button--secondary,
+body.orders-page-shell .order-card__footer {
+  border-color: var(--orders-surface-border-subtle);
+}
+
+body.orders-page-shell .order-card__smart-badge {
+  background: rgba(29, 100, 177, 0.08);
+}
+
+body.orders-page-shell .order-card__next-action {
+  border-color: var(--orders-surface-border-subtle);
+  background: var(--orders-info-bg-soft);
+  box-shadow: none;
+}
+
+body.orders-page-shell .order-card[data-smart-risk="high"] .order-card__next-action {
+  border-color: var(--orders-surface-border-subtle);
+  background: var(--orders-warning-bg-soft);
+}
+
+body.orders-page-shell .order-card[data-smart-status="completed"] .order-card__next-action {
+  border-color: var(--orders-surface-border-subtle);
+  background: var(--orders-success-bg-soft);
+}
+
+body.orders-page-shell .order-card[data-smart-risk="high"] .order-card__next-action-icon,
+body.orders-page-shell .order-card[data-smart-risk="high"] .order-card__smart-badge {
+  color: #bc6414;
+  background: rgba(255, 147, 64, 0.105);
+}
+
+body.orders-page-shell .order-card[data-smart-status="completed"] .order-card__next-action-icon,
+body.orders-page-shell .order-card[data-smart-status="completed"] .order-card__smart-badge {
+  color: #1f8e5f;
+  background: rgba(31, 142, 95, 0.095);
+}
+
+body.orders-page-shell .orders-command-summary__icon,
+body.orders-page-shell .orders-command-insight__icon,
+body.orders-page-shell .order-card__next-action-icon {
+  box-shadow: inset 0 0 0 1px rgba(20, 56, 95, 0.035);
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell .orders-command-summary__card,
+  body.orders-page-shell .orders-command-insight,
+  body.orders-page-shell .orders-planner__card,
+  body.orders-page-shell .order-card {
+    box-shadow: 0 10px 24px rgba(18, 55, 95, 0.04);
+  }
+}
+
+
+/* Pedidos Compact Card Contract v2
+   Cards become an operational summary only. Full context lives in the details overlay. */
+body.orders-page-shell .orders-list .order-card {
+  display: grid;
+  align-content: start;
+  gap: 0;
+  overflow: hidden;
+}
+
+body.orders-page-shell .orders-list .order-card__top {
+  padding-bottom: 12px;
+}
+
+body.orders-page-shell .orders-list .order-card__progress,
+body.orders-page-shell .orders-list .order-card__progress-summary,
+body.orders-page-shell .orders-list .order-card__meta-grid,
+body.orders-page-shell .orders-list .order-card__next-action,
+body.orders-page-shell .orders-list .order-card__footer {
+  display: none;
+}
+
+body.orders-page-shell .orders-list .order-card__body {
+  display: grid;
+  gap: 12px;
+  padding-top: 18px;
+}
+
+body.orders-page-shell .orders-list .order-card__body h2 {
+  margin: 0;
+  font-size: clamp(1.12rem, 1.35vw, 1.32rem);
+  line-height: 1.12;
+}
+
+body.orders-page-shell .orders-list .order-card__subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+body.orders-page-shell .orders-list .order-card__identity {
+  margin-top: 2px;
+}
+
+body.orders-page-shell .orders-list .order-card__actions {
+  margin-top: 18px;
+  padding-top: 0;
+}
+
+body.orders-page-shell .orders-list .order-card__button {
+  min-height: 46px;
+}
+
+body.orders-page-shell .orders-list .order-card__smart-badge {
+  background: rgba(29, 100, 177, 0.075);
+}
+
+body.orders-page-shell .orders-list .order-card__time {
+  white-space: nowrap;
+}
+
+@media (min-width: 761px) {
+  body.orders-page-shell .orders-list .order-card {
+    min-height: 390px;
+  }
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell .orders-list .order-card {
+    min-height: 0;
+  }
+
+  body.orders-page-shell .orders-list .order-card__top {
+    align-items: start;
+    padding-bottom: 10px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__body {
+    gap: 10px;
+    padding-top: 14px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__subtitle {
+    font-size: 0.86rem;
+  }
+
+  body.orders-page-shell .orders-list .order-card__actions {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__button {
+    min-height: 42px;
+  }
+}
+
+
+/* Pedidos Detail Pattern Reset v1
+   The previous details sidepanel/overlay pattern was removed.
+   Keep cards compact while the new detail experience is redesigned. */
+body.orders-page-shell [data-order-open="details-disabled"] {
+  cursor: default;
+}
+
+body.orders-page-shell .order-card__button[data-order-open="details-disabled"] {
+  pointer-events: none;
+  opacity: 0.88;
+}
+
+
+/* Pedidos Detail Drawer + Card Refresh v2
+   Cards stay operational and lighter, while details open in a clean right drawer. */
+body.orders-page-shell .orders-list .order-card {
+  min-height: 320px;
+  gap: 0;
+}
+
+body.orders-page-shell .orders-list .order-card__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding-bottom: 12px;
+}
+
+body.orders-page-shell .orders-list .order-card__statusline {
+  margin-right: auto;
+}
+
+body.orders-page-shell .orders-list .order-card__time {
+  color: #7c8ea7;
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+body.orders-page-shell .orders-list .order-card__smart-badge {
+  margin-left: 0;
+  background: rgba(29, 100, 177, 0.08);
+}
+
+body.orders-page-shell .orders-list .order-card__progress,
+body.orders-page-shell .orders-list .order-card__progress-summary,
+body.orders-page-shell .orders-list .order-card__next-action,
+body.orders-page-shell .orders-list .order-card__footer,
+body.orders-page-shell .orders-list .order-card__select {
+  display: none;
+}
+
+body.orders-page-shell .orders-list .order-card__body {
+  display: grid;
+  gap: 10px;
+  padding-top: 16px;
+}
+
+body.orders-page-shell .orders-list .order-card__body h2 {
+  margin: 0;
+  color: #0c2f56;
+  font-size: clamp(1.1rem, 1.3vw, 1.3rem);
+  line-height: 1.12;
+}
+
+body.orders-page-shell .orders-list .order-card__subtitle {
+  margin: 0;
+  color: #5f7691;
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
+
+body.orders-page-shell .orders-list .order-card__identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 2px;
+}
+
+body.orders-page-shell .orders-list .order-card__avatar {
+  flex: 0 0 auto;
+}
+
+body.orders-page-shell .orders-list .order-card__location {
+  color: #68809b;
+  font-size: 0.97rem;
+  font-weight: 650;
+  line-height: 1.32;
+}
+
+body.orders-page-shell .orders-list .order-card__meta-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+body.orders-page-shell .orders-list .order-card__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid rgba(20, 56, 95, 0.06);
+  border-radius: 999px;
+  background: rgba(243, 247, 252, 0.9);
+  color: #4f6783;
+  font-size: 0.84rem;
+  font-weight: 750;
+}
+
+body.orders-page-shell .orders-list .order-card__meta-icon {
+  width: 18px;
+  height: 18px;
+  color: #1d64b1;
+}
+
+body.orders-page-shell .orders-list .order-card__meta-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body.orders-page-shell .orders-list .order-card__actions {
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+body.orders-page-shell .orders-list .order-card__button {
+  min-height: 46px;
+}
+
+body.orders-page-shell .orders-list .order-card__button--primary {
+  flex: 1.15;
+}
+
+body.orders-page-shell .orders-list .order-card__button--secondary {
+  flex: 0.95;
+}
+
+body.orders-page-shell [data-order-open="details"] {
+  pointer-events: auto;
+  opacity: 1;
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell .orders-list .order-card {
+    min-height: 0;
+  }
+
+  body.orders-page-shell .orders-list .order-card__top {
+    gap: 8px;
+    padding-bottom: 10px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__body {
+    gap: 8px;
+    padding-top: 14px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__subtitle,
+  body.orders-page-shell .orders-list .order-card__location {
+    font-size: 0.88rem;
+  }
+
+  body.orders-page-shell .orders-list .order-card__meta-grid {
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__meta {
+    min-height: 34px;
+    padding: 0 10px;
+    font-size: 0.76rem;
+  }
+
+  body.orders-page-shell .orders-list .order-card__actions {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding-top: 14px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__button {
+    min-height: 42px;
+  }
+}
+
+
+/* Pedidos Summary Compact v6
+   Make the intelligent summary cards denser without touching global cards. */
+body.orders-page-shell .orders-command-summary__card {
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  min-height: 86px;
+  padding: 14px;
+  border-radius: 20px;
+}
+
+body.orders-page-shell .orders-command-summary__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 15px;
+}
+
+body.orders-page-shell .orders-command-summary__icon svg {
+  width: 21px;
+  height: 21px;
+}
+
+body.orders-page-shell .orders-command-summary__value {
+  font-size: clamp(1.35rem, 1.7vw, 1.7rem);
+}
+
+body.orders-page-shell .orders-command-summary__label {
+  font-size: 0.84rem;
+}
+
+body.orders-page-shell .orders-command-summary__hint {
+  font-size: 0.72rem;
+  line-height: 1.18;
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell .orders-command-summary__card {
+    flex: 0 0 184px;
+    min-height: 82px;
+    padding: 12px;
+  }
+}
+
+
+/* Pedidos Embedded AI Signals v2 */
+body.orders-page-shell .order-card__ai-insight {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  margin-top: 14px;
+  padding: 0 12px;
+  border: 1px solid rgba(32, 199, 166, 0.16);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(32, 199, 166, 0.095), rgba(29, 100, 177, 0.055));
+  color: #145b80;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+body.orders-page-shell .order-card__ai-insight-icon svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.15;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell .order-card__ai-insight {
+    min-height: 32px;
+    margin-top: 10px;
+    font-size: 0.72rem;
+  }
+}
+
+
+
+/* Pedidos Card Density Tune v3
+   Reduce vertical growth after embedding AI signals. */
+body.orders-page-shell .orders-list .order-card {
+  min-height: 0;
+}
+
+body.orders-page-shell .orders-list .order-card__top {
+  padding-bottom: 10px;
+}
+
+body.orders-page-shell .orders-list .order-card__body {
+  gap: 8px;
+  padding-top: 12px;
+}
+
+body.orders-page-shell .orders-list .order-card__meta-grid {
+  gap: 8px;
+  margin-top: 10px;
+}
+
+body.orders-page-shell .orders-list .order-card__meta {
+  min-height: 34px;
+  padding: 0 11px;
+  font-size: 0.8rem;
+}
+
+body.orders-page-shell .orders-list .order-card__ai-insight {
+  min-height: 30px;
+  margin-top: 10px;
+  padding: 0 10px;
+  font-size: 0.72rem;
+}
+
+body.orders-page-shell .orders-list .order-card__ai-insight-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+body.orders-page-shell .orders-list .order-card__actions {
+  padding-top: 12px;
+}
+
+body.orders-page-shell .orders-list .order-card__button {
+  min-height: 44px;
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell .orders-list .order-card__body {
+    gap: 8px;
+    padding-top: 12px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__meta-grid {
+    margin-top: 8px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__meta {
+    min-height: 32px;
+    padding: 0 9px;
+    font-size: 0.74rem;
+  }
+
+  body.orders-page-shell .orders-list .order-card__ai-insight {
+    min-height: 28px;
+    margin-top: 8px;
+    padding: 0 9px;
+    font-size: 0.68rem;
+  }
+
+  body.orders-page-shell .orders-list .order-card__actions {
+    padding-top: 12px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__button {
+    min-height: 40px;
+  }
+}
+
+
+/* Pedidos Card Minimal v4
+   Cards are now a lightweight operational preview.
+   Full context remains in the detail drawer. */
+body.orders-page-shell .orders-list .order-card {
+  min-height: 0;
+  padding: 22px;
+}
+
+body.orders-page-shell .orders-list .order-card__top {
+  gap: 8px 10px;
+  padding-bottom: 10px;
+}
+
+body.orders-page-shell .orders-list .order-card__time {
+  flex-basis: 100%;
+  font-size: 0.82rem;
+}
+
+body.orders-page-shell .orders-list .order-card__smart-badge {
+  min-height: 26px;
+  padding: 0 9px;
+  font-size: 0.68rem;
+}
+
+body.orders-page-shell .orders-list .order-card__body {
+  gap: 8px;
+  padding-top: 10px;
+}
+
+body.orders-page-shell .orders-list .order-card__body h2 {
+  font-size: clamp(1.08rem, 1.22vw, 1.22rem);
+}
+
+body.orders-page-shell .orders-list .order-card__subtitle {
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+body.orders-page-shell .orders-list .order-card__identity {
+  gap: 10px;
+  margin-top: 0;
+}
+
+body.orders-page-shell .orders-list .order-card__avatar {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  font-size: 0.88rem;
+}
+
+body.orders-page-shell .orders-list .order-card__location {
+  font-size: 0.86rem;
+  line-height: 1.22;
+}
+
+/* The prazo/orçamento pills are detail-level information now. */
+body.orders-page-shell .orders-list .order-card__meta-grid {
+  display: none;
+}
+
+body.orders-page-shell .orders-list .order-card__ai-insight {
+  min-height: 28px;
+  margin-top: 10px;
+  padding: 0 9px;
+  font-size: 0.68rem;
+}
+
+body.orders-page-shell .orders-list .order-card__ai-insight-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+body.orders-page-shell .orders-list .order-card__actions {
+  gap: 10px;
+  padding-top: 14px;
+}
+
+body.orders-page-shell .orders-list .order-card__button {
+  min-height: 42px;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell .orders-list .order-card {
+    padding: 20px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__top {
+    padding-bottom: 8px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__body {
+    gap: 7px;
+    padding-top: 8px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__avatar {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__ai-insight {
+    min-height: 26px;
+    margin-top: 8px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__actions {
+    padding-top: 12px;
+  }
+}
+
+
+/* Pedidos Responsive Pass v1
+   Dedicated responsive layer for pedidos.html.
+   Keeps desktop intact and optimizes mobile/tablet layout density, scroll and bottom navigation safety. */
+
+/* Tablet: avoid three large order cards fighting for width. */
+@media (max-width: 1180px) and (min-width: 761px) {
+  body.orders-page-shell .orders-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    gap: 18px;
+  }
+
+  body.orders-page-shell .orders-command-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Mobile-first operational layout */
+@media (max-width: 760px) {
+  body.orders-page-shell .orders-shell-content,
+  body.orders-page-shell .doke-page-shell,
+  body.orders-page-shell .orders-page {
+    width: 100%;
+    max-width: 100%;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+
+  body.orders-page-shell .orders-page {
+    display: grid;
+    gap: 16px;
+    padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Desktop side-meta is too heavy on phones; keep the native/mobile actions in charge. */
+  body.orders-page-shell .home-side-meta {
+    display: none;
+  }
+
+  /* Summary becomes compact chips/cards with less height. */
+  body.orders-page-shell .orders-command-summary {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(148px, 40vw);
+    grid-template-columns: none;
+    gap: 10px;
+    margin-left: -2px;
+    margin-right: -2px;
+    padding: 2px 2px 8px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  body.orders-page-shell .orders-command-summary::-webkit-scrollbar {
+    display: none;
+  }
+
+  body.orders-page-shell .orders-command-summary__card {
+    scroll-snap-align: start;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 9px;
+    min-height: 70px;
+    padding: 10px;
+    border-radius: 18px;
+  }
+
+  body.orders-page-shell .orders-command-summary__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 13px;
+  }
+
+  body.orders-page-shell .orders-command-summary__icon svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  body.orders-page-shell .orders-command-summary__value {
+    font-size: 1.18rem;
+  }
+
+  body.orders-page-shell .orders-command-summary__label {
+    font-size: 0.74rem;
+    line-height: 1.06;
+  }
+
+  body.orders-page-shell .orders-command-summary__hint {
+    display: none;
+  }
+
+  /* Agenda: calendar grid is secondary on mobile; daily timeline gets priority. */
+  body.orders-page-shell .orders-planner {
+    display: grid;
+    gap: 12px;
+  }
+
+  body.orders-page-shell .orders-planner__calendar {
+    display: none;
+  }
+
+  body.orders-page-shell .orders-planner__card {
+    border-radius: 22px;
+  }
+
+  body.orders-page-shell .orders-planner__events {
+    min-width: 0;
+  }
+
+  body.orders-page-shell .orders-planner__events .orders-planner__card {
+    padding: 16px;
+  }
+
+  body.orders-page-shell .orders-planner__event {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    padding: 12px 0;
+  }
+
+  body.orders-page-shell .orders-planner__event-action {
+    grid-column: 2;
+    width: fit-content;
+    min-height: 32px;
+    margin-top: 6px;
+    padding: 0 12px;
+    font-size: 0.76rem;
+  }
+
+  /* Insights should not dominate mobile. */
+  body.orders-page-shell .orders-command-insights {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  body.orders-page-shell .orders-command-insight {
+    grid-template-columns: 36px minmax(0, 1fr);
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  body.orders-page-shell .orders-command-insight__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 13px;
+  }
+
+  body.orders-page-shell .orders-command-insight p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  /* Cards: one per row, lower height, no horizontal overflow. */
+  body.orders-page-shell .orders-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  body.orders-page-shell .orders-list .order-card {
+    width: 100%;
+    min-width: 0;
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 7px 8px;
+    align-items: center;
+    padding-bottom: 8px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__time {
+    grid-column: 1 / -1;
+    min-width: 0;
+    font-size: 0.76rem;
+    white-space: normal;
+  }
+
+  body.orders-page-shell .orders-list .order-card__smart-badge {
+    justify-self: end;
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  body.orders-page-shell .orders-list .order-card__body h2 {
+    font-size: 1.05rem;
+    line-height: 1.1;
+  }
+
+  body.orders-page-shell .orders-list .order-card__subtitle {
+    font-size: 0.84rem;
+  }
+
+  body.orders-page-shell .orders-list .order-card__identity {
+    align-items: center;
+    gap: 10px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__location {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 0.82rem;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  body.orders-page-shell .orders-list .order-card__ai-insight {
+    max-width: 100%;
+  }
+
+  body.orders-page-shell .orders-list .order-card__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+    padding-top: 12px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__button {
+    min-width: 0;
+    min-height: 40px;
+    padding-inline: 10px;
+    font-size: 0.82rem;
+  }
+
+  body.orders-page-shell .orders-list .order-card__button svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  /* Floating AI must not cover bottom navigation. */
+  body.orders-page-shell .doke-ai-launcher {
+    right: 14px;
+    bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+    min-height: 44px;
+    padding: 0 13px;
+    font-size: 0.8rem;
+    box-shadow: 0 14px 30px rgba(29, 100, 177, 0.2);
+  }
+}
+
+/* Very small phones: prioritize readability over two-action width. */
+@media (max-width: 390px) {
+  body.orders-page-shell .orders-shell-content,
+  body.orders-page-shell .doke-page-shell,
+  body.orders-page-shell .orders-page {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  body.orders-page-shell .orders-command-summary {
+    grid-auto-columns: minmax(138px, 56vw);
+  }
+
+  body.orders-page-shell .orders-list .order-card {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__actions {
+    grid-template-columns: 1fr;
+  }
+
+  body.orders-page-shell .orders-list .order-card__button {
+    min-height: 40px;
+  }
+}
+
+
+/* Pedidos Mobile Polish v2
+   Fixes narrow mobile cards, agenda collisions, and bottom-sheet readability. */
+@media (max-width: 760px) {
+  /* Summary cards need enough width for labels without clipping. */
+  body.orders-page-shell .orders-command-summary {
+    grid-auto-columns: minmax(168px, 48vw);
+  }
+
+  body.orders-page-shell .orders-command-summary__card {
+    min-height: 72px;
+    padding: 10px 11px;
+  }
+
+  body.orders-page-shell .orders-command-summary__label {
+    font-size: 0.72rem;
+    line-height: 1.1;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  /* Agenda timeline: prevent time/title collision. */
+  body.orders-page-shell .orders-planner__agenda .orders-planner__card {
+    padding: 14px;
+  }
+
+  body.orders-page-shell .orders-planner__card-header--agenda {
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  body.orders-page-shell .orders-planner__agenda-meta {
+    width: 100%;
+    justify-content: center;
+    min-height: 28px;
+    font-size: 0.72rem;
+  }
+
+  body.orders-page-shell .orders-planner__event {
+    grid-template-columns: 54px minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+    padding: 14px 0;
+  }
+
+  body.orders-page-shell .orders-planner__event-time {
+    display: grid;
+    justify-items: start;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  body.orders-page-shell .orders-planner__event-time strong {
+    font-size: 0.95rem;
+    line-height: 1;
+  }
+
+  body.orders-page-shell .orders-planner__event-time span {
+    font-size: 0.72rem;
+    line-height: 1;
+  }
+
+  body.orders-page-shell .orders-planner__event-body {
+    min-width: 0;
+  }
+
+  body.orders-page-shell .orders-planner__event-body h4 {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.15;
+  }
+
+  body.orders-page-shell .orders-planner__event-body p {
+    margin: 4px 0 0;
+    font-size: 0.76rem;
+    line-height: 1.28;
+  }
+
+  body.orders-page-shell .orders-planner__event-status {
+    margin-top: 8px;
+  }
+
+  body.orders-page-shell .orders-planner__event-action {
+    grid-column: 2;
+    min-height: 30px;
+    margin-top: 4px;
+  }
+
+  /* Cards: keep mobile preview lightweight. */
+  body.orders-page-shell .orders-list .order-card {
+    padding: 17px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__actions {
+    grid-template-columns: 1fr;
+  }
+
+  body.orders-page-shell .orders-list .order-card__button--secondary {
+    min-height: 38px;
+  }
+}
+
+
+/* Pedidos Mobile Cards Refine v3
+   Tightens the visual contract of the summary, planner and order cards on small screens. */
+@media (max-width: 760px) {
+  /* 1) Summary cards:
+     horizontal cut-off looked unfinished; use a balanced 2-col grid instead. */
+  body.orders-page-shell .orders-command-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row;
+    gap: 10px;
+    padding: 0;
+    overflow: visible;
+  }
+
+  body.orders-page-shell .orders-command-summary__card {
+    min-height: 82px;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  body.orders-page-shell .orders-command-summary__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+  }
+
+  body.orders-page-shell .orders-command-summary__icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  body.orders-page-shell .orders-command-summary__content {
+    gap: 2px;
+  }
+
+  body.orders-page-shell .orders-command-summary__value {
+    font-size: 1.36rem;
+    line-height: 0.95;
+  }
+
+  body.orders-page-shell .orders-command-summary__label {
+    font-size: 0.82rem;
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+  }
+
+  /* 2) Planner events:
+     give the time column real room and let the content breathe. */
+  body.orders-page-shell .orders-planner__agenda .orders-planner__card {
+    padding: 16px 14px;
+  }
+
+  body.orders-page-shell .orders-planner__event {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
+    grid-template-areas:
+      "time body"
+      ". action";
+    gap: 12px;
+    align-items: start;
+    padding: 14px 0;
+  }
+
+  body.orders-page-shell .orders-planner__event-time {
+    grid-area: time;
+    gap: 3px;
+  }
+
+  body.orders-page-shell .orders-planner__event-time strong {
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  body.orders-page-shell .orders-planner__event-time span {
+    font-size: 0.72rem;
+    line-height: 1;
+    color: #7a8ea8;
+  }
+
+  body.orders-page-shell .orders-planner__event-body {
+    grid-area: body;
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+    padding-right: 2px;
+  }
+
+  body.orders-page-shell .orders-planner__event-body h4 {
+    font-size: 0.98rem;
+    line-height: 1.18;
+  }
+
+  body.orders-page-shell .orders-planner__event-body p {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.34;
+    color: #7286a1;
+  }
+
+  body.orders-page-shell .orders-planner__event-status {
+    width: fit-content;
+    min-height: 28px;
+    margin-top: 0;
+    padding: 0 10px;
+    font-size: 0.74rem;
+  }
+
+  body.orders-page-shell .orders-planner__event-action {
+    grid-area: action;
+    width: fit-content;
+    min-height: 32px;
+    margin-top: 2px;
+    padding: 0 12px;
+    font-size: 0.76rem;
+  }
+
+  /* 3) Order card:
+     cleaner top contract and less dead air. */
+  body.orders-page-shell .orders-list .order-card {
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "status badge"
+      "time badge";
+    gap: 6px 10px;
+    align-items: center;
+    padding-bottom: 10px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__statusline {
+    grid-area: status;
+    min-width: 0;
+  }
+
+  body.orders-page-shell .orders-list .order-card__status-text {
+    font-size: 0.78rem;
+    line-height: 1.05;
+  }
+
+  body.orders-page-shell .orders-list .order-card__time {
+    grid-area: time;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    font-size: 0.74rem;
+    line-height: 1.05;
+    white-space: normal;
+    color: #7d8fa8;
+  }
+
+  body.orders-page-shell .orders-list .order-card__smart-badge {
+    grid-area: badge;
+    align-self: start;
+    justify-self: end;
+    min-height: 24px;
+    padding: 0 9px;
+    border-radius: 999px;
+    font-size: 0.66rem;
+  }
+
+  body.orders-page-shell .orders-list .order-card__body {
+    gap: 8px;
+    padding-top: 8px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__body h2 {
+    font-size: 1rem;
+    line-height: 1.14;
+  }
+
+  body.orders-page-shell .orders-list .order-card__subtitle {
+    font-size: 0.8rem;
+    line-height: 1.3;
+  }
+
+  body.orders-page-shell .orders-list .order-card__identity {
+    gap: 10px;
+    margin-top: 2px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__avatar {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    font-size: 0.84rem;
+  }
+
+  body.orders-page-shell .orders-list .order-card__location {
+    font-size: 0.78rem;
+    line-height: 1.28;
+  }
+
+  body.orders-page-shell .orders-list .order-card__ai-insight {
+    width: fit-content;
+    max-width: 100%;
+    min-height: 26px;
+    margin-top: 8px;
+    padding: 0 8px;
+    font-size: 0.66rem;
+  }
+
+  body.orders-page-shell .orders-list .order-card__actions {
+    gap: 8px;
+    padding-top: 10px;
+    margin-top: 0;
+  }
+
+  body.orders-page-shell .orders-list .order-card__button {
+    min-height: 40px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 390px) {
+  body.orders-page-shell .orders-command-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  body.orders-page-shell .orders-command-summary__card {
+    min-height: 78px;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  body.orders-page-shell .orders-command-summary__value {
+    font-size: 1.24rem;
+  }
+
+  body.orders-page-shell .orders-command-summary__label {
+    font-size: 0.76rem;
+  }
+
+  body.orders-page-shell .orders-planner__event {
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__top {
+    gap: 6px 8px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__smart-badge {
+    font-size: 0.62rem;
+    padding: 0 8px;
+  }
+}
+
+
+/* Pedidos Mobile Fine Tune v4
+   Fixes planner time/title collision and improves order-card header rhythm on narrow screens. */
+@media (max-width: 760px) {
+  /* Planner events */
+  body.orders-page-shell .orders-planner__event {
+    grid-template-columns: 64px minmax(0, 1fr);
+    grid-template-areas:
+      "time body"
+      ". action";
+    gap: 12px;
+    align-items: start;
+  }
+
+  body.orders-page-shell .orders-planner__event-time {
+    grid-area: time;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 3px;
+    min-width: 64px;
+    padding-top: 2px;
+  }
+
+  body.orders-page-shell .orders-planner__event-time strong,
+  body.orders-page-shell .orders-planner__event-time span {
+    display: block;
+    width: 100%;
+  }
+
+  body.orders-page-shell .orders-planner__event-time strong {
+    font-size: 1rem;
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+
+  body.orders-page-shell .orders-planner__event-time span {
+    font-size: 0.72rem;
+    line-height: 1;
+    color: #7e91ab;
+  }
+
+  body.orders-page-shell .orders-planner__event-body {
+    grid-area: body;
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    padding-top: 0;
+  }
+
+  body.orders-page-shell .orders-planner__event-body h4 {
+    margin: 0;
+    font-size: 0.98rem;
+    line-height: 1.18;
+  }
+
+  body.orders-page-shell .orders-planner__event-body p {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.32;
+    color: #7186a2;
+  }
+
+  body.orders-page-shell .orders-planner__event-status {
+    width: fit-content;
+    min-height: 28px;
+    margin-top: 0;
+    padding-inline: 10px;
+  }
+
+  body.orders-page-shell .orders-planner__event-action {
+    grid-area: action;
+    margin-top: 2px;
+  }
+
+  /* Order cards */
+  body.orders-page-shell .orders-list .order-card__top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "status badge"
+      "time time";
+    gap: 6px 10px;
+    align-items: start;
+    padding-bottom: 10px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__statusline {
+    grid-area: status;
+    min-width: 0;
+  }
+
+  body.orders-page-shell .orders-list .order-card__status-dot {
+    margin-top: 2px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__status-text {
+    font-size: 0.82rem;
+    line-height: 1.06;
+  }
+
+  body.orders-page-shell .orders-list .order-card__time {
+    grid-area: time;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+    margin-left: 1px;
+    color: #7c8ea8;
+    font-size: 0.76rem;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  body.orders-page-shell .orders-list .order-card__time svg,
+  body.orders-page-shell .orders-list .order-card__time .order-card__time-icon {
+    flex: 0 0 auto;
+  }
+
+  body.orders-page-shell .orders-list .order-card__smart-badge {
+    grid-area: badge;
+    align-self: start;
+    justify-self: end;
+    min-height: 24px;
+    padding: 0 10px;
+    font-size: 0.66rem;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 390px) {
+  body.orders-page-shell .orders-planner__event {
+    grid-template-columns: 60px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  body.orders-page-shell .orders-planner__event-time {
+    min-width: 60px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__top {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "status"
+      "badge"
+      "time";
+    gap: 6px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__smart-badge {
+    justify-self: start;
+  }
+
+  body.orders-page-shell .orders-list .order-card__time {
+    white-space: normal;
+  }
+}
+
+
+/* Pedidos Mobile Card Compact v5
+   Fix avatar geometry and reduce mobile card height without removing useful context. */
+@media (max-width: 760px) {
+  body.orders-page-shell .orders-list .order-card {
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__top {
+    padding-bottom: 8px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__body {
+    gap: 6px;
+    padding-top: 6px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__body h2 {
+    font-size: 0.98rem;
+    line-height: 1.1;
+  }
+
+  body.orders-page-shell .orders-list .order-card__subtitle {
+    font-size: 0.78rem;
+    line-height: 1.24;
+  }
+
+  body.orders-page-shell .orders-list .order-card__identity {
+    gap: 9px;
+    margin-top: 0;
+  }
+
+  body.orders-page-shell .orders-list .order-card__avatar {
+    display: grid;
+    place-items: center;
+    flex: 0 0 36px;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    aspect-ratio: 1 / 1;
+    padding: 0;
+    border-radius: 50%;
+    line-height: 1;
+    overflow: hidden;
+  }
+
+  body.orders-page-shell .orders-list .order-card__location {
+    font-size: 0.76rem;
+    line-height: 1.22;
+  }
+
+  body.orders-page-shell .orders-list .order-card__ai-insight {
+    min-height: 24px;
+    margin-top: 6px;
+    padding: 0 8px;
+    font-size: 0.64rem;
+  }
+
+  body.orders-page-shell .orders-list .order-card__ai-insight-icon svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__actions {
+    gap: 7px;
+    padding-top: 9px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__button {
+    min-height: 38px;
+    font-size: 0.8rem;
+  }
+
+  body.orders-page-shell .orders-list .order-card__button svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+@media (max-width: 390px) {
+  body.orders-page-shell .orders-list .order-card {
+    padding: 13px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__avatar {
+    flex-basis: 34px;
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__button {
+    min-height: 37px;
+  }
+}
+
+
+/* Pedidos Avatar Circle Fix v6
+   Hard-lock avatar geometry so it stays a perfect circle on mobile. */
+@media (max-width: 760px) {
+  body.orders-page-shell .orders-list .order-card .order-card__avatar {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 36px;
+    block-size: 36px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    max-width: 36px;
+    max-height: 36px;
+    flex: 0 0 36px;
+    aspect-ratio: 1 / 1;
+    border-radius: 999px;
+    overflow: hidden;
+    line-height: 1;
+    padding: 0;
+  }
+}
+
+@media (max-width: 390px) {
+  body.orders-page-shell .orders-list .order-card .order-card__avatar {
+    inline-size: 34px;
+    block-size: 34px;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    max-width: 34px;
+    max-height: 34px;
+    flex-basis: 34px;
+  }
+}
+
+
+/* Pedidos Safe Content Width
+   Fixes desktop right clipping by constraining the pedidos workspace, not by remaking the header. */
+@media (min-width: 1024px) {
+  body.orders-page-shell .orders-shell-content,
+  body.orders-page-shell .doke-page-shell,
+  body.orders-page-shell .orders-page {
+    width: 100%;
+    max-width: 1180px;
+    margin-left: auto;
+    margin-right: auto;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  body.orders-page-shell .home-side-meta,
+  body.orders-page-shell .orders-command-summary,
+  body.orders-page-shell .orders-planner {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  body.orders-page-shell .home-side-meta__search-form {
+    flex: 0 1 260px;
+    width: 260px;
+    max-width: 260px;
+    min-width: 220px;
+  }
+
+  body.orders-page-shell .home-side-meta__search-input {
+    width: 100%;
+    background: #fff;
+  }
+}
+
+
+/* Pedidos Header Grouped Controls
+   Keep search, input and page actions together. The secondary icons stay to the right. */
+@media (min-width: 1024px) {
+  body.orders-page-shell .home-side-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 14px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  body.orders-page-shell .home-side-meta__group--primary {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  body.orders-page-shell .home-side-meta__search {
+    flex: 0 0 auto;
+  }
+
+  body.orders-page-shell .home-side-meta__search-form {
+    display: block;
+    flex: 0 0 260px;
+    width: 260px;
+    max-width: 260px;
+    min-width: 260px;
+  }
+
+  body.orders-page-shell .home-side-meta__search-input {
+    width: 100%;
+    background: #fff;
+  }
+
+  body.orders-page-shell .orders-page-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 12px;
+    margin-left: 0;
+  }
+
+  body.orders-page-shell .home-side-meta__group--secondary {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1280px) {
+  body.orders-page-shell .home-side-meta__search-form {
+    flex-basis: 220px;
+    width: 220px;
+    max-width: 220px;
+    min-width: 220px;
+  }
+}
+
+
+/* Pedidos Header Remove Search Gap
+   Removes the invisible search input space so the command buttons stay grouped. */
+@media (min-width: 1024px) {
+  body.orders-page-shell .home-side-meta__group--primary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  body.orders-page-shell .home-side-meta__search-form {
+    display: none;
+    flex: 0 0 0;
+    width: 0;
+    min-width: 0;
+    max-width: 0;
+    overflow: hidden;
+  }
+
+  body.orders-page-shell .orders-page-actions {
+    margin-left: 0;
+  }
+}
+
+
+/* Pedidos Header Index-Style Search v3
+   Closed: [lupa] [Filtros] [Selecionar] [Agenda]
+   Open:   [input] [Filtros] [Selecionar] [Agenda]
+   The input replaces the icon slot; it does not sit beside it. */
+@media (min-width: 1024px) {
+  body.orders-page-shell .orders-page .home-side-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 14px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta__group--primary {
+    display: flex;
+    flex: 0 1 auto;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta__group--secondary {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+    min-width: 0;
+  }
+
+  body.orders-page-shell .orders-page .orders-page-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 12px;
+    margin-left: 0;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta:not(.is-search-open) .home-side-meta__search {
+    display: grid;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta:not(.is-search-open) .home-side-meta__search-form {
+    display: none;
+    flex: 0 0 0;
+    width: 0;
+    min-width: 0;
+    max-width: 0;
+    overflow: hidden;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search {
+    display: none;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-form {
+    display: block;
+    flex: 0 0 240px;
+    width: 240px;
+    min-width: 240px;
+    max-width: 240px;
+    overflow: visible;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-input {
+    width: 100%;
+    height: 56px;
+    background: #fff;
+    box-sizing: border-box;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1360px) {
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-form {
+    flex-basis: 210px;
+    width: 210px;
+    min-width: 210px;
+    max-width: 210px;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta__group--secondary {
+    gap: 10px;
+  }
+
+  body.orders-page-shell .orders-page .orders-page-actions {
+    gap: 10px;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1180px) {
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-form {
+    flex-basis: 180px;
+    width: 180px;
+    min-width: 180px;
+    max-width: 180px;
+  }
+}
+
+
+/* Pedidos Header Search Focus Mode v4
+   When search is open, secondary/global actions are hidden so the input never collides with Agenda.
+   This keeps the primary command group stable: [input] [Filtros] [Selecionar] [Agenda]. */
+@media (min-width: 1024px) {
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__group--secondary {
+    display: none;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__group--primary {
+    flex: 0 1 auto;
+    max-width: 100%;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-form {
+    flex: 0 0 280px;
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1360px) {
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-form {
+    flex-basis: 240px;
+    width: 240px;
+    min-width: 240px;
+    max-width: 240px;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1180px) {
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-form {
+    flex-basis: 210px;
+    width: 210px;
+    min-width: 210px;
+    max-width: 210px;
+  }
+}
+
+
+/* Pedidos Open Search Width v5
+   Reduces the visible search input width when the header search is open. */
+@media (min-width: 1024px) {
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-form {
+    flex: 0 0 190px;
+    width: 190px;
+    min-width: 190px;
+    max-width: 190px;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-input {
+    padding-inline: 14px;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1360px) {
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-form {
+    flex-basis: 170px;
+    width: 170px;
+    min-width: 170px;
+    max-width: 170px;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1180px) {
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-form {
+    flex-basis: 150px;
+    width: 150px;
+    min-width: 150px;
+    max-width: 150px;
+  }
+}
+
+
+/* Pedidos Search Polish v6
+   Match search input height with command buttons, keep white surface, and improve open/close transition. */
+@media (min-width: 1024px) {
+  body.orders-page-shell .orders-page .home-side-meta .home-side-meta__search,
+  body.orders-page-shell .orders-page .home-side-meta .page-header-context__action {
+    height: 56px;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-form,
+  body.orders-page-shell .orders-page .home-side-meta.is-search-closing .home-side-meta__search-form {
+    display: block;
+    height: 56px;
+    transform-origin: left center;
+    will-change: opacity, transform;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-form {
+    animation: ordersSearchEnter 180ms cubic-bezier(.2,.8,.2,1) both;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-closing .home-side-meta__search-form {
+    animation: ordersSearchExit 160ms ease both;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-input,
+  body.orders-page-shell .orders-page .home-side-meta.is-search-closing .home-side-meta__search-input {
+    height: 56px;
+    min-height: 56px;
+    padding-inline: 16px;
+    border: 1px solid rgba(29, 100, 177, 0.14);
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 12px 26px rgba(18, 55, 95, 0.045);
+    box-sizing: border-box;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-input:focus {
+    border-color: rgba(29, 100, 177, 0.32);
+    background: #fff;
+    box-shadow:
+      0 0 0 4px rgba(29, 100, 177, 0.07),
+      0 12px 26px rgba(18, 55, 95, 0.045);
+  }
+}
+
+@keyframes ordersSearchEnter {
+  from {
+    opacity: 0;
+    transform: translateX(-8px) scaleX(.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scaleX(1);
+  }
+}
+
+@keyframes ordersSearchExit {
+  from {
+    opacity: 1;
+    transform: translateX(0) scaleX(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(-8px) scaleX(.92);
+  }
+}
+
+
+/* Pedidos Search Height Fix v7
+   The input looked taller because the focus ring expanded outside the control.
+   This locks the visible box to the same height/radius as the command buttons. */
+@media (min-width: 1024px) {
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-form,
+  body.orders-page-shell .orders-page .home-side-meta.is-search-closing .home-side-meta__search-form {
+    height: 56px;
+    min-height: 56px;
+    max-height: 56px;
+    align-self: center;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-input,
+  body.orders-page-shell .orders-page .home-side-meta.is-search-closing .home-side-meta__search-input {
+    display: block;
+    width: 100%;
+    height: 56px;
+    min-height: 56px;
+    max-height: 56px;
+    padding: 0 16px;
+    border: 1px solid rgba(29, 100, 177, 0.14);
+    border-radius: 18px;
+    outline: 0;
+    background: #fff;
+    box-shadow: 0 12px 24px rgba(18, 55, 95, 0.04);
+    line-height: 56px;
+    box-sizing: border-box;
+    appearance: none;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-input:focus {
+    border-color: rgba(29, 100, 177, 0.28);
+    outline: 0;
+    background: #fff;
+    box-shadow:
+      inset 0 0 0 1px rgba(29, 100, 177, 0.12),
+      0 12px 24px rgba(18, 55, 95, 0.04);
+  }
+}
+
+
+/* Pedidos Search Height Order Fix v8
+   Loaded after shared UI CSS via pedidos.html, so this page contract wins without !important. */
+@media (min-width: 1024px) {
+  body.orders-page-shell .orders-page .home-side-meta .home-side-meta__search,
+  body.orders-page-shell .orders-page .home-side-meta .page-header-context__action {
+    height: 56px;
+    min-height: 56px;
+    max-height: 56px;
+    box-sizing: border-box;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-form,
+  body.orders-page-shell .orders-page .home-side-meta.is-search-closing .home-side-meta__search-form {
+    height: 56px;
+    min-height: 56px;
+    max-height: 56px;
+    align-self: center;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-input,
+  body.orders-page-shell .orders-page .home-side-meta.is-search-closing .home-side-meta__search-input {
+    display: block;
+    width: 100%;
+    height: 56px;
+    min-height: 56px;
+    max-height: 56px;
+    padding-block: 0;
+    padding-inline: 16px;
+    border: 1px solid rgba(29, 100, 177, 0.14);
+    border-radius: 18px;
+    outline: 0;
+    background: #fff;
+    line-height: normal;
+    box-sizing: border-box;
+    box-shadow: 0 12px 24px rgba(18, 55, 95, 0.04);
+    appearance: none;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-input:focus {
+    border-color: rgba(29, 100, 177, 0.28);
+    outline: 0;
+    background: #fff;
+    box-shadow:
+      inset 0 0 0 1px rgba(29, 100, 177, 0.12),
+      0 12px 24px rgba(18, 55, 95, 0.04);
+  }
+}
+
+
+/* Pedidos Search Compact v9
+   Final visual contract for the opened search input:
+   smaller than the buttons, white background, no oversized focus halo. */
+@media (min-width: 1024px) {
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-form,
+  body.orders-page-shell .orders-page .home-side-meta.is-search-closing .home-side-meta__search-form {
+    height: 48px;
+    min-height: 48px;
+    max-height: 48px;
+    align-self: center;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-input,
+  body.orders-page-shell .orders-page .home-side-meta.is-search-closing .home-side-meta__search-input {
+    display: block;
+    width: 100%;
+    height: 48px;
+    min-height: 48px;
+    max-height: 48px;
+    padding: 0 14px;
+    border: 1px solid rgba(29, 100, 177, 0.14);
+    border-radius: 16px;
+    outline: 0;
+    background: #fff;
+    color: #12375f;
+    font-size: 0.92rem;
+    font-weight: 650;
+    line-height: 48px;
+    box-sizing: border-box;
+    box-shadow: 0 10px 22px rgba(18, 55, 95, 0.035);
+    appearance: none;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-input::placeholder {
+    color: #8193aa;
+  }
+
+  body.orders-page-shell .orders-page .home-side-meta.is-search-open .home-side-meta__search-input:focus {
+    border-color: rgba(29, 100, 177, 0.24);
+    outline: 0;
+    background: #fff;
+    box-shadow:
+      inset 0 0 0 1px rgba(29, 100, 177, 0.10),
+      0 10px 22px rgba(18, 55, 95, 0.035);
+  }
+}
+
+/* Pedidos Selection Panel standard integration */
+.orders-page-shell [data-orders-select-panel] {
+  margin-top: 10px;
+}
+
+.orders-page-shell [data-orders-select-panel] .doke-mobile-action-panel__head {
+  margin-bottom: 14px;
+}
+
+.orders-page-shell [data-orders-select-panel] .doke-mobile-action-panel__footer {
+  align-items: stretch;
+}
+
+@media (min-width: 1024px) {
+  .orders-page-shell [data-orders-select-panel] {
+    max-width: 100%;
+  }
+}
+
+/* Pedidos Selection Panel Compact integration v2 */
+.orders-page-shell [data-orders-select-panel] {
+  max-width: 680px;
+}
+
+.orders-page-shell .orders-page-header__controls:not([hidden]) {
+  align-items: flex-start;
+}
+
+/* Pedidos Selection Panel Polish integration v3
+   Removes the oversized parent surface; only the selection panel should look like a card. */
+.orders-page-shell .orders-page-header__controls:not([hidden]) {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.orders-page-shell .orders-page-header__controls .orders-filter-status-stack {
+  display: none;
+}
+
+.orders-page-shell [data-orders-select-panel] {
+  margin-top: 0;
+  max-width: 540px;
+}
+
+.orders-page-shell [data-orders-select-panel]:not([hidden]) {
+  display: block;
+}
+
+.orders-page-shell [data-orders-select-panel] .doke-mobile-action-panel__footer {
+  align-items: stretch;
+}
+
+
+/* Selection surface flatten v4
+   Remove the nested card feeling by rendering filter/select controls outside
+   of the hero section, as a single lightweight inline utility panel. */
+.orders-page-shell .orders-page-header__controls {
+  width: min(100%, 560px);
+  margin-top: 16px;
+}
+
+.orders-page-shell .orders-page-header__controls[hidden] {
+  display: none !important;
+}
+
+.orders-page-shell .orders-page-header__controls:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.orders-page-shell .orders-page-header__controls .orders-filter-status-stack {
+  display: flex;
+  align-items: center;
+  min-height: 0;
+}
+
+.orders-page-shell .orders-page-header__controls .orders-active-filter-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.orders-page-shell .orders-page-header__controls .orders-active-filter-chip,
+.orders-page-shell .orders-page-header__controls .orders-active-filter-clear {
+  box-shadow: none;
+}
+
+.orders-page-shell [data-orders-select-panel],
+.orders-page-shell [data-orders-filters-popover] {
+  margin-top: 0;
+  max-width: 560px;
+}
+
+.orders-page-shell [data-orders-select-panel]:not([hidden]),
+.orders-page-shell [data-orders-filters-popover]:not([hidden]) {
+  display: block;
+}
+
+/* Selection surface flat v5
+   Forces the controls area to be structural only. The panel itself is the only visual surface. */
+body.orders-page-shell .orders-page .orders-page-header__controls {
+  width: min(100%, 560px);
+  max-width: 560px;
+  margin: 14px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.orders-page-shell .orders-page .orders-page-header__controls[hidden] {
+  display: none;
+}
+
+body.orders-page-shell .orders-page .orders-page-header__controls:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: 0;
+}
+
+body.orders-page-shell .orders-page .orders-page-header__controls .orders-filter-status-stack {
+  display: flex;
+  align-items: center;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.orders-page-shell .orders-page .orders-page-header__controls .orders-active-filter-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+body.orders-page-shell .orders-page .orders-page-header__controls .orders-active-filter-chip,
+body.orders-page-shell .orders-page .orders-page-header__controls .orders-active-filter-clear {
+  box-shadow: none;
+}
+
+body.orders-page-shell .orders-page [data-orders-select-panel],
+body.orders-page-shell .orders-page [data-orders-filters-popover] {
+  margin: 0;
+  max-width: 560px;
+}
+
+body.orders-page-shell .orders-page [data-orders-select-panel]:not([hidden]),
+body.orders-page-shell .orders-page [data-orders-filters-popover]:not([hidden]) {
+  display: block;
+}
+
+
+/* Selection panel contract v6
+   Keep the utility panel visually attached to the header controls,
+   remove the oversized host area, and make the opened panel denser. */
+body.orders-page-shell .orders-page .orders-page-header__controls {
+  width: fit-content;
+  max-width: min(100%, 508px);
+  margin-top: 8px;
+}
+
+body.orders-page-shell .orders-page .orders-page-header__controls:not([hidden]) {
+  display: inline-flex;
+  width: fit-content;
+  max-width: min(100%, 508px);
+  gap: 8px;
+  align-items: flex-start;
+}
+
+body.orders-page-shell .orders-page .orders-page-header__controls .orders-filter-status-stack {
+  width: auto;
+}
+
+body.orders-page-shell .orders-page .orders-page-header__controls .orders-active-filter-row {
+  gap: 8px;
+}
+
+body.orders-page-shell .orders-page [data-orders-select-panel],
+body.orders-page-shell .orders-page [data-orders-filters-popover] {
+  width: min(100%, 508px);
+  max-width: 508px;
+}
+
+body.orders-page-shell .orders-page [data-orders-select-panel] {
+  position: relative;
+  transform-origin: top left;
+  animation: ordersSelectPanelEnter 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+body.orders-page-shell .orders-page [data-orders-select-panel]::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 28px;
+  width: 14px;
+  height: 14px;
+  border-top: 1px solid rgba(29, 100, 177, 0.10);
+  border-left: 1px solid rgba(29, 100, 177, 0.10);
+  background: #fff;
+  transform: rotate(45deg);
+  border-top-left-radius: 3px;
+}
+
+body.orders-page-shell .orders-page [data-orders-select-panel] .doke-mobile-action-panel__head {
+  margin-bottom: 12px;
+}
+
+body.orders-page-shell .orders-page [data-orders-select-panel] .doke-mobile-action-panel__head p {
+  max-width: 40ch;
+}
+
+body.orders-page-shell .orders-page [data-orders-select-panel] .doke-mobile-selection-stack {
+  gap: 8px;
+}
+
+body.orders-page-shell .orders-page [data-orders-select-panel] .doke-mobile-selection-action {
+  min-height: 58px;
+  padding: 12px;
+}
+
+body.orders-page-shell .orders-page [data-orders-select-panel] .doke-mobile-action-panel__footer {
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+@keyframes ordersSelectPanelEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 900px) {
+  body.orders-page-shell .orders-page .orders-page-header__controls,
+  body.orders-page-shell .orders-page .orders-page-header__controls:not([hidden]),
+  body.orders-page-shell .orders-page [data-orders-select-panel],
+  body.orders-page-shell .orders-page [data-orders-filters-popover] {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body.orders-page-shell .orders-page [data-orders-select-panel]::before {
+    left: 24px;
+  }
+}
+
+/* Selection mode cards v7
+   When the selection panel is open, cards expose their selectable checkbox.
+   This restores the missing visual affordance without changing the card markup. */
+body.orders-page-shell
+  .orders-page:has([data-orders-select-panel]:not([hidden]))
+  .orders-list
+  .order-card
+  .order-card__select {
+  display: inline-flex;
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 4;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(29, 100, 177, 0.18);
+  border-radius: 14px;
+  background: #fff;
+  color: #1d64b1;
+  box-shadow: 0 12px 24px rgba(18, 55, 95, 0.08);
+  cursor: pointer;
+}
+
+body.orders-page-shell
+  .orders-page:has([data-orders-select-panel]:not([hidden]))
+  .orders-list
+  .order-card {
+  position: relative;
+}
+
+body.orders-page-shell
+  .orders-page:has([data-orders-select-panel]:not([hidden]))
+  .orders-list
+  .order-card
+  .order-card__select span {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-radius: 5px;
+}
+
+body.orders-page-shell
+  .orders-page:has([data-orders-select-panel]:not([hidden]))
+  .orders-list
+  .order-card
+  .order-card__select[aria-pressed="true"],
+body.orders-page-shell
+  .orders-page:has([data-orders-select-panel]:not([hidden]))
+  .orders-list
+  .order-card.is-selected
+  .order-card__select {
+  background: #1d64b1;
+  color: #fff;
+  border-color: #1d64b1;
+}
+
+body.orders-page-shell
+  .orders-page:has([data-orders-select-panel]:not([hidden]))
+  .orders-list
+  .order-card
+  .order-card__select[aria-pressed="true"] span,
+body.orders-page-shell
+  .orders-page:has([data-orders-select-panel]:not([hidden]))
+  .orders-list
+  .order-card.is-selected
+  .order-card__select span {
+  border-color: #fff;
+  background:
+    linear-gradient(135deg, transparent 0 42%, #fff 42% 58%, transparent 58%) center / 12px 12px no-repeat;
+}
+
+body.orders-page-shell
+  .orders-page:has([data-orders-select-panel]:not([hidden]))
+  .orders-list
+  .order-card.is-selected {
+  border-color: rgba(29, 100, 177, 0.34);
+  box-shadow:
+    0 0 0 4px rgba(29, 100, 177, 0.08),
+    0 18px 42px rgba(18, 55, 95, 0.08);
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell
+    .orders-page:has([data-orders-select-panel]:not([hidden]))
+    .orders-list
+    .order-card
+    .order-card__select {
+    top: 14px;
+    right: 14px;
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+  }
+}
+
+/* Filter panel contract v1
+   Same anchoring and density used by the selection panel. */
+body.orders-page-shell .orders-page [data-orders-filters-popover] {
+  position: relative;
+  width: min(100%, 508px);
+  max-width: 508px;
+  transform-origin: top left;
+  animation: ordersFilterPanelEnter 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+body.orders-page-shell .orders-page [data-orders-filters-popover]::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 28px;
+  width: 14px;
+  height: 14px;
+  border-top: 1px solid rgba(29, 100, 177, 0.10);
+  border-left: 1px solid rgba(29, 100, 177, 0.10);
+  border-top-left-radius: 3px;
+  background: #fff;
+  transform: rotate(45deg);
+}
+
+@keyframes ordersFilterPanelEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 900px) {
+  body.orders-page-shell .orders-page [data-orders-filters-popover] {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body.orders-page-shell .orders-page [data-orders-filters-popover]::before {
+    left: 24px;
+  }
+}
+
+/* Filter/selection panel visibility v3
+   The JS controls hidden attributes; CSS only defines visible layout. */
+body.orders-page-shell .orders-page #orders-action-controls:not([hidden]) {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: fit-content;
+  max-width: min(100%, 508px);
+  margin-top: 8px;
+  gap: 8px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.orders-page-shell .orders-page #orders-action-controls[hidden],
+body.orders-page-shell .orders-page #orders-action-controls [hidden] {
+  display: none;
+}
+
+body.orders-page-shell .orders-page #orders-action-controls [data-orders-filters-popover]:not([hidden]),
+body.orders-page-shell .orders-page #orders-action-controls [data-orders-select-panel]:not([hidden]) {
+  display: block;
+  visibility: visible;
+  opacity: 1;
+}
+
+body.orders-page-shell .orders-page #orders-action-controls[data-active-panel="filters"] [data-orders-filters-popover],
+body.orders-page-shell .orders-page #orders-action-controls[data-active-panel="select"] [data-orders-select-panel] {
+  display: block;
+}

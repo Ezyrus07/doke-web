@@ -1,64 +1,114 @@
+/* Doke Auth Service
+   Responsibility: one facade for login/logout/session across providers.
+   Current provider: mock. Future providers: Supabase/Firebase without changing pages. */
 (function () {
-  'use strict';
+  const ns = (window.DokeAuth = window.DokeAuth || {});
 
-  var Doke = window.Doke || (window.Doke = {});
+  const DEFAULT_USER = Object.freeze({
+    id: 'mock-user-doke',
+    name: 'Gabriel',
+    initials: 'DK',
+    role: 'student-founder',
+    email: 'gabriel@doke.local'
+  });
 
-  function mockUserFromEmail(email, role) {
-    var username = String(email || 'gabriel@doke.local').split('@')[0];
-    return {
-      user: {
-        id: 'mock-user-' + username.replace(/[^a-z0-9]/gi, '-').toLowerCase(),
-        email: email || 'gabriel@doke.local',
-        name: username.charAt(0).toUpperCase() + username.slice(1)
-      },
-      profile: {
-        id: 'mock-profile-' + username.replace(/[^a-z0-9]/gi, '-').toLowerCase(),
-        displayName: username.charAt(0).toUpperCase() + username.slice(1),
-        role: role || 'client',
-        city: 'Salvador',
-        state: 'BA'
-      },
-      issuedAt: new Date().toISOString(),
-      provider: 'mock'
-    };
-  }
+  const config = {
+    provider: 'mock',
+    loginRedirect: '../index.html',
+    logoutRedirect: 'auth/login.html'
+  };
 
-  async function getCurrentUser() {
-    var session = Doke.session ? Doke.session.read() : null;
-    return session ? session.user : null;
-  }
+  const delay = (ms = 180) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
-  async function getCurrentSession() {
-    return Doke.session ? Doke.session.read() : null;
-  }
+  const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 
-  async function signIn(payload) {
-    var session = mockUserFromEmail(payload && payload.email, payload && payload.role);
-    if (Doke.session) Doke.session.write(session), Doke.session.apply(session);
+  const createMockSession = ({ email, name } = {}) => ({
+    provider: 'mock',
+    token: `mock-${Date.now()}`,
+    user: {
+      ...DEFAULT_USER,
+      email: normalizeEmail(email) || DEFAULT_USER.email,
+      name: String(name || DEFAULT_USER.name).trim() || DEFAULT_USER.name
+    }
+  });
+
+  const getSession = () => ns.session?.read() || null;
+  const getCurrentUser = () => ns.session?.getUser() || null;
+  const isAuthenticated = () => ns.session?.isAuthenticated() || false;
+
+  const login = async ({ email, password, name, remember = true } = {}) => {
+    if (config.provider !== 'mock') {
+      throw new Error(`Auth provider "${config.provider}" ainda não foi conectado.`);
+    }
+
+    await delay();
+
+    if (!normalizeEmail(email)) {
+      throw new Error('Informe um e-mail válido.');
+    }
+
+    if (typeof password === 'string' && password.length > 0 && password.length < 4) {
+      throw new Error('A senha precisa ter pelo menos 4 caracteres no modo mock.');
+    }
+
+    const session = createMockSession({ email, name });
+    ns.session.write({
+      ...session,
+      remember
+    });
+
     return session;
-  }
+  };
 
-  async function signOut() {
-    if (Doke.session) Doke.session.clear(), Doke.session.apply(null);
+  const logout = async () => {
+    await delay(80);
+    ns.session.clear();
     return true;
-  }
+  };
 
-  function requireAuth(options) {
-    var session = Doke.session ? Doke.session.read() : null;
-    if (session) return session;
-    if (options && options.redirectTo) window.location.href = options.redirectTo;
-    return null;
-  }
+  const onAuthChange = (listener) => ns.session.subscribe(listener);
 
-  function requireRole(roles, options) {
-    var session = requireAuth(options);
-    if (!session) return null;
-    var allowed = Array.isArray(roles) ? roles : [roles];
-    var role = session.profile && session.profile.role ? session.profile.role : 'guest';
-    if (allowed.indexOf(role) >= 0 || role === 'admin') return session;
-    if (options && options.redirectTo) window.location.href = options.redirectTo;
-    return null;
-  }
+  const redirectTo = (target) => {
+    if (!target) return;
+    window.location.assign(target);
+  };
 
-  Doke.auth = { getCurrentUser: getCurrentUser, getCurrentSession: getCurrentSession, signIn: signIn, signOut: signOut, requireAuth: requireAuth, requireRole: requireRole };
+  const requireAuth = ({ enforce = false, redirectToLogin = config.logoutRedirect } = {}) => {
+    const authenticated = isAuthenticated();
+
+    document.documentElement.dataset.authenticated = String(authenticated);
+
+    if (!authenticated && enforce) {
+      redirectTo(redirectToLogin);
+    }
+
+    return authenticated;
+  };
+
+  const redirectIfAuthenticated = ({ enforce = false, redirectToApp = config.loginRedirect } = {}) => {
+    const authenticated = isAuthenticated();
+
+    if (authenticated && enforce) {
+      redirectTo(redirectToApp);
+    }
+
+    return authenticated;
+  };
+
+  const setProvider = (provider) => {
+    config.provider = provider || 'mock';
+  };
+
+  ns.service = Object.freeze({
+    config,
+    setProvider,
+    login,
+    logout,
+    getSession,
+    getCurrentUser,
+    isAuthenticated,
+    onAuthChange,
+    requireAuth,
+    redirectIfAuthenticated
+  });
 })();

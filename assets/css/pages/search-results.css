@@ -1710,3 +1710,213 @@ body.search-results-body .results-layout[data-results-mode="before-after"] .resu
   }
 }
 
+/* RESULTADOS MOBILE USER CARD HIERARCHY REFINE v6
+   Two-up user cards on phones need better information hierarchy.
+   Use avatar + score on the first row, full-width name on the second row,
+   and CTA on the third row. This avoids the squeezed name problem. */
+@media (max-width: 760px) {
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid {
+    gap: 10px !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card {
+    display: grid !important;
+    grid-template-columns: 34px minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "avatar . score"
+      "name name name"
+      "cta cta cta" !important;
+    align-content: start !important;
+    align-items: center !important;
+    justify-items: stretch !important;
+    gap: 8px 8px !important;
+    min-height: 132px !important;
+    padding: 10px !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__header,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__header {
+    display: contents !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__avatar,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__avatar {
+    grid-area: avatar !important;
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 10px !important;
+    justify-self: start !important;
+    align-self: center !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__identity,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__identity {
+    grid-area: name !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__identity strong,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__identity strong {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: normal !important;
+    text-align: left !important;
+    font-size: 0.82rem !important;
+    line-height: 1.12 !important;
+    min-height: 1.84rem !important;
+    margin: 0 !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__score,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__score {
+    grid-area: score !important;
+    justify-self: end !important;
+    align-self: center !important;
+    min-height: 26px !important;
+    padding: 0 9px !important;
+    border-radius: 999px !important;
+    font-size: 0.74rem !important;
+    margin: 0 !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__footer,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__footer {
+    grid-area: cta !important;
+    width: 100% !important;
+    margin-top: 0 !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__cta,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__cta {
+    width: 100% !important;
+    min-height: 34px !important;
+    border-radius: 12px !important;
+    padding-inline: 8px !important;
+    font-size: 0.76rem !important;
+    justify-content: center !important;
+  }
+}
+
+/* RESULTADOS MOBILE USER CARD CENTERED STACK v7
+   Final phone layout for professional cards in the users mode.
+   Keep the 2-up grid, but stack each card vertically: circular avatar on top,
+   centered name, centered rating below, and full-width CTA at the bottom. */
+@media (max-width: 760px) {
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid {
+    gap: 10px !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "avatar"
+      "name"
+      "score"
+      "cta" !important;
+    justify-items: center !important;
+    align-content: start !important;
+    align-items: start !important;
+    gap: 8px !important;
+    min-height: 154px !important;
+    padding: 12px !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__header,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__header,
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__body,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__body {
+    display: contents !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__avatar,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__avatar {
+    grid-area: avatar !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    border-radius: 50% !important;
+    justify-self: center !important;
+    align-self: start !important;
+    object-fit: cover !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__identity,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__identity {
+    grid-area: name !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-align: center !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__identity strong,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__identity strong {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: normal !important;
+    text-align: center !important;
+    font-size: 0.84rem !important;
+    line-height: 1.12 !important;
+    min-height: 1.88rem !important;
+    margin: 0 !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__score,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__score {
+    grid-area: score !important;
+    justify-self: center !important;
+    align-self: start !important;
+    min-height: 28px !important;
+    padding: 0 10px !important;
+    border-radius: 999px !important;
+    font-size: 0.76rem !important;
+    margin: 0 !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__footer,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__footer {
+    grid-area: cta !important;
+    width: 100% !important;
+    margin-top: 0 !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__cta,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__cta {
+    width: 100% !important;
+    min-height: 36px !important;
+    border-radius: 13px !important;
+    padding-inline: 10px !important;
+    justify-content: center !important;
+    font-size: 0.78rem !important;
+  }
+}
+
+/* RESULTADOS MOBILE USER CARD DATA CLEANUP v8
+   Remove the extra role/location/service meta from the compact user cards on phones.
+   Keep only avatar, name, rating and CTA. */
+@media (max-width: 760px) {
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__header,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__header {
+    display: contents !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__body,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__body {
+    display: none !important;
+  }
+}
+
