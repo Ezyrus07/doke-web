@@ -1,0 +1,143 @@
+/* Mensagens boot contract v7
+   CSS crítico da rota para evitar FOUC/transição com HTML cru.
+   Não define visual final; só reserva a malha e oculta estruturas legadas até o CSS completo carregar. */
+@media (min-width: 761px) {
+  body.messages-page-shell .messages-mobile-header,
+  body.messages-page-shell .messages-desktop-toolbar,
+  body.messages-page-shell .messages-header-controls,
+  body.messages-page-shell .messages-sidebar-actions,
+  body.messages-page-shell .messages-sidebar > .messages-sidebar-search:not(.messages-sidebar-search--modern) {
+    display: none !important;
+  }
+
+  body.messages-page-shell .before-after-preview,
+  body.messages-page-shell .before-after-section,
+  body.messages-page-shell .worker-preview,
+  body.messages-page-shell .worker-preview__media,
+  body.messages-page-shell .worker-preview__video,
+  body.messages-page-shell .home-section,
+  body.messages-page-shell .home-feed,
+  body.messages-page-shell .home-main,
+  body.messages-page-shell .shell-home__content,
+  body.messages-page-shell .page__content > :not(.messages-shell-content):not(.app-shell-page__workspace),
+  body.messages-page-shell .messages-shell-content > :not(.messages-app) {
+    display: none !important;
+  }
+
+  body.messages-page-shell .page__content,
+  body.messages-page-shell .page__content-inner,
+  body.messages-page-shell .messages-shell-content {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    background: #f4f8fc !important;
+  }
+
+  body.messages-page-shell .messages-shell-content {
+    display: grid !important;
+    min-height: 100dvh !important;
+    padding: 48px 14px 14px 112px !important;
+  }
+
+  body.messages-page-shell .messages-app {
+    display: grid !important;
+    grid-template-columns: clamp(390px, 27vw, 430px) minmax(0, 1fr) !important;
+    justify-self: center !important;
+    width: min(100%, 1288px) !important;
+    max-width: 1288px !important;
+    min-height: calc(100dvh - 62px) !important;
+    height: calc(100dvh - 62px) !important;
+    margin: 0 auto !important;
+    overflow: hidden !important;
+    background: #fff !important;
+  }
+}
+
+/* v8 — esconder legado duplicado desde o CSS crítico externo também. */
+@media (min-width: 761px) {
+  body.messages-page-shell .messages-sidebar-panel,
+  body.messages-page-shell .messages-sidebar-actions,
+  body.messages-page-shell .messages-desktop-toolbar,
+  body.messages-page-shell .messages-mobile-header,
+  body.messages-page-shell .messages-header-controls,
+  body.messages-page-shell .messages-sidebar > .messages-sidebar-search:not(.messages-sidebar-search--modern) {
+    display: none !important;
+  }
+}
+
+/* 2026-05-07 — Mensagens no black borders v10
+   Corrige bordas pretas vistas durante a transição da rota.
+   Causa: a rota era liberada no DOMContentLoaded, antes da pintura completa do CSS,
+   e alguns contratos legados/defaults ficavam visíveis por alguns frames. */
+@media (min-width: 761px) {
+  body.messages-page-shell .message-item,
+  body.messages-page-shell .message-item.doke-card,
+  body.messages-page-shell .doke-message-card,
+  body.messages-page-shell .messages-sidebar-search--modern,
+  body.messages-page-shell .messages-sidebar-search--modern input,
+  body.messages-page-shell .messages-sidebar-brand__compose,
+  body.messages-page-shell .messages-sidebar-tools__filter,
+  body.messages-page-shell .message-bubble,
+  body.messages-page-shell .messages-composer,
+  body.messages-page-shell .messages-composer__field,
+  body.messages-page-shell .messages-thread__action {
+    outline: 0 !important;
+    border-color: rgba(207, 222, 238, 0.74) !important;
+  }
+
+  body.messages-page-shell .message-item {
+    border-width: 1px !important;
+    border-style: solid !important;
+    border-color: transparent !important;
+  }
+
+  body.messages-page-shell .message-item.is-active {
+    border-color: rgba(29, 100, 177, 0.24) !important;
+  }
+
+  body.messages-page-shell .message-item:focus,
+  body.messages-page-shell .message-item:active,
+  body.messages-page-shell .message-item:focus-visible {
+    outline: 0 !important;
+    border-color: rgba(29, 100, 177, 0.28) !important;
+    box-shadow: 0 0 0 4px rgba(29, 100, 177, 0.08) !important;
+  }
+
+  body.messages-page-shell .messages-sidebar-search--modern:focus-within,
+  body.messages-page-shell .messages-composer__field:focus-within,
+  body.messages-page-shell .messages-thread__action:focus-visible,
+  body.messages-page-shell .messages-sidebar-brand__compose:focus-visible,
+  body.messages-page-shell .messages-sidebar-tools__filter:focus-visible {
+    outline: 0 !important;
+    border-color: rgba(29, 100, 177, 0.32) !important;
+    box-shadow: 0 0 0 4px rgba(29, 100, 177, 0.08) !important;
+  }
+}
+
+/* 2026-05-07 — Mensagens no blank route v12
+   Remove o gate com hidden porque a navegação do shell pode trocar a rota sem executar scripts inline.
+   Mantém a estabilidade só por CSS crítico e sem tela em branco. */
+@media (min-width: 761px) {
+  body.messages-page-shell .messages-app {
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+
+  body.messages-page-shell .messages-mobile-header,
+  body.messages-page-shell .messages-desktop-toolbar,
+  body.messages-page-shell .messages-header-controls,
+  body.messages-page-shell .messages-sidebar-actions,
+  body.messages-page-shell .messages-sidebar > .messages-sidebar-search:not(.messages-sidebar-search--modern),
+  body.messages-page-shell .messages-sidebar-panel {
+    display: none !important;
+  }
+
+  body.messages-page-shell .message-item,
+  body.messages-page-shell .message-item.doke-card,
+  body.messages-page-shell .doke-message-card,
+  body.messages-page-shell .messages-sidebar-search--modern,
+  body.messages-page-shell .messages-composer,
+  body.messages-page-shell .message-bubble {
+    outline: 0 !important;
+  }
+}

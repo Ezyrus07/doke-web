@@ -15,7 +15,7 @@
     },
     "living-room": {
       avatar: "",
-      name: "Casa Viva Reformas",
+      name: "Casa Viva Decoração",
       lastSeen: "Visto há 12 min",
       unread: 1,
       group: "orders",
@@ -39,7 +39,7 @@
     },
     amanda: {
       avatar: "",
-      name: "Amanda Rocha",
+      name: "Amanda Ribeiro",
       lastSeen: "Online há 5 min",
       unread: 0,
       group: "contacts",
@@ -402,10 +402,8 @@
     const toggleFilterKey = (key) => {
       if (!key || key === "all") {
         selectedFilterKeys.clear();
-      } else if (selectedFilterKeys.has(key)) {
-        selectedFilterKeys.delete(key);
       } else {
-        selectedFilterKeys.add(key);
+        selectedFilterKeys = selectedFilterKeys.has(key) ? new Set() : new Set([key]);
       }
       syncFilterButtons();
       syncVisibility();
@@ -484,7 +482,7 @@
       if (!conversation || !threadBody) return;
       const isSameThread = activeId === id;
       const previousScrollTop = threadBody.scrollTop;
-      const { scrollTo = isSameThread ? "preserve" : "start" } = options;
+      const { scrollTo = isSameThread ? "preserve" : "start", openOnMobile = false } = options;
       activeId = id;
       contextMessageIndex = -1;
       if (!isSameThread) clearSelection();
@@ -565,7 +563,7 @@
       });
       syncSelectionBar();
       refreshConversationCards();
-      if (window.innerWidth <= 767) {
+      if (window.innerWidth <= 767 && (openOnMobile || root.classList.contains("messages-app--thread-open"))) {
         root.classList.add("messages-app--thread-open");
       }
 
@@ -872,7 +870,7 @@
           syncHeaderControls();
           return;
         }
-        renderThread(id, { scrollTo: "start" });
+        renderThread(id, { scrollTo: "start", openOnMobile: true });
       });
     });
 
@@ -1236,6 +1234,47 @@
     document.addEventListener("DOMContentLoaded", initMessagesPage, { once: true });
   } else {
     initMessagesPage();
+  }
+})();
+
+(() => {
+  const initDesktopFiltersFallback = () => {
+    const root = document.querySelector("[data-messages-page]");
+    const toggles = Array.from(root?.querySelectorAll("[data-messages-filter-toggle]") || []);
+    const panel = root?.querySelector("[data-messages-desktop-filters-panel]");
+    if (!root || !toggles.length || !panel || panel.dataset.filtersFallbackBound === "true") return;
+    panel.dataset.filtersFallbackBound = "true";
+
+    const setExpanded = (expanded) => {
+      toggles.forEach((toggle) => {
+        toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+      });
+    };
+
+    toggles.forEach((toggle) => {
+      toggle.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const willOpen = panel.hidden;
+        panel.hidden = !willOpen;
+        setExpanded(willOpen);
+      }, true);
+    });
+
+    panel.querySelectorAll("[data-messages-filter]").forEach((button) => {
+      button.addEventListener("click", () => {
+        window.setTimeout(() => {
+          panel.hidden = false;
+          setExpanded(true);
+        }, 0);
+      });
+    });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initDesktopFiltersFallback, { once: true });
+  } else {
+    initDesktopFiltersFallback();
   }
 })();
 

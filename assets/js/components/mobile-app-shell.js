@@ -178,7 +178,9 @@
     }
 
     var buttons = [
-      '<a class="doke-mobile-shell__quick-action" href="resultados.html" aria-label="Buscar">' + ICONS.search + '</a>',
+      ((cfg.key === 'pedidos' || cfg.key === 'notificacoes')
+        ? '<button class="doke-mobile-shell__quick-action" type="button" data-shell-search-trigger aria-label="Abrir busca">' + ICONS.search + '</button>'
+        : '<a class="doke-mobile-shell__quick-action" href="resultados.html" aria-label="Buscar">' + ICONS.search + '</a>'),
       '<button class="doke-mobile-shell__quick-action" type="button" data-shell-filter aria-label="Abrir filtros">' + ICONS.sliders + '</button>',
       '<button class="doke-mobile-shell__quick-action" type="button" data-shell-select aria-label="Selecionar">' + ICONS.check + '</button>'
     ];
@@ -229,26 +231,63 @@
       });
     }
 
+    function triggerPageSearch() {
+      var pageCfg = config();
+
+      if (pageCfg.key === 'pedidos') {
+        return clickFirst('[data-orders-mobile-search-toggle], .orders-page-header__search-toggle, .orders-header-search__icon');
+      }
+
+      if (pageCfg.key === 'notificacoes') {
+        return clickFirst('[data-notifications-mobile-search-toggle], .notifications-mobile-header .orders-page-header__search-toggle');
+      }
+
+      return clickFirst('[data-mobile-search-toggle], [data-search-toggle]');
+    }
+
+    function triggerPageFilters() {
+      var pageCfg = config();
+
+      if (pageCfg.key === 'home') {
+        if (openHomeFiltersDirect()) return true;
+        if (window.DokeMoreServicesRepair && typeof window.DokeMoreServicesRepair.open === 'function') {
+          window.DokeMoreServicesRepair.open();
+          return true;
+        }
+        if (clickFirst('[data-more-filters-toggle]')) return true;
+      }
+
+      if (pageCfg.key === 'resultados') {
+        if (clickFirst('[data-results-filters-open]')) return true;
+        if (openResultsFiltersDirect()) return true;
+      }
+
+      if (pageCfg.key === 'pedidos' && clickFirst('[data-orders-filter-toggle]')) return true;
+      if (pageCfg.key === 'notificacoes' && clickFirst('[data-notifications-filters-toggle]')) return true;
+
+      return clickFirst('[data-shell-filter-target], [data-home-search-filter], [data-home-search-filter-toggle], [data-filter-toggle], [data-orders-filter-toggle], [data-notifications-filters-toggle]');
+    }
+
+    function triggerPageSelect() {
+      var pageCfg = config();
+      if (pageCfg.key === 'pedidos' && clickFirst('[data-orders-select-toggle]')) return true;
+      if (pageCfg.key === 'notificacoes' && clickFirst('[data-notifications-select-toggle]')) return true;
+      return clickFirst('[data-orders-select-toggle], [data-notifications-select-toggle], [data-select-toggle], [data-bulk-select-toggle]');
+    }
+
+    var shellSearchButton = shell.querySelector('[data-shell-search-trigger]');
+    if (shellSearchButton) {
+      shellSearchButton.addEventListener('click', function (event) {
+        event.preventDefault();
+        if (triggerPageSearch()) return;
+        window.location.href = 'resultados.html';
+      });
+    }
+
     var filterButton = shell.querySelector('[data-shell-filter]');
     if (filterButton) {
       filterButton.addEventListener('click', function () {
-        var cfg = config();
-
-        if (cfg.key === 'home') {
-          if (openHomeFiltersDirect()) return;
-          if (window.DokeMoreServicesRepair && typeof window.DokeMoreServicesRepair.open === 'function') {
-            window.DokeMoreServicesRepair.open();
-            return;
-          }
-          if (clickFirst('[data-more-filters-toggle]')) return;
-        }
-
-        if (cfg.key === 'resultados') {
-          if (clickFirst('[data-results-filters-open]')) return;
-          if (openResultsFiltersDirect()) return;
-        }
-
-        if (clickFirst('[data-shell-filter-target], [data-home-search-filter], [data-home-search-filter-toggle], [data-filter-toggle], [data-orders-filter-toggle]')) return;
+        if (triggerPageFilters()) return;
         dispatchShellAction('filters');
       });
     }
@@ -256,7 +295,7 @@
     var selectButton = shell.querySelector('[data-shell-select]');
     if (selectButton) {
       selectButton.addEventListener('click', function () {
-        clickFirst('[data-orders-select-toggle], [data-select-toggle], [data-bulk-select-toggle]');
+        triggerPageSelect();
       });
     }
 
