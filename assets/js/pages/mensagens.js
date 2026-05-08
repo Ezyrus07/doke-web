@@ -100,6 +100,11 @@
     const composerInput = root.querySelector("[data-messages-composer-input]");
     const backButton = root.querySelector("[data-messages-back]");
     const chargeButton = root.querySelector("[data-messages-charge]");
+    const threadCallToggle = root.querySelector("[data-thread-call-toggle]");
+    const threadVideoCallButton = root.querySelector("[data-thread-video-call]");
+    const threadMoreToggle = root.querySelector("[data-thread-more-toggle]");
+    const threadCallMenu = root.querySelector("[data-thread-call-menu]");
+    const threadMoreMenu = root.querySelector("[data-thread-more-menu]");
     const searchCloseButtons = Array.from(root.querySelectorAll(".orders-header-search__close"));
     const searchToggleButtons = Array.from(root.querySelectorAll("[data-messages-mobile-search-toggle]"));
     const filterToggles = Array.from(root.querySelectorAll("[data-messages-filter-toggle]"));
@@ -711,6 +716,38 @@
       }
     };
 
+    const closeThreadCallMenu = () => {
+      threadCallMenu?.setAttribute("hidden", "");
+      threadCallToggle?.setAttribute("aria-expanded", "false");
+    };
+
+    const closeThreadMoreMenu = () => {
+      threadMoreMenu?.setAttribute("hidden", "");
+      threadMoreToggle?.setAttribute("aria-expanded", "false");
+    };
+
+    const toggleThreadCallMenu = () => {
+      if (!threadCallMenu || !threadCallToggle) return;
+      const willOpen = threadCallMenu.hidden;
+      closeThreadMoreMenu();
+      threadCallMenu.hidden = !willOpen;
+      threadCallToggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
+    };
+
+    const toggleThreadMoreMenu = () => {
+      if (!threadMoreMenu || !threadMoreToggle) return;
+      const willOpen = threadMoreMenu.hidden;
+      closeThreadCallMenu();
+      threadMoreMenu.hidden = !willOpen;
+      threadMoreToggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
+    };
+
+    const startThreadCall = (type = "audio") => {
+      const label = type === "video" ? "Videochamada iniciada" : "Ligação iniciada";
+      showCopyToast(label);
+      closeThreadCallMenu();
+    };
+
     const syncVisibility = () => {
       const query = getSearchQuery();
       let visibleCount = 0;
@@ -806,6 +843,38 @@
       }
       openSelectPanel();
     }));
+
+    document.addEventListener("doke:mobile-shell-action", (event) => {
+      if (!isMobileViewport()) return;
+      const action = event?.detail?.action;
+      if (action === "search") {
+        const willOpen = !root.classList.contains("is-search-open");
+        setSearchExpanded(willOpen);
+        closeFiltersPanel();
+        closeSelectPanel({ preserveSelectionMode: true });
+        syncHeaderControls();
+        if (willOpen) window.setTimeout(() => getVisibleSearchInput()?.focus(), 20);
+        return;
+      }
+      if (action === "filters") {
+        const panelOpen = Boolean((mobileFiltersPanel || desktopFiltersPanel) && !(mobileFiltersPanel || desktopFiltersPanel).hidden);
+        if (panelOpen) {
+          closeFiltersPanel();
+        } else {
+          openFiltersPanel();
+        }
+        syncHeaderControls();
+        return;
+      }
+      if (action === "select") {
+        if (selectionMode) {
+          closeSelectPanel();
+        } else {
+          openSelectPanel();
+        }
+        syncHeaderControls();
+      }
+    });
 
     desktopSelectToggle?.addEventListener("click", () => {
       const panelOpen = Boolean(desktopSelectPanel && !desktopSelectPanel.hidden);
@@ -1002,6 +1071,8 @@
         target.closest('.messages-thread')
       ) return;
       closeFiltersPanel();
+      closeThreadCallMenu();
+      closeThreadMoreMenu();
       setSearchExpanded(false);
       if (!selectionMode) {
         closeSelectPanel();
@@ -1013,6 +1084,8 @@
       if (event.key !== "Escape") return;
       setSearchExpanded(false);
       resetActionSurfaces();
+      closeThreadCallMenu();
+      closeThreadMoreMenu();
       hideMessageMenu();
     });
 
@@ -1080,6 +1153,53 @@
 
     chargeButton?.addEventListener("click", () => {
       openChargeModal();
+    });
+
+    threadCallToggle?.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleThreadCallMenu();
+    });
+
+    threadVideoCallButton?.addEventListener("click", (event) => {
+      event.preventDefault();
+      startThreadCall("video");
+    });
+
+    threadMoreToggle?.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleThreadMoreMenu();
+    });
+
+    threadCallMenu?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const action = event.target.closest("[data-thread-call-action]")?.dataset.threadCallAction;
+      if (!action) return;
+      startThreadCall(action === "video" ? "video" : "audio");
+    });
+
+    threadMoreMenu?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const action = event.target.closest("[data-thread-more-action]")?.dataset.threadMoreAction;
+      if (!action) return;
+      if (action === "search") {
+        setSearchExpanded(true);
+        window.setTimeout(() => getVisibleSearchInput()?.focus(), 20);
+      } else if (action === "archive") {
+        if (conversations[activeId]) conversations[activeId].archived = true;
+        syncVisibility();
+        showCopyToast("Conversa arquivada");
+      } else if (action === "mute") {
+        showCopyToast("Conversa silenciada");
+      } else if (action === "profile") {
+        showCopyToast("Perfil do contato");
+      } else if (action === "media") {
+        showCopyToast("Mídias e arquivos");
+      } else if (action === "block") {
+        showCopyToast("Ação registrada");
+      }
+      closeThreadMoreMenu();
     });
 
     chargeForm?.addEventListener("submit", (event) => {

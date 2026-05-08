@@ -2349,3 +2349,856 @@ body.messages-page-shell .messages-sidebar-panel--filters button.is-active {
   box-shadow: 0 8px 18px rgba(29, 100, 177, 0.18) !important;
 }
 }
+
+/* 2026-05-08 — Mobile thread header actions + composer contract
+   Mantem o desktop completo e usa no mobile apenas voltar, perfil, chamada e mais opcoes. */
+body.messages-page-shell .messages-thread__header {
+  position: relative !important;
+}
+
+body.messages-page-shell .messages-thread-call-menu,
+body.messages-page-shell .messages-thread-more-menu {
+  position: absolute !important;
+  right: 18px !important;
+  top: calc(100% - 4px) !important;
+  z-index: 80 !important;
+  width: min(260px, calc(100vw - 32px)) !important;
+  padding: 8px !important;
+  border: 1px solid rgba(196, 215, 235, 0.92) !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+  box-shadow: 0 22px 48px rgba(18, 55, 95, 0.16) !important;
+}
+
+body.messages-page-shell .messages-thread-call-menu[hidden],
+body.messages-page-shell .messages-thread-more-menu[hidden] {
+  display: none !important;
+}
+
+body.messages-page-shell .messages-thread-call-menu button,
+body.messages-page-shell .messages-thread-more-menu button {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+  min-height: 42px !important;
+  padding: 10px 12px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  color: #123253 !important;
+  font: inherit !important;
+  font-size: 0.88rem !important;
+  font-weight: 700 !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+}
+
+body.messages-page-shell .messages-thread-call-menu button:hover,
+body.messages-page-shell .messages-thread-more-menu button:hover {
+  background: #f2f7fd !important;
+}
+
+body.messages-page-shell .messages-thread-more-menu .is-danger {
+  color: #c83232 !important;
+}
+
+body.messages-page-shell .messages-thread-call-menu__icon {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 10px !important;
+  background: #edf6ff !important;
+  color: #1d64b1 !important;
+  font-size: 0.9rem !important;
+}
+
+@media (max-width: 760px) {
+  body.messages-page-shell .messages-app.messages-app--thread-open .messages-thread {
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+    height: calc(100dvh - 64px) !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.messages-page-shell .messages-thread__header {
+    display: grid !important;
+    grid-template-columns: 42px 1fr auto !important;
+    align-items: center !important;
+    gap: 10px !important;
+    min-height: 74px !important;
+    padding: 10px 12px !important;
+    border-bottom: 1px solid rgba(196, 215, 235, 0.78) !important;
+    border-radius: 22px 22px 0 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  body.messages-page-shell .messages-thread__back {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    border-radius: 14px !important;
+    color: #0d1f3c !important;
+  }
+
+  body.messages-page-shell .messages-thread__back svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  body.messages-page-shell .messages-thread__profile {
+    display: grid !important;
+    grid-template-columns: 44px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+  }
+
+  body.messages-page-shell .messages-thread__avatar.doke-avatar,
+  body.messages-page-shell .messages-thread__profile .messages-thread__avatar {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    font-size: 0.82rem !important;
+  }
+
+  body.messages-page-shell .messages-thread__profile strong {
+    display: block !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    color: #0d1f3c !important;
+    font-size: 1rem !important;
+    font-weight: 800 !important;
+    line-height: 1.12 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  body.messages-page-shell .messages-thread__profile p {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    margin: 4px 0 0 !important;
+    overflow: hidden !important;
+    color: #6f86a1 !important;
+    font-size: 0.76rem !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  body.messages-page-shell .messages-thread__profile p::before {
+    width: 7px !important;
+    height: 7px !important;
+    min-width: 7px !important;
+  }
+
+  body.messages-page-shell .messages-thread__actions {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+  }
+
+  body.messages-page-shell .messages-thread__action {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+    border: 1px solid rgba(196, 215, 235, 0.88) !important;
+    border-radius: 14px !important;
+    background: #fff !important;
+    color: #1d64b1 !important;
+    box-shadow: none !important;
+  }
+
+  body.messages-page-shell .messages-thread__action svg {
+    width: 19px !important;
+    height: 19px !important;
+    stroke-width: 2.2 !important;
+  }
+
+  body.messages-page-shell .messages-thread__action--order,
+  body.messages-page-shell .messages-thread__action--video {
+    display: none !important;
+  }
+
+  body.messages-page-shell .messages-thread-call-menu,
+  body.messages-page-shell .messages-thread-more-menu {
+    right: 10px !important;
+    top: calc(100% + 6px) !important;
+    width: min(246px, calc(100vw - 20px)) !important;
+    border-radius: 16px !important;
+  }
+
+  body.messages-page-shell .messages-thread-more-menu button {
+    min-height: 40px !important;
+    font-size: 0.82rem !important;
+  }
+
+  body.messages-page-shell .messages-thread__body {
+    min-height: 0 !important;
+    padding: 14px 12px 14px !important;
+    overflow-y: auto !important;
+    background: #f8fbff !important;
+  }
+
+  body.messages-page-shell .messages-composer {
+    display: grid !important;
+    grid-template-columns: 36px 36px minmax(0, 1fr) 42px !important;
+    align-items: center !important;
+    gap: 7px !important;
+    min-height: 58px !important;
+    margin: 0 !important;
+    padding: 8px 10px !important;
+    border-width: 1px 0 0 !important;
+    border-radius: 0 !important;
+    border-color: rgba(196, 215, 235, 0.78) !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  body.messages-page-shell .messages-composer__tools {
+    display: contents !important;
+  }
+
+  body.messages-page-shell .messages-composer__tool,
+  body.messages-page-shell .messages-composer__send {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    padding: 0 !important;
+    border-radius: 12px !important;
+  }
+
+  body.messages-page-shell .messages-composer__send {
+    width: 42px !important;
+    min-width: 42px !important;
+    border-radius: 14px !important;
+  }
+
+  body.messages-page-shell .messages-composer__field {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    padding: 0 34px 0 12px !important;
+    border: 1px solid rgba(196, 215, 235, 0.86) !important;
+    border-radius: 999px !important;
+    background: #f8fbff !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+  }
+
+  body.messages-page-shell .messages-composer__field:focus-within,
+  body.messages-page-shell .messages-composer textarea:focus,
+  body.messages-page-shell .messages-composer textarea:hover {
+    outline: 0 !important;
+    border-color: rgba(196, 215, 235, 0.86) !important;
+    box-shadow: none !important;
+  }
+
+  body.messages-page-shell .messages-composer textarea {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 34px !important;
+    height: 34px !important;
+    padding: 8px 0 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    background: transparent !important;
+    color: #0d1f3c !important;
+    font-size: 0.84rem !important;
+    line-height: 1.25 !important;
+    resize: none !important;
+  }
+
+  body.messages-page-shell .messages-composer textarea::placeholder {
+    color: #8ea1b8 !important;
+  }
+
+  body.messages-page-shell .messages-composer__emoji-inside {
+    position: absolute !important;
+    right: 7px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: #1d64b1 !important;
+  }
+
+  body.messages-page-shell .messages-composer__emoji-inside svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+
+/* 2026-05-08 — contrato final do thread mobile
+   Corrige a regressao do composer e garante acoes visiveis no header da conversa. */
+@media (max-width: 760px) {
+  body.messages-page-shell .messages-thread__header {
+    grid-template-columns: 42px minmax(0, 1fr) auto !important;
+    column-gap: 10px !important;
+    min-height: 70px !important;
+    padding: 9px 12px !important;
+  }
+
+  body.messages-page-shell .messages-thread__profile {
+    min-width: 0 !important;
+  }
+
+  body.messages-page-shell .messages-thread__actions {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    min-width: 88px !important;
+  }
+
+  body.messages-page-shell .messages-thread__action--call,
+  body.messages-page-shell .messages-thread__action--more {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+    border: 1px solid rgba(196, 215, 235, 0.88) !important;
+    border-radius: 14px !important;
+    background: #fff !important;
+    color: #1d64b1 !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  body.messages-page-shell .messages-thread__action--call svg,
+  body.messages-page-shell .messages-thread__action--more svg {
+    display: block !important;
+    width: 18px !important;
+    height: 18px !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+  }
+
+  body.messages-page-shell .messages-thread__action--call svg *,
+  body.messages-page-shell .messages-thread__action--more svg * {
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2.2 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+  }
+
+  body.messages-page-shell .messages-thread__action--order,
+  body.messages-page-shell .messages-thread__action--video {
+    display: none !important;
+  }
+
+  body.messages-page-shell .messages-composer {
+    display: grid !important;
+    grid-template-columns: 36px 36px minmax(0, 1fr) 42px !important;
+    grid-auto-rows: auto !important;
+    align-items: center !important;
+    gap: 7px !important;
+    min-height: 58px !important;
+    padding: 8px 10px !important;
+    overflow: visible !important;
+  }
+
+  body.messages-page-shell .messages-reply-preview[hidden],
+  body.messages-page-shell .messages-audio-draft[hidden],
+  body.messages-page-shell .messages-image-draft[hidden],
+  body.messages-page-shell .message-context-menu[hidden] {
+    display: none !important;
+  }
+
+  body.messages-page-shell .messages-reply-preview:not([hidden]),
+  body.messages-page-shell .messages-audio-draft:not([hidden]),
+  body.messages-page-shell .messages-image-draft:not([hidden]) {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 42px !important;
+    margin: 0 0 2px !important;
+    display: flex !important;
+    align-items: center !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+  }
+
+  body.messages-page-shell .messages-composer__tools {
+    display: contents !important;
+  }
+
+  body.messages-page-shell .messages-composer__tools > .messages-composer__tool:nth-child(1) {
+    grid-column: 1 !important;
+  }
+
+  body.messages-page-shell .messages-composer__tools > .messages-composer__tool:nth-child(2) {
+    grid-column: 2 !important;
+  }
+
+  body.messages-page-shell .messages-composer__field {
+    grid-column: 3 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 34px 0 12px !important;
+  }
+
+  body.messages-page-shell .messages-composer__send {
+    grid-column: 4 !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+  }
+
+  body.messages-page-shell .messages-composer__tool {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+  }
+
+  body.messages-page-shell .messages-composer textarea {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 8px 0 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.messages-page-shell .message-context-menu:not([hidden]) {
+    position: fixed !important;
+    display: grid !important;
+    width: min(190px, calc(100vw - 24px)) !important;
+    max-width: calc(100vw - 24px) !important;
+    z-index: 9999 !important;
+  }
+}
+
+
+/* 2026-05-08 — contrato final mobile: header como ferramenta da página de mensagens
+   Remove duplicação de título/busca/filtro no conteúdo, preserva busca/filtros acionados pelo header global
+   e fixa o thread entre header mobile e bottom nav sem faixa morta. */
+@media (max-width: 760px) {
+  body.messages-page-shell.doke-mobile-shell-mounted[data-shell-page="mensagens"] {
+    padding-top: var(--doke-mobile-shell-without-search-height) !important;
+    padding-bottom: calc(var(--doke-mobile-shell-nav-height) + env(safe-area-inset-bottom, 0px)) !important;
+    background: #eef6fb !important;
+  }
+
+  body.messages-page-shell .messages-sidebar {
+    height: calc(100dvh - var(--doke-mobile-shell-without-search-height) - var(--doke-mobile-shell-nav-height) - env(safe-area-inset-bottom, 0px)) !important;
+    min-height: 0 !important;
+    padding: 10px 16px 18px !important;
+    overflow-y: auto !important;
+  }
+
+  body.messages-page-shell .messages-sidebar-brand,
+  body.messages-page-shell .messages-sidebar-tools {
+    display: none !important;
+  }
+
+  body.messages-page-shell .messages-app.is-search-open .messages-sidebar-tools {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    margin: 0 0 4px !important;
+  }
+
+  body.messages-page-shell .messages-app.is-search-open .messages-sidebar-tools__filter {
+    display: none !important;
+  }
+
+  body.messages-page-shell .messages-app.is-search-open .messages-sidebar-search--modern {
+    display: flex !important;
+  }
+
+  body.messages-page-shell .messages-app.is-search-open .messages-sidebar-search__close {
+    display: inline-grid !important;
+  }
+
+  body.messages-page-shell .messages-sidebar-panel--filters:not([hidden]) {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    margin: 0 0 8px !important;
+    padding: 10px !important;
+    border: 1px solid rgba(196, 215, 235, 0.76) !important;
+    border-radius: 18px !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+  }
+
+  body.messages-page-shell .messages-app.messages-app--thread-open {
+    height: calc(100dvh - var(--doke-mobile-shell-without-search-height) - var(--doke-mobile-shell-nav-height) - env(safe-area-inset-bottom, 0px)) !important;
+    min-height: 0 !important;
+  }
+
+  body.messages-page-shell .messages-app.messages-app--thread-open .messages-thread {
+    position: fixed !important;
+    top: var(--doke-mobile-shell-without-search-height) !important;
+    right: 0 !important;
+    bottom: calc(var(--doke-mobile-shell-nav-height) + env(safe-area-inset-bottom, 0px)) !important;
+    left: 0 !important;
+    z-index: 20 !important;
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+    width: min(100%, var(--doke-mobile-shell-max)) !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 auto !important;
+    border-radius: 22px 22px 0 0 !important;
+    overflow: hidden !important;
+    background: #fff !important;
+  }
+
+  body.messages-page-shell .messages-thread__body {
+    min-height: 0 !important;
+    overflow-y: auto !important;
+  }
+
+  body.messages-page-shell .messages-composer {
+    position: relative !important;
+    grid-row: 3 !important;
+    margin: 0 !important;
+  }
+
+  body.messages-page-shell .messages-composer__field,
+  body.messages-page-shell .messages-sidebar-search--modern,
+  body.messages-page-shell .messages-sidebar-search--modern input,
+  body.messages-page-shell .messages-composer textarea {
+    outline: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body.messages-page-shell .messages-composer__field:focus-within,
+  body.messages-page-shell .messages-sidebar-search--modern:focus-within,
+  body.messages-page-shell .messages-sidebar-search--modern:hover,
+  body.messages-page-shell .messages-composer__field:hover {
+    border-color: rgba(196, 215, 235, 0.86) !important;
+    box-shadow: none !important;
+  }
+}
+
+/* 2026-05-08 — FIX: thread mobile com composer preso no rodape
+   Esta camada corrige a regressao em que o composer subia para abaixo do header.
+   O thread aberto usa flex vertical: header / corpo flexivel / composer. */
+@media (max-width: 760px) {
+  body.messages-page-shell .messages-app.messages-app--thread-open .messages-thread {
+    position: fixed !important;
+    top: var(--doke-mobile-shell-without-search-height, 72px) !important;
+    right: 0 !important;
+    bottom: calc(var(--doke-mobile-shell-nav-height, 64px) + env(safe-area-inset-bottom, 0px)) !important;
+    left: 0 !important;
+    z-index: 20 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: min(100%, var(--doke-mobile-shell-max, 430px)) !important;
+    max-width: var(--doke-mobile-shell-max, 430px) !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 auto !important;
+    overflow: hidden !important;
+    border-radius: 22px 22px 0 0 !important;
+    background: #fff !important;
+  }
+
+  body.messages-page-shell .messages-thread__header {
+    flex: 0 0 auto !important;
+    display: grid !important;
+    grid-template-columns: 42px minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    column-gap: 10px !important;
+    min-height: 70px !important;
+    padding: 9px 12px !important;
+    border-bottom: 1px solid rgba(196, 215, 235, 0.78) !important;
+    border-radius: 22px 22px 0 0 !important;
+    background: #fff !important;
+  }
+
+  body.messages-page-shell .messages-thread__profile {
+    min-width: 0 !important;
+  }
+
+  body.messages-page-shell .messages-thread__actions {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    min-width: 88px !important;
+  }
+
+  body.messages-page-shell .messages-thread__action--order,
+  body.messages-page-shell .messages-thread__action--video {
+    display: none !important;
+  }
+
+  body.messages-page-shell .messages-thread__action--call,
+  body.messages-page-shell .messages-thread__action--more {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+    border: 1px solid rgba(196, 215, 235, 0.88) !important;
+    border-radius: 14px !important;
+    background: #fff !important;
+    color: #1d64b1 !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  body.messages-page-shell .messages-thread__body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow-y: auto !important;
+    padding: 14px 12px !important;
+    background: #f8fbff !important;
+  }
+
+  body.messages-page-shell .messages-thread-empty:not([hidden]) {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 24px 16px !important;
+    background: #f8fbff !important;
+  }
+
+  body.messages-page-shell .messages-composer {
+    flex: 0 0 auto !important;
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    z-index: 3 !important;
+    display: grid !important;
+    grid-template-columns: 36px 36px minmax(0, 1fr) 42px !important;
+    grid-auto-rows: auto !important;
+    align-items: center !important;
+    gap: 7px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 58px !important;
+    margin: 0 !important;
+    padding: 8px 10px !important;
+    border: 0 !important;
+    border-top: 1px solid rgba(196, 215, 235, 0.78) !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  body.messages-page-shell .messages-composer__tools {
+    display: contents !important;
+  }
+
+  body.messages-page-shell .messages-composer__tools > .messages-composer__tool:nth-child(1) {
+    grid-column: 1 !important;
+  }
+
+  body.messages-page-shell .messages-composer__tools > .messages-composer__tool:nth-child(2) {
+    grid-column: 2 !important;
+  }
+
+  body.messages-page-shell .messages-composer__tool,
+  body.messages-page-shell .messages-composer__send {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    padding: 0 !important;
+    border: 1px solid rgba(196, 215, 235, 0.86) !important;
+    border-radius: 12px !important;
+    background: #f8fbff !important;
+    box-shadow: none !important;
+  }
+
+  body.messages-page-shell .messages-composer__field {
+    grid-column: 3 !important;
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 34px 0 12px !important;
+    border: 1px solid rgba(196, 215, 235, 0.86) !important;
+    border-radius: 999px !important;
+    background: #f8fbff !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+  }
+
+  body.messages-page-shell .messages-composer textarea {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 8px 0 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    background: transparent !important;
+    color: #0d1f3c !important;
+    font-size: 0.84rem !important;
+    line-height: 1.25 !important;
+    resize: none !important;
+    overflow: hidden !important;
+    box-shadow: none !important;
+  }
+
+  body.messages-page-shell .messages-composer textarea::placeholder {
+    color: #8ea1b8 !important;
+  }
+
+  body.messages-page-shell .messages-composer__emoji-inside {
+    position: absolute !important;
+    right: 7px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: #1d64b1 !important;
+    box-shadow: none !important;
+  }
+
+  body.messages-page-shell .messages-composer__send {
+    grid-column: 4 !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    border: 0 !important;
+    border-radius: 14px !important;
+    background: #2877c9 !important;
+    color: #fff !important;
+  }
+
+  body.messages-page-shell .messages-reply-preview[hidden],
+  body.messages-page-shell .messages-audio-draft[hidden],
+  body.messages-page-shell .messages-image-draft[hidden] {
+    display: none !important;
+  }
+
+  body.messages-page-shell .messages-reply-preview:not([hidden]),
+  body.messages-page-shell .messages-audio-draft:not([hidden]),
+  body.messages-page-shell .messages-image-draft:not([hidden]) {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 0 2px !important;
+  }
+}
+
+/* 2026-05-08 — FIX: estado vazio do thread mobile não pode vazar sobre conversas com mensagens.
+   O componente doke-empty-state tem display com alta especificidade em outros arquivos;
+   por isso o hidden precisa ser protegido aqui, no CSS da página. */
+body.messages-page-shell .messages-thread-empty[hidden],
+body.messages-page-shell .messages-thread-empty[aria-hidden="true"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  block-size: 0 !important;
+  min-block-size: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+}
+
+body.messages-page-shell .messages-thread-empty:not([hidden]) {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 28px 20px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #f8fbff !important;
+  color: #0d1f3c !important;
+  text-align: center !important;
+}
+
+body.messages-page-shell .messages-thread-empty__badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-width: min(100%, 220px) !important;
+  padding: 7px 12px !important;
+  border: 1px solid rgba(196, 215, 235, 0.84) !important;
+  border-radius: 999px !important;
+  background: #fff !important;
+  color: #5f7190 !important;
+  font-size: 0.76rem !important;
+  font-weight: 800 !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
+}
+
+body.messages-page-shell .messages-thread-empty h3 {
+  margin: 0 !important;
+  color: #0d1f3c !important;
+  font-size: clamp(1rem, 4.8vw, 1.2rem) !important;
+  line-height: 1.2 !important;
+}
+
+body.messages-page-shell .messages-thread-empty p {
+  max-width: 280px !important;
+  margin: 0 !important;
+  color: #6f819f !important;
+  font-size: 0.86rem !important;
+  line-height: 1.35 !important;
+}

@@ -141,3 +141,37 @@
     outline: 0 !important;
   }
 }
+
+/* 2026-05-08 — SPA + shell spacing contract v13
+   Objetivo: manter mensagens.html dentro do roteador SPA sem pintura crua e
+   alinhar seu eixo ao mesmo envelope horizontal de index/pedidos/comunidade.
+   Não altera body/sidebar/header globais; só neutraliza deslocamentos locais da rota. */
+@media (min-width: 761px) {
+  body.messages-page-shell .page__content {
+    background: var(--doke-shell-surface-bg, #eef4f9) !important;
+  }
+
+  body.messages-page-shell .page__content-inner.messages-shell-content {
+    width: min(100%, var(--doke-shell-max-wide, 1360px)) !important;
+    max-width: var(--doke-shell-max-wide, 1360px) !important;
+    margin-inline: auto !important;
+    padding: 0 !important;
+    min-height: auto !important;
+    background: transparent !important;
+  }
+
+  body.messages-page-shell .messages-app {
+    justify-self: stretch !important;
+    align-self: stretch !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: calc(100dvh - var(--doke-shell-header-height, 72px) - var(--doke-shell-block-gap-desktop, 24px) - 32px) !important;
+    height: calc(100dvh - var(--doke-shell-header-height, 72px) - var(--doke-shell-block-gap-desktop, 24px) - 32px) !important;
+    margin: 0 !important;
+  }
+
+  body.messages-page-shell:not(.is-shell-swapping) .messages-app {
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+}

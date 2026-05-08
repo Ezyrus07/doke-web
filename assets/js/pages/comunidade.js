@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchInputs = [...page.querySelectorAll('[data-community-search], [data-community-search-mobile]')];
   const codeTriggers = [...page.querySelectorAll('[data-community-code-trigger]')];
   const createTriggers = [...page.querySelectorAll('[data-community-create]')];
+  const focusSearchTriggers = [...page.querySelectorAll('[data-community-focus-search]')];
   const mobileSearchToggle = page.querySelector('[data-community-mobile-search-toggle]');
   const mobileSearchPanel = page.querySelector('[data-community-mobile-search]');
   const codeForm = page.querySelector('[data-community-code-form]');
@@ -197,6 +198,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   createTriggers.forEach((trigger) => {
     trigger.addEventListener('click', () => openActionModal(createModal));
+  });
+
+  focusSearchTriggers.forEach((trigger) => {
+    trigger.addEventListener('click', () => {
+      const target = searchInputs.find((input) => input.offsetParent !== null) || searchInputs[0];
+      if (!target) return;
+      target.focus();
+      target.select?.();
+    });
   });
 
   document.querySelectorAll('[data-community-action-close]').forEach((button) => {

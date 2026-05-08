@@ -47,6 +47,15 @@ const ensureInstantRouteStyle = () => {
     body.is-shell-swapping {
       cursor: progress;
     }
+
+    /* Mensagens é uma rota pesada: durante o swap, mantemos o workspace oculto
+       até os estilos da nova página estarem ativos. Evita HTML cru sem forçar
+       reload nativo. */
+    body.is-shell-swapping[data-page="mensagens"] .messages-app,
+    body.is-shell-swapping .messages-app {
+      visibility: hidden !important;
+      opacity: 0 !important;
+    }
   `;
   document.head.appendChild(style);
 };
@@ -385,8 +394,44 @@ const INTERNAL_VIEW_STYLE_HINTS = {
     "assets/css/pages/pedidos.css"
   ],
   "/mensagens.html": [
-    "assets/css/pages/home-shared.css",
-    "assets/css/pages/home.css",
+    "assets/css/pages/app-shell.css",
+    "assets/css/pages/internal-shell.css",
+    "assets/css/pages/internal-list-pages.css",
+    "assets/css/pages/internal-action-surfaces.css",
+    "assets/css/components/chat-composer.css",
+    "assets/css/components/media-lightbox.css",
+    "assets/css/components/ui-surface-system.css",
+    "assets/css/patterns/internal-pages.css",
+    "assets/css/core/responsive-foundation.css",
+    "assets/css/components/internal/topbar-standard.css",
+    "assets/css/components/cards/card-grid-contract.css",
+    "assets/css/components/overlays/overlay-contract.css",
+    "assets/css/components/forms-actions/form-action-contract.css",
+    "assets/css/core/responsive-runtime.css",
+    "assets/css/patterns/responsive-polish.css",
+    "assets/css/components/navigation/mobile-drawer-standard.css",
+    "assets/css/components/cards/mobile-list-card-system.css",
+    "assets/css/components/overlays/mobile-overlay-system.css",
+    "assets/css/components/avatar.css",
+    "assets/css/components/internal/filter-select-standard.css",
+    "assets/css/components/shell/page-container-contract.css",
+    "assets/css/components/shell/mobile-app-shell.css",
+    "assets/css/components/ui/doke-ui-system.css",
+    "assets/css/components/domain/doke-domain-cards.css",
+    "assets/css/components/layout/doke-layout-system.css",
+    "assets/css/components/flows/doke-product-flows.css",
+    "assets/css/components/shell/desktop-shell.css",
+    "assets/css/components/shell/desktop-sidebar.css",
+    "assets/css/components/shell/desktop-topbar.css",
+    "assets/css/components/shell/desktop-search.css",
+    "assets/css/components/shell/responsive-boundary.css",
+    "assets/css/components/shell/desktop-base-stability.css",
+    "assets/css/components/shell/mobile-base-stability.css",
+    "assets/css/components/shell/doke-shell-contract.css",
+    "assets/css/components/layout/responsive-page-contract.css",
+    "assets/css/pages/mensagens/message-boot.css",
+    "assets/css/components/internal/chat-workspace-contract.css",
+    "assets/css/pages/mensagens/desktop-redesign.css",
     "assets/css/pages/mensagens.css"
   ],
   "/notificacoes.html": [
@@ -1012,9 +1057,8 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
     discardStagedStyles(stagedStyles);
     throw error;
   } finally {
-    window.requestAnimationFrame(() => {
-      body.classList.remove("is-shell-swapping");
-    });
+    await waitForNextPaint();
+    body.classList.remove("is-shell-swapping");
   }
 };
 

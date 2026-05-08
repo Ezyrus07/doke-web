@@ -178,7 +178,7 @@
     }
 
     var buttons = [
-      ((cfg.key === 'pedidos' || cfg.key === 'notificacoes')
+      ((cfg.key === 'pedidos' || cfg.key === 'notificacoes' || cfg.key === 'mensagens')
         ? '<button class="doke-mobile-shell__quick-action" type="button" data-shell-search-trigger aria-label="Abrir busca">' + ICONS.search + '</button>'
         : '<a class="doke-mobile-shell__quick-action" href="resultados.html" aria-label="Buscar">' + ICONS.search + '</a>'),
       '<button class="doke-mobile-shell__quick-action" type="button" data-shell-filter aria-label="Abrir filtros">' + ICONS.sliders + '</button>',
@@ -202,7 +202,7 @@
       '<header class="doke-mobile-shell__topbar" aria-label="Cabeçalho mobile global">',
       '  <button class="doke-mobile-shell__profile" type="button" data-shell-profile aria-label="Abrir menu da conta">',
       '    <span class="doke-mobile-shell__avatar">DK</span>',
-      '    <span class="doke-mobile-shell__hello">Olá Gabriel</span>',
+      '    <span class="doke-mobile-shell__hello">' + (cfg.key === 'mensagens' ? 'Mensagens' : 'Olá Gabriel') + '</span>',
       '  </button>',
       '  <div class="doke-mobile-shell__actions" data-shell-context-actions>',
       createQuickActions(cfg),
@@ -242,6 +242,11 @@
         return clickFirst('[data-notifications-mobile-search-toggle], .notifications-mobile-header .orders-page-header__search-toggle');
       }
 
+      if (pageCfg.key === 'mensagens') {
+        dispatchShellAction('search');
+        return true;
+      }
+
       return clickFirst('[data-mobile-search-toggle], [data-search-toggle]');
     }
 
@@ -264,6 +269,10 @@
 
       if (pageCfg.key === 'pedidos' && clickFirst('[data-orders-filter-toggle]')) return true;
       if (pageCfg.key === 'notificacoes' && clickFirst('[data-notifications-filters-toggle]')) return true;
+      if (pageCfg.key === 'mensagens') {
+        dispatchShellAction('filters');
+        return true;
+      }
 
       return clickFirst('[data-shell-filter-target], [data-home-search-filter], [data-home-search-filter-toggle], [data-filter-toggle], [data-orders-filter-toggle], [data-notifications-filters-toggle]');
     }
@@ -272,6 +281,10 @@
       var pageCfg = config();
       if (pageCfg.key === 'pedidos' && clickFirst('[data-orders-select-toggle]')) return true;
       if (pageCfg.key === 'notificacoes' && clickFirst('[data-notifications-select-toggle]')) return true;
+      if (pageCfg.key === 'mensagens') {
+        dispatchShellAction('select');
+        return true;
+      }
       return clickFirst('[data-orders-select-toggle], [data-notifications-select-toggle], [data-select-toggle], [data-bulk-select-toggle]');
     }
 
