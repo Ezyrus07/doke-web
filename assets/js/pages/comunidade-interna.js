@@ -18,6 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchClear = document.querySelector('[data-community-search-clear]');
   const membersToggle = document.querySelector('[data-community-members-toggle]');
   const membersPanel = document.querySelector('[data-community-members-panel]');
+  const pinsToggle = document.querySelector('[data-community-pins-toggle]');
+  const pinsPanel = document.querySelector('[data-community-pins-panel]');
+  const pinsClose = document.querySelector('[data-community-pins-close]');
+  const menuToggle = document.querySelector('[data-community-menu-toggle]');
+  const channelMenu = document.querySelector('[data-community-menu]');
 
   if (!messages) return;
 
@@ -27,6 +32,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const scrollToLatest = () => {
     messages.scrollTop = messages.scrollHeight;
+  };
+
+  const scrollToStart = () => {
+    messages.scrollTop = 0;
   };
 
   const syncSubmitState = () => {
@@ -63,6 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const openSearch = () => {
     if (!searchForm || !searchToggle || !searchInput) return;
+    setPinsPanelState(false);
+    setChannelMenuState(false);
     searchForm.hidden = false;
     searchToggle.setAttribute('aria-expanded', 'true');
     requestAnimationFrame(() => searchInput.focus());
@@ -88,6 +99,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggleMembersPanel = () => {
     const isOpen = document.body.classList.contains('is-members-open');
     setMembersPanelState(!isOpen);
+  };
+
+  const setPinsPanelState = (isOpen) => {
+    if (!pinsToggle || !pinsPanel) return;
+    pinsPanel.hidden = !isOpen;
+    pinsToggle.setAttribute('aria-expanded', String(isOpen));
+    if (isOpen) {
+      setChannelMenuState(false);
+      if (searchForm && !searchForm.hidden) closeSearch();
+    }
+  };
+
+  const setChannelMenuState = (isOpen) => {
+    if (!menuToggle || !channelMenu) return;
+    channelMenu.hidden = !isOpen;
+    menuToggle.setAttribute('aria-expanded', String(isOpen));
+    if (isOpen) {
+      setPinsPanelState(false);
+      if (searchForm && !searchForm.hidden) closeSearch();
+    }
   };
 
   const formatAudioTime = (totalSeconds) => {
@@ -284,6 +315,19 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   membersToggle?.addEventListener('click', toggleMembersPanel);
+  pinsToggle?.addEventListener('click', () => setPinsPanelState(Boolean(pinsPanel?.hidden)));
+  pinsClose?.addEventListener('click', () => setPinsPanelState(false));
+  menuToggle?.addEventListener('click', () => setChannelMenuState(Boolean(channelMenu?.hidden)));
+
+  document.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const clickedPins = target.closest('[data-community-pins-panel], [data-community-pins-toggle]');
+    const clickedMenu = target.closest('[data-community-menu], [data-community-menu-toggle]');
+    if (!clickedPins) setPinsPanelState(false);
+    if (!clickedMenu) setChannelMenuState(false);
+  });
+
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && searchForm && !searchForm.hidden) {
       closeSearch();
@@ -291,21 +335,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (event.key === 'Escape' && document.body.classList.contains('is-members-open')) {
       setMembersPanelState(false);
     }
+    if (event.key === 'Escape') {
+      setPinsPanelState(false);
+      setChannelMenuState(false);
+    }
   });
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       autoResizeComposer();
-      scrollToLatest();
+      scrollToStart();
     });
   });
 
   setMembersPanelState(false);
   syncSubmitState();
   autoResizeComposer();
-  window.addEventListener('load', scrollToLatest, { once: true });
+  window.addEventListener('pageshow', scrollToStart);
   window.addEventListener('resize', () => {
     autoResizeComposer();
-    scrollToLatest();
   });
 });

@@ -16,7 +16,7 @@
     'pedidos.html': { key: 'pedidos', active: 'orders', search: false },
     'mensagens.html': { key: 'mensagens', active: 'messages', search: false },
     'comunidade.html': { key: 'comunidade', active: 'communities', search: false },
-    'comunidade-interna.html': { key: 'comunidade-interna', active: 'communities', search: false },
+    'comunidade-interna.html': { key: 'mensagens', active: 'communities', search: false, title: 'Comunidade' },
     'perfil.html': { key: 'perfil', active: 'profile', search: false },
     'carteira.html': { key: 'carteira', active: 'profile', search: false },
     'notificacoes.html': { key: 'notificacoes', active: '', search: false },
