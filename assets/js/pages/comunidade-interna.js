@@ -341,6 +341,56 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+
+  const communityRoot = document.querySelector('[data-community-internal-page]');
+  const channelButtons = Array.from(communityRoot?.querySelectorAll('.messages-sidebar .message-item') || []);
+  const threadBackButton = communityRoot?.querySelector('.messages-thread__back');
+  const threadTitle = communityRoot?.querySelector('.messages-thread__profile strong');
+  const threadSubtitle = communityRoot?.querySelector('.messages-thread__profile p');
+  const threadAvatar = communityRoot?.querySelector('.messages-thread__avatar');
+
+  const openChannelThread = (channelButton) => {
+    if (!communityRoot || !channelButton) return;
+
+    channelButtons.forEach((button) => {
+      button.classList.toggle('is-active', button === channelButton);
+    });
+
+    const title = channelButton.querySelector('.message-item__line strong')?.textContent?.trim();
+    const subtitle = channelButton.querySelector('.message-item__preview')?.textContent?.trim();
+    const avatar = channelButton.querySelector('.message-item__avatar')?.textContent?.trim();
+
+    if (threadTitle && title) threadTitle.textContent = title;
+    if (threadSubtitle && subtitle) threadSubtitle.textContent = subtitle;
+    if (threadAvatar && avatar) threadAvatar.textContent = avatar;
+
+    communityRoot.classList.add('messages-app--thread-open');
+    document.body.classList.add('messages-thread-is-open');
+    scrollToStart();
+  };
+
+  const closeChannelThread = () => {
+    communityRoot?.classList.remove('messages-app--thread-open');
+    document.body.classList.remove('messages-thread-is-open');
+    setMembersPanelState(false);
+    setPinsPanelState(false);
+    setChannelMenuState(false);
+    if (searchForm && !searchForm.hidden) closeSearch();
+  };
+
+  channelButtons.forEach((button) => {
+    button.addEventListener('click', () => openChannelThread(button));
+  });
+
+  threadBackButton?.addEventListener('click', closeChannelThread);
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 767) {
+      document.body.classList.remove('messages-thread-is-open');
+      communityRoot?.classList.remove('messages-app--thread-open');
+    }
+  });
+
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       autoResizeComposer();

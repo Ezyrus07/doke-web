@@ -860,3 +860,346 @@
     display: none !important;
   }
 }
+
+
+/* 2026-05-09 — comunidade-interna mobile thread parity
+   Responsabilidade local da rota: ao abrir um canal no mobile, a thread substitui o shell superior
+   como em mensagens.html, sem faixa vazia e preservando os ícones dos botões. */
+@media (max-width: 760px) {
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-app.messages-app--thread-open .messages-thread {
+    top: var(--doke-mobile-shell-without-search-height, 72px) !important;
+    bottom: calc(var(--doke-mobile-shell-nav-height, 64px) + env(safe-area-inset-bottom, 0px)) !important;
+    border-radius: 0 !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-app.messages-app--thread-open .messages-thread__header {
+    border-radius: 0 !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"].messages-thread-is-open {
+    padding-top: 0 !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"].messages-thread-is-open .doke-mobile-shell {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"].messages-thread-is-open .messages-app.messages-app--thread-open .messages-thread {
+    top: 0 !important;
+    bottom: calc(var(--doke-mobile-shell-nav-height, 64px) + env(safe-area-inset-bottom, 0px)) !important;
+    border-radius: 0 !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"].messages-thread-is-open .messages-app.messages-app--thread-open .messages-thread__header {
+    border-radius: 0 !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__action,
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__back {
+    color: #1d64b1 !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__back svg,
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__action svg {
+    display: block !important;
+    width: 19px !important;
+    height: 19px !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2.25 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__back svg *,
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__action svg * {
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2.25 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    vector-effect: non-scaling-stroke !important;
+  }
+}
+
+/* 2026-05-09 — mobile thread hard contract
+   A rota comunidade-interna usa a mesma tela de conversa do mensagens.html: quando o canal
+   está aberto no mobile, a thread vira viewport fixa e não herda offset do shell/lista. */
+@media (max-width: 760px) {
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-app.messages-app--thread-open .messages-thread {
+    position: fixed !important;
+    inset: 0 0 calc(var(--doke-mobile-shell-nav-height, 64px) + env(safe-area-inset-bottom, 0px)) 0 !important;
+    z-index: 80 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    transform: none !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-app.messages-app--thread-open .messages-thread__header {
+    border-radius: 0 !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__back svg,
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__action svg {
+    width: 16px !important;
+    height: 16px !important;
+    stroke-width: 2 !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__back svg *,
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__action svg * {
+    stroke-width: 2 !important;
+  }
+}
+
+/* 2026-05-09 — contrato final: canal mobile acima do shell global e iconografia igual ao header. */
+@media (max-width: 760px) {
+  body.messages-page-shell[data-page="comunidade-interna"].messages-thread-is-open .doke-mobile-shell,
+  body.messages-page-shell[data-page="comunidade-interna"]:has(.messages-app.messages-app--thread-open) .doke-mobile-shell {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-app.messages-app--thread-open .messages-thread,
+  body.messages-page-shell[data-page="comunidade-interna"]:has(.messages-app.messages-app--thread-open) .messages-thread {
+    position: fixed !important;
+    inset: 0 0 calc(var(--doke-mobile-shell-nav-height, 64px) + env(safe-area-inset-bottom, 0px)) 0 !important;
+    z-index: 1301 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    transform: none !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-app.messages-app--thread-open .messages-thread__header {
+    border-radius: 0 !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__back svg,
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__action svg {
+    width: 18px !important;
+    height: 18px !important;
+    stroke-width: 1.9 !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__back svg *,
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__action svg * {
+    stroke-width: 1.9 !important;
+  }
+}
+
+/* 2026-05-09 — ajuste visual final: ações do canal mobile no mesmo peso do header global. */
+@media (max-width: 760px) {
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__back,
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__action {
+    width: var(--doke-mobile-header-action, 40px) !important;
+    height: var(--doke-mobile-header-action, 40px) !important;
+    min-width: var(--doke-mobile-header-action, 40px) !important;
+    min-height: var(--doke-mobile-header-action, 40px) !important;
+    max-width: var(--doke-mobile-header-action, 40px) !important;
+    max-height: var(--doke-mobile-header-action, 40px) !important;
+    border-radius: var(--doke-mobile-header-action-radius, 14px) !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__back svg,
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__action svg {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+    max-width: 16px !important;
+    max-height: 16px !important;
+    stroke-width: 2.1 !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__back svg *,
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-thread__action svg * {
+    stroke-width: 2.1 !important;
+  }
+}
+
+/* 2026-05-09 — contrato final do composer mobile
+   Mantém a barra inferior do comunidade-interna.html igual à do mensagens.html. */
+@media (max-width: 760px) {
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-app.messages-app--thread-open .messages-composer {
+    flex: 0 0 auto !important;
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    z-index: 3 !important;
+    display: grid !important;
+    grid-template-columns: 36px 36px minmax(0, 1fr) 42px !important;
+    align-items: center !important;
+    gap: 7px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 58px !important;
+    margin: 0 !important;
+    padding: 8px 10px !important;
+    border: 0 !important;
+    border-top: 1px solid rgba(196, 215, 235, 0.78) !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-composer__tools {
+    display: contents !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-composer__tools > .messages-composer__tool:nth-child(1) {
+    grid-column: 1 !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-composer__tools > .messages-composer__tool:nth-child(2) {
+    grid-column: 2 !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-composer__tool,
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-composer__send {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    padding: 0 !important;
+    border: 1px solid rgba(196, 215, 235, 0.86) !important;
+    border-radius: 12px !important;
+    background: #f8fbff !important;
+    color: #1d64b1 !important;
+    box-shadow: none !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-composer__field {
+    grid-column: 3 !important;
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 34px 0 12px !important;
+    border: 1px solid rgba(196, 215, 235, 0.86) !important;
+    border-radius: 999px !important;
+    background: #f8fbff !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-composer textarea {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 8px 0 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    background: transparent !important;
+    color: #0d1f3c !important;
+    font-size: 0.84rem !important;
+    line-height: 1.25 !important;
+    resize: none !important;
+    overflow: hidden !important;
+    box-shadow: none !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-composer textarea::placeholder {
+    color: #8ea1b8 !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-composer__emoji-inside {
+    position: absolute !important;
+    right: 7px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: #1d64b1 !important;
+    box-shadow: none !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-composer__send {
+    grid-column: 4 !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    border: 0 !important;
+    border-radius: 14px !important;
+    background: #2877c9 !important;
+    color: #fff !important;
+  }
+
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-composer__tool svg,
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-composer__emoji-inside svg,
+  body.messages-page-shell[data-page="comunidade-interna"] .messages-composer__send svg {
+    display: block !important;
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+    max-width: 16px !important;
+    max-height: 16px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2.1 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    vector-effect: non-scaling-stroke !important;
+  }
+}
+
+/* Mobile channel presence indicator: keep status dot outside the channel avatar circle. */
+@media (max-width: 768px) {
+  body.community-room-shell .community-channel,
+  body.community-room-shell .community-channel span {
+    overflow: visible !important;
+  }
+
+  body.community-room-shell .community-channel span {
+    position: relative !important;
+  }
+
+  body.community-room-shell .community-channel span::after {
+    content: "" !important;
+    position: absolute !important;
+    right: -3px !important;
+    bottom: 2px !important;
+    width: 9px !important;
+    height: 9px !important;
+    border: 2px solid #f8fbff !important;
+    border-radius: 50% !important;
+    background: #22c55e !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.95) !important;
+  }
+
+  body.community-room-shell .community-channel:not(.is-active) span::after {
+    background: #cbd5e1 !important;
+  }
+}
