@@ -9,7 +9,7 @@ window.DokeProfileData = {
       verified: true,
       headline: 'Pintura residencial e acabamento com escopo claro, comunicação organizada e execução limpa do início ao pós-obra.',
       badges: [
-        { label: 'Profissional verificada', tone: 'accent' },
+        { label: 'Profissional verificado', tone: 'accent' },
         { label: 'Pintura e acabamento', iconKey: 'painting' }
       ],
       stats: [

@@ -487,8 +487,8 @@ window.DokeInitProfile = () => {
     const role = actionRole(item.label);
     if (labelKey.includes("solicitar orcamento")) {
       return `
-        <button class="${classes}" type="button" data-profile-action-role="${role}" data-profile-mobile-label="Orçamento" data-budget-open data-budget-provider="${escapeAttr(item.provider || "Studio Aquarela")}" data-budget-service="${escapeAttr(item.service || "reforma residencial de alto padrao")}">
-          <span class="profile-action__label" data-profile-mobile-label="Orçamento">${normalize(item.label)}</span>
+        <button class="${classes}" type="button" data-profile-action-role="${role}" data-budget-open data-budget-provider="${escapeAttr(item.provider || "Studio Aquarela")}" data-budget-service="${escapeAttr(item.service || "reforma residencial de alto padrao")}">
+          <span class="profile-action__label">Solicitar orçamento</span>
         </button>
       `;
     }
@@ -1549,13 +1549,13 @@ window.DokeInitProfile = () => {
         "Especialista em ambientes residenciais com foco em leitura visual limpa, acabamento consistente e comunicaÃ§Ã£o objetiva do inÃ­cio ao fim."
     );
     const isPhoneHero = window.matchMedia('(max-width: 760px)').matches && body.dataset.profileView === 'visitor' && body.dataset.profileType === 'professional';
-    const shortHeadline = isPhoneHero && baseHeadline.length > 54
-      ? `${baseHeadline.slice(0, 51).trimEnd()}...`
+    const shortHeadline = isPhoneHero && baseHeadline.length > 64
+      ? `${baseHeadline.slice(0, 61).trimEnd()}...`
       : baseHeadline;
-    const shouldShowMore = shortHeadline.length > 84 && profileMode !== "client";
+    const shouldShowMore = isPhoneHero && baseHeadline.length > 64 && profileMode !== "client";
     els.headline.innerHTML = shouldShowMore
-      ? `${shortHeadline} <button class="profile-bio__more" type="button" data-profile-more>Ver mais</button>`
-      : shortHeadline;
+      ? `<span class="profile-bio__text">${shortHeadline}</span> <button class="profile-bio__more" type="button" data-profile-more>Ver mais</button>`
+      : `<span class="profile-bio__text">${shortHeadline}</span>`;
     els.categories.innerHTML = profileMode === "client" || profileMode === "client-owner" ? "" : categories.map(categoryMarkup).join("");
     els.verified.hidden = profileMode === "client" || profileMode === "client-owner" ? true : !hero.verified;
     els.verified.dataset.tooltip = 'Selo de perfil verificado pela Doke.';
