@@ -84,16 +84,8 @@ window.DokeInitProfile = () => {
             hero: {
               ...(clientPublicProfile.hero || {}),
               badges: [],
-              stats: [
-                { value: "18,4 mil", label: "seguidores" },
-                { value: "26", label: "serviços feitos" },
-                { value: "4,9", label: "nota média" }
-              ],
-              rotatingHighlights: [
-                { label: "Comunidade", value: "18,4 mil", detail: "seguidores acompanhando o perfil" },
-                { label: "Execuções", value: "26", detail: "serviços concluídos com profissionais" },
-                { label: "Resposta", value: "Até 2h", detail: "tempo médio para responder contatos" }
-              ],
+              stats: [],
+              rotatingHighlights: [],
               actions: [
                 { label: "Mensagem", href: "mensagens.html", tone: "primary" },
                 ...(params.get("from") === "owner"
@@ -102,27 +94,36 @@ window.DokeInitProfile = () => {
               ]
             },
             tabs: {
-              about: clientPublicProfile.tabs?.about || "Sobre",
-              portfolio: clientPublicProfile.tabs?.collections || "Portfólios"
+              about: clientPublicProfile.tabs?.about || "Sobre"
             },
             sections: {
-              about: clientPublicProfile.sections?.about || {},
-              portfolio: {
-                ...(clientPublicProfile.sections?.collections || {}),
-                title: "Portfólios compartilhados",
-                intro: "Portfólios salvos e republicados no perfil do cliente, no estilo de referência compartilhada entre cliente e profissional."
-              }
+              about: clientPublicProfile.sections?.about || {}
             }
           }
         : profileMode === "client-owner"
           ? clientOwnerProfile
         : publicProfile;
+  const PROFILE_VISIBLE_TABS = new Set([
+    "services",
+    "beforeAfter",
+    "reviews",
+    "about",
+    "portfolio",
+    "certificates",
+    "faq"
+  ]);
+
+  if (baseProfile.tabs) {
+    baseProfile.tabs = Object.fromEntries(
+      Object.entries(baseProfile.tabs).filter(([key]) => PROFILE_VISIBLE_TABS.has(key))
+    );
+  }
+
   if (baseProfile.tabs?.posts) {
     const nextTabs = {};
     Object.entries(baseProfile.tabs).forEach(([key, label]) => {
       if (key === "posts") {
-        nextTabs.workers = "Workers";
-        nextTabs.beforeAfter = "Antes x Depois";
+        nextTabs.beforeAfter = "Publica��es";
         return;
       }
       nextTabs[key] = label;
@@ -143,6 +144,7 @@ window.DokeInitProfile = () => {
     avatar: root.querySelector("[data-profile-avatar]"),
     verified: root.querySelector("[data-profile-verified]"),
     nameActions: root.querySelector("[data-profile-name-actions]"),
+    optionsHost: root.querySelector("[data-profile-options-host]"),
     stats: root.querySelector("[data-profile-stats]"),
     highlights: root.querySelector("[data-profile-highlights]"),
     actions: root.querySelector("[data-profile-actions]"),
@@ -214,32 +216,38 @@ window.DokeInitProfile = () => {
     const panels = root.querySelector('[data-profile-section="panels"]');
     const previousScrollY = window.scrollY || window.pageYOffset || 0;
     const previousScrollX = window.scrollX || window.pageXOffset || 0;
-    const lockMediaPanel = panels && mediaTabs.has(state.activeTab) && mediaTabs.has(nextTab);
+    const shouldLockPanel = Boolean(panels);
+    const previousPanelHeight = panels ? Math.max(panels.offsetHeight, 620) : 0;
 
-    if (lockMediaPanel) {
-      panels.style.minHeight = `${Math.max(panels.offsetHeight, 620)}px`;
+    if (shouldLockPanel) {
+      panels.style.minHeight = `${previousPanelHeight}px`;
       body.classList.add("is-profile-tab-switching");
     }
 
     state.activeTab = nextTab;
     render();
 
-    if (lockMediaPanel) {
-      const releasePanelLock = () => {
-        panels.style.minHeight = "";
-        body.classList.remove("is-profile-tab-switching");
-      };
+    const restoreScroll = () => {
+      const currentY = window.scrollY || window.pageYOffset || 0;
+      if (Math.abs(currentY - previousScrollY) > 2) {
+        window.scrollTo({ top: previousScrollY, left: previousScrollX, behavior: "auto" });
+      }
+    };
 
+    window.requestAnimationFrame(() => {
+      restoreScroll();
       window.requestAnimationFrame(() => {
-        if (Math.abs((window.scrollY || window.pageYOffset || 0) - previousScrollY) > 2) {
-          window.scrollTo({ top: previousScrollY, left: previousScrollX, behavior: "auto" });
-        }
-        window.requestAnimationFrame(releasePanelLock);
+        restoreScroll();
+        if (panels) panels.style.minHeight = "";
+        body.classList.remove("is-profile-tab-switching");
       });
-      return;
-    }
+    });
+  };
 
-    body.classList.remove("is-profile-tab-switching");
+  const syncActiveTabState = () => {
+    body.dataset.profileActiveTab = state.activeTab || "services";
+    const tabsHost = root.querySelector('[data-profile-section="tabs"]');
+    if (tabsHost) tabsHost.dataset.activeTab = state.activeTab || "services";
   };
 
   const updateUrl = () => {
@@ -479,8 +487,8 @@ window.DokeInitProfile = () => {
     const role = actionRole(item.label);
     if (labelKey.includes("solicitar orcamento")) {
       return `
-        <button class="${classes}" type="button" data-profile-action-role="${role}" data-budget-open data-budget-provider="${escapeAttr(item.provider || "Studio Aquarela")}" data-budget-service="${escapeAttr(item.service || "reforma residencial de alto padrao")}">
-          ${normalize(item.label)}
+        <button class="${classes}" type="button" data-profile-action-role="${role}" data-profile-mobile-label="Or�amento" data-budget-open data-budget-provider="${escapeAttr(item.provider || "Studio Aquarela")}" data-budget-service="${escapeAttr(item.service || "reforma residencial de alto padrao")}">
+          <span class="profile-action__label" data-profile-mobile-label="Or�amento">${normalize(item.label)}</span>
         </button>
       `;
     }
@@ -500,6 +508,19 @@ window.DokeInitProfile = () => {
 
   const followActionMarkup = (item) => `
     <button class="profile-follow-action" type="button" data-profile-follow data-profile-action-role="follow" aria-pressed="false">${normalize(item.label)}</button>
+  `;
+
+  const profileOptionsMarkup = () => `
+    <div class="profile-options-menu" data-profile-options>
+      <button class="profile-options-menu__trigger" type="button" data-profile-options-trigger aria-expanded="false" aria-haspopup="menu" aria-label="Mais opcoes do perfil">
+        <span class="profile-options-menu__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
+      <div class="profile-options-menu__panel" role="menu" data-profile-options-panel hidden>
+        <button type="button" role="menuitem" data-profile-copy-link>Copiar link do perfil</button>
+        <button type="button" role="menuitem" data-profile-report>Denunciar perfil</button>
+        <button type="button" role="menuitem" data-profile-report>Reportar problema</button>
+      </div>
+    </div>
   `;
 
   const renderPanelShell = (content) => `
@@ -575,33 +596,31 @@ window.DokeInitProfile = () => {
         ${items
           .map(
             (item, index) => `
-          <article class="service-card service-card--featured service-card--feed ${state.selectedServices.includes(index) ? "is-selected" : ""} ${state.selectingServices ? "is-selecting" : ""}" data-profile-service-card="${index}">
-            <div class="service-card__media ${item.mediaClass}">
+          <article class="doke-ad-card doke-ad-card--featured ${state.selectedServices.includes(index) ? "is-selected" : ""} ${state.selectingServices ? "is-selecting" : ""}" data-profile-service-card="${index}">
+            <div class="doke-ad-card__media ${String(item.mediaClass || "").replace("service-card__media", "doke-ad-card__media")}">
               ${profileMode === "owner" && state.selectingServices
-                ? `<button class="service-card__favorite profile-service-select-indicator ${state.selectedServices.includes(index) ? "is-selected" : ""}" type="button" aria-label="Selecionar Servi�o" data-profile-service-select="${index}">${state.selectedServices.includes(index) ? "✓" : ""}</button>`
-                : `<button class="service-card__favorite" type="button" aria-label="Salvar Servi�o">
+                ? `<button class="doke-ad-card__favorite profile-service-select-indicator ${state.selectedServices.includes(index) ? "is-selected" : ""}" type="button" aria-label="Selecionar anuncio" data-profile-service-select="${index}">${state.selectedServices.includes(index) ? "&#10003;" : ""}</button>`
+                : `<button class="doke-ad-card__favorite" type="button" aria-label="Salvar anuncio">
                 <svg viewBox="0 0 24 24"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
               </button>`}
-              <span class="service-card__badge ${item.badgeModifier || ""}">${normalize(item.badge)}</span>
-              <div class="service-card__media-content">
-                <span class="service-card__category">${normalize(item.category)}</span>
-                <strong>${normalize(item.title)}</strong>
-              </div>
+              <span class="doke-ad-card__badge">${normalize(item.badge)}</span>
             </div>
-            <div class="service-card__body">
-              <div class="service-card__rating">★ ${item.rating.toFixed(1).replace(".", ",")} <span>(${normalize(item.reviews)})</span></div>
-              <div class="service-card__meta-row">
-                <div class="service-card__profile">
-                  <span class="service-card__avatar ${item.avatarClass}" aria-hidden="true"></span>
-                  <span class="service-card__location">${normalize(item.location)}</span>
-                </div>
+            <div class="doke-ad-card__body">
+              <span class="doke-ad-card__category">${["Pintura residencial", "El&eacute;trica 24h", "Diarista premium"][index] || normalize(item.category)}</span>
+              <h3 class="doke-ad-card__title">${normalize(item.title)}</h3>
+              <div class="doke-ad-card__rating" aria-label="Avaliacao ${item.rating.toFixed(1).replace(".", ",")} baseada em ${normalize(item.reviews)}">
+                <span class="doke-ad-card__rating-star">&#9733;</span>
+                <strong>${item.rating.toFixed(1).replace(".", ",")}</strong>
+                <span>(${normalize(item.reviews)})</span>
               </div>
-              <div class="service-card__tags">${item.tags.map((tag) => `<span>${normalize(tag)}</span>`).join("")}</div>
-              <div class="service-card__footer">
-                <div>
-                  <strong class="service-card__price">${normalize(item.price)}</strong>
-                </div>
-                <span class="service-card__cta" aria-label="Ver Servi�o">Ver Servi�o</span>
+              <div class="doke-ad-card__tags" aria-label="Tags do anuncio">${item.tags.slice(0, 2).map((tag) => `<span>${normalize(tag)}</span>`).join("")}</div>
+              <div class="doke-ad-card__location">
+                <span class="doke-ad-card__avatar" aria-hidden="true"></span>
+                <span class="doke-ad-card__location-text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.7A2.7 2.7 0 1 1 12 6.3a2.7 2.7 0 0 1 0 5.4Z"></path></svg><span>${normalize(item.location)}</span></span>
+              </div>
+              <div class="doke-ad-card__footer">
+                <strong class="doke-ad-card__price">${normalize(item.price)}</strong>
+                <a class="doke-ad-card__cta" href="detalhe-anuncio.html">Ver an&uacute;ncio</a>
               </div>
             </div>
           </article>
@@ -638,143 +657,174 @@ window.DokeInitProfile = () => {
     window.DokeHomeBeforeAfter?.create({ signal });
   };
 
+
+
   const renderPosts = () => {
     if (profileMode === "client") return renderClientReferences();
 
-    const showWorkers = state.activeTab === "workers";
-    const showBeforeAfter = state.activeTab === "beforeAfter";
-    const toolbarLabel = showWorkers ? "worker" : "caso";
-    const toolbarLabelPlural = showWorkers ? "workers" : "casos";
+    const publications = [
+      {
+        id: "case-kitchen",
+        type: "photo",
+        cardClass: "publication-card--photo",
+        mediaClass: "publication-card__media--kitchen",
+        label: "Foto",
+        title: "Cozinha com marcenaria sob medida",
+        author: "Studio Casa Viva",
+        likes: 142,
+        comments: 28,
+        saves: 36
+      },
+      {
+        id: "case-reforma",
+        type: "video",
+        cardClass: "publication-card--video",
+        mediaClass: "publication-card__media--living",
+        label: "V&iacute;deo",
+        title: "Tour r&aacute;pido da reforma",
+        author: "Renato Acabamentos",
+        likes: 98,
+        comments: 19,
+        saves: 22
+      },
+      {
+        id: "case-bathroom",
+        type: "beforeAfter",
+        cardClass: "publication-card--before-after",
+        mediaClass: "publication-card__comparison",
+        label: "Antes e depois",
+        title: "Banheiro revitalizado sem quebra-quebra",
+        author: "Renato Acabamentos",
+        likes: 176,
+        comments: 31,
+        saves: 45
+      }
+    ];
+
+    const renderPublicationCard = (item, index) => {
+      const postId = `publication-${index}`;
+      const isSelected = state.selectedPosts.includes(postId);
+      const selectButton = profileMode === "owner" && state.selectingPosts
+        ? `<button class="profile-post-select-indicator ${isSelected ? "is-selected" : ""}" type="button" data-profile-post-select="${postId}" aria-label="Selecionar publicacao">${isSelected ? "&#10003;" : ""}</button>`
+        : "";
+
+      const mediaMarkup = item.type === "beforeAfter"
+        ? `
+          <div class="publication-card__media publication-card__comparison">
+            <span class="publication-card__type publication-card__type--comparison">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 5.5h15v13h-15z"></path><path d="M12 5.5v13"></path></svg>
+              ${item.label}
+            </span>
+            <div class="publication-card__half publication-card__half--before"><span>Antes</span></div>
+            <div class="publication-card__half publication-card__half--after"><span>Depois</span></div>
+          </div>
+        `
+        : `
+          <div class="publication-card__media ${item.mediaClass}">
+            <span class="publication-card__type">
+              ${item.type === "video"
+                ? `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="13" height="13" rx="3"></rect><path d="m16.5 10 4-2.5v9l-4-2.5Z"></path></svg>`
+                : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 8.2A2.2 2.2 0 0 1 6.7 6h2.1l1.1-1.5h4.2L15.2 6h2.1a2.2 2.2 0 0 1 2.2 2.2v8.6a2.2 2.2 0 0 1-2.2 2.2H6.7a2.2 2.2 0 0 1-2.2-2.2V8.2Z"></path><circle cx="12" cy="12.5" r="3.4"></circle></svg>`
+              }
+              ${item.label}
+            </span>
+            ${item.type === "video" ? `<span class="publication-card__play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 7 8 5-8 5V7Z"></path></svg></span>` : ""}
+          </div>
+        `;
+
+      return `
+        <article class="publication-card ${item.cardClass} doke-card ${state.selectingPosts ? "is-selecting" : ""} ${isSelected ? "is-selected" : ""}"
+          data-profile-post-card="${postId}"
+          data-before-after-trigger
+          data-before-after-id="${item.id}"
+          role="button"
+          tabindex="0"
+          aria-haspopup="dialog"
+          aria-label="Abrir publicacao: ${normalize(item.title)}">
+          ${selectButton}
+          ${mediaMarkup}
+          <div class="publication-card__content">
+            <h3 class="publication-card__title">${normalize(item.title)}</h3>
+            <p class="publication-card__author">Por <a href="perfil.html">${normalize(item.author)}</a></p>
+            <div class="publication-card__actions" aria-label="Interacoes da publicacao">
+              <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.6c0 5.4-8.8 10.2-8.8 10.2S3.2 14 3.2 8.6A4.7 4.7 0 0 1 12 6.2a4.7 4.7 0 0 1 8.8 2.4Z"></path></svg>${item.likes}</span>
+              <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 11.5a7.3 7.3 0 0 1 7.6-7.1 7.3 7.3 0 0 1 7.6 7.1 7.3 7.3 0 0 1-7.6 7.1 8.7 8.7 0 0 1-2.9-.5L5 19.4l1.2-3.2a6.7 6.7 0 0 1-2-4.7Z"></path></svg>${item.comments}</span>
+              <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5h11A1.5 1.5 0 0 1 19 6v14l-7-4-7 4V6a1.5 1.5 0 0 1 1.5-1.5Z"></path></svg>${item.saves}</span>
+            </div>
+          </div>
+        </article>
+      `;
+    };
 
     return renderPanelShell(`
-      <div class="profile-posts-stack ${profileMode === "owner" ? "profile-posts-stack--owner" : ""}">
+      <div class="profile-publications-stack ${profileMode === "owner" ? "profile-publications-stack--owner" : ""}">
         ${profileMode === "owner" ? `
         <div class="profile-services-toolbar">
-          <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Novo</button>
+          <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Nova publica&ccedil;&atilde;o</button>
           <button class="profile-services-toolbar__action ${state.selectingPosts ? "is-active" : ""}" type="button" data-profile-posts-select-toggle>${state.selectingPosts ? "Cancelar" : "Selecionar"}</button>
-          ${state.selectedPosts.length === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-posts-edit>Editar ${toolbarLabel}</button>` : ""}
-          ${state.selectedPosts.length > 1 ? `<span class="profile-services-toolbar__hint">Só dá para editar um ${toolbarLabel} por vez.</span>` : ""}
+          ${state.selectedPosts.length === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-posts-edit>Editar publica&ccedil;&atilde;o</button>` : ""}
+          ${state.selectedPosts.length > 1 ? `<span class="profile-services-toolbar__hint">S&oacute; d&aacute; para editar uma publica&ccedil;&atilde;o por vez.</span>` : ""}
         </div>
         ` : ""}
 
-        ${showWorkers ? `
-        <section class="profile-post-section profile-post-section--workers" aria-labelledby="profile-workers-title">
-<div class="content-rail profile-post-section__rail">
-            <button class="home-categories__arrow content-rail__arrow content-rail__arrow--prev" type="button" aria-label="Ver workers anteriores" data-rail-arrow="prev" data-rail-target="profile-short-videos-track">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6.5-5 5 5 5"></path></svg>
-            </button>
-            <div class="short-videos__track profile-posts-videos" id="profile-short-videos-track" data-rail-track>
-              ${shortVideoPool
-                .map((item, index) => {
-                  const postId = `video-${index}`;
-                  const isSelected = state.selectedPosts.includes(postId);
-                  const interactiveAttrs = state.selectingPosts
-                    ? ""
-                    : `data-worker-trigger data-worker-id="${item.id}" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Abrir worker: ${normalize(item.title)}"`;
-
-                  return `
-                <article class="video-card ${item.mediaClass} ${state.selectingPosts ? "is-selecting" : ""} ${isSelected ? "is-selected" : ""}" data-profile-post-card="${postId}" ${interactiveAttrs}>
-                  ${profileMode === "owner" && state.selectingPosts ? `<button class="profile-post-select-indicator ${isSelected ? "is-selected" : ""}" type="button" data-profile-post-select="${postId}" aria-label="Selecionar worker">${isSelected ? "✓" : ""}</button>` : ""}
-                  <span class="video-card__play">▶</span>
-                  <div class="video-card__content"><strong>${normalize(item.title)}</strong></div>
-                </article>
-              `;
-                })
-                .join("")}
-            </div>
-            <button class="home-categories__arrow content-rail__arrow content-rail__arrow--next" type="button" aria-label="Ver próximos workers" data-rail-arrow="next" data-rail-target="profile-short-videos-track">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6.5 5 5-5 5"></path></svg>
-            </button>
+        <section class="profile-post-section profile-post-section--publications">
+          <div class="publication-grid profile-publications-grid" id="profile-publications-track" data-rail-track aria-label="Publicacoes">
+            ${publications.map(renderPublicationCard).join("")}
           </div>
         </section>
-        ` : ""}
-
-        ${showBeforeAfter ? `
-        <section class="profile-post-section profile-post-section--before-after" aria-labelledby="profile-before-after-title">
-<div class="content-rail profile-post-section__rail">
-            <button class="home-categories__arrow content-rail__arrow content-rail__arrow--prev" type="button" aria-label="Ver casos anteriores" data-rail-arrow="prev" data-rail-target="profile-before-after-track">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6.5-5 5 5 5"></path></svg>
-            </button>
-            <div class="comparison-grid profile-posts-comparison" id="profile-before-after-track" data-rail-track>
-              ${beforeAfterPool
-                .map((item, index) => {
-                  const postId = `compare-${index}`;
-                  const isSelected = state.selectedPosts.includes(postId);
-                  const previewId = getBeforeAfterPreviewId(item);
-                  const interactiveAttrs = state.selectingPosts
-                    ? ""
-                    : `data-before-after-trigger data-before-after-id="${previewId}" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Abrir caso: ${normalize(item.title)}"`;
-
-                  return `
-                <article class="comparison-card ${state.selectingPosts ? "is-selecting" : ""} ${isSelected ? "is-selected" : ""}" data-profile-post-card="${postId}" ${interactiveAttrs}>
-                  ${profileMode === "owner" && state.selectingPosts ? `<button class="profile-post-select-indicator ${isSelected ? "is-selected" : ""}" type="button" data-profile-post-select="${postId}" aria-label="Selecionar caso">${isSelected ? "✓" : ""}</button>` : ""}
-                  <div class="comparison-card__visual ${item.visualClass}">
-                    <div class="comparison-card__half comparison-card__half--before"><span>Antes</span></div>
-                    <div class="comparison-card__half comparison-card__half--after"><span>Depois</span></div>
-                  </div>
-                  <div class="comparison-card__body">
-                    <strong class="comparison-card__title">${normalize(item.title)}</strong>
-                    <div class="comparison-card__meta">
-                      <span class="comparison-card__provider">Por <span>${normalize(item.author)}</span></span>
-                      <span class="comparison-card__rating" aria-label="Avaliação ${String(item.rating).replace(".", ",")} de 5">★ <strong>${String(item.rating).replace(".", ",")}</strong></span>
-                    </div>
-                  </div>
-                </article>
-              `;
-                })
-                .join("")}
-            </div>
-            <button class="home-categories__arrow content-rail__arrow content-rail__arrow--next" type="button" aria-label="Ver próximos casos" data-rail-arrow="next" data-rail-target="profile-before-after-track">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6.5 5 5-5 5"></path></svg>
-            </button>
-          </div>
-        </section>
-        ` : ""}
       </div>
     `);
   };
+
 
   const renderReviews = () => {
     const groups = baseProfile.sections?.reviews?.groups || [];
     const reviewAds = groups.map((group, index) => ({
       id: `ad-${index + 1}`,
       label: normalize(group.title),
-      score: normalize(group.score),
-      count: normalize(group.count),
-      metrics: (group.highlights || []).slice(0, 6).map((item) => ({
-        label: normalize(item.label),
-        value: normalize(item.value),
-        icon: normalize(item.icon || '✦')
+      score: normalize(group.score || "4,9"),
+      count: normalize(group.count || "128 avaliacoes"),
+      metrics: (group.highlights || []).slice(0, 6).map((item, metricIndex) => ({
+        label: normalize(item.label || ["Acabamento", "Comunicacao", "Pontualidade"][metricIndex] || "Qualidade"),
+        value: normalize(item.value || ["4,9", "4,8", "4,9"][metricIndex] || "4,9"),
+        icon: normalize(item.icon || "")
       })),
       reviews: (group.items || []).map((item) => {
         const meta = normalize(item.meta);
         const normalizedMeta = meta.toLowerCase();
+        const tags = (item.tags || []).map(normalize);
+        const ratingValue = Number(String(item.rating).replace(",", ".")) || 5;
         const isRecent = /dia|dias|semana|semanas|recente/.test(normalizedMeta);
+        const hasContext = normalize(item.text).length > 70 || tags.length > 1;
         return {
           name: normalize(item.author),
           meta,
           rating: normalize(item.rating),
           text: normalize(item.text),
-          tags: (item.tags || []).map(normalize),
-          groups: `${Number(String(item.rating).replace(',', '.')) >= 4.8 ? 'positivas ' : ''}${isRecent ? 'recentes ' : ''}`.trim() || 'all'
+          tags,
+          groups: `${ratingValue >= 4.8 ? "positivas " : ""}${isRecent ? "recentes " : ""}${hasContext ? "contexto " : ""}`.trim() || "all"
         };
       })
     }));
 
     return renderPanelShell(`
-      <div class="profile-review-detail">
+      <section class="profile-review-detail profile-review-detail--clean" aria-labelledby="profile-reviews-heading">
         ${reviewAds.length > 1 ? `
-          <div class="profile-review-switcher">
-            <label class="profile-review-switcher__label" for="profile-review-ad">Servi�o</label>
-            <select class="profile-review-switcher__select" id="profile-review-ad" data-profile-review-select data-ui-select>
-              ${reviewAds.map((ad, index) => `<option value="${ad.id}" ${index === 0 ? 'selected' : ''}>${ad.label}</option>`).join('')}
-            </select>
+          <div class="profile-review-service-row">
+            <label class="profile-review-service-select">
+              <span>Servico</span>
+              <select class="profile-review-switcher__select" id="profile-review-ad" data-profile-review-select data-ui-select>
+                ${reviewAds.map((ad, index) => `<option value="${ad.id}" ${index === 0 ? "selected" : ""}>${ad.label}</option>`).join("")}
+              </select>
+            </label>
           </div>
-        ` : ''}
-<div class="profile-review-hub profile-review-hub--trust" data-profile-review-hub data-review-ads='${JSON.stringify(reviewAds).replace(/'/g, '&apos;')}'></div>
-      </div>
+        ` : ""}
+
+        <div class="profile-review-hub profile-review-hub--clean" data-profile-review-hub data-review-ads='${JSON.stringify(reviewAds).replace(/'/g, "&apos;")}'></div>
+      </section>
     `);
   };
+
 
   const renderAbout = () => {
     const section = baseProfile.sections?.about || {};
@@ -782,92 +832,157 @@ window.DokeInitProfile = () => {
     const blocks = section.blocks || [];
 
     if (profileMode === "client" || profileMode === "client-owner") {
+      const clientTexts = blocks.length
+        ? blocks.slice(0, 3).map((item) => normalize(item.text))
+        : [
+            "Normalmente ja sabe o pedido com fotos, objetivo, prioridade e restricoes principais para filtrar proposta generica.",
+            "Gosta de comunicacao direta, leitura visual do ambiente e combinados claros antes de fechar atendimento."
+          ];
+
       return renderPanelShell(`
-        <div class="profile-client-about">
+        <section class="profile-client-about profile-client-about--single" aria-label="Sobre o cliente">
           <article class="profile-client-about__card">
-            ${blocks.map((item) => `<p>${normalize(item.text)}</p>`).join("")}
+            <span class="profile-client-about__eyebrow">Sobre o cliente</span>
+            <h3>Como prefere contratar</h3>
+            ${clientTexts.map((text) => `<p>${text}</p>`).join("")}
           </article>
-        </div>
+        </section>
       `);
     }
 
+    const defaultAboutText = [
+      "Antes de comecar, o profissional entende o objetivo, o ambiente e a urgencia do pedido. Isso ajuda a transformar a solicitacao em um escopo claro, reduz retrabalho e alinha expectativas antes da visita.",
+      "Atua melhor em projetos que exigem cuidado com acabamento, protecao do ambiente e leitura estetica do espaco."
+    ];
+
+    const aboutText = blocks.length
+      ? blocks.slice(0, 2).map((item) => normalize(item.text))
+      : defaultAboutText;
+
+    const factFallbacks = [
+      { label: "Atendimento", value: "Residencial e comercial leve" },
+      { label: "Formato", value: "Visita tecnica + execucao" },
+      { label: "Regioes", value: "Salvador e Lauro de Freitas" },
+      { label: "Especialidade", value: "Pintura, retoque e acabamento fino" }
+    ];
+
+    const factItems = factFallbacks.map((fallback, index) => ({
+      label: normalize(facts[index]?.label || fallback.label),
+      value: normalize(facts[index]?.value || fallback.value)
+    }));
+
+    const trustItems = [
+      { label: "Perfil certificado", detail: "Documento validado" },
+      { label: "Diploma validado", detail: "SENAC Bahia" },
+      { label: "Cliente recorrente", detail: "Boa retencao" }
+    ];
+
+    const differentialItems = [
+      { initials: "T", title: "Top da semana", text: "Mais visto" },
+      { initials: "R", title: "Resposta rapida", text: "Retorno consistente" },
+      { initials: "C", title: "Cliente recorrente", text: "Boa retencao" }
+    ];
+
     return renderPanelShell(`
-      <div class="profile-about-flow">
-        <section class="profile-about-hero">
-          <div class="profile-about-intro">
-            <h3>Como esse perfil trabalha</h3>
-            ${blocks.slice(0, 2).map((item) => `<p>${normalize(item.text)}</p>`).join("")}
+      <div class="profile-about-flow profile-about-flow--clean">
+        <section class="profile-about-main-card" aria-labelledby="profile-about-title">
+          <div class="profile-about-main-card__content">
+            <span class="profile-about-main-card__eyebrow">Sobre o profissional</span>
+            <h3 id="profile-about-title">Como trabalha</h3>
+            ${aboutText.map((text) => `<p>${text}</p>`).join("")}
           </div>
-          <article class="profile-about-certificate-card">
-            <a class="profile-about-certificate" href="#">
-              <div>
-                <strong>Profissional certificado</strong>
-                <span>Documento validado e aprovado. Clique para visualizar.</span>
-              </div>
-              <span class="profile-about-certificate__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"></path></svg>
-              </span>
-            </a>
-            <div class="profile-about-diploma">
-              <strong>Diploma em Design de Interiores</strong>
-              <span>SENAC Bahia</span>
-              <small>Concluído em 2021</small>
-            </div>
-          </article>
+
+          <div class="profile-about-trust-list" aria-label="Sinais de confianca">
+            ${trustItems.map((item) => `
+              <article class="profile-about-trust-item">
+                <span aria-hidden="true">&#10003;</span>
+                <div>
+                  <strong>${item.label}</strong>
+                  <small>${item.detail}</small>
+                </div>
+              </article>
+            `).join("")}
+          </div>
         </section>
 
-        <section class="profile-about-meta">
-          ${facts
-            .map(
-              (item) => `
-            <article class="profile-about-meta-item">
-              <span>${normalize(item.label)}</span>
-              <strong>${normalize(item.value)}</strong>
+        <section class="profile-about-facts" aria-label="Ficha tecnica do perfil">
+          ${factItems.map((item) => `
+            <article class="profile-about-fact-row">
+              <span>${item.label}</span>
+              <strong>${item.value}</strong>
             </article>
-          `
-            )
-            .join("")}
+          `).join("")}
         </section>
 
-        <div class="profile-about-tags-strip" aria-label="Diferenciais">
-          ${[
-            "Briefing direto",
-            "Boa apresentação",
-            "Prazo alinhado",
-            "Portfólio enxuto",
-            "Contato leve"
-          ]
-            .map((tag, index) => chipMarkup(tag, index < 2))
-            .join("")}
-        </div>
-
-        <section class="profile-about-trophies">
-          <article class="profile-about-trophy profile-about-trophy--1"><span class="profile-about-trophy__icon">T</span><div><strong>Top da semana</strong><small>Mais visto</small></div></article>
-          <article class="profile-about-trophy profile-about-trophy--2"><span class="profile-about-trophy__icon">R</span><div><strong>Resposta rápida</strong><small>Retorno consistente</small></div></article>
-          <article class="profile-about-trophy profile-about-trophy--3"><span class="profile-about-trophy__icon">C</span><div><strong>Cliente recorrente</strong><small>Boa retenção</small></div></article>
+        <section class="profile-about-differentials" aria-label="Diferenciais">
+          ${differentialItems.map((item) => `
+            <article class="profile-about-differential">
+              <span class="profile-about-differential__icon" aria-hidden="true">${item.initials}</span>
+              <div>
+                <strong>${item.title}</strong>
+                <small>${item.text}</small>
+              </div>
+            </article>
+          `).join("")}
         </section>
       </div>
     `);
   };
 
+
   const renderPortfolio = () => {
     const items = baseProfile.sections?.portfolio?.items || [];
+    const fallbackItems = [
+      {
+        title: "Sala contemporanea em tons claros",
+        subtitle: "Pintura + revisao de acabamento",
+        text: "Ambiente com correcao de textura, iluminacao valorizada e leitura mais leve na area social.",
+        chips: ["Antes e depois", "2 dias", "Acabamento fino"],
+        mediaClass: "profile-portfolio-media--living"
+      },
+      {
+        title: "Quarto infantil com paleta suave",
+        subtitle: "Consultoria de cor + execucao",
+        text: "Definicao de paleta, teste de amostra e acabamento final com foco em conforto visual.",
+        chips: ["Paleta guiada", "Cliente recorrente", "Execucao limpa"],
+        mediaClass: "profile-portfolio-media--bedroom"
+      },
+      {
+        title: "Revisao fina em apartamento alugado",
+        subtitle: "Retoque pos-obra",
+        text: "Intervencao rapida para corrigir falhas visuais sem transformar o pedido em obra longa.",
+        chips: ["Retorno rapido", "Alta satisfacao", "Sem quebra-quebra"],
+        mediaClass: "profile-portfolio-media--apartment"
+      }
+    ];
+
+    const portfolioItems = (items.length ? items : fallbackItems).slice(0, 6).map((item, index) => ({
+      title: normalize(item.title || fallbackItems[index % fallbackItems.length].title),
+      subtitle: normalize(item.subtitle || fallbackItems[index % fallbackItems.length].subtitle),
+      text: normalize(item.text || fallbackItems[index % fallbackItems.length].text),
+      chips: (item.chips && item.chips.length ? item.chips : fallbackItems[index % fallbackItems.length].chips).map(normalize),
+      mediaClass: item.mediaClass || fallbackItems[index % fallbackItems.length].mediaClass
+    }));
+
     return renderPanelShell(`
-      <div class="profile-portfolio-grid">
-        ${items
+      <div class="profile-portfolio-grid profile-portfolio-grid--showcase">
+        ${portfolioItems
           .map(
             (item) => `
-          <article class="profile-portfolio-card">
-            <div class="profile-portfolio-thumb"></div>
+          <article class="profile-portfolio-card profile-portfolio-card--showcase">
+            <div class="profile-portfolio-media ${item.mediaClass}">
+              <span class="profile-portfolio-media__badge">${item.chips[0] || "Projeto"}</span>
+            </div>
             <div class="profile-portfolio-card__body">
               <div class="profile-portfolio-card__header">
-                <h3>${normalize(item.title)}</h3>
-                <span class="profile-portfolio-card__location">${normalize(item.subtitle)}</span>
+                <span class="profile-portfolio-card__category">${item.subtitle}</span>
+                <h3>${item.title}</h3>
               </div>
-              <p>${normalize(item.text)}</p>
+              <p>${item.text}</p>
               <div class="profile-portfolio-meta">
-                ${(item.chips || []).map((text, index) => chipMarkup(text, index === 0)).join("")}
+                ${item.chips.slice(0, 3).map((text, chipIndex) => `<span class="profile-portfolio-chip ${chipIndex === 0 ? "profile-portfolio-chip--accent" : ""}">${text}</span>`).join("")}
               </div>
+              <a class="profile-portfolio-card__cta" href="#">Ver projeto <span aria-hidden="true">&rarr;</span></a>
             </div>
           </article>
         `
@@ -910,48 +1025,63 @@ window.DokeInitProfile = () => {
     `);
   };
 
+
   const renderCertificates = () => {
     const section = baseProfile.sections?.certificates || {};
     const items = section.items || [];
+    const fallbackItems = [
+      { status: "Verificado", issuer: "Equipe Doke", title: "Identidade validada", meta: "Documento e selfie aprovados" },
+      { status: "Certificado", issuer: "SENAC Bahia", title: "Curso de Design de Interiores", meta: "Concluido em 2021" },
+      { status: "Atualizado", issuer: "Formacao complementar", title: "Boas praticas de atendimento", meta: "Atualizacao recente" }
+    ];
+    const certificates = (items.length ? items : fallbackItems).slice(0, 3).map((item, index) => ({
+      status: normalize(item.status || fallbackItems[index]?.status || "Validado"),
+      issuer: normalize(item.issuer || fallbackItems[index]?.issuer || "Doke"),
+      title: normalize(item.title || fallbackItems[index]?.title || "Certificado validado"),
+      meta: normalize(item.meta || fallbackItems[index]?.meta || "Informacao validada"),
+      tone: index === 0 ? "primary" : index === 1 ? "education" : "practice"
+    }));
+
     return renderPanelShell(`
-      <div class="profile-certificates-grid">
-        ${items
-          .map(
-            (item) => `
-          <article class="profile-certificate-card">
-            <div class="profile-certificate-card__meta">
-              <span class="profile-certificate-card__status">${normalize(item.status)}</span>
-              <span class="profile-certificate-card__issuer">${normalize(item.issuer)}</span>
+      <div class="profile-certificates-showcase">
+        ${certificates.map((item, index) => `
+          <article class="profile-certificate-card profile-certificate-card--${item.tone}">
+            <div class="profile-certificate-card__icon" aria-hidden="true">${index === 0 ? "ID" : index === 1 ? "ED" : "BP"}</div>
+            <div class="profile-certificate-card__body">
+              <div class="profile-certificate-card__meta">
+                <span class="profile-certificate-card__status">${item.status}</span>
+                <span class="profile-certificate-card__issuer">${item.issuer}</span>
+              </div>
+              <h3>${item.title}</h3>
+              <p>${item.meta}</p>
+              <a class="profile-certificate-card__cta" href="#">Ver detalhes</a>
             </div>
-            <h3>${normalize(item.title)}</h3>
-            <p>${normalize(item.meta)}</p>
           </article>
-        `
-          )
-          .join("")}
+        `).join("")}
       </div>
     `);
   };
+
 
   const renderFaq = () => {
     const section = baseProfile.sections?.faq || {};
     const items = section.items || [];
     return renderPanelShell(`
-      <div class="profile-faq-list">
+      <section class="profile-faq-accordion" aria-label="Perguntas frequentes">
         ${items
           .map(
             (item, index) => `
-          <article class="profile-faq-card">
+          <article class="profile-faq-card profile-faq-card--compact">
             <button type="button" data-profile-faq-toggle aria-expanded="${index === 0 ? "true" : "false"}">
               <h3>${normalize(item.question)}</h3>
-              <span aria-hidden="true">${index === 0 ? "−" : "+"}</span>
+              <span aria-hidden="true">${index === 0 ? "&minus;" : "+"}</span>
             </button>
             <p class="profile-faq-card__answer" ${index === 0 ? "" : "hidden"}>${normalize(item.answer)}</p>
           </article>
         `
           )
           .join("")}
-      </div>
+      </section>
     `);
   };
 
@@ -991,7 +1121,7 @@ window.DokeInitProfile = () => {
       },
       {
         badge: "Conte?do da semana",
-        title: "Post recomendado: antes e depois com prova visual curta",
+        title: "Post recomendado: publica��es com prova visual curta",
         text: "Seu perfil est? convertendo melhor quando mostra processo visual em menos de 20 segundos. A IA sugere publicar isso primeiro.",
         cta: "Gerar rascunho"
       }
@@ -1422,17 +1552,26 @@ window.DokeInitProfile = () => {
     const shortHeadline = isPhoneHero && baseHeadline.length > 54
       ? `${baseHeadline.slice(0, 51).trimEnd()}...`
       : baseHeadline;
-    els.headline.innerHTML = `${shortHeadline} <button class="profile-bio__more" type="button" data-profile-more>Ver mais</button>`;
+    const shouldShowMore = shortHeadline.length > 84 && profileMode !== "client";
+    els.headline.innerHTML = shouldShowMore
+      ? `${shortHeadline} <button class="profile-bio__more" type="button" data-profile-more>Ver mais</button>`
+      : shortHeadline;
     els.categories.innerHTML = profileMode === "client" || profileMode === "client-owner" ? "" : categories.map(categoryMarkup).join("");
-    els.verified.hidden = !hero.verified;
+    els.verified.hidden = profileMode === "client" || profileMode === "client-owner" ? true : !hero.verified;
     els.verified.dataset.tooltip = 'Selo de perfil verificado pela Doke.';
-    const heroActions = isPhoneHero
+    const heroActions = (isPhoneHero
       ? actions.filter((item) => normalizeActionLabel(item.label) !== "seguir")
-      : actions;
+      : actions).filter((item) => normalizeActionLabel(item.label) !== "seguir");
     els.stats.innerHTML = stats.map(statMarkup).join("");
-    els.nameActions.innerHTML = profileMode === "client" || isPhoneHero ? followActionMarkup(followAction) : "";
-    els.actions.innerHTML = heroActions.map((item) => item.label === "Seguir" ? followActionMarkup(item) : actionMarkup(item)).join("");
+    els.nameActions.innerHTML = profileMode === "owner" || profileMode === "client-owner" ? "" : followActionMarkup(followAction);
+    const showProfileOptions = profileMode !== "owner" && profileMode !== "client-owner";
+    if (els.optionsHost) {
+      els.optionsHost.innerHTML = showProfileOptions ? profileOptionsMarkup() : "";
+    }
+    els.actions.innerHTML = heroActions.map((item) => actionMarkup(item)).join("");
     bindHeroHighlights(rotatingHighlights);
+
+    syncActiveTabState();
 
     const labels = baseProfile.tabs || {};
     els.tabs.forEach((tab) => {
@@ -1442,6 +1581,11 @@ window.DokeInitProfile = () => {
       tab.hidden = !visible;
       tab.classList.toggle("is-active", isActive);
       tab.setAttribute("aria-selected", String(isActive));
+      if (isActive) {
+        tab.setAttribute("aria-current", "page");
+      } else {
+        tab.removeAttribute("aria-current");
+      }
     });
 
     Object.entries(panelMap).forEach(([key, panel]) => {
@@ -1570,6 +1714,48 @@ window.DokeInitProfile = () => {
       button.classList.toggle('is-active', !active);
     });
 
+    root.querySelectorAll('[data-profile-options]').forEach((menu) => {
+      const trigger = menu.querySelector('[data-profile-options-trigger]');
+      const panel = menu.querySelector('[data-profile-options-panel]');
+      if (!trigger || !panel) return;
+
+      const closeMenu = () => {
+        panel.hidden = true;
+        trigger.setAttribute('aria-expanded', 'false');
+      };
+
+      trigger.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const nextOpen = panel.hidden;
+        panel.hidden = !nextOpen;
+        trigger.setAttribute('aria-expanded', String(nextOpen));
+      });
+
+      menu.querySelector('[data-profile-copy-link]')?.addEventListener('click', async () => {
+        const url = window.location.href.split('#')[0];
+        try {
+          await navigator.clipboard?.writeText(url);
+          trigger.setAttribute('data-feedback', 'copied');
+          window.setTimeout(() => trigger.removeAttribute('data-feedback'), 1200);
+        } catch {
+          window.prompt('Copie o link do perfil:', url);
+        }
+        closeMenu();
+      });
+
+      menu.querySelectorAll('[data-profile-report]').forEach((button) => {
+        button.addEventListener('click', () => {
+          closeMenu();
+          window.alert('Obrigado. A equipe Doke vai analisar este perfil.');
+        });
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!menu.contains(event.target)) closeMenu();
+      }, { passive: true });
+    });
+
     root.querySelectorAll('.profile-action').forEach((button) => {
       if (button.textContent.trim().toLowerCase() !== 'editar perfil') return;
       button.addEventListener('click', (event) => {
@@ -1594,14 +1780,8 @@ window.DokeInitProfile = () => {
       if (hub.dataset.profileReviewReady === "true") return;
       hub.dataset.profileReviewReady = "true";
 
-      const select = hub.parentElement?.querySelector("[data-profile-review-select]");
+      const select = hub.closest(".profile-review-detail")?.querySelector("[data-profile-review-select]");
       const raw = hub.dataset.reviewAds || "[]";
-      const avatarPool = [
-        "assets/img/auth/carpinteira.png",
-        "assets/img/auth/pintor.png",
-        "assets/img/auth/pintor-hero.png",
-        "assets/img/auth/marceneira-hero.png"
-      ];
       let ads = [];
       let activeFilter = "all";
 
@@ -1609,35 +1789,50 @@ window.DokeInitProfile = () => {
         ads = JSON.parse(raw.replace(/&apos;/g, "'"));
       } catch {}
 
-      const metricIcons = ["★", "✦", "◔", "⌁", "$", "✓"];
-      const toneGroup = (review) => review.groups || "all";
       const getInitials = (name = "") => {
         const parts = normalize(name).split(/\s+/).filter(Boolean);
         const initials = parts.slice(0, 2).map((part) => part[0]).join("");
         return initials.toUpperCase() || "DK";
       };
+
       const formatStars = (rating = "5,0") => {
         const numeric = Number(String(rating).replace(",", ".")) || 5;
         const filled = Math.max(1, Math.min(5, Math.round(numeric)));
-        return "★".repeat(filled) + "☆".repeat(5 - filled);
+        return "&#9733;".repeat(filled) + "&#9734;".repeat(5 - filled);
       };
+
+      const getMetricFallbacks = (active) => {
+        const base = [
+          { label: "Acabamento", value: "4,9" },
+          { label: "Comunicacao", value: "4,8" },
+          { label: "Pontualidade", value: "4,9" },
+          { label: "Recomendacao", value: "96%" }
+        ];
+
+        const metrics = (active.metrics || []).filter(Boolean);
+        return base.map((fallback, index) => ({
+          label: normalize(metrics[index]?.label || fallback.label),
+          value: normalize(metrics[index]?.value || fallback.value)
+        }));
+      };
+
+      const toneGroup = (review) => review.groups || "all";
 
       const draw = (id) => {
         const active = ads.find((item) => item.id === id) || ads[0];
         if (!active) return;
 
-        const metricsMarkup = (active.metrics || []).slice(0, 3).map((metric, index) => `
-          <article class="profile-review-trust-metric">
-            <span><i>${metric.icon || metricIcons[index] || '✦'}</i>${metric.label}</span>
+        const metricsMarkup = getMetricFallbacks(active).map((metric) => `
+          <article class="profile-review-kpi">
+            <span>${metric.label}</span>
             <strong>${metric.value}</strong>
           </article>
-        `).join('');
+        `).join("");
 
-
-        const reviewsMarkup = active.reviews.map((item, index) => {
+        const reviewsMarkup = active.reviews.map((item) => {
           const tags = (item.tags || []).slice(0, 3);
           return `
-            <article class="profile-review-card" data-review-group="${toneGroup(item)}">
+            <article class="profile-review-card profile-review-card--clean" data-review-group="${toneGroup(item)}">
               <header class="profile-review-card__head">
                 <div class="profile-review-card__client">
                   <span class="profile-review-card__avatar" aria-hidden="true">${getInitials(item.name)}</span>
@@ -1646,7 +1841,7 @@ window.DokeInitProfile = () => {
                     <span>${item.meta}</span>
                   </div>
                 </div>
-                <div class="profile-review-card__rating" aria-label="Avaliação ${item.rating} de 5">
+                <div class="profile-review-card__rating" aria-label="Avaliacao ${item.rating} de 5">
                   <strong>${item.rating}</strong>
                   <span>${formatStars(item.rating)}</span>
                 </div>
@@ -1654,71 +1849,72 @@ window.DokeInitProfile = () => {
               <p>${item.text}</p>
               <footer class="profile-review-card__footer">
                 <span>${active.label}</span>
-                ${tags.map((tag) => `<span>${tag}</span>`).join('')}
+                ${tags.map((tag) => `<span>${tag}</span>`).join("")}
               </footer>
             </article>
           `;
-        }).join('');
+        }).join("");
 
         hub.innerHTML = `
-          <section class="profile-review-summary-card" aria-label="Resumo das avaliações">
-            <div class="profile-review-summary-card__score">
+          <section class="profile-review-summary-card profile-review-summary-card--clean" aria-label="Resumo das avaliacoes">
+            <div class="profile-review-score">
               <strong>${active.score}</strong>
-              <span class="profile-review-summary-card__stars">★★★★★</span>
+              <span>${formatStars(active.score)}</span>
               <small>${active.count}</small>
               <b>Cliente verificado</b>
             </div>
 
             <div class="profile-review-summary-card__content">
               <div class="profile-review-summary-card__topline">
-                <div>
-                  <span>Resumo das avaliações</span>
-                  <h4>Resumo das avaliações</h4>
-                </div>
-                <p>Excelente reputação em acabamento, comunicação e execução limpa. As notas abaixo ajudam o cliente a entender onde o profissional se destaca.</p>
+                <span>Resumo de reputacao</span>
+                <h4>Excelente experiencia em servicos concluidos</h4>
+                <p>Notas organizadas por criterio para ajudar o cliente a entender onde o profissional se destaca.</p>
               </div>
 
-              <div class="profile-review-trust-metrics">${metricsMarkup}</div>
+              <div class="profile-review-kpis">${metricsMarkup}</div>
             </div>
           </section>
 
-          <div class="profile-review-toolbar profile-review-toolbar--trust">
+          <div class="profile-review-toolbar profile-review-toolbar--clean">
             <div class="detail-filter-chips">
-              <button class="detail-chip detail-chip--filter ${activeFilter === 'all' ? 'is-active' : ''}" type="button" data-profile-review-filter="all">Todas</button>
-              <button class="detail-chip detail-chip--filter ${activeFilter === 'recentes' ? 'is-active' : ''}" type="button" data-profile-review-filter="recentes">Recentes</button>
-              <button class="detail-chip detail-chip--filter ${activeFilter === 'positivas' ? 'is-active' : ''}" type="button" data-profile-review-filter="positivas">Positivas</button>
-              <button class="detail-chip detail-chip--filter ${activeFilter === 'contexto' ? 'is-active' : ''}" type="button" data-profile-review-filter="all">Com contexto</button>
+              <button class="detail-chip detail-chip--filter ${activeFilter === "all" ? "is-active" : ""}" type="button" data-profile-review-filter="all">Todas</button>
+              <button class="detail-chip detail-chip--filter ${activeFilter === "recentes" ? "is-active" : ""}" type="button" data-profile-review-filter="recentes">Recentes</button>
+              <button class="detail-chip detail-chip--filter ${activeFilter === "positivas" ? "is-active" : ""}" type="button" data-profile-review-filter="positivas">Positivas</button>
+              <button class="detail-chip detail-chip--filter ${activeFilter === "contexto" ? "is-active" : ""}" type="button" data-profile-review-filter="contexto">Com contexto</button>
             </div>
-            <span>${active.reviews.length} comentários exibidos</span>
+            <span data-profile-review-count>${active.reviews.length} comentarios exibidos</span>
           </div>
 
-          <div class="profile-review-grid">${reviewsMarkup}</div>
+          <div class="profile-review-grid profile-review-grid--clean">${reviewsMarkup}</div>
         `;
 
-        const cards = [...hub.querySelectorAll('.profile-review-card')];
+        const cards = [...hub.querySelectorAll(".profile-review-card")];
         let visibleCount = 0;
         cards.forEach((card) => {
-          const visible = activeFilter === 'all' || card.dataset.reviewGroup?.includes(activeFilter);
+          const visible = activeFilter === "all" || card.dataset.reviewGroup?.includes(activeFilter);
           card.hidden = !visible;
           if (visible) visibleCount += 1;
         });
 
-        const grid = hub.querySelector('.profile-review-grid');
+        const count = hub.querySelector("[data-profile-review-count]");
+        if (count) count.textContent = `${visibleCount} comentarios exibidos`;
+
+        const grid = hub.querySelector(".profile-review-grid");
         if (grid && !visibleCount) {
-          grid.innerHTML = '<article class="profile-review-empty"><strong>Nenhuma avaliação neste filtro</strong><p>Troque o filtro ou selecione outro Servi�o para ver mais comentários.</p></article>';
+          grid.innerHTML = '<article class="profile-review-empty"><strong>Nenhuma avaliacao neste filtro</strong><p>Troque o filtro ou selecione outro servico para ver mais comentarios.</p></article>';
         }
 
-        hub.querySelectorAll('[data-profile-review-filter]').forEach((button) => {
-          button.addEventListener('click', () => {
-            activeFilter = button.dataset.profileReviewFilter || 'all';
+        hub.querySelectorAll("[data-profile-review-filter]").forEach((button) => {
+          button.addEventListener("click", () => {
+            activeFilter = button.dataset.profileReviewFilter || "all";
             draw(select?.value);
           });
         });
       };
 
       draw(select?.value);
-      select?.addEventListener('change', () => {
-        activeFilter = 'all';
+      select?.addEventListener("change", () => {
+        activeFilter = "all";
         draw(select.value);
       });
     });
@@ -1728,6 +1924,19 @@ window.DokeInitProfile = () => {
     tab.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
+      els.tabs.forEach((item) => {
+        const isActive = item === tab;
+        item.classList.toggle("is-active", isActive);
+        item.setAttribute("aria-selected", String(isActive));
+        if (isActive) {
+          item.setAttribute("aria-current", "page");
+        } else {
+          item.removeAttribute("aria-current");
+        }
+      });
+      body.dataset.profileActiveTab = tab.dataset.profileTab || "services";
+      const tabsHost = root.querySelector('[data-profile-section="tabs"]');
+      if (tabsHost) tabsHost.dataset.activeTab = tab.dataset.profileTab || "services";
       tab.blur();
 
       switchProfileTab(tab.dataset.profileTab);
@@ -1827,6 +2036,27 @@ window.DokeInitProfile = () => {
     }
   });
 
+  const bindHorizontalProfileRails = () => {
+    if (window.__dokeProfileHorizontalRailsBound) return;
+    window.__dokeProfileHorizontalRailsBound = true;
+
+    const railSelector = [
+      ".profile-tabs",
+      ".profile-posts-stack .short-videos__track",
+      ".profile-posts-stack .comparison-grid"
+    ].join(", ");
+
+    document.addEventListener("wheel", (event) => {
+      const rail = event.target.closest?.(railSelector);
+      if (!rail) return;
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+      if (rail.scrollWidth <= rail.clientWidth + 4) return;
+
+      rail.scrollLeft += event.deltaY;
+      event.preventDefault();
+    }, { passive: false });
+  };
+
   if (window.DokeProfileShare && els.shareButtons.length) {
     window.DokeProfileShare.bind(els.shareButtons, () => ({
       title: document.title,
@@ -1836,10 +2066,14 @@ window.DokeInitProfile = () => {
   }
 
 
-
+  bindHorizontalProfileRails();
 
   render();
 };
 
 window.DokeInitProfile();
+
+
+
+
 

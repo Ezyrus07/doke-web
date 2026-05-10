@@ -2,7 +2,7 @@
 body[data-page="perfil"],
 body.profile-page,
 body.perfil-page {
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: auto;
 }
 
 body[data-page="perfil"] main,
@@ -46,5 +46,27 @@ body.perfil-page .profile-page-spacer {
   body.perfil-page .profile-shell {
     padding-bottom: 32px !important;
     margin-bottom: 0 !important;
+  }
+}
+
+
+/* 2026-05-09 — scroll recovery contract for perfil.
+   The viewport/body must be the single vertical scroll owner on desktop.
+   Do not let .page or .page__content become nested scroll containers. */
+@media (min-width: 761px) {
+  body.profile-page-shell {
+    overflow-y: visible !important;
+  }
+
+  body.profile-page-shell .app-shell,
+  body.profile-page-shell .page,
+  body.profile-page-shell .page__content {
+    overflow-y: visible !important;
+  }
+
+  body.profile-page-shell .page,
+  body.profile-page-shell .page__content {
+    height: auto !important;
+    min-height: 0 !important;
   }
 }

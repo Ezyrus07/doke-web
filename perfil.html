@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="assets/css/core/index.css" />
   <link rel="stylesheet" href="assets/css/pages/app-shell.css?v=20260501-desktop-grid-shell-v1" />
   <link rel="stylesheet" href="assets/css/pages/internal-shell.css" />
-  <link rel="stylesheet" href="assets/css/components/before-after-workers-preview.css?v=20260428-comments-sheet" />
+  <link rel="stylesheet" href="assets/css/components/before-after-workers-preview.css?v=20260505-publication-modal-v2" />
   <link rel="stylesheet" href="assets/css/components/cards/card-grid-contract.css?v=20260502-stage2-card-contract-v1" />
   <link rel="stylesheet" href="assets/css/components/forms-actions/form-action-contract.css?v=20260428-architecture">
   <link rel="stylesheet" href="assets/css/components/navigation/mobile-drawer-standard.css?v=20260428-architecture">
@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="assets/css/pages/orcamento.css" />
   <link rel="stylesheet" href="assets/css/pages/perfil-budget-modal.css" />
   <link rel="stylesheet" href="assets/css/pages/perfil-edit-modal.css?v=20260426-profile-edit-modal" />
-  <link rel="stylesheet" href="assets/css/pages/perfil-page-adjustments.css?v=20260426-profile-adjustments" />
+  <link rel="stylesheet" href="assets/css/pages/perfil-page-adjustments.css?v=20260509-profile-scrollbar-visible-v1" />
   <link rel="stylesheet" href="assets/css/pages/perfil-publications.css?v=20260426-profile-publications" />
   <link rel="stylesheet" href="assets/css/pages/perfil-reviews-page.css?v=20260502-stage4-responsive-v1" />
   <link rel="stylesheet" href="assets/css/pages/perfil.css?v=20260501-compact-announcement-card-v1" />
@@ -48,8 +48,11 @@
   <link rel="stylesheet" href="assets/css/components/shell/desktop-base-stability.css?v=20260501-desktop-base-stability-v1">
   <link rel="stylesheet" href="assets/css/components/shell/mobile-base-stability.css?v=20260501-mobile-base-stability-v1">
   <link rel="stylesheet" href="assets/css/components/shell/doke-shell-contract.css?v=20260501-width-header-contract-v12">
-<link rel="stylesheet" href="assets/css/components/layout/responsive-page-contract.css?v=20260502-stage4-responsive-page-contract-v1">
+  <link rel="stylesheet" href="assets/css/components/layout/responsive-page-contract.css?v=20260502-stage4-responsive-page-contract-v1">
+  <link rel="stylesheet" href="assets/css/components/cards/ad-card.css?v=20260509-profile-index-card-parity">
   <link rel="stylesheet" href="assets/css/components/cards/service-card.css?v=20260503-canonical-card-contract-v3">
+  <link rel="stylesheet" href="assets/css/pages/perfil-reference-hero.css?v=20260510-profile-mobile-reference-v1">
+  <link rel="stylesheet" href="assets/css/pages/perfil-mobile-reference-hotfix.css?v=20260510-profile-reference-v15">
 </head>
   <body data-page="perfil" class="doke-app-shell-page app-shell-page internal-shell-page profile-page-shell doke-flow doke-profile-flow"
     data-profile-type="professional"
@@ -179,21 +182,6 @@
             </div>
           </div>
         </header>
-
-      <section class="doke-mobile-page-header" aria-label="Cabeçalho mobile de Perfil">
-        <div class="doke-mobile-page-header__row">
-          <button class="doke-mobile-page-header__identity" type="button" data-mobile-home-menu-open aria-label="Abrir menu lateral">
-            <span class="doke-mobile-page-header__avatar doke-avatar">DK</span>
-            <span class="doke-mobile-page-header__title">Perfil</span>
-          </button>
-          <div class="doke-mobile-page-header__actions" aria-label="Ações rápidas de Perfil">
-            <a class="doke-mobile-page-header__action doke-btn" href="resultados.html" aria-label="Buscar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="5.75"></circle><path d="m16 16 4 4"></path></svg></a>
-            <a class="doke-mobile-page-header__action doke-btn" href="notificacoes.html" aria-label="Notificações"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.75a4 4 0 0 0-4 4v2.1c0 .7-.24 1.38-.68 1.92L5.9 14.5h12.2l-1.42-1.73a3 3 0 0 1-.68-1.92v-2.1a4 4 0 0 0-4-4Z"></path><path d="M10 17.2a2.3 2.3 0 0 0 4 0"></path></svg></a>
-          </div>
-        </div>
-      </section>
-
-
         <main class="page__content doke-page">
           <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean shell-home__workspace shell-home__workspace--clean profile-shell-content doke-page-shell doke-page-stack">
             <section class="profile-screen doke-page-section" data-profile-root data-profile-state="ready">
@@ -202,7 +190,13 @@
                 data-profile-section="hero"
                 aria-labelledby="profile-name"
               >
-                <div class="profile-hero-shell__cover"></div>
+                <div class="profile-hero-shell__cover" aria-label="Capa do perfil Studio Aquarela">
+                  <div class="profile-options-host profile-options-host--cover" data-profile-options-host></div>
+                  <div class="profile-cover__content">
+                    <p class="profile-cover__eyebrow">Studio Aquarela</p>
+                    <h2 class="profile-cover__title">Transformamos ambientes<br><strong>com cuidado e perfeição.</strong></h2>
+                  </div>
+                </div>
 
                 <div class="doke-card doke-card--profile profile-card doke-profile-card">
                   <div class="profile-card__content">
@@ -272,10 +266,8 @@
                       ></div>
                     </div>
                   </div>
-                </div>
-              </section>
 
-              <nav class="profile-tabs" aria-label="Seções do perfil" data-profile-section="tabs">
+              <nav class="profile-tabs profile-tabs--compact" aria-label="Seções do perfil" data-profile-section="tabs">
                 <button
                   class="profile-tab is-active"
                   type="button"
@@ -286,16 +278,9 @@
                 <button
                   class="profile-tab"
                   type="button"
-                  data-profile-tab="workers"
-                >
-                  Workers
-                </button>
-                <button
-                  class="profile-tab"
-                  type="button"
                   data-profile-tab="beforeAfter"
                 >
-                  Antes x Depois
+                  Publicações
                 </button>
                 <button
                   class="profile-tab"
@@ -321,13 +306,6 @@
                 <button
                   class="profile-tab"
                   type="button"
-                  data-profile-tab="achievements"
-                >
-                  Conquistas
-                </button>
-                <button
-                  class="profile-tab"
-                  type="button"
                   data-profile-tab="certificates"
                 >
                   Certificados
@@ -339,15 +317,10 @@
                 >
                   FAQ
                 </button>
-                <button
-                  class="profile-tab"
-                  type="button"
-                  data-profile-tab="overview"
-                >
-                  Visão geral
-                </button>
               </nav>
 
+                </div>
+              </section>
               <div class="profile-panels" data-profile-section="panels">
                 <section
                   class="profile-panel is-active doke-profile-card doke-card doke-page-section"
@@ -1004,16 +977,16 @@
     <script src="assets/js/pages/search-data.js"></script>
     <script src="assets/js/features/profile/profile-tabs.js"></script>
     <script src="assets/js/features/profile/profile-share.js"></script>
-    <script src="assets/js/pages/home/workers.js?v=20260428-comments-sheet"></script>
-    <script src="assets/js/pages/home/before-after.js?v=20260428-comments-sheet"></script>
+    <script src="assets/js/pages/home/workers.js?v=20260503-workers-recovery-safe-v1"></script>
+    <script src="assets/js/pages/home/before-after.js?v=20260505-comment-composer-v1"></script>
     <script src="assets/js/components/doke-lite-select.js?v=select-align-trigger-0425"></script>
-    <script src="assets/js/pages/perfil.js?v=doke-select-standard-0425"></script>
+    <script src="assets/js/pages/perfil.js?v=20260509-profile-mobile-hard-single-column-v1"></script>
     <script src="assets/js/pages/orcamento.js"></script>
     <script src="assets/js/pages/perfil-budget.js"></script>
     <script src="assets/js/pages/perfil-budget-success.js?v=upload-inside-success-clean-0425"></script>
     <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
   <script src="assets/js/ui/mobile-drawer-standard.js?v=20260428-architecture"></script>
-  <nav class="doke-bottom-nav" data-bottom-nav aria-label="Navegação principal mobile">
+  <nav class="doke-bottom-nav" data-bottom-nav aria-label="Navegação principal mobile" hidden style="display: none !important; visibility: hidden !important;">
     <div class="doke-bottom-nav__inner">
       <a class="doke-bottom-nav__item" href="index.html">
         <svg class="doke-bottom-nav__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5"></path><path d="M6.5 10.5V19h11v-8.5"></path><path d="M9.5 19v-5h5v5"></path></svg>
@@ -1061,6 +1034,53 @@
   <script src="assets/js/controllers/page-controller-registry.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/controllers/perfil-controller.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/controllers/controller-bootstrap.js?v=20260501-stage32-runtime-flags" defer></script>
-  <script src="assets/js/components/mobile-app-shell.js?v=20260507-mobile-buttons-fix-v10" defer></script>
+  <style>
+    .doke-bottom-nav,
+    nav[data-bottom-nav] {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    @media (max-width: 760px) {
+      body.profile-page-shell .doke-bottom-nav,
+      body.profile-page-shell nav[data-bottom-nav] {
+        display: none !important;
+        visibility: hidden !important;
+      }
+
+      body.profile-page-shell,
+      body.profile-page-shell .app-shell,
+      body.profile-page-shell .page,
+      body.profile-page-shell .page__content {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+      }
+    }
+  </style>
+  <script>
+    (function () {
+      function cleanProfileMobileShell() {
+      if (window.matchMedia('(max-width: 760px)').matches && document.body.classList.contains('profile-page-shell')) {
+        document.querySelectorAll('header[aria-label], .doke-bottom-nav, nav[data-bottom-nav]').forEach(function (element) {
+          var label = element.getAttribute('aria-label') || '';
+          if (element.matches('.doke-bottom-nav, nav[data-bottom-nav]') || label.indexOf('Cabe') === 0) {
+            element.style.setProperty('display', 'none', 'important');
+            element.style.setProperty('visibility', 'hidden', 'important');
+          }
+        });
+        document.body.style.setProperty('padding-top', '0', 'important');
+      }
+      }
+
+      window.addEventListener('DOMContentLoaded', cleanProfileMobileShell);
+      window.addEventListener('load', cleanProfileMobileShell);
+      setTimeout(cleanProfileMobileShell, 250);
+      setTimeout(cleanProfileMobileShell, 1000);
+      setTimeout(cleanProfileMobileShell, 2000);
+      setInterval(cleanProfileMobileShell, 500);
+    }());
+  </script>
 </body>
 </html>
