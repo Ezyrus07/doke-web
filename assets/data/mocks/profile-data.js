@@ -31,13 +31,9 @@ window.DokeProfileData = {
     },
     tabs: {
       services: 'Serviços',
-      posts: 'Publicações',
-      reviews: 'Avaliações',
-      about: 'Sobre',
-      portfolio: 'Portfólio',
-      achievements: 'Conquistas',
-      certificates: 'Certificados',
-      faq: 'FAQ'
+      workers: 'Workers',
+      beforeAfter: 'Publicações',
+      reviews: 'Avaliações'
     },
     sections: {
       services: {

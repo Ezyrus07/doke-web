@@ -4,7 +4,7 @@
  * Keep this file structural. Do not place page-specific visuals here.
  */
 :root{
-  --doke-mobile-gutter: clamp(12px, 4vw, 18px);
+  --doke-mobile-gutter: var(--doke-mobile-page-edge, 16px);
   --doke-tablet-gutter: clamp(18px, 4vw, 32px);
   --doke-desktop-gutter: clamp(24px, 3vw, 40px);
   --doke-page-max: 1220px;
@@ -22,11 +22,12 @@ img,video,canvas,svg{max-width:100%;}
   body.app-shell-page{min-height:100dvh;}
   .page{width:100%;min-width:0;}
   .page__content{padding-bottom:var(--doke-bottom-nav-safe)!important;overflow-x:clip;}
-  .page__content-inner{max-width:100%!important;padding-inline:var(--doke-mobile-gutter)!important;}
+  .page__content-inner{max-width:var(--doke-mobile-app-max,430px)!important;padding-inline:var(--doke-mobile-gutter)!important;}
   .bottom-nav,.mobile-bottom-nav,[data-bottom-nav]{min-height:64px;padding-bottom:env(safe-area-inset-bottom,0px);}
   button,a,input,select,textarea{max-width:100%;}
   button,.button,.btn,.icon-button,[role="button"]{min-height:var(--doke-touch-target);}
   .modal,.dialog,.drawer,.popover,.dropdown,.surface,.card{max-width:calc(100vw - (var(--doke-mobile-gutter) * 2));}
 }
+@media (max-width:360px){:root{--doke-mobile-gutter:var(--doke-mobile-page-edge,12px);}}
 @media (min-width:761px) and (max-width:1024px){.page__content-inner{padding-inline:var(--doke-tablet-gutter)!important;}}
 @media (min-width:1025px){.page__content-inner{padding-inline:var(--doke-desktop-gutter);}}

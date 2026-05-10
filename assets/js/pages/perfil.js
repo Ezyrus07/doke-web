@@ -105,10 +105,12 @@ window.DokeInitProfile = () => {
         : publicProfile;
   const PROFILE_VISIBLE_TABS = new Set([
     "services",
+    "workers",
     "beforeAfter",
     "reviews",
     "about",
     "portfolio",
+    "achievements",
     "certificates",
     "faq"
   ]);
@@ -486,9 +488,10 @@ window.DokeInitProfile = () => {
     const labelKey = normalizeActionLabel(item.label);
     const role = actionRole(item.label);
     if (labelKey.includes("solicitar orcamento")) {
+      const compactLabel = window.matchMedia('(max-width: 760px)').matches ? "Orçamento" : normalize(item.label);
       return `
-        <button class="${classes}" type="button" data-profile-action-role="${role}" data-budget-open data-budget-provider="${escapeAttr(item.provider || "Studio Aquarela")}" data-budget-service="${escapeAttr(item.service || "reforma residencial de alto padrao")}">
-          <span class="profile-action__label">Solicitar orçamento</span>
+        <button class="${classes}" type="button" data-profile-action-role="${role}" data-profile-mobile-label="Orçamento" data-budget-open data-budget-provider="${escapeAttr(item.provider || "Studio Aquarela")}" data-budget-service="${escapeAttr(item.service || "reforma residencial de alto padrao")}">
+          <span class="profile-action__label" data-profile-mobile-label="Orçamento">${compactLabel}</span>
         </button>
       `;
     }
@@ -657,6 +660,69 @@ window.DokeInitProfile = () => {
     window.DokeHomeBeforeAfter?.create({ signal });
   };
 
+
+
+  const WORKER_CARDS = [
+    {
+      id: "vid-pintura",
+      variant: "video-card--one",
+      badge: "Disponível hoje",
+      title: "Pintura residencial com acabamento limpo",
+      meta: "1,2 mil visualizações"
+    },
+    {
+      id: "vid-cozinha",
+      variant: "video-card--two",
+      badge: "Resposta rápida",
+      title: "Antes e depois de parede nivelada",
+      meta: "842 visualizações"
+    },
+    {
+      id: "vid-eletrica",
+      variant: "video-card--three",
+      badge: "Top da semana",
+      title: "Organização do pós-obra em 30 segundos",
+      meta: "2,4 mil visualizações"
+    },
+    {
+      id: "vid-limpeza",
+      variant: "video-card--four",
+      badge: "Novo worker",
+      title: "Como protegemos móveis antes da pintura",
+      meta: "618 visualizações"
+    }
+  ];
+
+  const renderWorkers = () => {
+    if (profileMode === "client") return renderClientReferences();
+
+    return renderPanelShell(`
+      <div class="profile-publications-stack profile-publications-stack--workers">
+        <section class="profile-post-section profile-post-section--workers" aria-label="Workers do perfil">
+          <div class="content-rail doke-scroll-rail home-media-rail home-media-rail--workers profile-workers-rail" id="profile-workers-track" data-rail-track aria-label="Workers">
+            ${WORKER_CARDS.map((item, index) => `
+              <article class="video-card ${item.variant} doke-card doke-worker-card doke-media-card"
+                data-worker-trigger
+                data-worker-id="${item.id}"
+                role="button"
+                tabindex="0"
+                aria-haspopup="dialog"
+                aria-label="Abrir worker: ${normalize(item.title)}">
+                <span class="video-card__badge"><i></i>${normalize(item.badge)}</span>
+                <button class="video-card__favorite" type="button" aria-label="Salvar worker" data-worker-favorite>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
+                </button>
+                <div class="video-card__overlay">
+                  <h3>${normalize(item.title)}</h3>
+                  <p>${normalize(item.meta)}</p>
+                </div>
+              </article>
+            `).join("")}
+          </div>
+        </section>
+      </div>
+    `);
+  };
 
 
   const renderPosts = () => {
@@ -1498,6 +1564,7 @@ window.DokeInitProfile = () => {
       case "services":
         return renderPanelShell(renderServiceCards());
       case "workers":
+        return renderWorkers();
       case "beforeAfter":
         return renderPosts();
       case "reviews":
