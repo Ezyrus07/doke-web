@@ -515,7 +515,7 @@
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
-    align-items: stretch !important;
+    align-items: flex-start !important;
     justify-content: flex-start !important;
     gap: 12px !important;
     width: 100% !important;
@@ -537,21 +537,7 @@
   }
 
   body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-services-results > .doke-ad-card {
-    display: block !important;
-    flex: 0 0 min(78vw, 296px) !important;
-    width: min(78vw, 296px) !important;
-    min-width: min(78vw, 296px) !important;
-    max-width: min(78vw, 296px) !important;
-    height: auto !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border-radius: 16px !important;
     scroll-snap-align: start !important;
-  }
-
-  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-services-results .doke-ad-card__body {
-    display: block !important;
-    min-height: 205px !important;
   }
 
   body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-workers-rail {
@@ -617,6 +603,54 @@
     padding: 0 !important;
     border-radius: 24px !important;
     scroll-snap-align: start !important;
+  }
+}
+
+/* 2026-05-10 — perfil adopts the global mobile ad-card contract.
+   This block only neutralizes older perfil overrides that are loaded after the component. */
+@media (max-width: 760px) {
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-services-results {
+    align-items: flex-start !important;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-services-results > .doke-ad-card {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 256px !important;
+    min-width: 256px !important;
+    max-width: 256px !important;
+    flex: 0 0 256px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    align-self: flex-start !important;
+    overflow: hidden !important;
+    border-radius: 17px !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(8, 39, 71, 0.08) !important;
+    box-shadow: 0 10px 22px rgba(17, 45, 78, 0.07) !important;
+    scroll-snap-align: start !important;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-services-results > .doke-ad-card .doke-ad-card__media {
+    height: 96px !important;
+    min-height: 96px !important;
+    max-height: 96px !important;
+    flex: 0 0 96px !important;
+  }
+
+  body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professional"] .profile-services-results > .doke-ad-card .doke-ad-card__body {
+    display: grid !important;
+    grid-template-rows: 10px 17px 16px 29px 44px !important;
+    align-content: start !important;
+    row-gap: 2px !important;
+    height: 170px !important;
+    min-height: 170px !important;
+    max-height: 170px !important;
+    padding: 8px 10px 10px !important;
+    flex: 0 0 170px !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
   }
 }
 
