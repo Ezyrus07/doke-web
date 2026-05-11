@@ -56,17 +56,9 @@ window.DokeInitProfile = () => {
           ...ownerProfile,
           hero: {
             ...(publicProfile.hero || {}),
-            actions: (ownerProfile.hero?.actions || publicProfile.hero?.actions || [])
-              .filter((item) => item && !normalizeActionLabel(item.label).includes("novo anuncio"))
-              .map((item) => {
-                const isEditAction = normalizeActionLabel(item.label).includes("editar vitrine publica");
-
-                return {
-                  ...item,
-                  href: isEditAction ? undefined : item.href,
-                  label: isEditAction ? "Editar perfil" : item.label
-                };
-              }),
+            actions: [
+              { label: "Editar perfil", tone: "primary", role: "edit-profile" }
+            ],
             badges: [...((publicProfile.hero?.badges || []).slice(0, 2))]
           },
           tabs: {
@@ -103,7 +95,7 @@ window.DokeInitProfile = () => {
         : profileMode === "client-owner"
           ? clientOwnerProfile
         : publicProfile;
-  const PROFILE_VISIBLE_TABS = new Set([
+  const PROFILE_TAB_ORDER = [
     "services",
     "workers",
     "beforeAfter",
@@ -113,11 +105,15 @@ window.DokeInitProfile = () => {
     "achievements",
     "certificates",
     "faq"
-  ]);
+  ];
+
+  const PROFILE_VISIBLE_TABS = new Set(PROFILE_TAB_ORDER);
 
   if (baseProfile.tabs) {
     baseProfile.tabs = Object.fromEntries(
-      Object.entries(baseProfile.tabs).filter(([key]) => PROFILE_VISIBLE_TABS.has(key))
+      PROFILE_TAB_ORDER
+        .filter((key) => Object.prototype.hasOwnProperty.call(baseProfile.tabs, key) && PROFILE_VISIBLE_TABS.has(key))
+        .map((key) => [key, baseProfile.tabs[key]])
     );
   }
 
@@ -177,8 +173,12 @@ window.DokeInitProfile = () => {
     selectingServices: false,
     selectedServices: [],
     selectingPosts: false,
-    selectedPosts: []
+    selectedPosts: [],
+    selectingWorkers: false,
+    selectedWorkers: []
   };
+  let hasSyncedInitialTabRailScroll = false;
+
 
   let postsPreviewController = null;
 
@@ -216,10 +216,18 @@ window.DokeInitProfile = () => {
     if (!nextTab || nextTab === state.activeTab) return;
 
     const panels = root.querySelector('[data-profile-section="panels"]');
+    const pageScroller = document.querySelector(".page__content");
     const previousScrollY = window.scrollY || window.pageYOffset || 0;
     const previousScrollX = window.scrollX || window.pageXOffset || 0;
+    const previousPageScrollTop = pageScroller?.scrollTop || 0;
+    const previousPageScrollLeft = pageScroller?.scrollLeft || 0;
     const shouldLockPanel = Boolean(panels);
-    const previousPanelHeight = panels ? Math.max(panels.offsetHeight, 620) : 0;
+    const panelsRect = panels?.getBoundingClientRect?.();
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+    const neededPanelHeight = panelsRect
+      ? Math.max(0, viewportHeight + Math.max(previousScrollY, previousPageScrollTop) - panelsRect.top + 80)
+      : 0;
+    const previousPanelHeight = panels ? Math.max(panels.offsetHeight, 620, neededPanelHeight) : 0;
 
     if (shouldLockPanel) {
       panels.style.minHeight = `${previousPanelHeight}px`;
@@ -234,14 +242,24 @@ window.DokeInitProfile = () => {
       if (Math.abs(currentY - previousScrollY) > 2) {
         window.scrollTo({ top: previousScrollY, left: previousScrollX, behavior: "auto" });
       }
+      if (pageScroller && Math.abs(pageScroller.scrollTop - previousPageScrollTop) > 2) {
+        pageScroller.scrollTo({
+          top: previousPageScrollTop,
+          left: previousPageScrollLeft,
+          behavior: "auto"
+        });
+      }
     };
 
     window.requestAnimationFrame(() => {
       restoreScroll();
       window.requestAnimationFrame(() => {
         restoreScroll();
-        if (panels) panels.style.minHeight = "";
-        body.classList.remove("is-profile-tab-switching");
+        window.setTimeout(restoreScroll, 0);
+        window.setTimeout(() => {
+          restoreScroll();
+          body.classList.remove("is-profile-tab-switching");
+        }, 120);
       });
     });
   };
@@ -337,6 +355,14 @@ window.DokeInitProfile = () => {
     state.selectedPosts = exists
       ? state.selectedPosts.filter((item) => item !== id)
       : [...state.selectedPosts, id];
+    render();
+  };
+
+  const toggleWorkerSelection = (id) => {
+    const exists = state.selectedWorkers.includes(id);
+    state.selectedWorkers = exists
+      ? state.selectedWorkers.filter((item) => item !== id)
+      : [...state.selectedWorkers, id];
     render();
   };
 
@@ -475,18 +501,24 @@ window.DokeInitProfile = () => {
 
   const escapeAttr = (value) => String(value || "").replace(/"/g, "&quot;");
 
-  const actionRole = (label = "") => {
-    const key = normalizeActionLabel(label);
+  const actionRole = (item = {}) => {
+    if (item.role) return item.role;
+    const key = normalizeActionLabel(item.label);
     if (key.includes("solicitar orcamento")) return "primary";
+    if (key.includes("orcamento")) return "primary";
     if (key.includes("seguir")) return "follow";
     if (key.includes("mensagem")) return "message";
+    if (key.includes("publicar")) return "publish";
+    if (key.includes("anunciar") || key.includes("novo anuncio")) return "announce";
+    if (key.includes("editar perfil")) return "edit-profile";
+    if (key.includes("ver perfil publico")) return "public-profile";
     return "secondary";
   };
 
   const actionMarkup = (item) => {
     const classes = `profile-action ${item.tone === "primary" || item.style === "primary" ? "profile-action--success" : ""}`.trim();
     const labelKey = normalizeActionLabel(item.label);
-    const role = actionRole(item.label);
+    const role = actionRole(item);
     if (labelKey.includes("solicitar orcamento")) {
       const compactLabel = window.matchMedia('(max-width: 760px)').matches ? "Orçamento" : normalize(item.label);
       return `
@@ -580,57 +612,98 @@ window.DokeInitProfile = () => {
     `);
   };
 
+  const isVisitorProfessionalMobile = () => window.matchMedia('(max-width: 760px)').matches;
+
+
+  const buildIndexLikeCards = (items) => `
+    <div class="results-grid profile-services-results profile-services-results--stacked">
+      ${items.map((item, index) => renderServiceCard(item, index)).join("")}
+    </div>
+  `;
+
+  const renderShowcaseSectionHeader = ({ eyebrow = "", title = "", href = "#", linkLabel = "Ver todos" } = {}) => `
+    <div class="profile-showcase-section__header">
+      <div class="profile-showcase-section__heading">
+        ${eyebrow ? `<span class="profile-showcase-section__eyebrow">${normalize(eyebrow)}</span>` : ""}
+        <h3 class="profile-showcase-section__title">${normalize(title)}</h3>
+      </div>
+      <a class="profile-showcase-section__link" href="${href}">${normalize(linkLabel)}</a>
+    </div>
+  `;
+
+  const renderServiceCard = (item, index) => `
+    <article class="doke-ad-card doke-ad-card--featured ${state.selectedServices.includes(index) ? "is-selected" : ""} ${state.selectingServices ? "is-selecting" : ""}" data-profile-service-card="${index}">
+      <div class="doke-ad-card__media ${String(item.mediaClass || "").replace("service-card__media", "doke-ad-card__media")}">
+        ${profileMode === "owner" && state.selectingServices
+          ? `<button class="doke-ad-card__favorite profile-service-select-indicator ${state.selectedServices.includes(index) ? "is-selected" : ""}" type="button" aria-label="Selecionar anuncio" data-profile-service-select="${index}">${state.selectedServices.includes(index) ? "&#10003;" : ""}</button>`
+          : `<button class="doke-ad-card__favorite" type="button" aria-label="Salvar anuncio">
+              <svg viewBox="0 0 24 24"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
+            </button>`}
+        <span class="doke-ad-card__badge">${normalize(item.badge)}</span>
+      </div>
+      <div class="doke-ad-card__body">
+        <span class="doke-ad-card__category">${["Pintura residencial", "El&eacute;trica 24h", "Diarista premium"][index] || normalize(item.category)}</span>
+        <h3 class="doke-ad-card__title">${normalize(item.title)}</h3>
+        <div class="doke-ad-card__rating" aria-label="Avaliacao ${item.rating.toFixed(1).replace(".", ",")} baseada em ${normalize(item.reviews)}">
+          <span class="doke-ad-card__rating-star">&#9733;</span>
+          <strong>${item.rating.toFixed(1).replace(".", ",")}</strong>
+          <span>(${normalize(item.reviews)})</span>
+        </div>
+        <div class="doke-ad-card__tags" aria-label="Tags do anuncio">${item.tags.slice(0, 2).map((tag) => `<span>${normalize(tag)}</span>`).join("")}</div>
+        <div class="doke-ad-card__location">
+          <span class="doke-ad-card__avatar" aria-hidden="true"></span>
+          <span class="doke-ad-card__location-text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.7A2.7 2.7 0 1 1 12 6.3a2.7 2.7 0 0 1 0 5.4Z"></path></svg><span>${normalize(item.location)}</span></span>
+        </div>
+        <div class="doke-ad-card__footer">
+          <strong class="doke-ad-card__price">${normalize(item.price)}</strong>
+          <a class="doke-ad-card__cta" href="detalhe-anuncio.html">Ver an&uacute;ncio</a>
+        </div>
+      </div>
+    </article>
+  `;
+
+  const renderServicesRail = () => {
+    const items = servicePool.slice(0, 3);
+    return `
+      <div class="results-grid profile-services-results">
+        ${items.map((item, index) => renderServiceCard(item, index)).join("")}
+      </div>
+    `;
+  };
+
+  const renderShowcaseServicesSection = () => `
+    <section class="profile-showcase-section profile-showcase-section--services" aria-labelledby="profile-showcase-services-title">
+      ${renderShowcaseSectionHeader({
+        eyebrow: 'Serviços',
+        title: 'Serviços em destaque',
+        href: 'resultados.html?type=services',
+        linkLabel: 'Ver todos'
+      })}
+      ${renderServicesRail()}
+    </section>
+  `;
+
   const renderServiceCards = () => {
     if (profileMode === "client") {
       return renderClientRequests();
     }
-    const items = servicePool.slice(0, 3);
+
     const selectedCount = state.selectedServices.length;
+
+    if (isVisitorProfessionalMobile()) {
+      return renderServicesRail();
+    }
+
     return `
       ${profileMode === "owner" ? `
       <div class="profile-services-toolbar">
-        <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Novo</button>
+        <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Novo servi&ccedil;o</button>
         <button class="profile-services-toolbar__action ${state.selectingServices ? "is-active" : ""}" type="button" data-profile-services-select-toggle>${state.selectingServices ? "Cancelar" : "Selecionar"}</button>
-        ${selectedCount === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-services-edit>Editar Serviço</button>` : ""}
-        ${selectedCount > 1 ? `<span class="profile-services-toolbar__hint">SÃ³ dÃ¡ para editar um Serviço por vez.</span>` : ""}
+        ${selectedCount === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-services-edit>Editar Servi&ccedil;o</button>` : ""}
+        ${selectedCount > 1 ? `<span class="profile-services-toolbar__hint">Só dá para editar um Serviço por vez.</span>` : ""}
       </div>
       ` : ""}
-      <div class="results-grid profile-services-results">
-        ${items
-          .map(
-            (item, index) => `
-          <article class="doke-ad-card doke-ad-card--featured ${state.selectedServices.includes(index) ? "is-selected" : ""} ${state.selectingServices ? "is-selecting" : ""}" data-profile-service-card="${index}">
-            <div class="doke-ad-card__media ${String(item.mediaClass || "").replace("service-card__media", "doke-ad-card__media")}">
-              ${profileMode === "owner" && state.selectingServices
-                ? `<button class="doke-ad-card__favorite profile-service-select-indicator ${state.selectedServices.includes(index) ? "is-selected" : ""}" type="button" aria-label="Selecionar anuncio" data-profile-service-select="${index}">${state.selectedServices.includes(index) ? "&#10003;" : ""}</button>`
-                : `<button class="doke-ad-card__favorite" type="button" aria-label="Salvar anuncio">
-                <svg viewBox="0 0 24 24"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
-              </button>`}
-              <span class="doke-ad-card__badge">${normalize(item.badge)}</span>
-            </div>
-            <div class="doke-ad-card__body">
-              <span class="doke-ad-card__category">${["Pintura residencial", "El&eacute;trica 24h", "Diarista premium"][index] || normalize(item.category)}</span>
-              <h3 class="doke-ad-card__title">${normalize(item.title)}</h3>
-              <div class="doke-ad-card__rating" aria-label="Avaliacao ${item.rating.toFixed(1).replace(".", ",")} baseada em ${normalize(item.reviews)}">
-                <span class="doke-ad-card__rating-star">&#9733;</span>
-                <strong>${item.rating.toFixed(1).replace(".", ",")}</strong>
-                <span>(${normalize(item.reviews)})</span>
-              </div>
-              <div class="doke-ad-card__tags" aria-label="Tags do anuncio">${item.tags.slice(0, 2).map((tag) => `<span>${normalize(tag)}</span>`).join("")}</div>
-              <div class="doke-ad-card__location">
-                <span class="doke-ad-card__avatar" aria-hidden="true"></span>
-                <span class="doke-ad-card__location-text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.7A2.7 2.7 0 1 1 12 6.3a2.7 2.7 0 0 1 0 5.4Z"></path></svg><span>${normalize(item.location)}</span></span>
-              </div>
-              <div class="doke-ad-card__footer">
-                <strong class="doke-ad-card__price">${normalize(item.price)}</strong>
-                <a class="doke-ad-card__cta" href="detalhe-anuncio.html">Ver an&uacute;ncio</a>
-              </div>
-            </div>
-          </article>
-        `
-          )
-          .join("")}
-      </div>
+      ${renderServicesRail()}
     `;
   };
 
@@ -650,7 +723,8 @@ window.DokeInitProfile = () => {
     postsPreviewController?.abort();
     postsPreviewController = null;
 
-    if (!["workers", "beforeAfter"].includes(state.activeTab) || state.selectingPosts) return;
+    const shouldEnablePreviewRails = ["workers", "beforeAfter"].includes(state.activeTab);
+    if (!shouldEnablePreviewRails || state.selectingPosts) return;
     if (!document.querySelector('[data-worker-preview]') && !document.querySelector('[data-before-after-preview]')) return;
 
     postsPreviewController = new AbortController();
@@ -693,155 +767,169 @@ window.DokeInitProfile = () => {
     }
   ];
 
+  const PROFILE_PUBLICATIONS = [
+    {
+      id: "case-kitchen",
+      type: "photo",
+      cardClass: "publication-card--photo",
+      mediaClass: "publication-card__media--kitchen",
+      label: "Foto",
+      title: "Cozinha com marcenaria sob medida",
+      author: "Studio Casa Viva",
+      likes: 142,
+      comments: 28,
+      saves: 36
+    },
+    {
+      id: "case-reforma",
+      type: "video",
+      cardClass: "publication-card--video",
+      mediaClass: "publication-card__media--living",
+      label: "Vídeo",
+      title: "Tour rápido da reforma",
+      author: "Renato Acabamentos",
+      likes: 98,
+      comments: 19,
+      saves: 22
+    },
+    {
+      id: "case-bathroom",
+      type: "beforeAfter",
+      cardClass: "publication-card--before-after",
+      mediaClass: "publication-card__comparison",
+      label: "Antes e depois",
+      title: "Banheiro revitalizado sem quebra-quebra",
+      author: "Renato Acabamentos",
+      likes: 176,
+      comments: 31,
+      saves: 45
+    }
+  ];
+
+  const renderWorkersSection = () => `
+    <div class="short-videos__track profile-workers-rail ${state.selectingWorkers ? "is-selecting" : ""}" data-rail-track aria-label="Workers">
+      ${WORKER_CARDS.map((item) => {
+        const isSelected = state.selectedWorkers.includes(item.id);
+        return `
+        <article class="video-card ${item.variant} doke-card doke-worker-card doke-media-card ${state.selectingWorkers ? "is-selecting" : ""} ${isSelected ? "is-selected" : ""}"
+          data-worker-trigger
+          data-worker-id="${item.id}"
+          data-profile-worker-card="${item.id}"
+          role="button"
+          tabindex="0"
+          aria-haspopup="dialog"
+          aria-label="Abrir worker: ${normalize(item.title)}">
+          ${profileMode === "owner" && state.selectingWorkers ? `<button class="profile-post-select-indicator ${isSelected ? "is-selected" : ""}" type="button" data-profile-worker-select="${item.id}" aria-label="Selecionar worker">${isSelected ? "&#10003;" : ""}</button>` : ""}
+        </article>
+      `;
+      }).join("")}
+    </div>
+  `;
+
+  const renderPublicationCard = (item, index) => {
+    const postId = `publication-${index}`;
+    const isSelected = state.selectedPosts.includes(postId);
+    const selectButton = profileMode === "owner" && state.selectingPosts
+      ? `<button class="profile-post-select-indicator ${isSelected ? "is-selected" : ""}" type="button" data-profile-post-select="${postId}" aria-label="Selecionar publicacao">${isSelected ? "&#10003;" : ""}</button>`
+      : "";
+
+    const mediaMarkup = item.type === "beforeAfter"
+      ? `
+        <div class="publication-card__media publication-card__comparison">
+          <span class="publication-card__type publication-card__type--comparison">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 5.5h15v13h-15z"></path><path d="M12 5.5v13"></path></svg>
+            ${item.label}
+          </span>
+          <div class="publication-card__half publication-card__half--before"><span>Antes</span></div>
+          <div class="publication-card__half publication-card__half--after"><span>Depois</span></div>
+        </div>
+      `
+      : `
+        <div class="publication-card__media ${item.mediaClass}">
+          <span class="publication-card__type">
+            ${item.type === "video"
+              ? `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="13" height="13" rx="3"></rect><path d="m16.5 10 4-2.5v9l-4-2.5Z"></path></svg>`
+              : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 8.2A2.2 2.2 0 0 1 6.7 6h2.1l1.1-1.5h4.2L15.2 6h2.1a2.2 2.2 0 0 1 2.2 2.2v8.6a2.2 2.2 0 0 1-2.2 2.2H6.7a2.2 2.2 0 0 1-2.2-2.2V8.2Z"></path><circle cx="12" cy="12.5" r="3.4"></circle></svg>`
+            }
+            ${item.label}
+          </span>
+          ${item.type === "video" ? `<span class="publication-card__play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 7 8 5-8 5V7Z"></path></svg></span>` : ""}
+        </div>
+      `;
+
+    return `
+      <article class="publication-card ${item.cardClass} doke-card ${state.selectingPosts ? "is-selecting" : ""} ${isSelected ? "is-selected" : ""}"
+        data-profile-post-card="${postId}"
+        data-before-after-trigger
+        data-before-after-id="${item.id}"
+        role="button"
+        tabindex="0"
+        aria-haspopup="dialog"
+        aria-label="Abrir publicacao: ${normalize(item.title)}">
+        ${selectButton}
+        ${mediaMarkup}
+        <div class="publication-card__content">
+          <h3 class="publication-card__title">${normalize(item.title)}</h3>
+          <p class="publication-card__author">Por <a href="perfil.html">${normalize(item.author)}</a></p>
+          <div class="publication-card__actions" aria-label="Interacoes da publicacao">
+            <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.6c0 5.4-8.8 10.2-8.8 10.2S3.2 14 3.2 8.6A4.7 4.7 0 0 1 12 6.2a4.7 4.7 0 0 1 8.8 2.4Z"></path></svg>${item.likes}</span>
+            <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 11.5a7.3 7.3 0 0 1 7.6-7.1 7.3 7.3 0 0 1 7.6 7.1 7.3 7.3 0 0 1-7.6 7.1 8.7 8.7 0 0 1-2.9-.5L5 19.4l1.2-3.2a6.7 6.7 0 0 1-2-4.7Z"></path></svg>${item.comments}</span>
+            <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5h11A1.5 1.5 0 0 1 19 6v14l-7-4-7 4V6a1.5 1.5 0 0 1 1.5-1.5Z"></path></svg>${item.saves}</span>
+          </div>
+        </div>
+      </article>
+    `;
+  };
+
+  const renderPublicationsSection = () => `
+    <div class="publication-grid profile-publications-grid" data-rail-track aria-label="Publicacoes">
+      ${PROFILE_PUBLICATIONS.map((item, index) => renderPublicationCard(item, index)).join("")}
+    </div>
+  `;
+
+  const renderShowcaseVisitorSections = () => `
+    <div class="profile-showcase-stack">
+      ${renderShowcaseServicesSection()}
+      ${renderWorkersSection()}
+      ${renderPublicationsSection()}
+    </div>
+  `;
+
   const renderWorkers = () => {
     if (profileMode === "client") return renderClientReferences();
 
     return renderPanelShell(`
       <div class="profile-publications-stack profile-publications-stack--workers">
-        <section class="profile-post-section profile-post-section--workers" aria-label="Workers do perfil">
-          <div class="content-rail doke-scroll-rail home-media-rail home-media-rail--workers profile-workers-rail" id="profile-workers-track" data-rail-track aria-label="Workers">
-            ${WORKER_CARDS.map((item, index) => `
-              <article class="video-card ${item.variant} doke-card doke-worker-card doke-media-card"
-                data-worker-trigger
-                data-worker-id="${item.id}"
-                role="button"
-                tabindex="0"
-                aria-haspopup="dialog"
-                aria-label="Abrir worker: ${normalize(item.title)}">
-                <span class="video-card__badge"><i></i>${normalize(item.badge)}</span>
-                <button class="video-card__favorite" type="button" aria-label="Salvar worker" data-worker-favorite>
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-6.6-6.3a4.2 4.2 0 0 1 0-6 4.4 4.4 0 0 1 6.1 0L12 7.2l.5-.5a4.4 4.4 0 0 1 6.1 0 4.2 4.2 0 0 1 0 6Z"></path></svg>
-                </button>
-                <div class="video-card__overlay">
-                  <h3>${normalize(item.title)}</h3>
-                  <p>${normalize(item.meta)}</p>
-                </div>
-              </article>
-            `).join("")}
-          </div>
-        </section>
+        ${profileMode === "owner" ? `
+        <div class="profile-services-toolbar">
+          <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Novo Worker</button>
+          <button class="profile-services-toolbar__action ${state.selectingWorkers ? "is-active" : ""}" type="button" data-profile-workers-select-toggle>${state.selectingWorkers ? "Cancelar" : "Selecionar"}</button>
+          ${state.selectedWorkers.length === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-workers-edit>Editar Worker</button>` : ""}
+          ${state.selectedWorkers.length > 1 ? `<span class="profile-services-toolbar__hint">So da para editar um Worker por vez.</span>` : ""}
+        </div>
+        ` : ""}
+        ${renderWorkersSection()}
       </div>
     `);
   };
 
-
   const renderPosts = () => {
     if (profileMode === "client") return renderClientReferences();
-
-    const publications = [
-      {
-        id: "case-kitchen",
-        type: "photo",
-        cardClass: "publication-card--photo",
-        mediaClass: "publication-card__media--kitchen",
-        label: "Foto",
-        title: "Cozinha com marcenaria sob medida",
-        author: "Studio Casa Viva",
-        likes: 142,
-        comments: 28,
-        saves: 36
-      },
-      {
-        id: "case-reforma",
-        type: "video",
-        cardClass: "publication-card--video",
-        mediaClass: "publication-card__media--living",
-        label: "V&iacute;deo",
-        title: "Tour r&aacute;pido da reforma",
-        author: "Renato Acabamentos",
-        likes: 98,
-        comments: 19,
-        saves: 22
-      },
-      {
-        id: "case-bathroom",
-        type: "beforeAfter",
-        cardClass: "publication-card--before-after",
-        mediaClass: "publication-card__comparison",
-        label: "Antes e depois",
-        title: "Banheiro revitalizado sem quebra-quebra",
-        author: "Renato Acabamentos",
-        likes: 176,
-        comments: 31,
-        saves: 45
-      }
-    ];
-
-    const renderPublicationCard = (item, index) => {
-      const postId = `publication-${index}`;
-      const isSelected = state.selectedPosts.includes(postId);
-      const selectButton = profileMode === "owner" && state.selectingPosts
-        ? `<button class="profile-post-select-indicator ${isSelected ? "is-selected" : ""}" type="button" data-profile-post-select="${postId}" aria-label="Selecionar publicacao">${isSelected ? "&#10003;" : ""}</button>`
-        : "";
-
-      const mediaMarkup = item.type === "beforeAfter"
-        ? `
-          <div class="publication-card__media publication-card__comparison">
-            <span class="publication-card__type publication-card__type--comparison">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 5.5h15v13h-15z"></path><path d="M12 5.5v13"></path></svg>
-              ${item.label}
-            </span>
-            <div class="publication-card__half publication-card__half--before"><span>Antes</span></div>
-            <div class="publication-card__half publication-card__half--after"><span>Depois</span></div>
-          </div>
-        `
-        : `
-          <div class="publication-card__media ${item.mediaClass}">
-            <span class="publication-card__type">
-              ${item.type === "video"
-                ? `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="13" height="13" rx="3"></rect><path d="m16.5 10 4-2.5v9l-4-2.5Z"></path></svg>`
-                : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 8.2A2.2 2.2 0 0 1 6.7 6h2.1l1.1-1.5h4.2L15.2 6h2.1a2.2 2.2 0 0 1 2.2 2.2v8.6a2.2 2.2 0 0 1-2.2 2.2H6.7a2.2 2.2 0 0 1-2.2-2.2V8.2Z"></path><circle cx="12" cy="12.5" r="3.4"></circle></svg>`
-              }
-              ${item.label}
-            </span>
-            ${item.type === "video" ? `<span class="publication-card__play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 7 8 5-8 5V7Z"></path></svg></span>` : ""}
-          </div>
-        `;
-
-      return `
-        <article class="publication-card ${item.cardClass} doke-card ${state.selectingPosts ? "is-selecting" : ""} ${isSelected ? "is-selected" : ""}"
-          data-profile-post-card="${postId}"
-          data-before-after-trigger
-          data-before-after-id="${item.id}"
-          role="button"
-          tabindex="0"
-          aria-haspopup="dialog"
-          aria-label="Abrir publicacao: ${normalize(item.title)}">
-          ${selectButton}
-          ${mediaMarkup}
-          <div class="publication-card__content">
-            <h3 class="publication-card__title">${normalize(item.title)}</h3>
-            <p class="publication-card__author">Por <a href="perfil.html">${normalize(item.author)}</a></p>
-            <div class="publication-card__actions" aria-label="Interacoes da publicacao">
-              <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.6c0 5.4-8.8 10.2-8.8 10.2S3.2 14 3.2 8.6A4.7 4.7 0 0 1 12 6.2a4.7 4.7 0 0 1 8.8 2.4Z"></path></svg>${item.likes}</span>
-              <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 11.5a7.3 7.3 0 0 1 7.6-7.1 7.3 7.3 0 0 1 7.6 7.1 7.3 7.3 0 0 1-7.6 7.1 8.7 8.7 0 0 1-2.9-.5L5 19.4l1.2-3.2a6.7 6.7 0 0 1-2-4.7Z"></path></svg>${item.comments}</span>
-              <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5h11A1.5 1.5 0 0 1 19 6v14l-7-4-7 4V6a1.5 1.5 0 0 1 1.5-1.5Z"></path></svg>${item.saves}</span>
-            </div>
-          </div>
-        </article>
-      `;
-    };
 
     return renderPanelShell(`
       <div class="profile-publications-stack ${profileMode === "owner" ? "profile-publications-stack--owner" : ""}">
         ${profileMode === "owner" ? `
         <div class="profile-services-toolbar">
-          <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Nova publica&ccedil;&atilde;o</button>
+          <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Nova publicação</button>
           <button class="profile-services-toolbar__action ${state.selectingPosts ? "is-active" : ""}" type="button" data-profile-posts-select-toggle>${state.selectingPosts ? "Cancelar" : "Selecionar"}</button>
-          ${state.selectedPosts.length === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-posts-edit>Editar publica&ccedil;&atilde;o</button>` : ""}
-          ${state.selectedPosts.length > 1 ? `<span class="profile-services-toolbar__hint">S&oacute; d&aacute; para editar uma publica&ccedil;&atilde;o por vez.</span>` : ""}
+          ${state.selectedPosts.length === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-posts-edit>Editar publicação</button>` : ""}
+          ${state.selectedPosts.length > 1 ? `<span class="profile-services-toolbar__hint">Só dá para editar uma publicação por vez.</span>` : ""}
         </div>
         ` : ""}
-
-        <section class="profile-post-section profile-post-section--publications">
-          <div class="publication-grid profile-publications-grid" id="profile-publications-track" data-rail-track aria-label="Publicacoes">
-            ${publications.map(renderPublicationCard).join("")}
-          </div>
-        </section>
+        ${renderPublicationsSection()}
       </div>
     `);
   };
-
 
   const renderReviews = () => {
     const groups = baseProfile.sections?.reviews?.groups || [];
@@ -1615,7 +1703,7 @@ window.DokeInitProfile = () => {
       hero.headline ||
         "Especialista em ambientes residenciais com foco em leitura visual limpa, acabamento consistente e comunicaÃ§Ã£o objetiva do inÃ­cio ao fim."
     );
-    const isPhoneHero = window.matchMedia('(max-width: 760px)').matches && body.dataset.profileView === 'visitor' && body.dataset.profileType === 'professional';
+    const isPhoneHero = window.matchMedia('(max-width: 760px)').matches;
     const shortHeadline = isPhoneHero && baseHeadline.length > 64
       ? `${baseHeadline.slice(0, 61).trimEnd()}...`
       : baseHeadline;
@@ -1654,6 +1742,11 @@ window.DokeInitProfile = () => {
         tab.removeAttribute("aria-current");
       }
     });
+
+    if (!hasSyncedInitialTabRailScroll && els.tabsHost && window.matchMedia("(max-width: 760px)").matches) {
+      els.tabsHost.scrollLeft = 0;
+      hasSyncedInitialTabRailScroll = true;
+    }
 
     Object.entries(panelMap).forEach(([key, panel]) => {
       const isActive = key === state.activeTab;
@@ -1704,6 +1797,16 @@ window.DokeInitProfile = () => {
       render();
     });
 
+    root.querySelector("[data-profile-workers-select-toggle]")?.addEventListener("click", () => {
+      state.selectingWorkers = !state.selectingWorkers;
+      if (!state.selectingWorkers) state.selectedWorkers = [];
+      render();
+    });
+
+    root.querySelector("[data-profile-workers-edit]")?.addEventListener("click", () => {
+      if (state.selectedWorkers.length !== 1) return;
+    });
+
     root.querySelector("[data-profile-posts-edit]")?.addEventListener("click", () => {
       if (state.selectedPosts.length !== 1) return;
       window.location.href = "detalhe-anuncio.html";
@@ -1736,6 +1839,27 @@ window.DokeInitProfile = () => {
         if (!id) return;
         if (!state.selectingPosts) state.selectingPosts = true;
         togglePostSelection(id);
+      });
+    });
+
+    root.querySelectorAll("[data-profile-worker-select]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const id = button.dataset.profileWorkerSelect;
+        if (!id) return;
+        if (!state.selectingWorkers) state.selectingWorkers = true;
+        toggleWorkerSelection(id);
+      });
+    });
+
+    root.querySelectorAll("[data-profile-worker-card]").forEach((card) => {
+      card.addEventListener("click", (event) => {
+        if (!state.selectingWorkers) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const id = card.dataset.profileWorkerCard;
+        if (!id) return;
+        toggleWorkerSelection(id);
       });
     });
 

@@ -44,7 +44,7 @@
 @import url("../components/internal/topbar-standard.css?v=20260428-architecture");
 @import url("../components/cards/card-grid-contract.css?v=20260502-stage2-card-contract-v1");
 @import url("../components/cards/recommendation-card.css?v=20260428-index-recommendations-v3");
-@import url("../components/cards/ad-card.css?v=20260510-ad-card-mobile-contract-v5");
+@import url("../components/cards/ad-card.css?v=20260510-index-profile-card-parity-v1");
 @import url("../patterns/home-results-card.css?v=20260428-architecture");
 @import url("../components/overlays/overlay-contract.css?v=20260428-architecture");
 @import url("../components/forms-actions/form-action-contract.css?v=20260428-architecture");
@@ -5649,3 +5649,317 @@ html.home-index-root body.home-index-shell section.more-services .service-grid.s
   }
 }
 
+
+
+/* HOME MOBILE WIDTH AXIS LOCK v24
+   Scope: index mobile only.
+   Purpose: keep the page, section headers and horizontal rails on the same mobile axis
+   without changing body, sidebar, header or shared components. Horizontal overflow stays
+   inside rails; the page itself must not create a second width. */
+@media (max-width: 760px) {
+  html.home-index-root,
+  html.home-index-root body.home-index-shell {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  html.home-index-root body.home-index-shell {
+    --doke-mobile-app-max: 430px;
+    --doke-mobile-page-edge: 14px;
+  }
+
+  html.home-index-root body.home-index-shell .page__content {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace,
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace--clean,
+  html.home-index-root body.home-index-shell .page__content-inner.container.shell-home__workspace,
+  html.home-index-root body.home-index-shell .page__content-inner.container.shell-home__workspace--clean {
+    width: min(100%, var(--doke-mobile-app-max)) !important;
+    max-width: var(--doke-mobile-app-max) !important;
+    min-width: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: var(--doke-mobile-page-edge) !important;
+    padding-right: var(--doke-mobile-page-edge) !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(
+    .home-index-topbar,
+    .home-search-hero,
+    .home-categories,
+    .home-cat\00e9gories,
+    .featured-services,
+    .short-videos,
+    .home-publications,
+    .before-after,
+    .more-services,
+    .featured-pros,
+    .doke-page-section
+  ) {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(
+    .section-heading,
+    .home-section-header,
+    .home-media-section__header,
+    .featured-services .section-heading,
+    .more-services .section-heading
+  ) {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(
+    .content-rail,
+    .doke-scroll-rail,
+    .service-grid,
+    .publication-grid,
+    [data-rail-track],
+    [data-more-services-grid]
+  ) {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+}
+
+
+/* HOME MOBILE WIDTH CONTRACT v5
+   Keep index rails/cards on the same fixed mobile card contract. Page sections own
+   only the axis; card anatomy remains in the card component/home card contract. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace,
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace--clean,
+  html.home-index-root body.home-index-shell .page__content-inner.container.shell-home__workspace,
+  html.home-index-root body.home-index-shell .page__content-inner.container.shell-home__workspace--clean {
+    width: min(100%, var(--doke-mobile-app-max, 430px)) !important;
+    max-width: var(--doke-mobile-app-max, 430px) !important;
+    min-width: 0 !important;
+    margin-inline: auto !important;
+    padding-inline: var(--doke-mobile-page-edge, 14px) !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track,
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid] {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x proximity !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid]::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card,
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid] > article.doke-ad-card {
+    flex: 0 0 256px !important;
+    width: 256px !important;
+    min-width: 256px !important;
+    max-width: 256px !important;
+    align-self: flex-start !important;
+    scroll-snap-align: start !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* 2026-05-10 - Index publications reuse the mobile card composition on all viewports. */
+html.home-index-root body.home-index-shell section.home-publications .publication-card {
+  --publication-radius: 22px !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(196, 212, 228, 0.82) !important;
+  border-radius: 22px !important;
+  background: #fff !important;
+  box-shadow: 0 10px 22px rgba(19, 48, 82, 0.07) !important;
+}
+
+html.home-index-root body.home-index-shell section.home-publications .publication-card > .publication-card__media,
+html.home-index-root body.home-index-shell section.home-publications .publication-card .publication-card__media {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: clamp(164px, 15.5vw, 232px) !important;
+  min-height: clamp(164px, 15.5vw, 232px) !important;
+  margin: 0 !important;
+  border-radius: 22px 22px 0 0 !important;
+  background-size: cover !important;
+  background-position: center !important;
+}
+
+html.home-index-root body.home-index-shell section.home-publications .publication-card__type {
+  top: 10px !important;
+  left: 10px !important;
+  min-height: 30px !important;
+  padding-inline: 11px !important;
+  background: rgba(18, 31, 44, 0.82) !important;
+  font-size: 0.68rem !important;
+}
+
+html.home-index-root body.home-index-shell section.home-publications .publication-card__content {
+  display: grid !important;
+  gap: 8px !important;
+  padding: 14px 16px 16px !important;
+}
+
+html.home-index-root body.home-index-shell section.home-publications .publication-card__title {
+  min-height: 2.15em !important;
+  margin: 0 !important;
+  color: #143557 !important;
+  font-size: clamp(0.98rem, 1.05vw, 1.14rem) !important;
+  line-height: 1.12 !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.03em !important;
+}
+
+html.home-index-root body.home-index-shell section.home-publications .publication-card__author {
+  margin: 0 !important;
+  color: #6f8198 !important;
+  font-size: 0.86rem !important;
+  font-weight: 750 !important;
+}
+
+html.home-index-root body.home-index-shell section.home-publications .publication-card__author a {
+  color: #075fb8 !important;
+  font-weight: 900 !important;
+}
+
+html.home-index-root body.home-index-shell section.home-publications .publication-card__actions {
+  gap: 12px !important;
+  margin-top: 0 !important;
+  padding-top: 9px !important;
+  border-top: 1px solid rgba(214, 226, 238, 0.9) !important;
+}
+
+html.home-index-root body.home-index-shell section.home-publications .publication-card__action {
+  color: #294d74 !important;
+  font-size: 0.82rem !important;
+  font-weight: 800 !important;
+}
+
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__content {
+    padding: 11px 13px 13px !important;
+    gap: 6px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__title {
+    font-size: 0.96rem !important;
+    line-height: 1.12 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__author {
+    font-size: 0.8rem !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__actions {
+    padding-top: 8px !important;
+  }
+}
+
+/* 2026-05-10 - Keep before/after media as a clean split inside the mobile-style publication card. */
+html.home-index-root body.home-index-shell section.home-publications .publication-card > .publication-card__comparison,
+html.home-index-root body.home-index-shell section.home-publications .publication-card .publication-card__comparison {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 0 !important;
+  background: #c9d6e3 !important;
+}
+
+html.home-index-root body.home-index-shell section.home-publications .publication-card__comparison::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 auto 0 50% !important;
+  z-index: 2 !important;
+  width: 1px !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+}
+
+html.home-index-root body.home-index-shell section.home-publications .publication-card__comparison::after {
+  background: linear-gradient(180deg, rgba(9, 22, 36, 0.02) 0%, rgba(9, 22, 36, 0.01) 52%, rgba(5, 16, 29, 0.18) 100%) !important;
+}
+
+html.home-index-root body.home-index-shell section.home-publications .publication-card__half {
+  position: relative !important;
+  min-width: 0 !important;
+  min-height: 100% !important;
+  background-size: cover !important;
+  background-position: center !important;
+}
+
+html.home-index-root body.home-index-shell section.home-publications .publication-card__half--before {
+  background-image: url("https://images.pexels.com/photos/6444235/pexels-photo-6444235.jpeg?auto=compress&cs=tinysrgb&w=900") !important;
+}
+
+html.home-index-root body.home-index-shell section.home-publications .publication-card__half--after {
+  background-image: url("https://images.pexels.com/photos/7031408/pexels-photo-7031408.jpeg?auto=compress&cs=tinysrgb&w=900") !important;
+}
+
+html.home-index-root body.home-index-shell section.home-publications .publication-card__half span {
+  top: auto !important;
+  bottom: 12px !important;
+  z-index: 3 !important;
+  min-height: 30px !important;
+  padding: 0 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: #143557 !important;
+  font-size: 0.76rem !important;
+  font-weight: 900 !important;
+  box-shadow: 0 8px 18px rgba(10, 25, 42, 0.14) !important;
+  transform: none !important;
+}
+
+html.home-index-root body.home-index-shell section.home-publications .publication-card__half--before span {
+  left: 12px !important;
+  right: auto !important;
+}
+
+html.home-index-root body.home-index-shell section.home-publications .publication-card__half--after span {
+  right: 12px !important;
+  left: auto !important;
+}
