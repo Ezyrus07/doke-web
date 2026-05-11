@@ -210,7 +210,7 @@ const renderSharedSidebar = () => {
 
 const updateSidebarActiveState = (pathOverride = null) => {
   const path = pathOverride || getCurrentPath();
-  const homeActive = path === "/index.html" || path === "/detalhe-anuncio.html";
+  const homeActive = path === "/index.html";
   const ordersActive = path === "/pedidos.html";
   const messagesActive = path === "/mensagens.html" || path === "/pagamento.html" || path === "/finalizar-pedido.html" || path === "/avaliacao.html";
   const notificationsActive = path === "/notificacoes.html";
@@ -441,7 +441,10 @@ const INTERNAL_VIEW_STYLE_HINTS = {
     "assets/js/pages/configuracoes.js"
   ],
   "/detalhe-anuncio.html": [
-    "assets/css/pages/internal-shell.css",
+    "assets/css/components/actions/action-button.css",
+    "assets/css/components/cards/card-system.css",
+    "assets/css/components/cards/publication-card.css",
+    "assets/css/components/cards/worker-media-card.css",
     "assets/css/pages/detalhe-anuncio.css"
   ]
 };

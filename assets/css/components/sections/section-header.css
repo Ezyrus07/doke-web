@@ -1,0 +1,88 @@
+/* section-header.css
+   Reusable Doke section header contract.
+   Responsibility: titles, subtitles and optional actions inside content cards/sections.
+*/
+
+.doke-section-header {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 var(--space-4, 18px);
+}
+
+.doke-section-header--inline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4, 18px);
+}
+
+.doke-section-header__content {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.doke-section-header h2,
+.doke-section-header__title {
+  margin: 0;
+  color: var(--color-heading, #17324d);
+  font-size: clamp(1.12rem, 1.45vw, 1.45rem);
+  line-height: 1.16;
+  letter-spacing: -0.04em;
+  font-weight: 900;
+}
+
+.doke-section-header p,
+.doke-section-header__eyebrow {
+  margin: 0;
+  color: var(--color-primary-strong, var(--color-primary, #176db5));
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.doke-section-header__text {
+  margin: 0;
+  color: var(--color-text-soft, #64748b);
+  font-size: 0.94rem;
+  line-height: 1.55;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 700;
+}
+
+.doke-section-header a,
+.doke-section-header__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: var(--radius-pill, 999px);
+  color: var(--color-primary-strong, var(--color-primary, #176db5));
+  background: var(--color-primary-soft, rgba(23, 109, 181, 0.1));
+  border: 1px solid var(--color-primary-border, rgba(23, 109, 181, 0.18));
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.doke-section-header a:hover,
+.doke-section-header__action:hover {
+  border-color: var(--color-primary, #176db5);
+  background: rgba(var(--color-primary-rgb, 23, 109, 181), 0.14);
+}
+
+@media (max-width: 640px) {
+  .doke-section-header--inline {
+    display: grid;
+  }
+
+  .doke-section-header a,
+  .doke-section-header__action {
+    justify-self: start;
+  }
+}
