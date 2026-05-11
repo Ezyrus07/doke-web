@@ -22,7 +22,6 @@ window.DokeInitProfile = () => {
       ],
       actions: [
         { label: "Editar perfil", tone: "primary" },
-        { label: "Ver perfil público", href: "perfil.html?mode=client&from=owner", tone: "ghost" }
       ],
       rotatingHighlights: [
         { label: "Comunidade", value: "18,4 mil", detail: "seguidores acompanhando seu perfil" },
@@ -1712,8 +1711,9 @@ window.DokeInitProfile = () => {
       ? `<span class="profile-bio__text">${shortHeadline}</span> <button class="profile-bio__more" type="button" data-profile-more>Ver mais</button>`
       : `<span class="profile-bio__text">${shortHeadline}</span>`;
     els.categories.innerHTML = profileMode === "client" || profileMode === "client-owner" ? "" : categories.map(categoryMarkup).join("");
-    els.verified.hidden = profileMode === "client" || profileMode === "client-owner" ? true : !hero.verified;
-    els.verified.dataset.tooltip = 'Selo de perfil verificado pela Doke.';
+    els.verified.hidden = true;
+    els.verified.removeAttribute("data-tooltip");
+    els.verified.removeAttribute("aria-label");
     const heroActions = (isPhoneHero
       ? actions.filter((item) => normalizeActionLabel(item.label) !== "seguir")
       : actions).filter((item) => normalizeActionLabel(item.label) !== "seguir");
