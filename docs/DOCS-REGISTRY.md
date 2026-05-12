@@ -1,69 +1,183 @@
 # Registro de Documentação do Doke
 
-Este arquivo é um índice operacional. Ele organiza a leitura da documentação sem mover arquivos históricos ainda.
+Este arquivo é um índice operacional. Ele organiza a leitura da documentação com contratos ativos, apoio operacional, evidências e históricos migrados. A fonte primária para regras atuais é [`docs/ACTIVE-CONTRACTS-INDEX.md`](ACTIVE-CONTRACTS-INDEX.md); use este registro como apoio para navegação, classificação e rastreabilidade.
 
 ## Totais
 
 - Markdown em `docs/`: **258**
-- Contratos ativos / base técnica: **44**
+- Contratos ativos espelhados do índice primário: **29**
+- Apoio operacional em revisão: **8**
+- Candidatos históricos migrados: **15**
+- Evidências de validação classificadas: **11**
 - Ciclos globais recentes: **43**
 - Relatórios de auditoria/limpeza: **68**
 - Histórico/legado a revisar: **59**
+- Segunda triagem histórica classificada: **59**
 - Outros documentos: **38**
 
 ## Como usar este registro
 
-- Para regras atuais, priorizar contratos ativos e documentos globais recentes.
+- Para regras atuais, começar por [`ACTIVE-CONTRACTS-INDEX.md`](ACTIVE-CONTRACTS-INDEX.md) e seguir apenas os contratos ativos apontados ali.
+- Para navegação ampla, usar este registro como índice operacional dos documentos existentes.
 - Para entender decisões antigas, consultar histórico/legado.
 - Para limpar documentação, criar um ciclo próprio antes de mover ou remover arquivos.
 - Documentos em `docs/validation/` são evidências de auditoria, não contratos permanentes.
 
+
+## Governança do registry — Ciclo Global 64
+
+`docs/ACTIVE-CONTRACTS-INDEX.md` é a fonte primária de contratos ativos. Este registry permanece como índice operacional e pode listar documentos de apoio, candidatos a revisão ou evidências históricas em seções que ainda usam nomes amplos como “Contratos ativos / base técnica”.
+
+A consistência entre o índice primário e este registry é verificada por:
+
+```bash
+npm run audit:docs-registry-governance
+```
+
+A auditoria gera `docs/validation/global-cycle-64-docs-registry-governance-report.json` e classifica divergências sem mover documentos automaticamente. Documentos listados aqui, mas ausentes de `ACTIVE-CONTRACTS-INDEX.md`, devem ser tratados como candidatos de revisão, não como contrato ativo definitivo.
+
+
+## Reestruturação do registry — Ciclo Global 66
+
+O Ciclo Global 66 consolidou a reconciliação anterior em grupos explícitos, sem mover arquivos e sem promover documentos automaticamente. O objetivo é impedir que evidências, stages antigos ou documentos de apoio sejam confundidos com contratos ativos.
+
+Validação:
+
+```bash
+npm run audit:docs-registry-structure
+```
+
+A auditoria gera `docs/validation/global-cycle-66-docs-registry-structure-report.json` e verifica se a seção abaixo está separada em quatro grupos:
+
+- contratos ativos espelhados do índice primário;
+- apoio operacional;
+- candidatos históricos;
+- evidências de validação.
+
+A classificação detalhada do Ciclo Global 65 continua registrada em `docs/validation/global-cycle-65-docs-registry-reconciliation-report.json`.
+
+
+## Migração histórica executada — Ciclo Global 68
+
+O Ciclo Global 68 executou a primeira migração física dos documentos classificados como candidatos históricos para `docs/archive/historical/`, seguindo o plano auditável em [`docs/DOCS-HISTORICAL-MIGRATION-PLAN.md`](DOCS-HISTORICAL-MIGRATION-PLAN.md).
+
+Validação:
+
+```bash
+npm run audit:docs-historical-migration-executed
+```
+
+A auditoria gera `docs/validation/global-cycle-68-docs-historical-migration-executed-report.json` e garante que:
+
+- todos os candidatos históricos migrados existem no destino atual;
+- nenhuma origem anterior permanece duplicada fora de `docs/archive/historical/`;
+- nenhum candidato histórico migrado aparece em `docs/ACTIVE-CONTRACTS-INDEX.md`;
+- todos os destinos atuais ficam dentro de `docs/archive/historical/`;
+- não há duplicidade de origem ou destino no registro de migração.
+
+
+## Segunda triagem documental — Ciclo Global 69
+
+O Ciclo Global 69 classificou os documentos restantes da seção “Histórico/legado a revisar” sem mover arquivos. O objetivo é preparar a próxima migração física com menor risco, mantendo `docs/ACTIVE-CONTRACTS-INDEX.md` como fonte primária.
+
+Documento de triagem:
+
+- [`docs/DOCS-SECOND-HISTORICAL-TRIAGE.md`](DOCS-SECOND-HISTORICAL-TRIAGE.md)
+
+Validação:
+
+```bash
+npm run audit:docs-second-historical-triage
+```
+
+A auditoria gera `docs/validation/global-cycle-69-docs-second-historical-triage-report.json` e garante que os 59 itens ainda em histórico/legado foram classificados como candidato histórico, apoio operacional, revisão manual ou evidência de validação. Nenhum arquivo é movido neste ciclo.
+
 ## Contratos ativos / base técnica
 
+> Fonte primária: [`docs/ACTIVE-CONTRACTS-INDEX.md`](ACTIVE-CONTRACTS-INDEX.md). A subseção “Contratos ativos espelhados do índice primário” deve ser o único espelho de contratos ativos neste registry. As demais subseções são apoio, histórico ou evidência.
+
+### Contratos ativos espelhados do índice primário
+
+Esses documentos estão ativos porque aparecem em `docs/ACTIVE-CONTRACTS-INDEX.md`.
+
+- `docs/ACTIVE-FILES.md`
 - `docs/API-CONTRACTS.md`
-- `docs/ARCHITECTURE-DECISIONS.md`
-- `docs/CARD-GRID-CONTRACT-STAGE3.md`
-- `docs/CSS-ARCHITECTURE-AUDIT.md`
-- `docs/CSS-ARCHITECTURE-REFORM-2026-04-22.md`
+- `docs/COMMUNICATION-DATA-READINESS-MAP.md`
+- `docs/CSS-RESPONSIVE-SYSTEM.md`
 - `docs/DATA-BACKEND-CONTRACTS.md`
+- `docs/DATA-MODEL-DRAFT.md`
 - `docs/DATA-READY-CONTRACTS.md`
-- `docs/FORM-ACTION-CONTRACT-STAGE10.md`
+- `docs/DELIVERY-CHECKLIST.md`
+- `docs/DEPRECATED-CSS.md`
+- `docs/DESIGN-SYSTEM-GUIDE.md`
+- `docs/DOCS-ACTIVE-REVIEW-DECISION-MAP.md`
+- `docs/FILES-ORGANIZATION.md`
+- `docs/FRONTEND-CHANGE-CHECKLIST.md`
 - `docs/FRONTEND-GOVERNANCE.md`
 - `docs/FRONTEND_COMPONENT_CONTRACTS.md`
 - `docs/GLOBAL-COMPONENTS-BASE-CONTRACT.md`
-- `docs/GLOBAL-CYCLE-12-DATA-READY-CONTRACTS.md`
-- `docs/GLOBAL-CYCLE-29-LIST-STATE-CONTRACTS.md`
-- `docs/GLOBAL-CYCLE-30-REPOSITORY-BOUNDARY.md`
 - `docs/GLOBAL-LAYOUT-CONTRACT.md`
-- `docs/HOME-ISOLATION-ARCHITECTURE.md`
+- `docs/GLOBAL-ORGANIZATION-PLAN.md`
+- `docs/GLOBAL-PAGE-ASSET-INVENTORY.md`
 - `docs/LIST-STATE-CONTRACTS.md`
-- `docs/MOBILE-ARCHITECTURE-STABILIZATION-2026-05-01.md`
-- `docs/MOBILE-RESULTS-HEADER-SEARCH-CONTRACT-2026-05-01.md`
-- `docs/OVERLAY-CONTRACT-STAGE9.md`
-- `docs/REPOSITORY-BOUNDARY.md`
-- `docs/STAGE17-DOMAIN-CARD-CONTRACTS.md`
-- `docs/STAGE18-LAYOUT-LISTS-STATES.md`
-- `docs/STAGE19-PRODUCT-FLOW-CONTRACTS.md`
-- `docs/STAGE21-BACKEND-DATA-CONTRACTS.md`
-- `docs/STAGE26-MOBILE-DESKTOP-BOUNDARY-GUARD.md`
-- `docs/STAGE27-DESKTOP-SHELL-CONTRACTS.md`
+- `docs/MOCK-DATA-BOUNDARIES.md`
+- `docs/PAGE-DATA-ORCHESTRATION-MAP.md`
+- `docs/PAGE-ROUTE-MAP.md`
+- `docs/PAGES-MAP.md`
+- `docs/PERFIL-DATA-READINESS-MAP.md`
+- `docs/PERFORMANCE-SEO-CHECKLIST.md`
+- `docs/SECURITY-CHECKLIST.md`
 - `docs/SURFACE-CONTRACT.md`
 - `docs/UI-COMPONENT-CONTRACTS.md`
-- `docs/css-architecture-status.md`
-- `docs/reports/frontend-stage2-tokens-and-contracts.md`
-- `docs/reports/frontend-stage3-search-filter-contract.md`
-- `docs/reports/frontend-stage6-chat-contract-important-reduction.md`
-- `docs/validation/architecture-audit-report.md`
-- `docs/validation/auth-session-contract-audit-report.md`
-- `docs/validation/desktop-shell-contract-audit-report.md`
-- `docs/validation/domain-card-contract-audit-report.md`
-- `docs/validation/frontend-contract-audit-report.md`
-- `docs/validation/global-cycle-3-components-base-report.md`
-- `docs/validation/js-foundation-contract-audit-report.md`
-- `docs/validation/layout-contract-audit-report.md`
-- `docs/validation/product-flow-contract-audit-report.md`
-- `docs/validation/stage34-responsive-boundary-report.md`
-- `docs/validation/surface-contract-report.md`
+
+### Apoio operacional
+
+Documentos úteis para contexto técnico, mas que não são fonte primária enquanto não forem promovidos no índice ativo.
+
+- `docs/ARCHITECTURE-DECISIONS.md` — Apoio arquitetural. Não é fonte primária enquanto não for promovido no índice ativo.
+- `docs/CSS-ARCHITECTURE-AUDIT.md` — Auditoria técnica útil para contexto, mas não contrato ativo.
+- `docs/CSS-ARCHITECTURE-REFORM-2026-04-22.md` — Plano/reforma de CSS útil como contexto; não governa mudanças atuais sozinho.
+- `docs/css-architecture-status.md` — Status operacional de CSS. Usar como apoio, não como contrato principal.
+- `docs/HOME-ISOLATION-ARCHITECTURE.md` — Apoio para isolamento da home. Não promover sem baseline visual da home.
+- `docs/MOBILE-ARCHITECTURE-STABILIZATION-2026-05-01.md` — Apoio para estabilidade mobile. Não usar para redesenho sem contrato ativo/baseline.
+- `docs/MOBILE-RESULTS-HEADER-SEARCH-CONTRACT-2026-05-01.md` — Apoio específico de resultados mobile. Não contrato global.
+- `docs/REPOSITORY-BOUNDARY.md` — Referência potencialmente útil; precisa comparação com data/repository contracts antes de promoção.
+
+### Candidatos históricos migrados
+
+Stages, relatórios ou contratos antigos movidos para `docs/archive/historical/`. Permanecem disponíveis para rastreabilidade, mas não são contratos ativos.
+
+- `docs/archive/historical/CARD-GRID-CONTRACT-STAGE3.md` — Contrato de stage antigo. Revisar antes de qualquer promoção; provável histórico.
+- `docs/archive/historical/FORM-ACTION-CONTRACT-STAGE10.md` — Contrato de stage antigo; revisar contra componentes/forms ativos antes de reaproveitar.
+- `docs/archive/historical/GLOBAL-CYCLE-12-DATA-READY-CONTRACTS.md` — Relatório de ciclo. Conteúdo supersedido pelo contrato ativo de data-ready.
+- `docs/archive/historical/GLOBAL-CYCLE-29-LIST-STATE-CONTRACTS.md` — Relatório de ciclo. Conteúdo deve ser comparado com `LIST-STATE-CONTRACTS.md`.
+- `docs/archive/historical/GLOBAL-CYCLE-30-REPOSITORY-BOUNDARY.md` — Relatório de ciclo. Conteúdo deve ser comparado com contrato/referência de repository boundary.
+- `docs/archive/historical/OVERLAY-CONTRACT-STAGE9.md` — Contrato de stage antigo; revisar contra contratos ativos de modal/dropdown/overlay.
+- `docs/archive/historical/reports/frontend-stage2-tokens-and-contracts.md` — Relatório de stage; provável evidência histórica.
+- `docs/archive/historical/reports/frontend-stage3-search-filter-contract.md` — Relatório de stage; revisar contra contratos atuais de busca/filtro.
+- `docs/archive/historical/reports/frontend-stage6-chat-contract-important-reduction.md` — Relatório de redução técnica; não contrato ativo.
+- `docs/archive/historical/STAGE17-DOMAIN-CARD-CONTRACTS.md` — Stage antigo; revisar contra contratos ativos de cards/componentes.
+- `docs/archive/historical/STAGE18-LAYOUT-LISTS-STATES.md` — Stage antigo; revisar contra `GLOBAL-LAYOUT-CONTRACT.md` e `LIST-STATE-CONTRACTS.md`.
+- `docs/archive/historical/STAGE19-PRODUCT-FLOW-CONTRACTS.md` — Stage antigo; revisar antes de qualquer promoção.
+- `docs/archive/historical/STAGE21-BACKEND-DATA-CONTRACTS.md` — Stage antigo; comparar com `DATA-BACKEND-CONTRACTS.md`.
+- `docs/archive/historical/STAGE26-MOBILE-DESKTOP-BOUNDARY-GUARD.md` — Stage antigo; revisar contra contratos responsivos ativos.
+- `docs/archive/historical/STAGE27-DESKTOP-SHELL-CONTRACTS.md` — Stage antigo; revisar contra contrato ativo de layout/shell.
+
+### Evidências de validação
+
+Relatórios de auditoria usados como evidência de execução. Não são contratos permanentes.
+
+- `docs/validation/architecture-audit-report.md` — Evidência de auditoria. Não é contrato.
+- `docs/validation/auth-session-contract-audit-report.md` — Evidência de auditoria. Não é contrato.
+- `docs/validation/desktop-shell-contract-audit-report.md` — Evidência de auditoria. Não é contrato.
+- `docs/validation/domain-card-contract-audit-report.md` — Evidência de auditoria. Não é contrato.
+- `docs/validation/frontend-contract-audit-report.md` — Evidência de auditoria. Não é contrato.
+- `docs/validation/global-cycle-3-components-base-report.md` — Evidência de auditoria. Não é contrato.
+- `docs/validation/js-foundation-contract-audit-report.md` — Evidência de auditoria. Não é contrato.
+- `docs/validation/layout-contract-audit-report.md` — Evidência de auditoria. Não é contrato.
+- `docs/validation/product-flow-contract-audit-report.md` — Evidência de auditoria. Não é contrato.
+- `docs/validation/stage34-responsive-boundary-report.md` — Evidência de auditoria. Não é contrato.
+- `docs/validation/surface-contract-report.md` — Evidência de auditoria. Não é contrato.
 
 ## Ciclos globais recentes
 

@@ -47,6 +47,51 @@
           services.wallet && services.wallet.getWallet ? services.wallet.getWallet() : ok(null),
           services.wallet && services.wallet.listTransactions ? services.wallet.listTransactions() : ok([])
         ]).then(function (values) { return { wallet: values[0], transactions: values[1] }; });
+      case 'finalizar-pedido':
+        var orderId = '';
+        try {
+          orderId = new URLSearchParams(window.location.search || '').get('orderId') || '';
+        } catch (error) {
+          orderId = '';
+        }
+        return services.orders && services.orders.getById && orderId
+          ? services.orders.getById(orderId).then(function (order) { return { order: order }; })
+          : ok({ order: null });
+      case 'pagamento':
+        var paymentOrderId = '';
+        try {
+          paymentOrderId = new URLSearchParams(window.location.search || '').get('orderId') || '';
+        } catch (error) {
+          paymentOrderId = '';
+        }
+        return Promise.all([
+          services.orders && services.orders.getById && paymentOrderId ? services.orders.getById(paymentOrderId) : ok(null),
+          services.wallet && services.wallet.getWallet ? services.wallet.getWallet() : ok(null)
+        ]).then(function (values) { return { order: values[0], wallet: values[1] }; });
+      case 'adicionar-cartao':
+        return services.wallet && services.wallet.getWallet
+          ? services.wallet.getWallet().then(function (wallet) {
+              return {
+                wallet: wallet,
+                paymentMethods: wallet && Array.isArray(wallet.paymentMethods) ? wallet.paymentMethods : [],
+                tokenizationProvider: null
+              };
+            })
+          : ok({ wallet: null, paymentMethods: [], tokenizationProvider: null });
+      case 'avaliacao':
+        var reviewOrderId = '';
+        try {
+          reviewOrderId = new URLSearchParams(window.location.search || '').get('orderId') || '';
+        } catch (error) {
+          reviewOrderId = '';
+        }
+        return Promise.all([
+          services.orders && services.orders.getById && reviewOrderId ? services.orders.getById(reviewOrderId) : ok(null),
+          ok([]),
+          ok(null)
+        ]).then(function (values) {
+          return { order: values[0], reviews: values[1], service: values[2] };
+        });
       case 'notificacoes':
         return services.notifications && services.notifications.list
           ? services.notifications.list({}).then(function (notifications) { return { notifications: notifications }; })
