@@ -1,39 +1,38 @@
-/* rating.css
-   Reusable rating contract for compact score rows across Doke pages.
-   Keep page files responsible only for placement and spacing around this component.
-*/
-
-.doke-rating {
+/* Doke rating primitive.
+   Reusable for service cards, reviews, professionals and detail pages. */
+:where(.doke-rating, [data-rating]) {
   display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  color: var(--color-heading);
+  gap: 0.35rem;
+  color: var(--color-text, #18314f);
+  font-size: 0.9rem;
   font-weight: 800;
-  line-height: 1.2;
-}
-
-.doke-rating__star {
-  color: var(--color-secondary-strong, var(--color-secondary));
-  font-size: 0.98em;
   line-height: 1;
 }
 
-.doke-rating strong {
-  color: var(--color-heading);
-  font-weight: 900;
+:where(.doke-rating__icon, [data-rating-icon]) {
+  color: var(--doke-rating-color, #f5b83d);
+  line-height: 1;
 }
 
-.doke-rating span:not(.doke-rating__star) {
-  color: var(--color-text-soft);
-  font-size: 0.9em;
+:where(.doke-rating__value, [data-rating-value]) {
+  color: var(--color-text, #18314f);
+  font-variant-numeric: tabular-nums;
+}
+
+:where(.doke-rating__count, [data-rating-count]) {
+  color: var(--color-muted, #64748b);
+  font-size: 0.82rem;
   font-weight: 700;
 }
 
-.doke-rating--pill {
-  width: fit-content;
-  padding: 8px 11px;
-  border: 1px solid var(--surface-outline-color);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.68);
+:where(.doke-rating--compact) {
+  gap: 0.25rem;
+  font-size: 0.82rem;
+}
+
+:where(.doke-rating--stacked) {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 0.45rem;
 }

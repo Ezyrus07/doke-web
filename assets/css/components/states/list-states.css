@@ -1,0 +1,91 @@
+/* Doke list state contracts
+   Generic, low-specificity state layer for dynamic lists rendered by JS/backend.
+   This file should not encode page-specific visuals. */
+
+:where(.doke-list-region, [data-list-region]) {
+  position: relative;
+}
+
+:where(.doke-list, [data-list]) {
+  min-width: 0;
+}
+
+:where(.doke-list-state, [data-list-state]) {
+  display: grid;
+  place-items: center;
+  gap: var(--space-3, 12px);
+  min-height: var(--doke-list-state-min-height, 180px);
+  padding: var(--space-6, 24px);
+  border: 1px solid var(--color-border-soft, rgba(27, 55, 100, 0.1));
+  border-radius: var(--radius-card, 20px);
+  background: var(--color-surface, #fff);
+  color: var(--color-text-muted, #64748b);
+  text-align: center;
+}
+
+:where(.doke-list-state__icon) {
+  display: inline-grid;
+  place-items: center;
+  width: var(--doke-list-state-icon-size, 44px);
+  height: var(--doke-list-state-icon-size, 44px);
+  border-radius: 999px;
+  background: var(--color-surface-soft, rgba(59, 130, 246, 0.08));
+  color: var(--color-primary, #2563eb);
+}
+
+:where(.doke-list-state__title) {
+  margin: 0;
+  color: var(--color-text-strong, #102a43);
+  font-size: var(--font-size-md, 1rem);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+:where(.doke-list-state__description) {
+  max-width: 44ch;
+  margin: 0;
+  font-size: var(--font-size-sm, .875rem);
+  line-height: 1.55;
+}
+
+:where(.doke-list-state__actions) {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2, 8px);
+  margin-top: var(--space-1, 4px);
+}
+
+:where(.doke-list-loading, [data-list-loading]) {
+  display: grid;
+  gap: var(--space-3, 12px);
+}
+
+:where(.doke-list-skeleton) {
+  min-height: var(--doke-list-skeleton-height, 88px);
+  border-radius: var(--radius-card, 20px);
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.14), rgba(148, 163, 184, 0.24), rgba(148, 163, 184, 0.14));
+  background-size: 200% 100%;
+  animation: doke-list-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes doke-list-skeleton-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+:where([data-state="loading"] [data-list], [data-state="empty"] [data-list], [data-state="error"] [data-list]) {
+  display: none;
+}
+
+:where([data-state="loading"] [data-list-loading], [data-state="empty"] [data-list-empty], [data-state="error"] [data-list-error]) {
+  display: grid;
+}
+
+:where([data-list-loading], [data-list-empty], [data-list-error]) {
+  display: none;
+}
+
+:where([hidden]) {
+  display: none;
+}

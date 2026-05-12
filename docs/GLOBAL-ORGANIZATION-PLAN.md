@@ -1,68 +1,46 @@
-# Doke — Plano de Organização Global
+# Doke — Plano Global de Organização
 
 ## Objetivo
 
-Estabilizar a base global do frontend antes de continuar reformas por página. O foco é reduzir regressões, remover referências quebradas, consolidar contratos reutilizáveis e impedir que ajustes locais contaminem `core`, shell, sidebar, header ou wrappers globais.
+Organizar o projeto sem transformar telas ainda provisórias em contratos definitivos. A prioridade é reduzir regressões, centralizar componentes recorrentes e manter a evolução visual do Doke mais previsível.
 
-## Regra de trabalho
+## Regra de responsabilidade
 
-Toda alteração deve respeitar a divisão:
+- `assets/css/core`: tokens, reset/base, tipografia, layout base, utilitários e fundação responsiva.
+- `assets/css/components`: peças reutilizáveis independentes de página, como botões, cards, chips, inputs, avatars, ratings e modais.
+- `assets/css/patterns`: composições reutilizáveis maiores, como hero, galeria, painel de CTA e blocos de seção.
+- `assets/css/pages`: somente layout e ajustes específicos de um HTML.
 
-- `assets/css/core`: tokens, reset, tipografia, layout base e utilitários globais.
-- `assets/css/components`: elementos reutilizáveis como botões, cards, chips, avatars, ratings, inputs, modais e shell.
-- `assets/css/patterns`: composições reutilizáveis formadas por componentes.
-- `assets/css/pages`: layout específico da página.
-- `assets/js/core`: infraestrutura compartilhada.
-- `assets/js/components`: comportamento reutilizável.
-- `assets/js/pages`: comportamento específico da página.
+## Proibições durante a reforma
 
-## Proibições
+- Não criar `fix.css`, `hotfix.css`, `stage.css`, `final.css`, `novo.css`, `ajuste.css` ou equivalentes.
+- Não adicionar `!important` como solução visual.
+- Não usar `style=""` para corrigir layout.
+- Não duplicar CSS de botões, cards, chips, inputs, modais, tabs, workers, publicações ou avaliações.
+- Não mexer em `body`, shell, sidebar, header ou wrappers globais para resolver problema local de uma página.
 
-Não criar arquivos com nomes de correção temporária como `fix`, `hotfix`, `stage`, `final`, `novo`, `ajuste` ou `redesign`.
+## Páginas em evolução
 
-Não resolver problema local alterando `body`, shell, sidebar, header ou wrappers globais.
+Estas páginas não devem ser tratadas como contrato visual definitivo ainda:
 
-Não introduzir `!important` ou `style=""` como solução visual.
+- `carteira.html`
+- `detalhe-anuncio.html`
+- `resultados.html`
+- `finalizar-pedido.html`
+- `pagamento.html`
+- `configuracoes.html`
+- `comunidade-interna.html`
+- `avaliacao.html`
+- `adicionar-cartao.html`
 
-Não duplicar CSS/JS de botões, cards, chips, workers, publicações, avaliações, inputs, modais ou dropdowns.
+Nelas, a prioridade é manter estrutura limpa, imports corretos, classes previsíveis e separação por responsabilidade.
 
-## Ciclos de execução
+## Ordem de trabalho
 
-### Ciclo Global 1 — Segurança objetiva
-
-- Corrigir imports quebrados.
-- Corrigir scripts de auditoria apontando para arquivos inexistentes.
-- Validar que HTMLs não referenciam CSS/JS ausentes.
-
-### Ciclo Global 2 — Contratos de base
-
-- Mapear contratos oficiais de botões, cards, chips, avatars, ratings, section headers e shell.
-- Definir fonte canônica para cada contrato.
-- Proibir criação de variantes locais sem justificativa.
-
-### Ciclo Global 3 — Shell e largura
-
-- Validar `page-container-contract`, `responsive-page-contract`, `desktop-shell`, `desktop-topbar`, `desktop-sidebar` e limites mobile.
-- Não redesenhar o shell; apenas corrigir incoerências de contrato.
-
-### Ciclo Global 4 — Marketplace
-
-- Consolidar index, resultados, detalhe-anuncio e perfil em cima dos mesmos contratos de cards, workers, publicações, avaliações, chips e botões.
-
-### Ciclo Global 5 — Páginas operacionais
-
-- Pedidos, carteira, notificações e configurações.
-
-### Ciclo Global 6 — Comunicação
-
-- Mensagens, comunidade e comunidade-interna, por serem páginas com maior risco estrutural.
-
-## Critérios de aceite global
-
-- Zero imports quebrados em HTMLs.
-- Nenhum arquivo novo temporário de correção visual.
-- Nenhum `!important` novo em alterações feitas.
-- Nenhum `style=""` novo.
-- CSS de página restrito ao layout específico.
-- Componentes recorrentes centralizados em `components` ou `patterns`.
-- Visual aprovado preservado por mudanças incrementais.
+1. Segurança global: imports, scripts e auditorias.
+2. Layout global: container, largura, shell, topbar, sidebar e responsividade base.
+3. Componentes-base: botões, cards, chips, badges, inputs, avatars, ratings, modais e headers de seção.
+4. Marketplace: index, resultados, perfil e detalhe do anúncio.
+5. Páginas operacionais em evolução.
+6. Comunicação/comunidade.
+7. Limpeza final: redução de `!important`, remoção de CSS legado, performance e acessibilidade.

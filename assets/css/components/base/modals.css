@@ -1,0 +1,65 @@
+/* Doke Base Modal Contract */
+:where(.doke-modal) {
+  width: min(100%, 560px);
+  max-height: min(86vh, 760px);
+  overflow: auto;
+  border: 1px solid var(--surface-outline-color, var(--color-border-soft));
+  border-radius: var(--radius-xl, 28px);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-overlay, 0 26px 80px rgba(15, 23, 42, 0.22));
+}
+
+:where(.doke-modal[hidden]) {
+  display: none;
+}
+
+:where(.doke-modal__header, .doke-modal__body, .doke-modal__footer) {
+  padding-inline: var(--space-6);
+}
+
+:where(.doke-modal__header) {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-top: var(--space-6);
+  padding-bottom: var(--space-3);
+}
+
+:where(.doke-modal__title) {
+  margin: 0;
+  color: var(--color-heading, var(--color-text-strong));
+  font-size: var(--text-title);
+  line-height: var(--line-height-tight);
+}
+
+:where(.doke-modal__body) {
+  padding-block: var(--space-3) var(--space-5);
+  color: var(--color-text);
+}
+
+:where(.doke-modal__footer) {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding-bottom: var(--space-6);
+}
+
+:where(.doke-modal--sm) { width: min(100%, 420px); }
+:where(.doke-modal--lg) { width: min(100%, 760px); }
+
+@media (max-width: 760px) {
+  :where(.doke-modal) {
+    width: min(100%, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    border-radius: var(--radius-lg, 22px);
+  }
+
+  :where(.doke-modal__footer) {
+    flex-direction: column-reverse;
+  }
+
+  :where(.doke-modal__footer .doke-btn) {
+    width: 100%;
+  }
+}

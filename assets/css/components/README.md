@@ -17,7 +17,5 @@ shared internal shells.
 ## Deprecated shims
 
 - `ui.css`
-- `surface-contract-final.css`
-
 Do not add new CSS to deprecated shims. Move reusable code into a focused
 component module and keep page CSS limited to page layout.

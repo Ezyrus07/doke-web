@@ -15,7 +15,7 @@ function collectCssImports(assetPath, root, seen = new Set()) {
 
   const source = fs.readFileSync(absolute, 'utf8');
   const imports = [];
-  const importPattern = /@import\s+(?:url\()?["']?([^"')\s]+)["']?\)?/g;
+  const importPattern = /@import\s+(?:url\()?['"]?([^"')\s]+)['"]?\)?/g;
   let match;
 
   while ((match = importPattern.exec(source))) {
@@ -26,13 +26,26 @@ function collectCssImports(assetPath, root, seen = new Set()) {
   return [normalized, ...imports];
 }
 
+function extractAttribute(tag, attributeName) {
+  const pattern = new RegExp(`${attributeName}\\s*=\\s*(["'])(.*?)\\1`, 'i');
+  const match = tag.match(pattern);
+  return match ? match[2] : '';
+}
+
 function getLoadedCssAssets(html, root = process.cwd()) {
   const assets = [];
-  const linkPattern = /<link[^>]+rel=["']stylesheet["'][^>]+href=["']([^"']+)["'][^>]*>/g;
+  const linkPattern = /<link\b[^>]*>/gi;
   let match;
 
   while ((match = linkPattern.exec(html))) {
-    assets.push(...collectCssImports(match[1], root));
+    const tag = match[0];
+    const rel = extractAttribute(tag, 'rel').toLowerCase();
+    const href = extractAttribute(tag, 'href');
+
+    if (!href) continue;
+    if (!rel.split(/\s+/).includes('stylesheet')) continue;
+
+    assets.push(...collectCssImports(href, root));
   }
 
   return assets;

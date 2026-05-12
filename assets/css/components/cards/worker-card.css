@@ -1,60 +1,7 @@
-/* Doke Worker card.
-   Owns only the Workers cards rendered on the home feed.
-   Contract: media-only cards. No copy, badges, metrics or actions inside the card. */
+/* Doke Worker card component.
+   Responsibility: reusable media-only Worker cards.
+   Page/rail placement is owned by patterns/home-media-rails.css or page-specific patterns. */
 
-body.home-index-shell {
-  --home-media-arrow-size: 52px;
-  --home-media-rail-inset: 68px;
-  --home-media-section-gap: 30px;
-}
-
-body.home-index-shell .short-videos {
-  display: grid;
-  gap: 14px;
-  margin-top: var(--home-media-section-gap);
-}
-
-body.home-index-shell .short-videos .content-rail.home-media-rail {
-  position: relative;
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  padding-inline: var(--home-media-rail-inset);
-  box-sizing: border-box;
-  overflow: visible;
-}
-
-body.home-index-shell .short-videos .home-catégories__arrow,
-body.home-index-shell .short-videos .content-rail__arrow {
-  position: absolute;
-  top: 50%;
-  z-index: 5;
-  display: grid;
-  place-items: center;
-  width: var(--home-media-arrow-size);
-  height: var(--home-media-arrow-size);
-  transform: translateY(-50%);
-}
-
-body.home-index-shell .short-videos .content-rail__arrow--prev { left: 0; }
-body.home-index-shell .short-videos .content-rail__arrow--next { right: 0; }
-
-body.home-index-shell .short-videos .short-videos__track {
-  display: flex;
-  align-items: stretch;
-  justify-content: flex-start;
-  gap: 22px;
-  width: 100%;
-  min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 4px 0 10px;
-  scrollbar-width: none;
-  scroll-snap-type: x proximity;
-}
-
-body.home-index-shell .short-videos .short-videos__track::-webkit-scrollbar { display: none; }
 
 body.home-index-shell .short-videos .video-card {
   position: relative;
@@ -132,25 +79,6 @@ body.home-index-shell .short-videos .video-card.is-previewing .video-card__previ
 }
 
 @media (max-width: 760px) {
-  body.home-index-shell .short-videos {
-    margin-top: 22px;
-    gap: 12px;
-  }
-
-  body.home-index-shell .short-videos .content-rail.home-media-rail {
-    display: block;
-    padding-inline: 0;
-  }
-
-  body.home-index-shell .short-videos .content-rail__arrow {
-    display: none;
-  }
-
-  body.home-index-shell .short-videos .short-videos__track {
-    gap: 12px;
-    padding-bottom: 8px;
-  }
-
   body.home-index-shell .short-videos .video-card {
     flex-basis: min(70vw, 230px);
     width: min(70vw, 230px);

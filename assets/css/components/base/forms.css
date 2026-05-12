@@ -1,0 +1,70 @@
+/* Doke Base Form Controls Contract */
+:root {
+  --doke-control-height: 48px;
+  --doke-control-radius: var(--input-radius, 15px);
+  --doke-control-padding-x: 16px;
+}
+
+:where(.doke-input, .doke-select, .doke-textarea, .input, .select) {
+  width: 100%;
+  min-height: var(--doke-control-height);
+  padding: 0 var(--doke-control-padding-x);
+  border: 1px solid var(--surface-outline-color, var(--color-border-soft));
+  border-radius: var(--doke-control-radius);
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--color-text);
+  font: inherit;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+:where(.doke-textarea) {
+  min-height: 112px;
+  padding-block: 14px;
+  line-height: var(--line-height-relaxed);
+  resize: vertical;
+}
+
+:where(.doke-input, .doke-select, .doke-textarea, .input, .select)::placeholder {
+  color: #9ca3af;
+}
+
+:where(.doke-input, .doke-select, .doke-textarea, .input, .select):where(:focus, :focus-visible) {
+  outline: 0;
+  border-color: rgba(var(--color-primary-rgb), 0.4);
+  box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.10);
+  background: var(--color-surface);
+}
+
+:where(.doke-searchbox, .searchbox) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--doke-control-height);
+  padding: 0 14px;
+  border: 1px solid var(--surface-outline-color, var(--color-border-soft));
+  border-radius: var(--doke-control-radius);
+  background: rgba(255, 255, 255, 0.94);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+:where(.doke-searchbox, .searchbox):focus-within {
+  border-color: rgba(var(--color-primary-rgb), 0.4);
+  box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.10);
+  background: var(--color-surface);
+}
+
+:where(.doke-searchbox, .searchbox) input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+}

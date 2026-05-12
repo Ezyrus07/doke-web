@@ -1,88 +1,54 @@
-/* section-header.css
-   Reusable Doke section header contract.
-   Responsibility: titles, subtitles and optional actions inside content cards/sections.
-*/
-
-.doke-section-header {
-  display: grid;
-  gap: 6px;
-  margin: 0 0 var(--space-4, 18px);
-}
-
-.doke-section-header--inline {
+/* Doke section header contract
+   Owns reusable section title/action alignment, not page-specific spacing. */
+:where(.doke-section-header) {
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: var(--space-4, 18px);
-}
-
-.doke-section-header__content {
-  display: grid;
-  gap: 6px;
+  gap: var(--doke-space-3, 0.75rem);
   min-width: 0;
 }
 
-.doke-section-header h2,
-.doke-section-header__title {
-  margin: 0;
-  color: var(--color-heading, #17324d);
-  font-size: clamp(1.12rem, 1.45vw, 1.45rem);
-  line-height: 1.16;
-  letter-spacing: -0.04em;
-  font-weight: 900;
+:where(.doke-section-header__copy) {
+  display: grid;
+  gap: var(--doke-space-1, 0.25rem);
+  min-width: 0;
 }
 
-.doke-section-header p,
-.doke-section-header__eyebrow {
+:where(.doke-section-header__eyebrow) {
   margin: 0;
-  color: var(--color-primary-strong, var(--color-primary, #176db5));
-  font-size: 0.76rem;
-  font-weight: 900;
+  font-size: var(--doke-font-size-xs, 0.75rem);
+  font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: var(--doke-accent, #1b8dff);
 }
 
-.doke-section-header__text {
+:where(.doke-section-header__title) {
   margin: 0;
-  color: var(--color-text-soft, #64748b);
-  font-size: 0.94rem;
-  line-height: 1.55;
-  text-transform: none;
-  letter-spacing: 0;
-  font-weight: 700;
+  color: var(--doke-text-primary, #14213d);
 }
 
-.doke-section-header a,
-.doke-section-header__action {
-  display: inline-flex;
+:where(.doke-section-header__description) {
+  margin: 0;
+  color: var(--doke-text-muted, #667085);
+}
+
+:where(.doke-section-header__actions) {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 34px;
-  padding: 0 12px;
-  border-radius: var(--radius-pill, 999px);
-  color: var(--color-primary-strong, var(--color-primary, #176db5));
-  background: var(--color-primary-soft, rgba(23, 109, 181, 0.1));
-  border: 1px solid var(--color-primary-border, rgba(23, 109, 181, 0.18));
-  text-decoration: none;
-  font-size: 0.82rem;
-  font-weight: 900;
-  white-space: nowrap;
-}
-
-.doke-section-header a:hover,
-.doke-section-header__action:hover {
-  border-color: var(--color-primary, #176db5);
-  background: rgba(var(--color-primary-rgb, 23, 109, 181), 0.14);
+  justify-content: flex-end;
+  gap: var(--doke-space-2, 0.5rem);
+  flex: 0 0 auto;
 }
 
 @media (max-width: 640px) {
-  .doke-section-header--inline {
-    display: grid;
+  :where(.doke-section-header) {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
-  .doke-section-header a,
-  .doke-section-header__action {
-    justify-self: start;
+  :where(.doke-section-header__actions) {
+    justify-content: flex-start;
+    width: 100%;
   }
 }

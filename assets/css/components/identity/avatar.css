@@ -1,0 +1,84 @@
+/* Doke avatar primitive.
+   Canonical low-specificity contract for user/provider/community avatars. */
+:root {
+  --doke-avatar-xs: 28px;
+  --doke-avatar-sm: 36px;
+  --doke-avatar-md: 44px;
+  --doke-avatar-lg: 64px;
+  --doke-avatar-xl: 96px;
+}
+
+:where(.doke-avatar, [data-avatar]) {
+  --doke-avatar-size: var(--doke-avatar-md);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--doke-avatar-size);
+  height: var(--doke-avatar-size);
+  min-width: var(--doke-avatar-size);
+  min-height: var(--doke-avatar-size);
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary, #2a5f90), var(--color-secondary, #35c9a5));
+  color: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 24px rgba(22, 67, 115, 0.14);
+  font-size: 0.9rem;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  text-align: center;
+}
+
+:where(.doke-avatar--xs) { --doke-avatar-size: var(--doke-avatar-xs); font-size: 0.68rem; }
+:where(.doke-avatar--sm) { --doke-avatar-size: var(--doke-avatar-sm); font-size: 0.78rem; }
+:where(.doke-avatar--lg) { --doke-avatar-size: var(--doke-avatar-lg); font-size: 1.15rem; }
+:where(.doke-avatar--xl) { --doke-avatar-size: var(--doke-avatar-xl); font-size: 2rem; }
+
+:where(.doke-avatar img, .doke-avatar picture, .doke-avatar svg, [data-avatar] img, [data-avatar] picture, [data-avatar] svg) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+:where(.doke-avatar__status, [data-avatar-status]) {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: var(--color-secondary, #35c9a5);
+}
+
+:where(.doke-avatar-meta, [data-avatar-meta]) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+:where(.doke-avatar-meta__content, [data-avatar-meta-content]) {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+:where(.doke-avatar-meta__title, [data-avatar-title]) {
+  color: var(--color-text, #18314f);
+  font-size: 0.92rem;
+  font-weight: 850;
+  line-height: 1.15;
+}
+
+:where(.doke-avatar-meta__subtitle, [data-avatar-subtitle]) {
+  color: var(--color-muted, #64748b);
+  font-size: 0.8rem;
+  font-weight: 650;
+  line-height: 1.2;
+}

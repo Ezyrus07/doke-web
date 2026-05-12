@@ -1,65 +1,7 @@
 /* Doke publication card component.
    Responsibility: reusable publication cards for photo, video and before/after media.
-   Owns only the home publications feed. */
+   Page/rail placement is owned by patterns/home-media-rails.css or page-specific patterns. */
 
-.home-publications {
-  display: grid;
-  gap: 14px;
-  margin-top: 28px;
-}
-
-.home-publications__header {
-  align-items: center;
-}
-
-.home-publications .content-rail.home-media-rail {
-  position: relative;
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  padding-inline: var(--home-media-rail-inset);
-  box-sizing: border-box;
-  overflow: visible;
-}
-
-.home-publications .home-catégories__arrow,
-.home-publications .content-rail__arrow {
-  position: absolute;
-  top: 50%;
-  z-index: 5;
-  display: grid;
-  place-items: center;
-  width: var(--home-media-arrow-size);
-  height: var(--home-media-arrow-size);
-  transform: translateY(-50%);
-}
-
-.home-publications .content-rail__arrow--prev {
-  left: 0;
-}
-
-.home-publications .content-rail__arrow--next {
-  right: 0;
-}
-
-.publication-grid {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: calc((100% - 36px) / 3);
-  gap: 18px;
-  width: 100%;
-  min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 4px 0 10px;
-  scrollbar-width: none;
-  scroll-snap-type: x proximity;
-}
-
-.publication-grid::-webkit-scrollbar {
-  display: none;
-}
 
 .publication-card {
   --publication-radius: 24px;
@@ -309,33 +251,8 @@
   flex: 0 0 13px;
 }
 
-@media (max-width: 1080px) {
-  .publication-grid {
-    grid-auto-columns: calc((100% - 18px) / 2);
-  }
-}
 
 @media (max-width: 760px) {
-  .home-publications {
-    margin-top: 22px;
-    gap: 12px;
-  }
-
-  .home-publications .content-rail.home-media-rail {
-    display: block;
-    padding-inline: 0;
-  }
-
-  .home-publications .content-rail__arrow {
-    display: none;
-  }
-
-  .publication-grid {
-    grid-auto-columns: min(86vw, 330px);
-    gap: 12px;
-    padding-bottom: 8px;
-  }
-
   .publication-card {
     min-height: 310px;
   }

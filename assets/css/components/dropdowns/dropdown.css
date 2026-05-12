@@ -1,0 +1,58 @@
+/* Global dropdown/popover ownership contract.
+   New interactive menus should use .doke-dropdown / data-dropdown hooks. */
+
+:where(.doke-dropdown, [data-dropdown]) {
+  position: relative;
+  display: inline-flex;
+}
+
+:where(.doke-dropdown__trigger, [data-dropdown-trigger]) {
+  cursor: pointer;
+}
+
+:where(.doke-dropdown__menu, [data-dropdown-menu]) {
+  position: absolute;
+  z-index: var(--z-dropdown, 900);
+  inset-block-start: calc(100% + 10px);
+  inset-inline-end: 0;
+  min-inline-size: var(--doke-dropdown-min-width, 220px);
+  max-inline-size: min(var(--doke-dropdown-max-width, 420px), calc(100vw - 28px));
+  max-block-size: min(420px, calc(100dvh - 96px));
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid var(--doke-card-border, rgba(139, 161, 189, 0.24));
+  border-radius: var(--doke-dropdown-radius, 18px);
+  background: var(--doke-surface, #fff);
+  box-shadow: var(--doke-dropdown-shadow, 0 18px 45px rgba(7, 29, 58, 0.14));
+  overscroll-behavior: contain;
+}
+
+:where(.doke-dropdown__menu[hidden], [data-dropdown-menu][hidden]) {
+  display: none;
+}
+
+:where(.doke-dropdown__item, [data-dropdown-item]) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--doke-ink, #071d3a);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+:where(.doke-dropdown__item:hover, [data-dropdown-item]:hover) {
+  background: var(--doke-surface-soft, #f4f8fc);
+}
+
+:where(.doke-dropdown--start .doke-dropdown__menu) {
+  inset-inline: 0 auto;
+}
