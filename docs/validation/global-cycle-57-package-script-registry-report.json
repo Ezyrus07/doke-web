@@ -1,0 +1,385 @@
+{
+  "generatedAt": "2026-05-12T13:27:41.581Z",
+  "totals": {
+    "scripts": 35,
+    "auditScripts": 28,
+    "cleanupScripts": 2,
+    "visualScripts": 2,
+    "testScripts": 2,
+    "nodeTargets": 29
+  },
+  "failures": [],
+  "warnings": [],
+  "notes": [
+    "There are 5 specialized audit commands. They are intentionally not all required in audit:all to keep the default pipeline stable.",
+    "Cleanup command cleanup:unused-legacy-css has no same-suffix audit command (audit:unused-legacy-css). This may be acceptable when a broader audit covers it.",
+    "Cleanup command cleanup:stale-audit-artifacts has no same-suffix audit command (audit:stale-audit-artifacts). This may be acceptable when a broader audit covers it."
+  ],
+  "scripts": [
+    {
+      "name": "audit:frontend",
+      "command": "node scripts/audit-frontend-contracts.js",
+      "nodeTargets": [
+        "scripts/audit-frontend-contracts.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:frontend:strict",
+      "command": "node scripts/audit-frontend-contracts.js --strict",
+      "nodeTargets": [
+        "scripts/audit-frontend-contracts.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:architecture",
+      "command": "node scripts/audit-project-architecture.js",
+      "nodeTargets": [
+        "scripts/audit-project-architecture.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:all",
+      "command": "npm run audit:frontend:strict && npm run audit:ui && npm run audit:domain && npm run audit:layout && npm run audit:flows && npm run audit:bridge && npm run audit:routes && npm run audit:mocks && npm run audit:architecture && npm run audit:backend-data && npm run audit:auth-session && npm run audit:desktop-shell && npm run audit:js-foundation && npm run audit:visual-baseline && npm run audit:controller-mocks && npm run audit:domain-services && npm run audit:runtime-flags && npm run audit:responsive-inventory && npm run audit:responsive-boundaries && npm run audit:desktop-base && npm run audit:mobile-base",
+      "nodeTargets": [],
+      "npmRunTargets": [
+        "audit:frontend:strict",
+        "audit:ui",
+        "audit:domain",
+        "audit:layout",
+        "audit:flows",
+        "audit:bridge",
+        "audit:routes",
+        "audit:mocks",
+        "audit:architecture",
+        "audit:backend-data",
+        "audit:auth-session",
+        "audit:desktop-shell",
+        "audit:js-foundation",
+        "audit:visual-baseline",
+        "audit:controller-mocks",
+        "audit:domain-services",
+        "audit:runtime-flags",
+        "audit:responsive-inventory",
+        "audit:responsive-boundaries",
+        "audit:desktop-base",
+        "audit:mobile-base"
+      ],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:ui",
+      "command": "node scripts/audit-ui-canonical-classes.js",
+      "nodeTargets": [
+        "scripts/audit-ui-canonical-classes.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:bridge",
+      "command": "node scripts/audit-legacy-bridge-scope.js",
+      "nodeTargets": [
+        "scripts/audit-legacy-bridge-scope.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:domain",
+      "command": "node scripts/audit-domain-card-contracts.js",
+      "nodeTargets": [
+        "scripts/audit-domain-card-contracts.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:layout",
+      "command": "node scripts/audit-layout-contracts.js",
+      "nodeTargets": [
+        "scripts/audit-layout-contracts.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:flows",
+      "command": "node scripts/audit-product-flow-contracts.js",
+      "nodeTargets": [
+        "scripts/audit-product-flow-contracts.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:routes",
+      "command": "node scripts/audit-page-route-map.js",
+      "nodeTargets": [
+        "scripts/audit-page-route-map.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:mocks",
+      "command": "node scripts/audit-mock-data-contracts.js",
+      "nodeTargets": [
+        "scripts/audit-mock-data-contracts.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "test:e2e",
+      "command": "playwright test tests/e2e",
+      "nodeTargets": [],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "test:visual",
+      "command": "playwright test tests/visual",
+      "nodeTargets": [],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:backend-data",
+      "command": "node scripts/audit-backend-data-contracts.js",
+      "nodeTargets": [
+        "scripts/audit-backend-data-contracts.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:auth-session",
+      "command": "node scripts/audit-auth-session-contracts.js",
+      "nodeTargets": [
+        "scripts/audit-auth-session-contracts.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:desktop-shell",
+      "command": "node scripts/audit-desktop-shell-contracts.js",
+      "nodeTargets": [
+        "scripts/audit-desktop-shell-contracts.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:js-foundation",
+      "command": "node scripts/audit-js-foundation-contracts.js",
+      "nodeTargets": [
+        "scripts/audit-js-foundation-contracts.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:visual-baseline",
+      "command": "node scripts/audit-visual-qa-baseline.js",
+      "nodeTargets": [
+        "scripts/audit-visual-qa-baseline.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "visual:baseline",
+      "command": "playwright test tests/visual --update-snapshots",
+      "nodeTargets": [],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "visual:qa",
+      "command": "playwright test tests/visual tests/e2e/stage28-regression-guards.spec.js",
+      "nodeTargets": [],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:quality-pipeline",
+      "command": "node scripts/audit-quality-pipeline.js",
+      "nodeTargets": [
+        "scripts/audit-quality-pipeline.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "quality:ci",
+      "command": "npm run audit:all && npm run audit:quality-pipeline && npm run test:e2e && npm run test:visual",
+      "nodeTargets": [],
+      "npmRunTargets": [
+        "audit:all",
+        "audit:quality-pipeline",
+        "test:e2e",
+        "test:visual"
+      ],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:controller-mocks",
+      "command": "node scripts/audit-controller-mock-wiring.js",
+      "nodeTargets": [
+        "scripts/audit-controller-mock-wiring.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:domain-services",
+      "command": "node scripts/audit-domain-services.js",
+      "nodeTargets": [
+        "scripts/audit-domain-services.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:runtime-flags",
+      "command": "node scripts/audit-runtime-flags.js",
+      "nodeTargets": [
+        "scripts/audit-runtime-flags.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:responsive-inventory",
+      "command": "node scripts/audit-responsive-inventory.js",
+      "nodeTargets": [
+        "scripts/audit-responsive-inventory.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:responsive-boundaries",
+      "command": "node scripts/audit-responsive-boundaries.js",
+      "nodeTargets": [
+        "scripts/audit-responsive-boundaries.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:desktop-base",
+      "command": "node scripts/audit-desktop-base-stability.js",
+      "nodeTargets": [
+        "scripts/audit-desktop-base-stability.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:mobile-base",
+      "command": "node scripts/audit-mobile-base-stability.js",
+      "nodeTargets": [
+        "scripts/audit-mobile-base-stability.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:legacy-baseline-plan",
+      "command": "node scripts/audit-legacy-baseline-plan.js",
+      "nodeTargets": [
+        "scripts/audit-legacy-baseline-plan.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "cleanup:unused-legacy-css",
+      "command": "node scripts/cleanup-unused-legacy-css.js",
+      "nodeTargets": [
+        "scripts/cleanup-unused-legacy-css.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:unused-legacy-css-cleanup",
+      "command": "node scripts/audit-unused-legacy-css-cleanup.js",
+      "nodeTargets": [
+        "scripts/audit-unused-legacy-css-cleanup.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "cleanup:stale-audit-artifacts",
+      "command": "node scripts/cleanup-stale-audit-artifacts.js",
+      "nodeTargets": [
+        "scripts/cleanup-stale-audit-artifacts.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:removed-asset-reference-hygiene",
+      "command": "node scripts/audit-removed-asset-reference-hygiene.js",
+      "nodeTargets": [
+        "scripts/audit-removed-asset-reference-hygiene.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    },
+    {
+      "name": "audit:package-script-registry",
+      "command": "node scripts/audit-package-script-registry.js",
+      "nodeTargets": [
+        "scripts/audit-package-script-registry.js"
+      ],
+      "npmRunTargets": [],
+      "missingNodeTargets": [],
+      "missingNpmTargets": []
+    }
+  ]
+}

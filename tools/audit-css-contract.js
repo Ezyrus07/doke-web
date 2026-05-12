@@ -61,7 +61,6 @@ while (stack.length) {
 
 const deprecatedCss = [
   'assets/css/components/ui.css',
-  'assets/css/components/surface-contract-final.css',
   'assets/css/core/surfaces.css',
   'assets/css/core/surface-normalize.css',
   'assets/css/core/border-consolidation.css',

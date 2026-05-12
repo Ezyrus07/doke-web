@@ -37,7 +37,6 @@ const forbiddenLegacyCss = [
   'app-mobile-search.css',
   'mobile-search-header-shared.css',
   'mobile-page-rhythm-contract.css',
-  'doke-legacy-bridge.css',
   'desktop-app-shell-recovery.css'
 ];
 
