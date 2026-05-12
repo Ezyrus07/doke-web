@@ -9,7 +9,8 @@
     mockDataControllers: true,
     authSessionBootstrap: true,
     desktopContracts: true,
-    visualGuards: true
+    visualGuards: true,
+    instantShellNavigation: false
   });
 
   function readEnvironment() {

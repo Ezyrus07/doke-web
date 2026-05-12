@@ -11,7 +11,10 @@
     controllers: 'controllerBootstrap',
     mocks: 'mockDataControllers',
     auth: 'authSessionBootstrap',
-    desktop: 'desktopContracts'
+    desktop: 'desktopContracts',
+    instantNavigation: 'instantShellNavigation',
+    shellNavigation: 'instantShellNavigation',
+    routeSwap: 'instantShellNavigation'
   });
 
   function canonical(name) {

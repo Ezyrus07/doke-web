@@ -62,6 +62,7 @@ const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", "/comunidade-interna.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
 const isMobileSidebarViewport = () => window.innerWidth <= 1024;
+const isInstantShellNavigationEnabled = () => Boolean(window.Doke?.flags?.isEnabled?.("instantShellNavigation"));
 
 
 if (window.localStorage.getItem(THEME_STORAGE_KEY) === "dark") {
@@ -104,6 +105,7 @@ const isInternalViewUrl = (href) => {
 };
 
 const shouldBypassShellSwap = (href) => {
+  if (!isInstantShellNavigationEnabled()) return true;
   try {
     const url = new URL(href, window.location.href);
     const path = getCurrentPath(url.href);
@@ -1214,7 +1216,6 @@ document.addEventListener("focusin", (event) => {
 window.addEventListener("popstate", () => {
   const href = window.location.href;
   if (shouldBypassShellSwap(href)) {
-    window.location.reload();
     return;
   }
 
