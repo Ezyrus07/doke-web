@@ -1,19 +1,20 @@
 {
   "cycle": 82,
   "name": "product-script-ownership",
-  "generatedAt": "2026-05-12T17:44:53.940Z",
+  "generatedAt": "2026-05-12T18:58:24.982Z",
   "scope": {
     "type": "read-only ownership classification",
     "sourceReport": "docs/validation/global-cycle-81-product-script-dependency-map-report.json",
     "removalPerformed": false
   },
   "summary": {
-    "scriptCount": 43,
-    "ownerCount": 6,
+    "scriptCount": 44,
+    "ownerCount": 7,
     "owners": {
       "controllers/data-boundary": 9,
       "core/js-foundation": 12,
       "services/domain-data": 10,
+      "state/data-readiness": 1,
       "ui/mobile-runtime": 4,
       "components/shared-js": 2,
       "pages/local-behavior": 6
@@ -191,6 +192,23 @@
       ],
       "removalRisk": "high-shared-service",
       "rule": "Remove only after confirming no controller/page reads the resource."
+    },
+    {
+      "src": "assets/js/state/state-contracts.js",
+      "owner": "state/data-readiness",
+      "role": "state-contract",
+      "categoryGroup": "all-target-pages",
+      "pageCount": 6,
+      "pages": [
+        "mensagens.html",
+        "comunidade-interna.html",
+        "finalizar-pedido.html",
+        "pagamento.html",
+        "adicionar-cartao.html",
+        "avaliacao.html"
+      ],
+      "removalRisk": "critical-do-not-remove-without-runtime-test",
+      "rule": "Keep before page controllers; removal requires backend-state regression review."
     },
     {
       "src": "assets/js/ui/mobile-drawer-standard.js",
@@ -625,6 +643,7 @@
     "core-runtime": "Never remove from a page without validating global Doke namespace/runtime boot.",
     "controller-stack": "Keep ordered after domain services and before controller-bootstrap.",
     "domain-service": "Remove only after confirming no controller/page reads the resource.",
+    "state-contract": "Keep before page controllers; removal requires backend-state regression review.",
     "ui-runtime": "Remove only with mobile/desktop interaction regression pass.",
     "shared-component": "Remove only if the matching component/pattern is absent from the page.",
     "page-behavior": "Owned by page; consolidate or remove only in a page-specific cycle.",

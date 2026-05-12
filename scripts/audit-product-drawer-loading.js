@@ -4,7 +4,8 @@ const path = require('path');
 
 const ROOT = process.cwd();
 const OUTPUT = 'docs/validation/global-cycle-98-product-drawer-loading-report.json';
-const DRAWER_SRC = 'assets/js/pages/home/drawer.js';
+const DRAWER_SRC = 'assets/js/ui/mobile-drawer.js';
+const LEGACY_DRAWER_SRC = 'assets/js/pages/home/drawer.js';
 
 const htmlFiles = fs.readdirSync(ROOT)
   .filter((file) => file.endsWith('.html'))
@@ -25,7 +26,7 @@ for (const file of htmlFiles) {
     const srcMatch = attrs.match(/\bsrc=["']([^"']+)["']/i);
     if (!srcMatch) continue;
     const src = srcMatch[1];
-    if (normalizeSrc(src) !== DRAWER_SRC) continue;
+    if (normalizeSrc(src) !== DRAWER_SRC && normalizeSrc(src) !== LEGACY_DRAWER_SRC) continue;
     const usage = {
       page: file,
       src,
@@ -46,6 +47,7 @@ const report = {
   scope: {
     type: 'safe loading normalization gate',
     drawerSource: DRAWER_SRC,
+    legacyDrawerSource: LEGACY_DRAWER_SRC,
     visualChanges: false,
     jsRemovalPerformed: false,
     orderChanged: false

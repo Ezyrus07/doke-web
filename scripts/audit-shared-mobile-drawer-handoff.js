@@ -4,7 +4,8 @@ const path = require('path');
 
 const ROOT = process.cwd();
 const OUTPUT = 'docs/validation/global-cycle-106-shared-mobile-drawer-handoff-report.json';
-const DRAWER_SRC = 'assets/js/pages/home/drawer.js';
+const DRAWER_SRC = 'assets/js/ui/mobile-drawer.js';
+const LEGACY_DRAWER_SRC = 'assets/js/pages/home/drawer.js';
 const HANDOFF_DOC = 'docs/GLOBAL-CYCLES-CLOSURE-HANDOFF.md';
 
 function read(file) {
@@ -31,15 +32,15 @@ function extractScripts(html) {
 const htmlFiles = fs.readdirSync(ROOT).filter((file) => file.endsWith('.html')).sort();
 const usages = [];
 for (const file of htmlFiles) {
-  const scripts = extractScripts(read(file)).filter((script) => script.normalizedSrc === DRAWER_SRC);
+  const scripts = extractScripts(read(file)).filter((script) => script.normalizedSrc === DRAWER_SRC || script.normalizedSrc === LEGACY_DRAWER_SRC);
   scripts.forEach((script) => usages.push({
     page: file,
     src: script.src,
     hasDefer: /\bdefer\b/i.test(script.attrs),
     normalizedSrc: script.normalizedSrc,
-    currentPathOwner: 'pages/home',
+    currentPathOwner: script.normalizedSrc === DRAWER_SRC ? 'ui' : 'pages/home',
     actualRuntimeRole: 'shared-mobile-drawer',
-    migrationDecision: 'defer-physical-rename-until-dedicated-import-migration'
+    migrationDecision: script.normalizedSrc === DRAWER_SRC ? 'migrated-to-shared-ui-path' : 'legacy-path-still-pending-removal'
   }));
 }
 
@@ -50,9 +51,10 @@ const report = {
   scope: {
     visualChanges: false,
     responsiveWork: false,
-    physicalRenamePerformed: false,
+    physicalRenamePerformed: true,
     jsRemovalPerformed: false,
     drawerSource: DRAWER_SRC,
+    legacyDrawerSource: LEGACY_DRAWER_SRC,
   },
   checks: {
     drawerFileExists: fs.existsSync(path.join(ROOT, DRAWER_SRC)),
@@ -64,7 +66,7 @@ const report = {
   summary: {
     usageCount: usages.length,
     pages: usages.map((usage) => usage.page),
-    recommendedFutureAction: 'Create a dedicated shared mobile drawer migration only after all consumers are covered by a visual/runtime baseline.',
+    recommendedFutureAction: 'Remove legacy drawer source after applying the cycle and confirming no legacy imports remain.',
   },
   usages,
 };

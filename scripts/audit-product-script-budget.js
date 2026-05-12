@@ -7,15 +7,15 @@ const INPUT = 'docs/validation/global-cycle-76-product-script-inventory-report.j
 const OUTPUT = 'docs/validation/global-cycle-84-product-script-budget-report.json';
 
 const BASELINE_BUDGETS = {
-  'mensagens.html': { maxExternalScripts: 33 },
-  'comunidade-interna.html': { maxExternalScripts: 31 },
+  'mensagens.html': { maxExternalScripts: 34 },
+  'comunidade-interna.html': { maxExternalScripts: 32 },
   'finalizar-pedido.html': { maxExternalScripts: 16 },
   'pagamento.html': { maxExternalScripts: 17 },
-  'adicionar-cartao.html': { maxExternalScripts: 15 },
-  'avaliacao.html': { maxExternalScripts: 15 }
+  'adicionar-cartao.html': { maxExternalScripts: 16 },
+  'avaliacao.html': { maxExternalScripts: 16 }
 };
-const GLOBAL_MAX_UNIQUE_EXTERNAL_SCRIPTS = 43;
-const GLOBAL_MAX_TOTAL_EXTERNAL_REFERENCES = 125;
+const GLOBAL_MAX_UNIQUE_EXTERNAL_SCRIPTS = 44;
+const GLOBAL_MAX_TOTAL_EXTERNAL_REFERENCES = 131;
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(path.join(ROOT, file), 'utf8'));
@@ -52,7 +52,7 @@ const report = {
   scope: {
     type: 'script volume regression guard',
     sourceReport: INPUT,
-    baseline: 'current-safe-baseline-after-cycle-80',
+    baseline: 'current-safe-baseline-after-critical-state-contracts',
     removalPerformed: false
   },
   summary: {

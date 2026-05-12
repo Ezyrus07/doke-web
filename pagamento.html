@@ -96,7 +96,12 @@
 
 
    <main class="page__content">
-    <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean shell-home__workspace shell-home__workspace--clean payment-shell-content" data-payment-page>
+    <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean shell-home__workspace shell-home__workspace--clean payment-shell-content" data-payment-page data-state-boundary="pagamento" data-view-state="ready" aria-busy="false">
+     <div data-state-region data-state-scope="pagamento" aria-live="polite" aria-atomic="true">
+      <p data-state-loading hidden>Carregando dados de pagamento...</p>
+      <p data-state-empty hidden>Nenhum método de pagamento disponível.</p>
+      <p data-state-error hidden>Não foi possível carregar os dados de pagamento.</p>
+     </div>
      <section class="payment-layout">
       <div class="payment-main">
        <header class="payment-hero">
@@ -281,7 +286,7 @@
          </div>
         </dl>
 
-        <button class="payment-primary-button" type="button" data-payment-submit>Pagar agora</button>
+        <button class="payment-primary-button" type="button" data-payment-submit data-action-state="idle" data-action-loading-label="Processando pagamento...">Pagar agora</button>
         <p class="payment-summary__footnote">Ao pagar, o profissional recebe a confirmação e pode avançar com o atendimento.</p>
        </section>
       </aside>
@@ -326,6 +331,7 @@
   <script src="assets/js/services/order-service.js?v=20260512-cycle77-script-load-v1" defer></script>
   <script src="assets/js/services/wallet-service.js?v=20260512-cycle72-payment-boundary" defer></script>
   <script src="assets/js/services/domain-data-service.js?v=20260512-cycle77-script-load-v1" defer></script>
+  <script src="assets/js/state/state-contracts.js?v=20260512-cycle131-state-contracts" defer></script>
   <script src="assets/js/controllers/controller-data.js?v=20260512-cycle77-script-load-v1" defer></script>
   <script src="assets/js/controllers/page-controller-registry.js?v=20260512-cycle77-script-load-v1" defer></script>
   <script src="assets/js/controllers/pagamento-controller.js?v=20260512-cycle72-payment-boundary" defer></script>

@@ -183,7 +183,12 @@
         </header>
         <main class="page__content doke-page">
           <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean shell-home__workspace shell-home__workspace--clean profile-shell-content doke-page-shell doke-page-stack">
-            <section class="profile-screen doke-page-section" data-profile-root data-profile-id="profile-gabriel" data-data-ready="profile" data-profile-state="ready">
+            <section class="profile-screen doke-page-section" data-profile-root data-profile-id="profile-gabriel" data-data-ready="profile" data-profile-state="ready" data-state-boundary="perfil" data-state-scope="perfil" data-view-state="ready" aria-busy="false">
+            <div class="doke-state-region" data-state-region data-state-scope="perfil" aria-live="polite" hidden>
+              <p data-state-loading hidden>Carregando perfil...</p>
+              <p data-state-empty hidden>Nenhuma informação de perfil disponível.</p>
+              <p data-state-error hidden>Não foi possível carregar o perfil.</p>
+            </div>
               <section
                 class="profile-hero-shell doke-page-section"
                 data-profile-section="hero"
@@ -560,7 +565,7 @@
                   <button
                     class="profile-edit-modal__action profile-edit-modal__action--primary doke-btn doke-btn--primary"
                     type="submit"
-                  >
+                   data-action-state="idle" data-action-loading-label="Processando ação do perfil...">
                     Salvar alterações
                   </button>
                 </div>
@@ -797,7 +802,7 @@
                 <button class="budget-button budget-button--primary budget-button--nav doke-btn doke-btn--primary" type="button" data-step-next aria-label="Proximo">
                   <span>Continuar</span>
                 </button>
-                <button class="budget-button budget-button--success budget-button--nav doke-btn doke-btn--primary" type="submit" data-step-submit hidden aria-label="Enviar pedido">
+                <button class="budget-button budget-button--success budget-button--nav doke-btn doke-btn--primary" type="submit" data-step-submit hidden aria-label="Enviar pedido" data-action-state="idle" data-action-loading-label="Processando ação do perfil...">
                   <span>Enviar pedido</span>
                 </button>
               </div>
@@ -863,7 +868,7 @@
           </div>
           <div class="address-modal__actions">
             <button class="budget-button budget-button--ghost doke-btn doke-btn--ghost" type="button" data-close-address-modal>Cancelar</button>
-            <button class="budget-button budget-button--primary doke-btn doke-btn--primary" type="submit">Salvar endereco</button>
+            <button class="budget-button budget-button--primary doke-btn doke-btn--primary" type="submit" data-action-state="idle" data-action-loading-label="Processando ação do perfil...">Salvar endereco</button>
           </div>
         </form>
       </div>
@@ -1052,6 +1057,7 @@
 <script src="assets/js/core/feature-flags.js?v=20260501-stage32-runtime-flags" defer></script>
 <script src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags" defer></script>
 <script src="assets/js/core/app-state.js?v=20260501-auth-session-v1" defer></script>
+  <script src="assets/js/state/state-contracts.js?v=20260512-state-contracts-v1" defer></script>
   <script src="assets/js/core/permissions.js?v=20260501-auth-session-v1" defer></script>
   <script src="assets/js/core/session.js?v=20260501-auth-session-v1" defer></script>
   <script src="assets/js/services/auth-service.js?v=20260501-auth-session-v1" defer></script>

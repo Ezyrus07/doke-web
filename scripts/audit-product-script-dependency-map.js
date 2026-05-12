@@ -24,6 +24,7 @@ function scriptRole(src) {
   if (src.includes('/core/')) return 'core-runtime';
   if (src.includes('/controllers/')) return 'controller-stack';
   if (src.includes('/services/')) return 'domain-service';
+  if (src.includes('/state/')) return 'state-contract';
   if (src.includes('/ui/')) return 'ui-runtime';
   if (src.includes('/components/')) return 'shared-component';
   if (src.includes('/pages/')) return 'page-behavior';
@@ -43,7 +44,7 @@ function groupForPages(pages) {
 }
 
 function removalRisk(src, pages, role) {
-  if (role === 'core-runtime' || role === 'controller-stack') return 'critical-do-not-remove-without-runtime-test';
+  if (role === 'core-runtime' || role === 'controller-stack' || role === 'state-contract') return 'critical-do-not-remove-without-runtime-test';
   if (role === 'domain-service' && pages.length >= 4) return 'high-shared-service';
   if (role === 'ui-runtime' && pages.length >= 4) return 'high-shared-ui-runtime';
   if (role === 'page-behavior' && pages.length === 1) return 'page-owned-review-only';

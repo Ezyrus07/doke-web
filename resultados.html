@@ -148,7 +148,13 @@
         <main class="page__content doke-page">
           <div
             class="page__content-inner container app-shell-page__workspace search-results-workspace search-results-workspace--internal doke-page-shell doke-page-stack"
+            data-state-boundary="resultados" data-state-scope="resultados" data-view-state="ready" aria-busy="false"
           >
+            <div class="doke-state-region" data-state-region data-state-scope="resultados" aria-live="polite" hidden>
+              <p data-state-loading hidden>Carregando resultados...</p>
+              <p data-state-empty hidden>Nenhum resultado encontrado.</p>
+              <p data-state-error hidden>Não foi possível carregar os resultados.</p>
+            </div>
             <section class="results-searchbar doke-page-section" data-results-searchbox aria-label="Buscar resultados">
               <form class="results-searchbar__form doke-search-pill doke-search-pill--compact" action="resultados.html" role="search" data-results-search-form novalidate autocomplete="off" aria-label="Buscar resultados no Doke">
                 <label class="results-searchbar__field doke-search-pill__field" for="results-page-search">
@@ -158,7 +164,7 @@
                   <input id="results-page-search" class="doke-search-pill__input" type="search" name="q" placeholder="Ex: Pintor, Encanador..." data-results-search-input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
                 </label>
                 <button class="results-searchbar__mobile-filter" type="button" data-results-filters-open aria-controls="results-filters-panel" aria-label="Abrir filtros">Filtros</button>
-                <button class="results-searchbar__button doke-search-pill__button" type="submit" aria-label="Buscar">
+                <button class="results-searchbar__button doke-search-pill__button" type="submit" aria-label="Buscar" data-action-state="idle" data-action-loading-label="Atualizando resultados...">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"></path><path d="m13 6 6 6-6 6"></path></svg>
                 </button>
                 <div class="search-dropdown results-searchbar__dropdown" data-results-search-dropdown hidden>
@@ -333,7 +339,7 @@
                       >
                         Limpar
                       </button>
-                      <button class="results-button doke-btn" type="submit">
+                      <button class="results-button doke-btn" type="submit" data-action-state="idle" data-action-loading-label="Atualizando resultados...">
                         Aplicar
                       </button>
                     </div>
@@ -557,6 +563,7 @@
 <script src="assets/js/core/feature-flags.js?v=20260501-stage32-runtime-flags" defer></script>
 <script src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags" defer></script>
 <script src="assets/js/core/app-state.js?v=20260501-auth-session-v1" defer></script>
+  <script src="assets/js/state/state-contracts.js?v=20260512-state-contracts-v1" defer></script>
   <script src="assets/js/core/permissions.js?v=20260501-auth-session-v1" defer></script>
   <script src="assets/js/core/session.js?v=20260501-auth-session-v1" defer></script>
   <script src="assets/js/services/auth-service.js?v=20260501-auth-session-v1" defer></script>
