@@ -66,6 +66,7 @@
   --color-secondary-strong: #22786b;
   --color-secondary-soft: #e8f5f2;
   --color-secondary-border: rgba(41, 143, 127, 0.22);
+  --border-color-secondary: var(--color-secondary-border);
 
   --color-accent: #7c3aed;
   --color-accent-soft: #f3efff;
@@ -78,10 +79,36 @@
   --color-success: #16a34a;
   --color-info-soft: #eef2ff;
 
-  --color-border: var(--color-primary-border);
-  --color-border-soft: rgba(24, 75, 118, 0.10);
-  --color-border-muted: rgba(214, 226, 238, 0.96);
-  --color-border-strong: rgba(15, 23, 42, 0.12);
+  /* Border system -------------------------------------------------------- */
+  /*
+    Source of truth for every visible stroke.
+    Components/pages should consume --border*, --color-border* or aliases mapped below.
+    Do not apply a universal border reset; only elements that intentionally have a border
+    should draw one.
+  */
+  --border-width: 1px;
+  --border-style: solid;
+  --border-color: rgba(36, 88, 135, 0.14);
+  --border-color-soft: rgba(36, 88, 135, 0.10);
+  --border-color-muted: rgba(214, 226, 238, 0.92);
+  --border-color-strong: rgba(36, 88, 135, 0.22);
+  --border-color-interactive: rgba(var(--color-primary-rgb), 0.24);
+  --border-color-selected: rgba(var(--color-primary-rgb), 0.30);
+  --border-color-focus: rgba(var(--color-primary-rgb), 0.42);
+
+  --border: var(--border-width) var(--border-style) var(--border-color);
+  --border-soft: var(--border-width) var(--border-style) var(--border-color-soft);
+  --border-muted: var(--border-width) var(--border-style) var(--border-color-muted);
+  --border-strong: var(--border-width) var(--border-style) var(--border-color-strong);
+  --border-interactive: var(--border-width) var(--border-style) var(--border-color-interactive);
+  --border-selected: var(--border-width) var(--border-style) var(--border-color-selected);
+  --border-focus: var(--border-width) var(--border-style) var(--border-color-focus);
+
+  /* Legacy/color aliases kept mapped to the standard border system. */
+  --color-border: var(--border-color);
+  --color-border-soft: var(--border-color-soft);
+  --color-border-muted: var(--border-color-muted);
+  --color-border-strong: var(--border-color-strong);
 
   /* Gradients ----------------------------------------------------------- */
   --gradient-brand: linear-gradient(180deg, color-mix(in srgb, var(--color-primary) 80%, white) 0%, var(--color-primary) 100%);
@@ -94,14 +121,26 @@
   /* Shadows ------------------------------------------------------------- */
   --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
   --shadow-sm: 0 6px 18px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 12px 28px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 18px 42px rgba(15, 23, 42, 0.10);
+  --shadow-md: 0 12px 28px var(--border-color-strong);
+  --shadow-lg: 0 18px 42px var(--border-color-strong);
   --shadow-xl: 0 24px 70px rgba(15, 23, 42, 0.16);
-  --shadow-card: 0 18px 45px rgba(15, 23, 42, 0.08);
-  --shadow-card-hover: 0 22px 56px rgba(15, 23, 42, 0.12);
+  --shadow-card: 0 18px 45px var(--border-color-strong);
+  --shadow-card-hover: 0 22px 56px var(--border-color-strong);
   --shadow-control: 0 8px 18px rgba(25, 54, 89, 0.08);
   --shadow-dock: 0 18px 50px rgba(15, 23, 42, 0.14);
   --shadow-focus: 0 0 0 3px rgba(var(--color-primary-rgb), 0.18);
+
+  /* Semantic shadow aliases. Prefer these contracts over raw box-shadow values. */
+  --shadow-none: none;
+  --shadow-surface-xs: 0 10px 24px rgba(31, 84, 136, 0.035);
+  --shadow-surface-sm: 0 10px 24px rgba(31, 84, 136, 0.045);
+  --shadow-surface: 0 10px 24px rgba(39, 58, 86, 0.08);
+  --shadow-surface-strong: 0 14px 28px rgba(39, 58, 86, 0.12);
+  --shadow-control-soft: 0 6px 16px rgba(27, 61, 98, 0.08);
+  --shadow-control-hover: 0 10px 24px rgba(23, 59, 94, 0.09);
+  --shadow-action-primary: 0 18px 34px rgba(27, 75, 121, 0.22);
+  --shadow-action-secondary: 0 8px 18px rgba(24, 168, 141, 0.16);
+  --shadow-action-secondary-strong: 0 10px 20px rgba(27, 138, 120, 0.18);
 
   /* Radius -------------------------------------------------------------- */
   --radius-2xs: 8px;
@@ -113,6 +152,11 @@
   --radius-2xl: 30px;
   --radius-full: 999px;
   --radius-pill: var(--radius-full);
+
+  /* Legacy-safe radius aliases for values still present in older screens. */
+  --radius-compact: 12px;
+  --radius-base: 16px;
+  --radius-surface: 22px;
 
   /* Semantic radius aliases. Components should prefer these over literals. */
   --radius-control: var(--radius-sm);
@@ -147,10 +191,16 @@
   --safe-gutter-inline: max(var(--gutter-mobile), env(safe-area-inset-left, 0px));
 
   /* Component sizing ---------------------------------------------------- */
+  --size-control-xs: 34px;
   --size-control-sm: 38px;
   --size-control-md: 42px;
   --size-control-lg: 46px;
   --size-control-xl: 50px;
+  --control-height-xs: var(--size-control-xs);
+  --control-height-sm: var(--size-control-sm);
+  --control-height-md: var(--size-control-md);
+  --control-height-lg: var(--size-control-lg);
+  --control-height-xl: var(--size-control-xl);
   --size-icon-sm: 18px;
   --size-icon-md: 20px;
   --size-icon-lg: 22px;
@@ -164,6 +214,85 @@
   --icon-button-size: var(--size-control-md);
   --close-button-size: var(--size-control-md);
 
+
+
+  /* Control/Button/Input system ------------------------------------------ */
+  --control-gap: var(--space-2);
+  --control-padding-x-sm: 14px;
+  --control-padding-x-md: 16px;
+  --control-padding-x-lg: 20px;
+  --control-font-size-sm: var(--font-size-sm);
+  --control-font-size-md: var(--font-size-md);
+  --control-font-weight: var(--font-weight-bold);
+  --control-line-height: 1;
+
+  --btn-height-sm: var(--control-height-sm);
+  --btn-height-md: var(--control-height-lg);
+  --btn-height-lg: 52px;
+  --btn-height-xl: 56px;
+  --btn-padding-x-sm: var(--control-padding-x-sm);
+  --btn-padding-x-md: 18px;
+  --btn-padding-x-lg: 22px;
+  --btn-gap: 10px;
+  --btn-radius: var(--radius-control);
+  --btn-radius-sm: var(--radius-xs);
+  --btn-radius-lg: var(--radius-control-lg);
+  --btn-radius-pill: var(--radius-pill);
+  --btn-border: var(--border-soft);
+  --btn-border-strong: var(--border-interactive);
+  --btn-bg: var(--color-surface);
+  --btn-bg-soft: var(--color-primary-soft);
+  --btn-text: var(--color-heading);
+  --btn-text-muted: var(--color-text-soft);
+  --btn-shadow: var(--shadow-control-soft);
+  --btn-shadow-hover: var(--shadow-control-hover);
+  --btn-focus-ring: var(--shadow-focus);
+
+  --input-height-sm: var(--control-height-sm);
+  --input-height-md: var(--control-height-lg);
+  --input-height-lg: var(--control-height-xl);
+  --input-padding-x: var(--control-padding-x-md);
+  --input-radius: var(--radius-control);
+  --input-border: var(--border-soft);
+  --input-border-focus: var(--border-color-focus);
+  --input-bg: rgba(255, 255, 255, 0.94);
+  --input-bg-focus: var(--color-surface);
+  --input-text: var(--color-text);
+  --input-placeholder: #9ca3af;
+  --input-focus-ring: 0 0 0 4px rgba(var(--color-primary-rgb), 0.10);
+
+  --select-height: var(--input-height-md);
+  --select-radius: var(--input-radius);
+  --select-border: var(--input-border);
+  --select-bg: var(--input-bg);
+
+  --dropdown-min-width: 220px;
+  --dropdown-max-width: 420px;
+  --dropdown-padding: 10px;
+  --dropdown-gap: 10px;
+  --dropdown-radius: var(--radius-card-sm);
+  --dropdown-border: var(--border-soft);
+  --dropdown-bg: var(--color-surface);
+  --dropdown-shadow: var(--shadow-surface-strong);
+  --dropdown-item-height: 40px;
+  --dropdown-item-radius: var(--radius-compact);
+
+  --chip-height: var(--control-height-xs);
+  --chip-height-sm: 30px;
+  --chip-padding-x: 12px;
+  --chip-gap: 8px;
+  --chip-radius: var(--radius-pill);
+  --chip-border: var(--border-soft);
+  --chip-bg: rgba(255, 255, 255, 0.92);
+  --chip-text: var(--color-text-soft);
+
+  --badge-height: 30px;
+  --badge-padding-x: 11px;
+  --badge-radius: var(--radius-pill);
+  --badge-border: var(--border-soft);
+  --badge-bg: var(--color-surface-muted);
+  --badge-text: var(--color-text-muted);
+
   /* Layout -------------------------------------------------------------- */
   --sidebar-width: 272px;
   --header-height: 76px;
@@ -173,6 +302,23 @@
   --content-max-wide: 1440px;
   --content-max-readable: 760px;
   --panel-max: 720px;
+
+  /* Shared rail/grid contracts ------------------------------------------ */
+  --rail-max: var(--content-max);
+  --rail-inline-padding: 0px;
+  --rail-gap: var(--space-4);
+  --rail-gap-lg: var(--space-5);
+  --rail-arrow-size: 48px;
+  --section-gap: var(--space-8);
+  --section-gap-lg: var(--space-10);
+  --section-title-size: var(--font-size-sm);
+  --section-title-letter-spacing: 0.18em;
+  --section-title-color: #6d819a;
+  --grid-card-gap: var(--space-4);
+  --grid-card-gap-lg: 18px;
+  --grid-worker-columns: 4;
+  --grid-publication-columns: 3;
+  --grid-service-columns: 3;
   --drawer-width: 390px;
 
   /* Breakpoints: custom properties document the contract; media queries
@@ -190,22 +336,22 @@
   --shell-content-bg-mobile: #f2f6fa;
   --shell-sidebar-bg: var(--color-white);
   --shell-sidebar-bg-elevated: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 249, 253, 0.98) 100%);
-  --shell-sidebar-border: var(--color-border-soft);
+  --shell-sidebar-border: var(--border-color-soft);
   --shell-sidebar-shadow: 12px 0 28px rgba(16, 38, 60, 0.05);
   --shell-sidebar-shadow-mobile: 20px 0 44px rgba(15, 33, 54, 0.12);
   --shell-sidebar-shadow-drawer: 20px 0 42px rgba(15, 23, 42, 0.16);
   --shell-topbar-bg: var(--color-surface-glass);
-  --shell-topbar-border: var(--color-border-soft);
+  --shell-topbar-border: var(--border-color-soft);
   --shell-topbar-shadow: var(--shadow-xs);
   --shell-control-bg: rgba(248, 251, 255, 0.92);
   --shell-control-bg-hover: rgba(255, 255, 255, 0.96);
-  --shell-control-border: var(--color-border-soft);
+  --shell-control-border: var(--border-color-soft);
   --shell-drawer-scrim: rgba(15, 23, 42, 0.36);
 
   /* Surface and card aliases ------------------------------------------- */
-  --surface-outline-color: var(--color-border-soft);
-  --surface-outline-color-strong: var(--color-border-strong);
-  --surface-outline-color-soft: var(--color-border-soft);
+  --surface-outline-color: var(--border-color-soft);
+  --surface-outline-color-strong: var(--border-color-strong);
+  --surface-outline-color-soft: var(--border-color-soft);
   --surface-outline-hover: rgba(111, 148, 186, 0.94);
   --surface-outline-focus: rgba(43, 95, 148, 0.42);
   --surface-outline-ring: rgba(43, 95, 148, 0.08);
@@ -217,8 +363,8 @@
 
   --doke-card-bg: var(--color-surface);
   --doke-card-bg-soft: var(--color-surface-muted);
-  --doke-card-border: var(--color-border-soft);
-  --doke-card-border-strong: var(--color-border-strong);
+  --doke-card-border: var(--border-color-soft);
+  --doke-card-border-strong: var(--border-color-strong);
   --doke-card-shadow: var(--shadow-card);
   --doke-card-shadow-hover: var(--shadow-card-hover);
   --doke-card-radius-sm: var(--radius-sm);
@@ -235,11 +381,11 @@
   --internal-control-border: var(--doke-card-border);
   --surface-shell-border: var(--doke-card-border);
   --surface-shell-bg: var(--color-surface-raised);
-  --surface-shell-shadow: 0 10px 24px rgba(39, 58, 86, 0.06);
-  --surface-shell-radius: 22px;
+  --surface-shell-shadow: var(--shadow-surface-sm);
+  --surface-shell-radius: var(--radius-surface);
   --surface-shell-radius-compact: var(--radius-md);
-  --internal-surface-shadow: 0 10px 24px rgba(39, 58, 86, 0.08);
-  --internal-surface-radius: 20px;
+  --internal-surface-shadow: var(--shadow-surface);
+  --internal-surface-radius: var(--radius-base);
   --internal-surface-radius-lg: var(--radius-xl);
 
   /* Legacy-compatible Doke UI aliases ---------------------------------- */
@@ -249,22 +395,22 @@
   --doke-ui-blue-600: #21639b;
   --doke-ui-text: #23445f;
   --doke-ui-muted: #6f86a5;
-  --doke-ui-line: #d6e4f2;
-  --doke-ui-line-soft: var(--color-border-soft);
+  --doke-ui-line: var(--border-color-muted);
+  --doke-ui-line-soft: var(--border-color-soft);
   --doke-ui-bg: var(--color-white);
   --doke-ui-bg-soft: #f7fbff;
   --doke-ui-bg-blue: #eef5fc;
   --doke-ui-danger: var(--color-danger-strong);
   --doke-ui-danger-bg: #fff1f1;
 
-  --doke-control-height: var(--size-control-xl);
-  --doke-control-radius: var(--radius-sm);
-  --doke-button-height: var(--button-height);
-  --doke-button-radius: var(--button-radius);
+  --doke-control-height: var(--input-height-lg);
+  --doke-control-radius: var(--input-radius);
+  --doke-button-height: var(--btn-height-md);
+  --doke-button-radius: var(--btn-radius);
   --doke-icon-button-size: var(--icon-button-size);
   --doke-close-button-size: var(--close-button-size);
   --doke-close-button-size-mobile: var(--size-control-md);
-  --doke-chip-height: 34px;
+  --doke-chip-height: var(--chip-height);
   --doke-drawer-width: var(--drawer-width);
   --doke-surface-width: var(--content-max-readable);
   --doke-surface-width-wide: 940px;

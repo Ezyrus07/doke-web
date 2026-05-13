@@ -1,24 +1,24 @@
 /* Doke Base Chips and Badges Contract */
 :root {
-  --doke-chip-height: 36px;
-  --doke-chip-padding-x: 12px;
-  --doke-badge-height: 30px;
-  --doke-badge-padding-x: 11px;
+  --doke-chip-height: var(--chip-height);
+  --doke-chip-padding-x: var(--chip-padding-x);
+  --doke-badge-height: var(--badge-height);
+  --doke-badge-padding-x: var(--badge-padding-x);
 }
 
 :where(.doke-chip, .chip) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--chip-gap);
   min-height: var(--doke-chip-height);
   padding: 0 var(--doke-chip-padding-x);
-  border: 1px solid var(--surface-outline-color, var(--color-border-soft));
-  border-radius: var(--radius-pill, 999px);
-  background: rgba(255, 255, 255, 0.92);
-  color: var(--color-text-soft, var(--color-text-muted));
+  border: var(--chip-border);
+  border-radius: var(--chip-radius);
+  background: var(--chip-bg);
+  color: var(--chip-text);
   font-size: var(--font-size-sm);
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   line-height: 1;
   text-decoration: none;
   white-space: nowrap;
@@ -31,7 +31,7 @@
 
 :where(.doke-chip, .chip):where(:hover) {
   transform: translateY(-1px);
-  border-color: var(--color-border-strong);
+  border-color: var(--border-color-strong);
 }
 
 :where(.doke-chip.is-active, .chip.is-active, .doke-chip--primary) {
@@ -58,12 +58,12 @@
   gap: 7px;
   min-height: var(--doke-badge-height);
   padding: 0 var(--doke-badge-padding-x);
-  border-radius: var(--radius-pill, 999px);
-  border: 1px solid var(--surface-outline-color, var(--color-border-soft));
-  background: var(--color-surface-muted);
-  color: var(--color-text-muted);
+  border-radius: var(--badge-radius);
+  border: var(--badge-border);
+  background: var(--badge-bg);
+  color: var(--badge-text);
   font-size: var(--font-size-xs);
-  font-weight: 800;
+  font-weight: var(--font-weight-extrabold);
   line-height: 1;
   letter-spacing: 0.01em;
   text-decoration: none;
@@ -84,14 +84,14 @@
 
 :where(.doke-badge--warning, .badge--warning) {
   background: var(--color-warning-soft);
-  border-color: #fde68a;
-  color: #b45309;
+  border-color: rgba(245, 158, 11, 0.26);
+  color: var(--color-warning-strong);
 }
 
 :where(.doke-badge--danger, .badge--danger) {
   background: var(--color-danger-soft);
-  border-color: #fecaca;
-  color: #b91c1c;
+  border-color: rgba(239, 68, 68, 0.26);
+  color: var(--color-danger-strong);
 }
 
 :where(.doke-badge, .badge, .doke-chip, .chip) svg {

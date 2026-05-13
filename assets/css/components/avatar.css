@@ -1,4 +1,5 @@
-/* Doke Avatar Contract: pessoa/usuário/profissional/fallback com iniciais sempre circular. */
+/* Doke avatar primitive.
+   Canonical low-specificity contract for user/provider/community avatars. */
 :root {
   --doke-avatar-xs: 28px;
   --doke-avatar-sm: 36px;
@@ -7,237 +8,77 @@
   --doke-avatar-xl: 96px;
 }
 
-.avatar,
-.avatar--circle,
-.home-mobile-hero__avatar,
-.home-side-meta__avatar,
-.home-mobile-drawer__avatar,
-.topbar-profile__avatar,
-.topbar-profile__button .avatar,
-.wallet-topbar-profile__avatar,
-.orders-page-header__hero-avatar,
-.orders-profile__avatar,
-.settings-mobile-header__avatar,
-.detail-topbar__avatar,
-.detail-summary__avatar,
-.detail-host__avatar,
-.detail-booking__avatar,
-.profile-avatar,
-.profile-edit-media__avatar,
-.profile-follower-card__avatar,
-.profile-review-card__avatar,
-.profile-review-entry__avatar,
-.avatar-large,
-.message-item__avatar,
-.messages-thread__avatar,
-.community-message__avatar,
-.community-member__avatar,
-.community-member-card__avatar,
-.community-leaders__avatar,
-.community-avatar-stack i,
-.before-after-preview__avatar,
-.before-after-preview__mini-avatar,
-.worker-preview__mini-avatar,
-.service-card__avatar,
-.order-card__avatar,
-.pro-card__avatar,
-.professional-card__avatar,
-.budget-professional__avatar,
-.detail-professional__avatar,
-.order-provider__avatar,
-.ui-hero-demo__avatar {
+:where(.doke-avatar, [data-avatar]) {
+  --doke-avatar-size: var(--doke-avatar-md);
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: var(--doke-avatar-size);
+  height: var(--doke-avatar-size);
+  min-width: var(--doke-avatar-size);
+  min-height: var(--doke-avatar-size);
   flex: 0 0 auto;
-  width: var(--doke-avatar-md);
-  height: var(--doke-avatar-md);
-  min-width: var(--doke-avatar-md);
-  min-height: var(--doke-avatar-md);
-  aspect-ratio: 1 / 1;
-  padding: 0;
   overflow: hidden;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-primary, #2a5f90), var(--color-secondary, #35c9a5));
+  background: linear-gradient(135deg, var(--color-primary, var(--border-color-selected)), var(--color-secondary, #35c9a5));
   color: #fff;
-  border: 2px solid rgba(255,255,255,.9);
-  box-shadow: 0 10px 24px rgba(22,67,115,.14);
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 24px rgba(22, 67, 115, 0.14);
+  font-size: 0.9rem;
+  font-weight: 850;
+  letter-spacing: -0.03em;
   line-height: 1;
   text-align: center;
-  font-weight: 800;
-  letter-spacing: -.03em;
-  object-fit: cover;
 }
 
-:is(.avatar,.home-mobile-hero__avatar,.home-side-meta__avatar,.home-mobile-drawer__avatar,.topbar-profile__avatar,.orders-page-header__hero-avatar,.settings-mobile-header__avatar,.detail-topbar__avatar,.profile-avatar,.message-item__avatar,.messages-thread__avatar,.community-message__avatar,.community-member__avatar,.community-member-card__avatar,.service-card__avatar,.order-card__avatar,.pro-card__avatar) :is(img,picture,svg),
-:is(img.avatar,img.home-mobile-hero__avatar,img.home-side-meta__avatar,img.orders-page-header__hero-avatar,img.settings-mobile-header__avatar,img.detail-topbar__avatar,img.profile-avatar,img.message-item__avatar,img.messages-thread__avatar,img.service-card__avatar,img.order-card__avatar,img.pro-card__avatar) {
+:where(.doke-avatar--xs) { --doke-avatar-size: var(--doke-avatar-xs); font-size: 0.68rem; }
+:where(.doke-avatar--sm) { --doke-avatar-size: var(--doke-avatar-sm); font-size: 0.78rem; }
+:where(.doke-avatar--lg) { --doke-avatar-size: var(--doke-avatar-lg); font-size: 1.15rem; }
+:where(.doke-avatar--xl) { --doke-avatar-size: var(--doke-avatar-xl); font-size: 2rem; }
+
+:where(.doke-avatar img, .doke-avatar picture, .doke-avatar svg, [data-avatar] img, [data-avatar] picture, [data-avatar] svg) {
+  display: block;
   width: 100%;
   height: 100%;
-  min-width: 100%;
-  min-height: 100%;
-  border-radius: 50%;
+  border-radius: inherit;
   object-fit: cover;
-  display: block;
 }
 
-.home-mobile-hero__avatar,
-.home-side-meta__avatar,
-.orders-page-header__hero-avatar,
-.settings-mobile-header__avatar,
-.topbar-profile__avatar,
-.wallet-topbar-profile__avatar,
-.orders-profile__avatar {
-  width: var(--doke-avatar-sm);
-  height: var(--doke-avatar-sm);
-  min-width: var(--doke-avatar-sm);
-  min-height: var(--doke-avatar-sm);
-  font-size: .78rem;
-}
-
-.home-mobile-hero__avatar,
-.home-side-meta__avatar,
-.orders-page-header__hero-avatar,
-.settings-mobile-header__avatar {
-  width: var(--doke-mobile-header-avatar, 42px) !important;
-  height: var(--doke-mobile-header-avatar, 42px) !important;
-  min-width: var(--doke-mobile-header-avatar, 42px) !important;
-  min-height: var(--doke-mobile-header-avatar, 42px) !important;
-  flex: 0 0 var(--doke-mobile-header-avatar, 42px) !important;
-  border-radius: 50% !important;
-}
-
-.profile-avatar,
-.avatar-large {
-  width: var(--doke-avatar-xl);
-  height: var(--doke-avatar-xl);
-  min-width: var(--doke-avatar-xl);
-  min-height: var(--doke-avatar-xl);
-  font-size: 2rem;
-}
-
-.message-item__avatar,
-.messages-thread__avatar,
-.before-after-preview__mini-avatar,
-.worker-preview__mini-avatar,
-.profile-review-card__avatar,
-.profile-review-entry__avatar {
-  width: var(--doke-avatar-md);
-  height: var(--doke-avatar-md);
-  min-width: var(--doke-avatar-md);
-  min-height: var(--doke-avatar-md);
-}
-
-.avatar__status,
-.profile-avatar__status,
-.home-side-meta__avatar-status {
+:where(.doke-avatar__status, [data-avatar-status]) {
   position: absolute;
   right: 2px;
   bottom: 2px;
   width: 12px;
   height: 12px;
-  border-radius: 999px;
   border: 2px solid #fff;
-  background: #22c55e;
+  border-radius: var(--radius-pill);
+  background: var(--color-secondary, #35c9a5);
 }
 
-/* Guard rail: legacy page CSS may still set rounded-square radii. Avatar classes remain circles. */
-:is(
-  .avatar,
-  .avatar--circle,
-  .home-mobile-hero__avatar,
-  .home-side-meta__avatar,
-  .home-mobile-drawer__avatar,
-  .topbar-profile__avatar,
-  .topbar-profile__button .avatar,
-  .wallet-topbar-profile__avatar,
-  .orders-page-header__hero-avatar,
-  .orders-profile__avatar,
-  .settings-mobile-header__avatar,
-  .detail-topbar__avatar,
-  .detail-summary__avatar,
-  .detail-host__avatar,
-  .detail-booking__avatar,
-  .profile-avatar,
-  .profile-edit-media__avatar,
-  .profile-follower-card__avatar,
-  .profile-review-card__avatar,
-  .profile-review-entry__avatar,
-  .avatar-large,
-  .message-item__avatar,
-  .messages-thread__avatar,
-  .community-message__avatar,
-  .community-member__avatar,
-  .community-member-card__avatar,
-  .community-leaders__avatar,
-  .community-avatar-stack i,
-  .before-after-preview__avatar,
-  .before-after-preview__mini-avatar,
-  .worker-preview__mini-avatar,
-  .service-card__avatar,
-  .order-card__avatar,
-  .pro-card__avatar,
-  .professional-card__avatar,
-  .budget-professional__avatar,
-  .detail-professional__avatar,
-  .order-provider__avatar,
-  .ui-hero-demo__avatar
-) {
-  border-radius: 50% !important;
+:where(.doke-avatar-meta, [data-avatar-meta]) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
-/* Professional cards use photo avatars; keep the shared circular geometry without
-   replacing their image backgrounds with the generic fallback gradient. */
-.pro-card__avatar {
-  background-position: center !important;
-  background-size: cover !important;
-  background-repeat: no-repeat !important;
+:where(.doke-avatar-meta__content, [data-avatar-meta-content]) {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
 }
 
-.pro-card__avatar--painter {
-  background-image:
-    linear-gradient(180deg, rgba(13,31,54,0.06), rgba(13,31,54,0.12)),
-    url("../../img/workers/worker-pintura.png") !important;
+:where(.doke-avatar-meta__title, [data-avatar-title]) {
+  color: var(--color-text, #18314f);
+  font-size: 0.92rem;
+  font-weight: 850;
+  line-height: 1.15;
 }
 
-.pro-card__avatar--cleaner {
-  background-image:
-    linear-gradient(180deg, rgba(13,31,54,0.04), rgba(13,31,54,0.10)),
-    url("../../img/workers/worker-limpeza.png") !important;
-}
-
-.pro-card__avatar--teacher {
-  background-image:
-    linear-gradient(180deg, rgba(13,31,54,0.05), rgba(13,31,54,0.10)),
-    url("../../img/workers/worker-cozinha.png") !important;
-}
-
-.service-card__avatar {
-  background-position: center !important;
-  background-size: cover !important;
-  background-repeat: no-repeat !important;
-}
-
-.service-card__avatar--carlos {
-  background-image:
-    linear-gradient(180deg, rgba(13,31,54,0.05), rgba(13,31,54,0.12)),
-    url("../../img/workers/worker-pintura.png") !important;
-}
-
-.service-card__avatar--marcos {
-  background-image:
-    linear-gradient(180deg, rgba(13,31,54,0.05), rgba(13,31,54,0.12)),
-    url("../../img/workers/worker-eletrica.png") !important;
-}
-
-.service-card__avatar--elaine {
-  background-image:
-    linear-gradient(180deg, rgba(13,31,54,0.05), rgba(13,31,54,0.12)),
-    url("../../img/workers/worker-limpeza.png") !important;
-}
-
-.service-card__avatar--renata {
-  background-image:
-    linear-gradient(180deg, rgba(13,31,54,0.05), rgba(13,31,54,0.12)),
-    url("../../img/workers/worker-cozinha.png") !important;
+:where(.doke-avatar-meta__subtitle, [data-avatar-subtitle]) {
+  color: var(--color-muted, #64748b);
+  font-size: 0.8rem;
+  font-weight: 650;
+  line-height: 1.2;
 }

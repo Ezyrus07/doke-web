@@ -1,18 +1,18 @@
 /* Doke Base Form Controls Contract */
 :root {
-  --doke-control-height: 48px;
-  --doke-control-radius: var(--input-radius, 15px);
-  --doke-control-padding-x: 16px;
+  --doke-control-height: var(--input-height-lg);
+  --doke-control-radius: var(--input-radius);
+  --doke-control-padding-x: var(--input-padding-x);
 }
 
 :where(.doke-input, .doke-select, .doke-textarea, .input, .select) {
   width: 100%;
   min-height: var(--doke-control-height);
   padding: 0 var(--doke-control-padding-x);
-  border: 1px solid var(--surface-outline-color, var(--color-border-soft));
+  border: var(--input-border);
   border-radius: var(--doke-control-radius);
-  background: rgba(255, 255, 255, 0.94);
-  color: var(--color-text);
+  background: var(--input-bg);
+  color: var(--input-text);
   font: inherit;
   transition:
     border-color var(--transition-fast),
@@ -22,31 +22,31 @@
 
 :where(.doke-textarea) {
   min-height: 112px;
-  padding-block: 14px;
+  padding-block: var(--space-3);
   line-height: var(--line-height-relaxed);
   resize: vertical;
 }
 
 :where(.doke-input, .doke-select, .doke-textarea, .input, .select)::placeholder {
-  color: #9ca3af;
+  color: var(--input-placeholder);
 }
 
 :where(.doke-input, .doke-select, .doke-textarea, .input, .select):where(:focus, :focus-visible) {
   outline: 0;
-  border-color: rgba(var(--color-primary-rgb), 0.4);
-  box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.10);
-  background: var(--color-surface);
+  border-color: var(--input-border-focus);
+  box-shadow: var(--input-focus-ring);
+  background: var(--input-bg-focus);
 }
 
 :where(.doke-searchbox, .searchbox) {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--control-gap);
   min-height: var(--doke-control-height);
-  padding: 0 14px;
-  border: 1px solid var(--surface-outline-color, var(--color-border-soft));
+  padding: 0 var(--control-padding-x-sm);
+  border: var(--input-border);
   border-radius: var(--doke-control-radius);
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--input-bg);
   transition:
     border-color var(--transition-fast),
     box-shadow var(--transition-fast),
@@ -54,9 +54,9 @@
 }
 
 :where(.doke-searchbox, .searchbox):focus-within {
-  border-color: rgba(var(--color-primary-rgb), 0.4);
-  box-shadow: 0 0 0 4px rgba(var(--color-primary-rgb), 0.10);
-  background: var(--color-surface);
+  border-color: var(--input-border-focus);
+  box-shadow: var(--input-focus-ring);
+  background: var(--input-bg-focus);
 }
 
 :where(.doke-searchbox, .searchbox) input {
@@ -65,6 +65,6 @@
   border: 0;
   outline: 0;
   background: transparent;
-  color: var(--color-text);
+  color: var(--input-text);
   font: inherit;
 }

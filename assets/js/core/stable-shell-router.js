@@ -237,6 +237,13 @@
     document.body.classList.remove('sidebar-open', 'mobile-search-active', 'home-search-overlay-active', 'is-stable-shell-routing');
   }
 
+
+  function applyRouteRuntimeClasses(path) {
+    var normalized = path || currentPath();
+    var isHome = normalized === '/index.html' || normalized === '/';
+    document.documentElement.classList.toggle('home-index-root', isHome);
+  }
+
   function syncStandaloneUi(nextDoc) {
     var currentScrim = document.querySelector('.mobile-scrim');
     var nextScrim = nextDoc.querySelector('.mobile-scrim');
@@ -251,7 +258,7 @@
     else if (currentModal && !nextModal) currentModal.remove();
   }
 
-  function replaceShell(nextDoc) {
+  function replaceShell(nextDoc, path) {
     var currentShell = document.querySelector('.app-shell');
     var nextShell = nextDoc.querySelector('.app-shell');
     if (!currentShell || !nextShell) {
@@ -267,6 +274,7 @@
 
     syncHtmlContract(nextDoc.documentElement);
     syncBodyContract(nextDoc.body);
+    applyRouteRuntimeClasses(path);
     currentShell.replaceWith(nextShellNode);
     syncStandaloneUi(nextDoc);
     document.title = nextDoc.title || document.title;
@@ -353,7 +361,7 @@
       if (id !== navigationId) return;
       await ensureScripts(nextDoc);
       if (id !== navigationId) return;
-      replaceShell(nextDoc);
+      replaceShell(nextDoc, path);
 
       if (options.replace) window.history.replaceState({ dokeStableShell: true, href: url.href }, '', url.href);
       else window.history.pushState({ dokeStableShell: true, href: url.href }, '', url.href);
@@ -419,6 +427,7 @@
       navigate(href, options || {});
     };
 
+    applyRouteRuntimeClasses(currentPath());
     updateSidebar(currentPath());
   }
 
