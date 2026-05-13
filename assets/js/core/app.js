@@ -1,5 +1,10 @@
 /* Global shell interactions: sidebar, theme, auth avatar/profile menu and internal routing. */
 const body = document.body;
+try {
+  if ('scrollRestoration' in window.history) {
+    window.history.scrollRestoration = 'manual';
+  }
+} catch {}
 
 const ensureInstantRouteStyle = () => {
   if (document.getElementById("doke-instant-route-style")) return;
@@ -62,7 +67,6 @@ const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", "/comunidade-interna.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
 const isMobileSidebarViewport = () => window.innerWidth <= 1024;
-const isInstantShellNavigationEnabled = () => Boolean(window.Doke?.flags?.isEnabled?.("instantShellNavigation"));
 
 
 if (window.localStorage.getItem(THEME_STORAGE_KEY) === "dark") {
@@ -104,9 +108,18 @@ const isInternalViewUrl = (href) => {
   }
 };
 
-const shouldBypassShellSwap = (href) => {
-  if (!isInstantShellNavigationEnabled()) return true;
+
+const isInstantShellNavigationEnabled = () => {
   try {
+    return window.Doke?.flags?.isEnabled?.('instantShellNavigation') !== false;
+  } catch {
+    return true;
+  }
+};
+
+const shouldBypassShellSwap = (href) => {
+  try {
+    if (!isInstantShellNavigationEnabled()) return true;
     const url = new URL(href, window.location.href);
     const path = getCurrentPath(url.href);
 
@@ -456,7 +469,7 @@ const preloadedStyleHrefs = new Set();
 const INTERNAL_VIEW_SCRIPT_HINTS = {
   "/index.html": [
     "assets/js/pages/search-data.js",
-    "assets/js/pages/home/drawer.js",
+    "assets/js/ui/mobile-drawer.js",
     "assets/js/pages/home/filters.js",
     "assets/js/pages/home/search.js",
     "assets/js/pages/home.js"
@@ -861,22 +874,55 @@ document.addEventListener("click", (event) => {
 
 window.DokeUiSelect = window.DokeUiSelect || createUiSelectApi();
 
-const syncBodyClassesFromDocument = (nextDoc) => {
-  const preserved = PRESERVED_BODY_STATE_CLASSES.filter((className) => body.classList.contains(className));
-  body.className = "";
-  nextDoc.body.classList.forEach((className) => {
-    if (!PRESERVED_BODY_STATE_CLASSES.includes(className)) {
-      body.classList.add(className);
-    }
-  });
-  preserved.forEach((className) => body.classList.add(className));
+const PRESERVED_HTML_CLASS_NAMES = ["doke-js-mobile", "doke-js-desktop", "doke-mobile-shell-ready", "doke-mobile-shell-pending"];
+const PRESERVED_BODY_ATTRS = ["style"];
 
-  const nextPageName = nextDoc.body.getAttribute("data-page") || "";
-  if (nextPageName) {
-    body.setAttribute("data-page", nextPageName);
+const syncElementAttributesFromDocument = (target, source, { preserveAttrs = [], preserveClasses = [] } = {}) => {
+  if (!target || !source) return;
+
+  const preservedAttrs = new Map();
+  preserveAttrs.forEach((name) => {
+    if (target.hasAttribute(name)) preservedAttrs.set(name, target.getAttribute(name));
+  });
+
+  [...target.attributes].forEach((attr) => {
+    if (preserveAttrs.includes(attr.name)) return;
+    target.removeAttribute(attr.name);
+  });
+
+  [...source.attributes].forEach((attr) => {
+    if (attr.name === "class") return;
+    if (preserveAttrs.includes(attr.name) && preservedAttrs.has(attr.name)) return;
+    target.setAttribute(attr.name, attr.value);
+  });
+
+  preservedAttrs.forEach((value, name) => target.setAttribute(name, value));
+
+  const preservedClassNames = preserveClasses.filter((className) => target.classList.contains(className));
+  target.className = "";
+  source.classList.forEach((className) => {
+    if (!preserveClasses.includes(className)) target.classList.add(className);
+  });
+  preservedClassNames.forEach((className) => target.classList.add(className));
+};
+
+const syncDocumentStateFromDocument = (nextDoc) => {
+  syncElementAttributesFromDocument(document.documentElement, nextDoc.documentElement, {
+    preserveClasses: PRESERVED_HTML_CLASS_NAMES
+  });
+
+  syncElementAttributesFromDocument(body, nextDoc.body, {
+    preserveAttrs: PRESERVED_BODY_ATTRS,
+    preserveClasses: PRESERVED_BODY_STATE_CLASSES
+  });
+
+  // Re-apply persisted shell state after the route body contract is replaced.
+  if (window.localStorage.getItem(THEME_STORAGE_KEY) === "dark") {
+    body.classList.add("theme-dark");
   } else {
-    body.removeAttribute("data-page");
+    body.classList.remove("theme-dark");
   }
+  syncSidebarCollapsedState();
 };
 
 const suppressRouteTransitionsBriefly = () => {
@@ -926,6 +972,7 @@ const initializeCurrentView = () => {
   runViewInitializer("profile", window.DokeInitProfile);
   runViewInitializer("professional-profile", window.DokeInitProfessionalProfile);
   syncLucideIcons();
+  runViewInitializer("mobile-shell", window.DokeMobileAppShell?.refresh);
 
   try {
     initChipRails();
@@ -946,6 +993,56 @@ const waitForNextPaint = () =>
       window.requestAnimationFrame(resolve);
     });
   });
+
+const ROUTE_SCROLL_RESET_SELECTORS = [
+  '.app-shell',
+  '.page',
+  '.page__content',
+  '.page__content-inner',
+  '[data-shell-main]',
+  '.shell-home__workspace',
+  '.doke-page-shell',
+  '.orders-shell-content',
+  '.notifications-page',
+  '.communities-page',
+  '.settings-shell-content'
+];
+
+const setScrollInstantly = (node) => {
+  if (!node) return;
+  try {
+    node.scrollTop = 0;
+    node.scrollLeft = 0;
+  } catch {}
+};
+
+const resetRouteScrollPosition = () => {
+  const html = document.documentElement;
+  const previousHtmlBehavior = html.style.scrollBehavior;
+  const previousBodyBehavior = body.style.scrollBehavior;
+  html.style.scrollBehavior = 'auto';
+  body.style.scrollBehavior = 'auto';
+
+  const reset = () => {
+    try { window.scrollTo(0, 0); } catch {}
+    setScrollInstantly(document.scrollingElement);
+    setScrollInstantly(html);
+    setScrollInstantly(body);
+    ROUTE_SCROLL_RESET_SELECTORS.forEach((selector) => {
+      document.querySelectorAll(selector).forEach(setScrollInstantly);
+    });
+  };
+
+  reset();
+  window.requestAnimationFrame(() => {
+    reset();
+    window.requestAnimationFrame(() => {
+      reset();
+      html.style.scrollBehavior = previousHtmlBehavior;
+      body.style.scrollBehavior = previousBodyBehavior;
+    });
+  });
+};
 
 const swapView = async (href, { replace = false, preserveScroll = false } = {}) => {
   const url = new URL(href, window.location.href);
@@ -975,29 +1072,35 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
 
     const parser = new DOMParser();
     const nextDoc = parser.parseFromString(html, "text/html");
-    const nextPage = nextDoc.querySelector(".page");
-    const currentPage = document.querySelector(".page");
+    const nextShell = nextDoc.querySelector(".app-shell");
+    const currentShell = document.querySelector(".app-shell");
 
-    if (!nextPage || !currentPage) {
+    if (!nextShell || !currentShell) {
       window.location.href = url.toString();
       return;
     }
 
     stagedStyles = await syncStylesFromDocument(nextDoc);
-    await ensureScriptsFromDocument(nextDoc);
 
-    const nextPageNode = nextPage.cloneNode(true);
+    const nextShellNode = nextShell.cloneNode(true);
+    const currentSidebar = currentShell.querySelector(":scope > .sidebar");
+    const nextSidebar = nextShellNode.querySelector(":scope > .sidebar");
 
-    // Critical section: body classes, DOM and page CSS are switched together.
-    // This prevents the outgoing route from receiving selectors for the next
-    // data-page before its markup has been replaced.
-    syncBodyClassesFromDocument(nextDoc);
+    if (currentSidebar && nextSidebar) {
+      nextSidebar.replaceWith(currentSidebar);
+    }
+
+    // Critical section: body classes, app shell, topbar and page content move
+    // together. Swapping only .page leaves route-specific chrome/styles stale
+    // and causes the F5-only layout correction bug.
+    syncDocumentStateFromDocument(nextDoc);
     syncStandaloneUiFromDocument(nextDoc);
-    currentPage.replaceWith(nextPageNode);
+    currentShell.replaceWith(nextShellNode);
     activateStagedStyles(stagedStyles);
 
     cleanupDynamicStyles(nextDoc);
     document.title = nextDoc.title || document.title;
+    await ensureScriptsFromDocument(nextDoc);
     closeProfileMenu();
     closeMobileSearch();
 
@@ -1008,11 +1111,13 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
     }
 
     if (!preserveScroll) {
-      window.scrollTo({ top: 0, behavior: "auto" });
+      resetRouteScrollPosition();
     }
 
     try {
       initializeCurrentView();
+      document.dispatchEvent(new CustomEvent("doke:route-ready", { detail: { href: url.toString(), path: getCurrentPath(url.href) } }));
+      if (!preserveScroll) resetRouteScrollPosition();
     } catch (error) {
       console.error("[Doke:swap:init-after-replace]", error);
     }
@@ -1216,6 +1321,7 @@ document.addEventListener("focusin", (event) => {
 window.addEventListener("popstate", () => {
   const href = window.location.href;
   if (shouldBypassShellSwap(href)) {
+    window.location.reload();
     return;
   }
 

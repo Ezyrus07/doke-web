@@ -347,9 +347,16 @@
     return nav;
   }
 
-  function mount() {
+  function removeExistingShell() {
+    var shell = document.querySelector('[data-doke-mobile-shell]');
+    var nav = document.querySelector('[data-doke-mobile-bottom-nav]');
+    if (shell) shell.remove();
+    if (nav) nav.remove();
+  }
+
+  function render() {
     var cfg = config();
-    if (document.querySelector('[data-doke-mobile-shell]')) return;
+    removeExistingShell();
     document.body.setAttribute('data-shell-page', cfg.key);
     document.body.setAttribute('data-shell-search', cfg.search ? 'true' : 'false');
     document.body.classList.add('doke-mobile-shell-mounted');
@@ -358,6 +365,15 @@
     document.documentElement.classList.remove('doke-mobile-shell-pending');
     document.documentElement.classList.add('doke-mobile-shell-ready');
   }
+
+  function mount() {
+    render();
+  }
+
+  window.DokeMobileAppShell = window.DokeMobileAppShell || {};
+  window.DokeMobileAppShell.refresh = render;
+
+  document.addEventListener('doke:route-ready', render);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', mount, { once: true });
