@@ -111,9 +111,9 @@ const isInternalViewUrl = (href) => {
 
 const isInstantShellNavigationEnabled = () => {
   try {
-    return window.Doke?.flags?.isEnabled?.('instantShellNavigation') !== false;
+    return window.Doke?.flags?.isEnabled?.('instantShellNavigation') === true;
   } catch {
-    return true;
+    return false;
   }
 };
 
@@ -1319,6 +1319,8 @@ document.addEventListener("focusin", (event) => {
 });
 
 window.addEventListener("popstate", () => {
+  if (!isInstantShellNavigationEnabled()) return;
+
   const href = window.location.href;
   if (shouldBypassShellSwap(href)) {
     window.location.reload();

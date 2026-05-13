@@ -14,7 +14,9 @@
     desktop: 'desktopContracts',
     instantNavigation: 'instantShellNavigation',
     shellNavigation: 'instantShellNavigation',
-    routeSwap: 'instantShellNavigation'
+    routeSwap: 'instantShellNavigation',
+    stableNavigation: 'stableShellNavigation',
+    stableShell: 'stableShellNavigation'
   });
 
   function canonical(name) {

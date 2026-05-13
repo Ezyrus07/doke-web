@@ -10,7 +10,8 @@
     authSessionBootstrap: true,
     desktopContracts: true,
     visualGuards: true,
-    instantShellNavigation: true
+    instantShellNavigation: false,
+    stableShellNavigation: true
   });
 
   function readEnvironment() {
@@ -36,7 +37,7 @@
   var windowConfig = readWindowConfig();
 
   Doke.runtimeConfig = Object.freeze({
-    version: '20260512-cycle168-shell-router',
+    version: '20260513-stable-shell-router-v2',
     environment: windowConfig.environment || readEnvironment(),
     flags: mergeFlags(DEFAULT_FLAGS, windowConfig.flags || {}),
     safeModeQueryParam: 'dokeSafeMode',
