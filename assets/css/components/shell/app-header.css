@@ -647,3 +647,31 @@
     box-sizing: border-box !important;
   }
 }
+
+/* Global Header Contract v2.0 — approved visual rail
+   Owner: components/shell.
+   The app header must not use the full page canvas. Its shared controls live on
+   the same narrower action rail used visually by the hero/cards, while page
+   content width remains owned by page/layout contracts. */
+@media (min-width: 761px) {
+  body.has-global-header > .app-shell > .page > .app-header,
+  body[data-page].has-global-header > .app-shell > .page > .app-header {
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: none !important;
+    max-width: none !important;
+    margin-inline: 0 !important;
+  }
+
+  body.has-global-header > .app-shell > .page > .app-header > .app-header__inner,
+  body[data-page].has-global-header > .app-shell > .page > .app-header > .app-header__inner,
+  body.has-global-header .app-header.app-header--detail > .app-header__inner {
+    --app-header-rail-max: var(--doke-app-shell-max, 1180px);
+    --app-header-rail-gutter: var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px));
+    inline-size: min(calc(100% - (var(--app-header-rail-gutter) * 4)), var(--app-header-rail-max)) !important;
+    width: min(calc(100% - (var(--app-header-rail-gutter) * 4)), var(--app-header-rail-max)) !important;
+    max-inline-size: var(--app-header-rail-max) !important;
+    max-width: var(--app-header-rail-max) !important;
+    margin-inline: auto !important;
+  }
+}

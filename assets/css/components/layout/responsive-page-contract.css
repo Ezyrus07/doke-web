@@ -469,3 +469,130 @@ body:is(.home-index-shell, .search-results-body) :where(.service-card__cta, .wor
     padding: 0 !important;
   }
 }
+
+/* Header Parity Lock — app-header must not inherit list-page toolbar metrics.
+   Owner: components/layout
+   Purpose: keep migrated global headers identical on pedidos/carteira/index/detalhe
+   even when list-page compatibility CSS is loaded after the shell header contract. */
+@media (min-width: 761px) {
+  body.has-global-header > .app-shell > .page > .app-header.home-side-meta {
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: none !important;
+    max-width: none !important;
+    min-height: var(--doke-app-topbar-height, 96px) !important;
+    margin: 0 0 clamp(12px, 1.5vw, 22px) !important;
+    padding: clamp(22px, 2.2vw, 32px) 0 clamp(16px, 1.5vw, 22px) !important;
+    display: block !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  body.has-global-header > .app-shell > .page > .app-header.home-side-meta > .app-header__inner {
+    inline-size: min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), var(--doke-app-shell-max, 1180px)) !important;
+    width: min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), var(--doke-app-shell-max, 1180px)) !important;
+    max-inline-size: var(--doke-app-shell-max, 1180px) !important;
+    max-width: var(--doke-app-shell-max, 1180px) !important;
+    min-height: var(--app-header-control-size, 48px) !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: var(--app-header-control-gap, 12px) !important;
+    box-sizing: border-box !important;
+  }
+
+  body.has-global-header .app-header.home-side-meta .home-side-meta__group,
+  body.has-global-header .app-header.home-side-meta .app-header__group {
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--app-header-control-gap, 12px) !important;
+    min-width: 0 !important;
+    height: var(--app-header-control-size, 48px) !important;
+    min-height: var(--app-header-control-size, 48px) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.has-global-header .app-header.home-side-meta .home-side-meta__group--primary,
+  body.has-global-header .app-header.home-side-meta .app-header__group--primary {
+    flex: 1 1 auto !important;
+    justify-content: flex-start !important;
+  }
+
+  body.has-global-header .app-header.home-side-meta .home-side-meta__group--secondary,
+  body.has-global-header .app-header.home-side-meta .app-header__group--secondary {
+    flex: 0 0 auto !important;
+    justify-content: flex-end !important;
+    margin-left: auto !important;
+  }
+
+  body.has-global-header .app-header.home-side-meta :is(.home-side-meta__search, .home-side-meta__alert, .detail-standard-topbar__back, .topbar-shortcut, .doke-icon-btn) {
+    inline-size: var(--app-header-control-size, 48px) !important;
+    block-size: var(--app-header-control-size, 48px) !important;
+    min-inline-size: var(--app-header-control-size, 48px) !important;
+    min-block-size: var(--app-header-control-size, 48px) !important;
+    max-inline-size: var(--app-header-control-size, 48px) !important;
+    max-block-size: var(--app-header-control-size, 48px) !important;
+    flex: 0 0 var(--app-header-control-size, 48px) !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: var(--app-header-control-radius, 16px) !important;
+    box-sizing: border-box !important;
+  }
+
+  body.has-global-header .app-header.home-side-meta .page-header-context,
+  body.has-global-header .app-header.home-side-meta .orders-page-actions {
+    height: var(--app-header-action-height, 48px) !important;
+    min-height: var(--app-header-action-height, 48px) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: var(--app-header-control-gap, 12px) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.has-global-header .app-header.home-side-meta .page-header-context__action {
+    height: var(--app-header-action-height, 48px) !important;
+    min-height: var(--app-header-action-height, 48px) !important;
+    padding: 0 18px !important;
+    border-radius: var(--app-header-control-radius, 16px) !important;
+    font-size: 15px !important;
+    line-height: 1 !important;
+  }
+
+  body.has-global-header .app-header.home-side-meta .home-side-meta__profile-wrap {
+    height: var(--app-header-profile-height, 48px) !important;
+    min-height: var(--app-header-profile-height, 48px) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    overflow: visible !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.has-global-header .app-header.home-side-meta .home-side-meta__profile {
+    height: var(--app-header-profile-height, 48px) !important;
+    min-height: var(--app-header-profile-height, 48px) !important;
+    padding: 6px 14px 6px 8px !important;
+    border-radius: 18px !important;
+    border-right: 0 !important;
+    gap: 10px !important;
+  }
+
+  body.has-global-header .app-header.home-side-meta .home-side-meta__avatar {
+    inline-size: var(--app-header-profile-avatar, 36px) !important;
+    block-size: var(--app-header-profile-avatar, 36px) !important;
+    min-inline-size: var(--app-header-profile-avatar, 36px) !important;
+    min-block-size: var(--app-header-profile-avatar, 36px) !important;
+    max-inline-size: var(--app-header-profile-avatar, 36px) !important;
+    max-block-size: var(--app-header-profile-avatar, 36px) !important;
+  }
+}

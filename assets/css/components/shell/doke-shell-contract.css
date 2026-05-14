@@ -2289,3 +2289,51 @@ body {
     box-shadow: var(--doke-header-control-shadow-hover) !important;
   }
 }
+
+/*
+  Doke Shell Contract v14 — header vertical parity, no top lift
+  Responsabilidade: nenhum HTML pode subir a coluna .page para aproximar o
+  header do topo. O header deve ocupar fluxo normal, com o mesmo respiro
+  vertical nas rotas que compartilham topbar/header.
+*/
+@media (min-width: 761px) {
+  :root {
+    --doke-app-topbar-height: 96px !important;
+    --doke-app-header-lift: 0px !important;
+  }
+
+  body[data-page] > .app-shell > .page,
+  body.doke-app-shell-page > .app-shell > .page,
+  body.app-shell-page > .app-shell > .page,
+  body.internal-shell-page > .app-shell > .page {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    transform: none !important;
+  }
+
+  body[data-page] > .app-shell > .page > .topbar,
+  body[data-page] > .app-shell > .page > .internal-page-topbar,
+  body.doke-app-shell-page > .app-shell > .page > .topbar,
+  body.doke-app-shell-page > .app-shell > .page > .internal-page-topbar,
+  body.app-shell-page > .app-shell > .page > .topbar,
+  body.app-shell-page > .app-shell > .page > .internal-page-topbar,
+  body.internal-shell-page > .app-shell > .page > .topbar,
+  body.internal-shell-page > .app-shell > .page > .internal-page-topbar {
+    min-height: var(--doke-app-topbar-height) !important;
+    height: auto !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 26px !important;
+    padding-bottom: 18px !important;
+    align-items: center !important;
+    transform: none !important;
+  }
+
+  body[data-page] > .app-shell > .page > .page__content,
+  body.doke-app-shell-page > .app-shell > .page > .page__content,
+  body.app-shell-page > .app-shell > .page > .page__content,
+  body.internal-shell-page > .app-shell > .page > .page__content {
+    margin-top: 0 !important;
+    transform: none !important;
+  }
+}
