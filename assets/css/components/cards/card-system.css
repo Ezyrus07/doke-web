@@ -7,13 +7,13 @@
 :root {
   --doke-card-bg: var(--color-surface);
   --doke-card-bg-soft: var(--color-surface-muted);
-  --doke-card-border: var(--color-border-soft);
-  --doke-card-border-strong: var(--color-border-strong);
-  --doke-card-shadow: var(--shadow-card);
-  --doke-card-shadow-hover: var(--shadow-card-hover);
-  --doke-card-radius-sm: var(--radius-sm);
-  --doke-card-radius: var(--radius-md);
-  --doke-card-radius-lg: var(--radius-lg);
+  --doke-card-border: var(--card-border-color);
+  --doke-card-border-strong: var(--card-border-color);
+  --doke-card-shadow: var(--card-shadow);
+  --doke-card-shadow-hover: var(--card-shadow-hover);
+  --doke-card-radius-sm: var(--card-radius-sm);
+  --doke-card-radius: var(--card-radius);
+  --doke-card-radius-lg: var(--card-radius-lg);
   --doke-card-padding-sm: var(--space-3);
   --doke-card-padding: var(--space-4);
   --doke-card-padding-lg: var(--space-5);
@@ -45,7 +45,7 @@
 .wallet-bank-card,
 .notification-card {
   background: var(--doke-card-bg);
-  border: var(--border-soft);
+  border: var(--card-border, 1px solid var(--doke-card-border));
   border-radius: var(--doke-card-radius-lg);
   box-shadow: var(--doke-card-shadow);
   color: var(--doke-card-text);
@@ -76,7 +76,7 @@
 .wallet-manage-card,
 .wallet-bank-card,
 .notification-card {
-  transition: transform var(--transition-card), border-color var(--transition-card), box-shadow var(--transition-card);
+  transition: var(--card-transition, transform var(--transition-card), box-shadow var(--transition-card));
 }
 
 .service-card:hover,
@@ -86,8 +86,9 @@
 .recommendation-card:hover,
 .community-member-card:hover,
 .notification-card:hover {
-  border-color: var(--doke-card-border-strong);
+  border-color: var(--doke-card-border);
   box-shadow: var(--doke-card-shadow-hover);
+  transform: translateY(-1px);
 }
 
 .service-card:focus-within,
@@ -161,7 +162,7 @@
 
 .service-card__media,
 .recommendation-card__media {
-  border-radius: calc(var(--doke-card-radius-lg) - 6px);
+  border-radius: var(--card-media-radius, calc(var(--doke-card-radius-lg) - 6px));
   overflow: hidden;
   background: var(--doke-card-bg-soft);
 }
@@ -562,10 +563,10 @@
 }
 
 :is(.service-card, .worker-card, .media-card, .profile-card, .result-card, .community-card, .recommendation-card, .comparison-card, .video-card) {
-  border: 1px solid var(--doke-card-border, rgba(32, 74, 116, .12));
-  border-radius: var(--doke-card-radius-lg, 24px);
+  border: var(--card-border, 1px solid var(--doke-card-border, rgba(116, 145, 175, .14)));
+  border-radius: var(--doke-card-radius-lg, var(--card-radius-lg, 18px));
   background: var(--doke-card-bg, #fff);
-  box-shadow: var(--doke-card-shadow, 0 18px 42px rgba(25, 55, 92, .08));
+  box-shadow: var(--doke-card-shadow, var(--card-shadow, 0 8px 24px rgba(15, 45, 75, .045)));
 }
 
 :is(.service-card__media, .worker-card__media, .media-card__media, .result-card__media, .recommendation-card__media, .comparison-card__media) {
@@ -573,7 +574,7 @@
   aspect-ratio: var(--doke-card-media-ratio);
   min-height: 0;
   overflow: hidden;
-  border-radius: calc(var(--doke-card-radius-lg, 24px) - 6px) calc(var(--doke-card-radius-lg, 24px) - 6px) 0 0;
+  border-radius: var(--card-media-radius, 14px) var(--card-media-radius, 14px) 0 0;
   background-size: cover;
   background-position: center;
 }
@@ -596,7 +597,7 @@
 :is(.service-card__favorite, .worker-card__favorite, .result-card__favorite, .favorite-button) {
   inline-size: var(--doke-card-favorite-size);
   block-size: var(--doke-card-favorite-size);
-  border-radius: var(--radius-pill);
+  border-radius: 999px;
   flex: 0 0 auto;
   display: inline-grid;
   place-items: center;

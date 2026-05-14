@@ -622,14 +622,14 @@ body {
   --doke-header-control-radius: 18px;
   --doke-header-icon-size: 18px;
   --doke-header-control-bg: #ffffff;
-  --doke-header-control-border: #dbe7f1;
+  --doke-header-control-border: var(--surface-border-subtle, rgba(36, 88, 135, 0.055));
   --doke-header-control-text: #0b2b4c;
   --doke-header-control-muted: #5f7896;
   --doke-header-control-blue: #2b68a3;
   --doke-header-control-teal: #13847d;
-  --doke-header-control-shadow: 0 14px 32px rgba(22, 52, 86, 0.08);
-  --doke-header-control-shadow-hover: 0 18px 38px rgba(22, 52, 86, 0.12);
-  --doke-header-control-ring: rgba(43, 104, 163, 0.22);
+  --doke-header-control-shadow: 0 10px 28px rgba(15, 45, 75, 0.055);
+  --doke-header-control-shadow-hover: 0 12px 32px rgba(15, 45, 75, 0.075);
+  --doke-header-control-ring: rgba(43, 104, 163, 0.18);
 }
 
 @media (min-width: 761px) {
@@ -757,7 +757,7 @@ body {
     .topbar-shortcut
   ):hover {
     transform: translateY(-1px) !important;
-    border-color: rgba(43, 104, 163, 0.28) !important;
+    border-color: var(--doke-header-control-border) !important;
     box-shadow: var(--doke-header-control-shadow-hover) !important;
   }
 
@@ -1406,8 +1406,8 @@ body {
     --doke-app-topbar-height: 60px !important;
     --doke-app-topbar-control: 48px !important;
     --doke-header-profile-height: 54px !important;
-    --doke-header-control-shadow: 0 12px 26px rgba(22, 52, 86, 0.075) !important;
-    --doke-header-control-shadow-hover: 0 16px 34px rgba(22, 52, 86, 0.11) !important;
+    --doke-header-control-shadow: 0 8px 22px rgba(15, 45, 75, 0.052) !important;
+    --doke-header-control-shadow-hover: 0 10px 28px rgba(15, 45, 75, 0.07) !important;
   }
 
   body[data-page] > .app-shell > .page {
@@ -2240,5 +2240,52 @@ body {
     border-color: transparent !important;
     box-shadow: var(--doke-header-control-shadow) !important;
     outline: 0 !important;
+  }
+}
+
+
+/* Doke Shell Contract — soft surface header controls
+   Responsabilidade: alinhar o header ao padrão global soft-surface.
+   O contorno fica quase invisível; a separação vem de fundo branco + elevação leve.
+   Estados ativos primários continuam preservados pelos seletores semânticos existentes. */
+@media (min-width: 761px) {
+  body[data-page] :is(
+    .topbar-search-icon,
+    .mobile-toggle,
+    .topbar-search__icon,
+    .topbar-search-close,
+    .home-side-meta__search,
+    .home-side-meta__alert,
+    .settings-topbar__action,
+    .home-index-topbar__location,
+    .home-side-meta__location,
+    .topbar-location,
+    .topbar-shortcut,
+    .topbar-profile__button,
+    .home-side-meta__profile,
+    .home-side-meta__profile-caret-button
+  ):not(.is-active):not([aria-pressed="true"]):not([aria-expanded="true"]) {
+    border-color: var(--doke-header-control-border) !important;
+    box-shadow: var(--doke-header-control-shadow) !important;
+  }
+
+  body[data-page] :is(
+    .topbar-search-icon,
+    .mobile-toggle,
+    .topbar-search__icon,
+    .topbar-search-close,
+    .home-side-meta__search,
+    .home-side-meta__alert,
+    .settings-topbar__action,
+    .home-index-topbar__location,
+    .home-side-meta__location,
+    .topbar-location,
+    .topbar-shortcut,
+    .topbar-profile__button,
+    .home-side-meta__profile,
+    .home-side-meta__profile-caret-button
+  ):not(.is-active):not([aria-pressed="true"]):not([aria-expanded="true"]):hover {
+    border-color: var(--doke-header-control-border) !important;
+    box-shadow: var(--doke-header-control-shadow-hover) !important;
   }
 }

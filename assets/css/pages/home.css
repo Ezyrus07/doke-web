@@ -5806,15 +5806,15 @@ html.home-index-root body.home-index-shell section.more-services .service-grid.s
 
 /* 2026-05-10 - Index publications reuse the mobile card composition on all viewports. */
 html.home-index-root body.home-index-shell section.home-publications .publication-card {
-  --publication-radius: 22px !important;
+  --publication-radius: var(--card-radius-lg, 22px) !important;
   min-height: 0 !important;
   height: auto !important;
   padding: 0 !important;
   overflow: hidden !important;
-  border: 1px solid rgba(196, 212, 228, 0.82) !important;
-  border-radius: 22px !important;
-  background: #fff !important;
-  box-shadow: 0 10px 22px rgba(19, 48, 82, 0.07) !important;
+  border: var(--card-border, 1px solid rgba(36, 88, 135, 0.04)) !important;
+  border-radius: var(--publication-radius) !important;
+  background: var(--card-bg, #fff) !important;
+  box-shadow: var(--card-shadow, 0 8px 24px rgba(15, 45, 75, 0.045)) !important;
 }
 
 html.home-index-root body.home-index-shell section.home-publications .publication-card > .publication-card__media,
@@ -5871,7 +5871,7 @@ html.home-index-root body.home-index-shell section.home-publications .publicatio
   gap: 12px !important;
   margin-top: 0 !important;
   padding-top: 9px !important;
-  border-top: 1px solid rgba(214, 226, 238, 0.9) !important;
+  border-top: 1px solid var(--surface-divider, rgba(15, 45, 75, 0.06)) !important;
 }
 
 html.home-index-root body.home-index-shell section.home-publications .publication-card__action {
@@ -5979,5 +5979,59 @@ html.home-index-root body.home-index-shell section.home-publications .publicatio
   html.home-index-root body.home-index-shell .home-catégory:hover .home-catégory__icon,
   html.home-index-root body.home-index-shell .home-catégory:focus-visible .home-catégory__icon {
     box-shadow: 0 12px 24px rgba(34, 72, 116, 0.10), inset 0 0 0 1px rgba(184, 208, 233, 0.28);
+  }
+}
+
+
+/* 2026-05-13 — Home desktop header surface cleanup
+   Responsabilidade: o header do index deve manter apenas os controles visíveis.
+   A superfície/painel pai não deve criar fundo, borda ou sombra próprios. */
+@media (min-width: 1025px) {
+  html.home-index-root body.home-index-shell .home-index-topbar,
+  html.home-index-root body.home-index-shell .home-index-topbar::before,
+  html.home-index-root body.home-index-shell .home-index-topbar::after,
+  html.home-index-root body.home-index-shell .home-index-topbar :is(.topbar__inner, .internal-page-topbar__inner, .home-tablet-topbar__inner) {
+    background: transparent !important;
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-index-topbar {
+    border-radius: 0 !important;
+  }
+}
+
+/* 2026-05-13 — Index header transparent rail final cleanup
+   Scope: index desktop only.
+   Remove the legacy parent surface around the marketplace header. Controls keep
+   their own soft-surface backgrounds; only wrapper rails are transparent. */
+@media (min-width: 1025px) {
+  html.home-index-root body.home-index-shell :is(
+    .home-index-topbar,
+    .home-index-topbar::before,
+    .home-index-topbar::after,
+    .home-index-topbar > :is(.topbar__left, .topbar__center, .topbar__right),
+    .home-index-topbar :is(.topbar__inner, .internal-page-topbar__inner, .home-tablet-topbar__inner),
+    .home-index-topbar .topbar-account-cluster,
+    .home-side-meta,
+    .home-side-meta::before,
+    .home-side-meta::after,
+    .home-side-meta__inner,
+    .home-side-meta__group
+  ) {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(.home-index-topbar, .home-side-meta) {
+    border-radius: 0 !important;
   }
 }

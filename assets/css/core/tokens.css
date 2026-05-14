@@ -88,13 +88,23 @@
   */
   --border-width: 1px;
   --border-style: solid;
-  --border-color: rgba(36, 88, 135, 0.14);
-  --border-color-soft: rgba(36, 88, 135, 0.10);
-  --border-color-muted: rgba(214, 226, 238, 0.92);
-  --border-color-strong: rgba(36, 88, 135, 0.22);
-  --border-color-interactive: rgba(var(--color-primary-rgb), 0.24);
-  --border-color-selected: rgba(var(--color-primary-rgb), 0.30);
-  --border-color-focus: rgba(var(--color-primary-rgb), 0.42);
+
+  /* Soft surface line system: inspired by app-like cards that separate layers
+     with near-invisible hairlines and subtle elevation instead of hard outlines. */
+  --surface-border-subtle: rgba(36, 88, 135, 0.055);
+  --surface-border-soft: rgba(36, 88, 135, 0.08);
+  --surface-border: rgba(36, 88, 135, 0.10);
+  --surface-border-strong: rgba(36, 88, 135, 0.14);
+  --surface-divider: rgba(36, 88, 135, 0.075);
+  --surface-divider-strong: rgba(36, 88, 135, 0.11);
+
+  --border-color: var(--surface-border);
+  --border-color-soft: var(--surface-border-subtle);
+  --border-color-muted: var(--surface-divider);
+  --border-color-strong: var(--surface-border-strong);
+  --border-color-interactive: rgba(var(--color-primary-rgb), 0.18);
+  --border-color-selected: rgba(var(--color-primary-rgb), 0.24);
+  --border-color-focus: rgba(var(--color-primary-rgb), 0.36);
 
   --border: var(--border-width) var(--border-style) var(--border-color);
   --border-soft: var(--border-width) var(--border-style) var(--border-color-soft);
@@ -121,23 +131,24 @@
   /* Shadows ------------------------------------------------------------- */
   --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
   --shadow-sm: 0 6px 18px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 12px 28px var(--border-color-strong);
-  --shadow-lg: 0 18px 42px var(--border-color-strong);
-  --shadow-xl: 0 24px 70px rgba(15, 23, 42, 0.16);
-  --shadow-card: 0 18px 45px var(--border-color-strong);
-  --shadow-card-hover: 0 22px 56px var(--border-color-strong);
+  --shadow-md: 0 12px 28px rgba(15, 45, 75, 0.075);
+  --shadow-lg: 0 18px 42px rgba(15, 45, 75, 0.095);
+  --shadow-xl: 0 24px 70px rgba(15, 23, 42, 0.13);
+  --shadow-card: 0 8px 24px rgba(15, 45, 75, 0.045);
+  --shadow-card-hover: 0 12px 30px rgba(15, 45, 75, 0.065);
   --shadow-control: 0 8px 18px rgba(25, 54, 89, 0.08);
   --shadow-dock: 0 18px 50px rgba(15, 23, 42, 0.14);
   --shadow-focus: 0 0 0 3px rgba(var(--color-primary-rgb), 0.18);
 
   /* Semantic shadow aliases. Prefer these contracts over raw box-shadow values. */
   --shadow-none: none;
-  --shadow-surface-xs: 0 10px 24px rgba(31, 84, 136, 0.035);
-  --shadow-surface-sm: 0 10px 24px rgba(31, 84, 136, 0.045);
-  --shadow-surface: 0 10px 24px rgba(39, 58, 86, 0.08);
-  --shadow-surface-strong: 0 14px 28px rgba(39, 58, 86, 0.12);
-  --shadow-control-soft: 0 6px 16px rgba(27, 61, 98, 0.08);
-  --shadow-control-hover: 0 10px 24px rgba(23, 59, 94, 0.09);
+  --shadow-surface-xs: 0 4px 12px rgba(15, 45, 75, 0.028);
+  --shadow-surface-sm: 0 6px 18px rgba(15, 45, 75, 0.038);
+  --shadow-surface: 0 8px 24px rgba(15, 45, 75, 0.052);
+  --shadow-surface-strong: 0 12px 30px rgba(15, 45, 75, 0.075);
+  --shadow-surface-popover: 0 16px 42px rgba(15, 45, 75, 0.095);
+  --shadow-control-soft: 0 4px 12px rgba(15, 45, 75, 0.045);
+  --shadow-control-hover: 0 8px 18px rgba(15, 45, 75, 0.06);
   --shadow-action-primary: 0 18px 34px rgba(27, 75, 121, 0.22);
   --shadow-action-secondary: 0 8px 18px rgba(24, 168, 141, 0.16);
   --shadow-action-secondary-strong: 0 10px 20px rgba(27, 138, 120, 0.18);
@@ -226,6 +237,21 @@
   --control-font-weight: var(--font-weight-bold);
   --control-line-height: 1;
 
+  /* Card/surface visual language ---------------------------------------- */
+  --card-bg: var(--color-surface);
+  --card-border-color: var(--surface-border-subtle);
+  --card-border-color-hover: var(--surface-border-subtle);
+  --card-border: var(--border-width) var(--border-style) var(--card-border-color);
+  --card-radius-sm: var(--radius-xs);
+  --card-radius: var(--radius-sm);
+  --card-radius-lg: var(--radius-md);
+  --card-media-radius: calc(var(--card-radius) - 4px);
+  --card-shadow: var(--shadow-card);
+  --card-shadow-hover: var(--shadow-card-hover);
+  --card-shadow-media: var(--shadow-surface-xs);
+  --card-divider: var(--border-width) var(--border-style) var(--surface-divider);
+  --card-transition: transform var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+
   --btn-height-sm: var(--control-height-sm);
   --btn-height-md: var(--control-height-lg);
   --btn-height-lg: 52px;
@@ -273,7 +299,7 @@
   --dropdown-radius: var(--radius-card-sm);
   --dropdown-border: var(--border-soft);
   --dropdown-bg: var(--color-surface);
-  --dropdown-shadow: var(--shadow-surface-strong);
+  --dropdown-shadow: var(--shadow-surface-popover, var(--shadow-surface-strong));
   --dropdown-item-height: 40px;
   --dropdown-item-radius: var(--radius-compact);
 
@@ -349,9 +375,9 @@
   --shell-drawer-scrim: rgba(15, 23, 42, 0.36);
 
   /* Surface and card aliases ------------------------------------------- */
-  --surface-outline-color: var(--border-color-soft);
-  --surface-outline-color-strong: var(--border-color-strong);
-  --surface-outline-color-soft: var(--border-color-soft);
+  --surface-outline-color: var(--surface-border-subtle);
+  --surface-outline-color-strong: var(--surface-border-strong);
+  --surface-outline-color-soft: var(--surface-border-subtle);
   --surface-outline-hover: rgba(111, 148, 186, 0.94);
   --surface-outline-focus: rgba(43, 95, 148, 0.42);
   --surface-outline-ring: rgba(43, 95, 148, 0.08);
@@ -363,13 +389,13 @@
 
   --doke-card-bg: var(--color-surface);
   --doke-card-bg-soft: var(--color-surface-muted);
-  --doke-card-border: var(--border-color-soft);
-  --doke-card-border-strong: var(--border-color-strong);
-  --doke-card-shadow: var(--shadow-card);
-  --doke-card-shadow-hover: var(--shadow-card-hover);
-  --doke-card-radius-sm: var(--radius-sm);
-  --doke-card-radius: var(--radius-md);
-  --doke-card-radius-lg: var(--radius-lg);
+  --doke-card-border: var(--card-border-color);
+  --doke-card-border-strong: var(--surface-border-strong);
+  --doke-card-shadow: var(--card-shadow);
+  --doke-card-shadow-hover: var(--card-shadow-hover);
+  --doke-card-radius-sm: var(--card-radius-sm);
+  --doke-card-radius: var(--card-radius);
+  --doke-card-radius-lg: var(--card-radius-lg);
   --doke-card-padding-sm: var(--space-3);
   --doke-card-padding: var(--space-4);
   --doke-card-padding-lg: var(--space-5);
@@ -395,8 +421,8 @@
   --doke-ui-blue-600: #21639b;
   --doke-ui-text: #23445f;
   --doke-ui-muted: #6f86a5;
-  --doke-ui-line: var(--border-color-muted);
-  --doke-ui-line-soft: var(--border-color-soft);
+  --doke-ui-line: var(--surface-divider);
+  --doke-ui-line-soft: var(--surface-border-subtle);
   --doke-ui-bg: var(--color-white);
   --doke-ui-bg-soft: #f7fbff;
   --doke-ui-bg-blue: #eef5fc;

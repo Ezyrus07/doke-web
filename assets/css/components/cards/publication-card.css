@@ -4,7 +4,7 @@
 
 
 .publication-card {
-  --publication-radius: 24px;
+  --publication-radius: var(--card-radius-lg);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -12,10 +12,10 @@
   min-height: 330px;
   height: 100%;
   overflow: hidden;
-  border: 1px solid rgba(196, 212, 228, 0.88);
+  border: var(--border-width) var(--border-style) rgba(36, 88, 135, 0.04);
   border-radius: var(--publication-radius);
-  background: #fff;
-  box-shadow: 0 10px 22px rgba(19, 48, 82, 0.08);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-surface-sm);
   color: #163553;
   scroll-snap-align: start;
 }
@@ -24,8 +24,19 @@
   cursor: pointer;
 }
 
+.publication-card {
+  transition: var(--card-transition);
+}
+
+.publication-card:hover,
+.publication-card:focus-within {
+  border-color: rgba(36, 88, 135, 0.04);
+  box-shadow: var(--shadow-surface);
+  transform: translateY(-1px);
+}
+
 .publication-card:focus-visible {
-  outline: 3px solid var(--border-color-selected);
+  outline: 3px solid rgba(29, 100, 177, 0.28);
   outline-offset: 4px;
 }
 
@@ -97,7 +108,7 @@
   gap: 6px;
   min-height: 28px;
   padding: 0 10px;
-  border-radius: var(--radius-pill);
+  border-radius: 999px;
   background: rgba(18, 31, 44, 0.74);
   color: #fff;
   backdrop-filter: blur(12px);
@@ -130,7 +141,7 @@
   place-items: center;
   width: 52px;
   height: 52px;
-  border-radius: var(--radius-pill);
+  border-radius: 999px;
   transform: translate(-50%, -50%);
   background: rgba(255, 255, 255, 0.94);
   color: #12385e;
@@ -176,7 +187,7 @@
   top: 50%;
   z-index: 3;
   padding: 6px 10px;
-  border-radius: var(--radius-pill);
+  border-radius: 999px;
   background: rgba(255, 255, 255, 0.94);
   color: #6c4426;
   box-shadow: 0 6px 14px rgba(10, 25, 42, 0.12);
@@ -232,7 +243,7 @@
   gap: 12px;
   margin-top: 2px;
   padding-top: 9px;
-  border-top: var(--border-muted);
+  border-top: 1px solid rgba(214, 226, 238, 0.9);
 }
 
 .publication-card__action {
@@ -321,7 +332,7 @@
   }
 
   .publication-card__media {
-    border-radius: var(--radius-md);
+    border-radius: 18px;
   }
 }
 
@@ -333,7 +344,7 @@
     --publication-radius: 22px;
     min-height: auto;
     border-width: 1px;
-    border-color: var(--border-color-muted);
+    border-color: rgba(196, 212, 228, 0.82);
     box-shadow: 0 10px 22px rgba(19, 48, 82, 0.07);
   }
 
