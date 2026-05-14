@@ -622,3 +622,28 @@
     font-family: inherit !important;
   }
 }
+
+/* Global Header Contract v2.0 — final desktop rail parity.
+   Header outer participates in vertical flow only; the inner rail is the same
+   1180px shell rail consumed by pedidos.html and other migrated pages. */
+@media (min-width: 761px) {
+  body.has-global-header > .app-shell > .page > .app-header {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.has-global-header > .app-shell > .page > .app-header > .app-header__inner {
+    width: min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), var(--doke-app-shell-max, 1180px)) !important;
+    max-width: var(--doke-app-shell-max, 1180px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+}

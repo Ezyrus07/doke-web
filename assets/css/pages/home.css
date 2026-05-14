@@ -6035,3 +6035,46 @@ html.home-index-root body.home-index-shell section.home-publications .publicatio
     border-radius: 0 !important;
   }
 }
+
+/* 2026-05-14: index desktop parity correction.
+   The index must not define a wider header rail than pedidos.html.
+   Header geometry stays in components/shell/app-header.css; home.css only keeps
+   page content on the standard shell rail and consumes the shared search-pill size. */
+@media (min-width: 1025px) {
+  body.home-index-shell.has-global-header > .app-shell > .page > .app-header > .app-header__inner {
+    width: min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), var(--doke-app-shell-max, 1180px)) !important;
+    max-width: var(--doke-app-shell-max, 1180px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell .page__content-inner.shell-home__workspace,
+  body.home-index-shell .page__content-inner.shell-home__workspace--clean {
+    width: min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), var(--doke-app-shell-max, 1180px)) !important;
+    max-width: var(--doke-app-shell-max, 1180px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell .home-search-hero__button.doke-search-pill__button {
+    width: var(--doke-search-pill-button-size, 48px) !important;
+    min-width: var(--doke-search-pill-button-size, 48px) !important;
+    height: var(--doke-search-pill-button-size, 48px) !important;
+    min-height: var(--doke-search-pill-button-size, 48px) !important;
+    right: var(--doke-search-pill-button-offset, 6px) !important;
+    border-radius: var(--doke-search-pill-button-radius, var(--radius-pill)) !important;
+    background: var(--doke-search-pill-button-bg, #147b8d) !important;
+    box-shadow: var(--doke-search-pill-button-shadow, 0 12px 24px rgba(20, 123, 141, 0.18)) !important;
+  }
+
+  body.home-index-shell .home-search-hero__button.doke-search-pill__button svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+}

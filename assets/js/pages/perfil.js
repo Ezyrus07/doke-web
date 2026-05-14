@@ -2043,7 +2043,6 @@ window.DokeInitProfile = () => {
                 <span class="doke-review-card__avatar" aria-hidden="true">${getInitials(item.name)}</span>
                 <div class="doke-review-card__identity">
                   <strong>${item.name}</strong>
-                  <small class="doke-review-card__meta"><span class="doke-review-card__verified" aria-hidden="true">&bull;</span>${item.meta}</small>
                 </div>
               </div>
             </header>
@@ -2055,14 +2054,6 @@ window.DokeInitProfile = () => {
 
         hub.innerHTML = `
           <section class="doke-review-section" aria-label="Resumo das avaliacoes">
-            <div class="doke-review-heading">
-              <div>
-                <p class="doke-review-eyebrow">Resumo de reputacao</p>
-                <h3>Excelente experiencia em servicos concluidos</h3>
-                <p>Notas organizadas por criterio para ajudar o cliente a entender onde o profissional se destaca.</p>
-              </div>
-            </div>
-
             <div class="doke-review-scoreboard">
               <div class="doke-review-scoreboard__score">
                 <strong>${active.score}</strong>
