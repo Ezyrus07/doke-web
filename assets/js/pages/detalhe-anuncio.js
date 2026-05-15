@@ -3,17 +3,81 @@
   if (!root) return;
 
   const mainImage = root.querySelector('[data-gallery-main]');
+  const stage = root.querySelector('.ad-gallery__stage');
   const thumbs = Array.from(root.querySelectorAll('[data-gallery-thumb]'));
+  const prevButton = root.querySelector('.ad-gallery__nav--prev');
+  const nextButton = root.querySelector('.ad-gallery__nav--next');
+  const moreButton = root.querySelector('.ad-gallery__more[data-lightbox-open]');
 
-  thumbs.forEach((thumb) => {
-    thumb.addEventListener('click', () => {
-      const nextSrc = thumb.dataset.src;
-      if (!mainImage || !nextSrc) return;
+  const galleryItems = thumbs.map((thumb) => ({
+    src: thumb.dataset.src,
+    alt: thumb.querySelector('img')?.alt || thumb.getAttribute('aria-label') || 'Foto do serviço'
+  })).filter((item) => item.src);
 
-      mainImage.src = nextSrc;
-      thumbs.forEach((item) => item.classList.toggle('is-active', item === thumb));
+  let currentIndex = Math.max(0, thumbs.findIndex((thumb) => thumb.classList.contains('is-active')));
+  if (currentIndex < 0) currentIndex = 0;
+
+  const syncGallery = () => {
+    const item = galleryItems[currentIndex];
+    if (mainImage && item) {
+      mainImage.src = item.src;
+      mainImage.alt = item.alt;
+    }
+
+    thumbs.forEach((thumb, index) => {
+      const isActive = index === currentIndex;
+      thumb.classList.toggle('is-active', isActive);
+      thumb.setAttribute('aria-pressed', String(isActive));
     });
+  };
+
+  const goTo = (index) => {
+    if (!galleryItems.length) return;
+    currentIndex = (index + galleryItems.length) % galleryItems.length;
+    syncGallery();
+  };
+
+  thumbs.forEach((thumb, index) => {
+    thumb.addEventListener('click', () => goTo(index));
   });
+
+  prevButton?.addEventListener('click', (event) => {
+    event.stopPropagation();
+    goTo(currentIndex - 1);
+  });
+
+  nextButton?.addEventListener('click', (event) => {
+    event.stopPropagation();
+    goTo(currentIndex + 1);
+  });
+
+  const openLightbox = () => {
+    if (!window.DokeMediaLightbox || !galleryItems.length) return;
+    window.DokeMediaLightbox.open({
+      items: galleryItems,
+      index: currentIndex,
+      title: 'Fotos do serviço'
+    });
+  };
+
+  stage?.addEventListener('click', (event) => {
+    if (event.target.closest('.ad-gallery__nav') || event.target.closest('.ad-gallery__favorite')) return;
+    openLightbox();
+  });
+
+  stage?.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openLightbox();
+  });
+
+  moreButton?.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openLightbox();
+  });
+
+  syncGallery();
 
   const favoriteButtons = Array.from(document.querySelectorAll('[data-favorite-toggle]'));
   favoriteButtons.forEach((button) => {

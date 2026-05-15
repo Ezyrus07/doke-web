@@ -275,8 +275,8 @@ body.profile-page-shell .profile-stats-row::before{
 
 @media (min-width: 901px) {
   body.profile-page-shell > .app-shell > .page > .page__content > .page__content-inner.profile-shell-content{
-    width: min(calc(100% - 36px), 1540px) !important;
-    max-width: 1540px !important;
+    width: min(calc(100% - (var(--doke-app-shell-gutter, 32px) * 4)), var(--doke-app-shell-max, 1180px)) !important;
+    max-width: var(--doke-app-shell-max, 1180px) !important;
     margin-inline: auto !important;
   }
 
@@ -487,10 +487,6 @@ body.profile-page-shell .profile-stats-row::before{
 
   body.profile-page-shell .profile-card .profile-tab[data-profile-tab="beforeAfter"]{
     --profile-tab-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='5' width='16' height='14' rx='2'/%3E%3Cpath d='m8 14 2.2-2.2 2.2 2.2 2.8-3.2L18 14'/%3E%3Ccircle cx='9' cy='9' r='1'/%3E%3C/svg%3E");
-  }
-
-  body.profile-page-shell .profile-card .profile-tab[data-profile-tab="reviews"]{
-    --profile-tab-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m12 3.8 2.3 4.7 5.2.8-3.8 3.7.9 5.2-4.6-2.4-4.6 2.4.9-5.2-3.8-3.7 5.2-.8z'/%3E%3C/svg%3E");
   }
 
   body.profile-page-shell .profile-card .profile-tab[data-profile-tab="about"]{
@@ -2066,7 +2062,6 @@ body.profile-page-shell .profile-card > .profile-tabs.profile-tabs--compact .pro
    and mirror the active visual state explicitly, including Publicações (beforeAfter). */
 body.profile-page-shell .profile-tabs.profile-tabs--compact[data-active-tab="services"] [data-profile-tab="services"],
 body.profile-page-shell .profile-tabs.profile-tabs--compact[data-active-tab="beforeAfter"] [data-profile-tab="beforeAfter"],
-body.profile-page-shell .profile-tabs.profile-tabs--compact[data-active-tab="reviews"] [data-profile-tab="reviews"],
 body.profile-page-shell .profile-tabs.profile-tabs--compact[data-active-tab="about"] [data-profile-tab="about"],
 body.profile-page-shell .profile-tabs.profile-tabs--compact[data-active-tab="portfolio"] [data-profile-tab="portfolio"],
 body.profile-page-shell .profile-tabs.profile-tabs--compact[data-active-tab="certificates"] [data-profile-tab="certificates"],
@@ -2078,7 +2073,6 @@ body.profile-page-shell .profile-tabs.profile-tabs--compact[data-active-tab="faq
 
 body.profile-page-shell .profile-tabs.profile-tabs--compact[data-active-tab="services"] [data-profile-tab="services"]::after,
 body.profile-page-shell .profile-tabs.profile-tabs--compact[data-active-tab="beforeAfter"] [data-profile-tab="beforeAfter"]::after,
-body.profile-page-shell .profile-tabs.profile-tabs--compact[data-active-tab="reviews"] [data-profile-tab="reviews"]::after,
 body.profile-page-shell .profile-tabs.profile-tabs--compact[data-active-tab="about"] [data-profile-tab="about"]::after,
 body.profile-page-shell .profile-tabs.profile-tabs--compact[data-active-tab="portfolio"] [data-profile-tab="portfolio"]::after,
 body.profile-page-shell .profile-tabs.profile-tabs--compact[data-active-tab="certificates"] [data-profile-tab="certificates"]::after,
@@ -2231,626 +2225,6 @@ body.profile-page-shell .profile-stats-row::after{
   }
 }
 
-/* 2026-05-09 — clean profile reviews section.
-   Rebuilds the Reviews tab as a reputation area with fewer visual layers and clearer hierarchy. */
-body.profile-page-shell .profile-panel[data-profile-panel="reviews"],
-body.profile-page-shell .profile-panel[data-profile-panel="reviews"].doke-card,
-body.profile-page-shell .profile-panel[data-profile-panel="reviews"].doke-page-section{
-  padding: clamp(14px, 2vw, 22px) !important;
-  border: var(--border-soft) !important;
-  border-radius: var(--radius-surface, 24px) !important;
-  background: rgba(255, 255, 255, 0.94) !important;
-  box-shadow: 0 16px 34px rgba(17, 45, 78, 0.055) !important;
-}
-
-body.profile-page-shell .profile-panel[data-profile-panel="reviews"] .profile-panel-layout,
-body.profile-page-shell .profile-panel[data-profile-panel="reviews"] .profile-panel-main{
-  padding: 0 !important;
-  border: 0 !important;
-  border-color: transparent !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-body.profile-page-shell .profile-review-detail--clean{
-  display: grid !important;
-  gap: clamp(12px, 1.6vw, 18px) !important;
-  width: 100% !important;
-}
-
-body.profile-page-shell .profile-review-heading{
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px) !important;
-  align-items: end !important;
-  gap: 24px !important;
-  padding: 0 !important;
-}
-
-body.profile-page-shell .profile-review-heading__eyebrow{
-  display: inline-flex !important;
-  margin-bottom: 8px !important;
-  color: #6f8199 !important;
-  font-size: 0.76rem !important;
-  font-weight: 900 !important;
-  letter-spacing: 0.18em !important;
-  text-transform: uppercase !important;
-}
-
-body.profile-page-shell .profile-review-heading h3{
-  margin: 0 !important;
-  color: #14345a !important;
-  font-size: clamp(1.55rem, 2vw, 2.2rem) !important;
-  font-weight: 900 !important;
-  letter-spacing: -0.055em !important;
-  line-height: 1.02 !important;
-}
-
-body.profile-page-shell .profile-review-heading p{
-  max-width: 620px !important;
-  margin: 8px 0 0 !important;
-  color: #657893 !important;
-  font-size: 0.95rem !important;
-  font-weight: 700 !important;
-  line-height: 1.5 !important;
-}
-
-body.profile-page-shell .profile-review-service-select{
-  display: grid !important;
-  gap: 8px !important;
-  margin: 0 !important;
-}
-
-body.profile-page-shell .profile-review-service-select > span{
-  color: #6f8199 !important;
-  font-size: 0.72rem !important;
-  font-weight: 900 !important;
-  letter-spacing: 0.14em !important;
-  text-transform: uppercase !important;
-}
-
-body.profile-page-shell .profile-review-service-select .profile-review-switcher__select{
-  width: 100% !important;
-  min-height: 48px !important;
-  padding: 0 44px 0 18px !important;
-  border: var(--border-soft) !important;
-  border-radius: var(--radius-base) !important;
-  background-color: #ffffff !important;
-  color: #14345a !important;
-  box-shadow: none !important;
-  font-size: 0.92rem !important;
-  font-weight: 850 !important;
-}
-
-body.profile-page-shell .profile-review-hub--clean{
-  display: grid !important;
-  gap: clamp(10px, 1.4vw, 14px) !important;
-}
-
-body.profile-page-shell .profile-review-summary-card--clean{
-  display: grid !important;
-  grid-template-columns: minmax(180px, 220px) minmax(0, 1fr) !important;
-  align-items: stretch !important;
-  gap: 22px !important;
-  padding: 24px !important;
-  border: var(--border-soft) !important;
-  border-radius: 26px !important;
-  background: #ffffff !important;
-  box-shadow: 0 18px 40px rgba(17, 45, 78, 0.07) !important;
-}
-
-body.profile-page-shell .profile-review-score{
-  display: grid !important;
-  place-items: center !important;
-  gap: 7px !important;
-  min-height: 178px !important;
-  padding: 20px !important;
-  border: var(--border-soft) !important;
-  border-radius: var(--radius-surface) !important;
-  background: linear-gradient(180deg, rgba(232, 246, 255, 0.92), rgba(255, 255, 255, 0.94)) !important;
-}
-
-body.profile-page-shell .profile-review-score strong{
-  color: #195783 !important;
-  font-size: clamp(3.1rem, 5vw, 4.65rem) !important;
-  font-weight: 900 !important;
-  letter-spacing: -0.08em !important;
-  line-height: 0.92 !important;
-}
-
-body.profile-page-shell .profile-review-score span{
-  color: #f5a524 !important;
-  font-size: 0.86rem !important;
-  letter-spacing: 0.12em !important;
-}
-
-body.profile-page-shell .profile-review-score small{
-  color: #657893 !important;
-  font-size: 0.9rem !important;
-  font-weight: 700 !important;
-}
-
-body.profile-page-shell .profile-review-score b{
-  display: inline-flex !important;
-  align-items: center !important;
-  min-height: 26px !important;
-  padding: 0 12px !important;
-  border-radius: var(--radius-pill) !important;
-  background: rgba(18, 159, 146, 0.1) !important;
-  color: #087c70 !important;
-  font-size: 0.72rem !important;
-  font-weight: 900 !important;
-}
-
-body.profile-page-shell .profile-review-summary-card__content{
-  display: grid !important;
-  align-content: center !important;
-  gap: 20px !important;
-  min-width: 0 !important;
-}
-
-body.profile-page-shell .profile-review-summary-card__topline{
-  display: grid !important;
-  gap: 6px !important;
-}
-
-body.profile-page-shell .profile-review-summary-card__topline span{
-  color: #6f8199 !important;
-  font-size: 0.72rem !important;
-  font-weight: 900 !important;
-  letter-spacing: 0.16em !important;
-  text-transform: uppercase !important;
-}
-
-body.profile-page-shell .profile-review-summary-card__topline h4{
-  margin: 0 !important;
-  color: #14345a !important;
-  font-size: clamp(1.25rem, 1.5vw, 1.55rem) !important;
-  font-weight: 900 !important;
-  letter-spacing: -0.04em !important;
-  line-height: 1.08 !important;
-}
-
-body.profile-page-shell .profile-review-summary-card__topline p{
-  max-width: 660px !important;
-  margin: 0 !important;
-  color: #657893 !important;
-  font-size: 0.92rem !important;
-  font-weight: 700 !important;
-  line-height: 1.5 !important;
-}
-
-body.profile-page-shell .profile-review-kpis{
-  display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  gap: 12px !important;
-}
-
-body.profile-page-shell .profile-review-kpi{
-  display: grid !important;
-  gap: 6px !important;
-  min-width: 0 !important;
-  min-height: 76px !important;
-  padding: 14px 16px !important;
-  border: var(--border-soft) !important;
-  border-radius: var(--radius-md) !important;
-  background: rgba(248, 252, 255, 0.92) !important;
-}
-
-body.profile-page-shell .profile-review-kpi span{
-  overflow: hidden !important;
-  color: #6f8199 !important;
-  font-size: 0.74rem !important;
-  font-weight: 850 !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-}
-
-body.profile-page-shell .profile-review-kpi strong{
-  color: #14345a !important;
-  font-size: 1.12rem !important;
-  font-weight: 900 !important;
-}
-
-body.profile-page-shell .profile-review-toolbar--clean{
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 16px !important;
-  padding: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-body.profile-page-shell .profile-review-toolbar--clean .detail-filter-chips{
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 8px !important;
-}
-
-body.profile-page-shell .profile-review-toolbar--clean .detail-chip{
-  min-height: var(--control-height-sm) !important;
-  padding: 0 16px !important;
-  border: var(--border-soft) !important;
-  border-radius: var(--radius-pill) !important;
-  background: #ffffff !important;
-  color: #14345a !important;
-  box-shadow: none !important;
-  font-size: 0.82rem !important;
-  font-weight: 850 !important;
-}
-
-body.profile-page-shell .profile-review-toolbar--clean .detail-chip.is-active{
-  border-color: #195783 !important;
-  background: #195783 !important;
-  color: #ffffff !important;
-}
-
-body.profile-page-shell .profile-review-toolbar--clean > span{
-  color: #6f8199 !important;
-  font-size: 0.78rem !important;
-  font-weight: 850 !important;
-  white-space: nowrap !important;
-}
-
-body.profile-page-shell .profile-review-grid--clean{
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 16px !important;
-}
-
-body.profile-page-shell .profile-review-card--clean{
-  display: grid !important;
-  gap: 16px !important;
-  min-width: 0 !important;
-  padding: 22px !important;
-  border: var(--border-soft) !important;
-  border-radius: var(--radius-surface) !important;
-  background: #ffffff !important;
-  box-shadow: 0 12px 26px rgba(17, 45, 78, 0.06) !important;
-}
-
-body.profile-page-shell .profile-review-card--clean .profile-review-card__head{
-  display: flex !important;
-  align-items: flex-start !important;
-  justify-content: space-between !important;
-  gap: 16px !important;
-}
-
-body.profile-page-shell .profile-review-card--clean .profile-review-card__client{
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-  min-width: 0 !important;
-}
-
-body.profile-page-shell .profile-review-card--clean .profile-review-card__avatar{
-  display: grid !important;
-  place-items: center !important;
-  width: 42px !important;
-  height: var(--control-height-md) !important;
-  flex: 0 0 42px !important;
-  border-radius: var(--radius-pill) !important;
-  background: #eef6fd !important;
-  color: #195783 !important;
-  font-size: 0.78rem !important;
-  font-weight: 900 !important;
-}
-
-body.profile-page-shell .profile-review-card--clean .profile-review-card__client strong,
-body.profile-page-shell .profile-review-card--clean .profile-review-card__rating strong{
-  color: #14345a !important;
-  font-weight: 900 !important;
-}
-
-body.profile-page-shell .profile-review-card--clean .profile-review-card__client span{
-  color: #657893 !important;
-  font-size: 0.78rem !important;
-  font-weight: 650 !important;
-}
-
-body.profile-page-shell .profile-review-card--clean .profile-review-card__rating{
-  display: grid !important;
-  justify-items: end !important;
-  gap: 4px !important;
-  color: #f5a524 !important;
-  font-size: 0.72rem !important;
-}
-
-body.profile-page-shell .profile-review-card--clean p{
-  margin: 0 !important;
-  color: #2d4161 !important;
-  font-size: 0.95rem !important;
-  font-weight: 500 !important;
-  line-height: 1.62 !important;
-}
-
-body.profile-page-shell .profile-review-card--clean .profile-review-card__footer{
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 8px !important;
-  padding-top: 0 !important;
-  border-top: 0 !important;
-}
-
-body.profile-page-shell .profile-review-card--clean .profile-review-card__footer span{
-  min-height: 28px !important;
-  padding: 0 12px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  border-radius: var(--radius-pill) !important;
-  background: #eef6fd !important;
-  color: #195783 !important;
-  font-size: 0.72rem !important;
-  font-weight: 850 !important;
-}
-
-body.profile-page-shell .profile-review-card--clean .profile-review-card__footer span:first-child{
-  background: rgba(18, 159, 146, 0.1) !important;
-  color: #087c70 !important;
-}
-
-@media (max-width: 980px) {
-  body.profile-page-shell .profile-review-heading,
-body.profile-page-shell .profile-review-summary-card--clean{
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-
-  body.profile-page-shell .profile-review-kpis,
-body.profile-page-shell .profile-review-grid--clean{
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-}
-
-@media (max-width: 640px) {
-  body.profile-page-shell .profile-review-kpis,
-body.profile-page-shell .profile-review-grid--clean{
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-
-  body.profile-page-shell .profile-review-toolbar--clean{
-    align-items: flex-start !important;
-    flex-direction: column !important;
-  }
-}
-
-/* 2026-05-09 — reviews heading removal.
-   The Reviews tab now starts directly with the service selector and reputation summary. */
-body.profile-page-shell .profile-review-heading{
-  display: none !important;
-}
-
-body.profile-page-shell .profile-review-service-row{
-  display: flex !important;
-  justify-content: flex-start !important;
-  padding: 0 !important;
-}
-
-body.profile-page-shell .profile-review-service-row .profile-review-service-select{
-  width: min(100%, 420px) !important;
-}
-
-/* 2026-05-09 — clean profile about section.
-   Replaces the old scattered card layout with: intro, trust signals, technical facts and differentials. */
-body.profile-page-shell .profile-panel[data-profile-panel="about"],
-body.profile-page-shell .profile-panel[data-profile-panel="about"].doke-card,
-body.profile-page-shell .profile-panel[data-profile-panel="about"].doke-page-section,
-body.profile-page-shell .profile-panel[data-profile-panel="about"] .profile-panel-layout,
-body.profile-page-shell .profile-panel[data-profile-panel="about"] .profile-panel-main{
-  padding: 0 !important;
-  border: 0 !important;
-  border-color: transparent !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-body.profile-page-shell .profile-about-flow--clean{
-  display: grid !important;
-  gap: 18px !important;
-  width: 100% !important;
-}
-
-body.profile-page-shell .profile-about-main-card{
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 390px) !important;
-  gap: 28px !important;
-  padding: 28px !important;
-  border: var(--border-soft) !important;
-  border-radius: 26px !important;
-  background: #ffffff !important;
-  box-shadow: 0 18px 40px rgba(17, 45, 78, 0.07) !important;
-}
-
-body.profile-page-shell .profile-about-main-card__content{
-  min-width: 0 !important;
-}
-
-body.profile-page-shell .profile-about-main-card__eyebrow{
-  display: inline-flex !important;
-  margin-bottom: 8px !important;
-  color: #6f8199 !important;
-  font-size: 0.74rem !important;
-  font-weight: 900 !important;
-  letter-spacing: 0.16em !important;
-  text-transform: uppercase !important;
-}
-
-body.profile-page-shell .profile-about-main-card h3{
-  margin: 0 0 16px !important;
-  color: #14345a !important;
-  font-size: clamp(1.45rem, 1.8vw, 2rem) !important;
-  font-weight: 900 !important;
-  letter-spacing: -0.055em !important;
-  line-height: 1.04 !important;
-}
-
-body.profile-page-shell .profile-about-main-card p{
-  max-width: 760px !important;
-  margin: 0 !important;
-  color: #2d4161 !important;
-  font-size: 1rem !important;
-  font-weight: 500 !important;
-  line-height: 1.68 !important;
-}
-
-body.profile-page-shell .profile-about-main-card p + p{
-  margin-top: 14px !important;
-}
-
-body.profile-page-shell .profile-about-trust-list{
-  display: grid !important;
-  align-content: center !important;
-  gap: 10px !important;
-  min-width: 0 !important;
-}
-
-body.profile-page-shell .profile-about-trust-item{
-  display: grid !important;
-  grid-template-columns: 36px minmax(0, 1fr) !important;
-  align-items: center !important;
-  gap: 12px !important;
-  min-height: 66px !important;
-  padding: 12px 14px !important;
-  border: 1px solid rgba(18, 159, 146, 0.14) !important;
-  border-radius: var(--radius-md) !important;
-  background: rgba(232, 248, 245, 0.74) !important;
-}
-
-body.profile-page-shell .profile-about-trust-item > span{
-  display: grid !important;
-  place-items: center !important;
-  width: 36px !important;
-  height: 36px !important;
-  border-radius: var(--radius-pill) !important;
-  background: #129f92 !important;
-  color: #ffffff !important;
-  font-weight: 900 !important;
-}
-
-body.profile-page-shell .profile-about-trust-item strong{
-  display: block !important;
-  color: #14345a !important;
-  font-size: 0.92rem !important;
-  font-weight: 900 !important;
-  line-height: 1.15 !important;
-}
-
-body.profile-page-shell .profile-about-trust-item small{
-  display: block !important;
-  margin-top: 3px !important;
-  color: #657893 !important;
-  font-size: 0.78rem !important;
-  font-weight: 700 !important;
-}
-
-body.profile-page-shell .profile-about-facts{
-  display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  gap: 12px !important;
-}
-
-body.profile-page-shell .profile-about-fact-row{
-  display: grid !important;
-  align-content: start !important;
-  gap: 10px !important;
-  min-height: 104px !important;
-  padding: 18px !important;
-  border: var(--border-soft) !important;
-  border-radius: 20px !important;
-  background: #ffffff !important;
-  box-shadow: 0 10px 24px rgba(17, 45, 78, 0.045) !important;
-}
-
-body.profile-page-shell .profile-about-fact-row span{
-  color: #6f8199 !important;
-  font-size: 0.72rem !important;
-  font-weight: 900 !important;
-  letter-spacing: 0.14em !important;
-  text-transform: uppercase !important;
-}
-
-body.profile-page-shell .profile-about-fact-row strong{
-  color: #14345a !important;
-  font-size: 0.96rem !important;
-  font-weight: 900 !important;
-  line-height: 1.35 !important;
-}
-
-body.profile-page-shell .profile-about-differentials{
-  display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  gap: 12px !important;
-}
-
-body.profile-page-shell .profile-about-differential{
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 14px !important;
-  min-height: 86px !important;
-  padding: 16px !important;
-  border: var(--border-soft) !important;
-  border-radius: 20px !important;
-  background: #ffffff !important;
-  box-shadow: 0 10px 24px rgba(17, 45, 78, 0.045) !important;
-}
-
-body.profile-page-shell .profile-about-differential__icon{
-  display: grid !important;
-  place-items: center !important;
-  width: 42px !important;
-  height: var(--control-height-md) !important;
-  flex: 0 0 42px !important;
-  border-radius: var(--radius-sm) !important;
-  background: rgba(18, 159, 146, 0.12) !important;
-  color: #087c70 !important;
-  font-weight: 900 !important;
-}
-
-body.profile-page-shell .profile-about-differential strong{
-  display: block !important;
-  color: #14345a !important;
-  font-size: 0.95rem !important;
-  font-weight: 900 !important;
-  line-height: 1.15 !important;
-}
-
-body.profile-page-shell .profile-about-differential small{
-  display: block !important;
-  margin-top: 4px !important;
-  color: #657893 !important;
-  font-size: 0.78rem !important;
-  font-weight: 700 !important;
-}
-
-@media (max-width: 1100px) {
-  body.profile-page-shell .profile-about-main-card{
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-
-  body.profile-page-shell .profile-about-trust-list{
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  }
-
-  body.profile-page-shell .profile-about-facts{
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-}
-
-@media (max-width: 760px) {
-  body.profile-page-shell .profile-about-main-card,
-body.profile-page-shell .profile-about-trust-list,
-body.profile-page-shell .profile-about-facts,
-body.profile-page-shell .profile-about-differentials{
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-
-  body.profile-page-shell .profile-about-main-card{
-    padding: 22px !important;
-  }
-}
 
 /* 2026-05-09 — profile portfolio showcase.
    Turns the portfolio tab into visual proof: image-first cards, chips and clear CTA. */
@@ -4304,7 +3678,6 @@ body.profile-page-shell .profile-panel-main{
   body.profile-page-shell .profile-services-results,
 body.profile-page-shell .profile-publications-grid.publication-grid,
 body.profile-page-shell .profile-publications-grid,
-body.profile-page-shell .profile-review-grid--clean,
 body.profile-page-shell .profile-portfolio-grid--showcase,
 body.profile-page-shell .profile-certificates-showcase,
 body.profile-page-shell .profile-about-facts,
@@ -4317,7 +3690,6 @@ body.profile-page-shell .profile-about-differentials{
 body.profile-page-shell .profile-publications-grid .publication-card,
 body.profile-page-shell .profile-portfolio-card--showcase,
 body.profile-page-shell .profile-certificate-card,
-body.profile-page-shell .profile-review-card--clean,
 body.profile-page-shell .profile-about-main-card,
 body.profile-page-shell .profile-about-fact-row,
 body.profile-page-shell .profile-about-differential,
@@ -4328,36 +3700,9 @@ body.profile-page-shell .profile-client-about__card{
     border-radius: 20px !important;
   }
 
-  body.profile-page-shell .profile-review-summary-card--clean,
-body.profile-page-shell .profile-about-main-card{
+  body.profile-page-shell .profile-about-main-card{
     grid-template-columns: minmax(0, 1fr) !important;
     padding: 20px !important;
-  }
-
-  body.profile-page-shell .profile-review-kpis{
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 10px !important;
-  }
-
-  body.profile-page-shell .profile-review-toolbar--clean{
-    align-items: stretch !important;
-    flex-direction: column !important;
-    gap: 10px !important;
-  }
-
-  body.profile-page-shell .profile-review-toolbar--clean .detail-filter-chips{
-    overflow-x: auto !important;
-    flex-wrap: nowrap !important;
-    padding-bottom: 2px !important;
-    scrollbar-width: none !important;
-  }
-
-  body.profile-page-shell .profile-review-toolbar--clean .detail-filter-chips::-webkit-scrollbar{
-    display: none !important;
-  }
-
-  body.profile-page-shell .profile-review-toolbar--clean .detail-chip{
-    flex: 0 0 auto !important;
   }
 
   body.profile-page-shell .profile-about-trust-list{
@@ -4418,10 +3763,6 @@ body.profile-page-shell .profile-panels{
 
   body.profile-page-shell .profile-card > .profile-tabs.profile-tabs--compact .profile-tab{
     min-width: 112px !important;
-  }
-
-  body.profile-page-shell .profile-review-kpis{
-    grid-template-columns: minmax(0, 1fr) !important;
   }
 }
 
@@ -4712,7 +4053,6 @@ body.profile-page-shell .profile-panel-main{
   body.profile-page-shell .profile-services-results,
 body.profile-page-shell .profile-publications-grid,
 body.profile-page-shell .profile-publications-grid.publication-grid,
-body.profile-page-shell .profile-review-grid--clean,
 body.profile-page-shell .profile-portfolio-grid--showcase,
 body.profile-page-shell .profile-certificates-showcase,
 body.profile-page-shell .profile-about-facts,
@@ -4722,15 +4062,10 @@ body.profile-page-shell .profile-about-trust-list{
     gap: 12px !important;
   }
 
-  body.profile-page-shell .profile-review-summary-card--clean,
-body.profile-page-shell .profile-about-main-card{
+  body.profile-page-shell .profile-about-main-card{
     grid-template-columns: minmax(0, 1fr) !important;
     padding: 18px !important;
     border-radius: 20px !important;
-  }
-
-  body.profile-page-shell .profile-review-kpis{
-    grid-template-columns: minmax(0, 1fr) !important;
   }
 
   body.profile-page-shell .profile-portfolio-media,
@@ -5827,7 +5162,6 @@ body.profile-page-shell .profile-actions-row .profile-action::after{
 
   body.profile-page-shell .profile-services-results,
 body.profile-page-shell .profile-publications-grid,
-body.profile-page-shell .profile-review-grid--clean,
 body.profile-page-shell .profile-portfolio-grid--showcase{
     gap: 14px !important;
   }
@@ -8853,5 +8187,30 @@ body.profile-page-shell[data-profile-view="visitor"][data-profile-type="professi
     border-radius: var(--radius-2xs) !important;
     font-size: 0.56rem !important;
     letter-spacing: 0 !important;
+  }
+}
+
+
+/* 2026-05-14 — perfil desktop rail stability.
+   Owner: pages/perfil. The profile is a showcase surface and intentionally uses
+   a wider local rail than transactional list pages, without touching global shell,
+   sidebar, header, body or other page contracts. */
+@media (min-width: 761px) {
+  .page > .page__content > .page__content-inner.profile-shell-content,
+  body.profile-page-shell > .app-shell > .page > .page__content > .page__content-inner.profile-shell-content,
+  body[data-page="perfil"] > .app-shell > .page > .page__content > .page__content-inner.profile-shell-content {
+    --profile-approved-rail-max: var(--profile-desktop-content-width, 1360px);
+    --profile-approved-rail-gutter: var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px));
+    width: min(calc(100% - (var(--profile-approved-rail-gutter) * 2)), var(--profile-approved-rail-max)) !important;
+    max-width: var(--profile-approved-rail-max) !important;
+    margin-inline: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  .page__content-inner.profile-shell-content > .profile-screen {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    box-sizing: border-box !important;
   }
 }

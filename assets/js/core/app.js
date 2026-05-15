@@ -57,6 +57,9 @@ const ensureInstantRouteStyle = () => {
 };
 ensureInstantRouteStyle();
 const SIDEBAR_STORAGE_KEY = "doke.sidebar.collapsed";
+const SIDEBAR_COLLAPSED_HTML_CLASS = "doke-sidebar-collapsed";
+const SIDEBAR_EXPANDED_HTML_CLASS = "doke-sidebar-expanded";
+const SIDEBAR_STATE_READY_HTML_CLASS = "doke-shell-state-ready";
 const THEME_STORAGE_KEY = "doke.theme";
 const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", "mobile-search-active"];
 const ROUTE_SWAP_STATE_CLASSES = ["is-shell-swapping", "is-route-instant-swap"];
@@ -82,11 +85,35 @@ const readStoredSidebarCollapsed = () => {
 };
 
 const syncSidebarCollapsedState = () => {
+  const root = document.documentElement;
+  const applySidebarWidthVars = (width) => {
+    const homeWorkspace = `min(var(--doke-app-shell-max, 1180px), calc(100vw - ${width} - (clamp(28px, 3vw, 48px) * 2)))`;
+    root.style.setProperty("--doke-current-sidebar-width", width);
+    root.style.setProperty("--sidebar-width", width);
+    root.style.setProperty("--doke-desktop-sidebar-width", width);
+    root.style.setProperty("--doke-app-sidebar-width", width);
+    root.style.setProperty("--doke-app-shell-sidebar-width", width);
+    root.style.setProperty("--doke-home-sidebar-width", width);
+    root.style.setProperty("--doke-home-desktop-gutter", "clamp(28px, 3vw, 48px)");
+    root.style.setProperty("--doke-home-desktop-workspace", homeWorkspace);
+    root.style.setProperty("--home-desktop-content-width", homeWorkspace);
+  };
+
   if (isMobileSidebarViewport()) {
     body.classList.remove("sidebar-collapsed");
+    root.classList.remove(SIDEBAR_COLLAPSED_HTML_CLASS);
+    root.classList.add(SIDEBAR_EXPANDED_HTML_CLASS, SIDEBAR_STATE_READY_HTML_CLASS);
+    applySidebarWidthVars("0px");
     return;
   }
-  body.classList.toggle("sidebar-collapsed", readStoredSidebarCollapsed());
+
+  const isCollapsed = readStoredSidebarCollapsed();
+  const sidebarWidth = isCollapsed ? "96px" : "272px";
+  body.classList.toggle("sidebar-collapsed", isCollapsed);
+  root.classList.toggle(SIDEBAR_COLLAPSED_HTML_CLASS, isCollapsed);
+  root.classList.toggle(SIDEBAR_EXPANDED_HTML_CLASS, !isCollapsed);
+  root.classList.add(SIDEBAR_STATE_READY_HTML_CLASS);
+  applySidebarWidthVars(sidebarWidth);
 };
 
 window.addEventListener("resize", syncSidebarCollapsedState, { passive: true });
@@ -874,7 +901,7 @@ document.addEventListener("click", (event) => {
 
 window.DokeUiSelect = window.DokeUiSelect || createUiSelectApi();
 
-const PRESERVED_HTML_CLASS_NAMES = ["doke-js-mobile", "doke-js-desktop", "doke-mobile-shell-ready", "doke-mobile-shell-pending"];
+const PRESERVED_HTML_CLASS_NAMES = ["doke-js-mobile", "doke-js-desktop", "doke-mobile-shell-ready", "doke-mobile-shell-pending", SIDEBAR_COLLAPSED_HTML_CLASS, SIDEBAR_EXPANDED_HTML_CLASS, SIDEBAR_STATE_READY_HTML_CLASS];
 const PRESERVED_BODY_ATTRS = ["style"];
 
 const syncElementAttributesFromDocument = (target, source, { preserveAttrs = [], preserveClasses = [] } = {}) => {
@@ -1352,11 +1379,9 @@ document.addEventListener("click", (event) => {
       window.localStorage.setItem(SIDEBAR_STORAGE_KEY, "false");
       return;
     }
-    body.classList.toggle("sidebar-collapsed");
-    window.localStorage.setItem(
-      SIDEBAR_STORAGE_KEY,
-      body.classList.contains("sidebar-collapsed") ? "true" : "false"
-    );
+    const nextCollapsed = !body.classList.contains("sidebar-collapsed");
+    window.localStorage.setItem(SIDEBAR_STORAGE_KEY, nextCollapsed ? "true" : "false");
+    syncSidebarCollapsedState();
     return;
   }
 

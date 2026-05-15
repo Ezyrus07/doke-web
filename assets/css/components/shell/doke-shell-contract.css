@@ -2337,3 +2337,273 @@ body {
     transform: none !important;
   }
 }
+
+
+/*
+  Doke Shell Contract v13 — EARLY SIDEBAR WIDTH PARITY
+  The blocking head bootstrap applies html.doke-sidebar-collapsed before CSS
+  loads. These aliases mirror body.sidebar-collapsed geometry so direct page
+  entry, internal navigation and F5 start from the same shell width.
+*/
+@media (min-width: 761px) {
+  html.doke-sidebar-collapsed {
+    --doke-app-sidebar-width: 96px !important;
+    --sidebar-width: 96px !important;
+    --doke-desktop-sidebar-width: 96px !important;
+  }
+
+  html.doke-sidebar-collapsed body[data-page] > .app-shell,
+  html.doke-sidebar-collapsed body.doke-app-shell-page > .app-shell,
+  html.doke-sidebar-collapsed body.app-shell-page > .app-shell,
+  html.doke-sidebar-collapsed body.internal-shell-page > .app-shell {
+    grid-template-columns: 96px minmax(0, 1fr) !important;
+  }
+
+  html.doke-sidebar-collapsed body[data-page] > .app-shell > .sidebar,
+  html.doke-sidebar-collapsed body.doke-app-shell-page > .app-shell > .sidebar,
+  html.doke-sidebar-collapsed body.app-shell-page > .app-shell > .sidebar,
+  html.doke-sidebar-collapsed body.internal-shell-page > .app-shell > .sidebar {
+    width: 96px !important;
+    min-width: 96px !important;
+    max-width: 96px !important;
+    inline-size: 96px !important;
+    min-inline-size: 96px !important;
+    max-inline-size: 96px !important;
+    padding-inline: 14px !important;
+    align-items: center !important;
+    overflow-x: hidden !important;
+  }
+
+  html.doke-sidebar-collapsed body[data-page] > .app-shell > .page,
+  html.doke-sidebar-collapsed body.doke-app-shell-page > .app-shell > .page,
+  html.doke-sidebar-collapsed body.app-shell-page > .app-shell > .page,
+  html.doke-sidebar-collapsed body.internal-shell-page > .app-shell > .page {
+    grid-column: 2 !important;
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  html.doke-sidebar-collapsed body .sidebar__brand,
+  html.doke-sidebar-collapsed body .brand-logo {
+    display: flex !important;
+  }
+
+  html.doke-sidebar-collapsed body .sidebar__label,
+  html.doke-sidebar-collapsed body .nav-link__count,
+  html.doke-sidebar-collapsed body .nav-link__start > span:last-child {
+    display: none !important;
+    opacity: 0 !important;
+  }
+
+  html.doke-sidebar-collapsed body .nav-link {
+    justify-content: center !important;
+    padding-inline: 10px !important;
+  }
+
+  html.doke-sidebar-collapsed body .nav-link__start {
+    justify-content: center !important;
+    gap: 0 !important;
+  }
+
+  html.doke-sidebar-collapsed body.home-index-shell.doke-app-shell-page {
+    --doke-home-sidebar-width: 96px !important;
+    --doke-home-desktop-workspace: min(1280px, calc(100vw - 96px - (var(--doke-home-desktop-gutter) * 2))) !important;
+    --home-desktop-content-width: var(--doke-home-desktop-workspace) !important;
+  }
+}
+
+/*
+  Doke Shell Contract v14 — HOME WIDTH F5 PARITY
+  Garante que a home use a mesma largura de workspace no primeiro carregamento,
+  na hidratação do app.js e no F5. A regra fica no contrato global do shell
+  porque o problema é de geometria do app frame, não de uma seção da home.
+*/
+@media (min-width: 1025px) {
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page {
+    --doke-current-sidebar-width: var(--doke-home-sidebar-width, var(--sidebar-width, 272px));
+    --doke-home-desktop-gutter: clamp(28px, 3vw, 48px);
+    --doke-home-desktop-workspace: min(1360px, calc(100vw - var(--doke-current-sidebar-width) - (var(--doke-home-desktop-gutter) * 2))) !important;
+    --home-desktop-content-width: var(--doke-home-desktop-workspace) !important;
+  }
+
+  html.doke-sidebar-expanded body.home-index-shell.doke-app-shell-page {
+    --doke-current-sidebar-width: 272px;
+    --sidebar-width: 272px !important;
+    --doke-home-sidebar-width: 272px !important;
+    --doke-desktop-sidebar-width: 272px !important;
+    --doke-app-sidebar-width: 272px !important;
+  }
+
+  html.doke-sidebar-collapsed body.home-index-shell.doke-app-shell-page,
+  html.doke-sidebar-collapsed body.sidebar-collapsed.home-index-shell.doke-app-shell-page {
+    --doke-current-sidebar-width: 96px;
+    --sidebar-width: 96px !important;
+    --doke-home-sidebar-width: 96px !important;
+    --doke-desktop-sidebar-width: 96px !important;
+    --doke-app-sidebar-width: 96px !important;
+    --doke-home-desktop-workspace: min(1360px, calc(100vw - 96px - (var(--doke-home-desktop-gutter) * 2))) !important;
+    --home-desktop-content-width: var(--doke-home-desktop-workspace) !important;
+  }
+
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page > .app-shell {
+    grid-template-columns: var(--doke-current-sidebar-width) minmax(0, 1fr) !important;
+  }
+
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page > .app-shell > .page {
+    grid-column: 2 !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page .page__content {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: var(--doke-home-desktop-gutter) !important;
+    padding-right: var(--doke-home-desktop-gutter) !important;
+    box-sizing: border-box !important;
+    overflow-x: clip !important;
+  }
+
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace,
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace--clean {
+    width: var(--doke-home-desktop-workspace) !important;
+    max-width: var(--doke-home-desktop-workspace) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace > .home-side-meta,
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace > .home-search-hero,
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace > section[class*="home-cat"],
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace > .featured-services,
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace > .short-videos,
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace > .before-after,
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace > .more-services,
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace > .featured-pros {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/*
+  Doke Shell Contract v16 — INDEX RAIL PARITY FINAL
+  Responsabilidade: a home não pode usar trilho próprio maior que as páginas
+  internas. Este bloco fica no fim do contrato para vencer as camadas antigas
+  da home que ainda setavam 1280/1360/1480px.
+*/
+@media (min-width: 1025px) {
+  html body.home-index-shell.doke-app-shell-page,
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page,
+  html.doke-sidebar-expanded body.home-index-shell.doke-app-shell-page,
+  html.doke-sidebar-collapsed body.home-index-shell.doke-app-shell-page,
+  html.doke-sidebar-collapsed body.sidebar-collapsed.home-index-shell.doke-app-shell-page {
+    --doke-home-desktop-gutter: var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) !important;
+    --doke-home-desktop-workspace: min(1180px, calc(100vw - var(--doke-app-sidebar-width, var(--sidebar-width, 272px)) - (var(--doke-home-desktop-gutter) * 2))) !important;
+    --home-desktop-content-width: var(--doke-home-desktop-workspace) !important;
+    --home-desktop-content-max-v9: 1180px !important;
+    --home-desktop-header-max-v10: 1180px !important;
+    --doke-app-shell-max: 1180px !important;
+  }
+
+  html.doke-sidebar-collapsed body.home-index-shell.doke-app-shell-page,
+  html.doke-sidebar-collapsed body.sidebar-collapsed.home-index-shell.doke-app-shell-page {
+    --doke-home-desktop-workspace: min(1180px, calc(100vw - 96px - (var(--doke-home-desktop-gutter) * 2))) !important;
+  }
+
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace,
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace--clean,
+  html body.home-index-shell.doke-app-shell-page .home-side-meta,
+  html body.home-index-shell.doke-app-shell-page .home-search-hero,
+  html body.home-index-shell.doke-app-shell-page .home-search-hero__panel,
+  html body.home-index-shell.doke-app-shell-page .home-search-hero__card,
+  html body.home-index-shell.doke-app-shell-page .home-categories,
+  html body.home-index-shell.doke-app-shell-page .home-catégories,
+  html body.home-index-shell.doke-app-shell-page .home-categories__rail,
+  html body.home-index-shell.doke-app-shell-page .home-catégories__rail,
+  html body.home-index-shell.doke-app-shell-page .featured-services,
+  html body.home-index-shell.doke-app-shell-page .short-videos,
+  html body.home-index-shell.doke-app-shell-page .home-publications,
+  html body.home-index-shell.doke-app-shell-page .before-after,
+  html body.home-index-shell.doke-app-shell-page .more-services,
+  html body.home-index-shell.doke-app-shell-page .featured-pros {
+    width: var(--doke-home-desktop-workspace) !important;
+    max-width: var(--doke-home-desktop-workspace) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  html body.home-index-shell.doke-app-shell-page .home-search-hero__panel,
+  html body.home-index-shell.doke-app-shell-page .home-search-hero__card {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+
+/*
+  Doke Shell Contract v17 — INDEX RAIL MICRO PARITY
+  A home estava usando gutter max 48px, enquanto as páginas internas usam o
+  gutter global max 40px. Essa diferença de 8px criava o desalinhamento
+  milimétrico entre index e os outros HTMLs.
+*/
+@media (min-width: 1025px) {
+  html body.home-index-shell.doke-app-shell-page,
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page,
+  html.doke-sidebar-expanded body.home-index-shell.doke-app-shell-page,
+  html.doke-sidebar-collapsed body.home-index-shell.doke-app-shell-page,
+  html.doke-sidebar-collapsed body.sidebar-collapsed.home-index-shell.doke-app-shell-page {
+    --doke-home-desktop-gutter: var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) !important;
+  }
+
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page .page__content,
+  html body.home-index-shell.doke-app-shell-page .page__content {
+    padding-left: var(--doke-home-desktop-gutter) !important;
+    padding-right: var(--doke-home-desktop-gutter) !important;
+  }
+}
+
+
+/*
+  Doke Shell Contract v18 — INDEX HEADER RAIL PARITY
+  O index usa .app-header.home-side-meta como header global. Blocos antigos de
+  paridade estavam aplicando largura no próprio .home-side-meta; como ele também
+  é o outer .app-header, o .app-header__inner recebia o gutter pela segunda vez.
+  Resultado: só o header do index ficava alguns pixels deslocado em relação aos
+  HTMLs internos. O outer volta a ocupar o canvas da page e apenas o inner assume
+  o mesmo trilho do conteúdo.
+*/
+@media (min-width: 1025px) {
+  html body.home-index-shell.has-global-header > .app-shell > .page > .app-header.home-side-meta {
+    width: 100% !important;
+    inline-size: 100% !important;
+    max-width: none !important;
+    max-inline-size: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body.home-index-shell.has-global-header > .app-shell > .page > .app-header.home-side-meta > .app-header__inner {
+    width: var(--doke-home-desktop-workspace, min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), var(--doke-app-shell-max, 1180px))) !important;
+    inline-size: var(--doke-home-desktop-workspace, min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), var(--doke-app-shell-max, 1180px))) !important;
+    max-width: var(--doke-home-desktop-workspace, var(--doke-app-shell-max, 1180px)) !important;
+    max-inline-size: var(--doke-home-desktop-workspace, var(--doke-app-shell-max, 1180px)) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+}

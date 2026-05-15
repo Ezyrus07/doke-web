@@ -1,5 +1,5 @@
 /* Doke shared media lightbox
-   Used by messages, community chat and detail gallery. */
+   Used by messages, community chat and any page/media gallery that can open images. */
 .doke-media-lightbox {
   position: fixed;
   inset: 0;
@@ -7,10 +7,10 @@
   display: none;
   align-items: center;
   justify-content: center;
-  padding: clamp(16px, 3vw, 44px);
-  background: rgba(7, 22, 39, .78);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  padding: clamp(12px, 2vw, 24px);
+  background: rgba(7, 20, 35, .74);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 
 .doke-media-lightbox.is-open {
@@ -18,12 +18,12 @@
 }
 
 .doke-media-lightbox__surface {
-  width: min(1180px, 100%);
-  max-height: 92vh;
+  width: min(1560px, 100%);
+  max-height: 96vh;
   position: relative;
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
-  gap: 18px;
+  gap: 14px;
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -42,71 +42,81 @@
 .doke-media-lightbox__close,
 .doke-media-lightbox__nav,
 .doke-media-lightbox__thumb {
-  border: 1px solid rgba(206, 222, 239, .95);
+  border: 1px solid rgba(15, 45, 75, .065);
   background: rgba(255, 255, 255, .96);
-  color: #1f5f9f;
+  color: var(--color-primary-strong, #0b4f86);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform .16s ease, background-color .16s ease, box-shadow .16s ease, border-color .16s ease, color .16s ease;
+  transition: transform .16s ease, background-color .16s ease, box-shadow .16s ease, border-color .16s ease, color .16s ease, opacity .16s ease;
 }
 
 .doke-media-lightbox__close:hover,
 .doke-media-lightbox__nav:hover,
 .doke-media-lightbox__thumb:hover {
-  background: #f3f8fd;
-  color: #174a80;
-  border-color: rgba(162, 190, 220, .95);
-  box-shadow: 0 12px 28px rgba(2, 20, 40, .16);
+  background: #fff;
+  color: var(--color-primary, #1d64b1);
+  border-color: rgba(29, 100, 177, .16);
+  box-shadow: 0 14px 32px rgba(2, 20, 40, .18);
 }
 
 .doke-media-lightbox__close {
   position: fixed;
-  top: clamp(18px, 3vw, 34px);
-  right: clamp(18px, 3vw, 34px);
+  top: clamp(16px, 2vw, 26px);
+  right: clamp(16px, 2vw, 26px);
   z-index: 2;
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-base);
-  font-size: 1.18rem;
-  font-weight: 900;
-  line-height: 1;
-  box-shadow: 0 12px 30px rgba(2, 20, 40, .16);
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-pill, 999px);
+  box-shadow: 0 14px 34px rgba(2, 20, 40, .18);
+}
+
+.doke-media-lightbox__close svg,
+.doke-media-lightbox__nav svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .doke-media-lightbox__stage {
   position: relative;
-  min-height: 280px;
+  min-height: min(560px, 62vh);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-inline: clamp(58px, 7vw, 92px);
+  padding-inline: clamp(66px, 6vw, 108px);
   background: transparent;
 }
 
 .doke-media-lightbox__image {
   display: block;
-  max-width: min(100%, 980px);
-  max-height: calc(92vh - 132px);
+  max-width: min(100%, 1380px);
+  max-height: calc(96vh - 112px);
   width: auto;
   height: auto;
   object-fit: contain;
-  border-radius: var(--radius-lg);
-  background: #fff;
+  border-radius: 18px;
+  background: transparent;
   box-shadow: 0 30px 90px rgba(2, 20, 40, .32);
+}
+
+.doke-media-lightbox.has-gallery .doke-media-lightbox__image {
+  max-height: calc(96vh - 128px);
 }
 
 .doke-media-lightbox__nav {
   position: absolute;
   top: 50%;
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-base);
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-pill, 999px);
   transform: translateY(-50%);
-  font-size: 1.28rem;
-  font-weight: 900;
-  box-shadow: 0 12px 30px rgba(2, 20, 40, .16);
+  box-shadow: 0 14px 34px rgba(2, 20, 40, .18);
 }
 
 .doke-media-lightbox__nav:hover {
@@ -123,11 +133,11 @@
 .doke-media-lightbox__nav--next { right: 0; }
 
 .doke-media-lightbox__thumbs {
-  min-height: 64px;
+  min-height: 76px;
   display: none;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   padding: 0;
   border-radius: 0;
   background: transparent;
@@ -140,19 +150,19 @@
 }
 
 .doke-media-lightbox__thumb {
-  width: 64px;
-  height: 64px;
+  width: 78px;
+  height: 78px;
   padding: 0;
   overflow: hidden;
-  border-radius: var(--radius-base);
+  border-radius: 18px;
   opacity: .72;
   box-shadow: 0 8px 18px rgba(2, 20, 40, .14);
 }
 
 .doke-media-lightbox__thumb.is-active {
   opacity: 1;
-  border-color: #2f77bd;
-  box-shadow: 0 0 0 3px rgba(47,119,189,.28), 0 10px 24px rgba(2,20,40,.16);
+  border-color: var(--color-primary, #1d64b1);
+  box-shadow: 0 0 0 3px rgba(29, 100, 177, .24), 0 10px 24px rgba(2,20,40,.16);
 }
 
 .doke-media-lightbox__thumb img {
@@ -165,19 +175,38 @@
 [data-media-lightbox],
 .message-bubble__image img,
 .community-message__image img,
-.detail-gallery img {
+.detail-gallery img,
+.ad-gallery__stage,
+.ad-gallery img {
   cursor: zoom-in;
 }
 
+.ad-gallery__stage:focus-visible {
+  outline: 3px solid rgba(29, 100, 177, .28);
+  outline-offset: 6px;
+}
+
 .message-bubble__image img,
-.community-message__image img {
+.community-message__image img,
+.ad-gallery__stage img {
   transition: transform .16s ease, filter .16s ease;
 }
 
 .message-bubble__image:hover img,
-.community-message__image:hover img {
-  transform: scale(1.01);
-  filter: saturate(1.04);
+.community-message__image:hover img,
+.ad-gallery__stage:hover img {
+  transform: scale(1.006);
+  filter: saturate(1.03);
+}
+
+@media (min-width: 1200px) {
+  .doke-media-lightbox__surface {
+    width: min(88vw, 1560px);
+  }
+
+  .doke-media-lightbox__image {
+    max-width: min(100%, 1440px);
+  }
 }
 
 @media (max-width: 720px) {
@@ -186,32 +215,34 @@
   }
 
   .doke-media-lightbox__surface {
-    max-height: 94vh;
+    max-height: 96vh;
     gap: 12px;
   }
 
   .doke-media-lightbox__close {
     top: 12px;
     right: 12px;
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
   }
 
   .doke-media-lightbox__stage {
     padding-inline: 0;
+    min-height: 220px;
   }
 
-  .doke-media-lightbox__image {
-    max-height: calc(94vh - 102px);
-    border-radius: var(--radius-md);
+  .doke-media-lightbox__image,
+  .doke-media-lightbox.has-gallery .doke-media-lightbox__image {
+    max-width: 100%;
+    max-height: calc(96vh - 106px);
+    border-radius: 14px;
   }
 
   .doke-media-lightbox__nav {
-    width: 40px;
-    height: 40px;
-    font-size: 1.18rem;
+    width: 42px;
+    height: 42px;
     top: auto;
-    bottom: 84px;
+    bottom: 92px;
     transform: none;
   }
 
@@ -219,21 +250,55 @@
     transform: translateY(-1px);
   }
 
-  .doke-media-lightbox__nav--prev { left: 10px; }
-  .doke-media-lightbox__nav--next { right: 10px; }
+  .doke-media-lightbox__nav--prev { left: 6px; }
+  .doke-media-lightbox__nav--next { right: 6px; }
 
   .doke-media-lightbox__thumbs {
     justify-content: flex-start;
     overflow-x: auto;
-    min-height: 58px;
-    padding: 0;
-    border-radius: 0;
+    min-height: 60px;
+    padding: 0 6px;
+    scrollbar-width: thin;
   }
 
   .doke-media-lightbox__thumb {
-    width: 54px;
-    height: 54px;
-    border-radius: var(--radius-sm);
+    width: 58px;
+    height: 58px;
+    border-radius: 14px;
     flex: 0 0 auto;
+  }
+}
+
+
+/* Shared media lightbox hover refinement */
+@media (hover: hover) and (pointer: fine) {
+  .doke-media-lightbox__image {
+    transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+  }
+
+  .doke-media-lightbox__stage:hover .doke-media-lightbox__image {
+    transform: scale(1.006);
+    filter: saturate(1.03);
+    box-shadow: 0 34px 92px rgba(2, 20, 40, .32);
+  }
+
+  .doke-media-lightbox__close,
+  .doke-media-lightbox__nav,
+  .doke-media-lightbox__thumb {
+    transition: transform 160ms ease, color 160ms ease, background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+  }
+
+  .doke-media-lightbox__close:hover {
+    transform: translateY(-2px) scale(1.03);
+  }
+
+  .doke-media-lightbox__nav:hover {
+    transform: translateY(calc(-50% - 2px)) scale(1.03);
+  }
+
+  .doke-media-lightbox__thumb:hover {
+    opacity: 1;
+    transform: translateY(-2px);
+    border-color: rgba(47, 119, 189, .48);
   }
 }

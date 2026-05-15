@@ -120,7 +120,7 @@ window.DokeInitProfile = () => {
     const nextTabs = {};
     Object.entries(baseProfile.tabs).forEach(([key, label]) => {
       if (key === "posts") {
-        nextTabs.beforeAfter = "Publicações";
+        nextTabs.beforeAfter = "Publicaï¿½ï¿½es";
         return;
       }
       nextTabs[key] = label;
@@ -365,14 +365,6 @@ window.DokeInitProfile = () => {
     render();
   };
 
-  const openReviewsPanel = () => {
-    closeFollowersModal();
-    preserveProfileViewport(() => {
-      state.activeTab = "reviews";
-      render();
-    });
-  };
-
   const openFollowersPanel = () => {
     if (!els.followersModal) return;
     renderFollowersModal();
@@ -519,10 +511,10 @@ window.DokeInitProfile = () => {
     const labelKey = normalizeActionLabel(item.label);
     const role = actionRole(item);
     if (labelKey.includes("solicitar orcamento")) {
-      const compactLabel = window.matchMedia('(max-width: 760px)').matches ? "Orçamento" : normalize(item.label);
+      const compactLabel = window.matchMedia('(max-width: 760px)').matches ? "Orï¿½amento" : normalize(item.label);
       return `
-        <button class="${classes}" type="button" data-profile-action-role="${role}" data-profile-mobile-label="Orçamento" data-budget-open data-budget-provider="${escapeAttr(item.provider || "Studio Aquarela")}" data-budget-service="${escapeAttr(item.service || "reforma residencial de alto padrao")}">
-          <span class="profile-action__label" data-profile-mobile-label="Orçamento">${compactLabel}</span>
+        <button class="${classes}" type="button" data-profile-action-role="${role}" data-profile-mobile-label="Orï¿½amento" data-budget-open data-budget-provider="${escapeAttr(item.provider || "Studio Aquarela")}" data-budget-service="${escapeAttr(item.service || "reforma residencial de alto padrao")}">
+          <span class="profile-action__label" data-profile-mobile-label="Orï¿½amento">${compactLabel}</span>
         </button>
       `;
     }
@@ -673,8 +665,8 @@ window.DokeInitProfile = () => {
   const renderShowcaseServicesSection = () => `
     <section class="profile-showcase-section profile-showcase-section--services" aria-labelledby="profile-showcase-services-title">
       ${renderShowcaseSectionHeader({
-        eyebrow: 'Serviços',
-        title: 'Serviços em destaque',
+        eyebrow: 'Serviï¿½os',
+        title: 'Serviï¿½os em destaque',
         href: 'resultados.html?type=services',
         linkLabel: 'Ver todos'
       })}
@@ -699,7 +691,7 @@ window.DokeInitProfile = () => {
         <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Novo servi&ccedil;o</button>
         <button class="profile-services-toolbar__action ${state.selectingServices ? "is-active" : ""}" type="button" data-profile-services-select-toggle>${state.selectingServices ? "Cancelar" : "Selecionar"}</button>
         ${selectedCount === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-services-edit>Editar Servi&ccedil;o</button>` : ""}
-        ${selectedCount > 1 ? `<span class="profile-services-toolbar__hint">Só dá para editar um Serviço por vez.</span>` : ""}
+        ${selectedCount > 1 ? `<span class="profile-services-toolbar__hint">Sï¿½ dï¿½ para editar um Serviï¿½o por vez.</span>` : ""}
       </div>
       ` : ""}
       ${renderServicesRail()}
@@ -739,30 +731,30 @@ window.DokeInitProfile = () => {
     {
       id: "vid-pintura",
       variant: "video-card--one",
-      badge: "Disponível hoje",
+      badge: "Disponï¿½vel hoje",
       title: "Pintura residencial com acabamento limpo",
-      meta: "1,2 mil visualizações"
+      meta: "1,2 mil visualizaï¿½ï¿½es"
     },
     {
       id: "vid-cozinha",
       variant: "video-card--two",
-      badge: "Resposta rápida",
+      badge: "Resposta rï¿½pida",
       title: "Antes e depois de parede nivelada",
-      meta: "842 visualizações"
+      meta: "842 visualizaï¿½ï¿½es"
     },
     {
       id: "vid-eletrica",
       variant: "video-card--three",
       badge: "Top da semana",
-      title: "Organização do pós-obra em 30 segundos",
-      meta: "2,4 mil visualizações"
+      title: "Organizaï¿½ï¿½o do pï¿½s-obra em 30 segundos",
+      meta: "2,4 mil visualizaï¿½ï¿½es"
     },
     {
       id: "vid-limpeza",
       variant: "video-card--four",
       badge: "Novo worker",
-      title: "Como protegemos móveis antes da pintura",
-      meta: "618 visualizações"
+      title: "Como protegemos mï¿½veis antes da pintura",
+      meta: "618 visualizaï¿½ï¿½es"
     }
   ];
 
@@ -784,8 +776,8 @@ window.DokeInitProfile = () => {
       type: "video",
       cardClass: "publication-card--video",
       mediaClass: "publication-card__media--living",
-      label: "Vídeo",
-      title: "Tour rápido da reforma",
+      label: "Vï¿½deo",
+      title: "Tour rï¿½pido da reforma",
       author: "Renato Acabamentos",
       likes: 98,
       comments: 19,
@@ -919,10 +911,10 @@ window.DokeInitProfile = () => {
       <div class="profile-publications-stack ${profileMode === "owner" ? "profile-publications-stack--owner" : ""}">
         ${profileMode === "owner" ? `
         <div class="profile-services-toolbar">
-          <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Nova publicação</button>
+          <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Nova publicaï¿½ï¿½o</button>
           <button class="profile-services-toolbar__action ${state.selectingPosts ? "is-active" : ""}" type="button" data-profile-posts-select-toggle>${state.selectingPosts ? "Cancelar" : "Selecionar"}</button>
-          ${state.selectedPosts.length === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-posts-edit>Editar publicação</button>` : ""}
-          ${state.selectedPosts.length > 1 ? `<span class="profile-services-toolbar__hint">Só dá para editar uma publicação por vez.</span>` : ""}
+          ${state.selectedPosts.length === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-posts-edit>Editar publicaï¿½ï¿½o</button>` : ""}
+          ${state.selectedPosts.length > 1 ? `<span class="profile-services-toolbar__hint">Sï¿½ dï¿½ para editar uma publicaï¿½ï¿½o por vez.</span>` : ""}
         </div>
         ` : ""}
         ${renderPublicationsSection()}
@@ -930,54 +922,108 @@ window.DokeInitProfile = () => {
     `);
   };
 
-  const renderReviews = () => {
-    const groups = baseProfile.sections?.reviews?.groups || [];
-    const reviewAds = groups.map((group, index) => ({
-      id: `ad-${index + 1}`,
-      label: normalize(group.title),
-      score: normalize(group.score || "4,9"),
-      count: normalize(group.count || "128 avaliacoes"),
-      metrics: (group.highlights || []).slice(0, 6).map((item, metricIndex) => ({
-        label: normalize(item.label || ["Acabamento", "Comunicacao", "Pontualidade"][metricIndex] || "Qualidade"),
-        value: normalize(item.value || ["4,9", "4,8", "4,9"][metricIndex] || "4,9"),
-        icon: normalize(item.icon || "")
-      })),
-      reviews: (group.items || []).map((item) => {
-        const meta = normalize(item.meta);
-        const normalizedMeta = meta.toLowerCase();
-        const tags = (item.tags || []).map(normalize);
-        const ratingValue = Number(String(item.rating).replace(",", ".")) || 5;
-        const isRecent = /dia|dias|semana|semanas|recente/.test(normalizedMeta);
-        const hasContext = normalize(item.text).length > 70 || tags.length > 1;
-        return {
-          name: normalize(item.author),
-          meta,
-          rating: normalize(item.rating),
-          text: normalize(item.text),
-          tags,
-          groups: `${ratingValue >= 4.8 ? "positivas " : ""}${isRecent ? "recentes " : ""}${hasContext ? "contexto " : ""}`.trim() || "all"
-        };
-      })
-    }));
-
-    return renderPanelShell(`
-      <section class="profile-review-detail profile-review-detail--clean" aria-labelledby="profile-reviews-heading">
-        ${reviewAds.length > 1 ? `
-          <div class="profile-review-service-row">
-            <label class="profile-review-service-select">
-              <span>Servico</span>
-              <select class="profile-review-switcher__select" id="profile-review-ad" data-profile-review-select data-ui-select>
-                ${reviewAds.map((ad, index) => `<option value="${ad.id}" ${index === 0 ? "selected" : ""}>${ad.label}</option>`).join("")}
-              </select>
-            </label>
+  const renderReviews = () => renderPanelShell(`
+    <section class="doke-reviews-shell doke-reviews-shell--profile" aria-labelledby="profile-reviews-title" data-profile-section="reviews">
+      <div class="doke-reviews-panel">
+        <div class="doke-reviews-panel__top">
+          <div class="doke-reviews-summary">
+            <h2 class="doke-reviews-title" id="profile-reviews-title">ReputaÃ§Ã£o do perfil</h2>
+            <div class="doke-reviews-scoreline" aria-label="Nota mÃ©dia do perfil: 4,9 de 5">
+              <strong class="doke-reviews-scoreline__score">4,9</strong>
+              <span class="doke-reviews-stars" aria-hidden="true">â˜…â˜…â˜…â˜…â˜…</span>
+              <span class="doke-reviews-count">Â· 126 avaliaÃ§Ãµes verificadas</span>
+            </div>
+            <p class="doke-reviews-subnote">Baseado em serviÃ§os concluÃ­dos</p>
+            <span class="doke-reviews-recommendation">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                <path d="M7 11l4-8a3 3 0 0 1 3 3v4h4.4a2 2 0 0 1 1.9 2.6l-2 7A2 2 0 0 1 17.4 21H7Z"></path>
+              </svg>
+              96% recomendam
+            </span>
           </div>
-        ` : ""}
 
-        <div class="profile-review-hub profile-review-hub--clean" data-profile-review-hub data-review-ads='${JSON.stringify(reviewAds).replace(/'/g, "&apos;")}'></div>
-      </section>
-    `);
-  };
+          <div class="doke-reviews-bars" aria-label="DistribuiÃ§Ã£o de avaliaÃ§Ãµes do perfil">
+            <div class="doke-reviews-bar">
+              <span>5 estrelas</span>
+              <span class="doke-reviews-bar__track" aria-hidden="true"><span class="doke-reviews-bar__fill doke-reviews-bar__fill--81"></span></span>
+              <strong>102</strong>
+            </div>
+            <div class="doke-reviews-bar">
+              <span>4 estrelas</span>
+              <span class="doke-reviews-bar__track" aria-hidden="true"><span class="doke-reviews-bar__fill doke-reviews-bar__fill--19"></span></span>
+              <strong>24</strong>
+            </div>
+          </div>
+        </div>
 
+        <div class="doke-reviews-divider" aria-hidden="true"></div>
+
+        <div class="doke-reviews-metrics" aria-label="Pontos fortes avaliados">
+          <div class="doke-review-metric">
+            <span class="doke-review-metric__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 7v5l3 2"></path></svg></span>
+            <span class="doke-review-metric__copy"><span class="doke-review-metric__label">Pontualidade</span><strong class="doke-review-metric__value">4,9</strong></span>
+          </div>
+          <div class="doke-review-metric">
+            <span class="doke-review-metric__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 6h14v9H8l-3 3Z"></path><path d="M8 10h8"></path></svg></span>
+            <span class="doke-review-metric__copy"><span class="doke-review-metric__label">ComunicaÃ§Ã£o</span><strong class="doke-review-metric__value">4,8</strong></span>
+          </div>
+          <div class="doke-review-metric">
+            <span class="doke-review-metric__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.4-2.8 7.4-7 9-4.2-1.6-7-4.6-7-9V6Z"></path><path d="m9 12 2 2 4-4"></path></svg></span>
+            <span class="doke-review-metric__copy"><span class="doke-review-metric__label">Qualidade</span><strong class="doke-review-metric__value">4,9</strong></span>
+          </div>
+          <div class="doke-review-metric">
+            <span class="doke-review-metric__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 13 13 20 4 11V4h7Z"></path><circle cx="8.5" cy="8.5" r="1.2"></circle></svg></span>
+            <span class="doke-review-metric__copy"><span class="doke-review-metric__label">PreÃ§o</span><strong class="doke-review-metric__value">4,7</strong></span>
+          </div>
+          <div class="doke-review-metric">
+            <span class="doke-review-metric__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"></circle><path d="M5 20a7 7 0 0 1 14 0"></path></svg></span>
+            <span class="doke-review-metric__copy"><span class="doke-review-metric__label">Atendimento</span><strong class="doke-review-metric__value">5,0</strong></span>
+          </div>
+          <div class="doke-review-metric">
+            <span class="doke-review-metric__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v4"></path><path d="M12 17v4"></path><path d="M3 12h4"></path><path d="M17 12h4"></path><path d="m6 6 2.5 2.5"></path><path d="m15.5 15.5L18 18"></path><path d="m18 6-2.5 2.5"></path><path d="m8.5 15.5L6 18"></path></svg></span>
+            <span class="doke-review-metric__copy"><span class="doke-review-metric__label">Limpeza</span><strong class="doke-review-metric__value">4,8</strong></span>
+          </div>
+        </div>
+
+        <div class="doke-reviews-divider" aria-hidden="true"></div>
+
+        <div class="doke-reviews-filter-row">
+          <div class="doke-reviews-filters" aria-label="Filtros de avaliaÃ§Ãµes">
+            <button class="doke-review-filter is-active" type="button" data-review-filter="all">Todas</button>
+            <button class="doke-review-filter" type="button" data-review-filter="recent">Recentes</button>
+            <button class="doke-review-filter" type="button" data-review-filter="positive">Positivas</button>
+            <button class="doke-review-filter" type="button" data-review-filter="context">Com contexto</button>
+          </div>
+          <span class="doke-reviews-visible-count">2 comentÃ¡rios exibidos</span>
+        </div>
+
+        <div class="doke-review-list">
+          <article class="doke-review-item" data-review-id="profile-review-marina" data-rating="5.0">
+            <div class="doke-review-avatar" aria-hidden="true">MA</div>
+            <div class="doke-review-content">
+              <header class="doke-review-author"><strong>Marina Alves</strong><span>Apartamento Â· cliente verificada</span></header>
+              <p class="doke-review-text">A proteÃ§Ã£o foi muito bem feita, o cronograma foi respeitado e o resultado final ficou uniforme sem correria.</p>
+              <footer class="doke-review-footer"><span class="doke-review-date">HÃ¡ 3 dias</span><a class="doke-review-more" href="#">Mostrar mais â†’</a></footer>
+            </div>
+            <div class="doke-review-badges" aria-label="AvaliaÃ§Ã£o 5,0 verificada"><span class="doke-review-rating"><span aria-hidden="true">â˜…</span> 5,0</span><span class="doke-review-verified">âœ“ Verificada</span></div>
+          </article>
+
+          <article class="doke-review-item" data-review-id="profile-review-bruno" data-rating="4.8">
+            <div class="doke-review-avatar" aria-hidden="true">BC</div>
+            <div class="doke-review-content">
+              <header class="doke-review-author"><strong>Bruno Costa</strong><span>Cobertura Â· cliente verificado</span></header>
+              <p class="doke-review-text">Gostei da clareza no escopo, do cuidado com a limpeza e da forma de sinalizar cada etapa antes da execuÃ§Ã£o.</p>
+              <footer class="doke-review-footer"><span class="doke-review-date">HÃ¡ 5 dias</span><a class="doke-review-more" href="#">Mostrar mais â†’</a></footer>
+            </div>
+            <div class="doke-review-badges" aria-label="AvaliaÃ§Ã£o 4,8 verificada"><span class="doke-review-rating"><span aria-hidden="true">â˜…</span> 4,8</span><span class="doke-review-verified">âœ“ Verificada</span></div>
+          </article>
+        </div>
+
+        <a class="doke-reviews-all" href="#">Ver todas as avaliaÃ§Ãµes â†’</a>
+      </div>
+    </section>
+  `);
 
   const renderAbout = () => {
     const section = baseProfile.sections?.about || {};
@@ -1274,7 +1320,7 @@ window.DokeInitProfile = () => {
       },
       {
         badge: "Conte?do da semana",
-        title: "Post recomendado: publicações com prova visual curta",
+        title: "Post recomendado: publicaï¿½ï¿½es com prova visual curta",
         text: "Seu perfil est? convertendo melhor quando mostra processo visual em menos de 20 segundos. A IA sugere publicar isso primeiro.",
         cta: "Gerar rascunho"
       }
@@ -1770,10 +1816,6 @@ window.DokeInitProfile = () => {
     root.querySelectorAll("[data-profile-stat]").forEach((button) => {
       button.addEventListener("click", () => {
         const label = button.dataset.profileStat || "";
-        if (label.includes("nota") || label.includes("avalia")) {
-          openReviewsPanel();
-          return;
-        }
         if (label.includes("seguidores")) {
           openFollowersPanel();
         }
@@ -1967,161 +2009,7 @@ window.DokeInitProfile = () => {
         if (icon) icon.textContent = expanded ? '+' : 'âˆ’';
       });
     });
-    document.querySelectorAll("[data-profile-review-hub]").forEach((hub) => {
-      if (hub.dataset.profileReviewReady === "true") return;
-      hub.dataset.profileReviewReady = "true";
-
-      const select = hub.closest(".profile-review-detail")?.querySelector("[data-profile-review-select]");
-      const raw = hub.dataset.reviewAds || "[]";
-      let ads = [];
-      let activeFilter = "all";
-
-      try {
-        ads = JSON.parse(raw.replace(/&apos;/g, "'"));
-      } catch {}
-
-      const getInitials = (name = "") => {
-        const parts = normalize(name).split(/\s+/).filter(Boolean);
-        const initials = parts.slice(0, 2).map((part) => part[0]).join("");
-        return initials.toUpperCase() || "DK";
-      };
-
-      const formatStars = (rating = "5,0") => {
-        const numeric = Number(String(rating).replace(",", ".")) || 5;
-        const filled = Math.max(1, Math.min(5, Math.round(numeric)));
-        return "&#9733;".repeat(filled) + "&#9734;".repeat(5 - filled);
-      };
-
-      const getMetricFallbacks = (active) => {
-        const base = [
-          { label: "Atendimento", value: "5,0" },
-          { label: "Prazo", value: "4,8" },
-          { label: "Acabamento", value: "4,9" },
-          { label: "Preco", value: "4,7" },
-          { label: "Limpeza", value: "4,8" },
-          { label: "Organizacao", value: "4,9" }
-        ];
-
-        const metrics = (active.metrics || []).filter(Boolean);
-        return base.map((fallback, index) => ({
-          label: normalize(metrics[index]?.label || fallback.label),
-          value: normalize(metrics[index]?.value || fallback.value)
-        }));
-      };
-
-      const metricToBarClass = (value = "4,9") => {
-        const numeric = Number(String(value).replace(",", ".").replace("%", ""));
-        const percent = String(value).includes("%") ? numeric : (numeric / 5) * 100;
-        if (!Number.isFinite(percent)) return "is-96";
-        if (percent >= 99) return "is-100";
-        if (percent >= 97) return "is-98";
-        if (percent >= 95) return "is-96";
-        if (percent >= 93) return "is-94";
-        if (percent >= 91) return "is-92";
-        return "is-90";
-      };
-
-      const toneGroup = (review) => review.groups || "all";
-
-      const draw = (id) => {
-        const active = ads.find((item) => item.id === id) || ads[0];
-        if (!active) return;
-
-        const metrics = getMetricFallbacks(active);
-        const competenciesMarkup = metrics.slice(0, 6).map((metric) => `
-          <div class="doke-review-competency">
-            <span>${metric.label}</span>
-            <strong>${metric.value}</strong>
-          </div>
-        `).join("");
-
-        const visibleReviews = active.reviews.slice(0, 2);
-        const reviewsMarkup = visibleReviews.map((item) => `
-          <article class="doke-review-card" data-review-group="${toneGroup(item)}">
-            <header class="doke-review-card__head">
-              <div class="doke-review-card__client">
-                <span class="doke-review-card__avatar" aria-hidden="true">${getInitials(item.name)}</span>
-                <div class="doke-review-card__identity">
-                  <strong>${item.name}</strong>
-                </div>
-              </div>
-            </header>
-            <span class="doke-review-rating" aria-label="Avaliacao ${item.rating} de 5"><strong>${item.rating}</strong><span class="doke-review-stars" aria-hidden="true">${formatStars(item.rating)}</span></span>
-            <p>${item.text}</p>
-            <small class="doke-review-card__service">${active.label}</small>
-          </article>
-        `).join("");
-
-        hub.innerHTML = `
-          <section class="doke-review-section" aria-label="Resumo das avaliacoes">
-            <div class="doke-review-scoreboard">
-              <div class="doke-review-scoreboard__score">
-                <strong>${active.score}</strong>
-                <span class="doke-review-stars" aria-label="${active.score} de 5 estrelas">${formatStars(active.score)}</span>
-                <small>${active.count}</small>
-                <b class="doke-review-scoreboard__trust">&check; Todas verificadas</b>
-              </div>
-              <div class="doke-review-bars" aria-label="Distribuicao das avaliacoes">
-                <div class="doke-review-bars__row"><span>5 estrelas</span><i class="doke-review-bars__track is-96"></i><strong class="doke-review-bars__count">123</strong></div>
-                <div class="doke-review-bars__row"><span>4 estrelas</span><i class="doke-review-bars__track is-04"></i><strong class="doke-review-bars__count">5</strong></div>
-                <div class="doke-review-bars__row"><span>3 estrelas</span><i class="doke-review-bars__track is-00"></i><strong class="doke-review-bars__count">0</strong></div>
-              </div>
-            </div>
-
-            <div class="doke-review-competencies" aria-label="Notas por competencia">
-              <div class="doke-review-competencies__head">
-                <div>
-                  <span>Onde este profissional se destaca</span>
-                </div>
-              </div>
-              <div class="doke-review-competencies__grid">${competenciesMarkup}</div>
-            </div>
-          </section>
-
-          <div class="doke-review-toolbar">
-            <div class="doke-review-filters">
-              <button class="doke-review-filter ${activeFilter === "all" ? "is-active" : ""}" type="button" data-profile-review-filter="all" aria-pressed="${activeFilter === "all"}">Todas</button>
-              <button class="doke-review-filter ${activeFilter === "recentes" ? "is-active" : ""}" type="button" data-profile-review-filter="recentes" aria-pressed="${activeFilter === "recentes"}">Recentes</button>
-              <button class="doke-review-filter ${activeFilter === "positivas" ? "is-active" : ""}" type="button" data-profile-review-filter="positivas" aria-pressed="${activeFilter === "positivas"}">Positivas</button>
-              <button class="doke-review-filter ${activeFilter === "contexto" ? "is-active" : ""}" type="button" data-profile-review-filter="contexto" aria-pressed="${activeFilter === "contexto"}">Com contexto</button>
-            </div>
-            <span class="doke-review-count" data-profile-review-count>${visibleReviews.length} comentarios exibidos</span>
-          </div>
-
-          <div class="doke-review-grid">${reviewsMarkup}</div>
-        `;
-
-        const cards = [...hub.querySelectorAll(".doke-review-card")];
-        let visibleCount = 0;
-        cards.forEach((card) => {
-          const visible = activeFilter === "all" || card.dataset.reviewGroup?.includes(activeFilter);
-          card.hidden = !visible;
-          if (visible) visibleCount += 1;
-        });
-
-        const count = hub.querySelector("[data-profile-review-count]");
-        if (count) count.textContent = `${visibleCount} comentarios exibidos`;
-
-        const grid = hub.querySelector(".doke-review-grid");
-        if (grid && !visibleCount) {
-          grid.innerHTML = '<article class="doke-review-empty"><strong>Nenhuma avaliacao neste filtro</strong><p>Troque o filtro ou selecione outro servico para ver mais comentarios.</p></article>';
-        }
-
-        hub.querySelectorAll("[data-profile-review-filter]").forEach((button) => {
-          button.addEventListener("click", () => {
-            activeFilter = button.dataset.profileReviewFilter || "all";
-            draw(select?.value);
-          });
-        });
-      };
-
-      draw(select?.value);
-      select?.addEventListener("change", () => {
-        activeFilter = "all";
-        draw(select.value);
-      });
-    });
-  };
+};
 
   els.tabs.forEach((tab) => {
     tab.addEventListener("click", (event) => {

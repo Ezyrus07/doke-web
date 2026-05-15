@@ -1,5 +1,5 @@
 (() => {
-  const SELECTOR = '[data-media-lightbox], .message-bubble__image img, .community-message__image img';
+  const SELECTOR = '[data-media-lightbox], .message-bubble__image img, .community-message__image img, [data-gallery-main]';
   let root;
   let image;
   let thumbs;
@@ -9,7 +9,9 @@
   let activeIndex = 0;
   let lastFocused;
 
-  const iconClose = '×';
+  const iconClose = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>';
+  const iconPrev = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>';
+  const iconNext = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>';
 
   const normalizeItem = (item) => ({
     src: item?.src || '',
@@ -34,9 +36,9 @@
       <div class="doke-media-lightbox__surface" data-media-lightbox-surface>
         <button class="doke-media-lightbox__close" type="button" data-media-lightbox-close aria-label="Fechar imagem">${iconClose}</button>
         <div class="doke-media-lightbox__stage">
-          <button class="doke-media-lightbox__nav doke-media-lightbox__nav--prev" type="button" data-media-lightbox-prev aria-label="Imagem anterior">‹</button>
+          <button class="doke-media-lightbox__nav doke-media-lightbox__nav--prev" type="button" data-media-lightbox-prev aria-label="Imagem anterior">${iconPrev}</button>
           <img class="doke-media-lightbox__image" data-media-lightbox-image src="" alt="Imagem ampliada">
-          <button class="doke-media-lightbox__nav doke-media-lightbox__nav--next" type="button" data-media-lightbox-next aria-label="Próxima imagem">›</button>
+          <button class="doke-media-lightbox__nav doke-media-lightbox__nav--next" type="button" data-media-lightbox-next aria-label="Próxima imagem">${iconNext}</button>
         </div>
         <div class="doke-media-lightbox__thumbs" data-media-lightbox-thumbs aria-label="Miniaturas da galeria"></div>
       </div>
@@ -121,42 +123,42 @@
     render();
   };
 
-  const galleryItems = () => {
-    const gallery = document.querySelector('[data-gallery]');
+  const galleryItems = (contextNode) => {
+    const gallery = contextNode?.closest?.('[data-gallery], [data-detail-gallery], .ad-gallery, .detail-gallery') || document.querySelector('[data-gallery], [data-detail-gallery], .ad-gallery, .detail-gallery');
     if (!gallery) return [];
-    const main = gallery.querySelector('[data-gallery-main]');
     const list = [];
-    if (main?.src) {
-      list.push({ src: main.currentSrc || main.src, alt: main.alt, caption: main.alt, title: 'Fotos do serviço' });
-    }
     gallery.querySelectorAll('[data-gallery-thumb]').forEach((thumb) => {
-      const src = thumb.dataset.src;
+      const src = thumb.dataset.src || thumb.querySelector('img')?.currentSrc || thumb.querySelector('img')?.src;
+      const alt = thumb.querySelector('img')?.alt || thumb.dataset.alt || thumb.getAttribute('aria-label') || 'Foto do serviço';
       if (!src || list.some((item) => item.src === src)) return;
-      list.push({ src, alt: thumb.dataset.alt || 'Foto do serviço', caption: thumb.dataset.alt || '', title: 'Fotos do serviço' });
+      list.push({ src, alt, caption: alt, title: 'Fotos do serviço' });
     });
-    gallery.querySelectorAll('.detail-gallery__tile--more img').forEach((img) => {
-      const src = img.currentSrc || img.src;
-      if (!src || list.some((item) => item.src === src)) return;
-      list.push({ src, alt: img.alt || 'Foto do serviço', caption: img.alt || '', title: 'Fotos do serviço' });
-    });
+    const main = gallery.querySelector('[data-gallery-main]');
+    const mainSrc = main?.currentSrc || main?.src;
+    if (mainSrc && !list.some((item) => item.src === mainSrc)) {
+      list.unshift({ src: mainSrc, alt: main?.alt || 'Foto do serviço', caption: main?.alt || '', title: 'Fotos do serviço' });
+    }
     return list;
   };
 
   document.addEventListener('click', (event) => {
     const detailTrigger = event.target.closest('[data-lightbox-open]');
     if (detailTrigger) {
-      const gallery = galleryItems();
+      const gallery = galleryItems(detailTrigger);
       if (gallery.length) {
+        const currentSrc = detailTrigger.closest('[data-gallery], [data-detail-gallery], .ad-gallery, .detail-gallery')?.querySelector('[data-gallery-main]')?.currentSrc
+          || detailTrigger.closest('[data-gallery], [data-detail-gallery], .ad-gallery, .detail-gallery')?.querySelector('[data-gallery-main]')?.src;
+        const currentIndex = Math.max(0, gallery.findIndex((item) => item.src === currentSrc));
         event.preventDefault();
         event.stopPropagation();
-        open({ items: gallery, index: 0, title: 'Fotos do serviço' });
+        open({ items: gallery, index: currentIndex, title: 'Fotos do serviço' });
       }
       return;
     }
 
-    const galleryImage = event.target.closest('.detail-gallery img');
+    const galleryImage = event.target.closest('.detail-gallery img, .ad-gallery img');
     if (galleryImage) {
-      const gallery = galleryItems();
+      const gallery = galleryItems(galleryImage);
       const src = galleryImage.closest('[data-gallery-thumb]')?.dataset.src || galleryImage.currentSrc || galleryImage.src;
       const index = Math.max(0, gallery.findIndex((item) => item.src === src));
       event.preventDefault();
