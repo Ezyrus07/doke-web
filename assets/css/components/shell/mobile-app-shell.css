@@ -726,3 +726,25 @@
     stroke-linejoin: round !important;
   }
 }
+
+
+/* 2026-05-15 — Detail mobile header action alignment
+   Scope: detalhe-anuncio only. The announcement page does not use the location pill;
+   its compact actions must align to the right edge using the same square action contract. */
+@media (max-width: 760px) {
+  body.doke-mobile-shell-mounted[data-shell-page="detalhe-anuncio"] .doke-mobile-shell__actions {
+    margin-left: auto !important;
+    justify-self: end !important;
+  }
+
+  body.doke-mobile-shell-mounted[data-shell-page="detalhe-anuncio"] .doke-mobile-shell__actions:has(.doke-mobile-shell__quick-action) {
+    display: grid !important;
+    grid-template-columns: repeat(2, var(--doke-mobile-shell-action-size, 40px)) !important;
+    justify-content: end !important;
+    justify-items: end !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: max-content !important;
+    min-width: max-content !important;
+  }
+}

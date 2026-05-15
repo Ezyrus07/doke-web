@@ -13,6 +13,7 @@
     'index.html': { key: 'home', active: 'home', search: true },
     '': { key: 'home', active: 'home', search: true },
     'resultados.html': { key: 'resultados', active: 'home', search: true },
+    'detalhe-anuncio.html': { key: 'detalhe-anuncio', active: 'home', search: false, title: 'Anúncio', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'pedidos.html': { key: 'pedidos', active: 'orders', search: false },
     'mensagens.html': { key: 'mensagens', active: 'messages', search: false },
     'comunidade.html': { key: 'comunidade', active: 'communities', search: false },
@@ -168,13 +169,26 @@
 
   function createQuickActions(cfg) {
     if (!usesContextActions(cfg)) {
-      return [
-        '    <button class="doke-mobile-shell__location" type="button" data-shell-location aria-label="Selecionar localização">',
-        '      <span class="doke-mobile-shell__location-dot" aria-hidden="true"></span>',
-        '      <span class="doke-mobile-shell__location-label">' + locationLabel() + '</span>',
-        '    </button>',
+      var baseActions = [];
+
+      if (cfg && cfg.compactSearchButton) {
+        baseActions.push('    <button class="doke-mobile-shell__quick-action" type="button" data-shell-search-trigger aria-label="Abrir busca">' + ICONS.search + '</button>');
+      }
+
+      if (!cfg || !cfg.hideLocation) {
+        baseActions.push(
+          '    <button class="doke-mobile-shell__location" type="button" data-shell-location aria-label="Selecionar localização">',
+          '      <span class="doke-mobile-shell__location-dot" aria-hidden="true"></span>',
+          '      <span class="doke-mobile-shell__location-label">' + locationLabel() + '</span>',
+          '    </button>'
+        );
+      }
+
+      baseActions.push(
         '    <a class="doke-mobile-shell__notification" href="notificacoes.html" aria-label="Abrir notificações">' + ICONS.bell + '</a>'
-      ].join('');
+      );
+
+      return baseActions.join('');
     }
 
     var buttons = [
@@ -202,24 +216,26 @@
       '<header class="doke-mobile-shell__topbar" aria-label="Cabeçalho mobile global">',
       '  <button class="doke-mobile-shell__profile" type="button" data-shell-profile aria-label="Abrir menu da conta">',
       '    <span class="doke-mobile-shell__avatar">DK</span>',
-      '    <span class="doke-mobile-shell__hello">' + (cfg.key === 'mensagens' ? 'Mensagens' : 'Olá Gabriel') + '</span>',
+      '    <span class="doke-mobile-shell__hello">' + (cfg.title || (cfg.key === 'mensagens' ? 'Mensagens' : 'Olá Gabriel')) + '</span>',
       '  </button>',
       '  <div class="doke-mobile-shell__actions" data-shell-context-actions>',
       createQuickActions(cfg),
       '  </div>',
       '</header>',
-      '<form class="doke-mobile-shell__search" action="resultados.html" role="search" data-shell-search autocomplete="off">',
-      '  <button class="doke-mobile-shell__search-button" type="submit" aria-label="Buscar serviço">' + ICONS.search + '</button>',
-      '  <label class="doke-mobile-shell__field" for="doke-shell-search-input">',
-      '    <input id="doke-shell-search-input" class="doke-mobile-shell__input" type="search" name="q" placeholder="Ex: Pintor, Encanador..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">',
-      '  </label>',
-      '  <button class="doke-mobile-shell__voice" type="button" aria-label="Buscar por voz">' + ICONS.mic + '</button>',
-      '  <button class="doke-mobile-shell__filter" type="button" data-shell-filter aria-label="Abrir filtros">' + ICONS.sliders + '</button>',
-      '</form>'
+      (cfg.hideSearchBar ? '' : [
+        '<form class="doke-mobile-shell__search" action="resultados.html" role="search" data-shell-search autocomplete="off">',
+        '  <button class="doke-mobile-shell__search-button" type="submit" aria-label="Buscar serviço">' + ICONS.search + '</button>',
+        '  <label class="doke-mobile-shell__field" for="doke-shell-search-input">',
+        '    <input id="doke-shell-search-input" class="doke-mobile-shell__input" type="search" name="q" placeholder="Ex: Pintor, Encanador..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">',
+        '  </label>',
+        '  <button class="doke-mobile-shell__voice" type="button" aria-label="Buscar por voz">' + ICONS.mic + '</button>',
+        '  <button class="doke-mobile-shell__filter" type="button" data-shell-filter aria-label="Abrir filtros">' + ICONS.sliders + '</button>',
+        '</form>'
+      ].join(''))
     ].join('');
 
     var input = shell.querySelector('.doke-mobile-shell__input');
-    input.value = queryValue();
+    if (input) input.value = queryValue();
 
     shell.querySelector('[data-shell-profile]').addEventListener('click', function () {
       openMobileDrawerDirect();
@@ -318,12 +334,15 @@
         clickFirst('[data-orders-agenda-toggle]');
       });
     }
-    shell.querySelector('[data-shell-search]').addEventListener('submit', function (event) {
-      event.preventDefault();
-      var value = input.value.trim();
-      if (!value) return;
-      window.location.href = 'resultados.html?q=' + encodeURIComponent(value);
-    });
+    var shellSearchForm = shell.querySelector('[data-shell-search]');
+    if (shellSearchForm && input) {
+      shellSearchForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var value = input.value.trim();
+        if (!value) return;
+        window.location.href = 'resultados.html?q=' + encodeURIComponent(value);
+      });
+    }
 
     return shell;
   }
