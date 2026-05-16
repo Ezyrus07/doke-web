@@ -220,3 +220,27 @@ body.app-shell-page .doke-bottom-nav .doke-bottom-nav__item[aria-current="page"]
     display: none !important;
   }
 }
+
+/* v20260515 — Bottom nav selected/hover state must use Doke action green, not primary blue. */
+:root {
+  --doke-bottom-nav-active-color: var(--color-secondary, #14b8a6);
+  --doke-bottom-nav-hover-color: var(--color-secondary, #14b8a6);
+}
+
+@media (max-width: 767px) {
+  .doke-bottom-nav__item:is(:hover, :focus-visible),
+  .bottom-nav__item:is(:hover, :focus-visible),
+  .doke-bottom-nav__item[aria-current="page"],
+  .bottom-nav__item:is([aria-current="page"], .is-active),
+  body.app-shell-page .bottom-nav .bottom-nav__item:is([aria-current="page"], .is-active),
+  body.home-index-shell .bottom-nav .bottom-nav__item:is([aria-current="page"], .is-active),
+  body.internal-shell-page .bottom-nav .bottom-nav__item:is([aria-current="page"], .is-active),
+  body.app-shell-page .doke-bottom-nav .doke-bottom-nav__item[aria-current="page"] {
+    color: var(--doke-bottom-nav-active-color) !important;
+  }
+
+  .doke-bottom-nav__item[aria-current="page"]::before,
+  .bottom-nav__item:is([aria-current="page"], .is-active)::before {
+    background: var(--doke-bottom-nav-active-color) !important;
+  }
+}

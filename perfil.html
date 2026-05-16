@@ -35,8 +35,8 @@
   <link rel="stylesheet" href="assets/css/core/responsive-audit.css?v=20260429-no-bottomnav-avatar-final">
 <link rel="stylesheet" href="assets/css/components/avatar.css?v=20260429-avatar-circle-final">
   <link rel="stylesheet" href="assets/css/components/shell/page-container-contract.css?v=20260510-mobile-width-contract-v1">
-<script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
-  <link rel="stylesheet" href="assets/css/components/shell/mobile-app-shell.css?v=20260505-mobile-actions-v4">
+<link rel="stylesheet" href="assets/css/components/shell/mobile-app-shell.css?v=20260515-bottom-nav-green-v1">
+  <link rel="stylesheet" href="assets/css/components/navigation/bottom-nav.css?v=20260515-bottom-nav-green-v33">
   <link rel="stylesheet" href="assets/css/components/ui/doke-ui-system.css?v=20260501-ui-contract-v2-components">
   <link rel="stylesheet" href="assets/css/components/domain/doke-domain-cards.css?v=20260501-domain-cards-v1">
   <link rel="stylesheet" href="assets/css/components/layout/doke-layout-system.css?v=20260501-layout-system-v1">  <link rel="stylesheet" href="assets/css/components/flows/doke-product-flows.css?v=20260501-product-flows-v1">  <link rel="stylesheet" href="assets/css/components/shell/desktop-shell.css?v=20260501-desktop-contract-v1">
@@ -52,7 +52,7 @@
   <link rel="stylesheet" href="assets/css/components/cards/ad-card.css?v=20260509-profile-index-card-parity">
   <link rel="stylesheet" href="assets/css/components/cards/service-card.css?v=20260503-canonical-card-contract-v3">
   <link rel="stylesheet" href="assets/css/pages/perfil-reference-hero.css?v=20260514-review-background-v3">
-  <link rel="stylesheet" href="assets/css/pages/perfil/mobile-public-profile.css?v=20260510-mobile-profile-parity-v35" />
+  <link rel="stylesheet" href="assets/css/pages/perfil/mobile-public-profile.css?v=20260515-profile-instagram-rhythm-v34" />
 </head>
   <body data-page="perfil" class="doke-app-shell-page app-shell-page internal-shell-page profile-page-shell doke-flow doke-profile-flow has-global-header"
     data-profile-type="professional"
@@ -1264,53 +1264,5 @@
   <script src="assets/js/controllers/page-controller-registry.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/controllers/perfil-controller.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/controllers/controller-bootstrap.js?v=20260501-stage32-runtime-flags" defer></script>
-  <style>
-    .doke-bottom-nav,
-    nav[data-bottom-nav] {
-      display: none !important;
-      visibility: hidden !important;
-      pointer-events: none !important;
-    }
-
-    @media (max-width: 760px) {
-      body.profile-page-shell .doke-bottom-nav,
-      body.profile-page-shell nav[data-bottom-nav] {
-        display: none !important;
-        visibility: hidden !important;
-      }
-
-      body.profile-page-shell,
-      body.profile-page-shell .app-shell,
-      body.profile-page-shell .page,
-      body.profile-page-shell .page__content {
-        margin-top: 0 !important;
-        padding-top: 0 !important;
-        padding-bottom: 0 !important;
-      }
-    }
-  </style>
-  <script>
-    (function () {
-      function cleanProfileMobileShell() {
-      if (window.matchMedia('(max-width: 760px)').matches && document.body.classList.contains('profile-page-shell')) {
-        document.querySelectorAll('header[aria-label], .doke-bottom-nav, nav[data-bottom-nav]').forEach(function (element) {
-          var label = element.getAttribute('aria-label') || '';
-          if (element.matches('.doke-bottom-nav, nav[data-bottom-nav]') || label.indexOf('Cabe') === 0) {
-            element.style.setProperty('display', 'none', 'important');
-            element.style.setProperty('visibility', 'hidden', 'important');
-          }
-        });
-        document.body.style.setProperty('padding-top', '0', 'important');
-      }
-      }
-
-      window.addEventListener('DOMContentLoaded', cleanProfileMobileShell);
-      window.addEventListener('load', cleanProfileMobileShell);
-      setTimeout(cleanProfileMobileShell, 250);
-      setTimeout(cleanProfileMobileShell, 1000);
-      setTimeout(cleanProfileMobileShell, 2000);
-      setInterval(cleanProfileMobileShell, 500);
-    }());
-  </script>
 </body>
 </html>

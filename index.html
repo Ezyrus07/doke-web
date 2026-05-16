@@ -16,13 +16,14 @@
   <link rel="stylesheet" href="assets/css/pages/app-shell.css?v=20260501-desktop-grid-shell-v1">
   <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
 
-<link rel="stylesheet" href="assets/css/pages/home.css?v=20260515-mobile-column-contract-v1">
+<link rel="stylesheet" href="assets/css/pages/home.css?v=20260515-mobile-axis-contract-v3">
   <link rel="stylesheet" href="assets/css/components/shell/app-header.css?v=20260514-global-header-v20-parity">
-  <link rel="stylesheet" href="assets/css/components/layout/responsive-page-contract.css?v=20260514-header-parity-audit-v2">
-  <link rel="stylesheet" href="assets/css/components/shell/doke-shell-contract.css?v=20260514-index-header-rail-parity-v18">
+  <link rel="stylesheet" href="assets/css/components/layout/responsive-page-contract.css?v=20260515-mobile-axis-v1">
+  <link rel="stylesheet" href="assets/css/components/shell/doke-shell-contract.css?v=20260515-mobile-axis-v1">
   <style>
+    @media (max-width: 760px) {
     body.home-index-shell.doke-mobile-shell-mounted {
-      --home-index-mobile-column-inline: 18px;
+      --home-index-mobile-column-inline: var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 18px));
       --home-index-mobile-column-width: calc(100vw - (var(--home-index-mobile-column-inline) * 2));
       overflow-x: hidden !important;
     }
@@ -126,9 +127,11 @@
       box-sizing: border-box !important;
     }
 
-    @media (max-width: 1024px) {
+    }
+
+    @media (max-width: 760px) {
       body.home-index-shell {
-        --home-index-mobile-column-inline: 18px;
+        --home-index-mobile-column-inline: var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 18px));
         --home-index-mobile-column-width: calc(100vw - (var(--home-index-mobile-column-inline) * 2));
         overflow-x: hidden !important;
       }
@@ -1651,102 +1654,21 @@
     <script src="assets/js/components/ad-card-interactions.js?v=20260505-ad-card-actions-v1" defer></script>
   <script src="assets/js/pages/home/mobile-interaction-contract.js?v=20260506-v23"></script>
   <style id="home-mobile-carousel-peek-contract">
-    html.home-index-root body.home-index-shell.doke-mobile-shell-mounted {
-      --home-mobile-header-axis: 21px;
-      --home-mobile-content-width: calc(100vw - (var(--home-mobile-header-axis) * 2));
-    }
-
-    html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(
-      section.featured-services,
-      section.home-recommendations,
-      section.home-publications,
-      section.more-services,
-      section.featured-pros
-    ) {
-      width: var(--home-mobile-content-width) !important;
-      max-width: var(--home-mobile-content-width) !important;
-      margin-left: auto !important;
-      margin-right: auto !important;
-      padding-left: 0 !important;
-      padding-right: 0 !important;
-      box-sizing: border-box !important;
-      overflow-x: hidden !important;
-    }
-
-    html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(
-      section.featured-services,
-      section.home-recommendations,
-      section.home-publications,
-      section.more-services,
-      section.featured-pros
-    ) > :is(.section-heading, .home-section-header, .content-rail, .recommendation-list, .more-services__controls, .more-services__cards-rail, .more-services__tabs-rail, .more-services__filters-host) {
-      width: 100% !important;
-      max-width: 100% !important;
-      min-width: 0 !important;
-      margin-left: 0 !important;
-      margin-right: 0 !important;
-      padding-left: 0 !important;
-      padding-right: 0 !important;
-      box-sizing: border-box !important;
-    }
-
-    html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(
-      section.featured-services #featured-services-track,
-      section.home-publications #home-publications-track,
-      section.more-services [data-more-services-grid]
-    ) {
-      display: flex !important;
-      flex-flow: row nowrap !important;
-      gap: 14px !important;
-      width: 100% !important;
-      max-width: 100% !important;
-      min-width: 0 !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      overflow-x: auto !important;
-      overflow-y: hidden !important;
-      scroll-snap-type: x proximity !important;
-      scrollbar-width: none !important;
-      box-sizing: border-box !important;
-    }
-
-    html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(
-      section.featured-services #featured-services-track,
-      section.home-publications #home-publications-track,
-      section.more-services [data-more-services-grid]
-    )::-webkit-scrollbar {
-      display: none !important;
-    }
-
-    html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-services #featured-services-track > article.doke-ad-card,
-    html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.home-publications #home-publications-track > article.publication-card,
-    html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services [data-more-services-grid] > article.doke-ad-card {
-      flex: 0 0 calc(100% - 46px) !important;
-      width: calc(100% - 46px) !important;
-      min-width: calc(100% - 46px) !important;
-      max-width: calc(100% - 46px) !important;
-      margin: 0 !important;
-      overflow: hidden !important;
-      scroll-snap-align: start !important;
-      box-sizing: border-box !important;
-    }
-
-    html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-services #featured-services-track > article.doke-ad-card > *,
-    html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.home-publications #home-publications-track > article.publication-card > *,
-    html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services [data-more-services-grid] > article.doke-ad-card > *,
-    html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(
-      section.featured-services #featured-services-track,
-      section.home-publications #home-publications-track,
-      section.more-services [data-more-services-grid]
-    ) :is(.doke-ad-card__media, .doke-ad-card__body, .doke-ad-card__footer, .publication-card__media, .publication-card__content) {
-      width: 100% !important;
-      min-width: 0 !important;
-      max-width: 100% !important;
-      box-sizing: border-box !important;
-    }
-
     @media (max-width: 760px) {
+      html.home-index-root body.home-index-shell,
+      html.home-index-root body.home-index-shell.doke-mobile-shell-mounted {
+        --home-mobile-header-axis: var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 18px));
+        --home-mobile-content-width: calc(100vw - (var(--home-mobile-header-axis) * 2));
+      }
+
       html.home-index-root body.home-index-shell :is(
+        section.featured-services,
+        section.home-recommendations,
+        section.home-publications,
+        section.more-services,
+        section.featured-pros
+      ),
+      html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(
         section.featured-services,
         section.home-recommendations,
         section.home-publications,
@@ -1769,6 +1691,13 @@
         section.home-publications,
         section.more-services,
         section.featured-pros
+      ) > :is(.section-heading, .home-section-header, .content-rail, .recommendation-list, .more-services__controls, .more-services__cards-rail, .more-services__tabs-rail, .more-services__filters-host),
+      html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(
+        section.featured-services,
+        section.home-recommendations,
+        section.home-publications,
+        section.more-services,
+        section.featured-pros
       ) > :is(.section-heading, .home-section-header, .content-rail, .recommendation-list, .more-services__controls, .more-services__cards-rail, .more-services__tabs-rail, .more-services__filters-host) {
         width: 100% !important;
         max-width: 100% !important;
@@ -1781,6 +1710,11 @@
       }
 
       html.home-index-root body.home-index-shell :is(
+        section.featured-services #featured-services-track,
+        section.home-publications #home-publications-track,
+        section.more-services [data-more-services-grid]
+      ),
+      html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(
         section.featured-services #featured-services-track,
         section.home-publications #home-publications-track,
         section.more-services [data-more-services-grid]
@@ -1804,13 +1738,21 @@
         section.featured-services #featured-services-track,
         section.home-publications #home-publications-track,
         section.more-services [data-more-services-grid]
+      )::-webkit-scrollbar,
+      html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(
+        section.featured-services #featured-services-track,
+        section.home-publications #home-publications-track,
+        section.more-services [data-more-services-grid]
       )::-webkit-scrollbar {
         display: none !important;
       }
 
       html.home-index-root body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card,
       html.home-index-root body.home-index-shell section.home-publications #home-publications-track > article.publication-card,
-      html.home-index-root body.home-index-shell section.more-services [data-more-services-grid] > article.doke-ad-card {
+      html.home-index-root body.home-index-shell section.more-services [data-more-services-grid] > article.doke-ad-card,
+      html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-services #featured-services-track > article.doke-ad-card,
+      html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.home-publications #home-publications-track > article.publication-card,
+      html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services [data-more-services-grid] > article.doke-ad-card {
         flex: 0 0 calc(100% - 46px) !important;
         width: calc(100% - 46px) !important;
         min-width: calc(100% - 46px) !important;
@@ -1824,6 +1766,9 @@
       html.home-index-root body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card > *,
       html.home-index-root body.home-index-shell section.home-publications #home-publications-track > article.publication-card > *,
       html.home-index-root body.home-index-shell section.more-services [data-more-services-grid] > article.doke-ad-card > *,
+      html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-services #featured-services-track > article.doke-ad-card > *,
+      html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.home-publications #home-publications-track > article.publication-card > *,
+      html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services [data-more-services-grid] > article.doke-ad-card > *,
       html.home-index-root body.home-index-shell :is(
         section.featured-services #featured-services-track,
         section.home-publications #home-publications-track,
