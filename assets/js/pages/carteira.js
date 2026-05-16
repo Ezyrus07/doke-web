@@ -1,101 +1,381 @@
 (() => {
-  const modal = document.querySelector('[data-wallet-withdraw-modal]');
-  const openButtons = document.querySelectorAll('[data-wallet-open-withdraw]');
-  const closeButtons = document.querySelectorAll('[data-wallet-close-withdraw]');
-  const form = document.querySelector('[data-wallet-withdraw-form]');
-  const filterButtons = document.querySelectorAll('[data-wallet-filter]');
-  const transactions = document.querySelectorAll('[data-wallet-type]');
-  const scrollButtons = document.querySelectorAll('[data-wallet-scroll-to]');
-  const viewButtons = document.querySelectorAll('[data-wallet-view-toggle]');
-  const viewPanels = document.querySelectorAll('[data-wallet-view-panel]');
-
-  const openModal = () => {
-    if (!modal) return;
-    modal.hidden = false;
-    document.body.classList.add('wallet-modal-open');
-    modal.querySelector('input')?.focus();
+  const ready = (callback) => {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', callback, { once: true });
+      return;
+    }
+    callback();
   };
 
-  const closeModal = () => {
-    if (!modal) return;
-    modal.hidden = true;
-    document.body.classList.remove('wallet-modal-open');
-  };
+  ready(() => {
+    const viewButtons = Array.from(document.querySelectorAll('[data-wallet-view-toggle]'));
+    const viewPanels = Array.from(document.querySelectorAll('[data-wallet-view-panel]'));
+    const filterButtons = Array.from(document.querySelectorAll('[data-wallet-filter]'));
+    const transactions = Array.from(document.querySelectorAll('[data-wallet-type]'));
+    const withdrawModal = document.querySelector('[data-wallet-withdraw-modal]');
+    const withdrawOpenButton = document.querySelector('[data-wallet-open-withdraw]');
+    const withdrawCloseButtons = Array.from(document.querySelectorAll('[data-wallet-close-withdraw]'));
+    const withdrawForm = document.querySelector('[data-wallet-withdraw-form]');
+    const accountModal = document.querySelector('[data-wallet-account-modal]');
+    const accountManageButton = document.querySelector('[data-wallet-account-action="manage"]');
+    const accountCloseButtons = Array.from(document.querySelectorAll('[data-wallet-close-account]'));
+    const accountForm = document.querySelector('[data-wallet-account-form]');
+    const accountInputs = accountForm ? Array.from(accountForm.querySelectorAll('[data-wallet-account-input]')) : [];
+    const accountFields = Array.from(document.querySelectorAll('[data-wallet-account-field]'));
+    const dialogDropdowns = Array.from(document.querySelectorAll('[data-wallet-dialog-select]'));
 
-  openButtons.forEach((button) => button.addEventListener('click', openModal));
-  closeButtons.forEach((button) => button.addEventListener('click', closeModal));
+    const normalizeView = (view) => {
+      return viewPanels.some((panel) => panel.dataset.walletViewPanel === view) ? view : 'overview';
+    };
 
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') closeModal();
-  });
+    const setView = (view) => {
+      const nextView = normalizeView(view);
 
-  form?.addEventListener('submit', (event) => {
-    event.preventDefault();
-    closeModal();
-  });
+      viewPanels.forEach((panel) => {
+        const isActivePanel = panel.dataset.walletViewPanel === nextView;
+        panel.hidden = !isActivePanel;
+        panel.setAttribute('aria-hidden', String(!isActivePanel));
+      });
 
-  scrollButtons.forEach((button) => {
-    button.addEventListener('click', () => {
-      const id = button.dataset.walletScrollTo;
-      const target = id ? document.getElementById(id) : null;
-      target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  });
+      viewButtons.forEach((button) => {
+        const isActiveButton = button.dataset.walletViewToggle === nextView;
+        button.classList.toggle('is-view-active', isActiveButton);
+        button.setAttribute('aria-pressed', String(isActiveButton));
+      });
 
-  let currentView = 'overview';
+      document.body.dataset.walletView = nextView;
 
-  const setView = (view) => {
-    if (!viewPanels.length) return;
-
-    currentView = view;
-
-    viewPanels.forEach((panel) => {
-      panel.hidden = panel.dataset.walletViewPanel !== view;
-    });
+      document.querySelectorAll('[data-wallet-mobile-view]').forEach((button) => {
+        button.classList.toggle('is-view-active', button.dataset.walletMobileView === nextView);
+      });
+    };
 
     viewButtons.forEach((button) => {
-      button.classList.toggle('is-view-active', button.dataset.walletViewToggle === view);
-      button.setAttribute('aria-pressed', String(button.dataset.walletViewToggle === view));
-    });
-  };
-
-  viewButtons.forEach((button) => {
-    button.setAttribute('aria-pressed', 'false');
-
-    button.addEventListener('click', () => {
-      const requestedView = button.dataset.walletViewToggle || 'overview';
-      const view = requestedView === 'statistics' && currentView === 'statistics'
-        ? 'overview'
-        : requestedView;
-
-      setView(view);
-
-      const scrollTargetId = view === 'overview' ? 'wallet-statement-title' : button.dataset.walletScrollTo;
-      const targetPanel = document.querySelector(`[data-wallet-view-panel="${view}"]`);
-      const target = scrollTargetId ? document.getElementById(scrollTargetId) : targetPanel;
-
-      requestAnimationFrame(() => {
-        target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      button.addEventListener('click', () => {
+        setView(button.dataset.walletViewToggle);
       });
     });
-  });
 
-  if (viewPanels.length) {
-    setView('overview');
-  }
+    const setTransactionFilter = (filter) => {
+      const nextFilter = filter || 'all';
 
-  filterButtons.forEach((button) => {
-    button.addEventListener('click', () => {
-      const filter = button.dataset.walletFilter || 'all';
-
-      filterButtons.forEach((item) => {
-        item.classList.toggle('is-active', item === button);
+      filterButtons.forEach((button) => {
+        const isActiveButton = button.dataset.walletFilter === nextFilter;
+        button.classList.toggle('is-active', isActiveButton);
+        button.setAttribute('aria-pressed', String(isActiveButton));
       });
 
       transactions.forEach((transaction) => {
         const type = transaction.dataset.walletType;
-        transaction.hidden = filter !== 'all' && type !== filter;
+        const isVisible = nextFilter === 'all' || type === nextFilter;
+        transaction.hidden = !isVisible;
+      });
+    };
+
+    filterButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        setTransactionFilter(button.dataset.walletFilter);
       });
     });
+
+    const openWithdrawModal = () => {
+      if (!withdrawModal) return;
+      withdrawModal.hidden = false;
+      withdrawModal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('is-wallet-modal-open');
+      const firstField = withdrawModal.querySelector('input, select, textarea, button');
+      firstField?.focus({ preventScroll: true });
+    };
+
+    const closeWithdrawModal = () => {
+      if (!withdrawModal) return;
+      withdrawModal.hidden = true;
+      withdrawModal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('is-wallet-modal-open');
+      withdrawOpenButton?.focus({ preventScroll: true });
+    };
+
+    withdrawOpenButton?.addEventListener('click', openWithdrawModal);
+    withdrawCloseButtons.forEach((button) => {
+      button.addEventListener('click', closeWithdrawModal);
+    });
+
+    withdrawForm?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      closeWithdrawModal();
+    });
+
+    const bankThemes = {
+      'Nubank': { mark: 'nu', theme: 'nubank' },
+      'Banco Inter': { mark: 'inter', theme: 'inter' },
+      'Itaú': { mark: 'itaú', theme: 'generic' },
+      'Bradesco': { mark: 'bra', theme: 'generic' },
+      'Caixa': { mark: 'cx', theme: 'generic' },
+      'Banco do Brasil': { mark: 'bb', theme: 'generic' }
+    };
+
+    const getAccountInput = (name) => {
+      return accountInputs.find((input) => input.dataset.walletAccountInput === name);
+    };
+
+    const getAccountField = (name) => {
+      return accountFields.find((field) => field.dataset.walletAccountField === name);
+    };
+
+    const setBankTheme = (theme) => {
+      const bankMark = getAccountField('bankMark');
+      const previewMark = accountModal?.querySelector('[data-wallet-account-preview-mark]');
+
+      [bankMark, previewMark].forEach((mark) => {
+        if (!mark) return;
+        mark.classList.remove('wallet-bank-card__mark--nubank', 'wallet-bank-card__mark--inter', 'wallet-bank-card__mark--generic');
+        mark.dataset.bankTheme = theme;
+        if (mark.classList.contains('wallet-bank-card__mark')) {
+          mark.classList.add(`wallet-bank-card__mark--${theme}`);
+        }
+      });
+    };
+
+    const getAccountStateFromForm = () => {
+      const bankName = getAccountInput('bankName')?.value || 'Nubank';
+      const accountLastDigits = (getAccountInput('accountLastDigits')?.value || '9821').replace(/\D/g, '').slice(-4) || '9821';
+      const accountType = getAccountInput('accountType')?.value || 'Conta corrente';
+      const pixStatus = getAccountInput('pixStatus')?.value || 'CPF verificado';
+      const nextPayout = getAccountInput('nextPayout')?.value || '12 abr · 08:00';
+      const bankTheme = bankThemes[bankName] || { mark: bankName.slice(0, 2).toLowerCase(), theme: 'generic' };
+
+      return {
+        bankName,
+        accountLastDigits,
+        accountType,
+        pixStatus,
+        nextPayout,
+        bankMark: bankTheme.mark,
+        bankTheme: bankTheme.theme,
+        accountLabel: `Conta principal · final ${accountLastDigits}`,
+        payoutCopy: 'PIX automático toda terça-feira às 08:00',
+        withdrawDestination: `PIX • ${bankName}`
+      };
+    };
+
+    const syncAccountPreview = () => {
+      if (!accountModal) return;
+
+      const state = getAccountStateFromForm();
+      const previewMark = accountModal.querySelector('[data-wallet-account-preview-mark]');
+      const previewMiniMark = accountModal.querySelector('[data-wallet-account-preview-mark-mini]');
+      const previewBank = accountModal.querySelector('[data-wallet-account-preview-bank]');
+      const previewCopy = accountModal.querySelector('[data-wallet-account-preview-copy]');
+
+      [previewMark, previewMiniMark].forEach((mark) => {
+        if (!mark) return;
+        mark.textContent = state.bankMark;
+        mark.dataset.bankTheme = state.bankTheme;
+      });
+      if (previewBank) previewBank.textContent = state.bankName;
+      if (previewCopy) previewCopy.textContent = state.accountLabel;
+    };
+
+    const applyAccountState = () => {
+      const state = getAccountStateFromForm();
+
+      Object.entries(state).forEach(([key, value]) => {
+        const field = getAccountField(key);
+        if (field) field.textContent = value;
+      });
+
+      setBankTheme(state.bankTheme);
+    };
+
+    const openAccountModal = () => {
+      if (!accountModal) return;
+      syncAccountPreview();
+      accountModal.hidden = false;
+      accountModal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('is-wallet-modal-open');
+      const firstField = accountModal.querySelector('select, input, textarea, button');
+      firstField?.focus({ preventScroll: true });
+    };
+
+    const closeAccountModal = () => {
+      if (!accountModal) return;
+      accountModal.hidden = true;
+      accountModal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('is-wallet-modal-open');
+      accountManageButton?.focus({ preventScroll: true });
+    };
+
+    accountManageButton?.addEventListener('click', openAccountModal);
+    accountCloseButtons.forEach((button) => {
+      button.addEventListener('click', closeAccountModal);
+    });
+
+    accountInputs.forEach((input) => {
+      input.addEventListener('input', syncAccountPreview);
+      input.addEventListener('change', syncAccountPreview);
+    });
+
+    accountForm?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      applyAccountState();
+      closeAccountModal();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+
+      if (withdrawModal && !withdrawModal.hidden) {
+        closeWithdrawModal();
+        return;
+      }
+
+      if (accountModal && !accountModal.hidden) {
+        closeAccountModal();
+      }
+    });
+
+    const closeDialogDropdowns = (exceptDropdown = null) => {
+      dialogDropdowns.forEach((dropdown) => {
+        if (dropdown === exceptDropdown) return;
+
+        dropdown.classList.remove('is-open');
+        const button = dropdown.querySelector('[data-wallet-dialog-select-button]');
+        const menu = dropdown.querySelector('[data-wallet-dialog-select-menu]');
+        button?.setAttribute('aria-expanded', 'false');
+        if (menu) menu.hidden = true;
+      });
+    };
+
+    const setDialogDropdownValue = (dropdown, option) => {
+      if (!dropdown || !option) return;
+
+      const inputName = dropdown.dataset.walletDialogSelectName;
+      const input = getAccountInput(inputName);
+      const label = dropdown.querySelector('[data-wallet-dialog-select-label]');
+      const mark = dropdown.querySelector('[data-wallet-account-preview-mark-mini]');
+      const value = option.dataset.value || option.textContent.trim();
+      const theme = option.dataset.theme || 'generic';
+      const markText = option.dataset.mark || value.slice(0, 2).toLowerCase();
+
+      if (input) {
+        input.value = value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      if (label) label.textContent = value;
+
+      if (mark) {
+        mark.textContent = markText;
+        mark.dataset.bankTheme = theme;
+      }
+
+      dropdown.querySelectorAll('[data-wallet-dialog-option]').forEach((item) => {
+        item.setAttribute('aria-selected', String(item === option));
+      });
+
+      syncAccountPreview();
+      closeDialogDropdowns();
+    };
+
+    dialogDropdowns.forEach((dropdown) => {
+      const button = dropdown.querySelector('[data-wallet-dialog-select-button]');
+      const menu = dropdown.querySelector('[data-wallet-dialog-select-menu]');
+      const options = Array.from(dropdown.querySelectorAll('[data-wallet-dialog-option]'));
+
+      button?.addEventListener('click', () => {
+        const willOpen = !dropdown.classList.contains('is-open');
+        closeDialogDropdowns(dropdown);
+        dropdown.classList.toggle('is-open', willOpen);
+        button.setAttribute('aria-expanded', String(willOpen));
+        if (menu) menu.hidden = !willOpen;
+      });
+
+      options.forEach((option) => {
+        option.addEventListener('click', () => {
+          setDialogDropdownValue(dropdown, option);
+        });
+      });
+    });
+
+    document.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (!target.closest('[data-wallet-dialog-select]')) {
+        closeDialogDropdowns();
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeDialogDropdowns();
+      }
+    });
+
+    syncAccountPreview();
+
+    const syncWalletMobileHeaderActions = () => {
+      const actionGroups = Array.from(document.querySelectorAll('.doke-mobile-page-header__actions'));
+      if (!actionGroups.length) return;
+
+      actionGroups.forEach((group) => {
+        if (group.dataset.walletMobileActionsReady === 'true') return;
+
+        group.dataset.walletMobileActionsReady = 'true';
+        group.classList.add('wallet-mobile-actions');
+        group.setAttribute('aria-label', 'Ações rápidas da carteira');
+
+        group.innerHTML = `
+          <button class="doke-mobile-page-header__action wallet-mobile-action doke-btn" type="button" data-wallet-mobile-withdraw aria-label="Sacar saldo">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16"></path><path d="m6 10 6-6 6 6"></path></svg>
+          </button>
+          <button class="doke-mobile-page-header__action wallet-mobile-action doke-btn" type="button" data-wallet-mobile-view="overview" aria-label="Ver extrato">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M7 17.5h8"></path></svg>
+          </button>
+          <button class="doke-mobile-page-header__action wallet-mobile-action doke-btn" type="button" data-wallet-mobile-view="statistics" aria-label="Ver estatísticas">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9"></path><path d="M12 19V5"></path><path d="M19 19v-7"></path></svg>
+          </button>
+        `;
+
+        const withdrawButton = group.querySelector('[data-wallet-mobile-withdraw]');
+        const mobileViewButtons = Array.from(group.querySelectorAll('[data-wallet-mobile-view]'));
+
+        withdrawButton?.addEventListener('click', openWithdrawModal);
+
+        mobileViewButtons.forEach((button) => {
+          button.addEventListener('click', () => {
+            setView(button.dataset.walletMobileView);
+          });
+        });
+      });
+    };
+
+    const syncWalletMobileHeaderState = () => {
+      const activeView = document.body.dataset.walletView || 'overview';
+      document.querySelectorAll('[data-wallet-mobile-view]').forEach((button) => {
+        button.classList.toggle('is-view-active', button.dataset.walletMobileView === activeView);
+      });
+    };
+
+    const ensureWalletMobileHeader = () => {
+      syncWalletMobileHeaderActions();
+      syncWalletMobileHeaderState();
+    };
+
+    ensureWalletMobileHeader();
+    window.setTimeout(ensureWalletMobileHeader, 80);
+    window.setTimeout(ensureWalletMobileHeader, 300);
+
+    const mobileHeader = document.querySelector('.doke-mobile-page-header');
+    if (mobileHeader) {
+      const mobileHeaderObserver = new MutationObserver(() => {
+        ensureWalletMobileHeader();
+      });
+      mobileHeaderObserver.observe(mobileHeader, { childList: true, subtree: true });
+    }
+
+    const initialActiveButton = viewButtons.find((button) => button.classList.contains('is-view-active'));
+    setView(initialActiveButton?.dataset.walletViewToggle || 'overview');
+    setTransactionFilter(filterButtons.find((button) => button.classList.contains('is-active'))?.dataset.walletFilter || 'all');
   });
 })();
