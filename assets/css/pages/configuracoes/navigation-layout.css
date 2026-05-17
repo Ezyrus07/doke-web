@@ -223,3 +223,87 @@
   color: var(--color-primary-strong);
   font-weight: 600;
 }
+
+/* =========== Settings rebrand aligned to Doke desktop pages =========== */
+@media (min-width: 1025px) {
+  body.settings-page-shell .settings-grid {
+    grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
+    gap: 28px;
+    max-width: 1120px;
+    margin-inline: auto;
+  }
+
+  body.settings-page-shell .settings-sidebar {
+    padding: 22px;
+    border-radius: 24px;
+    box-shadow: 0 20px 48px rgba(24, 57, 95, 0.06);
+  }
+
+  body.settings-page-shell .settings-sidebar__item.is-active {
+    background: color-mix(in srgb, var(--color-primary-soft) 78%, white);
+    color: var(--color-primary-strong);
+    box-shadow: inset 0 0 0 1px rgba(42, 95, 144, 0.08);
+  }
+
+  body.settings-page-shell .settings-sidebar__item {
+    min-height: 48px;
+    padding: 11px 14px;
+  }
+}
+
+/* =========== Settings desktop workspace parity with mensagens.html ===========
+   Responsabilidade: layout da página de configurações em desktop.
+   Objetivo: ocupar a área útil do shell em vez de manter o conteúdo como ilha centralizada. */
+@media (min-width: 1025px) {
+  body.settings-page-shell {
+    --settings-workspace-bg: #edf4fa;
+  }
+
+  body.settings-page-shell .page__content {
+    min-height: 100dvh;
+    padding: 0;
+    margin: 0;
+    background: var(--settings-workspace-bg);
+    overflow: visible;
+  }
+
+  body.settings-page-shell .settings-shell-content,
+  body.settings-page-shell .page__content-inner.settings-shell-content,
+  body.settings-page-shell .shell-home__workspace.settings-shell-content {
+    width: 100%;
+    max-width: none;
+    min-height: 100dvh;
+    margin: 0;
+    padding: 48px 56px;
+    background: var(--settings-workspace-bg);
+  }
+
+  body.settings-page-shell .settings-page {
+    width: 100%;
+    min-height: calc(100dvh - 96px);
+  }
+
+  body.settings-page-shell .settings-grid {
+    width: 100%;
+    max-width: none;
+    min-height: calc(100dvh - 96px);
+    margin: 0;
+    grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
+    gap: 28px;
+    align-items: stretch;
+  }
+
+  body.settings-page-shell .settings-sidebar {
+    position: sticky;
+    top: 48px;
+    min-height: calc(100dvh - 96px);
+    height: calc(100dvh - 96px);
+    overflow-y: auto;
+  }
+
+  body.settings-page-shell .settings-content,
+  body.settings-page-shell .settings-panel.is-active {
+    min-width: 0;
+    min-height: calc(100dvh - 96px);
+  }
+}

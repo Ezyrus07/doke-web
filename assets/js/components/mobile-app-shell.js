@@ -21,7 +21,7 @@
     'perfil.html': { key: 'perfil', active: 'profile', search: false },
     'carteira.html': { key: 'carteira', active: 'profile', search: false },
     'notificacoes.html': { key: 'notificacoes', active: '', search: false },
-    'configuracoes.html': { key: 'configuracoes', active: 'profile', search: false }
+    'configuracoes.html': { key: 'configuracoes', active: 'profile', search: false, title: 'Configurações', compactSearchButton: true, hideSearchBar: true, hideLocation: true }
   };
 
   var ICONS = {
@@ -48,7 +48,7 @@
   }
 
   function usesContextActions(cfg) {
-    return Boolean(cfg && !cfg.search && ['pedidos', 'mensagens', 'comunidade', 'comunidade-interna', 'carteira', 'notificacoes', 'configuracoes', 'perfil'].indexOf(cfg.key) !== -1);
+    return Boolean(cfg && !cfg.search && ['pedidos', 'mensagens', 'comunidade', 'comunidade-interna', 'carteira', 'notificacoes', 'perfil'].indexOf(cfg.key) !== -1);
   }
 
   function queryValue() {
