@@ -692,3 +692,48 @@
     box-sizing: border-box !important;
   }
 }
+
+
+/* Global Header Contract v2.0 — internal pages use one rail
+   O index/home já tem contrato próprio e continua intacto.
+   Nas páginas internas, header e conteúdo passam a compartilhar exatamente
+   o mesmo trilho em qualquer zoom, evitando header menor/maior que a página. */
+@media (min-width: 761px) {
+  body.has-global-header:not(.home-index-shell) {
+    --doke-internal-page-rail: min(
+      calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)),
+      var(--doke-app-shell-max, 1180px)
+    );
+  }
+
+  body.has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header > .app-header__inner,
+  body.has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header + .page__content > .page__content-inner,
+  body.has-global-header:not(.home-index-shell) > .app-shell > .page > .page__content > .page__content-inner,
+  body.has-global-header:not(.home-index-shell) .app-shell-page__workspace,
+  body.has-global-header:not(.home-index-shell) .shell-home__workspace,
+  body.has-global-header:not(.home-index-shell) .orders-shell-content,
+  body.has-global-header:not(.home-index-shell) .profile-shell-content,
+  body.has-global-header:not(.home-index-shell) .wallet-shell-content,
+  body.has-global-header:not(.home-index-shell) .settings-shell-content,
+  body.has-global-header:not(.home-index-shell) .search-results-workspace {
+    width: var(--doke-internal-page-rail) !important;
+    max-width: var(--doke-internal-page-rail) !important;
+    inline-size: var(--doke-internal-page-rail) !important;
+    max-inline-size: var(--doke-internal-page-rail) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+}

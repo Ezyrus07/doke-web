@@ -6390,3 +6390,82 @@ html.home-index-root body.home-index-shell section.home-publications .publicatio
     box-sizing: border-box !important;
   }
 }
+
+
+/* HOME DESKTOP RAIL PARITY v17
+   Corrige regressão em que o header da home ficava em um eixo/largura e
+   o conteúdo principal em outro. Escopo restrito ao index desktop: não altera
+   shell global, sidebar, páginas internas, cards ou componentes reutilizáveis. */
+@media (min-width: 1025px) {
+  html.home-index-root body.home-index-shell.doke-app-shell-page,
+  html body.home-index-shell.doke-app-shell-page {
+    --doke-home-desktop-rail-v17: min(
+      calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)),
+      var(--doke-app-shell-max, 1180px)
+    ) !important;
+    --doke-home-desktop-workspace: var(--doke-home-desktop-rail-v17) !important;
+    --home-desktop-content-width: var(--doke-home-desktop-rail-v17) !important;
+    --home-desktop-content-max-v9: var(--doke-home-desktop-rail-v17) !important;
+    --home-desktop-header-max-v10: var(--doke-home-desktop-rail-v17) !important;
+  }
+
+  html.home-index-root body.home-index-shell.doke-app-shell-page > .app-shell > .page > .app-header.home-side-meta,
+  html body.home-index-shell.doke-app-shell-page > .app-shell > .page > .app-header.home-side-meta {
+    width: 100% !important;
+    max-width: none !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell.doke-app-shell-page > .app-shell > .page > .app-header.home-side-meta > .app-header__inner,
+  html body.home-index-shell.doke-app-shell-page > .app-shell > .page > .app-header.home-side-meta > .app-header__inner,
+  html.home-index-root body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace,
+  html.home-index-root body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace--clean,
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace,
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace--clean {
+    width: var(--doke-home-desktop-rail-v17) !important;
+    max-width: var(--doke-home-desktop-rail-v17) !important;
+    inline-size: var(--doke-home-desktop-rail-v17) !important;
+    max-inline-size: var(--doke-home-desktop-rail-v17) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell.doke-app-shell-page .page__content,
+  html body.home-index-shell.doke-app-shell-page .page__content {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell.doke-app-shell-page :is(
+    .home-search-hero,
+    .home-catégories,
+    .home-categories,
+    .featured-services,
+    .short-videos,
+    .home-publications,
+    .before-after,
+    .more-services,
+    .featured-pros
+  ),
+  html body.home-index-shell.doke-app-shell-page :is(
+    .home-search-hero,
+    .home-catégories,
+    .home-categories,
+    .featured-services,
+    .short-videos,
+    .home-publications,
+    .before-after,
+    .more-services,
+    .featured-pros
+  ) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+}

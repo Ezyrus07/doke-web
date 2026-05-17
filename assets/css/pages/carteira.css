@@ -3845,3 +3845,375 @@ body[data-wallet-view="statistics"] .wallet-analytics {
     box-shadow: 0 14px 26px rgba(31, 139, 109, 0.22) !important;
   }
 }
+
+
+/* Carteira — estados reais e feedback */
+.wallet-transaction__status {
+  display: inline-block;
+  margin-top: 2px;
+  color: #6f88a3;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.wallet-transaction[data-wallet-status="released"] .wallet-transaction__status {
+  color: #0d8d6d;
+}
+
+.wallet-transaction[data-wallet-status="awaiting-client-confirmation"] .wallet-transaction__status,
+.wallet-transaction[data-wallet-status="applied"] .wallet-transaction__status {
+  color: #b97d12;
+}
+
+.wallet-transaction[data-wallet-status="processing"] .wallet-transaction__status {
+  color: #2b67ba;
+}
+
+.wallet-empty-state {
+  padding: 24px;
+  border: 1px dashed rgba(34, 98, 154, 0.16);
+  border-radius: 22px;
+  background: #f8fbff;
+  text-align: center;
+}
+
+.wallet-empty-state[hidden] {
+  display: none !important;
+}
+
+.wallet-empty-state strong {
+  display: block;
+  color: #0b3778;
+  font-size: 1rem;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+.wallet-empty-state p {
+  margin: 0;
+  color: #7289a2;
+  font-size: 0.94rem;
+  line-height: 1.45;
+}
+
+.wallet-empty-state--bank {
+  margin: 12px 0;
+}
+
+.wallet-bank-panel.is-wallet-bank-empty .wallet-bank-card--featured,
+.wallet-bank-panel.is-wallet-bank-empty .wallet-bank-details,
+.wallet-bank-panel.is-wallet-bank-empty .wallet-bank-status {
+  display: none;
+}
+
+.wallet-toast-region {
+  position: fixed;
+  right: clamp(16px, 3vw, 32px);
+  bottom: clamp(18px, 4vw, 34px);
+  z-index: 120;
+  display: grid;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.wallet-toast {
+  min-width: min(320px, calc(100vw - 32px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 146, 113, 0.16);
+  background: #f4fbf8;
+  color: #0d6f58;
+  box-shadow: 0 18px 44px rgba(18, 39, 62, 0.16);
+  pointer-events: auto;
+  animation: wallet-toast-in 180ms ease-out;
+}
+
+.wallet-toast--error {
+  border-color: rgba(185, 74, 72, 0.18);
+  background: #fff6f5;
+  color: #8c2f2b;
+}
+
+.wallet-toast strong {
+  font-size: 0.94rem;
+  line-height: 1.25;
+}
+
+.wallet-toast button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.72);
+  color: currentColor;
+  font: inherit;
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.wallet-toast.is-leaving {
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+@keyframes wallet-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .wallet-toast-region {
+    left: 14px;
+    right: 14px;
+    bottom: 84px;
+  }
+
+  .wallet-toast {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+
+/* Carteira — detalhes de movimentação */
+.wallet-transaction[data-wallet-transaction-action],
+.wallet-transaction[role="button"] {
+  cursor: pointer;
+}
+
+.wallet-transaction[data-wallet-transaction-action]:hover,
+.wallet-transaction[role="button"]:hover {
+  transform: translateY(-1px);
+  border-color: rgba(47, 115, 177, 0.16);
+  box-shadow: 0 14px 28px rgba(28, 58, 93, 0.08);
+}
+
+.wallet-transaction[data-wallet-transaction-action]:focus-visible,
+.wallet-transaction[role="button"]:focus-visible {
+  outline: 3px solid rgba(47, 115, 177, 0.22);
+  outline-offset: 3px;
+}
+
+.wallet-dialog--transaction {
+  width: min(100%, 560px);
+}
+
+.wallet-dialog__badge--transaction {
+  background: #edf4fb;
+  border-color: rgba(34, 98, 154, 0.12);
+  color: #0b4a77;
+}
+
+.wallet-transaction-detail-card {
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(34, 98, 154, 0.08);
+  background:
+    radial-gradient(circle at 92% 12%, rgba(35, 151, 133, 0.14), transparent 36%),
+    #fbfdff;
+}
+
+.wallet-transaction-detail-card__label,
+.wallet-transaction-detail-grid span,
+.wallet-transaction-detail-note span {
+  display: block;
+  color: #7289a2;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
+.wallet-transaction-detail-card strong {
+  display: block;
+  margin-top: 6px;
+  color: #0b3778;
+  font-size: clamp(2rem, 3vw, 2.6rem);
+  line-height: 0.95;
+  letter-spacing: -0.055em;
+}
+
+.wallet-transaction-detail-card small {
+  display: inline-block;
+  margin-top: 8px;
+  color: #0f9271;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.wallet-modal[data-transaction-type="withdraw"] .wallet-transaction-detail-card small {
+  color: #2b67ba;
+}
+
+.wallet-modal[data-transaction-type="held"] .wallet-transaction-detail-card small,
+.wallet-modal[data-transaction-type="fee"] .wallet-transaction-detail-card small {
+  color: #b97d12;
+}
+
+.wallet-transaction-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.wallet-transaction-detail-grid article,
+.wallet-transaction-detail-note {
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(34, 98, 154, 0.08);
+  background: #f8fbff;
+}
+
+.wallet-transaction-detail-grid strong {
+  display: block;
+  margin-top: 7px;
+  color: #0b3778;
+  font-size: 0.96rem;
+  line-height: 1.25;
+}
+
+.wallet-transaction-detail-note p {
+  margin: 8px 0 0;
+  color: #6f88a3;
+  font-size: 0.94rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  .wallet-transaction-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Carteira — detalhes inline de movimentação */
+.wallet-transaction-detail-panel {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid rgba(34, 98, 154, 0.08);
+  border-radius: 24px;
+  background: #fbfdff;
+}
+
+.wallet-transaction-detail-panel[hidden] {
+  display: none !important;
+}
+
+.wallet-transaction-detail-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wallet-transaction-detail-panel__back {
+  min-height: 38px;
+  padding: 0 14px 0 10px;
+  border: 1px solid rgba(34, 98, 154, 0.10);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #edf4fb;
+  color: #0b3778;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.wallet-transaction-detail-panel__back svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wallet-transaction-detail-panel__badge {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid rgba(34, 98, 154, 0.10);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  background: #edf4fb;
+  color: #0b4a77;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.wallet-transaction-detail-panel__intro h3 {
+  margin: 0;
+  color: #0b3778;
+  font-size: clamp(1.8rem, 3vw, 2.35rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.wallet-transaction-detail-panel__intro p {
+  margin: 8px 0 0;
+  color: #6f88a3;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.wallet-transaction-detail-panel__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.wallet-transaction-detail-panel[data-transaction-type="withdraw"] .wallet-transaction-detail-card small {
+  color: #2b67ba;
+}
+
+.wallet-transaction-detail-panel[data-transaction-type="held"] .wallet-transaction-detail-card small,
+.wallet-transaction-detail-panel[data-transaction-type="fee"] .wallet-transaction-detail-card small {
+  color: #b97d12;
+}
+
+@media (max-width: 640px) {
+  .wallet-transaction-detail-panel {
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .wallet-transaction-detail-panel__header {
+    align-items: flex-start;
+  }
+
+  .wallet-transaction-detail-panel__actions .wallet-dialog-btn {
+    width: 100%;
+  }
+}
+
+
+/* Carteira — alternância correta entre lista e detalhe */
+.wallet-tabs[hidden],
+.wallet-list[hidden],
+[data-wallet-transaction-list][hidden],
+.wallet-transaction-detail-panel[hidden],
+[data-wallet-transaction-detail-panel][hidden],
+.wallet-empty-state[hidden] {
+  display: none !important;
+}
