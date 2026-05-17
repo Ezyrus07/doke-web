@@ -1,0 +1,59 @@
+/* Profile header removal.
+   perfil.html uses the profile hero as the first visual surface, without the
+   global app header rail above it. */
+body.profile-page-shell > .app-shell > .page > .app-header.app-header--profile {
+  display: none !important;
+}
+
+body.profile-page-shell > .app-shell > .page > .app-header.app-header--profile + .page__content {
+  margin-top: 0 !important;
+  padding-top: clamp(28px, 3vw, 48px) !important;
+}
+
+@media (min-width: 1025px) {
+  body.profile-page-shell > .app-shell > .page > .page__content {
+    width: 100% !important;
+    max-width: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: clamp(28px, 3vw, 48px) !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-view][data-profile-type].doke-app-shell-page > .app-shell > .page > .page__content > .page__content-inner:is(#doke-profile-rail-lock, .profile-shell-content) {
+    width: 100% !important;
+    max-width: none !important;
+    inline-size: 100% !important;
+    max-inline-size: none !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell:not(#dokeProfileRailA):not(#dokeProfileRailB)[data-profile-view][data-profile-type].doke-app-shell-page > .app-shell > .page > .page__content > .page__content-inner.profile-shell-content:not(#dokeProfileRailC) {
+    width: 100% !important;
+    max-width: none !important;
+    inline-size: 100% !important;
+    max-inline-size: none !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-view][data-profile-type].doke-app-shell-page > .app-shell > .page > .page__content > .page__content-inner:is(#doke-profile-rail-lock, .profile-shell-content) > .profile-screen,
+  html body[data-page="perfil"].profile-page-shell[data-profile-view][data-profile-type].doke-app-shell-page > .app-shell > .page > .page__content > .page__content-inner:is(#doke-profile-rail-lock, .profile-shell-content) .profile-hero-shell {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.profile-page-shell.has-global-header > .app-shell > .page > .app-header > .app-header__inner {
+    width: calc(100% - clamp(28px, 3vw, 48px) - clamp(28px, 3vw, 48px)) !important;
+    max-width: calc(100% - clamp(28px, 3vw, 48px) - clamp(28px, 3vw, 48px)) !important;
+    inline-size: calc(100% - clamp(28px, 3vw, 48px) - clamp(28px, 3vw, 48px)) !important;
+    max-inline-size: calc(100% - clamp(28px, 3vw, 48px) - clamp(28px, 3vw, 48px)) !important;
+    margin-inline: auto !important;
+    box-sizing: border-box !important;
+  }
+}

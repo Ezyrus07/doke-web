@@ -479,6 +479,32 @@
   }
 }
 
+/* Global Header Gap Contract.
+   Keeps the horizontal distance between header controls identical across pages. */
+@media (min-width: 761px) {
+  body.has-global-header {
+    --doke-header-item-gap: 14px;
+    --app-header-control-gap: var(--doke-header-item-gap);
+  }
+
+  body.has-global-header > .app-shell > .page > .app-header > .app-header__inner,
+  body.has-global-header > .app-shell > .page > .app-header :is(.app-header__group, .home-side-meta__group),
+  body.has-global-header > .app-shell > .page > :is(.topbar, .internal-page-topbar, .home-index-topbar) :is(.topbar__left, .topbar__center, .topbar__right) {
+    gap: var(--doke-header-item-gap) !important;
+    column-gap: var(--doke-header-item-gap) !important;
+  }
+
+  body.has-global-header > .app-shell > .page > .app-header :is(.app-header__group, .home-side-meta__group) > *,
+  body.has-global-header > .app-shell > .page > :is(.topbar, .internal-page-topbar, .home-index-topbar) :is(.topbar__left, .topbar__center, .topbar__right) > * {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  body.has-global-header > .app-shell > .page > .app-header .home-side-meta__search-form:not(.is-active):not(.is-open) {
+    display: none !important;
+  }
+}
+
 /* Global Header Contract v1.8 — detail parity hardening
    detalhe-anuncio must use the exact same app-header geometry as the other
    migrated pages. Page-specific detail classes are no longer allowed to affect

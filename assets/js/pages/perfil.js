@@ -10,35 +10,75 @@ window.DokeInitProfile = () => {
   const publicProfile = data.professionalPublic || {};
   const clientPublicProfile = data.clientPublic || {};
   const ownerProfile = data.professionalOwner || {};
+  const PROFESSIONAL_DEFAULT_TABS = {
+    services: "Serviços",
+    workers: "Workers",
+    beforeAfter: "Publicações",
+    reviews: "Avaliações",
+    about: "Sobre",
+    portfolio: "Portfólio",
+    achievements: "Conquistas",
+    certificates: "Certificados",
+    faq: "FAQ"
+  };
+  const professionalTabs = {
+    ...PROFESSIONAL_DEFAULT_TABS,
+    ...(publicProfile.tabs || {})
+  };
   const clientOwnerProfile = {
     pageTitle: "Doke | Meu perfil de cliente",
     hero: {
       ...(clientPublicProfile.hero || {}),
       badges: [],
-      stats: [
-        { value: "18,4 mil", label: "seguidores" },
-        { value: "26", label: "serviços feitos" },
-        { value: "4,9", label: "nota média" }
-      ],
+      stats: [],
       actions: [
-        { label: "Editar perfil", tone: "primary" },
+        { label: "Editar perfil", tone: "primary", role: "edit-profile" },
+        { label: "Tornar-se profissional", href: "tornar-profissional.html", tone: "ghost", role: "become-professional" }
       ],
-      rotatingHighlights: [
-        { label: "Comunidade", value: "18,4 mil", detail: "seguidores acompanhando seu perfil" },
-        { label: "Execuções", value: "26", detail: "serviços concluídos com profissionais" },
-        { label: "Resposta", value: "Até 2h", detail: "tempo médio para responder contatos" }
-      ]
+      rotatingHighlights: []
     },
     tabs: {
       about: "Sobre",
-      portfolio: "Portfólios"
+      achievements: "Conquistas"
     },
     sections: {
       about: clientPublicProfile.sections?.about || {},
-      portfolio: {
-        ...(clientPublicProfile.sections?.collections || {}),
-        title: "Portfólios compartilhados",
-        intro: "Portfólios salvos e republicados no seu perfil para orientar profissionais com o estilo que você busca."
+      achievements: {
+        layout: "achievements",
+        title: "Conquistas do cliente",
+        intro: "Marcos que valorizam sua reputação como contratante dentro do Doke.",
+        items: [
+          {
+            title: "Cliente verificado",
+            detail: "Conta com dados básicos validados para transmitir mais confiança aos profissionais.",
+            icon: "✓",
+            theme: "mint",
+            shape: "shield",
+            progress: 100,
+            status: "Desbloqueada",
+            metric: "Perfil validado"
+          },
+          {
+            title: "Briefing claro",
+            detail: "Pedidos publicados com descrição objetiva, fotos e prioridades bem definidas.",
+            icon: "★",
+            theme: "blue",
+            shape: "ticket",
+            progress: 86,
+            status: "86% concluída",
+            metric: "Meta: briefing completo"
+          },
+          {
+            title: "Boa comunicação",
+            detail: "Histórico de respostas rápidas durante conversas e alinhamentos de orçamento.",
+            icon: "↗",
+            theme: "gold",
+            shape: "blob",
+            progress: 72,
+            status: "Em evolução",
+            metric: "Resposta em até 2h"
+          }
+        ]
       }
     }
   };
@@ -61,7 +101,7 @@ window.DokeInitProfile = () => {
             badges: [...((publicProfile.hero?.badges || []).slice(0, 2))]
           },
           tabs: {
-            ...(publicProfile.tabs || {}),
+            ...professionalTabs,
             overview: "Estatísticas"
           },
           sections: {
@@ -93,7 +133,10 @@ window.DokeInitProfile = () => {
           }
         : profileMode === "client-owner"
           ? clientOwnerProfile
-        : publicProfile;
+        : {
+            ...publicProfile,
+            tabs: professionalTabs
+          };
   const PROFILE_TAB_ORDER = [
     "services",
     "workers",
@@ -103,7 +146,9 @@ window.DokeInitProfile = () => {
     "portfolio",
     "achievements",
     "certificates",
-    "faq"
+    "faq",
+    "overview",
+    "listings"
   ];
 
   const PROFILE_VISIBLE_TABS = new Set(PROFILE_TAB_ORDER);
@@ -120,7 +165,7 @@ window.DokeInitProfile = () => {
     const nextTabs = {};
     Object.entries(baseProfile.tabs).forEach(([key, label]) => {
       if (key === "posts") {
-        nextTabs.beforeAfter = "Publica��es";
+        nextTabs.beforeAfter = "Publicações";
         return;
       }
       nextTabs[key] = label;
@@ -167,6 +212,27 @@ window.DokeInitProfile = () => {
   const availableTabs = Object.keys(baseProfile.tabs || {});
   const requestedPanelRaw = params.get("panel");
   const requestedPanel = requestedPanelRaw === "posts" ? "workers" : requestedPanelRaw;
+  const rebuildProfileTabs = () => {
+    const tabsHost = root.querySelector('[data-profile-section="tabs"]');
+    if (!tabsHost) return;
+
+    tabsHost.innerHTML = availableTabs
+      .map((key) => `
+        <button
+          class="profile-tab"
+          type="button"
+          data-profile-tab="${key}"
+        >
+          ${baseProfile.tabs[key]}
+        </button>
+      `)
+      .join("");
+
+    els.tabs = [...root.querySelectorAll("[data-profile-tab]")];
+  };
+
+  rebuildProfileTabs();
+
   const state = {
     activeTab: availableTabs.includes(requestedPanel) ? requestedPanel : availableTabs[0] || "services",
     selectingServices: false,
@@ -502,6 +568,7 @@ window.DokeInitProfile = () => {
     if (key.includes("publicar")) return "publish";
     if (key.includes("anunciar") || key.includes("novo anuncio")) return "announce";
     if (key.includes("editar perfil")) return "edit-profile";
+    if (key.includes("tornar-se profissional")) return "become-professional";
     if (key.includes("ver perfil publico")) return "public-profile";
     return "secondary";
   };

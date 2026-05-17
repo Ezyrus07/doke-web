@@ -2851,3 +2851,145 @@ body {
     --doke-mobile-rail-edge: 22px;
   }
 }
+
+/*
+  Doke Shell Contract v20 — trilho desktop fluido sem cap artificial
+  Responsabilidade: remover o estrangulamento de largura criado por contratos
+  antigos da home e das páginas internas que limitavam o conteúdo a 1180px.
+  O shell desktop agora usa a largura real disponível depois da sidebar,
+  preservando apenas o gutter lateral global.
+*/
+@media (min-width: 1025px) {
+  body.doke-app-shell-page,
+  body.app-shell-page,
+  body.internal-shell-page {
+    --doke-app-shell-gutter: clamp(24px, 3vw, 40px) !important;
+    --doke-fluid-desktop-rail: calc(100% - (var(--doke-app-shell-gutter) * 2)) !important;
+    --doke-app-shell-width: var(--doke-fluid-desktop-rail) !important;
+    --doke-app-shell-workspace-max: none !important;
+    --doke-shell-max-default: none !important;
+    --doke-shell-max-wide: none !important;
+    --doke-shell-max-narrow: none !important;
+  }
+
+  body.home-index-shell.doke-app-shell-page,
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page,
+  html.doke-sidebar-expanded body.home-index-shell.doke-app-shell-page,
+  html.doke-sidebar-collapsed body.home-index-shell.doke-app-shell-page,
+  html.doke-sidebar-collapsed body.sidebar-collapsed.home-index-shell.doke-app-shell-page {
+    --doke-home-desktop-gutter: var(--doke-app-shell-gutter) !important;
+    --doke-home-desktop-workspace: var(--doke-fluid-desktop-rail) !important;
+    --home-desktop-content-width: var(--doke-fluid-desktop-rail) !important;
+    --home-desktop-content-max-v9: none !important;
+    --home-desktop-header-max-v10: none !important;
+  }
+
+  body.has-global-header:not(.home-index-shell) {
+    --doke-internal-shared-rail-v19: var(--doke-fluid-desktop-rail) !important;
+  }
+
+  body.doke-app-shell-page > .app-shell > .page > .page__content,
+  body.app-shell-page > .app-shell > .page > .page__content,
+  body.internal-shell-page > .app-shell > .page > .page__content,
+  html.doke-shell-state-ready body.home-index-shell.doke-app-shell-page .page__content,
+  html body.home-index-shell.doke-app-shell-page .page__content {
+    width: 100% !important;
+    inline-size: 100% !important;
+    max-width: none !important;
+    max-inline-size: none !important;
+    padding-left: var(--doke-app-shell-gutter) !important;
+    padding-right: var(--doke-app-shell-gutter) !important;
+    box-sizing: border-box !important;
+  }
+
+  body.doke-app-shell-page > .app-shell > .page > .page__content > .page__content-inner,
+  body.app-shell-page > .app-shell > .page > .page__content > .page__content-inner,
+  body.internal-shell-page > .app-shell > .page > .page__content > .page__content-inner,
+  body.doke-app-shell-page .app-shell-page__workspace,
+  body.doke-app-shell-page .shell-home__workspace,
+  body.doke-app-shell-page .orders-shell-content,
+  body.doke-app-shell-page .messages-shell-content,
+  body.doke-app-shell-page .profile-shell-content,
+  body.doke-app-shell-page .wallet-shell-content,
+  body.doke-app-shell-page .settings-shell-content,
+  body.doke-app-shell-page .search-results-workspace,
+  body.app-shell-page .app-shell-page__workspace,
+  body.app-shell-page .shell-home__workspace,
+  body.app-shell-page .orders-shell-content,
+  body.app-shell-page .messages-shell-content,
+  body.app-shell-page .profile-shell-content,
+  body.app-shell-page .wallet-shell-content,
+  body.app-shell-page .settings-shell-content,
+  body.app-shell-page .search-results-workspace,
+  body.internal-shell-page .app-shell-page__workspace,
+  body.internal-shell-page .shell-home__workspace,
+  body.internal-shell-page .orders-shell-content,
+  body.internal-shell-page .messages-shell-content,
+  body.internal-shell-page .profile-shell-content,
+  body.internal-shell-page .wallet-shell-content,
+  body.internal-shell-page .settings-shell-content,
+  body.internal-shell-page .search-results-workspace,
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace,
+  html body.home-index-shell.doke-app-shell-page .page__content-inner.shell-home__workspace--clean {
+    width: 100% !important;
+    inline-size: 100% !important;
+    max-width: none !important;
+    max-inline-size: none !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body.home-index-shell.has-global-header > .app-shell > .page > .app-header.home-side-meta,
+  body.has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header {
+    width: 100% !important;
+    inline-size: 100% !important;
+    max-width: none !important;
+    max-inline-size: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: var(--doke-app-shell-gutter) !important;
+    padding-right: var(--doke-app-shell-gutter) !important;
+    box-sizing: border-box !important;
+  }
+
+  html body.home-index-shell.has-global-header > .app-shell > .page > .app-header.home-side-meta > .app-header__inner,
+  body.has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header > .app-header__inner {
+    width: 100% !important;
+    inline-size: 100% !important;
+    max-width: none !important;
+    max-inline-size: none !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body.home-index-shell.doke-app-shell-page .home-side-meta,
+  html body.home-index-shell.doke-app-shell-page .home-search-hero,
+  html body.home-index-shell.doke-app-shell-page .home-search-hero__panel,
+  html body.home-index-shell.doke-app-shell-page .home-search-hero__card,
+  html body.home-index-shell.doke-app-shell-page .home-categories,
+  html body.home-index-shell.doke-app-shell-page .home-catégories,
+  html body.home-index-shell.doke-app-shell-page .home-categories__rail,
+  html body.home-index-shell.doke-app-shell-page .home-catégories__rail,
+  html body.home-index-shell.doke-app-shell-page .featured-services,
+  html body.home-index-shell.doke-app-shell-page .short-videos,
+  html body.home-index-shell.doke-app-shell-page .home-publications,
+  html body.home-index-shell.doke-app-shell-page .before-after,
+  html body.home-index-shell.doke-app-shell-page .more-services,
+  html body.home-index-shell.doke-app-shell-page .featured-pros {
+    width: 100% !important;
+    inline-size: 100% !important;
+    max-width: none !important;
+    max-inline-size: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+}

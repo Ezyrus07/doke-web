@@ -7,6 +7,11 @@
   var READY = "doke-shell-state-ready";
   var COLLAPSED = "doke-sidebar-collapsed";
   var EXPANDED = "doke-sidebar-expanded";
+  var LEGACY_WIDTH_VARS = [
+    "--doke-home-desktop-gutter",
+    "--doke-home-desktop-workspace",
+    "--home-desktop-content-width"
+  ];
 
   function isDesktopShell() {
     try {
@@ -27,7 +32,6 @@
   function applyShellState() {
     var shouldCollapse = isDesktopShell() && readCollapsed();
     var sidebarWidth = shouldCollapse ? "96px" : "272px";
-    var homeWorkspace = "min(var(--doke-app-shell-max, 1180px), calc(100vw - " + sidebarWidth + " - (clamp(28px, 3vw, 48px) * 2)))";
 
     root.classList.toggle(COLLAPSED, shouldCollapse);
     root.classList.toggle(EXPANDED, !shouldCollapse);
@@ -39,10 +43,11 @@
     root.style.setProperty("--doke-app-sidebar-width", sidebarWidth);
     root.style.setProperty("--doke-app-shell-sidebar-width", sidebarWidth);
     root.style.setProperty("--doke-home-sidebar-width", sidebarWidth);
-    root.style.setProperty("--doke-home-desktop-gutter", "clamp(28px, 3vw, 48px)");
-    root.style.setProperty("--doke-home-desktop-workspace", homeWorkspace);
-    root.style.setProperty("--home-desktop-content-width", homeWorkspace);
+    LEGACY_WIDTH_VARS.forEach(function (name) {
+      root.style.removeProperty(name);
+    });
   }
 
   applyShellState();
+  window.addEventListener("pageshow", applyShellState, { passive: true });
 })();

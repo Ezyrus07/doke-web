@@ -21,7 +21,8 @@
     'perfil.html': { key: 'perfil', active: 'profile', search: false },
     'carteira.html': { key: 'carteira', active: 'profile', search: false },
     'notificacoes.html': { key: 'notificacoes', active: '', search: false },
-    'configuracoes.html': { key: 'configuracoes', active: 'profile', search: false, title: 'Configurações', compactSearchButton: true, hideSearchBar: true, hideLocation: true }
+    'configuracoes.html': { key: 'configuracoes', active: 'profile', search: false, title: 'Configurações', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
+    'tornar-profissional.html': { key: 'tornar-profissional', active: 'profile', search: false, title: 'Tornar-se profissional', compactSearchButton: true, hideSearchBar: true, hideLocation: true }
   };
 
   var ICONS = {

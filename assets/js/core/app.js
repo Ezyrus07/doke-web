@@ -61,6 +61,11 @@ const SIDEBAR_COLLAPSED_HTML_CLASS = "doke-sidebar-collapsed";
 const SIDEBAR_EXPANDED_HTML_CLASS = "doke-sidebar-expanded";
 const SIDEBAR_STATE_READY_HTML_CLASS = "doke-shell-state-ready";
 const THEME_STORAGE_KEY = "doke.theme";
+const LEGACY_HOME_WIDTH_VARS = [
+  "--doke-home-desktop-gutter",
+  "--doke-home-desktop-workspace",
+  "--home-desktop-content-width",
+];
 const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", "mobile-search-active"];
 const ROUTE_SWAP_STATE_CLASSES = ["is-shell-swapping", "is-route-instant-swap"];
 const PRESERVED_BODY_STATE_CLASSES = [...SHELL_STATE_CLASSES, ...ROUTE_SWAP_STATE_CLASSES];
@@ -86,17 +91,14 @@ const readStoredSidebarCollapsed = () => {
 
 const syncSidebarCollapsedState = () => {
   const root = document.documentElement;
+  LEGACY_HOME_WIDTH_VARS.forEach((name) => root.style.removeProperty(name));
   const applySidebarWidthVars = (width) => {
-    const homeWorkspace = `min(var(--doke-app-shell-max, 1180px), calc(100vw - ${width} - (clamp(28px, 3vw, 48px) * 2)))`;
     root.style.setProperty("--doke-current-sidebar-width", width);
     root.style.setProperty("--sidebar-width", width);
     root.style.setProperty("--doke-desktop-sidebar-width", width);
     root.style.setProperty("--doke-app-sidebar-width", width);
     root.style.setProperty("--doke-app-shell-sidebar-width", width);
     root.style.setProperty("--doke-home-sidebar-width", width);
-    root.style.setProperty("--doke-home-desktop-gutter", "clamp(28px, 3vw, 48px)");
-    root.style.setProperty("--doke-home-desktop-workspace", homeWorkspace);
-    root.style.setProperty("--home-desktop-content-width", homeWorkspace);
   };
 
   if (isMobileSidebarViewport()) {
@@ -117,6 +119,7 @@ const syncSidebarCollapsedState = () => {
 };
 
 window.addEventListener("resize", syncSidebarCollapsedState, { passive: true });
+window.addEventListener("pageshow", syncSidebarCollapsedState, { passive: true });
 syncSidebarCollapsedState();
 
 const authService = window.DokeAuth || null;
