@@ -2662,3 +2662,192 @@ body {
     padding-right: 0 !important;
   }
 }
+
+/* Doke Mobile Rail Contract — all internal pages (20260517-mobile-rail-all-pages-v1)
+   Baseline visual: index mobile. Header/search define o eixo; conteúdo abaixo
+   deve começar no mesmo X e terminar no mesmo Y. Carrosséis podem rolar por
+   dentro do rail, mas o primeiro item não cria offset externo. */
+@media (max-width: 760px) {
+  body.doke-mobile-shell-mounted:not(.home-index-shell) {
+    --doke-mobile-rail-edge: 24px;
+    --doke-mobile-rail-width: min(
+      calc(100vw - (var(--doke-mobile-rail-edge) * 2)),
+      calc(var(--doke-mobile-app-max, 430px) - (var(--doke-mobile-rail-edge) * 2))
+    );
+    overflow-x: hidden !important;
+  }
+
+  body.doke-mobile-shell-mounted:not(.home-index-shell) > .app-shell,
+  body.doke-mobile-shell-mounted:not(.home-index-shell) > .app-shell > .page {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  body.doke-mobile-shell-mounted:not(.home-index-shell) > .app-shell > .page > .page__content {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  body.doke-mobile-shell-mounted:not(.home-index-shell) > .app-shell > .page > .page__content > .page__content-inner,
+  body.doke-mobile-shell-mounted:not(.home-index-shell) :is(
+    .app-shell-page__workspace,
+    .shell-home__workspace,
+    .orders-shell-content,
+    .profile-shell-content,
+    .wallet-shell-content,
+    .settings-shell-content,
+    .messages-shell-content,
+    .notifications-shell-content,
+    .communities-shell-content,
+    .search-results-workspace,
+    .detalhe-shell-content,
+    .detail-shell-content
+  ) {
+    width: var(--doke-mobile-rail-width) !important;
+    max-width: var(--doke-mobile-rail-width) !important;
+    inline-size: var(--doke-mobile-rail-width) !important;
+    max-inline-size: var(--doke-mobile-rail-width) !important;
+    min-width: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: visible !important;
+  }
+
+  body.doke-mobile-shell-mounted:not(.home-index-shell) :is(
+    .doke-page,
+    .doke-page-shell,
+    .doke-page-stack,
+    .doke-page-section,
+    .wallet-page,
+    .wallet-overview,
+    .wallet-analytics,
+    .orders-page,
+    .orders-dashboard,
+    .orders-grid,
+    .orders-shell,
+    .profile-screen,
+    .profile-main,
+    .profile-content,
+    .communities-page,
+    .communities-discovery,
+    .communities-layout,
+    .communities-main,
+    .results-layout,
+    .results-main,
+    .detail-page,
+    .detail-layout,
+    .detail-main,
+    .notifications-page,
+    .messages-app
+  ) {
+    width: 100% !important;
+    max-width: 100% !important;
+    inline-size: 100% !important;
+    max-inline-size: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.doke-mobile-shell-mounted:not(.home-index-shell) :is(
+    .doke-card,
+    .doke-page-section,
+    .wallet-hero,
+    .wallet-kpis,
+    .wallet-board,
+    .wallet-panel,
+    .orders-summary,
+    .orders-planner,
+    .orders-card,
+    .orders-insight,
+    .order-card,
+    .profile-hero-shell,
+    .profile-tabs,
+    .profile-section,
+    .community-card,
+    .communities-panel,
+    .results-summary,
+    .results-list,
+    .results-filters,
+    .detail-card,
+    .detail-gallery,
+    .detail-sidebar,
+    .notifications-list,
+    .notification-card
+  ) {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  body.doke-mobile-shell-mounted:not(.home-index-shell) :is(
+    .orders-cards,
+    .orders-quick-actions,
+    .profile-services-rail,
+    .profile-workers-rail,
+    .profile-publications-rail,
+    .communities-cards,
+    .community-cards,
+    .results-cards,
+    .service-results-grid,
+    .detail-related-rail,
+    .detail-workers-rail,
+    .detail-publications-rail
+  ) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    scroll-padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.doke-mobile-shell-mounted:not(.home-index-shell) :is(
+    .orders-cards,
+    .orders-quick-actions,
+    .profile-services-rail,
+    .profile-workers-rail,
+    .profile-publications-rail,
+    .communities-cards,
+    .community-cards,
+    .results-cards,
+    .service-results-grid,
+    .detail-related-rail,
+    .detail-workers-rail,
+    .detail-publications-rail
+  ) > :first-child {
+    margin-left: 0 !important;
+  }
+
+  body.doke-mobile-shell-mounted:not(.home-index-shell) :is(
+    .orders-cards,
+    .orders-quick-actions,
+    .profile-services-rail,
+    .profile-workers-rail,
+    .profile-publications-rail,
+    .communities-cards,
+    .community-cards,
+    .results-cards,
+    .service-results-grid,
+    .detail-related-rail,
+    .detail-workers-rail,
+    .detail-publications-rail
+  ) > :last-child {
+    margin-right: 0 !important;
+  }
+}
+
+@media (max-width: 380px) {
+  body.doke-mobile-shell-mounted:not(.home-index-shell) {
+    --doke-mobile-rail-edge: 22px;
+  }
+}

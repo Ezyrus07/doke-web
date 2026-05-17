@@ -165,3 +165,35 @@
     max-width: 100%;
   }
 }
+
+/* Doke Action Contract — button/pill consistency (20260516-design-system-consolidation-v1)
+   Normaliza botões de ação sem redesenhar componentes específicos. */
+:root {
+  --doke-action-pill-height: 48px;
+  --doke-action-pill-radius: 16px;
+  --doke-action-pill-padding-x: 18px;
+  --doke-action-primary-bg: linear-gradient(135deg, #18b391 0%, #0f8f76 100%);
+  --doke-action-secondary-bg: rgba(255, 255, 255, 0.96);
+  --doke-action-secondary-border: rgba(34, 98, 154, 0.08);
+  --doke-action-shadow: 0 10px 24px rgba(24, 55, 90, 0.07);
+}
+
+:is(.doke-btn, .doke-action-button, .page-header-context__action, .wallet-button, .wallet-dialog-btn, .wallet-bank-manage, .orders-filter-button, .orders-select-button, .orders-agenda-toggle) {
+  min-height: var(--doke-action-pill-height);
+  border-radius: var(--doke-action-pill-radius);
+  font-weight: 800;
+  box-sizing: border-box;
+}
+
+:is(.doke-btn, .doke-action-button, .page-header-context__action, .wallet-bank-manage):not(.is-active):not(.is-view-active) {
+  border-color: var(--doke-action-secondary-border);
+}
+
+:is(.doke-btn, .doke-action-button, .page-header-context__action, .wallet-button, .wallet-dialog-btn, .orders-filter-button, .orders-select-button, .orders-agenda-toggle):focus-visible {
+  outline: 3px solid rgba(47, 115, 177, 0.22);
+  outline-offset: 3px;
+}
+
+:is(.doke-btn, .doke-action-button, .page-header-context__action, .wallet-button, .wallet-dialog-btn):active {
+  transform: translateY(1px);
+}

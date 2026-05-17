@@ -855,3 +855,31 @@
     height: 58px !important;
   }
 }
+
+/* Doke Domain Card Contract — canonical surfaces (20260516-design-system-consolidation-v1)
+   Define tokens e normaliza cards recorrentes sem alterar HTML. */
+:root {
+  --doke-card-bg: #fff;
+  --doke-card-border: rgba(23, 57, 95, 0.08);
+  --doke-card-shadow: 0 18px 42px rgba(20, 50, 84, 0.08);
+  --doke-card-radius: var(--radius-xl, 24px);
+  --doke-card-radius-compact: var(--radius-surface, 22px);
+}
+
+:is(.doke-card, .wallet-panel, .orders-planner, .orders-insight, .order-card, .community-card, .profile-hero-shell, .results-summary, .detail-card) {
+  background: var(--doke-card-bg);
+  border-color: var(--doke-card-border);
+  box-shadow: var(--doke-card-shadow);
+  box-sizing: border-box;
+}
+
+:is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card, .community-card, .order-card, .wallet-panel) {
+  border-radius: var(--doke-card-radius);
+  overflow: hidden;
+}
+
+:is(.service-card.doke-service-card, .service-card--feed.doke-service-card, .service-card--result.doke-service-card):focus-within,
+:is(.community-card, .order-card, .wallet-panel):focus-within {
+  outline: 3px solid rgba(47, 115, 177, 0.16);
+  outline-offset: 3px;
+}

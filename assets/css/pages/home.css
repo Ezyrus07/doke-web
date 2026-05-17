@@ -6469,3 +6469,214 @@ html.home-index-root body.home-index-shell section.home-publications .publicatio
     box-sizing: border-box !important;
   }
 }
+
+/* Home — mobile rail contract v1
+   Responsabilidade: alinhar as seções principais da home ao mesmo eixo do
+   header/search mobile. Carrosséis mantêm overflow controlado apenas dentro do
+   próprio rail, sem aumentar a largura da página. */
+@media (max-width: 760px) {
+  body.home-index-shell {
+    --home-mobile-edge: 24px;
+    --home-mobile-rail: min(
+      calc(100vw - (var(--home-mobile-edge) * 2)),
+      calc(var(--doke-mobile-app-max, 430px) - (var(--home-mobile-edge) * 2))
+    );
+  }
+
+  body.home-index-shell .page__content,
+  body.home-index-shell .page__content-inner.shell-home__workspace {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-inline: 0 !important;
+    margin-inline: 0 !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell :is(
+    .home-search-hero,
+    .home-categories,
+    .home-catégories,
+    .featured-services,
+    .home-recommendations,
+    .recommended-services,
+    .short-videos,
+    .home-publications,
+    .before-after,
+    .more-services,
+    .featured-pros
+  ) {
+    width: var(--home-mobile-rail) !important;
+    max-width: var(--home-mobile-rail) !important;
+    inline-size: var(--home-mobile-rail) !important;
+    max-inline-size: var(--home-mobile-rail) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell :is(
+    .home-search-hero__panel,
+    .home-search-hero__card,
+    .home-search-form,
+    .home-mobile-search,
+    .section-header,
+    .home-section-header,
+    .featured-services__header,
+    .recommended-services__header
+  ) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell :is(
+    .home-categories__rail,
+    .home-catégories__rail,
+    .featured-services__grid,
+    .featured-services__rail,
+    .home-recommendations__rail,
+    .recommended-services__rail
+  ) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell :is(
+    .featured-services__grid,
+    .featured-services__rail,
+    .home-recommendations__rail,
+    .recommended-services__rail
+  ) {
+    overflow-x: auto !important;
+    scroll-padding-inline: 0 !important;
+  }
+}
+
+@media (max-width: 380px) {
+  body.home-index-shell {
+    --home-mobile-edge: 22px;
+  }
+}
+
+/* Home — mobile categories x-axis parity v2
+   As categorias precisam começar no mesmo X do search/header. A largura do
+   bloco fica no rail da home; só a rolagem horizontal acontece dentro dele.
+   Não usamos margem negativa nem padding externo que empurre o primeiro item. */
+@media (max-width: 760px) {
+  body.home-index-shell :is(.home-categories, .home-catégories) {
+    width: var(--home-mobile-rail) !important;
+    max-width: var(--home-mobile-rail) !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell :is(
+    .home-categories__rail,
+    .home-catégories__rail,
+    .home-categories__list,
+    .home-catégories__list,
+    .home-categories__track,
+    .home-catégories__track,
+    .home-category-list,
+    .home-category-rail,
+    .categories-rail,
+    .categories-track
+  ) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    scroll-padding-inline: 0 !important;
+    overflow-x: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  body.home-index-shell :is(
+    .home-categories__rail,
+    .home-catégories__rail,
+    .home-categories__list,
+    .home-catégories__list,
+    .home-categories__track,
+    .home-catégories__track,
+    .home-category-list,
+    .home-category-rail,
+    .categories-rail,
+    .categories-track
+  ) > :first-child {
+    margin-left: 0 !important;
+  }
+
+  body.home-index-shell :is(
+    .home-categories__rail,
+    .home-catégories__rail,
+    .home-categories__list,
+    .home-catégories__list,
+    .home-categories__track,
+    .home-catégories__track,
+    .home-category-list,
+    .home-category-rail,
+    .categories-rail,
+    .categories-track
+  ) > :last-child {
+    margin-right: 0 !important;
+  }
+
+  body.home-index-shell :is(
+    .home-categories__prev,
+    .home-catégories__prev,
+    .home-categories__next,
+    .home-catégories__next,
+    .categories-prev,
+    .categories-next
+  ) {
+    display: none !important;
+  }
+}
+
+/* Home — mobile categories exact x-axis v3
+   Duplicado em home.css para manter contrato quando o inline legado for removido.
+   O index.html ainda tem uma camada mobile tardia, por isso ele também foi ajustado. */
+@media (max-width: 760px) {
+  html body.home-index-shell.doke-mobile-shell-mounted .home-catégories,
+  html body.home-index-shell .home-catégories {
+    width: var(--home-index-mobile-column-width, var(--home-mobile-rail)) !important;
+    max-width: var(--home-index-mobile-column-width, var(--home-mobile-rail)) !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html body.home-index-shell .home-catégories__rail,
+  html body.home-index-shell .home-catégories__track {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    scroll-padding-inline: 0 !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html body.home-index-shell .home-catégories__track {
+    justify-content: flex-start !important;
+    overflow-x: auto !important;
+  }
+
+  html body.home-index-shell .home-catégories__track > .home-catégory:first-child {
+    margin-left: 0 !important;
+  }
+
+  html body.home-index-shell .home-catégories__arrow {
+    display: none !important;
+  }
+}

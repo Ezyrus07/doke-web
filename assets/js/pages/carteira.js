@@ -515,24 +515,29 @@
     bindTransactionItems();
 
     const syncWalletMobileHeaderActions = () => {
-      const actionGroups = Array.from(document.querySelectorAll('.doke-mobile-page-header__actions'));
+      const actionGroups = Array.from(document.querySelectorAll('.doke-mobile-page-header__actions, .doke-mobile-shell__actions[data-shell-context-actions]'));
       if (!actionGroups.length) return;
 
       actionGroups.forEach((group) => {
         if (group.dataset.walletMobileActionsReady === 'true') return;
+
+        const isShellActions = group.classList.contains('doke-mobile-shell__actions');
+        const actionClass = isShellActions
+          ? 'doke-mobile-shell__quick-action wallet-mobile-action'
+          : 'doke-mobile-page-header__action wallet-mobile-action doke-btn';
 
         group.dataset.walletMobileActionsReady = 'true';
         group.classList.add('wallet-mobile-actions');
         group.setAttribute('aria-label', 'Ações rápidas da carteira');
 
         group.innerHTML = `
-          <button class="doke-mobile-page-header__action wallet-mobile-action doke-btn" type="button" data-wallet-mobile-withdraw aria-label="Sacar saldo">
+          <button class="${actionClass}" type="button" data-wallet-mobile-withdraw aria-label="Sacar saldo">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16"></path><path d="m6 10 6-6 6 6"></path></svg>
           </button>
-          <button class="doke-mobile-page-header__action wallet-mobile-action doke-btn" type="button" data-wallet-mobile-view="overview" aria-label="Ver extrato">
+          <button class="${actionClass}" type="button" data-wallet-mobile-view="overview" aria-label="Ver extrato">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M7 17.5h8"></path></svg>
           </button>
-          <button class="doke-mobile-page-header__action wallet-mobile-action doke-btn" type="button" data-wallet-mobile-view="statistics" aria-label="Ver estatísticas">
+          <button class="${actionClass}" type="button" data-wallet-mobile-view="statistics" aria-label="Ver estatísticas">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9"></path><path d="M12 19V5"></path><path d="M19 19v-7"></path></svg>
           </button>
         `;
