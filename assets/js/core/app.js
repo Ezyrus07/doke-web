@@ -70,9 +70,9 @@ const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", 
 const ROUTE_SWAP_STATE_CLASSES = ["is-shell-swapping", "is-route-instant-swap"];
 const PRESERVED_BODY_STATE_CLASSES = [...SHELL_STATE_CLASSES, ...ROUTE_SWAP_STATE_CLASSES];
 const INTERNAL_PROFILE_PATH = "/perfil.html";
-const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/carteira.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento.html", "/finalizar-pedido.html", "/avaliacao.html", "/adicionar-cartao.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/mais.html", "/"]);
+const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/novidades.html", "/ajuda.html", "/carteira.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento.html", "/finalizar-pedido.html", "/avaliacao.html", "/adicionar-cartao.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/mais.html", "/"]);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
-const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", "/comunidade-interna.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
+const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/novidades.html", "/ajuda.html", "/comunidade.html", "/comunidade-interna.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
 const isMobileSidebarViewport = () => window.innerWidth <= 1024;
 
@@ -240,6 +240,13 @@ const SHARED_SIDEBAR_MARKUP = `
     <a class="nav-link nav-link--settings" href="configuracoes.html">
       <span class="nav-link__start"><span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 3.8v2.1"></path><path d="M12 18.1v2.1"></path><path d="m18.2 5.8-1.5 1.5"></path><path d="m7.3 16.7-1.5 1.5"></path><path d="M20.2 12h-2.1"></path><path d="M5.9 12H3.8"></path><path d="m18.2 18.2-1.5-1.5"></path><path d="m7.3 7.3-1.5-1.5"></path></svg></span><span>Configurações</span></span>
     </a>
+    <a class="nav-link nav-link--news" href="novidades.html">
+      <span class="nav-link__start"><span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 5.5h12v13H6z"></path><path d="M9 9h6"></path><path d="M9 12h6"></path><path d="M9 15h4"></path></svg></span><span>Novidades</span></span>
+      <span class="nav-link__count">Novo</span>
+    </a>
+    <a class="nav-link nav-link--help" href="ajuda.html">
+      <span class="nav-link__start"><span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M9.7 9.3a2.4 2.4 0 0 1 4.6 1.1c0 1.7-1.6 2.1-2.2 3.2"></path><path d="M12 17h.01"></path></svg></span><span>Ajuda</span></span>
+    </a>
   </div>
 
 `;
@@ -259,6 +266,8 @@ const updateSidebarActiveState = (pathOverride = null) => {
   const ordersActive = path === "/pedidos.html";
   const messagesActive = path === "/mensagens.html" || path === "/pagamento.html" || path === "/finalizar-pedido.html" || path === "/avaliacao.html";
   const notificationsActive = path === "/notificacoes.html";
+  const newsActive = path === "/novidades.html";
+  const helpActive = path === "/ajuda.html";
   const communitiesActive = path === "/comunidade.html" || path === "/comunidade-interna.html";
   const profileActive = path === INTERNAL_PROFILE_PATH;
   const walletActive = path === "/carteira.html" || path === "/adicionar-cartao.html";
@@ -269,6 +278,8 @@ const updateSidebarActiveState = (pathOverride = null) => {
     [".nav-link--orders", ordersActive],
     [".nav-link--messages", messagesActive],
     [".nav-link--notifications", notificationsActive],
+    [".nav-link--news", newsActive],
+    [".nav-link--help", helpActive],
     [".nav-link--communities", communitiesActive],
     [".nav-link--profile", profileActive],
     [".nav-link--wallet", walletActive],
@@ -442,6 +453,14 @@ const INTERNAL_VIEW_STYLE_HINTS = {
     "assets/css/pages/pedidos.css",
     "assets/css/pages/notificacoes.css"
   ],
+  "/novidades.html": [
+    "assets/css/pages/internal-shell.css",
+    "assets/css/pages/novidades.css"
+  ],
+  "/ajuda.html": [
+    "assets/css/pages/internal-shell.css",
+    "assets/css/pages/ajuda.css"
+  ],
   "/carteira.html": [
     "assets/css/pages/internal-shell.css",
     "assets/css/pages/carteira.css"
@@ -511,6 +530,8 @@ const INTERNAL_VIEW_SCRIPT_HINTS = {
   "/pedidos.html": ["assets/js/pages/pedidos.js"],
   "/mensagens.html": ["assets/js/pages/mensagens.js"],
   "/notificacoes.html": ["assets/js/pages/notificacoes.js"],
+  "/novidades.html": ["assets/js/pages/novidades.js"],
+  "/ajuda.html": ["assets/js/pages/ajuda.js"],
   "/carteira.html": ["assets/js/pages/carteira.js"],
   "/pagamento.html": ["assets/js/pages/pagamento.js"],
   "/finalizar-pedido.html": ["assets/js/pages/finalizar-pedido.js"],

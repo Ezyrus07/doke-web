@@ -33,6 +33,8 @@
     'resultado.html',
     'perfil.html',
     'notificacoes.html',
+    'novidades.html',
+    'ajuda.html',
     'carteira.html',
     'configuracoes.html'
   ]);

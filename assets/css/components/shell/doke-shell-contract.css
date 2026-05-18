@@ -2993,3 +2993,96 @@ body {
     box-sizing: border-box !important;
   }
 }
+
+/* Header right actions parity v1
+   Scope: only the reusable right-side controls inside the global desktop app header.
+   Keeps page-specific primary actions free to change content without redefining geometry. */
+@media (min-width: 761px) {
+  body.has-global-header .app-header {
+    --doke-header-action-size: var(--app-header-control-size, 48px);
+    --doke-header-action-radius: var(--app-header-control-radius, 16px);
+    --doke-header-action-gap: var(--app-header-control-gap, 12px);
+    --doke-header-action-icon: var(--app-header-control-icon, 18px);
+    --doke-header-action-border: var(--app-header-border, 1px solid rgba(15, 45, 75, 0.06));
+    --doke-header-action-bg: var(--app-header-bg, rgba(255, 255, 255, 0.96));
+    --doke-header-action-ink: var(--app-header-ink, #0b335d);
+    --doke-header-action-shadow: var(--app-header-shadow, 0 8px 22px rgba(15, 45, 75, 0.055));
+    --doke-header-action-shadow-hover: var(--app-header-shadow-hover, 0 10px 24px rgba(15, 45, 75, 0.07));
+  }
+
+  body.has-global-header .app-header .app-header__inner {
+    width: 100% !important;
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: var(--doke-header-action-gap) !important;
+  }
+
+  body.has-global-header .app-header .app-header__group--secondary,
+  body.has-global-header .app-header .home-side-meta__group--secondary {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: var(--doke-header-action-gap) !important;
+    height: var(--doke-header-action-size) !important;
+    min-height: var(--doke-header-action-size) !important;
+    margin: 0 0 0 auto !important;
+    padding: 0 !important;
+    flex: 0 0 auto !important;
+    line-height: 1 !important;
+  }
+
+  body.has-global-header .app-header .app-header__group--secondary > :is(.home-side-meta__alert, .topbar-shortcut, .doke-icon-btn),
+  body.has-global-header .app-header .home-side-meta__group--secondary > :is(.home-side-meta__alert, .topbar-shortcut, .doke-icon-btn) {
+    width: var(--doke-header-action-size) !important;
+    height: var(--doke-header-action-size) !important;
+    min-width: var(--doke-header-action-size) !important;
+    min-height: var(--doke-header-action-size) !important;
+    max-width: var(--doke-header-action-size) !important;
+    max-height: var(--doke-header-action-size) !important;
+    flex: 0 0 var(--doke-header-action-size) !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: var(--doke-header-action-border) !important;
+    border-radius: var(--doke-header-action-radius) !important;
+    background: var(--doke-header-action-bg) !important;
+    color: var(--doke-header-action-ink) !important;
+    box-shadow: var(--doke-header-action-shadow) !important;
+    transform: none !important;
+    text-decoration: none !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    line-height: 1 !important;
+    font: inherit !important;
+    overflow: hidden !important;
+  }
+
+  body.has-global-header .app-header .app-header__group--secondary > :is(.home-side-meta__alert, .topbar-shortcut, .doke-icon-btn):hover,
+  body.has-global-header .app-header .home-side-meta__group--secondary > :is(.home-side-meta__alert, .topbar-shortcut, .doke-icon-btn):hover {
+    border-color: var(--doke-header-action-border) !important;
+    background: var(--doke-header-action-bg) !important;
+    box-shadow: var(--doke-header-action-shadow-hover) !important;
+    transform: none !important;
+  }
+
+  body.has-global-header .app-header .app-header__group--secondary > :is(.home-side-meta__alert, .topbar-shortcut, .doke-icon-btn) svg,
+  body.has-global-header .app-header .home-side-meta__group--secondary > :is(.home-side-meta__alert, .topbar-shortcut, .doke-icon-btn) svg {
+    width: var(--doke-header-action-icon) !important;
+    height: var(--doke-header-action-icon) !important;
+    min-width: var(--doke-header-action-icon) !important;
+    min-height: var(--doke-header-action-icon) !important;
+    flex: 0 0 var(--doke-header-action-icon) !important;
+    display: block !important;
+    margin: 0 !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    transform: none !important;
+  }
+}
