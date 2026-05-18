@@ -16,12 +16,12 @@
   };
 
   const items = [
-    ['doc', 'Como contratar um serviço?', 'ajuda.html#contratar'],
-    ['megaphone', 'Como anunciar meu serviço?', 'ajuda.html#anunciar'],
-    ['wallet', 'Pagamentos e carteira', 'ajuda.html#pagamentos'],
-    ['shield', 'Segurança da conta', 'ajuda.html#seguranca'],
-    ['users', 'Comunidades', 'ajuda.html#comunidades'],
-    ['headset', 'Falar com suporte', 'ajuda.html#suporte']
+    ['doc', 'Como contratar um serviço?'],
+    ['megaphone', 'Como anunciar meu serviço?'],
+    ['wallet', 'Pagamentos e carteira'],
+    ['shield', 'Segurança da conta'],
+    ['users', 'Comunidades'],
+    ['headset', 'Falar com suporte']
   ];
 
   const createDrawer = () => {
@@ -45,15 +45,15 @@
         </label>
         <p class="doke-help-drawer__text">Encontre respostas rápidas para as dúvidas mais comuns ou fale com nosso time.</p>
         <div class="doke-help-drawer__list" role="list">
-          ${items.map(([key, label, href]) => `
-            <a class="doke-help-drawer__item" href="${href}" role="listitem">
+          ${items.map(([key, label]) => `
+            <button class="doke-help-drawer__item" type="button" role="listitem">
               <span class="doke-help-drawer__item-icon">${icon[key]}</span>
               <span class="doke-help-drawer__item-text">${label}</span>
               <span class="doke-help-drawer__item-chevron">${icon.chevron}</span>
-            </a>
+            </button>
           `).join('')}
         </div>
-        <a class="doke-help-drawer__cta" href="ajuda.html">${icon.book}<span>Ver central de ajuda</span></a>
+        <button class="doke-help-drawer__cta" type="button" data-help-center-pending>${icon.book}<span>Ver central de ajuda</span></button>
         <footer class="doke-help-drawer__meta">
           <span>Atendimento de segunda a sexta, das 8h às 18h.</span>
           <span class="doke-help-drawer__status">Tempo médio de resposta: 2 min</span>
@@ -101,6 +101,10 @@
       return;
     }
 
+    const pendingCenter = event.target.closest('[data-help-center-pending]');
+    if (pendingCenter) {
+      event.preventDefault();
+    }
   });
 
   document.addEventListener('keydown', (event) => {

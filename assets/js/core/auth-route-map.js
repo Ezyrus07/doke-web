@@ -33,10 +33,9 @@
     'resultado.html',
     'perfil.html',
     'notificacoes.html',
-    'novidades.html',
-    'ajuda.html',
     'carteira.html',
-    'configuracoes.html'
+    'configuracoes.html',
+    'tornar-profissional.html'
   ]);
 
   const normalizePath = (path = window.location.pathname) => {

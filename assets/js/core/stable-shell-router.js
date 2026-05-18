@@ -10,13 +10,12 @@
     '/pedidos.html',
     '/mensagens.html',
     '/notificacoes.html',
-    '/novidades.html',
-    '/ajuda.html',
     '/carteira.html',
     '/comunidade.html',
     '/comunidade-interna.html',
     '/perfil.html',
     '/configuracoes.html',
+    '/tornar-profissional.html',
     '/mais.html',
     '/'
   ]);
@@ -35,13 +34,12 @@
     '/pedidos.html': ['DokeInitOrders'],
     '/mensagens.html': ['DokeInitMessages'],
     '/notificacoes.html': ['DokeInitNotifications'],
-    '/novidades.html': ['DokeInitNews'],
-    '/ajuda.html': ['DokeInitHelpCenter'],
     '/carteira.html': ['DokeInitWallet'],
     '/comunidade.html': [],
     '/comunidade-interna.html': [],
     '/perfil.html': ['DokeInitProfile'],
-    '/configuracoes.html': []
+    '/configuracoes.html': [],
+    '/tornar-profissional.html': ['DokeInitBecomePro']
   };
 
   var PRESERVED_BODY_CLASSES = [
