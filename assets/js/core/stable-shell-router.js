@@ -16,6 +16,7 @@
     '/perfil.html',
     '/configuracoes.html',
     '/tornar-profissional.html',
+    '/anunciar-servico.html',
     '/mais.html',
     '/'
   ]);
@@ -39,7 +40,8 @@
     '/comunidade-interna.html': [],
     '/perfil.html': ['DokeInitProfile'],
     '/configuracoes.html': [],
-    '/tornar-profissional.html': ['DokeInitBecomePro']
+    '/tornar-profissional.html': ['DokeInitBecomePro'],
+    '/anunciar-servico.html': ['DokeInitPostService']
   };
 
   var PRESERVED_BODY_CLASSES = [

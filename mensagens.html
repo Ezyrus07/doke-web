@@ -50,6 +50,7 @@
 <link rel="stylesheet" href="assets/css/components/chat-composer.css?v=20260424-shared-composer-1">
 <link rel="stylesheet" href="assets/css/components/media-lightbox.css?v=20260425-shared-media-lightbox-v1">
 <link rel="stylesheet" href="assets/css/components/ui-surface-system.css?v=20260427-modal-alignment-v22">
+  <link rel="stylesheet" href="assets/css/components/overlays/financial-modal-system.css?v=20260519-financial-modal-system-v5">
 
 
 <link rel="stylesheet" href="assets/css/patterns/internal-pages.css?v=20260428-architecture" />
@@ -85,6 +86,7 @@
   <link rel="stylesheet" href="assets/css/pages/mensagens.css?v=20260507-messages-mobile-rebuild-v32">
   <link rel="stylesheet" href="assets/css/components/layout/responsive-page-contract.css?v=20260514-header-parity-audit-v2">
   <link rel="stylesheet" href="assets/css/components/shell/doke-shell-contract.css?v=20260518-internal-rail-v25-final">
+  <link rel="stylesheet" href="assets/css/components/overlays/financial-modal-system.css?v=20260519-financial-modal-system-v5">
 </head>
 <body data-page="mensagens" class="doke-app-shell-page app-shell-page internal-shell-page messages-page-shell doke-flow doke-message-flow">
  <div class="app-shell">
@@ -137,7 +139,8 @@
           <span class="message-item__avatar doke-avatar" aria-hidden="true">SA</span>
           <span class="message-item__content">
            <span class="message-item__line"><strong>Studio Aquarela</strong><span class="message-item__time">09:27</span></span>
-           <span class="message-item__preview">Se fizer sentido, posso te enviar...</span>
+           <span class="message-item__deal-status message-item__deal-status--negotiation">Em negociação</span>
+           <span class="message-item__preview">Pintura residencial · posso enviar proposta...</span>
            <span class="message-item__status">Online agora</span>
           </span>
           <span class="message-item__badge doke-badge">2</span>
@@ -146,7 +149,8 @@
           <span class="message-item__avatar doke-avatar" aria-hidden="true">CV</span>
           <span class="message-item__content">
            <span class="message-item__line"><strong>Casa Viva Decoração</strong><span class="message-item__time">12:11</span></span>
-           <span class="message-item__preview">Fechado. Começamos na...</span>
+           <span class="message-item__deal-status message-item__deal-status--pending">Aguardando proposta</span>
+           <span class="message-item__preview">Decoração · prazo fica confortável...</span>
            <span class="message-item__status">Visto há 12 min</span>
           </span>
           <span class="message-item__badge message-item__badge--muted doke-badge">1</span>
@@ -155,7 +159,8 @@
           <span class="message-item__avatar doke-avatar" aria-hidden="true">LT</span>
           <span class="message-item__content">
            <span class="message-item__line"><strong>Luz Técnica</strong><span class="message-item__time">ontem</span></span>
-           <span class="message-item__preview">Quando puder, deixa eu ver...</span>
+           <span class="message-item__deal-status message-item__deal-status--done">Finalizado</span>
+           <span class="message-item__preview">Elétrica · deixe sua avaliação...</span>
            <span class="message-item__status">Visto ontem</span>
           </span>
          </button>
@@ -172,7 +177,8 @@
           <span class="message-item__avatar doke-avatar" aria-hidden="true">AR</span>
           <span class="message-item__content">
            <span class="message-item__line"><strong>Amanda Ribeiro</strong><span class="message-item__time">08:40</span></span>
-           <span class="message-item__preview">Obrigado! Assim que tiver...</span>
+           <span class="message-item__deal-status message-item__deal-status--pending">Aguardando proposta</span>
+           <span class="message-item__preview">Assim que tiver novidades me avise...</span>
            <span class="message-item__status">Online há 5 min</span>
           </span>
          </button>
@@ -180,7 +186,8 @@
           <span class="message-item__avatar doke-avatar" aria-hidden="true">ML</span>
           <span class="message-item__content">
            <span class="message-item__line"><strong>Marcos Lima</strong><span class="message-item__time">ontem</span></span>
-           <span class="message-item__preview">Valeu por indicar o profissional. Gostei bastante do atendimento.</span>
+           <span class="message-item__deal-status message-item__deal-status--done">Finalizado</span>
+           <span class="message-item__preview">Gostei bastante do atendimento.</span>
            <span class="message-item__status">Visto ontem às 20:18</span>
           </span>
          </button>
@@ -208,15 +215,39 @@
          </div>
         </div>
         <div class="messages-thread__actions">
-         <button class="messages-thread__action messages-thread__action--charge messages-thread__action--order doke-btn" type="button" data-header-nav="pedidos.html" aria-label="Ver pedido">
+         <button class="messages-thread__action messages-thread__action--order doke-btn" type="button" data-header-nav="pedidos.html" aria-label="Ver pedido">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="5.5" width="15" height="14" rx="3"></rect><path d="M8 3.75v3.5"></path><path d="M16 3.75v3.5"></path><path d="M5 10h14"></path></svg>
           <span>Ver pedido</span>
          </button>
+         <button class="messages-thread__action messages-thread__action--charge doke-btn" type="button" data-messages-charge aria-label="Enviar cobrança">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="3"></rect><path d="M8 9h8"></path><path d="M8 13h5"></path><path d="M16 13.5c0 1.2-.9 2-2.2 2H12"></path></svg>
+          <span>Cobrança</span>
+         </button>
          <button class="messages-thread__action messages-thread__action--call doke-btn" type="button" data-thread-call-toggle aria-label="Ligar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v2.6a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 3.8 2 2 0 0 1 4.1 1.6h2.6a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L7.8 9.4a16 16 0 0 0 6.8 6.8l1.1-1.1a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.3 1.6z"></path></svg></button>
-         <button class="messages-thread__action messages-thread__action--video-call doke-btn" type="button" data-thread-video-call aria-label="Videochamada"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6.5" width="12" height="11" rx="2.5"></rect><path d="m15.5 10.5 5-3v9l-5-3z"></path></svg></button>
          <button class="messages-thread__action messages-thread__action--more doke-btn" type="button" data-thread-more-toggle aria-label="Mais opções da conversa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12h.01"></path><path d="M12 12h.01"></path><path d="M17.5 12h.01"></path></svg></button>
         </div>
        </header>
+
+       <section class="messages-order-card" data-messages-order-context aria-label="Pedido vinculado à conversa">
+        <div class="messages-order-card__head">
+         <span>Pedido vinculado</span>
+         <strong>Em negociação</strong>
+        </div>
+        <div class="messages-order-card__body">
+         <div class="messages-order-card__copy">
+          <h2>Pintura residencial com acabamento fino</h2>
+          <dl class="messages-order-card__facts">
+           <div><dt>Estimativa</dt><dd>R$ 850</dd></div>
+           <div><dt>Prazo</dt><dd>até 7 dias</dd></div>
+           <div><dt>Categoria</dt><dd>Pintura</dd></div>
+          </dl>
+         </div>
+         <div class="messages-order-card__actions">
+          <a class="messages-order-card__button messages-order-card__button--ghost" href="pedidos.html">Ver detalhes</a>
+          <button class="messages-order-card__button" type="button" data-messages-proposal-action>Enviar proposta</button>
+         </div>
+        </div>
+       </section>
 
        <div class="messages-selection-bar" data-messages-selection hidden>
         <div class="messages-selection-bar__summary">
@@ -334,36 +365,38 @@
   </div>
  </dialog>
 
- <dialog class="charge-modal" data-charge-modal>
-  <form class="charge-modal__surface doke-modal" method="dialog" data-charge-form>
-   <div class="charge-modal__header surface-modal__hero">
+ <dialog class="charge-modal doke-financial-modal" data-charge-modal>
+  <form class="charge-modal__surface doke-modal doke-financial-modal__surface" method="dialog" data-charge-form>
+   <div class="charge-modal__header surface-modal__hero doke-financial-modal__header">
     <div class="surface-modal__intro">
-<span class="charge-modal__eyebrow">Cobrança</span>
-<strong>Nova cobrança</strong>
+<span class="charge-modal__eyebrow doke-financial-modal__eyebrow doke-financial-modal__eyebrow--charge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h8.5L19 7v13.5l-2-1.2-2 1.2-2-1.2-2 1.2-2-1.2-2 1.2V3.5Z"></path><path d="M9 8h6"></path><path d="M9 12h5"></path></svg>Cobrança</span>
+<strong class="doke-financial-modal__title">Nova cobrança</strong>
      <p>Envie um valor direto na conversa.</p>
     </div>
     <button class="charge-modal__close doke-icon-btn doke-icon-btn--flat" type="button" data-charge-cancel aria-label="Fechar cobrança">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
     </button>
    </div>
-   <label class="charge-modal__field doke-field">
-    <span>Valor da cobrança</span>
-    <div class="charge-modal__money-field doke-field">
-     <span>R$</span>
-     <input type="text" inputmode="decimal" value="280,00" data-charge-amount>
-    </div>
-   </label>
-   <label class="charge-modal__field doke-field">
-    <span>Parcelamento</span>
-    <select data-charge-installments>
-     <option value="1x">À vista</option>
-     <option value="2x">2x sem juros</option>
-     <option value="3x">3x sem juros</option>
-     <option value="4x">4x sem juros</option>
-     <option value="6x">6x sem juros</option>
-    </select>
-   </label>
-   <div class="charge-modal__actions">
+   <div class="charge-modal__body doke-financial-modal__body">
+    <label class="charge-modal__field doke-field doke-financial-modal__field">
+     <span>Valor da cobrança</span>
+     <div class="charge-modal__money-field doke-financial-modal__money-field">
+      <span>R$</span>
+      <input type="text" inputmode="decimal" value="280,00" data-charge-amount>
+     </div>
+    </label>
+    <label class="charge-modal__field doke-field doke-financial-modal__field">
+     <span>Parcelamento</span>
+     <select class="doke-financial-modal__control" data-charge-installments>
+      <option value="1x">À vista</option>
+      <option value="2x">2x sem juros</option>
+      <option value="3x">3x sem juros</option>
+      <option value="4x">4x sem juros</option>
+      <option value="6x">6x sem juros</option>
+     </select>
+    </label>
+   </div>
+   <div class="charge-modal__actions doke-financial-modal__footer">
     <button class="charge-modal__button charge-modal__button--ghost doke-btn doke-btn--ghost" type="button" data-charge-cancel>Cancelar</button>
     <button class="charge-modal__button doke-btn" type="submit">Enviar cobrança</button>
    </div>

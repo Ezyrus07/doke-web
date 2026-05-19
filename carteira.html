@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="assets/css/components/navigation/mobile-drawer-standard.css?v=20260428-architecture">
 <link rel="stylesheet" href="assets/css/components/overlays/overlay-contract.css?v=20260428-architecture" />
   <link rel="stylesheet" href="assets/css/components/ui-surface-system.css?v=20260427-modal-alignment-v22" />
+  <link rel="stylesheet" href="assets/css/components/overlays/financial-modal-system.css?v=20260519-financial-modal-system-v5">
   <link rel="stylesheet" href="assets/css/patterns/internal-pages.css?v=20260428-architecture" />
   <link rel="stylesheet" href="assets/css/patterns/responsive-polish.css?v=20260428-architecture">
   <link rel="stylesheet" href="assets/css/pages/carteira.css?v=20260517-wallet-mobile-compression-v14" />
@@ -45,6 +46,7 @@
 <link rel="stylesheet" href="assets/css/components/shell/app-header.css?v=20260517-header-gap-v3">
   <link rel="stylesheet" href="assets/css/components/layout/responsive-page-contract.css?v=20260514-header-parity-audit-v2">
   <link rel="stylesheet" href="assets/css/components/shell/doke-shell-contract.css?v=20260518-internal-rail-v25-final">
+  <link rel="stylesheet" href="assets/css/components/overlays/financial-modal-system.css?v=20260519-financial-modal-system-v5">
 </head>
  <body data-page="carteira" class="doke-app-shell-page app-shell-page internal-shell-page wallet-page-shell doke-flow doke-wallet-flow has-global-header">
   <div class="app-shell">
@@ -607,29 +609,32 @@
 
   <div class="wallet-modal" data-wallet-withdraw-modal hidden>
    <div class="wallet-modal__scrim wallet-dialog__scrim" data-wallet-close-withdraw></div>
-   <section class="wallet-dialog wallet-dialog--withdraw" role="dialog" aria-modal="true" aria-labelledby="wallet-withdraw-title" aria-describedby="wallet-withdraw-description">
+   <section class="wallet-dialog wallet-dialog--withdraw doke-financial-modal__surface" role="dialog" aria-modal="true" aria-labelledby="wallet-withdraw-title" aria-describedby="wallet-withdraw-description">
     <button class="wallet-dialog__close" type="button" data-wallet-close-withdraw aria-label="Fechar solicitação de transferência">
      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
     </button>
 
     <form class="wallet-dialog__form" data-wallet-withdraw-form>
      <div class="wallet-dialog__scroll">
-      <header class="wallet-dialog__header">
-       <span class="wallet-dialog__badge wallet-dialog__badge--withdraw">
+      <header class="wallet-dialog__header doke-financial-modal__header">
+       <span class="wallet-dialog__badge wallet-dialog__badge--withdraw doke-financial-modal__eyebrow doke-financial-modal__eyebrow--withdraw">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"></path><path d="m8 11 4 4 4-4"></path><path d="M5 19h14"></path></svg>
         Saque
        </span>
-       <h2 id="wallet-withdraw-title">Solicitar transferência</h2>
+       <h2 id="wallet-withdraw-title" class="doke-financial-modal__title">Solicitar saque</h2>
        <p id="wallet-withdraw-description">Informe o valor que deseja transferir para a conta cadastrada.</p>
       </header>
 
       <div class="wallet-dialog__body">
-       <label class="wallet-dialog-field wallet-dialog-field--wide">
+       <label class="wallet-dialog-field wallet-dialog-field--wide doke-financial-modal__field">
         <span>Valor do saque</span>
-        <input type="text" inputmode="decimal" value="R$ 1.200,00" data-wallet-withdraw-amount>
+        <div class="wallet-dialog-money-field doke-financial-modal__money-field">
+         <span aria-hidden="true">R$</span>
+         <input type="text" inputmode="decimal" value="1.200,00" data-wallet-withdraw-amount>
+        </div>
        </label>
 
-       <div class="wallet-dialog-summary wallet-dialog-summary--withdraw" aria-label="Resumo da transferência">
+       <div class="wallet-dialog-summary wallet-dialog-summary--withdraw doke-financial-modal__summary" aria-label="Resumo da transferência">
         <article>
          <span>Destino</span>
          <strong data-wallet-account-field="withdrawDestination">PIX • Nubank</strong>
@@ -642,7 +647,7 @@
       </div>
      </div>
 
-     <footer class="wallet-dialog__footer">
+     <footer class="wallet-dialog__footer doke-financial-modal__footer">
       <button class="wallet-dialog-btn wallet-dialog-btn--secondary" type="button" data-wallet-close-withdraw>Cancelar</button>
       <button class="wallet-dialog-btn wallet-dialog-btn--primary" type="submit">Confirmar saque</button>
      </footer>

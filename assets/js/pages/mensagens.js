@@ -96,6 +96,9 @@
     const threadAvatar = root.querySelector("[data-thread-avatar]");
     const threadName = root.querySelector("[data-thread-name]");
     const threadLastSeen = root.querySelector("[data-thread-last-seen]");
+    const orderContext = root.querySelector("[data-messages-order-context]");
+    const dealRail = root.querySelector("[data-messages-deal-rail]");
+    const proposalActionButtons = Array.from(root.querySelectorAll("[data-messages-proposal-action]"));
     const composer = root.querySelector("[data-messages-composer]");
     const composerInput = root.querySelector("[data-messages-composer-input]");
     const backButton = root.querySelector("[data-messages-back]");
@@ -187,6 +190,16 @@
     const syncComposerPlaceholder = () => {
       if (!composerInput) return;
       composerInput.placeholder = window.innerWidth <= 760 ? "Mensagem..." : "Digite sua mensagem...";
+    };
+
+    const syncCommerceContext = (conversation) => {
+      const isOrderConversation = conversation?.group === "orders";
+      if (orderContext) orderContext.hidden = !isOrderConversation;
+      if (dealRail) dealRail.hidden = !isOrderConversation;
+      proposalActionButtons.forEach((button) => {
+        button.hidden = !isOrderConversation;
+        button.disabled = !isOrderConversation;
+      });
     };
 
     const getVisibleSearchInput = () => {
@@ -499,6 +512,7 @@
       if (threadAvatar) threadAvatar.textContent = getConversationInitials(conversation.name);
       if (threadName) threadName.textContent = conversation.name;
       if (threadLastSeen) threadLastSeen.textContent = conversation.lastSeen;
+      syncCommerceContext(conversation);
       if (threadEmpty) threadEmpty.hidden = conversation.messages.length !== 0;
       if (threadBody) threadBody.hidden = conversation.messages.length === 0;
       const activeInitials = getConversationInitials(conversation.name);
@@ -530,6 +544,20 @@
           </div>
         </article>
       `).join("");
+      if (conversation.group === "orders" && conversation.messages.length) {
+        threadBody.insertAdjacentHTML("beforeend", `
+          <article class="messages-action-card" data-messages-action-card>
+            <span class="messages-action-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 6v6l4 2"></path><circle cx="12" cy="12" r="8.5"></circle></svg>
+            </span>
+            <div>
+              <strong>Ação pendente</strong>
+              <p>Envie a proposta final para avançar a negociação com ${conversation.name}.</p>
+            </div>
+            <button type="button" data-messages-proposal-action-inline>Enviar proposta</button>
+          </article>
+        `);
+      }
       conversation.messages.forEach((message, index) => {
         if (message.type !== "charge") return;
         const bubble = threadBody.querySelector(`.message-bubble[data-message-index="${index}"]`);
@@ -1345,6 +1373,23 @@
     resetImageDraft();
     if (copyToast) copyToast.hidden = true;
     syncComposerPlaceholder();
+    proposalActionButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        if (!composerInput) return;
+        composerInput.value = "Olá! Vou preparar uma proposta com escopo, prazo e valor para você aprovar aqui pela Doke.";
+        composerInput.focus();
+        composerInput.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+    });
+
+    root.addEventListener("click", (event) => {
+      const inlineProposalButton = event.target.closest("[data-messages-proposal-action-inline]");
+      if (!inlineProposalButton || !composerInput) return;
+      composerInput.value = "Olá! Vou preparar uma proposta com escopo, prazo e valor para você aprovar aqui pela Doke.";
+      composerInput.focus();
+      composerInput.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+
     renderThread(activeId, { scrollTo: "start" });
     if (window.innerWidth <= 767) {
       root.classList.remove("messages-app--thread-open");

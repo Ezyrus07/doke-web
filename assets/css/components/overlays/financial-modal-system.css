@@ -1,0 +1,1192 @@
+/* Doke financial modal system
+   Responsabilidade: padronizar modais financeiros e cards internos que abrem sobre a tela.
+   Escopo atual: cobrança em mensagens e saque na carteira. */
+:root {
+  --doke-financial-modal-width: 620px;
+  --doke-financial-modal-radius: 30px;
+  --doke-financial-card-radius: 18px;
+  --doke-financial-control-radius: 16px;
+  --doke-financial-border: #cfdeef;
+  --doke-financial-border-soft: #dce7f3;
+  --doke-financial-surface: #ffffff;
+  --doke-financial-surface-soft: #f8fbff;
+  --doke-financial-title: #0b3778;
+  --doke-financial-text: #15385f;
+  --doke-financial-muted: #6f85a1;
+  --doke-financial-primary: #1f6db6;
+  --doke-financial-primary-strong: #145a9e;
+  --doke-financial-focus: rgba(31, 109, 182, .16);
+  --doke-financial-shadow: 0 28px 80px rgba(18, 39, 62, .24);
+}
+
+:is(dialog.charge-modal, .wallet-modal:not([hidden])) {
+  z-index: 1500;
+}
+
+:is(dialog.charge-modal)::backdrop {
+  background: rgba(17, 36, 59, .58) !important;
+  backdrop-filter: blur(14px) saturate(115%);
+}
+
+.wallet-dialog__scrim {
+  background: rgba(17, 36, 59, .58) !important;
+  backdrop-filter: blur(14px) saturate(115%) !important;
+}
+
+:is(.charge-modal__surface, .wallet-dialog--withdraw) {
+  width: min(92vw, var(--doke-financial-modal-width)) !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(207, 222, 239, .92) !important;
+  border-radius: var(--doke-financial-modal-radius) !important;
+  background: var(--doke-financial-surface) !important;
+  box-shadow: var(--doke-financial-shadow) !important;
+}
+
+.charge-modal__surface {
+  display: grid !important;
+  gap: 0 !important;
+  padding: 0 !important;
+}
+
+:is(.charge-modal__header, .wallet-dialog__header) {
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 38px 38px 24px !important;
+}
+
+:is(.charge-modal__header, .wallet-dialog__header).doke-financial-modal__header {
+  display: block !important;
+  padding-right: 90px !important;
+}
+
+:is(.charge-modal__eyebrow, .wallet-dialog__badge) {
+  width: fit-content !important;
+  min-height: 34px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  margin: 0 0 28px !important;
+  padding: 0 16px !important;
+  border-radius: 999px !important;
+  font-size: .78rem !important;
+  line-height: 1 !important;
+  font-weight: 800 !important;
+  letter-spacing: .09em !important;
+  text-transform: uppercase !important;
+}
+
+:is(.charge-modal__eyebrow, .wallet-dialog__badge) svg {
+  width: 17px !important;
+  height: 17px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2.1 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+.doke-financial-modal__eyebrow--charge,
+.charge-modal__eyebrow {
+  border: 1px solid #d8c6ff !important;
+  background: #f4efff !important;
+  color: #6e4ad7 !important;
+}
+
+.doke-financial-modal__eyebrow--withdraw,
+.wallet-dialog__badge--withdraw {
+  border: 1px solid #bfe6dc !important;
+  background: #eefaf6 !important;
+  color: #087e72 !important;
+}
+
+:is(.charge-modal__header strong, .wallet-dialog__header h2, .doke-financial-modal__title) {
+  display: block !important;
+  max-width: none !important;
+  margin: 0 !important;
+  color: var(--doke-financial-title) !important;
+  font-size: clamp(2.05rem, 3vw, 2.7rem) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -.055em !important;
+  white-space: normal !important;
+  font-weight: 800 !important;
+}
+
+:is(.charge-modal__header p, .wallet-dialog__header p) {
+  max-width: 480px !important;
+  margin: 12px 0 0 !important;
+  color: var(--doke-financial-muted) !important;
+  font-size: 1rem !important;
+  line-height: 1.48 !important;
+  font-weight: 500 !important;
+}
+
+:is(.charge-modal__close, .wallet-dialog__close) {
+  top: 28px !important;
+  right: 28px !important;
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border: 1px solid var(--doke-financial-border) !important;
+  border-radius: 14px !important;
+  background: #f3f8fd !important;
+  color: #0b3778 !important;
+  box-shadow: none !important;
+}
+
+:is(.charge-modal__close, .wallet-dialog__close):is(:hover, :focus-visible) {
+  background: #eaf3fb !important;
+  border-color: #bed2e8 !important;
+  box-shadow: 0 0 0 4px var(--doke-financial-focus) !important;
+}
+
+:is(.charge-modal__close, .wallet-dialog__close) svg {
+  width: 18px !important;
+  height: 18px !important;
+  stroke: currentColor !important;
+  stroke-width: 2.35 !important;
+}
+
+.charge-modal__field,
+.wallet-dialog__body,
+.wallet-dialog-field,
+.wallet-dialog-summary--withdraw {
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+.charge-modal__field,
+.wallet-dialog-field {
+  display: grid !important;
+  gap: 9px !important;
+}
+
+.charge-modal__field,
+.charge-modal__actions {
+  margin-inline: 38px !important;
+}
+
+.charge-modal__field + .charge-modal__field {
+  margin-top: 18px !important;
+}
+
+.wallet-dialog__body {
+  display: grid !important;
+  gap: 18px !important;
+  padding: 0 38px 28px !important;
+}
+
+:is(.charge-modal__field > span, .wallet-dialog-field > span:first-child) {
+  color: var(--doke-financial-muted) !important;
+  font-size: .86rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -.015em !important;
+  text-transform: none !important;
+}
+
+:is(.charge-modal__money-field, .wallet-dialog-money-field, .charge-modal__field select, .wallet-dialog-field input, .wallet-dialog-field select, .wallet-dialog-control) {
+  width: 100% !important;
+  min-height: 58px !important;
+  border: 1px solid var(--doke-financial-border) !important;
+  border-radius: var(--doke-financial-control-radius) !important;
+  background: var(--doke-financial-surface-soft) !important;
+  color: var(--doke-financial-title) !important;
+  box-shadow: none !important;
+}
+
+:is(.charge-modal__money-field, .wallet-dialog-money-field) {
+  display: grid !important;
+  grid-template-columns: 74px minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+:is(.charge-modal__money-field > span, .wallet-dialog-money-field > span) {
+  display: inline-grid !important;
+  place-items: center !important;
+  min-height: 58px !important;
+  border-right: 1px solid var(--doke-financial-border) !important;
+  color: var(--doke-financial-title) !important;
+  font-size: 1rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0 !important;
+  background: rgba(255,255,255,.42) !important;
+}
+
+:is(.charge-modal__money-field input, .wallet-dialog-money-field input) {
+  width: 100% !important;
+  min-height: 58px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0 22px !important;
+  color: var(--doke-financial-title) !important;
+  font: inherit !important;
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
+.charge-modal__field select,
+.wallet-dialog-field select,
+.wallet-dialog-control {
+  padding: 0 18px !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+}
+
+:is(.charge-modal__money-field, .wallet-dialog-money-field, .charge-modal__field select, .wallet-dialog-field input, .wallet-dialog-field select):focus-within,
+:is(.charge-modal__field select, .wallet-dialog-field input, .wallet-dialog-field select):focus-visible {
+  border-color: #8db5dd !important;
+  box-shadow: 0 0 0 4px var(--doke-financial-focus) !important;
+}
+
+.wallet-dialog-summary--withdraw.doke-financial-modal__summary {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.wallet-dialog-summary--withdraw article {
+  min-height: 94px !important;
+  display: grid !important;
+  align-content: center !important;
+  gap: 10px !important;
+  padding: 18px 20px !important;
+  border: 1px solid var(--doke-financial-border-soft) !important;
+  border-radius: var(--doke-financial-card-radius) !important;
+  background: var(--doke-financial-surface-soft) !important;
+  box-shadow: none !important;
+}
+
+.wallet-dialog-summary--withdraw article span {
+  margin: 0 !important;
+  color: var(--doke-financial-muted) !important;
+  font-size: .9rem !important;
+  line-height: 1 !important;
+  font-weight: 700 !important;
+  letter-spacing: -.01em !important;
+  text-transform: none !important;
+}
+
+.wallet-dialog-summary--withdraw article strong {
+  color: var(--doke-financial-title) !important;
+  font-size: 1rem !important;
+  line-height: 1.2 !important;
+  font-weight: 800 !important;
+}
+
+:is(.charge-modal__actions, .wallet-dialog__footer) {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) !important;
+  gap: 16px !important;
+  margin: 28px 0 0 !important;
+  padding: 22px 38px 30px !important;
+  border-top: 1px solid var(--doke-financial-border-soft) !important;
+  background: linear-gradient(180deg, #fbfdff 0%, #f7fbff 100%) !important;
+}
+
+:is(.charge-modal__button, .wallet-dialog-btn) {
+  min-height: 54px !important;
+  height: 54px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 22px !important;
+  border-radius: 16px !important;
+  font: inherit !important;
+  font-size: .98rem !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+}
+
+:is(.charge-modal__button:not(.charge-modal__button--ghost), .wallet-dialog-btn--primary) {
+  border: 1px solid var(--doke-financial-primary) !important;
+  background: linear-gradient(135deg, var(--doke-financial-primary) 0%, var(--doke-financial-primary-strong) 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 22px rgba(31, 109, 182, .18) !important;
+}
+
+:is(.charge-modal__button:not(.charge-modal__button--ghost), .wallet-dialog-btn--primary):hover {
+  box-shadow: 0 14px 26px rgba(31, 109, 182, .24) !important;
+}
+
+:is(.charge-modal__button--ghost, .wallet-dialog-btn--secondary) {
+  border: 1px solid var(--doke-financial-border) !important;
+  background: #f5f9fe !important;
+  color: var(--doke-financial-title) !important;
+  box-shadow: none !important;
+}
+
+:is(.charge-modal__button--ghost, .wallet-dialog-btn--secondary):hover {
+  background: #edf5fc !important;
+  border-color: #bdd0e6 !important;
+}
+
+@media (max-width: 760px) {
+  :is(.charge-modal__surface, .wallet-dialog--withdraw) {
+    width: min(100% - 24px, 560px) !important;
+    border-radius: 24px !important;
+  }
+
+  :is(.charge-modal__header, .wallet-dialog__header) {
+    padding: 28px 22px 20px !important;
+    padding-right: 74px !important;
+  }
+
+  :is(.charge-modal__header strong, .wallet-dialog__header h2, .doke-financial-modal__title) {
+    font-size: clamp(1.8rem, 9vw, 2.2rem) !important;
+  }
+
+  :is(.charge-modal__field, .charge-modal__actions) {
+    margin-inline: 22px !important;
+  }
+
+  .wallet-dialog__body {
+    padding: 0 22px 22px !important;
+  }
+
+  .wallet-dialog-summary--withdraw.doke-financial-modal__summary {
+    grid-template-columns: 1fr !important;
+  }
+
+  :is(.charge-modal__actions, .wallet-dialog__footer) {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    padding: 18px 22px 22px !important;
+  }
+
+  :is(.charge-modal__button, .wallet-dialog-btn) {
+    width: 100% !important;
+  }
+}
+
+/* 2026-05-19 — V2: refinamento premium do contrato financeiro
+   Ajusta escala, alinhamento e remove heranças que criavam campos com caixa interna.
+   Este bloco deve vencer os estilos legados de mensagens/carteira sem alterar shell global. */
+:root {
+  --doke-financial-modal-width: 560px;
+  --doke-financial-modal-radius: 28px;
+  --doke-financial-card-radius: 16px;
+  --doke-financial-control-radius: 16px;
+  --doke-financial-border: #cfe0f0;
+  --doke-financial-border-soft: #dbe8f4;
+  --doke-financial-surface-soft: #f8fbff;
+  --doke-financial-title: #0d3d7d;
+  --doke-financial-muted: #6c819e;
+  --doke-financial-primary: #1f6fb8;
+  --doke-financial-primary-strong: #145ea7;
+}
+
+:is(.charge-modal__surface, .wallet-dialog--withdraw) {
+  width: min(calc(100vw - 48px), var(--doke-financial-modal-width)) !important;
+  max-width: var(--doke-financial-modal-width) !important;
+  border-radius: var(--doke-financial-modal-radius) !important;
+  text-align: left !important;
+}
+
+:is(.charge-modal__surface, .wallet-dialog--withdraw),
+:is(.charge-modal__surface, .wallet-dialog--withdraw) * {
+  box-sizing: border-box !important;
+}
+
+:is(.charge-modal__header, .wallet-dialog__header),
+:is(.charge-modal__header, .wallet-dialog__header).doke-financial-modal__header {
+  display: block !important;
+  padding: 34px 34px 20px !important;
+  padding-right: 84px !important;
+  text-align: left !important;
+}
+
+:is(.charge-modal__eyebrow, .wallet-dialog__badge) {
+  min-height: 32px !important;
+  margin: 0 0 26px !important;
+  padding: 0 14px !important;
+  gap: 8px !important;
+  font-size: .74rem !important;
+  letter-spacing: .085em !important;
+}
+
+:is(.charge-modal__eyebrow, .wallet-dialog__badge) svg {
+  width: 15px !important;
+  height: 15px !important;
+}
+
+:is(.charge-modal__header strong, .wallet-dialog__header h2, .doke-financial-modal__title) {
+  margin: 0 !important;
+  max-width: 100% !important;
+  font-size: clamp(2rem, 3.2vw, 2.35rem) !important;
+  line-height: 1.05 !important;
+  letter-spacing: -.055em !important;
+  font-weight: 800 !important;
+  text-align: left !important;
+}
+
+:is(.charge-modal__header p, .wallet-dialog__header p) {
+  max-width: 430px !important;
+  margin: 10px 0 0 !important;
+  font-size: .98rem !important;
+  line-height: 1.48 !important;
+  text-align: left !important;
+}
+
+:is(.charge-modal__close, .wallet-dialog__close) {
+  top: 28px !important;
+  right: 28px !important;
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  border-radius: 14px !important;
+}
+
+:is(.charge-modal__field, .charge-modal__actions) {
+  margin-inline: 34px !important;
+}
+
+.charge-modal__field,
+.wallet-dialog-field {
+  gap: 8px !important;
+  text-align: left !important;
+}
+
+.charge-modal__field + .charge-modal__field {
+  margin-top: 18px !important;
+}
+
+.wallet-dialog__body {
+  gap: 18px !important;
+  padding: 0 34px 26px !important;
+}
+
+:is(.charge-modal__field > span, .wallet-dialog-field > span:first-child) {
+  display: block !important;
+  margin: 0 !important;
+  color: #687f9d !important;
+  font-size: .86rem !important;
+  line-height: 1.25 !important;
+  font-weight: 800 !important;
+  letter-spacing: -.01em !important;
+  text-align: left !important;
+}
+
+:is(.charge-modal__money-field, .wallet-dialog-money-field, .charge-modal__field select, .wallet-dialog-field input, .wallet-dialog-field select, .wallet-dialog-control) {
+  min-height: 56px !important;
+  height: 56px !important;
+  border: 1px solid var(--doke-financial-border) !important;
+  border-radius: var(--doke-financial-control-radius) !important;
+  background: #f8fbff !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .72) inset !important;
+}
+
+:is(.charge-modal__money-field, .wallet-dialog-money-field) {
+  grid-template-columns: 68px minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+:is(.charge-modal__money-field > span, .wallet-dialog-money-field > span) {
+  min-height: 56px !important;
+  height: 56px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border-right: 1px solid var(--doke-financial-border-soft) !important;
+  background: rgba(255,255,255,.55) !important;
+  color: var(--doke-financial-title) !important;
+  font-size: .98rem !important;
+  font-weight: 800 !important;
+}
+
+:is(.charge-modal__money-field input, .wallet-dialog-money-field input),
+:is(.charge-modal__money-field input, .wallet-dialog-money-field input):is(:hover, :focus, :focus-visible, :active) {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  min-height: 56px !important;
+  height: 56px !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 20px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--doke-financial-title) !important;
+  font-size: 1.05rem !important;
+  line-height: 56px !important;
+  font-weight: 700 !important;
+}
+
+:is(.charge-modal__field select, .wallet-dialog-field select, .wallet-dialog-control),
+:is(.charge-modal__field select, .wallet-dialog-field select, .wallet-dialog-control):is(:hover, :focus, :focus-visible, :active) {
+  appearance: auto !important;
+  -webkit-appearance: menulist !important;
+  width: 100% !important;
+  padding: 0 18px !important;
+  outline: 0 !important;
+  color: var(--doke-financial-title) !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+}
+
+:is(.charge-modal__money-field, .wallet-dialog-money-field, .charge-modal__field select, .wallet-dialog-field input, .wallet-dialog-field select):focus-within,
+:is(.charge-modal__field select, .wallet-dialog-field input, .wallet-dialog-field select):focus-visible {
+  border-color: #9cbfdf !important;
+  box-shadow: 0 0 0 4px rgba(31, 109, 182, .12) !important;
+}
+
+.wallet-dialog-summary--withdraw.doke-financial-modal__summary {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+.wallet-dialog-summary--withdraw article,
+.doke-financial-modal__card {
+  min-height: 86px !important;
+  padding: 16px 18px !important;
+  border: 1px solid var(--doke-financial-border-soft) !important;
+  border-radius: var(--doke-financial-card-radius) !important;
+  background: #f8fbff !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.72) inset !important;
+  text-align: left !important;
+}
+
+.wallet-dialog-summary--withdraw article span {
+  color: var(--doke-financial-muted) !important;
+  font-size: .84rem !important;
+  line-height: 1.2 !important;
+  font-weight: 700 !important;
+}
+
+.wallet-dialog-summary--withdraw article strong {
+  margin-top: 2px !important;
+  color: var(--doke-financial-title) !important;
+  font-size: 1rem !important;
+  line-height: 1.2 !important;
+  font-weight: 800 !important;
+}
+
+:is(.charge-modal__actions, .wallet-dialog__footer) {
+  display: grid !important;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.15fr) !important;
+  gap: 14px !important;
+  margin: 26px 0 0 !important;
+  padding: 20px 34px 28px !important;
+  border-top: 1px solid var(--doke-financial-border-soft) !important;
+  background: linear-gradient(180deg, #fbfdff 0%, #f8fbff 100%) !important;
+}
+
+:is(.charge-modal__button, .wallet-dialog-btn) {
+  min-height: 52px !important;
+  height: 52px !important;
+  border-radius: 16px !important;
+  font-size: .96rem !important;
+  font-weight: 800 !important;
+}
+
+:is(.charge-modal__button:not(.charge-modal__button--ghost), .wallet-dialog-btn--primary) {
+  background: linear-gradient(135deg, #2475bd 0%, #145fa7 100%) !important;
+  box-shadow: 0 12px 24px rgba(20, 95, 167, .18) !important;
+}
+
+:is(.charge-modal__button--ghost, .wallet-dialog-btn--secondary) {
+  background: #f8fbff !important;
+  border-color: var(--doke-financial-border) !important;
+}
+
+@media (max-width: 760px) {
+  :is(.charge-modal__surface, .wallet-dialog--withdraw) {
+    width: min(calc(100vw - 24px), 520px) !important;
+    border-radius: 24px !important;
+  }
+
+  :is(.charge-modal__header, .wallet-dialog__header),
+  :is(.charge-modal__header, .wallet-dialog__header).doke-financial-modal__header {
+    padding: 28px 22px 18px !important;
+    padding-right: 72px !important;
+  }
+
+  :is(.charge-modal__header strong, .wallet-dialog__header h2, .doke-financial-modal__title) {
+    font-size: clamp(1.75rem, 8vw, 2.05rem) !important;
+  }
+
+  :is(.charge-modal__close, .wallet-dialog__close) {
+    top: 22px !important;
+    right: 22px !important;
+  }
+
+  :is(.charge-modal__field, .charge-modal__actions) {
+    margin-inline: 22px !important;
+  }
+
+  .wallet-dialog__body {
+    padding: 0 22px 22px !important;
+  }
+
+  .wallet-dialog-summary--withdraw.doke-financial-modal__summary {
+    grid-template-columns: 1fr !important;
+  }
+
+  :is(.charge-modal__actions, .wallet-dialog__footer) {
+    grid-template-columns: 1fr !important;
+    padding: 18px 22px 22px !important;
+  }
+}
+
+/* 2026-05-19 — V3: paridade visual do modal de cobrança com o modal de saque.
+   Motivo: mensagens.html carrega estilos antigos depois do contrato financeiro;
+   esta camada neutraliza centralizacao, largura estreita e input com caixa interna. */
+:root {
+  --doke-financial-modal-width: 620px;
+}
+
+.charge-modal .charge-modal__surface.doke-financial-modal__surface {
+  width: min(calc(100vw - 48px), 620px) !important;
+  max-width: 620px !important;
+  min-height: auto !important;
+  display: grid !important;
+  grid-template-rows: auto auto auto !important;
+  padding: 0 !important;
+  text-align: left !important;
+}
+
+.charge-modal .charge-modal__header.doke-financial-modal__header,
+.charge-modal .charge-modal__header.surface-modal__hero.doke-financial-modal__header {
+  display: block !important;
+  width: 100% !important;
+  padding: 34px 42px 22px !important;
+  padding-right: 96px !important;
+  margin: 0 !important;
+  text-align: left !important;
+  align-items: initial !important;
+  justify-items: initial !important;
+}
+
+.charge-modal .charge-modal__eyebrow.doke-financial-modal__eyebrow {
+  margin: 0 0 28px !important;
+}
+
+.charge-modal .charge-modal__header .doke-financial-modal__title,
+.charge-modal .charge-modal__header strong {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  text-align: left !important;
+  font-size: clamp(2.2rem, 3.4vw, 2.75rem) !important;
+  line-height: 1.03 !important;
+  letter-spacing: -0.06em !important;
+}
+
+.charge-modal .charge-modal__header p {
+  width: 100% !important;
+  max-width: 440px !important;
+  margin: 12px 0 0 !important;
+  text-align: left !important;
+}
+
+.charge-modal .charge-modal__close {
+  top: 32px !important;
+  right: 34px !important;
+}
+
+.charge-modal .charge-modal__field.doke-financial-modal__field {
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 42px !important;
+  text-align: left !important;
+  justify-items: stretch !important;
+  align-items: stretch !important;
+}
+
+.charge-modal .charge-modal__field.doke-financial-modal__field + .charge-modal__field.doke-financial-modal__field {
+  margin-top: 18px !important;
+}
+
+.charge-modal .charge-modal__field > span {
+  width: 100% !important;
+  margin: 0 !important;
+  text-align: left !important;
+}
+
+.charge-modal .charge-modal__money-field.doke-financial-modal__money-field,
+.charge-modal .charge-modal__field select.doke-financial-modal__control {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  justify-self: stretch !important;
+}
+
+.charge-modal .charge-modal__money-field.doke-financial-modal__money-field {
+  grid-template-columns: 72px minmax(0, 1fr) !important;
+}
+
+.charge-modal .charge-modal__money-field input,
+.charge-modal .charge-modal__money-field input:is(:hover, :focus, :focus-visible, :active) {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+.charge-modal .charge-modal__field select.doke-financial-modal__control {
+  appearance: auto !important;
+  -webkit-appearance: menulist !important;
+  height: 56px !important;
+}
+
+.charge-modal .charge-modal__actions.doke-financial-modal__footer {
+  width: 100% !important;
+  margin: 28px 0 0 !important;
+  padding: 22px 42px 30px !important;
+  grid-template-columns: minmax(0, .95fr) minmax(0, 1.2fr) !important;
+  text-align: left !important;
+}
+
+.charge-modal .charge-modal__button {
+  width: 100% !important;
+}
+
+@media (max-width: 760px) {
+  .charge-modal .charge-modal__surface.doke-financial-modal__surface {
+    width: min(calc(100vw - 24px), 520px) !important;
+    max-width: 520px !important;
+  }
+
+  .charge-modal .charge-modal__header.doke-financial-modal__header,
+  .charge-modal .charge-modal__header.surface-modal__hero.doke-financial-modal__header {
+    padding: 28px 22px 18px !important;
+    padding-right: 74px !important;
+  }
+
+  .charge-modal .charge-modal__header .doke-financial-modal__title,
+  .charge-modal .charge-modal__header strong {
+    font-size: clamp(1.85rem, 8.5vw, 2.15rem) !important;
+  }
+
+  .charge-modal .charge-modal__field.doke-financial-modal__field {
+    margin-inline: 22px !important;
+  }
+
+  .charge-modal .charge-modal__actions.doke-financial-modal__footer {
+    grid-template-columns: 1fr !important;
+    padding: 18px 22px 22px !important;
+  }
+}
+
+/* 2026-05-19 — V4: contrato único real para modais financeiros.
+   A cobrança passa a usar a mesma anatomia do saque: header + body + footer.
+   Esta camada remove diferenças visuais causadas por classes antigas de mensagens. */
+:root {
+  --doke-financial-modal-width: 620px;
+  --doke-financial-modal-radius: 28px;
+  --doke-financial-card-radius: 16px;
+  --doke-financial-control-radius: 16px;
+  --doke-financial-padding-x: 36px;
+  --doke-financial-border: #cfe0f0;
+  --doke-financial-border-soft: #dce8f4;
+  --doke-financial-surface-soft: #f8fbff;
+  --doke-financial-title: #0b3c7c;
+  --doke-financial-muted: #6f85a1;
+  --doke-financial-primary: #2475bd;
+  --doke-financial-primary-strong: #155fa6;
+}
+
+:is(.charge-modal__surface.doke-financial-modal__surface, .wallet-dialog--withdraw.doke-financial-modal__surface) {
+  width: min(calc(100vw - 48px), var(--doke-financial-modal-width)) !important;
+  max-width: var(--doke-financial-modal-width) !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(207, 224, 240, .95) !important;
+  border-radius: var(--doke-financial-modal-radius) !important;
+  background: #fff !important;
+  box-shadow: 0 30px 80px rgba(18, 39, 62, .24) !important;
+  text-align: left !important;
+}
+
+.charge-modal__surface.doke-financial-modal__surface {
+  display: block !important;
+  padding: 0 !important;
+}
+
+:is(.charge-modal__header.doke-financial-modal__header, .wallet-dialog__header.doke-financial-modal__header),
+.charge-modal .charge-modal__header.surface-modal__hero.doke-financial-modal__header {
+  display: block !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 34px var(--doke-financial-padding-x) 20px !important;
+  padding-right: 90px !important;
+  text-align: left !important;
+  background: transparent !important;
+}
+
+.charge-modal__header .surface-modal__intro {
+  display: block !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+}
+
+:is(.charge-modal__eyebrow.doke-financial-modal__eyebrow, .wallet-dialog__badge.doke-financial-modal__eyebrow) {
+  min-height: 32px !important;
+  width: fit-content !important;
+  margin: 0 0 26px !important;
+  padding: 0 14px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  border-radius: 999px !important;
+  font-size: .74rem !important;
+  line-height: 1 !important;
+  font-weight: 800 !important;
+  letter-spacing: .085em !important;
+  text-transform: uppercase !important;
+}
+
+:is(.charge-modal__eyebrow.doke-financial-modal__eyebrow, .wallet-dialog__badge.doke-financial-modal__eyebrow) svg {
+  width: 15px !important;
+  height: 15px !important;
+}
+
+:is(.charge-modal__header .doke-financial-modal__title, .wallet-dialog__header .doke-financial-modal__title) {
+  display: block !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  color: var(--doke-financial-title) !important;
+  font-size: clamp(2.15rem, 3.35vw, 2.55rem) !important;
+  line-height: 1.04 !important;
+  letter-spacing: -.058em !important;
+  font-weight: 800 !important;
+  text-align: left !important;
+}
+
+:is(.charge-modal__header p, .wallet-dialog__header p) {
+  max-width: 455px !important;
+  margin: 12px 0 0 !important;
+  color: var(--doke-financial-muted) !important;
+  font-size: 1rem !important;
+  line-height: 1.45 !important;
+  font-weight: 500 !important;
+  text-align: left !important;
+}
+
+:is(.charge-modal__close, .wallet-dialog__close) {
+  position: absolute !important;
+  top: 30px !important;
+  right: 30px !important;
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border: 1px solid var(--doke-financial-border) !important;
+  border-radius: 16px !important;
+  background: #f3f8fd !important;
+  color: var(--doke-financial-title) !important;
+  box-shadow: none !important;
+}
+
+:is(.charge-modal__body.doke-financial-modal__body, .wallet-dialog__body) {
+  width: 100% !important;
+  max-width: none !important;
+  display: grid !important;
+  gap: 18px !important;
+  margin: 0 !important;
+  padding: 0 var(--doke-financial-padding-x) 28px !important;
+  text-align: left !important;
+}
+
+.charge-modal .charge-modal__field.doke-financial-modal__field,
+.wallet-dialog-field.doke-financial-modal__field {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+  justify-items: stretch !important;
+}
+
+.charge-modal .charge-modal__field.doke-financial-modal__field + .charge-modal__field.doke-financial-modal__field {
+  margin-top: 0 !important;
+}
+
+:is(.charge-modal__field > span, .wallet-dialog-field > span:first-child) {
+  display: block !important;
+  width: 100% !important;
+  margin: 0 !important;
+  color: #6a819e !important;
+  font-size: .86rem !important;
+  line-height: 1.25 !important;
+  font-weight: 800 !important;
+  letter-spacing: -.01em !important;
+  text-align: left !important;
+}
+
+:is(.charge-modal__money-field.doke-financial-modal__money-field, .wallet-dialog-money-field.doke-financial-modal__money-field, .charge-modal__field select.doke-financial-modal__control, .wallet-dialog-field input, .wallet-dialog-field select, .wallet-dialog-control) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 56px !important;
+  height: 56px !important;
+  border: 1px solid var(--doke-financial-border) !important;
+  border-radius: var(--doke-financial-control-radius) !important;
+  background: var(--doke-financial-surface-soft) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.72) inset !important;
+}
+
+:is(.charge-modal__money-field.doke-financial-modal__money-field, .wallet-dialog-money-field.doke-financial-modal__money-field) {
+  display: grid !important;
+  grid-template-columns: 68px minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+:is(.charge-modal__money-field > span, .wallet-dialog-money-field > span) {
+  min-height: 56px !important;
+  height: 56px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  border-right: 1px solid var(--doke-financial-border-soft) !important;
+  background: rgba(255,255,255,.56) !important;
+  color: var(--doke-financial-title) !important;
+  font-size: .98rem !important;
+  line-height: 1 !important;
+  font-weight: 800 !important;
+}
+
+:is(.charge-modal__money-field input, .wallet-dialog-money-field input),
+:is(.charge-modal__money-field input, .wallet-dialog-money-field input):is(:hover, :focus, :focus-visible, :active) {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 56px !important;
+  min-height: 56px !important;
+  margin: 0 !important;
+  padding: 0 20px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--doke-financial-title) !important;
+  font-size: 1.05rem !important;
+  line-height: 56px !important;
+  font-weight: 700 !important;
+}
+
+:is(.charge-modal__field select.doke-financial-modal__control, .wallet-dialog-field select, .wallet-dialog-control) {
+  appearance: auto !important;
+  -webkit-appearance: menulist !important;
+  padding: 0 18px !important;
+  color: var(--doke-financial-title) !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+}
+
+.wallet-dialog-summary--withdraw.doke-financial-modal__summary {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.wallet-dialog-summary--withdraw article {
+  min-height: 86px !important;
+  display: grid !important;
+  align-content: center !important;
+  gap: 8px !important;
+  padding: 16px 18px !important;
+  border: 1px solid var(--doke-financial-border-soft) !important;
+  border-radius: var(--doke-financial-card-radius) !important;
+  background: var(--doke-financial-surface-soft) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.72) inset !important;
+}
+
+.wallet-dialog-summary--withdraw article span {
+  margin: 0 !important;
+  color: var(--doke-financial-muted) !important;
+  font-size: .84rem !important;
+  font-weight: 700 !important;
+}
+
+.wallet-dialog-summary--withdraw article strong {
+  color: var(--doke-financial-title) !important;
+  font-size: 1rem !important;
+  font-weight: 800 !important;
+}
+
+:is(.charge-modal__actions.doke-financial-modal__footer, .wallet-dialog__footer.doke-financial-modal__footer) {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.15fr) !important;
+  gap: 14px !important;
+  margin: 0 !important;
+  padding: 22px var(--doke-financial-padding-x) 30px !important;
+  border-top: 1px solid var(--doke-financial-border-soft) !important;
+  background: linear-gradient(180deg, #fbfdff 0%, #f8fbff 100%) !important;
+}
+
+:is(.charge-modal__button, .wallet-dialog-btn) {
+  width: 100% !important;
+  min-height: 52px !important;
+  height: 52px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 22px !important;
+  border-radius: 16px !important;
+  font-size: .96rem !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+}
+
+:is(.charge-modal__button:not(.charge-modal__button--ghost), .wallet-dialog-btn--primary) {
+  border: 1px solid var(--doke-financial-primary) !important;
+  background: linear-gradient(135deg, var(--doke-financial-primary) 0%, var(--doke-financial-primary-strong) 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 24px rgba(20, 95, 167, .18) !important;
+}
+
+:is(.charge-modal__button--ghost, .wallet-dialog-btn--secondary) {
+  border: 1px solid var(--doke-financial-border) !important;
+  background: #f8fbff !important;
+  color: var(--doke-financial-title) !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --doke-financial-padding-x: 22px;
+  }
+
+  :is(.charge-modal__surface.doke-financial-modal__surface, .wallet-dialog--withdraw.doke-financial-modal__surface) {
+    width: min(calc(100vw - 24px), 520px) !important;
+    border-radius: 24px !important;
+  }
+
+  :is(.charge-modal__header.doke-financial-modal__header, .wallet-dialog__header.doke-financial-modal__header),
+  .charge-modal .charge-modal__header.surface-modal__hero.doke-financial-modal__header {
+    padding-top: 28px !important;
+    padding-bottom: 18px !important;
+    padding-right: 72px !important;
+  }
+
+  :is(.charge-modal__header .doke-financial-modal__title, .wallet-dialog__header .doke-financial-modal__title) {
+    font-size: clamp(1.78rem, 8.5vw, 2.1rem) !important;
+  }
+
+  :is(.charge-modal__close, .wallet-dialog__close) {
+    top: 22px !important;
+    right: 22px !important;
+  }
+
+  .wallet-dialog-summary--withdraw.doke-financial-modal__summary,
+  :is(.charge-modal__actions.doke-financial-modal__footer, .wallet-dialog__footer.doke-financial-modal__footer) {
+    grid-template-columns: 1fr !important;
+  }
+
+  :is(.charge-modal__actions.doke-financial-modal__footer, .wallet-dialog__footer.doke-financial-modal__footer) {
+    padding-top: 18px !important;
+    padding-bottom: 22px !important;
+  }
+}
+
+
+/* v5 — Money field seam fix
+   O campo monetário é uma peça única: a borda e o radius pertencem ao wrapper;
+   prefixo e input internos não podem desenhar borda/radius próprios. */
+html body :is(.charge-modal, .wallet-dialog) :is(.charge-modal__money-field.doke-financial-modal__money-field, .wallet-dialog-money-field.doke-financial-modal__money-field) {
+  isolation: isolate !important;
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 68px minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  width: 100% !important;
+  height: 56px !important;
+  min-height: 56px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid var(--doke-financial-border) !important;
+  border-radius: var(--doke-financial-control-radius) !important;
+  background: var(--doke-financial-surface-soft) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .72) inset !important;
+}
+
+html body :is(.charge-modal, .wallet-dialog) :is(.charge-modal__money-field.doke-financial-modal__money-field, .wallet-dialog-money-field.doke-financial-modal__money-field) > span {
+  position: relative !important;
+  z-index: 1 !important;
+  width: 68px !important;
+  min-width: 68px !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  display: grid !important;
+  place-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-right: 1px solid var(--doke-financial-border-soft) !important;
+  border-radius: 0 !important;
+  background: rgba(255, 255, 255, .52) !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+  color: var(--doke-financial-title) !important;
+}
+
+html body :is(.charge-modal, .wallet-dialog) :is(.charge-modal__money-field.doke-financial-modal__money-field, .wallet-dialog-money-field.doke-financial-modal__money-field) > input,
+html body :is(.charge-modal, .wallet-dialog) :is(.charge-modal__money-field.doke-financial-modal__money-field, .wallet-dialog-money-field.doke-financial-modal__money-field) > input:is(:hover, :focus, :focus-visible, :active) {
+  position: relative !important;
+  z-index: 1 !important;
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 20px !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  border: 0 !important;
+  border-left: 0 !important;
+  border-radius: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  clip-path: inset(0) !important;
+}
+
+html body :is(.charge-modal, .wallet-dialog) :is(.charge-modal__money-field.doke-financial-modal__money-field, .wallet-dialog-money-field.doke-financial-modal__money-field) > input::-webkit-inner-spin-button,
+html body :is(.charge-modal, .wallet-dialog) :is(.charge-modal__money-field.doke-financial-modal__money-field, .wallet-dialog-money-field.doke-financial-modal__money-field) > input::-webkit-outer-spin-button {
+  margin: 0 !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+}
+
+html body :is(.charge-modal, .wallet-dialog) :is(.charge-modal__money-field.doke-financial-modal__money-field, .wallet-dialog-money-field.doke-financial-modal__money-field):focus-within {
+  border-color: var(--doke-financial-border) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .72) inset !important;
+}

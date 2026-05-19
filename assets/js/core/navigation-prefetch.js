@@ -70,7 +70,7 @@
     ajuda: ['notificacoes.html', 'novidades.html', 'index.html'],
     comunidade: ['comunidade-interna.html', 'perfil.html', 'mensagens.html'],
     'comunidade-interna': ['comunidade.html', 'mensagens.html', 'perfil.html'],
-    perfil: ['mensagens.html', 'pedidos.html', 'tornar-profissional.html'],
+    perfil: ['mensagens.html', 'pedidos.html', 'tornar-profissional.html', 'anunciar-servico.html'],
     carteira: ['pagamento.html', 'adicionar-cartao.html', 'perfil.html'],
     configuracoes: ['perfil.html', 'ajuda.html', 'index.html'],
     resultados: ['detalhe-anuncio.html', 'index.html', 'perfil.html'],

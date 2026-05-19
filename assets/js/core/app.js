@@ -70,7 +70,7 @@ const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", 
 const ROUTE_SWAP_STATE_CLASSES = ["is-shell-swapping", "is-route-instant-swap"];
 const PRESERVED_BODY_STATE_CLASSES = [...SHELL_STATE_CLASSES, ...ROUTE_SWAP_STATE_CLASSES];
 const INTERNAL_PROFILE_PATH = "/perfil.html";
-const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/carteira.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento.html", "/finalizar-pedido.html", "/avaliacao.html", "/adicionar-cartao.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/mais.html", "/"]);
+const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/carteira.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento.html", "/finalizar-pedido.html", "/avaliacao.html", "/adicionar-cartao.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/anunciar-servico.html", "/mais.html", "/"]);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", "/comunidade-interna.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
@@ -475,6 +475,9 @@ const INTERNAL_VIEW_STYLE_HINTS = {
   "/perfil-profissional.html": [
     "assets/css/pages/perfil-profissional.css"
   ],
+  "/anunciar-servico.html": [
+    "assets/css/pages/anunciar-servico.css"
+  ],
   "/configuracoes.html": [
     "assets/css/pages/internal-shell.css",
     "assets/css/pages/configuracoes.css",
@@ -518,7 +521,8 @@ const INTERNAL_VIEW_SCRIPT_HINTS = {
   "/perfil.html": ["assets/js/pages/perfil.js"],
   "/perfil-profissional.html": ["assets/js/pages/perfil-base.js"],
   "/detalhe-anuncio.html": ["assets/js/pages/detalhe-anuncio.js"],
-  "/tornar-profissional.html": ["assets/js/pages/tornar-profissional.js"]
+  "/tornar-profissional.html": ["assets/js/pages/tornar-profissional.js"],
+  "/anunciar-servico.html": ["assets/js/pages/anunciar-servico.js"]
 };
 
 const preloadedScriptHrefs = new Set();

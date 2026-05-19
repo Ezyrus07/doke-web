@@ -280,7 +280,8 @@
     withdrawForm?.addEventListener('submit', (event) => {
       event.preventDefault();
 
-      const amount = withdrawAmountInput?.value || 'R$ 1.200,00';
+      const rawAmount = withdrawAmountInput?.value || '1.200,00';
+      const amount = /^\s*R\$/.test(rawAmount) ? rawAmount : `R$ ${rawAmount}`;
       const destination = getAccountField('withdrawDestination')?.textContent || 'PIX • Nubank';
 
       createWithdrawTransaction(amount, destination);
