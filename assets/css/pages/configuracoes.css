@@ -1091,3 +1091,16 @@ body.doke-settings-redesign svg {
     flex: 0 0 auto;
   }
 }
+
+/* Desktop zoom parity: settings uses a custom main wrapper instead of
+   .page__content-inner, so it must opt into the shared index rail here. */
+@media (min-width: 1025px) {
+  body[data-page="configuracoes"].settings-page-shell .settings-main,
+  body[data-page="configuracoes"].settings-page-shell .settings-layout {
+    width: min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), 1360px) !important;
+    max-width: min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), 1360px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+  }
+}

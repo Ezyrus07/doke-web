@@ -1,5 +1,6 @@
 /* Página própria: Torne-se profissional. Mantém visual limpo sem depender de configuracoes.css. */
 body.become-pro-page-shell {
+  --doke-shared-internal-rail: min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), 1360px);
   --pro-bg: #eef7fd;
   --pro-surface: #ffffff;
   --pro-surface-soft: #f8fbff;
@@ -27,6 +28,27 @@ body.become-pro-page-shell svg {
   background:
     radial-gradient(circle at 28% 12%, rgba(255,255,255,.9) 0 280px, transparent 520px),
     linear-gradient(180deg, #eef7fd 0%, #eaf4fb 100%);
+}
+
+@media (min-width: 761px) {
+  body[data-page="tornar-profissional"].become-pro-page-shell.has-global-header > .app-shell > .page > .app-header.app-header--become-pro {
+    width: 100% !important;
+    inline-size: 100% !important;
+    max-width: none !important;
+    max-inline-size: none !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    justify-content: center !important;
+  }
+
+  body[data-page="tornar-profissional"].become-pro-page-shell.has-global-header > .app-shell > .page > .app-header.app-header--become-pro > .app-header__inner {
+    width: var(--doke-shared-internal-rail) !important;
+    inline-size: var(--doke-shared-internal-rail) !important;
+    max-width: var(--doke-shared-internal-rail) !important;
+    max-inline-size: var(--doke-shared-internal-rail) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
 }
 
 .become-pro-screen {
@@ -105,7 +127,7 @@ body.become-pro-page-shell svg {
 
 .become-pro-progress__track {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: center;
   gap: 10px;
 }
@@ -348,7 +370,7 @@ body.become-pro-page-shell svg {
 
 .become-pro-toggles {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   margin-top: 18px;
 }
@@ -462,9 +484,262 @@ body.become-pro-page-shell svg {
 }
 
 .become-pro-confirm input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1.6px solid #c9d8ea;
+  border-radius: 5px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+
+.become-pro-confirm input::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  transform: scale(0);
+  transition: transform .16s ease;
+  background: center / 10px 10px no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 6.2 4.4 8.6 10 3'/%3E%3C/svg%3E");
+}
+
+.become-pro-confirm input:checked {
+  border-color: var(--pro-blue-strong);
+  background: var(--pro-blue-strong);
+  box-shadow: 0 0 0 3px rgba(21, 89, 159, .12);
+}
+
+.become-pro-confirm input:checked::after {
+  transform: scale(1);
+}
+
+.become-pro-confirm input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(38, 116, 217, .16);
+}
+
+.become-pro-verification-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(22, 184, 149, .18);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(22, 184, 149, .1), rgba(38, 116, 217, .07));
+  color: #315878;
+  font-weight: 700;
+}
+
+.become-pro-verification-note strong {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--pro-green-dark);
+  font-size: .78rem;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.become-pro-account-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.become-pro-account-choice label {
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid #d4e0ef;
+  border-radius: 14px;
+  background: #fbfdff;
+  color: var(--pro-blue-dark);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.become-pro-account-choice input {
   width: 18px;
   height: 18px;
   accent-color: var(--pro-blue);
+}
+
+.become-pro-account-choice label:has(input:checked) {
+  border-color: rgba(38, 116, 217, .42);
+  background: #eef6ff;
+  box-shadow: 0 10px 24px rgba(38, 116, 217, .08);
+}
+
+.become-pro-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.become-pro-upload-card {
+  min-height: 118px;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding: 16px;
+  border: 1px dashed rgba(38, 116, 217, .34);
+  border-radius: 16px;
+  background: #fbfdff;
+  color: var(--pro-muted);
+  cursor: pointer;
+}
+
+.become-pro-upload-card input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.become-pro-upload-card span {
+  color: var(--pro-blue-dark);
+  font-weight: 800;
+}
+
+.become-pro-upload-card small {
+  color: #6a809d;
+  font-size: .82rem;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.become-pro-privacy-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.become-pro-privacy-card {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid rgba(13, 47, 89, .08);
+  border-radius: 16px;
+  background: #fbfdff;
+}
+
+.become-pro-privacy-card strong {
+  color: var(--pro-blue-dark);
+  font-weight: 800;
+}
+
+.become-pro-privacy-card span {
+  color: var(--pro-muted);
+  font-size: .88rem;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+.become-pro-confirm-checks {
+  display: grid;
+  gap: 12px;
+}
+
+.become-pro-submit-state {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(8, 42, 85, .24);
+  backdrop-filter: blur(8px);
+}
+
+.become-pro-submit-state[hidden] {
+  display: none;
+}
+
+.become-pro-submit-state__card {
+  width: min(100%, 430px);
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 34px 30px 28px;
+  border: 1px solid rgba(13, 47, 89, .08);
+  border-radius: 26px;
+  background: #fff;
+  color: var(--pro-text);
+  text-align: center;
+  box-shadow: 0 28px 80px rgba(13, 47, 89, .18);
+  transform: translateY(10px) scale(.98);
+  opacity: 0;
+  animation: become-pro-submit-pop .24s ease forwards;
+}
+
+.become-pro-submit-state__icon {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--pro-green), var(--pro-blue));
+  color: #fff;
+  box-shadow: 0 18px 36px rgba(22, 184, 149, .24);
+}
+
+.become-pro-submit-state__icon svg {
+  width: 38px;
+  height: 38px;
+  stroke-width: 3;
+}
+
+.become-pro-submit-state h2 {
+  margin: 6px 0 0;
+  color: var(--pro-blue-dark);
+  font-size: 1.45rem;
+  line-height: 1.12;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+.become-pro-submit-state p {
+  margin: 0;
+  color: var(--pro-muted);
+  font-size: .96rem;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+.become-pro-submit-state__button {
+  min-height: 48px;
+  margin-top: 6px;
+  padding: 0 26px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2674d9 0%, #0f4a86 100%);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 14px 28px rgba(38, 116, 217, .18);
+}
+
+@keyframes become-pro-submit-pop {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .become-pro-benefits-card {
@@ -638,10 +913,18 @@ body.become-pro-page-shell svg {
   }
 
   .become-pro-grid,
+  .become-pro-account-choice,
+  .become-pro-upload-grid,
+  .become-pro-privacy-grid,
   .become-pro-toggles,
   .become-pro-actions,
   .become-pro-benefits-card ul {
     grid-template-columns: 1fr;
+  }
+
+  .become-pro-verification-note {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .become-pro-toggle {

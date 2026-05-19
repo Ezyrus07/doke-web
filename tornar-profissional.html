@@ -13,7 +13,6 @@
   <link rel="stylesheet" href="assets/css/pages/internal-shell.css?v=20260502-single-header-contract-v5">
   <link rel="stylesheet" href="assets/css/components/shell/app-header.css?v=20260517-header-gap-v3">
   <link rel="stylesheet" href="assets/css/components/layout/responsive-page-contract.css?v=20260514-header-parity-audit-v2">
-  <link rel="stylesheet" href="assets/css/components/shell/doke-shell-contract.css?v=20260518-internal-rail-v24">
   <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <link rel="stylesheet" href="assets/css/components/shell/mobile-app-shell.css?v=20260515-bottom-nav-green-v1">
   <link rel="stylesheet" href="assets/css/components/ui/doke-ui-system.css?v=20260501-ui-contract-v2-components">
@@ -29,6 +28,7 @@
   <link rel="stylesheet" href="assets/css/components/shell/mobile-base-stability.css?v=20260501-mobile-base-stability-v1">
   <link rel="stylesheet" href="assets/css/components/help/help-drawer.css?v=20260518-help-drawer-v1">
   <link rel="stylesheet" href="assets/css/pages/tornar-profissional.css?v=20260518-become-pro-v23">
+  <link rel="stylesheet" href="assets/css/components/shell/doke-shell-contract.css?v=20260518-internal-rail-v25-final">
 </head>
 <body data-page="tornar-profissional" class="doke-app-shell-page app-shell-page internal-shell-page become-pro-page-shell doke-flow has-global-header">
   <div class="app-shell">
@@ -69,8 +69,8 @@
             <div class="become-pro-layout">
               <section class="become-pro-form-card" aria-labelledby="become-pro-title">
                 <div class="become-pro-progress" aria-label="Progresso do cadastro">
-                  <span class="become-pro-progress__pill">Etapa <strong data-step-current>1</strong> de 3</span>
-                  <div class="become-pro-progress__track" aria-hidden="true"><span class="is-active"></span><span></span><span></span></div>
+                  <span class="become-pro-progress__pill">Etapa <strong data-step-current>1</strong> de 4</span>
+                  <div class="become-pro-progress__track" aria-hidden="true"><span class="is-active"></span><span></span><span></span><span></span></div>
                 </div>
 
                 <form class="become-pro-form" action="#" autocomplete="off">
@@ -142,12 +142,58 @@
                   </div>
 
                   <div class="become-pro-step-panel" data-step-panel="3" hidden>
-                    <div class="become-pro-section-head"><h2>Confirmação</h2><p>Revise as informações e aceite os termos para criar seu perfil profissional.</p></div>
-                    <div class="become-pro-confirm"><span>Você poderá adicionar documentos, certificados e portfólio depois.</span><label><input type="checkbox"> Aceito os termos para atuar como profissional na Doke.</label></div>
+                    <div class="become-pro-section-head">
+                      <h2>Seguran&ccedil;a e verifica&ccedil;&atilde;o</h2>
+                      <p>Esses dados ficam privados e ajudam a liberar profissionais mais confi&aacute;veis na plataforma.</p>
+                    </div>
+
+                    <div class="become-pro-verification-note">
+                      <strong>Privado</strong>
+                      <span>CPF, CNPJ, documento, selfie e endere&ccedil;o completo n&atilde;o aparecem no perfil p&uacute;blico.</span>
+                    </div>
+
+                    <div class="become-pro-account-choice" role="group" aria-label="Tipo de conta">
+                      <label><input type="radio" name="accountType" value="pf" checked><span>Pessoa f&iacute;sica</span></label>
+                      <label><input type="radio" name="accountType" value="pj"><span>Empresa</span></label>
+                    </div>
+
+                    <div class="become-pro-grid">
+                      <label class="become-pro-field"><span>Nome completo</span><input type="text" name="legalName" placeholder="Ex.: Jo&atilde;o da Silva"></label>
+                      <label class="become-pro-field"><span>CPF ou CNPJ</span><input type="text" name="taxId" placeholder="Somente n&uacute;meros"></label>
+                      <label class="become-pro-field"><span>Data de nascimento</span><input type="text" name="birthDate" placeholder="DD/MM/AAAA"></label>
+                      <label class="become-pro-field"><span>Telefone verificado</span><input type="text" name="verifiedPhone" placeholder="(31) 99999-9999"></label>
+                      <label class="become-pro-field"><span>CEP da base</span><input type="text" name="zipCode" placeholder="Ex.: 30140-071"></label>
+                      <label class="become-pro-field"><span>Cidade e estado</span><input type="text" name="cityState" placeholder="Ex.: Belo Horizonte, MG"></label>
+                      <label class="become-pro-field become-pro-field--full"><span>Endere&ccedil;o completo</span><input type="text" name="fullAddress" placeholder="Rua, n&uacute;mero, bairro e complemento"></label>
+                    </div>
+
+                    <div class="become-pro-upload-grid" aria-label="Envio de documentos">
+                      <label class="become-pro-upload-card"><input type="file" name="identityDocument" accept="image/*,.pdf"><span>Documento com foto</span><small>RG, CNH ou documento profissional.</small></label>
+                      <label class="become-pro-upload-card"><input type="file" name="documentSelfie" accept="image/*"><span>Selfie de confirma&ccedil;&atilde;o</span><small>Ajuda a confirmar que o documento pertence a voc&ecirc;.</small></label>
+                      <label class="become-pro-upload-card"><input type="file" name="companyDocument" accept="image/*,.pdf"><span>Comprovante ou CNPJ</span><small>Opcional para pessoa f&iacute;sica, recomendado para empresa.</small></label>
+                    </div>
+                  </div>
+
+                  <div class="become-pro-step-panel" data-step-panel="4" hidden>
+                    <div class="become-pro-section-head">
+                      <h2>Confirma&ccedil;&atilde;o</h2>
+                      <p>Revise os dados e envie seu perfil para an&aacute;lise antes de come&ccedil;ar a receber pedidos.</p>
+                    </div>
+                    <div class="become-pro-privacy-grid">
+                      <div class="become-pro-privacy-card"><strong>Perfil p&uacute;blico</strong><span>Nome profissional, categoria, descri&ccedil;&atilde;o, regi&atilde;o e experi&ecirc;ncia.</span></div>
+                      <div class="become-pro-privacy-card"><strong>Dados privados</strong><span>CPF/CNPJ, documento, selfie, telefone e endere&ccedil;o detalhado.</span></div>
+                      <div class="become-pro-privacy-card"><strong>An&aacute;lise</strong><span>A Doke pode pedir corre&ccedil;&otilde;es antes de liberar o perfil profissional.</span></div>
+                    </div>
+                    <div class="become-pro-confirm">
+                      <span>Depois da aprova&ccedil;&atilde;o, voc&ecirc; poder&aacute; adicionar certificados, portf&oacute;lio e an&uacute;ncios.</span>
+                      <div class="become-pro-confirm-checks">
+                        <label><input type="checkbox" checked> Confirmo que os dados enviados s&atilde;o verdadeiros.</label>
+                        <label><input type="checkbox" checked> Aceito os termos para atuar como profissional na Doke e autorizo a an&aacute;lise dos dados.</label>
+                      </div>
+                    </div>
                   </div>
 
                   <div class="become-pro-toggles" aria-label="Preferências rápidas">
-                    <button class="become-pro-toggle is-active" type="button" aria-pressed="true"><span></span><svg viewBox="0 0 24 24"><path d="M5.5 11 12 5l6.5 6"></path><path d="M7.5 10v8h9v-8"></path></svg>Faz visita técnica</button>
                     <button class="become-pro-toggle is-active" type="button" aria-pressed="true"><span></span><svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6Z"></path><path d="M8 10h8"></path></svg>Aceita orçamento pelo chat</button>
                     <button class="become-pro-toggle is-active" type="button" aria-pressed="true"><span></span><svg viewBox="0 0 24 24"><path d="m13 3-7 10h5l-1 8 7-11h-5z"></path></svg>Atende emergência</button>
                   </div>
@@ -168,8 +214,16 @@
                   <li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Montar portfólio</strong><p>Mostre seus trabalhos e destaque seu talento.</p></div></li>
                   <li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Participar de comunidades</strong><p>Conecte-se, tire dúvidas e troque experiências.</p></div></li>
                 </ul>
-                <div class="become-pro-toolbox" aria-hidden="true"><span class="become-pro-toolbox__box"></span><span class="become-pro-toolbox__tool become-pro-toolbox__tool--brush"></span><span class="become-pro-toolbox__tool become-pro-toolbox__tool--wrench"></span><span class="become-pro-toolbox__check"><svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"></path></svg></span></div>
               </aside>
+            </div>
+
+            <div class="become-pro-submit-state" data-submit-state hidden aria-live="polite" aria-modal="true" role="dialog">
+              <div class="become-pro-submit-state__card">
+                <span class="become-pro-submit-state__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"></path></svg></span>
+                <h2>Perfil enviado para an&aacute;lise</h2>
+                <p>Vamos revisar os dados de seguran&ccedil;a e avisar quando sua conta profissional estiver liberada.</p>
+                <button class="become-pro-submit-state__button" type="button" data-submit-close>Entendi</button>
+              </div>
             </div>
           </section>
         </div>

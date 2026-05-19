@@ -1098,19 +1098,29 @@ window.DokeInitProfile = () => {
     const blocks = section.blocks || [];
 
     if (profileMode === "client" || profileMode === "client-owner") {
-      const clientTexts = blocks.length
-        ? blocks.slice(0, 3).map((item) => normalize(item.text))
-        : [
-            "Normalmente ja sabe o pedido com fotos, objetivo, prioridade e restricoes principais para filtrar proposta generica.",
-            "Gosta de comunicacao direta, leitura visual do ambiente e combinados claros antes de fechar atendimento."
-          ];
+      const clientTexts = [
+        "Organiza pedidos com fotos, medidas e prioridades antes de conversar com profissionais.",
+        "Prefere propostas objetivas, prazos claros e etapas combinadas antes de fechar o servi&ccedil;o.",
+        "Valoriza atendimento direto, cuidado com o ambiente e atualiza&ccedil;&otilde;es durante a execu&ccedil;&atilde;o."
+      ];
 
       return renderPanelShell(`
         <section class="profile-client-about profile-client-about--single" aria-label="Sobre o cliente">
           <article class="profile-client-about__card">
             <span class="profile-client-about__eyebrow">Sobre o cliente</span>
-            <h3>Como prefere contratar</h3>
-            ${clientTexts.map((text) => `<p>${text}</p>`).join("")}
+            <h3>Contrata com escopo claro e decis&atilde;o r&aacute;pida</h3>
+            <p>Perfil preparado para receber propostas melhores: o pedido costuma chegar com contexto, refer&ecirc;ncias e crit&eacute;rios de escolha bem definidos.</p>
+            <ul class="profile-client-about__list">
+              ${clientTexts.map((text) => `<li>${text}</li>`).join("")}
+            </ul>
+          </article>
+          <article class="profile-client-about__card profile-client-pro-cta">
+            <span class="profile-client-about__eyebrow">Conta profissional</span>
+            <h3>Comece a anunciar seus serviços</h3>
+            <p>Transforme este perfil em uma vitrine profissional para receber pedidos, conversar com clientes e publicar seus anúncios.</p>
+            <a class="profile-client-pro-cta__button" href="tornar-profissional.html" data-profile-action-role="become-professional">
+              Tornar-se profissional
+            </a>
           </article>
         </section>
       `);
@@ -2230,8 +2240,4 @@ window.DokeInitProfile = () => {
 };
 
 window.DokeInitProfile();
-
-
-
-
 

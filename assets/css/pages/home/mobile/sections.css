@@ -1994,3 +1994,191 @@
     text-overflow: ellipsis !important;
   }
 }
+
+/* HOME MOBILE RAIL REPAIR v2
+   Scope: home mobile only.
+   Fixes the mobile density for:
+   - Mais anúncios: horizontal rail with readable cards, not compressed strips.
+   - Publicações em destaque: slightly narrower card for better swipe affordance.
+   - Profissionais em destaque: wider/readable profile cards. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section.more-services,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services,
+  html.home-index-root body.home-index-shell section.home-publications,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.home-publications,
+  html.home-index-root body.home-index-shell section.featured-pros,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-pros {
+    overflow: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid],
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services [data-more-services-grid],
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.home-publications #home-publications-track {
+    display: flex !important;
+    flex-flow: row nowrap !important;
+    gap: 14px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 0 8px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x proximity !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid]::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid] > article.doke-ad-card,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services [data-more-services-grid] > article.doke-ad-card,
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track > article.publication-card,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.home-publications #home-publications-track > article.publication-card {
+    flex: 0 0 calc(100% - 72px) !important;
+    width: calc(100% - 72px) !important;
+    min-width: calc(100% - 72px) !important;
+    max-width: calc(100% - 72px) !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    scroll-snap-align: start !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid] > article.doke-ad-card > *,
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track > article.publication-card > *,
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid] :is(.doke-ad-card__media, .doke-ad-card__body, .doke-ad-card__footer),
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track :is(.publication-card__media, .publication-card__content) {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros :is(.featured-pros__grid, #featured-pros-track),
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-pros :is(.featured-pros__grid, #featured-pros-track) {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: minmax(166px, 46vw) !important;
+    grid-template-columns: none !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 0 8px !important;
+    margin: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x proximity !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros :is(.featured-pros__grid, #featured-pros-track)::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .featured-pros__grid .pro-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    flex: none !important;
+    display: grid !important;
+    grid-template-rows: auto 1fr auto !important;
+    min-height: 218px !important;
+    padding: 0 !important;
+    border-radius: 24px !important;
+    scroll-snap-align: start !important;
+    overflow: hidden !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .featured-pros__grid .pro-card__header {
+    display: grid !important;
+    grid-template-columns: 64px minmax(0, 1fr) !important;
+    grid-template-areas:
+      "avatar score"
+      "avatar identity" !important;
+    align-items: start !important;
+    column-gap: 12px !important;
+    row-gap: 10px !important;
+    padding: 18px 16px 10px !important;
+    margin: 0 !important;
+    text-align: left !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .featured-pros__grid .pro-card__avatar {
+    grid-area: avatar !important;
+    width: 64px !important;
+    height: 64px !important;
+    min-width: 64px !important;
+    min-height: 64px !important;
+    max-width: 64px !important;
+    max-height: 64px !important;
+    border-radius: 20px !important;
+    margin: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .featured-pros__grid .pro-card__identity {
+    grid-area: identity !important;
+    display: grid !important;
+    justify-items: start !important;
+    min-width: 0 !important;
+    text-align: left !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .featured-pros__grid .pro-card__identity strong {
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important;
+    overflow: hidden !important;
+    font-size: 1rem !important;
+    line-height: 1.12 !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .featured-pros__grid .pro-card__score {
+    grid-area: score !important;
+    justify-self: end !important;
+    align-self: start !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    min-height: 36px !important;
+    padding: 0 14px !important;
+    border-radius: 999px !important;
+    margin: 0 !important;
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .featured-pros__grid .pro-card__footer {
+    display: block !important;
+    margin-top: auto !important;
+    padding: 10px 16px 16px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .featured-pros__grid .pro-card__cta {
+    width: 100% !important;
+    min-height: 52px !important;
+    border-radius: 18px !important;
+    font-size: 0.95rem !important;
+    padding: 0 16px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  html.home-index-root body.home-index-shell section.featured-pros :is(.featured-pros__grid, #featured-pros-track) {
+    grid-auto-columns: minmax(162px, 47vw) !important;
+    gap: 12px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .featured-pros__grid .pro-card {
+    min-height: 210px !important;
+  }
+}

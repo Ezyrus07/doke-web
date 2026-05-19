@@ -2994,504 +2994,60 @@ body {
   }
 }
 
-/* Doke Shell Contract v21 — header follows the page content rail
-   Owner: components/shell
-   Purpose: prevent non-index headers from stretching to viewport extremes at low zoom.
-   The outer header owns vertical flow; the inner rail mirrors the page workspace. */
-@media (min-width: 761px) {
-  body.has-global-header:not(.home-index-shell) {
-    --doke-header-content-rail-v21: min(
-      calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)),
-      var(--doke-page-header-max, var(--doke-app-shell-max, 1180px))
-    );
+/*
+  Doke Shell Contract v21 — internal desktop rail parity
+  Responsabilidade: alinhar o trilho desktop do header e do conteúdo nas páginas
+  internas ao mesmo eixo visual do index, sem depender da classe
+  `has-global-header`, que não está presente de forma consistente em todos os
+  HTMLs. Mantém a home no contrato próprio e evita mexer nas telas full-bleed.
+*/
+@media (min-width: 1025px) {
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell) {
+    --doke-internal-desktop-rail-v21: calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)) !important;
   }
 
-  body.become-pro-page-shell.has-global-header {
-    --doke-page-header-max: 1288px;
-  }
-
-  body.notifications-page-shell.has-global-header {
-    --doke-page-header-max: 1040px;
-  }
-
-  body.settings-page-shell.has-global-header,
-  body.wallet-page-shell.has-global-header,
-  body.orders-page-shell.has-global-header,
-  body.communities-page-shell.has-global-header,
-  body.search-results-body.has-global-header,
-  body.profile-page-shell.has-global-header {
-    --doke-page-header-max: var(--doke-app-shell-max, 1180px);
-  }
-
-  body.has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header {
-    inline-size: 100% !important;
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell) > .app-shell > .page > :is(.topbar, .internal-page-topbar, .topbar--location),
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell).has-global-header > .app-shell > .page > .app-header {
     width: 100% !important;
-    max-inline-size: none !important;
+    inline-size: 100% !important;
     max-width: none !important;
-    margin-inline: 0 !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    box-sizing: border-box !important;
-  }
-
-  body.has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header > .app-header__inner {
-    inline-size: var(--doke-header-content-rail-v21) !important;
-    width: var(--doke-header-content-rail-v21) !important;
-    max-inline-size: var(--doke-header-content-rail-v21) !important;
-    max-width: var(--doke-header-content-rail-v21) !important;
-    min-inline-size: 0 !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    box-sizing: border-box !important;
-  }
-}
-
-/*
-  Doke Shell Contract v22 — INTERNAL RAIL HARD LOCK
-  Owner: core/shell
-  Motivo: v20 abriu as páginas internas em largura fluida. Em zoom baixo/telas largas,
-  pedidos/notificações/comunidade passaram a esticar cards e header para as extremidades.
-  Contrato: toda página interna usa o mesmo trilho central do conteúdo; só o index mantém
-  o comportamento próprio já aprovado.
-*/
-@media (min-width: 1025px) {
-  body[data-page]:not(.home-index-shell) {
-    --doke-internal-rail-max-v22: var(--doke-app-shell-max, 1180px) !important;
-    --doke-internal-rail-gutter-v22: var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) !important;
-    --doke-internal-rail-width-v22: min(
-      calc(100% - (var(--doke-internal-rail-gutter-v22) * 2)),
-      var(--doke-internal-rail-max-v22)
-    ) !important;
-  }
-
-  body.become-pro-page-shell[data-page]:not(.home-index-shell) {
-    --doke-internal-rail-max-v22: 1288px !important;
-  }
-
-  body[data-page]:not(.home-index-shell) > .app-shell > .page {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    overflow-x: clip !important;
-  }
-
-  body[data-page]:not(.home-index-shell) > .app-shell > .page > .app-header,
-  body[data-page]:not(.home-index-shell) > .app-shell > .page > .topbar,
-  body[data-page]:not(.home-index-shell) > .app-shell > .page > .internal-page-topbar {
-    width: var(--doke-internal-rail-width-v22) !important;
-    max-width: var(--doke-internal-rail-max-v22) !important;
-    min-width: 0 !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    box-sizing: border-box !important;
-  }
-
-  body[data-page]:not(.home-index-shell) > .app-shell > .page > .app-header > .app-header__inner {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
+    max-inline-size: none !important;
     margin-left: 0 !important;
     margin-right: 0 !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
+    padding-left: var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) !important;
+    padding-right: var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) !important;
     box-sizing: border-box !important;
   }
 
-  body[data-page]:not(.home-index-shell) > .app-shell > .page > .page__content {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    box-sizing: border-box !important;
-    overflow-x: clip !important;
-  }
-
-  body[data-page]:not(.home-index-shell) > .app-shell > .page > .page__content > .page__content-inner,
-  body[data-page]:not(.home-index-shell) .app-shell-page__workspace,
-  body[data-page]:not(.home-index-shell) .orders-shell-content,
-  body[data-page]:not(.home-index-shell) .messages-shell-content,
-  body[data-page]:not(.home-index-shell) .profile-shell-content,
-  body[data-page]:not(.home-index-shell) .wallet-shell-content,
-  body[data-page]:not(.home-index-shell) .settings-shell-content,
-  body[data-page]:not(.home-index-shell) .search-results-workspace,
-  body[data-page]:not(.home-index-shell) .notifications-page,
-  body[data-page]:not(.home-index-shell) .communities-page,
-  body[data-page]:not(.home-index-shell) .communities-discovery,
-  body[data-page]:not(.home-index-shell) .communities-layout,
-  body[data-page]:not(.home-index-shell) .communities-main,
-  body[data-page]:not(.home-index-shell) .orders-page,
-  body[data-page]:not(.home-index-shell) .orders-dashboard,
-  body[data-page]:not(.home-index-shell) .orders-grid,
-  body[data-page]:not(.home-index-shell) .orders-shell,
-  body[data-page]:not(.home-index-shell) .results-layout,
-  body[data-page]:not(.home-index-shell) .results-main,
-  body[data-page]:not(.home-index-shell) .profile-screen,
-  body[data-page]:not(.home-index-shell) .wallet-page,
-  body[data-page]:not(.home-index-shell) .settings-page,
-  body[data-page]:not(.home-index-shell) .messages-app,
-  body[data-page]:not(.home-index-shell) .doke-page-shell,
-  body[data-page]:not(.home-index-shell) .become-pro-shell {
-    width: var(--doke-internal-rail-width-v22) !important;
-    max-width: var(--doke-internal-rail-max-v22) !important;
-    min-width: 0 !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    box-sizing: border-box !important;
-    overflow-x: clip !important;
-  }
-
-  body[data-page]:not(.home-index-shell) :is(
-    .orders-summary,
-    .orders-planner,
-    .orders-cards,
-    .orders-quick-actions,
-    .notifications-list,
-    .notifications-feed,
-    .notification-list,
-    .communities-grid,
-    .communities-cards,
-    .community-cards,
-    .results-cards,
-    .service-results-grid,
-    .settings-grid,
-    .wallet-grid,
-    .messages-layout,
-    .profile-layout,
-    .profile-services-rail,
-    .profile-workers-rail,
-    .profile-publications-rail
-  ) {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    box-sizing: border-box !important;
-  }
-}
-
-/*
-  Doke Shell Contract v23 — INTERNAL HEADER/CONTENT SAME RAIL
-  Responsabilidade: impedir que qualquer HTML interno abra header ou conteúdo
-  em trilhos diferentes quando o navegador está em zoom baixo ou tela larga.
-  O index mantém o contrato aprovado; páginas internas usam um único rail.
-*/
-@media (min-width: 1025px) {
-  body[data-page]:not(.home-index-shell) {
-    --doke-rail-max-v23: var(--doke-app-shell-max, 1180px) !important;
-    --doke-rail-gutter-v23: var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) !important;
-    --doke-rail-width-v23: min(
-      calc(100% - (var(--doke-rail-gutter-v23) * 2)),
-      var(--doke-rail-max-v23)
-    ) !important;
-  }
-
-  body.become-pro-page-shell[data-page]:not(.home-index-shell) {
-    --doke-rail-max-v23: 1288px !important;
-  }
-
-  body[data-page]:not(.home-index-shell) > .app-shell > .page > :is(.app-header, .topbar, .internal-page-topbar),
-  body[data-page]:not(.home-index-shell) > .app-shell > .page > .page__content > :is(.page__content-inner, .container) {
-    width: var(--doke-rail-width-v23) !important;
-    inline-size: var(--doke-rail-width-v23) !important;
-    max-width: var(--doke-rail-max-v23) !important;
-    max-inline-size: var(--doke-rail-max-v23) !important;
-    min-width: 0 !important;
-    min-inline-size: 0 !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    box-sizing: border-box !important;
-  }
-
-  body[data-page]:not(.home-index-shell) > .app-shell > .page > .app-header > .app-header__inner {
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell) > .app-shell > .page > .page__content {
     width: 100% !important;
     inline-size: 100% !important;
-    max-width: 100% !important;
-    max-inline-size: 100% !important;
-    min-width: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    box-sizing: border-box !important;
-  }
-
-  body.become-pro-page-shell > .app-shell > .page > .app-header,
-  body.become-pro-page-shell > .app-shell > .page > .page__content > .page__content-inner {
-    width: var(--doke-rail-width-v23) !important;
-    max-width: var(--doke-rail-max-v23) !important;
-  }
-
-  body.become-pro-page-shell .become-pro-screen,
-  body.become-pro-page-shell .become-pro-layout {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    box-sizing: border-box !important;
-  }
-
-  body[data-page]:not(.home-index-shell) :is(
-    .orders-page,
-    .orders-dashboard,
-    .orders-grid,
-    .orders-shell,
-    .orders-planner,
-    .notifications-page,
-    .notifications-list,
-    .notifications-feed,
-    .notification-list,
-    .communities-page,
-    .communities-discovery,
-    .communities-layout,
-    .communities-main,
-    .communities-grid,
-    .communities-cards,
-    .community-cards,
-    .messages-app,
-    .messages-layout,
-    .wallet-page,
-    .wallet-grid,
-    .settings-page,
-    .settings-grid,
-    .profile-screen,
-    .profile-layout,
-    .results-layout,
-    .results-main,
-    .results-cards,
-    .service-results-grid
-  ) {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    box-sizing: border-box !important;
-  }
-}
-
-/*
-  Doke Shell Contract v24 — FINAL INTERNAL RAIL LOCK
-  Owner: core/shell
-  Objetivo: impedir definitivamente que qualquer HTML interno estique header,
-  listas, cards ou conteúdo até as extremidades em zoom baixo/telas largas.
-  Regra: todo HTML interno usa UM ÚNICO TRILHO CENTRAL para header e conteúdo.
-  A home/index mantém seu contrato próprio aprovado.
-*/
-@media (min-width: 1025px) {
-  body[data-page]:not(.home-index-shell) {
-    --doke-internal-rail-max-final: 1360px !important;
-    --doke-internal-rail-gutter-final: clamp(28px, 3vw, 48px) !important;
-    --doke-internal-rail-final: min(
-      calc(100% - (var(--doke-internal-rail-gutter-final) * 2)),
-      var(--doke-internal-rail-max-final)
-    ) !important;
-  }
-
-  body.become-pro-page-shell[data-page]:not(.home-index-shell) {
-    --doke-internal-rail-max-final: 1288px !important;
-  }
-
-  body[data-page]:not(.home-index-shell) > .app-shell > .page {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    overflow-x: clip !important;
-  }
-
-  body[data-page]:not(.home-index-shell) > .app-shell > .page > .app-header,
-  body[data-page]:not(.home-index-shell) > .app-shell > .page > .topbar,
-  body[data-page]:not(.home-index-shell) > .app-shell > .page > .internal-page-topbar {
-    width: var(--doke-internal-rail-final) !important;
-    inline-size: var(--doke-internal-rail-final) !important;
-    max-width: var(--doke-internal-rail-max-final) !important;
-    max-inline-size: var(--doke-internal-rail-max-final) !important;
-    min-width: 0 !important;
-    min-inline-size: 0 !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+    max-width: none !important;
+    max-inline-size: none !important;
     padding-left: 0 !important;
     padding-right: 0 !important;
     box-sizing: border-box !important;
-    transform: none !important;
   }
 
-  body[data-page]:not(.home-index-shell) > .app-shell > .page > .app-header > .app-header__inner {
-    width: 100% !important;
-    inline-size: 100% !important;
-    max-width: 100% !important;
-    max-inline-size: 100% !important;
-    min-width: 0 !important;
-    min-inline-size: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    box-sizing: border-box !important;
-  }
-
-  body[data-page]:not(.home-index-shell) > .app-shell > .page > .page__content {
-    width: 100% !important;
-    inline-size: 100% !important;
-    max-width: 100% !important;
-    max-inline-size: 100% !important;
-    min-width: 0 !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    box-sizing: border-box !important;
-    overflow-x: clip !important;
-  }
-
-  body[data-page]:not(.home-index-shell) > .app-shell > .page > .page__content > .page__content-inner,
-  body[data-page]:not(.home-index-shell) > .app-shell > .page > .page__content > .container,
-  body[data-page]:not(.home-index-shell) .app-shell-page__workspace,
-  body[data-page]:not(.home-index-shell) .orders-shell-content,
-  body[data-page]:not(.home-index-shell) .messages-shell-content,
-  body[data-page]:not(.home-index-shell) .profile-shell-content,
-  body[data-page]:not(.home-index-shell) .wallet-shell-content,
-  body[data-page]:not(.home-index-shell) .settings-shell-content,
-  body[data-page]:not(.home-index-shell) .search-results-workspace,
-  body[data-page]:not(.home-index-shell) .notifications-shell-content,
-  body[data-page]:not(.home-index-shell) .communities-shell-content,
-  body[data-page]:not(.home-index-shell) .detail-shell-content,
-  body[data-page]:not(.home-index-shell) .detalhe-shell-content,
-  body[data-page]:not(.home-index-shell) .become-pro-shell {
-    width: var(--doke-internal-rail-final) !important;
-    inline-size: var(--doke-internal-rail-final) !important;
-    max-width: var(--doke-internal-rail-max-final) !important;
-    max-inline-size: var(--doke-internal-rail-max-final) !important;
-    min-width: 0 !important;
-    min-inline-size: 0 !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    box-sizing: border-box !important;
-    overflow-x: clip !important;
-  }
-
-  body[data-page]:not(.home-index-shell) :is(
-    .orders-page,
-    .orders-dashboard,
-    .orders-grid,
-    .orders-shell,
-    .orders-planner,
-    .orders-summary,
-    .orders-cards,
-    .orders-quick-actions,
-    .notifications-page,
-    .notifications-list,
-    .notifications-feed,
-    .notification-list,
-    .communities-page,
-    .communities-discovery,
-    .communities-layout,
-    .communities-main,
-    .communities-v2-shell,
-    .communities-v2-main,
-    .communities-v2-section,
-    .communities-grid,
-    .communities-cards,
-    .community-cards,
-    .messages-app,
-    .messages-layout,
-    .wallet-page,
-    .wallet-grid,
-    .settings-page,
-    .settings-grid,
-    .profile-screen,
-    .profile-layout,
-    .results-layout,
-    .results-main,
-    .results-cards,
-    .service-results-grid,
-    .doke-page-shell,
-    .doke-page-stack,
-    .doke-page-section,
-    .become-pro-screen,
-    .become-pro-layout
-  ) {
-    width: 100% !important;
-    inline-size: 100% !important;
-    max-width: 100% !important;
-    max-inline-size: 100% !important;
-    min-width: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    box-sizing: border-box !important;
-  }
-
-  body[data-page]:not(.home-index-shell) :is(
-    .orders-card,
-    .order-card,
-    .notification-card,
-    .community-card,
-    .communities-v2-card,
-    .result-card,
-    .service-card,
-    .doke-card
-  ) {
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-  }
-}
-
-/*
-  Doke Shell Contract v25 - index zoom-out parity
-  Legacy page contracts can still out-specificity the shared rail and stretch
-  the workspace on wide/zoomed-out viewports. This final lock keeps internal
-  page wrappers on the same 1360px rail used by index.html.
-*/
-@media (min-width: 1025px) {
-  body[data-page]:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell) {
-    --doke-index-zoom-parity-rail: min(
-      calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)),
-      1360px
-    ) !important;
-  }
-
-  body[data-page]:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell)
-    > .app-shell
-    > .page
-    > .page__content
-    > .page__content-inner.page__content-inner.page__content-inner,
-  body[data-page]:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell)
-    > .app-shell
-    > .page
-    > .page__content
-    > .page__content-inner.app-shell-page__workspace.shell-home__workspace.doke-page-shell.doke-page-stack,
-  body[data-page]:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell)
-    > .app-shell
-    > .page
-    > .page__content
-    > .page__content-inner.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.messages-shell-content.doke-page-shell.doke-page-stack {
-    width: var(--doke-index-zoom-parity-rail) !important;
-    inline-size: var(--doke-index-zoom-parity-rail) !important;
-    max-width: var(--doke-index-zoom-parity-rail) !important;
-    max-inline-size: var(--doke-index-zoom-parity-rail) !important;
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell) > .app-shell > .page > .page__content > .page__content-inner,
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell) > .app-shell > .page > .page__content > .page__content-inner.container,
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell) .app-shell-page__workspace,
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell) .shell-home__workspace,
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell) .orders-shell-content,
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell) .notifications-shell-content,
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell) .messages-shell-content,
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell) .profile-shell-content,
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell) .wallet-shell-content,
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell) .settings-shell-content,
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell) .search-results-workspace,
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell) .communities-shell,
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell) .orders-page,
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell) .notifications-page,
+  body:is(.doke-app-shell-page, .app-shell-page, .internal-shell-page):not(.home-index-shell):not(.community-room-shell) .communities-page {
+    width: var(--doke-internal-desktop-rail-v21) !important;
+    inline-size: var(--doke-internal-desktop-rail-v21) !important;
+    max-width: none !important;
+    max-inline-size: none !important;
     min-width: 0 !important;
     margin-left: auto !important;
     margin-right: auto !important;

@@ -12,10 +12,13 @@
     const nextButton = root.querySelector('[data-step-next]');
     const backButton = root.querySelector('[data-step-back]');
     const actions = root.querySelector('.become-pro-actions');
+    const submitState = root.querySelector('[data-submit-state]');
+    const submitClose = root.querySelector('[data-submit-close]');
+    const totalSteps = Math.max(1, panels.length);
     let currentStep = 1;
 
     const setStep = (step) => {
-      currentStep = Math.max(1, Math.min(3, step));
+      currentStep = Math.max(1, Math.min(totalSteps, step));
       panels.forEach((panel) => {
         const isActive = Number(panel.dataset.stepPanel) === currentStep;
         panel.hidden = !isActive;
@@ -28,7 +31,7 @@
       });
 
       if (nextButton) {
-        const label = currentStep >= 3 ? 'Criar perfil profissional' : 'Continuar';
+        const label = currentStep >= totalSteps ? 'Enviar para an\u00e1lise' : 'Continuar';
         const textNode = [...nextButton.childNodes].find((node) => node.nodeType === Node.TEXT_NODE);
         if (textNode) textNode.nodeValue = `${label} `;
       }
@@ -97,9 +100,23 @@
     });
 
     nextButton?.addEventListener('click', () => {
-      if (currentStep < 3) {
+      if (currentStep < totalSteps) {
         setStep(currentStep + 1);
         root.querySelector('.become-pro-form-card')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      } else {
+        submitState.hidden = false;
+        submitState.classList.add('is-visible');
+        nextButton.disabled = true;
+        submitClose?.focus({ preventScroll: true });
+      }
+    });
+
+    submitClose?.addEventListener('click', () => {
+      submitState?.classList.remove('is-visible');
+      if (submitState) submitState.hidden = true;
+      if (nextButton) {
+        nextButton.disabled = false;
+        nextButton.focus({ preventScroll: true });
       }
     });
 
