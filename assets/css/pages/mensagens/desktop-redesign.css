@@ -6096,3 +6096,182 @@ body.messages-page-shell {
     line-height: 1.42 !important;
   }
 }
+
+/* 2026-05-19 — Card transacional de cobrança
+   Cobrança não é mensagem comum: precisa parecer item financeiro acionável. */
+body.messages-page-shell .message-bubble:has(.message-bubble__charge) {
+  width: min(520px, 72%) !important;
+  max-width: min(520px, 72%) !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.messages-page-shell .message-bubble:has(.message-bubble__charge) > .message-bubble__meta {
+  display: none !important;
+}
+
+body.messages-page-shell .message-bubble__charge {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 13px;
+  padding: 18px;
+  border: 1px solid #b8d3ef;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #f7fbff 0%, #eef7ff 54%, #ffffff 100%);
+  color: #0b3778;
+  box-shadow: 0 18px 38px rgba(31, 109, 182, 0.13);
+}
+
+body.messages-page-shell .message-bubble__charge::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: linear-gradient(180deg, #2da99a, #1f6db6);
+}
+
+body.messages-page-shell .message-bubble__charge-topline,
+body.messages-page-shell .message-bubble__charge-meta-row,
+body.messages-page-shell .message-bubble__charge-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+body.messages-page-shell .message-bubble__charge-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border: 1px solid rgba(45, 169, 154, 0.24);
+  border-radius: 999px;
+  background: rgba(45, 169, 154, 0.12);
+  color: #08796f;
+  font-size: 0.76rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+body.messages-page-shell .message-bubble__charge-time {
+  color: #6b82a0;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+body.messages-page-shell .message-bubble__charge-main {
+  display: grid;
+  gap: 4px;
+}
+
+body.messages-page-shell .message-bubble__charge-kicker {
+  color: #6b82a0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+body.messages-page-shell .message-bubble__charge-value {
+  color: #0b3c7c;
+  font-size: clamp(1.45rem, 2.2vw, 1.85rem);
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+body.messages-page-shell .message-bubble__charge-description {
+  margin: 0 !important;
+  color: #15385f !important;
+  font-size: 0.96rem !important;
+  line-height: 1.45 !important;
+  font-weight: 650 !important;
+}
+
+body.messages-page-shell .message-bubble__charge-pill,
+body.messages-page-shell .message-bubble__charge-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  line-height: 1;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+body.messages-page-shell .message-bubble__charge-pill {
+  border: 1px solid #cfdeef;
+  background: #ffffff;
+  color: #21496f;
+}
+
+body.messages-page-shell .message-bubble__charge-status {
+  background: rgba(31, 109, 182, 0.11);
+  color: #1f5fae;
+}
+
+body.messages-page-shell .message-bubble__charge-actions {
+  padding-top: 2px;
+}
+
+body.messages-page-shell .message-bubble__charge-pay {
+  min-width: 132px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1f6db6, #155fa6);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 850;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(31, 109, 182, 0.18);
+}
+
+body.messages-page-shell .message-bubble__charge-pay:is(:hover, :focus-visible) {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px rgba(31, 109, 182, 0.22);
+}
+
+body.messages-page-shell .message-bubble__charge-pay.is-complete,
+body.messages-page-shell .message-bubble__charge-pay.is-done {
+  background: #2da99a;
+  box-shadow: 0 12px 24px rgba(45, 169, 154, 0.18);
+}
+
+@media (max-width: 760px) {
+  body.messages-page-shell .message-bubble:has(.message-bubble__charge) {
+    width: min(100%, 92vw) !important;
+    max-width: min(100%, 92vw) !important;
+  }
+
+  body.messages-page-shell .message-bubble__charge {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  body.messages-page-shell .message-bubble__charge-meta-row,
+  body.messages-page-shell .message-bubble__charge-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  body.messages-page-shell .message-bubble__charge-pay {
+    width: 100%;
+  }
+}
+
+/* 2026-05-19 — Remoção do detalhe lateral do card de cobrança
+   O card deve ter destaque por hierarquia, badge, valor e CTA — não por faixa decorativa lateral. */
+body.messages-page-shell .message-bubble__charge::before {
+  content: none !important;
+  display: none !important;
+}

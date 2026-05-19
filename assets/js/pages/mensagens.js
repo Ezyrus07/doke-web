@@ -148,6 +148,11 @@
     const chargeForm = document.querySelector("[data-charge-form]");
     const chargeAmountInput = document.querySelector("[data-charge-amount]");
     const chargeInstallments = document.querySelector("[data-charge-installments]");
+    const chargeInstallmentsDropdown = document.querySelector("[data-charge-installments-dropdown]");
+    const chargeInstallmentsToggle = document.querySelector("[data-charge-installments-toggle]");
+    const chargeInstallmentsMenu = document.querySelector("[data-charge-installments-menu]");
+    const chargeInstallmentsValue = document.querySelector("[data-charge-installments-value]");
+    const chargeInstallmentOptions = Array.from(document.querySelectorAll("[data-charge-installment-option]"));
     const chargeCancelButtons = document.querySelectorAll("[data-charge-cancel]");
     const mobileControls = root.querySelector("[data-messages-mobile-controls]") || root.querySelector(".messages-header-controls:not(.messages-header-controls--desktop)");
     const desktopControls = root.querySelector("[data-messages-desktop-controls]");
@@ -581,14 +586,20 @@
               ? `<button class="message-bubble__charge-pay is-complete" type="button" data-message-complete>Finalizar pedido</button>`
               : `<button class="message-bubble__charge-pay" type="button" data-message-pay>Pagar</button>`;
         chargeCard.innerHTML = `
-          <div class="message-bubble__charge-head">
-            <span class="message-bubble__charge-label">Cobrança</span>
+          <div class="message-bubble__charge-topline">
+            <span class="message-bubble__charge-chip">Cobrança</span>
+            <span class="message-bubble__charge-time">${message.time || "agora"}</span>
+          </div>
+          <div class="message-bubble__charge-main">
+            <span class="message-bubble__charge-kicker">Valor enviado</span>
             <strong class="message-bubble__charge-value">${message.amount}</strong>
           </div>
-          <div class="message-bubble__charge-text">${message.text}</div>
-          <div class="message-bubble__charge-text">${message.installments || "À vista"}</div>
-          <div class="message-bubble__charge-actions">
+          <p class="message-bubble__charge-description">${message.text}</p>
+          <div class="message-bubble__charge-meta-row">
+            <span class="message-bubble__charge-pill">${message.installments || "À vista"}</span>
             <span class="message-bubble__charge-status">${chargeStatus}</span>
+          </div>
+          <div class="message-bubble__charge-actions">
             ${chargeAction}
           </div>
         `;
@@ -736,7 +747,31 @@
       chargeAmountInput?.select();
     };
 
+    const closeChargeInstallmentsDropdown = () => {
+      if (!chargeInstallmentsDropdown || !chargeInstallmentsMenu || !chargeInstallmentsToggle) return;
+      chargeInstallmentsDropdown.classList.remove("is-open", "is-dropup");
+      chargeInstallmentsMenu.hidden = true;
+      chargeInstallmentsToggle.setAttribute("aria-expanded", "false");
+    };
+
+    const openChargeInstallmentsDropdown = () => {
+      if (!chargeInstallmentsDropdown || !chargeInstallmentsMenu || !chargeInstallmentsToggle) return;
+      chargeInstallmentsMenu.hidden = false;
+      chargeInstallmentsDropdown.classList.add("is-open");
+      chargeInstallmentsDropdown.classList.remove("is-dropup");
+      chargeInstallmentsToggle.setAttribute("aria-expanded", "true");
+
+      window.requestAnimationFrame(() => {
+        const toggleRect = chargeInstallmentsToggle.getBoundingClientRect();
+        const menuRect = chargeInstallmentsMenu.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - toggleRect.bottom;
+        const needsDropup = spaceBelow < menuRect.height + 28 && toggleRect.top > menuRect.height + 28;
+        chargeInstallmentsDropdown.classList.toggle("is-dropup", needsDropup);
+      });
+    };
+
     const closeChargeModal = () => {
+      closeChargeInstallmentsDropdown();
       if (!chargeModal) return;
       if (typeof chargeModal.close === "function" && chargeModal.open) {
         chargeModal.close();
@@ -1247,6 +1282,41 @@
       });
       closeChargeModal();
       renderThread(activeId, { scrollTo: "end" });
+    });
+
+    chargeInstallmentsToggle?.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (chargeInstallmentsDropdown?.classList.contains("is-open")) {
+        closeChargeInstallmentsDropdown();
+      } else {
+        openChargeInstallmentsDropdown();
+      }
+    });
+
+    chargeInstallmentOptions.forEach((option) => {
+      option.addEventListener("click", (event) => {
+        event.preventDefault();
+        const value = option.dataset.value || "1x";
+        const label = option.textContent?.trim() || "À vista";
+        if (chargeInstallments) chargeInstallments.value = value;
+        if (chargeInstallmentsValue) chargeInstallmentsValue.textContent = label;
+        chargeInstallmentOptions.forEach((item) => {
+          item.setAttribute("aria-selected", item === option ? "true" : "false");
+        });
+        closeChargeInstallmentsDropdown();
+        chargeInstallmentsToggle?.focus();
+      });
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!chargeInstallmentsDropdown?.classList.contains("is-open")) return;
+      if (event.target instanceof Node && chargeInstallmentsDropdown.contains(event.target)) return;
+      closeChargeInstallmentsDropdown();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeChargeInstallmentsDropdown();
     });
 
     chargeCancelButtons.forEach((button) => {

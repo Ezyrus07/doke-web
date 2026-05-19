@@ -1190,3 +1190,177 @@ html body :is(.charge-modal, .wallet-dialog) :is(.charge-modal__money-field.doke
   border-color: var(--doke-financial-border) !important;
   box-shadow: 0 1px 0 rgba(255, 255, 255, .72) inset !important;
 }
+
+/* v6 — Dropdown financeiro padronizado
+   Select nativo não permite controlar a lista de opções no navegador; por isso,
+   a cobrança usa um dropdown customizado com o mesmo padrão visual dos cards. */
+html body .charge-modal .doke-financial-modal__native-select {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+html body .charge-modal .doke-financial-modal__select {
+  position: relative !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+html body .charge-modal .doke-financial-modal__select-button {
+  width: 100% !important;
+  height: 56px !important;
+  min-height: 56px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 22px !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 0 18px 0 20px !important;
+  border: 1px solid var(--doke-financial-border) !important;
+  border-radius: var(--doke-financial-control-radius) !important;
+  background: var(--doke-financial-surface-soft) !important;
+  color: var(--doke-financial-title) !important;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .72) inset !important;
+  font: inherit !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  text-align: left !important;
+  cursor: pointer !important;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease !important;
+}
+
+html body .charge-modal .doke-financial-modal__select-button:hover {
+  background: #f4f9fe !important;
+  border-color: #c4d7ea !important;
+}
+
+html body .charge-modal .doke-financial-modal__select-button:focus-visible,
+html body .charge-modal .doke-financial-modal__select.is-open .doke-financial-modal__select-button {
+  outline: 0 !important;
+  border-color: #8db5dd !important;
+  box-shadow: 0 0 0 4px var(--doke-financial-focus) !important;
+}
+
+html body .charge-modal .doke-financial-modal__select-button span {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body .charge-modal .doke-financial-modal__select-button svg {
+  width: 20px !important;
+  height: 20px !important;
+  fill: none !important;
+  stroke: #5f7896 !important;
+  stroke-width: 2.2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  transition: transform 160ms ease !important;
+}
+
+html body .charge-modal .doke-financial-modal__select.is-open .doke-financial-modal__select-button svg {
+  transform: rotate(180deg) !important;
+}
+
+html body .charge-modal .doke-financial-modal__select-menu {
+  position: absolute !important;
+  z-index: 20 !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: calc(100% + 8px) !important;
+  display: grid !important;
+  gap: 4px !important;
+  max-height: 230px !important;
+  overflow: auto !important;
+  padding: 8px !important;
+  border: 1px solid var(--doke-financial-border) !important;
+  border-radius: 18px !important;
+  background: #ffffff !important;
+  box-shadow: 0 22px 46px rgba(18, 39, 62, .17) !important;
+}
+
+html body .charge-modal .doke-financial-modal__select-menu[hidden] {
+  display: none !important;
+}
+
+html body .charge-modal .doke-financial-modal__select-menu button {
+  width: 100% !important;
+  min-height: 42px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 0 12px !important;
+  border: 0 !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  color: var(--doke-financial-title) !important;
+  font: inherit !important;
+  font-size: .95rem !important;
+  font-weight: 750 !important;
+  text-align: left !important;
+  cursor: pointer !important;
+}
+
+html body .charge-modal .doke-financial-modal__select-menu button:hover,
+html body .charge-modal .doke-financial-modal__select-menu button:focus-visible,
+html body .charge-modal .doke-financial-modal__select-menu button[aria-selected="true"] {
+  outline: 0 !important;
+  background: #edf4fb !important;
+  color: var(--doke-financial-title) !important;
+}
+
+/* v7 — Dropdown compacto e sem briga com o footer do modal.
+   O menu agora tem altura controlada e pode abrir para cima quando não há espaço abaixo. */
+html body .charge-modal .doke-financial-modal__select-menu {
+  z-index: 80 !important;
+  top: calc(100% + 6px) !important;
+  max-height: 176px !important;
+  padding: 6px !important;
+  gap: 2px !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: #b7cbe0 transparent !important;
+  border-radius: 16px !important;
+  box-shadow: 0 18px 34px rgba(18, 39, 62, .14) !important;
+}
+
+html body .charge-modal .doke-financial-modal__select.is-dropup .doke-financial-modal__select-menu {
+  top: auto !important;
+  bottom: calc(100% + 6px) !important;
+}
+
+html body .charge-modal .doke-financial-modal__select-menu::-webkit-scrollbar {
+  width: 8px !important;
+}
+
+html body .charge-modal .doke-financial-modal__select-menu::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+html body .charge-modal .doke-financial-modal__select-menu::-webkit-scrollbar-thumb {
+  border: 2px solid #ffffff !important;
+  border-radius: 999px !important;
+  background: #b7cbe0 !important;
+}
+
+html body .charge-modal .doke-financial-modal__select-menu button {
+  min-height: 38px !important;
+  padding: 0 12px !important;
+  border-radius: 11px !important;
+  font-size: .93rem !important;
+  line-height: 1.1 !important;
+}
+
+html body .charge-modal .doke-financial-modal__select-menu button[aria-selected="true"] {
+  background: #eef5fc !important;
+}
