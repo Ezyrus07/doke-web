@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const ROOT = process.cwd();
-const PAGES = ['index.html','resultados.html','perfil.html','detalhe-anuncio.html','pedidos.html','carteira.html','pagamento.html','finalizar-pedido.html','avaliacao.html','adicionar-cartao.html','configuracoes.html','notificacoes.html','mensagens.html','comunidade.html','comunidade-interna.html'];
+const PAGES = ['index.html','resultados.html','perfil.html','detalhe-anuncio.html','pedidos.html','carteira.html','pagamento-profissional.html','finalizar-pedido.html','avaliacao.html','adicionar-cartao.html','configuracoes.html','notificacoes.html','mensagens.html','comunidade.html','comunidade-interna.html'];
 const issues = [];
 const rows = [];
 function attr(tag,name){ const m = tag && tag.match(new RegExp(name + '="([^"]*)"','i')); return m ? m[1] : ''; }

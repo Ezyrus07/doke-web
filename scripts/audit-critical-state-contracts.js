@@ -4,7 +4,7 @@ const path = require('path');
 const ROOT = process.cwd();
 const PAGES = {
   'finalizar-pedido.html': 'finalizar-pedido',
-  'pagamento.html': 'pagamento',
+  'pagamento-profissional.html': 'pagamento',
   'adicionar-cartao.html': 'adicionar-cartao',
   'avaliacao.html': 'avaliacao',
   'pedidos.html': 'pedidos',

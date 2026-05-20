@@ -7,7 +7,7 @@ const TARGET_PAGES = [
   'mensagens.html',
   'comunidade-interna.html',
   'finalizar-pedido.html',
-  'pagamento.html',
+  'pagamento-profissional.html',
   'adicionar-cartao.html',
   'avaliacao.html'
 ];

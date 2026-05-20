@@ -4,7 +4,7 @@ const path = require('path');
 
 const root = process.cwd();
 const pages = [
-  'index.html','resultados.html','perfil.html','pedidos.html','carteira.html','pagamento.html',
+  'index.html','resultados.html','perfil.html','pedidos.html','carteira.html','pagamento-profissional.html',
   'finalizar-pedido.html','avaliacao.html','configuracoes.html','notificacoes.html','comunidade.html','comunidade-interna.html'
 ];
 

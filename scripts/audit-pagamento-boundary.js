@@ -3,7 +3,7 @@
  * Global Cycle 72 — pagamento data boundary audit.
  *
  * Purpose:
- * - Ensure pagamento.html has a minimal controller/data boundary.
+ * - Ensure pagamento-profissional.html has a minimal controller/data boundary.
  * - Preserve provisional visual structure while preparing transactional data hooks.
  */
 const fs = require('fs');
@@ -26,8 +26,8 @@ function assert(condition, message, failures) {
 
 function main() {
   const failures = [];
-  const pageFile = 'pagamento.html';
-  const controllerFile = 'assets/js/controllers/pagamento-controller.js';
+  const pageFile = 'pagamento-profissional.html';
+  const controllerFile = 'assets/js/pages/pagamento-profissional.js';
   const controllerDataFile = 'assets/js/controllers/controller-data.js';
   const domainDataFile = 'assets/js/services/domain-data-service.js';
 
@@ -74,7 +74,7 @@ function main() {
     'assets/js/services/domain-data-service.js',
     'assets/js/controllers/controller-data.js',
     'assets/js/controllers/page-controller-registry.js',
-    'assets/js/controllers/pagamento-controller.js',
+    'assets/js/pages/pagamento-profissional.js',
     'assets/js/controllers/controller-bootstrap.js'
   ];
 

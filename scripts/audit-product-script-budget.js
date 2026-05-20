@@ -10,7 +10,7 @@ const BASELINE_BUDGETS = {
   'mensagens.html': { maxExternalScripts: 34 },
   'comunidade-interna.html': { maxExternalScripts: 32 },
   'finalizar-pedido.html': { maxExternalScripts: 16 },
-  'pagamento.html': { maxExternalScripts: 17 },
+  'pagamento-profissional.html': { maxExternalScripts: 17 },
   'adicionar-cartao.html': { maxExternalScripts: 16 },
   'avaliacao.html': { maxExternalScripts: 16 }
 };

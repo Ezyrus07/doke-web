@@ -33,7 +33,7 @@ const contracts = {
     },
     allowMissingGroups: []
   },
-  'pagamento.html': {
+  'pagamento-profissional.html': {
     pageRoot: ['data-payment-page'],
     requiredHooks: ['data-payment-page'],
     interactionGroups: {

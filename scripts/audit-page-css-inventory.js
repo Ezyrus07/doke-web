@@ -22,7 +22,7 @@ const EVOLVING_HTML = new Set([
   'detalhe-anuncio.html',
   'resultados.html',
   'finalizar-pedido.html',
-  'pagamento.html',
+  'pagamento-profissional.html',
   'configuracoes.html',
   'comunidade-interna.html',
   'avaliacao.html',

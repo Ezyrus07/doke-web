@@ -16,7 +16,7 @@ const TARGET_PAGES = [
   'mensagens.html',
   'comunidade-interna.html',
   'finalizar-pedido.html',
-  'pagamento.html',
+  'pagamento-profissional.html',
   'avaliacao.html',
   'adicionar-cartao.html',
 ];
@@ -63,7 +63,7 @@ function inferPageRole(pageFile) {
     'mensagens.html': 'communication-inbox',
     'comunidade-interna.html': 'community-room',
     'finalizar-pedido.html': 'checkout-finalization',
-    'pagamento.html': 'payment-flow',
+    'pagamento-profissional.html': 'payment-flow',
     'avaliacao.html': 'review-flow',
     'adicionar-cartao.html': 'payment-method-form',
   };

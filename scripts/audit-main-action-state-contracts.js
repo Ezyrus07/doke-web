@@ -11,7 +11,7 @@ const PAGES = [
   'notificacoes.html',
   'comunidade.html',
   'finalizar-pedido.html',
-  'pagamento.html',
+  'pagamento-profissional.html',
   'adicionar-cartao.html',
   'avaliacao.html',
   'pedidos.html',

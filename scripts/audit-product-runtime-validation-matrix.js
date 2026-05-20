@@ -7,7 +7,7 @@ const TARGET_PAGES = [
   'mensagens.html',
   'comunidade-interna.html',
   'finalizar-pedido.html',
-  'pagamento.html',
+  'pagamento-profissional.html',
   'adicionar-cartao.html',
   'avaliacao.html'
 ];
@@ -27,7 +27,7 @@ const selectorContracts = {
   'assets/js/pages/comunidade-interna.js': ['data-community-room', 'data-community-room-messages', 'data-community-room-form'],
   'assets/js/pages/finalizar-pedido.js': ['data-finalizar-pedido-page', 'data-checkout', 'data-finalize-order'],
   'assets/js/pages/mensagens.js': ['data-messages-page', 'data-thread-body', 'data-messages-composer'],
-  'assets/js/pages/pagamento.js': ['data-payment-page', 'data-payment-method', 'data-payment-submit'],
+  'assets/js/pages/pagamento-profissional.js': ['data-payment-page', 'data-payment-method', 'data-payment-submit'],
   'assets/js/services/community-service.js': ['data-community', 'data-community-room', 'data-community-feed'],
   'assets/js/services/conversation-service.js': ['data-messages-page', 'data-conversation', 'data-thread-body'],
   'assets/js/services/order-service.js': ['data-order', 'data-finalizar-pedido-page', 'data-payment-page', 'data-review-page'],

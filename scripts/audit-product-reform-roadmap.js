@@ -23,7 +23,7 @@ const pageOrder = [
   { page: 'detalhe-anuncio.html', phase: 'desktop-priority-2', reason: 'detail/conversion page; provisional visual' },
   { page: 'mensagens.html', phase: 'desktop-priority-2', reason: 'communication core; already data-ready enough for reform prep' },
   { page: 'comunidade-interna.html', phase: 'desktop-priority-2', reason: 'community conversation area; provisional visual' },
-  { page: 'pagamento.html', phase: 'desktop-priority-3', reason: 'transactional; data boundary exists, visual provisional' },
+  { page: 'pagamento-profissional.html', phase: 'desktop-priority-3', reason: 'transactional; data boundary exists, visual provisional' },
   { page: 'finalizar-pedido.html', phase: 'desktop-priority-3', reason: 'transactional; data boundary exists, visual provisional' },
   { page: 'adicionar-cartao.html', phase: 'desktop-priority-3', reason: 'sensitive transactional page; card data boundary exists' },
   { page: 'avaliacao.html', phase: 'desktop-priority-3', reason: 'post-order flow; controller exists' },

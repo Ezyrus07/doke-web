@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const ROOT = process.cwd();
-const TARGETS = ['index.html','resultados.html','perfil.html','pedidos.html','carteira.html','pagamento.html','finalizar-pedido.html','avaliacao.html','configuracoes.html','notificacoes.html','comunidade.html','comunidade-interna.html'];
+const TARGETS = ['index.html','resultados.html','perfil.html','pedidos.html','carteira.html','pagamento-profissional.html','finalizar-pedido.html','avaliacao.html','configuracoes.html','notificacoes.html','comunidade.html','comunidade-interna.html'];
 const failures = [];
 const pages = [];
 for (const page of TARGETS) {

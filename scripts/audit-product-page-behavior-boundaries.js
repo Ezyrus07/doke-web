@@ -14,9 +14,9 @@ const pages = [
     controllerSignals: ['Doke.finalizeOrderController', 'visualContract', 'provisional-layout-preserved']
   },
   {
-    page: 'pagamento.html',
-    pageScript: 'assets/js/pages/pagamento.js',
-    controller: 'assets/js/controllers/pagamento-controller.js',
+    page: 'pagamento-profissional.html',
+    pageScript: 'assets/js/pages/pagamento-profissional.js',
+    controller: 'assets/js/pages/pagamento-profissional.js',
     pageSignals: ['data-payment-method', 'data-payment-submit', 'DokeInitPaymentPage'],
     controllerSignals: ['Doke.paymentController', 'visualContract', 'provisional-layout-preserved']
   },

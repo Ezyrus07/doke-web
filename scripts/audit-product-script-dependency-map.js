@@ -9,11 +9,11 @@ const TARGET_PAGES = [
   'mensagens.html',
   'comunidade-interna.html',
   'finalizar-pedido.html',
-  'pagamento.html',
+  'pagamento-profissional.html',
   'adicionar-cartao.html',
   'avaliacao.html'
 ];
-const TRANSACTION_PAGES = new Set(['finalizar-pedido.html', 'pagamento.html', 'adicionar-cartao.html', 'avaliacao.html']);
+const TRANSACTION_PAGES = new Set(['finalizar-pedido.html', 'pagamento-profissional.html', 'adicionar-cartao.html', 'avaliacao.html']);
 const COMMUNICATION_PAGES = new Set(['mensagens.html', 'comunidade-interna.html']);
 
 function readJson(file) {

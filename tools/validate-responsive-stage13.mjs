@@ -29,7 +29,7 @@ const pages = [
   'configuracoes.html',
   'detalhe-anuncio.html',
   'finalizar-pedido.html',
-  'pagamento.html',
+  'pagamento-profissional.html',
   'adicionar-cartao.html',
   'avaliacao.html',
   'auth/login.html',

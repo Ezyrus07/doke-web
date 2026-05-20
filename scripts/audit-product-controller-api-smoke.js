@@ -10,8 +10,8 @@ const controllers = {
     api: ['Doke.finalizeOrderController', 'getLatest'],
     stateKey: 'finalizar-pedido'
   },
-  'pagamento.html': {
-    file: 'assets/js/controllers/pagamento-controller.js',
+  'pagamento-profissional.html': {
+    file: 'assets/js/pages/pagamento-profissional.js',
     api: ['Doke.paymentController', 'getLatest'],
     stateKey: 'pagamento'
   },

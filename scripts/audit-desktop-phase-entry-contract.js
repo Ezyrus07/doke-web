@@ -22,7 +22,7 @@ const REQUIRED_PAGES = [
   'detalhe-anuncio.html',
   'pedidos.html',
   'carteira.html',
-  'pagamento.html',
+  'pagamento-profissional.html',
   'finalizar-pedido.html',
   'configuracoes.html',
   'notificacoes.html',

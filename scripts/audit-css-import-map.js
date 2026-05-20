@@ -10,7 +10,7 @@ const HTML_PAGES = [
   'detalhe-anuncio.html',
   'pedidos.html',
   'carteira.html',
-  'pagamento.html',
+  'pagamento-profissional.html',
   'finalizar-pedido.html',
   'avaliacao.html',
   'adicionar-cartao.html',
