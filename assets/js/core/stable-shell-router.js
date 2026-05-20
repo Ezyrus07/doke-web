@@ -12,6 +12,7 @@
     '/notificacoes.html',
     '/carteira.html',
     '/comunidade.html',
+    '/comunidade-interna.html',
     '/perfil.html',
     '/configuracoes.html',
     '/tornar-profissional.html',
@@ -33,6 +34,7 @@
     '/notificacoes.html': ['DokeInitNotifications'],
     '/carteira.html': ['DokeInitWallet'],
     '/comunidade.html': [],
+    '/comunidade-interna.html': [],
     '/perfil.html': ['DokeInitProfile'],
     '/configuracoes.html': [],
     '/tornar-profissional.html': ['DokeInitBecomePro']
@@ -303,7 +305,7 @@
       '.nav-link--orders': normalized === '/pedidos.html',
       '.nav-link--messages': normalized === '/mensagens.html',
       '.nav-link--notifications': normalized === '/notificacoes.html',
-      '.nav-link--communities': normalized === '/comunidade.html',
+      '.nav-link--communities': normalized === '/comunidade.html' || normalized === '/comunidade-interna.html',
       '.nav-link--profile': normalized === '/perfil.html',
       '.nav-link--wallet': normalized === '/carteira.html',
       '.nav-link--settings': normalized === '/configuracoes.html' || normalized === '/mais.html'

@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.querySelectorAll('[data-community-enter]').forEach((button) => {
     button.addEventListener('click', () => {
-      window.location.href = 'comunidade.html';
+      window.location.href = 'comunidade-interna.html';
     });
   });
 

@@ -70,7 +70,7 @@ const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", 
 const ROUTE_SWAP_STATE_CLASSES = ["is-shell-swapping", "is-route-instant-swap"];
 const PRESERVED_BODY_STATE_CLASSES = [...SHELL_STATE_CLASSES, ...ROUTE_SWAP_STATE_CLASSES];
 const INTERNAL_PROFILE_PATH = "/perfil.html";
-const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/carteira.html", "/comunidade.html", "/pagamento-profissional.html", "/avaliacao.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/mais.html", "/"]);
+const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/carteira.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento-profissional.html", "/avaliacao.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/mais.html", "/"]);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
@@ -257,7 +257,7 @@ const updateSidebarActiveState = (pathOverride = null) => {
   const ordersActive = path === "/pedidos.html";
   const messagesActive = path === "/mensagens.html" || path === "/pagamento-profissional.html" || path === "/avaliacao.html";
   const notificationsActive = path === "/notificacoes.html";
-  const communitiesActive = path === "/comunidade.html";
+  const communitiesActive = path === "/comunidade.html" || path === "/comunidade-interna.html";
   const profileActive = path === INTERNAL_PROFILE_PATH;
   const walletActive = path === "/carteira.html";
   const settingsActive = path === "/configuracoes.html" || path === "/mais.html";
@@ -446,6 +446,9 @@ const INTERNAL_VIEW_STYLE_HINTS = {
   ],
   "/comunidade.html": [
     "assets/css/pages/comunidade.css"
+  ],
+  "/comunidade-interna.html": [
+    "assets/css/pages/comunidade-interna.css"
   ],
   "/avaliacao.html": [
     "assets/css/pages/home-shared.css",
