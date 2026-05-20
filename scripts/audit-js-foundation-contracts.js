@@ -21,7 +21,6 @@ const pages = {
   'pedidos.html': 'pedidos-controller.js',
   'mensagens.html': 'mensagens-controller.js',
   'comunidade.html': 'comunidade-controller.js',
-  'comunidade-interna.html': 'comunidade-interna-controller.js',
   'perfil.html': 'perfil-controller.js',
   'carteira.html': 'wallet-controller.js',
   'notificacoes.html': 'notificacoes-controller.js',

@@ -5,7 +5,7 @@ const path = require('path');
 const ROOT = process.cwd();
 const TARGET_PAGES = [
   'mensagens.html',
-  'comunidade-interna.html',
+  'comunidade.html',
   'pagamento-profissional.html',
   'avaliacao.html'
 ];
@@ -22,10 +22,9 @@ const selectorContracts = {
   'assets/js/components/mobile-app-shell.js': ['doke-mobile-shell-pending', 'data-mobile-home-menu-open', 'data-mobile-shell', 'doke-mobile-page-header'],
   'assets/js/pages/home/drawer.js': ['data-mobile-home-drawer', 'data-mobile-home-menu-open', 'data-home-profile-menu-toggle'],
   'assets/js/pages/avaliacao.js': ['data-review-page', 'data-review-star', 'data-review-submit'],
-  'assets/js/pages/comunidade-interna.js': ['data-community-room', 'data-community-room-messages', 'data-community-room-form'],
   'assets/js/pages/mensagens.js': ['data-messages-page', 'data-thread-body', 'data-messages-composer'],
   'assets/js/pages/pagamento-profissional.js': ['data-payment-page', 'data-payment-method', 'data-payment-submit'],
-  'assets/js/services/community-service.js': ['data-community', 'data-community-room', 'data-community-feed'],
+  'assets/js/services/community-service.js': ['data-community', 'data-community-feed'],
   'assets/js/services/conversation-service.js': ['data-messages-page', 'data-conversation', 'data-thread-body'],
   'assets/js/services/order-service.js': ['data-order', 'data-finalizar-pedido-page', 'data-payment-page', 'data-review-page'],
   'assets/js/services/profile-service.js': ['data-profile', 'data-profile-card', 'data-user-profile'],

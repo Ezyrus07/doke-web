@@ -17,7 +17,6 @@
     'pedidos.html': { key: 'pedidos', active: 'orders', search: false },
     'mensagens.html': { key: 'mensagens', active: 'messages', search: false },
     'comunidade.html': { key: 'comunidade', active: 'communities', search: false },
-    'comunidade-interna.html': { key: 'mensagens', active: 'communities', search: false, title: 'Comunidade' },
     'perfil.html': { key: 'perfil', active: 'profile', search: false },
     'carteira.html': { key: 'carteira', active: 'profile', search: false },
     'notificacoes.html': { key: 'notificacoes', active: '', search: false },
@@ -52,7 +51,7 @@
   }
 
   function usesContextActions(cfg) {
-    return Boolean(cfg && !cfg.search && ['pedidos', 'mensagens', 'comunidade', 'comunidade-interna', 'carteira', 'notificacoes', 'perfil'].indexOf(cfg.key) !== -1);
+    return Boolean(cfg && !cfg.search && ['pedidos', 'mensagens', 'comunidade', 'carteira', 'notificacoes', 'perfil'].indexOf(cfg.key) !== -1);
   }
 
   function queryValue() {

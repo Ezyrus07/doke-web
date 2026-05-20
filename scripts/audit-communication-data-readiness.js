@@ -27,18 +27,6 @@ const pages = [
       inputs: ['data-community-search', 'data-community-filter']
     },
     futureResources: ['communities', 'communityHighlights', 'rankings', 'filters', 'joinRequests']
-  },
-  {
-    file: 'comunidade-interna.html',
-    key: 'comunidade-interna',
-    expected: {
-      roots: ['data-community-room', 'data-community-internal', 'data-page="comunidade-interna"'],
-      lists: ['data-channel-list', 'data-community-messages', 'data-community-feed'],
-      items: ['data-channel-id', 'data-message-id', 'data-post-id'],
-      states: ['data-community-empty', 'data-list-empty'],
-      inputs: ['data-message-composer', 'data-community-composer']
-    },
-    futureResources: ['community', 'channels', 'members', 'messages', 'posts', 'attachments', 'moderation']
   }
 ];
 

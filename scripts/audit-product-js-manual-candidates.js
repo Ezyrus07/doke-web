@@ -15,7 +15,7 @@ const manual = (readiness.decisions || []).filter((item) => item.decision === 'm
 
 const targetPages = [
   'mensagens.html',
-  'comunidade-interna.html',
+  'comunidade.html',
   'pagamento-profissional.html',
   'avaliacao.html'
 ];

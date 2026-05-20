@@ -9,7 +9,6 @@
     pedidos: ['orders'],
     mensagens: ['messages', 'users'],
     comunidade: ['communities'],
-    'comunidade-interna': ['communities', 'messages', 'users'],
     perfil: ['users', 'services', 'orders'],
     carteira: ['wallet'],
     'finalizar-pedido': ['orders'],

@@ -8,7 +8,7 @@ const path = require('path');
 
 const root = process.cwd();
 const strict = process.argv.includes('--strict');
-const pages = ['index.html','resultados.html','pedidos.html','mensagens.html','comunidade.html','comunidade-interna.html','perfil.html','carteira.html','notificacoes.html','configuracoes.html'];
+const pages = ['index.html','resultados.html','pedidos.html','mensagens.html','comunidade.html','comunidade.html','perfil.html','carteira.html','notificacoes.html','configuracoes.html'];
 
 const issues = [];
 const stats = { dokeBtn: 0, dokeIconBtn: 0, dokeCard: 0, dokeField: 0, dokeInput: 0, dokeModal: 0, dokeAvatar: 0, dokeChipBadge: 0 };

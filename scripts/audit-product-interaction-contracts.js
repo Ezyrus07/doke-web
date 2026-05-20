@@ -15,15 +15,6 @@ const contracts = {
       threadMenus: ['data-thread-more-toggle', 'data-thread-more-menu']
     }
   },
-  'comunidade-interna.html': {
-    pageRoot: ['data-community-room'],
-    requiredHooks: ['data-community-room-messages', 'data-community-room-form', 'data-community-room-input'],
-    interactionGroups: {
-      search: ['data-community-search-toggle', 'data-community-search-form'],
-      members: ['data-community-members-toggle', 'data-community-members-panel'],
-      contextPanels: ['data-community-room-sidebar', 'data-community-summary-region']
-    }
-  },
   'pagamento-profissional.html': {
     pageRoot: ['data-payment-page'],
     requiredHooks: ['data-payment-page'],

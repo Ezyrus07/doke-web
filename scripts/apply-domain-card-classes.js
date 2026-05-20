@@ -4,7 +4,7 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 const pages = [
   'index.html','resultados.html','pedidos.html','mensagens.html','comunidade.html',
-  'comunidade-interna.html','perfil.html','carteira.html','notificacoes.html','configuracoes.html'
+  'comunidade.html','perfil.html','carteira.html','notificacoes.html','configuracoes.html'
 ];
 
 const rules = [

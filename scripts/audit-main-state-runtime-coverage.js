@@ -16,7 +16,7 @@ const PAGES = [
   'notificacoes.html',
   'mensagens.html',
   'comunidade.html',
-  'comunidade-interna.html'
+  'comunidade.html'
 ];
 
 function read(file) {

@@ -9,7 +9,6 @@
     '/mensagens.html',
     '/notificacoes.html',
     '/comunidade.html',
-    '/comunidade-interna.html',
     '/carteira.html',
     '/perfil.html',
     '/configuracoes.html',

@@ -22,7 +22,6 @@ const PAGE_CONTROLLER_BY_HTML = {
   'pedidos.html': 'assets/js/controllers/pedidos-controller.js',
   'mensagens.html': 'assets/js/controllers/mensagens-controller.js',
   'comunidade.html': 'assets/js/controllers/comunidade-controller.js',
-  'comunidade-interna.html': 'assets/js/controllers/comunidade-interna-controller.js',
   'notificacoes.html': 'assets/js/controllers/notificacoes-controller.js',
   'carteira.html': 'assets/js/controllers/wallet-controller.js',
   'configuracoes.html': 'assets/js/controllers/configuracoes-controller.js'
@@ -151,7 +150,7 @@ function audit() {
         ensureBefore(page, scripts, 'assets/js/services/page-data-orchestrator.js', src, issues);
         ensureBefore(page, scripts, 'assets/js/core/list-state.js', src, issues, 'warning');
       }
-    } else if (['index.html', 'resultados.html', 'perfil.html', 'pedidos.html', 'comunidade.html', 'comunidade-interna.html', 'carteira.html', 'configuracoes.html', 'notificacoes.html', 'detalhe-anuncio.html'].includes(page)) {
+    } else if (['index.html', 'resultados.html', 'perfil.html', 'pedidos.html', 'comunidade.html', 'comunidade.html', 'carteira.html', 'configuracoes.html', 'notificacoes.html', 'detalhe-anuncio.html'].includes(page)) {
       notes.push({ page, type: 'data-ready-chain-not-installed', message: 'Página relevante ainda não carrega a cadeia data-ready nova; tratar em ciclo próprio antes de renderização dinâmica.' });
     }
 

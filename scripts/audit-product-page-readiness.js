@@ -14,7 +14,7 @@ const ROOT = process.cwd();
 const OUTPUT = path.join(ROOT, 'docs/validation/global-cycle-70-product-page-readiness-report.json');
 const TARGET_PAGES = [
   'mensagens.html',
-  'comunidade-interna.html',
+  'comunidade.html',
   'pagamento-profissional.html',
   'avaliacao.html',
   ];
@@ -59,7 +59,7 @@ function resolveAsset(pageFile, assetPath) {
 function inferPageRole(pageFile) {
   const map = {
     'mensagens.html': 'communication-inbox',
-    'comunidade-interna.html': 'community-room',
+    'comunidade.html': 'community-discovery',
     'pagamento-profissional.html': 'payment-flow',
     'avaliacao.html': 'review-flow',
   };

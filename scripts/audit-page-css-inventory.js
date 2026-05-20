@@ -15,7 +15,7 @@ const CRITICAL_HTML = new Set([
   'perfil.html',
   'pedidos.html',
   'mensagens.html',
-  'comunidade-interna.html',
+  'comunidade.html',
 ]);
 const EVOLVING_HTML = new Set([
   'carteira.html',
@@ -23,7 +23,7 @@ const EVOLVING_HTML = new Set([
   'resultados.html',
   'pagamento-profissional.html',
   'configuracoes.html',
-  'comunidade-interna.html',
+  'comunidade.html',
   'avaliacao.html',
   ]);
 

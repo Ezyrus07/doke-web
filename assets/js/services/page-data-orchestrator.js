@@ -58,12 +58,6 @@
       controller: 'comunidade-controller',
       strategy: 'render community discovery from repository data and preserve card contracts'
     }),
-    'comunidade-interna': Object.freeze({
-      status: 'evolving-complex',
-      resources: ['communities', 'messages', 'users'],
-      controller: 'comunidade-interna-controller',
-      strategy: 'prepare channels, members and messages without locking current provisional layout'
-    }),
     mensagens: Object.freeze({
       status: 'complex-communication',
       resources: ['conversations', 'messages', 'users'],

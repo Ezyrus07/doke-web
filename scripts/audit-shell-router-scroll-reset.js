@@ -15,7 +15,7 @@ const mainPages = [
   'notificacoes.html',
   'mensagens.html',
   'comunidade.html',
-  'comunidade-interna.html'
+  'comunidade.html'
 ];
 const expectedVersion = 'assets/js/core/app.js?v=20260512-shell-router-scroll-reset-v167';
 const appPath = path.join(root, 'assets/js/core/app.js');

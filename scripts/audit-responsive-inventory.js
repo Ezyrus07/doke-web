@@ -9,7 +9,6 @@ const pages = [
   { file: 'pedidos.html', page: 'pedidos', flow: 'doke-order-flow', desktop: ['desktop-shell.css', 'desktop-sidebar.css', 'desktop-topbar.css'], mobile: ['mobile-app-shell.css'] },
   { file: 'mensagens.html', page: 'mensagens', flow: 'doke-message-flow', desktop: ['desktop-shell.css', 'desktop-sidebar.css', 'desktop-topbar.css'], mobile: ['mobile-app-shell.css'] },
   { file: 'comunidade.html', page: 'comunidade', flow: 'doke-community-flow', desktop: ['desktop-shell.css', 'desktop-sidebar.css', 'desktop-topbar.css'], mobile: ['mobile-app-shell.css'] },
-  { file: 'comunidade-interna.html', page: 'comunidade-interna', flow: 'doke-community-flow', desktop: ['desktop-shell.css', 'desktop-sidebar.css', 'desktop-topbar.css'], mobile: ['mobile-app-shell.css'] },
   { file: 'perfil.html', page: 'perfil', flow: 'doke-profile-flow', desktop: ['desktop-shell.css', 'desktop-sidebar.css', 'desktop-topbar.css'], mobile: ['mobile-app-shell.css'] },
   { file: 'carteira.html', page: 'carteira', flow: 'doke-wallet-flow', desktop: ['desktop-shell.css', 'desktop-sidebar.css', 'desktop-topbar.css'], mobile: ['mobile-app-shell.css'] },
   { file: 'notificacoes.html', page: 'notificacoes', flow: 'doke-settings-flow', desktop: ['desktop-shell.css', 'desktop-sidebar.css', 'desktop-topbar.css'], mobile: ['mobile-app-shell.css'] },

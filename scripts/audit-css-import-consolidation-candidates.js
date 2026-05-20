@@ -17,7 +17,7 @@ const TARGET_PAGES = [
   'notificacoes.html',
   'mensagens.html',
   'comunidade.html',
-  'comunidade-interna.html',
+  'comunidade.html',
 ].filter((page) => fs.existsSync(path.join(ROOT, page)));
 
 function classify(href) {

@@ -8,7 +8,7 @@ const pages = [
   'pedidos.html',
   'mensagens.html',
   'comunidade.html',
-  'comunidade-interna.html',
+  'comunidade.html',
   'perfil.html',
   'carteira.html',
   'notificacoes.html',

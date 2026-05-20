@@ -27,7 +27,7 @@
         }),
         dom.create('div', {
           className: 'doke-card__footer doke-community-card__footer',
-          children: [dom.create('a', { className: 'doke-btn doke-btn--primary doke-btn--compact', text: 'Entrar', attrs: { href: community.href || 'comunidade-interna.html' } })]
+          children: [dom.create('a', { className: 'doke-btn doke-btn--primary doke-btn--compact', text: 'Entrar', attrs: { href: community.href || 'comunidade.html' } })]
         })
       ]
     });

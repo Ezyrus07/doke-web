@@ -8,7 +8,6 @@ const PAGES = {
   'pedidos.html': 'pedidos',
   'carteira.html': 'carteira',
   'mensagens.html': 'mensagens',
-  'comunidade-interna.html': 'comunidade-interna'
 };
 const REPORT = path.join(ROOT, 'docs/validation/global-cycle-131-135-critical-state-contracts-report.json');
 

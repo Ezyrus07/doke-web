@@ -23,7 +23,7 @@ const evolvingPages = new Set([
   'detalhe-anuncio.html',
   'pagamento-profissional.html',
   'configuracoes.html',
-  'comunidade-interna.html',
+  'comunidade.html',
   'avaliacao.html',
   ]);
 

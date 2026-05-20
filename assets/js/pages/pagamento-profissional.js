@@ -218,4 +218,70 @@
 
   setSelectedMethod(selectedMethod);
   updateTotals();
+
+  const finishOrderModal = document.querySelector('[data-finish-order-modal]');
+  const finishOrderOpenButtons = Array.from(document.querySelectorAll('[data-finish-order-open]'));
+  const finishOrderConfirm = document.querySelector('[data-finish-order-confirm]');
+  const finishOrderSubmit = document.querySelector('[data-finish-order-submit]');
+  const finishOrderError = document.querySelector('[data-finish-order-error]');
+  const finishOrderPanels = Array.from(document.querySelectorAll('[data-finish-order-panel]'));
+
+  function setFinishOrderPanel(panelName) {
+    finishOrderPanels.forEach((panel) => {
+      const active = panel.dataset.finishOrderPanel === panelName;
+      panel.hidden = !active;
+      panel.classList.toggle('is-active', active);
+    });
+  }
+
+  function openFinishOrderModal() {
+    if (!finishOrderModal) return;
+    setFinishOrderPanel('confirm');
+    if (finishOrderError) finishOrderError.hidden = true;
+    finishOrderModal.hidden = false;
+    finishOrderModal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('payment-finish-modal-open');
+  }
+
+  function closeFinishOrderModal() {
+    if (!finishOrderModal) return;
+    finishOrderModal.hidden = true;
+    finishOrderModal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('payment-finish-modal-open');
+  }
+
+  finishOrderOpenButtons.forEach((button) => {
+    button.addEventListener('click', openFinishOrderModal);
+  });
+
+  if (finishOrderConfirm) {
+    finishOrderConfirm.addEventListener('change', () => {
+      if (finishOrderError) finishOrderError.hidden = true;
+    });
+  }
+
+  if (finishOrderSubmit) {
+    finishOrderSubmit.addEventListener('click', () => {
+      if (finishOrderConfirm && !finishOrderConfirm.checked) {
+        if (finishOrderError) finishOrderError.hidden = false;
+        finishOrderConfirm.focus();
+        return;
+      }
+      if (finishOrderError) finishOrderError.hidden = true;
+      setFinishOrderPanel('success');
+    });
+  }
+
+  if (finishOrderModal) {
+    finishOrderModal.addEventListener('click', (event) => {
+      if (event.target.closest('[data-finish-order-close]')) closeFinishOrderModal();
+    });
+  }
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && finishOrderModal && !finishOrderModal.hidden) {
+      closeFinishOrderModal();
+    }
+  });
+
 })();

@@ -16,7 +16,7 @@ const HTML_PAGES = [
   'notificacoes.html',
   'mensagens.html',
   'comunidade.html',
-  'comunidade-interna.html',
+  'comunidade.html',
 ];
 
 function normalizeHref(href) {

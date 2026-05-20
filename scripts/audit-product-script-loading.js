@@ -14,7 +14,7 @@ const ROOT = process.cwd();
 const OUTPUT = path.join(ROOT, 'docs/validation/global-cycle-75-product-script-loading-report.json');
 const TARGET_PAGES = [
   'mensagens.html',
-  'comunidade-interna.html',
+  'comunidade.html',
   'pagamento-profissional.html',
   'avaliacao.html',
   ];

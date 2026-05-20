@@ -8,7 +8,7 @@ const pages = [
   { file: 'pedidos.html', flow: 'doke-order-flow' },
   { file: 'mensagens.html', flow: 'doke-message-flow' },
   { file: 'comunidade.html', flow: 'doke-community-flow' },
-  { file: 'comunidade-interna.html', flow: 'doke-community-flow' },
+  { file: 'comunidade.html', flow: 'doke-community-flow' },
   { file: 'perfil.html', flow: 'doke-profile-flow' },
   { file: 'carteira.html', flow: 'doke-wallet-flow' },
   { file: 'notificacoes.html', flow: 'doke-settings-flow' },

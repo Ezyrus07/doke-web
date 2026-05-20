@@ -10,7 +10,7 @@ const PAGES = [
   'index.html', 'resultados.html', 'perfil.html', 'detalhe-anuncio.html', 'pedidos.html',
   'carteira.html', 'pagamento-profissional.html', 'avaliacao.html',
   'configuracoes.html', 'notificacoes.html', 'mensagens.html',
-  'comunidade.html', 'comunidade-interna.html'
+  'comunidade.html', 'comunidade.html'
 ];
 
 function read(file) {

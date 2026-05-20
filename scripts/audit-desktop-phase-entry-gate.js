@@ -4,9 +4,9 @@ const path = require('path');
 const ROOT = process.cwd();
 const REPORT = path.join(ROOT, 'docs/validation/global-cycle-104-desktop-phase-entry-gate-report.json');
 const pages = [
-  'index.html','resultados.html','perfil.html','detalhe-anuncio.html','pedidos.html','carteira.html','pagamento-profissional.html','avaliacao.html','configuracoes.html','notificacoes.html','mensagens.html','comunidade.html','comunidade-interna.html'
+  'index.html','resultados.html','perfil.html','detalhe-anuncio.html','pedidos.html','carteira.html','pagamento-profissional.html','avaliacao.html','configuracoes.html','notificacoes.html','mensagens.html','comunidade.html','comunidade.html'
 ];
-const provisionalPages = new Set(['carteira.html','detalhe-anuncio.html','resultados.html','pagamento-profissional.html','configuracoes.html','comunidade-interna.html','avaliacao.html']);
+const provisionalPages = new Set(['carteira.html','detalhe-anuncio.html','resultados.html','pagamento-profissional.html','configuracoes.html','comunidade.html','avaliacao.html']);
 const pageReports = pages.filter((file) => fs.existsSync(path.join(ROOT, file))).map((file) => {
   const text = fs.readFileSync(path.join(ROOT, file), 'utf8');
   const inlineStyleCount = (text.match(/\sstyle\s*=\s*"[^"]*"/g) || []).length;

@@ -28,7 +28,7 @@ const REQUIRED_PAGES = [
   'avaliacao.html',
   'mensagens.html',
   'comunidade.html',
-  'comunidade-interna.html',
+  'comunidade.html',
 ];
 
 const contractExists = fs.existsSync(path.join(ROOT, CONTRACT));

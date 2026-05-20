@@ -213,7 +213,7 @@ const md = `# Ciclo Global 46 — Mapa de CSS legado/suspeito\n\n` +
 `4. **Migrar regra útil para o lugar correto** antes de remover o arquivo legado.\n` +
 `5. **Remover um import por vez**, validando desktop/mobile.\n\n` +
 `## Próxima ação recomendada\n\n` +
-`Começar pelos arquivos suspeitos que têm muitas ocorrências de \`!important\` e uso concentrado em uma página. Evitar mexer primeiro em arquivos que afetam \`perfil.html\`, \`mensagens.html\` e \`comunidade-interna.html\` sem baseline visual.\n\n` +
+`Começar pelos arquivos suspeitos que têm muitas ocorrências de \`!important\` e uso concentrado em uma página. Evitar mexer primeiro em arquivos que afetam \`perfil.html\`, \`mensagens.html\` e \`comunidade.html\` sem baseline visual.\n\n` +
 `O próximo ciclo recomendado é **Ciclo Global 47 — classificação dos CSS suspeitos por risco de remoção**, separando: remover agora, migrar antes, manter por compatibilidade e bloquear até baseline visual.\n`;
 
 fs.writeFileSync(path.join(DOCS_DIR, 'GLOBAL-CYCLE-46-LEGACY-CSS-MAP.md'), md);

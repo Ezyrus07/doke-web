@@ -39,7 +39,7 @@ const mainPages = [
   'notificacoes.html',
   'mensagens.html',
   'comunidade.html',
-  'comunidade-interna.html'
+  'comunidade.html'
 ];
 
 function exists(rel) {

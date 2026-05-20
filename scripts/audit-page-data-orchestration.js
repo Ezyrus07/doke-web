@@ -17,7 +17,6 @@ const requiredPages = [
   'notificacoes',
   'configuracoes',
   'comunidade',
-  'comunidade-interna',
   'mensagens',
   'pagamento',
   'finalizar-pedido',
@@ -32,7 +31,6 @@ const evolvingPages = new Set([
   'finalizar-pedido',
   'pagamento',
   'configuracoes',
-  'comunidade-interna',
   'avaliacao',
   'adicionar-cartao'
 ]);

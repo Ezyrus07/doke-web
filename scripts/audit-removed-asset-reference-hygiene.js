@@ -8,7 +8,6 @@ const removedAssets = [
   'assets/css/components/ui/doke-legacy-bridge.css',
   'assets/css/components/surface-contract-final.css',
   'assets/css/pages/comunidade/internal-modal-legacy.css',
-  'assets/css/pages/comunidade-interna/internal-modal-legacy.css',
 ];
 
 const activeExtensions = new Set(['.html', '.css', '.js', '.json']);

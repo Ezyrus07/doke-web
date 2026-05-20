@@ -5,7 +5,7 @@ const path = require('path');
 const ROOT = process.cwd();
 const TARGET_PAGES = [
   'mensagens.html',
-  'comunidade-interna.html',
+  'comunidade.html',
   'pagamento-profissional.html',
   'avaliacao.html'
 ];

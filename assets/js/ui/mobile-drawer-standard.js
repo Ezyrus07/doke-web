@@ -18,7 +18,6 @@
   const cleanPath=(value)=>String(value||'').split('?')[0].split('#')[0].split('/').pop().toLowerCase()||'index.html';
   const routeGroup=(path)=>{
     const current=cleanPath(path);
-    if(current==='comunidade-interna.html')return'comunidade.html';
     if(current==='detalhe-anuncio.html'||current==='resultados.html')return'index.html';
     if(['pagamento-profissional.html','avaliacao.html'].includes(current))return'pedidos.html';
     return current;

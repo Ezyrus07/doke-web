@@ -7,7 +7,7 @@ const REPORT_PATH = path.join(ROOT, 'docs/validation/global-cycle-143-essential-
 const pages = [
   'index.html', 'resultados.html', 'perfil.html', 'detalhe-anuncio.html', 'pedidos.html', 'carteira.html',
   'pagamento-profissional.html', 'avaliacao.html', 'configuracoes.html',
-  'notificacoes.html', 'mensagens.html', 'comunidade.html', 'comunidade-interna.html'
+  'notificacoes.html', 'mensagens.html', 'comunidade.html', 'comunidade.html'
 ];
 
 function read(file) { return fs.readFileSync(path.join(ROOT, file), 'utf8'); }

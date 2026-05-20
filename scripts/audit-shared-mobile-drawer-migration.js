@@ -6,7 +6,7 @@ const OUT = path.join(ROOT, 'docs', 'validation', 'global-cycle-119-shared-mobil
 const MANIFEST = path.join(ROOT, 'docs', 'validation', 'global-cycle-119-source-removal-manifest.json');
 const OLD = 'assets/js/pages/home/drawer.js';
 const NEXT = 'assets/js/ui/mobile-drawer.js';
-const EXPECTED_PAGES = ['index.html','mensagens.html','comunidade-interna.html','comunidade.html','configuracoes.html','notificacoes.html','pedidos.html'];
+const EXPECTED_PAGES = ['index.html','mensagens.html','comunidade.html','comunidade.html','configuracoes.html','notificacoes.html','pedidos.html'];
 
 function read(file) { return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : ''; }
 function srcs(html) { return [...html.matchAll(/<script\b[^>]*src=["']([^"']+)["'][^>]*>/gi)].map((m) => m[1].split('?')[0].replace(/^\.\//, '')); }

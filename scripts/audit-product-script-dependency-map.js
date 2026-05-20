@@ -7,12 +7,12 @@ const INPUT = 'docs/validation/global-cycle-76-product-script-inventory-report.j
 const OUTPUT = 'docs/validation/global-cycle-81-product-script-dependency-map-report.json';
 const TARGET_PAGES = [
   'mensagens.html',
-  'comunidade-interna.html',
+  'comunidade.html',
   'pagamento-profissional.html',
   'avaliacao.html'
 ];
 const TRANSACTION_PAGES = new Set(['pagamento-profissional.html', 'avaliacao.html']);
-const COMMUNICATION_PAGES = new Set(['mensagens.html', 'comunidade-interna.html']);
+const COMMUNICATION_PAGES = new Set(['mensagens.html', 'comunidade.html']);
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(path.join(ROOT, file), 'utf8'));

@@ -22,7 +22,7 @@ const pageOrder = [
   { page: 'perfil.html', phase: 'desktop-priority-1', reason: 'high visual complexity; must use baseline before changes' },
   { page: 'detalhe-anuncio.html', phase: 'desktop-priority-2', reason: 'detail/conversion page; provisional visual' },
   { page: 'mensagens.html', phase: 'desktop-priority-2', reason: 'communication core; already data-ready enough for reform prep' },
-  { page: 'comunidade-interna.html', phase: 'desktop-priority-2', reason: 'community conversation area; provisional visual' },
+  { page: 'comunidade.html', phase: 'desktop-priority-2', reason: 'community conversation area; provisional visual' },
   { page: 'pagamento-profissional.html', phase: 'desktop-priority-3', reason: 'transactional; data boundary exists, visual provisional' },
   { page: 'avaliacao.html', phase: 'desktop-priority-3', reason: 'post-order flow; controller exists' },
   { page: 'pedidos.html', phase: 'desktop-priority-4', reason: 'operational dashboard; check existing baseline first' },

@@ -28,7 +28,7 @@
     'mensagens.html',
     'comunidade.html',
     'comunidades.html',
-    'comunidade-interna.html',
+    'comunidade.html',
     'resultados.html',
     'resultado.html',
     'perfil.html',

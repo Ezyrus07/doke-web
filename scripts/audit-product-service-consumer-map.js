@@ -19,7 +19,7 @@ const SCAN_FILES = [
   'assets/js/services/domain-data-service.js',
   'assets/js/controllers/controller-data.js',
   'mensagens.html',
-  'comunidade-interna.html',
+  'comunidade.html',
   'pagamento-profissional.html',
   'avaliacao.html'
 ];

@@ -21,7 +21,7 @@ const pages = [
   'resultados.html',
   'perfil.html',
   'comunidade.html',
-  'comunidade-interna.html',
+  'comunidade.html',
   'pedidos.html',
   'mensagens.html',
   'notificacoes.html',

@@ -33,7 +33,6 @@
           ? services.messages.listConversations({ userId: 'user_001' }).then(function (messages) { return { messages: messages }; })
           : ok({ messages: [] });
       case 'comunidade':
-      case 'comunidade-interna':
         return services.communities && services.communities.list
           ? services.communities.list({ city: 'Salvador' }).then(function (communities) { return { communities: communities }; })
           : ok({ communities: [] });
