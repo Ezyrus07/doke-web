@@ -984,7 +984,7 @@
           avatar: "",
           title: `Finalizar pedido com ${conversations[activeId]?.name || "profissional"}`
         });
-        const nextUrl = `finalizar-pedido.html?${query.toString()}`;
+        const nextUrl = `pagamento-profissional.html?${query.toString()}`;
         if (window.DokeNavigate) {
           window.DokeNavigate(nextUrl);
         } else {

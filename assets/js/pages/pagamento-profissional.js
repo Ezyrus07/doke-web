@@ -4,9 +4,18 @@
   const root = document.querySelector('[data-payment-page]');
   if (!root) return;
 
+  const BASE_TOTAL = 280;
+  const POINTS_DISCOUNT = 23;
+
   const methodButtons = Array.from(root.querySelectorAll('[data-payment-method]'));
   const cardFields = root.querySelector('[data-card-fields]');
+  const cardEmpty = root.querySelector('[data-card-empty]');
+  const addCardButton = root.querySelector('[data-add-card]');
   const summaryMethod = root.querySelector('[data-summary-method]');
+  const summaryTotal = root.querySelector('[data-summary-total]');
+  const pointsInput = root.querySelector('[data-points-input]');
+  const pointsRow = root.querySelector('[data-summary-points-row]');
+  const pointsDiscount = root.querySelector('[data-summary-points-discount]');
   const submitButton = root.querySelector('[data-payment-submit]');
   const confirmInput = root.querySelector('[data-payment-confirm-input]');
   const errorMessage = root.querySelector('[data-payment-error]');
@@ -17,9 +26,37 @@
   const showReceiptButton = modal ? modal.querySelector('[data-show-receipt]') : null;
   const receipt = modal ? modal.querySelector('[data-payment-receipt]') : null;
   const pixCode = modal ? modal.querySelector('[data-pix-code]') : null;
+  const modalTotal = modal ? modal.querySelector('[data-modal-total]') : null;
+  const receiptTotal = modal ? modal.querySelector('[data-receipt-total]') : null;
 
   let selectedMethod = 'Pix';
+  let cardFormOpen = false;
   let processingTimer = null;
+
+  function formatCurrency(value) {
+    return value.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
+  }
+
+  function getCurrentTotal() {
+    const usesPoints = Boolean(pointsInput && pointsInput.checked);
+    return Math.max(BASE_TOTAL - (usesPoints ? POINTS_DISCOUNT : 0), 0);
+  }
+
+  function updateTotals() {
+    const usesPoints = Boolean(pointsInput && pointsInput.checked);
+    const total = getCurrentTotal();
+    const formattedTotal = formatCurrency(total);
+
+    if (pointsRow) pointsRow.hidden = !usesPoints;
+    if (pointsDiscount) pointsDiscount.textContent = `-${formatCurrency(POINTS_DISCOUNT)}`;
+    if (summaryTotal) summaryTotal.textContent = formattedTotal;
+    if (modalTotal) modalTotal.textContent = formattedTotal;
+    if (receiptTotal) receiptTotal.textContent = formattedTotal;
+
+  }
 
   function setSelectedMethod(method) {
     selectedMethod = method;
@@ -31,7 +68,18 @@
     });
 
     if (summaryMethod) summaryMethod.textContent = method;
-    if (cardFields) cardFields.hidden = method !== 'Cartão de crédito';
+    updateCardPaymentState();
+  }
+
+  function isCardMethod(method) {
+    return method === 'Cartão de crédito' || method === 'Cartão de débito';
+  }
+
+  function updateCardPaymentState() {
+    const needsCard = isCardMethod(selectedMethod);
+
+    if (cardEmpty) cardEmpty.hidden = !needsCard || cardFormOpen;
+    if (cardFields) cardFields.hidden = !needsCard || !cardFormOpen;
   }
 
   function showPanel(name) {
@@ -80,12 +128,37 @@
     });
   });
 
+
+  if (addCardButton) {
+    addCardButton.addEventListener('click', () => {
+      cardFormOpen = true;
+      updateCardPaymentState();
+      clearError();
+
+      const firstInput = cardFields ? cardFields.querySelector('input') : null;
+      if (firstInput) firstInput.focus();
+    });
+  }
+
+  if (pointsInput) {
+    pointsInput.addEventListener('change', () => {
+      updateTotals();
+      clearError();
+    });
+  }
+
   if (confirmInput) {
     confirmInput.addEventListener('change', clearError);
   }
 
   if (submitButton) {
     submitButton.addEventListener('click', () => {
+      if (isCardMethod(selectedMethod) && !cardFormOpen) {
+        showError('Adicione um cartão para continuar com essa forma de pagamento.');
+        if (addCardButton) addCardButton.focus();
+        return;
+      }
+
       if (confirmInput && !confirmInput.checked) {
         showError('Confirme que revisou a cobrança antes de continuar.');
         confirmInput.focus();
@@ -144,4 +217,5 @@
   });
 
   setSelectedMethod(selectedMethod);
+  updateTotals();
 })();

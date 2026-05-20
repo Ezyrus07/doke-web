@@ -12,9 +12,7 @@ const PRODUCT_PAGES = [
   'pedidos.html',
   'carteira.html',
   'pagamento-profissional.html',
-  'finalizar-pedido.html',
   'avaliacao.html',
-  'adicionar-cartao.html',
   'configuracoes.html',
   'notificacoes.html',
   'mensagens.html',
@@ -46,7 +44,7 @@ const pages = PRODUCT_PAGES.map((page) => {
   const viewportPresent = /<meta\b[^>]*name=["']viewport["']/i.test(html);
   const images = [...html.matchAll(/<img\b[^>]*>/gi)].map((m) => m[0]);
   const imagesWithoutAlt = images.filter((tag) => !/\balt=["']/i.test(tag)).length;
-  const provisional = ['carteira.html','detalhe-anuncio.html','resultados.html','finalizar-pedido.html','pagamento-profissional.html','avaliacao.html','adicionar-cartao.html','configuracoes.html','comunidade-interna.html'].includes(page);
+  const provisional = ['carteira.html','detalhe-anuncio.html','resultados.html','pagamento-profissional.html','avaliacao.html','configuracoes.html','comunidade-interna.html'].includes(page);
   const issues = [];
   if (!viewportPresent) issues.push('missing-viewport');
   if (!bodyClass.trim()) issues.push('missing-body-class');
@@ -74,7 +72,7 @@ const pages = PRODUCT_PAGES.map((page) => {
 
 const groups = {
   marketplaceCritical: ['index.html','resultados.html','perfil.html','detalhe-anuncio.html'],
-  operationalTransactional: ['pedidos.html','carteira.html','pagamento-profissional.html','finalizar-pedido.html','avaliacao.html','adicionar-cartao.html','configuracoes.html','notificacoes.html'],
+  operationalTransactional: ['pedidos.html','carteira.html','pagamento-profissional.html','avaliacao.html','configuracoes.html','notificacoes.html'],
   communicationCommunity: ['mensagens.html','comunidade.html','comunidade-interna.html']
 };
 

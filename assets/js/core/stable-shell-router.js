@@ -22,9 +22,8 @@
 
   var NATIVE_ONLY_ROUTES = new Set([
     '/detalhe-anuncio.html',
-    '/finalizar-pedido.html',
-    '/avaliacao.html',
-    '/adicionar-cartao.html'
+    '/pagamento-profissional.html',
+    '/avaliacao.html'
   ]);
 
   var ROUTE_INIT = {

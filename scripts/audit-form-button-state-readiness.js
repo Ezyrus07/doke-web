@@ -8,8 +8,8 @@ const ROOT = process.cwd();
 const OUT = path.join(ROOT, 'docs/validation/global-cycle-128-form-button-state-readiness-report.json');
 const PAGES = [
   'index.html', 'resultados.html', 'perfil.html', 'detalhe-anuncio.html', 'pedidos.html',
-  'carteira.html', 'pagamento-profissional.html', 'finalizar-pedido.html', 'avaliacao.html',
-  'adicionar-cartao.html', 'configuracoes.html', 'notificacoes.html', 'mensagens.html',
+  'carteira.html', 'pagamento-profissional.html', 'avaliacao.html',
+  'configuracoes.html', 'notificacoes.html', 'mensagens.html',
   'comunidade.html', 'comunidade-interna.html'
 ];
 

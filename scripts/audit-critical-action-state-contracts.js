@@ -3,9 +3,7 @@ const path = require('path');
 
 const ROOT = process.cwd();
 const ACTIONS = [
-  { file: 'finalizar-pedido.html', selector: 'data-finalize-submit' },
   { file: 'pagamento-profissional.html', selector: 'data-payment-submit' },
-  { file: 'adicionar-cartao.html', selector: 'data-card-add-submit' },
   { file: 'avaliacao.html', selector: 'data-review-submit' }
 ];
 const REPORT = path.join(ROOT, 'docs/validation/global-cycle-131-135-critical-action-state-contracts-report.json');

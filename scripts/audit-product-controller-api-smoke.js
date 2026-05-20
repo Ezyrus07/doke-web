@@ -5,20 +5,10 @@ const path = require('path');
 const ROOT = process.cwd();
 const OUT = 'docs/validation/global-cycle-88-product-controller-api-smoke-report.json';
 const controllers = {
-  'finalizar-pedido.html': {
-    file: 'assets/js/controllers/finalizar-pedido-controller.js',
-    api: ['Doke.finalizeOrderController', 'getLatest'],
-    stateKey: 'finalizar-pedido'
-  },
   'pagamento-profissional.html': {
     file: 'assets/js/pages/pagamento-profissional.js',
     api: ['Doke.paymentController', 'getLatest'],
     stateKey: 'pagamento'
-  },
-  'adicionar-cartao.html': {
-    file: 'assets/js/controllers/adicionar-cartao-controller.js',
-    api: ['Doke.addCardController', 'getLatest'],
-    stateKey: 'adicionar-cartao'
   },
   'avaliacao.html': {
     file: 'assets/js/controllers/avaliacao-controller.js',

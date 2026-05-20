@@ -20,7 +20,7 @@
     const current=cleanPath(path);
     if(current==='comunidade-interna.html')return'comunidade.html';
     if(current==='detalhe-anuncio.html'||current==='resultados.html')return'index.html';
-    if(['finalizar-pedido.html','adicionar-cartao.html','avaliacao.html'].includes(current))return'pedidos.html';
+    if(['pagamento-profissional.html','avaliacao.html'].includes(current))return'pedidos.html';
     return current;
   };
   const drawerItem=({href,label,iconName,badge,button})=>{

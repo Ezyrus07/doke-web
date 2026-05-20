@@ -70,7 +70,7 @@ const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", 
 const ROUTE_SWAP_STATE_CLASSES = ["is-shell-swapping", "is-route-instant-swap"];
 const PRESERVED_BODY_STATE_CLASSES = [...SHELL_STATE_CLASSES, ...ROUTE_SWAP_STATE_CLASSES];
 const INTERNAL_PROFILE_PATH = "/perfil.html";
-const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/carteira.html", "/comunidade.html", "/comunidade-interna.html", "/finalizar-pedido.html", "/avaliacao.html", "/adicionar-cartao.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/mais.html", "/"]);
+const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/carteira.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento-profissional.html", "/avaliacao.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/mais.html", "/"]);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", "/comunidade-interna.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
@@ -161,9 +161,8 @@ const shouldBypassShellSwap = (href) => {
     // lifecycle is fully normalized. The menu and main app views still use the
     // app-shell router, which removes the heavy reload feeling in daily use.
     const nativeOnlyPaths = new Set([
-      "/finalizar-pedido.html",
+      "/pagamento-profissional.html",
       "/avaliacao.html",
-      "/adicionar-cartao.html"
     ]);
 
     return nativeOnlyPaths.has(path);
@@ -256,11 +255,11 @@ const updateSidebarActiveState = (pathOverride = null) => {
   const path = pathOverride || getCurrentPath();
   const homeActive = path === "/index.html";
   const ordersActive = path === "/pedidos.html";
-  const messagesActive = path === "/mensagens.html" || path === "/finalizar-pedido.html" || path === "/avaliacao.html";
+  const messagesActive = path === "/mensagens.html" || path === "/pagamento-profissional.html" || path === "/avaliacao.html";
   const notificationsActive = path === "/notificacoes.html";
   const communitiesActive = path === "/comunidade.html" || path === "/comunidade-interna.html";
   const profileActive = path === INTERNAL_PROFILE_PATH;
-  const walletActive = path === "/carteira.html" || path === "/adicionar-cartao.html";
+  const walletActive = path === "/carteira.html";
   const settingsActive = path === "/configuracoes.html" || path === "/mais.html";
 
   const stateMap = new Map([
@@ -453,11 +452,6 @@ const INTERNAL_VIEW_STYLE_HINTS = {
     "assets/css/pages/comunidade-interna/message-rebuild.css",
     "assets/css/patterns/chat-screen-fill.css"
   ],
-  "/finalizar-pedido.html": [
-    "assets/css/pages/home-shared.css",
-    "assets/css/pages/home.css",
-    "assets/css/pages/post-service.css"
-  ],
   "/avaliacao.html": [
     "assets/css/pages/home-shared.css",
     "assets/css/pages/home.css",
@@ -506,7 +500,6 @@ const INTERNAL_VIEW_SCRIPT_HINTS = {
   "/mensagens.html": ["assets/js/pages/mensagens.js"],
   "/notificacoes.html": ["assets/js/pages/notificacoes.js"],
   "/carteira.html": ["assets/js/pages/carteira.js"],
-  "/finalizar-pedido.html": ["assets/js/pages/finalizar-pedido.js"],
   "/avaliacao.html": ["assets/js/pages/avaliacao.js"],
   "/perfil.html": ["assets/js/pages/perfil.js"],
   "/perfil-profissional.html": ["assets/js/pages/perfil-base.js"],

@@ -61,18 +61,6 @@
 
       <main class="page__content doke-page payment-screen" data-payment-page>
         <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean doke-page-shell doke-page-stack payment-screen__rail">
-          <section class="payment-hero" aria-labelledby="payment-title">
-            <div>
-              <span class="payment-badge payment-badge--warning">Aguardando pagamento</span>
-              <h1 id="payment-title">Pagamento seguro</h1>
-              <p>Revise a cobrança enviada por Studio Aquarela antes de confirmar.</p>
-            </div>
-            <div class="payment-hero__amount" aria-label="Valor da cobrança">
-              <span>Valor da cobrança</span>
-              <strong>R$ 280,00</strong>
-            </div>
-          </section>
-
           <div class="payment-layout">
             <div class="payment-main-column">
               <section class="payment-card payment-charge-card" aria-labelledby="charge-title">
@@ -107,37 +95,6 @@
                 </div>
               </section>
 
-              <section class="payment-card" aria-labelledby="service-title">
-                <div class="payment-card__header payment-card__header--compact">
-                  <div>
-                    <span class="payment-eyebrow">Detalhes do serviço</span>
-                    <h2 id="service-title">Pintura residencial</h2>
-                  </div>
-                </div>
-                <p class="payment-service-copy">Finalização da proposta para pintura interna com preparação de parede e acabamento.</p>
-                <dl class="payment-facts">
-                  <div><dt>Local</dt><dd>Belo Horizonte, MG</dd></div>
-                  <div><dt>Prazo combinado</dt><dd>2 dias úteis</dd></div>
-                </dl>
-                <div class="payment-list-grid">
-                  <div class="payment-list-block">
-                    <h3>Inclui</h3>
-                    <ul class="payment-check-list">
-                      <li><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span>Mão de obra</li>
-                      <li><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span>Proteção do ambiente</li>
-                      <li><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span>Limpeza básica ao final</li>
-                    </ul>
-                  </div>
-                  <div class="payment-list-block payment-list-block--muted">
-                    <h3>Não inclui</h3>
-                    <ul class="payment-check-list payment-check-list--muted">
-                      <li><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 7l10 10"></path><path d="M17 7 7 17"></path></svg></span>Materiais extras</li>
-                      <li><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 7l10 10"></path><path d="M17 7 7 17"></path></svg></span>Reparos estruturais não combinados</li>
-                    </ul>
-                  </div>
-                </div>
-              </section>
-
               <section class="payment-card" aria-labelledby="method-title">
                 <div class="payment-card__header payment-card__header--compact">
                   <div>
@@ -152,11 +109,11 @@
                   </button>
                   <button class="payment-method" type="button" role="radio" aria-checked="false" data-payment-method="Cartão de crédito">
                     <span class="payment-method__radio" aria-hidden="true"></span>
-                    <span class="payment-method__content"><strong>Cartão de crédito</strong><small>Opção de parcelamento</small></span>
+                    <span class="payment-method__content"><strong>Cartão de crédito</strong><small>Usar cartão cadastrado</small></span>
                   </button>
                   <button class="payment-method" type="button" role="radio" aria-checked="false" data-payment-method="Cartão de débito">
                     <span class="payment-method__radio" aria-hidden="true"></span>
-                    <span class="payment-method__content"><strong>Cartão de débito</strong><small>Pagamento direto</small></span>
+                    <span class="payment-method__content"><strong>Cartão de débito</strong><small>Usar cartão cadastrado</small></span>
                   </button>
                   <button class="payment-method" type="button" role="radio" aria-checked="false" data-payment-method="Saldo Doke">
                     <span class="payment-method__radio" aria-hidden="true"></span>
@@ -164,12 +121,34 @@
                   </button>
                 </div>
 
+                <div class="payment-points" aria-label="Pontos acumulados da Doke">
+                  <div class="payment-points__content">
+                    <span class="payment-points__icon" aria-hidden="true">✦</span>
+                    <div>
+                      <strong>Usar pontos Doke</strong>
+                      <small>Você tem 230 pontos disponíveis. Use agora para reduzir R$ 23,00 do pagamento.</small>
+                    </div>
+                  </div>
+                  <label class="payment-points-toggle">
+                    <input type="checkbox" data-points-input>
+                    <span class="payment-points-toggle__track" aria-hidden="true"><span></span></span>
+                    <span class="sr-only">Usar pontos acumulados</span>
+                  </label>
+                </div>
+
+                <div class="payment-card-empty" data-card-empty hidden>
+                  <div>
+                    <strong>Nenhum cartão cadastrado</strong>
+                    <small>Adicione um cartão para pagar por crédito ou débito. O parcelamento, quando existir, já vem definido pelo profissional na cobrança.</small>
+                  </div>
+                  <button class="payment-button payment-button--soft" type="button" data-add-card>Adicionar cartão</button>
+                </div>
+
                 <div class="payment-card-fields" data-card-fields hidden>
                   <div class="payment-field payment-field--full"><label for="card-number">Número do cartão</label><input id="card-number" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000"></div>
                   <div class="payment-field payment-field--full"><label for="card-name">Nome impresso</label><input id="card-name" autocomplete="cc-name" placeholder="Nome como aparece no cartão"></div>
                   <div class="payment-field"><label for="card-expiry">Validade</label><input id="card-expiry" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA"></div>
                   <div class="payment-field"><label for="card-cvv">CVV</label><input id="card-cvv" inputmode="numeric" autocomplete="cc-csc" placeholder="000"></div>
-                  <div class="payment-field payment-field--full"><label for="installments">Parcelamento</label><select id="installments"><option>1x de R$ 280,00</option><option>2x de R$ 140,00</option><option>3x de R$ 93,33</option></select></div>
                 </div>
               </section>
 
@@ -191,14 +170,13 @@
 
             <aside class="payment-summary" aria-labelledby="summary-title">
               <div class="payment-summary__card payment-card">
-                <span class="payment-eyebrow">Resumo</span>
-                <h2 id="summary-title">Resumo</h2>
+                <h2 id="summary-title">Resumo do pagamento</h2>
                 <dl class="payment-summary-list">
-                  <div><dt>Profissional</dt><dd>Studio Aquarela</dd></div>
                   <div><dt>Serviço</dt><dd>Pintura residencial</dd></div>
-                  <div><dt>Subtotal</dt><dd>R$ 280,00</dd></div>
+                  <div><dt>Subtotal</dt><dd data-summary-subtotal>R$ 280,00</dd></div>
                   <div><dt>Taxa da plataforma</dt><dd>R$ 0,00</dd></div>
-                  <div class="payment-summary-list__total"><dt>Total</dt><dd>R$ 280,00</dd></div>
+                  <div class="payment-summary-list__discount" data-summary-points-row hidden><dt>Pontos Doke</dt><dd data-summary-points-discount>-R$ 23,00</dd></div>
+                  <div class="payment-summary-list__total"><dt>Total</dt><dd data-summary-total>R$ 280,00</dd></div>
                   <div><dt>Método selecionado</dt><dd data-summary-method>Pix</dd></div>
                   <div><dt>Status</dt><dd><span class="payment-badge payment-badge--warning">Aguardando pagamento</span></dd></div>
                 </dl>
@@ -246,11 +224,11 @@
       <div class="payment-submit-state__panel" data-modal-panel="success" hidden>
         <span class="payment-submit-state__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"></path></svg></span>
         <h2>Pagamento confirmado</h2>
-        <p>Seu pagamento de R$ 280,00 para Studio Aquarela foi registrado no pedido.</p>
+        <p>Seu pagamento de <span data-modal-total>R$ 280,00</span> para Studio Aquarela foi registrado no pedido.</p>
         <span class="payment-badge payment-badge--success">Comprovante disponível</span>
         <article class="payment-receipt" data-payment-receipt hidden>
           <strong>Comprovante mockado</strong>
-          <span>Pedido #DK-2048 · Studio Aquarela · R$ 280,00</span>
+          <span>Pedido #DK-2048 · Studio Aquarela · <span data-receipt-total>R$ 280,00</span></span>
           <small>Registro visual para futura integração com backend.</small>
         </article>
         <div class="payment-submit-state__actions">

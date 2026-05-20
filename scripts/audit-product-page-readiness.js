@@ -15,11 +15,9 @@ const OUTPUT = path.join(ROOT, 'docs/validation/global-cycle-70-product-page-rea
 const TARGET_PAGES = [
   'mensagens.html',
   'comunidade-interna.html',
-  'finalizar-pedido.html',
   'pagamento-profissional.html',
   'avaliacao.html',
-  'adicionar-cartao.html',
-];
+  ];
 
 function read(file) {
   return fs.readFileSync(path.join(ROOT, file), 'utf8');
@@ -62,10 +60,8 @@ function inferPageRole(pageFile) {
   const map = {
     'mensagens.html': 'communication-inbox',
     'comunidade-interna.html': 'community-room',
-    'finalizar-pedido.html': 'checkout-finalization',
     'pagamento-profissional.html': 'payment-flow',
     'avaliacao.html': 'review-flow',
-    'adicionar-cartao.html': 'payment-method-form',
   };
   return map[pageFile] || 'product-page';
 }

@@ -16,20 +16,11 @@ const manual = (readiness.decisions || []).filter((item) => item.decision === 'm
 const targetPages = [
   'mensagens.html',
   'comunidade-interna.html',
-  'finalizar-pedido.html',
   'pagamento-profissional.html',
-  'adicionar-cartao.html',
   'avaliacao.html'
 ];
 
 const scriptSignals = {
-  'assets/js/pages/finalizar-pedido.js': {
-    publicApis: ['DokeInitOrderFinalize'],
-    domSignals: ['data-order-finalize-page', 'data-finalize-submit', 'data-finalize-image-input', 'data-finalize-preview'],
-    pageBoundary: 'page-local-behavior',
-    decision: 'keep-as-page-behavior',
-    reason: 'The file owns local UI interactions for finalizar-pedido.html, while the controller owns data boundary only.'
-  },
   'assets/js/services/auth-service.js': {
     publicApis: ['window.DokeAuth', 'DokeAuth.service', 'requireAuth', 'getCurrentUser'],
     consumers: ['assets/js/core/app.js'],

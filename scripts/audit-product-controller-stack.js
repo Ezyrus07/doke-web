@@ -7,9 +7,7 @@ const OUTPUT = 'docs/validation/global-cycle-78-product-controller-stack-report.
 const TARGETS = [
   { page: 'mensagens.html', controller: 'assets/js/controllers/mensagens-controller.js' },
   { page: 'comunidade-interna.html', controller: 'assets/js/controllers/comunidade-interna-controller.js' },
-  { page: 'finalizar-pedido.html', controller: 'assets/js/controllers/finalizar-pedido-controller.js' },
   { page: 'pagamento-profissional.html', controller: 'assets/js/pages/pagamento-profissional.js' },
-  { page: 'adicionar-cartao.html', controller: 'assets/js/controllers/adicionar-cartao-controller.js' },
   { page: 'avaliacao.html', controller: 'assets/js/controllers/avaliacao-controller.js' }
 ];
 

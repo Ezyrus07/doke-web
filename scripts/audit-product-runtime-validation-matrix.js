@@ -6,9 +6,7 @@ const ROOT = process.cwd();
 const TARGET_PAGES = [
   'mensagens.html',
   'comunidade-interna.html',
-  'finalizar-pedido.html',
   'pagamento-profissional.html',
-  'adicionar-cartao.html',
   'avaliacao.html'
 ];
 const SOURCE_REPORT = 'docs/validation/global-cycle-83-product-script-reduction-candidates-report.json';
@@ -25,7 +23,6 @@ const selectorContracts = {
   'assets/js/pages/home/drawer.js': ['data-mobile-home-drawer', 'data-mobile-home-menu-open', 'data-home-profile-menu-toggle'],
   'assets/js/pages/avaliacao.js': ['data-review-page', 'data-review-star', 'data-review-submit'],
   'assets/js/pages/comunidade-interna.js': ['data-community-room', 'data-community-room-messages', 'data-community-room-form'],
-  'assets/js/pages/finalizar-pedido.js': ['data-finalizar-pedido-page', 'data-checkout', 'data-finalize-order'],
   'assets/js/pages/mensagens.js': ['data-messages-page', 'data-thread-body', 'data-messages-composer'],
   'assets/js/pages/pagamento-profissional.js': ['data-payment-page', 'data-payment-method', 'data-payment-submit'],
   'assets/js/services/community-service.js': ['data-community', 'data-community-room', 'data-community-feed'],

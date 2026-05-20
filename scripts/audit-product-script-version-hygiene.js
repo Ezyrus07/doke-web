@@ -6,9 +6,7 @@ const ROOT = process.cwd();
 const TARGET_PAGES = [
   'mensagens.html',
   'comunidade-interna.html',
-  'finalizar-pedido.html',
   'pagamento-profissional.html',
-  'adicionar-cartao.html',
   'avaliacao.html'
 ];
 const OUTPUT = 'docs/validation/global-cycle-77-product-script-version-hygiene-report.json';

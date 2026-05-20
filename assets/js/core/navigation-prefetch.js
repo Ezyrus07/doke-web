@@ -71,11 +71,10 @@
     comunidade: ['comunidade-interna.html', 'perfil.html', 'mensagens.html'],
     'comunidade-interna': ['comunidade.html', 'mensagens.html', 'perfil.html'],
     perfil: ['mensagens.html', 'pedidos.html', 'tornar-profissional.html'],
-    carteira: ['adicionar-cartao.html', 'perfil.html'],
+    carteira: ['perfil.html'],
     configuracoes: ['perfil.html', 'ajuda.html', 'index.html'],
     resultados: ['detalhe-anuncio.html', 'index.html', 'perfil.html'],
-    'detalhe-anuncio': ['perfil.html', 'finalizar-pedido.html', 'mensagens.html'],
-    'finalizar-pedido': ['pedidos.html', 'detalhe-anuncio.html']
+    'detalhe-anuncio': ['perfil.html', 'pagamento-profissional.html', 'mensagens.html']
   };
 
   const getPageKey = () => {

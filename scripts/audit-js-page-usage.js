@@ -33,9 +33,7 @@ const PAGE_STATUS = {
   'carteira.html': 'evolving-operational',
   'configuracoes.html': 'evolving-operational',
   'pagamento-profissional.html': 'evolving-flow',
-  'finalizar-pedido.html': 'evolving-flow',
   'avaliacao.html': 'evolving-flow',
-  'adicionar-cartao.html': 'evolving-flow',
 };
 
 const EXPECTED_PAGE_SLUGS = {
@@ -51,9 +49,7 @@ const EXPECTED_PAGE_SLUGS = {
   'carteira.html': ['carteira', 'wallet'],
   'configuracoes.html': ['configuracoes', 'settings'],
   'pagamento-profissional.html': ['pagamento', 'payment'],
-  'finalizar-pedido.html': ['finalizar', 'checkout', 'pedido'],
   'avaliacao.html': ['avaliacao', 'review'],
-  'adicionar-cartao.html': ['adicionar-cartao', 'card', 'payment'],
 };
 
 const GLOBAL_ALLOWED_SEGMENTS = [

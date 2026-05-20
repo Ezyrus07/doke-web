@@ -21,13 +21,11 @@ const EVOLVING_HTML = new Set([
   'carteira.html',
   'detalhe-anuncio.html',
   'resultados.html',
-  'finalizar-pedido.html',
   'pagamento-profissional.html',
   'configuracoes.html',
   'comunidade-interna.html',
   'avaliacao.html',
-  'adicionar-cartao.html',
-]);
+  ]);
 
 function walk(dir, acc = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

@@ -21,13 +21,11 @@ const stablePages = new Set([
 const evolvingPages = new Set([
   'carteira.html',
   'detalhe-anuncio.html',
-  'finalizar-pedido.html',
   'pagamento-profissional.html',
   'configuracoes.html',
   'comunidade-interna.html',
   'avaliacao.html',
-  'adicionar-cartao.html',
-]);
+  ]);
 
 const excludedPages = new Set([
   'teste.html',

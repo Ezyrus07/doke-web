@@ -24,15 +24,6 @@ const contracts = {
       contextPanels: ['data-community-room-sidebar', 'data-community-summary-region']
     }
   },
-  'finalizar-pedido.html': {
-    pageRoot: ['data-order-finalize-page'],
-    requiredHooks: ['data-order-finalize-page', 'data-finalize-submit'],
-    interactionGroups: {
-      orderContext: ['data-order-finalize-page', 'data-finalize-amount', 'data-finalize-professional'],
-      primaryActions: ['data-finalize-submit']
-    },
-    allowMissingGroups: []
-  },
   'pagamento-profissional.html': {
     pageRoot: ['data-payment-page'],
     requiredHooks: ['data-payment-page'],
@@ -41,14 +32,6 @@ const contracts = {
       paymentSubmit: ['data-payment-submit', 'data-pay-submit']
     },
     allowMissingGroups: ['paymentMethods', 'paymentSubmit']
-  },
-  'adicionar-cartao.html': {
-    pageRoot: ['data-card-add-page'],
-    requiredHooks: ['data-card-add-page', 'data-card-add-number', 'data-card-add-cvv', 'data-card-add-submit'],
-    interactionGroups: {
-      cardFields: ['data-card-add-holder-name', 'data-card-add-number', 'data-card-add-expiry', 'data-card-add-cvv'],
-      cardActions: ['data-card-add-submit', 'data-card-add-cancel', 'data-card-add-back']
-    }
   },
   'avaliacao.html': {
     pageRoot: ['data-review-page'],

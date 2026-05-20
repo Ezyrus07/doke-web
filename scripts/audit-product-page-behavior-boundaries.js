@@ -7,25 +7,11 @@ const OUT = 'docs/validation/global-cycle-93-product-page-behavior-boundaries-re
 
 const pages = [
   {
-    page: 'finalizar-pedido.html',
-    pageScript: 'assets/js/pages/finalizar-pedido.js',
-    controller: 'assets/js/controllers/finalizar-pedido-controller.js',
-    pageSignals: ['data-finalize-image-input', 'data-finalize-preview', 'data-finalize-submit', 'DokeInitOrderFinalize'],
-    controllerSignals: ['Doke.finalizeOrderController', 'visualContract', 'provisional-layout-preserved']
-  },
-  {
     page: 'pagamento-profissional.html',
     pageScript: 'assets/js/pages/pagamento-profissional.js',
     controller: 'assets/js/pages/pagamento-profissional.js',
     pageSignals: ['data-payment-method', 'data-payment-submit', 'DokeInitPaymentPage'],
     controllerSignals: ['Doke.paymentController', 'visualContract', 'provisional-layout-preserved']
-  },
-  {
-    page: 'adicionar-cartao.html',
-    pageScript: null,
-    controller: 'assets/js/controllers/adicionar-cartao-controller.js',
-    pageSignals: ['data-card-add-page', 'data-card-add-submit'],
-    controllerSignals: ['Doke.addCardController', 'tokenization', 'last4']
   },
   {
     page: 'avaliacao.html',

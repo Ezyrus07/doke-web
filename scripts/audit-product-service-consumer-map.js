@@ -20,9 +20,7 @@ const SCAN_FILES = [
   'assets/js/controllers/controller-data.js',
   'mensagens.html',
   'comunidade-interna.html',
-  'finalizar-pedido.html',
   'pagamento-profissional.html',
-  'adicionar-cartao.html',
   'avaliacao.html'
 ];
 
