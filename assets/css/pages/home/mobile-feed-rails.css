@@ -1,0 +1,145 @@
+/* HOME MOBILE FEED RAIL FIX
+   Scope: index/home mobile only.
+   Owner: page-specific layout. This file replaces the late inline carousel
+   contract that could collapse "Mais anúncios" cards into vertical strips on
+   mobile Safari. It does not touch body, shell, sidebar, header or global wrappers. */
+
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted {
+    --home-mobile-feed-gutter: var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 18px));
+    --home-mobile-feed-width: calc(100vw - (var(--home-mobile-feed-gutter) * 2));
+  }
+
+  html.home-index-root body.home-index-shell section.more-services,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services {
+    width: var(--home-mobile-feed-width) !important;
+    max-width: var(--home-mobile-feed-width) !important;
+    min-width: 0 !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services > :is(.home-section-header, .section-heading, .more-services__controls, .more-services__tabs-rail, .more-services__filters-host, .more-services__cards-rail),
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services > :is(.home-section-header, .section-heading, .more-services__controls, .more-services__tabs-rail, .more-services__filters-host, .more-services__cards-rail) {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services > .content-rail.more-services__cards-rail {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin-top: 16px !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    scrollbar-width: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services > .content-rail.more-services__cards-rail::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid],
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .service-grid[data-more-services-grid] {
+    display: grid !important;
+    grid-auto-flow: row !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-auto-columns: initial !important;
+    grid-template-rows: none !important;
+    gap: 14px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    scroll-snap-type: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] > article.doke-ad-card:not([hidden]),
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .service-grid[data-more-services-grid] > article.doke-ad-card:not([hidden]) {
+    display: flex !important;
+    flex: none !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    align-self: stretch !important;
+    scroll-snap-align: none !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] > article.doke-ad-card[hidden],
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .service-grid[data-more-services-grid] > article.doke-ad-card[hidden] {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card > :is(.doke-ad-card__media, .doke-ad-card__body, .doke-ad-card__footer),
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card > :is(.doke-ad-card__media, .doke-ad-card__body, .doke-ad-card__footer) {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__media,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__media {
+    flex: 0 0 auto !important;
+    height: 118px !important;
+    min-height: 118px !important;
+    max-height: 118px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__body,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__body {
+    display: grid !important;
+    grid-template-rows: auto auto auto auto auto !important;
+    align-content: start !important;
+    gap: 7px !important;
+    flex: none !important;
+    min-height: 0 !important;
+    padding: 12px 14px 14px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__title,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__title {
+    display: block !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    font-size: 1.08rem !important;
+    line-height: 1.08 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__footer,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__footer {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-top: 0 !important;
+    padding-top: 10px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__load,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .more-services__load {
+    width: 100% !important;
+    margin-top: 16px !important;
+  }
+}

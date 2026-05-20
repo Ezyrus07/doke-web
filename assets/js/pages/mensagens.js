@@ -96,9 +96,6 @@
     const threadAvatar = root.querySelector("[data-thread-avatar]");
     const threadName = root.querySelector("[data-thread-name]");
     const threadLastSeen = root.querySelector("[data-thread-last-seen]");
-    const orderContext = root.querySelector("[data-messages-order-context]");
-    const dealRail = root.querySelector("[data-messages-deal-rail]");
-    const proposalActionButtons = Array.from(root.querySelectorAll("[data-messages-proposal-action]"));
     const composer = root.querySelector("[data-messages-composer]");
     const composerInput = root.querySelector("[data-messages-composer-input]");
     const backButton = root.querySelector("[data-messages-back]");
@@ -148,11 +145,6 @@
     const chargeForm = document.querySelector("[data-charge-form]");
     const chargeAmountInput = document.querySelector("[data-charge-amount]");
     const chargeInstallments = document.querySelector("[data-charge-installments]");
-    const chargeInstallmentsDropdown = document.querySelector("[data-charge-installments-dropdown]");
-    const chargeInstallmentsToggle = document.querySelector("[data-charge-installments-toggle]");
-    const chargeInstallmentsMenu = document.querySelector("[data-charge-installments-menu]");
-    const chargeInstallmentsValue = document.querySelector("[data-charge-installments-value]");
-    const chargeInstallmentOptions = Array.from(document.querySelectorAll("[data-charge-installment-option]"));
     const chargeCancelButtons = document.querySelectorAll("[data-charge-cancel]");
     const mobileControls = root.querySelector("[data-messages-mobile-controls]") || root.querySelector(".messages-header-controls:not(.messages-header-controls--desktop)");
     const desktopControls = root.querySelector("[data-messages-desktop-controls]");
@@ -195,16 +187,6 @@
     const syncComposerPlaceholder = () => {
       if (!composerInput) return;
       composerInput.placeholder = window.innerWidth <= 760 ? "Mensagem..." : "Digite sua mensagem...";
-    };
-
-    const syncCommerceContext = (conversation) => {
-      const isOrderConversation = conversation?.group === "orders";
-      if (orderContext) orderContext.hidden = !isOrderConversation;
-      if (dealRail) dealRail.hidden = !isOrderConversation;
-      proposalActionButtons.forEach((button) => {
-        button.hidden = !isOrderConversation;
-        button.disabled = !isOrderConversation;
-      });
     };
 
     const getVisibleSearchInput = () => {
@@ -253,12 +235,7 @@
         conversation: activeId
       });
 
-      const nextUrl = `pagamento.html?${query.toString()}`;
-      if (window.DokeNavigate) {
-        window.DokeNavigate(nextUrl);
-      } else {
-        window.location.href = nextUrl;
-      }
+      console.warn("Pagamento removido: fluxo de pagamento desativado temporariamente.", Object.fromEntries(query));
     };
 
     const syncCounts = () => {
@@ -517,7 +494,6 @@
       if (threadAvatar) threadAvatar.textContent = getConversationInitials(conversation.name);
       if (threadName) threadName.textContent = conversation.name;
       if (threadLastSeen) threadLastSeen.textContent = conversation.lastSeen;
-      syncCommerceContext(conversation);
       if (threadEmpty) threadEmpty.hidden = conversation.messages.length !== 0;
       if (threadBody) threadBody.hidden = conversation.messages.length === 0;
       const activeInitials = getConversationInitials(conversation.name);
@@ -549,20 +525,6 @@
           </div>
         </article>
       `).join("");
-      if (conversation.group === "orders" && conversation.messages.length) {
-        threadBody.insertAdjacentHTML("beforeend", `
-          <article class="messages-action-card" data-messages-action-card>
-            <span class="messages-action-card__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M12 6v6l4 2"></path><circle cx="12" cy="12" r="8.5"></circle></svg>
-            </span>
-            <div>
-              <strong>Ação pendente</strong>
-              <p>Envie a proposta final para avançar a negociação com ${conversation.name}.</p>
-            </div>
-            <button type="button" data-messages-proposal-action-inline>Enviar proposta</button>
-          </article>
-        `);
-      }
       conversation.messages.forEach((message, index) => {
         if (message.type !== "charge") return;
         const bubble = threadBody.querySelector(`.message-bubble[data-message-index="${index}"]`);
@@ -586,20 +548,14 @@
               ? `<button class="message-bubble__charge-pay is-complete" type="button" data-message-complete>Finalizar pedido</button>`
               : `<button class="message-bubble__charge-pay" type="button" data-message-pay>Pagar</button>`;
         chargeCard.innerHTML = `
-          <div class="message-bubble__charge-topline">
-            <span class="message-bubble__charge-chip">Cobrança</span>
-            <span class="message-bubble__charge-time">${message.time || "agora"}</span>
-          </div>
-          <div class="message-bubble__charge-main">
-            <span class="message-bubble__charge-kicker">Valor enviado</span>
+          <div class="message-bubble__charge-head">
+            <span class="message-bubble__charge-label">Cobrança</span>
             <strong class="message-bubble__charge-value">${message.amount}</strong>
           </div>
-          <p class="message-bubble__charge-description">${message.text}</p>
-          <div class="message-bubble__charge-meta-row">
-            <span class="message-bubble__charge-pill">${message.installments || "À vista"}</span>
-            <span class="message-bubble__charge-status">${chargeStatus}</span>
-          </div>
+          <div class="message-bubble__charge-text">${message.text}</div>
+          <div class="message-bubble__charge-text">${message.installments || "À vista"}</div>
           <div class="message-bubble__charge-actions">
+            <span class="message-bubble__charge-status">${chargeStatus}</span>
             ${chargeAction}
           </div>
         `;
@@ -747,31 +703,7 @@
       chargeAmountInput?.select();
     };
 
-    const closeChargeInstallmentsDropdown = () => {
-      if (!chargeInstallmentsDropdown || !chargeInstallmentsMenu || !chargeInstallmentsToggle) return;
-      chargeInstallmentsDropdown.classList.remove("is-open", "is-dropup");
-      chargeInstallmentsMenu.hidden = true;
-      chargeInstallmentsToggle.setAttribute("aria-expanded", "false");
-    };
-
-    const openChargeInstallmentsDropdown = () => {
-      if (!chargeInstallmentsDropdown || !chargeInstallmentsMenu || !chargeInstallmentsToggle) return;
-      chargeInstallmentsMenu.hidden = false;
-      chargeInstallmentsDropdown.classList.add("is-open");
-      chargeInstallmentsDropdown.classList.remove("is-dropup");
-      chargeInstallmentsToggle.setAttribute("aria-expanded", "true");
-
-      window.requestAnimationFrame(() => {
-        const toggleRect = chargeInstallmentsToggle.getBoundingClientRect();
-        const menuRect = chargeInstallmentsMenu.getBoundingClientRect();
-        const spaceBelow = window.innerHeight - toggleRect.bottom;
-        const needsDropup = spaceBelow < menuRect.height + 28 && toggleRect.top > menuRect.height + 28;
-        chargeInstallmentsDropdown.classList.toggle("is-dropup", needsDropup);
-      });
-    };
-
     const closeChargeModal = () => {
-      closeChargeInstallmentsDropdown();
       if (!chargeModal) return;
       if (typeof chargeModal.close === "function" && chargeModal.open) {
         chargeModal.close();
@@ -1284,41 +1216,6 @@
       renderThread(activeId, { scrollTo: "end" });
     });
 
-    chargeInstallmentsToggle?.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      if (chargeInstallmentsDropdown?.classList.contains("is-open")) {
-        closeChargeInstallmentsDropdown();
-      } else {
-        openChargeInstallmentsDropdown();
-      }
-    });
-
-    chargeInstallmentOptions.forEach((option) => {
-      option.addEventListener("click", (event) => {
-        event.preventDefault();
-        const value = option.dataset.value || "1x";
-        const label = option.textContent?.trim() || "À vista";
-        if (chargeInstallments) chargeInstallments.value = value;
-        if (chargeInstallmentsValue) chargeInstallmentsValue.textContent = label;
-        chargeInstallmentOptions.forEach((item) => {
-          item.setAttribute("aria-selected", item === option ? "true" : "false");
-        });
-        closeChargeInstallmentsDropdown();
-        chargeInstallmentsToggle?.focus();
-      });
-    });
-
-    document.addEventListener("click", (event) => {
-      if (!chargeInstallmentsDropdown?.classList.contains("is-open")) return;
-      if (event.target instanceof Node && chargeInstallmentsDropdown.contains(event.target)) return;
-      closeChargeInstallmentsDropdown();
-    });
-
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") closeChargeInstallmentsDropdown();
-    });
-
     chargeCancelButtons.forEach((button) => {
       button.addEventListener("click", () => {
         closeChargeModal();
@@ -1443,23 +1340,6 @@
     resetImageDraft();
     if (copyToast) copyToast.hidden = true;
     syncComposerPlaceholder();
-    proposalActionButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        if (!composerInput) return;
-        composerInput.value = "Olá! Vou preparar uma proposta com escopo, prazo e valor para você aprovar aqui pela Doke.";
-        composerInput.focus();
-        composerInput.dispatchEvent(new Event("input", { bubbles: true }));
-      });
-    });
-
-    root.addEventListener("click", (event) => {
-      const inlineProposalButton = event.target.closest("[data-messages-proposal-action-inline]");
-      if (!inlineProposalButton || !composerInput) return;
-      composerInput.value = "Olá! Vou preparar uma proposta com escopo, prazo e valor para você aprovar aqui pela Doke.";
-      composerInput.focus();
-      composerInput.dispatchEvent(new Event("input", { bubbles: true }));
-    });
-
     renderThread(activeId, { scrollTo: "start" });
     if (window.innerWidth <= 767) {
       root.classList.remove("messages-app--thread-open");

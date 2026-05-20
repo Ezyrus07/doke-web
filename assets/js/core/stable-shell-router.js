@@ -16,14 +16,12 @@
     '/perfil.html',
     '/configuracoes.html',
     '/tornar-profissional.html',
-    '/anunciar-servico.html',
     '/mais.html',
     '/'
   ]);
 
   var NATIVE_ONLY_ROUTES = new Set([
     '/detalhe-anuncio.html',
-    '/pagamento.html',
     '/finalizar-pedido.html',
     '/avaliacao.html',
     '/adicionar-cartao.html'
@@ -40,8 +38,7 @@
     '/comunidade-interna.html': [],
     '/perfil.html': ['DokeInitProfile'],
     '/configuracoes.html': [],
-    '/tornar-profissional.html': ['DokeInitBecomePro'],
-    '/anunciar-servico.html': ['DokeInitPostService']
+    '/tornar-profissional.html': ['DokeInitBecomePro']
   };
 
   var PRESERVED_BODY_CLASSES = [

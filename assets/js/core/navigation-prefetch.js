@@ -70,13 +70,12 @@
     ajuda: ['notificacoes.html', 'novidades.html', 'index.html'],
     comunidade: ['comunidade-interna.html', 'perfil.html', 'mensagens.html'],
     'comunidade-interna': ['comunidade.html', 'mensagens.html', 'perfil.html'],
-    perfil: ['mensagens.html', 'pedidos.html', 'tornar-profissional.html', 'anunciar-servico.html'],
-    carteira: ['pagamento.html', 'adicionar-cartao.html', 'perfil.html'],
+    perfil: ['mensagens.html', 'pedidos.html', 'tornar-profissional.html'],
+    carteira: ['adicionar-cartao.html', 'perfil.html'],
     configuracoes: ['perfil.html', 'ajuda.html', 'index.html'],
     resultados: ['detalhe-anuncio.html', 'index.html', 'perfil.html'],
     'detalhe-anuncio': ['perfil.html', 'finalizar-pedido.html', 'mensagens.html'],
-    'finalizar-pedido': ['pagamento.html', 'pedidos.html', 'detalhe-anuncio.html'],
-    pagamento: ['pedidos.html', 'carteira.html', 'finalizar-pedido.html']
+    'finalizar-pedido': ['pedidos.html', 'detalhe-anuncio.html']
   };
 
   const getPageKey = () => {

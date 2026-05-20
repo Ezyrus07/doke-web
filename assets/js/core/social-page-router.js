@@ -17,7 +17,6 @@
   ]);
   var NATIVE_ONLY_ROUTES = new Set([
     '/detalhe-anuncio.html',
-    '/pagamento.html',
     '/finalizar-pedido.html',
     '/avaliacao.html',
     '/adicionar-cartao.html'

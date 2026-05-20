@@ -729,49 +729,6 @@ window.DokeInitProfile = () => {
     `;
   };
 
-
-  const renderServiceReviewStatusCard = () => {
-    if (profileMode !== "owner") return "";
-
-    return `
-      <article class="profile-service-review-card" data-profile-service-review-card>
-        <div class="profile-service-review-card__topline">
-          <span class="profile-service-review-card__status">
-            <span class="profile-service-review-card__dot" aria-hidden="true"></span>
-            Em análise pela Doke
-          </span>
-          <span class="profile-service-review-card__time">Enviado hoje · prazo estimado até 24h</span>
-        </div>
-
-        <div class="profile-service-review-card__body">
-          <div class="profile-service-review-card__copy">
-            <span class="profile-service-review-card__eyebrow">Anúncio enviado</span>
-            <h3>Pintura residencial com acabamento fino</h3>
-            <p>O anúncio ainda não aparece para clientes. A revisão acontece aqui mesmo, dentro da área de Serviços.</p>
-          </div>
-
-          <a class="profile-service-review-card__button" href="anunciar-servico.html">Editar envio</a>
-        </div>
-
-        <div class="profile-service-review-card__progress" aria-label="Andamento da revisão do anúncio">
-          <div class="profile-service-review-card__progress-head">
-            <strong>Andamento</strong>
-            <span>2 de 4 critérios revisados</span>
-          </div>
-          <div class="profile-service-review-card__track" aria-hidden="true">
-            <span></span>
-          </div>
-          <div class="profile-service-review-card__steps">
-            <span class="is-done">Dados básicos</span>
-            <span class="is-done">Preço e região</span>
-            <span>Fotos</span>
-            <span>Liberação</span>
-          </div>
-        </div>
-      </article>
-    `;
-  };
-
   const renderShowcaseServicesSection = () => `
     <section class="profile-showcase-section profile-showcase-section--services" aria-labelledby="profile-showcase-services-title">
       ${renderShowcaseSectionHeader({
@@ -798,12 +755,11 @@ window.DokeInitProfile = () => {
     return `
       ${profileMode === "owner" ? `
       <div class="profile-services-toolbar">
-        <a class="profile-services-toolbar__action profile-services-toolbar__action--primary" href="anunciar-servico.html">Novo servi&ccedil;o</a>
+        <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Novo servi&ccedil;o</button>
         <button class="profile-services-toolbar__action ${state.selectingServices ? "is-active" : ""}" type="button" data-profile-services-select-toggle>${state.selectingServices ? "Cancelar" : "Selecionar"}</button>
         ${selectedCount === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-services-edit>Editar Servi&ccedil;o</button>` : ""}
         ${selectedCount > 1 ? `<span class="profile-services-toolbar__hint">S� d� para editar um Servi�o por vez.</span>` : ""}
       </div>
-      ${renderServiceReviewStatusCard()}
       ` : ""}
       ${renderServicesRail()}
     `;
@@ -922,6 +878,11 @@ window.DokeInitProfile = () => {
           aria-haspopup="dialog"
           aria-label="Abrir worker: ${normalize(item.title)}">
           ${profileMode === "owner" && state.selectingWorkers ? `<button class="profile-post-select-indicator ${isSelected ? "is-selected" : ""}" type="button" data-profile-worker-select="${item.id}" aria-label="Selecionar worker">${isSelected ? "&#10003;" : ""}</button>` : ""}
+          <div class="profile-worker-card__content" aria-hidden="true">
+            <span class="profile-worker-card__badge">${normalize(item.badge)}</span>
+            <h3 class="profile-worker-card__title">${normalize(item.title)}</h3>
+            <p class="profile-worker-card__meta">${normalize(item.meta)}</p>
+          </div>
         </article>
       `;
       }).join("")}
