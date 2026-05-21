@@ -16,7 +16,6 @@
     '/perfil.html',
     '/configuracoes.html',
     '/tornar-profissional.html',
-    '/mais.html',
     '/'
   ]);
 
@@ -308,7 +307,7 @@
       '.nav-link--communities': normalized === '/comunidade.html' || normalized === '/comunidade-interna.html',
       '.nav-link--profile': normalized === '/perfil.html',
       '.nav-link--wallet': normalized === '/carteira.html',
-      '.nav-link--settings': normalized === '/configuracoes.html' || normalized === '/mais.html'
+      '.nav-link--settings': normalized === '/configuracoes.html'
     };
 
     document.querySelectorAll('.sidebar .nav-link').forEach(function (link) {

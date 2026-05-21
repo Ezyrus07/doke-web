@@ -2925,3 +2925,16 @@ body.orders-page-shell .orders-page #orders-action-controls[data-active-panel="f
 body.orders-page-shell .orders-page #orders-action-controls[data-active-panel="select"] [data-orders-select-panel] {
   display: block;
 }
+
+/* 2026-05-20 mobile cycle 2: tablet containment for the orders list.
+   Objective fix: at 768px the 2-column command layout clipped the second card because the content area is narrower than two 280px cards. */
+@media (min-width: 761px) and (max-width: 920px) {
+  body.orders-page-shell .orders-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.orders-page-shell .orders-list .order-card {
+    width: 100%;
+    min-width: 0;
+  }
+}

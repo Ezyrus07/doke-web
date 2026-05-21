@@ -113,6 +113,8 @@
 
     panel.hidden = false;
     panel.removeAttribute('hidden');
+    panel.classList.add('is-open');
+    panel.setAttribute('aria-hidden', 'false');
     document.body.classList.remove('home-search-overlay-active', 'mobile-search-active');
     document.body.classList.add('home-filter-sheet-open');
     if (toggle) toggle.setAttribute('aria-expanded', 'true');
@@ -138,6 +140,30 @@
   }
 
   function openMobileDrawerDirect() {
+    if (config().key === 'home') {
+      if (window.DokeOpenHomeDrawerDirect && window.DokeOpenHomeDrawerDirect()) {
+        dispatchShellAction('profile-menu');
+        return true;
+      }
+
+      if (window.DokeHomeDrawerHardOpen && window.DokeHomeDrawerHardOpen()) {
+        dispatchShellAction('profile-menu');
+        return true;
+      }
+
+      var homeDrawer = document.querySelector('[data-mobile-home-drawer], .home-mobile-drawer, [data-mobile-drawer]');
+      if (homeDrawer) {
+        homeDrawer.hidden = false;
+        homeDrawer.removeAttribute('hidden');
+        homeDrawer.classList.add('is-open');
+        homeDrawer.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('mobile-home-drawer-open', 'doke-mobile-drawer-open');
+        document.body.classList.remove('home-filter-sheet-open', 'home-inline-filters-open');
+        dispatchShellAction('profile-menu');
+        return true;
+      }
+    }
+
     var sidebar = document.querySelector('.app-shell > .sidebar, [data-shell-sidebar], .sidebar');
     var scrim = document.querySelector('[data-sidebar-scrim], .mobile-scrim');
 
@@ -323,6 +349,20 @@
         if (triggerPageFilters()) return;
         dispatchShellAction('filters');
       });
+    }
+
+    if (config().key === 'home') {
+      filterButton && filterButton.addEventListener('pointerdown', function (event) {
+        event.stopPropagation();
+      }, true);
+
+      filterButton && filterButton.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation && event.stopImmediatePropagation();
+        if (openHomeFiltersDirect()) return;
+        dispatchShellAction('filters');
+      }, true);
     }
 
     var selectButton = shell.querySelector('[data-shell-select]');

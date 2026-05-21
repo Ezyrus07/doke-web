@@ -854,3 +854,40 @@
     width: 84px;
   }
 }
+
+/* 2026-05-20 mobile cycle 2: preserve descoberta cards in narrow mobile.
+   Objective fix: later photo-card rules were overriding title containment, causing long titles/stats to collide in compact cards. */
+@media (max-width: 760px) {
+  body.communities-page-shell .communities-discovery-v2 .community-card-v2,
+  body.communities-page-shell .communities-discovery-v2 .community-card-v2__body,
+  body.communities-page-shell .communities-discovery-v2 .community-card-v2__stats {
+    min-width: 0;
+  }
+
+  body.communities-page-shell .communities-discovery-v2 .community-card-v2 h3 {
+    display: -webkit-box;
+    max-width: 100%;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
+  }
+
+  body.communities-page-shell .communities-discovery-v2 .community-card-v2__stats {
+    overflow: hidden;
+  }
+
+  body.communities-page-shell .communities-discovery-v2 .community-card-v2__stats span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* 2026-05-20 mobile cycle 2: keep category pill inside compact discovery card flow. */
+@media (max-width: 760px) {
+  body.communities-page-shell .communities-discovery-v2 .community-card-v2 .community-pill {
+    position: static;
+    z-index: auto;
+  }
+}

@@ -143,9 +143,9 @@
 
 .search-results-body .results-searchbar__form:focus-within,
 .search-results-body .results-searchbar.is-search-open .results-searchbar__form {
-  border-color: rgba(31, 101, 173, 0.38);
+  border-color: rgba(187, 207, 226, 0.86);
   background: #fff;
-  box-shadow: 0 10px 24px rgba(29, 56, 88, 0.095), 0 0 0 3px rgba(31, 101, 173, 0.07);
+  box-shadow: 0 8px 20px rgba(29, 56, 88, 0.07);
 }
 
 .search-results-body .results-searchbar__field {
@@ -247,10 +247,11 @@
 
 .search-results-body .results-searchbar__mobile-filter:hover,
 .search-results-body .results-searchbar__mobile-filter:focus-visible {
-  border-color: rgba(31, 101, 173, 0.32) !important;
+  border-color: rgba(191, 207, 224, 0.82) !important;
   background: rgba(241, 247, 253, 0.98) !important;
   color: #164f86 !important;
   outline: 0 !important;
+  box-shadow: none !important;
 }
 
 .search-results-body .results-searchbar__button {
@@ -503,6 +504,7 @@
   }
 
 }
+
 @import url("../components/cards/service-card.css?v=20260503-canonical-card-contract-v2");
 
 
@@ -1108,9 +1110,9 @@
 
   body.search-results-body .results-searchbar__form.doke-search-pill:focus-within .results-searchbar__field.doke-search-pill__field,
   body.search-results-body .results-searchbar.is-search-open .results-searchbar__field.doke-search-pill__field {
-    border-color: var(--doke-search-pill-border-focus) !important;
-    box-shadow: var(--doke-search-pill-shadow-focus) !important;
-    transform: translateY(-1px) !important;
+    border-color: var(--doke-search-pill-border) !important;
+    box-shadow: var(--doke-search-pill-shadow) !important;
+    transform: none !important;
   }
 
   body.search-results-body .results-searchbar__field .doke-search-pill__input {
@@ -1920,4 +1922,32 @@ body.search-results-body .results-layout[data-results-mode="before-after"] .resu
   body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__body {
     display: none !important;
   }
+}
+/* Final interaction outline reset: keep hover/focus borders visually neutral. */
+body.search-results-body :is(
+  .results-searchbar__form,
+  .results-searchbar__field,
+  .results-searchbar__field input,
+  .results-searchbar__query,
+  .results-searchbar__mobile-filter,
+  .filter-toggle,
+  .topbar-search,
+  .topbar-search input,
+  .doke-search-pill__field,
+  .doke-btn,
+  .doke-button,
+  .doke-action-button
+):is(:hover, :focus, :focus-visible, :focus-within) {
+  outline: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+body.search-results-body :is(.results-searchbar__form, .results-searchbar__field, .results-searchbar__query, .doke-search-pill__field):is(:hover, :focus-within) {
+  border-color: var(--doke-search-control-border, var(--doke-search-pill-border, var(--border-color-muted))) !important;
+  box-shadow: var(--doke-search-control-shadow, var(--doke-search-pill-shadow, none)) !important;
+}
+
+body.search-results-body :is(.results-searchbar__mobile-filter, .filter-toggle):is(:hover, :focus-visible) {
+  border-color: var(--doke-filter-chip-border, var(--doke-action-border, rgba(34, 98, 154, 0.08))) !important;
 }
