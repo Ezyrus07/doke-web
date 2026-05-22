@@ -5566,3 +5566,232 @@ body[data-wallet-view="statistics"] .wallet-analytics {
     font-size: 0.9rem !important;
   }
 }
+
+
+
+/* Carteira v71 — tablet toolbar and desktop-like balance density.
+   Header keeps global actions; wallet actions become a local toolbar below the header.
+   Scope: carteira.html only. */
+@media (min-width: 561px) and (max-width: 1180px) {
+  body.wallet-page-shell > .app-shell > .page > .app-header.app-header--wallet {
+    margin-bottom: 76px !important;
+  }
+
+  body.wallet-page-shell > .app-shell > .page > .app-header.app-header--wallet .page-header-context {
+    position: absolute !important;
+    top: calc(100% + 12px) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    width: var(--doke-tablet-rail, min(calc(100vw - 36px), 920px)) !important;
+    max-width: var(--doke-tablet-rail, min(calc(100vw - 36px), 920px)) !important;
+    min-height: 58px !important;
+    margin: 0 !important;
+    padding: 8px 10px !important;
+    border: 1px solid rgba(197, 216, 232, 0.56) !important;
+    border-radius: 22px !important;
+    background: rgba(255, 255, 255, 0.88) !important;
+    box-shadow: 0 14px 34px rgba(15, 45, 75, 0.045) !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+  }
+
+  body.wallet-page-shell > .app-shell > .page > .app-header.app-header--wallet .page-header-context::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  body.wallet-page-shell > .app-shell > .page > .app-header.app-header--wallet .page-header-context__action {
+    flex: 0 0 auto !important;
+    min-height: 40px !important;
+    height: 40px !important;
+    padding: 0 18px !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(210, 224, 238, 0.82) !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #174d83 !important;
+    box-shadow: 0 8px 20px rgba(15, 45, 75, 0.055) !important;
+    font-size: 0.84rem !important;
+    font-weight: 850 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  body.wallet-page-shell > .app-shell > .page > .app-header.app-header--wallet .page-header-context__action:first-child,
+  body.wallet-page-shell > .app-shell > .page > .app-header.app-header--wallet .page-header-context__action.is-view-active {
+    border-color: rgba(34, 126, 208, 0.28) !important;
+    background: linear-gradient(135deg, #2f7fca 0%, #195180 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 12px 28px rgba(31, 95, 159, 0.18) !important;
+  }
+
+  body.wallet-page-shell .wallet-mobile-layout {
+    display: none !important;
+  }
+
+  body.wallet-page-shell .wallet-page {
+    display: grid !important;
+    gap: 18px !important;
+  }
+
+  body.wallet-page-shell .wallet-overview {
+    display: grid !important;
+    gap: 18px !important;
+    width: 100% !important;
+  }
+
+  body.wallet-page-shell .wallet-overview > .wallet-hero,
+  body.wallet-page-shell .wallet-overview > .wallet-kpis {
+    display: grid !important;
+  }
+
+  body.wallet-page-shell .wallet-hero {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 18px !important;
+    padding: clamp(28px, 4.6vw, 42px) !important;
+    border-radius: 26px !important;
+  }
+
+  body.wallet-page-shell .wallet-hero__amount {
+    font-size: clamp(2.75rem, 8vw, 4.2rem) !important;
+    line-height: 0.96 !important;
+  }
+
+  body.wallet-page-shell .wallet-hero__meta {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  body.wallet-page-shell .wallet-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  body.wallet-page-shell .wallet-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 18px !important;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 700px) {
+  body.wallet-page-shell > .app-shell > .page > .app-header.app-header--wallet {
+    margin-bottom: 70px !important;
+  }
+
+  body.wallet-page-shell > .app-shell > .page > .app-header.app-header--wallet .page-header-context {
+    min-height: 54px !important;
+    padding: 7px 8px !important;
+    border-radius: 20px !important;
+  }
+
+  body.wallet-page-shell > .app-shell > .page > .app-header.app-header--wallet .page-header-context__action {
+    min-height: 38px !important;
+    height: 38px !important;
+    padding-inline: 14px !important;
+    font-size: 0.8rem !important;
+  }
+
+  body.wallet-page-shell .wallet-hero__meta {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body.wallet-page-shell .wallet-kpis {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+
+
+/* Carteira v73 — actions in tablet header, no lower/absolute toolbar. */
+@media (min-width: 561px) and (max-width: 1180px) {
+  body.wallet-page-shell > .app-shell > .page > .app-header.app-header--wallet {
+    margin-bottom: 0 !important;
+  }
+
+  body.wallet-page-shell > .app-shell > .page > .app-header.app-header--wallet .page-header-context {
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    display: inline-flex !important;
+    visibility: visible !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex: 0 1 auto !important;
+    width: auto !important;
+    max-width: min(46vw, 360px) !important;
+    min-width: 0 !important;
+    min-height: var(--doke-tablet-control, 48px) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    pointer-events: auto !important;
+    scrollbar-width: none !important;
+  }
+
+  body.wallet-page-shell > .app-shell > .page > .app-header.app-header--wallet .page-header-context::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  body.wallet-page-shell > .app-shell > .page > .app-header.app-header--wallet .page-header-context__action {
+    min-height: var(--doke-tablet-control, 48px) !important;
+    height: var(--doke-tablet-control, 48px) !important;
+    border-radius: 16px !important;
+  }
+}
+
+
+
+/* Carteira v76 — keep wallet actions in tablet header. */
+@media (min-width: 561px) and (max-width: 1180px) {
+  body.wallet-page-shell > .app-shell > .page > .app-header.app-header--wallet {
+    margin-bottom: 0 !important;
+  }
+
+  body.wallet-page-shell > .app-shell > .page > .app-header.app-header--wallet .page-header-context {
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    align-items: center !important;
+    flex: 0 1 auto !important;
+    width: auto !important;
+    max-width: min(48vw, 420px) !important;
+    min-width: 0 !important;
+    min-height: var(--doke-tablet-control, 48px) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 10px !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    pointer-events: auto !important;
+    scrollbar-width: none !important;
+  }
+
+  body.wallet-page-shell > .app-shell > .page > .app-header.app-header--wallet .page-header-context__action {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: var(--doke-tablet-control, 48px) !important;
+    min-height: var(--doke-tablet-control, 48px) !important;
+    border-radius: 16px !important;
+  }
+}
