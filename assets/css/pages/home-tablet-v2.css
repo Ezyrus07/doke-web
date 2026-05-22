@@ -1,3 +1,9 @@
+
+
+/* Tablet-only trigger: desktop keeps the sidebar; mobile keeps its own header. */
+body.home-index-shell .home-side-meta__tablet-menu {
+  display: none;
+}
 /* Home tablet v2.
    Tablet follows desktop rail/header contract: no independent search anatomy. */
 @media (min-width: 561px) and (max-width: 1024px) {
@@ -735,5 +741,249 @@
     display: none !important;
     visibility: hidden !important;
     pointer-events: none !important;
+  }
+}
+
+
+/* 2026-05-21 — CTA radius parity with desktop.
+   Keep tablet dimensions untouched; only align the corner contract used by
+   Procurar serviços / Anunciar meu serviço with the desktop CTA. */
+@media (min-width: 561px) and (max-width: 1024px) {
+  html.home-index-root body.home-index-shell .home-search-hero__actions > .home-search-hero__cta,
+  html.home-index-root body.home-index-shell .home-search-hero__actions > .home-search-hero__cta.doke-btn,
+  html.home-index-root body.home-index-shell .home-search-hero__actions > .home-search-hero__cta--primary,
+  html.home-index-root body.home-index-shell .home-search-hero__actions > .home-search-hero__cta--secondary {
+    border-radius: 22px !important;
+    overflow: hidden !important;
+  }
+}
+
+
+/* 2026-05-21 — tablet section headers and drawer contract.
+   Keep content inside the same rail and expose a tablet navigation trigger
+   without changing desktop/mobile shell contracts. */
+@media (min-width: 561px) and (max-width: 1024px) {
+  html.home-index-root body.home-index-shell .app-header.app-header--home.home-side-meta .home-side-meta__tablet-menu {
+    display: inline-flex !important;
+    visibility: visible !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 46px !important;
+    height: 46px !important;
+    min-width: 46px !important;
+    min-height: 46px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 16px !important;
+    background: #fff !important;
+    color: #1e5b91 !important;
+    box-shadow: 0 14px 32px rgba(31, 68, 110, 0.08) !important;
+    cursor: pointer !important;
+  }
+
+  html.home-index-root body.home-index-shell .app-header.app-header--home.home-side-meta .home-side-meta__tablet-menu svg {
+    width: 21px !important;
+    height: 21px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2.15 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+  }
+
+  html.home-index-root body.home-index-shell .app-header.app-header--home.home-side-meta .home-side-meta__group--primary {
+    gap: 14px !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-section-header,
+  html.home-index-root body.home-index-shell .section-heading.section-heading--spread.home-section-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    gap: 18px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-section-header > div,
+  html.home-index-root body.home-index-shell .section-heading.section-heading--spread.home-section-header > div {
+    min-width: 0 !important;
+    max-width: calc(100% - 132px) !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-section-title,
+  html.home-index-root body.home-index-shell .section-heading__title.home-section-title {
+    max-width: 100% !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-section-header .section-heading__link {
+    flex: 0 0 auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 112px !important;
+    max-width: 124px !important;
+    min-height: 48px !important;
+    padding: 0 20px !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #1f5c91 !important;
+    box-shadow: 0 14px 34px rgba(31, 68, 110, 0.08) !important;
+    font-size: 0.9rem !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    text-decoration: none !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-mobile-drawer:not([hidden]) {
+    display: block !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-mobile-drawer {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 1300 !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-mobile-drawer__panel {
+    width: min(84vw, 336px) !important;
+    max-width: 336px !important;
+    border-radius: 0 26px 26px 0 !important;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 767px) {
+  html.home-index-root body.home-index-shell .home-section-header .section-heading__link {
+    min-width: 104px !important;
+    max-width: 116px !important;
+    min-height: 46px !important;
+    padding-inline: 16px !important;
+    font-size: 0.86rem !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-section-header > div,
+  html.home-index-root body.home-index-shell .section-heading.section-heading--spread.home-section-header > div {
+    max-width: calc(100% - 122px) !important;
+  }
+}
+
+/* 2026-05-21 — tablet header/content rail parity.
+   Tablet must read as desktop without sidebar: header and page sections share
+   the same outer rail instead of the header being more inset than the hero. */
+@media (min-width: 561px) and (max-width: 1024px) {
+  body.home-index-shell {
+    --tablet-gutter: clamp(18px, 3vw, 24px);
+    --tablet-home-rail: min(calc(100% - (var(--tablet-gutter) * 2)), var(--tablet-page-max));
+  }
+
+  html.home-index-root body.home-index-shell .app-header.app-header--home.home-side-meta .app-header__inner,
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace,
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace--clean,
+  html.home-index-root body.home-index-shell .page__content-inner.container.shell-home__workspace,
+  html.home-index-root body.home-index-shell .page__content-inner.container.shell-home__workspace--clean {
+    width: var(--tablet-home-rail) !important;
+    max-width: var(--tablet-home-rail) !important;
+    inline-size: var(--tablet-home-rail) !important;
+    max-inline-size: var(--tablet-home-rail) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell .app-header.app-header--home.home-side-meta .app-header__inner {
+    justify-content: space-between !important;
+    gap: clamp(10px, 1.7vw, 16px) !important;
+  }
+}
+
+/* Tablet publications rail density v23.
+   Scoped to home publications only; preserves v21 header, hero, categories and drawer contract. */
+@media (min-width: 561px) and (max-width: 1024px) {
+  html.home-index-root body.home-index-shell section.home-publications > .section-heading.home-media-section__header,
+  html.home-index-root body.home-index-shell section.home-publications > .section-heading.home-publications__header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    min-height: 48px !important;
+    margin: 0 0 18px !important;
+    padding: 0 !important;
+    gap: 16px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .section-heading.home-media-section__header > :first-child,
+  html.home-index-root body.home-index-shell section.home-publications > .section-heading.home-publications__header > :first-child {
+    min-width: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .section-heading .section-heading__link {
+    flex: 0 0 auto !important;
+    min-height: 46px !important;
+    padding-inline: 22px !important;
+    border-radius: 18px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 12px 28px rgba(31, 68, 110, 0.08) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail > .content-rail__arrow {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > #home-publications-track.publication-grid {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    grid-auto-columns: clamp(272px, 43vw, 350px) !important;
+    gap: 18px !important;
+    align-items: stretch !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    scroll-snap-type: x proximity !important;
+    padding: 0 2px 2px 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > #home-publications-track.publication-grid::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > #home-publications-track.publication-grid > .publication-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 308px !important;
+    margin: 0 !important;
+    scroll-snap-align: start !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications .publication-card__media {
+    min-height: 168px !important;
   }
 }
