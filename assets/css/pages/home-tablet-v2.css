@@ -1014,3 +1014,457 @@ body.home-index-shell .home-side-meta__tablet-menu {
     margin-left: auto !important;
   }
 }
+
+/* 2026-05-23 — featured ad cards tablet carousel density.
+   Scope: home featured-services only. The featured ad rail must behave like a
+   horizontal carousel on tablet, showing about two cards per viewport instead
+   of stretching one card to the full rail. Card anatomy remains owned by the
+   canonical doke-ad-card component; this page rule only controls rail density. */
+@media (min-width: 561px) and (max-width: 1024px) {
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid {
+    --featured-tablet-card-gap: clamp(14px, 2.2vw, 18px);
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    grid-auto-columns: calc((100% - var(--featured-tablet-card-gap)) / 2) !important;
+    gap: var(--featured-tablet-card-gap) !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 2px 4px 0 !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-snap-type: x proximity !important;
+    scrollbar-width: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid > .doke-ad-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    scroll-snap-align: start !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__media {
+    flex-basis: clamp(108px, 17vw, 142px) !important;
+    height: clamp(108px, 17vw, 142px) !important;
+    min-height: clamp(108px, 17vw, 142px) !important;
+    max-height: clamp(108px, 17vw, 142px) !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__body {
+    padding: clamp(12px, 1.9vw, 16px) !important;
+  }
+}
+
+/* 2026-05-23 — portrait tablet search hero restoration.
+   Scope: index tablet portrait only. Restores the main search region between
+   header and categories without touching global shell/header contracts. */
+@media (min-width: 561px) and (max-width: 767px) and (orientation: portrait) {
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace > .home-search-hero.doke-page-section,
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace--clean > .home-search-hero.doke-page-section,
+  html.home-index-root body.home-index-shell .home-search-hero.doke-page-section {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: clamp(12px, 2.8vw, 18px) 0 clamp(30px, 5.2vw, 40px) !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-search-hero__panel,
+  html.home-index-root body.home-index-shell .home-search-hero__card {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-search-hero__card {
+    padding: clamp(18px, 3.6vw, 24px) !important;
+    border: 1px solid rgba(15, 45, 75, 0.06) !important;
+    border-radius: 26px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 22px 54px rgba(20, 59, 95, 0.08) !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-search-hero__form.doke-search-pill {
+    position: relative !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 62px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    pointer-events: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-search-hero__field.doke-search-pill__field {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 62px !important;
+    padding: 10px 82px 10px 24px !important;
+    border: 1px solid rgba(21, 73, 112, 0.10) !important;
+    border-radius: 999px !important;
+    background: #fff !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 10px 22px rgba(57,81,111,.06) !important;
+    box-sizing: border-box !important;
+    pointer-events: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-search-hero__input.doke-search-pill__input {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    color: #153657 !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    pointer-events: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-search-hero__button.doke-search-pill__button {
+    position: absolute !important;
+    top: 50% !important;
+    right: 14px !important;
+    transform: translateY(-50%) !important;
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: linear-gradient(135deg, #2b5f94 0%, #137d74 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 10px 20px rgba(29, 104, 122, 0.14) !important;
+    pointer-events: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-search-hero__actions {
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 46px !important;
+    margin: 16px 0 0 !important;
+    gap: 14px !important;
+    pointer-events: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-search-hero__actions > .home-search-hero__cta {
+    min-width: 0 !important;
+    min-height: 46px !important;
+    height: 46px !important;
+    border-radius: 18px !important;
+    font-size: 0.86rem !important;
+    white-space: nowrap !important;
+  }
+}
+
+/* 2026-05-23 — portrait tablet profile pill proportion fix.
+   Scope: home tablet header profile chip only. Keeps the header contract intact,
+   fixes the distorted avatar by locking the badge to a square and gives the
+   identity pill enough width to breathe without touching global header/shell. */
+@media (min-width: 561px) and (max-width: 767px) and (orientation: portrait) {
+  html.home-index-root body.home-index-shell .app-header.app-header--home.home-side-meta .home-side-meta__profile-wrap {
+    display: inline-flex !important;
+    align-items: center !important;
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell .app-header.app-header--home.home-side-meta .home-side-meta__profile {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 9px !important;
+    min-width: 128px !important;
+    max-width: 152px !important;
+    min-height: 46px !important;
+    height: 46px !important;
+    padding: 5px 12px 5px 6px !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: #fff !important;
+    box-shadow: 0 14px 32px rgba(31, 68, 110, 0.08) !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  html.home-index-root body.home-index-shell .app-header.app-header--home.home-side-meta .home-side-meta__avatar.doke-avatar {
+    display: grid !important;
+    place-items: center !important;
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    max-width: 36px !important;
+    max-height: 36px !important;
+    aspect-ratio: 1 / 1 !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    line-height: 1 !important;
+    overflow: hidden !important;
+  }
+
+  html.home-index-root body.home-index-shell .app-header.app-header--home.home-side-meta .home-side-meta__identity {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    gap: 1px !important;
+    line-height: 1.05 !important;
+    white-space: nowrap !important;
+  }
+
+  html.home-index-root body.home-index-shell .app-header.app-header--home.home-side-meta .home-side-meta__identity strong,
+  html.home-index-root body.home-index-shell .app-header.app-header--home.home-side-meta .home-side-meta__identity span {
+    display: block !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  html.home-index-root body.home-index-shell .app-header.app-header--home.home-side-meta .home-side-meta__identity strong {
+    font-size: 0.79rem !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  html.home-index-root body.home-index-shell .app-header.app-header--home.home-side-meta .home-side-meta__identity span {
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+  }
+}
+
+/* 2026-05-23 — portrait tablet recommendations rail correction.
+   Scope: home recommendations on iPad/tablet portrait only. The section must
+   not inherit a full-width desktop card with an oversized media area; it becomes
+   the same kind of horizontal discovery rail used by featured services. */
+@media (min-width: 561px) and (max-width: 767px) and (orientation: portrait) {
+  html.home-index-root body.home-index-shell section.home-recommendations.doke-page-section {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: clamp(28px, 5vw, 40px) 0 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-recommendations > .home-recommendations__header,
+  html.home-index-root body.home-index-shell section.home-recommendations > .section-heading.home-section-header {
+    margin: 0 0 18px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-recommendations > .recommendation-list,
+  html.home-index-root body.home-index-shell section.home-recommendations .recommendation-list.doke-list {
+    --recommendation-tablet-card-gap: clamp(14px, 2.4vw, 18px);
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    grid-auto-columns: calc((100% - var(--recommendation-tablet-card-gap)) / 2) !important;
+    align-items: stretch !important;
+    gap: var(--recommendation-tablet-card-gap) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 2px 4px 0 !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-snap-type: x proximity !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-recommendations > .recommendation-list::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.home-recommendations .recommendation-list.doke-list::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-recommendations .recommendation-card.doke-card {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: 148px auto auto !important;
+    align-content: start !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    border: 1px solid rgba(185, 205, 224, 0.72) !important;
+    border-radius: 24px !important;
+    background: #fff !important;
+    box-shadow: 0 12px 30px rgba(31, 68, 110, 0.08) !important;
+    overflow: hidden !important;
+    scroll-snap-align: start !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-recommendations .recommendation-card__media {
+    display: block !important;
+    width: 100% !important;
+    height: 148px !important;
+    min-height: 148px !important;
+    max-height: 148px !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+    background: #eef5fb !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-recommendations .recommendation-card__media img {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    object-fit: cover !important;
+    object-position: center !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-recommendations .recommendation-card__content {
+    display: grid !important;
+    min-width: 0 !important;
+    padding: 14px 14px 8px !important;
+    gap: 5px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-recommendations .recommendation-card__title {
+    margin: 0 !important;
+    color: #102f52 !important;
+    font-size: 0.98rem !important;
+    font-weight: 900 !important;
+    line-height: 1.12 !important;
+    letter-spacing: -0.03em !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-recommendations .recommendation-card__category {
+    margin: 0 !important;
+    color: #54657a !important;
+    font-size: 0.84rem !important;
+    font-weight: 700 !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-recommendations .recommendation-card__meta {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    margin-top: 2px !important;
+    color: #415d7a !important;
+    font-size: 0.78rem !important;
+    font-weight: 750 !important;
+    line-height: 1.2 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-recommendations .recommendation-card__aside {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 8px 14px 14px !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-recommendations .recommendation-card__price {
+    margin: 0 !important;
+    color: #102f52 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-recommendations .recommendation-card__price span {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-recommendations .recommendation-card__price strong {
+    display: block !important;
+    color: #102f52 !important;
+    font-size: 1rem !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.04em !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-recommendations .recommendation-card__cta.doke-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    min-height: 40px !important;
+    height: 40px !important;
+    padding: 0 14px !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: #17a394 !important;
+    color: #fff !important;
+    font-size: 0.78rem !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+    text-align: center !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    box-shadow: none !important;
+  }
+}
