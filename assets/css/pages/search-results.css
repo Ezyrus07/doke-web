@@ -1951,3 +1951,128 @@ body.search-results-body :is(.results-searchbar__form, .results-searchbar__field
 body.search-results-body :is(.results-searchbar__mobile-filter, .filter-toggle):is(:hover, :focus-visible) {
   border-color: var(--doke-filter-chip-border, var(--doke-action-border, rgba(34, 98, 154, 0.08))) !important;
 }
+
+
+
+/* Resultados v86 — tablet rail correction.
+   Scope: resultados.html only.
+   Fixes the tablet regression where the hidden desktop sidebar/grid still reserves
+   horizontal space and pushes the results content to the right. */
+@media (min-width: 561px) and (max-width: 1180px) {
+  body.search-results-body {
+    --results-tablet-gutter: clamp(18px, 4.2vw, 52px);
+    --results-tablet-rail-max: 920px;
+    --results-tablet-rail: min(calc(100vw - (var(--results-tablet-gutter) * 2)), var(--results-tablet-rail-max));
+    overflow-x: hidden !important;
+    background: var(--doke-app-bg, #eef6fb) !important;
+  }
+
+  html.doke-sidebar-expanded body.search-results-body > .app-shell,
+  html.doke-sidebar-collapsed body.search-results-body > .app-shell,
+  body.search-results-body > .app-shell,
+  body.search-results-body .app-shell {
+    display: block !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 100svh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+    background: var(--doke-app-bg, #eef6fb) !important;
+  }
+
+  html.doke-sidebar-expanded body.search-results-body > .app-shell > .sidebar,
+  html.doke-sidebar-collapsed body.search-results-body > .app-shell > .sidebar,
+  body.search-results-body > .app-shell > .sidebar,
+  body.search-results-body .sidebar {
+    display: none !important;
+    width: 0 !important;
+    max-width: 0 !important;
+    min-width: 0 !important;
+    inline-size: 0 !important;
+    max-inline-size: 0 !important;
+    min-inline-size: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html.doke-sidebar-expanded body.search-results-body > .app-shell > .page,
+  html.doke-sidebar-collapsed body.search-results-body > .app-shell > .page,
+  body.search-results-body > .app-shell > .page,
+  body.search-results-body .page {
+    grid-column: 1 / -1 !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    margin-left: 0 !important;
+    padding: 0 !important;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    translate: none !important;
+    overflow-x: hidden !important;
+    background: var(--doke-app-bg, #eef6fb) !important;
+  }
+
+  body.search-results-body .page__content {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 0 calc(var(--doke-tablet-bottom-nav-height, 76px) + 30px) !important;
+    overflow-x: hidden !important;
+    background: var(--doke-app-bg, #eef6fb) !important;
+  }
+
+  body.search-results-body .page__content-inner,
+  body.search-results-body .app-shell-page__workspace,
+  body.search-results-body .search-results-workspace,
+  body.search-results-body .search-results-workspace--internal,
+  body.search-results-body .doke-page-shell {
+    display: grid !important;
+    width: var(--results-tablet-rail) !important;
+    max-width: var(--results-tablet-rail) !important;
+    min-width: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    transform: none !important;
+    translate: none !important;
+  }
+
+  body.search-results-body .results-searchbar,
+  body.search-results-body .results-layout,
+  body.search-results-body .results-main,
+  body.search-results-body .results-summary,
+  body.search-results-body .results-quickbar,
+  body.search-results-body .results-list,
+  body.search-results-body .results-grid {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.search-results-body .results-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body.search-results-body .results-filters {
+    display: none !important;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 700px) {
+  body.search-results-body {
+    --results-tablet-gutter: 18px;
+  }
+}

@@ -2939,15 +2939,6 @@ body.orders-page-shell .orders-page #orders-action-controls[data-active-panel="s
   }
 }
 
-
-
-/* Pedidos v67 — tablet header/page-toolbar separation.
-   Header owns navigation/context. Page-specific actions live in the pedidos toolbar.
-   Scope: pedidos tablet only. Desktop and mobile contracts stay untouched. */
-body.orders-page-shell .orders-tablet-menu {
-  display: none;
-}
-
 @media (min-width: 561px) and (max-width: 1180px) {
   body.orders-page-shell .app-header--orders .orders-tablet-menu {
     display: inline-grid !important;
@@ -3099,7 +3090,7 @@ body.orders-page-shell .orders-tablet-menu {
   }
 }
 
-@media (min-width: 561px) and (max-width: 700px) {
+@media (min-width: 561px) and (max-width: 900px) {
   body.orders-page-shell .orders-page-header__hero-strip {
     padding: 8px !important;
     border-radius: 20px !important;
@@ -3113,12 +3104,6 @@ body.orders-page-shell .orders-tablet-menu {
   }
 }
 
-
-
-/* Pedidos v68 — tablet toolbar correction.
-   Fixes v67 load-order issue: page-specific toolbar styles must win over shell.
-   Header: global navigation only. Toolbar: page actions only. Search form hidden until
-   we implement a proper tablet search overlay. */
 @media (min-width: 561px) and (max-width: 1180px) {
   body.orders-page-shell > .app-shell > .page > .app-header.app-header--orders .orders-page-actions,
   body.orders-page-shell .app-header.app-header--orders .orders-page-actions,
@@ -3251,5 +3236,689 @@ body.orders-page-shell .orders-tablet-menu {
 
   body.orders-page-shell .orders-page-header {
     display: none !important;
+  }
+}
+
+
+/* Pedidos v77 — canonical tablet header actions. */
+@media (min-width: 561px) and (max-width: 1180px) {
+  body.orders-page-shell .app-header--orders .orders-page-actions,
+  body.orders-page-shell .app-header--orders .page-header-context.orders-page-actions {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    align-items: center !important;
+    flex: 0 1 auto !important;
+    width: auto !important;
+    max-width: min(48vw, 420px) !important;
+    min-width: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: var(--doke-tablet-control, 48px) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 10px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    pointer-events: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  body.orders-page-shell .app-header--orders .page-header-context__action {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    flex: 0 0 auto !important;
+    height: var(--doke-tablet-control, 48px) !important;
+    min-height: var(--doke-tablet-control, 48px) !important;
+  }
+
+  body.orders-page-shell .orders-page-header {
+    display: none !important;
+  }
+}
+
+
+/* Pedidos v78 — keep header action buttons on the shared tablet shape. */
+@media (min-width: 561px) and (max-width: 1180px) {
+  body.orders-page-shell .app-header--orders .orders-page-actions,
+  body.orders-page-shell .app-header--orders .page-header-context.orders-page-actions {
+    overflow-y: visible !important;
+    padding-block: 2px !important;
+  }
+
+  body.orders-page-shell .app-header--orders .page-header-context__action {
+    box-sizing: border-box !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    padding: 0 18px !important;
+    border-radius: 14px !important;
+    line-height: 1 !important;
+  }
+}
+
+
+/* Pedidos v79 — remove outline and prevent clipping on tablet header actions. */
+@media (min-width: 561px) and (max-width: 1180px) {
+  body.orders-page-shell .app-header--orders .orders-page-actions,
+  body.orders-page-shell .app-header--orders .page-header-context.orders-page-actions {
+    padding-block: 3px !important;
+    overflow: visible !important;
+  }
+
+  body.orders-page-shell .app-header--orders .page-header-context__action {
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    padding: 0 18px !important;
+    border: 0 !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    outline: 0 !important;
+  }
+
+  body.orders-page-shell .app-header--orders .page-header-context__action:first-child,
+  body.orders-page-shell .app-header--orders .page-header-context__action.is-view-active,
+  body.orders-page-shell .app-header--orders .page-header-context__action[aria-expanded="true"] {
+    border: 0 !important;
+  }
+}
+
+
+
+/* Pedidos v80 — final tablet header button shape.
+   This page CSS loads after the shell, so it owns the final visual normalization. */
+@media (min-width: 561px) and (max-width: 1180px) {
+  body.orders-page-shell .app-header--orders,
+  body.orders-page-shell .app-header--orders .app-header__inner,
+  body.orders-page-shell .app-header--orders .app-header__group,
+  body.orders-page-shell .app-header--orders .app-header__group--primary {
+    overflow: visible !important;
+  }
+
+  body.orders-page-shell .app-header--orders .app-header__inner {
+    min-height: 62px !important;
+    padding-block: 7px !important;
+    align-items: center !important;
+  }
+
+  body.orders-page-shell .app-header--orders .orders-page-actions,
+  body.orders-page-shell .app-header--orders .page-header-context.orders-page-actions {
+    align-items: center !important;
+    align-self: center !important;
+    padding-block: 4px !important;
+    overflow: visible !important;
+  }
+
+  body.orders-page-shell .app-header--orders .page-header-context__action,
+  body.orders-page-shell .app-header--orders .page-header-context__action.doke-btn,
+  body.orders-page-shell .app-header--orders button.page-header-context__action {
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    padding: 0 18px !important;
+    border: 0 !important;
+    border-color: transparent !important;
+    border-width: 0 !important;
+    border-style: none !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #174d83 !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    outline: 0 !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+    overflow: visible !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+  }
+
+  body.orders-page-shell .app-header--orders .page-header-context__action:first-child,
+  body.orders-page-shell .app-header--orders .page-header-context__action.is-view-active,
+  body.orders-page-shell .app-header--orders .page-header-context__action[aria-expanded="true"] {
+    border: 0 !important;
+    border-color: transparent !important;
+    background: linear-gradient(135deg, #2f7fca 0%, #195180 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 12px 28px rgba(31, 95, 159, 0.18) !important;
+  }
+
+  body.orders-page-shell .app-header--orders .page-header-context__action svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
+
+
+/* Pedidos v81 — flat page actions in tablet header. */
+@media (min-width: 561px) and (max-width: 1180px) {
+  body.orders-page-shell .app-header--orders .orders-page-actions,
+  body.orders-page-shell .app-header--orders .page-header-context.orders-page-actions {
+    flex: 0 1 auto !important;
+    width: auto !important;
+    max-width: min(58vw, 460px) !important;
+    gap: 10px !important;
+    padding: 3px 2px !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+  }
+
+  body.orders-page-shell .app-header--orders .page-header-context__action,
+  body.orders-page-shell .app-header--orders .page-header-context__action.doke-btn,
+  body.orders-page-shell .app-header--orders button.page-header-context__action,
+  body.orders-page-shell .app-header--orders .page-header-context__action:first-child,
+  body.orders-page-shell .app-header--orders .page-header-context__action.is-view-active,
+  body.orders-page-shell .app-header--orders .page-header-context__action[aria-expanded="true"] {
+    box-sizing: border-box !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    padding: 0 18px !important;
+    border: 0 !important;
+    border-width: 0 !important;
+    border-style: none !important;
+    border-color: transparent !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #174d83 !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    outline: 0 !important;
+    overflow: visible !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+  }
+
+  body.orders-page-shell .app-header--orders .page-header-context__action::before,
+  body.orders-page-shell .app-header--orders .page-header-context__action::after {
+    display: none !important;
+    content: none !important;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 700px) {
+  body.orders-page-shell .app-header--orders .orders-page-actions,
+  body.orders-page-shell .app-header--orders .page-header-context.orders-page-actions {
+    max-width: min(60vw, 350px) !important;
+    gap: 8px !important;
+  }
+
+  body.orders-page-shell .app-header--orders .page-header-context__action,
+  body.orders-page-shell .app-header--orders .page-header-context__action:first-child,
+  body.orders-page-shell .app-header--orders .page-header-context__action.is-view-active,
+  body.orders-page-shell .app-header--orders .page-header-context__action[aria-expanded="true"] {
+    padding-inline: 16px !important;
+  }
+}
+
+
+
+/* Pedidos v82 — icon-only tablet header actions under 700px. */
+@media (min-width: 561px) and (max-width: 700px) {
+  body.orders-page-shell .app-header--orders .orders-page-actions,
+  body.orders-page-shell .app-header--orders .page-header-context.orders-page-actions {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    max-width: none !important;
+    gap: 8px !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.orders-page-shell .app-header--orders .page-header-context__action,
+  body.orders-page-shell .app-header--orders .page-header-context__action.doke-btn,
+  body.orders-page-shell .app-header--orders button.page-header-context__action,
+  body.orders-page-shell .app-header--orders .page-header-context__action:first-child,
+  body.orders-page-shell .app-header--orders .page-header-context__action.is-view-active,
+  body.orders-page-shell .app-header--orders .page-header-context__action[aria-expanded="true"] {
+    width: var(--doke-tablet-control, 48px) !important;
+    min-width: var(--doke-tablet-control, 48px) !important;
+    max-width: var(--doke-tablet-control, 48px) !important;
+    height: var(--doke-tablet-control, 48px) !important;
+    min-height: var(--doke-tablet-control, 48px) !important;
+    max-height: var(--doke-tablet-control, 48px) !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #1f5f9f !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    overflow: visible !important;
+  }
+
+  body.orders-page-shell .app-header--orders .page-header-context__action span {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  body.orders-page-shell .app-header--orders .page-header-context__action svg {
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+  }
+}
+
+
+
+/* Pedidos v84 — surgical tablet action controls.
+   Safe patch only for pedidos.html.
+   Does not touch shell/global layout or other pages.
+   561–700px: actions become icon-only square controls to fit the tablet header. */
+@media (min-width: 561px) and (max-width: 700px) {
+  body.orders-page-shell .app-header--orders .orders-page-actions,
+  body.orders-page-shell .app-header--orders .page-header-context.orders-page-actions {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    align-items: center !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 48px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 8px !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
+  }
+
+  body.orders-page-shell .app-header--orders .orders-page-actions .page-header-context__action,
+  body.orders-page-shell .app-header--orders .orders-page-actions .page-header-context__action.doke-btn,
+  body.orders-page-shell .app-header--orders .orders-page-actions button.page-header-context__action,
+  body.orders-page-shell .app-header--orders .orders-page-actions .page-header-context__action:first-child,
+  body.orders-page-shell .app-header--orders .orders-page-actions .page-header-context__action.is-view-active,
+  body.orders-page-shell .app-header--orders .orders-page-actions .page-header-context__action[aria-expanded="true"] {
+    box-sizing: border-box !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    flex: 0 0 48px !important;
+    width: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    border: 0 !important;
+    border-width: 0 !important;
+    border-style: none !important;
+    border-color: transparent !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #1f5f9f !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    outline: 0 !important;
+    overflow: visible !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+  }
+
+  body.orders-page-shell .app-header--orders .orders-page-actions .page-header-context__action > span {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  body.orders-page-shell .app-header--orders .orders-page-actions .page-header-context__action svg {
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+    stroke: currentColor !important;
+    flex: 0 0 auto !important;
+  }
+}
+
+
+
+/* Pedidos v87 — tablet header icon actions only.
+   Scope: pedidos.html only.
+   Fixes the 575px tablet header by forcing local actions to the same square
+   icon-control shape as menu/search, hiding text visually, and compacting profile text. */
+@media (min-width: 561px) and (max-width: 700px) {
+  body.orders-page-shell .app-header--orders,
+  body.orders-page-shell .app-header--orders .app-header__inner,
+  body.orders-page-shell .app-header--orders .app-header__group,
+  body.orders-page-shell .app-header--orders .app-header__group--primary,
+  body.orders-page-shell .app-header--orders .orders-page-actions,
+  body.orders-page-shell .app-header--orders .page-header-context.orders-page-actions {
+    overflow: visible !important;
+  }
+
+  body.orders-page-shell .app-header--orders .app-header__inner {
+    min-height: 64px !important;
+    padding-block: 8px !important;
+    align-items: center !important;
+  }
+
+  body.orders-page-shell .app-header--orders .app-header__group--primary {
+    gap: 8px !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  body.orders-page-shell .app-header--orders .orders-page-actions,
+  body.orders-page-shell .app-header--orders .page-header-context.orders-page-actions {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 48px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 8px !important;
+    pointer-events: auto !important;
+  }
+
+  body.orders-page-shell .app-header--orders .orders-page-actions .page-header-context__action,
+  body.orders-page-shell .app-header--orders .orders-page-actions .page-header-context__action.doke-btn,
+  body.orders-page-shell .app-header--orders .orders-page-actions button.page-header-context__action,
+  body.orders-page-shell .app-header--orders .orders-page-actions .page-header-context__action:first-child,
+  body.orders-page-shell .app-header--orders .orders-page-actions .page-header-context__action.is-view-active,
+  body.orders-page-shell .app-header--orders .orders-page-actions .page-header-context__action[aria-expanded="true"],
+  body.orders-page-shell .app-header--orders .page-header-context.orders-page-actions .page-header-context__action,
+  body.orders-page-shell .app-header--orders .page-header-context.orders-page-actions .page-header-context__action.doke-btn,
+  body.orders-page-shell .app-header--orders .page-header-context.orders-page-actions button.page-header-context__action,
+  body.orders-page-shell .app-header--orders .page-header-context.orders-page-actions .page-header-context__action:first-child,
+  body.orders-page-shell .app-header--orders .page-header-context.orders-page-actions .page-header-context__action.is-view-active,
+  body.orders-page-shell .app-header--orders .page-header-context.orders-page-actions .page-header-context__action[aria-expanded="true"] {
+    box-sizing: border-box !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    flex: 0 0 48px !important;
+    width: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    border: 0 !important;
+    border-width: 0 !important;
+    border-style: none !important;
+    border-color: transparent !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #1f5f9f !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    outline: 0 !important;
+    line-height: 1 !important;
+    overflow: visible !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+  }
+
+  body.orders-page-shell .app-header--orders .page-header-context__action::before,
+  body.orders-page-shell .app-header--orders .page-header-context__action::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  body.orders-page-shell .app-header--orders .page-header-context__action > span,
+  body.orders-page-shell .app-header--orders .page-header-context__action .page-header-context__action-label,
+  body.orders-page-shell .app-header--orders .page-header-context__action .doke-btn__label {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  body.orders-page-shell .app-header--orders .page-header-context__action svg {
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+    stroke: currentColor !important;
+    flex: 0 0 auto !important;
+  }
+
+  body.orders-page-shell .app-header--orders .home-side-meta__profile {
+    min-width: 48px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 6px 8px !important;
+    gap: 0 !important;
+  }
+
+  body.orders-page-shell .app-header--orders .home-side-meta__identity {
+    display: none !important;
+  }
+
+  body.orders-page-shell .app-header--orders .home-side-meta__avatar {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+  }
+}
+
+
+
+/* Pedidos v88 — hard override for tablet icon header actions.
+   This targets the real data attributes directly and hides text with font-size:0,
+   so it works even if older button/span rules keep winning. */
+@media (min-width: 561px) and (max-width: 700px) {
+  body.orders-page-shell .app-header--orders :is(
+    button[data-orders-filter-toggle],
+    button[data-orders-select-toggle],
+    button[data-orders-agenda-toggle]
+  ) {
+    box-sizing: border-box !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    flex: 0 0 48px !important;
+    width: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    inline-size: 48px !important;
+    min-inline-size: 48px !important;
+    max-inline-size: 48px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    block-size: 48px !important;
+    min-block-size: 48px !important;
+    max-block-size: 48px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    border: 0 !important;
+    border-width: 0 !important;
+    border-style: none !important;
+    border-color: transparent !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #1f5f9f !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    outline: 0 !important;
+    overflow: hidden !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    white-space: nowrap !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+  }
+
+  body.orders-page-shell .app-header--orders :is(
+    button[data-orders-filter-toggle],
+    button[data-orders-select-toggle],
+    button[data-orders-agenda-toggle]
+  ) > span {
+    display: none !important;
+  }
+
+  body.orders-page-shell .app-header--orders :is(
+    button[data-orders-filter-toggle],
+    button[data-orders-select-toggle],
+    button[data-orders-agenda-toggle]
+  ) svg {
+    display: block !important;
+    width: 18px !important;
+    min-width: 18px !important;
+    max-width: 18px !important;
+    height: 18px !important;
+    min-height: 18px !important;
+    max-height: 18px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    stroke: currentColor !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+  }
+
+  body.orders-page-shell .app-header--orders :is(
+    button[data-orders-filter-toggle],
+    button[data-orders-select-toggle],
+    button[data-orders-agenda-toggle]
+  )::before,
+  body.orders-page-shell .app-header--orders :is(
+    button[data-orders-filter-toggle],
+    button[data-orders-select-toggle],
+    button[data-orders-agenda-toggle]
+  )::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  body.orders-page-shell .app-header--orders .orders-page-actions,
+  body.orders-page-shell .app-header--orders .page-header-context.orders-page-actions {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.orders-page-shell .app-header--orders .home-side-meta__profile {
+    flex: 0 0 auto !important;
+    min-width: 48px !important;
+    width: auto !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 6px 8px !important;
+    gap: 0 !important;
+  }
+
+  body.orders-page-shell .app-header--orders .home-side-meta__identity {
+    display: none !important;
+  }
+}
+
+/* Pedidos v90 — tablet landscape follows desktop header actions. */
+@media (min-width: 901px) and (max-width: 1024px) {
+  body.orders-page-shell .app-header--orders .orders-page-actions,
+  body.orders-page-shell .app-header--orders .page-header-context.orders-page-actions {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: auto !important;
+    max-width: min(58vw, 460px) !important;
+    overflow: visible !important;
+  }
+
+  body.orders-page-shell .app-header--orders :is(
+    button[data-orders-filter-toggle],
+    button[data-orders-select-toggle],
+    button[data-orders-agenda-toggle]
+  ) {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    inline-size: auto !important;
+    min-inline-size: 0 !important;
+    max-inline-size: none !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    block-size: 42px !important;
+    min-block-size: 42px !important;
+    max-block-size: 42px !important;
+    padding: 0 18px !important;
+    gap: 8px !important;
+    border: 0 !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #174d83 !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    font-size: 0.84rem !important;
+    font-weight: 850 !important;
+    line-height: 1 !important;
+    overflow: visible !important;
+  }
+
+  body.orders-page-shell .app-header--orders :is(
+    button[data-orders-filter-toggle],
+    button[data-orders-select-toggle],
+    button[data-orders-agenda-toggle]
+  ) > span {
+    position: static !important;
+    display: inline !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    clip: auto !important;
+    clip-path: none !important;
+    white-space: nowrap !important;
+  }
+
+  body.orders-page-shell .app-header--orders :is(
+    button[data-orders-filter-toggle],
+    button[data-orders-select-toggle],
+    button[data-orders-agenda-toggle]
+  ) svg {
+    width: 17px !important;
+    min-width: 17px !important;
+    max-width: 17px !important;
+    height: 17px !important;
+    min-height: 17px !important;
+    max-height: 17px !important;
+    flex: 0 0 17px !important;
   }
 }

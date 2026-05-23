@@ -3507,7 +3507,7 @@ body {
    or as a broken narrow mobile layout. Page CSS keeps page-specific layout;
    this layer only owns tablet rails, header compactness, horizontal overflow
    containment, shared card grids and bottom-nav geometry. */
-@media (min-width: 561px) and (max-width: 1024px) {
+@media (min-width: 561px) and (max-width: 700px) {
   :root {
     --doke-tablet-rail-max: 920px;
     --doke-tablet-gutter: clamp(24px, 5vw, 52px);
@@ -3826,7 +3826,7 @@ body {
 
 /* Home/tablet product experience: mirrors the approved iPad mockup without
    changing the desktop baseline. */
-@media (min-width: 561px) and (max-width: 1024px) {
+@media (min-width: 561px) and (max-width: 700px) {
   body.home-index-shell {
     --doke-tablet-rail-max: 920px;
     --doke-tablet-gutter: clamp(24px, 5vw, 52px);
@@ -4520,247 +4520,6 @@ body[data-page] .home-side-meta__tablet-menu {
   }
 }
 
-
-
-/* Tablet local-actions contract v70.
-   Header is global navigation only; page-specific actions must render in page toolbar/hero strip.
-   Applies to app-header pages that still carry legacy .page-header-context inside header. */
-@media (min-width: 561px) and (max-width: 1180px) {
-  body[data-page]:not(.home-index-shell):not([data-page="home"]) > .app-shell > .page > .app-header.home-side-meta .page-header-context,
-  body[data-page]:not(.home-index-shell):not([data-page="home"]) .app-header.home-side-meta .page-header-context {
-    display: none !important;
-    visibility: hidden !important;
-    width: 0 !important;
-    max-width: 0 !important;
-    min-width: 0 !important;
-    height: 0 !important;
-    max-height: 0 !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    pointer-events: none !important;
-  }
-}
-
-
-
-/* Tablet header minimal actions v72.
-   Decision: tablet header keeps only navigation context:
-   [menu] [search/location] ... [profile].
-   Secondary shortcuts (news/help/notifications) stay in drawer/bottom navigation, not in header. */
-@media (min-width: 561px) and (max-width: 1180px) {
-  body[data-page]:not(.home-index-shell):not([data-page="home"]) .app-header.home-side-meta .app-header__group--secondary .home-side-meta__alert {
-    display: none !important;
-    visibility: hidden !important;
-    width: 0 !important;
-    max-width: 0 !important;
-    min-width: 0 !important;
-    height: 0 !important;
-    max-height: 0 !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    pointer-events: none !important;
-  }
-
-  body[data-page]:not(.home-index-shell):not([data-page="home"]) .app-header.home-side-meta .app-header__group--secondary {
-    gap: 0 !important;
-    margin-left: auto !important;
-  }
-
-  body[data-page]:not(.home-index-shell):not([data-page="home"]) .app-header.home-side-meta .home-side-meta__profile {
-    margin-left: 0 !important;
-  }
-}
-
-
-
-/* Tablet header local actions v73.
-   Decision update: page-local primary actions can live in the tablet header when they are
-   few and compact. The duplicated lower toolbar is removed by each page stylesheet.
-   Header pattern becomes: [menu] [search] [local actions] ... [profile]. */
-@media (min-width: 561px) and (max-width: 1180px) {
-  body[data-page]:not(.home-index-shell):not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary .page-header-context {
-    display: inline-flex !important;
-    visibility: visible !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    flex: 0 1 auto !important;
-    width: auto !important;
-    max-width: min(46vw, 360px) !important;
-    min-width: 0 !important;
-    height: auto !important;
-    max-height: none !important;
-    min-height: var(--doke-tablet-control, 48px) !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    gap: 10px !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    pointer-events: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-width: none !important;
-  }
-
-  body[data-page]:not(.home-index-shell):not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary .page-header-context::-webkit-scrollbar {
-    display: none !important;
-  }
-
-  body[data-page]:not(.home-index-shell):not([data-page="home"]) .app-header.home-side-meta .page-header-context__action {
-    display: inline-flex !important;
-    visibility: visible !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex: 0 0 auto !important;
-    width: auto !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    height: var(--doke-tablet-control, 48px) !important;
-    max-height: var(--doke-tablet-control, 48px) !important;
-    min-height: var(--doke-tablet-control, 48px) !important;
-    margin: 0 !important;
-    padding: 0 16px !important;
-    gap: 8px !important;
-    border-radius: 16px !important;
-    border: 1px solid rgba(210, 224, 238, 0.82) !important;
-    background: rgba(255, 255, 255, 0.96) !important;
-    color: #174d83 !important;
-    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
-    font-size: 0.84rem !important;
-    font-weight: 850 !important;
-    line-height: 1 !important;
-    white-space: nowrap !important;
-    overflow: visible !important;
-    pointer-events: auto !important;
-  }
-
-  body[data-page]:not(.home-index-shell):not([data-page="home"]) .app-header.home-side-meta .page-header-context__action svg {
-    width: 17px !important;
-    height: 17px !important;
-    stroke: currentColor !important;
-    flex: 0 0 auto !important;
-  }
-
-  body[data-page]:not(.home-index-shell):not([data-page="home"]) .app-header.home-side-meta .page-header-context__action:first-child,
-  body[data-page]:not(.home-index-shell):not([data-page="home"]) .app-header.home-side-meta .page-header-context__action.is-view-active,
-  body[data-page]:not(.home-index-shell):not([data-page="home"]) .app-header.home-side-meta .page-header-context__action[aria-expanded="true"] {
-    border-color: rgba(34, 126, 208, 0.28) !important;
-    background: linear-gradient(135deg, #2f7fca 0%, #195180 100%) !important;
-    color: #fff !important;
-    box-shadow: 0 12px 28px rgba(31, 95, 159, 0.18) !important;
-  }
-}
-
-@media (min-width: 561px) and (max-width: 700px) {
-  body[data-page]:not(.home-index-shell):not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary .page-header-context {
-    max-width: min(38vw, 240px) !important;
-    gap: 8px !important;
-  }
-
-  body[data-page]:not(.home-index-shell):not([data-page="home"]) .app-header.home-side-meta .page-header-context__action {
-    height: var(--doke-tablet-control, 48px) !important;
-    min-height: var(--doke-tablet-control, 48px) !important;
-    padding-inline: 14px !important;
-    font-size: 0.8rem !important;
-  }
-}
-
-
-
-/* Comunidade tablet header actions v74.
-   comunidade.html does not use data-page, so the generic body[data-page] header-action
-   contract does not match it. This page-specific bridge restores the desktop actions
-   in the tablet header and keeps the duplicated lower toolbar removed. */
-@media (min-width: 561px) and (max-width: 1180px) {
-  body.communities-page-shell .app-header.app-header--communities.home-side-meta .app-header__group--primary .page-header-context {
-    display: inline-flex !important;
-    visibility: visible !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    flex: 0 1 auto !important;
-    width: auto !important;
-    max-width: min(48vw, 390px) !important;
-    min-width: 0 !important;
-    height: auto !important;
-    max-height: none !important;
-    min-height: var(--doke-tablet-control, 48px) !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    gap: 10px !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    pointer-events: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-width: none !important;
-  }
-
-  body.communities-page-shell .app-header.app-header--communities.home-side-meta .app-header__group--primary .page-header-context::-webkit-scrollbar {
-    display: none !important;
-  }
-
-  body.communities-page-shell .app-header.app-header--communities.home-side-meta .page-header-context__action {
-    display: inline-flex !important;
-    visibility: visible !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex: 0 0 auto !important;
-    width: auto !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    height: var(--doke-tablet-control, 48px) !important;
-    max-height: var(--doke-tablet-control, 48px) !important;
-    min-height: var(--doke-tablet-control, 48px) !important;
-    margin: 0 !important;
-    padding: 0 16px !important;
-    gap: 8px !important;
-    border-radius: 16px !important;
-    border: 1px solid rgba(210, 224, 238, 0.82) !important;
-    background: rgba(255, 255, 255, 0.96) !important;
-    color: #174d83 !important;
-    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
-    font-size: 0.84rem !important;
-    font-weight: 850 !important;
-    line-height: 1 !important;
-    white-space: nowrap !important;
-    overflow: visible !important;
-    pointer-events: auto !important;
-  }
-
-  body.communities-page-shell .app-header.app-header--communities.home-side-meta .page-header-context__action svg {
-    width: 17px !important;
-    height: 17px !important;
-    stroke: currentColor !important;
-    flex: 0 0 auto !important;
-  }
-
-  body.communities-page-shell .app-header.app-header--communities.home-side-meta .page-header-context__action:first-child {
-    border-color: rgba(34, 126, 208, 0.28) !important;
-    background: linear-gradient(135deg, #2f7fca 0%, #195180 100%) !important;
-    color: #fff !important;
-    box-shadow: 0 12px 28px rgba(31, 95, 159, 0.18) !important;
-  }
-
-  body.communities-page-shell .communities-mobile-header.orders-page-header {
-    display: none !important;
-  }
-}
-
-@media (min-width: 561px) and (max-width: 700px) {
-  body.communities-page-shell .app-header.app-header--communities.home-side-meta .app-header__group--primary .page-header-context {
-    max-width: min(48vw, 280px) !important;
-    gap: 8px !important;
-  }
-
-  body.communities-page-shell .app-header.app-header--communities.home-side-meta .page-header-context__action {
-    padding-inline: 14px !important;
-    font-size: 0.8rem !important;
-  }
-}
-
-
-
 /* Tablet header action final contract v76.
    Final decision: tablet header must show page-specific primary actions when they exist.
    Secondary shortcut alerts remain hidden. Lower duplicated toolbars are removed per page CSS. */
@@ -4865,5 +4624,744 @@ body[data-page] .home-side-meta__tablet-menu {
   body[data-page]:not(.home-index-shell):not([data-page="home"]) .app-header.home-side-meta .page-header-context__action {
     padding-inline: 14px !important;
     font-size: 0.8rem !important;
+  }
+}
+
+
+
+/* Tablet header actions canonical v77.
+   Final canonical contract:
+   [menu] [search] [page actions] ... [profile]
+   No secondary alert buttons. No duplicated lower toolbar. */
+@media (min-width: 561px) and (max-width: 1180px) {
+  body[data-page]:not([data-page="home"]) > .app-shell > .page > .app-header.home-side-meta .app-header__group--primary,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary {
+    display: inline-flex !important;
+    align-items: center !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+    gap: clamp(8px, 1.4vw, 12px) !important;
+  }
+
+  body[data-page]:not([data-page="home"]) > .app-shell > .page > .app-header.home-side-meta .app-header__group--primary > .page-header-context,
+  body[data-page]:not([data-page="home"]) > .app-shell > .page > .app-header.home-side-meta .app-header__group--primary > .orders-page-actions,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .page-header-context,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .orders-page-actions {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex: 0 1 auto !important;
+    width: auto !important;
+    max-width: min(48vw, 420px) !important;
+    min-width: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: var(--doke-tablet-control, 48px) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 10px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    pointer-events: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .page-header-context::-webkit-scrollbar,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .orders-page-actions::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    height: var(--doke-tablet-control, 48px) !important;
+    max-height: var(--doke-tablet-control, 48px) !important;
+    min-height: var(--doke-tablet-control, 48px) !important;
+    margin: 0 !important;
+    padding: 0 16px !important;
+    gap: 8px !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(210, 224, 238, 0.82) !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #174d83 !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    font-size: 0.84rem !important;
+    font-weight: 850 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action:first-child,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action.is-view-active,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action[aria-expanded="true"] {
+    border-color: rgba(34, 126, 208, 0.28) !important;
+    background: linear-gradient(135deg, #2f7fca 0%, #195180 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 12px 28px rgba(31, 95, 159, 0.18) !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action svg {
+    width: 17px !important;
+    height: 17px !important;
+    stroke: currentColor !important;
+    flex: 0 0 auto !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--secondary .home-side-meta__alert {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    max-width: 0 !important;
+    min-width: 0 !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 700px) {
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .page-header-context,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .orders-page-actions {
+    max-width: min(50vw, 300px) !important;
+    gap: 8px !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action {
+    padding-inline: 14px !important;
+    font-size: 0.8rem !important;
+  }
+}
+
+
+/* Tablet header action visual polish v78.
+   Fixes inconsistent radius and clipping on tablet page-action buttons. */
+@media (min-width: 561px) and (max-width: 1180px) {
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__inner,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary {
+    overflow: visible !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__inner {
+    min-height: calc(var(--doke-tablet-control, 48px) + 12px) !important;
+    padding-block: 6px !important;
+    align-items: center !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .page-header-context,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .orders-page-actions {
+    align-self: center !important;
+    padding-block: 2px !important;
+    overflow-y: visible !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action {
+    box-sizing: border-box !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    padding: 0 18px !important;
+    border-radius: 14px !important;
+    line-height: 1 !important;
+    align-self: center !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 700px) {
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action {
+    padding-inline: 16px !important;
+  }
+}
+
+
+/* Tablet header action style cleanup v79.
+   Make tablet page-action buttons match the menu/search controls: no visible border line,
+   same rounded shape, more vertical breathing room, and no clipping. */
+@media (min-width: 561px) and (max-width: 1180px) {
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__inner {
+    min-height: calc(var(--doke-tablet-control, 48px) + 14px) !important;
+    padding-block: 7px !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .page-header-context,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .orders-page-actions {
+    padding-block: 3px !important;
+    overflow: visible !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action {
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    padding: 0 18px !important;
+    border: 0 !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    outline: 0 !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action:first-child,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action.is-view-active,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action[aria-expanded="true"] {
+    border: 0 !important;
+  }
+}
+
+
+
+/* Tablet header action shape canonical v80.
+   Corrects v79 escaped selector issue and removes the outlined/bordered button style.
+   Page-action buttons now share the menu/search visual language: white surface, no
+   border line, soft shadow, consistent radius, and no clipping. */
+@media (min-width: 561px) and (max-width: 1180px) {
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__inner,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary {
+    overflow: visible !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__inner {
+    min-height: 62px !important;
+    padding-block: 7px !important;
+    align-items: center !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .page-header-context,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .orders-page-actions {
+    align-items: center !important;
+    align-self: center !important;
+    padding-block: 4px !important;
+    overflow: visible !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action.doke-btn,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta button.page-header-context__action {
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    padding: 0 18px !important;
+    border: 0 !important;
+    border-color: transparent !important;
+    border-width: 0 !important;
+    border-style: none !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #174d83 !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    outline: 0 !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
+    overflow: visible !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action:first-child,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action.is-view-active,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action[aria-expanded="true"] {
+    border: 0 !important;
+    border-color: transparent !important;
+    background: linear-gradient(135deg, #2f7fca 0%, #195180 100%) !important;
+    color: #fff !important;
+    box-shadow: 0 12px 28px rgba(31, 95, 159, 0.18) !important;
+  }
+}
+
+
+
+/* Tablet header actions flat surface v81.
+   Final visual decision: page actions use the same white surface language as menu/search.
+   Also fixes clipping by allowing a wider actions rail on 575px tablets. */
+@media (min-width: 561px) and (max-width: 1180px) {
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .page-header-context,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .orders-page-actions {
+    flex: 0 1 auto !important;
+    width: auto !important;
+    max-width: min(58vw, 460px) !important;
+    gap: 10px !important;
+    padding: 3px 2px !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action.doke-btn,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta button.page-header-context__action,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action:first-child,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action.is-view-active,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action[aria-expanded="true"] {
+    box-sizing: border-box !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    padding: 0 18px !important;
+    border: 0 !important;
+    border-width: 0 !important;
+    border-style: none !important;
+    border-color: transparent !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #174d83 !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    outline: 0 !important;
+    overflow: visible !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action::before,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action::after {
+    display: none !important;
+    content: none !important;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 700px) {
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .page-header-context,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .orders-page-actions {
+    max-width: min(60vw, 350px) !important;
+    gap: 8px !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action:first-child,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action.is-view-active,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action[aria-expanded="true"] {
+    padding-inline: 16px !important;
+  }
+}
+
+/* Tablet narrow header action lock v82.
+   Internal pages with more than two page actions must not overflow the shared
+   header rail. Match the index tablet header control shape and keep labels
+   available through aria-label/title while the visual surface becomes icon-only. */
+@media (min-width: 561px) and (max-width: 900px) {
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__inner,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--secondary,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .page-header-context,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .orders-page-actions {
+    overflow: visible !important;
+    min-width: 0 !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__inner {
+    gap: 10px !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary {
+    flex: 1 1 auto !important;
+    gap: 8px !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .page-header-context,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .orders-page-actions {
+    display: inline-flex !important;
+    align-items: center !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    max-width: none !important;
+    gap: 8px !important;
+    padding: 0 !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action.doke-btn,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta button.page-header-context__action,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action:first-child,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action.is-view-active,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action[aria-expanded="true"] {
+    box-sizing: border-box !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    flex: 0 0 var(--doke-tablet-control, 48px) !important;
+    width: var(--doke-tablet-control, 48px) !important;
+    min-width: var(--doke-tablet-control, 48px) !important;
+    max-width: var(--doke-tablet-control, 48px) !important;
+    inline-size: var(--doke-tablet-control, 48px) !important;
+    min-inline-size: var(--doke-tablet-control, 48px) !important;
+    max-inline-size: var(--doke-tablet-control, 48px) !important;
+    height: var(--doke-tablet-control, 48px) !important;
+    min-height: var(--doke-tablet-control, 48px) !important;
+    max-height: var(--doke-tablet-control, 48px) !important;
+    block-size: var(--doke-tablet-control, 48px) !important;
+    min-block-size: var(--doke-tablet-control, 48px) !important;
+    max-block-size: var(--doke-tablet-control, 48px) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    border: 0 !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #1f5f9f !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    outline: 0 !important;
+    overflow: hidden !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    white-space: nowrap !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action > span,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action .page-header-context__action-label,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action .doke-btn__label {
+    display: none !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action svg {
+    display: block !important;
+    width: 18px !important;
+    min-width: 18px !important;
+    max-width: 18px !important;
+    height: 18px !important;
+    min-height: 18px !important;
+    max-height: 18px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    stroke: currentColor !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action::before,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .home-side-meta__profile {
+    flex: 0 0 auto !important;
+    min-width: var(--doke-tablet-control, 48px) !important;
+    width: auto !important;
+    height: var(--doke-tablet-control, 48px) !important;
+    min-height: var(--doke-tablet-control, 48px) !important;
+    padding: 6px 8px !important;
+    gap: 0 !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .home-side-meta__identity {
+    display: none !important;
+  }
+}
+
+/* Tablet landscape header parity v83.
+   From 701px upward, tablet has enough rail to use the same text action
+   buttons as desktop. The icon-only lock above remains limited to narrow
+   tablet widths where text labels would clip. */
+@media (min-width: 901px) and (max-width: 1024px) {
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .page-header-context,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .app-header__group--primary > .orders-page-actions {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: auto !important;
+    max-width: min(58vw, 460px) !important;
+    overflow: visible !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action.doke-btn,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta button.page-header-context__action,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action:first-child,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action.is-view-active,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action[aria-expanded="true"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    inline-size: auto !important;
+    min-inline-size: 0 !important;
+    max-inline-size: none !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    padding: 0 18px !important;
+    gap: 8px !important;
+    border: 0 !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #174d83 !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    font-size: 0.84rem !important;
+    font-weight: 850 !important;
+    line-height: 1 !important;
+    overflow: visible !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action > span,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action .page-header-context__action-label,
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action .doke-btn__label {
+    position: static !important;
+    display: inline !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    clip: auto !important;
+    clip-path: none !important;
+    white-space: nowrap !important;
+  }
+
+  body[data-page]:not([data-page="home"]) .app-header.home-side-meta .page-header-context__action svg {
+    width: 17px !important;
+    height: 17px !important;
+    flex: 0 0 17px !important;
+  }
+}
+
+/* Tablet landscape desktop parity v84.
+   In horizontal tablet, the app shell must be the desktop shell: visible sidebar,
+   no tablet menu button, full secondary shortcuts, and profile text. */
+@media (min-width: 761px) and (max-width: 1024px) {
+  body[data-page]:not([data-page="home"]):not(.home-index-shell).app-shell-page {
+    --sidebar-width: 272px !important;
+    --doke-app-shell-sidebar-width: var(--sidebar-width, 272px) !important;
+    --doke-app-shell-workspace-max: var(--doke-shell-max-wide, 1360px) !important;
+    --doke-app-shell-gutter: clamp(24px, 3vw, 48px) !important;
+    --doke-desktop-sidebar-width: var(--sidebar-width, 272px) !important;
+    --doke-app-sidebar-width: var(--sidebar-width, 272px) !important;
+  }
+
+  html.doke-sidebar-expanded body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell,
+  html.doke-sidebar-collapsed body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell).app-shell-page > .app-shell,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell).doke-app-shell-page > .app-shell,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell).internal-shell-page > .app-shell {
+    display: grid !important;
+    grid-template-columns: var(--doke-app-shell-sidebar-width, 272px) minmax(0, 1fr) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 100vh !important;
+    overflow-x: clip !important;
+  }
+
+  html.doke-sidebar-expanded body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .sidebar,
+  html.doke-sidebar-collapsed body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .sidebar,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .sidebar,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .sidebar {
+    position: sticky !important;
+    top: 0 !important;
+    left: auto !important;
+    right: auto !important;
+    grid-column: 1 !important;
+    display: flex !important;
+    width: var(--doke-app-shell-sidebar-width, 272px) !important;
+    min-width: var(--doke-app-shell-sidebar-width, 272px) !important;
+    max-width: var(--doke-app-shell-sidebar-width, 272px) !important;
+    inline-size: var(--doke-app-shell-sidebar-width, 272px) !important;
+    min-inline-size: var(--doke-app-shell-sidebar-width, 272px) !important;
+    max-inline-size: var(--doke-app-shell-sidebar-width, 272px) !important;
+    transform: none !important;
+    translate: none !important;
+    overflow: visible !important;
+  }
+
+  html.doke-sidebar-expanded body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page,
+  html.doke-sidebar-collapsed body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page {
+    grid-column: 2 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    overflow-x: clip !important;
+  }
+
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page > .page__content,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .page__content {
+    padding-left: var(--doke-app-shell-gutter, clamp(24px, 3vw, 48px)) !important;
+    padding-right: var(--doke-app-shell-gutter, clamp(24px, 3vw, 48px)) !important;
+    padding-bottom: 0 !important;
+  }
+
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page > .page__content > .page__content-inner,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page > .page__content > .container,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .page__content-inner,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .app-shell-page__workspace,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .shell-home__workspace,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .orders-shell-content,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .wallet-shell-content,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .settings-shell-content {
+    width: min(100%, var(--doke-app-shell-workspace-max, 1360px)) !important;
+    max-width: var(--doke-app-shell-workspace-max, 1360px) !important;
+    margin-inline: auto !important;
+  }
+
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page > .app-header > .app-header__inner {
+    width: min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 48px)) * 2)), var(--doke-app-shell-workspace-max, 1360px)) !important;
+    max-width: var(--doke-app-shell-workspace-max, 1360px) !important;
+    min-height: var(--app-header-control-size, 48px) !important;
+  }
+
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .app-header.home-side-meta .home-side-meta__tablet-menu {
+    display: none !important;
+  }
+
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .app-header.home-side-meta .app-header__group--secondary .home-side-meta__alert {
+    display: inline-grid !important;
+    visibility: visible !important;
+    width: var(--app-header-control-size, 48px) !important;
+    min-width: var(--app-header-control-size, 48px) !important;
+    max-width: var(--app-header-control-size, 48px) !important;
+    height: var(--app-header-control-size, 48px) !important;
+    min-height: var(--app-header-control-size, 48px) !important;
+    max-height: var(--app-header-control-size, 48px) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    pointer-events: auto !important;
+  }
+
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .app-header.home-side-meta .home-side-meta__profile {
+    width: auto !important;
+    min-width: 0 !important;
+    height: var(--app-header-profile-height, 48px) !important;
+    min-height: var(--app-header-profile-height, 48px) !important;
+    padding: 6px 14px 6px 8px !important;
+    gap: 10px !important;
+  }
+
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .app-header.home-side-meta .home-side-meta__identity {
+    display: grid !important;
+  }
+}
+
+/* Tablet landscape header-with-menu v85.
+   User decision: horizontal tablet keeps the header actions from desktop, but
+   does not mount the fixed sidebar. Navigation remains available through the
+   header menu button. */
+@media (min-width: 761px) and (max-width: 1024px) {
+  body[data-page]:not([data-page="home"]):not(.home-index-shell).app-shell-page {
+    --sidebar-width: 0px !important;
+    --doke-app-shell-sidebar-width: 0px !important;
+    --doke-desktop-sidebar-width: 0px !important;
+    --doke-app-sidebar-width: 0px !important;
+    --doke-tablet-rail-max: 920px !important;
+    --doke-tablet-gutter: clamp(18px, 4.2vw, 52px) !important;
+    --doke-tablet-rail: min(calc(100vw - (var(--doke-tablet-gutter) * 2)), var(--doke-tablet-rail-max)) !important;
+  }
+
+  html.doke-sidebar-expanded body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell,
+  html.doke-sidebar-collapsed body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell).app-shell-page > .app-shell,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell).doke-app-shell-page > .app-shell,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell).internal-shell-page > .app-shell {
+    display: block !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html.doke-sidebar-expanded body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .sidebar,
+  html.doke-sidebar-collapsed body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .sidebar,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .sidebar,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .sidebar {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    inline-size: 0 !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 0 !important;
+    overflow: hidden !important;
+    transform: none !important;
+  }
+
+  html.doke-sidebar-expanded body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page,
+  html.doke-sidebar-collapsed body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page > .page__content,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .page__content {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-bottom: var(--doke-tablet-bottom-safe, calc(var(--doke-tablet-bottom-nav-height, 76px) + 30px)) !important;
+  }
+
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page > .page__content > .page__content-inner,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page > .page__content > .container,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .page__content-inner,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .app-shell-page__workspace,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .shell-home__workspace,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .orders-shell-content,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .wallet-shell-content,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .settings-shell-content {
+    width: var(--doke-tablet-rail) !important;
+    max-width: var(--doke-tablet-rail) !important;
+    margin-inline: auto !important;
+  }
+
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page > .app-header > .app-header__inner {
+    width: var(--doke-tablet-rail) !important;
+    max-width: var(--doke-tablet-rail) !important;
+  }
+
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .app-header.home-side-meta .home-side-meta__tablet-menu {
+    display: inline-grid !important;
+    visibility: visible !important;
+    width: var(--doke-tablet-control, 48px) !important;
+    min-width: var(--doke-tablet-control, 48px) !important;
+    max-width: var(--doke-tablet-control, 48px) !important;
+    height: var(--doke-tablet-control, 48px) !important;
+    min-height: var(--doke-tablet-control, 48px) !important;
+    max-height: var(--doke-tablet-control, 48px) !important;
+    flex: 0 0 var(--doke-tablet-control, 48px) !important;
+    place-items: center !important;
+  }
+
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) .app-header.home-side-meta .app-header__group--secondary .home-side-meta__alert {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
   }
 }
