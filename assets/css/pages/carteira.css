@@ -5795,3 +5795,2138 @@ body[data-wallet-view="statistics"] .wallet-analytics {
     border-radius: 16px !important;
   }
 }
+
+/* Carteira v78 — tablet breathing room.
+   Responsabilidade: corrigir densidade da carteira em tablets sem tocar no shell global.
+   O iPad mini/tablet vertical não deve herdar o rail mobile de 430px. */
+@media (min-width: 561px) and (max-width: 1180px) {
+  body.wallet-page-shell {
+    --doke-tablet-rail: min(calc(100vw - clamp(48px, 8vw, 96px)), 920px) !important;
+    --wallet-tablet-section-gap: clamp(18px, 2.4vw, 24px) !important;
+  }
+
+  body.wallet-page-shell .page__content {
+    padding-inline: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  body.wallet-page-shell .page__content-inner.wallet-shell-content {
+    width: var(--doke-tablet-rail) !important;
+    max-width: var(--doke-tablet-rail) !important;
+    inline-size: var(--doke-tablet-rail) !important;
+    max-inline-size: var(--doke-tablet-rail) !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.wallet-page-shell .wallet-mobile-layout {
+    display: none !important;
+  }
+
+  body.wallet-page-shell .wallet-page,
+  body.wallet-page-shell .wallet-overview,
+  body.wallet-page-shell .wallet-layout {
+    gap: var(--wallet-tablet-section-gap) !important;
+  }
+
+  body.wallet-page-shell .wallet-overview > .wallet-hero,
+  body.wallet-page-shell .wallet-overview > .wallet-kpis {
+    display: grid !important;
+  }
+
+  body.wallet-page-shell .wallet-hero {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: clamp(22px, 3vw, 30px) !important;
+    padding: clamp(34px, 5.2vw, 52px) !important;
+    border-radius: clamp(28px, 3vw, 34px) !important;
+    align-items: start !important;
+  }
+
+  body.wallet-page-shell .wallet-hero__balance {
+    gap: 12px !important;
+  }
+
+  body.wallet-page-shell .wallet-hero__eyebrow {
+    font-size: clamp(0.78rem, 1.35vw, 0.9rem) !important;
+    line-height: 1.1 !important;
+  }
+
+  body.wallet-page-shell .wallet-hero__amount {
+    font-size: clamp(3.15rem, 7vw, 4.45rem) !important;
+    line-height: 0.94 !important;
+    letter-spacing: -0.072em !important;
+  }
+
+  body.wallet-page-shell .wallet-hero__copy {
+    font-size: clamp(0.98rem, 1.8vw, 1.12rem) !important;
+    line-height: 1.48 !important;
+  }
+
+  body.wallet-page-shell .wallet-hero__meta {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: clamp(12px, 1.8vw, 18px) !important;
+  }
+
+  body.wallet-page-shell .wallet-hero-stat {
+    min-height: 82px !important;
+    grid-template-columns: 52px minmax(0, 1fr) !important;
+    gap: 16px !important;
+    padding: 16px 18px !important;
+    border-radius: 22px !important;
+  }
+
+  body.wallet-page-shell .wallet-hero-stat__icon {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 17px !important;
+  }
+
+  body.wallet-page-shell .wallet-hero-stat__content span,
+  body.wallet-page-shell .wallet-hero-stat__content small {
+    font-size: 0.78rem !important;
+    line-height: 1.16 !important;
+  }
+
+  body.wallet-page-shell .wallet-hero-stat__content strong {
+    font-size: clamp(0.95rem, 1.45vw, 1.08rem) !important;
+    line-height: 1.12 !important;
+  }
+
+  body.wallet-page-shell .wallet-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: var(--wallet-tablet-section-gap) !important;
+  }
+
+  body.wallet-page-shell .wallet-kpi {
+    min-height: 118px !important;
+    padding: clamp(22px, 3vw, 28px) !important;
+    border-radius: 26px !important;
+    gap: 18px !important;
+  }
+
+  body.wallet-page-shell .wallet-kpi__icon {
+    width: 52px !important;
+    height: 52px !important;
+    border-radius: 18px !important;
+  }
+
+  body.wallet-page-shell .wallet-kpi__content span {
+    font-size: 0.86rem !important;
+    line-height: 1.18 !important;
+  }
+
+  body.wallet-page-shell .wallet-kpi__content strong {
+    font-size: clamp(1.3rem, 2.8vw, 1.65rem) !important;
+    line-height: 1.08 !important;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 700px) {
+  body.wallet-page-shell {
+    --doke-tablet-rail: min(calc(100vw - 48px), 620px) !important;
+    --wallet-tablet-section-gap: 18px !important;
+  }
+
+  body.wallet-page-shell .wallet-hero {
+    padding: 34px 32px !important;
+    gap: 24px !important;
+  }
+
+  body.wallet-page-shell .wallet-hero__amount {
+    font-size: clamp(3.05rem, 9.2vw, 3.85rem) !important;
+  }
+
+  body.wallet-page-shell .wallet-hero__meta,
+  body.wallet-page-shell .wallet-kpis {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body.wallet-page-shell .wallet-hero-stat {
+    min-height: 86px !important;
+    padding: 18px 20px !important;
+  }
+
+  body.wallet-page-shell .wallet-kpi {
+    min-height: 108px !important;
+    grid-template-columns: 56px minmax(0, 1fr) !important;
+    align-items: center !important;
+  }
+}
+
+@media (min-width: 701px) and (max-width: 860px) {
+  body.wallet-page-shell {
+    --doke-tablet-rail: min(calc(100vw - 56px), 760px) !important;
+  }
+
+  body.wallet-page-shell .wallet-hero {
+    padding: 36px 34px !important;
+  }
+
+  body.wallet-page-shell .wallet-hero__meta {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body.wallet-page-shell .wallet-hero-stat {
+    min-height: 82px !important;
+  }
+}
+
+/* Carteira v79 — corrigir tablet que ainda caía no rail mobile.
+   Causa raiz: em tablets estreitos o body pode receber .doke-mobile-shell-mounted;
+   as regras mobile anteriores têm maior especificidade e mantinham o limite de 430px.
+   Escopo: somente carteira.html em tablet portrait, sem alterar shell/header globais. */
+@media (min-width: 561px) and (max-width: 760px) {
+  body.wallet-page-shell.doke-mobile-shell-mounted,
+  body.wallet-page-shell {
+    --doke-tablet-rail: min(calc(100vw - 40px), 640px) !important;
+    --wallet-mobile-rail: var(--doke-tablet-rail) !important;
+    --wallet-mobile-edge: 20px !important;
+    --wallet-mobile-section-gap: 18px !important;
+    --wallet-tablet-section-gap: 18px !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .page__content,
+  body.wallet-page-shell .page__content {
+    width: 100% !important;
+    padding-inline: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .page__content-inner.wallet-shell-content,
+  body.wallet-page-shell .page__content-inner.wallet-shell-content {
+    width: var(--doke-tablet-rail) !important;
+    max-width: var(--doke-tablet-rail) !important;
+    inline-size: var(--doke-tablet-rail) !important;
+    max-inline-size: var(--doke-tablet-rail) !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-page,
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-overview,
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-analytics,
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-hero,
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-kpis,
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-board,
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-panel,
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-summary,
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-chart-panel,
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-bank-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    inline-size: 100% !important;
+    max-inline-size: 100% !important;
+    margin-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-page,
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-overview,
+  body.wallet-page-shell .wallet-page,
+  body.wallet-page-shell .wallet-overview {
+    gap: var(--wallet-tablet-section-gap) !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-mobile-layout,
+  body.wallet-page-shell .wallet-mobile-layout {
+    display: none !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-overview > .wallet-hero,
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-overview > .wallet-kpis,
+  body.wallet-page-shell .wallet-overview > .wallet-hero,
+  body.wallet-page-shell .wallet-overview > .wallet-kpis {
+    display: grid !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-hero,
+  body.wallet-page-shell .wallet-hero {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 22px !important;
+    padding: 30px 28px !important;
+    border-radius: 28px !important;
+    align-items: start !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-hero__balance,
+  body.wallet-page-shell .wallet-hero__balance {
+    gap: 10px !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-hero__amount,
+  body.wallet-page-shell .wallet-hero__amount {
+    font-size: clamp(2.65rem, 8.8vw, 3.35rem) !important;
+    line-height: 0.96 !important;
+    letter-spacing: -0.065em !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-hero__copy,
+  body.wallet-page-shell .wallet-hero__copy {
+    font-size: 0.98rem !important;
+    line-height: 1.5 !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-hero__meta,
+  body.wallet-page-shell .wallet-hero__meta {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-hero-stat,
+  body.wallet-page-shell .wallet-hero-stat {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 72px !important;
+    grid-template-columns: 50px minmax(0, 1fr) !important;
+    gap: 14px !important;
+    padding: 14px 18px !important;
+    border-radius: 20px !important;
+    box-sizing: border-box !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-hero-stat__icon,
+  body.wallet-page-shell .wallet-hero-stat__icon {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 16px !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-hero-stat__content span,
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-hero-stat__content small,
+  body.wallet-page-shell .wallet-hero-stat__content span,
+  body.wallet-page-shell .wallet-hero-stat__content small {
+    font-size: 0.78rem !important;
+    line-height: 1.16 !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-hero-stat__content strong,
+  body.wallet-page-shell .wallet-hero-stat__content strong {
+    font-size: 0.96rem !important;
+    line-height: 1.12 !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-kpis,
+  body.wallet-page-shell .wallet-kpis {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 16px !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-kpi,
+  body.wallet-page-shell .wallet-kpi {
+    min-height: 96px !important;
+    grid-template-columns: 54px minmax(0, 1fr) !important;
+    gap: 16px !important;
+    padding: 20px 22px !important;
+    border-radius: 24px !important;
+    align-items: center !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-kpi__icon,
+  body.wallet-page-shell .wallet-kpi__icon {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 17px !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-kpi__content strong,
+  body.wallet-page-shell .wallet-kpi__content strong {
+    font-size: clamp(1.28rem, 4.2vw, 1.55rem) !important;
+  }
+}
+
+@media (min-width: 701px) and (max-width: 760px) {
+  body.wallet-page-shell.doke-mobile-shell-mounted,
+  body.wallet-page-shell {
+    --doke-tablet-rail: min(calc(100vw - 48px), 680px) !important;
+  }
+
+  body.wallet-page-shell.doke-mobile-shell-mounted .wallet-hero,
+  body.wallet-page-shell .wallet-hero {
+    padding: 32px 30px !important;
+  }
+}
+
+
+/* ========================================
+   Carteira — tablet estreito: respiro do painel de recebimento
+   Corrige header colado e chips de status apertados em 575–608px.
+======================================== */
+@media (min-width: 561px) and (max-width: 760px) {
+  body.wallet-page-shell .wallet-bank-panel {
+    padding: 22px 18px 20px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel__header {
+    align-items: center !important;
+    gap: 14px !important;
+    margin-bottom: 16px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel__header h2 {
+    font-size: clamp(1.22rem, 3vw, 1.4rem) !important;
+    line-height: 1.08 !important;
+    white-space: normal !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-manage {
+    min-height: 38px !important;
+    padding-inline: 16px !important;
+    border-radius: 14px !important;
+    font-size: 0.84rem !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-card {
+    margin-bottom: 14px !important;
+    padding: 14px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-details {
+    gap: 10px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-detail {
+    min-height: 58px !important;
+    padding: 12px 13px !important;
+    gap: 4px !important;
+    border-radius: 16px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-detail span {
+    font-size: 0.67rem !important;
+    line-height: 1.05 !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-detail strong {
+    font-size: 0.88rem !important;
+    line-height: 1.12 !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-status {
+    gap: 10px !important;
+    margin-top: 14px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-status__item {
+    min-height: 42px !important;
+    padding: 0 14px !important;
+    border-radius: 15px !important;
+    font-size: 0.79rem !important;
+    line-height: 1.1 !important;
+    white-space: normal !important;
+    text-align: center !important;
+  }
+}
+
+
+/* ========================================
+   Carteira — tablet estreito: painel de movimentações igual ao tablet maior
+   Objetivo: 575–608px herdar a mesma leitura visual do layout da direita,
+   sem manter o bloco comprimido/mais mobile.
+======================================== */
+@media (min-width: 561px) and (max-width: 760px) {
+  body.wallet-page-shell .wallet-panel--statement {
+    padding: 24px 18px 20px !important;
+    border-radius: 28px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-panel__header--overview {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    justify-items: center !important;
+    align-items: center !important;
+    gap: 16px !important;
+    margin-bottom: 16px !important;
+    text-align: center !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-panel__header--overview h2 {
+    width: 100% !important;
+    margin: 0 !important;
+    text-align: center !important;
+    font-size: clamp(1.45rem, 4.4vw, 2rem) !important;
+    line-height: 1.04 !important;
+    letter-spacing: -0.05em !important;
+    white-space: normal !important;
+    text-wrap: balance !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-tabs {
+    width: min(100%, 430px) !important;
+    max-width: 100% !important;
+    margin-inline: auto !important;
+    justify-content: center !important;
+    padding: 5px !important;
+    border-radius: 999px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-tab,
+  body.wallet-page-shell .wallet-panel--statement .wallet-tabs button {
+    flex: 1 1 0 !important;
+    min-height: 40px !important;
+    padding-inline: 12px !important;
+    border-radius: 999px !important;
+    font-size: 0.82rem !important;
+    font-weight: 800 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-list {
+    display: grid !important;
+    gap: 10px !important;
+    border: 0 !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction {
+    display: grid !important;
+    grid-template-columns: 46px minmax(0, 1fr) auto !important;
+    grid-template-areas: "icon content amount" !important;
+    column-gap: 12px !important;
+    align-items: center !important;
+    min-height: 84px !important;
+    padding: 14px 14px !important;
+    border: 1px solid rgba(34, 98, 154, 0.09) !important;
+    border-radius: 18px !important;
+    background: #fbfdff !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72) !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction + .wallet-transaction {
+    border-top: 1px solid rgba(34, 98, 154, 0.09) !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__icon {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    border-radius: 14px !important;
+    font-size: 1rem !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content {
+    gap: 3px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content strong {
+    font-size: 0.96rem !important;
+    line-height: 1.12 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content p {
+    font-size: 0.78rem !important;
+    line-height: 1.18 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__status {
+    font-size: 0.74rem !important;
+    line-height: 1.12 !important;
+    font-weight: 800 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__amount,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction > b {
+    font-size: 0.92rem !important;
+    line-height: 1 !important;
+    letter-spacing: -0.03em !important;
+    white-space: nowrap !important;
+    align-self: center !important;
+  }
+}
+
+
+/* ========================================
+   Carteira — mobile: aplicar o mesmo refinamento do tablet
+   Escopo: somente carteira.html em mobile real.
+   Objetivo: dar respiro ao painel de movimentações e à conta de recebimento,
+   evitando aparência de lista comprimida.
+======================================== */
+@media (max-width: 560px) {
+  body.wallet-page-shell .wallet-panel--statement {
+    padding: 20px 14px 18px !important;
+    border-radius: 24px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-panel__header--overview {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    justify-items: center !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin-bottom: 14px !important;
+    text-align: center !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-panel__header--overview h2 {
+    width: 100% !important;
+    margin: 0 !important;
+    text-align: center !important;
+    font-size: clamp(1.28rem, 5.8vw, 1.55rem) !important;
+    line-height: 1.06 !important;
+    letter-spacing: -0.045em !important;
+    white-space: normal !important;
+    text-wrap: balance !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-tabs {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: auto !important;
+    justify-content: center !important;
+    padding: 4px !important;
+    gap: 4px !important;
+    border-radius: 999px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-tab,
+  body.wallet-page-shell .wallet-panel--statement .wallet-tabs button {
+    flex: 1 1 0 !important;
+    min-height: 36px !important;
+    padding-inline: 8px !important;
+    border-radius: 999px !important;
+    font-size: 0.74rem !important;
+    line-height: 1 !important;
+    font-weight: 800 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-list {
+    display: grid !important;
+    gap: 10px !important;
+    border: 0 !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction {
+    display: grid !important;
+    grid-template-columns: 38px minmax(0, 1fr) auto !important;
+    grid-template-areas: "icon content amount" !important;
+    column-gap: 10px !important;
+    align-items: center !important;
+    min-height: 78px !important;
+    padding: 12px 11px !important;
+    border: 1px solid rgba(34, 98, 154, 0.09) !important;
+    border-radius: 17px !important;
+    background: #fbfdff !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72) !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction + .wallet-transaction {
+    border-top: 0 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__icon {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    border-radius: 13px !important;
+    font-size: 0.95rem !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content {
+    gap: 2px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content strong {
+    font-size: 0.86rem !important;
+    line-height: 1.1 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content p {
+    font-size: 0.72rem !important;
+    line-height: 1.15 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__status {
+    font-size: 0.69rem !important;
+    line-height: 1.1 !important;
+    font-weight: 800 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__amount,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction > b {
+    font-size: 0.82rem !important;
+    line-height: 1 !important;
+    letter-spacing: -0.03em !important;
+    white-space: nowrap !important;
+    align-self: center !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel {
+    padding: 20px 14px 18px !important;
+    border-radius: 24px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel__header {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-bottom: 14px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel__header h2 {
+    font-size: clamp(1.08rem, 4.9vw, 1.24rem) !important;
+    line-height: 1.08 !important;
+    white-space: normal !important;
+    text-wrap: balance !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-manage {
+    min-height: 34px !important;
+    padding-inline: 12px !important;
+    border-radius: 12px !important;
+    font-size: 0.76rem !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-card {
+    margin-bottom: 12px !important;
+    padding: 12px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-details {
+    gap: 8px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-detail {
+    min-height: 54px !important;
+    padding: 10px 11px !important;
+    gap: 3px !important;
+    border-radius: 15px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-detail span {
+    font-size: 0.63rem !important;
+    line-height: 1.04 !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-detail strong {
+    font-size: 0.8rem !important;
+    line-height: 1.1 !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-status {
+    gap: 8px !important;
+    margin-top: 12px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-status__item {
+    min-height: 40px !important;
+    padding: 0 12px !important;
+    border-radius: 14px !important;
+    font-size: 0.74rem !important;
+    line-height: 1.08 !important;
+    white-space: normal !important;
+    text-align: center !important;
+  }
+}
+
+
+/* ========================================
+   Carteira — mobile estreito: reduzir escala sem perder hierarquia
+   Causa raiz: o refinamento visual funcionou, mas em telas realmente estreitas
+   a seção ainda ficou densa demais. Aqui reduzimos escala, não estrutura.
+======================================== */
+@media (max-width: 430px) {
+  body.wallet-page-shell {
+    --wallet-mobile-edge: 16px !important;
+    --wallet-mobile-section-gap: 12px !important;
+  }
+
+  body.wallet-page-shell .wallet-kpis {
+    gap: 12px !important;
+  }
+
+  body.wallet-page-shell .wallet-kpi {
+    min-height: 86px !important;
+    padding: 16px 14px !important;
+    gap: 12px !important;
+    border-radius: 20px !important;
+  }
+
+  body.wallet-page-shell .wallet-kpi__icon {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 14px !important;
+  }
+
+  body.wallet-page-shell .wallet-kpi__content span {
+    font-size: 0.72rem !important;
+    line-height: 1.08 !important;
+  }
+
+  body.wallet-page-shell .wallet-kpi__content strong {
+    font-size: 1.08rem !important;
+    line-height: 1.04 !important;
+    letter-spacing: -0.045em !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement {
+    padding: 16px 12px 14px !important;
+    border-radius: 22px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-panel__header--overview {
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-panel__header--overview h2 {
+    font-size: clamp(1.12rem, 5.3vw, 1.34rem) !important;
+    line-height: 1.04 !important;
+    letter-spacing: -0.04em !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-tabs {
+    padding: 3px !important;
+    gap: 3px !important;
+    min-height: 40px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-tab,
+  body.wallet-page-shell .wallet-panel--statement .wallet-tabs button {
+    min-height: 32px !important;
+    padding-inline: 6px !important;
+    font-size: 0.68rem !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-list {
+    gap: 8px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction {
+    grid-template-columns: 34px minmax(0, 1fr) auto !important;
+    column-gap: 8px !important;
+    min-height: 70px !important;
+    padding: 10px 10px !important;
+    border-radius: 15px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__icon {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    border-radius: 11px !important;
+    font-size: 0.86rem !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content {
+    gap: 1px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content strong {
+    font-size: 0.78rem !important;
+    line-height: 1.06 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content p {
+    font-size: 0.65rem !important;
+    line-height: 1.12 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__status {
+    font-size: 0.63rem !important;
+    line-height: 1.08 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__amount,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction > b {
+    font-size: 0.74rem !important;
+    line-height: 1 !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel {
+    padding: 16px 12px 14px !important;
+    border-radius: 22px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel__header {
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel__header h2 {
+    font-size: 0.98rem !important;
+    line-height: 1.05 !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-manage {
+    min-height: 30px !important;
+    padding-inline: 10px !important;
+    border-radius: 10px !important;
+    font-size: 0.68rem !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-card {
+    grid-template-columns: 36px minmax(0, 1fr) !important;
+    gap: 9px !important;
+    margin-bottom: 10px !important;
+    padding: 10px !important;
+    border-radius: 15px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-card__mark {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    border-radius: 12px !important;
+    font-size: 0.82rem !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-card__content strong {
+    font-size: 0.82rem !important;
+    line-height: 1.08 !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-card__content p {
+    font-size: 0.66rem !important;
+    line-height: 1.12 !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-details {
+    gap: 7px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-detail {
+    min-height: 48px !important;
+    padding: 8px 9px !important;
+    gap: 2px !important;
+    border-radius: 13px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-detail span {
+    font-size: 0.58rem !important;
+    line-height: 1.02 !important;
+    letter-spacing: 0.08em !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-detail strong {
+    font-size: 0.74rem !important;
+    line-height: 1.08 !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-status {
+    gap: 7px !important;
+    margin-top: 10px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-status__item {
+    min-height: 36px !important;
+    padding: 0 9px !important;
+    border-radius: 12px !important;
+    font-size: 0.68rem !important;
+    line-height: 1.04 !important;
+  }
+}
+
+@media (max-width: 390px) {
+  body.wallet-page-shell .wallet-panel--statement .wallet-panel__header--overview h2 {
+    font-size: 1.06rem !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-tab,
+  body.wallet-page-shell .wallet-panel--statement .wallet-tabs button {
+    font-size: 0.64rem !important;
+    min-height: 30px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction {
+    grid-template-columns: 30px minmax(0, 1fr) auto !important;
+    column-gap: 7px !important;
+    min-height: 66px !important;
+    padding: 9px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__icon {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    font-size: 0.8rem !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content strong {
+    font-size: 0.75rem !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content p,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__status {
+    font-size: 0.62rem !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__amount,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction > b {
+    font-size: 0.7rem !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel__header h2 {
+    font-size: 0.92rem !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-manage {
+    min-height: 28px !important;
+    padding-inline: 9px !important;
+    font-size: 0.64rem !important;
+  }
+}
+
+
+/* ========================================
+   Carteira v84 — mobile real: redução de escala e cache bust
+   Escopo local: carteira.html. Não altera shell, header, body ou bottom nav.
+   Motivo: em iPhone estreito a tela ainda estava renderizando com escala alta.
+======================================== */
+@media (max-width: 560px) {
+  body.wallet-page-shell .wallet-page {
+    gap: 10px !important;
+  }
+
+  body.wallet-page-shell .wallet-overview,
+  body.wallet-page-shell .wallet-board,
+  body.wallet-page-shell .wallet-layout,
+  body.wallet-page-shell .wallet-mobile-layout {
+    gap: 10px !important;
+  }
+
+  body.wallet-page-shell .wallet-mobile-balance,
+  body.wallet-page-shell .wallet-summary-card--balance {
+    padding: 13px 14px 12px !important;
+    border-radius: 18px !important;
+    min-height: 0 !important;
+  }
+
+  body.wallet-page-shell .wallet-mobile-balance__eyebrow,
+  body.wallet-page-shell .wallet-summary-card--balance span {
+    font-size: 0.58rem !important;
+    line-height: 1 !important;
+    letter-spacing: 0.12em !important;
+  }
+
+  body.wallet-page-shell .wallet-mobile-balance__amount,
+  body.wallet-page-shell .wallet-summary-card--balance strong {
+    font-size: clamp(2rem, 10.2vw, 2.42rem) !important;
+    line-height: 0.96 !important;
+    letter-spacing: -0.07em !important;
+  }
+
+  body.wallet-page-shell .wallet-mobile-balance__copy,
+  body.wallet-page-shell .wallet-summary-card--balance p {
+    font-size: 0.68rem !important;
+    line-height: 1.2 !important;
+    margin-top: 3px !important;
+  }
+
+  body.wallet-page-shell .wallet-mobile-strip {
+    gap: 7px !important;
+  }
+
+  body.wallet-page-shell .wallet-mobile-info,
+  body.wallet-page-shell .wallet-mobile-status {
+    min-height: 42px !important;
+    padding: 7px 9px !important;
+    border-radius: 13px !important;
+    gap: 6px !important;
+  }
+
+  body.wallet-page-shell .wallet-mobile-info__icon,
+  body.wallet-page-shell .wallet-mobile-status__icon {
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    border-radius: 9px !important;
+    font-size: 0.72rem !important;
+  }
+
+  body.wallet-page-shell .wallet-mobile-info span,
+  body.wallet-page-shell .wallet-mobile-status span {
+    font-size: 0.56rem !important;
+    line-height: 1.05 !important;
+  }
+
+  body.wallet-page-shell .wallet-mobile-info strong,
+  body.wallet-page-shell .wallet-mobile-status strong {
+    font-size: 0.7rem !important;
+    line-height: 1.05 !important;
+  }
+
+  body.wallet-page-shell .wallet-mobile-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  body.wallet-page-shell .wallet-mobile-metrics article,
+  body.wallet-page-shell .wallet-kpi {
+    min-height: 44px !important;
+    padding: 7px 7px !important;
+    border-radius: 12px !important;
+    gap: 2px !important;
+  }
+
+  body.wallet-page-shell .wallet-mobile-metrics span,
+  body.wallet-page-shell .wallet-kpi__content span {
+    font-size: 0.52rem !important;
+    line-height: 1.05 !important;
+    letter-spacing: 0.02em !important;
+  }
+
+  body.wallet-page-shell .wallet-mobile-metrics strong,
+  body.wallet-page-shell .wallet-kpi__content strong {
+    font-size: 0.68rem !important;
+    line-height: 1.02 !important;
+    letter-spacing: -0.035em !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement {
+    padding: 12px 10px 10px !important;
+    border-radius: 18px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-panel__header,
+  body.wallet-page-shell .wallet-panel--statement .wallet-panel__header--overview {
+    gap: 8px !important;
+    margin-bottom: 9px !important;
+    text-align: center !important;
+    align-items: center !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-eyebrow {
+    display: none !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement h2,
+  body.wallet-page-shell .wallet-panel--statement #wallet-statement-title {
+    font-size: clamp(1rem, 5vw, 1.16rem) !important;
+    line-height: 1.04 !important;
+    margin: 0 !important;
+    letter-spacing: -0.04em !important;
+    text-align: center !important;
+  }
+
+  body.wallet-page-shell .wallet-tabs {
+    min-height: 32px !important;
+    padding: 3px !important;
+    gap: 3px !important;
+    border-radius: 999px !important;
+  }
+
+  body.wallet-page-shell .wallet-tab,
+  body.wallet-page-shell .wallet-tabs button {
+    min-height: 25px !important;
+    padding-inline: 5px !important;
+    font-size: 0.56rem !important;
+    border-radius: 999px !important;
+  }
+
+  body.wallet-page-shell .wallet-list {
+    gap: 6px !important;
+  }
+
+  body.wallet-page-shell .wallet-transaction {
+    grid-template-columns: 26px minmax(0, 1fr) auto !important;
+    column-gap: 6px !important;
+    min-height: 52px !important;
+    padding: 7px 7px !important;
+    border-radius: 12px !important;
+  }
+
+  body.wallet-page-shell .wallet-transaction__icon {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    border-radius: 8px !important;
+    font-size: 0.66rem !important;
+  }
+
+  body.wallet-page-shell .wallet-transaction strong,
+  body.wallet-page-shell .wallet-transaction__content strong {
+    font-size: 0.63rem !important;
+    line-height: 1.04 !important;
+    letter-spacing: -0.015em !important;
+  }
+
+  body.wallet-page-shell .wallet-transaction p,
+  body.wallet-page-shell .wallet-transaction__content p {
+    margin: 1px 0 0 !important;
+    font-size: 0.54rem !important;
+    line-height: 1.08 !important;
+  }
+
+  body.wallet-page-shell .wallet-transaction__status {
+    font-size: 0.52rem !important;
+    line-height: 1.05 !important;
+  }
+
+  body.wallet-page-shell .wallet-transaction b,
+  body.wallet-page-shell .wallet-transaction__amount {
+    font-size: 0.6rem !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel {
+    padding: 12px 10px 10px !important;
+    border-radius: 18px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel__header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-bottom: 8px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel .wallet-eyebrow {
+    display: none !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel h2,
+  body.wallet-page-shell #wallet-bank-title {
+    font-size: 0.78rem !important;
+    line-height: 1.05 !important;
+    margin: 0 !important;
+    letter-spacing: -0.025em !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-manage,
+  body.wallet-page-shell .wallet-link-button--static {
+    min-height: 24px !important;
+    padding-inline: 7px !important;
+    border-radius: 8px !important;
+    font-size: 0.52rem !important;
+    line-height: 1 !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-card {
+    display: grid !important;
+    grid-template-columns: 30px minmax(0, 1fr) !important;
+    gap: 7px !important;
+    padding: 8px !important;
+    border-radius: 12px !important;
+    margin-bottom: 8px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-card__mark {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    border-radius: 9px !important;
+    font-size: 0.6rem !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-card__label {
+    font-size: 0.5rem !important;
+    margin-bottom: 2px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-card strong,
+  body.wallet-page-shell .wallet-bank-card__content strong {
+    font-size: 0.68rem !important;
+    line-height: 1.06 !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-card p,
+  body.wallet-page-shell .wallet-bank-card__content p {
+    margin-top: 1px !important;
+    font-size: 0.54rem !important;
+    line-height: 1.1 !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-details {
+    gap: 6px !important;
+    margin: 0 0 8px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-detail {
+    min-height: 38px !important;
+    padding: 7px 8px !important;
+    border-radius: 11px !important;
+    gap: 2px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-detail span {
+    font-size: 0.5rem !important;
+    line-height: 1 !important;
+    letter-spacing: 0.06em !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-detail strong {
+    font-size: 0.62rem !important;
+    line-height: 1.05 !important;
+  }
+
+  body.wallet-page-shell .wallet-chip-row--bank,
+  body.wallet-page-shell .wallet-bank-status {
+    gap: 6px !important;
+    margin-top: 8px !important;
+  }
+
+  body.wallet-page-shell .wallet-chip-row--bank span,
+  body.wallet-page-shell .wallet-bank-status__item {
+    min-height: 28px !important;
+    padding-inline: 8px !important;
+    border-radius: 999px !important;
+    font-size: 0.56rem !important;
+    line-height: 1.05 !important;
+  }
+}
+
+@media (max-width: 390px) {
+  body.wallet-page-shell .wallet-mobile-balance__amount,
+  body.wallet-page-shell .wallet-summary-card--balance strong {
+    font-size: clamp(1.86rem, 9.8vw, 2.2rem) !important;
+  }
+
+  body.wallet-page-shell .wallet-transaction {
+    grid-template-columns: 24px minmax(0, 1fr) auto !important;
+    min-height: 48px !important;
+    padding: 6px !important;
+  }
+
+  body.wallet-page-shell .wallet-transaction__icon {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+  }
+
+  body.wallet-page-shell .wallet-transaction strong,
+  body.wallet-page-shell .wallet-transaction__content strong {
+    font-size: 0.6rem !important;
+  }
+
+  body.wallet-page-shell .wallet-transaction p,
+  body.wallet-page-shell .wallet-transaction__content p,
+  body.wallet-page-shell .wallet-transaction__status {
+    font-size: 0.5rem !important;
+  }
+
+  body.wallet-page-shell .wallet-transaction b,
+  body.wallet-page-shell .wallet-transaction__amount {
+    font-size: 0.56rem !important;
+  }
+}
+
+
+/* ========================================
+   Carteira — v85: mobile real sem transações coladas
+   Causa raiz: em largura estreita, a lista estava em 3 colunas
+   (ícone + texto + valor), comprimindo título, descrição e valor.
+   Solução: manter card compacto, mas dar largura real ao texto e jogar
+   o valor para uma linha própria dentro do card.
+======================================== */
+@media (max-width: 430px) {
+  body.wallet-page-shell .wallet-panel--statement {
+    padding: 14px 12px 13px !important;
+    border-radius: 20px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-panel__header,
+  body.wallet-page-shell .wallet-panel--statement .wallet-panel__header--overview {
+    gap: 10px !important;
+    margin-bottom: 11px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement h2,
+  body.wallet-page-shell .wallet-panel--statement #wallet-statement-title {
+    font-size: clamp(1.04rem, 5.2vw, 1.18rem) !important;
+    line-height: 1.06 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-tabs {
+    margin-bottom: 4px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-list {
+    gap: 9px !important;
+    margin-top: 8px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction {
+    display: grid !important;
+    grid-template-columns: 28px minmax(0, 1fr) !important;
+    grid-template-areas:
+      "icon content"
+      ". amount" !important;
+    column-gap: 8px !important;
+    row-gap: 4px !important;
+    align-items: start !important;
+    min-height: 68px !important;
+    padding: 10px 10px !important;
+    border-radius: 15px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__icon {
+    grid-area: icon !important;
+    width: 27px !important;
+    height: 27px !important;
+    min-width: 27px !important;
+    border-radius: 10px !important;
+    font-size: 0.72rem !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction > div,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content {
+    grid-area: content !important;
+    min-width: 0 !important;
+    display: grid !important;
+    gap: 2px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction strong,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content strong {
+    font-size: 0.68rem !important;
+    line-height: 1.12 !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction p,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content p {
+    margin: 0 !important;
+    font-size: 0.56rem !important;
+    line-height: 1.15 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction b,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__amount {
+    grid-area: amount !important;
+    justify-self: end !important;
+    align-self: end !important;
+    margin-top: 1px !important;
+    font-size: 0.62rem !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__status {
+    font-size: 0.54rem !important;
+    line-height: 1.12 !important;
+  }
+}
+
+@media (max-width: 390px) {
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction {
+    grid-template-columns: 26px minmax(0, 1fr) !important;
+    min-height: 64px !important;
+    padding: 9px !important;
+    column-gap: 7px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__icon {
+    width: 25px !important;
+    height: 25px !important;
+    min-width: 25px !important;
+    font-size: 0.68rem !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction strong,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content strong {
+    font-size: 0.65rem !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction p,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content p {
+    font-size: 0.53rem !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction b,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__amount {
+    font-size: 0.58rem !important;
+  }
+}
+
+
+/* ========================================
+   Carteira — v86: transações mobile com separação real
+   Causa real: o valor ainda ficava no mesmo bloco visual do texto.
+   Agora o valor vira uma faixa própria no rodapé do card, sem competir com
+   título/descrição. Escopo isolado: carteira.html mobile estreito.
+======================================== */
+@media (max-width: 430px) {
+  body.wallet-page-shell .wallet-panel--statement {
+    padding: 15px 12px 14px !important;
+    border-radius: 20px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-list {
+    gap: 11px !important;
+    margin-top: 10px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction {
+    display: grid !important;
+    grid-template-columns: 30px minmax(0, 1fr) !important;
+    grid-template-areas:
+      "icon content"
+      "amount amount" !important;
+    column-gap: 10px !important;
+    row-gap: 8px !important;
+    align-items: start !important;
+    min-height: 86px !important;
+    padding: 12px 12px 10px !important;
+    border-radius: 16px !important;
+    background: #fbfdff !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__icon {
+    grid-area: icon !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    border-radius: 11px !important;
+    font-size: 0.76rem !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction > div,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content {
+    grid-area: content !important;
+    min-width: 0 !important;
+    display: grid !important;
+    gap: 3px !important;
+    padding-top: 1px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction strong,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content strong {
+    display: block !important;
+    font-size: 0.73rem !important;
+    line-height: 1.18 !important;
+    letter-spacing: -0.012em !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction p,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content p {
+    display: block !important;
+    margin: 0 !important;
+    font-size: 0.6rem !important;
+    line-height: 1.24 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction b,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__amount {
+    grid-area: amount !important;
+    grid-column: 1 / -1 !important;
+    justify-self: stretch !important;
+    align-self: auto !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding-top: 7px !important;
+    border-top: 1px solid rgba(31, 93, 146, 0.07) !important;
+    font-size: 0.68rem !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__status {
+    margin-top: 2px !important;
+    font-size: 0.58rem !important;
+    line-height: 1.16 !important;
+  }
+}
+
+@media (max-width: 390px) {
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction {
+    grid-template-columns: 28px minmax(0, 1fr) !important;
+    grid-template-areas:
+      "icon content"
+      "amount amount" !important;
+    min-height: 82px !important;
+    padding: 11px 11px 9px !important;
+    column-gap: 9px !important;
+    row-gap: 7px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__icon {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction strong,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content strong {
+    font-size: 0.7rem !important;
+    line-height: 1.16 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction p,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content p {
+    font-size: 0.58rem !important;
+    line-height: 1.2 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction b,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__amount {
+    font-size: 0.64rem !important;
+    padding-top: 6px !important;
+  }
+}
+
+
+/* ========================================
+   Carteira — v87: mobile sem densidade colada
+   Correção final de ritmo visual: aumenta separação real entre header,
+   abas, cards de movimentação e conta de recebimento. Não altera shell global.
+======================================== */
+@media (max-width: 430px) {
+  body.wallet-page-shell .wallet-page {
+    gap: 18px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement {
+    padding: 18px 14px 18px !important;
+    border-radius: 22px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-panel__header,
+  body.wallet-page-shell .wallet-panel--statement .wallet-panel__header--overview {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    justify-items: center !important;
+    gap: 13px !important;
+    margin-bottom: 18px !important;
+    text-align: center !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement h2,
+  body.wallet-page-shell .wallet-panel--statement #wallet-statement-title {
+    margin: 0 !important;
+    font-size: 1.18rem !important;
+    line-height: 1.12 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-tabs {
+    width: 100% !important;
+    min-height: 42px !important;
+    padding: 4px !important;
+    gap: 5px !important;
+    margin: 0 0 2px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-tab,
+  body.wallet-page-shell .wallet-panel--statement .wallet-tabs button {
+    min-height: 34px !important;
+    font-size: 0.68rem !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-list {
+    display: grid !important;
+    gap: 15px !important;
+    margin-top: 16px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction {
+    display: grid !important;
+    grid-template-columns: 34px minmax(0, 1fr) !important;
+    grid-template-areas:
+      "icon content"
+      "amount amount" !important;
+    column-gap: 12px !important;
+    row-gap: 12px !important;
+    align-items: start !important;
+    min-height: 112px !important;
+    padding: 15px 14px 13px !important;
+    border-radius: 18px !important;
+    border: 1px solid rgba(31, 93, 146, 0.10) !important;
+    background: #fbfdff !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__icon {
+    grid-area: icon !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    border-radius: 12px !important;
+    font-size: 0.82rem !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction > div,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content {
+    grid-area: content !important;
+    display: grid !important;
+    gap: 5px !important;
+    min-width: 0 !important;
+    padding-top: 1px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction strong,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content strong {
+    display: block !important;
+    font-size: 0.78rem !important;
+    line-height: 1.22 !important;
+    letter-spacing: -0.01em !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction p,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content p {
+    display: block !important;
+    margin: 0 !important;
+    font-size: 0.63rem !important;
+    line-height: 1.28 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__status {
+    display: block !important;
+    margin-top: 1px !important;
+    font-size: 0.61rem !important;
+    line-height: 1.2 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction b,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__amount {
+    grid-area: amount !important;
+    grid-column: 1 / -1 !important;
+    justify-self: stretch !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding-top: 11px !important;
+    border-top: 1px solid rgba(31, 93, 146, 0.10) !important;
+    font-size: 0.75rem !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel {
+    margin-top: 18px !important;
+    padding: 18px 14px 18px !important;
+    border-radius: 22px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel__header,
+  body.wallet-page-shell .wallet-bank-panel .wallet-panel__header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin-bottom: 18px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel__header h2,
+  body.wallet-page-shell .wallet-bank-panel .wallet-panel__header h2 {
+    margin: 0 !important;
+    font-size: 1rem !important;
+    line-height: 1.15 !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-manage,
+  body.wallet-page-shell .wallet-link-button--static {
+    min-height: 32px !important;
+    padding-inline: 12px !important;
+    border-radius: 11px !important;
+    font-size: 0.66rem !important;
+    white-space: nowrap !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-card,
+  body.wallet-page-shell .wallet-bank-card--featured {
+    padding: 14px !important;
+    margin-bottom: 16px !important;
+    border-radius: 17px !important;
+    gap: 12px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-details {
+    gap: 12px !important;
+    margin: 0 0 16px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-detail {
+    min-height: 58px !important;
+    padding: 12px !important;
+    border-radius: 15px !important;
+  }
+
+  body.wallet-page-shell .wallet-chip-row,
+  body.wallet-page-shell .wallet-chip-row--bank,
+  body.wallet-page-shell .wallet-bank-status {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    margin-top: 16px !important;
+  }
+
+  body.wallet-page-shell .wallet-chip-row span,
+  body.wallet-page-shell .wallet-bank-status__item {
+    width: 100% !important;
+    min-height: 38px !important;
+    justify-content: center !important;
+    padding: 0 12px !important;
+    border-radius: 14px !important;
+    font-size: 0.7rem !important;
+    line-height: 1.1 !important;
+    text-align: center !important;
+  }
+
+  body.wallet-page-shell .page__content,
+  body.wallet-page-shell .wallet-shell-content {
+    padding-bottom: max(96px, calc(76px + env(safe-area-inset-bottom, 0px))) !important;
+  }
+}
+
+@media (max-width: 390px) {
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction {
+    min-height: 108px !important;
+    padding: 14px 13px 12px !important;
+    row-gap: 11px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction strong,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content strong {
+    font-size: 0.75rem !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction p,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content p {
+    font-size: 0.61rem !important;
+  }
+}
+
+
+/* ========================================
+   Carteira — v88: correção real de cascata + respiro estrutural mobile
+   IMPORTANTE: carteira.css agora é carregado depois dos contratos globais no HTML,
+   então estas regras vencem os componentes compartilhados sem mexer em shell/body.
+======================================== */
+@media (max-width: 430px) {
+  body.wallet-page-shell .wallet-page {
+    gap: 24px !important;
+  }
+
+  body.wallet-page-shell .wallet-mobile-layout {
+    gap: 18px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement {
+    padding: 20px 14px 22px !important;
+    border-radius: 24px !important;
+    overflow: visible !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-panel__header {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    justify-items: center !important;
+    gap: 16px !important;
+    margin: 0 0 20px !important;
+    padding: 0 !important;
+    text-align: center !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement #wallet-statement-title,
+  body.wallet-page-shell .wallet-panel--statement h2 {
+    font-size: 1.18rem !important;
+    line-height: 1.15 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-tabs {
+    width: 100% !important;
+    min-height: 44px !important;
+    padding: 5px !important;
+    gap: 6px !important;
+    margin: 0 !important;
+    border-radius: 999px !important;
+    overflow: visible !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-tab,
+  body.wallet-page-shell .wallet-panel--statement .wallet-tabs button {
+    min-height: 34px !important;
+    padding: 0 10px !important;
+    font-size: 0.68rem !important;
+    line-height: 1 !important;
+    border-radius: 999px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-list {
+    display: grid !important;
+    gap: 18px !important;
+    margin-top: 18px !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction {
+    display: grid !important;
+    grid-template-columns: 36px minmax(0, 1fr) !important;
+    grid-template-areas:
+      "icon content"
+      "amount amount" !important;
+    column-gap: 14px !important;
+    row-gap: 14px !important;
+    align-items: start !important;
+    min-height: 128px !important;
+    padding: 18px 16px 15px !important;
+    border-radius: 20px !important;
+    border: 1px solid rgba(31, 93, 146, 0.12) !important;
+    background: #ffffff !important;
+    box-shadow: 0 10px 24px rgba(27, 58, 93, 0.06) !important;
+    overflow: visible !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__icon {
+    grid-area: icon !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    border-radius: 13px !important;
+    font-size: 0.86rem !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction > div {
+    grid-area: content !important;
+    display: grid !important;
+    gap: 6px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    padding: 1px 0 0 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction strong,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content strong {
+    display: block !important;
+    font-size: 0.82rem !important;
+    line-height: 1.22 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction p,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__content p {
+    display: block !important;
+    margin: 0 !important;
+    font-size: 0.66rem !important;
+    line-height: 1.32 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__status {
+    display: block !important;
+    margin-top: 3px !important;
+    font-size: 0.64rem !important;
+    line-height: 1.25 !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction__amount,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction b {
+    grid-area: amount !important;
+    grid-column: 1 / -1 !important;
+    justify-self: stretch !important;
+    align-self: auto !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-height: 34px !important;
+    margin: 0 !important;
+    padding: 12px 0 0 !important;
+    border-top: 1px solid rgba(31, 93, 146, 0.12) !important;
+    font-size: 0.78rem !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel {
+    margin-top: 24px !important;
+    padding: 20px 14px 22px !important;
+    border-radius: 24px !important;
+    overflow: visible !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel__header,
+  body.wallet-page-shell .wallet-bank-panel .wallet-panel__header {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    align-items: center !important;
+    gap: 14px !important;
+    margin: 0 0 20px !important;
+    padding: 0 !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel h2,
+  body.wallet-page-shell #wallet-bank-title {
+    font-size: 1rem !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
+  }
+
+  body.wallet-page-shell .wallet-link-button--static,
+  body.wallet-page-shell .wallet-bank-manage {
+    min-height: 34px !important;
+    padding: 0 12px !important;
+    border-radius: 12px !important;
+    font-size: 0.66rem !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-card,
+  body.wallet-page-shell .wallet-bank-card--featured {
+    margin-bottom: 18px !important;
+    padding: 16px !important;
+    border-radius: 18px !important;
+    gap: 14px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-details {
+    display: grid !important;
+    gap: 14px !important;
+    margin: 0 0 18px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-detail {
+    min-height: 62px !important;
+    padding: 13px 14px !important;
+    border-radius: 16px !important;
+  }
+
+  body.wallet-page-shell .wallet-chip-row--bank,
+  body.wallet-page-shell .wallet-bank-status {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    margin-top: 18px !important;
+    width: 100% !important;
+  }
+
+  body.wallet-page-shell .wallet-chip-row--bank span,
+  body.wallet-page-shell .wallet-bank-status__item {
+    width: 100% !important;
+    min-height: 42px !important;
+    justify-content: center !important;
+    padding: 0 14px !important;
+    border-radius: 15px !important;
+    font-size: 0.72rem !important;
+    line-height: 1.1 !important;
+    text-align: center !important;
+  }
+
+  body.wallet-page-shell .page__content,
+  body.wallet-page-shell .wallet-shell-content {
+    padding-bottom: max(112px, calc(88px + env(safe-area-inset-bottom, 0px))) !important;
+  }
+}
+
+@media (max-width: 390px) {
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction {
+    min-height: 126px !important;
+    padding: 17px 15px 14px !important;
+    row-gap: 14px !important;
+  }
+}
+
+
+/* ========================================
+   Carteira — mobile physical inset contract v92
+   Causa: os blocos anteriores mexiam em variáveis de rail, mas algumas
+   superfícies continuavam ocupando 100% do viewport por cascata/shell.
+   Esta camada força o inset físico dos painéis da carteira, sem tocar no
+   shell, header, body ou wrappers globais.
+======================================== */
+@media (max-width: 760px) {
+  body.wallet-page-shell {
+    --wallet-page-safe-inset: clamp(18px, 5vw, 22px) !important;
+    --wallet-panel-safe-width: calc(100vw - (var(--wallet-page-safe-inset) * 2)) !important;
+  }
+
+  body.wallet-page-shell .page__content {
+    padding-inline: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  body.wallet-page-shell .page__content-inner.wallet-shell-content,
+  body.wallet-page-shell.doke-mobile-shell-mounted .page__content-inner.wallet-shell-content {
+    width: 100% !important;
+    max-width: min(100%, var(--doke-mobile-app-max, 430px)) !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  body.wallet-page-shell .wallet-page,
+  body.wallet-page-shell .wallet-layout,
+  body.wallet-page-shell .wallet-overview {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  body.wallet-page-shell .wallet-mobile-layout,
+  body.wallet-page-shell .wallet-panel--statement,
+  body.wallet-page-shell .wallet-bank-panel {
+    width: var(--wallet-panel-safe-width) !important;
+    max-width: calc(var(--doke-mobile-app-max, 430px) - (var(--wallet-page-safe-inset) * 2)) !important;
+    inline-size: var(--wallet-panel-safe-width) !important;
+    max-inline-size: calc(var(--doke-mobile-app-max, 430px) - (var(--wallet-page-safe-inset) * 2)) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement {
+    padding: 20px 16px 22px !important;
+  }
+
+  body.wallet-page-shell .wallet-bank-panel {
+    padding: 20px 16px 22px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement .wallet-tabs,
+  body.wallet-page-shell .wallet-panel--statement .wallet-list,
+  body.wallet-page-shell .wallet-panel--statement .wallet-transaction,
+  body.wallet-page-shell .wallet-bank-card,
+  body.wallet-page-shell .wallet-bank-details,
+  body.wallet-page-shell .wallet-bank-detail,
+  body.wallet-page-shell .wallet-bank-status,
+  body.wallet-page-shell .wallet-chip-row--bank,
+  body.wallet-page-shell .wallet-chip-row--bank span,
+  body.wallet-page-shell .wallet-bank-status__item {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (max-width: 390px) {
+  body.wallet-page-shell {
+    --wallet-page-safe-inset: 18px !important;
+  }
+
+  body.wallet-page-shell .wallet-panel--statement,
+  body.wallet-page-shell .wallet-bank-panel {
+    padding-inline: 15px !important;
+  }
+}
+
+@media (max-width: 340px) {
+  body.wallet-page-shell {
+    --wallet-page-safe-inset: 16px !important;
+  }
+}
