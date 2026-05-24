@@ -3922,3 +3922,78 @@ body.orders-page-shell .orders-page #orders-action-controls[data-active-panel="s
     flex: 0 0 17px !important;
   }
 }
+
+/* 2026-05-23 — tablet orders list density.
+   Tablet has enough horizontal space for two compact order cards; keep phones
+   and desktop contracts unchanged. */
+@media (min-width: 761px) and (max-width: 1180px) {
+  body.orders-page-shell section.orders-list,
+  body.orders-page-shell .orders-page section.orders-list {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    align-items: stretch !important;
+    gap: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.orders-page-shell section.orders-list > .order-card,
+  body.orders-page-shell .orders-page section.orders-list > .order-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: clamp(18px, 2.3vw, 22px) !important;
+    box-sizing: border-box !important;
+  }
+
+  body.orders-page-shell section.orders-list > .order-card .order-card__top,
+  body.orders-page-shell .orders-page section.orders-list > .order-card .order-card__top {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    align-items: start !important;
+  }
+
+  body.orders-page-shell section.orders-list > .order-card .order-card__time,
+  body.orders-page-shell .orders-page section.orders-list > .order-card .order-card__time {
+    justify-self: start !important;
+    max-width: 100% !important;
+  }
+
+  body.orders-page-shell section.orders-list > .order-card .order-card__body h2,
+  body.orders-page-shell .orders-page section.orders-list > .order-card .order-card__body h2 {
+    font-size: clamp(1rem, 1.65vw, 1.12rem) !important;
+    line-height: 1.16 !important;
+  }
+
+  body.orders-page-shell section.orders-list > .order-card .order-card__actions,
+  body.orders-page-shell .orders-page section.orders-list > .order-card .order-card__actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  body.orders-page-shell section.orders-list > .order-card .order-card__button,
+  body.orders-page-shell .orders-page section.orders-list > .order-card .order-card__button {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 840px) {
+  body.orders-page-shell section.orders-list,
+  body.orders-page-shell .orders-page section.orders-list {
+    gap: 14px !important;
+  }
+
+  body.orders-page-shell section.orders-list > .order-card,
+  body.orders-page-shell .orders-page section.orders-list > .order-card {
+    padding: 16px !important;
+  }
+}

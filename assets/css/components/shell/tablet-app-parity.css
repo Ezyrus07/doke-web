@@ -1,0 +1,1215 @@
+/*
+ * Doke tablet shell contract — v4
+ * Responsibility: tablet portrait app chrome only.
+ * Mobile keeps bottom navigation. Tablet portrait becomes compact desktop without sidebar.
+ * Page CSS still owns internal content; this file owns rail, header controls and nav visibility.
+ */
+@media (min-width: 561px) and (max-width: 767px) {
+  :root {
+    --doke-tablet-shell-bg: #eef5fb;
+    --doke-tablet-shell-gutter: clamp(30px, 5.7vw, 48px);
+    --doke-tablet-shell-rail-max: 1180px;
+    --doke-tablet-shell-rail: min(calc(100vw - (var(--doke-tablet-shell-gutter) * 2)), var(--doke-tablet-shell-rail-max));
+    --doke-tablet-shell-control: 44px;
+    --doke-tablet-shell-control-radius: 16px;
+    --doke-tablet-shell-profile-height: 44px;
+    --doke-tablet-shell-avatar: 34px;
+    --doke-tablet-shell-shadow: 0 16px 34px rgba(31, 68, 110, 0.08);
+    --doke-tablet-shell-top-gap: clamp(22px, 4vw, 34px);
+    --doke-tablet-shell-header-gap: clamp(30px, 5.6vw, 42px);
+  }
+
+  body.doke-app-shell-page,
+  body.app-shell-page,
+  body.internal-shell-page,
+  body.home-index-shell,
+  body.messages-page-shell {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+    background: var(--doke-tablet-shell-bg) !important;
+    --sidebar-width: 0px !important;
+    --doke-app-shell-sidebar-width: 0px !important;
+    --doke-desktop-sidebar-width: 0px !important;
+    --doke-app-sidebar-width: 0px !important;
+    --doke-tablet-bottom-nav-height: 0px !important;
+    --doke-tablet-bottom-safe: 0px !important;
+    --doke-runtime-bottom-nav-height: 0px !important;
+    --doke-mobile-bottom-nav-height: 0px !important;
+    --doke-mobile-page-bottom-safe: 0px !important;
+  }
+
+  body.doke-app-shell-page .app-shell,
+  body.app-shell-page .app-shell,
+  body.internal-shell-page .app-shell,
+  body.home-index-shell .app-shell,
+  body.messages-page-shell .app-shell,
+  body.doke-app-shell-page .page,
+  body.app-shell-page .page,
+  body.internal-shell-page .page,
+  body.home-index-shell .page,
+  body.messages-page-shell .page {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    transform: none !important;
+    background: transparent !important;
+  }
+
+  body.doke-app-shell-page .sidebar,
+  body.app-shell-page .sidebar,
+  body.internal-shell-page .sidebar,
+  body.home-index-shell .sidebar,
+  body.messages-page-shell .sidebar,
+  body.doke-app-shell-page [data-shell-sidebar],
+  body.app-shell-page [data-shell-sidebar],
+  body.internal-shell-page [data-shell-sidebar],
+  body.home-index-shell [data-shell-sidebar],
+  body.messages-page-shell [data-shell-sidebar],
+  body.home-index-shell .doke-mobile-shell,
+  body.messages-page-shell .doke-mobile-shell,
+  body.home-index-shell .app-mobile-topbar,
+  body.messages-page-shell .app-mobile-topbar,
+  body.home-index-shell .app-mobile-search,
+  body.messages-page-shell .app-mobile-search {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  /* Tablet decision: no bottom navigation. Bottom nav belongs to the mobile contract only. */
+  body.doke-app-shell-page :is(.bottom-nav, .mobile-bottom-nav, .bottom-nav-mobile, .doke-bottom-nav, .doke-mobile-bottom-nav, .doke-mobile-shell__bottom-nav, [data-bottom-nav]),
+  body.app-shell-page :is(.bottom-nav, .mobile-bottom-nav, .bottom-nav-mobile, .doke-bottom-nav, .doke-mobile-bottom-nav, .doke-mobile-shell__bottom-nav, [data-bottom-nav]),
+  body.internal-shell-page :is(.bottom-nav, .mobile-bottom-nav, .bottom-nav-mobile, .doke-bottom-nav, .doke-mobile-bottom-nav, .doke-mobile-shell__bottom-nav, [data-bottom-nav]),
+  body.home-index-shell :is(.bottom-nav, .mobile-bottom-nav, .bottom-nav-mobile, .doke-bottom-nav, .doke-mobile-bottom-nav, .doke-mobile-shell__bottom-nav, [data-bottom-nav]),
+  body.messages-page-shell :is(.bottom-nav, .mobile-bottom-nav, .bottom-nav-mobile, .doke-bottom-nav, .doke-mobile-bottom-nav, .doke-mobile-shell__bottom-nav, [data-bottom-nav]) {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+    transform: none !important;
+  }
+
+  body.home-index-shell .page__content,
+  body.messages-page-shell .page__content {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 0 40px !important;
+    overflow-x: hidden !important;
+    background: var(--doke-tablet-shell-bg) !important;
+  }
+
+  body.home-index-shell .page__content-inner,
+  body.home-index-shell .shell-home__workspace,
+  body.messages-page-shell .page__content-inner,
+  body.messages-page-shell .messages-shell-content {
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+
+  /* Reusable tablet header. All pages may vary the actions, not the geometry. */
+  .doke-tablet-shell-header,
+  body.messages-page-shell .doke-tablet-shell-header.app-header.app-header--messages {
+    position: relative !important;
+    inset: auto !important;
+    transform: none !important;
+    display: block !important;
+    visibility: visible !important;
+    width: var(--doke-tablet-shell-rail) !important;
+    max-width: var(--doke-tablet-shell-rail) !important;
+    min-width: 0 !important;
+    min-height: var(--doke-tablet-shell-control) !important;
+    margin: 0 auto var(--doke-tablet-shell-header-gap) !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
+    box-sizing: border-box !important;
+    z-index: 30 !important;
+  }
+
+  .doke-tablet-shell-header > .app-header__inner,
+  body.messages-page-shell .doke-tablet-shell-header > .app-header__inner {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: var(--doke-tablet-shell-control) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+  }
+
+  .doke-tablet-shell-header :is(.app-header__group, .home-side-meta__group) {
+    display: inline-flex !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 12px !important;
+  }
+
+  .doke-tablet-shell-header :is(.app-header__group--primary, .home-side-meta__group--primary) {
+    flex: 1 1 auto !important;
+    justify-content: flex-start !important;
+  }
+
+  .doke-tablet-shell-header :is(.app-header__group--secondary, .home-side-meta__group--secondary) {
+    flex: 0 0 auto !important;
+    justify-content: flex-end !important;
+    margin-left: auto !important;
+  }
+
+  .doke-tablet-shell-header :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .page-header-context__action, .doke-icon-btn, .topbar-shortcut) {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: var(--doke-tablet-shell-control) !important;
+    min-width: var(--doke-tablet-shell-control) !important;
+    max-width: var(--doke-tablet-shell-control) !important;
+    height: var(--doke-tablet-shell-control) !important;
+    min-height: var(--doke-tablet-shell-control) !important;
+    max-height: var(--doke-tablet-shell-control) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: var(--doke-tablet-shell-control-radius) !important;
+    background: #fff !important;
+    color: #1f679f !important;
+    box-shadow: var(--doke-tablet-shell-shadow) !important;
+    line-height: 1 !important;
+    text-decoration: none !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .doke-tablet-shell-header :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .page-header-context__action, .doke-icon-btn, .topbar-shortcut) svg {
+    display: block !important;
+    width: 18px !important;
+    height: 18px !important;
+    color: currentColor !important;
+    fill: none !important;
+    stroke: currentColor !important;
+  }
+
+  .doke-tablet-shell-header :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .page-header-context__action, .doke-icon-btn, .topbar-shortcut) svg * {
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2.25 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+  }
+
+  .doke-tablet-shell-header :is(.page-header-context, .messages-page-actions) {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .doke-tablet-shell-header :is(.home-side-meta__search-form, .home-side-meta__search-label, .home-side-meta__search-input, .page-header-context__action span) {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+    pointer-events: none !important;
+  }
+
+  .doke-tablet-shell-header .home-side-meta__profile-wrap {
+    display: inline-flex !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .doke-tablet-shell-header .home-side-meta__profile {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-height: var(--doke-tablet-shell-profile-height) !important;
+    height: var(--doke-tablet-shell-profile-height) !important;
+    max-width: 132px !important;
+    margin: 0 !important;
+    padding: 4px 10px 4px 5px !important;
+    border: 0 !important;
+    border-radius: 22px !important;
+    background: #fff !important;
+    color: #113d70 !important;
+    box-shadow: var(--doke-tablet-shell-shadow) !important;
+    box-sizing: border-box !important;
+  }
+
+  .doke-tablet-shell-header .home-side-meta__avatar {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: var(--doke-tablet-shell-avatar) !important;
+    height: var(--doke-tablet-shell-avatar) !important;
+    min-width: var(--doke-tablet-shell-avatar) !important;
+    min-height: var(--doke-tablet-shell-avatar) !important;
+    border-radius: 999px !important;
+    background: #168797 !important;
+    color: #fff !important;
+    font-size: 0.78rem !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.03em !important;
+  }
+
+  .doke-tablet-shell-header .home-side-meta__identity {
+    display: grid !important;
+    gap: 1px !important;
+    min-width: 0 !important;
+    text-align: left !important;
+    line-height: 1.05 !important;
+  }
+
+  .doke-tablet-shell-header .home-side-meta__identity strong {
+    display: block !important;
+    max-width: 68px !important;
+    color: #083f76 !important;
+    font-size: 0.74rem !important;
+    font-weight: 900 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .doke-tablet-shell-header .home-side-meta__identity span {
+    display: block !important;
+    color: #2b6598 !important;
+    font-size: 0.64rem !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+  }
+
+  /* Messages: first consumer of the tablet shell contract. */
+  body.messages-page-shell .page__content-inner.messages-shell-content,
+  body.messages-page-shell .app-shell-page__workspace.messages-shell-content,
+  body.messages-page-shell .messages-shell-content.doke-page-shell {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 100dvh !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: var(--doke-tablet-shell-top-gap) 0 40px !important;
+    background: var(--doke-tablet-shell-bg) !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  body.messages-page-shell :is(.messages-mobile-header, .messages-desktop-toolbar, .messages-header-controls, .messages-sidebar-actions, .messages-sidebar-panel, .messages-thread) {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body.messages-page-shell .messages-app,
+  body.messages-page-shell .messages-app.doke-page-section,
+  body.messages-page-shell .messages-sidebar {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: var(--doke-tablet-shell-rail) !important;
+    max-width: var(--doke-tablet-shell-rail) !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  body.messages-page-shell .messages-app > [data-state-region],
+  body.messages-page-shell .messages-sidebar-tools,
+  body.messages-page-shell .messages-sidebar > .messages-sidebar-search:not(.messages-sidebar-search--modern) {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body.messages-page-shell .messages-sidebar-brand {
+    display: flex !important;
+    align-items: center !important;
+    min-height: 0 !important;
+    margin: 0 0 16px !important;
+    padding: 0 !important;
+  }
+
+  body.messages-page-shell .messages-sidebar-brand::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  body.messages-page-shell .messages-sidebar-brand h1,
+  body.messages-page-shell .messages-block__header h2 {
+    margin: 0 !important;
+    color: #082f5f !important;
+    font-size: 1.04rem !important;
+    font-weight: 900 !important;
+    line-height: 1.12 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  body.messages-page-shell .messages-block {
+    display: grid !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+
+  body.messages-page-shell .messages-block + .messages-block {
+    margin-top: 22px !important;
+  }
+
+  body.messages-page-shell .messages-block__header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    min-height: auto !important;
+    margin: 0 0 2px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body.messages-page-shell .message-item,
+  body.messages-page-shell .message-item.doke-card,
+  body.messages-page-shell .doke-message-card.message-item {
+    display: grid !important;
+    grid-template-columns: 48px minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 90px !important;
+    margin: 0 !important;
+    padding: 16px !important;
+    border: 1px solid rgba(207, 222, 238, 0.78) !important;
+    border-radius: 20px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #082f5f !important;
+    box-shadow: 0 14px 30px rgba(20, 59, 95, 0.045) !important;
+    opacity: 1 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  body.messages-page-shell .message-item.is-active {
+    border-color: rgba(29, 100, 177, 0.24) !important;
+    box-shadow: 0 16px 34px rgba(20, 59, 95, 0.08) !important;
+  }
+
+  body.messages-page-shell .message-item__avatar {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    border-radius: 999px !important;
+    background: #dbe7f3 !important;
+    color: #fff !important;
+    font-size: 1rem !important;
+    font-weight: 850 !important;
+  }
+
+  body.messages-page-shell .message-item__content {
+    min-width: 0 !important;
+  }
+
+  body.messages-page-shell .message-item__name {
+    color: #082f5f !important;
+    font-size: 0.98rem !important;
+    font-weight: 850 !important;
+    line-height: 1.15 !important;
+  }
+
+  body.messages-page-shell .message-item__preview {
+    max-width: 100% !important;
+    color: #6f86a3 !important;
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    line-height: 1.32 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  body.messages-page-shell .message-item__meta {
+    align-self: start !important;
+    padding-top: 4px !important;
+    color: #6f86a3 !important;
+    font-size: 0.72rem !important;
+    font-weight: 850 !important;
+  }
+}
+
+
+/* v5 — tablet header/content parity stabilization.
+   This block intentionally owns only tablet shell geometry and message-page chrome.
+   Page-specific content remains inside the messages component rules above. */
+@media (min-width: 561px) and (max-width: 767px) {
+  body.home-index-shell,
+  body.messages-page-shell {
+    --doke-tablet-shell-gutter: clamp(42px, 8vw, 52px) !important;
+    --doke-tablet-shell-rail: min(calc(100vw - (var(--doke-tablet-shell-gutter) * 2)), var(--doke-tablet-shell-rail-max)) !important;
+    --doke-tablet-shell-top-gap: clamp(16px, 3.2vw, 22px) !important;
+    --doke-tablet-shell-header-gap: clamp(30px, 5.4vw, 42px) !important;
+  }
+
+  body.messages-page-shell .page__content,
+  body.messages-page-shell .page__content-inner.messages-shell-content,
+  body.messages-page-shell .app-shell-page__workspace.messages-shell-content,
+  body.messages-page-shell .messages-shell-content.doke-page-shell {
+    padding-top: var(--doke-tablet-shell-top-gap) !important;
+    padding-right: 0 !important;
+    padding-bottom: 44px !important;
+    padding-left: 0 !important;
+  }
+
+  body.messages-page-shell .doke-tablet-shell-header.app-header.app-header--messages,
+  body.messages-page-shell header.doke-tablet-shell-header.home-side-meta {
+    width: var(--doke-tablet-shell-rail) !important;
+    max-width: var(--doke-tablet-shell-rail) !important;
+    margin: 0 auto var(--doke-tablet-shell-header-gap) !important;
+  }
+
+  body.messages-page-shell .doke-tablet-shell-header.app-header--messages > .app-header__inner {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+
+  body.messages-page-shell .doke-tablet-shell-header.app-header--messages .home-side-meta__group--primary {
+    flex: 1 1 auto !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+  }
+
+  body.messages-page-shell .doke-tablet-shell-header.app-header--messages .home-side-meta__group--secondary {
+    flex: 0 0 auto !important;
+    justify-content: flex-end !important;
+    gap: 0 !important;
+    margin-left: auto !important;
+  }
+
+  body.messages-page-shell .doke-tablet-shell-header.app-header--messages .home-side-meta__alert {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body.messages-page-shell .doke-tablet-shell-header.app-header--messages .home-side-meta__profile-wrap,
+  body.messages-page-shell .doke-tablet-shell-header.app-header--messages .home-side-meta__profile,
+  body.messages-page-shell .doke-tablet-shell-header.app-header--messages .home-side-meta__identity,
+  body.messages-page-shell .doke-tablet-shell-header.app-header--messages .home-side-meta__identity strong,
+  body.messages-page-shell .doke-tablet-shell-header.app-header--messages .home-side-meta__identity span {
+    visibility: visible !important;
+    opacity: 1 !important;
+    clip: auto !important;
+    clip-path: none !important;
+    overflow: visible !important;
+  }
+
+  body.messages-page-shell .doke-tablet-shell-header.app-header--messages .home-side-meta__profile {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: auto !important;
+    min-width: 120px !important;
+    max-width: 132px !important;
+    height: var(--doke-tablet-shell-profile-height) !important;
+    min-height: var(--doke-tablet-shell-profile-height) !important;
+    padding: 4px 10px 4px 5px !important;
+    border-radius: 999px !important;
+    background: #fff !important;
+    box-shadow: var(--doke-tablet-shell-shadow) !important;
+  }
+
+  body.messages-page-shell .doke-tablet-shell-header.app-header--messages .home-side-meta__identity {
+    position: static !important;
+    display: grid !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    pointer-events: auto !important;
+  }
+
+  body.messages-page-shell .messages-app,
+  body.messages-page-shell .messages-app.doke-page-section,
+  body.messages-page-shell .messages-sidebar {
+    width: var(--doke-tablet-shell-rail) !important;
+    max-width: var(--doke-tablet-shell-rail) !important;
+    margin-right: auto !important;
+    margin-left: auto !important;
+  }
+
+  body.messages-page-shell .messages-sidebar-brand {
+    margin-bottom: 14px !important;
+  }
+}
+
+/* v6 — tablet shell normalization.
+   Contract decision: tablet = compact desktop chrome, no bottom nav.
+   The header chrome is outside page content, like index. Page actions may vary. */
+@media (min-width: 561px) and (max-width: 767px) {
+  body.messages-page-shell {
+    --doke-tablet-shell-bg: #eef5fb;
+    --doke-tablet-page-rail: calc(100% - 32px);
+    --doke-tablet-page-max: 1180px;
+    --doke-tablet-shell-control: 44px;
+    --doke-tablet-shell-control-radius: 16px;
+    --doke-tablet-shell-profile-height: 44px;
+    --doke-tablet-shell-avatar: 34px;
+    --doke-tablet-shell-shadow: 0 16px 34px rgba(31, 68, 110, 0.08);
+    background: var(--doke-tablet-shell-bg) !important;
+    overflow-x: hidden !important;
+  }
+
+  body.messages-page-shell .app-shell,
+  body.messages-page-shell .page,
+  body.messages-page-shell .page__content {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: var(--doke-tablet-shell-bg) !important;
+    overflow: visible !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+  }
+
+  body.messages-page-shell .page > .doke-tablet-shell-header.app-header.app-header--messages.home-side-meta {
+    position: relative !important;
+    inset: auto !important;
+    display: block !important;
+    width: min(var(--doke-tablet-page-rail), var(--doke-tablet-page-max)) !important;
+    max-width: min(var(--doke-tablet-page-rail), var(--doke-tablet-page-max)) !important;
+    min-width: 0 !important;
+    min-height: var(--doke-tablet-shell-control) !important;
+    margin: 24px auto 58px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    transform: none !important;
+    z-index: 20 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.messages-page-shell .page > .doke-tablet-shell-header .app-header__inner {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: var(--doke-tablet-shell-control) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+  }
+
+  body.messages-page-shell .page > .doke-tablet-shell-header .home-side-meta__group {
+    display: inline-flex !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 12px !important;
+  }
+
+  body.messages-page-shell .page > .doke-tablet-shell-header .home-side-meta__group--primary {
+    flex: 1 1 auto !important;
+    justify-content: flex-start !important;
+  }
+
+  body.messages-page-shell .page > .doke-tablet-shell-header .home-side-meta__group--secondary {
+    flex: 0 0 auto !important;
+    justify-content: flex-end !important;
+    margin-left: auto !important;
+  }
+
+  body.messages-page-shell .page > .doke-tablet-shell-header :is(.home-side-meta__tablet-menu, .home-side-meta__search, .page-header-context__action) {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: var(--doke-tablet-shell-control) !important;
+    min-width: var(--doke-tablet-shell-control) !important;
+    max-width: var(--doke-tablet-shell-control) !important;
+    height: var(--doke-tablet-shell-control) !important;
+    min-height: var(--doke-tablet-shell-control) !important;
+    max-height: var(--doke-tablet-shell-control) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: var(--doke-tablet-shell-control-radius) !important;
+    background: #fff !important;
+    color: #1f679f !important;
+    box-shadow: var(--doke-tablet-shell-shadow) !important;
+    line-height: 1 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  body.messages-page-shell .page > .doke-tablet-shell-header .page-header-context__action {
+    background: #236da8 !important;
+    color: #fff !important;
+  }
+
+  body.messages-page-shell .page > .doke-tablet-shell-header :is(.home-side-meta__tablet-menu, .home-side-meta__search, .page-header-context__action) svg {
+    display: block !important;
+    width: 18px !important;
+    height: 18px !important;
+    color: currentColor !important;
+    fill: none !important;
+    stroke: currentColor !important;
+  }
+
+  body.messages-page-shell .page > .doke-tablet-shell-header :is(.home-side-meta__tablet-menu, .home-side-meta__search, .page-header-context__action) svg * {
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2.25 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+  }
+
+  body.messages-page-shell .page > .doke-tablet-shell-header :is(.home-side-meta__search-form, .home-side-meta__search-label, .home-side-meta__search-input, .page-header-context__action span, .home-side-meta__alert) {
+    position: absolute !important;
+    width: 1px !important;
+    min-width: 0 !important;
+    max-width: 1px !important;
+    height: 1px !important;
+    min-height: 0 !important;
+    max-height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+    pointer-events: none !important;
+  }
+
+  body.messages-page-shell .page > .doke-tablet-shell-header .home-side-meta__profile-wrap,
+  body.messages-page-shell .page > .doke-tablet-shell-header .home-side-meta__profile {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    clip: auto !important;
+    clip-path: none !important;
+  }
+
+  body.messages-page-shell .page > .doke-tablet-shell-header .home-side-meta__profile {
+    gap: 8px !important;
+    width: auto !important;
+    min-width: 124px !important;
+    max-width: 140px !important;
+    height: var(--doke-tablet-shell-profile-height) !important;
+    min-height: var(--doke-tablet-shell-profile-height) !important;
+    margin: 0 !important;
+    padding: 4px 10px 4px 5px !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: #fff !important;
+    box-shadow: var(--doke-tablet-shell-shadow) !important;
+    color: #113d70 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.messages-page-shell .page > .doke-tablet-shell-header .home-side-meta__avatar {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: var(--doke-tablet-shell-avatar) !important;
+    min-width: var(--doke-tablet-shell-avatar) !important;
+    height: var(--doke-tablet-shell-avatar) !important;
+    min-height: var(--doke-tablet-shell-avatar) !important;
+    border-radius: 999px !important;
+    background: #168797 !important;
+    color: #fff !important;
+    font-size: 0.78rem !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.03em !important;
+  }
+
+  body.messages-page-shell .page > .doke-tablet-shell-header .home-side-meta__identity {
+    position: static !important;
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 1px !important;
+    line-height: 1.05 !important;
+    text-align: left !important;
+    overflow: visible !important;
+    clip: auto !important;
+    clip-path: none !important;
+    pointer-events: auto !important;
+  }
+
+  body.messages-page-shell .page > .doke-tablet-shell-header .home-side-meta__identity strong,
+  body.messages-page-shell .page > .doke-tablet-shell-header .home-side-meta__identity span {
+    position: static !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: auto !important;
+    max-width: 72px !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip: auto !important;
+    clip-path: none !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+  }
+
+  body.messages-page-shell .page > .doke-tablet-shell-header .home-side-meta__identity strong {
+    color: #083f76 !important;
+    font-size: 0.74rem !important;
+    font-weight: 900 !important;
+  }
+
+  body.messages-page-shell .page > .doke-tablet-shell-header .home-side-meta__identity span {
+    color: #2b6598 !important;
+    font-size: 0.64rem !important;
+    font-weight: 800 !important;
+  }
+
+  body.messages-page-shell .page__content-inner.messages-shell-content,
+  body.messages-page-shell .app-shell-page__workspace.messages-shell-content,
+  body.messages-page-shell .messages-shell-content.doke-page-shell {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 0 44px !important;
+    background: var(--doke-tablet-shell-bg) !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  body.messages-page-shell .messages-app,
+  body.messages-page-shell .messages-app.doke-page-section,
+  body.messages-page-shell .messages-sidebar {
+    display: block !important;
+    width: min(var(--doke-tablet-page-rail), var(--doke-tablet-page-max)) !important;
+    max-width: min(var(--doke-tablet-page-rail), var(--doke-tablet-page-max)) !important;
+    min-width: 0 !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.messages-page-shell .messages-sidebar-brand {
+    margin: 0 0 16px !important;
+  }
+}
+
+/* v7 — tablet chrome contract hardening.
+   Fixes the actual cause of the remaining mismatch: generic internal-page
+   tablet rules were still compressing the messages profile and narrowing the
+   content rail. This block keeps the reusable shell contract stronger than
+   page-level header fallbacks without changing page-specific card content. */
+@media (min-width: 561px) and (max-width: 767px) {
+  body.messages-page-shell[data-page="mensagens"] {
+    --doke-tablet-page-rail: calc(100% - 32px) !important;
+    --doke-tablet-page-max: 1180px !important;
+    --doke-tablet-shell-control: 44px !important;
+    --doke-tablet-shell-control-radius: 16px !important;
+    --doke-tablet-shell-profile-height: 44px !important;
+    --doke-tablet-shell-avatar: 34px !important;
+    --doke-tablet-shell-shadow: 0 16px 34px rgba(31, 68, 110, 0.08) !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .page > header.doke-tablet-shell-header.app-header.home-side-meta.app-header--messages {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    display: block !important;
+    width: min(var(--doke-tablet-page-rail), var(--doke-tablet-page-max)) !important;
+    max-width: min(var(--doke-tablet-page-rail), var(--doke-tablet-page-max)) !important;
+    min-width: 0 !important;
+    min-height: var(--doke-tablet-shell-control) !important;
+    margin: 24px auto 42px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+    overflow: visible !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .page > header.doke-tablet-shell-header.app-header.home-side-meta.app-header--messages > .app-header__inner {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: var(--doke-tablet-shell-control) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .page > header.doke-tablet-shell-header.app-header.home-side-meta.app-header--messages .home-side-meta__group--primary {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex: 1 1 auto !important;
+    gap: 12px !important;
+    min-width: 0 !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .page > header.doke-tablet-shell-header.app-header.home-side-meta.app-header--messages .home-side-meta__group--secondary {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex: 0 0 auto !important;
+    gap: 0 !important;
+    min-width: 132px !important;
+    margin-left: auto !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .page > header.doke-tablet-shell-header.app-header.home-side-meta.app-header--messages :is(.home-side-meta__tablet-menu, .home-side-meta__search, .page-header-context__action) {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 var(--doke-tablet-shell-control) !important;
+    width: var(--doke-tablet-shell-control) !important;
+    min-width: var(--doke-tablet-shell-control) !important;
+    max-width: var(--doke-tablet-shell-control) !important;
+    height: var(--doke-tablet-shell-control) !important;
+    min-height: var(--doke-tablet-shell-control) !important;
+    max-height: var(--doke-tablet-shell-control) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: var(--doke-tablet-shell-control-radius) !important;
+    background: #fff !important;
+    color: #1f679f !important;
+    box-shadow: var(--doke-tablet-shell-shadow) !important;
+    overflow: hidden !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .page > header.doke-tablet-shell-header.app-header.home-side-meta.app-header--messages .page-header-context__action {
+    background: #236da8 !important;
+    color: #fff !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .page > header.doke-tablet-shell-header.app-header.home-side-meta.app-header--messages .home-side-meta__profile-wrap,
+  body.messages-page-shell[data-page="mensagens"] .page > header.doke-tablet-shell-header.app-header.home-side-meta.app-header--messages .home-side-meta__profile-wrap * {
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .page > header.doke-tablet-shell-header.app-header.home-side-meta.app-header--messages .home-side-meta__profile-wrap {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 132px !important;
+    max-width: none !important;
+    height: var(--doke-tablet-shell-profile-height) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .page > header.doke-tablet-shell-header.app-header.home-side-meta.app-header--messages .home-side-meta__profile {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex: 0 0 auto !important;
+    gap: 8px !important;
+    width: auto !important;
+    min-width: 132px !important;
+    max-width: 142px !important;
+    height: var(--doke-tablet-shell-profile-height) !important;
+    min-height: var(--doke-tablet-shell-profile-height) !important;
+    max-height: var(--doke-tablet-shell-profile-height) !important;
+    margin: 0 !important;
+    padding: 4px 10px 4px 5px !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: #fff !important;
+    color: #113d70 !important;
+    box-shadow: var(--doke-tablet-shell-shadow) !important;
+    overflow: visible !important;
+    clip: auto !important;
+    clip-path: none !important;
+    box-sizing: border-box !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .page > header.doke-tablet-shell-header.app-header.home-side-meta.app-header--messages .home-side-meta__avatar {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 var(--doke-tablet-shell-avatar) !important;
+    width: var(--doke-tablet-shell-avatar) !important;
+    min-width: var(--doke-tablet-shell-avatar) !important;
+    max-width: var(--doke-tablet-shell-avatar) !important;
+    height: var(--doke-tablet-shell-avatar) !important;
+    min-height: var(--doke-tablet-shell-avatar) !important;
+    max-height: var(--doke-tablet-shell-avatar) !important;
+    border-radius: 999px !important;
+    background: #168797 !important;
+    color: #fff !important;
+    font-size: .78rem !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .page > header.doke-tablet-shell-header.app-header.home-side-meta.app-header--messages .home-side-meta__identity {
+    position: static !important;
+    display: grid !important;
+    grid-template-rows: auto auto !important;
+    align-items: center !important;
+    gap: 1px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 74px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    clip: auto !important;
+    clip-path: none !important;
+    pointer-events: auto !important;
+    text-align: left !important;
+    line-height: 1.05 !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .page > header.doke-tablet-shell-header.app-header.home-side-meta.app-header--messages .home-side-meta__identity strong,
+  body.messages-page-shell[data-page="mensagens"] .page > header.doke-tablet-shell-header.app-header.home-side-meta.app-header--messages .home-side-meta__identity span {
+    position: static !important;
+    display: block !important;
+    width: auto !important;
+    max-width: 74px !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip: auto !important;
+    clip-path: none !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .page > header.doke-tablet-shell-header.app-header.home-side-meta.app-header--messages .home-side-meta__identity strong {
+    color: #083f76 !important;
+    font-size: .74rem !important;
+    font-weight: 900 !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .page > header.doke-tablet-shell-header.app-header.home-side-meta.app-header--messages .home-side-meta__identity span {
+    color: #2b6598 !important;
+    font-size: .64rem !important;
+    font-weight: 800 !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .page__content-inner.messages-shell-content,
+  body.messages-page-shell[data-page="mensagens"] .app-shell-page__workspace.messages-shell-content,
+  body.messages-page-shell[data-page="mensagens"] .messages-shell-content.doke-page-shell {
+    padding: 0 0 44px !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .messages-app,
+  body.messages-page-shell[data-page="mensagens"] .messages-app.doke-page-section,
+  body.messages-page-shell[data-page="mensagens"] .messages-sidebar {
+    width: min(var(--doke-tablet-page-rail), var(--doke-tablet-page-max)) !important;
+    max-width: min(var(--doke-tablet-page-rail), var(--doke-tablet-page-max)) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .messages-list {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
+
+
+/* v8 — messages tablet width parity.
+   Fix: the messages rail was still resolving from a narrowed page container,
+   so the header/content became visibly narrower than index. Use viewport-based
+   tablet rail here, same visual width as the index chrome, and keep page CSS
+   out of shell/header responsibility. */
+@media (min-width: 561px) and (max-width: 767px) {
+  body.messages-page-shell[data-page="mensagens"] {
+    --doke-tablet-page-rail: min(calc(100vw - 48px), var(--doke-tablet-page-max, 1180px)) !important;
+    --doke-tablet-page-max: 1180px !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .app-shell,
+  body.messages-page-shell[data-page="mensagens"] .page,
+  body.messages-page-shell[data-page="mensagens"] .page__content,
+  body.messages-page-shell[data-page="mensagens"] .page__content-inner.messages-shell-content,
+  body.messages-page-shell[data-page="mensagens"] .app-shell-page__workspace.messages-shell-content,
+  body.messages-page-shell[data-page="mensagens"] .messages-shell-content.doke-page-shell {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    margin-left: calc(50% - 50vw) !important;
+    margin-right: calc(50% - 50vw) !important;
+    box-sizing: border-box !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .page > header.doke-tablet-shell-header.app-header.home-side-meta.app-header--messages {
+    width: var(--doke-tablet-page-rail) !important;
+    max-width: var(--doke-tablet-page-rail) !important;
+    margin: 24px auto 42px !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .messages-app,
+  body.messages-page-shell[data-page="mensagens"] .messages-app.doke-page-section,
+  body.messages-page-shell[data-page="mensagens"] .messages-sidebar,
+  body.messages-page-shell[data-page="mensagens"] .messages-list {
+    width: var(--doke-tablet-page-rail) !important;
+    max-width: var(--doke-tablet-page-rail) !important;
+    min-width: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .messages-block,
+  body.messages-page-shell[data-page="mensagens"] .message-item,
+  body.messages-page-shell[data-page="mensagens"] .message-item.doke-card,
+  body.messages-page-shell[data-page="mensagens"] .doke-message-card.message-item {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+}
+
+
+/* v10 — messages tablet start-point parity without clipping.
+   Fix: v9 used a negative margin to align the top, which pushed the header
+   outside the page clipping area and cut the buttons/profile. Keep the same
+   index-like start point inside the normal flow instead. */
+@media (min-width: 561px) and (max-width: 767px) {
+  body.messages-page-shell[data-page="mensagens"] .app-shell,
+  body.messages-page-shell[data-page="mensagens"] .page {
+    padding-top: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.messages-page-shell[data-page="mensagens"] .page > header.doke-tablet-shell-header.app-header.home-side-meta.app-header--messages {
+    margin-top: 24px !important;
+    margin-bottom: 42px !important;
+  }
+}

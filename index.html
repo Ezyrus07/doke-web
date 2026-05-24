@@ -275,10 +275,148 @@
       display: none !important;
     }
 
-  </style>
+  
+
+    /* 2026-05-23 — mobile featured ad card width refinement.
+       Narrow only the featured ad rail on mobile so the card feels lighter,
+       reduces perceived height, and hints horizontal continuation. */
+    @media (max-width: 560px) {
+      html body.home-index-shell section.featured-services > .content-rail {
+        overflow-x: visible !important;
+      }
+
+      html body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid {
+        display: grid !important;
+        grid-auto-flow: column !important;
+        grid-template-columns: none !important;
+        grid-auto-columns: minmax(0, 86%) !important;
+        gap: 14px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 2px 2px 0 !important;
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+        scrollbar-width: none !important;
+        -webkit-overflow-scrolling: touch !important;
+        scroll-snap-type: x proximity !important;
+        box-sizing: border-box !important;
+      }
+
+      html body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid::-webkit-scrollbar {
+        display: none !important;
+      }
+
+      html body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid > .doke-ad-card {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        scroll-snap-align: start !important;
+        box-sizing: border-box !important;
+      }
+    }
+
+
+
+    /* 2026-05-23 — mobile Mais anúncios repair.
+       Keep the section in normal feed order on mobile instead of collapsing
+       the ad cards into compressed columns. Also keep tabs readable. */
+    @media (max-width: 560px) {
+      html body.home-index-shell section.more-services > .section-heading.home-section-header,
+      html body.home-index-shell section.more-services > .section-heading.home-section-header.home-section-header--stacked {
+        display: grid !important;
+        gap: 12px !important;
+      }
+
+      html body.home-index-shell section.more-services .more-services__controls,
+      html body.home-index-shell section.more-services .more-services__tabs-rail {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+        scrollbar-width: none !important;
+        -webkit-overflow-scrolling: touch !important;
+      }
+
+      html body.home-index-shell section.more-services .more-services__controls::-webkit-scrollbar,
+      html body.home-index-shell section.more-services .more-services__tabs-rail::-webkit-scrollbar {
+        display: none !important;
+      }
+
+      html body.home-index-shell section.more-services .more-services__tabs-track {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        width: max-content !important;
+        min-width: 100% !important;
+        gap: 10px !important;
+        padding: 0 2px 4px 0 !important;
+        overflow: visible !important;
+      }
+
+      html body.home-index-shell section.more-services .more-services__tabs-track > .mini-tab,
+      html body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle {
+        flex: 0 0 auto !important;
+        min-width: max-content !important;
+        width: auto !important;
+        max-width: none !important;
+        white-space: nowrap !important;
+      }
+
+      html body.home-index-shell section.more-services .more-services__cards-rail,
+      html body.home-index-shell section.more-services .content-rail.more-services__cards-rail {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+      }
+
+      html body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        grid-auto-flow: row !important;
+        grid-auto-columns: initial !important;
+        gap: 14px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+      }
+
+      html body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] > .doke-ad-card {
+        display: flex !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+      }
+
+      html body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] > .doke-ad-card[hidden] {
+        display: none !important;
+      }
+
+      html body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] > .doke-ad-card > * {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+      }
+    }
+
+</style>
   <link rel="stylesheet" href="assets/css/pages/stable-desktop-rail.css?v=20260517-f5-stable-v2">
   <link rel="stylesheet" href="assets/css/pages/home/mobile-feed-rails.css?v=20260519-mobile-feed-rail-fix-v1">
-  <link rel="stylesheet" href="assets/css/pages/home-tablet-v2.css?v=20260523-remove-recommendations-v1">
+  <link rel="stylesheet" href="assets/css/pages/home-tablet-v2.css?v=20260523-tablet-no-bottom-nav-v11">
+  <link rel="stylesheet" href="assets/css/components/shell/tablet-app-parity.css?v=20260524-tablet-shell-contract-v8">
 </head>
 <body data-page="home" data-page-key="index" class="doke-app-shell-page app-shell-page internal-shell-page shell-home home-index-shell doke-flow doke-search-flow has-global-header">
   <div class="app-shell">
