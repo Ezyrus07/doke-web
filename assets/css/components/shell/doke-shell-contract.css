@@ -5365,3 +5365,589 @@ body[data-page] .home-side-meta__tablet-menu {
     pointer-events: none !important;
   }
 }
+
+/* Tablet portrait shell safety v87.
+   Decision: tablet portrait uses top chrome, not mobile bottom navigation.
+   Scope: shell/navigation only. Does not redesign page content. */
+@media (min-width: 561px) and (max-width: 767px) {
+  body[data-page].doke-app-shell-page,
+  body[data-page].app-shell-page,
+  body[data-page].internal-shell-page {
+    --sidebar-width: 0px !important;
+    --doke-app-shell-sidebar-width: 0px !important;
+    --doke-desktop-sidebar-width: 0px !important;
+    --doke-app-sidebar-width: 0px !important;
+    --doke-tablet-bottom-nav-height: 0px !important;
+    --doke-tablet-bottom-safe: 0px !important;
+    --doke-runtime-bottom-nav-height: 0px !important;
+    --doke-mobile-bottom-nav-height: 0px !important;
+    --doke-mobile-page-bottom-safe: 0px !important;
+  }
+
+  body[data-page].doke-app-shell-page > .app-shell,
+  body[data-page].app-shell-page > .app-shell,
+  body[data-page].internal-shell-page > .app-shell {
+    display: block !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body[data-page] > .app-shell > .sidebar,
+  body[data-page] .sidebar[data-shell-sidebar] {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body[data-page] > .app-shell > .page {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  body[data-page] :is(.bottom-nav, .mobile-bottom-nav, .bottom-nav-mobile, .doke-bottom-nav, .doke-mobile-bottom-nav, .doke-mobile-shell__bottom-nav, [data-bottom-nav]) {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+    transform: none !important;
+  }
+
+  body[data-page] .page__content {
+    padding-bottom: 40px !important;
+  }
+}
+
+/* 2026-05-24 — Tablet/mobile boundary lock
+   Contract: 561–760px is tablet vertical for Doke, not mobile.
+   Mobile App Shell stays limited to real phone widths. This prevents the
+   injected "Olá Gabriel" header and bottom navigation from overriding the
+   shared tablet header on pedidos, mensagens and the other internal pages. */
+@media (min-width: 561px) and (max-width: 760px) {
+  html.doke-mobile-shell-ready .doke-mobile-shell,
+  html.doke-mobile-shell-ready .doke-mobile-bottom-nav,
+  html.doke-mobile-shell-pending .doke-mobile-shell,
+  html.doke-mobile-shell-pending .doke-mobile-bottom-nav,
+  body.doke-mobile-shell-mounted .doke-mobile-shell,
+  body.doke-mobile-shell-mounted .doke-mobile-bottom-nav,
+  body.doke-mobile-shell-mounted .bottom-nav,
+  body.doke-mobile-shell-mounted .doke-bottom-nav,
+  body[data-page] .bottom-nav,
+  body[data-page] .doke-bottom-nav,
+  body[data-page] .doke-mobile-bottom-nav {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body.doke-mobile-shell-mounted,
+  body.doke-mobile-shell-mounted[data-shell-search="false"] {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  body.doke-mobile-shell-mounted .topbar,
+  body.doke-mobile-shell-mounted .internal-page-topbar,
+  body.doke-mobile-shell-mounted .topbar--location,
+  body[data-page] .topbar.internal-page-topbar {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body.doke-mobile-shell-mounted .home-side-meta,
+  body[data-page] .app-header.home-side-meta {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  body[data-page="pedidos"],
+  body[data-page="notificacoes"] {
+    --doke-tablet-rail: min(calc(100vw - 48px), 1180px);
+    --doke-tablet-control: 44px;
+    --doke-tablet-control-radius: 16px;
+    background: #eef5fb !important;
+    overflow-x: hidden !important;
+  }
+
+  body[data-page="pedidos"] > .app-shell,
+  body[data-page="pedidos"] > .app-shell > .page,
+  body[data-page="notificacoes"] > .app-shell,
+  body[data-page="notificacoes"] > .app-shell > .page {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #eef5fb !important;
+    overflow: visible !important;
+    transform: none !important;
+  }
+
+  body[data-page="pedidos"] .sidebar,
+  body[data-page="pedidos"] [data-shell-sidebar],
+  body[data-page="notificacoes"] .sidebar,
+  body[data-page="notificacoes"] [data-shell-sidebar] {
+    display: none !important;
+  }
+
+  body[data-page="pedidos"] > .app-shell > .page > .app-header.app-header--orders,
+  body[data-page="notificacoes"] > .app-shell > .page > .app-header.home-side-meta {
+    display: block !important;
+    width: var(--doke-tablet-rail) !important;
+    max-width: var(--doke-tablet-rail) !important;
+    min-width: 0 !important;
+    min-height: var(--doke-tablet-control) !important;
+    margin: 24px auto 42px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+  }
+
+  body[data-page="pedidos"] > .app-shell > .page > .app-header.app-header--orders > .app-header__inner,
+  body[data-page="notificacoes"] > .app-shell > .page > .app-header.home-side-meta > .app-header__inner {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-height: var(--doke-tablet-control) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  body[data-page="pedidos"] .app-header--orders .app-header__group,
+  body[data-page="notificacoes"] .app-header .app-header__group {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  body[data-page="pedidos"] .app-header--orders .app-header__group--primary,
+  body[data-page="notificacoes"] .app-header .app-header__group--primary {
+    flex: 1 1 auto !important;
+    justify-content: flex-start !important;
+  }
+
+  body[data-page="pedidos"] .app-header--orders .app-header__group--secondary,
+  body[data-page="notificacoes"] .app-header .app-header__group--secondary {
+    flex: 0 0 auto !important;
+    justify-content: flex-end !important;
+    margin-left: auto !important;
+  }
+
+  body[data-page="pedidos"] .app-header--orders :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert),
+  body[data-page="pedidos"] .app-header--orders :is(button[data-orders-filter-toggle], button[data-orders-select-toggle], button[data-orders-agenda-toggle]),
+  body[data-page="notificacoes"] .app-header :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .page-header-context__action) {
+    box-sizing: border-box !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    flex: 0 0 var(--doke-tablet-control) !important;
+    width: var(--doke-tablet-control) !important;
+    min-width: var(--doke-tablet-control) !important;
+    max-width: var(--doke-tablet-control) !important;
+    height: var(--doke-tablet-control) !important;
+    min-height: var(--doke-tablet-control) !important;
+    max-height: var(--doke-tablet-control) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: var(--doke-tablet-control-radius) !important;
+    background: #fff !important;
+    color: #1f679f !important;
+    box-shadow: 0 16px 34px rgba(31, 68, 110, 0.08) !important;
+    overflow: hidden !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+  }
+
+  body[data-page="pedidos"] .app-header--orders :is(button[data-orders-filter-toggle], button[data-orders-select-toggle], button[data-orders-agenda-toggle]) > span,
+  body[data-page="notificacoes"] .app-header .page-header-context__action > span,
+  body[data-page="pedidos"] .app-header--orders .home-side-meta__search-form,
+  body[data-page="notificacoes"] .app-header .home-side-meta__search-form {
+    display: none !important;
+  }
+
+  body[data-page="pedidos"] .app-header--orders svg,
+  body[data-page="notificacoes"] .app-header svg {
+    display: block !important;
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2.25 !important;
+  }
+
+  body[data-page="pedidos"] .app-header--orders .home-side-meta__profile,
+  body[data-page="notificacoes"] .app-header .home-side-meta__profile {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: 132px !important;
+    width: auto !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 4px 10px 4px 5px !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: #fff !important;
+    box-shadow: 0 16px 34px rgba(31, 68, 110, 0.08) !important;
+    overflow: visible !important;
+  }
+
+  body[data-page="pedidos"] .app-header--orders .home-side-meta__identity,
+  body[data-page="notificacoes"] .app-header .home-side-meta__identity {
+    display: grid !important;
+    gap: 1px !important;
+    max-width: 74px !important;
+    line-height: 1.05 !important;
+  }
+
+  body[data-page="pedidos"] .app-header--orders .home-side-meta__avatar,
+  body[data-page="notificacoes"] .app-header .home-side-meta__avatar {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    border-radius: 999px !important;
+    font-size: .78rem !important;
+  }
+
+  body[data-page="pedidos"] > .app-shell > .page > .page__content,
+  body[data-page="notificacoes"] > .app-shell > .page > .page__content {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 0 40px !important;
+    background: #eef5fb !important;
+    overflow: visible !important;
+  }
+
+  body[data-page="pedidos"] .page__content-inner,
+  body[data-page="pedidos"] .orders-shell-content,
+  body[data-page="pedidos"] .orders-page,
+  body[data-page="notificacoes"] .page__content-inner,
+  body[data-page="notificacoes"] .notifications-page {
+    width: var(--doke-tablet-rail) !important;
+    max-width: var(--doke-tablet-rail) !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+  }
+
+  body[data-page="pedidos"] .orders-page-header {
+    display: none !important;
+  }
+
+  body[data-page="pedidos"] .orders-command-summary {
+    margin-top: 0 !important;
+  }
+}
+
+/* 2026-05-24 - Shared tablet header origin
+   Pages that render the app-header tablet chrome must not keep the legacy
+   internal topbar in the document flow. Hidden topbars were adding an 86px
+   spacer above pedidos and any other page that reused the same header. */
+@media (min-width: 561px) and (max-width: 760px) {
+  body[data-page].app-shell-page,
+  body[data-page].doke-app-shell-page,
+  body[data-page].internal-shell-page,
+  body[data-page="home"],
+  body[data-page="pedidos"],
+  body[data-page="notificacoes"] {
+    --doke-tablet-rail: min(calc(100% - 36px), 1180px) !important;
+    --doke-tablet-control: 48px !important;
+    --doke-tablet-control-radius: 16px !important;
+    --doke-tablet-header-gap: 10px !important;
+    --doke-tablet-header-item-gap: 10px !important;
+  }
+
+  body[data-page]:has(> .app-shell > .page > .app-header.home-side-meta) > .app-shell > .page > .topbar,
+  body[data-page]:has(> .app-shell > .page > .app-header.home-side-meta) > .app-shell > .page > .internal-page-topbar,
+  body[data-page]:has(> .app-shell > .page > .app-header.home-side-meta) > .app-shell > .page > .topbar--location {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body[data-page] > .app-shell > .page > .app-header.home-side-meta {
+    top: 0 !important;
+  }
+
+  body[data-page] > .app-shell > .page > .app-header.home-side-meta > .app-header__inner {
+    width: var(--doke-tablet-rail) !important;
+    max-width: var(--doke-tablet-rail) !important;
+    margin-inline: auto !important;
+    gap: var(--doke-tablet-header-gap) !important;
+  }
+
+  body[data-page] > .app-shell > .page > .app-header.home-side-meta .app-header__group {
+    gap: var(--doke-tablet-header-item-gap) !important;
+  }
+
+  body[data-page] > .app-shell > .page > .app-header.home-side-meta .app-header__group--primary {
+    gap: var(--doke-tablet-header-item-gap) !important;
+  }
+
+  body[data-page] > .app-shell > .page > .app-header.home-side-meta :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .page-header-context__action) {
+    box-sizing: border-box !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    width: var(--doke-tablet-control) !important;
+    min-width: var(--doke-tablet-control) !important;
+    max-width: var(--doke-tablet-control) !important;
+    inline-size: var(--doke-tablet-control) !important;
+    min-inline-size: var(--doke-tablet-control) !important;
+    max-inline-size: var(--doke-tablet-control) !important;
+    height: var(--doke-tablet-control) !important;
+    min-height: var(--doke-tablet-control) !important;
+    max-height: var(--doke-tablet-control) !important;
+    block-size: var(--doke-tablet-control) !important;
+    min-block-size: var(--doke-tablet-control) !important;
+    max-block-size: var(--doke-tablet-control) !important;
+    flex-basis: var(--doke-tablet-control) !important;
+    padding: 0 !important;
+    border: 1px solid rgba(15, 45, 75, 0.06) !important;
+    border-radius: var(--doke-tablet-control-radius) !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    overflow: hidden !important;
+  }
+
+  body[data-page] > .app-shell > .page > .app-header.home-side-meta .home-side-meta__profile {
+    box-sizing: border-box !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    width: var(--doke-tablet-control) !important;
+    min-width: var(--doke-tablet-control) !important;
+    max-width: var(--doke-tablet-control) !important;
+    inline-size: var(--doke-tablet-control) !important;
+    min-inline-size: var(--doke-tablet-control) !important;
+    max-inline-size: var(--doke-tablet-control) !important;
+    height: var(--doke-tablet-control) !important;
+    min-height: var(--doke-tablet-control) !important;
+    max-height: var(--doke-tablet-control) !important;
+    block-size: var(--doke-tablet-control) !important;
+    min-block-size: var(--doke-tablet-control) !important;
+    max-block-size: var(--doke-tablet-control) !important;
+    padding: 6px !important;
+    border: 1px solid rgba(15, 45, 75, 0.06) !important;
+    border-radius: var(--doke-tablet-control-radius) !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body[data-page] > .app-shell > .page > .app-header.home-side-meta .home-side-meta__avatar {
+    box-sizing: border-box !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    max-width: 34px !important;
+    max-height: 34px !important;
+    inline-size: 34px !important;
+    min-inline-size: 34px !important;
+    max-inline-size: 34px !important;
+    block-size: 34px !important;
+    min-block-size: 34px !important;
+    max-block-size: 34px !important;
+    flex: 0 0 34px !important;
+    border: 0 !important;
+  }
+
+  body[data-page] > .app-shell > .page > .app-header.home-side-meta .home-side-meta__identity {
+    display: none !important;
+  }
+
+  body[data-page="home"] > .app-shell > .page > .app-header.app-header--home.home-side-meta > .app-header__inner,
+  body[data-page="pedidos"] > .app-shell > .page > .app-header.app-header--orders.home-side-meta > .app-header__inner,
+  body[data-page="notificacoes"] > .app-shell > .page > .app-header.home-side-meta > .app-header__inner,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta > .app-header__inner {
+    width: var(--doke-tablet-rail) !important;
+    max-width: var(--doke-tablet-rail) !important;
+    margin-inline: auto !important;
+    gap: var(--doke-tablet-header-gap) !important;
+  }
+
+  body[data-page="home"] > .app-shell > .page > .app-header.app-header--home.home-side-meta .app-header__group,
+  body[data-page="pedidos"] > .app-shell > .page > .app-header.app-header--orders.home-side-meta .app-header__group,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta .app-header__group {
+    gap: var(--doke-tablet-header-item-gap) !important;
+  }
+
+  body[data-page="home"] > .app-shell > .page > .app-header.app-header--home.home-side-meta .home-side-meta__profile,
+  body[data-page="pedidos"] > .app-shell > .page > .app-header.app-header--orders.home-side-meta .home-side-meta__profile,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta .home-side-meta__profile {
+    box-sizing: border-box !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    width: var(--doke-tablet-control) !important;
+    min-width: var(--doke-tablet-control) !important;
+    max-width: var(--doke-tablet-control) !important;
+    inline-size: var(--doke-tablet-control) !important;
+    min-inline-size: var(--doke-tablet-control) !important;
+    max-inline-size: var(--doke-tablet-control) !important;
+    height: var(--doke-tablet-control) !important;
+    min-height: var(--doke-tablet-control) !important;
+    max-height: var(--doke-tablet-control) !important;
+    block-size: var(--doke-tablet-control) !important;
+    min-block-size: var(--doke-tablet-control) !important;
+    max-block-size: var(--doke-tablet-control) !important;
+    padding: 6px !important;
+    border: 1px solid rgba(15, 45, 75, 0.06) !important;
+    border-radius: var(--doke-tablet-control-radius) !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body[data-page="home"] > .app-shell > .page > .app-header.app-header--home.home-side-meta .home-side-meta__identity,
+  body[data-page="pedidos"] > .app-shell > .page > .app-header.app-header--orders.home-side-meta .home-side-meta__identity,
+  body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta .home-side-meta__identity {
+    display: none !important;
+  }
+
+  body[data-page]:has(> .app-shell > .page > .app-header.home-side-meta) .page__content-inner,
+  body[data-page]:has(> .app-shell > .page > .app-header.home-side-meta) .orders-shell-content,
+  body[data-page]:has(> .app-shell > .page > .app-header.home-side-meta) .messages-shell-content,
+  body[data-page]:has(> .app-shell > .page > .app-header.home-side-meta) .profile-shell-content,
+  body[data-page]:has(> .app-shell > .page > .app-header.home-side-meta) .wallet-shell-content,
+  body[data-page]:has(> .app-shell > .page > .app-header.home-side-meta) .settings-shell-content,
+  body[data-page]:has(> .app-shell > .page > .app-header.home-side-meta) .search-results-workspace {
+    width: var(--doke-tablet-rail) !important;
+    max-width: var(--doke-tablet-rail) !important;
+    margin-inline: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell > .app-shell > .page > .app-header.app-header--home.home-side-meta :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .page-header-context__action),
+  body[data-page="home"] > .app-shell > .page > .app-header.app-header--home.home-side-meta :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .page-header-context__action),
+  body[data-page="pedidos"] > .app-shell > .page > .app-header.app-header--orders.home-side-meta :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .page-header-context__action) {
+    box-sizing: border-box !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    inline-size: 48px !important;
+    min-inline-size: 48px !important;
+    max-inline-size: 48px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    block-size: 48px !important;
+    min-block-size: 48px !important;
+    max-block-size: 48px !important;
+    flex: 0 0 48px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 1px solid rgba(15, 45, 75, 0.06) !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #1f5f9f !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    overflow: hidden !important;
+  }
+
+  html.home-index-root body.home-index-shell > .app-shell > .page > .app-header.app-header--home.home-side-meta .home-side-meta__avatar,
+  body[data-page="home"] > .app-shell > .page > .app-header.app-header--home.home-side-meta .home-side-meta__avatar,
+  body[data-page="pedidos"] > .app-shell > .page > .app-header.app-header--orders.home-side-meta .home-side-meta__avatar {
+    box-sizing: border-box !important;
+    width: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    inline-size: 34px !important;
+    min-inline-size: 34px !important;
+    max-inline-size: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    block-size: 34px !important;
+    min-block-size: 34px !important;
+    max-block-size: 34px !important;
+    flex: 0 0 34px !important;
+    border: 0 !important;
+  }
+
+  body[data-page]:not(.home-index-shell):not([data-page="home"]) :is(.section-heading, .home-section-header, .communities-v2-section__heading, .settings-section-heading, .wallet-section-heading, .profile-section-heading) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  body[data-page]:not(.home-index-shell):not([data-page="home"]) :is(.section-heading, .home-section-header, .communities-v2-section__heading, .settings-section-heading, .wallet-section-heading, .profile-section-heading) > :first-child {
+    min-width: 0 !important;
+  }
+
+  body[data-page]:not(.home-index-shell):not([data-page="home"]) :is(.section-heading__title, .home-section-title, .communities-v2-section__heading h2, .settings-section-heading h2, .wallet-section-heading h1, .profile-section-heading h2) {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: clamp(1.42rem, 4.6vw, 1.82rem) !important;
+    line-height: 1.06 !important;
+    letter-spacing: -0.035em !important;
+  }
+
+  body[data-page]:not(.home-index-shell):not([data-page="home"]) :is(.section-heading__link, .communities-v2-section__heading a, .community-side-card__header a, .settings-section-heading a, .wallet-section-heading a) {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+    font-size: 0.82rem !important;
+    line-height: 1 !important;
+  }
+
+}

@@ -1231,3 +1231,302 @@
     display: none !important;
   }
 }
+
+/* Comunidade v80 - tablet vertical polish.
+   Aligns the community tablet surface with the shared app header and gives
+   cards enough width for readable titles/actions at 575px. */
+@media (min-width: 561px) and (max-width: 760px) {
+  body.communities-page-shell {
+    --community-tablet-rail: min(calc(100% - 36px), 1180px);
+    --community-tablet-control: 48px;
+    --community-tablet-radius: 16px;
+    --community-tablet-card-radius: 22px;
+    --community-tablet-border: rgba(205, 221, 237, .82);
+  }
+
+  body.communities-page-shell > .app-shell > .page > .topbar,
+  body.communities-page-shell > .app-shell > .page > .internal-page-topbar,
+  body.communities-page-shell > .app-shell > .page > .topbar--location {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body.communities-page-shell > .app-shell > .page > .app-header.app-header--communities.home-side-meta {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 96px !important;
+    height: 96px !important;
+    margin: 0 !important;
+    padding: 20px 0 10px !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  body.communities-page-shell > .app-shell > .page > .app-header.app-header--communities.home-side-meta > .app-header__inner {
+    width: var(--community-tablet-rail) !important;
+    max-width: var(--community-tablet-rail) !important;
+    height: var(--community-tablet-control) !important;
+    min-height: var(--community-tablet-control) !important;
+    margin-inline: auto !important;
+    gap: 10px !important;
+  }
+
+  body.communities-page-shell .app-header.app-header--communities :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .page-header-context__action, .home-side-meta__profile) {
+    box-sizing: border-box !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    width: var(--community-tablet-control) !important;
+    min-width: var(--community-tablet-control) !important;
+    max-width: var(--community-tablet-control) !important;
+    height: var(--community-tablet-control) !important;
+    min-height: var(--community-tablet-control) !important;
+    max-height: var(--community-tablet-control) !important;
+    flex: 0 0 var(--community-tablet-control) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 1px solid rgba(15, 45, 75, .06) !important;
+    border-radius: var(--community-tablet-radius) !important;
+    background: rgba(255, 255, 255, .96) !important;
+    color: #1f5f9f !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, .06) !important;
+    overflow: hidden !important;
+  }
+
+  body.communities-page-shell .app-header.app-header--communities .page-header-context {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.communities-page-shell .app-header.app-header--communities .page-header-context__action > span,
+  body.communities-page-shell .app-header.app-header--communities .home-side-meta__identity {
+    display: none !important;
+  }
+
+  body.communities-page-shell .app-header.app-header--communities .home-side-meta__profile {
+    padding: 6px !important;
+  }
+
+  body.communities-page-shell .app-header.app-header--communities .home-side-meta__avatar {
+    width: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    border: 0 !important;
+  }
+
+  body.communities-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content,
+  body.communities-page-shell .page__content-inner {
+    width: var(--community-tablet-rail) !important;
+    max-width: var(--community-tablet-rail) !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.communities-page-shell .communities-page,
+  body.communities-page-shell .communities-discovery,
+  body.communities-page-shell .communities-v2-shell,
+  body.communities-page-shell .communities-v2-main,
+  body.communities-page-shell .communities-v2-sidebar,
+  body.communities-page-shell .communities-v2-section {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.communities-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content {
+    padding-top: 8px !important;
+    padding-bottom: 34px !important;
+  }
+
+  body.communities-page-shell .communities-page,
+  body.communities-page-shell .communities-v2-shell,
+  body.communities-page-shell .communities-v2-main,
+  body.communities-page-shell .communities-v2-sidebar {
+    gap: 22px !important;
+  }
+
+  body.communities-page-shell .communities-v2-section__heading {
+    margin-bottom: 12px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  body.communities-page-shell .communities-v2-section__heading h2 {
+    max-width: none !important;
+    min-width: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: clamp(1.42rem, 4.6vw, 1.82rem) !important;
+    line-height: 1.06 !important;
+    letter-spacing: -0.035em !important;
+  }
+
+  body.communities-page-shell .communities-v2-section__heading--stack h2 {
+    max-width: 100% !important;
+  }
+
+  body.communities-page-shell .communities-v2-section__heading a {
+    white-space: nowrap !important;
+    font-size: .82rem !important;
+    line-height: 1 !important;
+  }
+
+  body.communities-page-shell .communities-v2-filters {
+    width: 100% !important;
+    margin: 0 0 16px !important;
+    padding: 0 0 6px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+  }
+
+  body.communities-page-shell .communities-v2-filters::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  body.communities-page-shell .communities-filter {
+    min-height: 38px !important;
+    padding-inline: 14px !important;
+    white-space: nowrap !important;
+  }
+
+  body.communities-page-shell .communities-v2-continue-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  body.communities-page-shell .community-continue-card {
+    grid-template-columns: 72px minmax(0, 1fr) !important;
+    grid-template-areas:
+      "media content"
+      "action action" !important;
+    min-height: 136px !important;
+    padding: 14px !important;
+    row-gap: 12px !important;
+    column-gap: 12px !important;
+    border-radius: var(--community-tablet-card-radius) !important;
+    border: 1px solid var(--community-tablet-border) !important;
+    overflow: hidden !important;
+  }
+
+  body.communities-page-shell .community-continue-card img {
+    width: 72px !important;
+    height: 72px !important;
+    border-radius: 18px !important;
+  }
+
+  body.communities-page-shell .community-continue-card h3 {
+    min-height: 2.22em !important;
+    white-space: normal !important;
+  }
+
+  body.communities-page-shell .community-open-button {
+    grid-area: action !important;
+    width: 100% !important;
+    min-height: 36px !important;
+    justify-self: stretch !important;
+  }
+
+  body.communities-page-shell .communities-v2-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px !important;
+  }
+
+  body.communities-page-shell .community-card-v2 {
+    display: grid !important;
+    grid-template-columns: 124px minmax(0, 1fr) !important;
+    min-height: 148px !important;
+    padding: 0 !important;
+    border-radius: var(--community-tablet-card-radius) !important;
+    border: 1px solid var(--community-tablet-border) !important;
+    overflow: hidden !important;
+  }
+
+  body.communities-page-shell .community-card-v2__image {
+    width: 124px !important;
+    height: 100% !important;
+    min-height: 148px !important;
+    object-fit: cover !important;
+  }
+
+  body.communities-page-shell .community-card-v2__body {
+    min-width: 0 !important;
+    padding: 16px !important;
+    gap: 7px !important;
+    align-content: center !important;
+  }
+
+  body.communities-page-shell .community-card-v2 h3 {
+    min-height: 0 !important;
+    max-width: 100% !important;
+    font-size: 1.02rem !important;
+    line-height: 1.12 !important;
+  }
+
+  body.communities-page-shell .community-card-v2__button {
+    width: auto !important;
+    min-width: 92px !important;
+    justify-self: start !important;
+    padding-inline: 18px !important;
+  }
+
+  body.communities-page-shell .communities-empty-v2 {
+    grid-template-columns: 44px minmax(0, 1fr) !important;
+    width: 100% !important;
+    padding: 16px !important;
+    border-radius: 20px !important;
+  }
+
+  body.communities-page-shell .communities-v2-sidebar {
+    position: static !important;
+  }
+
+  body.communities-page-shell .community-side-card-v2 {
+    width: 100% !important;
+    padding: 22px !important;
+    padding-inline: 22px !important;
+    padding-block: 22px !important;
+    padding-left: 22px !important;
+    padding-right: 22px !important;
+    border-radius: var(--community-tablet-card-radius) !important;
+    border: 1px solid var(--community-tablet-border) !important;
+    background: rgba(255, 255, 255, .94) !important;
+  }
+
+  body.communities-page-shell .community-side-card-v2 > :not(.community-side-card-v2__footer-link) {
+    width: calc(100% - 44px) !important;
+    max-width: calc(100% - 44px) !important;
+    margin-left: 22px !important;
+    margin-right: 22px !important;
+    box-sizing: border-box !important;
+  }
+
+  body.communities-page-shell .community-side-card-v2__footer-link {
+    width: calc(100% - 44px) !important;
+    max-width: calc(100% - 44px) !important;
+    margin-left: 22px !important;
+    margin-right: 22px !important;
+  }
+}
