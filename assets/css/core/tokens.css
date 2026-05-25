@@ -329,6 +329,14 @@
   --content-max-readable: 760px;
   --panel-max: 720px;
 
+  /* Canonical shared responsive page/rail contract ------------------------ */
+  --doke-shared-page-inline: 18px;
+  --doke-shared-page-width: min(572px, calc(100vw - var(--doke-shared-page-inline) - var(--doke-shared-page-inline)));
+  --doke-section-gap: var(--space-7);
+  --doke-header-height: var(--mobile-header-height);
+  --doke-first-block-top: var(--mobile-header-height);
+  --doke-card-grid-gap: 14px;
+
   /* Shared rail/grid contracts ------------------------------------------ */
   --rail-max: var(--content-max);
   --rail-inline-padding: 0px;
@@ -454,3 +462,36 @@
   --transition-shell: 240ms ease;
 }
 
+
+/* Canonical shared responsive page/rail media overrides. */
+@media (min-width: 608px) and (max-width: 760px) {
+  :root {
+    --doke-header-height: 86px;
+    --doke-first-block-top: 98px;
+  }
+}
+
+@media (min-width: 761px) {
+  :root {
+    --doke-shared-page-inline: clamp(24px, 3vw, 48px);
+    --doke-shared-page-width: calc(100vw - 280px - var(--doke-shared-page-inline) - var(--doke-shared-page-inline));
+    --doke-section-gap: var(--space-8);
+    --doke-header-height: 96px;
+    --doke-first-block-top: 108px;
+    --doke-card-grid-gap: 18px;
+  }
+}
+
+@media (min-width: 1180px) {
+  :root {
+    --doke-shared-page-inline: 48px;
+    --doke-section-gap: var(--space-9);
+  }
+}
+
+@media (max-width: 360px) {
+  :root {
+    --doke-shared-page-inline: 14px;
+    --doke-shared-page-width: calc(100vw - var(--doke-shared-page-inline) - var(--doke-shared-page-inline));
+  }
+}

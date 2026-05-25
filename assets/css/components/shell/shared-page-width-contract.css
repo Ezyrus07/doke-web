@@ -1,131 +1,582 @@
 /*
- * Shared page width contract
- * One mobile/tablet rail for marketplace and internal pages so the same
- * sections and cards do not change width between HTML entrypoints.
+ * Doke shared responsive page/rail contract
+ *
+ * Responsibility:
+ * - Defines the canonical index.html rail/container rhythm for equivalent pages.
+ * - Pages may place sections in a different order/composition, but should consume
+ *   these tokens instead of redefining rail width, grid gap or first-block rhythm.
+ * - Card anatomy remains owned by assets/css/components/cards/*.
  */
 
 :root {
   --doke-shared-page-inline: 18px;
-  --doke-shared-page-width: min(572px, calc(100vw - (var(--doke-shared-page-inline) * 2)));
+  --doke-shared-page-width: min(572px, calc(100vw - var(--doke-shared-page-inline) - var(--doke-shared-page-inline)));
+  --doke-section-gap: 28px;
+  --doke-header-height: 64px;
+  --doke-first-block-top: 64px;
+  --doke-card-grid-gap: 14px;
 }
 
-@media (max-width: 760px) {
-  body[data-page] {
-    --doke-mobile-page-edge: var(--doke-shared-page-inline) !important;
-    --doke-mobile-page-gutter: var(--doke-shared-page-inline) !important;
-    --doke-current-page-rail: var(--doke-shared-page-inline) !important;
-    --doke-tablet-page-edge: var(--doke-shared-page-inline) !important;
-    --doke-tablet-gutter: var(--doke-shared-page-inline) !important;
-    --detail-tablet-gutter: var(--doke-shared-page-inline) !important;
-    --detail-tablet-rail: var(--doke-shared-page-width) !important;
-    --home-index-mobile-column-inline: var(--doke-shared-page-inline) !important;
-    --home-index-mobile-column-width: var(--doke-shared-page-width) !important;
+@media (min-width: 608px) and (max-width: 760px) {
+  :root {
+    --doke-header-height: 86px;
+    --doke-first-block-top: 98px;
+    --doke-card-grid-gap: 14px;
   }
+}
 
-  body[data-page] > .app-shell > .page > .app-header > .app-header__inner,
-  body[data-page] > .app-shell > .page > .page__content > .page__content-inner,
-  body[data-page] .page__content-inner.container,
-  body[data-page] .shell-home__workspace,
-  body[data-page] .app-shell-page__workspace,
-  body[data-page] .doke-page-shell,
-  body[data-page] .page-container,
-  body[data-page] .internal-page-container {
-    width: var(--doke-shared-page-width) !important;
-    min-width: 0 !important;
-    max-width: var(--doke-shared-page-width) !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    box-sizing: border-box !important;
+@media (min-width: 761px) {
+  :root {
+    --doke-shared-page-inline: clamp(24px, 3vw, 48px);
+    --doke-shared-page-width: calc(100vw - 280px - var(--doke-shared-page-inline) - var(--doke-shared-page-inline));
+    --doke-header-height: 96px;
+    --doke-first-block-top: 108px;
+    --doke-section-gap: 32px;
+    --doke-card-grid-gap: 18px;
   }
+}
 
-  body[data-page] > .app-shell > .page > .page__content > .page__content-inner,
-  body[data-page] .page__content-inner.container,
-  body[data-page] .shell-home__workspace,
-  body[data-page] .app-shell-page__workspace,
-  body[data-page] .doke-page-shell {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-  }
-
-  body[data-page="home"] .page__content-inner > :is(
-    .home-search-hero,
-    section[class*="home-cat"],
-    .featured-services,
-    .home-recommendations,
-    .short-videos,
-    .home-publications,
-    .more-services,
-    .featured-pros
-  ),
-  body.home-index-shell .page__content-inner > :is(
-    .home-search-hero,
-    section[class*="home-cat"],
-    .featured-services,
-    .home-recommendations,
-    .short-videos,
-    .home-publications,
-    .more-services,
-    .featured-pros
-  ),
-  body[data-page="detalhe-anuncio"] .ad-detail-shell,
-  body[data-page="detalhe-anuncio"] .ad-detail-hero,
-  body[data-page="detalhe-anuncio"] .ad-action-card,
-  body[data-page="detalhe-anuncio"] .detail-section,
-  body[data-page="perfil"] .profile-shell-content > :is(
-    .profile-header,
-    .profile-hero,
-    .profile-content,
-    .profile-section,
-    .profile-main,
-    .profile-tabs,
-    .profile-publications,
-    .profile-services,
-    .profile-reviews
-  ) {
-    width: var(--doke-shared-page-width) !important;
-    max-width: var(--doke-shared-page-width) !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    box-sizing: border-box !important;
-  }
-
-  html body[data-page].doke-app-shell-page > .app-shell > .page > .page__content > .page__content-inner.page__content-inner,
-  html body[data-page].app-shell-page > .app-shell > .page > .page__content > .page__content-inner.page__content-inner,
-  html body[data-page].internal-shell-page > .app-shell > .page > .page__content > .page__content-inner.page__content-inner,
-  html body[data-page].has-global-header > .app-shell > .page > .app-header > .app-header__inner.app-header__inner,
-  html body[data-page].has-global-header > .app-shell > .page > .app-header.home-side-meta > .app-header__inner.app-header__inner,
-  html body[data-page] .page__content-inner.container.shell-home__workspace,
-  html body[data-page] .page__content-inner.app-shell-page__workspace.shell-home__workspace,
-  html body[data-page] .shell-home__workspace.shell-home__workspace,
-  html body[data-page] .doke-page-shell.doke-page-shell {
-    width: var(--doke-shared-page-width) !important;
-    min-width: 0 !important;
-    max-width: var(--doke-shared-page-width) !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    box-sizing: border-box !important;
-  }
-
-  html body[data-page="detalhe-anuncio"].doke-app-shell-page > .app-shell > .page > .page__content > .ad-detail-shell.ad-detail-shell,
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-shell.ad-detail-shell,
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-hero.ad-detail-hero,
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-action-card.ad-action-card,
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section.detail-section,
-  html body[data-page="perfil"].profile-page-shell > .app-shell > .page > .page__content > .profile-shell-content.profile-shell-content,
-  html body[data-page="perfil"] .profile-shell-content.profile-shell-content {
-    width: var(--doke-shared-page-width) !important;
-    min-width: 0 !important;
-    max-width: var(--doke-shared-page-width) !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    box-sizing: border-box !important;
+@media (min-width: 1180px) {
+  :root {
+    --doke-shared-page-inline: 48px;
+    --doke-section-gap: 36px;
   }
 }
 
 @media (max-width: 360px) {
   :root {
     --doke-shared-page-inline: 14px;
+    --doke-shared-page-width: calc(100vw - var(--doke-shared-page-inline) - var(--doke-shared-page-inline));
+  }
+}
+
+body[data-page] {
+  --doke-mobile-page-edge: var(--doke-shared-page-inline);
+  --doke-mobile-page-gutter: var(--doke-shared-page-inline);
+  --doke-current-page-rail: var(--doke-shared-page-inline);
+  --doke-tablet-page-edge: var(--doke-shared-page-inline);
+  --doke-tablet-gutter: var(--doke-shared-page-inline);
+  --detail-tablet-gutter: var(--doke-shared-page-inline);
+  --detail-tablet-rail: var(--doke-shared-page-width);
+  --home-index-mobile-column-inline: var(--doke-shared-page-inline);
+  --home-index-mobile-column-width: var(--doke-shared-page-width);
+  --rail-max: var(--doke-shared-page-width);
+  --rail-gap: var(--doke-card-grid-gap);
+  --grid-card-gap: var(--doke-card-grid-gap);
+  --section-gap: var(--doke-section-gap);
+}
+
+/* Canonical page rail: same width and centering contract as index.html. */
+body[data-page] :is(
+  .page__content-inner,
+  .page__content-inner.container,
+  .shell-home__workspace,
+  .shell-home__workspace--clean,
+  .app-shell-page__workspace,
+  .page-container,
+  .internal-page-container,
+  .ad-detail-shell,
+  .profile-shell-content,
+  .search-results-workspace,
+  .orders-shell-content,
+  .notifications-page-shell,
+  .communities-v2-shell,
+  .settings-page-frame,
+  .settings-page-shell,
+  .wallet-page,
+  .wallet-shell,
+  .wallet-content,
+  .messages-app
+) {
+  width: var(--doke-shared-page-width) !important;
+  min-width: 0 !important;
+  max-width: var(--doke-shared-page-width) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Section surfaces may define their own internal layout, but not escape the rail. */
+body[data-page] :is(
+  .home-search-hero,
+  .featured-services,
+  .home-recommendations,
+  .short-videos,
+  .home-publications,
+  .more-services,
+  .featured-pros,
+  .detail-section,
+  .ad-detail-hero,
+  .ad-action-card,
+  .profile-header,
+  .profile-hero,
+  .profile-content,
+  .profile-section,
+  .profile-tabs,
+  .results-searchbar,
+  .results-related,
+  .orders-page-header,
+  .orders-list,
+  .notifications-page-header,
+  .notifications-group,
+  .communities-v2-section,
+  .settings-layout,
+  .settings-card,
+  .wallet-section,
+  .wallet-balance-card
+) {
+  max-width: var(--doke-shared-page-width) !important;
+  box-sizing: border-box !important;
+}
+
+body[data-page] :is(
+  .doke-page-stack,
+  .page__content-inner,
+  .shell-home__workspace,
+  .shell-home__workspace--clean,
+  .app-shell-page__workspace,
+  .ad-detail-shell,
+  .profile-shell-content,
+  .search-results-workspace,
+  .orders-shell-content,
+  .notifications-page-shell,
+  .communities-v2-shell,
+  .settings-page-frame,
+  .wallet-shell,
+  .messages-app
+) {
+  gap: var(--doke-section-gap) !important;
+  row-gap: var(--doke-section-gap) !important;
+}
+
+/* Rails/grids keep index rhythm; card anatomy remains in card components. */
+body[data-page] :is(
+  .doke-scroll-rail,
+  .home-media-rail,
+  .content-rail,
+  .service-grid,
+  .publication-grid,
+  .doke-grid,
+  .results-grid,
+  .results-users-grid,
+  .results-videos-grid,
+  .communities-v2-grid,
+  .communities-v2-continue-grid,
+  .detail-related-grid,
+  .detail-related-media-rail
+) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  gap: var(--doke-card-grid-gap) !important;
+  column-gap: var(--doke-card-grid-gap) !important;
+  row-gap: var(--doke-card-grid-gap) !important;
+  box-sizing: border-box !important;
+}
+
+/* Match index first useful block rhythm for pages using the shared app header. */
+body[data-page].has-global-header :is(
+  .page__content-inner,
+  .shell-home__workspace,
+  .app-shell-page__workspace,
+  .ad-detail-shell,
+  .profile-shell-content,
+  .orders-shell-content,
+  .notifications-page-shell,
+  .communities-v2-shell,
+  .wallet-shell,
+  .messages-app
+) {
+  margin-top: 0 !important;
+}
+
+body[data-page].has-global-header .page__content {
+  padding-top: var(--doke-first-block-top) !important;
+}
+
+body[data-page="home"].has-global-header .page__content {
+  padding-top: 0 !important;
+}
+
+@media (min-width: 761px) {
+  body[data-page] :is(
+    .page__content-inner,
+    .page__content-inner.container,
+    .shell-home__workspace,
+    .app-shell-page__workspace,
+      .page-container,
+    .internal-page-container,
+    .ad-detail-shell,
+    .profile-shell-content,
+    .search-results-workspace,
+    .orders-shell-content,
+    .notifications-page-shell,
+    .communities-v2-shell,
+    .settings-page-frame,
+    .settings-page-shell,
+    .wallet-page,
+    .wallet-shell,
+    .wallet-content,
+    .messages-app
+  ) {
+    width: var(--doke-shared-page-width) !important;
+    max-width: var(--doke-shared-page-width) !important;
+  }
+}
+
+
+/* High-specificity legacy neutralization: old page CSS used html/body selectors
+   and !important to redefine page rails. This layer restores the shared index rail. */
+html body[data-page] :is(
+  .page__content-inner.page__content-inner,
+  .page__content-inner.container,
+  .shell-home__workspace.shell-home__workspace,
+  .app-shell-page__workspace.app-shell-page__workspace,
+  .ad-detail-shell.ad-detail-shell,
+  .profile-shell-content.profile-shell-content,
+  .search-results-workspace.search-results-workspace,
+  .orders-shell-content.orders-shell-content,
+  .notifications-page-shell.notifications-page-shell,
+  .communities-v2-shell.communities-v2-shell,
+  .settings-page-frame.settings-page-frame,
+  .settings-page-shell.settings-page-shell,
+  .wallet-page.wallet-page,
+  .wallet-shell.wallet-shell,
+  .wallet-content.wallet-content,
+  .messages-app.messages-app
+) {
+  width: var(--doke-shared-page-width) !important;
+  min-width: 0 !important;
+  max-width: var(--doke-shared-page-width) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box !important;
+}
+
+html body[data-page] :is(
+  .home-search-hero.home-search-hero,
+  .featured-services.featured-services,
+  .home-recommendations.home-recommendations,
+  .short-videos.short-videos,
+  .home-publications.home-publications,
+  .more-services.more-services,
+  .featured-pros.featured-pros,
+  .detail-section.detail-section,
+  .ad-detail-hero.ad-detail-hero,
+  .ad-action-card.ad-action-card,
+  .profile-header.profile-header,
+  .profile-hero.profile-hero,
+  .profile-content.profile-content,
+  .profile-section.profile-section,
+  .profile-tabs.profile-tabs,
+  .results-searchbar.results-searchbar,
+  .results-related.results-related,
+  .orders-page-header.orders-page-header,
+  .orders-list.orders-list,
+  .notifications-page-header.notifications-page-header,
+  .notifications-group.notifications-group,
+  .communities-v2-section.communities-v2-section,
+  .settings-layout.settings-layout,
+  .settings-card.settings-card,
+  .wallet-section.wallet-section,
+  .wallet-balance-card.wallet-balance-card
+) {
+  max-width: var(--doke-shared-page-width) !important;
+  box-sizing: border-box !important;
+}
+
+html body[data-page] :is(
+  .doke-scroll-rail.doke-scroll-rail,
+  .home-media-rail.home-media-rail,
+  .content-rail.content-rail,
+  .service-grid.service-grid,
+  .publication-grid.publication-grid,
+  .doke-grid.doke-grid,
+  .results-grid.results-grid,
+  .results-users-grid.results-users-grid,
+  .results-videos-grid.results-videos-grid,
+  .communities-v2-grid.communities-v2-grid,
+  .communities-v2-continue-grid.communities-v2-continue-grid,
+  .detail-related-grid.detail-related-grid,
+  .detail-related-media-rail.detail-related-media-rail
+) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  gap: var(--doke-card-grid-gap) !important;
+  column-gap: var(--doke-card-grid-gap) !important;
+  row-gap: var(--doke-card-grid-gap) !important;
+  box-sizing: border-box !important;
+}
+
+/* Literal fallbacks for browsers/cascade layers that do not resolve shared var in old pages. */
+@media (max-width: 760px) {
+  html body[data-page] :is(
+    .page__content-inner.page__content-inner,
+    .page__content-inner.container,
+    .shell-home__workspace.shell-home__workspace,
+    .app-shell-page__workspace.app-shell-page__workspace,
+    .ad-detail-shell.ad-detail-shell,
+    .profile-shell-content.profile-shell-content,
+    .search-results-workspace.search-results-workspace,
+    .orders-shell-content.orders-shell-content,
+    .notifications-page-shell.notifications-page-shell,
+    .communities-v2-shell.communities-v2-shell,
+    .settings-page-frame.settings-page-frame,
+    .settings-page-shell.settings-page-shell,
+    .wallet-page.wallet-page,
+    .wallet-shell.wallet-shell,
+    .wallet-content.wallet-content,
+    .messages-app.messages-app
+  ) {
+    width: min(572px, calc(100vw - 36px)) !important;
+    max-width: min(572px, calc(100vw - 36px)) !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1179px) {
+  html body[data-page] :is(
+    .page__content-inner.page__content-inner,
+    .page__content-inner.container,
+    .shell-home__workspace.shell-home__workspace,
+    .app-shell-page__workspace.app-shell-page__workspace,
+    .ad-detail-shell.ad-detail-shell,
+    .profile-shell-content.profile-shell-content,
+    .search-results-workspace.search-results-workspace,
+    .orders-shell-content.orders-shell-content,
+    .notifications-page-shell.notifications-page-shell,
+    .communities-v2-shell.communities-v2-shell,
+    .settings-page-frame.settings-page-frame,
+    .settings-page-shell.settings-page-shell,
+    .wallet-page.wallet-page,
+    .wallet-shell.wallet-shell,
+    .wallet-content.wallet-content,
+    .messages-app.messages-app
+  ) {
+    width: calc(100vw - 280px - clamp(24px, 3vw, 48px) - clamp(24px, 3vw, 48px)) !important;
+    max-width: calc(100vw - 280px - clamp(24px, 3vw, 48px) - clamp(24px, 3vw, 48px)) !important;
+  }
+}
+
+@media (min-width: 1180px) {
+  html body[data-page] :is(
+    .page__content-inner.page__content-inner,
+    .page__content-inner.container,
+    .shell-home__workspace.shell-home__workspace,
+    .app-shell-page__workspace.app-shell-page__workspace,
+    .ad-detail-shell.ad-detail-shell,
+    .profile-shell-content.profile-shell-content,
+    .search-results-workspace.search-results-workspace,
+    .orders-shell-content.orders-shell-content,
+    .notifications-page-shell.notifications-page-shell,
+    .communities-v2-shell.communities-v2-shell,
+    .settings-page-frame.settings-page-frame,
+    .settings-page-shell.settings-page-shell,
+    .wallet-page.wallet-page,
+    .wallet-shell.wallet-shell,
+    .wallet-content.wallet-content,
+    .messages-app.messages-app
+  ) {
+    width: calc(100vw - 280px - 96px) !important;
+    max-width: calc(100vw - 280px - 96px) !important;
+  }
+}
+
+/* Exact shared rail selectors for legacy pages with very specific page CSS. */
+html body[data-page="home"].home-index-shell .page .page__content .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean,
+html body[data-page="perfil"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+html body[data-page="resultados"] .page .page__content .page__content-inner.container.app-shell-page__workspace.search-results-workspace,
+html body[data-page="pedidos"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+html body[data-page="mensagens"] .page .page__content .page__content-inner.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace,
+html body[data-page="notificacoes"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+html body[data-page="comunidade"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+html body[data-page="carteira"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+html body[data-page="detalhe-anuncio"] .page .page__content .ad-detail-shell,
+html body[data-page="configuracoes"] .page.settings-page-frame,
+html body[data-page="configuracoes"] .settings-content {
+  width: var(--doke-shared-page-width) !important;
+  min-width: 0 !important;
+  max-width: var(--doke-shared-page-width) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-page="home"].home-index-shell .page .page__content .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean,
+  html body[data-page="perfil"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="resultados"] .page .page__content .page__content-inner.container.app-shell-page__workspace.search-results-workspace,
+  html body[data-page="pedidos"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="mensagens"] .page .page__content .page__content-inner.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace,
+  html body[data-page="notificacoes"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="comunidade"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="carteira"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="detalhe-anuncio"] .page .page__content .ad-detail-shell,
+  html body[data-page="configuracoes"] .page.settings-page-frame,
+  html body[data-page="configuracoes"] .settings-content {
+    width: min(572px, calc(100vw - 36px)) !important;
+    max-width: min(572px, calc(100vw - 36px)) !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1179px) {
+  html body[data-page="home"].home-index-shell .page .page__content .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean,
+  html body[data-page="perfil"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="resultados"] .page .page__content .page__content-inner.container.app-shell-page__workspace.search-results-workspace,
+  html body[data-page="pedidos"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="mensagens"] .page .page__content .page__content-inner.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace,
+  html body[data-page="notificacoes"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="comunidade"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="carteira"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="detalhe-anuncio"] .page .page__content .ad-detail-shell,
+  html body[data-page="configuracoes"] .page.settings-page-frame,
+  html body[data-page="configuracoes"] .settings-content {
+    width: calc(100vw - 280px - clamp(24px, 3vw, 48px) - clamp(24px, 3vw, 48px)) !important;
+    max-width: calc(100vw - 280px - clamp(24px, 3vw, 48px) - clamp(24px, 3vw, 48px)) !important;
+  }
+}
+
+@media (min-width: 1180px) {
+  html body[data-page="home"].home-index-shell .page .page__content .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean,
+  html body[data-page="perfil"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="resultados"] .page .page__content .page__content-inner.container.app-shell-page__workspace.search-results-workspace,
+  html body[data-page="pedidos"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="mensagens"] .page .page__content .page__content-inner.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace,
+  html body[data-page="notificacoes"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="comunidade"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="carteira"] .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="detalhe-anuncio"] .page .page__content .ad-detail-shell,
+  html body[data-page="configuracoes"] .page.settings-page-frame,
+  html body[data-page="configuracoes"] .settings-content {
+    width: calc(100vw - 280px - 96px) !important;
+    max-width: calc(100vw - 280px - 96px) !important;
+  }
+}
+
+/* Authority rail layer: page-entrypoint selectors outrank historical page contracts. */
+html body[data-page="home"].home-index-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean,
+html body[data-page="detalhe-anuncio"].detalhe-shell-page .ad-detail-shell.ad-detail-shell,
+html body[data-page="perfil"].profile-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.profile-shell-content.profile-shell-content.doke-page-shell.doke-page-stack,
+html body[data-page="resultados"].search-results-body .page__content-inner.container.app-shell-page__workspace.search-results-workspace.search-results-workspace--internal.doke-page-shell.doke-page-stack,
+html body[data-page="pedidos"].orders-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack,
+html body[data-page="mensagens"].messages-page-shell .page__content-inner.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.messages-shell-content.doke-page-shell.doke-page-stack,
+html body[data-page="notificacoes"].notifications-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack,
+html body[data-page="comunidade"].communities-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.communities-page-shell.doke-page-shell.doke-page-stack,
+html body[data-page="carteira"].wallet-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.wallet-shell-content.doke-page-shell.doke-page-stack,
+html body[data-page="configuracoes"].settings-page-shell .page.settings-page-frame,
+html body[data-page="configuracoes"].settings-page-shell .settings-content.settings-content {
+  width: var(--doke-shared-page-width) !important;
+  min-width: 0 !important;
+  max-width: var(--doke-shared-page-width) !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-page="home"].home-index-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean,
+  html body[data-page="detalhe-anuncio"].detalhe-shell-page .ad-detail-shell.ad-detail-shell,
+  html body[data-page="perfil"].profile-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.profile-shell-content.profile-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="resultados"].search-results-body .page__content-inner.container.app-shell-page__workspace.search-results-workspace.search-results-workspace--internal.doke-page-shell.doke-page-stack,
+  html body[data-page="pedidos"].orders-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="mensagens"].messages-page-shell .page__content-inner.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.messages-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="notificacoes"].notifications-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="comunidade"].communities-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.communities-page-shell.doke-page-shell.doke-page-stack,
+  html body[data-page="carteira"].wallet-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.wallet-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="configuracoes"].settings-page-shell .page.settings-page-frame,
+  html body[data-page="configuracoes"].settings-page-shell .settings-content.settings-content {
+    width: min(572px, calc(100vw - 36px)) !important;
+    max-width: min(572px, calc(100vw - 36px)) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1179px) {
+  html body[data-page="home"].home-index-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean,
+  html body[data-page="detalhe-anuncio"].detalhe-shell-page .ad-detail-shell.ad-detail-shell,
+  html body[data-page="perfil"].profile-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.profile-shell-content.profile-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="resultados"].search-results-body .page__content-inner.container.app-shell-page__workspace.search-results-workspace.search-results-workspace--internal.doke-page-shell.doke-page-stack,
+  html body[data-page="pedidos"].orders-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="mensagens"].messages-page-shell .page__content-inner.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.messages-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="notificacoes"].notifications-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="comunidade"].communities-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.communities-page-shell.doke-page-shell.doke-page-stack,
+  html body[data-page="carteira"].wallet-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.wallet-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="configuracoes"].settings-page-shell .page.settings-page-frame,
+  html body[data-page="configuracoes"].settings-page-shell .settings-content.settings-content {
+    width: calc(100vw - 280px - clamp(24px, 3vw, 48px) - clamp(24px, 3vw, 48px)) !important;
+    max-width: calc(100vw - 280px - clamp(24px, 3vw, 48px) - clamp(24px, 3vw, 48px)) !important;
+    margin-left: calc(280px + clamp(24px, 3vw, 48px)) !important;
+    margin-right: clamp(24px, 3vw, 48px) !important;
+  }
+}
+
+@media (min-width: 1180px) {
+  html body[data-page="home"].home-index-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean,
+  html body[data-page="detalhe-anuncio"].detalhe-shell-page .ad-detail-shell.ad-detail-shell,
+  html body[data-page="perfil"].profile-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.profile-shell-content.profile-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="resultados"].search-results-body .page__content-inner.container.app-shell-page__workspace.search-results-workspace.search-results-workspace--internal.doke-page-shell.doke-page-stack,
+  html body[data-page="pedidos"].orders-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="mensagens"].messages-page-shell .page__content-inner.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.messages-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="notificacoes"].notifications-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="comunidade"].communities-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.communities-page-shell.doke-page-shell.doke-page-stack,
+  html body[data-page="carteira"].wallet-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.wallet-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="configuracoes"].settings-page-shell .page.settings-page-frame,
+  html body[data-page="configuracoes"].settings-page-shell .settings-content.settings-content {
+    width: calc(100vw - 280px - 96px) !important;
+    max-width: calc(100vw - 280px - 96px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+
+/* Additional named shell aliases used by pages that still share legacy class names. */
+html body[data-page="comunidade"].communities-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack,
+html body[data-page="mensagens"].messages-page-shell .messages-shell-content.messages-shell-content,
+html body[data-page="notificacoes"].notifications-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack {
+  width: var(--doke-shared-page-width) !important;
+  min-width: 0 !important;
+  max-width: var(--doke-shared-page-width) !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 760px) {
+  html body[data-page="comunidade"].communities-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="mensagens"].messages-page-shell .messages-shell-content.messages-shell-content,
+  html body[data-page="notificacoes"].notifications-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack {
+    width: min(572px, calc(100vw - 36px)) !important;
+    max-width: min(572px, calc(100vw - 36px)) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1179px) {
+  html body[data-page="comunidade"].communities-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="mensagens"].messages-page-shell .messages-shell-content.messages-shell-content,
+  html body[data-page="notificacoes"].notifications-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack {
+    width: calc(100vw - 280px - clamp(24px, 3vw, 48px) - clamp(24px, 3vw, 48px)) !important;
+    max-width: calc(100vw - 280px - clamp(24px, 3vw, 48px) - clamp(24px, 3vw, 48px)) !important;
+    margin-left: calc(280px + clamp(24px, 3vw, 48px)) !important;
+    margin-right: clamp(24px, 3vw, 48px) !important;
+  }
+}
+
+@media (min-width: 1180px) {
+  html body[data-page="comunidade"].communities-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="mensagens"].messages-page-shell .messages-shell-content.messages-shell-content,
+  html body[data-page="notificacoes"].notifications-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack {
+    width: calc(100vw - 280px - 96px) !important;
+    max-width: calc(100vw - 280px - 96px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
   }
 }

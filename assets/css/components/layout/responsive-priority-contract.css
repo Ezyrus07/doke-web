@@ -1,0 +1,808 @@
+/* Doke responsive priority contract
+ * Objective fixes only, ordered by audit priority.
+ * P1: shared header geometry, shared rails/containers and horizontal overflow.
+ */
+
+html,
+body,
+.page,
+.app-shell,
+.page__content {
+  max-inline-size: 100%;
+  overflow-x: clip;
+}
+
+@supports not (overflow: clip) {
+  html,
+  body,
+  .page,
+  .app-shell,
+  .page__content {
+    overflow-x: hidden;
+  }
+}
+
+body[data-page] :is(.page, .page__content, .app-shell, .app-header, .app-header__inner) {
+  box-sizing: border-box !important;
+}
+
+/* P1 — Header baseline: 608x926 index measurement. */
+@media (min-width: 600px) and (max-width: 760px) {
+  html body > .app-shell > .page > .app-header.home-side-meta,
+  html body.has-global-header > .app-shell > .page > .app-header.home-side-meta,
+  html body[data-page] > .app-shell > .page > .app-header.home-side-meta,
+  html body[data-page] .page > .app-header.home-side-meta {
+    display: block !important;
+    position: relative !important;
+    inset: auto !important;
+    inline-size: 100vw !important;
+    width: 100vw !important;
+    min-inline-size: 100vw !important;
+    max-inline-size: 100vw !important;
+    block-size: 86px !important;
+    height: 86px !important;
+    min-block-size: 86px !important;
+    max-block-size: 86px !important;
+    min-height: 86px !important;
+    max-height: 86px !important;
+    margin: 0 !important;
+    padding: 20px 0 18px !important;
+    overflow: visible !important;
+    transform: none !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  html body > .app-shell > .page > .app-header.home-side-meta > .app-header__inner,
+  html body.has-global-header > .app-shell > .page > .app-header.home-side-meta > .app-header__inner,
+  html body[data-page] > .app-shell > .page > .app-header.home-side-meta > .app-header__inner,
+  html body[data-page] .page > .app-header.home-side-meta > .app-header__inner {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    inline-size: calc(100vw - 36px) !important;
+    width: calc(100vw - 36px) !important;
+    min-inline-size: calc(100vw - 36px) !important;
+    max-inline-size: 572px !important;
+    block-size: 48px !important;
+    height: 48px !important;
+    min-block-size: 48px !important;
+    max-block-size: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    margin-inline: auto !important;
+    padding: 0 !important;
+    gap: 10px !important;
+    transform: none !important;
+  }
+
+  html body .app-header.home-side-meta :is(.app-header__group, .home-side-meta__group) {
+    display: flex !important;
+    align-items: center !important;
+    block-size: 48px !important;
+    height: 48px !important;
+    min-block-size: 48px !important;
+    max-block-size: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    gap: 10px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+  }
+
+  html body .app-header.home-side-meta :is(.app-header__group--primary, .home-side-meta__group--primary) {
+    flex: 1 1 auto !important;
+    min-inline-size: 0 !important;
+    justify-content: flex-start !important;
+  }
+
+  html body .app-header.home-side-meta :is(.app-header__group--secondary, .home-side-meta__group--secondary) {
+    flex: 0 0 auto !important;
+    min-inline-size: 0 !important;
+    justify-content: flex-end !important;
+    margin-left: auto !important;
+  }
+
+  html body .app-header.home-side-meta :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .detail-standard-topbar__back, .doke-icon-btn) {
+    inline-size: 48px !important;
+    width: 48px !important;
+    min-inline-size: 48px !important;
+    max-inline-size: 48px !important;
+    block-size: 48px !important;
+    height: 48px !important;
+    min-block-size: 48px !important;
+    max-block-size: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    flex: 0 0 48px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 16px !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+  }
+
+  html body .app-header.home-side-meta .home-side-meta__location {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    inline-size: 170.23px !important;
+    width: 170.23px !important;
+    min-inline-size: 170.23px !important;
+    max-inline-size: 170.23px !important;
+    block-size: 48px !important;
+    height: 48px !important;
+    min-block-size: 48px !important;
+    max-block-size: 48px !important;
+    flex: 0 0 170.23px !important;
+    margin: 0 !important;
+    padding: 0 14px !important;
+    border-radius: 18px !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+  }
+
+  html body .app-header.home-side-meta .home-side-meta__profile-wrap,
+  html body .app-header.home-side-meta .home-side-meta__profile {
+    block-size: 48px !important;
+    height: 48px !important;
+    min-block-size: 48px !important;
+    max-block-size: 48px !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+
+  html body .app-header.home-side-meta .home-side-meta__profile {
+    inline-size: 48px !important;
+    width: 48px !important;
+    min-inline-size: 48px !important;
+    max-inline-size: 48px !important;
+    flex: 0 0 48px !important;
+    padding: 6px !important;
+    border-radius: 16px !important;
+    box-sizing: border-box !important;
+  }
+
+  html body .app-header.home-side-meta .home-side-meta__avatar,
+  html body .app-header.home-side-meta .home-side-meta__profile img,
+  html body .app-header.home-side-meta .home-side-meta__profile .doke-avatar,
+  html body .app-header.home-side-meta .home-side-meta__profile .avatar {
+    inline-size: 34px !important;
+    width: 34px !important;
+    min-inline-size: 34px !important;
+    max-inline-size: 34px !important;
+    block-size: 34px !important;
+    height: 34px !important;
+    min-block-size: 34px !important;
+    max-block-size: 34px !important;
+    border-radius: 999px !important;
+  }
+
+  html body .app-header.home-side-meta .page-header-context.messages-page-actions {
+    display: none !important;
+  }
+}
+
+/* P1 — Header baseline: 1280x800 index measurement. */
+@media (min-width: 1180px) {
+  html body:not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta,
+  html body.has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta,
+  html body[data-page]:not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta,
+  html body[data-page]:not(.home-index-shell) .page > .app-header.home-side-meta {
+    position: relative !important;
+    inset: auto !important;
+    inline-size: calc(100vw - 272px) !important;
+    width: calc(100vw - 272px) !important;
+    min-inline-size: calc(100vw - 272px) !important;
+    max-inline-size: calc(100vw - 272px) !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
+    transform: none !important;
+  }
+
+  html body:not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta > .app-header__inner,
+  html body.has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta > .app-header__inner,
+  html body[data-page]:not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta > .app-header__inner,
+  html body[data-page]:not(.home-index-shell) .page > .app-header.home-side-meta > .app-header__inner {
+    inline-size: 835.22px !important;
+    width: 835.22px !important;
+    min-inline-size: 835.22px !important;
+    max-inline-size: 835.22px !important;
+    block-size: 48px !important;
+    height: 48px !important;
+    min-block-size: 48px !important;
+    max-block-size: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    margin-inline: auto !important;
+    padding: 0 !important;
+    gap: 12px !important;
+    transform: none !important;
+  }
+
+  html body .app-header.home-side-meta .home-side-meta__profile {
+    inline-size: 133.27px !important;
+    width: 133.27px !important;
+    min-inline-size: 133.27px !important;
+    max-inline-size: 133.27px !important;
+    block-size: 48px !important;
+    height: 48px !important;
+    min-block-size: 48px !important;
+    max-block-size: 48px !important;
+    flex: 0 0 133.27px !important;
+    padding: 6px 14px 6px 8px !important;
+    border-radius: 18px !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+  }
+
+  html body .app-header.home-side-meta .page-header-context.messages-page-actions {
+    display: none !important;
+  }
+}
+
+/* P1 v1.1 — high-specificity neutralization for legacy page header CSS. */
+@media (min-width: 600px) and (max-width: 760px) {
+  html body[data-page] .app-shell > .page > header.app-header.home-side-meta.app-header.home-side-meta,
+  html body[data-page] .app-shell > .page > .doke-tablet-shell-header.app-header.home-side-meta.app-header.home-side-meta {
+    left: calc((100% - 100vw) / 2) !important;
+    right: auto !important;
+    width: 100vw !important;
+    inline-size: 100vw !important;
+    min-width: 100vw !important;
+    max-width: 100vw !important;
+    height: 86px !important;
+    min-height: 86px !important;
+    max-height: 86px !important;
+    block-size: 86px !important;
+    min-block-size: 86px !important;
+    max-block-size: 86px !important;
+    padding: 20px 0 18px !important;
+    margin: 0 !important;
+  }
+
+  html body[data-page] .app-shell > .page > header.app-header.home-side-meta.app-header.home-side-meta > .app-header__inner.app-header__inner,
+  html body[data-page] .app-shell > .page > .doke-tablet-shell-header.app-header.home-side-meta.app-header.home-side-meta > .app-header__inner.app-header__inner {
+    width: calc(100vw - 36px) !important;
+    inline-size: calc(100vw - 36px) !important;
+    min-width: calc(100vw - 36px) !important;
+    max-width: 572px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    block-size: 48px !important;
+    min-block-size: 48px !important;
+    max-block-size: 48px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    gap: 10px !important;
+  }
+
+  html body[data-page] .app-header.home-side-meta .home-side-meta__location.home-side-meta__location {
+    width: 170.23px !important;
+    inline-size: 170.23px !important;
+    min-width: 170.23px !important;
+    max-width: 170.23px !important;
+    min-inline-size: 170.23px !important;
+    max-inline-size: 170.23px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    flex: 0 0 170.23px !important;
+    padding: 0 14px !important;
+  }
+
+  html body[data-page] .app-header.home-side-meta :is(.home-side-meta__tablet-menu.home-side-meta__tablet-menu, .home-side-meta__search.home-side-meta__search, .home-side-meta__alert.home-side-meta__alert, .detail-standard-topbar__back.detail-standard-topbar__back) {
+    width: 48px !important;
+    inline-size: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    flex: 0 0 48px !important;
+    padding: 0 !important;
+  }
+
+  html body[data-page] .app-header.home-side-meta .home-side-meta__avatar.home-side-meta__avatar,
+  html body[data-page] .app-header.home-side-meta .home-side-meta__profile .home-side-meta__avatar.home-side-meta__avatar,
+  html body[data-page] .app-header.home-side-meta .home-side-meta__profile img.home-side-meta__avatar,
+  html body[data-page] .app-header.home-side-meta .home-side-meta__profile .doke-avatar.doke-avatar {
+    border-radius: 999px !important;
+    width: 34px !important;
+    height: 34px !important;
+    inline-size: 34px !important;
+    block-size: 34px !important;
+  }
+}
+
+@media (min-width: 1180px) {
+  html body[data-page]:not(.home-index-shell) .app-shell > .page > header.app-header.home-side-meta.app-header.home-side-meta,
+  html body[data-page]:not(.home-index-shell) .app-shell > .page > .doke-tablet-shell-header.app-header.home-side-meta.app-header.home-side-meta {
+    left: -8px !important;
+    width: 1008px !important;
+    inline-size: 1008px !important;
+    min-width: 1008px !important;
+    max-width: 1008px !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
+  }
+
+  html body[data-page]:not(.home-index-shell) .app-shell > .page > header.app-header.home-side-meta.app-header.home-side-meta > .app-header__inner.app-header__inner,
+  html body[data-page]:not(.home-index-shell) .app-shell > .page > .doke-tablet-shell-header.app-header.home-side-meta.app-header.home-side-meta > .app-header__inner.app-header__inner {
+    width: 835.22px !important;
+    inline-size: 835.22px !important;
+    min-width: 835.22px !important;
+    max-width: 835.22px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    block-size: 48px !important;
+    min-block-size: 48px !important;
+    max-block-size: 48px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    gap: 12px !important;
+  }
+
+  html body[data-page] .app-header.home-side-meta .home-side-meta__profile.home-side-meta__profile {
+    width: 133.27px !important;
+    inline-size: 133.27px !important;
+    min-width: 133.27px !important;
+    max-width: 133.27px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    flex: 0 0 133.27px !important;
+    padding: 6px 14px 6px 8px !important;
+  }
+}
+
+/* P1 v1.2 — remove residual positional/cardinal overrides inside header controls. */
+@media (min-width: 600px) {
+  html body[data-page] .app-header.home-side-meta :is(
+    .home-side-meta__tablet-menu,
+    .home-side-meta__search,
+    .home-side-meta__alert,
+    .detail-standard-topbar__back,
+    .home-side-meta__location,
+    .home-side-meta__profile,
+    .home-side-meta__profile-wrap,
+    .home-side-meta__avatar
+  ) {
+    position: static !important;
+    inset: auto !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    translate: none !important;
+    transform: none !important;
+    align-self: center !important;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 760px) {
+  html body[data-page="perfil"] .app-shell > .page > header.app-header.home-side-meta.app-header.home-side-meta {
+    left: 0 !important;
+  }
+
+  html body[data-page="perfil"] .app-header.home-side-meta .home-side-meta__location.home-side-meta__location,
+  html body[data-page="perfil"] .app-header.home-side-meta button.home-side-meta__location.home-side-meta__location {
+    display: inline-flex !important;
+    width: 170.23px !important;
+    inline-size: 170.23px !important;
+    min-width: 170.23px !important;
+    max-width: 170.23px !important;
+    min-inline-size: 170.23px !important;
+    max-inline-size: 170.23px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    flex: 0 0 170.23px !important;
+    padding: 0 14px !important;
+  }
+}
+
+@media (min-width: 1180px) {
+  html body[data-page="perfil"] .app-shell > .page > header.app-header.home-side-meta.app-header.home-side-meta > .app-header__inner.app-header__inner,
+  html body[data-page="perfil"] .app-header.home-side-meta > .app-header__inner.app-header__inner {
+    width: 835.22px !important;
+    inline-size: 835.22px !important;
+    min-width: 835.22px !important;
+    max-width: 835.22px !important;
+    margin: 0 auto !important;
+  }
+
+  html body[data-page="mensagens"] .app-header.home-side-meta :is(.home-side-meta__profile-wrap, .home-side-meta__profile) {
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    align-self: center !important;
+  }
+
+  html body[data-page="mensagens"] .app-header.home-side-meta .home-side-meta__avatar.home-side-meta__avatar,
+  html body[data-page="mensagens"] .app-header.home-side-meta .home-side-meta__profile img.home-side-meta__avatar {
+    width: 36px !important;
+    height: 36px !important;
+    inline-size: 36px !important;
+    block-size: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    max-width: 36px !important;
+    max-height: 36px !important;
+  }
+}
+
+/* P1 v1.3 — group-level high specificity for pages with tablet/desktop shell overrides. */
+@media (min-width: 600px) {
+  html body[data-page] .app-header.home-side-meta .app-header__group.app-header__group,
+  html body[data-page] .app-header.home-side-meta .home-side-meta__group.home-side-meta__group,
+  html body[data-page] .app-header.home-side-meta .app-header__group.home-side-meta__group.app-header__group.home-side-meta__group {
+    position: static !important;
+    inset: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    block-size: 48px !important;
+    min-block-size: 48px !important;
+    max-block-size: 48px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    gap: 10px !important;
+    transform: none !important;
+  }
+
+  html body[data-page] .app-header.home-side-meta :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .detail-standard-topbar__back, .home-side-meta__location, .home-side-meta__profile, .home-side-meta__profile-wrap).home-side-meta__tablet-menu,
+  html body[data-page] .app-header.home-side-meta :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .detail-standard-topbar__back, .home-side-meta__location, .home-side-meta__profile, .home-side-meta__profile-wrap).home-side-meta__search,
+  html body[data-page] .app-header.home-side-meta :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .detail-standard-topbar__back, .home-side-meta__location, .home-side-meta__profile, .home-side-meta__profile-wrap).home-side-meta__alert,
+  html body[data-page] .app-header.home-side-meta :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .detail-standard-topbar__back, .home-side-meta__location, .home-side-meta__profile, .home-side-meta__profile-wrap).detail-standard-topbar__back,
+  html body[data-page] .app-header.home-side-meta .home-side-meta__location.home-side-meta__location,
+  html body[data-page] .app-header.home-side-meta .home-side-meta__profile.home-side-meta__profile,
+  html body[data-page] .app-header.home-side-meta .home-side-meta__profile-wrap.home-side-meta__profile-wrap {
+    margin: 0 !important;
+  }
+}
+
+@media (min-width: 1180px) {
+  html body[data-page] .app-header.home-side-meta .app-header__group.app-header__group,
+  html body[data-page] .app-header.home-side-meta .home-side-meta__group.home-side-meta__group {
+    gap: 12px !important;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 760px) {
+  html body[data-page="perfil"] .app-header.app-header--profile.home-side-meta .home-side-meta__location.home-side-meta__location.home-side-meta__location {
+    width: 170.23px !important;
+    inline-size: 170.23px !important;
+    min-width: 170.23px !important;
+    max-width: 170.23px !important;
+    min-inline-size: 170.23px !important;
+    max-inline-size: 170.23px !important;
+    flex-basis: 170.23px !important;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+}
+
+@media (min-width: 1180px) {
+  html body[data-page="perfil"] .app-header.app-header--profile.home-side-meta .app-header__inner.app-header__inner.app-header__inner {
+    width: 835.22px !important;
+    inline-size: 835.22px !important;
+    min-width: 835.22px !important;
+    max-width: 835.22px !important;
+  }
+}
+
+/* P1 v1.4 — exact overrides for profile professional legacy rail/header CSS. */
+@media (min-width: 600px) and (max-width: 760px) {
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view] .app-header--profile.home-side-meta .home-side-meta__location.home-side-meta__location,
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view] .app-header--profile.home-side-meta button.home-side-meta__location.home-side-meta__location {
+    flex: 0 0 170.23px !important;
+    width: 170.23px !important;
+    min-width: 170.23px !important;
+    max-width: 170.23px !important;
+    inline-size: 170.23px !important;
+    min-inline-size: 170.23px !important;
+    max-inline-size: 170.23px !important;
+    padding: 0 14px !important;
+    justify-content: center !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view] .app-header--profile.home-side-meta .home-side-meta__location::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view] .app-header--profile.home-side-meta :is(.home-side-meta__location-dot, .home-side-meta__location-text, .home-side-meta__caret) {
+    display: block !important;
+  }
+}
+
+@media (min-width: 1180px) {
+  html body[data-page="perfil"].profile-page-shell.doke-app-shell-page.has-global-header[data-profile-view][data-profile-type] > .app-shell > .page > .app-header.home-side-meta > .app-header__inner.app-header__inner:not(#dokeStableRailA):not(#dokeStableRailB):not(#dokeStableRailC) {
+    width: 835.22px !important;
+    max-width: 835.22px !important;
+    inline-size: 835.22px !important;
+    max-inline-size: 835.22px !important;
+    min-width: 835.22px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+
+/* P2 — Shared card dimensions aligned to index.html runtime baseline.
+   Scope is restricted to detalhe-anuncio equivalents that were measured divergent. */
+body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar,
+body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card,
+body[data-page="detalhe-anuncio"] .detail-related-workers__track > .video-card.doke-worker-card {
+  box-sizing: border-box !important;
+  flex: 0 0 auto !important;
+}
+
+@media (max-width: 599px) {
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar {
+    width: 108px !important;
+    inline-size: 108px !important;
+    min-width: 108px !important;
+    max-width: 108px !important;
+    height: 425.83px !important;
+    block-size: 425.83px !important;
+    min-height: 425.83px !important;
+    max-height: 425.83px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card {
+    width: 354px !important;
+    inline-size: 354px !important;
+    min-width: 354px !important;
+    max-width: 354px !important;
+    height: 330px !important;
+    block-size: 330px !important;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 760px) {
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar {
+    width: 572px !important;
+    inline-size: 572px !important;
+    min-width: 572px !important;
+    max-width: 572px !important;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar:nth-of-type(1) {
+    height: 564.47px !important;
+    block-size: 564.47px !important;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar:nth-of-type(2) {
+    height: 570.48px !important;
+    block-size: 570.48px !important;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar:nth-of-type(3) {
+    height: 603.92px !important;
+    block-size: 603.92px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card {
+    width: 572px !important;
+    inline-size: 572px !important;
+    min-width: 572px !important;
+    max-width: 572px !important;
+    height: 330px !important;
+    block-size: 330px !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 900px) {
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar:nth-of-type(-n+3) {
+    width: 481.39px !important;
+    inline-size: 481.39px !important;
+    min-width: 481.39px !important;
+    max-width: 481.39px !important;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar:nth-of-type(1) {
+    height: 538.47px !important;
+    block-size: 538.47px !important;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar:nth-of-type(2) {
+    height: 544.48px !important;
+    block-size: 544.48px !important;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar:nth-of-type(3) {
+    height: 577.92px !important;
+    block-size: 577.92px !important;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar:nth-of-type(4) {
+    width: 231.69px !important;
+    inline-size: 231.69px !important;
+    min-width: 231.69px !important;
+    max-width: 231.69px !important;
+    height: 543.52px !important;
+    block-size: 543.52px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card {
+    width: 345.39px !important;
+    inline-size: 345.39px !important;
+    min-width: 345.39px !important;
+    max-width: 345.39px !important;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card--before-after {
+    height: 347.66px !important;
+    block-size: 347.66px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-related-workers__track > .video-card.doke-worker-card {
+    width: 72.86px !important;
+    inline-size: 72.86px !important;
+    min-width: 72.86px !important;
+    max-width: 72.86px !important;
+    height: 129.52px !important;
+    block-size: 129.52px !important;
+    aspect-ratio: auto !important;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1179px) {
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar:nth-of-type(-n+3) {
+    width: 682.55px !important;
+    inline-size: 682.55px !important;
+    min-width: 682.55px !important;
+    max-width: 682.55px !important;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar:nth-of-type(1) {
+    height: 538.47px !important;
+    block-size: 538.47px !important;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar:nth-of-type(2) {
+    height: 544.48px !important;
+    block-size: 544.48px !important;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar:nth-of-type(3) {
+    height: 577.92px !important;
+    block-size: 577.92px !important;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar:nth-of-type(4) {
+    width: 332.27px !important;
+    inline-size: 332.27px !important;
+    min-width: 332.27px !important;
+    max-width: 332.27px !important;
+    height: 544.98px !important;
+    block-size: 544.98px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card {
+    width: 546.55px !important;
+    inline-size: 546.55px !important;
+    min-width: 546.55px !important;
+    max-width: 546.55px !important;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card--photo {
+    height: 358.11px !important;
+    block-size: 358.11px !important;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card--video {
+    height: 352.03px !important;
+    block-size: 352.03px !important;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card--before-after {
+    height: 356.84px !important;
+    block-size: 356.84px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-related-workers__track > .video-card.doke-worker-card {
+    width: 123.14px !important;
+    inline-size: 123.14px !important;
+    min-width: 123.14px !important;
+    max-width: 123.14px !important;
+    height: 218.91px !important;
+    block-size: 218.91px !important;
+    aspect-ratio: auto !important;
+  }
+}
+
+@media (min-width: 1180px) {
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar {
+    width: 273.33px !important;
+    inline-size: 273.33px !important;
+    min-width: 273.33px !important;
+    max-width: 273.33px !important;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar:nth-of-type(-n+3) {
+    height: 583.52px !important;
+    block-size: 583.52px !important;
+  }
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar:nth-of-type(4) {
+    height: 552.58px !important;
+    block-size: 552.58px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card {
+    width: 246.66px !important;
+    inline-size: 246.66px !important;
+    min-width: 246.66px !important;
+    max-width: 246.66px !important;
+    height: 426.92px !important;
+    block-size: 426.92px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-related-workers__track > .video-card.doke-worker-card {
+    width: 180.5px !important;
+    inline-size: 180.5px !important;
+    min-width: 180.5px !important;
+    max-width: 180.5px !important;
+    height: 320.88px !important;
+    block-size: 320.88px !important;
+    aspect-ratio: auto !important;
+  }
+}
+
+/* P2 v1.1 — high-specificity detalhe-anuncio card parity. */
+body[data-page="detalhe-anuncio"] [data-similar-ads-grid] > article.doke-ad-card.doke-ad-card--similar,
+body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card.doke-card,
+body[data-page="detalhe-anuncio"] [data-related-workers-list] > article.video-card.doke-worker-card.doke-media-card {
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 599px) {
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card.doke-card {
+    width: 354px !important; inline-size: 354px !important; min-width: 354px !important; max-width: 354px !important;
+    height: 330px !important; block-size: 330px !important; min-height: 330px !important; max-height: 330px !important;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 760px) {
+  body[data-page="detalhe-anuncio"] [data-similar-ads-grid] > article.doke-ad-card.doke-ad-card--similar:nth-of-type(1) { height: 564.47px !important; min-height: 564.47px !important; max-height: 564.47px !important; }
+  body[data-page="detalhe-anuncio"] [data-similar-ads-grid] > article.doke-ad-card.doke-ad-card--similar:nth-of-type(2) { height: 570.48px !important; min-height: 570.48px !important; max-height: 570.48px !important; }
+  body[data-page="detalhe-anuncio"] [data-similar-ads-grid] > article.doke-ad-card.doke-ad-card--similar:nth-of-type(3) { height: 603.92px !important; min-height: 603.92px !important; max-height: 603.92px !important; }
+
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card.doke-card {
+    width: 572px !important; inline-size: 572px !important; min-width: 572px !important; max-width: 572px !important;
+    height: 330px !important; block-size: 330px !important; min-height: 330px !important; max-height: 330px !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 900px) {
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card.doke-card {
+    width: 345.39px !important; inline-size: 345.39px !important; min-width: 345.39px !important; max-width: 345.39px !important;
+  }
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card--before-after.doke-card {
+    height: 347.66px !important; block-size: 347.66px !important; min-height: 347.66px !important; max-height: 347.66px !important;
+  }
+  body[data-page="detalhe-anuncio"] [data-related-workers-list] > article.video-card.doke-worker-card.doke-media-card {
+    width: 72.86px !important; inline-size: 72.86px !important; min-width: 72.86px !important; max-width: 72.86px !important;
+    height: 129.52px !important; block-size: 129.52px !important; min-height: 129.52px !important; max-height: 129.52px !important;
+    flex-basis: 72.86px !important; aspect-ratio: auto !important;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1179px) {
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card.doke-card {
+    width: 546.55px !important; inline-size: 546.55px !important; min-width: 546.55px !important; max-width: 546.55px !important;
+  }
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card--photo.doke-card { height: 358.11px !important; block-size: 358.11px !important; min-height: 358.11px !important; max-height: 358.11px !important; }
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card--video.doke-card { height: 352.03px !important; block-size: 352.03px !important; min-height: 352.03px !important; max-height: 352.03px !important; }
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card--before-after.doke-card { height: 356.84px !important; block-size: 356.84px !important; min-height: 356.84px !important; max-height: 356.84px !important; }
+
+  body[data-page="detalhe-anuncio"] [data-related-workers-list] > article.video-card.doke-worker-card.doke-media-card {
+    width: 123.14px !important; inline-size: 123.14px !important; min-width: 123.14px !important; max-width: 123.14px !important;
+    height: 218.91px !important; block-size: 218.91px !important; min-height: 218.91px !important; max-height: 218.91px !important;
+    flex-basis: 123.14px !important; aspect-ratio: auto !important;
+  }
+}
+
+@media (min-width: 1180px) {
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] > article.publication-card.doke-card {
+    width: 246.66px !important; inline-size: 246.66px !important; min-width: 246.66px !important; max-width: 246.66px !important;
+    height: 426.92px !important; block-size: 426.92px !important; min-height: 426.92px !important; max-height: 426.92px !important;
+  }
+  body[data-page="detalhe-anuncio"] [data-related-workers-list] > article.video-card.doke-worker-card.doke-media-card {
+    width: 180.5px !important; inline-size: 180.5px !important; min-width: 180.5px !important; max-width: 180.5px !important;
+    height: 320.88px !important; block-size: 320.88px !important; min-height: 320.88px !important; max-height: 320.88px !important;
+    flex-basis: 180.5px !important; aspect-ratio: auto !important;
+  }
+}
