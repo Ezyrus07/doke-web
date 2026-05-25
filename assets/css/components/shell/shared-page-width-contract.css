@@ -1,0 +1,131 @@
+/*
+ * Shared page width contract
+ * One mobile/tablet rail for marketplace and internal pages so the same
+ * sections and cards do not change width between HTML entrypoints.
+ */
+
+:root {
+  --doke-shared-page-inline: 18px;
+  --doke-shared-page-width: min(572px, calc(100vw - (var(--doke-shared-page-inline) * 2)));
+}
+
+@media (max-width: 760px) {
+  body[data-page] {
+    --doke-mobile-page-edge: var(--doke-shared-page-inline) !important;
+    --doke-mobile-page-gutter: var(--doke-shared-page-inline) !important;
+    --doke-current-page-rail: var(--doke-shared-page-inline) !important;
+    --doke-tablet-page-edge: var(--doke-shared-page-inline) !important;
+    --doke-tablet-gutter: var(--doke-shared-page-inline) !important;
+    --detail-tablet-gutter: var(--doke-shared-page-inline) !important;
+    --detail-tablet-rail: var(--doke-shared-page-width) !important;
+    --home-index-mobile-column-inline: var(--doke-shared-page-inline) !important;
+    --home-index-mobile-column-width: var(--doke-shared-page-width) !important;
+  }
+
+  body[data-page] > .app-shell > .page > .app-header > .app-header__inner,
+  body[data-page] > .app-shell > .page > .page__content > .page__content-inner,
+  body[data-page] .page__content-inner.container,
+  body[data-page] .shell-home__workspace,
+  body[data-page] .app-shell-page__workspace,
+  body[data-page] .doke-page-shell,
+  body[data-page] .page-container,
+  body[data-page] .internal-page-container {
+    width: var(--doke-shared-page-width) !important;
+    min-width: 0 !important;
+    max-width: var(--doke-shared-page-width) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  body[data-page] > .app-shell > .page > .page__content > .page__content-inner,
+  body[data-page] .page__content-inner.container,
+  body[data-page] .shell-home__workspace,
+  body[data-page] .app-shell-page__workspace,
+  body[data-page] .doke-page-shell {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  body[data-page="home"] .page__content-inner > :is(
+    .home-search-hero,
+    section[class*="home-cat"],
+    .featured-services,
+    .home-recommendations,
+    .short-videos,
+    .home-publications,
+    .more-services,
+    .featured-pros
+  ),
+  body.home-index-shell .page__content-inner > :is(
+    .home-search-hero,
+    section[class*="home-cat"],
+    .featured-services,
+    .home-recommendations,
+    .short-videos,
+    .home-publications,
+    .more-services,
+    .featured-pros
+  ),
+  body[data-page="detalhe-anuncio"] .ad-detail-shell,
+  body[data-page="detalhe-anuncio"] .ad-detail-hero,
+  body[data-page="detalhe-anuncio"] .ad-action-card,
+  body[data-page="detalhe-anuncio"] .detail-section,
+  body[data-page="perfil"] .profile-shell-content > :is(
+    .profile-header,
+    .profile-hero,
+    .profile-content,
+    .profile-section,
+    .profile-main,
+    .profile-tabs,
+    .profile-publications,
+    .profile-services,
+    .profile-reviews
+  ) {
+    width: var(--doke-shared-page-width) !important;
+    max-width: var(--doke-shared-page-width) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page].doke-app-shell-page > .app-shell > .page > .page__content > .page__content-inner.page__content-inner,
+  html body[data-page].app-shell-page > .app-shell > .page > .page__content > .page__content-inner.page__content-inner,
+  html body[data-page].internal-shell-page > .app-shell > .page > .page__content > .page__content-inner.page__content-inner,
+  html body[data-page].has-global-header > .app-shell > .page > .app-header > .app-header__inner.app-header__inner,
+  html body[data-page].has-global-header > .app-shell > .page > .app-header.home-side-meta > .app-header__inner.app-header__inner,
+  html body[data-page] .page__content-inner.container.shell-home__workspace,
+  html body[data-page] .page__content-inner.app-shell-page__workspace.shell-home__workspace,
+  html body[data-page] .shell-home__workspace.shell-home__workspace,
+  html body[data-page] .doke-page-shell.doke-page-shell {
+    width: var(--doke-shared-page-width) !important;
+    min-width: 0 !important;
+    max-width: var(--doke-shared-page-width) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="detalhe-anuncio"].doke-app-shell-page > .app-shell > .page > .page__content > .ad-detail-shell.ad-detail-shell,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-shell.ad-detail-shell,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-hero.ad-detail-hero,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-action-card.ad-action-card,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section.detail-section,
+  html body[data-page="perfil"].profile-page-shell > .app-shell > .page > .page__content > .profile-shell-content.profile-shell-content,
+  html body[data-page="perfil"] .profile-shell-content.profile-shell-content {
+    width: var(--doke-shared-page-width) !important;
+    min-width: 0 !important;
+    max-width: var(--doke-shared-page-width) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (max-width: 360px) {
+  :root {
+    --doke-shared-page-inline: 14px;
+  }
+}

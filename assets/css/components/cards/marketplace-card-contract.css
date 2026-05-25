@@ -1,0 +1,134 @@
+/* Shared marketplace card contract.
+   Responsibility: shared card anatomy based on index.html.
+   Page CSS owns only rail/grid placement, section spacing and page-specific visibility. */
+
+:root {
+  --doke-marketplace-card-radius: var(--card-radius-lg, 24px);
+  --doke-marketplace-card-radius-mobile: var(--radius-base, 16px);
+  --doke-marketplace-card-border: var(--card-border, 1px solid rgba(36, 88, 135, 0.08));
+  --doke-marketplace-card-bg: var(--card-bg, #fff);
+  --doke-marketplace-card-shadow: var(--card-shadow, 0 10px 28px rgba(19, 48, 82, 0.08));
+  --doke-marketplace-card-shadow-hover: var(--card-shadow-hover, 0 18px 38px rgba(19, 48, 82, 0.14));
+  --doke-worker-card-aspect: 9 / 16;
+  --doke-worker-card-mobile-aspect: 281 / 381;
+  --doke-publication-media-height-mobile: 164px;
+}
+
+:where(.doke-ad-card, .service-card, .publication-card, .video-card.doke-worker-card[data-worker-trigger]) {
+  box-sizing: border-box;
+  min-width: 0;
+  font-family: var(--doke-font-family, Poppins, Inter, system-ui, sans-serif);
+}
+
+:where(.doke-ad-card, .service-card, .publication-card) {
+  border: var(--doke-marketplace-card-border);
+  border-radius: var(--doke-marketplace-card-radius);
+  background: var(--doke-marketplace-card-bg);
+  box-shadow: var(--doke-marketplace-card-shadow);
+}
+
+:where(.doke-ad-card, .service-card, .publication-card, .video-card.doke-worker-card[data-worker-trigger]) :where(img, video, picture) {
+  max-width: 100%;
+}
+
+.video-card.doke-worker-card[data-worker-trigger] {
+  position: relative;
+  display: block;
+  min-width: 0;
+  aspect-ratio: var(--doke-worker-card-aspect);
+  padding: 0;
+  overflow: hidden;
+  border: var(--doke-marketplace-card-border);
+  border-radius: var(--doke-marketplace-card-radius);
+  background-color: #15314a;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  box-shadow: var(--card-shadow-media, var(--doke-marketplace-card-shadow));
+  color: transparent;
+  isolation: isolate;
+  cursor: pointer;
+  scroll-snap-align: start;
+}
+
+.video-card.doke-worker-card.video-card--one[data-worker-trigger] {
+  background-image: url("../../../img/workers/worker-pintura.png");
+}
+
+.video-card.doke-worker-card.video-card--two[data-worker-trigger] {
+  background-image: url("../../../img/workers/worker-cozinha.png");
+}
+
+.video-card.doke-worker-card.video-card--three[data-worker-trigger] {
+  background-image: url("../../../img/workers/worker-eletrica.png");
+}
+
+.video-card.doke-worker-card.video-card--four[data-worker-trigger] {
+  background-image: url("../../../img/workers/worker-limpeza.png");
+}
+
+.video-card.doke-worker-card[data-worker-trigger]::before,
+.video-card.doke-worker-card[data-worker-trigger]::after {
+  content: none !important;
+  display: none !important;
+}
+
+.video-card.doke-worker-card[data-worker-trigger] > :not(.video-card__poster):not(.video-card__preview) {
+  display: none !important;
+}
+
+.video-card.doke-worker-card[data-worker-trigger] :where(.video-card__poster, .video-card__preview) {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: inherit;
+}
+
+.video-card.doke-worker-card[data-worker-trigger] .video-card__poster {
+  z-index: 0;
+  display: block !important;
+}
+
+.video-card.doke-worker-card[data-worker-trigger] .video-card__preview {
+  z-index: 1;
+  display: block !important;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.video-card.doke-worker-card[data-worker-trigger].is-previewing .video-card__preview {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :where(.doke-ad-card, .service-card, .publication-card, .video-card.doke-worker-card[data-worker-trigger]) {
+    transition: var(--card-transition, transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease);
+  }
+
+  :where(.doke-ad-card, .service-card, .publication-card, .video-card.doke-worker-card[data-worker-trigger]):hover,
+  :where(.doke-ad-card, .service-card, .publication-card, .video-card.doke-worker-card[data-worker-trigger]):focus-within,
+  .video-card.doke-worker-card[data-worker-trigger].is-previewing {
+    border-color: var(--card-border-color, rgba(18, 159, 146, 0.16));
+    box-shadow: var(--doke-marketplace-card-shadow-hover);
+    transform: translateY(-2px);
+  }
+}
+
+@media (max-width: 760px) {
+  .video-card.doke-worker-card[data-worker-trigger] {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    aspect-ratio: var(--doke-worker-card-mobile-aspect);
+    border-radius: var(--doke-marketplace-card-radius-mobile);
+  }
+
+  .publication-card > .publication-card__media {
+    height: var(--doke-publication-media-height-mobile);
+    min-height: var(--doke-publication-media-height-mobile);
+  }
+}

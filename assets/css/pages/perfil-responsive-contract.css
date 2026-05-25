@@ -382,6 +382,27 @@
   }
 }
 
+/* 2026-05-24 - Shared page width contract.
+   Profile keeps the same tablet/mobile rail as index.html and detail pages;
+   page CSS may organize internal composition, but not redefine the outer rail. */
+@media (max-width: 760px) {
+  html body[data-page="perfil"].profile-page-shell > .app-shell > .page > .page__content > .page__content-inner.page__content-inner,
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view] > .app-shell > .page > .page__content > .page__content-inner.profile-shell-content,
+  html body[data-page="perfil"].profile-page-shell .profile-shell-content.profile-shell-content,
+  html body[data-page="perfil"].profile-page-shell .shell-home__workspace.shell-home__workspace,
+  html body[data-page="perfil"].profile-page-shell .doke-page-shell.doke-page-shell {
+    width: var(--doke-shared-page-width, min(572px, calc(100vw - 36px))) !important;
+    inline-size: var(--doke-shared-page-width, min(572px, calc(100vw - 36px))) !important;
+    min-width: 0 !important;
+    max-width: var(--doke-shared-page-width, min(572px, calc(100vw - 36px))) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+}
+
 /* Tablet grande / iPad 768px–1024px.
    Versão premium do desktop, mas ações e métricas descem para largura total. */
 @media (min-width: 768px) and (max-width: 1024px) {
@@ -824,5 +845,75 @@
 
   html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view] .profile-stat {
     min-height: 88px !important;
+  }
+}
+
+/* Keep the Workers media rail on the same card dimensions as index.html after all profile tablet overrides. */
+@media (max-width: 760px) {
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"] .profile-panel[data-profile-panel="workers"],
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"] .profile-publications-stack--workers,
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"] .profile-publications-stack--workers .profile-post-section,
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"] .profile-publications-stack--workers .profile-panel-layout,
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"] .profile-publications-stack--workers .profile-panel-main {
+    position: relative !important;
+    left: 50% !important;
+    width: min(572px, calc(100vw - 36px)) !important;
+    min-width: min(572px, calc(100vw - 36px)) !important;
+    max-width: min(572px, calc(100vw - 36px)) !important;
+    margin-inline: 0 !important;
+    transform: translateX(-50%) !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"] .profile-panel[data-profile-panel="workers"] .profile-workers-rail.short-videos__track,
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"] .profile-panel[data-profile-panel="workers"] .profile-workers-rail {
+    position: relative !important;
+    left: 50% !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-flow: row !important;
+    grid-auto-rows: auto !important;
+    gap: 10px !important;
+    width: min(572px, calc(100vw - 36px)) !important;
+    max-width: min(572px, calc(100vw - 36px)) !important;
+    min-width: min(572px, calc(100vw - 36px)) !important;
+    margin: 0 !important;
+    padding: 0 0 4px !important;
+    overflow: visible !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+    transform: translateX(-50%) !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"] .profile-panel[data-profile-panel="workers"] .profile-workers-rail > .video-card,
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"] .profile-panel[data-profile-panel="workers"] .profile-workers-rail > .video-card[data-worker-trigger] {
+    flex: initial !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    aspect-ratio: 281 / 381 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: var(--radius-base, 16px) !important;
+    overflow: hidden !important;
+  }
+}
+
+/* Final outer rail normalization: keep profile page width aligned with index/detail. */
+@media (max-width: 760px) {
+  html body[data-page="perfil"].profile-page-shell > .app-shell > .page > .page__content > .page__content-inner.page__content-inner,
+  html body[data-page="perfil"].profile-page-shell .profile-shell-content.profile-shell-content,
+  html body[data-page="perfil"].profile-page-shell .shell-home__workspace.shell-home__workspace,
+  html body[data-page="perfil"].profile-page-shell .doke-page-shell.doke-page-shell {
+    width: var(--doke-shared-page-width, min(572px, calc(100vw - 36px))) !important;
+    min-width: 0 !important;
+    max-width: var(--doke-shared-page-width, min(572px, calc(100vw - 36px))) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
   }
 }
