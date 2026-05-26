@@ -1,0 +1,189 @@
+/*
+ * Doke internal tablet rail contract
+ * Responsibility: align internal-page tablet headers to the same horizontal rail
+ * used by their page content on portrait tablet widths.
+ * Scope is intentionally limited to non-index internal pages.
+ */
+@media (min-width: 561px) and (max-width: 760px) {
+  html body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page {
+    --doke-tablet-gutter: clamp(18px, 3vw, 24px) !important;
+    --doke-tablet-page-max: 760px !important;
+    --doke-tablet-page-rail: min(
+      calc(100vw - (var(--doke-tablet-gutter) * 2)),
+      var(--doke-tablet-page-max)
+    ) !important;
+    --doke-current-page-rail: var(--doke-tablet-page-rail) !important;
+    --doke-shared-page-width: var(--doke-tablet-page-rail) !important;
+    --rail-max: var(--doke-tablet-page-rail) !important;
+    overflow-x: hidden !important;
+  }
+
+  html body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page > .app-shell {
+    display: block !important;
+    grid-template-columns: none !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  html body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page > .app-shell > :is(.sidebar, [data-shell-sidebar]) {
+    display: none !important;
+    visibility: hidden !important;
+    inline-size: 0 !important;
+    width: 0 !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    max-inline-size: 0 !important;
+    max-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  html body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page > .app-shell > .page {
+    display: block !important;
+    grid-column: auto !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+  }
+
+  /* When the canonical app header exists, the older desktop topbar must not
+     reserve vertical space above it. Pages without app-header keep topbar as
+     their active tablet header. */
+  html body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page:has(> .app-shell > .page > header.app-header.home-side-meta)
+    > .app-shell
+    > .page
+    > header.internal-page-topbar {
+    display: none !important;
+    visibility: hidden !important;
+    block-size: 0 !important;
+    height: 0 !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  html body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page
+    > .app-shell
+    > .page
+    > header.app-header.home-side-meta,
+  html body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page:not(:has(> .app-shell > .page > header.app-header.home-side-meta))
+    > .app-shell
+    > .page
+    > header.internal-page-topbar {
+    position: relative !important;
+    inset: auto !important;
+    z-index: 20 !important;
+    display: block !important;
+    inline-size: var(--doke-tablet-page-rail) !important;
+    width: var(--doke-tablet-page-rail) !important;
+    max-inline-size: var(--doke-tablet-page-rail) !important;
+    max-width: var(--doke-tablet-page-rail) !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    margin-inline: auto !important;
+    margin-block: 24px 28px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page
+    > .app-shell
+    > .page
+    > header.app-header.home-side-meta
+    > .app-header__inner {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page
+    > .app-shell
+    > .page
+    > :is(main.page__content, .page__content) {
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page
+    .page
+    .page__content
+    :is(
+      .page__content-inner,
+      .app-shell-page__workspace,
+      .doke-page-shell,
+      .doke-page-stack,
+      .ad-detail-shell,
+      .profile-shell-content,
+      .search-results-workspace,
+      .orders-shell-content,
+      .messages-shell-content,
+      .notifications-page-shell,
+      .communities-v2-shell,
+      .settings-page-frame,
+      .settings-page-shell,
+      .settings-content,
+      .wallet-page,
+      .wallet-shell,
+      .wallet-content,
+      .messages-app
+    ) {
+    inline-size: var(--doke-tablet-page-rail) !important;
+    width: var(--doke-tablet-page-rail) !important;
+    max-inline-size: var(--doke-tablet-page-rail) !important;
+    max-width: var(--doke-tablet-page-rail) !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page
+    > .app-shell
+    > .page
+    > header.app-header.home-side-meta
+    :is(.home-side-meta__group, .app-header__group) {
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+}
