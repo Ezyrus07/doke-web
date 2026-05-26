@@ -1,0 +1,170 @@
+/* Doke Header Rail Alignment Contract
+ * Responsibility: keep shared app headers on the same horizontal rail as the
+ * page workspace/content. This fixes legacy desktop rules that centered the
+ * action bar inside a narrower header rail and made internal headers start too
+ * far to the right.
+ *
+ * Scope: geometry only. Does not change colors, copy, icons, shadows or visual
+ * hierarchy.
+ */
+
+@media (min-width: 761px) {
+  body.has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta,
+  body[data-page].has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta,
+  body.has-global-header:not(.home-index-shell) .page > .app-header.home-side-meta {
+    inline-size: min(calc(100vw - 280px), 1000px) !important;
+    width: min(calc(100vw - 280px), 1000px) !important;
+    min-inline-size: 0 !important;
+    max-inline-size: min(calc(100vw - 280px), 1000px) !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+  }
+
+  body.has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta > .app-header__inner,
+  body[data-page].has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header.home-side-meta > .app-header__inner,
+  body.has-global-header:not(.home-index-shell) .page > .app-header.home-side-meta > .app-header__inner {
+    inline-size: min(100%, var(--doke-shared-page-width, calc(100% - 96px))) !important;
+    width: min(100%, var(--doke-shared-page-width, calc(100% - 96px))) !important;
+    min-inline-size: 0 !important;
+    max-inline-size: min(100%, var(--doke-shared-page-width, calc(100% - 96px))) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+  }
+
+  body.has-global-header:not(.home-index-shell) .app-header.home-side-meta .home-side-meta__group--primary,
+  body.has-global-header:not(.home-index-shell) .app-header.home-side-meta .app-header__group--primary {
+    justify-content: flex-start !important;
+    margin-left: 0 !important;
+    min-width: 0 !important;
+  }
+
+  body.has-global-header:not(.home-index-shell) .app-header.home-side-meta .home-side-meta__group--secondary,
+  body.has-global-header:not(.home-index-shell) .app-header.home-side-meta .app-header__group--secondary {
+    justify-content: flex-end !important;
+    margin-left: auto !important;
+    min-width: 0 !important;
+  }
+}
+
+/* Results still uses the older internal topbar. Keep it on the same rail when
+   it appears on desktop, without changing its component design. */
+@media (min-width: 1180px) {
+  body[data-page="resultados"] .topbar,
+  body[data-page="resultados"] .internal-page-topbar {
+    inline-size: min(calc(100vw - 280px), 1000px) !important;
+    width: min(calc(100vw - 280px), 1000px) !important;
+    max-inline-size: min(calc(100vw - 280px), 1000px) !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* v1.1 — beat older high-specificity priority/header parity layers. */
+@media (min-width: 761px) {
+  html body.has-global-header:not(.home-index-shell) > .app-shell > .page > header.app-header.home-side-meta.app-header.home-side-meta,
+  html body[data-page].has-global-header:not(.home-index-shell) > .app-shell > .page > header.app-header.home-side-meta.app-header.home-side-meta,
+  html body.has-global-header:not(.home-index-shell) .page > header.app-header.home-side-meta.app-header.home-side-meta {
+    inline-size: min(calc(100vw - 280px), 1000px) !important;
+    width: min(calc(100vw - 280px), 1000px) !important;
+    min-inline-size: 0 !important;
+    max-inline-size: min(calc(100vw - 280px), 1000px) !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
+  }
+
+  html body.has-global-header:not(.home-index-shell) > .app-shell > .page > header.app-header.home-side-meta.app-header.home-side-meta > .app-header__inner.app-header__inner,
+  html body[data-page].has-global-header:not(.home-index-shell) > .app-shell > .page > header.app-header.home-side-meta.app-header.home-side-meta > .app-header__inner.app-header__inner,
+  html body.has-global-header:not(.home-index-shell) .page > header.app-header.home-side-meta.app-header.home-side-meta > .app-header__inner.app-header__inner {
+    inline-size: min(100%, var(--doke-shared-page-width, calc(100% - 96px))) !important;
+    width: min(100%, var(--doke-shared-page-width, calc(100% - 96px))) !important;
+    min-inline-size: 0 !important;
+    max-inline-size: min(100%, var(--doke-shared-page-width, calc(100% - 96px))) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+
+@media (min-width: 761px) {
+  html body.has-global-header:not(.home-index-shell) > .app-shell > .page > header.app-header.home-side-meta.app-header.home-side-meta,
+  html body[data-page].has-global-header:not(.home-index-shell) > .app-shell > .page > header.app-header.home-side-meta.app-header.home-side-meta,
+  html body.has-global-header:not(.home-index-shell) .page > header.app-header.home-side-meta.app-header.home-side-meta {
+    left: auto !important;
+    right: auto !important;
+    inset-inline-start: auto !important;
+    inset-inline-end: auto !important;
+  }
+}
+
+/* v1.2 — profile/detail pages had old focused parity overrides with even higher
+   specificity. Their header rail still belongs to the shared internal header
+   contract. */
+@media (min-width: 761px) {
+  html body[data-page="perfil"].has-global-header .page header.app-header.app-header--profile.home-side-meta.home-side-meta,
+  html body[data-page="perfil"].profile-page-shell.has-global-header .page header.app-header.app-header--profile.home-side-meta.home-side-meta,
+  html body[data-page="detalhe-anuncio"].has-global-header .page header.app-header.home-side-meta.home-side-meta {
+    inline-size: min(calc(100vw - 280px), 1000px) !important;
+    width: min(calc(100vw - 280px), 1000px) !important;
+    max-inline-size: min(calc(100vw - 280px), 1000px) !important;
+    left: auto !important;
+    right: auto !important;
+    inset-inline-start: auto !important;
+    inset-inline-end: auto !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
+  }
+
+  html body[data-page="perfil"].has-global-header .page header.app-header.app-header--profile.home-side-meta.home-side-meta > .app-header__inner.app-header__inner.app-header__inner,
+  html body[data-page="perfil"].profile-page-shell.has-global-header .page header.app-header.app-header--profile.home-side-meta.home-side-meta > .app-header__inner.app-header__inner.app-header__inner,
+  html body[data-page="detalhe-anuncio"].has-global-header .page header.app-header.home-side-meta.home-side-meta > .app-header__inner.app-header__inner.app-header__inner {
+    inline-size: min(100%, var(--doke-shared-page-width, calc(100% - 96px))) !important;
+    width: min(100%, var(--doke-shared-page-width, calc(100% - 96px))) !important;
+    max-inline-size: min(100%, var(--doke-shared-page-width, calc(100% - 96px))) !important;
+    min-inline-size: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+
+@media (min-width: 1180px) {
+  html body[data-page="resultados"] .page > header.topbar.internal-page-topbar,
+  html body[data-page="resultados"] header.topbar.internal-page-topbar.topbar {
+    inline-size: var(--doke-shared-page-width, 904px) !important;
+    width: var(--doke-shared-page-width, 904px) !important;
+    max-inline-size: var(--doke-shared-page-width, 904px) !important;
+    margin-left: auto !important;
+    margin-right: 48px !important;
+    left: auto !important;
+    right: auto !important;
+  }
+}
+
+/* v1.3 — beat legacy :not(#id) specificity guards used on profile rails. */
+@media (min-width: 761px) {
+  html body[data-page="perfil"].profile-page-shell.has-global-header[data-profile-view][data-profile-type] > .app-shell > .page > header.app-header.app-header--profile.home-side-meta.home-side-meta:not(#dokeHeaderRailA):not(#dokeHeaderRailB):not(#dokeHeaderRailC) {
+    inline-size: min(calc(100vw - 280px), 1000px) !important;
+    width: min(calc(100vw - 280px), 1000px) !important;
+    max-inline-size: min(calc(100vw - 280px), 1000px) !important;
+    left: auto !important;
+    right: auto !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell.has-global-header[data-profile-view][data-profile-type] > .app-shell > .page > header.app-header.app-header--profile.home-side-meta.home-side-meta:not(#dokeHeaderRailA):not(#dokeHeaderRailB):not(#dokeHeaderRailC) > .app-header__inner.app-header__inner.app-header__inner:not(#dokeHeaderRailA):not(#dokeHeaderRailB):not(#dokeHeaderRailC) {
+    inline-size: min(100%, var(--doke-shared-page-width, calc(100% - 96px))) !important;
+    width: min(100%, var(--doke-shared-page-width, calc(100% - 96px))) !important;
+    min-inline-size: 0 !important;
+    max-inline-size: min(100%, var(--doke-shared-page-width, calc(100% - 96px))) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}

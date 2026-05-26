@@ -1,0 +1,517 @@
+/* Doke marketplace index parity contract
+   Objective: make marketplace-equivalent cards/rails in resultados.html and related marketplace pages follow index.html anatomy.
+   Scope: CSS-only visual contract. Does not change JS, data, copy, images or DOM semantics. */
+
+:root {
+  --doke-marketplace-rail-gap: var(--doke-card-grid-gap, 18px);
+  --doke-marketplace-mobile-card-width: min(82vw, 320px);
+  --doke-marketplace-mobile-list-gap: 14px;
+  --doke-marketplace-filter-height: 38px;
+  --doke-marketplace-filter-radius: 999px;
+}
+
+/* Results page should use the same page rail as the index marketplace workspace. */
+body.search-results-body :is(.page__content-inner, .search-results-workspace) {
+  width: var(--doke-shared-page-width, min(100%, 904px)) !important;
+  max-width: var(--doke-shared-page-width, min(100%, 904px)) !important;
+  margin-inline: auto !important;
+  padding-inline: var(--doke-shared-page-inline, 0px) !important;
+  box-sizing: border-box !important;
+}
+
+body.search-results-body :is(.results-grid, .results-videos-grid, .results-before-after-grid, .results-users-grid),
+body[data-page="perfil"] :is(.profile-services-grid, .profile-workers-grid, .profile-publications-grid, [data-profile-services-grid], [data-profile-workers-grid], [data-profile-posts-grid]),
+body[data-page="detalhe-anuncio"] :is([data-similar-ads-grid], [data-related-workers-list], [data-related-publications-list]) {
+  gap: var(--doke-marketplace-rail-gap) !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Filter pills: same compact chip rhythm as index's mini-tabs/filter toggle. */
+body.search-results-body :is(.search-scope__option span, .search-scope__filter-toggle, .results-searchbar__mobile-filter),
+body[data-page="comunidade"] :is(.communities-filter),
+body :is(.mini-tab, .filter-toggle) {
+  min-height: var(--doke-marketplace-filter-height) !important;
+  height: var(--doke-marketplace-filter-height) !important;
+  border-radius: var(--doke-marketplace-filter-radius) !important;
+  padding-inline: 14px !important;
+  font-size: 0.82rem !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  box-sizing: border-box !important;
+}
+
+body.search-results-body :is(.search-scope, .results-searchbar__scope),
+body[data-page="comunidade"] .communities-v2-filters,
+body .more-services__tabs-track {
+  gap: 10px !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+}
+
+body.search-results-body :is(.search-scope, .results-searchbar__scope)::-webkit-scrollbar,
+body[data-page="comunidade"] .communities-v2-filters::-webkit-scrollbar,
+body .more-services__tabs-track::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* Section headers on marketplace pages use the same anatomy as the index section header. */
+body.search-results-body :is(.results-related__header, .results-panel__heading),
+body[data-page="comunidade"] .communities-v2-section__heading,
+body[data-page="detalhe-anuncio"] .detail-section__header,
+body[data-page="perfil"] :is(.profile-section-heading, .profile-section__header) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 0 var(--doke-section-gap, 16px) !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+body.search-results-body :is(.results-related__header h2, .results-related__header h3, .results-panel__heading h2),
+body[data-page="comunidade"] .communities-v2-section__heading h2,
+body[data-page="detalhe-anuncio"] .detail-section__header :is(h2,h3),
+body[data-page="perfil"] :is(.profile-section-heading h2, .profile-section__header h2) {
+  margin: 0 !important;
+  font-size: var(--doke-section-title-size, clamp(1.02rem, 1.28vw, 1.38rem)) !important;
+  line-height: var(--doke-section-title-line, 1.08) !important;
+  letter-spacing: 0.04em !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Shared ad/service card anatomy parity. */
+body.search-results-body :is(.results-grid, .results-empty__grid) > :is(.doke-ad-card, .service-card),
+body[data-page="perfil"] :is(.profile-services-grid, [data-profile-services-grid]) > :is(.doke-ad-card, .service-card),
+body[data-page="detalhe-anuncio"] [data-similar-ads-grid] > :is(.doke-ad-card, .service-card) {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  border-radius: var(--card-radius-lg) !important;
+  box-sizing: border-box !important;
+}
+
+body.search-results-body :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__media, .service-card__media),
+body[data-page="perfil"] :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__media, .service-card__media),
+body[data-page="detalhe-anuncio"] [data-similar-ads-grid] :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__media, .service-card__media) {
+  margin: 0 !important;
+  border-radius: 0 !important;
+  background-size: cover !important;
+  background-position: center !important;
+  overflow: hidden !important;
+}
+
+body.search-results-body :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__body, .service-card__body),
+body[data-page="perfil"] :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__body, .service-card__body),
+body[data-page="detalhe-anuncio"] [data-similar-ads-grid] :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__body, .service-card__body) {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+body.search-results-body :is(.doke-ad-card__badge, .service-card__badge),
+body[data-page="perfil"] :is(.doke-ad-card__badge, .service-card__badge),
+body[data-page="detalhe-anuncio"] [data-similar-ads-grid] :is(.doke-ad-card__badge, .service-card__badge) {
+  top: 12px !important;
+  left: 12px !important;
+  max-width: calc(100% - 86px) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+body.search-results-body :is(.doke-ad-card__favorite, .service-card__favorite),
+body[data-page="perfil"] :is(.doke-ad-card__favorite, .service-card__favorite),
+body[data-page="detalhe-anuncio"] [data-similar-ads-grid] :is(.doke-ad-card__favorite, .service-card__favorite) {
+  top: 10px !important;
+  right: 10px !important;
+}
+
+body.search-results-body :is(.doke-ad-card__title, .service-card__title, .publication-card__title),
+body[data-page="perfil"] :is(.doke-ad-card__title, .service-card__title, .publication-card__title),
+body[data-page="detalhe-anuncio"] :is(.doke-ad-card__title, .service-card__title, .publication-card__title) {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+body.search-results-body :is(.doke-ad-card__footer, .service-card__footer),
+body[data-page="perfil"] :is(.doke-ad-card__footer, .service-card__footer),
+body[data-page="detalhe-anuncio"] [data-similar-ads-grid] :is(.doke-ad-card__footer, .service-card__footer) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+body.search-results-body :is(.doke-ad-card__cta, .service-card__cta),
+body[data-page="perfil"] :is(.doke-ad-card__cta, .service-card__cta),
+body[data-page="detalhe-anuncio"] [data-similar-ads-grid] :is(.doke-ad-card__cta, .service-card__cta) {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Shared publication card anatomy parity. */
+body.search-results-body :is(.results-before-after-grid, .results-grid) > .publication-card,
+body[data-page="perfil"] :is(.profile-publications-grid, [data-profile-posts-grid]) > .publication-card,
+body[data-page="detalhe-anuncio"] [data-related-publications-list] > .publication-card {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  border-radius: var(--publication-radius, var(--card-radius-lg)) !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+body.search-results-body .publication-card > :is(.publication-card__media, .publication-card__comparison),
+body[data-page="perfil"] .publication-card > :is(.publication-card__media, .publication-card__comparison),
+body[data-page="detalhe-anuncio"] [data-related-publications-list] .publication-card > :is(.publication-card__media, .publication-card__comparison) {
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
+/* Workers/video cards should remain media-only like index, not content cards. */
+body.search-results-body :is(.results-videos-grid, .results-grid) > .video-card,
+body[data-page="perfil"] :is(.profile-workers-grid, [data-profile-workers-grid]) > .video-card,
+body[data-page="detalhe-anuncio"] [data-related-workers-list] > .video-card {
+  position: relative !important;
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  aspect-ratio: 9 / 16 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: var(--card-border) !important;
+  border-radius: var(--card-radius-lg) !important;
+  background-position: center !important;
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+  box-shadow: var(--card-shadow-media) !important;
+  color: transparent !important;
+  box-sizing: border-box !important;
+}
+
+body.search-results-body :is(.results-videos-grid, .results-grid) > .video-card > :not(.video-card__poster):not(.video-card__preview),
+body[data-page="perfil"] :is(.profile-workers-grid, [data-profile-workers-grid]) > .video-card > :not(.video-card__poster):not(.video-card__preview),
+body[data-page="detalhe-anuncio"] [data-related-workers-list] > .video-card > :not(.video-card__poster):not(.video-card__preview) {
+  display: none !important;
+}
+
+body.search-results-body .video-card :is(.video-card__poster, .video-card__preview),
+body[data-page="perfil"] .video-card :is(.video-card__poster, .video-card__preview),
+body[data-page="detalhe-anuncio"] .video-card :is(.video-card__poster, .video-card__preview) {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: inherit !important;
+}
+
+@media (max-width: 560px) {
+  body.search-results-body :is(.results-grid, .results-empty__grid) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: var(--doke-marketplace-mobile-list-gap) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  body.search-results-body :is(.results-videos-grid, .results-before-after-grid),
+  body[data-page="perfil"] :is(.profile-workers-grid, .profile-publications-grid, [data-profile-workers-grid], [data-profile-posts-grid]),
+  body[data-page="detalhe-anuncio"] :is([data-related-workers-list], [data-related-publications-list]) {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    grid-auto-columns: var(--doke-marketplace-mobile-card-width) !important;
+    gap: var(--doke-marketplace-mobile-list-gap) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    scroll-snap-type: x proximity !important;
+    scrollbar-width: none !important;
+    padding-bottom: 8px !important;
+    box-sizing: border-box !important;
+  }
+
+  body.search-results-body :is(.results-videos-grid, .results-before-after-grid)::-webkit-scrollbar,
+  body[data-page="perfil"] :is(.profile-workers-grid, .profile-publications-grid, [data-profile-workers-grid], [data-profile-posts-grid])::-webkit-scrollbar,
+  body[data-page="detalhe-anuncio"] :is([data-related-workers-list], [data-related-publications-list])::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  body.search-results-body :is(.results-grid, .results-empty__grid) > :is(.doke-ad-card, .service-card),
+  body.search-results-body :is(.results-videos-grid, .results-before-after-grid) > :is(.video-card, .publication-card),
+  body[data-page="perfil"] :is(.profile-workers-grid, .profile-publications-grid, [data-profile-workers-grid], [data-profile-posts-grid]) > :is(.video-card, .publication-card),
+  body[data-page="detalhe-anuncio"] :is([data-related-workers-list], [data-related-publications-list]) > :is(.video-card, .publication-card) {
+    scroll-snap-align: start !important;
+    min-width: 0 !important;
+  }
+
+  body.search-results-body :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__media, .service-card__media),
+  body[data-page="perfil"] :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__media, .service-card__media),
+  body[data-page="detalhe-anuncio"] [data-similar-ads-grid] :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__media, .service-card__media) {
+    height: 142px !important;
+    min-height: 142px !important;
+    max-height: 142px !important;
+  }
+
+  body.search-results-body :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__body, .service-card__body),
+  body[data-page="perfil"] :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__body, .service-card__body),
+  body[data-page="detalhe-anuncio"] [data-similar-ads-grid] :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__body, .service-card__body) {
+    padding: 13px 14px 14px !important;
+  }
+
+  body.search-results-body .publication-card > :is(.publication-card__media, .publication-card__comparison),
+  body[data-page="perfil"] .publication-card > :is(.publication-card__media, .publication-card__comparison),
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] .publication-card > :is(.publication-card__media, .publication-card__comparison) {
+    height: 150px !important;
+    min-height: 150px !important;
+    max-height: 150px !important;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 900px) {
+  body.search-results-body :is(.results-grid, .results-empty__grid),
+  body[data-page="perfil"] :is(.profile-services-grid, [data-profile-services-grid]),
+  body[data-page="detalhe-anuncio"] [data-similar-ads-grid] {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: var(--doke-marketplace-rail-gap) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  body.search-results-body :is(.results-videos-grid, .results-before-after-grid),
+  body[data-page="perfil"] :is(.profile-workers-grid, .profile-publications-grid, [data-profile-workers-grid], [data-profile-posts-grid]),
+  body[data-page="detalhe-anuncio"] :is([data-related-workers-list], [data-related-publications-list]) {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: var(--doke-marketplace-rail-gap) !important;
+  }
+
+  body.search-results-body :is(.doke-ad-card, .service-card),
+  body[data-page="perfil"] :is(.doke-ad-card, .service-card),
+  body[data-page="detalhe-anuncio"] [data-similar-ads-grid] :is(.doke-ad-card, .service-card) {
+    height: var(--doke-index-ad-card-tablet-height, 266px) !important;
+    min-height: var(--doke-index-ad-card-tablet-height, 266px) !important;
+    max-height: var(--doke-index-ad-card-tablet-height, 266px) !important;
+    border-radius: var(--doke-index-ad-card-tablet-radius, 24px) !important;
+  }
+
+  body.search-results-body :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__media, .service-card__media),
+  body[data-page="perfil"] :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__media, .service-card__media),
+  body[data-page="detalhe-anuncio"] [data-similar-ads-grid] :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__media, .service-card__media) {
+    height: var(--doke-index-ad-media-tablet-height, 96px) !important;
+    min-height: var(--doke-index-ad-media-tablet-height, 96px) !important;
+    max-height: var(--doke-index-ad-media-tablet-height, 96px) !important;
+  }
+
+  body.search-results-body :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__body, .service-card__body),
+  body[data-page="perfil"] :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__body, .service-card__body),
+  body[data-page="detalhe-anuncio"] [data-similar-ads-grid] :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__body, .service-card__body) {
+    height: var(--doke-index-ad-body-tablet-height, 170px) !important;
+    min-height: var(--doke-index-ad-body-tablet-height, 170px) !important;
+    max-height: var(--doke-index-ad-body-tablet-height, 170px) !important;
+    padding: 8px 10px 10px !important;
+  }
+
+  body.search-results-body .publication-card > :is(.publication-card__media, .publication-card__comparison),
+  body[data-page="perfil"] .publication-card > :is(.publication-card__media, .publication-card__comparison),
+  body[data-page="detalhe-anuncio"] [data-related-publications-list] .publication-card > :is(.publication-card__media, .publication-card__comparison) {
+    height: 164px !important;
+    min-height: 164px !important;
+    max-height: 164px !important;
+  }
+}
+
+@media (min-width: 901px) {
+  body.search-results-body :is(.results-grid, .results-empty__grid),
+  body[data-page="perfil"] :is(.profile-services-grid, [data-profile-services-grid]) {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: var(--doke-marketplace-rail-gap) !important;
+  }
+
+  body.search-results-body :is(.results-videos-grid, .results-before-after-grid),
+  body[data-page="perfil"] :is(.profile-workers-grid, .profile-publications-grid, [data-profile-workers-grid], [data-profile-posts-grid]) {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: var(--doke-marketplace-rail-gap) !important;
+  }
+}
+
+/* High-specificity terminal locks for legacy results/page CSS still using !important. */
+@media (max-width: 760px) {
+  html body.search-results-body.search-results-body .results-grid.results-grid > article.doke-ad-card.doke-ad-card,
+  html body.search-results-body.search-results-body .results-grid.results-grid > article.service-card.service-card {
+    width: var(--doke-marketplace-mobile-card-width) !important;
+    min-width: var(--doke-marketplace-mobile-card-width) !important;
+    max-width: var(--doke-marketplace-mobile-card-width) !important;
+    height: 263px !important;
+    min-height: 263px !important;
+    max-height: 263px !important;
+    border-radius: var(--card-radius, 16px) !important;
+  }
+
+  html body.search-results-body.search-results-body .results-grid.results-grid {
+    display: grid !important;
+    grid-template-columns: none !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: var(--doke-marketplace-mobile-card-width) !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    gap: 14px !important;
+    scrollbar-width: none !important;
+  }
+
+  html body.search-results-body.search-results-body .results-grid.results-grid::-webkit-scrollbar { display: none !important; }
+
+  html body.search-results-body.search-results-body .results-grid.results-grid > article.doke-ad-card.doke-ad-card > div.doke-ad-card__media.doke-ad-card__media,
+  html body.search-results-body.search-results-body .results-grid.results-grid > article.service-card.service-card > div.service-card__media.service-card__media {
+    height: 104px !important;
+    min-height: 104px !important;
+    max-height: 104px !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  html body.search-results-body.search-results-body .results-grid.results-grid > article.doke-ad-card.doke-ad-card > div.doke-ad-card__body.doke-ad-card__body,
+  html body.search-results-body.search-results-body .results-grid.results-grid > article.service-card.service-card > div.service-card__body.service-card__body {
+    height: 159px !important;
+    min-height: 159px !important;
+    max-height: 159px !important;
+    padding: 13px 14px 14px !important;
+  }
+
+  html body.search-results-body.search-results-body .results-before-after-grid.results-before-after-grid > article.publication-card.publication-card,
+  html body.search-results-body.search-results-body .results-videos-grid.results-videos-grid > article.video-card.video-card,
+  html body[data-page="perfil"] :is([data-profile-posts-grid], [data-profile-workers-grid]) > :is(article.publication-card.publication-card, article.video-card.video-card),
+  html body[data-page="detalhe-anuncio"] :is([data-related-publications-list], [data-related-workers-list]) > :is(article.publication-card.publication-card, article.video-card.video-card) {
+    width: var(--doke-marketplace-mobile-card-width) !important;
+    min-width: var(--doke-marketplace-mobile-card-width) !important;
+    max-width: var(--doke-marketplace-mobile-card-width) !important;
+    border-radius: var(--card-radius, 16px) !important;
+    overflow: hidden !important;
+  }
+
+  html body.search-results-body.search-results-body .results-before-after-grid.results-before-after-grid > article.publication-card.publication-card {
+    height: 284px !important;
+    min-height: 284px !important;
+    max-height: 284px !important;
+  }
+
+  html body.search-results-body.search-results-body .results-before-after-grid.results-before-after-grid > article.publication-card.publication-card > :is(.publication-card__media, .publication-card__comparison) {
+    height: 150px !important;
+    min-height: 150px !important;
+    max-height: 150px !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  html body.search-results-body.search-results-body .results-videos-grid.results-videos-grid > article.video-card.video-card {
+    aspect-ratio: 9 / 16 !important;
+    height: auto !important;
+    padding: 0 !important;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 900px) {
+  html body.search-results-body.search-results-body .results-grid.results-grid > article.doke-ad-card.doke-ad-card,
+  html body.search-results-body.search-results-body .results-grid.results-grid > article.service-card.service-card {
+    height: 263px !important;
+    min-height: 263px !important;
+    max-height: 263px !important;
+    border-radius: var(--doke-index-ad-card-tablet-radius, 24px) !important;
+  }
+
+  html body.search-results-body.search-results-body .results-grid.results-grid > article.doke-ad-card.doke-ad-card > div.doke-ad-card__media.doke-ad-card__media,
+  html body.search-results-body.search-results-body .results-grid.results-grid > article.service-card.service-card > div.service-card__media.service-card__media {
+    height: 104px !important;
+    min-height: 104px !important;
+    max-height: 104px !important;
+  }
+
+  html body.search-results-body.search-results-body .results-before-after-grid.results-before-after-grid > article.publication-card.publication-card {
+    height: 308px !important;
+    min-height: 308px !important;
+    max-height: 308px !important;
+    border-radius: var(--publication-radius, var(--card-radius-lg)) !important;
+  }
+
+  html body.search-results-body.search-results-body .results-videos-grid.results-videos-grid > article.video-card.video-card {
+    border-radius: var(--card-radius, 16px) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page [data-similar-ads-grid].detail-related-grid--ads.detail-related-grid--ads,
+  html body[data-page="perfil"] [data-profile-services-grid].profile-services-grid.profile-services-grid {
+    display: grid !important;
+    grid-template-columns: none !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: var(--doke-marketplace-mobile-card-width) !important;
+    gap: 14px !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    scrollbar-width: none !important;
+    scroll-snap-type: x proximity !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page [data-similar-ads-grid].detail-related-grid--ads.detail-related-grid--ads::-webkit-scrollbar,
+  html body[data-page="perfil"] [data-profile-services-grid].profile-services-grid.profile-services-grid::-webkit-scrollbar { display: none !important; }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page [data-similar-ads-grid].detail-related-grid--ads.detail-related-grid--ads > article.doke-ad-card.doke-ad-card,
+  html body[data-page="perfil"] [data-profile-services-grid].profile-services-grid.profile-services-grid > article.doke-ad-card.doke-ad-card {
+    width: var(--doke-marketplace-mobile-card-width) !important;
+    min-width: var(--doke-marketplace-mobile-card-width) !important;
+    max-width: var(--doke-marketplace-mobile-card-width) !important;
+    height: 263px !important;
+    min-height: 263px !important;
+    max-height: 263px !important;
+    border-radius: var(--card-radius, 16px) !important;
+    scroll-snap-align: start !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page [data-similar-ads-grid].detail-related-grid--ads.detail-related-grid--ads > article.doke-ad-card.doke-ad-card > .doke-ad-card__media.doke-ad-card__media,
+  html body[data-page="perfil"] [data-profile-services-grid].profile-services-grid.profile-services-grid > article.doke-ad-card.doke-ad-card > .doke-ad-card__media.doke-ad-card__media {
+    height: 104px !important;
+    min-height: 104px !important;
+    max-height: 104px !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page [data-similar-ads-grid].detail-related-grid--ads.detail-related-grid--ads > article.doke-ad-card.doke-ad-card > .doke-ad-card__body.doke-ad-card__body,
+  html body[data-page="perfil"] [data-profile-services-grid].profile-services-grid.profile-services-grid > article.doke-ad-card.doke-ad-card > .doke-ad-card__body.doke-ad-card__body {
+    height: 159px !important;
+    min-height: 159px !important;
+    max-height: 159px !important;
+    padding: 13px 14px 14px !important;
+  }
+}

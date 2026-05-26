@@ -1,0 +1,471 @@
+/* Doke desktop page rail authority
+   Final desktop layer for shared page/header width.
+   Purpose: prevent each HTML from expanding cards and panels to arbitrary
+   viewport width while preserving different needs for marketplace, operations,
+   support and form pages. */
+
+@media (min-width: 1180px) {
+  body[data-page] {
+    --doke-desktop-page-gutter: 48px;
+    --doke-desktop-page-available: calc(100vw - var(--doke-app-sidebar-width, 280px) - var(--doke-desktop-page-gutter) - var(--doke-desktop-page-gutter));
+    --doke-desktop-page-max: 1360px;
+    --doke-desktop-header-max: var(--doke-desktop-page-max);
+    --doke-header-content-inset: 0px;
+    --doke-current-page-rail: min(var(--doke-desktop-page-available), var(--doke-desktop-page-max));
+    --rail-max: var(--doke-current-page-rail);
+  }
+
+  body:is(
+    [data-page="home"],
+    [data-page="detalhe-anuncio"],
+    [data-page="perfil"],
+    [data-page="resultados"]
+  ) {
+    --doke-desktop-page-max: 1360px;
+  }
+
+  body:is(
+    [data-page="pedidos"],
+    [data-page="notificacoes"],
+    [data-page="mensagens"],
+    [data-page="comunidade"],
+    [data-page="comunidade-interna"]
+  ) {
+    --doke-desktop-page-max: 1320px;
+  }
+
+  body:is(
+    [data-page="carteira"],
+    [data-page="novidades"],
+    [data-page="ajuda"]
+  ) {
+    --doke-desktop-page-max: 1120px;
+  }
+
+  body:is(
+    [data-page="configuracoes"],
+    [data-page="anunciar-servico"],
+    [data-page="tornar-profissional"],
+    [data-page="pagamento-profissional"],
+    [data-page="avaliacao"],
+    [data-page="avaliacao-profissional"]
+  ) {
+    --doke-desktop-page-max: 960px;
+  }
+
+  html body[data-page] :is(
+    .page__content-inner.page__content-inner,
+    .page__content-inner.container,
+    .shell-home__workspace.shell-home__workspace,
+    .shell-home__workspace--clean.shell-home__workspace--clean,
+    .app-shell-page__workspace.app-shell-page__workspace,
+    .doke-page-shell.doke-page-shell,
+    .doke-page-stack.doke-page-stack,
+    .ad-detail-shell.ad-detail-shell,
+    .profile-shell-content.profile-shell-content,
+    .search-results-workspace.search-results-workspace,
+    .orders-shell-content.orders-shell-content,
+    .messages-shell-content.messages-shell-content,
+    .notifications-page-shell.notifications-page-shell,
+    .communities-v2-shell.communities-v2-shell,
+    .settings-page-frame.settings-page-frame,
+    .settings-page-shell.settings-page-shell,
+    .settings-content.settings-content,
+    .wallet-page.wallet-page,
+    .wallet-shell.wallet-shell,
+    .wallet-content.wallet-content,
+    .messages-app.messages-app
+  ),
+  html body[data-page="home"].home-index-shell .page .page__content .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean,
+  html body[data-page="detalhe-anuncio"].detalhe-shell-page .page .page__content .ad-detail-shell.ad-detail-shell,
+  html body[data-page="perfil"].profile-page-shell .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="resultados"].search-results-body .page .page__content .page__content-inner.container.app-shell-page__workspace.search-results-workspace,
+  html body[data-page="pedidos"].orders-page-shell .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="mensagens"].messages-page-shell .page .page__content .page__content-inner.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="notificacoes"].notifications-page-shell .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="comunidade"].communities-page-shell .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="carteira"].wallet-page-shell .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="configuracoes"].settings-page-shell .page.settings-page-frame,
+  html body[data-page="configuracoes"].settings-page-shell .settings-content.settings-content {
+    width: var(--doke-desktop-page-available) !important;
+    min-width: 0 !important;
+    max-width: var(--doke-desktop-page-max) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page] :is(
+    .topbar.topbar,
+    .internal-page-topbar.internal-page-topbar,
+    .app-header.app-header,
+    .home-side-meta.home-side-meta
+  ) {
+    width: var(--doke-desktop-page-available) !important;
+    max-width: var(--doke-desktop-header-max) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page].has-global-header > .app-shell > .page > .app-header > .app-header__inner,
+  html body[data-page].has-global-header .page > .app-header.home-side-meta > .app-header__inner {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: var(--doke-header-content-inset) !important;
+    padding-right: var(--doke-header-content-inset) !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page] :is(
+    .home-search-hero,
+    .featured-services,
+    .home-recommendations,
+    .short-videos,
+    .home-publications,
+    .more-services,
+    .featured-pros,
+    .detail-section,
+    .ad-detail-hero,
+    .ad-action-card,
+    .profile-header,
+    .profile-hero,
+    .profile-content,
+    .profile-section,
+    .profile-tabs,
+    .results-searchbar,
+    .results-related,
+    .orders-page-header,
+    .orders-list,
+    .notifications-page-header,
+    .notifications-group,
+    .communities-v2-section,
+    .settings-layout,
+    .settings-card,
+    .wallet-section,
+    .wallet-balance-card
+  ) {
+    max-width: 100% !important;
+  }
+
+  html body[data-page][data-page].doke-app-shell-page.app-shell-page.internal-shell-page
+    > .app-shell
+    > .page
+    > .page__content
+    > .page__content-inner.page__content-inner.page__content-inner,
+  html body[data-page][data-page].doke-app-shell-page.app-shell-page.internal-shell-page
+    > .app-shell
+    > .page
+    > .page__content
+    > .page__content-inner.app-shell-page__workspace.app-shell-page__workspace.shell-home__workspace,
+  html body[data-page][data-page].doke-app-shell-page.app-shell-page.internal-shell-page
+    > .app-shell
+    > .page
+    > .page__content
+    > .ad-detail-shell.ad-detail-shell.ad-detail-shell {
+    width: var(--doke-desktop-page-available) !important;
+    min-width: 0 !important;
+    max-width: var(--doke-desktop-page-max) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page][data-page].doke-app-shell-page.app-shell-page.internal-shell-page
+    > .app-shell
+    > .page
+    > :is(.topbar, .internal-page-topbar, .app-header, .home-side-meta) {
+    width: var(--doke-desktop-page-available) !important;
+    max-width: var(--doke-desktop-header-max) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  html body[data-page][data-page].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page
+    > .app-shell
+    > .page
+    > header.app-header.app-header.home-side-meta.home-side-meta {
+    width: var(--doke-desktop-page-available) !important;
+    max-width: var(--doke-desktop-header-max) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page][data-page].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page
+    > .app-shell
+    > .page
+    > header.app-header.app-header.home-side-meta.home-side-meta
+    > .app-header__inner.app-header__inner {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: var(--doke-header-content-inset) !important;
+    padding-right: var(--doke-header-content-inset) !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root
+    body[data-page="home"].home-index-shell.has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page
+    > .app-shell
+    > .page
+    > header.app-header.app-header.app-header--home.home-side-meta.home-side-meta
+    > .app-header__inner.app-header__inner.app-header__inner:not(#dokeStableRailA):not(#dokeStableRailB):not(#dokeStableRailC):not(#dokeStableRailD) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: var(--doke-header-content-inset) !important;
+    padding-right: var(--doke-header-content-inset) !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root
+    body[data-page="home"].home-index-shell
+    section.short-videos
+    > .content-rail.home-media-rail--workers
+    > #short-videos-track.short-videos__track:not(#dokeStableRailA):not(#dokeStableRailB):not(#dokeStableRailC) {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    gap: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  html.home-index-root
+    body[data-page="home"].home-index-shell
+    section.short-videos
+    > .content-rail.home-media-rail--workers
+    > #short-videos-track.short-videos__track
+    > .video-card.video-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    justify-self: stretch !important;
+  }
+}
+
+@media (max-width: 1179px) {
+  html.home-index-root
+    body[data-page="home"].home-index-shell
+    section.short-videos
+    > .content-rail.home-media-rail--workers
+    > #short-videos-track.short-videos__track
+    > .video-card.video-card--five {
+    display: none !important;
+  }
+}
+
+/* Final index tablet authority.
+   Loaded after the older tablet/mobile contracts so the tablet rail cannot
+   collapse to a narrow centered column on iPad-sized viewports. */
+@media (min-width: 561px) and (max-width: 1024px) {
+  html.home-index-root body[data-page="home"].home-index-shell {
+    --tablet-gutter: clamp(18px, 3vw, 24px) !important;
+    --tablet-page-max: 760px !important;
+    --tablet-home-rail: min(calc(100vw - var(--tablet-gutter) - var(--tablet-gutter)), var(--tablet-page-max)) !important;
+  }
+
+  html.home-index-root body[data-page="home"].home-index-shell .app-header.app-header--home.home-side-meta .app-header__inner,
+  html.home-index-root body[data-page="home"].home-index-shell .page__content-inner.shell-home__workspace,
+  html.home-index-root body[data-page="home"].home-index-shell .page__content-inner.shell-home__workspace--clean,
+  html.home-index-root body[data-page="home"].home-index-shell .page__content-inner.container.shell-home__workspace,
+  html.home-index-root body[data-page="home"].home-index-shell .page__content-inner.container.shell-home__workspace--clean,
+  html.home-index-root body[data-page="home"].home-index-shell .page .page__content .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean,
+  html.home-index-root body[data-page="home"].home-index-shell.doke-app-shell-page.app-shell-page.internal-shell-page .page .page__content .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean {
+    width: var(--tablet-home-rail) !important;
+    max-width: var(--tablet-home-rail) !important;
+    inline-size: var(--tablet-home-rail) !important;
+    max-inline-size: var(--tablet-home-rail) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body[data-page="home"].home-index-shell
+    .app-header.app-header--home.home-side-meta
+    .home-side-meta__tablet-menu.home-side-meta__tablet-menu,
+  html.home-index-root body[data-page="home"].home-index-shell.has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page
+    > .app-shell
+    > .page
+    > header.app-header.app-header.app-header--home.home-side-meta.home-side-meta
+    .home-side-meta__tablet-menu.home-side-meta__tablet-menu.home-side-meta__tablet-menu {
+    appearance: none !important;
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 48px !important;
+    inline-size: 48px !important;
+    height: 48px !important;
+    block-size: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    min-inline-size: 48px !important;
+    max-inline-size: 48px !important;
+    min-block-size: 48px !important;
+    max-block-size: 48px !important;
+    flex: 0 0 48px !important;
+    flex-basis: 48px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 16px !important;
+    background: #fff !important;
+    color: #1f5f96 !important;
+    box-shadow: 0 14px 32px rgba(31, 68, 110, 0.08) !important;
+    pointer-events: auto !important;
+  }
+
+  html.home-index-root body[data-page="home"].home-index-shell
+    .app-header.app-header--home.home-side-meta
+    .home-side-meta__tablet-menu.home-side-meta__tablet-menu svg,
+  html.home-index-root body[data-page="home"].home-index-shell.has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page
+    > .app-shell
+    > .page
+    > header.app-header.app-header.app-header--home.home-side-meta.home-side-meta
+    .home-side-meta__tablet-menu.home-side-meta__tablet-menu.home-side-meta__tablet-menu svg {
+    width: 21px !important;
+    height: 21px !important;
+    display: block !important;
+  }
+
+  html.home-index-root body[data-page="home"].home-index-shell .page__content-inner.shell-home__workspace > :is(
+    .home-search-hero,
+    section[class*="home-cat"],
+    .featured-services,
+    .home-recommendations,
+    .short-videos,
+    .home-publications,
+    .more-services,
+    .featured-pros
+  ),
+  html.home-index-root body[data-page="home"].home-index-shell .page__content-inner.shell-home__workspace--clean > :is(
+    .home-search-hero,
+    section[class*="home-cat"],
+    .featured-services,
+    .home-recommendations,
+    .short-videos,
+    .home-publications,
+    .more-services,
+    .featured-pros
+  ) {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body[data-page="home"].home-index-shell #featured-services-track.service-grid.doke-grid,
+  html.home-index-root body[data-page="home"].home-index-shell section.featured-services.featured-services > .content-rail.content-rail > #featured-services-track.service-grid.doke-grid.service-grid.doke-grid,
+  html.home-index-root body[data-page="home"].home-index-shell section.more-services [data-more-services-grid].service-grid.doke-grid,
+  html.home-index-root body[data-page="home"].home-index-shell section.home-publications > .content-rail > #home-publications-track.publication-grid {
+    display: grid !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    scroll-snap-type: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body[data-page="home"].home-index-shell #featured-services-track.service-grid.doke-grid > article.doke-ad-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.featured-services.featured-services > .content-rail.content-rail > #featured-services-track.service-grid.doke-grid.service-grid.doke-grid > article.doke-ad-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.more-services [data-more-services-grid].service-grid.doke-grid > article.doke-ad-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.home-publications > .content-rail > #home-publications-track.publication-grid > .publication-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    flex: none !important;
+    justify-self: stretch !important;
+    scroll-snap-align: unset !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body[data-page="home"].home-index-shell #featured-services-track.service-grid.doke-grid > article.doke-ad-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.more-services [data-more-services-grid].service-grid.doke-grid > article.doke-ad-card {
+    height: auto !important;
+    min-height: 332px !important;
+    max-height: none !important;
+    overflow: hidden !important;
+  }
+
+  html.home-index-root body[data-page="home"].home-index-shell #featured-services-track.service-grid.doke-grid > article.doke-ad-card > :is(.doke-ad-card__media, .service-card__media),
+  html.home-index-root body[data-page="home"].home-index-shell section.more-services [data-more-services-grid].service-grid.doke-grid > article.doke-ad-card > :is(.doke-ad-card__media, .service-card__media) {
+    height: 150px !important;
+    min-height: 150px !important;
+    max-height: 150px !important;
+  }
+
+  html.home-index-root body[data-page="home"].home-index-shell #featured-services-track.service-grid.doke-grid > article.doke-ad-card > :is(.doke-ad-card__body, .service-card__body),
+  html.home-index-root body[data-page="home"].home-index-shell section.more-services [data-more-services-grid].service-grid.doke-grid > article.doke-ad-card > :is(.doke-ad-card__body, .service-card__body) {
+    min-height: 182px !important;
+    height: auto !important;
+    overflow: hidden !important;
+  }
+
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track {
+    display: grid !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    scroll-snap-type: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track > .video-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    aspect-ratio: 4 / 5 !important;
+    justify-self: stretch !important;
+    scroll-snap-align: unset !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 699px) {
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 700px) and (max-width: 1024px) {
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track > .video-card {
+    aspect-ratio: 9 / 13 !important;
+  }
+}

@@ -19,7 +19,10 @@ const BREAKPOINTS = [
   { name: '810x1080', width: 810, height: 1080 },
 ];
 
-const CONTRACT_HREF = 'assets/css/components/layout/focused-index-parity-contract.css';
+const CONTRACT_HREFS = [
+  'assets/css/components/layout/focused-index-parity-contract.css',
+  'assets/css/components/layout/focused-index-final-parity-contract.css',
+];
 const TARGET_PAGES = ['detalhe-anuncio.html', 'perfil.html'];
 
 const COMPONENTS = [
@@ -52,7 +55,7 @@ function loadHtml(file, mode) {
     if (!hrefMatch) return tag;
     const href = hrefMatch[1].split('?')[0];
     if (/^(https?:)?\/\//i.test(href)) return '';
-    if (mode === 'before' && href === CONTRACT_HREF) return '<!-- focused parity contract disabled for before measurement -->';
+    if (mode === 'before' && CONTRACT_HREFS.includes(href)) return '<!-- focused parity contract disabled for before measurement -->';
     const cssPath = path.join(ROOT, href);
     if (!fs.existsSync(cssPath)) return '';
     return `<style data-source-css="${href}">\n${fs.readFileSync(cssPath, 'utf8')}\n</style>`;

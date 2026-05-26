@@ -89,6 +89,28 @@ window.DokeHomeWorkers = (() => {
         { avatar: "PH", name: "Pedro Henrique", text: "Esse processo serve para porcelanato fosco?", time: "22 min" },
         { avatar: "ES", name: "Elaine Santos", text: "Serve, mas o produto precisa ser mais neutro para não manchar.", time: "agora" }
       ]
+    },
+    {
+      id: "vid-manutencao",
+      title: "Manutencao rapida antes da vistoria",
+      author: "Rafael Gomes",
+      avatar: "RG",
+      category: "Manutencao residencial",
+      duration: "45 segundos",
+      mediaClass: "video-card--five",
+      poster: "https://images.pexels.com/photos/8961065/pexels-photo-8961065.jpeg?auto=compress&cs=tinysrgb&w=1200&q=80",
+      videoSrc: DEMO_VIDEO,
+      likes: "7,4k",
+      saves: "1,9k",
+      commentsCount: "83",
+      commentsLabel: "83 comentarios",
+      primaryHref: "detalhe-anuncio.html",
+      secondaryHref: "perfil.html",
+      comments: [
+        { avatar: "TN", name: "Thiago Nunes", text: "Essa revisao antes da entrega evita muita dor de cabeca.", time: "3 min" },
+        { avatar: "LA", name: "Lia Alves", text: "Voce tambem confere vazamento pequeno em sifao?", time: "11 min" },
+        { avatar: "RG", name: "Rafael Gomes", text: "Confiro sim. Normalmente ja resolvo na mesma visita.", time: "agora" }
+      ]
     }
   ];
 

@@ -2056,3 +2056,145 @@ html.home-index-root body.home-index-shell section.more-services button[data-mor
     --doke-mobile-page-bottom-safe: 0px !important;
   }
 }
+
+/* 2026-05-25 - final tablet rail normalization for index.
+   Tablet width must come from the viewport, not from nested percentage rails.
+   This keeps iPad mini and iPad 9 on the same layout system. */
+@media (min-width: 561px) and (max-width: 1024px) {
+  html.home-index-root body.home-index-shell {
+    --tablet-gutter: clamp(18px, 3vw, 24px) !important;
+    --tablet-page-max: 760px !important;
+    --tablet-home-rail: min(calc(100vw - var(--tablet-gutter) - var(--tablet-gutter)), var(--tablet-page-max)) !important;
+  }
+
+  html.home-index-root body.home-index-shell .app-header.app-header--home.home-side-meta .app-header__inner,
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace,
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace--clean,
+  html.home-index-root body.home-index-shell .page__content-inner.container.shell-home__workspace,
+  html.home-index-root body.home-index-shell .page__content-inner.container.shell-home__workspace--clean {
+    width: var(--tablet-home-rail) !important;
+    max-width: var(--tablet-home-rail) !important;
+    inline-size: var(--tablet-home-rail) !important;
+    max-inline-size: var(--tablet-home-rail) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace > :is(
+    .home-search-hero,
+    section[class*="home-cat"],
+    .featured-services,
+    .home-recommendations,
+    .short-videos,
+    .home-publications,
+    .more-services,
+    .featured-pros
+  ),
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace--clean > :is(
+    .home-search-hero,
+    section[class*="home-cat"],
+    .featured-services,
+    .home-recommendations,
+    .short-videos,
+    .home-publications,
+    .more-services,
+    .featured-pros
+  ) {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell #featured-services-track.service-grid.doke-grid,
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid].service-grid.doke-grid {
+    display: grid !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    scroll-snap-type: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell #featured-services-track.service-grid.doke-grid > article.doke-ad-card,
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-grid].service-grid.doke-grid > article.doke-ad-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    flex: none !important;
+    justify-self: stretch !important;
+    scroll-snap-align: unset !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > #home-publications-track.publication-grid {
+    display: grid !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    scroll-snap-type: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > #home-publications-track.publication-grid > .publication-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    justify-self: stretch !important;
+    scroll-snap-align: unset !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track {
+    display: grid !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    scroll-snap-type: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track > .video-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    aspect-ratio: 9 / 14 !important;
+    justify-self: stretch !important;
+    scroll-snap-align: unset !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 699px) {
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}

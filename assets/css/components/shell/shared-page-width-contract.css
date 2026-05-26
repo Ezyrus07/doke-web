@@ -580,3 +580,171 @@ html body[data-page="notificacoes"].notifications-page-shell .page__content-inne
     margin-right: auto !important;
   }
 }
+
+/* 2026-05-25 — desktop family rail authority.
+   Older rules above intentionally matched legacy pages, but their desktop fallback
+   expanded to the full available viewport. This layer gives every HTML a bounded,
+   page-family rail so cards and panels do not stretch independently on large screens. */
+body[data-page] {
+  --doke-page-family-max: 1180px;
+}
+
+body:is(
+  [data-page="home"],
+  [data-page="detalhe-anuncio"],
+  [data-page="perfil"],
+  [data-page="resultados"]
+) {
+  --doke-page-family-max: 1180px;
+}
+
+body:is(
+  [data-page="pedidos"],
+  [data-page="notificacoes"],
+  [data-page="mensagens"],
+  [data-page="comunidade"],
+  [data-page="comunidade-interna"]
+) {
+  --doke-page-family-max: 1320px;
+}
+
+body:is(
+  [data-page="carteira"],
+  [data-page="novidades"],
+  [data-page="ajuda"]
+) {
+  --doke-page-family-max: 1120px;
+}
+
+body:is(
+  [data-page="configuracoes"],
+  [data-page="anunciar-servico"],
+  [data-page="tornar-profissional"],
+  [data-page="pagamento-profissional"],
+  [data-page="avaliacao"],
+  [data-page="avaliacao-profissional"]
+) {
+  --doke-page-family-max: 960px;
+}
+
+@media (min-width: 761px) {
+  body[data-page] {
+    --doke-shared-page-inline: clamp(24px, 3vw, 48px);
+    --doke-page-available-width: calc(100vw - var(--doke-app-sidebar-width, 280px) - var(--doke-shared-page-inline) - var(--doke-shared-page-inline));
+    --doke-shared-page-width: min(var(--doke-page-available-width), var(--doke-page-family-max));
+    --doke-current-page-rail: var(--doke-shared-page-width);
+    --rail-max: var(--doke-shared-page-width);
+  }
+
+  html body[data-page] .page {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    min-width: 0 !important;
+  }
+
+  html body[data-page] :is(.page__content, main.page__content) {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page] :is(
+    .page__content-inner.page__content-inner,
+    .page__content-inner.container,
+    .shell-home__workspace.shell-home__workspace,
+    .shell-home__workspace--clean.shell-home__workspace--clean,
+    .app-shell-page__workspace.app-shell-page__workspace,
+    .doke-page-shell.doke-page-shell,
+    .doke-page-stack.doke-page-stack,
+    .ad-detail-shell.ad-detail-shell,
+    .profile-shell-content.profile-shell-content,
+    .search-results-workspace.search-results-workspace,
+    .orders-shell-content.orders-shell-content,
+    .messages-shell-content.messages-shell-content,
+    .notifications-page-shell.notifications-page-shell,
+    .communities-v2-shell.communities-v2-shell,
+    .settings-page-frame.settings-page-frame,
+    .settings-page-shell.settings-page-shell,
+    .settings-content.settings-content,
+    .wallet-page.wallet-page,
+    .wallet-shell.wallet-shell,
+    .wallet-content.wallet-content,
+    .messages-app.messages-app
+  ),
+  html body[data-page="home"].home-index-shell .page .page__content .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean,
+  html body[data-page="detalhe-anuncio"].detalhe-shell-page .page .page__content .ad-detail-shell.ad-detail-shell,
+  html body[data-page="perfil"].profile-page-shell .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="resultados"].search-results-body .page .page__content .page__content-inner.container.app-shell-page__workspace.search-results-workspace,
+  html body[data-page="pedidos"].orders-page-shell .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="mensagens"].messages-page-shell .page .page__content .page__content-inner.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="notificacoes"].notifications-page-shell .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="comunidade"].communities-page-shell .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="carteira"].wallet-page-shell .page .page__content .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean,
+  html body[data-page="configuracoes"].settings-page-shell .page.settings-page-frame,
+  html body[data-page="configuracoes"].settings-page-shell .settings-content.settings-content {
+    width: var(--doke-shared-page-width) !important;
+    min-width: 0 !important;
+    max-width: var(--doke-shared-page-width) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page] :is(
+    .topbar.topbar,
+    .internal-page-topbar.internal-page-topbar,
+    .app-header.app-header,
+    .home-side-meta.home-side-meta
+  ) {
+    width: var(--doke-shared-page-width) !important;
+    max-width: var(--doke-shared-page-width) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page].has-global-header > .app-shell > .page > .app-header > .app-header__inner,
+  html body[data-page].has-global-header .page > .app-header.home-side-meta > .app-header__inner {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  html body[data-page] :is(
+    .home-search-hero,
+    .featured-services,
+    .home-recommendations,
+    .short-videos,
+    .home-publications,
+    .more-services,
+    .featured-pros,
+    .detail-section,
+    .ad-detail-hero,
+    .ad-action-card,
+    .profile-header,
+    .profile-hero,
+    .profile-content,
+    .profile-section,
+    .profile-tabs,
+    .results-searchbar,
+    .results-related,
+    .orders-page-header,
+    .orders-list,
+    .notifications-page-header,
+    .notifications-group,
+    .communities-v2-section,
+    .settings-layout,
+    .settings-card,
+    .wallet-section,
+    .wallet-balance-card
+  ) {
+    max-width: 100% !important;
+  }
+}

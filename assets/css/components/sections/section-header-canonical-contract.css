@@ -363,3 +363,85 @@ html body :where(
 html body :where(.section-heading__eyebrow, .detail-eyebrow, .results-panel__eyebrow, .doke-section-header__eyebrow) {
   font-size: var(--doke-section-eyebrow-size) !important;
 }
+
+/* 2026-05-25 — compact area-title parity lock.
+   Keep every section title on the same small scale as "Publicações em destaque",
+   even when older page/mobile contracts try to promote titles to hero size. */
+:root {
+  --doke-section-title-size: 0.86rem;
+  --doke-section-title-line: 1.14;
+  --doke-section-title-weight: 850;
+  --doke-section-title-letter: 0;
+  --doke-section-title-color: var(--doke-text-muted, #72839a);
+}
+
+@media (min-width: 701px) {
+  :root {
+    --doke-section-title-size: 0.82rem;
+  }
+}
+
+@media (max-width: 560px) {
+  :root {
+    --doke-section-title-size: 0.78rem;
+    --doke-section-title-line: 1.16;
+  }
+}
+
+html body :is(
+  .section-heading.section-heading,
+  .home-section-header.home-section-header,
+  .detail-section__header.detail-section__header,
+  .detail-section__header--row.detail-section__header--row,
+  .results-related__header.results-related__header,
+  .communities-v2-section__heading.communities-v2-section__heading,
+  .settings-section-heading.settings-section-heading,
+  .wallet-section-heading.wallet-section-heading,
+  .profile-section-heading.profile-section-heading,
+  .doke-section-header.doke-section-header
+) :is(
+  .section-heading__title,
+  .home-section-title,
+  .doke-section-header__title,
+  h1,
+  h2,
+  h3
+),
+html body :is(
+  .section-heading__title.home-section-title,
+  .home-section-title,
+  .detail-section__header h2,
+  .detail-section__header h3,
+  .results-related__header h2,
+  .results-related__header h3,
+  .communities-v2-section__heading h2,
+  .settings-section-heading h1,
+  .settings-section-heading h2,
+  .wallet-section-heading h1,
+  .wallet-section-heading h2,
+  .profile-section-heading h2,
+  .doke-reviews-title,
+  .doke-section-header__title
+) {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  color: var(--doke-section-title-color) !important;
+  font-size: var(--doke-section-title-size) !important;
+  line-height: var(--doke-section-title-line) !important;
+  font-weight: var(--doke-section-title-weight) !important;
+  letter-spacing: var(--doke-section-title-letter) !important;
+  text-transform: uppercase !important;
+  text-align: left !important;
+}
+
+html body.home-index-shell section.more-services > .section-heading.home-section-header > :first-child,
+html body.home-index-shell section.more-services > .section-heading.home-section-header.home-section-header--stacked > :first-child {
+  max-width: 100% !important;
+  margin-left: 0 !important;
+}
+
+html body.home-index-shell section.more-services #more-services-title {
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
