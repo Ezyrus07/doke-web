@@ -34,6 +34,8 @@
     mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5a2.8 2.8 0 0 0-2.8 2.8v4.2a2.8 2.8 0 1 0 5.6 0V7.8A2.8 2.8 0 0 0 12 5Z"></path><path d="M7.8 11.4a4.2 4.2 0 1 0 8.4 0"></path><path d="M12 17v2.2"></path><path d="M9.6 19.2h4.8"></path></svg>',
     sliders: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6.5h14"></path><path d="M5 12h14"></path><path d="M5 17.5h14"></path><circle cx="9" cy="6.5" r="1.75"></circle><circle cx="15" cy="12" r="1.75"></circle><circle cx="11" cy="17.5" r="1.75"></circle></svg>',
     check: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"></rect><path d="m8.5 12 2.5 2.5 4.5-5"></path></svg>',
+    communityCode: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect height="15" rx="2.2" width="9" x="8" y="4.5"></rect><path d="M11 8.5h3"></path><path d="M11 11.5h3"></path><circle cx="14" cy="16" r=".7" fill="currentColor" stroke="none"></circle><circle cx="5.4" cy="12" r="1.4"></circle><path d="M6.8 12H10"></path><path d="M8.8 12v1.6"></path></svg>',
+    plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>',
     calendar: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="5.5" width="15" height="14" rx="3"></rect><path d="M8 3.75v3.5M16 3.75v3.5M5 10h14"></path></svg>',
     home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5.5 9.5V20h13V9.5"></path></svg>',
     orders: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg>',
@@ -221,6 +223,15 @@
       return baseActions.join('');
     }
 
+    if (cfg.key === 'comunidade') {
+      return [
+        '<button class="doke-mobile-shell__quick-action" type="button" data-shell-search-trigger aria-label="Abrir busca">' + ICONS.search + '</button>',
+        '<button class="doke-mobile-shell__quick-action" type="button" data-community-code-shell aria-label="Entrar por código">' + ICONS.communityCode + '</button>',
+        '<button class="doke-mobile-shell__quick-action" type="button" data-community-create-shell aria-label="Criar comunidade">' + ICONS.plus + '</button>',
+        '<a class="doke-mobile-shell__quick-action" href="notificacoes.html" aria-label="Notificações">' + ICONS.bell + '</a>'
+      ].join('');
+    }
+
     var buttons = [
       ((cfg.key === 'pedidos' || cfg.key === 'notificacoes' || cfg.key === 'mensagens')
         ? '<button class="doke-mobile-shell__quick-action" type="button" data-shell-search-trigger aria-label="Abrir busca">' + ICONS.search + '</button>'
@@ -289,6 +300,12 @@
       }
 
       if (pageCfg.key === 'mensagens') {
+        dispatchShellAction('search');
+        return true;
+      }
+
+      if (pageCfg.key === 'comunidade') {
+        if (clickFirst('[data-community-mobile-search-toggle], .communities-mobile-header .orders-page-header__search-toggle')) return true;
         dispatchShellAction('search');
         return true;
       }
@@ -369,6 +386,22 @@
     if (selectButton) {
       selectButton.addEventListener('click', function () {
         triggerPageSelect();
+      });
+    }
+
+    var communityCodeButton = shell.querySelector('[data-community-code-shell]');
+    if (communityCodeButton) {
+      communityCodeButton.addEventListener('click', function () {
+        if (clickFirst('[data-community-code-trigger]')) return;
+        dispatchShellAction('community-code');
+      });
+    }
+
+    var communityCreateButton = shell.querySelector('[data-community-create-shell]');
+    if (communityCreateButton) {
+      communityCreateButton.addEventListener('click', function () {
+        if (clickFirst('[data-community-create]')) return;
+        dispatchShellAction('community-create');
       });
     }
 

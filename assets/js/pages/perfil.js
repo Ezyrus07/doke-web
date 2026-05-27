@@ -798,30 +798,34 @@ window.DokeInitProfile = () => {
     {
       id: "vid-pintura",
       variant: "video-card--one",
-      badge: "Dispon�vel hoje",
-      title: "Pintura residencial com acabamento limpo",
-      meta: "1,2 mil visualiza��es"
+      badge: "Disponivel hoje",
+      title: "Rafael Lima",
+      meta: "Pintor profissional",
+      rating: "4,9"
     },
     {
       id: "vid-cozinha",
       variant: "video-card--two",
-      badge: "Resposta r�pida",
-      title: "Antes e depois de parede nivelada",
-      meta: "842 visualiza��es"
+      badge: "Resposta rapida",
+      title: "Bruno Santos",
+      meta: "Especialista em acabamento",
+      rating: "4,8"
     },
     {
       id: "vid-eletrica",
       variant: "video-card--three",
       badge: "Top da semana",
-      title: "Organiza��o do p�s-obra em 30 segundos",
-      meta: "2,4 mil visualiza��es"
+      title: "Tiago Ferreira",
+      meta: "Pintura spray",
+      rating: "4,9"
     },
     {
       id: "vid-limpeza",
       variant: "video-card--four",
       badge: "Novo worker",
-      title: "Como protegemos m�veis antes da pintura",
-      meta: "618 visualiza��es"
+      title: "Lucas Andrade",
+      meta: "Texturas e massas",
+      rating: "4,7"
     }
   ];
 
@@ -879,9 +883,14 @@ window.DokeInitProfile = () => {
           aria-label="Abrir worker: ${normalize(item.title)}">
           ${profileMode === "owner" && state.selectingWorkers ? `<button class="profile-post-select-indicator ${isSelected ? "is-selected" : ""}" type="button" data-profile-worker-select="${item.id}" aria-label="Selecionar worker">${isSelected ? "&#10003;" : ""}</button>` : ""}
           <div class="profile-worker-card__content" aria-hidden="true">
-            <span class="profile-worker-card__badge">${normalize(item.badge)}</span>
-            <h3 class="profile-worker-card__title">${normalize(item.title)}</h3>
-            <p class="profile-worker-card__meta">${normalize(item.meta)}</p>
+            <span class="profile-worker-card__person-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20a7 7 0 0 1 14 0"></path></svg>
+            </span>
+            <span class="profile-worker-card__text">
+              <span class="profile-worker-card__title">${normalize(item.title)}</span>
+              <span class="profile-worker-card__meta">${normalize(item.meta)}</span>
+            </span>
+            <span class="profile-worker-card__rating">★ ${normalize(item.rating || "4,9")}</span>
           </div>
         </article>
       `;
