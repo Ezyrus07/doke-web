@@ -6,7 +6,7 @@ window.DokeInitProfile = () => {
   const params = new URLSearchParams(window.location.search);
   const body = document.body;
   const data = window.DokeProfileData || {};
-  const profileMode = params.get("mode");
+  const profileMode = params.get("mode") || "owner";
   const publicProfile = data.professionalPublic || {};
   const clientPublicProfile = data.clientPublic || {};
   const ownerProfile = data.professionalOwner || {};
@@ -101,12 +101,10 @@ window.DokeInitProfile = () => {
             badges: [...((publicProfile.hero?.badges || []).slice(0, 2))]
           },
           tabs: {
-            ...professionalTabs,
-            overview: "Estatísticas"
+            ...professionalTabs
           },
           sections: {
-            ...(publicProfile.sections || {}),
-            overview: ownerProfile.sections?.overview || {}
+            ...(publicProfile.sections || {})
           }
         }
       : profileMode === "client"
@@ -233,8 +231,14 @@ window.DokeInitProfile = () => {
 
   rebuildProfileTabs();
 
+  const defaultPanel = requestedPanel
+    ? requestedPanel
+    : profileMode === "owner" && availableTabs.includes("workers")
+      ? "workers"
+      : availableTabs[0] || "services";
+
   const state = {
-    activeTab: availableTabs.includes(requestedPanel) ? requestedPanel : availableTabs[0] || "services",
+    activeTab: availableTabs.includes(defaultPanel) ? defaultPanel : availableTabs[0] || "services",
     selectingServices: false,
     selectedServices: [],
     selectingPosts: false,
@@ -796,36 +800,28 @@ window.DokeInitProfile = () => {
 
   const WORKER_CARDS = [
     {
-      id: "vid-pintura",
+      id: "worker-joao",
       variant: "video-card--one",
-      badge: "Disponivel hoje",
-      title: "Rafael Lima",
+      title: "João Silva",
       meta: "Pintor profissional",
-      rating: "4,9"
+      rating: "4,8",
+      reviews: "34 avaliações"
     },
     {
-      id: "vid-cozinha",
+      id: "worker-carlos",
       variant: "video-card--two",
-      badge: "Resposta rapida",
-      title: "Bruno Santos",
-      meta: "Especialista em acabamento",
-      rating: "4,8"
+      title: "Carlos Mendes",
+      meta: "Pintor profissional",
+      rating: "4,9",
+      reviews: "28 avaliações"
     },
     {
-      id: "vid-eletrica",
+      id: "worker-ana",
       variant: "video-card--three",
-      badge: "Top da semana",
-      title: "Tiago Ferreira",
-      meta: "Pintura spray",
-      rating: "4,9"
-    },
-    {
-      id: "vid-limpeza",
-      variant: "video-card--four",
-      badge: "Novo worker",
-      title: "Lucas Andrade",
-      meta: "Texturas e massas",
-      rating: "4,7"
+      title: "Ana Paula",
+      meta: "Pintora profissional",
+      rating: "4,9",
+      reviews: "22 avaliações"
     }
   ];
 
@@ -873,7 +869,7 @@ window.DokeInitProfile = () => {
       ${WORKER_CARDS.map((item) => {
         const isSelected = state.selectedWorkers.includes(item.id);
         return `
-        <article class="video-card ${item.variant} doke-card doke-worker-card doke-media-card ${state.selectingWorkers ? "is-selecting" : ""} ${isSelected ? "is-selected" : ""}"
+        <article class="video-card doke-card doke-worker-card doke-media-card profile-worker-card profile-worker-card--grid ${state.selectingWorkers ? "is-selecting" : ""} ${isSelected ? "is-selected" : ""}"
           data-worker-trigger
           data-worker-id="${item.id}"
           data-profile-worker-card="${item.id}"
@@ -882,15 +878,19 @@ window.DokeInitProfile = () => {
           aria-haspopup="dialog"
           aria-label="Abrir worker: ${normalize(item.title)}">
           ${profileMode === "owner" && state.selectingWorkers ? `<button class="profile-post-select-indicator ${isSelected ? "is-selected" : ""}" type="button" data-profile-worker-select="${item.id}" aria-label="Selecionar worker">${isSelected ? "&#10003;" : ""}</button>` : ""}
-          <div class="profile-worker-card__content" aria-hidden="true">
-            <span class="profile-worker-card__person-icon">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20a7 7 0 0 1 14 0"></path></svg>
-            </span>
-            <span class="profile-worker-card__text">
-              <span class="profile-worker-card__title">${normalize(item.title)}</span>
-              <span class="profile-worker-card__meta">${normalize(item.meta)}</span>
-            </span>
-            <span class="profile-worker-card__rating">★ ${normalize(item.rating || "4,9")}</span>
+          <div class="profile-worker-card__media ${item.variant}" aria-hidden="true"></div>
+          <div class="profile-worker-card__body">
+            <div class="profile-worker-card__head">
+              <span class="profile-worker-card__text">
+                <span class="profile-worker-card__title">${normalize(item.title)}</span>
+                <span class="profile-worker-card__meta">${normalize(item.meta)}</span>
+              </span>
+              <span class="profile-worker-card__more" aria-hidden="true"></span>
+            </div>
+            <div class="profile-worker-card__footer">
+              <span class="profile-worker-card__rating">★ ${normalize(item.rating || "4,9")}</span>
+              <span class="profile-worker-card__reviews">${normalize(item.reviews || "24 avaliações")}</span>
+            </div>
           </div>
         </article>
       `;
