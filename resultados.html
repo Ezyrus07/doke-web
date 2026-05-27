@@ -12,8 +12,8 @@
     />
       <script src="assets/js/core/shell-state-early.js?v=20260517-shell-fluid-rail-v2"></script>
 <link rel="stylesheet" href="assets/css/core/index.css" />
+    <link rel="stylesheet" href="assets/css/components/shell/app-header.css?v=20260527-results-header-parity-v1" />
     <link rel="stylesheet" href="assets/css/pages/app-shell.css?v=20260501-desktop-grid-shell-v1" />
-    <link rel="stylesheet" href="assets/css/pages/search-results.css?v=20260510-mobile-width-contract-v1" />
     <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <link rel="stylesheet" href="assets/css/components/layout/responsive-page-contract.css?v=20260514-header-parity-audit-v2">
   <link rel="stylesheet" href="assets/css/components/shell/doke-shell-contract.css?v=20260524-tablet-heading-standard-v2">
@@ -28,127 +28,82 @@
   <link rel="stylesheet" href="assets/css/components/cards/mobile-card-distribution-contract.css?v=20260525-mobile-card-distribution-v1">
   <link rel="stylesheet" href="assets/css/components/shell/desktop-page-rail-authority.css?v=20260526-tablet-header-top-parity-v12">
   <link rel="stylesheet" href="assets/css/components/shell/tablet-internal-rail-contract.css?v=20260526-tablet-internal-rail-contract-v1">
+  <link rel="stylesheet" href="assets/css/pages/search-results.css?v=20260527-results-mobile-axis-v103">
+  <link rel="stylesheet" href="assets/css/pages/search-results-mobile-rail-final.css?v=20260527-results-mobile-rail-final-v1">
 </head>
-  <body data-page="resultados" class="doke-app-shell-page app-shell-page internal-shell-page search-results-body doke-flow doke-search-flow">
+  <body data-page="resultados" class="doke-app-shell-page app-shell-page internal-shell-page search-results-body doke-flow doke-search-flow has-global-header">
     <div class="app-shell">
       <aside class="sidebar" data-shell-sidebar></aside>
 
       <div class="page">
-        <header class="topbar topbar--location internal-page-topbar">
-          <div class="topbar__left">
-            <form
-              class="topbar-search topbar-search--subtle"
-              data-results-topbar-search
-              autocomplete="off"
-              aria-label="Buscar no cabeçalho"
-            >
-              <button
-                class="topbar-search__icon doke-icon-btn doke-icon-btn--flat"
-                type="submit"
-                data-results-topbar-submit
-                aria-label="Pesquisar"
-              >
-                <svg viewBox="0 0 24 24">
-                  <circle cx="11" cy="11" r="6"></circle>
-                  <path d="m20 20-4.2-4.2"></path>
+        <header class="app-header app-header--results home-side-meta" aria-label="Atalhos e contexto dos resultados">
+          <div class="app-header__inner">
+            <div class="home-side-meta__group home-side-meta__group--primary app-header__group app-header__group--primary">
+              <button class="home-side-meta__tablet-menu" type="button" data-mobile-home-menu-open aria-label="Abrir menu lateral" aria-expanded="false" aria-haspopup="dialog">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 7h14"></path>
+                  <path d="M5 12h14"></path>
+                  <path d="M5 17h14"></path>
                 </svg>
               </button>
-              <input
-                type="search"
-                placeholder="Buscar"
-                autocomplete="off"
-                autocapitalize="off"
-                autocorrect="off"
-                spellcheck="false"
-              />
-            </form>
-          </div>
-          <div class="topbar__center">
-            <button
-              class="topbar-location topbar-location--inline"
-              type="button"
-              data-location-trigger
-            >
-              <span class="topbar-location__label doke-label">Localização</span>
-              <strong data-topbar-location-value>Rua Maranhão, 343</strong>
-            </button>
-            <div class="topbar-shortcuts" aria-label="Atalhos do cabeçalho">
-              <a class="topbar-shortcut topbar-shortcut--primary" href="#"
-                >Anunciar serviço</a
-              >
-              <a class="topbar-shortcut" href="#">Ajuda</a>
-              <a class="topbar-shortcut" href="#">Novidades</a>
+              <button class="home-side-meta__search" type="button" aria-label="Buscar nos resultados" data-mobile-search-open>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="11" cy="11" r="5.75"></circle>
+                  <path d="m16 16 4 4"></path>
+                </svg>
+              </button>
+              <form class="home-side-meta__search-form" action="resultados.html" role="search" aria-label="Busca rápida nos resultados" data-results-topbar-search autocomplete="off">
+                <label class="home-side-meta__search-label doke-label" for="results-header-search">Buscar</label>
+                <input id="results-header-search" class="home-side-meta__search-input doke-input" type="search" name="q" placeholder="Buscar serviço" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+              </form>
+              <button class="home-side-meta__location" type="button" data-location-trigger aria-label="Alterar localização">
+                <span class="home-side-meta__location-dot" aria-hidden="true"></span>
+                <span class="home-side-meta__location-text" data-topbar-location-value data-location-fallback="Belo Horizonte, MG">Belo Horizonte, MG</span>
+                <span class="home-side-meta__caret" aria-hidden="true"></span>
+              </button>
             </div>
-          </div>
-          <div class="topbar__right">
-            <div class="topbar-account-cluster">
-              <div class="topbar-points">
-                <span class="topbar-points__label doke-label">Progresso</span>
-                <div class="topbar-points__row">
-                  <span class="topbar-points__level">Nível 15</span>
-                  <span class="topbar-points__badge doke-badge">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        d="m12 3.5 2.1 4.4 4.9.7-3.6 3.5.9 4.9-4.3-2.3-4.3 2.3.9-4.9-3.6-3.5 4.9-.7z"
-                      ></path>
-                    </svg>
-                    230 pontos
+            <div class="home-side-meta__group home-side-meta__group--secondary app-header__group app-header__group--secondary">
+              <button class="home-side-meta__alert" type="button" aria-label="Novidades">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 5.5h12v13H6z"></path>
+                  <path d="M9 9h6"></path>
+                  <path d="M9 12h6"></path>
+                  <path d="M9 15h4"></path>
+                </svg>
+              </button>
+              <button class="home-side-meta__alert" type="button" aria-label="Suporte">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 13.5V10l10-4v12l-10-4z"></path>
+                  <path d="M15 9.5h2.2A2.8 2.8 0 0 1 20 12.3v.4a2.8 2.8 0 0 1-2.8 2.8H15"></path>
+                  <path d="M7.5 14.5v2.2a1.8 1.8 0 0 0 1.8 1.8h1.2"></path>
+                </svg>
+              </button>
+              <button class="home-side-meta__alert" type="button" aria-label="Notificações">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 4.75a4 4 0 0 0-4 4v2.1c0 .7-.24 1.38-.68 1.92L5.9 14.5h12.2l-1.42-1.73a3 3 0 0 1-.68-1.92v-2.1a4 4 0 0 0-4-4Z"></path>
+                  <path d="M10 17.2a2.3 2.3 0 0 0 4 0"></path>
+                </svg>
+              </button>
+              <div class="home-side-meta__profile-wrap">
+                <button class="home-side-meta__profile" type="button" data-mobile-home-menu-open data-home-profile-menu-toggle aria-label="Abrir menu da conta" aria-expanded="false" aria-haspopup="true">
+                  <span class="home-side-meta__avatar doke-avatar" data-mobile-home-menu-open role="button" tabindex="0">DK</span>
+                  <span class="home-side-meta__identity">
+                    <strong>Gabriel</strong>
+                    <span>Pontos: 230</span>
                   </span>
-                </div>
-              </div>
-              <div class="topbar-profile" aria-label="Perfil do usuário">
-                <button
-                  class="topbar-profile__button doke-btn"
-                  type="button"
-                  data-profile-menu-toggle
-                  aria-expanded="false"
-                  aria-haspopup="true"
-                  aria-label="Abrir menu do perfil"
-                >
-                  <div class="avatar doke-avatar">DK</div>
                 </button>
-                <div class="profile-dropdown doke-popover doke-menu" data-profile-menu hidden>
+                <div class="profile-dropdown profile-dropdown--home profile-dropdown--home-main doke-popover doke-menu" data-home-profile-menu hidden>
                   <div class="profile-dropdown__header doke-popover">@gabriel</div>
                   <div class="profile-dropdown__body doke-popover">
-                    <a class="profile-dropdown__item doke-popover" href="#"
-                      ><span class="profile-dropdown__icon doke-popover" aria-hidden="true"
-                        ><svg viewBox="0 0 24 24">
-                          <path d="M13 4h6v6"></path>
-                          <path d="M20 4 9 15"></path>
-                          <path
-                            d="M11 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"
-                          ></path></svg></span
-                      ><span>Alternar conta</span></a
-                    >
-                    <a class="profile-dropdown__item doke-popover" href="#"
-                      ><span class="profile-dropdown__icon doke-popover" aria-hidden="true"
-                        ><svg viewBox="0 0 24 24">
-                          <circle cx="12" cy="12" r="3.2"></circle>
-                          <path d="M12 3.8v2.1"></path>
-                          <path d="M12 18.1v2.1"></path>
-                          <path d="m18.2 5.8-1.5 1.5"></path>
-                          <path d="m7.3 16.7-1.5 1.5"></path>
-                          <path d="M20.2 12h-2.1"></path>
-                          <path d="M5.9 12H3.8"></path>
-                          <path d="m18.2 18.2-1.5-1.5"></path>
-                          <path d="m7.3 7.3-1.5-1.5"></path></svg></span
-                      ><span>Configurações</span></a
-                    >
+                    <a class="profile-dropdown__item doke-popover" href="perfil.html">
+                      <span class="profile-dropdown__icon doke-popover" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.2-3.2 3.7-4.8 7-4.8s5.8 1.6 7 4.8"></path></svg></span>
+                      <span>Perfil</span>
+                    </a>
                   </div>
                   <div class="profile-dropdown__footer doke-popover">
-                    <button
-                      class="profile-dropdown__item profile-dropdown__item--danger doke-popover"
-                      type="button"
-                      data-profile-logout
-                    >
-                      <span class="profile-dropdown__icon doke-popover" aria-hidden="true"
-                        ><svg viewBox="0 0 24 24">
-                          <path
-                            d="M15 7.5V5.8A1.8 1.8 0 0 0 13.2 4H7.8A1.8 1.8 0 0 0 6 5.8v12.4A1.8 1.8 0 0 0 7.8 20h5.4a1.8 1.8 0 0 0 1.8-1.8v-1.7"
-                          ></path>
-                          <path d="M10 12h10"></path>
-                          <path d="m17 8 3 4-3 4"></path></svg></span
-                      ><span>Sair</span>
+                    <button class="profile-dropdown__item profile-dropdown__item--danger doke-popover" type="button" data-profile-logout>
+                      <span class="profile-dropdown__icon doke-popover" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M15 7.5V5.8A1.8 1.8 0 0 0 13.2 4H7.8A1.8 1.8 0 0 0 6 5.8v12.4A1.8 1.8 0 0 0 7.8 20h5.4a1.8 1.8 0 0 0 1.8-1.8v-1.7"></path><path d="M10 12h10"></path><path d="m17 8 3 4-3 4"></path></svg></span>
+                      <span>Sair</span>
                     </button>
                   </div>
                 </div>
@@ -224,12 +179,12 @@
                   aria-expanded="true"
                 >
                   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path d="M4 7h10"></path>
-                    <path d="M18 7h2"></path>
-                    <circle cx="16" cy="7" r="2"></circle>
-                    <path d="M4 17h2"></path>
-                    <path d="M10 17h10"></path>
-                    <circle cx="8" cy="17" r="2"></circle>
+                    <path d="M5 6.5h14"></path>
+                    <path d="M5 12h14"></path>
+                    <path d="M5 17.5h14"></path>
+                    <circle cx="9" cy="6.5" r="1.75"></circle>
+                    <circle cx="15" cy="12" r="1.75"></circle>
+                    <circle cx="11" cy="17.5" r="1.75"></circle>
                   </svg>
                   <span>Filtros</span>
                 </button>
