@@ -109,14 +109,14 @@
     const threadMoreMenu = root.querySelector("[data-thread-more-menu]");
     const searchCloseButtons = Array.from(root.querySelectorAll(".orders-header-search__close"));
     const searchToggleButtons = Array.from(root.querySelectorAll("[data-messages-mobile-search-toggle]"));
-    const filterToggles = Array.from(root.querySelectorAll("[data-messages-filter-toggle]"));
+    const filterToggles = Array.from(document.querySelectorAll("[data-messages-filter-toggle]"));
     const desktopFilterToggle = root.querySelector("[data-messages-desktop-filter-toggle]");
     const filterButtons = Array.from(root.querySelectorAll("[data-messages-filter]"));
     const archiveToggles = Array.from(root.querySelectorAll("[data-messages-archive-toggle]"));
     const clearFilterButtons = Array.from(root.querySelectorAll("[data-messages-clear-filter]"));
     const activeChips = Array.from(root.querySelectorAll("[data-messages-active-chip]"));
     const headerControls = Array.from(root.querySelectorAll("[data-messages-header-controls], .messages-header-controls"));
-    const selectToggles = Array.from(root.querySelectorAll("[data-messages-select-toggle]"));
+    const selectToggles = Array.from(document.querySelectorAll("[data-messages-select-toggle]"));
     const desktopSelectToggle = root.querySelector("[data-messages-desktop-select-toggle]");
     const selectModeButtons = Array.from(root.querySelectorAll("[data-messages-select-mode]"));
     const desktopFiltersPanel = root.querySelector("[data-messages-desktop-filters-panel]");

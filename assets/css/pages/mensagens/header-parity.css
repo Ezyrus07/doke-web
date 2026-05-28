@@ -1,7 +1,7 @@
 /*
- * Mensagens — paridade de header em tablet compacto
- * Responsabilidade: expor o mesmo header compacto usado nas páginas internas
- * apenas no tablet menor, sem alterar o workspace desktop do chat.
+ * Mensagens — paridade do header em tablet compacto.
+ * Responsabilidade: alinhar o header de mensagens ao mesmo contrato estrutural
+ * usado por pedidos/index, sem alterar o workspace desktop do chat.
  */
 
 @media (min-width: 761px), (max-width: 599px) {
@@ -18,7 +18,6 @@
     max-block-size: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
-    border: 0 !important;
     overflow: hidden !important;
     pointer-events: none !important;
   }
@@ -26,9 +25,32 @@
 
 @media (min-width: 600px) and (max-width: 760px) {
   html body[data-page="mensagens"].messages-page-shell {
-    --messages-tablet-rail: var(--doke-tablet-page-rail, min(calc(100vw - 36px), 760px));
-    --messages-tablet-header-control: 48px;
+    --messages-tablet-gutter: clamp(34px, 6vw, 52px);
+    --messages-tablet-page-max: 1420px;
+    --messages-tablet-rail: min(calc(100vw - (var(--messages-tablet-gutter) * 2)), var(--messages-tablet-page-max));
+    --messages-tablet-control: 48px;
+    --messages-tablet-control-radius: 16px;
     --messages-tablet-header-gap: 10px;
+    background: #eef5fb !important;
+    overflow-x: hidden !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell.doke-mobile-shell-mounted,
+  html body[data-page="mensagens"].messages-page-shell.doke-mobile-shell-mounted[data-shell-search="false"] {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell :is(.doke-mobile-shell, .doke-mobile-bottom-nav, .bottom-nav, .doke-bottom-nav) {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    block-size: 0 !important;
+    min-block-size: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
   }
 
   html body[data-page="mensagens"].messages-page-shell > .app-shell,
@@ -36,53 +58,55 @@
   html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > main.page__content.doke-page {
     margin-block-start: 0 !important;
     padding-block-start: 0 !important;
+    inline-size: 100% !important;
+    max-inline-size: 100% !important;
     min-block-size: 100dvh !important;
     overflow: visible !important;
     transform: none !important;
     top: auto !important;
+    background: #eef5fb !important;
   }
 
-  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header {
-    display: flex !important;
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > .messages-tablet-header {
+    display: block !important;
     visibility: visible !important;
-    position: relative !important;
-    z-index: 20 !important;
-    inset: auto !important;
-    top: auto !important;
-    transform: none !important;
-    inline-size: var(--messages-tablet-rail) !important;
-    width: var(--messages-tablet-rail) !important;
-    max-inline-size: var(--messages-tablet-rail) !important;
-    block-size: var(--messages-tablet-header-control) !important;
-    min-block-size: var(--messages-tablet-header-control) !important;
-    max-block-size: var(--messages-tablet-header-control) !important;
-    margin: 32px auto 42px !important;
-    padding: 0 !important;
-    border: 0 !important;
-    background: transparent !important;
+    opacity: 1 !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 40 !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: 100% !important;
+    block-size: 96px !important;
+    min-block-size: 96px !important;
+    max-block-size: 96px !important;
+    margin: 0 !important;
+    padding: 20px 0 10px !important;
+    background: rgba(238, 245, 251, 0.96) !important;
+    box-shadow: none !important;
     overflow: visible !important;
     pointer-events: auto !important;
+    transform: none !important;
+    box-sizing: border-box !important;
   }
 
   html body[data-page="mensagens"].messages-page-shell .messages-tablet-header > .app-header__inner {
     display: flex !important;
     align-items: center !important;
-    justify-content: space-between !important;
+    justify-content: flex-start !important;
     gap: 16px !important;
-    inline-size: 100% !important;
-    width: 100% !important;
-    max-inline-size: none !important;
-    block-size: var(--messages-tablet-header-control) !important;
-    min-block-size: var(--messages-tablet-header-control) !important;
-    max-block-size: var(--messages-tablet-header-control) !important;
-    margin: 0 !important;
+    inline-size: var(--messages-tablet-rail) !important;
+    width: var(--messages-tablet-rail) !important;
+    max-inline-size: var(--messages-tablet-rail) !important;
+    min-block-size: var(--messages-tablet-control) !important;
+    margin: 0 auto !important;
     padding: 0 !important;
     overflow: visible !important;
+    box-sizing: border-box !important;
   }
 
-  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header .app-header__group,
-  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header .home-side-meta__group {
-    display: flex !important;
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header :is(.app-header__group, .home-side-meta__group) {
+    display: inline-flex !important;
     align-items: center !important;
     gap: var(--messages-tablet-header-gap) !important;
     min-inline-size: 0 !important;
@@ -91,28 +115,47 @@
     overflow: visible !important;
   }
 
-  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .home-side-meta__profile) {
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header :is(.app-header__group--primary, .home-side-meta__group--primary) {
+    flex: 1 1 auto !important;
+    justify-content: flex-start !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header :is(.app-header__group--secondary, .home-side-meta__group--secondary) {
+    flex: 0 0 auto !important;
+    justify-content: flex-end !important;
+    margin-left: auto !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .home-side-meta__profile, .page-header-context__action) {
+    box-sizing: border-box !important;
     display: inline-grid !important;
     place-items: center !important;
-    inline-size: var(--messages-tablet-header-control) !important;
-    block-size: var(--messages-tablet-header-control) !important;
-    min-inline-size: var(--messages-tablet-header-control) !important;
-    min-block-size: var(--messages-tablet-header-control) !important;
-    max-inline-size: var(--messages-tablet-header-control) !important;
-    max-block-size: var(--messages-tablet-header-control) !important;
-    flex: 0 0 var(--messages-tablet-header-control) !important;
+    inline-size: var(--messages-tablet-control) !important;
+    block-size: var(--messages-tablet-control) !important;
+    min-inline-size: var(--messages-tablet-control) !important;
+    min-block-size: var(--messages-tablet-control) !important;
+    max-inline-size: var(--messages-tablet-control) !important;
+    max-block-size: var(--messages-tablet-control) !important;
+    flex: 0 0 var(--messages-tablet-control) !important;
     margin: 0 !important;
     padding: 0 !important;
-    border-radius: 16px !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header .messages-page-actions {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: var(--messages-tablet-header-gap) !important;
+    height: var(--messages-tablet-control) !important;
+    margin: 0 !important;
+    padding: 0 !important;
     overflow: visible !important;
   }
 
-  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header .home-side-meta__avatar {
-    inline-size: 34px !important;
-    block-size: 34px !important;
-    min-inline-size: 34px !important;
-    min-block-size: 34px !important;
-    font-size: 0.72rem !important;
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header .messages-page-actions .page-header-context__action > span {
+    display: none !important;
   }
 
   html body[data-page="mensagens"].messages-page-shell .messages-tablet-header .home-side-meta__identity,
@@ -130,20 +173,22 @@
     width: var(--messages-tablet-rail) !important;
     max-inline-size: var(--messages-tablet-rail) !important;
     margin: 0 auto !important;
-    padding: 0 !important;
+    padding: 0 0 40px !important;
     position: relative !important;
     top: auto !important;
     transform: none !important;
     overflow: visible !important;
+    box-sizing: border-box !important;
   }
 
   html body[data-page="mensagens"].messages-page-shell .messages-app,
-  html body[data-page="mensagens"].messages-page-shell .messages-sidebar {
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar,
+  html body[data-page="mensagens"].messages-page-shell .messages-list {
     inline-size: 100% !important;
     width: 100% !important;
     max-inline-size: none !important;
     margin: 0 !important;
-    padding-block-start: 0 !important;
+    padding: 0 !important;
     overflow: visible !important;
     position: relative !important;
     top: auto !important;
@@ -151,8 +196,12 @@
   }
 
   html body[data-page="mensagens"].messages-page-shell .messages-sidebar-brand,
-  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-tools {
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-tools,
+  html body[data-page="mensagens"].messages-page-shell .messages-thread,
+  html body[data-page="mensagens"].messages-page-shell .messages-desktop-toolbar,
+  html body[data-page="mensagens"].messages-page-shell .messages-header-controls {
     position: absolute !important;
+    display: block !important;
     inline-size: 1px !important;
     block-size: 1px !important;
     margin: 0 !important;
@@ -161,6 +210,8 @@
     clip: rect(0 0 0 0) !important;
     clip-path: inset(50%) !important;
     white-space: nowrap !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
   }
 
   html body[data-page="mensagens"].messages-page-shell .messages-block:first-of-type {
@@ -170,6 +221,7 @@
   html body[data-page="mensagens"].messages-page-shell.is-messages-header-search-open .messages-sidebar-tools {
     position: relative !important;
     display: flex !important;
+    visibility: visible !important;
     inline-size: 100% !important;
     width: 100% !important;
     block-size: auto !important;
@@ -180,6 +232,7 @@
     clip: auto !important;
     clip-path: none !important;
     white-space: normal !important;
+    pointer-events: auto !important;
   }
 
   html body[data-page="mensagens"].messages-page-shell.is-messages-header-search-open .messages-sidebar-tools > :not(.messages-sidebar-search) {
@@ -225,5 +278,73 @@
     max-block-size: 100% !important;
     margin: 0 !important;
     overflow: hidden !important;
+  }
+}
+
+/* 2026-05-28 — Messages tablet header visual parity lock
+   Last-mile correction: the messages page must inherit the same button/avatar
+   geometry and icon rendering used by pedidos on the compact tablet rail. */
+@media (min-width: 600px) and (max-width: 760px) {
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .home-side-meta__profile, .page-header-context__action) {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    box-sizing: border-box !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    inline-size: var(--messages-tablet-control) !important;
+    min-inline-size: var(--messages-tablet-control) !important;
+    max-inline-size: var(--messages-tablet-control) !important;
+    block-size: var(--messages-tablet-control) !important;
+    min-block-size: var(--messages-tablet-control) !important;
+    max-block-size: var(--messages-tablet-control) !important;
+    flex: 0 0 var(--messages-tablet-control) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 1px solid rgba(15, 45, 75, 0.06) !important;
+    border-radius: var(--messages-tablet-control-radius) !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #1f5f9f !important;
+    box-shadow: 0 10px 26px rgba(15, 45, 75, 0.06) !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    overflow: hidden !important;
+    transform: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .page-header-context__action) svg {
+    display: block !important;
+    inline-size: 18px !important;
+    block-size: 18px !important;
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: currentColor !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2.25 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+    overflow: visible !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header .home-side-meta__avatar {
+    box-sizing: border-box !important;
+    display: inline-grid !important;
+    place-items: center !important;
+    inline-size: 34px !important;
+    block-size: 34px !important;
+    min-inline-size: 34px !important;
+    min-block-size: 34px !important;
+    max-inline-size: 34px !important;
+    max-block-size: 34px !important;
+    flex: 0 0 34px !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    font-size: .78rem !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+    letter-spacing: -.02em !important;
   }
 }

@@ -44,14 +44,15 @@
   <link rel="stylesheet" href="assets/css/components/shell/responsive-boundary.css?v=20260501-responsive-boundary-v1">
   <link rel="stylesheet" href="assets/css/components/shell/desktop-base-stability.css?v=20260501-desktop-base-stability-v1">
   <link rel="stylesheet" href="assets/css/components/shell/mobile-base-stability.css?v=20260501-mobile-base-stability-v1">
+<link rel="stylesheet" href="assets/css/components/shell/app-header.css?v=20260517-header-gap-v3">
 
 <link rel="stylesheet" href="assets/css/pages/mensagens/message-boot.css?v=20260507-messages-mobile-rebuild-v32">
   <link rel="stylesheet" href="assets/css/components/internal/chat-workspace-contract.css?v=20260502-internal-chat-contract-v33">
   <link rel="stylesheet" href="assets/css/patterns/chat-screen-fill.css?v=20260509-screen-fill-v2">
   <link rel="stylesheet" href="assets/css/pages/mensagens/desktop-redesign.css?v=20260515-mobile-thread-topbar-v1">
 <link rel="stylesheet" href="assets/css/components/layout/responsive-page-contract.css?v=20260514-header-parity-audit-v2">
-  <link rel="stylesheet" href="assets/css/components/shell/doke-shell-contract.css?v=20260524-tablet-heading-standard-v2">
-  <link rel="stylesheet" href="assets/css/components/shell/tablet-app-parity.css?v=20260524-tablet-shell-contract-v14">
+  <link rel="stylesheet" href="assets/css/components/shell/doke-shell-contract.css?v=20260528-messages-shared-header-contract-v1">
+  <link rel="stylesheet" href="assets/css/components/shell/tablet-app-parity.css?v=20260528-messages-shared-header-parity-v2">
   <link rel="stylesheet" href="assets/css/components/cards/marketplace-card-contract.css?v=20260525-global-card-contract-v1">
   <link rel="stylesheet" href="assets/css/components/shell/app-header-canonical-contract.css?v=20260525-header-canonical-v3">
   <link rel="stylesheet" href="assets/css/components/shell/shared-page-width-contract.css?v=20260525-rails-container-contract-v1">
@@ -65,15 +66,14 @@
   <link rel="stylesheet" href="assets/css/components/cards/mobile-card-distribution-contract.css?v=20260525-mobile-card-distribution-v1">
   <link rel="stylesheet" href="assets/css/components/shell/desktop-page-rail-authority.css?v=20260526-tablet-header-top-parity-v12">
   <link rel="stylesheet" href="assets/css/components/shell/tablet-internal-rail-contract.css?v=20260526-tablet-internal-rail-contract-v1">
-  <link rel="stylesheet" href="assets/css/pages/mensagens.css?v=20260528-messages-desktop-whitebar-v9">
+  <link rel="stylesheet" href="assets/css/pages/mensagens.css?v=20260528-messages-header-pixel-parity-v19">
 </head>
 <body data-page="mensagens" class="doke-app-shell-page app-shell-page internal-shell-page messages-page-shell doke-flow doke-message-flow">
  <div class="app-shell">
   <aside class="sidebar" data-shell-sidebar></aside>
 
   <div class="page">
-   <main class="page__content doke-page">
-   <header class="messages-tablet-header app-header app-header--messages home-side-meta" aria-label="Atalhos de mensagens">
+   <header class="messages-tablet-header doke-tablet-shell-header app-header app-header--messages home-side-meta" aria-label="Atalhos de mensagens">
     <div class="app-header__inner">
      <div class="home-side-meta__group home-side-meta__group--primary app-header__group app-header__group--primary">
       <button class="home-side-meta__tablet-menu messages-header-menu" type="button" data-mobile-home-menu-open aria-label="Abrir menu lateral" aria-expanded="false" aria-haspopup="dialog">
@@ -89,16 +89,35 @@
         <path d="m16 16 4 4"></path>
        </svg>
       </button>
-      <button class="home-side-meta__alert messages-header-filter-toggle" type="button" aria-label="Filtrar conversas" aria-expanded="false" data-messages-header-filter-toggle>
-       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M5 6.5h14"></path>
-        <path d="M5 12h14"></path>
-        <path d="M5 17.5h14"></path>
-        <circle cx="9" cy="6.5" r="1.75"></circle>
-        <circle cx="15" cy="12" r="1.75"></circle>
-        <circle cx="11" cy="17.5" r="1.75"></circle>
-       </svg>
-      </button>
+      <div class="page-header-context messages-page-actions" aria-label="Ações rápidas de mensagens">
+       <button class="page-header-context__action doke-btn messages-header-filter-toggle" type="button" aria-label="Filtrar conversas" aria-expanded="false" data-messages-filter-toggle>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+         <path d="M5 6.5h14"></path>
+         <path d="M5 12h14"></path>
+         <path d="M5 17.5h14"></path>
+         <circle cx="9" cy="6.5" r="1.75"></circle>
+         <circle cx="15" cy="12" r="1.75"></circle>
+         <circle cx="11" cy="17.5" r="1.75"></circle>
+        </svg>
+        <span>Filtros</span>
+       </button>
+       <button class="page-header-context__action doke-btn messages-header-select-toggle" type="button" aria-label="Selecionar conversas" aria-expanded="false" data-messages-select-toggle>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+         <rect x="4" y="4" width="16" height="16" rx="3"></rect>
+         <path d="m8.5 12 2.5 2.5 4.5-5"></path>
+        </svg>
+        <span>Selecionar</span>
+       </button>
+       <button class="page-header-context__action doke-btn messages-header-agenda-toggle" type="button" aria-label="Abrir agenda de mensagens" aria-expanded="false" data-messages-agenda-toggle>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+         <rect x="4" y="6" width="16" height="14" rx="3"></rect>
+         <path d="M8 4v4"></path>
+         <path d="M16 4v4"></path>
+         <path d="M4 10h16"></path>
+        </svg>
+        <span>Agenda</span>
+       </button>
+      </div>
      </div>
      <div class="home-side-meta__group home-side-meta__group--secondary app-header__group app-header__group--secondary">
       <div class="home-side-meta__profile-wrap">
@@ -132,6 +151,7 @@
      </div>
     </div>
    </header>
+   <main class="page__content doke-page">
     <div class="page__content-inner messages-shell-content">
      <section class="messages-app" data-messages-page data-state-boundary="mensagens" data-view-state="ready" aria-busy="false">
        <div data-state-region data-state-scope="mensagens" aria-live="polite" aria-atomic="true">
@@ -482,7 +502,7 @@
   <script src="assets/js/core/stable-shell-router.js?v=20260513-stable-shell-router-v2" defer></script>
  <script src="assets/js/ui/mobile-drawer.js" defer></script>
  <script src="assets/js/components/media-lightbox.js?v=20260425-shared-media-lightbox-v1" defer></script>
- <script src="assets/js/pages/mensagens.js?v=20260528-messages-header-parity-v2" defer></script>
+ <script src="assets/js/pages/mensagens.js?v=20260528-messages-header-actions-v3" defer></script>
   <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture" defer></script>
   <script src="assets/js/ui/mobile-drawer-standard.js?v=20260428-architecture" defer></script>
   <script src="assets/js/ui/mobile-interaction-standard.js?v=20260428-v1" defer></script>
