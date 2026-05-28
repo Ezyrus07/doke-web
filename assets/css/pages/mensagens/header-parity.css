@@ -1,0 +1,229 @@
+/*
+ * Mensagens — paridade de header em tablet compacto
+ * Responsabilidade: expor o mesmo header compacto usado nas páginas internas
+ * apenas no tablet menor, sem alterar o workspace desktop do chat.
+ */
+
+@media (min-width: 761px), (max-width: 599px) {
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header {
+    display: none !important;
+    visibility: hidden !important;
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    inline-size: 0 !important;
+    block-size: 0 !important;
+    min-inline-size: 0 !important;
+    min-block-size: 0 !important;
+    max-inline-size: 0 !important;
+    max-block-size: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 760px) {
+  html body[data-page="mensagens"].messages-page-shell {
+    --messages-tablet-rail: var(--doke-tablet-page-rail, min(calc(100vw - 36px), 760px));
+    --messages-tablet-header-control: 48px;
+    --messages-tablet-header-gap: 10px;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell,
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page,
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > main.page__content.doke-page {
+    margin-block-start: 0 !important;
+    padding-block-start: 0 !important;
+    min-block-size: 100dvh !important;
+    overflow: visible !important;
+    transform: none !important;
+    top: auto !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header {
+    display: flex !important;
+    visibility: visible !important;
+    position: relative !important;
+    z-index: 20 !important;
+    inset: auto !important;
+    top: auto !important;
+    transform: none !important;
+    inline-size: var(--messages-tablet-rail) !important;
+    width: var(--messages-tablet-rail) !important;
+    max-inline-size: var(--messages-tablet-rail) !important;
+    block-size: var(--messages-tablet-header-control) !important;
+    min-block-size: var(--messages-tablet-header-control) !important;
+    max-block-size: var(--messages-tablet-header-control) !important;
+    margin: 32px auto 42px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header > .app-header__inner {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: none !important;
+    block-size: var(--messages-tablet-header-control) !important;
+    min-block-size: var(--messages-tablet-header-control) !important;
+    max-block-size: var(--messages-tablet-header-control) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header .app-header__group,
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header .home-side-meta__group {
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--messages-tablet-header-gap) !important;
+    min-inline-size: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header :is(.home-side-meta__tablet-menu, .home-side-meta__search, .home-side-meta__alert, .home-side-meta__profile) {
+    display: inline-grid !important;
+    place-items: center !important;
+    inline-size: var(--messages-tablet-header-control) !important;
+    block-size: var(--messages-tablet-header-control) !important;
+    min-inline-size: var(--messages-tablet-header-control) !important;
+    min-block-size: var(--messages-tablet-header-control) !important;
+    max-inline-size: var(--messages-tablet-header-control) !important;
+    max-block-size: var(--messages-tablet-header-control) !important;
+    flex: 0 0 var(--messages-tablet-header-control) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 16px !important;
+    overflow: visible !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header .home-side-meta__avatar {
+    inline-size: 34px !important;
+    block-size: 34px !important;
+    min-inline-size: 34px !important;
+    min-block-size: 34px !important;
+    font-size: 0.72rem !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header .home-side-meta__identity,
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header .profile-dropdown {
+    display: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header svg {
+    inline-size: 18px !important;
+    block-size: 18px !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-shell-content {
+    inline-size: var(--messages-tablet-rail) !important;
+    width: var(--messages-tablet-rail) !important;
+    max-inline-size: var(--messages-tablet-rail) !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    position: relative !important;
+    top: auto !important;
+    transform: none !important;
+    overflow: visible !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app,
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar {
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: none !important;
+    margin: 0 !important;
+    padding-block-start: 0 !important;
+    overflow: visible !important;
+    position: relative !important;
+    top: auto !important;
+    transform: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-brand,
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-tools {
+    position: absolute !important;
+    inline-size: 1px !important;
+    block-size: 1px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-block:first-of-type {
+    margin-block-start: 0 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell.is-messages-header-search-open .messages-sidebar-tools {
+    position: relative !important;
+    display: flex !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    block-size: auto !important;
+    height: auto !important;
+    margin: 0 0 14px !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    clip: auto !important;
+    clip-path: none !important;
+    white-space: normal !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell.is-messages-header-search-open .messages-sidebar-tools > :not(.messages-sidebar-search) {
+    display: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell.is-messages-header-search-open .messages-sidebar-search {
+    display: flex !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+  }
+}
+
+@media (min-width: 761px) {
+  html,
+  html body[data-page="mensagens"].messages-page-shell {
+    block-size: 100dvh !important;
+    min-block-size: 100dvh !important;
+    max-block-size: 100dvh !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell,
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page,
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > main.page__content.doke-page,
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > main.page__content.doke-page > .messages-shell-content {
+    block-size: 100dvh !important;
+    min-block-size: 0 !important;
+    max-block-size: 100dvh !important;
+    inline-size: 100% !important;
+    max-inline-size: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    top: auto !important;
+    transform: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app {
+    block-size: 100% !important;
+    min-block-size: 0 !important;
+    max-block-size: 100% !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+  }
+}

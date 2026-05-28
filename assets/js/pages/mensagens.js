@@ -1438,3 +1438,52 @@
     initInternalMobileHeaderMenu();
   }
 })();
+
+(() => {
+  const initMessagesHeaderParity = () => {
+    const pageRoot = document.querySelector('[data-messages-page]');
+    const body = document.body;
+    if (!pageRoot || !body || body.dataset.messagesHeaderParityReady === 'true') return;
+    body.dataset.messagesHeaderParityReady = 'true';
+
+    const searchToggle = document.querySelector('[data-messages-header-search-toggle]');
+    const filterToggle = document.querySelector('[data-messages-header-filter-toggle]');
+    const searchInput = pageRoot.querySelector('[data-messages-search-input]');
+    const filterPanel = pageRoot.querySelector('[data-messages-desktop-filters-panel]');
+    const internalFilterToggle = pageRoot.querySelector('[data-messages-filter-toggle]');
+
+    const syncFilterState = (expanded) => {
+      [filterToggle, internalFilterToggle].filter(Boolean).forEach((toggle) => {
+        toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      });
+    };
+
+    searchToggle?.addEventListener('click', () => {
+      const willOpen = !body.classList.contains('is-messages-header-search-open');
+      body.classList.toggle('is-messages-header-search-open', willOpen);
+      searchToggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+      if (willOpen) window.requestAnimationFrame(() => searchInput?.focus());
+    });
+
+    pageRoot.querySelectorAll('.messages-sidebar-search__close').forEach((button) => {
+      button.addEventListener('click', () => {
+        body.classList.remove('is-messages-header-search-open');
+        searchToggle?.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    filterToggle?.addEventListener('click', (event) => {
+      if (!filterPanel) return;
+      event.preventDefault();
+      const willOpen = filterPanel.hidden;
+      filterPanel.hidden = !willOpen;
+      syncFilterState(willOpen);
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMessagesHeaderParity, { once: true });
+  } else {
+    initMessagesHeaderParity();
+  }
+})();
