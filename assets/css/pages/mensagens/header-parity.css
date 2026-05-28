@@ -348,3 +348,153 @@
     letter-spacing: -.02em !important;
   }
 }
+
+/* 2026-05-28 — Tablet thread contextual mode.
+   Lista usa o header compartilhado de ações. Conversa aberta vira um contexto
+   próprio: remove o header global do fluxo e deixa o header interno da conversa
+   assumir a navegação principal, evitando dupla barra e perda de área útil. */
+@media (min-width: 600px) and (max-width: 760px) {
+  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) > .app-shell > .page > .messages-tablet-header {
+    display: none !important;
+    visibility: hidden !important;
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    inline-size: 0 !important;
+    block-size: 0 !important;
+    min-inline-size: 0 !important;
+    min-block-size: 0 !important;
+    max-inline-size: 0 !important;
+    max-block-size: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-shell-content {
+    padding: 14px 0 18px !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open {
+    display: block !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    min-block-size: calc(100dvh - 32px) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-sidebar {
+    position: absolute !important;
+    display: block !important;
+    inline-size: 1px !important;
+    block-size: 1px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread,
+  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread {
+    position: relative !important;
+    inset: auto !important;
+    z-index: auto !important;
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: 100% !important;
+    block-size: calc(100dvh - 32px) !important;
+    min-block-size: 0 !important;
+    max-block-size: calc(100dvh - 32px) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 1px solid rgba(207, 222, 238, 0.72) !important;
+    border-radius: 24px !important;
+    background: #ffffff !important;
+    box-shadow: 0 16px 34px rgba(32, 63, 96, 0.08) !important;
+    overflow: hidden !important;
+    clip: auto !important;
+    clip-path: none !important;
+    white-space: normal !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__header,
+  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__header {
+    position: relative !important;
+    z-index: 2 !important;
+    display: grid !important;
+    grid-template-columns: 44px minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 12px !important;
+    min-block-size: 64px !important;
+    block-size: 64px !important;
+    padding: 10px 12px !important;
+    border: 0 !important;
+    border-bottom: 1px solid rgba(207, 222, 238, 0.68) !important;
+    border-radius: 0 !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    box-shadow: none !important;
+    clip: auto !important;
+    clip-path: none !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__body,
+  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__body {
+    display: flex !important;
+    flex-direction: column !important;
+    min-block-size: 0 !important;
+    padding: 18px 18px 16px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+    clip: auto !important;
+    clip-path: none !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-composer,
+  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-composer {
+    display: grid !important;
+    grid-template-columns: auto auto minmax(0, 1fr) auto !important;
+    align-items: end !important;
+    gap: 10px !important;
+    margin: 0 !important;
+    padding: 14px !important;
+    border: 0 !important;
+    border-top: 1px solid rgba(207, 222, 238, 0.68) !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    clip: auto !important;
+    clip-path: none !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__back,
+  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__back,
+  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__action,
+  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action {
+    min-inline-size: 40px !important;
+    inline-size: 40px !important;
+    min-block-size: 40px !important;
+    block-size: 40px !important;
+    border-radius: 14px !important;
+  }
+
+}
