@@ -2932,3 +2932,168 @@ body.messages-page-shell .messages-sidebar-tools__menu {
     grid-template-columns: clamp(360px, 18vw, 460px) minmax(0, 1fr) !important;
   }
 }
+
+
+/* 2026-05-28 — Mensagens v32: restore desktop + Discord-like zoom safely.
+   Corrige o v31: não usar fixed na .page/.messages-shell-content em desktop.
+   O comportamento tipo Discord deve vir do grid do app-shell, não de tirar a rota
+   do fluxo. Assim a tela não some e o espaço à esquerda não abre em zoom baixo. */
+@media (min-width: 900px) {
+  html body[data-page="mensagens"].messages-page-shell {
+    --messages-shell-sidebar-width: var(--doke-desktop-sidebar-width, var(--sidebar-width, 272px));
+    overflow: hidden !important;
+    background: #eef4fa !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: var(--messages-shell-sidebar-width) minmax(0, 1fr) !important;
+    inline-size: 100vw !important;
+    width: 100vw !important;
+    max-inline-size: 100vw !important;
+    max-width: 100vw !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: #eef4fa !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .sidebar {
+    position: sticky !important;
+    inset: auto !important;
+    top: 0 !important;
+    grid-column: 1 !important;
+    inline-size: var(--messages-shell-sidebar-width) !important;
+    width: var(--messages-shell-sidebar-width) !important;
+    max-inline-size: var(--messages-shell-sidebar-width) !important;
+    max-width: var(--messages-shell-sidebar-width) !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    margin: 0 !important;
+    z-index: 30 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page {
+    position: relative !important;
+    inset: auto !important;
+    grid-column: 2 !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: none !important;
+    max-width: none !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: #eef4fa !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > .page__content,
+  html body[data-page="mensagens"].messages-page-shell .page__content,
+  html body[data-page="mensagens"].messages-page-shell .messages-shell-content {
+    position: relative !important;
+    inset: auto !important;
+    display: block !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: none !important;
+    max-width: none !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    max-block-size: none !important;
+    max-height: none !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: #eef4fa !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app {
+    position: relative !important;
+    inset: auto !important;
+    display: grid !important;
+    grid-template-columns: clamp(300px, 24vw, 420px) minmax(0, 1fr) !important;
+    gap: 0 !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: none !important;
+    max-width: none !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    max-block-size: none !important;
+    max-height: none !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: transparent !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar {
+    background: #f3f8fd !important;
+    block-size: 100% !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+    background: #ffffff !important;
+    block-size: 100% !important;
+    height: 100% !important;
+    min-block-size: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__body {
+    display: block !important;
+    min-block-size: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* Zoom muito baixo / viewport gigante: preencher como Discord.
+   Não centraliza card e não abre espaço entre sidebar global e lista. */
+@media (min-width: 1800px) {
+  html body[data-page="mensagens"].messages-page-shell .messages-app {
+    grid-template-columns: clamp(340px, 20vw, 440px) minmax(0, 1fr) !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__body {
+    padding: 24px clamp(20px, 2vw, 36px) 20px !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-bubble:not(.message-bubble--me) {
+    max-inline-size: min(760px, 74ch, calc(100% - 96px)) !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-bubble--me,
+  html body[data-page="mensagens"].messages-page-shell .message-row--me .message-bubble {
+    max-inline-size: min(680px, 58%, 72ch) !important;
+  }
+}
+
+@media (min-width: 2400px) {
+  html body[data-page="mensagens"].messages-page-shell .messages-app {
+    grid-template-columns: clamp(360px, 18vw, 460px) minmax(0, 1fr) !important;
+  }
+}
