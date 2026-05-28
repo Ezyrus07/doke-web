@@ -1291,3 +1291,617 @@ body[data-page="perfil"].profile-page-shell .profile-bio {
     font-size: 0.78rem !important;
   }
 }
+
+
+/* Tablet landscape profile contract.
+   iPad landscape has sidebar but should not fall into the loose desktop contract:
+   the topbar, hero and panels share one rail, and service cards render as a
+   safe 2-column grid without inherited carousel clipping. */
+@media (min-width: 900px) and (max-width: 1179px) and (orientation: landscape) {
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] {
+    --profile-landscape-rail: min(
+      calc(100vw - var(--doke-app-sidebar-width, 280px) - 96px),
+      900px
+    ) !important;
+    --profile-standard-rail: var(--profile-landscape-rail) !important;
+    --profile-tablet-rail: var(--profile-landscape-rail) !important;
+    --profile-owner-desktop-width: var(--profile-landscape-rail) !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] > .app-shell > .page > header#doke-profile-header-lock.app-header.home-side-meta,
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] > .app-shell > .page > header#doke-profile-header-lock.app-header.home-side-meta > .app-header__inner,
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] > .app-shell > .page > main.page__content > #doke-profile-rail-lock.profile-shell-content,
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] > .app-shell > .page > .page__content > .page__content-inner.profile-shell-content {
+    width: var(--profile-landscape-rail) !important;
+    inline-size: var(--profile-landscape-rail) !important;
+    max-width: var(--profile-landscape-rail) !important;
+    max-inline-size: var(--profile-landscape-rail) !important;
+    min-width: 0 !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] > .app-shell > .page > header#doke-profile-header-lock.app-header.home-side-meta > .app-header__inner {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 18px !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-screen,
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-hero-shell,
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-panels,
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-panel.is-active:not([hidden]) {
+    width: 100% !important;
+    inline-size: 100% !important;
+    max-width: 100% !important;
+    max-inline-size: 100% !important;
+    min-width: 0 !important;
+    margin-inline: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-screen {
+    gap: 18px !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-hero-shell {
+    border-radius: 26px !important;
+    background: transparent !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-hero-shell__cover {
+    height: 172px !important;
+    min-height: 172px !important;
+    max-height: 172px !important;
+    border-radius: 26px 26px 0 0 !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-cover__content {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 100% !important;
+    padding: 30px 56px 74px !important;
+    text-align: center !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-cover__title {
+    display: block !important;
+    max-width: 580px !important;
+    font-size: clamp(2rem, 3.2vw, 2.52rem) !important;
+    line-height: 1.02 !important;
+    letter-spacing: -0.045em !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: -54px 0 0 !important;
+    border-radius: 26px !important;
+    overflow: visible !important;
+    background: rgba(255, 255, 255, 0.992) !important;
+    border: 1px solid rgba(214, 226, 238, 0.92) !important;
+    box-shadow: 0 18px 40px rgba(20, 58, 104, 0.10) !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-card__content {
+    display: grid !important;
+    grid-template-columns: 108px minmax(0, 1fr) minmax(238px, 292px) !important;
+    grid-template-areas: "avatar main side" !important;
+    column-gap: 22px !important;
+    row-gap: 14px !important;
+    align-items: start !important;
+    padding: 0 28px 18px !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-avatar-column {
+    grid-area: avatar !important;
+    width: 108px !important;
+    height: 108px !important;
+    margin: -34px 0 0 !important;
+    padding: 0 !important;
+    justify-self: start !important;
+    align-self: start !important;
+    position: relative !important;
+    z-index: 4 !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-avatar-frame {
+    width: 104px !important;
+    height: 104px !important;
+    min-width: 104px !important;
+    min-height: 104px !important;
+    max-width: 104px !important;
+    max-height: 104px !important;
+    padding: 6px !important;
+    border-radius: 999px !important;
+    background: #fff !important;
+    box-shadow: 0 18px 34px rgba(14, 45, 78, 0.16) !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-avatar {
+    width: 92px !important;
+    height: 92px !important;
+    min-width: 92px !important;
+    min-height: 92px !important;
+    max-width: 92px !important;
+    max-height: 92px !important;
+    border-radius: 999px !important;
+    font-size: 2rem !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-main-column {
+    grid-area: main !important;
+    display: grid !important;
+    align-content: start !important;
+    gap: 9px !important;
+    min-width: 0 !important;
+    padding-top: 28px !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-name-row {
+    display: block !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-name {
+    max-width: none !important;
+    font-size: clamp(1.84rem, 2.55vw, 2.18rem) !important;
+    line-height: 1.02 !important;
+    letter-spacing: -0.045em !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-meta-row {
+    gap: 8px !important;
+    font-size: 0.78rem !important;
+    line-height: 1.18 !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-category-row {
+    gap: 8px !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-category-pill,
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-chip {
+    min-height: 28px !important;
+    padding-inline: 11px !important;
+    font-size: 0.7rem !important;
+    border-radius: 999px !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-bio {
+    max-width: 54ch !important;
+    margin-top: 2px !important;
+    font-size: 0.82rem !important;
+    line-height: 1.38 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-side-column {
+    grid-area: side !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-content: start !important;
+    justify-items: stretch !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding-top: 30px !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-actions-row {
+    order: 1 !important;
+    display: flex !important;
+    justify-content: stretch !important;
+    width: 100% !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-actions-row .profile-action,
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-actions-row .profile-follow-action {
+    width: 100% !important;
+    min-height: 42px !important;
+    height: 42px !important;
+    padding-inline: 14px !important;
+    border-radius: 12px !important;
+    font-size: 0.78rem !important;
+    font-weight: 850 !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-stats-row {
+    order: 2 !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    min-height: 64px !important;
+    padding: 2px 0 !important;
+    border: 0 !important;
+    border-radius: 14px !important;
+    background: rgba(246, 250, 253, 0.96) !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-stat {
+    min-height: 60px !important;
+    padding: 8px 6px 6px !important;
+    display: grid !important;
+    align-content: center !important;
+    justify-items: center !important;
+    gap: 3px !important;
+    border-left: 0 !important;
+    background: transparent !important;
+    position: relative !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-stat + .profile-stat::after {
+    content: "" !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 50% !important;
+    width: 1px !important;
+    height: 28px !important;
+    transform: translateY(-50%) !important;
+    background: rgba(16, 40, 73, 0.10) !important;
+    border-radius: 999px !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-stat::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-stat__value {
+    font-size: 0.98rem !important;
+    line-height: 1 !important;
+    letter-spacing: -0.04em !important;
+    color: #102849 !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-stat__label {
+    font-size: 0.48rem !important;
+    line-height: 1.12 !important;
+    color: #6f819c !important;
+    text-align: center !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-tabs.profile-tabs--compact {
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    width: calc(100% - 40px) !important;
+    max-width: calc(100% - 40px) !important;
+    margin: 0 20px 18px !important;
+    min-height: 54px !important;
+    padding: 8px !important;
+    gap: 6px !important;
+    overflow: hidden !important;
+    border-radius: 18px !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-tabs.profile-tabs--compact .profile-tab {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 38px !important;
+    padding-inline: 6px !important;
+    font-size: 0.66rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-services-toolbar {
+    margin: 0 0 18px !important;
+    gap: 12px !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-services-results.results-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-flow: row !important;
+    grid-auto-rows: auto !important;
+    gap: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    scroll-snap-type: none !important;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-services-results.results-grid > .doke-ad-card,
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-services-results.results-grid > .doke-ad-card:nth-child(n) {
+    display: flex !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 342px !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    flex: initial !important;
+    scroll-snap-align: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-services-results.results-grid > .doke-ad-card .doke-ad-card__media {
+    height: 128px !important;
+    min-height: 128px !important;
+    max-height: none !important;
+    flex: 0 0 128px !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-services-results.results-grid > .doke-ad-card .doke-ad-card__body {
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 12px 14px 14px !important;
+    overflow: visible !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-services-results.results-grid > .doke-ad-card .doke-ad-card__footer {
+    margin-top: auto !important;
+    padding-top: 10px !important;
+  }
+}
+
+
+/* Tablet landscape contract aligned to desktop behavior.
+   This range should behave like a compact desktop, not like a stretched portrait layout. */
+@media (min-width: 900px) and (max-width: 1179px) {
+  body[data-page="perfil"].profile-page-shell.has-global-header {
+    --profile-standard-rail: min(calc(100vw - var(--doke-app-sidebar-width, 280px) - 56px), 1048px) !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell.has-global-header > .app-shell > .page > header.app-header.home-side-meta,
+  html body[data-page="perfil"].profile-page-shell.has-global-header > .app-shell > .page > header.app-header.home-side-meta > .app-header__inner,
+  html body[data-page="perfil"].profile-page-shell.has-global-header > .app-shell > .page > main.page__content > #doke-profile-rail-lock.profile-shell-content,
+  html body[data-page="perfil"].profile-page-shell.has-global-header > .app-shell > .page > .page__content > .page__content-inner.profile-shell-content,
+  html body[data-page="perfil"].profile-page-shell.has-global-header > .app-shell > .page > main.page__content > .page__content-inner.profile-shell-content,
+  #doke-profile-header-lock#doke-profile-header-lock {
+    width: var(--profile-standard-rail) !important;
+    inline-size: var(--profile-standard-rail) !important;
+    max-width: var(--profile-standard-rail) !important;
+    max-inline-size: var(--profile-standard-rail) !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="perfil"].profile-page-shell.has-global-header > .app-shell > .page > header.app-header.home-side-meta > .app-header__inner,
+  #doke-profile-header-lock#doke-profile-header-lock > .app-header__inner,
+  html body[data-page="perfil"].profile-page-shell.has-global-header > .app-shell > .page > main.page__content > #doke-profile-rail-lock.profile-shell-content > .profile-screen,
+  html body[data-page="perfil"].profile-page-shell.has-global-header > .app-shell > .page > .page__content > .page__content-inner.profile-shell-content > .profile-screen,
+  body[data-page="perfil"].profile-page-shell .profile-hero-shell,
+  body[data-page="perfil"].profile-page-shell .profile-panels,
+  body[data-page="perfil"].profile-page-shell .profile-panel.is-active {
+    width: 100% !important;
+    inline-size: 100% !important;
+    max-width: 100% !important;
+    max-inline-size: 100% !important;
+    margin-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-hero-shell {
+    border-radius: 30px !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-hero-shell__cover {
+    height: clamp(208px, 24vw, 238px) !important;
+    min-height: 208px !important;
+    border-radius: 30px 30px 0 0 !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-cover__content {
+    padding: 34px 44px 78px !important;
+    align-items: center !important;
+    text-align: center !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-cover__title {
+    max-width: 700px !important;
+    font-size: clamp(2.5rem, 4vw, 3.35rem) !important;
+    line-height: .94 !important;
+    letter-spacing: -0.045em !important;
+    text-wrap: balance !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-card {
+    margin-top: -60px !important;
+    border-radius: 24px !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-card__content {
+    display: grid !important;
+    grid-template-columns: 136px minmax(380px, 1fr) minmax(230px, 278px) !important;
+    grid-template-areas: "avatar main side" !important;
+    align-items: start !important;
+    column-gap: 28px !important;
+    row-gap: 0 !important;
+    padding: 0 28px 22px !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-avatar-column {
+    grid-area: avatar !important;
+    width: 136px !important;
+    margin: -46px 0 0 8px !important;
+    padding: 0 !important;
+    justify-self: start !important;
+    align-self: start !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-avatar-frame {
+    width: 128px !important;
+    height: 128px !important;
+    padding: 7px !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-avatar {
+    width: 114px !important;
+    height: 114px !important;
+    font-size: 2.45rem !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-main-column {
+    grid-area: main !important;
+    padding-top: 34px !important;
+    min-width: 380px !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-name-row {
+    display: block !important;
+    min-width: 0 !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-name-group {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-name {
+    max-width: 100% !important;
+    font-size: clamp(1.95rem, 2.6vw, 2.35rem) !important;
+    line-height: .98 !important;
+    letter-spacing: -0.05em !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-handle-row {
+    margin-top: 10px !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-badges-row {
+    margin-top: 14px !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-description {
+    margin-top: 14px !important;
+    max-width: 100% !important;
+    font-size: .98rem !important;
+    line-height: 1.44 !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-side-column {
+    grid-area: side !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    padding-top: 34px !important;
+    align-self: start !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-actions-row {
+    order: 1 !important;
+    display: flex !important;
+    justify-content: stretch !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-actions-row .profile-action,
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-actions-row .profile-button,
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-actions-row button {
+    width: 100% !important;
+    min-height: 48px !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-stats-row {
+    order: 2 !important;
+    min-height: 92px !important;
+    border-radius: 18px !important;
+    background: linear-gradient(180deg, rgba(246, 250, 253, 0.98) 0%, rgba(241, 246, 250, 0.96) 100%) !important;
+    padding: 4px 0 !important;
+    align-items: stretch !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-stats-row .profile-stat {
+    min-height: 84px !important;
+    padding: 8px 10px !important;
+    background: transparent !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-stats-row .profile-stat__value {
+    font-size: 1.55rem !important;
+    line-height: 1 !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-stats-row .profile-stat__label {
+    font-size: .66rem !important;
+    line-height: 1.15 !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-card > .profile-tabs.profile-tabs--compact,
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-tabs.profile-tabs--compact {
+    display: grid !important;
+    grid-template-columns: repeat(9, minmax(0, 1fr)) !important;
+    width: calc(100% - 40px) !important;
+    max-width: calc(100% - 40px) !important;
+    margin: 4px 20px 12px !important;
+    padding: 8px 10px !important;
+    min-height: 68px !important;
+    gap: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"][data-profile-view="owner"] .profile-tabs.profile-tabs--compact .profile-tab {
+    min-width: 0 !important;
+    width: 100% !important;
+    padding: 0 5px !important;
+    font-size: .75rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    justify-content: center !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell[data-profile-type="professional"] .profile-services-toolbar {
+    margin: 0 0 24px !important;
+    gap: 14px !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell .profile-services-results,
+  body[data-page="perfil"].profile-page-shell .profile-services-results.results-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    justify-content: stretch !important;
+    gap: 20px !important;
+    overflow: visible !important;
+    max-height: none !important;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell .profile-services-results .service-card--feed {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    min-height: 100% !important;
+    height: auto !important;
+  }
+
+  body[data-page="perfil"].profile-page-shell .profile-services-results .service-card__media {
+    min-height: 192px !important;
+  }
+}

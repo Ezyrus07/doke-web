@@ -436,3 +436,252 @@
     font-size: 0.76rem !important;
   }
 }
+
+
+/* HOME MOBILE FEED RECOVERY — v95
+   Scope: index/home mobile only.
+   Fixes Safari/mobile cards that were rendered as squeezed multi-column strips.
+   Keeps the solution page-scoped; no shell, sidebar, header or global card contract changes. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted {
+    overflow-x: clip !important;
+  }
+
+  html.home-index-root body.home-index-shell .page__content,
+  html.home-index-root body.home-index-shell .shell-home__workspace,
+  html.home-index-root body.home-index-shell .shell-home__workspace--clean {
+    overflow-x: clip !important;
+    padding-bottom: calc(128px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* Featured service cards: mobile must be a readable horizontal rail, not 3 squeezed cards. */
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail.doke-scroll-rail,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-services > .content-rail.doke-scroll-rail,
+  html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services > .content-rail.more-services__cards-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-snap-type: x proximity !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail.doke-scroll-rail::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-services #featured-services-track.service-grid {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    grid-auto-columns: minmax(0, min(78vw, 320px)) !important;
+    justify-content: start !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+    width: max-content !important;
+    min-width: 100% !important;
+    max-width: none !important;
+    padding: 0 4px 10px 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    scroll-snap-type: x proximity !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid],
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .service-grid[data-more-services-grid] {
+    display: grid !important;
+    grid-auto-flow: row !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid > article.doke-ad-card,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-services #featured-services-track.service-grid > article.doke-ad-card,
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] > article.doke-ad-card:not([hidden]) {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    scroll-snap-align: start !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__media,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__media {
+    height: clamp(150px, 38vw, 178px) !important;
+    min-height: clamp(150px, 38vw, 178px) !important;
+    max-height: clamp(150px, 38vw, 178px) !important;
+    flex: 0 0 auto !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__body,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__body {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    min-height: 0 !important;
+    padding: 16px 16px 18px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__footer,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__footer {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-top: 8px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services .doke-ad-card__cta,
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__cta {
+    flex: 0 0 auto !important;
+    min-width: 132px !important;
+    max-width: 150px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Workers: restore real cards; prevent the old track from becoming thin vertical strips. */
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.short-videos > .content-rail.home-media-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-snap-type: x proximity !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    grid-auto-columns: minmax(154px, min(44vw, 184px)) !important;
+    gap: 14px !important;
+    width: max-content !important;
+    min-width: 100% !important;
+    max-width: none !important;
+    padding: 0 4px 10px 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    scroll-snap-type: x proximity !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.video-card,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track > article.video-card {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 236px !important;
+    max-height: none !important;
+    aspect-ratio: 9 / 14 !important;
+    overflow: hidden !important;
+    border-radius: 24px !important;
+    scroll-snap-align: start !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track > article.video-card:nth-child(n + 5) {
+    display: none !important;
+  }
+
+  /* Featured professionals: use a proper mobile carousel, not cramped 2/3-column cards. */
+  html.home-index-root body.home-index-shell section.featured-pros > .content-rail.doke-scroll-rail,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-pros > .content-rail.doke-scroll-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-snap-type: x proximity !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros > .content-rail.doke-scroll-rail::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-pros #featured-pros-track.featured-pros__grid {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    grid-auto-columns: minmax(0, min(76vw, 300px)) !important;
+    justify-content: start !important;
+    gap: 16px !important;
+    width: max-content !important;
+    min-width: 100% !important;
+    max-width: none !important;
+    padding: 0 4px 12px 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    scroll-snap-type: x proximity !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 214px !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    overflow: hidden !important;
+    scroll-snap-align: start !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .pro-card__cta {
+    width: 100% !important;
+    min-height: 44px !important;
+    white-space: nowrap !important;
+  }
+}
+
+@media (max-width: 420px) {
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid,
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid {
+    grid-auto-columns: minmax(0, calc(100vw - 72px)) !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track {
+    grid-auto-columns: minmax(150px, 44vw) !important;
+  }
+}
