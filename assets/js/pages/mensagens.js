@@ -9,8 +9,10 @@
       messages: [
         { author: "Studio Aquarela", time: "09:12", text: "Recebemos seu pedido e já separamos uma proposta base para pintura interna com pequenos reparos.", mine: false },
         { author: "Você", time: "09:18", text: "Perfeito. Quero entender prazo, materiais incluídos e se vocês conseguem começar ainda esta semana.", mine: true },
-        { author: "Studio Aquarela", time: "09:26", text: "Conseguimos iniciar em até 7 dias. Tinta, proteção e acabamento já entram no orçamento.", mine: false },
-        { author: "Studio Aquarela", time: "09:27", text: "Se fizer sentido, posso te enviar agora a versão fechada da proposta para aprovação.", mine: false }
+        { author: "Studio Aquarela", time: "09:22", text: "Conseguimos iniciar em até 7 dias. Tinta, proteção e acabamento já entram no pacote. Posso te enviar o detalhamento?", mine: false },
+        { author: "Você", time: "09:24", text: "Sim, por favor! Assim consigo alinhar com a equipe e já fechamos.", mine: true },
+        { author: "Studio Aquarela", time: "09:26", text: "Enviando agora o PDF com tudo detalhado. Qualquer dúvida, estou por aqui!", mine: false },
+        { author: "Você", time: "09:28", text: "Recebido aqui. Muito claro 👋 Obrigado pelo atendimento!", mine: true }
       ]
     },
     "living-room": {

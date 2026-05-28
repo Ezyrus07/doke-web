@@ -803,3 +803,1393 @@ body.messages-page-shell .messages-sidebar-tools__menu {
     min-height: 100dvh !important;
   }
 }
+
+
+/* 2026-05-28 — Mensagens v12: clean desktop layout contract.
+   Recomeça a correção a partir do fluxo real do app-shell.
+   Não usa position: fixed, não mexe na sidebar global e não desloca o shell.
+   Responsabilidade: manter mensagens.html colado ao topo e sem overflow lateral. */
+@media (min-width: 901px) {
+  html body[data-page="mensagens"].messages-page-shell {
+    overflow: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page,
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > .page__content {
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .page__content-inner.messages-shell-content,
+  html body[data-page="mensagens"].messages-page-shell .messages-shell-content {
+    position: relative !important;
+    inset: auto !important;
+    display: block !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    max-block-size: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app,
+  html body[data-page="mensagens"].messages-page-shell .messages-app.doke-page-section {
+    position: relative !important;
+    inset: auto !important;
+    display: grid !important;
+    grid-template-columns: clamp(320px, 27vw, 390px) minmax(0, 1fr) !important;
+    gap: 0 !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    max-block-size: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border-radius: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar,
+  html body[data-page="mensagens"].messages-page-shell .messages-thread {
+    inline-size: auto !important;
+    width: auto !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    block-size: 100% !important;
+    height: 100% !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    max-block-size: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar {
+    overflow-y: auto !important;
+    padding: 18px 14px 20px !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-tools {
+    gap: 10px !important;
+    padding: 0 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-search--modern {
+    min-inline-size: 0 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-item {
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    padding-inline: 14px !important;
+    gap: 12px !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+    border-inline-start: 1px solid #d9e5f1 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-linked-order,
+  html body[data-page="mensagens"].messages-page-shell .messages-selection-bar {
+    display: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 12px !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    min-block-size: 86px !important;
+    padding: 14px 18px !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__profile {
+    min-inline-size: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action {
+    flex: 0 0 auto !important;
+    height: 46px !important;
+    min-inline-size: 46px !important;
+    min-width: 46px !important;
+    max-inline-size: 126px !important;
+    max-width: 126px !important;
+    padding-inline: 12px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action--call,
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action--more {
+    inline-size: 46px !important;
+    width: 46px !important;
+    padding-inline: 0 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__body {
+    inline-size: 100% !important;
+    width: 100% !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    min-block-size: 0 !important;
+    padding: 22px 18px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-row,
+  html body[data-page="mensagens"].messages-page-shell .message-row--me {
+    inline-size: 100% !important;
+    width: 100% !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    margin-block: 16px !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-row--me {
+    justify-content: flex-end !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-bubble {
+    min-inline-size: 0 !important;
+    max-inline-size: min(620px, calc(100% - 76px)) !important;
+    box-sizing: border-box !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-bubble--me {
+    max-inline-size: min(520px, 58%) !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-composer {
+    inline-size: 100% !important;
+    width: 100% !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    min-block-size: 76px !important;
+    padding: 10px 18px !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__field {
+    min-inline-size: 0 !important;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1500px) {
+  html body[data-page="mensagens"].messages-page-shell .messages-app,
+  html body[data-page="mensagens"].messages-page-shell .messages-app.doke-page-section {
+    grid-template-columns: clamp(292px, 25vw, 340px) minmax(0, 1fr) !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action--order,
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action--charge {
+    inline-size: 46px !important;
+    width: 46px !important;
+    max-inline-size: 46px !important;
+    max-width: 46px !important;
+    padding-inline: 0 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action--order span,
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action--charge span {
+    display: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action--order svg,
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action--charge svg {
+    display: block !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-bubble--me {
+    max-inline-size: min(460px, 54%) !important;
+  }
+}
+
+
+/* 2026-05-28 — Mensagens v13: full workspace contract.
+   A tela de mensagens deixa de se comportar como página interna com rail.
+   Ela passa a preencher 100% da área útil do app-shell, sem fixed positioning
+   e sem mexer em contratos globais fora de body[data-page="mensagens"]. */
+@media (min-width: 761px) {
+  html body[data-page="mensagens"].messages-page-shell {
+    overflow: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell {
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page {
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: none !important;
+    max-width: none !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > .page__content,
+  html body[data-page="mensagens"].messages-page-shell .page__content,
+  html body[data-page="mensagens"].messages-page-shell .page__content-inner.messages-shell-content,
+  html body[data-page="mensagens"].messages-page-shell .messages-shell-content {
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: none !important;
+    max-width: none !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    max-block-size: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app,
+  html body[data-page="mensagens"].messages-page-shell .messages-app.doke-page-section {
+    position: relative !important;
+    inset: auto !important;
+    display: grid !important;
+    gap: 0 !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    max-block-size: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar,
+  html body[data-page="mensagens"].messages-page-shell .messages-thread {
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+    block-size: 100% !important;
+    height: 100% !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar {
+    overflow-y: auto !important;
+    border-radius: 0 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+    border-radius: 0 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__body {
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    min-block-size: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-composer {
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1024px) {
+  html body[data-page="mensagens"].messages-page-shell .messages-app,
+  html body[data-page="mensagens"].messages-page-shell .messages-app.doke-page-section {
+    grid-template-columns: clamp(292px, 36vw, 360px) minmax(0, 1fr) !important;
+  }
+}
+
+@media (min-width: 1025px) {
+  html body[data-page="mensagens"].messages-page-shell .messages-app,
+  html body[data-page="mensagens"].messages-page-shell .messages-app.doke-page-section {
+    grid-template-columns: clamp(300px, 26vw, 380px) minmax(0, 1fr) !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar {
+    padding: 0 14px 18px !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-tools {
+    padding-block-start: 18px !important;
+    gap: 10px !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__header {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 12px !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    padding-inline: 18px !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__profile {
+    min-inline-size: 0 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action {
+    flex: 0 0 46px !important;
+    inline-size: 46px !important;
+    width: 46px !important;
+    min-inline-size: 46px !important;
+    min-width: 46px !important;
+    max-inline-size: 46px !important;
+    max-width: 46px !important;
+    padding-inline: 0 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action span {
+    display: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action svg {
+    display: block !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__body {
+    padding-inline: clamp(16px, 2vw, 28px) !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-row {
+    inline-size: 100% !important;
+    width: 100% !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-row--me {
+    justify-content: flex-end !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-bubble {
+    min-inline-size: 0 !important;
+    max-inline-size: min(620px, calc(100% - 72px)) !important;
+    box-sizing: border-box !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-bubble--me {
+    max-inline-size: min(520px, 56%) !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-composer {
+    padding-inline: clamp(16px, 2vw, 24px) !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__field {
+    min-inline-size: 0 !important;
+  }
+}
+
+@media (min-width: 1500px) {
+  html body[data-page="mensagens"].messages-page-shell .messages-app,
+  html body[data-page="mensagens"].messages-page-shell .messages-app.doke-page-section {
+    grid-template-columns: clamp(360px, 27vw, 430px) minmax(0, 1fr) !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action--order,
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action--charge {
+    flex-basis: 128px !important;
+    inline-size: 128px !important;
+    width: 128px !important;
+    max-inline-size: 128px !important;
+    max-width: 128px !important;
+    padding-inline: 14px !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action--order span,
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action--charge span {
+    display: inline !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action--order svg,
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action--charge svg {
+    display: none !important;
+  }
+}
+
+
+/* 2026-05-28 — Mensagens v14: full-bleed route authority.
+   Objetivo: remover o comportamento de página com rail/gutter no mensagens.html.
+   A rota passa a ocupar toda a largura e altura úteis da coluna .page do app-shell,
+   sem position: fixed e sem afetar outras páginas. */
+@media (min-width: 761px) {
+  html body[data-page="mensagens"].messages-page-shell {
+    --doke-desktop-page-gutter: 0px;
+    --doke-shared-page-inline: 0px;
+    --doke-shared-page-width: 100%;
+    --doke-current-page-rail: 100%;
+    --rail-max: 100%;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell {
+    display: grid !important;
+    grid-template-columns: var(--doke-desktop-sidebar-width, var(--sidebar-width, 320px)) minmax(0, 1fr) !important;
+    inline-size: 100vw !important;
+    width: 100vw !important;
+    max-inline-size: 100vw !important;
+    max-width: 100vw !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page {
+    grid-column: 2 !important;
+    justify-self: stretch !important;
+    align-self: stretch !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: none !important;
+    max-width: none !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > main.page__content,
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > .page__content,
+  html body[data-page="mensagens"].messages-page-shell .page .page__content {
+    display: block !important;
+    justify-self: stretch !important;
+    align-self: stretch !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: none !important;
+    max-width: none !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    max-block-size: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .page__content-inner.app-shell-page__workspace.shell-home__workspace.messages-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="mensagens"].messages-page-shell .page__content-inner.messages-shell-content,
+  html body[data-page="mensagens"].messages-page-shell .messages-shell-content {
+    display: block !important;
+    justify-self: stretch !important;
+    align-self: stretch !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: none !important;
+    max-width: none !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    max-block-size: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell section.messages-app.doke-page-section,
+  html body[data-page="mensagens"].messages-page-shell .messages-app {
+    display: grid !important;
+    grid-template-columns: clamp(300px, 25vw, 390px) minmax(0, 1fr) !important;
+    gap: 0 !important;
+    justify-self: stretch !important;
+    align-self: stretch !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: none !important;
+    max-width: none !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    max-block-size: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app > .messages-sidebar,
+  html body[data-page="mensagens"].messages-page-shell .messages-app > .messages-thread {
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+    block-size: 100% !important;
+    height: 100% !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app > .messages-sidebar {
+    overflow-y: auto !important;
+    padding: 0 12px 18px !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-tools {
+    padding-block-start: 18px !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app > .messages-thread {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__body {
+    min-block-size: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1360px) {
+  html body[data-page="mensagens"].messages-page-shell section.messages-app.doke-page-section,
+  html body[data-page="mensagens"].messages-page-shell .messages-app {
+    grid-template-columns: clamp(284px, 23vw, 330px) minmax(0, 1fr) !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__header {
+    padding-inline: 14px !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__body,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer {
+    padding-inline: 14px !important;
+  }
+}
+
+@media (min-width: 1500px) {
+  html body[data-page="mensagens"].messages-page-shell section.messages-app.doke-page-section,
+  html body[data-page="mensagens"].messages-page-shell .messages-app {
+    grid-template-columns: clamp(360px, 26vw, 440px) minmax(0, 1fr) !important;
+  }
+}
+
+
+/* 2026-05-28 — Mensagens v15: viewport fill without rail.
+   Complementa o full-bleed: a coluna .page recebe largura explícita baseada
+   no viewport menos a sidebar real. Isso neutraliza contratos antigos que ainda
+   deixam uma faixa residual à direita da rota mensagens. */
+@media (min-width: 761px) {
+  html body[data-page="mensagens"].messages-page-shell {
+    --messages-app-sidebar-width: var(--doke-desktop-sidebar-width, var(--sidebar-width, 320px));
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page,
+  html body[data-page="mensagens"].messages-page-shell.app-shell-page > .app-shell > .page,
+  html body[data-page="mensagens"].messages-page-shell.doke-app-shell-page > .app-shell > .page {
+    grid-column: 2 !important;
+    margin-inline: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    inline-size: calc(100vw - var(--messages-app-sidebar-width)) !important;
+    width: calc(100vw - var(--messages-app-sidebar-width)) !important;
+    max-inline-size: calc(100vw - var(--messages-app-sidebar-width)) !important;
+    max-width: calc(100vw - var(--messages-app-sidebar-width)) !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > main.page__content,
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > .page__content,
+  html body[data-page="mensagens"].messages-page-shell .page__content,
+  html body[data-page="mensagens"].messages-page-shell .page__content-inner.messages-shell-content,
+  html body[data-page="mensagens"].messages-page-shell .messages-shell-content,
+  html body[data-page="mensagens"].messages-page-shell section.messages-app.doke-page-section,
+  html body[data-page="mensagens"].messages-page-shell .messages-app {
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app {
+    background: #ffffff !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  html body[data-page="mensagens"].messages-page-shell {
+    --messages-app-sidebar-width: var(--doke-desktop-sidebar-width, var(--sidebar-width, 272px));
+  }
+}
+
+
+/* 2026-05-28 — Mensagens v16: structural full-bleed.
+   Remove a dependência visual dos wrappers genéricos de página interna.
+   O HTML desta rota agora usa só page__content-inner + messages-shell-content,
+   e o CSS abaixo garante que a tela de chat preencha a coluna .page inteira. */
+@media (min-width: 761px) {
+  html body[data-page="mensagens"].messages-page-shell > .app-shell {
+    display: grid !important;
+    grid-template-columns: var(--doke-desktop-sidebar-width, var(--sidebar-width, 320px)) minmax(0, 1fr) !important;
+    inline-size: 100vw !important;
+    width: 100vw !important;
+    max-inline-size: 100vw !important;
+    max-width: 100vw !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page {
+    grid-column: 2 !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: none !important;
+    max-width: none !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > .page__content,
+  html body[data-page="mensagens"].messages-page-shell .page__content,
+  html body[data-page="mensagens"].messages-page-shell .page__content > .page__content-inner.messages-shell-content,
+  html body[data-page="mensagens"].messages-page-shell .messages-shell-content {
+    display: block !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: none !important;
+    max-width: none !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    max-block-size: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app {
+    display: grid !important;
+    grid-template-columns: clamp(292px, 24vw, 380px) minmax(0, 1fr) !important;
+    gap: 0 !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: none !important;
+    max-width: none !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    max-block-size: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar,
+  html body[data-page="mensagens"].messages-page-shell .messages-thread {
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+    block-size: 100% !important;
+    height: 100% !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar {
+    overflow-y: auto !important;
+    padding: 0 12px 18px !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__body {
+    min-block-size: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+}
+
+@media (min-width: 1500px) {
+  html body[data-page="mensagens"].messages-page-shell .messages-app {
+    grid-template-columns: clamp(360px, 26vw, 440px) minmax(0, 1fr) !important;
+  }
+}
+
+
+/* 2026-05-28 — Mensagens v17: true viewport fill.
+   A sobra restante vem da coluna .page herdando largura de rail/viewport interno.
+   Para mensagens, a página é um app de chat: a área útil fica ancorada entre a
+   sidebar real e a borda direita do viewport. Escopo isolado em data-page=mensagens. */
+@media (min-width: 761px) {
+  html body[data-page="mensagens"].messages-page-shell {
+    --messages-shell-sidebar-width: var(--doke-desktop-sidebar-width, var(--sidebar-width, 320px));
+    overflow: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell {
+    inline-size: 100vw !important;
+    width: 100vw !important;
+    max-inline-size: 100vw !important;
+    max-width: 100vw !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .sidebar {
+    position: fixed !important;
+    inset-block-start: 0 !important;
+    inset-block-end: 0 !important;
+    inset-inline-start: 0 !important;
+    inline-size: var(--messages-shell-sidebar-width) !important;
+    width: var(--messages-shell-sidebar-width) !important;
+    max-inline-size: var(--messages-shell-sidebar-width) !important;
+    max-width: var(--messages-shell-sidebar-width) !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    margin: 0 !important;
+    z-index: 30 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page {
+    position: fixed !important;
+    inset-block-start: 0 !important;
+    inset-block-end: 0 !important;
+    inset-inline-start: var(--messages-shell-sidebar-width) !important;
+    inset-inline-end: 0 !important;
+    grid-column: auto !important;
+    inline-size: auto !important;
+    width: auto !important;
+    max-inline-size: none !important;
+    max-width: none !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    max-block-size: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > .page__content,
+  html body[data-page="mensagens"].messages-page-shell .page__content,
+  html body[data-page="mensagens"].messages-page-shell .page__content > .page__content-inner.messages-shell-content,
+  html body[data-page="mensagens"].messages-page-shell .messages-shell-content,
+  html body[data-page="mensagens"].messages-page-shell .messages-app {
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    max-block-size: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app {
+    display: grid !important;
+    grid-template-columns: clamp(292px, 24vw, 380px) minmax(0, 1fr) !important;
+    gap: 0 !important;
+    background: #ffffff !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar,
+  html body[data-page="mensagens"].messages-page-shell .messages-thread {
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+    block-size: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar {
+    overflow-y: auto !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__body {
+    min-block-size: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+}
+
+@media (min-width: 1500px) {
+  html body[data-page="mensagens"].messages-page-shell .messages-app {
+    grid-template-columns: clamp(360px, 26vw, 440px) minmax(0, 1fr) !important;
+  }
+}
+
+
+/* 2026-05-28 — Mensagens v18: shadow cleanup.
+   Responsabilidade: limpar sombras pesadas/halo visual no painel de conversas
+   e no chat sem alterar o contrato full viewport da rota. */
+@media (min-width: 761px) {
+  html body[data-page="mensagens"].messages-page-shell .messages-app,
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar,
+  html body[data-page="mensagens"].messages-page-shell .messages-thread {
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar {
+    background: #f7fbff !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-search--modern,
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-tools__filter,
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-tools__menu {
+    box-shadow: none !important;
+    border-color: #d7e4f1 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-block__header {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-block__count,
+  html body[data-page="mensagens"].messages-page-shell .message-item__badge {
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-item,
+  html body[data-page="mensagens"].messages-page-shell .message-item.doke-card,
+  html body[data-page="mensagens"].messages-page-shell .doke-message-card.message-item {
+    background: #ffffff !important;
+    border: 1px solid #dbe7f3 !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-item.is-active,
+  html body[data-page="mensagens"].messages-page-shell .message-item:focus,
+  html body[data-page="mensagens"].messages-page-shell .message-item:focus-visible,
+  html body[data-page="mensagens"].messages-page-shell .message-item:active {
+    border-color: #aac9e8 !important;
+    box-shadow: 0 0 0 2px rgba(31, 111, 178, 0.10) !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-item__avatar,
+  html body[data-page="mensagens"].messages-page-shell .message-row__avatar,
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__avatar {
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__tool,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__send,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__field {
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-bubble {
+    box-shadow: none !important;
+    border-color: #d9e5f1 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-row--me .message-bubble,
+  html body[data-page="mensagens"].messages-page-shell .message-bubble--me {
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-composer {
+    box-shadow: none !important;
+    border-top: 1px solid #d9e5f1 !important;
+  }
+}
+
+
+/* 2026-05-28 — Mensagens v19: border by surface context.
+   Regra visual: quando o elemento branco está sobre fundo branco, mantém borda.
+   Quando está sobre fundo tonal diferente, remove borda e usa contraste por superfície/estado. */
+@media (min-width: 761px) {
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar {
+    background: #f3f8fd !important;
+  }
+
+  /* Fundo tonal diferente + controle branco: sem contorno pesado. */
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-search--modern,
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-tools__filter,
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-tools__menu,
+  html body[data-page="mensagens"].messages-page-shell .message-item,
+  html body[data-page="mensagens"].messages-page-shell .message-item.doke-card,
+  html body[data-page="mensagens"].messages-page-shell .doke-message-card.message-item {
+    border-color: transparent !important;
+    border-width: 1px !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-item {
+    background: rgba(255, 255, 255, 0.92) !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-item.is-active {
+    background: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* Estados interativos: feedback sem borda permanente. */
+  html body[data-page="mensagens"].messages-page-shell .message-item:hover,
+  html body[data-page="mensagens"].messages-page-shell .message-item:focus-visible {
+    background: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    outline: 2px solid rgba(31, 111, 178, 0.14) !important;
+    outline-offset: 0 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-search--modern:focus-within,
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-tools__filter:focus-visible,
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-tools__menu:focus-visible {
+    border-color: transparent !important;
+    box-shadow: none !important;
+    outline: 2px solid rgba(31, 111, 178, 0.14) !important;
+    outline-offset: 0 !important;
+  }
+
+  /* Badges/avatares sobre fundo tonal: sem aro artificial. */
+  html body[data-page="mensagens"].messages-page-shell .messages-block__count,
+  html body[data-page="mensagens"].messages-page-shell .message-item__badge,
+  html body[data-page="mensagens"].messages-page-shell .message-item__avatar {
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* Área do chat: superfícies brancas dentro de contexto branco mantêm borda para leitura. */
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__action,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__tool,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__field,
+  html body[data-page="mensagens"].messages-page-shell .message-bubble:not(.message-bubble--me) {
+    border-color: #d9e5f1 !important;
+  }
+
+  /* Bolha verde já tem contraste próprio; sem borda. */
+  html body[data-page="mensagens"].messages-page-shell .message-bubble--me,
+  html body[data-page="mensagens"].messages-page-shell .message-row--me .message-bubble {
+    border-color: transparent !important;
+  }
+}
+
+
+/* 2026-05-28 — Mensagens v20: remove vertical divider.
+   Remove a linha vertical entre lista de conversas e thread do chat.
+   A separação passa a ser feita apenas pela diferença sutil de superfície. */
+@media (min-width: 761px) {
+  html body[data-page="mensagens"].messages-page-shell .messages-app {
+    border-inline: 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar {
+    border-inline-end: 0 !important;
+    border-right: 0 !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread {
+    border-inline-start: 0 !important;
+    border-left: 0 !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__header,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer {
+    border-inline-start: 0 !important;
+    border-left: 0 !important;
+  }
+}
+
+
+/* 2026-05-28 — Mensagens v21: composer borderless controls.
+   Remove bordas do composer porque os controles estão sobre fundo tonal diferente.
+   Mantém apenas contraste por superfície, raio e estado de foco acessível. */
+@media (min-width: 761px) {
+  html body[data-page="mensagens"].messages-page-shell .messages-composer {
+    border-top: 0 !important;
+    box-shadow: none !important;
+    background: #f3f8fd !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__tool,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__field,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__emoji-inside {
+    border-color: transparent !important;
+    border-width: 1px !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__send {
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__tool:focus-visible,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__field:focus-within,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__emoji-inside:focus-visible,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__send:focus-visible {
+    outline: 2px solid rgba(31, 111, 178, 0.16) !important;
+    outline-offset: 0 !important;
+    box-shadow: none !important;
+  }
+}
+
+
+/* 2026-05-28 — Mensagens v22: composer white surface.
+   Corrige o v21: a solicitação era remover bordas, não trocar o fundo.
+   O composer volta para fundo branco; botões laterais ficam no cinza original,
+   sem borda permanente. */
+@media (min-width: 761px) {
+  html body[data-page="mensagens"].messages-page-shell .messages-composer {
+    background: #ffffff !important;
+    border-top: 0 !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__tool,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__emoji-inside {
+    background: #f5f9fd !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__field {
+    background: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__send {
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__tool:focus-visible,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__emoji-inside:focus-visible,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__send:focus-visible,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__field:focus-within {
+    outline: 2px solid rgba(31, 111, 178, 0.16) !important;
+    outline-offset: 0 !important;
+    box-shadow: none !important;
+  }
+}
+
+/* 2026-05-28 — Mensagens v23: gray composer input, borderless.
+   Corrige o v22: o campo de texto deve usar o mesmo cinza claro dos botões laterais,
+   mantendo o composer branco e sem borda permanente. */
+@media (min-width: 761px) {
+  html body[data-page="mensagens"].messages-page-shell .messages-composer {
+    background: #ffffff !important;
+    border-top: 0 !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__tool,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__emoji-inside,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__field {
+    background: #f5f9fd !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__send {
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__tool:focus-visible,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__emoji-inside:focus-visible,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__send:focus-visible,
+  html body[data-page="mensagens"].messages-page-shell .messages-composer__field:focus-within {
+    outline: 2px solid rgba(31, 111, 178, 0.16) !important;
+    outline-offset: 0 !important;
+    box-shadow: none !important;
+  }
+}
+
+/* 2026-05-28 — Mensagens v24: remove sidebar hover/active border.
+   Remove o contorno azul dos cards da lista de conversas/pedidos em hover, focus e estado ativo.
+   O feedback passa a ser só por superfície, sem borda nem halo. */
+@media (min-width: 761px) {
+  html body[data-page="mensagens"].messages-page-shell .message-item,
+  html body[data-page="mensagens"].messages-page-shell .message-item.doke-card,
+  html body[data-page="mensagens"].messages-page-shell .doke-message-card.message-item {
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-item:hover,
+  html body[data-page="mensagens"].messages-page-shell .message-item:focus-visible,
+  html body[data-page="mensagens"].messages-page-shell .message-item.is-active,
+  html body[data-page="mensagens"].messages-page-shell .message-item[aria-current="true"],
+  html body[data-page="mensagens"].messages-page-shell .message-item[aria-selected="true"] {
+    border-color: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-item:hover {
+    background: #ffffff !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-item.is-active,
+  html body[data-page="mensagens"].messages-page-shell .message-item[aria-current="true"],
+  html body[data-page="mensagens"].messages-page-shell .message-item[aria-selected="true"] {
+    background: #ffffff !important;
+  }
+}
+
+/* 2026-05-28 — Mensagens v25: better sidebar hover without border.
+   Mantém a remoção do contorno, mas devolve um hover melhor por superfície,
+   micro-movimento e destaque do conteúdo sem halo pesado. */
+@media (min-width: 761px) {
+  html body[data-page="mensagens"].messages-page-shell .message-item,
+  html body[data-page="mensagens"].messages-page-shell .message-item.doke-card,
+  html body[data-page="mensagens"].messages-page-shell .doke-message-card.message-item {
+    position: relative !important;
+    transition: background-color 180ms ease, transform 180ms ease, opacity 180ms ease !important;
+    will-change: transform !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-item:hover,
+  html body[data-page="mensagens"].messages-page-shell .message-item:focus-visible {
+    background: #ffffff !important;
+    transform: translateY(-1px) !important;
+    border-color: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-item:hover .message-item__title,
+  html body[data-page="mensagens"].messages-page-shell .message-item:hover .message-item__name,
+  html body[data-page="mensagens"].messages-page-shell .message-item:hover strong,
+  html body[data-page="mensagens"].messages-page-shell .message-item:focus-visible .message-item__title,
+  html body[data-page="mensagens"].messages-page-shell .message-item:focus-visible .message-item__name,
+  html body[data-page="mensagens"].messages-page-shell .message-item:focus-visible strong {
+    color: #0f3762 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-item:hover .message-item__preview,
+  html body[data-page="mensagens"].messages-page-shell .message-item:hover .message-item__snippet,
+  html body[data-page="mensagens"].messages-page-shell .message-item:hover p,
+  html body[data-page="mensagens"].messages-page-shell .message-item:focus-visible .message-item__preview,
+  html body[data-page="mensagens"].messages-page-shell .message-item:focus-visible .message-item__snippet,
+  html body[data-page="mensagens"].messages-page-shell .message-item:focus-visible p {
+    color: #6a7f98 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-item.is-active,
+  html body[data-page="mensagens"].messages-page-shell .message-item[aria-current="true"],
+  html body[data-page="mensagens"].messages-page-shell .message-item[aria-selected="true"] {
+    background: #ffffff !important;
+    transform: translateY(0) !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-item.is-active::before,
+  html body[data-page="mensagens"].messages-page-shell .message-item[aria-current="true"]::before,
+  html body[data-page="mensagens"].messages-page-shell .message-item[aria-selected="true"]::before {
+    content: "" !important;
+    position: absolute !important;
+    inset-block: 14px !important;
+    inset-inline-start: 0 !important;
+    inline-size: 4px !important;
+    border-radius: 999px !important;
+    background: #1f6fae !important;
+  }
+}
+
+/* 2026-05-28 — Mensagens v26: remove blue active indicator.
+   Mantém o hover melhor do v25, mas remove a barra azul lateral do card ativo.
+   O estado selecionado volta a ser indicado só por superfície. */
+@media (min-width: 761px) {
+  html body[data-page="mensagens"].messages-page-shell .message-item.is-active::before,
+  html body[data-page="mensagens"].messages-page-shell .message-item[aria-current="true"]::before,
+  html body[data-page="mensagens"].messages-page-shell .message-item[aria-selected="true"]::before {
+    content: none !important;
+    display: none !important;
+    background: transparent !important;
+  }
+}

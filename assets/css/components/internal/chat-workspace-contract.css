@@ -42,7 +42,7 @@ body.messages-page-shell .messages-shell-content {
   max-width: none !important;
   height: 100dvh !important;
   min-height: 100dvh !important;
-  padding: var(--doke-internal-gutter) 18px !important;
+  padding: 0 18px !important;
   margin: 0 !important;
   overflow: hidden !important;
 }
@@ -51,8 +51,9 @@ body.messages-page-shell .messages-app {
   display: grid !important;
   grid-template-columns: var(--doke-internal-side-width) minmax(0, 1fr) !important;
   gap: 18px !important;
-  height: calc(100dvh - (var(--doke-internal-gutter) * 2)) !important;
-  min-height: calc(100dvh - (var(--doke-internal-gutter) * 2)) !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  max-height: 100dvh !important;
   overflow: hidden !important;
   background: transparent !important;
   align-items: stretch !important;
@@ -60,9 +61,9 @@ body.messages-page-shell .messages-app {
 
 body.messages-page-shell .messages-sidebar,
 body.messages-page-shell .messages-thread {
-  height: calc(100dvh - (var(--doke-internal-gutter) * 2)) !important;
+  height: 100% !important;
   min-height: 0 !important;
-  max-height: calc(100dvh - (var(--doke-internal-gutter) * 2)) !important;
+  max-height: 100% !important;
 }
 
 body.messages-page-shell .messages-sidebar {
@@ -2861,5 +2862,51 @@ body.messages-page-shell .messages-sidebar-panel button:disabled {
 
   body.messages-page-shell .messages-sidebar-actions {
     display: flex !important;
+  }
+}
+
+/* 2026-05-28 — Mensagens: viewport edge contract.
+   Remove o gutter vertical antigo do workspace de mensagens.
+   O espaçamento interno passa a pertencer às colunas, não ao shell da rota. */
+@media (min-width: 761px) {
+  html body[data-page="mensagens"].messages-page-shell .page__content,
+  html body[data-page="mensagens"].messages-page-shell .page__content-inner,
+  html body[data-page="mensagens"].messages-page-shell .shell-home__workspace,
+  html body[data-page="mensagens"].messages-page-shell .messages-shell-content {
+    height: 100dvh !important;
+    min-height: 0 !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding-block: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app {
+    height: 100dvh !important;
+    min-height: 0 !important;
+    max-height: 100dvh !important;
+    margin-block: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar,
+  html body[data-page="mensagens"].messages-page-shell .messages-thread {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+  }
+}
+
+
+/* 2026-05-28 — Mensagens v7: cache-busted viewport lock.
+   Mantém a tela de mensagens colada ao topo depois da atualização do href no HTML. */
+@media (min-width: 761px) {
+  html body[data-page="mensagens"].messages-page-shell > .app-shell,
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page,
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > .page__content,
+  html body[data-page="mensagens"].messages-page-shell .messages-shell-content {
+    padding-block-start: 0 !important;
+    margin-block-start: 0 !important;
   }
 }
