@@ -4,40 +4,6 @@
  <meta charset="UTF-8">
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
  <title>Doke | Mensagens</title>
-<style id="messages-critical-guard">
-@media (min-width:761px){
- body.messages-page-shell .messages-mobile-header,
- body.messages-page-shell .messages-desktop-toolbar,
- body.messages-page-shell .messages-header-controls,
- body.messages-page-shell .messages-sidebar-actions,
- body.messages-page-shell .messages-sidebar > .messages-sidebar-search:not(.messages-sidebar-search--modern),
- body.messages-page-shell .messages-sidebar-panel,
- body.messages-page-shell .before-after-preview,
- body.messages-page-shell .before-after-section,
- body.messages-page-shell .worker-preview,
- body.messages-page-shell .worker-preview__media,
- body.messages-page-shell .worker-preview__video,
- body.messages-page-shell .home-section,
- body.messages-page-shell .home-feed,
- body.messages-page-shell .home-main,
- body.messages-page-shell .shell-home__content,
- body.messages-page-shell .page__content > :not(.messages-shell-content):not(.app-shell-page__workspace),
- body.messages-page-shell .messages-shell-content > :not(.messages-app){
-  display:none!important
- }
- body.messages-page-shell .messages-shell-content{display:grid!important;padding:48px 14px 14px 112px!important;background:#f4f8fc!important}
- body.messages-page-shell .messages-app{display:grid!important;grid-template-columns:clamp(390px,27vw,430px) minmax(0,1fr)!important;width:min(100%,1288px)!important;max-width:1288px!important;margin:0 auto!important;overflow:hidden!important;background:#fff!important;visibility:hidden!important;opacity:0!important}
- body.messages-page-shell .message-item,
- body.messages-page-shell .message-item.doke-card,
- body.messages-page-shell .doke-message-card{
-  outline:0!important;
-  border-color:rgba(207,222,238,.74)!important
- }
- body.messages-page-shell .message-item.is-active{
-  border-color:rgba(29,100,177,.24)!important
- }
-}
-</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -83,7 +49,7 @@
   <link rel="stylesheet" href="assets/css/components/internal/chat-workspace-contract.css?v=20260502-internal-chat-contract-v33">
   <link rel="stylesheet" href="assets/css/patterns/chat-screen-fill.css?v=20260509-screen-fill-v2">
   <link rel="stylesheet" href="assets/css/pages/mensagens/desktop-redesign.css?v=20260515-mobile-thread-topbar-v1">
-  <link rel="stylesheet" href="assets/css/pages/mensagens.css?v=20260523-tablet-sidebar-no-shadow-v23">
+  <link rel="stylesheet" href="assets/css/pages/mensagens.css?v=20260528-messages-product-contract-v18">
   <link rel="stylesheet" href="assets/css/components/layout/responsive-page-contract.css?v=20260514-header-parity-audit-v2">
   <link rel="stylesheet" href="assets/css/components/shell/doke-shell-contract.css?v=20260524-tablet-heading-standard-v2">
   <link rel="stylesheet" href="assets/css/components/shell/tablet-app-parity.css?v=20260524-tablet-shell-contract-v14">
@@ -106,61 +72,6 @@
   <aside class="sidebar" data-shell-sidebar></aside>
 
   <div class="page">
-   <!-- Tablet shell header: same chrome contract as index; page-specific actions only. -->
-<header class="doke-tablet-shell-header app-header app-header--messages home-side-meta" aria-label="Atalhos e contexto das mensagens">
-      <div class="app-header__inner">
-       <div class="home-side-meta__group home-side-meta__group--primary app-header__group app-header__group--primary">
-        <button class="home-side-meta__tablet-menu" type="button" data-mobile-home-menu-open aria-label="Abrir menu lateral" aria-expanded="false" aria-haspopup="dialog">
-         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 7h16"></path>
-          <path d="M4 12h16"></path>
-          <path d="M4 17h16"></path>
-         </svg>
-        </button>
-        <button class="home-side-meta__search" type="button" aria-label="Buscar conversas" data-messages-search-open aria-expanded="false">
-         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="11" cy="11" r="5.75"></circle>
-          <path d="m16 16 4 4"></path>
-         </svg>
-        </button>
-        <form class="home-side-meta__search-form" role="search" aria-label="Buscar conversas">
-         <label class="home-side-meta__search-label doke-label" for="tablet-quick-search-messages">Buscar</label>
-         <input id="tablet-quick-search-messages" class="home-side-meta__search-input doke-input" type="search" autocomplete="off" placeholder="Buscar conversa">
-        </form>
-        <div class="page-header-context messages-page-actions" aria-label="Ações rápidas de mensagens">
-         <button class="page-header-context__action doke-btn" type="button" data-messages-filter-toggle aria-expanded="false" aria-controls="messages-filters-panel">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-           <path d="M5 6.5h14"></path>
-           <path d="M5 12h14"></path>
-           <path d="M5 17.5h14"></path>
-           <circle cx="9" cy="6.5" r="1.75"></circle>
-           <circle cx="15" cy="12" r="1.75"></circle>
-           <circle cx="11" cy="17.5" r="1.75"></circle>
-          </svg>
-          <span>Filtros</span>
-         </button>
-        </div>
-       </div>
-       <div class="home-side-meta__group home-side-meta__group--secondary app-header__group app-header__group--secondary">
-        <button class="home-side-meta__alert" type="button" aria-label="Notificações" data-header-nav="notificacoes.html">
-         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 4.75a4 4 0 0 0-4 4v2.1c0 .7-.24 1.38-.68 1.92L5.9 14.5h12.2l-1.42-1.73a3 3 0 0 1-.68-1.92v-2.1a4 4 0 0 0-4-4Z"></path>
-          <path d="M10 17.2a2.3 2.3 0 0 0 4 0"></path>
-         </svg>
-        </button>
-        <div class="home-side-meta__profile-wrap">
-         <button class="home-side-meta__profile" type="button" data-home-profile-menu-toggle aria-label="Abrir menu da conta" aria-expanded="false" aria-haspopup="true">
-          <span class="home-side-meta__avatar doke-avatar">DK</span>
-          <span class="home-side-meta__identity">
-           <strong>Gabriel</strong>
-           <span>Pontos: 230</span>
-          </span>
-         </button>
-        </div>
-       </div>
-      </div>
-     </header>
-
    <main class="page__content doke-page">
     <div class="page__content-inner app-shell-page__workspace app-shell-page__workspace--clean shell-home__workspace shell-home__workspace--clean messages-shell-content doke-page-shell doke-page-stack">
      <section class="messages-app doke-page-section" data-messages-page data-state-boundary="mensagens" data-view-state="ready" aria-busy="false">
@@ -487,6 +398,24 @@
   </form>
  </dialog>
 
+  <script>
+   document.addEventListener("DOMContentLoaded", function () {
+    const resetThreadTop = () => {
+     document.querySelectorAll("[data-thread-body]").forEach((el) => {
+      try { el.scrollTop = 0; } catch (e) {}
+     });
+    };
+    const rafReset = () => requestAnimationFrame(() => requestAnimationFrame(resetThreadTop));
+    rafReset();
+    window.addEventListener("load", rafReset, { once: true });
+    const body = document.querySelector("[data-thread-body]");
+    if (body) {
+     const observer = new MutationObserver(() => rafReset());
+     observer.observe(body, { childList: true, subtree: true });
+     setTimeout(() => observer.disconnect(), 2500);
+    }
+   });
+  </script>
   <script src="assets/js/core/runtime-config.js?v=20260512-cycle77-script-load-v1" defer></script>
   <script src="assets/js/core/feature-flags.js?v=20260512-cycle77-script-load-v1" defer></script>
   <script src="assets/js/core/rollout-guard.js?v=20260512-cycle77-script-load-v1" defer></script>
