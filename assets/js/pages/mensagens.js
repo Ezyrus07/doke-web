@@ -568,6 +568,7 @@
       if (window.innerWidth <= 767 && (openOnMobile || root.classList.contains("messages-app--thread-open"))) {
         root.classList.add("messages-app--thread-open");
         document.body.classList.add("messages-thread-is-open");
+        document.documentElement.classList.add("messages-thread-is-open");
       }
 
       window.requestAnimationFrame(() => {
@@ -1290,6 +1291,7 @@
       hideMessageMenu();
       root.classList.remove("messages-app--thread-open");
       document.body.classList.remove("messages-thread-is-open");
+      document.documentElement.classList.remove("messages-thread-is-open");
       replyPreview?.setAttribute("hidden", "");
       audioDraft?.setAttribute("hidden", "");
       imageDraft?.setAttribute("hidden", "");
@@ -1318,6 +1320,7 @@
       if (window.innerWidth > 767) {
         root.classList.remove("messages-app--thread-open");
         document.body.classList.remove("messages-thread-is-open");
+        document.documentElement.classList.remove("messages-thread-is-open");
       }
       closeFiltersPanel();
       if (selectionMode) {
