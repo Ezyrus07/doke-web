@@ -1,0 +1,213 @@
+/*
+ * Mensagens — contrato desktop local.
+ * Responsabilidade: layout estrutural do mensagens.html em desktop.
+ * Não controla tablet/mobile, não estiliza botões e não altera shell global.
+ */
+
+@media (min-width: 761px) {
+  html body[data-page="mensagens"].messages-page-shell {
+    --messages-desktop-rail-max: 1720px;
+    --messages-shell-sidebar-width: var(--doke-desktop-sidebar-width, var(--sidebar-width, 272px));
+    background: #edf4fa !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: var(--messages-shell-sidebar-width) minmax(0, 1fr) !important;
+    inline-size: 100vw !important;
+    width: 100vw !important;
+    max-inline-size: 100vw !important;
+    max-width: 100vw !important;
+    block-size: 100dvh !important;
+    min-block-size: 100dvh !important;
+    max-block-size: 100dvh !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    align-items: stretch !important;
+    grid-template-rows: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    padding-block-start: 0 !important;
+    background: #edf4fa !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .sidebar,
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > [data-shell-sidebar] {
+    grid-column: 1 !important;
+    align-self: stretch !important;
+    position: sticky !important;
+    inset-block-start: 0 !important;
+    top: 0 !important;
+    inline-size: var(--messages-shell-sidebar-width) !important;
+    width: var(--messages-shell-sidebar-width) !important;
+    max-inline-size: var(--messages-shell-sidebar-width) !important;
+    max-width: var(--messages-shell-sidebar-width) !important;
+    block-size: 100dvh !important;
+    height: 100dvh !important;
+    max-block-size: 100dvh !important;
+    max-height: 100dvh !important;
+    margin-block-start: 0 !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+    z-index: 2 !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page {
+    grid-column: 2 !important;
+    align-self: stretch !important;
+    position: relative !important;
+    display: block !important;
+    min-inline-size: 0 !important;
+    inline-size: auto !important;
+    width: auto !important;
+    max-inline-size: none !important;
+    max-width: none !important;
+    block-size: 100dvh !important;
+    min-block-size: 100dvh !important;
+    max-block-size: 100dvh !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    padding-block-start: 0 !important;
+    transform: none !important;
+    background: #edf4fa !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    isolation: isolate !important;
+  }
+
+  /* Background authority for messages desktop: the route has no desktop topbar,
+     so the page rail must paint from y=0 instead of inheriting the default
+     white app-shell area reserved for internal headers. */
+  html body[data-page="mensagens"].messages-page-shell > .app-shell {
+    background: linear-gradient(
+      90deg,
+      #ffffff 0,
+      #ffffff var(--messages-shell-sidebar-width),
+      #edf4fa var(--messages-shell-sidebar-width),
+      #edf4fa 100%
+    ) !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: #edf4fa;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > .messages-tablet-header,
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > header.messages-tablet-header,
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > header.doke-tablet-shell-header.messages-tablet-header,
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header.doke-tablet-shell-header,
+  html body[data-page="mensagens"].messages-page-shell .doke-tablet-shell-header.messages-tablet-header {
+    display: none !important;
+    visibility: hidden !important;
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    inline-size: 0 !important;
+    width: 0 !important;
+    block-size: 0 !important;
+    height: 0 !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    max-inline-size: 0 !important;
+    max-width: 0 !important;
+    max-block-size: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > main.page__content.doke-page,
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > .page__content {
+    position: relative !important;
+    inset: auto !important;
+    display: block !important;
+    min-inline-size: 0 !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: none !important;
+    max-width: none !important;
+    block-size: 100dvh !important;
+    min-block-size: 100dvh !important;
+    max-block-size: 100dvh !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    padding-block-start: 0 !important;
+    transform: none !important;
+    background: #edf4fa !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .page__content > .messages-shell-content,
+  html body[data-page="mensagens"].messages-page-shell .page__content-inner.messages-shell-content,
+  html body[data-page="mensagens"].messages-page-shell .messages-shell-content {
+    position: relative !important;
+    display: grid !important;
+    align-items: start !important;
+    justify-items: center !important;
+    min-inline-size: 0 !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: none !important;
+    max-width: none !important;
+    block-size: 100dvh !important;
+    min-block-size: 100dvh !important;
+    max-block-size: 100dvh !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 clamp(12px, 1vw, 18px) !important;
+    padding-block-start: 0 !important;
+    transform: none !important;
+    background: #edf4fa !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app,
+  html body[data-page="mensagens"].messages-page-shell section.messages-app.doke-page-section {
+    align-self: start !important;
+    justify-self: center !important;
+    min-inline-size: 0 !important;
+    inline-size: min(100%, var(--messages-desktop-rail-max)) !important;
+    width: min(100%, var(--messages-desktop-rail-max)) !important;
+    max-inline-size: var(--messages-desktop-rail-max) !important;
+    max-width: var(--messages-desktop-rail-max) !important;
+    block-size: 100dvh !important;
+    min-block-size: 100dvh !important;
+    max-block-size: 100dvh !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    transform: none !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+}
