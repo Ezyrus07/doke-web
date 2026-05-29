@@ -1490,3 +1490,62 @@
     initMessagesHeaderParity();
   }
 })();
+
+/* Mensagens — rota tipo app: evita restauração de scroll entre reloads/zoom. */
+(() => {
+  if (document.body?.dataset.page !== 'mensagens') return;
+
+  if ('scrollRestoration' in window.history) {
+    window.history.scrollRestoration = 'manual';
+  }
+
+  const resetMessagesViewport = () => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
+    [
+      document.querySelector('.app-shell'),
+      document.querySelector('.page'),
+      document.querySelector('.page__content'),
+      document.querySelector('.messages-shell-content'),
+      document.querySelector('.messages-app'),
+      document.querySelector('.messages-sidebar'),
+      document.querySelector('.messages-thread__body')
+    ].filter(Boolean).forEach((node) => {
+      node.scrollTop = 0;
+      node.scrollLeft = 0;
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(resetMessagesViewport), { once: true });
+  } else {
+    requestAnimationFrame(resetMessagesViewport);
+  }
+})();
+
+/* Mensagens — sincroniza medidas do workspace em zoom baixo sem aplicar estilo inline. */
+(() => {
+  if (document.body?.dataset.page !== 'mensagens') return;
+
+  const root = document.documentElement;
+  const readSidebarWidth = () => {
+    const sidebar = document.querySelector('.app-shell > .sidebar, .app-shell > [data-shell-sidebar]');
+    const rect = sidebar?.getBoundingClientRect();
+    const fallback = parseFloat(getComputedStyle(root).getPropertyValue('--doke-desktop-sidebar-width')) || 272;
+    return Math.max(0, Math.round(rect?.width || fallback));
+  };
+
+  const syncMessagesWorkspaceMetrics = () => {
+    const viewportWidth = Math.round(window.visualViewport?.width || window.innerWidth || document.documentElement.clientWidth || 0);
+    const sidebarWidth = readSidebarWidth();
+    root.style.setProperty('--messages-shell-sidebar-width', `${sidebarWidth}px`);
+    root.style.setProperty('--messages-app-inline-size', `${Math.max(0, viewportWidth - sidebarWidth)}px`);
+  };
+
+  syncMessagesWorkspaceMetrics();
+  window.addEventListener('resize', syncMessagesWorkspaceMetrics, { passive: true });
+  window.visualViewport?.addEventListener('resize', syncMessagesWorkspaceMetrics, { passive: true });
+  window.visualViewport?.addEventListener('scroll', syncMessagesWorkspaceMetrics, { passive: true });
+})();
