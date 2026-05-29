@@ -197,6 +197,19 @@
 
     const pageParams = new URLSearchParams(window.location.search);
     let activeId = pageParams.get("conversation") && conversations[pageParams.get("conversation")] ? pageParams.get("conversation") : "painting";
+
+    const isCompactThreadViewport = () => {
+      const portrait = window.matchMedia?.("(orientation: portrait)")?.matches ?? window.innerHeight >= window.innerWidth;
+      return window.innerWidth >= 561 && window.innerWidth <= 767 && portrait;
+    };
+
+    const setCompactThreadOpen = (isOpen) => {
+      const open = Boolean(isOpen) && isCompactThreadViewport();
+      root.classList.toggle("messages-app--thread-open", open);
+      root.dataset.messagesMode = open ? "thread" : "list";
+      document.body.classList.toggle("messages-thread-is-open", open);
+      document.documentElement.classList.toggle("messages-thread-is-open", open);
+    };
     const normalize = (value) => String(value || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
     const getLatestChargeMessage = (conversationId) => {
       const messages = conversations[conversationId]?.messages || [];
@@ -565,10 +578,8 @@
       });
       syncSelectionBar();
       refreshConversationCards();
-      if (window.innerWidth <= 767 && (openOnMobile || root.classList.contains("messages-app--thread-open"))) {
-        root.classList.add("messages-app--thread-open");
-        document.body.classList.add("messages-thread-is-open");
-        document.documentElement.classList.add("messages-thread-is-open");
+      if (window.innerWidth <= 767) {
+        setCompactThreadOpen(openOnMobile || root.dataset.messagesMode === "thread");
       }
 
       window.requestAnimationFrame(() => {
@@ -938,6 +949,7 @@
           syncHeaderControls();
           return;
         }
+        setCompactThreadOpen(true);
         renderThread(id, { scrollTo: "start", openOnMobile: true });
       });
     });
@@ -1289,9 +1301,7 @@
 
     backButton?.addEventListener("click", () => {
       hideMessageMenu();
-      root.classList.remove("messages-app--thread-open");
-      document.body.classList.remove("messages-thread-is-open");
-      document.documentElement.classList.remove("messages-thread-is-open");
+      setCompactThreadOpen(false);
       replyPreview?.setAttribute("hidden", "");
       audioDraft?.setAttribute("hidden", "");
       imageDraft?.setAttribute("hidden", "");
@@ -1317,11 +1327,7 @@
     window.addEventListener("resize", () => {
       hideMessageMenu();
       syncComposerPlaceholder();
-      if (window.innerWidth > 767) {
-        root.classList.remove("messages-app--thread-open");
-        document.body.classList.remove("messages-thread-is-open");
-        document.documentElement.classList.remove("messages-thread-is-open");
-      }
+      setCompactThreadOpen(root.dataset.messagesMode === "thread");
       closeFiltersPanel();
       if (selectionMode) {
         openSelectPanel();
@@ -1347,7 +1353,7 @@
     syncComposerPlaceholder();
     renderThread(activeId, { scrollTo: "start" });
     if (window.innerWidth <= 767) {
-      root.classList.remove("messages-app--thread-open");
+      setCompactThreadOpen(false);
     }
   };
 
