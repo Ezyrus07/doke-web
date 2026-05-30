@@ -200,7 +200,7 @@
 
     const isCompactThreadViewport = () => {
       const portrait = window.matchMedia?.("(orientation: portrait)")?.matches ?? window.innerHeight >= window.innerWidth;
-      return window.innerWidth >= 561 && window.innerWidth <= 767 && portrait;
+      return window.innerWidth >= 561 && window.innerWidth <= 899 && portrait;
     };
 
     const setCompactThreadOpen = (isOpen) => {
@@ -578,7 +578,7 @@
       });
       syncSelectionBar();
       refreshConversationCards();
-      if (window.innerWidth <= 767) {
+      if (isCompactThreadViewport()) {
         setCompactThreadOpen(openOnMobile || root.dataset.messagesMode === "thread");
       }
 
@@ -1352,7 +1352,7 @@
     if (copyToast) copyToast.hidden = true;
     syncComposerPlaceholder();
     renderThread(activeId, { scrollTo: "start" });
-    if (window.innerWidth <= 767) {
+    if (isCompactThreadViewport()) {
       setCompactThreadOpen(false);
     }
   };

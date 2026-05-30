@@ -1,484 +1,96 @@
 /*
- * Mensagens — contrato tablet portrait.
- * Responsabilidade: modo conversa única em tablets verticais, sem tocar no desktop aprovado.
- * Desktop permanece governado por desktop-layout-contract.css.
+ * Mensagens — contrato tablet portrait da área de conteúdo.
+ * Responsabilidade: controlar somente a lista/conversa de mensagens.
+ * O header tablet é governado pelo contrato global em components/shell/tablet-internal-rail-contract.css.
  */
 
 @media (min-width: 768px) and (max-width: 899px) and (orientation: portrait) {
   html body[data-page="mensagens"].messages-page-shell {
-    --messages-tablet-thread-rail: min(100%, calc(100vw - 48px));
-    --messages-tablet-thread-header-height: 64px;
-    --messages-tablet-composer-height: 68px;
-    background: #edf4fa !important;
-    overflow: hidden !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell > .app-shell,
-  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page {
-    min-width: 0 !important;
-    min-height: 0 !important;
-    height: 100dvh !important;
-    max-height: 100dvh !important;
-    overflow: hidden !important;
-    background: #edf4fa !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-shell-content,
-  html body[data-page="mensagens"].messages-page-shell .page__content,
-  html body[data-page="mensagens"].messages-page-shell main.page__content.doke-page {
-    min-width: 0 !important;
-    min-height: 0 !important;
-    width: 100% !important;
-    max-width: none !important;
-    height: 100% !important;
-    max-height: none !important;
-    margin: 0 !important;
-    padding-inline: 0 !important;
-    overflow: hidden !important;
-    background: #edf4fa !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app,
-  html body[data-page="mensagens"].messages-page-shell section.messages-app.doke-page-section {
-    display: block !important;
-    width: var(--messages-tablet-thread-rail) !important;
-    max-width: var(--messages-tablet-thread-rail) !important;
-    min-width: 0 !important;
-    height: calc(100dvh - 108px) !important;
-    min-height: 0 !important;
-    max-height: calc(100dvh - 108px) !important;
-    margin: 0 auto !important;
-    padding: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    overflow: hidden !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app > [data-state-region],
-  html body[data-page="mensagens"].messages-page-shell .messages-sidebar,
-  html body[data-page="mensagens"].messages-page-shell .messages-empty,
-  html body[data-page="mensagens"].messages-page-shell .messages-order-card {
-    display: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-thread,
-  html body[data-page="mensagens"].messages-page-shell section.messages-thread.doke-page-section {
-    position: relative !important;
-    display: flex !important;
-    flex-direction: column !important;
-    width: 100% !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    height: 100% !important;
-    min-height: 0 !important;
-    max-height: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: #ffffff !important;
-    box-shadow: none !important;
-    overflow: hidden !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-thread__header {
-    position: relative !important;
-    z-index: 5 !important;
-    flex: 0 0 var(--messages-tablet-thread-header-height) !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 10px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    height: var(--messages-tablet-thread-header-height) !important;
-    min-height: var(--messages-tablet-thread-header-height) !important;
-    margin: 0 !important;
-    padding: 8px 10px !important;
-    border: 0 !important;
-    border-bottom: 1px solid rgba(207, 222, 238, 0.72) !important;
-    border-radius: 0 !important;
-    background: rgba(255, 255, 255, 0.98) !important;
-    box-shadow: none !important;
-    box-sizing: border-box !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-thread__back,
-  html body[data-page="mensagens"].messages-page-shell .messages-thread__action {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex: 0 0 38px !important;
-    width: 38px !important;
-    height: 38px !important;
-    min-width: 38px !important;
-    min-height: 38px !important;
-    padding: 0 !important;
-    border: 1px solid rgba(207, 222, 238, 0.75) !important;
-    border-radius: 14px !important;
-    background: #ffffff !important;
-    color: #205289 !important;
-    box-shadow: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-thread__back svg,
-  html body[data-page="mensagens"].messages-page-shell .messages-thread__action svg {
-    width: 18px !important;
-    height: 18px !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-thread__profile {
-    flex: 1 1 auto !important;
-    min-width: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 10px !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-thread__avatar {
-    flex: 0 0 34px !important;
-    width: 34px !important;
-    height: 34px !important;
-    min-width: 34px !important;
-    min-height: 34px !important;
-    border-radius: 999px !important;
-    font-size: 0.72rem !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-thread__profile strong,
-  html body[data-page="mensagens"].messages-page-shell [data-thread-name] {
-    display: block !important;
-    max-width: 100% !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-    font-size: 0.92rem !important;
-    line-height: 1.15 !important;
-    font-weight: 800 !important;
-    color: #123866 !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-thread__profile p,
-  html body[data-page="mensagens"].messages-page-shell [data-thread-last-seen] {
-    margin: 2px 0 0 !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-    font-size: 0.72rem !important;
-    line-height: 1.1 !important;
-    font-weight: 700 !important;
-    color: #159f92 !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-thread__actions {
-    flex: 0 0 auto !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    margin: 0 !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-thread__action span,
-  html body[data-page="mensagens"].messages-page-shell .messages-thread__action--order,
-  html body[data-page="mensagens"].messages-page-shell .messages-thread__action--charge,
-  html body[data-page="mensagens"].messages-page-shell .messages-thread__action--call {
-    display: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-thread__action--more {
-    display: inline-flex !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-thread__body {
-    flex: 1 1 auto !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 18px 24px 16px !important;
-    overflow-y: auto !important;
+    --messages-tablet-bg: #eef5fb;
+    --messages-tablet-rail: var(--doke-internal-tablet-rail, min(calc(100vw - 48px), 760px));
+    --messages-tablet-card-min: 82px;
+    background: var(--messages-tablet-bg) !important;
     overflow-x: hidden !important;
-    background: #ffffff !important;
-    box-sizing: border-box !important;
-    scroll-padding-bottom: calc(var(--messages-tablet-composer-height) + 16px) !important;
   }
 
-  html body[data-page="mensagens"].messages-page-shell .message-row {
-    width: 100% !important;
-    max-width: none !important;
-    margin-block: 0 16px !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .message-bubble,
-  html body[data-page="mensagens"].messages-page-shell .message-row--me .message-bubble {
-    max-width: min(390px, 86%) !important;
-    border-radius: 16px !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-composer {
-    position: relative !important;
-    z-index: 6 !important;
-    flex: 0 0 auto !important;
-    display: grid !important;
-    grid-template-columns: auto minmax(0, 1fr) auto !important;
-    grid-auto-rows: auto !important;
-    align-items: center !important;
-    gap: 8px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-    padding: 10px 10px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
-    border: 0 !important;
-    border-top: 1px solid rgba(207, 222, 238, 0.64) !important;
-    border-radius: 0 !important;
-    background: rgba(255, 255, 255, 0.98) !important;
-    box-shadow: none !important;
-    box-sizing: border-box !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-composer__tools {
-    grid-column: 1 !important;
-    grid-row: 1 !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 6px !important;
-    min-width: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    background: transparent !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-composer__tools > .messages-composer__tool:nth-child(2) {
-    display: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-composer__tool,
-  html body[data-page="mensagens"].messages-page-shell .messages-composer__send {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 42px !important;
-    height: 42px !important;
-    min-width: 42px !important;
-    min-height: 42px !important;
-    padding: 0 !important;
-    border: 0 !important;
-    border-radius: 14px !important;
-    box-shadow: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-composer__tool {
-    background: #f4f8fc !important;
-    color: #2a5f9d !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-composer__send {
-    grid-column: 3 !important;
-    grid-row: 1 !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-composer__field {
-    grid-column: 2 !important;
-    grid-row: 1 !important;
-    min-width: 0 !important;
-    min-height: 42px !important;
-    height: 42px !important;
-    padding: 0 36px 0 14px !important;
-    border: 0 !important;
-    border-radius: 14px !important;
-    background: #f4f8fc !important;
-    box-shadow: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-composer textarea,
-  html body[data-page="mensagens"].messages-page-shell .messages-composer textarea.doke-textarea,
-  html body[data-page="mensagens"].messages-page-shell .messages-composer .doke-chat-composer__input {
-    min-height: 42px !important;
-    height: 42px !important;
-    max-height: 96px !important;
-    padding: 10px 0 !important;
-    border: 0 !important;
-    background: transparent !important;
-    font-size: 0.86rem !important;
-    line-height: 1.35 !important;
-    font-weight: 700 !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-composer__emoji-inside {
-    position: absolute !important;
-    inset-inline-end: 6px !important;
-    inset-inline-start: auto !important;
-    inset-block-start: 50% !important;
-    inset-block-end: auto !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 30px !important;
-    height: 30px !important;
-    min-width: 30px !important;
-    min-height: 30px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    background: transparent !important;
-    color: #2a5f9d !important;
-    transform: translateY(-50%) !important;
-    box-shadow: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-audio-draft:not([hidden]) {
-    grid-column: 2 !important;
-    grid-row: 1 !important;
-    position: relative !important;
-    z-index: 4 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    min-width: 0 !important;
-    width: 100% !important;
-    min-height: 42px !important;
-    height: 42px !important;
-    margin: 0 !important;
-    padding: 0 12px !important;
-    border: 0 !important;
-    border-radius: 14px !important;
-    background: #f4f8fc !important;
-    box-shadow: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-composer:has(.messages-audio-draft:not([hidden])) .messages-composer__field,
-  html body[data-page="mensagens"].messages-page-shell .messages-composer:has(.messages-audio-draft:not([hidden])) .messages-composer__field textarea,
-  html body[data-page="mensagens"].messages-page-shell .messages-composer:has(.messages-audio-draft:not([hidden])) .messages-composer__emoji-inside {
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-audio-draft__meta,
-  html body[data-page="mensagens"].messages-page-shell .doke-composer-draft--audio .doke-composer-draft__meta {
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 7px !important;
-    min-width: 0 !important;
-    overflow: hidden !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-audio-draft__meta strong {
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-audio-draft__cancel {
-    margin-inline-start: auto !important;
-    padding-inline: 8px !important;
-  }
-}
-
-
-/* 2026-05-29 — guardião tablet portrait: quando a lista lateral é removida, o thread continua sendo o painel principal. */
-@media (min-width: 768px) and (max-width: 899px) and (orientation: portrait) {
-  html body[data-page="mensagens"].messages-page-shell .messages-app {
-    display: flex !important;
-    flex-direction: column !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-thread[hidden],
-  html body[data-page="mensagens"].messages-page-shell .messages-thread[aria-hidden="true"] {
-    display: flex !important;
-    visibility: visible !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-thread {
-    flex: 1 1 auto !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-  }
-}
-
-/* 2026-05-29 — iPad mini portrait thread focus.
-   Responsabilidade: quando a conversa está aberta em tablet compacto, o header
-   global de mensagens sai do fluxo e o header interno do contato assume a
-   navegação. A lista continua usando o header global normalmente. */
-@media (min-width: 561px) and (max-width: 767px) and (orientation: portrait) {
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) {
-    --messages-compact-thread-rail: min(calc(100vw - 48px), 560px);
-    --messages-compact-thread-gap: 14px;
-    --messages-compact-thread-header: 72px;
-    --messages-compact-thread-composer: 76px;
-    background: #eef5fb !important;
-    overflow: hidden !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open > .app-shell > .page > .messages-tablet-header,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) > .app-shell > .page > .messages-tablet-header {
-    position: absolute !important;
-    inset: 0 auto auto 0 !important;
-    display: none !important;
-    visibility: hidden !important;
-    inline-size: 0 !important;
-    block-size: 0 !important;
-    min-inline-size: 0 !important;
-    min-block-size: 0 !important;
-    max-inline-size: 0 !important;
-    max-block-size: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    pointer-events: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .bottom-nav,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .bottom-nav {
-    display: none !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open > .app-shell,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open > .app-shell > .page,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) > .app-shell,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) > .app-shell > .page {
-    min-width: 0 !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    max-height: 100dvh !important;
-    background: #eef5fb !important;
-    overflow: hidden !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .page__content,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .page__content-inner.messages-shell-content,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .page__content,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .page__content-inner.messages-shell-content {
+  html body[data-page="mensagens"].messages-page-shell:not(.messages-thread-is-open):not(:has(.messages-app.messages-app--thread-open)) > .app-shell > .page > main.page__content.doke-page,
+  html body[data-page="mensagens"].messages-page-shell:not(.messages-thread-is-open):not(:has(.messages-app.messages-app--thread-open)) .page__content {
+    position: static !important;
+    inset: auto !important;
     display: block !important;
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    max-height: 100dvh !important;
+    height: auto !important;
+    min-height: 0 !important;
     margin: 0 !important;
-    padding: var(--messages-compact-thread-gap) 0 !important;
-    background: #eef5fb !important;
-    overflow: hidden !important;
+    padding: 0 0 40px !important;
+    background: var(--messages-tablet-bg) !important;
+    overflow: visible !important;
     box-sizing: border-box !important;
   }
 
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-app {
-    position: relative !important;
+  html body[data-page="mensagens"].messages-page-shell:not(.messages-thread-is-open):not(:has(.messages-app.messages-app--thread-open)) .page__content-inner.messages-shell-content {
+    position: static !important;
+    inset: auto !important;
     display: block !important;
-    width: var(--messages-compact-thread-rail) !important;
-    max-width: var(--messages-compact-thread-rail) !important;
+    width: var(--messages-tablet-rail) !important;
+    max-width: var(--messages-tablet-rail) !important;
     min-width: 0 !important;
-    height: calc(100dvh - (var(--messages-compact-thread-gap) * 2)) !important;
+    height: auto !important;
     min-height: 0 !important;
-    max-height: calc(100dvh - (var(--messages-compact-thread-gap) * 2)) !important;
     margin: 0 auto !important;
+    padding: 0 !important;
+    background: transparent !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell:not(.messages-thread-is-open):not(:has(.messages-app.messages-app--thread-open)) .messages-app {
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell:not(.messages-thread-is-open) .messages-app:not(.messages-app--thread-open) .messages-thread,
+  html body[data-page="mensagens"].messages-page-shell:not(.messages-thread-is-open) .messages-app:not(.messages-app--thread-open) .messages-empty,
+  html body[data-page="mensagens"].messages-page-shell:not(.messages-thread-is-open) .messages-app:not(.messages-app--thread-open) .messages-order-card,
+  html body[data-page="mensagens"].messages-page-shell:not(.messages-thread-is-open) .messages-app:not(.messages-app--thread-open) > [data-state-region] {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell:not(.messages-thread-is-open) .messages-app:not(.messages-app--thread-open) .messages-sidebar {
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
     padding: 0 !important;
     border: 0 !important;
     border-radius: 0 !important;
@@ -487,350 +99,110 @@
     overflow: visible !important;
     transform: none !important;
     box-sizing: border-box !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-sidebar,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-sidebar,
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-empty,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-empty,
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-order-card,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-order-card {
-    position: absolute !important;
-    display: block !important;
-    inline-size: 1px !important;
-    block-size: 1px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    overflow: hidden !important;
-    clip: rect(0 0 0 0) !important;
-    clip-path: inset(50%) !important;
-    white-space: nowrap !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread {
-    position: relative !important;
-    inset: auto !important;
-    z-index: 1 !important;
-    display: grid !important;
-    grid-template-rows: var(--messages-compact-thread-header) minmax(0, 1fr) var(--messages-compact-thread-composer) !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    height: 100% !important;
-    min-height: 0 !important;
-    max-height: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 1px solid rgba(207, 222, 238, 0.72) !important;
-    border-radius: 24px !important;
-    background: #ffffff !important;
-    box-shadow: 0 18px 36px rgba(28, 65, 104, 0.08) !important;
-    overflow: hidden !important;
-    clip: auto !important;
-    clip-path: none !important;
-    visibility: visible !important;
-    opacity: 1 !important;
     pointer-events: auto !important;
-    transform: none !important;
-    box-sizing: border-box !important;
   }
 
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__header,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__header {
-    grid-row: 1 !important;
-    position: relative !important;
-    z-index: 3 !important;
-    display: grid !important;
-    grid-template-columns: 44px minmax(0, 1fr) auto !important;
-    align-items: center !important;
-    gap: 12px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    height: var(--messages-compact-thread-header) !important;
-    min-height: var(--messages-compact-thread-header) !important;
-    margin: 0 !important;
-    padding: 10px 14px !important;
-    border: 0 !important;
-    border-bottom: 1px solid rgba(207, 222, 238, 0.68) !important;
-    border-radius: 0 !important;
-    background: rgba(255, 255, 255, 0.98) !important;
-    box-shadow: none !important;
-    box-sizing: border-box !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__back,
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__action,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__back,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 44px !important;
-    height: 44px !important;
-    min-width: 44px !important;
-    min-height: 44px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 1px solid rgba(207, 222, 238, 0.78) !important;
-    border-radius: 16px !important;
-    background: #ffffff !important;
-    color: #164a7d !important;
-    box-shadow: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__action--order,
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__action--charge,
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__action--call,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--order,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--charge,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--call {
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-brand,
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-tools,
+  html body[data-page="mensagens"].messages-page-shell .messages-block__header {
     display: none !important;
   }
 
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__action--more,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--more {
-    display: inline-flex !important;
+  html body[data-page="mensagens"].messages-page-shell .messages-block {
+    display: grid !important;
+    gap: 10px !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__profile,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__profile {
+  html body[data-page="mensagens"].messages-page-shell .messages-block + .messages-block {
+    margin-top: 10px !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-list,
+  html body[data-page="mensagens"].messages-page-shell .doke-list {
     display: grid !important;
-    grid-template-columns: 52px minmax(0, 1fr) !important;
-    align-items: center !important;
     gap: 12px !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-item,
+  html body[data-page="mensagens"].messages-page-shell .message-item.doke-card,
+  html body[data-page="mensagens"].messages-page-shell .doke-message-card.message-item {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: 48px minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    column-gap: 12px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: var(--messages-tablet-card-min) !important;
+    margin: 0 !important;
+    padding: 14px 16px !important;
+    border: 0 !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #082f5f !important;
+    box-shadow: 0 14px 30px rgba(20, 59, 95, 0.045) !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-item__avatar {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: 999px !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .message-item__content,
+  html body[data-page="mensagens"].messages-page-shell .message-item__main {
     min-width: 0 !important;
   }
 
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__avatar,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__avatar {
-    width: 52px !important;
-    height: 52px !important;
-    min-width: 52px !important;
-    min-height: 52px !important;
-    border-radius: 999px !important;
-    background: #dce8f2 !important;
-    color: #ffffff !important;
-    font-size: 0.92rem !important;
-    font-weight: 900 !important;
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.96) !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__profile strong,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__profile strong {
-    display: block !important;
+  html body[data-page="mensagens"].messages-page-shell .message-item__name,
+  html body[data-page="mensagens"].messages-page-shell .message-item strong,
+  html body[data-page="mensagens"].messages-page-shell .message-item__preview,
+  html body[data-page="mensagens"].messages-page-shell .message-item p {
     max-width: 100% !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
-    color: #102f58 !important;
-    font-size: 1rem !important;
-    font-weight: 900 !important;
-    line-height: 1.15 !important;
-    letter-spacing: -0.03em !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__profile p,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__profile p {
-    position: relative !important;
-    margin: 4px 0 0 !important;
-    padding-left: 12px !important;
-    color: #4f6684 !important;
-    font-size: 0.8rem !important;
-    font-weight: 700 !important;
-    line-height: 1.15 !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__profile p::before,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__profile p::before {
-    content: "" !important;
-    position: absolute !important;
-    left: 0 !important;
-    top: 50% !important;
-    width: 6px !important;
-    height: 6px !important;
-    border-radius: 999px !important;
-    background: #23b26f !important;
-    transform: translateY(-50%) !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__body,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__body {
-    grid-row: 2 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 18px 24px 16px !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    background: linear-gradient(180deg, #fbfdff 0%, #ffffff 100%) !important;
-    box-sizing: border-box !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .message-date,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .message-date {
-    align-self: center !important;
-    margin: 4px auto 18px !important;
-    padding: 6px 14px !important;
-    border: 1px solid rgba(207, 222, 238, 0.76) !important;
-    border-radius: 999px !important;
-    background: #ffffff !important;
-    box-shadow: 0 8px 18px rgba(28, 65, 104, 0.06) !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .message-row,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .message-row {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-block: 0 18px !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .message-bubble,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .message-bubble {
-    max-width: min(420px, 82%) !important;
-    padding: 14px 16px !important;
-    border-radius: 18px !important;
-    line-height: 1.45 !important;
-    box-shadow: 0 10px 22px rgba(27, 61, 98, 0.06) !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .message-row--me .message-bubble,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .message-row--me .message-bubble {
-    max-width: min(420px, 78%) !important;
-    background: #159f92 !important;
-    color: #ffffff !important;
-    box-shadow: 0 14px 26px rgba(21, 159, 146, 0.2) !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-composer,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-composer {
-    grid-row: 3 !important;
-    position: relative !important;
-    z-index: 4 !important;
-    display: grid !important;
-    grid-template-columns: auto minmax(0, 1fr) auto !important;
-    align-items: center !important;
-    gap: 12px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    min-height: var(--messages-compact-thread-composer) !important;
-    height: var(--messages-compact-thread-composer) !important;
-    margin: 0 !important;
-    padding: 12px 14px !important;
-    border: 0 !important;
-    border-top: 1px solid rgba(207, 222, 238, 0.68) !important;
-    border-radius: 0 !important;
-    background: rgba(255, 255, 255, 0.98) !important;
-    box-shadow: none !important;
-    box-sizing: border-box !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-composer__tools,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-composer__tools {
-    display: contents !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-composer__tools > .messages-composer__tool:not(:first-child),
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-composer__tools > .messages-composer__tool:not(:first-child) {
-    display: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-composer__tool,
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-composer__send,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-composer__tool,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-composer__send {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 46px !important;
-    height: 46px !important;
-    min-width: 46px !important;
-    min-height: 46px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border-radius: 16px !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-composer__tool,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-composer__tool {
-    grid-column: 1 !important;
-    border: 1px solid rgba(207, 222, 238, 0.82) !important;
-    background: #f8fbfe !important;
-    color: #2a5f9d !important;
-    box-shadow: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-composer__field,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-composer__field {
-    grid-column: 2 !important;
-    min-width: 0 !important;
-    min-height: 46px !important;
-    height: 46px !important;
-    padding: 0 42px 0 16px !important;
-    border: 1px solid rgba(207, 222, 238, 0.82) !important;
-    border-radius: 999px !important;
-    background: #f8fbfe !important;
-    box-shadow: none !important;
-    box-sizing: border-box !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-composer textarea,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-composer textarea {
-    min-height: 44px !important;
-    height: 44px !important;
-    max-height: 96px !important;
-    padding: 11px 0 !important;
-    border: 0 !important;
-    background: transparent !important;
-    color: #223c5f !important;
-    font-size: 0.92rem !important;
-    line-height: 1.35 !important;
-    font-weight: 700 !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-composer__emoji-inside,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-composer__emoji-inside {
-    position: absolute !important;
-    inset-inline-end: 8px !important;
-    inset-block-start: 50% !important;
-    transform: translateY(-50%) !important;
-    width: 30px !important;
-    height: 30px !important;
-    min-width: 30px !important;
-    min-height: 30px !important;
-    border: 0 !important;
-    background: transparent !important;
-    color: #7a90aa !important;
-    box-shadow: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-composer__send,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-composer__send {
-    grid-column: 3 !important;
-    border: 0 !important;
-    background: #216eb6 !important;
-    color: #ffffff !important;
-    box-shadow: 0 12px 22px rgba(33, 110, 182, 0.22) !important;
   }
 }
 
-/* 2026-05-29 — reforço de estado real da conversa no tablet compacto.
-   Responsabilidade: remover o header global quando o JS marca a tela como thread,
-   sem afetar a lista nem outros breakpoints. */
-@media (min-width: 561px) and (max-width: 767px) and (orientation: portrait) {
+/* Estado de conversa aberta: o header global sai, o painel de conversa ocupa a tela. */
+@media (min-width: 768px) and (max-width: 899px) and (orientation: portrait) {
+  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open,
+  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) {
+    --messages-thread-rail: min(calc(100vw - 48px), 760px);
+    --messages-thread-gap: 14px;
+    --messages-thread-header: 72px;
+    --messages-thread-composer: 76px;
+    background: #eef5fb !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open > .app-shell,
+  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open > .app-shell > .page,
+  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) > .app-shell,
+  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) > .app-shell > .page {
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+    background: #eef5fb !important;
+  }
+
   html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-tablet-header,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .doke-tablet-shell-header.app-header--messages,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-tablet-header,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .doke-tablet-shell-header.app-header--messages {
-    position: absolute !important;
-    inset: 0 auto auto 0 !important;
+  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-tablet-header,
+  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .bottom-nav,
+  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .bottom-nav {
     display: none !important;
     visibility: hidden !important;
     width: 0 !important;
@@ -842,1048 +214,72 @@
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
-    opacity: 0 !important;
     pointer-events: none !important;
-  }
-}
-
-/* 2026-05-29 — autoridade final de posicionamento do thread no iPad mini.
-   Responsabilidade: depois que o header global é removido, retirar o espaço
-   reservado por contratos anteriores e ocultar qualquer ação residual do header.
-   Escopo limitado ao mensagens.html em tablet compacto portrait com conversa aberta. */
-@media (min-width: 561px) and (max-width: 767px) and (orientation: portrait) {
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]),
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) {
-    --messages-compact-thread-gap: 8px;
-    --messages-compact-thread-rail: min(calc(100vw - 48px), 560px);
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-tablet-header,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .doke-tablet-shell-header.app-header--messages,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-page-actions,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-header-filter-toggle,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-header-select-toggle,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-header-search-toggle,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-header-menu,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .home-side-meta__profile-wrap,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-tablet-header,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .doke-tablet-shell-header.app-header--messages,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-page-actions,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-header-filter-toggle,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-header-select-toggle,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-header-search-toggle,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-header-menu,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .home-side-meta__profile-wrap {
-    position: absolute !important;
-    inset: 0 auto auto 0 !important;
-    display: none !important;
-    visibility: hidden !important;
-    inline-size: 0 !important;
-    block-size: 0 !important;
-    min-inline-size: 0 !important;
-    min-block-size: 0 !important;
-    max-inline-size: 0 !important;
-    max-block-size: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open > .app-shell,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open > .app-shell > .page,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) > .app-shell,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) > .app-shell > .page {
-    display: block !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    max-height: 100dvh !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #eef5fb !important;
-    overflow: hidden !important;
   }
 
   html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .page__content,
   html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open main.page__content.doke-page,
   html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .page__content-inner.messages-shell-content,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .page__content,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) main.page__content.doke-page,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .page__content-inner.messages-shell-content {
-    display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    max-height: 100dvh !important;
-    margin: 0 !important;
-    padding: var(--messages-compact-thread-gap) 0 !important;
-    background: #eef5fb !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-app.messages-app--thread-open,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-app {
-    width: var(--messages-compact-thread-rail) !important;
-    max-width: var(--messages-compact-thread-rail) !important;
-    height: calc(100dvh - (var(--messages-compact-thread-gap) * 2)) !important;
-    max-height: calc(100dvh - (var(--messages-compact-thread-gap) * 2)) !important;
-    margin: 0 auto !important;
-    transform: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__body,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__body {
-    padding-block-start: 18px !important;
-  }
-}
-
-/* 2026-05-29 — autoridade final de ancoragem superior do thread compacto.
-   Responsabilidade: quando a conversa está aberta no iPad mini portrait,
-   o painel sai do fluxo herdado do shell/header e ancora no topo útil da viewport.
-   A lista mantém o fluxo normal; desktop e tablets médios não entram neste escopo. */
-@media (min-width: 561px) and (max-width: 767px) and (orientation: portrait) {
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]),
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) {
-    --messages-compact-thread-top-offset: 8px;
-    --messages-compact-thread-side-offset: 24px;
-    --messages-compact-thread-bottom-offset: 8px;
-    --messages-compact-thread-rail: min(calc(100vw - (var(--messages-compact-thread-side-offset) * 2)), 560px);
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .page__content,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open main.page__content.doke-page,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .page__content-inner.messages-shell-content,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .page__content,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) main.page__content.doke-page,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .page__content-inner.messages-shell-content {
-    padding: 0 !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-app.messages-app--thread-open,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-app,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-app {
-    position: fixed !important;
-    inset-block-start: calc(env(safe-area-inset-top, 0px) + var(--messages-compact-thread-top-offset)) !important;
-    inset-block-end: calc(env(safe-area-inset-bottom, 0px) + var(--messages-compact-thread-bottom-offset)) !important;
-    inset-inline-start: 50% !important;
-    inset-inline-end: auto !important;
-    z-index: 20 !important;
-    width: var(--messages-compact-thread-rail) !important;
-    max-width: var(--messages-compact-thread-rail) !important;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    margin: 0 !important;
-    transform: translateX(-50%) !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-app.messages-app--thread-open .messages-thread,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-app .messages-thread,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-app .messages-thread {
-    height: 100% !important;
-    max-height: 100% !important;
-    margin: 0 !important;
-  }
-}
-
-
-/* 2026-05-29 — modo conversa compacto fullscreen + ações de cobrança/ligação.
-   Responsabilidade: transformar apenas a conversa aberta no iPad mini/tablet compacto
-   em experiência imersiva. A lista, desktop e tablet médio permanecem fora deste ajuste. */
-@media (min-width: 561px) and (max-width: 767px) and (orientation: portrait) {
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]),
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) {
-    --messages-compact-thread-top-offset: 0px;
-    --messages-compact-thread-side-offset: 0px;
-    --messages-compact-thread-bottom-offset: 0px;
-    --messages-compact-thread-rail: 100vw;
-    --messages-tablet-thread-header-height: 72px;
-    --messages-tablet-composer-height: 64px;
-    background: #ffffff !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .bottom-nav,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .bottom-nav,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .bottom-nav,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-tablet-header,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .doke-tablet-shell-header.app-header--messages,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-tablet-header,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .doke-tablet-shell-header.app-header--messages,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-tablet-header,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .doke-tablet-shell-header.app-header--messages {
-    display: none !important;
-    visibility: hidden !important;
-    inline-size: 0 !important;
-    block-size: 0 !important;
-    overflow: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open > .app-shell,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open > .app-shell > .page,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) > .app-shell,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) > .app-shell > .page,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) > .app-shell,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) > .app-shell > .page,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .page__content,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open main.page__content.doke-page,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .page__content-inner.messages-shell-content,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .page__content,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) main.page__content.doke-page,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .page__content-inner.messages-shell-content,
   html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .page__content,
   html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) main.page__content.doke-page,
   html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .page__content-inner.messages-shell-content {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    min-width: 0 !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    max-height: 100dvh !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #ffffff !important;
-    overflow: hidden !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-app.messages-app--thread-open,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-app,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-app {
-    position: fixed !important;
-    inset: 0 !important;
-    z-index: 20 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    width: 100vw !important;
-    max-width: 100vw !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    max-height: 100dvh !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: #ffffff !important;
-    box-shadow: none !important;
-    overflow: hidden !important;
-    transform: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-app.messages-app--thread-open .messages-thread,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-app .messages-thread,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-app .messages-thread {
-    flex: 1 1 auto !important;
-    width: 100% !important;
-    height: 100% !important;
-    min-height: 0 !important;
-    max-height: 100% !important;
-    border-radius: 0 !important;
-    background: #f8fbfe !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__header,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__header,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__header {
-    flex-basis: var(--messages-tablet-thread-header-height) !important;
-    height: var(--messages-tablet-thread-header-height) !important;
-    min-height: var(--messages-tablet-thread-header-height) !important;
-    padding: 10px 12px !important;
-    gap: 10px !important;
-    background: rgba(255, 255, 255, 0.98) !important;
-    border-bottom: 1px solid rgba(207, 222, 238, 0.78) !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__back,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__back,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__action,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__back,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action {
-    flex: 0 0 42px !important;
-    width: 42px !important;
-    height: 42px !important;
-    min-width: 42px !important;
-    min-height: 42px !important;
-    border: 1px solid rgba(207, 222, 238, 0.9) !important;
-    border-radius: 16px !important;
-    background: #ffffff !important;
-    color: #1f65ad !important;
-    box-shadow: 0 8px 20px rgba(18, 56, 102, 0.06) !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__avatar,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__avatar,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__avatar {
-    flex-basis: 42px !important;
-    width: 42px !important;
-    height: 42px !important;
-    min-width: 42px !important;
-    min-height: 42px !important;
-    font-size: 0.82rem !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__profile,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__profile,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__profile {
-    flex: 1 1 156px !important;
-    min-width: 0 !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open [data-thread-name],
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) [data-thread-name],
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) [data-thread-name] {
-    font-size: 0.98rem !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__actions,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__actions,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__actions {
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    flex: 0 0 auto !important;
-    min-width: 0 !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action--order,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__action--order,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--order {
-    display: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action--charge,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__action--charge,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--charge {
-    display: inline-flex !important;
-    flex: 0 0 auto !important;
-    width: auto !important;
-    min-width: 96px !important;
-    height: 42px !important;
-    padding: 0 14px !important;
-    gap: 8px !important;
-    border-color: rgba(31, 101, 173, 0.78) !important;
-    border-radius: 16px !important;
-    color: #1f65ad !important;
-    font-weight: 800 !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action--charge svg,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__action--charge svg,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--charge svg {
-    display: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action--charge span,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__action--charge span,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--charge span {
-    display: inline !important;
-    font-size: 0.86rem !important;
-    line-height: 1 !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action--call,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action--more,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__action--call,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__action--more,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--call,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--more {
-    display: inline-flex !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__body,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__body,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__body {
-    padding: 18px 28px 18px !important;
-    background: #f8fbfe !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .message-row,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .message-row,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .message-row {
-    margin-block-end: 18px !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .message-bubble,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .message-row--me .message-bubble,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .message-bubble,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .message-row--me .message-bubble,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .message-bubble,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .message-row--me .message-bubble {
-    max-width: min(440px, 82%) !important;
-    border-radius: 18px !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-composer,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-composer,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-composer {
-    min-height: var(--messages-tablet-composer-height) !important;
-    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
-    background: rgba(255, 255, 255, 0.98) !important;
-  }
-}
-
-@media (min-width: 561px) and (max-width: 620px) and (orientation: portrait) {
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__header,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__header,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__header {
-    gap: 7px !important;
-    padding-inline: 8px !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__profile,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__profile,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__profile {
-    flex-basis: 132px !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__avatar,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__back,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__avatar,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__action,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__back,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__avatar,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__back {
-    flex-basis: 38px !important;
-    width: 38px !important;
-    height: 38px !important;
-    min-width: 38px !important;
-    min-height: 38px !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action--charge,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__action--charge,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--charge {
-    min-width: 86px !important;
-    height: 38px !important;
-    padding-inline: 10px !important;
-  }
-}
-
-/* Mensagens — alinhamento final do modo conversa fullscreen em tablet compacto.
-   Mantém o contrato restrito ao estado de thread para não afetar lista, desktop ou tablet médio. */
-@media (min-width: 561px) and (max-width: 767px) and (orientation: portrait) {
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread {
-    display: grid !important;
-    grid-template-rows: 64px minmax(0, 1fr) 58px !important;
-    width: 100vw !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    background: #f8fbfe !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    overflow: hidden !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__header,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__header,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__header {
-    display: grid !important;
-    grid-template-columns: 34px minmax(0, 1fr) auto !important;
-    align-items: center !important;
-    column-gap: 8px !important;
-    width: 100% !important;
-    height: 64px !important;
-    min-height: 64px !important;
-    max-height: 64px !important;
-    padding: 8px 10px !important;
-    background: #ffffff !important;
-    border: 0 !important;
-    border-bottom: 1px solid rgba(207, 222, 238, 0.82) !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__back,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__back,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__back {
-    grid-column: 1 !important;
-    flex: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__profile,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__profile,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__profile {
-    grid-column: 2 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    min-width: 0 !important;
-    width: auto !important;
-    max-width: none !important;
-    overflow: hidden !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__profile > div,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__profile > div,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__profile > div {
-    min-width: 0 !important;
-    overflow: hidden !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__actions,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__actions,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__actions {
-    grid-column: 3 !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: flex-end !important;
-    flex-wrap: nowrap !important;
-    gap: 6px !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-    overflow: visible !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__back,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__back,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__action,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__back,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action {
-    width: 34px !important;
-    height: 34px !important;
-    min-width: 34px !important;
-    min-height: 34px !important;
-    flex: 0 0 34px !important;
-    padding: 0 !important;
-    border: 1px solid rgba(207, 222, 238, 0.92) !important;
-    border-radius: 12px !important;
-    background: #ffffff !important;
-    color: #1f65ad !important;
-    box-shadow: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__avatar,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__avatar,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__avatar {
-    width: 34px !important;
-    height: 34px !important;
-    min-width: 34px !important;
-    min-height: 34px !important;
-    flex: 0 0 34px !important;
-    font-size: 0.72rem !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open [data-thread-name],
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) [data-thread-name],
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) [data-thread-name] {
-    font-size: 0.86rem !important;
-    line-height: 1.08 !important;
-    max-width: 100% !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open [data-thread-last-seen],
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) [data-thread-last-seen],
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) [data-thread-last-seen] {
-    font-size: 0.66rem !important;
-    line-height: 1.05 !important;
-    margin-top: 2px !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action--order,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__action--order,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--order {
-    display: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action--charge,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__action--charge,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--charge {
-    display: inline-flex !important;
-    width: auto !important;
-    min-width: 78px !important;
-    flex: 0 0 auto !important;
-    height: 34px !important;
-    min-height: 34px !important;
-    padding: 0 9px !important;
-    gap: 0 !important;
-    border-color: rgba(31, 101, 173, 0.72) !important;
-    border-radius: 12px !important;
-    font-weight: 800 !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action--charge span,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__action--charge span,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--charge span {
-    display: inline !important;
-    font-size: 0.72rem !important;
-    line-height: 1 !important;
-    white-space: nowrap !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action--call,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action--more,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__action--call,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__action--more,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--call,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--more {
-    display: inline-flex !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action svg,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__back svg,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__action svg,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__back svg,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action svg,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__back svg {
-    width: 16px !important;
-    height: 16px !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__body,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-thread__body,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__body {
-    min-height: 0 !important;
-    padding: 14px 22px 12px !important;
-    background: #f8fbfe !important;
-    overflow-y: auto !important;
-    box-sizing: border-box !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .message-row,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .message-row,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .message-row {
-    margin-block-end: 14px !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .message-bubble,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .message-bubble,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .message-bubble {
-    max-width: min(300px, 78%) !important;
-    padding: 11px 13px !important;
-    border: 1px solid rgba(207, 222, 238, 0.92) !important;
-    border-radius: 16px !important;
-    background: #ffffff !important;
-    box-shadow: 0 12px 24px rgba(18, 56, 102, 0.05) !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .message-row--me .message-bubble,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .message-row--me .message-bubble,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .message-row--me .message-bubble {
-    max-width: min(300px, 78%) !important;
-    border: 0 !important;
-    border-radius: 16px !important;
-    background: #0f9b8f !important;
-    box-shadow: 0 14px 28px rgba(15, 155, 143, 0.14) !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-composer,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app[data-messages-mode="thread"]) .messages-composer,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-composer {
-    min-height: 58px !important;
-    height: 58px !important;
-    padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
-    border-top: 1px solid rgba(207, 222, 238, 0.82) !important;
-    background: #ffffff !important;
-  }
-}
-
-
-/* 2026-05-29 — correção de regressão + paridade visual compacta.
-   Base: restaura o contrato que mantém lista visível no iPad mini e aplica
-   refinamento apenas quando o JS marca a conversa como aberta. */
-@media (min-width: 561px) and (max-width: 767px) and (orientation: portrait) {
-  html:not(.messages-thread-is-open) body[data-page="mensagens"].messages-page-shell .messages-thread,
-  body[data-page="mensagens"].messages-page-shell:not(.messages-thread-is-open) .messages-thread {
-    display: none !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-  }
-
-  html:not(.messages-thread-is-open) body[data-page="mensagens"].messages-page-shell .messages-sidebar,
-  body[data-page="mensagens"].messages-page-shell:not(.messages-thread-is-open) .messages-sidebar {
-    display: grid !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open {
-    --messages-compact-thread-header: 64px;
-    --messages-compact-thread-composer: 58px;
-    background: #ffffff !important;
-    overflow: hidden !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open,
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-app[data-messages-mode="thread"],
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-app.messages-app--thread-open,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-app[data-messages-mode="thread"] {
-    position: fixed !important;
-    inset: 0 !important;
-    z-index: 20 !important;
-    display: grid !important;
-    width: 100vw !important;
-    max-width: 100vw !important;
-    height: 100dvh !important;
-    max-height: 100dvh !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: #ffffff !important;
-    box-shadow: none !important;
-    overflow: hidden !important;
-    transform: none !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread,
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-app[data-messages-mode="thread"] .messages-thread,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-app.messages-app--thread-open .messages-thread,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-app[data-messages-mode="thread"] .messages-thread {
-    display: grid !important;
-    grid-template-rows: var(--messages-compact-thread-header) minmax(0, 1fr) var(--messages-compact-thread-composer) !important;
-    width: 100vw !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    max-height: 100dvh !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: #f8fbfe !important;
-    box-shadow: none !important;
-    overflow: hidden !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-thread__header,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__header {
-    grid-row: 1 !important;
-    display: grid !important;
-    grid-template-columns: 34px minmax(0, 1fr) auto !important;
-    align-items: center !important;
-    gap: 8px !important;
-    width: 100% !important;
-    height: var(--messages-compact-thread-header) !important;
-    min-height: var(--messages-compact-thread-header) !important;
-    max-height: var(--messages-compact-thread-header) !important;
-    margin: 0 !important;
-    padding: 8px 10px !important;
-    border: 0 !important;
-    border-bottom: 1px solid rgba(207, 222, 238, 0.9) !important;
-    border-radius: 0 !important;
-    background: #ffffff !important;
-    box-shadow: none !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-thread__back,
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-thread__action,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__back,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 34px !important;
-    height: 34px !important;
-    min-width: 34px !important;
-    min-height: 34px !important;
-    flex: 0 0 34px !important;
-    padding: 0 !important;
-    border: 1px solid rgba(207, 222, 238, 0.92) !important;
-    border-radius: 12px !important;
-    background: #ffffff !important;
-    color: #1f65ad !important;
-    box-shadow: none !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-thread__profile,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__profile {
-    grid-column: 2 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    overflow: hidden !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-thread__profile > div,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__profile > div {
-    display: grid !important;
-    gap: 2px !important;
-    min-width: 0 !important;
-    overflow: hidden !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-thread__avatar,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__avatar {
-    width: 34px !important;
-    height: 34px !important;
-    min-width: 34px !important;
-    min-height: 34px !important;
-    flex: 0 0 34px !important;
-    border-radius: 999px !important;
-    font-size: 0.72rem !important;
-    background: linear-gradient(135deg, #2b5f94 0%, #137d74 100%) !important;
-    color: #ffffff !important;
-    box-shadow: 0 8px 20px rgba(39, 58, 86, 0.1) !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell [data-thread-name],
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open [data-thread-name] {
-    font-size: 0.86rem !important;
-    line-height: 1.08 !important;
-    font-weight: 800 !important;
-    color: #062e58 !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell [data-thread-last-seen],
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open [data-thread-last-seen] {
-    margin: 2px 0 0 !important;
-    padding-left: 10px !important;
-    font-size: 0.66rem !important;
-    line-height: 1.05 !important;
-    font-weight: 600 !important;
-    color: #6f87a4 !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-thread__actions,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__actions {
-    grid-column: 3 !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: flex-end !important;
-    flex-wrap: nowrap !important;
-    gap: 6px !important;
-    min-width: max-content !important;
-    margin: 0 !important;
-    overflow: visible !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-thread__action--order,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action--order {
-    display: none !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-thread__action--charge,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action--charge {
-    display: inline-flex !important;
-    width: auto !important;
-    min-width: 78px !important;
-    flex: 0 0 auto !important;
-    padding: 0 9px !important;
-    gap: 0 !important;
-    border-color: rgba(31, 101, 173, 0.72) !important;
-    font-weight: 800 !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-thread__action--charge span,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action--charge span {
-    display: inline !important;
-    font-size: 0.72rem !important;
-    line-height: 1 !important;
-    white-space: nowrap !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-thread__action--call,
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-thread__action--more,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action--call,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action--more {
-    display: inline-flex !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-thread__action svg,
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-thread__back svg,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__action svg,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__back svg {
-    width: 16px !important;
-    height: 16px !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-thread__body,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__body {
-    grid-row: 2 !important;
-    min-height: 0 !important;
-    padding: 14px 22px 12px !important;
-    background: #f8fbfe !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    box-sizing: border-box !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .message-row,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .message-row {
-    margin-block-end: 14px !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .message-bubble,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .message-bubble {
-    max-width: min(300px, 78%) !important;
-    padding: 11px 13px !important;
-    border: 1px solid rgba(207, 222, 238, 0.92) !important;
-    border-radius: 16px !important;
-    background: #ffffff !important;
-    box-shadow: 0 12px 24px rgba(18, 56, 102, 0.05) !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .message-row--me .message-bubble,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .message-row--me .message-bubble {
-    max-width: min(300px, 78%) !important;
-    border: 0 !important;
-    border-radius: 16px !important;
-    background: #0f9b8f !important;
-    box-shadow: 0 14px 28px rgba(15, 155, 143, 0.14) !important;
-  }
-
-  html.messages-thread-is-open body[data-page="mensagens"].messages-page-shell .messages-composer,
-  body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-composer {
-    grid-row: 3 !important;
-    min-height: var(--messages-compact-thread-composer) !important;
-    height: var(--messages-compact-thread-composer) !important;
-    padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
-    border-top: 1px solid rgba(207, 222, 238, 0.82) !important;
-    background: #ffffff !important;
-  }
-}
-
-/*
- * 2026-05-29 — tablet thread visual parity with desktop.
- * Responsabilidade: manter a conversa aberta em tablet no mesmo contrato visual
- * do desktop: full-bleed, sem card flutuante, header interno no topo e ações
- * principais visíveis quando há largura útil suficiente.
- */
-@media (min-width: 561px) and (max-width: 899px) and (orientation: portrait) {
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) {
-    --messages-tablet-thread-header-height: 68px;
-    --messages-tablet-composer-height: 68px;
-    background: #ffffff !important;
-    overflow: hidden !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open > .app-shell,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open > .app-shell > .page,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) > .app-shell,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) > .app-shell > .page {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    min-width: 0 !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    max-height: 100dvh !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #ffffff !important;
-    overflow: hidden !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open > .app-shell > .page > .messages-tablet-header,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) > .app-shell > .page > .messages-tablet-header,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .bottom-nav,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .bottom-nav {
-    position: absolute !important;
-    display: none !important;
-    visibility: hidden !important;
-    inline-size: 0 !important;
-    block-size: 0 !important;
-    overflow: hidden !important;
-    pointer-events: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .page__content,
-  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .page__content-inner.messages-shell-content,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .page__content,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .page__content-inner.messages-shell-content {
     display: block !important;
-    width: 100vw !important;
-    max-width: 100vw !important;
+    width: 100% !important;
+    max-width: 100% !important;
     min-width: 0 !important;
     height: 100dvh !important;
     min-height: 100dvh !important;
     max-height: 100dvh !important;
     margin: 0 !important;
-    padding: 0 !important;
-    background: #ffffff !important;
+    padding: var(--messages-thread-gap) 0 !important;
+    background: #eef5fb !important;
     overflow: hidden !important;
     box-sizing: border-box !important;
   }
 
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open,
+  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-app,
   html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-app {
+    position: relative !important;
     display: block !important;
-    width: 100vw !important;
-    max-width: 100vw !important;
+    width: var(--messages-thread-rail) !important;
+    max-width: var(--messages-thread-rail) !important;
     min-width: 0 !important;
-    height: 100dvh !important;
+    height: calc(100dvh - (var(--messages-thread-gap) * 2)) !important;
     min-height: 0 !important;
-    max-height: 100dvh !important;
-    margin: 0 !important;
+    max-height: calc(100dvh - (var(--messages-thread-gap) * 2)) !important;
+    margin: 0 auto !important;
     padding: 0 !important;
     border: 0 !important;
-    border-radius: 0 !important;
-    background: #ffffff !important;
-    box-shadow: none !important;
+    background: transparent !important;
     overflow: hidden !important;
-    transform: none !important;
     box-sizing: border-box !important;
   }
 
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-sidebar,
+  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-sidebar,
   html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-sidebar,
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-empty,
+  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-empty,
   html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-empty,
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-order-card,
+  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-order-card,
   html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-order-card {
-    position: absolute !important;
-    inline-size: 1px !important;
-    block-size: 1px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    overflow: hidden !important;
-    clip: rect(0 0 0 0) !important;
-    clip-path: inset(50%) !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
+    display: none !important;
   }
 
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread,
+  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread,
   html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread {
     position: relative !important;
     display: grid !important;
-    grid-template-rows: var(--messages-tablet-thread-header-height) minmax(0, 1fr) var(--messages-tablet-composer-height) !important;
+    grid-template-rows: var(--messages-thread-header) minmax(0, 1fr) var(--messages-thread-composer) !important;
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
-    height: 100dvh !important;
+    height: 100% !important;
     min-height: 0 !important;
-    max-height: 100dvh !important;
     margin: 0 !important;
     padding: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: #ffffff !important;
-    box-shadow: none !important;
+    border: 1px solid rgba(207, 222, 238, 0.72) !important;
+    border-radius: 24px !important;
+    background: #fff !important;
+    box-shadow: 0 18px 36px rgba(28, 65, 104, 0.08) !important;
     overflow: hidden !important;
     visibility: visible !important;
     opacity: 1 !important;
@@ -1891,176 +287,43 @@
     box-sizing: border-box !important;
   }
 
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__header,
+  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__header,
   html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__header {
     grid-row: 1 !important;
+    position: relative !important;
     display: grid !important;
-    grid-template-columns: 38px minmax(0, 1fr) auto !important;
+    grid-template-columns: 44px minmax(0, 1fr) auto !important;
     align-items: center !important;
-    gap: 10px !important;
+    gap: 12px !important;
     width: 100% !important;
     min-width: 0 !important;
-    height: var(--messages-tablet-thread-header-height) !important;
-    min-height: var(--messages-tablet-thread-header-height) !important;
+    height: var(--messages-thread-header) !important;
     margin: 0 !important;
-    padding: 8px 14px !important;
-    border: 0 !important;
-    border-bottom: 1px solid rgba(207, 222, 238, 0.72) !important;
-    border-radius: 0 !important;
-    background: #ffffff !important;
-    box-shadow: none !important;
+    padding: 10px 14px !important;
+    border-bottom: 1px solid rgba(207, 222, 238, 0.68) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
     box-sizing: border-box !important;
   }
 
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__back,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__back,
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__action,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex: 0 0 38px !important;
-    width: 38px !important;
-    min-width: 38px !important;
-    height: 38px !important;
-    min-height: 38px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: 1px solid rgba(207, 222, 238, 0.88) !important;
-    border-radius: 14px !important;
-    background: #ffffff !important;
-    color: #164a7d !important;
-    box-shadow: none !important;
-    white-space: nowrap !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__profile,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__profile {
-    display: grid !important;
-    grid-template-columns: 36px minmax(0, 1fr) !important;
-    align-items: center !important;
-    gap: 10px !important;
-    min-width: 0 !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__avatar,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__avatar {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    min-height: 36px !important;
-    border-radius: 999px !important;
-    font-size: 0.72rem !important;
-    box-shadow: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__actions,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__actions {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-end !important;
-    gap: 8px !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__action--order,
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__action--charge,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--order,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--charge {
-    display: inline-flex !important;
-    flex: 0 0 auto !important;
-    width: auto !important;
-    min-width: 80px !important;
-    max-width: 116px !important;
-    padding: 0 14px !important;
-    font-size: 0.74rem !important;
-    font-weight: 800 !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__action--order svg,
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__action--charge svg,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--order svg,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--charge svg {
-    display: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__action span,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action span {
-    display: inline !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__action--call,
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__action--more,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--call,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--more {
-    display: inline-flex !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__body,
+  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-thread__body,
   html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__body {
     grid-row: 2 !important;
-    display: block !important;
-    width: 100% !important;
-    min-width: 0 !important;
     min-height: 0 !important;
-    margin: 0 !important;
-    padding: 18px 24px 16px !important;
-    overflow-x: hidden !important;
     overflow-y: auto !important;
-    background: #ffffff !important;
+    overflow-x: hidden !important;
+    padding: 18px 24px !important;
+    background: #fff !important;
     box-sizing: border-box !important;
   }
 
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .message-row,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .message-row {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-block: 0 18px !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .message-bubble,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .message-bubble {
-    max-width: min(430px, 68%) !important;
-    border-radius: 16px !important;
-    box-shadow: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .message-row--me .message-bubble,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .message-row--me .message-bubble {
-    max-width: min(430px, 64%) !important;
-    background: #159f92 !important;
-    color: #ffffff !important;
-    box-shadow: none !important;
-  }
-
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-composer,
+  html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open .messages-composer,
   html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-composer {
     grid-row: 3 !important;
-    display: grid !important;
-    grid-template-columns: auto minmax(0, 1fr) auto !important;
-    align-items: center !important;
-    gap: 10px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    min-height: var(--messages-tablet-composer-height) !important;
-    height: var(--messages-tablet-composer-height) !important;
+    position: relative !important;
+    z-index: 3 !important;
     margin: 0 !important;
-    padding: 10px 24px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
-    border: 0 !important;
-    border-top: 1px solid rgba(207, 222, 238, 0.72) !important;
-    border-radius: 0 !important;
-    background: #ffffff !important;
-    box-shadow: none !important;
+    border-top: 1px solid rgba(207, 222, 238, 0.64) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
     box-sizing: border-box !important;
-  }
-}
-
-@media (min-width: 561px) and (max-width: 589px) and (orientation: portrait) {
-  html body[data-page="mensagens"].messages-page-shell .messages-app.messages-app--thread-open .messages-thread__action--order,
-  html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) .messages-thread__action--order {
-    display: none !important;
   }
 }
