@@ -17,8 +17,30 @@
     try {
       return window.matchMedia("(min-width: 1025px)").matches;
     } catch (error) {
-      return true;
+      return (window.innerWidth || root.clientWidth || 0) >= 1025;
     }
+  }
+
+  function isMobileRuntime() {
+    try {
+      return window.matchMedia("(max-width: 760px)").matches;
+    } catch (error) {
+      return (window.innerWidth || root.clientWidth || 0) <= 760;
+    }
+  }
+
+  function syncViewportContract() {
+    var viewportHeight = window.innerHeight || root.clientHeight || 0;
+    var viewportWidth = window.innerWidth || root.clientWidth || 0;
+    var scrollbarWidth = Math.max(0, viewportWidth - root.clientWidth);
+    var mobile = isMobileRuntime();
+
+    root.classList.toggle("doke-js-mobile", mobile);
+    root.classList.toggle("doke-js-desktop", !mobile);
+    root.style.setProperty("--doke-js-vh", ((viewportHeight || 0) * 0.01).toFixed(2) + "px");
+    root.style.setProperty("--doke-window-width", viewportWidth + "px");
+    root.style.setProperty("--doke-layout-width", Math.max(0, viewportWidth - scrollbarWidth) + "px");
+    root.style.setProperty("--doke-scrollbar-width", scrollbarWidth + "px");
   }
 
   function readCollapsed() {
@@ -30,9 +52,11 @@
   }
 
   function applyShellState() {
-    var shouldCollapse = isDesktopShell() && readCollapsed();
-    var sidebarWidth = shouldCollapse ? "96px" : "272px";
+    var desktopShell = isDesktopShell();
+    var shouldCollapse = desktopShell && readCollapsed();
+    var sidebarWidth = desktopShell ? (shouldCollapse ? "96px" : "272px") : "0px";
 
+    syncViewportContract();
     root.classList.toggle(COLLAPSED, shouldCollapse);
     root.classList.toggle(EXPANDED, !shouldCollapse);
     root.classList.add(READY);
@@ -50,4 +74,6 @@
 
   applyShellState();
   window.addEventListener("pageshow", applyShellState, { passive: true });
+  window.addEventListener("resize", applyShellState, { passive: true });
+  window.addEventListener("orientationchange", applyShellState, { passive: true });
 })();

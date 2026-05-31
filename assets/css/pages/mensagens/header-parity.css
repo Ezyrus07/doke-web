@@ -512,3 +512,28 @@
   }
 
 }
+
+/* 2026-05-30 — Mobile list action source of truth.
+   The mobile header already owns search/filter actions on mensagens.html.
+   Keep the duplicated local list controls out of the mobile inbox, including
+   the transient header-search state, to avoid two search/filter surfaces. */
+@media (max-width: 760px) {
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-tools,
+  html body[data-page="mensagens"].messages-page-shell.is-messages-header-search-open .messages-sidebar-tools,
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar-panel--filters {
+    position: absolute !important;
+    display: block !important;
+    inline-size: 1px !important;
+    block-size: 1px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}

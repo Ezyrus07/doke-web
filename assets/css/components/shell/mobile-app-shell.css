@@ -9,7 +9,10 @@
 :root {
   --doke-mobile-shell-max: min(430px, 100vw);
   --doke-mobile-shell-edge: clamp(18px, 5.6vw, var(--space-6, 24px));
-  --doke-mobile-shell-top: max(20px, env(safe-area-inset-top, 0px));
+  /* Browser chrome em iOS/iPadOS pode expor safe-area-inset-top alto demais em modo navegador.
+     O shell mobile não deve herdar esse valor integral, senão o cabeçalho nasce baixo
+     e a lista fica com um vazio grande no topo. */
+  --doke-mobile-shell-top: clamp(12px, env(safe-area-inset-top, 0px), 20px);
   --doke-mobile-shell-gap: 12px;
   --doke-mobile-shell-topbar-height: 40px;
   --doke-mobile-shell-search-height: 56px;
@@ -169,7 +172,7 @@
     border-radius: var(--radius-pill) !important;
     background: rgba(255, 255, 255, .98) !important;
     color: var(--doke-mobile-shell-ink) !important;
-    box-shadow: 0 6px 16px rgba(27, 61, 98, .07) !important;
+    box-shadow: none !important;
     overflow: hidden !important;
   }
 
@@ -207,7 +210,7 @@
     border-radius: var(--radius-sm) !important;
     background: rgba(255, 255, 255, .98) !important;
     color: var(--doke-mobile-shell-primary) !important;
-    box-shadow: 0 6px 16px rgba(27, 61, 98, .08) !important;
+    box-shadow: none !important;
     text-decoration: none !important;
   }
 
@@ -469,7 +472,7 @@
     border-radius: var(--radius-sm) !important;
     background: rgba(255, 255, 255, 0.98) !important;
     color: #1266b0 !important;
-    box-shadow: 0 8px 18px rgba(27, 61, 98, 0.07) !important;
+    box-shadow: none !important;
     text-decoration: none !important;
   }
 
@@ -487,7 +490,7 @@
     background: #18a88d !important;
     border-color: transparent !important;
     color: #fff !important;
-    box-shadow: 0 10px 22px rgba(24, 168, 141, 0.18) !important;
+    box-shadow: none !important;
   }
 
   body.doke-mobile-shell-mounted[data-shell-page="pedidos"] .orders-page-header__hero-strip {
@@ -761,5 +764,54 @@
   body.doke-mobile-shell-mounted .doke-mobile-bottom-nav__item[aria-current="page"]::before,
   body.doke-mobile-shell-mounted .doke-mobile-bottom-nav__link[aria-current="page"]::before {
     background: var(--color-secondary, #14b8a6) !important;
+  }
+}
+
+/* First-paint stability contract: reserve the same mobile shell geometry before
+   mobile-app-shell.js mounts the runtime chrome. This prevents one-frame jumps
+   in page width/position/top offset on cold reload. */
+@media (max-width: 760px) {
+  html.doke-mobile-shell-pending body.app-shell-page {
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+    padding-top: var(--doke-mobile-shell-without-search-height) !important;
+    padding-bottom: calc(var(--doke-mobile-shell-nav-height) + env(safe-area-inset-bottom, 0px) + 14px) !important;
+  }
+
+  html.doke-mobile-shell-pending body:is(.home-index-shell, .search-results-body) {
+    padding-top: var(--doke-mobile-shell-with-search-height) !important;
+  }
+
+  html.doke-mobile-shell-pending body.notifications-page-shell {
+    padding-bottom: 0 !important;
+  }
+}
+
+/* First-paint/mobile regression v3
+   Corrige o espaço vertical excessivo visto no iPad mini/Safari depois do contrato
+   de estabilidade: o header local de notificações foi removido, então a página deve
+   nascer abaixo de um único shell global compacto, sem somar header antigo + shell. */
+@media (max-width: 760px) {
+  html.doke-mobile-shell-pending body.notifications-page-shell,
+  body.doke-mobile-shell-mounted.notifications-page-shell {
+    padding-top: var(--doke-mobile-shell-without-search-height) !important;
+    padding-bottom: 0 !important;
+  }
+
+  body.doke-mobile-shell-mounted[data-shell-page="notificacoes"] .doke-mobile-shell {
+    position: fixed !important;
+  }
+
+  body.notifications-page-shell .notifications-mobile-header,
+  body.notifications-page-shell .bottom-nav,
+  body.notifications-page-shell .doke-mobile-bottom-nav {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body.notifications-page-shell .notifications-page {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
   }
 }

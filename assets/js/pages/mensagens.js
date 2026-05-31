@@ -198,10 +198,7 @@
     const pageParams = new URLSearchParams(window.location.search);
     let activeId = pageParams.get("conversation") && conversations[pageParams.get("conversation")] ? pageParams.get("conversation") : "painting";
 
-    const isCompactThreadViewport = () => {
-      const portrait = window.matchMedia?.("(orientation: portrait)")?.matches ?? window.innerHeight >= window.innerWidth;
-      return window.innerWidth >= 561 && window.innerWidth <= 899 && portrait;
-    };
+    const isCompactThreadViewport = () => window.innerWidth >= 561 && window.innerWidth <= 1023;
 
     const setCompactThreadOpen = (isOpen) => {
       const open = Boolean(isOpen) && isCompactThreadViewport();

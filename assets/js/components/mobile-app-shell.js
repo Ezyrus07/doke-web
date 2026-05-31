@@ -20,7 +20,7 @@
     'comunidade-interna.html': { key: 'comunidade', active: 'communities', search: false, title: 'Comunidade' },
     'perfil.html': { key: 'perfil', active: 'profile', search: false },
     'carteira.html': { key: 'carteira', active: 'profile', search: false },
-    'notificacoes.html': { key: 'notificacoes', active: '', search: false },
+    'notificacoes.html': { key: 'notificacoes', active: '', search: false, bottomNav: false },
     'novidades.html': { key: 'novidades', active: '', search: false, title: 'Novidades' },
     'ajuda.html': { key: 'ajuda', active: '', search: false, title: 'Ajuda' },
     'configuracoes.html': { key: 'configuracoes', active: 'profile', search: false, title: 'Configurações', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
@@ -424,6 +424,10 @@
     return shell;
   }
 
+  function hasBottomNav(cfg) {
+    return !(cfg && cfg.bottomNav === false);
+  }
+
   function createNav(cfg) {
     var items = [
       ['home', 'index.html', 'Início', ICONS.home],
@@ -455,9 +459,12 @@
     removeExistingShell();
     document.body.setAttribute('data-shell-page', cfg.key);
     document.body.setAttribute('data-shell-search', cfg.search ? 'true' : 'false');
+    document.body.setAttribute('data-shell-bottom-nav', hasBottomNav(cfg) ? 'true' : 'false');
     document.body.classList.add('doke-mobile-shell-mounted');
     document.body.prepend(createShell(cfg));
-    document.body.appendChild(createNav(cfg));
+    if (hasBottomNav(cfg)) {
+      document.body.appendChild(createNav(cfg));
+    }
     document.documentElement.classList.remove('doke-mobile-shell-pending');
     document.documentElement.classList.add('doke-mobile-shell-ready');
   }
@@ -471,10 +478,10 @@
 
   document.addEventListener('doke:route-ready', render);
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', mount, { once: true });
-  } else {
+  if (document.body) {
     mount();
+  } else {
+    document.addEventListener('DOMContentLoaded', mount, { once: true });
   }
 }());
 

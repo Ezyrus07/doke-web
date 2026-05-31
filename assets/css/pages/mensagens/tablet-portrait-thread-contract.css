@@ -1,16 +1,34 @@
 /*
- * Mensagens — contrato tablet portrait da área de conteúdo.
+ * Mensagens — contrato tablet compacto da área de conteúdo.
  * Responsabilidade: controlar somente a lista/conversa de mensagens.
  * O header tablet é governado pelo contrato global em components/shell/tablet-internal-rail-contract.css.
  */
 
-@media (min-width: 768px) and (max-width: 899px) and (orientation: portrait) {
+@media (min-width: 768px) and (max-width: 1023px) {
   html body[data-page="mensagens"].messages-page-shell {
     --messages-tablet-bg: #eef5fb;
-    --messages-tablet-rail: var(--doke-internal-tablet-rail, min(calc(100vw - 48px), 760px));
+    --messages-tablet-rail: min(calc(100vw - 48px), 760px);
     --messages-tablet-card-min: 82px;
     background: var(--messages-tablet-bg) !important;
     overflow-x: hidden !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .sidebar {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell,
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
   }
 
   html body[data-page="mensagens"].messages-page-shell:not(.messages-thread-is-open):not(:has(.messages-app.messages-app--thread-open)) > .app-shell > .page > main.page__content.doke-page,
@@ -177,11 +195,11 @@
 }
 
 /* Estado de conversa aberta: o header global sai, o painel de conversa ocupa a tela. */
-@media (min-width: 768px) and (max-width: 899px) and (orientation: portrait) {
+@media (min-width: 768px) and (max-width: 1023px) {
   html body[data-page="mensagens"].messages-page-shell.messages-thread-is-open,
   html body[data-page="mensagens"].messages-page-shell:has(.messages-app.messages-app--thread-open) {
-    --messages-thread-rail: min(calc(100vw - 48px), 760px);
-    --messages-thread-gap: 14px;
+    --messages-thread-rail: min(calc(100vw - 32px), 860px);
+    --messages-thread-gap: 12px;
     --messages-thread-header: 72px;
     --messages-thread-composer: 76px;
     background: #eef5fb !important;
