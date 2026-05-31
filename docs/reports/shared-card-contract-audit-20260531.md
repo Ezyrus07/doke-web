@@ -277,3 +277,117 @@ Correção aplicada:
 - no desktop/tablet, a seção usa duas colunas e mostra até dois cards
 
 Isso elimina a última fonte estrutural de divergência do card de anúncio em relação ao comportamento esperado no detalhe.
+
+## Ajuste posterior — contrato tablet do detalhe-anuncio
+
+A tela tablet do `detalhe-anuncio.html` apresentava três problemas:
+
+- workers gigantes, herdando comportamento de preview/media antigo;
+- anúncios semelhantes cortados em duas colunas no rail estreito;
+- bloco comercial de preço/Enviar mensagem/Ligar aparecendo somente após todo o conteúdo principal.
+
+Correção aplicada em `detail-page-contract.css` no breakpoint `761px–1024px`:
+
+- o layout tablet vira uma coluna controlada;
+- `.ad-detail-main` usa `display: contents` apenas no tablet para permitir que o bloco lateral seja posicionado logo após o hero;
+- `.ad-detail-sidebar` sobe visualmente para depois do hero;
+- `.ad-action-card` ocupa a largura inteira da área e fica antes das seções relacionadas;
+- workers viram rail compacto com cards proporcionais, sem preview gigante;
+- publicações preservam anatomia do index e não esticam verticalmente;
+- anúncios semelhantes passam para uma coluna limpa no tablet para impedir corte.
+
+Escopo restrito ao detalhe. Não houve alteração em shell, sidebar global, header ou wrappers globais.
+
+## Ajuste posterior — tablet v12
+
+Após validação visual da v11:
+
+- os workers ficaram compactos demais;
+- anúncios semelhantes em uma coluna ficaram largos demais e pareciam banners, não cards do index.
+
+Correção v12:
+
+- workers tablet aumentados para `clamp(150px, 24vw, 178px)`;
+- anúncios semelhantes tablet voltaram para duas colunas seguras;
+- mídia dos anúncios semelhantes tablet limitada com `clamp(132px, 17vw, 156px)`;
+- continua sem mexer em shell/header/sidebar global.
+
+## Ajuste posterior — tablet v13 similar ads
+
+Após a v12, a distribuição dos anúncios semelhantes estava correta em 2 colunas, mas o conteúdo interno do card ainda era cortado no tablet.
+
+Causa:
+
+- card em duas colunas com largura menor;
+- `overflow: hidden` no card;
+- body sem respiro suficiente;
+- título e metadados sem altura útil suficiente.
+
+Correção v13:
+
+- manteve duas colunas no tablet;
+- mídia do card fixada em 148px no tablet para preservar proporção;
+- body do card com `height: auto`, `overflow: visible` e padding ajustado;
+- título permitido em até duas linhas;
+- rating, tags e localização não são mais comprimidos/cortados;
+- footer ganha margem superior controlada.
+
+Escopo restrito a `detail-page-contract.css` na seção `Anúncios semelhantes` do `detalhe-anuncio`.
+
+## Ajuste posterior — tablet landscape rail parity v14
+
+No tablet horizontal, o conteúdo do `detalhe-anuncio` não terminava no mesmo ponto do header interno.
+
+Causa:
+
+- o breakpoint tablet anterior limitava `ad-detail-shell`;
+- o header interno (`app-header--detail`) continuava seguindo outro trilho;
+- em landscape, isso deixava o hero/conteúdo visualmente desalinhado em relação ao header.
+
+Correção v14:
+
+- criado `--detail-tablet-rail-width`;
+- `app-header--detail` e `ad-detail-shell` passam a usar o mesmo width/max-width/margin no intervalo `761px–1180px`;
+- em `961px–1180px`, o layout volta a permitir conteúdo + sidebar balanceados dentro do mesmo trilho;
+- escopo restrito ao `detalhe-anuncio`, sem alterar contratos globais de shell/header/sidebar.
+
+## Ajuste posterior — tablet v15 sem sidebar lateral
+
+Após validação em tablet/horizontal, a sidebar à direita deixava a tela apertada e prejudicava leitura do painel de avaliações/conteúdo.
+
+Decisão:
+
+- no intervalo `761px–1180px`, o `detalhe-anuncio` passa a usar fluxo de uma coluna;
+- o bloco comercial (`ad-action-card`) aparece logo após o hero;
+- provider/trust/location aparecem abaixo, em grid de duas colunas quando houver espaço;
+- removido sticky lateral nesse breakpoint;
+- o header e o conteúdo continuam no mesmo trilho local;
+- escopo restrito ao `detail-page-contract.css`.
+
+## Ajuste posterior — tablet v16 largura + altura dos cards de publicação
+
+Após a v15, a tela tablet ficou em fluxo de uma coluna, mas ainda havia dois problemas:
+
+- diferença visual de largura entre o bloco comercial e as seções de conteúdo;
+- cards de publicação esticados verticalmente, com espaço vazio grande no final.
+
+Correção v16:
+
+- criado `--detail-tablet-section-width` para alinhar header, hero, bloco comercial, reviews e seções no mesmo trilho;
+- publicações no tablet usam `align-items: start` e altura automática;
+- `.publication-card`, `.publication-card__media` e `.publication-card__content` deixam de esticar para preencher a linha do grid;
+- mantidas duas colunas no tablet, sem alterar shell/header/sidebar global.
+
+## Ajuste posterior — tablet v17 action rail parity
+
+Após a v16, o bloco comercial ainda não seguia totalmente o mesmo trilho útil das seções do tablet.
+
+Correção v17:
+
+- `.ad-detail-sidebar` segue `--detail-tablet-section-width`;
+- `.ad-action-card` ocupa `grid-column: 1 / -1`;
+- `.ad-action-card` usa `width: 100%`;
+- botões internos (`Enviar mensagem`, `Ligar agora`) passam a ocupar 100% da coluna de ações;
+- metadados e trust também usam a largura total do card.
+
+Escopo restrito ao `detalhe-anuncio` no breakpoint `761px–1180px`.
