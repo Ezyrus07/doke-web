@@ -454,13 +454,37 @@
     if (nav) nav.remove();
   }
 
+  function isMobileShellViewport() {
+    try {
+      return window.matchMedia('(max-width: 760px)').matches;
+    } catch (error) {
+      return (window.innerWidth || document.documentElement.clientWidth || 0) <= 760;
+    }
+  }
+
+  function teardownForNonMobileViewport() {
+    removeExistingShell();
+    document.body.classList.remove('doke-mobile-shell-mounted');
+    document.body.removeAttribute('data-shell-page');
+    document.body.removeAttribute('data-shell-search');
+    document.body.removeAttribute('data-shell-bottom-nav');
+    document.documentElement.classList.remove('doke-mobile-shell-pending', 'doke-mobile-shell-ready');
+    document.documentElement.setAttribute('data-doke-mobile-shell', 'viewport-disabled');
+  }
+
   function render() {
+    if (!isMobileShellViewport()) {
+      teardownForNonMobileViewport();
+      return;
+    }
+
     var cfg = config();
     removeExistingShell();
     document.body.setAttribute('data-shell-page', cfg.key);
     document.body.setAttribute('data-shell-search', cfg.search ? 'true' : 'false');
     document.body.setAttribute('data-shell-bottom-nav', hasBottomNav(cfg) ? 'true' : 'false');
     document.body.classList.add('doke-mobile-shell-mounted');
+    document.documentElement.removeAttribute('data-doke-mobile-shell');
     document.body.prepend(createShell(cfg));
     if (hasBottomNav(cfg)) {
       document.body.appendChild(createNav(cfg));
@@ -477,6 +501,8 @@
   window.DokeMobileAppShell.refresh = render;
 
   document.addEventListener('doke:route-ready', render);
+  window.addEventListener('resize', render, { passive: true });
+  window.addEventListener('orientationchange', render, { passive: true });
 
   if (document.body) {
     mount();
