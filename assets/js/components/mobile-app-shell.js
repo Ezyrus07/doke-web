@@ -456,9 +456,9 @@
 
   function isMobileShellViewport() {
     try {
-      return window.matchMedia('(max-width: 760px)').matches;
+      return window.matchMedia('(max-width: 560px)').matches;
     } catch (error) {
-      return (window.innerWidth || document.documentElement.clientWidth || 0) <= 760;
+      return (window.innerWidth || document.documentElement.clientWidth || 0) <= 560;
     }
   }
 
