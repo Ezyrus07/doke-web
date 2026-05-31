@@ -391,3 +391,124 @@ Correção v17:
 - metadados e trust também usam a largura total do card.
 
 Escopo restrito ao `detalhe-anuncio` no breakpoint `761px–1180px`.
+
+## Ajuste posterior — iPad mini header vertical origin v18
+
+No `detalhe-anuncio.html`, em viewport tipo iPad mini vertical, o header canônico ficava baixo demais, deixando um espaço vazio excessivo no topo.
+
+Correção v18:
+
+- escopo restrito ao `detalhe-anuncio`;
+- breakpoint `561px–760px`;
+- remove padding/margem superior do `body`, `.app-shell`, `.page` e `.page__content` apenas nessa tela;
+- reposiciona `header.app-header--detail.home-side-meta` no topo do fluxo com `top: 0`;
+- padroniza a altura do `app-header__inner` em 46px;
+- reduz o padding inicial do `ad-detail-shell`;
+- preserva trilho e demais regras globais de header/shell para outras páginas.
+
+## Ajuste posterior — header/location + gallery edge v19
+
+Após a correção do header no iPad mini, restavam dois desvios visuais:
+
+- o ponto verde do botão de localização não aparecia;
+- a galeria do hero mostrava uma borda/folga branca que não aparece nos outros estados da tela.
+
+Correção v19:
+
+- restaurado `.home-side-meta__location-dot` no header do `detalhe-anuncio`;
+- removido o frame branco da superfície do hero apenas em `561px–760px`;
+- galeria e stage passam a controlar o radius/overflow diretamente;
+- resumo e thumbs mantêm espaçamento sem depender da superfície branca do hero.
+
+Escopo restrito ao `detail-page-contract.css`.
+
+## Ajuste posterior — tablet action card v20
+
+No iPad mini/tablet estreito, a barra fixa `.detail-mobile-action` aparecia sobre o conteúdo, enquanto a estrutura correta deveria ser o card comercial completo.
+
+Correção v20:
+
+- `.detail-mobile-action` fica totalmente oculta no breakpoint `561px–760px`;
+- `ad-action-card` passa a aparecer no fluxo logo após o hero;
+- estrutura do card segue o padrão da tela tablet: preço, subtexto, enviar mensagem, ligar, resposta, garantia e segurança;
+- botões ocupam 100% da largura útil;
+- escopo restrito ao `detail-page-contract.css`.
+
+## Ajuste posterior — iPad mini v21 restore hero ordering
+
+Após a v20, a barra mobile foi removida corretamente, mas a galeria/hero saiu da posição esperada no iPad mini porque `display: contents` colocou as seções internas no mesmo fluxo e a descrição ficou com `order` padrão antes do hero.
+
+Correção v21:
+
+- hero/galeria forçados como primeiro bloco visual após breadcrumb;
+- bloco comercial fica logo depois do hero;
+- descrição, detalhes, reviews e seções relacionadas ficam depois;
+- galeria, stage e imagem têm `display/visibility/opacity` restaurados explicitamente;
+- escopo restrito ao breakpoint `561px–760px` do `detalhe-anuncio`.
+
+## Ajuste posterior — iPad mini v22 hero standardization
+
+Após restaurar o hero, a composição ainda não estava no padrão: a imagem parecia insetada dentro de uma moldura branca e o bloco não reproduzia a hierarquia visual aprovada.
+
+Correção v22:
+
+- hero vira um card único com imagem ocupando o topo do bloco;
+- galeria/stage ocupam 100% da largura visual;
+- removida moldura lateral branca da imagem;
+- thumbs e resumo ficam abaixo com padding controlado;
+- título/ID/estatísticas seguem o bloco sem alterar shell/header global.
+
+## Ajuste posterior — iPad mini v23 similar ads rail
+
+Na tela iPad mini (`561px–760px`), a seção `Anúncios semelhantes` estava renderizando cards estreitos e centralizados, sem seguir o mesmo trilho útil do hero/action/descrição.
+
+Correção v23:
+
+- `detail-section--similar-ads` usa 100% da largura útil;
+- o grid de anúncios semelhantes vira uma coluna full rail;
+- cards `.doke-ad-card` usam `width: 100%`;
+- mídia preservada em 148px;
+- removido comportamento de rail/centralização nessa seção para esse breakpoint.
+
+Escopo restrito ao `detail-page-contract.css`.
+
+## Ajuste posterior — iPad mini v24 similar ads em 2 colunas
+
+A seção `Anúncios semelhantes` no breakpoint `561px–760px` foi ajustada para tentar seguir a referência de tablet com dois cards por linha.
+
+Correção v24:
+
+- grid da seção passa para `repeat(2, minmax(0, 1fr))`;
+- cards usam `width: 100%` com altura automática;
+- mídia reduzida para 116px para caber melhor em duas colunas;
+- body com padding menor e título limitado a 2 linhas;
+- localização levemente reduzida para preservar integridade do card;
+- continuam visíveis apenas os 2 primeiros cards.
+
+Escopo restrito ao `detail-page-contract.css`.
+
+## Ajuste posterior — v25 remove shadow layer das seções relacionadas
+
+Foi identificada uma camada visual de sombra inferior nas seções relacionadas do `detalhe-anuncio`, especialmente em workers, publicações e anúncios semelhantes.
+
+Correção v25:
+
+- remove `box-shadow`/`filter` dos rails e tracks relacionados;
+- remove sombras de pseudo-elementos dessas seções;
+- remove sombra local dos cards relacionados apenas dentro do `detalhe-anuncio`;
+- hover/focus desses cards também não recria a sombra nesse contexto;
+- escopo restrito ao `detail-page-contract.css`, sem alterar o contrato global dos cards do app.
+
+## Ajuste posterior — v26 remove underlayer das seções relacionadas
+
+Após a v25, ainda existia uma faixa visual embaixo dos cards. A causa não era somente `box-shadow`, mas uma superfície residual dos wrappers/rails das seções relacionadas.
+
+Correção v26:
+
+- wrappers das seções relacionadas passam a ser layout-only;
+- removidos background, borda, sombra, filter, pseudo-elementos e padding inferior residual;
+- rails/tracks deixam de criar altura visual extra;
+- grid rows usam `auto` e cards ficam alinhados ao início;
+- espaçamento entre seções passa a ser explícito por `margin-bottom`, não por uma superfície falsa.
+
+Escopo restrito ao `detail-page-contract.css`.

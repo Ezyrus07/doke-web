@@ -2635,3 +2635,786 @@ body[data-page="detalhe-anuncio"] [data-similar-ads-grid].detail-related-grid--a
   }
 }
 
+/* 2026-05-31 — detalhe iPad mini header vertical origin v18.
+   Scope: detalhe-anuncio only, tablet/narrow-tablet viewport.
+   Fixes the oversized blank space above/below the canonical detail header without
+   changing the global shell/header contracts used by other pages. */
+@media (min-width: 561px) and (max-width: 760px) {
+  html body[data-page="detalhe-anuncio"].has-global-header,
+  html body[data-page="detalhe-anuncio"].has-global-header > .app-shell,
+  html body[data-page="detalhe-anuncio"].has-global-header > .app-shell > .page {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"].has-global-header > .app-shell > .page {
+    display: block !important;
+    background: var(--detail-bg, #eef6fa) !important;
+  }
+
+  html body[data-page="detalhe-anuncio"].has-global-header > .app-shell > .page > header.app-header.app-header--detail.home-side-meta {
+    position: sticky !important;
+    top: 0 !important;
+    inset-block-start: 0 !important;
+    z-index: 60 !important;
+    display: block !important;
+    width: min(calc(100vw - (var(--detail-rail-gutter, 12px) * 2)), var(--detail-rail-max, 390px)) !important;
+    max-width: var(--detail-rail-max, 390px) !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 auto 10px !important;
+    padding: max(8px, env(safe-area-inset-top, 0px)) 0 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+
+  html body[data-page="detalhe-anuncio"].has-global-header > .app-shell > .page > header.app-header.app-header--detail.home-side-meta > .app-header__inner {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    max-height: 46px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"].has-global-header > .app-shell > .page > main.page__content.detalhe-anuncio-page {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] main.page__content.detalhe-anuncio-page > .ad-detail-shell {
+    padding-top: 6px !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .ad-detail-breadcrumb {
+    margin-top: 0 !important;
+    margin-bottom: 12px !important;
+  }
+}
+
+/* 2026-05-31 — detalhe iPad mini header/location + gallery edge v19.
+   Scope: detalhe-anuncio only, narrow tablet viewport. */
+@media (min-width: 561px) and (max-width: 760px) {
+  /* Restore the green status dot in the location button. */
+  html body[data-page="detalhe-anuncio"] header.app-header--detail.home-side-meta
+  .home-side-meta__location {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] header.app-header--detail.home-side-meta
+  .home-side-meta__location-dot {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 7px !important;
+    height: 7px !important;
+    min-width: 7px !important;
+    min-height: 7px !important;
+    flex: 0 0 7px !important;
+    border-radius: 999px !important;
+    background: #14b8a6 !important;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.12) !important;
+  }
+
+  /* The hero/gallery must not show a white frame on this tablet state. */
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-hero.detail-surface {
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-gallery {
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 18px !important;
+    overflow: hidden !important;
+    background: transparent !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-gallery__stage {
+    margin: 0 !important;
+    border-radius: 18px !important;
+    overflow: hidden !important;
+    background: transparent !important;
+    border: 0 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-gallery__stage > img {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    border-radius: inherit !important;
+  }
+
+  /* Recreate the summary spacing without using the hero surface as a white frame. */
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-gallery__thumbs,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-summary {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-summary {
+    margin-top: 12px !important;
+    padding-bottom: 0 !important;
+  }
+}
+
+/* 2026-05-31 — detalhe iPad/tablet action card v20.
+   On narrow tablet/iPad mini, the floating mobile CTA must not appear.
+   The full commercial action card follows the same structure used in tablet/desktop. */
+@media (min-width: 561px) and (max-width: 760px) {
+  html body[data-page="detalhe-anuncio"] .detail-mobile-action {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    position: static !important;
+    inset: auto !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-layout {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-main {
+    display: contents !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-hero {
+    order: 1 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-sidebar {
+    order: 2 !important;
+    position: static !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-sidebar > .ad-action-card {
+    order: 1 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 16px !important;
+    border-radius: 18px !important;
+    background: #fff !important;
+    box-shadow: 0 10px 28px rgba(19, 48, 82, 0.075) !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-action-card__price {
+    margin: 0 !important;
+    font-size: clamp(1.85rem, 5vw, 2.25rem) !important;
+    line-height: 1 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-action-card__subtext {
+    margin: -2px 0 4px !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-action-card__actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-action-card__actions > .detail-btn {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 44px !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-action-card__meta {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    margin: 8px 0 0 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-action-card__trust {
+    width: 100% !important;
+    margin: 8px 0 0 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-sidebar > :not(.ad-action-card) {
+    order: 2 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] main.page__content.detalhe-anuncio-page > .ad-detail-shell {
+    padding-bottom: 32px !important;
+  }
+}
+
+/* 2026-05-31 — iPad mini v21 restore hero ordering.
+   The v20 action-card flow used display: contents, but default order let description/details
+   appear before the hero. This restores the intended detail hierarchy. */
+@media (min-width: 561px) and (max-width: 760px) {
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-layout {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 16px !important;
+    align-items: start !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-main {
+    display: contents !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-hero {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    order: 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-sidebar {
+    order: 2 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-main > :not(.ad-detail-hero),
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-description,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-service-info,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .doke-reviews-shell--detail {
+    order: 3 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--ad-workers {
+    order: 4 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--ad-publications {
+    order: 5 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads {
+    order: 6 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-gallery,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-gallery__stage,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-gallery__stage > img {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-gallery__stage {
+    min-height: clamp(220px, 44vw, 300px) !important;
+  }
+}
+
+/* 2026-05-31 — iPad mini v22 hero standardization.
+   Match the approved hero composition: image fills the visual block, thumbnails and
+   summary sit below without the gallery looking inset inside a white frame. */
+@media (min-width: 561px) and (max-width: 760px) {
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-hero.detail-surface {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 0 14px !important;
+    border: 0 !important;
+    border-radius: 18px !important;
+    background: #fff !important;
+    overflow: hidden !important;
+    box-shadow: 0 10px 28px rgba(19, 48, 82, 0.075) !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-gallery {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 18px 18px 0 0 !important;
+    background: transparent !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-gallery__stage {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: clamp(238px, 46vw, 312px) !important;
+    min-height: clamp(238px, 46vw, 312px) !important;
+    max-height: clamp(238px, 46vw, 312px) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 18px 18px 0 0 !important;
+    background: transparent !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-gallery__stage > img {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    object-fit: cover !important;
+    object-position: center !important;
+    border-radius: 0 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-gallery__thumbs {
+    display: grid !important;
+    grid-template-columns: 52px 52px 52px 52px minmax(56px, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 12px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-gallery__thumb,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-gallery__more {
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    border-radius: 8px !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-summary {
+    display: grid !important;
+    gap: 6px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 12px !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-summary__eyebrow {
+    margin-top: 0 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-title-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 8px !important;
+    align-items: start !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-title {
+    min-width: 0 !important;
+    margin: 0 !important;
+    font-size: clamp(1.45rem, 4.8vw, 2rem) !important;
+    line-height: 1.02 !important;
+    letter-spacing: -0.055em !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-stats {
+    margin-top: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .ad-detail-breadcrumb {
+    margin-bottom: 10px !important;
+  }
+}
+
+/* 2026-05-31 — iPad mini v23 similar ads rail correction.
+   In the 561-760px detail layout, similar ads must not be narrow/centered cards.
+   They should use the same content rail as the hero/action/description blocks. */
+@media (min-width: 561px) and (max-width: 760px) {
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    justify-self: stretch !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads .detail-section__header {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    justify-items: stretch !important;
+    align-items: start !important;
+    gap: 14px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    scroll-snap-type: none !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads > article.doke-ad-card.doke-ad-card {
+    display: flex !important;
+    flex: none !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    align-self: start !important;
+    justify-self: stretch !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads > article.doke-ad-card.doke-ad-card > .doke-ad-card__media.doke-ad-card__media {
+    height: 148px !important;
+    min-height: 148px !important;
+    max-height: 148px !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads > article.doke-ad-card.doke-ad-card > .doke-ad-card__body {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads > article.doke-ad-card.doke-ad-card:nth-child(n + 3) {
+    display: none !important;
+  }
+}
+
+/* 2026-05-31 — iPad mini v24 similar ads two-column attempt.
+   In 561px–760px, similar ads should follow the approved two-column layout,
+   closer to the wider tablet reference, while preserving card integrity. */
+@media (min-width: 561px) and (max-width: 760px) {
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    justify-items: stretch !important;
+    align-items: start !important;
+    gap: 14px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    scroll-snap-type: none !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads > article.doke-ad-card.doke-ad-card {
+    display: flex !important;
+    flex: none !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    align-self: start !important;
+    justify-self: stretch !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads > article.doke-ad-card.doke-ad-card > .doke-ad-card__media.doke-ad-card__media {
+    height: 116px !important;
+    min-height: 116px !important;
+    max-height: 116px !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads > article.doke-ad-card.doke-ad-card > .doke-ad-card__body {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 10px 10px 12px !important;
+    overflow: visible !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads .doke-ad-card__category {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads .doke-ad-card__title {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: initial !important;
+    white-space: normal !important;
+    line-height: 1.08 !important;
+    min-height: 0 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads .doke-ad-card__rating,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads .doke-ad-card__location,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads .doke-ad-card__tags {
+    overflow: visible !important;
+    min-height: 0 !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads .doke-ad-card__location {
+    font-size: 0.68rem !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads .doke-ad-card__footer {
+    margin-top: 8px !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads > article.doke-ad-card.doke-ad-card:nth-child(n + 3) {
+    display: none !important;
+  }
+}
+
+/* 2026-05-31 — detalhe v25 remove related-card shadow layer.
+   The related sections in detalhe-anuncio were visually creating a duplicated
+   bottom shadow/layer under cards. This removes the local shadow layer in this
+   page only, across breakpoints, without changing the global card contract. */
+html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) :is(
+  .content-rail,
+  .doke-scroll-rail,
+  .home-media-rail,
+  .detail-related-media-rail,
+  .detail-related-workers__track,
+  .detail-related-publications__track,
+  .detail-related-grid--ads
+) {
+  background: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+)::before,
+html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+)::after,
+html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(
+  .content-rail,
+  .doke-scroll-rail,
+  .home-media-rail,
+  .detail-related-media-rail,
+  .detail-related-workers__track,
+  .detail-related-publications__track,
+  .detail-related-grid--ads
+)::before,
+html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(
+  .content-rail,
+  .doke-scroll-rail,
+  .home-media-rail,
+  .detail-related-media-rail,
+  .detail-related-workers__track,
+  .detail-related-publications__track,
+  .detail-related-grid--ads
+)::after {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* Keep card surfaces clean in detalhe related areas: no page-level heavy shadow.
+   Border/radius/anatomy remain controlled by the global card contract. */
+html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) :is(
+  .video-card,
+  .doke-worker-card,
+  .publication-card,
+  .doke-ad-card
+) {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) :is(
+  .video-card,
+  .doke-worker-card,
+  .publication-card,
+  .doke-ad-card
+):is(:hover, :focus-within) {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* 2026-05-31 — detalhe v26 remove related underlayer surface.
+   The remaining artifact was not a shadow: it was a residual section/rail surface
+   below related cards. These wrappers must be layout-only in detalhe-anuncio. */
+html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+  border: 0 !important;
+  outline: 0 !important;
+  padding-bottom: 0 !important;
+  overflow: visible !important;
+}
+
+html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) :is(
+  .content-rail,
+  .doke-scroll-rail,
+  .home-media-rail,
+  .detail-related-media-rail,
+  .detail-related-workers__track,
+  .detail-related-publications__track,
+  .detail-related-grid--ads,
+  .publication-grid,
+  .short-videos__track
+) {
+  display: grid;
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+  border: 0 !important;
+  outline: 0 !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads,
+  .content-rail,
+  .doke-scroll-rail,
+  .home-media-rail,
+  .detail-related-media-rail,
+  .detail-related-workers__track,
+  .detail-related-publications__track,
+  .detail-related-grid--ads,
+  .publication-grid,
+  .short-videos__track
+)::before,
+html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads,
+  .content-rail,
+  .doke-scroll-rail,
+  .home-media-rail,
+  .detail-related-media-rail,
+  .detail-related-workers__track,
+  .detail-related-publications__track,
+  .detail-related-grid--ads,
+  .publication-grid,
+  .short-videos__track
+)::after {
+  display: none !important;
+  content: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+  border: 0 !important;
+}
+
+/* Prevent stretched grid rows from creating a visible empty rail surface under cards. */
+html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--ad-publications .detail-related-publications__track.publication-grid,
+html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads {
+  align-items: start !important;
+  grid-auto-rows: auto !important;
+  background: transparent !important;
+  padding-bottom: 0 !important;
+}
+
+html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--ad-publications .detail-related-publications__track.publication-grid > article.publication-card.publication-card,
+html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads > article.doke-ad-card.doke-ad-card {
+  align-self: start !important;
+  margin-bottom: 0 !important;
+}
+
+/* Keep spacing between sections explicit instead of coming from a fake surface. */
+html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--ad-publications {
+  margin-bottom: 30px !important;
+}
+
