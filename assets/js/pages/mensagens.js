@@ -105,6 +105,8 @@
     const threadCallToggle = root.querySelector("[data-thread-call-toggle]");
     const threadVideoCallButton = root.querySelector("[data-thread-video-call]");
     const threadMoreToggle = root.querySelector("[data-thread-more-toggle]");
+    const chatFocusToggle = root.querySelector("[data-messages-focus-toggle]");
+    const chatFocusLabel = root.querySelector("[data-messages-focus-label]");
     const threadCallMenu = root.querySelector("[data-thread-call-menu]");
     const threadMoreMenu = root.querySelector("[data-thread-more-menu]");
     const searchCloseButtons = Array.from(root.querySelectorAll(".orders-header-search__close"));
@@ -755,6 +757,22 @@
       closeThreadCallMenu();
     };
 
+    const setChatFocusMode = (isFocused) => {
+      const mode = isFocused ? "focus" : "split";
+      root.dataset.chatMode = mode;
+      document.body.classList.toggle("messages-chat-is-focused", isFocused);
+      chatFocusToggle?.setAttribute("aria-pressed", isFocused ? "true" : "false");
+      chatFocusToggle?.setAttribute("aria-label", isFocused ? "Recolher conversa" : "Expandir conversa");
+      chatFocusToggle?.setAttribute("title", isFocused ? "Recolher conversa" : "Expandir conversa");
+      if (chatFocusLabel) chatFocusLabel.textContent = isFocused ? "Mostrar conversas" : "Expandir conversa";
+    };
+
+    const toggleChatFocusMode = () => {
+      setChatFocusMode(root.dataset.chatMode !== "focus");
+      closeThreadCallMenu();
+      closeThreadMoreMenu();
+    };
+
     const syncVisibility = () => {
       const query = getSearchQuery();
       let visibleCount = 0;
@@ -1178,6 +1196,13 @@
       event.preventDefault();
       event.stopPropagation();
       toggleThreadMoreMenu();
+    });
+
+
+    chatFocusToggle?.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleChatFocusMode();
     });
 
     threadCallMenu?.addEventListener("click", (event) => {

@@ -7,7 +7,9 @@
 @media (min-width: 768px) and (max-width: 1180px) and (orientation: landscape) {
   html body[data-page="mensagens"].messages-page-shell {
     --messages-tablet-shell-sidebar: var(--doke-app-shell-sidebar-width, var(--doke-desktop-sidebar-width, var(--doke-app-sidebar-width, var(--sidebar-width, 272px))));
-    --messages-tablet-list: clamp(196px, 25vw, 226px);
+    --messages-tablet-list: clamp(276px, 35vw, 304px);
+    --messages-tablet-rail-gutter-start: 10px;
+    --messages-tablet-rail-gutter-end: 12px;
     overflow: hidden !important;
     background: #eef5fb !important;
   }
@@ -83,13 +85,23 @@
     height: 100dvh !important;
     min-width: 0 !important;
     min-height: 0 !important;
-    padding: 24px 14px 18px !important;
+    padding: 24px var(--messages-tablet-rail-gutter-end) 18px var(--messages-tablet-rail-gutter-start) !important;
     border: 0 !important;
     border-right: 1px solid rgba(207, 222, 238, 0.82) !important;
     border-radius: 0 !important;
     background: #f3f8fd !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar > :is(.messages-sidebar-brand, .messages-sidebar-tools, .messages-block, .messages-list) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: auto !important;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar :is(.messages-sidebar-tools, .messages-block__header, .messages-list) {
+    justify-self: center !important;
   }
 
   html body[data-page="mensagens"].messages-page-shell .messages-thread {
@@ -239,13 +251,23 @@
     min-inline-size: 0 !important;
     min-width: 0 !important;
     margin: 0 !important;
-    padding: 24px 14px 18px !important;
+    padding: 24px var(--messages-tablet-rail-gutter-end) 18px var(--messages-tablet-rail-gutter-start) !important;
     border: 0 !important;
     border-right: 1px solid rgba(207, 222, 238, 0.82) !important;
     border-radius: 0 !important;
     background: #f3f8fd !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
+  }
+
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page > div.page__content-inner.messages-shell-content > section.messages-app > section.messages-sidebar > :is(.messages-sidebar-brand, .messages-sidebar-tools, .messages-block, .messages-list) {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: auto !important;
+  }
+
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page > div.page__content-inner.messages-shell-content > section.messages-app > section.messages-sidebar :is(.messages-sidebar-tools, .messages-block__header, .messages-list) {
+    justify-self: center !important;
   }
 
   html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page > div.page__content-inner.messages-shell-content > section.messages-app > section.messages-thread {

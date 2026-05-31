@@ -1,0 +1,462 @@
+/* detalhe-anuncio/detail-layout-contract.css
+   Responsibility: final page-level layout contract for detalhe-anuncio.
+   Keeps global shell/sidebar untouched and separates the page rail from the
+   internal ad detail composition. Loaded after legacy detail layers to stop
+   conflicting breakpoint rules from changing the approved structure.
+*/
+
+body[data-page="detalhe-anuncio"] {
+  --detail-contract-bg: var(--doke-app-bg, var(--shell-content-bg, #eef6fb));
+  --detail-contract-surface: #fff;
+  --detail-contract-border: 1px solid rgba(15, 45, 75, 0.07);
+  --detail-contract-radius: 22px;
+  --detail-contract-shadow: 0 16px 42px rgba(31, 68, 110, 0.065);
+  background: var(--detail-contract-bg) !important;
+  overflow-x: hidden !important;
+}
+
+body[data-page="detalhe-anuncio"] .app-shell,
+body[data-page="detalhe-anuncio"] .page,
+body[data-page="detalhe-anuncio"] .page__content,
+body[data-page="detalhe-anuncio"] .detalhe-anuncio-page {
+  min-width: 0 !important;
+  overflow-x: clip !important;
+  box-sizing: border-box !important;
+  background: var(--detail-contract-bg) !important;
+  transform: none !important;
+}
+
+body[data-page="detalhe-anuncio"] .ad-detail-shell,
+body[data-page="detalhe-anuncio"] .ad-detail-layout,
+body[data-page="detalhe-anuncio"] .ad-detail-main,
+body[data-page="detalhe-anuncio"] .ad-detail-sidebar,
+body[data-page="detalhe-anuncio"] .detail-surface,
+body[data-page="detalhe-anuncio"] .ad-gallery,
+body[data-page="detalhe-anuncio"] .ad-gallery__stage {
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  transform: none !important;
+}
+
+body[data-page="detalhe-anuncio"] .detail-surface,
+body[data-page="detalhe-anuncio"] .ad-action-card,
+body[data-page="detalhe-anuncio"] .provider-card,
+body[data-page="detalhe-anuncio"] .trust-card,
+body[data-page="detalhe-anuncio"] .location-card {
+  border: var(--detail-contract-border) !important;
+  border-radius: var(--detail-contract-radius) !important;
+  background: var(--detail-contract-surface) !important;
+  box-shadow: var(--detail-contract-shadow) !important;
+}
+
+body[data-page="detalhe-anuncio"] .ad-detail-hero.detail-surface {
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+body[data-page="detalhe-anuncio"] .ad-gallery__stage {
+  overflow: hidden !important;
+  background: rgba(15, 45, 75, 0.04) !important;
+}
+
+body[data-page="detalhe-anuncio"] .ad-gallery__stage img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+body[data-page="detalhe-anuncio"] .ad-detail-breadcrumb {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+}
+
+@media (min-width: 1181px) {
+  body[data-page="detalhe-anuncio"] {
+    --detail-desktop-rail: min(calc(100% - 56px), 1180px);
+    --detail-desktop-sidebar: clamp(280px, 25vw, 320px);
+  }
+
+  body[data-page="detalhe-anuncio"] .sidebar,
+  body[data-page="detalhe-anuncio"] [data-shell-sidebar] {
+    display: flex !important;
+    visibility: visible !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .detalhe-anuncio-page {
+    width: 100% !important;
+    padding: 28px 0 64px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .app-header.app-header--detail.home-side-meta {
+    display: none !important;
+  }
+
+  body[data-page="detalhe-anuncio"].has-global-header .ad-detail-shell,
+  body[data-page="detalhe-anuncio"] .ad-detail-shell {
+    width: var(--detail-desktop-rail) !important;
+    max-width: 1180px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    display: grid !important;
+    gap: 18px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-layout {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) var(--detail-desktop-sidebar) !important;
+    gap: 28px !important;
+    align-items: start !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-main {
+    display: grid !important;
+    width: 100% !important;
+    max-width: none !important;
+    gap: 22px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-sidebar {
+    display: grid !important;
+    width: 100% !important;
+    max-width: var(--detail-desktop-sidebar) !important;
+    gap: 20px !important;
+    position: sticky !important;
+    top: 24px !important;
+    align-self: start !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-gallery__stage {
+    height: clamp(300px, 31vw, 390px) !important;
+    min-height: 300px !important;
+    border-radius: var(--detail-contract-radius) var(--detail-contract-radius) 0 0 !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-action,
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider,
+  body[data-page="detalhe-anuncio"] .detail-mobile-reviews {
+    display: none !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  body[data-page="detalhe-anuncio"] {
+    --detail-tablet-gutter: clamp(22px, 4.6vw, 48px);
+    --detail-tablet-rail: min(calc(100vw - (var(--detail-tablet-gutter) * 2)), 920px);
+    --detail-tablet-control: 48px;
+  }
+
+  body[data-page="detalhe-anuncio"] .sidebar,
+  body[data-page="detalhe-anuncio"] [data-shell-sidebar] {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .app-shell,
+  body[data-page="detalhe-anuncio"] .page,
+  body[data-page="detalhe-anuncio"] .page__content,
+  body[data-page="detalhe-anuncio"] .detalhe-anuncio-page {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding-inline: 0 !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .app-header.app-header--detail.home-side-meta {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    min-height: 88px !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 20px 0 14px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .app-header.app-header--detail.home-side-meta > .app-header__inner,
+  body[data-page="detalhe-anuncio"].has-global-header .ad-detail-shell,
+  body[data-page="detalhe-anuncio"] .ad-detail-shell {
+    width: var(--detail-tablet-rail) !important;
+    max-width: var(--detail-tablet-rail) !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-shell {
+    display: grid !important;
+    gap: 14px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-layout {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+    width: 100% !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-main,
+  body[data-page="detalhe-anuncio"] .ad-detail-sidebar {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-sidebar {
+    position: static !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-gallery__stage {
+    height: clamp(320px, 48vw, 430px) !important;
+    border-radius: var(--detail-contract-radius) var(--detail-contract-radius) 0 0 !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-action {
+    display: none !important;
+  }
+}
+
+@media (max-width: 760px) {
+  html:has(body[data-page="detalhe-anuncio"]),
+  body[data-page="detalhe-anuncio"] {
+    --detail-mobile-gutter: clamp(12px, 3.6vw, 16px);
+    --detail-mobile-rail: min(calc(100vw - (var(--detail-mobile-gutter) * 2)), 430px);
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .sidebar,
+  body[data-page="detalhe-anuncio"] [data-shell-sidebar] {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .app-shell,
+  body[data-page="detalhe-anuncio"] .page,
+  body[data-page="detalhe-anuncio"] .page__content,
+  body[data-page="detalhe-anuncio"] .detalhe-anuncio-page {
+    display: block !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow-x: clip !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .detalhe-anuncio-page {
+    padding-bottom: calc(136px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .app-header.app-header--detail.home-side-meta {
+    position: relative !important;
+    width: 100vw !important;
+    min-height: 78px !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 16px 0 10px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .app-header.app-header--detail.home-side-meta > .app-header__inner,
+  body[data-page="detalhe-anuncio"].has-global-header .ad-detail-shell,
+  body[data-page="detalhe-anuncio"] .ad-detail-shell {
+    width: var(--detail-mobile-rail) !important;
+    max-width: var(--detail-mobile-rail) !important;
+    min-width: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .app-header.app-header--detail.home-side-meta > .app-header__inner {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    min-height: 44px !important;
+    height: 44px !important;
+    gap: 8px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .home-side-meta__location,
+  body[data-page="detalhe-anuncio"] .home-side-meta__identity,
+  body[data-page="detalhe-anuncio"] .home-side-meta__profile-wrap {
+    display: none !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .app-header--detail :is(.home-side-meta__tablet-menu, .home-side-meta__alert, .detail-standard-topbar__back) {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    border-radius: 14px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-shell {
+    display: grid !important;
+    gap: 12px !important;
+    padding-top: 0 !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-breadcrumb {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    font-size: 0.74rem !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-breadcrumb a:nth-of-type(2),
+  body[data-page="detalhe-anuncio"] .ad-detail-breadcrumb a:nth-of-type(3),
+  body[data-page="detalhe-anuncio"] .ad-detail-breadcrumb span:nth-of-type(2),
+  body[data-page="detalhe-anuncio"] .ad-detail-breadcrumb span:nth-of-type(3) {
+    display: none !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-layout {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    width: 100% !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-main,
+  body[data-page="detalhe-anuncio"] .ad-detail-sidebar,
+  body[data-page="detalhe-anuncio"] .ad-detail-hero,
+  body[data-page="detalhe-anuncio"] .detail-surface,
+  body[data-page="detalhe-anuncio"] .detail-section,
+  body[data-page="detalhe-anuncio"] .ad-gallery,
+  body[data-page="detalhe-anuncio"] .ad-gallery__stage {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-sidebar {
+    display: none !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-gallery__stage {
+    height: clamp(150px, 41vw, 182px) !important;
+    min-height: 150px !important;
+    border-radius: var(--detail-contract-radius) var(--detail-contract-radius) 0 0 !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-gallery__thumbs {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: minmax(54px, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    padding: 10px 10px 0 !important;
+    overflow-x: auto !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-title-block {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 5px !important;
+    padding: 12px 0 6px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-title-block h1 {
+    font-size: clamp(1.18rem, 5.2vw, 1.42rem) !important;
+    line-height: 1.08 !important;
+    letter-spacing: -0.05em !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-provider-line,
+  body[data-page="detalhe-anuncio"] .ad-detail-id {
+    font-size: 0.72rem !important;
+    line-height: 1.25 !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-stats {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    width: 100% !important;
+    margin: 8px 0 0 !important;
+    padding: 10px 6px !important;
+    gap: 0 !important;
+    border-radius: 16px !important;
+    background: #fff !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-stats li {
+    display: grid !important;
+    justify-items: center !important;
+    gap: 3px !important;
+    padding: 0 4px !important;
+    min-width: 0 !important;
+    border-right: 1px solid rgba(15, 45, 75, 0.08) !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-stats li:last-child {
+    border-right: 0 !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-stat-copy {
+    display: grid !important;
+    justify-items: center !important;
+    gap: 1px !important;
+    min-width: 0 !important;
+    font-size: 0.58rem !important;
+    line-height: 1.05 !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-section {
+    padding: 16px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-action {
+    position: fixed !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
+    z-index: 70 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: var(--detail-mobile-rail) !important;
+    max-width: var(--detail-mobile-rail) !important;
+    margin: 0 !important;
+    padding: 10px !important;
+    transform: translateX(-50%) !important;
+    border-radius: 18px !important;
+    box-sizing: border-box !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-action__cta {
+    min-height: 42px !important;
+    padding-inline: 14px !important;
+    white-space: nowrap !important;
+  }
+
+  body[data-page="detalhe-anuncio"] :is(.bottom-nav, .mobile-bottom-nav, .doke-mobile-bottom-nav) {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    transform: none !important;
+  }
+}

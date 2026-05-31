@@ -725,11 +725,11 @@
   html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(section.featured-services, section.more-services) .doke-ad-card__media {
     flex: 0 0 auto !important;
     width: 100% !important;
-    height: clamp(176px, 46vw, 216px) !important;
-    min-height: clamp(176px, 46vw, 216px) !important;
-    max-height: clamp(176px, 46vw, 216px) !important;
+    height: var(--doke-market-ad-media-height-compact, 148px) !important;
+    min-height: var(--doke-market-ad-media-height-compact, 148px) !important;
+    max-height: var(--doke-market-ad-media-height-compact, 148px) !important;
     overflow: hidden !important;
-    border-radius: 22px 22px 0 0 !important;
+    border-radius: 0 !important;
   }
 
   html.home-index-root body.home-index-shell :is(section.featured-services, section.more-services) .doke-ad-card__media :is(img, picture, video),
@@ -744,35 +744,68 @@
 
   html.home-index-root body.home-index-shell :is(section.featured-services, section.more-services) .doke-ad-card__body,
   html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(section.featured-services, section.more-services) .doke-ad-card__body {
-    display: grid !important;
-    align-content: start !important;
-    gap: 10px !important;
-    flex: none !important;
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    gap: normal !important;
     min-height: 0 !important;
-    padding: 14px 16px 16px !important;
+    padding: 13px 14px 14px !important;
   }
 
   html.home-index-root body.home-index-shell :is(section.featured-services, section.more-services) .doke-ad-card__title,
   html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(section.featured-services, section.more-services) .doke-ad-card__title {
-    display: -webkit-box !important;
-    -webkit-box-orient: vertical !important;
-    -webkit-line-clamp: 2 !important;
+    display: flow-root !important;
     min-width: 0 !important;
     max-width: 100% !important;
     overflow: hidden !important;
-    white-space: normal !important;
+    margin: 0 0 10px !important;
+    font-size: clamp(1.35rem, 1.55vw, 1.62rem) !important;
+    line-height: 1.02 !important;
+    white-space: nowrap !important;
     text-overflow: ellipsis !important;
   }
 
   html.home-index-root body.home-index-shell :is(section.featured-services, section.more-services) .doke-ad-card__footer,
   html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(section.featured-services, section.more-services) .doke-ad-card__footer {
-    flex: 0 0 auto !important;
-    display: grid !important;
-    grid-template-columns: auto minmax(0, 1fr) !important;
+    display: flex !important;
     align-items: center !important;
+    justify-content: space-between !important;
     gap: 12px !important;
+    width: 100% !important;
+    min-width: 0 !important;
     margin-top: auto !important;
-    padding-top: 12px !important;
+    padding-top: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-services #featured-services-track.service-grid > article.doke-ad-card.doke-ad-card > .doke-ad-card__body.doke-ad-card__body,
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid > article.doke-ad-card.doke-ad-card > .doke-ad-card__body.doke-ad-card__body,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .service-grid[data-more-services-grid] > article.doke-ad-card.doke-ad-card > .doke-ad-card__body.doke-ad-card__body,
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] > article.doke-ad-card.doke-ad-card > .doke-ad-card__body.doke-ad-card__body {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    flex-direction: column !important;
+    gap: normal !important;
+    padding: 13px 14px 14px !important;
+  }
+
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-services #featured-services-track.service-grid > article.doke-ad-card.doke-ad-card .doke-ad-card__title.doke-ad-card__title,
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid > article.doke-ad-card.doke-ad-card .doke-ad-card__title.doke-ad-card__title,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .service-grid[data-more-services-grid] > article.doke-ad-card.doke-ad-card .doke-ad-card__title.doke-ad-card__title,
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] > article.doke-ad-card.doke-ad-card .doke-ad-card__title.doke-ad-card__title {
+    display: flow-root !important;
+    margin: 0 0 10px !important;
+    font-size: clamp(1.35rem, 1.55vw, 1.62rem) !important;
+    line-height: 1.02 !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+  }
+
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-services #featured-services-track.service-grid > article.doke-ad-card.doke-ad-card .doke-ad-card__footer.doke-ad-card__footer,
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid > article.doke-ad-card.doke-ad-card .doke-ad-card__footer.doke-ad-card__footer,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .service-grid[data-more-services-grid] > article.doke-ad-card.doke-ad-card .doke-ad-card__footer.doke-ad-card__footer,
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] > article.doke-ad-card.doke-ad-card .doke-ad-card__footer.doke-ad-card__footer {
+    display: flex !important;
+    justify-content: space-between !important;
+    padding-top: 0 !important;
   }
 }
-
