@@ -1,74 +1,76 @@
-/* Doke marketplace shared card contract.
-   Canonical source for marketplace/feed card anatomy, derived from index.html.
-   Architecture rule: pages may place sections/rails, but must not redefine card internals. */
+/* Doke — shared marketplace card contract
+   Source of truth: index.html visual anatomy.
+   Responsibility: reusable card internals only.
+   Pages may control columns, rail width, overflow, visible quantity and section gaps.
+*/
 
 :root {
-  --doke-market-card-bg: var(--card-bg, #fff);
-  --doke-market-card-border: var(--card-border, 1px solid rgba(36, 88, 135, 0.08));
-  --doke-market-card-radius: var(--card-radius-lg, 24px);
-  --doke-market-card-radius-mobile: var(--radius-base, 16px);
-  --doke-market-card-shadow: var(--card-shadow, 0 10px 28px rgba(19, 48, 82, 0.08));
-  --doke-market-card-shadow-hover: var(--card-shadow-hover, 0 18px 38px rgba(19, 48, 82, 0.14));
-  --doke-market-card-transition: var(--card-transition, transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease);
-  --doke-market-card-ink: #082747;
-  --doke-market-card-muted: #72839b;
-  --doke-market-card-accent: #129f92;
+  --doke-card-bg: var(--card-bg, #fff);
+  --doke-card-border: 1px solid rgba(25, 70, 108, 0.08);
+  --doke-card-radius: 18px;
+  --doke-card-radius-sm: 16px;
+  --doke-card-shadow: 0 10px 28px rgba(19, 48, 82, 0.075);
+  --doke-card-shadow-hover: 0 16px 34px rgba(19, 48, 82, 0.12);
+  --doke-card-ink: #082747;
+  --doke-card-muted: #667b95;
+  --doke-card-soft: #edf8f6;
+  --doke-card-accent: #129f92;
+  --doke-card-accent-dark: #0d897d;
 
-  --doke-ad-media-height: clamp(148px, 12vw, 178px);
+  --doke-ad-media-height: clamp(140px, 13vw, 164px);
   --doke-ad-media-height-mobile: 148px;
-  --doke-ad-body-padding: 18px 20px 20px;
-  --doke-ad-body-padding-mobile: 16px 16px 18px;
+  --doke-ad-padding: 16px 18px 18px;
+  --doke-ad-padding-mobile: 14px 14px 16px;
 
-  --doke-publication-media-height: clamp(178px, 20vw, 270px);
-  --doke-publication-media-height-mobile: 164px;
-  --doke-publication-content-padding: 16px 18px 18px;
-  --doke-publication-content-padding-mobile: 14px 14px 16px;
+  --doke-publication-media-height: clamp(126px, 14vw, 156px);
+  --doke-publication-media-height-mobile: 148px;
+  --doke-publication-padding: 14px 16px 16px;
+  --doke-publication-padding-mobile: 13px 14px 15px;
 
   --doke-worker-aspect: 9 / 16;
   --doke-worker-mobile-aspect: 281 / 381;
-
-  --doke-card-rail-gap: clamp(14px, 1.6vw, 18px);
+  --doke-card-rail-gap: 18px;
 }
 
-:where(.doke-ad-card, .service-card, .publication-card, .video-card[data-worker-trigger], .doke-worker-card, .doke-review-card, .review-card) {
+/* Base surfaces */
+:where(.doke-ad-card, .service-card, .publication-card, .doke-review-card, .review-card, .rating-card, .testimonial-card, .avaliacao-card),
+:where(.video-card[data-worker-trigger], .video-card.doke-worker-card, .doke-worker-card, .worker-card) {
   box-sizing: border-box;
   min-width: 0;
-  font-family: var(--doke-font-family, Poppins, Inter, system-ui, sans-serif);
+  font-family: var(--doke-font-family, Poppins, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
 }
 
-:where(.doke-ad-card, .service-card, .publication-card, .doke-review-card, .review-card) {
+:where(.doke-ad-card, .service-card, .publication-card, .doke-review-card, .review-card, .rating-card, .testimonial-card, .avaliacao-card) {
   overflow: hidden;
-  border: var(--doke-market-card-border);
-  border-radius: var(--doke-market-card-radius);
-  background: var(--doke-market-card-bg);
-  box-shadow: var(--doke-market-card-shadow);
-  color: var(--doke-market-card-ink);
+  border: var(--doke-card-border);
+  border-radius: var(--doke-card-radius);
+  background: var(--doke-card-bg);
+  box-shadow: var(--doke-card-shadow);
+  color: var(--doke-card-ink);
 }
 
 :where(.doke-ad-card, .service-card, .publication-card) {
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 100%;
-}
-
-:where(.doke-ad-card, .service-card, .publication-card, .video-card[data-worker-trigger], .doke-worker-card):where(:hover, :focus-within) {
-  border-color: var(--card-border-color, rgba(18, 159, 146, 0.16));
-  box-shadow: var(--doke-market-card-shadow-hover);
+  height: auto;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  :where(.doke-ad-card, .service-card, .publication-card, .video-card[data-worker-trigger], .doke-worker-card) {
-    transition: var(--doke-market-card-transition);
+  :where(.doke-ad-card, .service-card, .publication-card, .video-card[data-worker-trigger], .video-card.doke-worker-card, .doke-worker-card) {
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
   }
 
-  :where(.doke-ad-card, .service-card, .publication-card, .video-card[data-worker-trigger], .doke-worker-card):where(:hover, :focus-within) {
+  :where(.doke-ad-card, .service-card, .publication-card, .video-card[data-worker-trigger], .video-card.doke-worker-card, .doke-worker-card):where(:hover, :focus-within) {
     transform: translateY(-1px);
+    border-color: rgba(18, 159, 146, 0.16);
+    box-shadow: var(--doke-card-shadow-hover);
   }
 }
 
-/* Ad/service cards: shared index anatomy. */
-:where(.doke-ad-card__media, .service-card__media) {
+/* Ad/service card anatomy */
+:where(.doke-ad-card, .service-card) > :is(.doke-ad-card__media, .service-card__media),
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__media, .service-card__media) {
   position: relative;
   flex: 0 0 auto;
   width: 100%;
@@ -80,19 +82,21 @@
   background-color: #dfeaf2;
   background-position: center;
   background-size: cover;
+  background-repeat: no-repeat;
   isolation: isolate;
 }
 
-:where(.doke-ad-card__media, .service-card__media)::after {
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__media, .service-card__media)::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: linear-gradient(180deg, rgba(7, 18, 31, 0.03), rgba(7, 18, 31, 0.05));
+  background: linear-gradient(180deg, rgba(7, 18, 31, 0.02), rgba(7, 18, 31, 0.05));
   pointer-events: none;
 }
 
-:where(.doke-ad-card__media, .service-card__media) :where(img, picture, video) {
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__media, .service-card__media) > :is(img, picture, video),
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__media, .service-card__media) :is(img, picture, video) {
   position: absolute;
   inset: 0;
   display: block;
@@ -102,26 +106,35 @@
   border-radius: 0;
 }
 
-:where(.doke-ad-card__badge, .service-card__badge) {
+:where(.doke-ad-card, .service-card) > :is(.doke-ad-card__body, .service-card__body),
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__body, .service-card__body) {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--doke-ad-padding);
+}
+
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__badge, .service-card__badge) {
   position: absolute;
-  top: 16px;
-  left: 18px;
+  top: 14px;
+  left: 14px;
   z-index: 2;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   width: fit-content;
-  min-height: 32px;
-  max-width: calc(100% - 108px);
-  padding: 0 13px;
+  max-width: calc(100% - 96px);
+  min-height: 28px;
+  padding: 0 11px;
   overflow: hidden;
   border: 0;
   border-radius: 999px;
   background: rgba(38, 41, 47, 0.88);
   color: #fff;
-  box-shadow: 0 9px 20px rgba(6, 18, 31, 0.18);
-  font-size: 0.78rem;
-  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(6, 18, 31, 0.16);
+  font-size: 0.72rem;
+  font-weight: 850;
   line-height: 1;
   letter-spacing: -0.025em;
   white-space: nowrap;
@@ -131,253 +144,340 @@
 
 .doke-ad-card__badge::before {
   content: "";
-  width: 9px;
-  height: 9px;
-  flex: 0 0 9px;
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
   border-radius: 999px;
   background: #19c8b8;
   box-shadow: 0 0 0 3px rgba(25, 200, 184, 0.12);
 }
 
-:where(.doke-ad-card__favorite, .service-card__favorite) {
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__favorite, .service-card__favorite) {
   position: absolute;
   top: 12px;
-  right: 16px;
+  right: 14px;
   z-index: 2;
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
-  min-width: 46px;
-  min-height: 46px;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
   padding: 0;
   border: 0;
   border-radius: 999px;
   background: #fff;
-  color: var(--doke-market-card-accent);
+  color: var(--doke-card-accent);
   box-shadow: 0 6px 16px rgba(7, 24, 41, 0.08);
 }
 
-:where(.doke-ad-card__body, .service-card__body) {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-width: 0;
-  padding: var(--doke-ad-body-padding);
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__favorite, .service-card__favorite) svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-:where(.doke-ad-card__category, .service-card__category, .service-card__catégory) {
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__category, .service-card__category, .service-card__catégory) {
   display: block;
-  margin: 0 0 8px;
+  margin: 0 0 7px;
   overflow: hidden;
   color: #7a8ca4;
-  font-size: clamp(0.78rem, 0.9vw, 0.9rem);
-  font-weight: 800;
-  letter-spacing: 0.16em;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
   line-height: 1.1;
   text-transform: uppercase;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-:where(.doke-ad-card__title, .service-card__title, .service-card__media-content strong) {
-  margin: 0 0 10px;
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__title, .service-card__title, .service-card__media-content strong) {
+  margin: 0 0 9px;
   overflow: hidden;
-  color: var(--doke-market-card-ink);
-  font-size: clamp(1.35rem, 1.55vw, 1.62rem);
+  color: var(--doke-card-ink);
+  font-size: clamp(0.96rem, 0.9rem + 0.25vw, 1.08rem);
   font-weight: 900;
-  letter-spacing: -0.06em;
-  line-height: 1.02;
+  letter-spacing: -0.045em;
+  line-height: 1.08;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-:where(.doke-ad-card__rating, .service-card__rating) {
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__rating, .service-card__rating) {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
-  margin: 0 0 12px;
-  color: var(--doke-market-card-ink);
-  font-size: clamp(0.98rem, 1.08vw, 1.08rem);
+  margin: 0 0 10px;
+  overflow: hidden;
+  color: var(--doke-card-ink);
+  font-size: 0.86rem;
   font-weight: 900;
   line-height: 1;
   white-space: nowrap;
 }
 
-:where(.doke-ad-card__tags, .service-card__tags) {
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__rating-star, .service-card__rating-star) {
+  color: var(--doke-card-accent);
+}
+
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__tags, .service-card__tags) {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
   gap: 6px;
   width: 100%;
-  max-width: 100%;
-  max-height: 28px;
   min-width: 0;
+  max-width: 100%;
+  max-height: 24px;
   margin: 0 0 12px;
   overflow: hidden;
 }
 
-:where(.doke-ad-card__tags, .service-card__tags) span {
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__tags, .service-card__tags) span {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
-  padding: 0 10px;
+  min-height: 22px;
+  padding: 0 9px;
   border: 0;
   border-radius: 999px;
-  background: #edf8f6;
-  color: var(--doke-market-card-accent);
-  font-size: clamp(0.72rem, 0.82vw, 0.8rem);
-  font-weight: 800;
+  background: var(--doke-card-soft);
+  color: var(--doke-card-accent-dark);
+  font-size: 0.68rem;
+  font-weight: 850;
   line-height: 1;
   white-space: nowrap;
 }
 
-:where(.doke-ad-card__location, .service-card__location, .service-card__meta-row, .service-card__profile) {
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__location, .service-card__location, .service-card__meta-row, .service-card__profile) {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   min-width: 0;
-  margin: 0 0 14px;
-  color: var(--doke-market-card-muted);
-  font-size: clamp(0.82rem, 0.96vw, 0.92rem);
-  font-weight: 700;
+  margin: 0 0 13px;
+  overflow: hidden;
+  color: var(--doke-card-muted);
+  font-size: 0.76rem;
+  font-weight: 750;
   line-height: 1.25;
 }
 
-:where(.doke-ad-card__footer, .service-card__footer, .service-card__footer--compact) {
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__location-text, .service-card__location-text) {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__location-text, .service-card__location-text) span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__location, .service-card__location) svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  fill: currentColor;
+}
+
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__avatar, .service-card__avatar) {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f6a33d, #13b9a8);
+}
+
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__footer, .service-card__footer, .service-card__footer--compact) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  margin-top: auto;
   min-width: 0;
+  margin-top: 2px;
 }
 
-:where(.doke-ad-card__price, .service-card__price) {
-  color: var(--doke-market-card-ink);
-  font-size: clamp(1.12rem, 1.3vw, 1.34rem);
-  font-weight: 900;
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__price, .service-card__price) {
+  min-width: 0;
+  color: var(--doke-card-ink);
+  font-size: clamp(0.95rem, 0.9rem + 0.25vw, 1.06rem);
+  font-weight: 950;
   line-height: 1;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
 }
 
-:where(.doke-ad-card__cta, .service-card__cta) {
+:where(.doke-ad-card, .service-card) :is(.doke-ad-card__cta, .service-card__cta) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
-  padding: 0 16px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #239785 0%, #1b8a78 100%);
+  min-height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: #1f8f7f;
   color: #fff;
-  font-size: 0.86rem;
+  font-size: 0.76rem;
   font-weight: 900;
   line-height: 1;
   text-decoration: none;
   white-space: nowrap;
 }
 
-/* Publication cards: shared index anatomy. */
+/* Publication card anatomy */
 .publication-card {
-  --publication-radius: var(--doke-market-card-radius);
   position: relative;
   scroll-snap-align: start;
 }
 
-.publication-card__media,
-.publication-card > .publication-card__media,
-.publication-card .publication-card__comparison {
+.publication-card > :is(.publication-card__media, .publication-card__comparison),
+.publication-card :is(.publication-card__media, .publication-card__comparison) {
   position: relative;
   flex: 0 0 auto;
-  width: auto;
-  min-height: var(--doke-publication-media-height);
+  width: 100%;
   height: var(--doke-publication-media-height);
+  min-height: var(--doke-publication-media-height);
   max-height: var(--doke-publication-media-height);
-  margin: 10px 10px 0;
+  margin: 0;
   overflow: hidden;
-  border-radius: calc(var(--publication-radius) - 6px);
+  border-radius: 0;
   background-color: #dbe7f2;
   background-position: center;
   background-size: cover;
+  background-repeat: no-repeat;
   isolation: isolate;
 }
 
-.publication-card :where(.publication-card__poster, .publication-card__preview, img, picture, video) {
+.publication-card :is(.publication-card__poster, .publication-card__preview, img, picture, video) {
   position: absolute;
   inset: 0;
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: inherit;
+  border-radius: 0;
 }
 
-.publication-card__content,
-.publication-card__body {
+.publication-card :is(.publication-card__content, .publication-card__body) {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
-  padding: var(--doke-publication-content-padding);
+  padding: var(--doke-publication-padding);
 }
 
-.publication-card__title {
+.publication-card .publication-card__title {
+  display: -webkit-box;
   margin: 0;
   overflow: hidden;
   color: #122f4f;
-  font-size: clamp(1.02rem, 1.18vw, 1.16rem);
+  font-size: clamp(0.92rem, 0.86rem + 0.2vw, 1rem);
   font-weight: 900;
   letter-spacing: -0.04em;
-  line-height: 1.08;
-  display: -webkit-box;
+  line-height: 1.12;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 
-.publication-card__author,
-.publication-card__meta {
+.publication-card :is(.publication-card__author, .publication-card__meta) {
   min-width: 0;
+  margin: 0;
   overflow: hidden;
-  color: #667b95;
-  font-size: clamp(0.82rem, 0.94vw, 0.92rem);
-  font-weight: 700;
+  color: var(--doke-card-muted);
+  font-size: 0.76rem;
+  font-weight: 750;
   line-height: 1.25;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-.publication-card__actions {
+.publication-card :is(.publication-card__author, .publication-card__meta) a {
+  color: #145fa5;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.publication-card .publication-card__actions {
   display: flex;
   align-items: center;
   gap: 12px;
   min-width: 0;
+  overflow: hidden;
   color: #6f839c;
-  font-size: 0.86rem;
+  font-size: 0.72rem;
   font-weight: 800;
   line-height: 1;
+  white-space: nowrap;
 }
 
-.publication-card__type,
-.publication-card__badge,
-.publication-card__play {
+.publication-card .publication-card__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.publication-card .publication-card__action svg {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.publication-card :is(.publication-card__type, .publication-card__badge) {
   position: absolute;
+  top: 12px;
+  left: 12px;
   z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(38, 41, 47, 0.88);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 850;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
-.publication-card__type,
-.publication-card__badge {
-  top: 14px;
-  left: 14px;
+.publication-card :is(.publication-card__type, .publication-card__badge) svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
 }
 
-.publication-card__play {
+.publication-card .publication-card__play {
+  position: absolute;
   right: 14px;
   bottom: 14px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.96);
+  color: #145fa5;
+  box-shadow: 0 8px 18px rgba(7, 24, 41, 0.1);
 }
 
-/* Worker/video cards: same worker media contract from index. */
-:where(.video-card[data-worker-trigger], .doke-worker-card, .worker-card) {
+/* Worker/video cards */
+:where(.video-card[data-worker-trigger], .video-card.doke-worker-card, .doke-worker-card, .worker-card) {
   position: relative;
   display: block;
   width: 100%;
@@ -388,25 +488,20 @@
   aspect-ratio: var(--doke-worker-aspect);
   padding: 0;
   overflow: hidden;
-  border: var(--doke-market-card-border);
-  border-radius: var(--doke-market-card-radius);
+  border: var(--doke-card-border);
+  border-radius: var(--doke-card-radius);
   background-color: #15314a;
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
-  box-shadow: var(--card-shadow-media, var(--doke-market-card-shadow));
+  box-shadow: var(--doke-card-shadow);
   color: transparent;
-  isolation: isolate;
   cursor: pointer;
+  isolation: isolate;
   scroll-snap-align: start;
 }
 
-.video-card.video-card--one[data-worker-trigger], .doke-worker-card.video-card--one { background-image: url("../../../img/workers/worker-pintura.png"); }
-.video-card.video-card--two[data-worker-trigger], .doke-worker-card.video-card--two { background-image: url("../../../img/workers/worker-cozinha.png"); }
-.video-card.video-card--three[data-worker-trigger], .doke-worker-card.video-card--three { background-image: url("../../../img/workers/worker-eletrica.png"); }
-.video-card.video-card--four[data-worker-trigger], .doke-worker-card.video-card--four { background-image: url("../../../img/workers/worker-limpeza.png"); }
-
-:where(.video-card[data-worker-trigger], .doke-worker-card) :where(.video-card__poster, .video-card__preview, img, picture, video) {
+:where(.video-card[data-worker-trigger], .video-card.doke-worker-card, .doke-worker-card, .worker-card) > :is(img, picture, video, .video-card__poster, .video-card__preview) {
   position: absolute;
   inset: 0;
   display: block;
@@ -416,34 +511,33 @@
   border-radius: inherit;
 }
 
-:where(.video-card[data-worker-trigger], .doke-worker-card) :where(.video-card__content, .video-card__play) {
+:where(.video-card[data-worker-trigger], .video-card.doke-worker-card, .doke-worker-card) > :is(.video-card__content, .video-card__play) {
   display: none;
 }
 
-/* Shared review cards used as reusable card surfaces. */
+/* Review/testimonial surfaces */
 :where(.doke-review-card, .review-card, .rating-card, .testimonial-card, .avaliacao-card) {
   display: grid;
   gap: 8px;
   padding: 16px;
-  border-radius: var(--doke-market-card-radius);
   line-height: 1.45;
 }
 
 :where(.doke-review-card, .review-card, .rating-card, .testimonial-card, .avaliacao-card) :where(strong, h3, h4) {
   margin: 0;
   color: #122f4f;
-  font-size: clamp(1rem, 1.12vw, 1.14rem);
+  font-size: 1rem;
   font-weight: 900;
   line-height: 1.12;
 }
 
 :where(.doke-review-card, .review-card, .rating-card, .testimonial-card, .avaliacao-card) :where(p, span, small) {
-  color: #667b95;
-  font-size: clamp(0.84rem, 0.94vw, 0.92rem);
+  color: var(--doke-card-muted);
+  font-size: 0.86rem;
   line-height: 1.45;
 }
 
-/* Rail contract: pages own placement; this owns equivalent horizontal behavior. */
+/* Rail helpers: no anatomy here. */
 :where(.doke-scroll-rail, .content-rail, .home-media-rail, .cards-rail, .rail, [data-rail-track], .detail-related-workers__track, .detail-related-publications__track) {
   min-width: 0;
   max-width: 100%;
@@ -451,7 +545,6 @@
 
 :where(.short-videos__track, .publication-grid, .detail-related-workers__track, .detail-related-publications__track, .profile-posts-videos, .profile-posts-comparison, [data-rail-track]) {
   gap: var(--doke-card-rail-gap);
-  scroll-snap-type: x proximity;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
 }
@@ -460,744 +553,161 @@
   display: none;
 }
 
+/* Mobile internal anatomy */
 @media (max-width: 760px) {
-  :where(.doke-ad-card, .service-card, .publication-card, .video-card[data-worker-trigger], .doke-worker-card, .doke-review-card, .review-card) {
-    border-radius: var(--doke-market-card-radius-mobile);
+  :where(.doke-ad-card, .service-card, .publication-card, .doke-review-card, .review-card, .rating-card, .testimonial-card, .avaliacao-card),
+  :where(.video-card[data-worker-trigger], .video-card.doke-worker-card, .doke-worker-card, .worker-card) {
+    border-radius: var(--doke-card-radius-sm);
   }
 
-  :where(.doke-ad-card__media, .service-card__media) {
+  :where(.doke-ad-card, .service-card) :is(.doke-ad-card__media, .service-card__media) {
     height: var(--doke-ad-media-height-mobile);
     min-height: var(--doke-ad-media-height-mobile);
     max-height: var(--doke-ad-media-height-mobile);
   }
 
-  :where(.doke-ad-card__body, .service-card__body) {
-    padding: var(--doke-ad-body-padding-mobile);
+  :where(.doke-ad-card, .service-card) :is(.doke-ad-card__body, .service-card__body) {
+    padding: var(--doke-ad-padding-mobile);
   }
 
-  .publication-card__media,
-  .publication-card > .publication-card__media,
-  .publication-card .publication-card__comparison {
-    min-height: var(--doke-publication-media-height-mobile);
+  :where(.doke-ad-card, .service-card) :is(.doke-ad-card__title, .service-card__title, .service-card__media-content strong) {
+    font-size: 0.96rem;
+  }
+
+  .publication-card :is(.publication-card__media, .publication-card__comparison) {
     height: var(--doke-publication-media-height-mobile);
+    min-height: var(--doke-publication-media-height-mobile);
     max-height: var(--doke-publication-media-height-mobile);
-    border-radius: calc(var(--doke-market-card-radius-mobile) - 6px);
   }
 
-  .publication-card__content,
-  .publication-card__body {
-    padding: var(--doke-publication-content-padding-mobile);
+  .publication-card :is(.publication-card__content, .publication-card__body) {
+    padding: var(--doke-publication-padding-mobile);
   }
 
-  :where(.video-card[data-worker-trigger], .doke-worker-card, .worker-card) {
+  :where(.video-card[data-worker-trigger], .video-card.doke-worker-card, .doke-worker-card, .worker-card) {
     aspect-ratio: var(--doke-worker-mobile-aspect);
-    border-radius: var(--doke-market-card-radius-mobile);
   }
 }
 
-/* Last-mile neutralization for legacy page-specific card anatomy. These are component-scoped. */
-:where(.doke-ad-card, .service-card, .publication-card) { overflow: hidden !important; }
-:where(.doke-ad-card__media, .service-card__media) { height: var(--doke-ad-media-height) !important; min-height: var(--doke-ad-media-height) !important; max-height: var(--doke-ad-media-height) !important; padding: 0 !important; }
-:where(.doke-ad-card__body, .service-card__body) { padding: var(--doke-ad-body-padding) !important; }
-.publication-card:where(.doke-card) { height: 100% !important; min-height: 330px !important; }
-.publication-card > .publication-card__media { height: var(--doke-publication-media-height) !important; min-height: var(--doke-publication-media-height) !important; max-height: var(--doke-publication-media-height) !important; }
-:where(.video-card[data-worker-trigger], .doke-worker-card) { aspect-ratio: var(--doke-worker-aspect) !important; height: auto !important; min-height: 0 !important; max-height: none !important; }
-
-@media (max-width: 760px) {
-  :where(.doke-ad-card__media, .service-card__media) { height: var(--doke-ad-media-height-mobile) !important; min-height: var(--doke-ad-media-height-mobile) !important; max-height: var(--doke-ad-media-height-mobile) !important; }
-  .publication-card > .publication-card__media { height: var(--doke-publication-media-height-mobile) !important; min-height: var(--doke-publication-media-height-mobile) !important; max-height: var(--doke-publication-media-height-mobile) !important; }
-  :where(.video-card[data-worker-trigger], .doke-worker-card) { aspect-ratio: var(--doke-worker-mobile-aspect) !important; height: auto !important; min-height: 0 !important; max-height: none !important; }
-  :where(.doke-ad-card__body, .service-card__body) { padding: var(--doke-ad-body-padding-mobile) !important; }
+/* Component authority guard.
+   This uses !important only for properties still redefined by legacy/page CSS.
+   Scope is restricted to card internals; page layout remains outside this contract. */
+html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card) {
+  display: flex !important;
+  flex-direction: column !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  border: var(--doke-card-border) !important;
+  border-radius: var(--doke-card-radius) !important;
+  background: var(--doke-card-bg) !important;
+  box-shadow: var(--doke-card-shadow) !important;
 }
 
-/* Specificity guard: legacy page CSS contains scoped !important anatomy. Keep this block component-owned. */
-.doke-ad-card,
-.service-card,
-.publication-card,
-.doke-review-card,
-.review-card {
-  border: var(--doke-market-card-border) !important;
-  border-radius: var(--doke-market-card-radius) !important;
-  background: var(--doke-market-card-bg) !important;
-  box-shadow: var(--doke-market-card-shadow) !important;
-}
-
-.doke-ad-card > .doke-ad-card__media,
-.service-card > .service-card__media {
+html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card) > :is(.doke-ad-card__media.doke-ad-card__media, .service-card__media.service-card__media) {
+  width: 100% !important;
   height: var(--doke-ad-media-height) !important;
   min-height: var(--doke-ad-media-height) !important;
   max-height: var(--doke-ad-media-height) !important;
   margin: 0 !important;
   padding: 0 !important;
   border-radius: 0 !important;
+  background-position: center !important;
+  background-size: cover !important;
 }
 
-.doke-ad-card > .doke-ad-card__body,
-.service-card > .service-card__body {
+html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card) > :is(.doke-ad-card__body.doke-ad-card__body, .service-card__body.service-card__body) {
+  flex: 0 0 auto !important;
+  padding: var(--doke-ad-padding) !important;
+}
+
+html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card) :is(.doke-ad-card__title.doke-ad-card__title, .service-card__title.service-card__title) {
+  font-size: clamp(0.96rem, 0.9rem + 0.25vw, 1.08rem) !important;
+  line-height: 1.08 !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+
+html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card) :is(.doke-ad-card__footer.doke-ad-card__footer, .service-card__footer.service-card__footer, .service-card__footer--compact) {
+  margin-top: 2px !important;
+}
+
+html body .publication-card.publication-card {
   display: flex !important;
-  flex: 1 1 auto !important;
   flex-direction: column !important;
-  padding: var(--doke-ad-body-padding) !important;
+  overflow: hidden !important;
+  border: var(--doke-card-border) !important;
+  border-radius: var(--doke-card-radius) !important;
+  background: var(--doke-card-bg) !important;
+  box-shadow: var(--doke-card-shadow) !important;
 }
 
-.doke-ad-card .doke-ad-card__badge,
-.service-card .service-card__badge {
-  top: 16px !important;
-  left: 18px !important;
-  min-height: 32px !important;
-  padding: 0 13px !important;
-  border-radius: 999px !important;
-  font-size: 0.78rem !important;
-  line-height: 1 !important;
-}
-
-.doke-ad-card .doke-ad-card__favorite,
-.service-card .service-card__favorite {
-  top: 12px !important;
-  right: 16px !important;
-  width: 46px !important;
-  height: 46px !important;
-  min-width: 46px !important;
-  min-height: 46px !important;
-  border-radius: 999px !important;
-}
-
-.publication-card.publication-card,
-.publication-card.doke-card {
-  min-height: 330px !important;
-  height: 100% !important;
-  border-radius: var(--doke-market-card-radius) !important;
-  box-shadow: var(--doke-market-card-shadow) !important;
-}
-
-.publication-card > .publication-card__media,
-.publication-card > .publication-card__comparison {
+html body .publication-card.publication-card > :is(.publication-card__media.publication-card__media, .publication-card__comparison.publication-card__comparison) {
+  width: 100% !important;
   height: var(--doke-publication-media-height) !important;
   min-height: var(--doke-publication-media-height) !important;
   max-height: var(--doke-publication-media-height) !important;
-  margin: 10px 10px 0 !important;
-  border-radius: calc(var(--doke-market-card-radius) - 6px) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background-position: center !important;
+  background-size: cover !important;
 }
 
-.publication-card > .publication-card__content,
-.publication-card > .publication-card__body {
-  padding: var(--doke-publication-content-padding) !important;
+html body .publication-card.publication-card > :is(.publication-card__content.publication-card__content, .publication-card__body.publication-card__body) {
+  padding: var(--doke-publication-padding) !important;
 }
 
-.video-card.doke-worker-card,
-.video-card[data-worker-trigger],
-.doke-worker-card {
+html body .publication-card.publication-card .publication-card__title.publication-card__title {
+  font-size: clamp(0.92rem, 0.86rem + 0.2vw, 1rem) !important;
+  line-height: 1.12 !important;
+}
+
+html body :is(.video-card[data-worker-trigger].video-card, .video-card.doke-worker-card, .doke-worker-card.doke-worker-card, .worker-card.worker-card) {
   aspect-ratio: var(--doke-worker-aspect) !important;
   height: auto !important;
   min-height: 0 !important;
   max-height: none !important;
   padding: 0 !important;
-  border: var(--doke-market-card-border) !important;
-  border-radius: var(--doke-market-card-radius) !important;
-  box-shadow: var(--doke-market-card-shadow) !important;
-}
-
-.video-card.doke-worker-card > :where(img, picture, video, .video-card__poster, .video-card__preview),
-.video-card[data-worker-trigger] > :where(img, picture, video, .video-card__poster, .video-card__preview),
-.doke-worker-card > :where(img, picture, video, .video-card__poster, .video-card__preview) {
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  border-radius: inherit !important;
-}
-
-.video-card.doke-worker-card > :where(.video-card__content, .video-card__play),
-.video-card[data-worker-trigger] > :where(.video-card__content, .video-card__play) {
-  display: none !important;
-}
-
-/* Shared horizontal card rails: equivalent card distribution without page-local card anatomy. */
-:where(.detail-related-workers__track, .profile-posts-videos, #profile-short-videos-track.profile-posts-videos) {
-  display: grid !important;
-  grid-auto-flow: column !important;
-  grid-auto-columns: calc((100% - (var(--doke-card-rail-gap) * 3)) / 4) !important;
-  gap: var(--doke-card-rail-gap) !important;
-  overflow-x: auto !important;
-  overflow-y: visible !important;
-}
-
-:where(.detail-related-publications__track, .profile-posts-comparison, #profile-before-after-track.profile-posts-comparison) {
-  display: grid !important;
-  grid-auto-flow: column !important;
-  grid-auto-columns: 100% !important;
-  gap: var(--doke-card-rail-gap) !important;
-  overflow-x: auto !important;
-  overflow-y: visible !important;
+  overflow: hidden !important;
+  border: var(--doke-card-border) !important;
+  border-radius: var(--doke-card-radius) !important;
+  background-position: center !important;
+  background-size: cover !important;
+  box-shadow: var(--doke-card-shadow) !important;
 }
 
 @media (max-width: 760px) {
-  .doke-ad-card,
-  .service-card,
-  .publication-card,
-  .doke-review-card,
-  .review-card {
-    border-radius: var(--doke-market-card-radius-mobile) !important;
+  html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card) {
+    border-radius: var(--doke-card-radius-sm) !important;
   }
 
-  .doke-ad-card > .doke-ad-card__media,
-  .service-card > .service-card__media {
+  html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card) > :is(.doke-ad-card__media.doke-ad-card__media, .service-card__media.service-card__media) {
     height: var(--doke-ad-media-height-mobile) !important;
     min-height: var(--doke-ad-media-height-mobile) !important;
     max-height: var(--doke-ad-media-height-mobile) !important;
   }
 
-  .doke-ad-card > .doke-ad-card__body,
-  .service-card > .service-card__body {
-    padding: var(--doke-ad-body-padding-mobile) !important;
+  html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card) > :is(.doke-ad-card__body.doke-ad-card__body, .service-card__body.service-card__body) {
+    padding: var(--doke-ad-padding-mobile) !important;
   }
 
-  .publication-card.publication-card,
-  .publication-card.doke-card {
-    min-height: 330px !important;
-    border-radius: var(--doke-market-card-radius-mobile) !important;
+  html body .publication-card.publication-card {
+    border-radius: var(--doke-card-radius-sm) !important;
   }
 
-  .publication-card > .publication-card__media,
-  .publication-card > .publication-card__comparison {
+  html body .publication-card.publication-card > :is(.publication-card__media.publication-card__media, .publication-card__comparison.publication-card__comparison) {
     height: var(--doke-publication-media-height-mobile) !important;
     min-height: var(--doke-publication-media-height-mobile) !important;
     max-height: var(--doke-publication-media-height-mobile) !important;
-    border-radius: calc(var(--doke-market-card-radius-mobile) - 6px) !important;
   }
 
-  .publication-card > .publication-card__content,
-  .publication-card > .publication-card__body {
-    padding: var(--doke-publication-content-padding-mobile) !important;
+  html body .publication-card.publication-card > :is(.publication-card__content.publication-card__content, .publication-card__body.publication-card__body) {
+    padding: var(--doke-publication-padding-mobile) !important;
   }
 
-  .video-card.doke-worker-card,
-  .video-card[data-worker-trigger],
-  .doke-worker-card {
+  html body :is(.video-card[data-worker-trigger].video-card, .video-card.doke-worker-card, .doke-worker-card.doke-worker-card, .worker-card.worker-card) {
     aspect-ratio: var(--doke-worker-mobile-aspect) !important;
-    border-radius: var(--doke-market-card-radius-mobile) !important;
-  }
-
-  :where(.detail-related-workers__track, .profile-posts-videos, #profile-short-videos-track.profile-posts-videos),
-  :where(.detail-related-publications__track, .profile-posts-comparison, #profile-before-after-track.profile-posts-comparison) {
-    grid-auto-columns: 100% !important;
-  }
-}
-
-@media (min-width: 1200px) {
-  :where(.detail-related-publications__track, .profile-posts-comparison, #profile-before-after-track.profile-posts-comparison) {
-    grid-auto-columns: calc((100% - (var(--doke-card-rail-gap) * 2)) / 3) !important;
-  }
-}
-
-/* Responsive marketplace card contract v2.
-   Purpose: harden index.html card anatomy against legacy page-specific overrides.
-   Pages may own section placement and grid context, but not card internals. */
-:root {
-  --doke-market-card-radius-desktop: 24px;
-  --doke-market-card-radius-compact: 16px;
-  --doke-market-ad-media-height: clamp(148px, 12vw, 178px);
-  --doke-market-ad-media-height-compact: 148px;
-  --doke-market-ad-media-height-wide-phone: 178px;
-  --doke-market-publication-media-height: clamp(178px, 20vw, 270px);
-  --doke-market-publication-media-height-compact: 164px;
-  --doke-market-card-shadow-canonical: 0 10px 28px rgba(19, 48, 82, 0.08);
-  --doke-market-worker-aspect-desktop: 9 / 16;
-  --doke-market-worker-aspect-compact: 281 / 381;
-}
-
-html body :is(.doke-ad-card, .service-card, .publication-card, .doke-review-card, .review-card, .rating-card, .testimonial-card, .avaliacao-card) {
-  box-sizing: border-box !important;
-  min-width: 0 !important;
-  overflow: hidden !important;
-  border: var(--doke-market-card-border) !important;
-  border-radius: var(--doke-market-card-radius-desktop) !important;
-  background: var(--doke-market-card-bg) !important;
-  box-shadow: var(--doke-market-card-shadow-canonical) !important;
-  color: var(--doke-market-card-ink) !important;
-  font-family: var(--doke-font-family, Poppins, Inter, system-ui, sans-serif) !important;
-}
-
-html body :is(.doke-ad-card, .service-card, .publication-card) {
-  display: flex !important;
-  flex-direction: column !important;
-  min-height: 0 !important;
-}
-
-html body :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__media, .service-card__media),
-html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__media, .service-card__media) {
-  position: relative !important;
-  flex: 0 0 auto !important;
-  width: 100% !important;
-  height: var(--doke-market-ad-media-height) !important;
-  min-height: var(--doke-market-ad-media-height) !important;
-  max-height: var(--doke-market-ad-media-height) !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  border-radius: 0 !important;
-  background-position: center !important;
-  background-size: cover !important;
-}
-
-html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__media, .service-card__media) > :is(img, picture, video),
-html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__media, .service-card__media) :is(img, picture, video) {
-  position: absolute !important;
-  inset: 0 !important;
-  display: block !important;
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  border-radius: 0 !important;
-}
-
-html body :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__body, .service-card__body),
-html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__body, .service-card__body) {
-  display: flex !important;
-  flex: 1 1 auto !important;
-  flex-direction: column !important;
-  min-width: 0 !important;
-  padding: var(--doke-ad-body-padding) !important;
-}
-
-html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__badge, .service-card__badge) {
-  position: absolute !important;
-  top: 16px !important;
-  left: 18px !important;
-  z-index: 2 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  width: fit-content !important;
-  min-height: 32px !important;
-  max-width: calc(100% - 108px) !important;
-  padding: 0 13px !important;
-  overflow: hidden !important;
-  border: 0 !important;
-  border-radius: 999px !important;
-  font-size: 0.78rem !important;
-  font-weight: 800 !important;
-  line-height: 1 !important;
-  white-space: nowrap !important;
-  text-overflow: ellipsis !important;
-}
-
-html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__favorite, .service-card__favorite) {
-  position: absolute !important;
-  top: 12px !important;
-  right: 16px !important;
-  z-index: 2 !important;
-  display: grid !important;
-  place-items: center !important;
-  width: 46px !important;
-  height: 46px !important;
-  min-width: 46px !important;
-  min-height: 46px !important;
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 999px !important;
-}
-
-html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__title, .service-card__title, .service-card__media-content strong) {
-  margin: 0 0 10px !important;
-  overflow: hidden !important;
-  font-size: clamp(1.35rem, 1.55vw, 1.62rem) !important;
-  font-weight: 900 !important;
-  letter-spacing: -0.06em !important;
-  line-height: 1.02 !important;
-  white-space: nowrap !important;
-  text-overflow: ellipsis !important;
-}
-
-html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__footer, .service-card__footer, .service-card__footer--compact) {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 12px !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  margin-top: auto !important;
-}
-
-html body .publication-card.publication-card {
-  position: relative !important;
-  display: flex !important;
-  flex-direction: column !important;
-  min-height: 330px !important;
-  border-radius: var(--doke-market-card-radius-desktop) !important;
-  scroll-snap-align: start !important;
-}
-
-html body .publication-card :is(.publication-card__media, .publication-card__comparison),
-html body .publication-card > :is(.publication-card__media, .publication-card__comparison) {
-  position: relative !important;
-  flex: 0 0 auto !important;
-  width: auto !important;
-  height: var(--doke-market-publication-media-height) !important;
-  min-height: var(--doke-market-publication-media-height) !important;
-  max-height: var(--doke-market-publication-media-height) !important;
-  margin: 10px 10px 0 !important;
-  overflow: hidden !important;
-  border-radius: calc(var(--doke-market-card-radius-desktop) - 6px) !important;
-  background-position: center !important;
-  background-size: cover !important;
-}
-
-html body .publication-card :is(.publication-card__media, .publication-card__comparison) :is(img, picture, video, .publication-card__poster, .publication-card__preview),
-html body .publication-card > :is(.publication-card__media, .publication-card__comparison) > :is(img, picture, video, .publication-card__poster, .publication-card__preview) {
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  border-radius: inherit !important;
-}
-
-html body .publication-card :is(.publication-card__content, .publication-card__body) {
-  display: grid !important;
-  gap: 10px !important;
-  min-width: 0 !important;
-  padding: var(--doke-publication-content-padding) !important;
-}
-
-html body .publication-card .publication-card__title {
-  margin: 0 !important;
-  overflow: hidden !important;
-  font-size: clamp(1.02rem, 1.18vw, 1.16rem) !important;
-  font-weight: 900 !important;
-  letter-spacing: -0.04em !important;
-  line-height: 1.08 !important;
-  display: -webkit-box !important;
-  -webkit-box-orient: vertical !important;
-  -webkit-line-clamp: 2 !important;
-}
-
-html body .publication-card :is(.publication-card__author, .publication-card__meta) {
-  min-width: 0 !important;
-  overflow: hidden !important;
-  font-size: clamp(0.82rem, 0.94vw, 0.92rem) !important;
-  font-weight: 700 !important;
-  line-height: 1.25 !important;
-  white-space: nowrap !important;
-  text-overflow: ellipsis !important;
-}
-
-html body .publication-card .publication-card__actions {
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-  min-width: 0 !important;
-  font-size: 0.86rem !important;
-  font-weight: 800 !important;
-  line-height: 1 !important;
-}
-
-html body :is(.video-card[data-worker-trigger], .video-card.doke-worker-card, .doke-worker-card.worker-card, .doke-worker-card.doke-media-card) {
-  position: relative !important;
-  display: block !important;
-  min-width: 0 !important;
-  height: auto !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  aspect-ratio: var(--doke-market-worker-aspect-desktop) !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  border: var(--doke-market-card-border) !important;
-  border-radius: var(--doke-market-card-radius-desktop) !important;
-  background-color: #15314a !important;
-  background-position: center !important;
-  background-size: cover !important;
-  background-repeat: no-repeat !important;
-  box-shadow: var(--doke-market-card-shadow-canonical) !important;
-  color: transparent !important;
-  isolation: isolate !important;
-  scroll-snap-align: start !important;
-}
-
-html body :is(.video-card[data-worker-trigger], .video-card.doke-worker-card, .doke-worker-card.worker-card, .doke-worker-card.doke-media-card) > :is(img, picture, video, .video-card__poster, .video-card__preview) {
-  position: absolute !important;
-  inset: 0 !important;
-  display: block !important;
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  border-radius: inherit !important;
-}
-
-html body :is(.video-card[data-worker-trigger], .video-card.doke-worker-card, .doke-worker-card.worker-card, .doke-worker-card.doke-media-card) > :is(.video-card__content, .video-card__play) {
-  display: none !important;
-}
-
-html body :is(.doke-scroll-rail, .content-rail, .home-media-rail, .cards-rail, [data-rail-track], .detail-related-media-rail) {
-  box-sizing: border-box !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-}
-
-html body :is(.short-videos__track, .publication-grid, .detail-related-workers__track, .detail-related-publications__track, .profile-posts-videos, .profile-posts-comparison, [data-rail-track]) {
-  gap: var(--doke-card-rail-gap) !important;
-  scroll-snap-type: x proximity !important;
-  scrollbar-width: none !important;
-  -webkit-overflow-scrolling: touch !important;
-}
-
-/* Known shared rails that historically redefined card anatomy. They may still be placed by the page,
-   but their children must keep the index card contract. */
-html body[data-page="detalhe-anuncio"] :is(.detail-related-workers__track, .detail-related-publications__track),
-html body.profile-page-shell :is(.profile-posts-videos, .profile-posts-comparison) {
-  display: grid !important;
-  grid-auto-flow: column !important;
-  gap: var(--doke-card-rail-gap) !important;
-  overflow-x: auto !important;
-  overflow-y: visible !important;
-}
-
-html body[data-page="detalhe-anuncio"] .detail-related-workers__track,
-html body.profile-page-shell .profile-posts-videos {
-  grid-auto-columns: calc((100% - (var(--doke-card-rail-gap) * 3)) / 4) !important;
-}
-
-html body[data-page="detalhe-anuncio"] .detail-related-publications__track,
-html body.profile-page-shell .profile-posts-comparison {
-  grid-auto-columns: 100% !important;
-}
-
-html body[data-page="detalhe-anuncio"] .detail-related-workers__track > .video-card[data-worker-trigger],
-html body.profile-page-shell .profile-posts-videos > .video-card[data-worker-trigger] {
-  width: 100% !important;
-  flex: 0 0 auto !important;
-}
-
-html body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card,
-html body.profile-page-shell .profile-posts-comparison > .publication-card {
-  width: 100% !important;
-  flex: 0 0 auto !important;
-}
-
-@media (max-width: 760px) {
-  html body :is(.doke-ad-card, .service-card, .publication-card, .doke-review-card, .review-card, .rating-card, .testimonial-card, .avaliacao-card) {
-    border-radius: var(--doke-market-card-radius-compact) !important;
-  }
-
-  html body :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__media, .service-card__media),
-  html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__media, .service-card__media) {
-    height: var(--doke-market-ad-media-height-compact) !important;
-    min-height: var(--doke-market-ad-media-height-compact) !important;
-    max-height: var(--doke-market-ad-media-height-compact) !important;
-  }
-
-  html body :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__body, .service-card__body),
-  html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__body, .service-card__body) {
-    padding: var(--doke-ad-body-padding-mobile) !important;
-  }
-
-  html body .publication-card :is(.publication-card__media, .publication-card__comparison),
-  html body .publication-card > :is(.publication-card__media, .publication-card__comparison) {
-    height: var(--doke-market-publication-media-height-compact) !important;
-    min-height: var(--doke-market-publication-media-height-compact) !important;
-    max-height: var(--doke-market-publication-media-height-compact) !important;
-    border-radius: calc(var(--doke-market-card-radius-compact) - 6px) !important;
-  }
-
-  html body :is(.video-card[data-worker-trigger], .video-card.doke-worker-card, .doke-worker-card.worker-card, .doke-worker-card.doke-media-card) {
-    aspect-ratio: var(--doke-market-worker-aspect-compact) !important;
-    border-radius: var(--doke-market-card-radius-compact) !important;
-  }
-
-  html body[data-page="detalhe-anuncio"] .detail-related-workers__track,
-  html body[data-page="detalhe-anuncio"] .detail-related-publications__track,
-  html body.profile-page-shell :is(.profile-posts-videos, .profile-posts-comparison) {
-    grid-auto-columns: 100% !important;
-  }
-}
-
-@media (min-width: 481px) and (max-width: 760px) {
-  html body :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__media, .service-card__media),
-  html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__media, .service-card__media) {
-    height: var(--doke-market-ad-media-height-wide-phone) !important;
-    min-height: var(--doke-market-ad-media-height-wide-phone) !important;
-    max-height: var(--doke-market-ad-media-height-wide-phone) !important;
-  }
-}
-
-@media (min-width: 761px) and (max-width: 1199px) {
-  html body[data-page="detalhe-anuncio"] .detail-related-workers__track,
-  html body.profile-page-shell .profile-posts-videos {
-    grid-auto-columns: calc((100% - (var(--doke-card-rail-gap) * 3)) / 4) !important;
-  }
-
-  html body[data-page="detalhe-anuncio"] .detail-related-publications__track,
-  html body.profile-page-shell .profile-posts-comparison {
-    grid-auto-columns: 100% !important;
-  }
-}
-
-@media (min-width: 1200px) {
-  html body[data-page="detalhe-anuncio"] .detail-related-publications__track,
-  html body.profile-page-shell .profile-posts-comparison {
-    grid-auto-columns: calc((100% - (var(--doke-card-rail-gap) * 2)) / 3) !important;
-  }
-}
-
-/* Legacy blocker neutralization.
-   This is intentionally component-owned even when selectors mention known legacy rails:
-   those rails contain shared card instances and had high-specificity !important anatomy. */
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-grid--ads > .doke-ad-card.doke-ad-card,
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar {
-  border: var(--doke-market-card-border) !important;
-  border-radius: var(--doke-market-card-radius-desktop) !important;
-  background: var(--doke-market-card-bg) !important;
-  box-shadow: var(--doke-market-card-shadow-canonical) !important;
-  overflow: hidden !important;
-}
-
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-grid--ads > .doke-ad-card.doke-ad-card .doke-ad-card__media {
-  height: var(--doke-market-ad-media-height) !important;
-  min-height: var(--doke-market-ad-media-height) !important;
-  max-height: var(--doke-market-ad-media-height) !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border-radius: 0 !important;
-}
-
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-grid--ads > .doke-ad-card.doke-ad-card .doke-ad-card__body {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: normal !important;
-  padding: var(--doke-ad-body-padding) !important;
-}
-
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-grid--ads > .doke-ad-card.doke-ad-card :is(.doke-ad-card__badge) {
-  top: 16px !important;
-  left: 18px !important;
-  min-height: 32px !important;
-  padding: 0 13px !important;
-  font-size: 0.78rem !important;
-}
-
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-grid--ads > .doke-ad-card.doke-ad-card :is(.doke-ad-card__favorite) {
-  top: 12px !important;
-  right: 16px !important;
-  width: 46px !important;
-  height: 46px !important;
-}
-
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-grid--ads > .doke-ad-card.doke-ad-card .doke-ad-card__title {
-  margin: 0 0 10px !important;
-  font-size: clamp(1.35rem, 1.55vw, 1.62rem) !important;
-  line-height: 1.02 !important;
-  white-space: nowrap !important;
-  text-overflow: ellipsis !important;
-}
-
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-publications__track > .publication-card.publication-card,
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-publications__track > .publication-card.doke-card {
-  min-height: 330px !important;
-  height: 100% !important;
-  max-height: none !important;
-  border: var(--doke-market-card-border) !important;
-  border-radius: var(--doke-market-card-radius-desktop) !important;
-  box-shadow: var(--doke-market-card-shadow-canonical) !important;
-  overflow: hidden !important;
-}
-
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-publications__track > .publication-card.publication-card > .publication-card__media,
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-publications__track > .publication-card.publication-card .publication-card__media,
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-publications__track > .publication-card.publication-card .publication-card__comparison {
-  width: auto !important;
-  height: var(--doke-market-publication-media-height) !important;
-  min-height: var(--doke-market-publication-media-height) !important;
-  max-height: var(--doke-market-publication-media-height) !important;
-  margin: 10px 10px 0 !important;
-  border-radius: calc(var(--doke-market-card-radius-desktop) - 6px) !important;
-}
-
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-publications__track > .publication-card.publication-card .publication-card__content {
-  gap: 10px !important;
-  padding: var(--doke-publication-content-padding) !important;
-}
-
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-workers__track > .video-card.video-card.doke-worker-card,
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--ad-workers .video-card.video-card.doke-worker-card,
-html body.profile-page-shell .profile-posts-videos > .video-card.video-card.doke-worker-card {
-  height: auto !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  aspect-ratio: var(--doke-market-worker-aspect-desktop) !important;
-  border: var(--doke-market-card-border) !important;
-  border-radius: var(--doke-market-card-radius-desktop) !important;
-  box-shadow: var(--doke-market-card-shadow-canonical) !important;
-}
-
-@media (max-width: 760px) {
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-grid--ads > .doke-ad-card.doke-ad-card,
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-grid--ads > .doke-ad-card.doke-ad-card--similar,
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-publications__track > .publication-card.publication-card,
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-publications__track > .publication-card.doke-card,
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-workers__track > .video-card.video-card.doke-worker-card,
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--ad-workers .video-card.video-card.doke-worker-card,
-  html body.profile-page-shell .profile-posts-videos > .video-card.video-card.doke-worker-card {
-    border-radius: var(--doke-market-card-radius-compact) !important;
-  }
-
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-grid--ads > .doke-ad-card.doke-ad-card .doke-ad-card__media {
-    height: var(--doke-market-ad-media-height-compact) !important;
-    min-height: var(--doke-market-ad-media-height-compact) !important;
-    max-height: var(--doke-market-ad-media-height-compact) !important;
-  }
-
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-publications__track > .publication-card.publication-card > .publication-card__media,
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-publications__track > .publication-card.publication-card .publication-card__media,
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-publications__track > .publication-card.publication-card .publication-card__comparison {
-    height: var(--doke-market-publication-media-height-compact) !important;
-    min-height: var(--doke-market-publication-media-height-compact) !important;
-    max-height: var(--doke-market-publication-media-height-compact) !important;
-    border-radius: calc(var(--doke-market-card-radius-compact) - 6px) !important;
-  }
-
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-workers__track > .video-card.video-card.doke-worker-card,
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--ad-workers .video-card.video-card.doke-worker-card,
-  html body.profile-page-shell .profile-posts-videos > .video-card.video-card.doke-worker-card {
-    aspect-ratio: var(--doke-market-worker-aspect-compact) !important;
-  }
-}
-
-@media (min-width: 481px) and (max-width: 760px) {
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-grid--ads > .doke-ad-card.doke-ad-card .doke-ad-card__media {
-    height: var(--doke-market-ad-media-height-wide-phone) !important;
-    min-height: var(--doke-market-ad-media-height-wide-phone) !important;
-    max-height: var(--doke-market-ad-media-height-wide-phone) !important;
-  }
-}
-
-/* Detail/profile rail blocker override v2: neutralizes legacy grid-template-columns that collapse cards. */
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--ad-workers .detail-related-workers__track.detail-related-workers__track,
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-workers__track.detail-related-workers__track,
-html body.profile-page-shell .profile-posts-videos.profile-posts-videos {
-  display: grid !important;
-  grid-template-columns: none !important;
-  grid-auto-flow: column !important;
-  grid-auto-columns: calc((100% - (var(--doke-card-rail-gap) * 3)) / 4) !important;
-  align-items: stretch !important;
-  gap: var(--doke-card-rail-gap) !important;
-}
-
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--ad-workers .detail-related-workers__track.detail-related-workers__track > .video-card.video-card.doke-worker-card,
-html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-workers__track.detail-related-workers__track > .video-card.video-card.doke-worker-card,
-html body.profile-page-shell .profile-posts-videos.profile-posts-videos > .video-card.video-card.doke-worker-card {
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  justify-self: stretch !important;
-}
-
-@media (max-width: 760px) {
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--ad-workers .detail-related-workers__track.detail-related-workers__track,
-  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-related-workers__track.detail-related-workers__track,
-  html body.profile-page-shell .profile-posts-videos.profile-posts-videos {
-    grid-template-columns: none !important;
-    grid-auto-flow: column !important;
-    grid-auto-columns: 100% !important;
+    border-radius: var(--doke-card-radius-sm) !important;
   }
 }
