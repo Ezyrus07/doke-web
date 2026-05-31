@@ -774,27 +774,14 @@ body.messages-page-shell .messages-composer__send {
   }
 
   body.messages-page-shell .app-shell {
-    grid-template-columns: var(--doke-message-shell-rail) minmax(0, 1fr) !important;
+    grid-template-columns: var(--doke-app-shell-sidebar-width, var(--doke-desktop-sidebar-width, var(--sidebar-width, 272px))) minmax(0, 1fr) !important;
     column-gap: 0 !important;
     height: 100dvh !important;
     min-height: 100dvh !important;
     overflow: hidden !important;
     background: var(--doke-internal-page-bg) !important;
   }
-
-  body.messages-page-shell .sidebar {
-    width: var(--doke-message-shell-rail) !important;
-    min-width: var(--doke-message-shell-rail) !important;
-    max-width: var(--doke-message-shell-rail) !important;
-    overflow: hidden !important;
-    border-right: 0 !important;
-    box-shadow: none !important;
-  }
-
-  body.messages-page-shell .sidebar > *:not([data-sidebar-collapse]):not(.sidebar-toggle):not(.sidebar__collapse):not(.sidebar-collapse) {
-    opacity: 0 !important;
-    pointer-events: none !important;
-  }
+  /* A sidebar não é mais colapsada por mensagens; o shell global controla sua geometria. */
 
   body.messages-page-shell .page {
     height: 100dvh !important;
@@ -1170,7 +1157,7 @@ body.messages-page-shell .messages-composer__send {
 
   body.messages-page-shell .app-shell {
     display: grid !important;
-    grid-template-columns: var(--doke-desktop-sidebar-width, 236px) minmax(0, 1fr) !important;
+    grid-template-columns: var(--doke-app-shell-sidebar-width, var(--doke-desktop-sidebar-width, var(--sidebar-width, 272px))) minmax(0, 1fr) !important;
     column-gap: 0 !important;
     width: 100vw !important;
     height: 100dvh !important;
@@ -1178,27 +1165,7 @@ body.messages-page-shell .messages-composer__send {
     overflow: hidden !important;
     background: var(--doke-internal-page-bg) !important;
   }
-
-  body.messages-page-shell .sidebar {
-    width: auto !important;
-    min-width: 0 !important;
-    max-width: none !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    overflow: hidden !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-  }
-
-  body.messages-page-shell .sidebar > * {
-    opacity: 1 !important;
-    pointer-events: auto !important;
-  }
-
-  body.messages-page-shell .sidebar > *:not([data-sidebar-collapse]):not(.sidebar-toggle):not(.sidebar__collapse):not(.sidebar-collapse) {
-    opacity: 1 !important;
-    pointer-events: auto !important;
-  }
+  /* A página de mensagens preserva a sidebar compartilhada sem sobrescrever filhos, logo ou nav. */
 
   body.messages-page-shell .page {
     min-width: 0 !important;
@@ -1581,12 +1548,6 @@ body.messages-page-shell .messages-composer__send {
   body.messages-page-shell .messages-room-summary__cover,
   body.messages-page-shell .messages-room-summary__body {
     display: none !important;
-  }
-
-  body.messages-page-shell .sidebar > *,
-  body.messages-page-shell .sidebar > *:not([data-sidebar-collapse]):not(.sidebar-toggle):not(.sidebar__collapse):not(.sidebar-collapse) {
-    opacity: 1 !important;
-    pointer-events: auto !important;
   }
 }
 
