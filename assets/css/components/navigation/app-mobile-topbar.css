@@ -374,3 +374,36 @@
     overflow: hidden !important;
   }
 }
+
+
+/* Large mobile width polish: wider phones should not keep the same narrow rail
+   as compact phones. The topbar/search hero must align with the expanded page rail. */
+@media (min-width: 390px) and (max-width: 760px) {
+  :root {
+    --app-mobile-max: 460px;
+    --app-mobile-edge: clamp(12px, 3.2vw, 16px);
+  }
+
+  body.home-index-shell .home-search-hero,
+  body.search-results-body .page__content-inner.search-results-workspace,
+  body.home-index-shell .page__content-inner {
+    max-width: var(--app-mobile-max) !important;
+    padding-left: var(--app-mobile-edge) !important;
+    padding-right: var(--app-mobile-edge) !important;
+  }
+}
+
+/* 2026-05-31 — v33 align mobile topbar to canonical large-mobile rail. */
+@media (min-width: 390px) and (max-width: 760px) {
+  body.home-index-shell .home-search-hero,
+  body.home-index-shell .page__content-inner,
+  body.search-results-body .page__content-inner.search-results-workspace {
+    width: var(--doke-large-mobile-rail, min(452px, calc(100vw - 24px))) !important;
+    max-width: var(--doke-large-mobile-rail, min(452px, calc(100vw - 24px))) !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+

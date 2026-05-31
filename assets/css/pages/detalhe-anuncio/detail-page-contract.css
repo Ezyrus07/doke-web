@@ -3418,3 +3418,70 @@ html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--ad
   margin-bottom: 30px !important;
 }
 
+
+
+/* Large mobile detail rail expansion.
+   Wider phones can support a broader content rail than 390px; keep compact phones unchanged. */
+@media (min-width: 390px) and (max-width: 760px) {
+  body[data-page="detalhe-anuncio"] {
+    --detail-rail-max: 430px;
+    --detail-rail-gutter: clamp(12px, 3.2vw, 16px);
+  }
+
+  body[data-page="detalhe-anuncio"] .app-header--detail,
+  body[data-page="detalhe-anuncio"] .ad-detail-shell,
+  body[data-page="detalhe-anuncio"] .detail-mobile-action {
+    width: min(calc(100vw - (var(--detail-rail-gutter) * 2)), var(--detail-rail-max)) !important;
+    max-width: var(--detail-rail-max) !important;
+  }
+}
+
+/* 2026-05-31 — v33 detalhe large-mobile composition.
+   Use the shared wider rail, but prevent title/ID/stat/CTA overlap. */
+@media (min-width: 390px) and (max-width: 760px) {
+  body[data-page="detalhe-anuncio"] {
+    --detail-rail-max: 452px;
+    --detail-rail-gutter: var(--doke-large-mobile-edge, clamp(12px, 3.4vw, 16px));
+  }
+
+  body[data-page="detalhe-anuncio"] .app-header--detail,
+  body[data-page="detalhe-anuncio"] .ad-detail-shell,
+  body[data-page="detalhe-anuncio"] .detail-mobile-action {
+    width: var(--doke-large-mobile-rail, min(calc(100vw - (var(--detail-rail-gutter) * 2)), var(--detail-rail-max))) !important;
+    max-width: var(--doke-large-mobile-rail, var(--detail-rail-max)) !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-title-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: start !important;
+    gap: 8px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-title {
+    min-width: 0 !important;
+    overflow-wrap: anywhere !important;
+    line-height: 1.02 !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-id {
+    align-self: start !important;
+    white-space: nowrap !important;
+    margin-top: 4px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-stats {
+    margin-top: 10px !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-shell {
+    padding-bottom: calc(var(--detail-mobile-nav-height, 60px) + var(--detail-mobile-cta-height, 74px) + 54px) !important;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-action {
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+  }
+}
+

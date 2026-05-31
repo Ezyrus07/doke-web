@@ -815,3 +815,31 @@
     padding-top: 0 !important;
   }
 }
+
+/* 2026-05-31 — Large-phone rail parity.
+   On 430px+ phones, the runtime header was keeping a 430px outer shell plus
+   internal side padding, so the usable topbar/search rail became narrower than
+   the cards below it. Match the visible header controls to the same mobile
+   content rail used by the index sections. */
+@media (min-width: 390px) and (max-width: 760px) {
+  body.doke-mobile-shell-mounted {
+    --doke-mobile-shell-large-rail: min(448px, calc(100vw - 36px));
+    --doke-mobile-shell-max: var(--doke-mobile-shell-large-rail) !important;
+    --doke-mobile-shell-edge: 0px !important;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell {
+    width: var(--doke-mobile-shell-large-rail) !important;
+    max-width: var(--doke-mobile-shell-large-rail) !important;
+    min-width: 0 !important;
+    padding-right: 0 !important;
+    padding-left: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__topbar,
+  body.doke-mobile-shell-mounted .doke-mobile-shell__search {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}

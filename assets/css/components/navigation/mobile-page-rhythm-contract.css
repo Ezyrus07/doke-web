@@ -417,3 +417,53 @@
   }
 }
 
+
+
+/* Large mobile rail expansion: use more of the available width on wider phones,
+   without changing the compact-phone rhythm. */
+@media (min-width: 390px) and (max-width: 760px) {
+  body.app-shell-page {
+    --doke-mobile-app-max: 460px;
+    --doke-mobile-page-edge: clamp(12px, 3.2vw, 16px);
+  }
+
+  body.internal-shell-page .page__content-inner,
+  body.internal-shell-page :is(
+    .orders-shell-content,
+    .messages-shell-content,
+    .settings-shell-content,
+    .profile-shell-content,
+    .wallet-shell-content,
+    .communities-shell,
+    .search-results-workspace,
+    .app-shell-page__workspace
+  ),
+  body.home-index-shell .home-search-hero {
+    max-width: var(--doke-mobile-app-max) !important;
+    padding-left: var(--doke-mobile-page-edge) !important;
+    padding-right: var(--doke-mobile-page-edge) !important;
+  }
+}
+
+/* 2026-05-31 — v33 internal mobile workspaces consume the same large-mobile rail. */
+@media (min-width: 390px) and (max-width: 760px) {
+  body.internal-shell-page .page__content-inner,
+  body.internal-shell-page :is(
+    .orders-shell-content,
+    .messages-shell-content,
+    .settings-shell-content,
+    .profile-shell-content,
+    .wallet-shell-content,
+    .communities-shell,
+    .search-results-workspace,
+    .app-shell-page__workspace
+  ) {
+    width: var(--doke-large-mobile-rail, min(452px, calc(100vw - 24px))) !important;
+    max-width: var(--doke-large-mobile-rail, min(452px, calc(100vw - 24px))) !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+

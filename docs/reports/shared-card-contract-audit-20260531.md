@@ -512,3 +512,39 @@ Correção v26:
 - espaçamento entre seções passa a ser explícito por `margin-bottom`, não por uma superfície falsa.
 
 Escopo restrito ao `detail-page-contract.css`.
+
+## Ajuste global — v32 larguras maiores para mobile largo
+
+Diagnóstico:
+- em telas mobile mais largas (ex.: Pixel 7 Pro, iPhones Max/Plus e afins), vários HTMLs ainda mantinham o mesmo rail estreito de telefones compactos;
+- isso reduzia área útil em home, resultados, perfil, páginas internas e detalhe do anúncio.
+
+Implementação:
+- `shared-page-width-contract.css`: reduz gutter e amplia o rail compartilhado no intervalo `390px–760px`;
+- `mobile-page-rhythm-contract.css`: aumenta `--doke-mobile-app-max` para `460px` em mobile largo;
+- `app-mobile-topbar.css`: alinha topbar/search hero ao novo rail largo;
+- `detail-page-contract.css`: amplia `--detail-rail-max` para `430px` em mobile largo, preservando telefones compactos.
+
+Responsabilidade arquitetural:
+- a mudança foi feita em contratos compartilhados de rail/layout;
+- não houve redefinição de anatomia de cards;
+- páginas específicas continuam livres apenas para sua composição, não para estreitar o rail sem necessidade.
+
+## Ajuste global — v33 contrato de mobile largo
+
+Após a v32, ficou claro que o problema não estava em apenas um HTML: o rail maior precisava ser consumido de forma consistente por todos os containers, headers, workspaces, seções e CTAs móveis.
+
+Correção v33:
+
+- criado `--doke-large-mobile-rail` no intervalo `390px–760px`;
+- rail conservador em `452px`, para aproveitar melhor celulares grandes sem quebrar composição;
+- workspaces internos, home, resultados, perfil, mensagens, comunidade, carteira e detalhe passam a compartilhar o mesmo rail;
+- topbar/search hero alinham ao rail;
+- bottom spacing global reforçado para não deixar bottom nav/CTA cobrir conteúdo final;
+- `detalhe-anuncio` recebe ajuste localizado de title row, ID, stats e CTA fixa para funcionar com o rail maior.
+
+Arquitetura:
+
+- a anatomia dos cards não foi alterada;
+- a correção foi feita no contrato de rail/layout compartilhado;
+- páginas específicas não recebem hacks visuais locais, exceto o refinamento necessário do hero/CTA do detalhe.
