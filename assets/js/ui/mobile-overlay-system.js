@@ -2,7 +2,7 @@
    Fix: remove generic selectors (.is-open/.is-visible/.active) and avoid observing
    the whole document continuously. This prevents false overlay locks/freezes. */
 (function(){
-  const mq = window.matchMedia('(max-width: 760px)');
+  const mq = window.matchMedia('(max-width: 560px)');
   const overlaySelectors = [
     'dialog[open]',
     '.ui-modal:not([hidden])',
