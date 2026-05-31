@@ -7,11 +7,11 @@
   'use strict';
 
   var root = document.documentElement;
-  var mobileQuery = window.matchMedia ? window.matchMedia('(max-width: 760px)') : null;
+  var mobileQuery = window.matchMedia ? window.matchMedia('(max-width: 560px)') : null;
   var rafId = 0;
 
   function isMobile() {
-    return mobileQuery ? mobileQuery.matches : window.innerWidth <= 760;
+    return mobileQuery ? mobileQuery.matches : window.innerWidth <= 560;
   }
 
   function getBottomNav() {

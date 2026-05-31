@@ -843,3 +843,48 @@
     max-width: 100% !important;
   }
 }
+
+/* 2026-05-31 — Tablet hard guard.
+   Some iPad/Safari sessions can momentarily run the legacy mobile shell before
+   the tablet contract settles. In the tablet band, the index must stay on the
+   tablet header/card system even if an old cached runtime adds the mobile shell
+   class after first paint. */
+@media (min-width: 561px) and (max-width: 1024px) {
+  body.home-index-shell.doke-mobile-shell-mounted {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  body.home-index-shell.doke-mobile-shell-mounted .doke-mobile-shell,
+  body.home-index-shell.doke-mobile-shell-mounted .doke-mobile-bottom-nav,
+  body.home-index-shell.doke-mobile-shell-mounted [data-doke-mobile-shell],
+  body.home-index-shell.doke-mobile-shell-mounted [data-doke-mobile-bottom-nav] {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted .app-header.app-header--home.home-side-meta {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 40 !important;
+    display: block !important;
+    visibility: visible !important;
+    width: 100% !important;
+    min-height: 86px !important;
+    height: auto !important;
+    margin: 0 !important;
+    pointer-events: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted .page__content {
+    padding-top: 0 !important;
+  }
+}

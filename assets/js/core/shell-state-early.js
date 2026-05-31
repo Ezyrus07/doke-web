@@ -23,9 +23,9 @@
 
   function isMobileRuntime() {
     try {
-      return window.matchMedia("(max-width: 760px)").matches;
+      return window.matchMedia("(max-width: 560px)").matches;
     } catch (error) {
-      return (window.innerWidth || root.clientWidth || 0) <= 760;
+      return (window.innerWidth || root.clientWidth || 0) <= 560;
     }
   }
 
