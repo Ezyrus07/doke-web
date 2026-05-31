@@ -23,7 +23,6 @@
   } catch (_) {}
 
   var blockedEvents = {
-    scroll: true,
     resize: true,
     orientationchange: true
   };
