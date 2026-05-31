@@ -17,6 +17,53 @@
   --doke-app-bg: #eef6fb;
 }
 
+/* 2026-05-31 - iPad portrait scroll stability
+   Last-resort shared shell guard for real iPad Safari. Tablet portrait pages
+   must scroll as one document; nested paint containment/clip can blank the
+   viewport after the first scroll frame. */
+@media (min-width: 561px) and (max-width: 1024px) and (orientation: portrait) {
+  html,
+  body[data-page].app-shell-page,
+  body[data-page].doke-app-shell-page,
+  body[data-page].internal-shell-page {
+    height: auto !important;
+    max-height: none !important;
+    min-height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  body[data-page] > .app-shell,
+  body[data-page] > .app-shell > .page,
+  body[data-page] > .app-shell > .page > .page__content,
+  body[data-page] > .app-shell > .page > .page__content > .page__content-inner {
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    transform: none !important;
+    translate: none !important;
+    scale: none !important;
+    rotate: none !important;
+    contain: none !important;
+    content-visibility: visible !important;
+    backface-visibility: visible !important;
+    will-change: auto !important;
+    clip-path: none !important;
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
+  }
+
+  html.doke-social-router-ready .app-shell > .page,
+  html.doke-social-router-ready body:not(.is-social-route-swapping) .app-shell > .page {
+    view-transition-name: none !important;
+    contain: none !important;
+    transition-property: none !important;
+  }
+}
+
 html,
 body {
   width: 100%;
