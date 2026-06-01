@@ -1413,7 +1413,7 @@
     flex-wrap: nowrap !important;
     justify-content: flex-start !important;
     align-items: flex-start !important;
-    gap: 8px !important;
+    gap: 16px !important;
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
@@ -1876,13 +1876,15 @@
 }
 
 
-/* 2026-06-01 — Index tablet hard layout authority v6.
+/* 2026-06-01 — Index tablet hard layout authority v7.
    Escopo restrito à home em tablet: espaçamento após header, categorias com
-   prévia lateral, publicações em carrossel real e load button centralizado. */
+   prévia lateral, publicações em carrossel real e load button centralizado.
+   A pista de categorias usa largura de item ligeiramente maior que o slot
+   disponível para mostrar a próxima categoria parcialmente e sinalizar swipe. */
 @media (min-width: 700px) and (max-width: 1366px) {
   html.home-index-root body.home-index-shell,
   html body.home-index-shell {
-    --index-tablet-content-top-gap: 36px;
+    --index-tablet-content-top-gap: 48px;
     --index-tablet-section-gap: 44px;
     --index-tablet-section-header-gap: 18px;
   }
@@ -1968,11 +1970,11 @@
 
   html.home-index-root body.home-index-shell section.home-catégories .home-catégory,
   html body.home-index-shell section.home-catégories .home-catégory {
-    flex: 0 0 132px !important;
-    inline-size: 132px !important;
-    width: 132px !important;
-    min-width: 132px !important;
-    max-width: 132px !important;
+    flex: 0 0 clamp(144px, 16vw, 160px) !important;
+    inline-size: clamp(144px, 16vw, 160px) !important;
+    width: clamp(144px, 16vw, 160px) !important;
+    min-width: clamp(144px, 16vw, 160px) !important;
+    max-width: clamp(144px, 16vw, 160px) !important;
     gap: 8px !important;
     scroll-snap-align: start !important;
   }
@@ -1989,8 +1991,8 @@
 
   html.home-index-root body.home-index-shell section.home-catégories .home-catégory__label,
   html body.home-index-shell section.home-catégories .home-catégory__label {
-    width: 132px !important;
-    max-width: 132px !important;
+    width: 100% !important;
+    max-width: 100% !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
@@ -2251,5 +2253,116 @@
       margin-right: auto !important;
       margin-left: auto !important;
     }
+  }
+}
+
+/* 2026-06-01 — Featured professionals tablet rail.
+   Authority: home tablet layout. Replaces the old four-column compressed grid with a horizontal rail. */
+@media (min-width: 700px) and (max-width: 1366px) {
+  html.home-index-root body.home-index-shell section.featured-pros > .content-rail,
+  html body.home-index-shell section.featured-pros > .content-rail {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid,
+  html body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    grid-template-columns: none !important;
+    gap: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 86px 12px 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x proximity !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid::-webkit-scrollbar,
+  html body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card--featured,
+  html body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card--featured {
+    flex: 0 0 clamp(272px, 31vw, 306px) !important;
+    width: clamp(272px, 31vw, 306px) !important;
+    min-width: clamp(272px, 31vw, 306px) !important;
+    max-width: clamp(272px, 31vw, 306px) !important;
+    min-height: 0 !important;
+    padding: 22px 18px 18px !important;
+    scroll-snap-align: start !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .pro-card--featured .pro-card__header,
+  html.home-index-root body.home-index-shell section.featured-pros .pro-card--featured .pro-card__score,
+  html body.home-index-shell section.featured-pros .pro-card--featured .pro-card__header,
+  html body.home-index-shell section.featured-pros .pro-card--featured .pro-card__score {
+    display: none !important;
+  }
+}
+
+@media (min-width: 700px) and (max-width: 1366px) {
+  html.home-index-root body.home-index-shell section.featured-pros .pro-card--featured .pro-card__visual,
+  html body.home-index-shell section.featured-pros .pro-card--featured .pro-card__visual {
+    width: 94px !important;
+    height: 94px !important;
+    margin: 0 auto 16px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .pro-card--featured .pro-card__avatar,
+  html body.home-index-shell section.featured-pros .pro-card--featured .pro-card__avatar {
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 100% !important;
+    min-height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    border-radius: 50% !important;
+    margin: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .pro-card--featured .pro-card__identity,
+  html body.home-index-shell section.featured-pros .pro-card--featured .pro-card__identity {
+    justify-items: center !important;
+    text-align: center !important;
+    gap: 6px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .pro-card--featured .pro-card__name,
+  html body.home-index-shell section.featured-pros .pro-card--featured .pro-card__name {
+    display: block !important;
+    overflow: visible !important;
+    font-size: 1.18rem !important;
+    line-height: 1.08 !important;
+    color: #0b1635 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .pro-card--featured .pro-card__role,
+  html.home-index-root body.home-index-shell section.featured-pros .pro-card--featured .pro-card__location,
+  html body.home-index-shell section.featured-pros .pro-card--featured .pro-card__role,
+  html body.home-index-shell section.featured-pros .pro-card--featured .pro-card__location {
+    display: inline-flex !important;
+    justify-content: center !important;
+    max-width: 100% !important;
+    font-size: 0.88rem !important;
+    line-height: 1.2 !important;
+    text-align: center !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros .pro-card--featured .pro-card__badges,
+  html body.home-index-shell section.featured-pros .pro-card--featured .pro-card__badges {
+    margin-top: 14px !important;
   }
 }
