@@ -3,6 +3,59 @@
    older mobile contracts still target max-width: 760px. This file is loaded last
    on index.html and makes 561-1024px a tablet contract regardless of cached
    mobile shell/runtime classes. */
+@media (min-width: 1180px) and (max-width: 1180px) and (orientation: landscape) {
+  html.home-index-root body.home-index-shell,
+  body.home-index-shell {
+    --sidebar-width: 0px !important;
+    --doke-app-sidebar-width: 0px !important;
+    --doke-app-shell-sidebar-width: 0px !important;
+    --doke-desktop-sidebar-width: 0px !important;
+    --doke-home-tablet-sidebar-width: 0px !important;
+  }
+
+  html.home-index-root body.home-index-shell > .app-shell,
+  body.home-index-shell > .app-shell {
+    display: block !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell > .app-shell > .sidebar,
+  html.home-index-root body.home-index-shell .sidebar,
+  html.home-index-root body.home-index-shell [data-shell-sidebar],
+  body.home-index-shell > .app-shell > .sidebar,
+  body.home-index-shell .sidebar,
+  body.home-index-shell [data-shell-sidebar] {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    inline-size: 0 !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  html.home-index-root body.home-index-shell > .app-shell > .page,
+  body.home-index-shell > .app-shell > .page {
+    grid-column: 1 / -1 !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+}
+
 @media (min-width: 561px) and (max-width: 1024px) {
   html,
   html.home-index-root,
