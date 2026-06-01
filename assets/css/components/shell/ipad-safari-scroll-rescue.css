@@ -795,3 +795,213 @@
     pointer-events: none !important;
   }
 }
+
+/* 2026-05-31 — Home tablet portrait contract correction.
+   The visible contract for 561-1024px is the contextual app header
+   (.home-side-meta). The legacy .home-index-topbar is a mobile/desktop bridge
+   and must not coexist with it on iPad portrait. */
+@media (min-width: 561px) and (max-width: 1024px) and (orientation: portrait) {
+  html body.home-index-shell > .app-shell > .page > header.topbar.topbar--location.internal-page-topbar.home-index-topbar,
+  html.home-index-root body.home-index-shell > .app-shell > .page > header.topbar.topbar--location.internal-page-topbar.home-index-topbar {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  html body.home-index-shell > .app-shell > .page > header.app-header.app-header--home.home-side-meta,
+  html.home-index-root body.home-index-shell > .app-shell > .page > header.app-header.app-header--home.home-side-meta,
+  body.home-index-shell header.app-header.app-header--home.home-side-meta {
+    position: relative !important;
+    inset: auto !important;
+    z-index: 40 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100% !important;
+    height: 82px !important;
+    min-height: 82px !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 18px 0 8px !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
+    background: rgba(238, 245, 251, 0.96) !important;
+    box-shadow: none !important;
+  }
+
+  html body.home-index-shell > .app-shell > .page > header.app-header.app-header--home.home-side-meta .app-header__inner,
+  html.home-index-root body.home-index-shell > .app-shell > .page > header.app-header.app-header--home.home-side-meta .app-header__inner {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: var(--doke-ipad-home-rail, min(calc(100vw - 52px), 760px)) !important;
+    max-width: var(--doke-ipad-home-rail, min(calc(100vw - 52px), 760px)) !important;
+    min-width: 0 !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    gap: 12px !important;
+  }
+
+  html body.home-index-shell header.app-header.app-header--home.home-side-meta :is(.home-side-meta__group, .home-side-meta__group--primary, .home-side-meta__group--secondary) {
+    display: inline-flex !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    gap: 12px !important;
+  }
+
+  html body.home-index-shell header.app-header.app-header--home.home-side-meta .home-side-meta__group--secondary {
+    margin-left: auto !important;
+  }
+
+  html body.home-index-shell header.app-header.app-header--home.home-side-meta :is(.home-side-meta__tablet-menu, .home-side-meta__search) {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 48px !important;
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    max-width: 48px !important;
+    max-height: 48px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 16px !important;
+    background: #fff !important;
+    color: #1f6398 !important;
+    box-shadow: 0 10px 24px rgba(31, 68, 110, 0.08) !important;
+    overflow: hidden !important;
+    pointer-events: auto !important;
+  }
+
+  html body.home-index-shell header.app-header.app-header--home.home-side-meta :is(.home-side-meta__tablet-menu, .home-side-meta__search) svg {
+    display: block !important;
+    width: 17px !important;
+    height: 17px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 2.2 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+  }
+
+  html body.home-index-shell header.app-header.app-header--home.home-side-meta .home-side-meta__search-form {
+    display: none !important;
+  }
+
+  html body.home-index-shell header.app-header.app-header--home.home-side-meta .home-side-meta__location {
+    display: inline-flex !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    max-width: 240px !important;
+  }
+
+  html body.home-index-shell .page__content {
+    padding-top: 16px !important;
+  }
+
+  html body.home-index-shell .home-catégories,
+  html body.home-index-shell section[class*="home-cat"] {
+    height: 104px !important;
+    min-height: 104px !important;
+    margin-bottom: 24px !important;
+  }
+
+  html body.home-index-shell .home-catégories__track {
+    justify-content: flex-start !important;
+    gap: clamp(16px, 2.4vw, 22px) !important;
+    height: 104px !important;
+    min-height: 104px !important;
+    padding: 0 !important;
+    overflow-x: auto !important;
+  }
+
+  html body.home-index-shell .home-catégory {
+    flex: 0 0 102px !important;
+    width: 102px !important;
+    min-width: 102px !important;
+    max-width: 102px !important;
+  }
+
+  html body.home-index-shell .home-catégory__icon {
+    width: 72px !important;
+    height: 72px !important;
+    min-width: 72px !important;
+    min-height: 72px !important;
+    border-radius: 18px !important;
+  }
+
+  html body.home-index-shell :is(.featured-services, .short-videos, .home-publications, .more-services, .featured-pros) {
+    margin-top: 24px !important;
+  }
+
+  html body.home-index-shell .featured-services {
+    margin-bottom: 30px !important;
+  }
+
+  html body.home-index-shell .short-videos {
+    margin-top: 30px !important;
+  }
+
+  html body.home-index-shell :is(.section-heading, .home-section-header, .home-media-section__header, .home-publications__header) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    min-height: 38px !important;
+    margin: 0 0 16px !important;
+    padding: 0 !important;
+  }
+
+  html body.home-index-shell :is(.section-heading__title, .home-section-title) {
+    margin: 0 !important;
+    color: #33445d !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+    line-height: 1.15 !important;
+    letter-spacing: 0.34em !important;
+    text-transform: uppercase !important;
+  }
+
+  html body.home-index-shell :is(.section-heading__link) {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 34px !important;
+    padding: 0 16px !important;
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, 0.78) !important;
+    color: #365575 !important;
+    font-weight: 800 !important;
+    text-decoration: none !important;
+    box-shadow: 0 10px 24px rgba(31, 68, 110, 0.06) !important;
+  }
+
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+  }
+
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card {
+    height: 244px !important;
+    min-height: 244px !important;
+    border-radius: 18px !important;
+  }
+}
