@@ -5,25 +5,28 @@
   var ROUTER_VERSION = '20260513-stable-shell-router-v2';
 
   var SAFE_ROUTES = new Set([
+    '/ajuda.html',
+    '/anunciar-servico.html',
+    '/avaliacao-profissional.html',
+    '/avaliacao.html',
+    '/carteira.html',
+    '/comunidade-interna.html',
+    '/comunidade.html',
+    '/configuracoes.html',
+    '/detalhe-anuncio.html',
     '/index.html',
-    '/resultados.html',
-    '/pedidos.html',
     '/mensagens.html',
     '/notificacoes.html',
-    '/carteira.html',
-    '/comunidade.html',
-    '/comunidade-interna.html',
+    '/novidades.html',
+    '/pagamento-profissional.html',
+    '/pedidos.html',
     '/perfil.html',
-    '/configuracoes.html',
+    '/resultados.html',
     '/tornar-profissional.html',
     '/'
   ]);
 
-  var NATIVE_ONLY_ROUTES = new Set([
-    '/detalhe-anuncio.html',
-    '/pagamento-profissional.html',
-    '/avaliacao.html'
-  ]);
+  var NATIVE_ONLY_ROUTES = new Set([]);
 
   var ROUTE_INIT = {
     '/index.html': ['DokeInitHome'],
@@ -110,7 +113,7 @@
 
   function setBusy(value) {
     document.documentElement.classList.toggle('is-stable-shell-routing', value);
-    document.body.classList.toggle('is-stable-shell-routing', value);
+    if (document.body) document.body.classList.toggle('is-stable-shell-routing', value);
     var shell = document.querySelector('.app-shell');
     if (shell) shell.setAttribute('aria-busy', value ? 'true' : 'false');
   }
@@ -196,6 +199,7 @@
           script.async = false;
           script.defer = false;
           script.setAttribute('data-doke-stable-route-script', 'true');
+          script.setAttribute('data-doke-route-script-src', src);
           script.addEventListener('load', resolve, { once: true });
           script.addEventListener('error', resolve, { once: true });
           document.body.appendChild(script);
@@ -274,15 +278,8 @@
     syncHtmlContract(nextDoc.documentElement);
     syncBodyContract(nextDoc.body);
     applyRouteRuntimeClasses(path);
-    Array.prototype.slice.call(nextDoc.body.childNodes).forEach(function (node) {
-      if (node === nextShell) node.replaceWith(nextShellNode);
-    });
-    document.body.replaceChildren.apply(
-      document.body,
-      Array.prototype.slice.call(nextDoc.body.childNodes).map(function (node) {
-        return node.cloneNode(true);
-      })
-    );
+    currentShell.replaceWith(nextShellNode);
+    syncStandaloneUi(nextDoc);
     document.title = nextDoc.title || document.title;
   }
 
@@ -305,8 +302,8 @@
     });
     requestAnimationFrame(function () {
       try { window.scrollTo(0, 0); } catch (error) {}
-      document.documentElement.style.scrollBehavior = previousHtmlBehavior;
-      document.body.style.scrollBehavior = previousBodyBehavior;
+      if (document.documentElement) document.documentElement.style.scrollBehavior = previousHtmlBehavior;
+      if (document.body) document.body.style.scrollBehavior = previousBodyBehavior;
     });
   }
 
@@ -342,6 +339,14 @@
       if (typeof window[name] !== 'function') return;
       try { window[name](); } catch (error) { console.error('[DokeStableShell:init:' + name + ']', error); }
     });
+    try {
+      if (window.Doke && window.Doke.controllers && typeof window.Doke.controllers.initCurrentPage === 'function') {
+        var result = window.Doke.controllers.initCurrentPage({ phase: 'stable-shell-route', path: path });
+        document.documentElement.setAttribute('data-doke-controller', result.initialized ? result.page : 'none');
+      }
+    } catch (error) {
+      console.error('[DokeStableShell:init:controller]', error);
+    }
     try { window.DokeUiSelect && window.DokeUiSelect.refresh && window.DokeUiSelect.refresh(); } catch (error) {}
     try { window.DokeMobileAppShell && window.DokeMobileAppShell.refresh && window.DokeMobileAppShell.refresh(); } catch (error) {}
     try { window.lucide && window.lucide.createIcons && window.lucide.createIcons(); } catch (error) {}
@@ -362,6 +367,7 @@
 
     if (navigating) return;
     var id = ++navigationId;
+    var committed = false;
     navigating = true;
     setBusy(true);
     updateSidebar(path);
@@ -378,16 +384,18 @@
 
       if (options.replace) window.history.replaceState({ dokeStableShell: true, href: url.href }, '', url.href);
       else window.history.pushState({ dokeStableShell: true, href: url.href }, '', url.href);
+      committed = true;
 
       resetScroll();
       updateSidebar(path);
       try { window.lucide && window.lucide.createIcons && window.lucide.createIcons(); } catch (error) {}
-      document.dispatchEvent(new CustomEvent('doke:stable-route-ready', { detail: { path: path, router: ROUTER_VERSION } }));
-      assertDocumentReadyForRoute();
+      runInitializers(path);
     } catch (error) {
       console.error('[DokeStableShell:navigate]', error);
-      if (options.replace) window.location.replace(url.href);
-      else window.location.href = url.href;
+      if (!committed) {
+        if (options.replace) window.location.replace(url.href);
+        else window.location.href = url.href;
+      }
     } finally {
       requestAnimationFrame(function () {
         setBusy(false);

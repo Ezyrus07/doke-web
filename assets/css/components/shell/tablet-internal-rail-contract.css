@@ -4,6 +4,45 @@
  * used by their page content on portrait tablet widths.
  * Scope is intentionally limited to non-index internal pages.
  */
+@media (min-width: 761px) and (max-width: 1180px) {
+  html:has(> body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page),
+  html:has(> body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page) > body {
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  html body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page > .app-shell {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  html body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page > .app-shell > :is(.sidebar, [data-shell-sidebar]) {
+    display: none !important;
+    visibility: hidden !important;
+    inline-size: 0 !important;
+    width: 0 !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    max-inline-size: 0 !important;
+    max-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+  }
+
+  html body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page > .app-shell > .page {
+    grid-column: 1 / -1 !important;
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    margin-left: 0 !important;
+  }
+}
+
 @media (min-width: 561px) and (max-width: 760px) {
   html body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page {
     --doke-tablet-gutter: clamp(18px, 3vw, 24px) !important;

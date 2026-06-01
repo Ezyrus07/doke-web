@@ -448,8 +448,8 @@
   }
 
   function removeExistingShell() {
-    var shell = document.querySelector('[data-doke-mobile-shell]');
-    var nav = document.querySelector('[data-doke-mobile-bottom-nav]');
+    var shell = document.querySelector('body > [data-doke-mobile-shell], body > .doke-mobile-shell');
+    var nav = document.querySelector('body > [data-doke-mobile-bottom-nav], body > .doke-mobile-bottom-nav');
     if (shell) shell.remove();
     if (nav) nav.remove();
   }
