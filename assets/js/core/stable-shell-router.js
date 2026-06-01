@@ -58,6 +58,7 @@
   var navigationId = 0;
 
   function isEnabled() {
+    return false;
     try {
       if (Doke.flags && typeof Doke.flags.isEnabled === 'function') {
         return Doke.flags.isEnabled('stableShellNavigation') === true;

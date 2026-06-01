@@ -28,11 +28,11 @@
   function isEnabled() {
     try {
       if (Doke.flags && typeof Doke.flags.isEnabled === 'function') {
-        return Doke.flags.isEnabled('socialPageNavigation') !== false;
+        return Doke.flags.isEnabled('socialPageNavigation') === true;
       }
-      return Doke.runtimeConfig?.flags?.socialPageNavigation !== false;
+      return Doke.runtimeConfig?.flags?.socialPageNavigation === true;
     } catch (_) {
-      return true;
+      return false;
     }
   }
 

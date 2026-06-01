@@ -140,6 +140,7 @@ const isInternalViewUrl = (href) => {
 
 
 const isInstantShellNavigationEnabled = () => {
+  return false;
   try {
     return window.Doke?.flags?.isEnabled?.('instantShellNavigation') === true;
   } catch {
