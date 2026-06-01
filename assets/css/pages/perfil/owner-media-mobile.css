@@ -1,0 +1,203 @@
+/* Perfil owner media mobile contract.
+   Responsabilidade: organizar apenas a área interna dos painéis de mídia do perfil no mobile,
+   sem tocar em shell, header, body, sidebar ou bottom nav globais. */
+
+@media (max-width: 760px) {
+  body.profile-page-shell {
+    --profile-mobile-page-gutter: 18px;
+    --profile-mobile-card-radius: 24px;
+    --profile-mobile-border: rgba(36, 84, 129, 0.14);
+  }
+
+  body.profile-page-shell .profile-panels {
+    width: 100%;
+    min-width: 0;
+    margin-top: 18px;
+    padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+  }
+
+  body.profile-page-shell .profile-panel {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  body.profile-page-shell .profile-publications-stack,
+  body.profile-page-shell .profile-publications-stack--workers {
+    width: 100%;
+    min-width: 0;
+    gap: 16px;
+  }
+
+  body.profile-page-shell .profile-services-toolbar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 0 var(--profile-mobile-page-gutter) 4px;
+    margin: 0;
+  }
+
+  body.profile-page-shell .profile-services-toolbar__action {
+    min-height: 48px !important;
+    height: 48px !important;
+    padding: 0 18px !important;
+    border-radius: 18px !important;
+    font-size: 0.98rem !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+
+  body.profile-page-shell .profile-services-toolbar__action--primary {
+    justify-content: center;
+    box-shadow: 0 16px 28px rgba(25, 101, 181, 0.16) !important;
+  }
+
+  body.profile-page-shell .profile-services-toolbar__hint {
+    grid-column: 1 / -1;
+    font-size: 0.82rem;
+    color: #6d7f98;
+  }
+
+  body.profile-page-shell .profile-workers-rail {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 14px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px var(--profile-mobile-page-gutter) 12px !important;
+    margin: 0 !important;
+    scrollbar-width: none;
+  }
+
+  body.profile-page-shell .profile-workers-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  body.profile-page-shell .profile-workers-rail .video-card,
+  body.profile-page-shell .profile-workers-rail .doke-worker-card,
+  body.profile-page-shell .profile-workers-rail .doke-media-card {
+    position: relative !important;
+    flex: 0 0 min(72vw, 300px) !important;
+    width: min(72vw, 300px) !important;
+    max-width: 300px !important;
+    min-width: min(72vw, 300px) !important;
+    aspect-ratio: 9 / 13 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border: 1px solid rgba(255, 255, 255, 0.74) !important;
+    border-radius: 28px !important;
+    background-size: cover !important;
+    background-position: center !important;
+    box-shadow: 0 18px 36px rgba(20, 46, 82, 0.16) !important;
+    scroll-snap-align: start;
+  }
+
+  body.profile-page-shell .profile-workers-rail .video-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background:
+      linear-gradient(180deg, rgba(7, 22, 43, 0.04) 0%, rgba(7, 22, 43, 0.18) 44%, rgba(7, 22, 43, 0.78) 100%);
+    pointer-events: none;
+  }
+
+  body.profile-page-shell .profile-worker-card__content {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    z-index: 2;
+    display: grid;
+    gap: 8px;
+    color: #fff;
+  }
+
+  body.profile-page-shell .profile-worker-card__badge {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: rgba(13, 148, 136, 0.92);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: -0.01em;
+    box-shadow: 0 10px 20px rgba(9, 71, 66, 0.24);
+  }
+
+  body.profile-page-shell .profile-worker-card__title {
+    margin: 0;
+    max-width: 100%;
+    color: #fff;
+    font-size: 1.02rem;
+    line-height: 1.14;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  body.profile-page-shell .profile-worker-card__meta {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.78rem;
+    line-height: 1.2;
+    font-weight: 700;
+  }
+
+  body.profile-page-shell .profile-workers-rail .profile-post-select-indicator {
+    z-index: 4;
+    top: 14px;
+    right: 14px;
+  }
+
+  body.profile-page-shell .profile-publications-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    padding: 0 var(--profile-mobile-page-gutter) 14px !important;
+  }
+
+  body.profile-page-shell .publication-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    border-radius: var(--profile-mobile-card-radius) !important;
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 420px) {
+  body.profile-page-shell .profile-services-toolbar {
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+  }
+
+  body.profile-page-shell .profile-services-toolbar__action {
+    min-height: 46px !important;
+    height: 46px !important;
+    padding-inline: 16px !important;
+    font-size: 0.94rem !important;
+  }
+
+  body.profile-page-shell .profile-workers-rail .video-card,
+  body.profile-page-shell .profile-workers-rail .doke-worker-card,
+  body.profile-page-shell .profile-workers-rail .doke-media-card {
+    flex-basis: 78vw !important;
+    width: 78vw !important;
+    min-width: 78vw !important;
+  }
+}

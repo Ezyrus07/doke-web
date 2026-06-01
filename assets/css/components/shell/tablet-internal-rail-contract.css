@@ -51,9 +51,14 @@
       calc(100vw - (var(--doke-tablet-gutter) * 2)),
       var(--doke-tablet-page-max)
     ) !important;
-    --doke-current-page-rail: var(--doke-tablet-page-rail) !important;
-    --doke-shared-page-width: var(--doke-tablet-page-rail) !important;
-    --rail-max: var(--doke-tablet-page-rail) !important;
+    --doke-page-gutter: var(--doke-tablet-gutter) !important;
+    --doke-page-max: var(--doke-tablet-page-max) !important;
+    --doke-page-available: calc(100vw - (var(--doke-page-gutter) * 2)) !important;
+    --doke-page-rail: var(--doke-tablet-page-rail) !important;
+    --doke-header-rail: var(--doke-page-rail) !important;
+    --doke-current-page-rail: var(--doke-page-rail) !important;
+    --doke-shared-page-width: var(--doke-page-rail) !important;
+    --rail-max: var(--doke-page-rail) !important;
     overflow-x: hidden !important;
   }
 
@@ -654,6 +659,51 @@
     max-width: var(--doke-internal-tablet-rail) !important;
     min-inline-size: 0 !important;
     min-width: 0 !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Phase 2 — canonical tablet app-header rail alignment.
+   Keeps the current tablet visual contract, but makes header and content consume
+   the same --doke-header-rail alias from the global width contract. */
+@media (min-width: 600px) and (max-width: 1179px) {
+  html body[data-page]:not(.home-index-shell).has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page {
+    --doke-header-rail: var(--doke-page-rail, var(--doke-tablet-page-rail)) !important;
+  }
+
+  html body[data-page]:not(.home-index-shell).has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > .app-shell > .page > :is(header.topbar, header.internal-page-topbar, header.topbar.internal-page-topbar) {
+    display: none !important;
+    visibility: hidden !important;
+    block-size: 0 !important;
+    height: 0 !important;
+    min-block-size: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page]:not(.home-index-shell).has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > .app-shell > .page > header.app-header.home-side-meta,
+  html body[data-page]:not(.home-index-shell).has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page .page > header.app-header.home-side-meta {
+    inline-size: 100% !important;
+    width: 100% !important;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page]:not(.home-index-shell).has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > .app-shell > .page > header.app-header.home-side-meta > .app-header__inner,
+  html body[data-page]:not(.home-index-shell).has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page .page > header.app-header.home-side-meta > .app-header__inner,
+  html body[data-page]:not(.home-index-shell).has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > .app-shell > .page > header[class*="app-header--"] > .app-header__inner {
+    inline-size: var(--doke-header-rail) !important;
+    width: var(--doke-header-rail) !important;
+    min-inline-size: 0 !important;
+    max-inline-size: var(--doke-header-rail) !important;
+    max-width: var(--doke-header-rail) !important;
     margin-inline: auto !important;
     padding-inline: 0 !important;
     box-sizing: border-box !important;

@@ -1,6 +1,8 @@
 (() => {
+  const initDetailAd = () => {
   const root = document.querySelector('[data-detail-page-root]');
-  if (!root) return;
+  if (!root || root.dataset.detailAdReady === 'true') return;
+  root.dataset.detailAdReady = 'true';
 
   const mainImage = root.querySelector('[data-gallery-main]');
   const stage = root.querySelector('.ad-gallery__stage');
@@ -127,4 +129,13 @@
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && modal && !modal.hidden) closeModal();
   });
+  };
+
+  window.DokeInitDetailAd = initDetailAd;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDetailAd, { once: true });
+  } else {
+    initDetailAd();
+  }
 })();

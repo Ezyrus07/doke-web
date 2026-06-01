@@ -8,9 +8,18 @@
 */
 
 :root {
-  --doke-app-sidebar-width: 280px;
-  --doke-app-shell-max: 1180px;
-  --doke-app-shell-gutter: clamp(24px, 3vw, 40px);
+  /* Canonical shell/page rail tokens. Keep legacy aliases below alive while
+     the remaining shell/header files are consolidated in controlled phases. */
+  --doke-sidebar-width: 280px;
+  --doke-page-gutter: clamp(24px, 3vw, 40px);
+  --doke-page-max: 1180px;
+  --doke-page-available: calc(100vw - var(--doke-sidebar-width) - (var(--doke-page-gutter) * 2));
+  --doke-page-rail: min(var(--doke-page-available), var(--doke-page-max));
+  --doke-header-rail: var(--doke-page-rail);
+
+  --doke-app-sidebar-width: var(--doke-sidebar-width);
+  --doke-app-shell-max: var(--doke-page-max);
+  --doke-app-shell-gutter: var(--doke-page-gutter);
   --doke-app-topbar-height: 96px;
   --doke-app-topbar-control: 54px;
   --doke-app-header-gap: 14px;
@@ -312,10 +321,17 @@ body {
 */
 
 :root {
-  --doke-app-sidebar-width: 280px;
-  --doke-app-shell-max: 1180px;
-  --doke-app-shell-gutter: clamp(24px, 3vw, 40px);
-  --doke-app-shell-width: min(calc(100% - (var(--doke-app-shell-gutter) * 2)), var(--doke-app-shell-max));
+  --doke-sidebar-width: 280px;
+  --doke-page-gutter: clamp(24px, 3vw, 40px);
+  --doke-page-max: 1180px;
+  --doke-page-available: calc(100vw - var(--doke-sidebar-width) - (var(--doke-page-gutter) * 2));
+  --doke-page-rail: min(var(--doke-page-available), var(--doke-page-max));
+  --doke-header-rail: var(--doke-page-rail);
+
+  --doke-app-sidebar-width: var(--doke-sidebar-width);
+  --doke-app-shell-max: var(--doke-page-max);
+  --doke-app-shell-gutter: var(--doke-page-gutter);
+  --doke-app-shell-width: min(calc(100% - (var(--doke-page-gutter) * 2)), var(--doke-page-max));
 
   /* Neutraliza contratos antigos que davam larguras diferentes por página. */
   --doke-shell-max-default: var(--doke-app-shell-max);
@@ -526,12 +542,18 @@ body {
 
 @media (min-width: 761px) {
   :root {
-    --doke-app-sidebar-width: 280px !important;
-    --doke-app-shell-max: 1180px !important;
-    --doke-shell-max-wide: var(--doke-app-shell-max) !important;
-    --doke-shell-max-default: var(--doke-app-shell-max) !important;
-    --doke-shell-max-narrow: var(--doke-app-shell-max) !important;
-    --doke-app-shell-gutter: clamp(24px, 3vw, 40px) !important;
+    --doke-sidebar-width: 280px !important;
+    --doke-page-gutter: clamp(24px, 3vw, 40px) !important;
+    --doke-page-max: 1180px !important;
+    --doke-page-available: calc(100vw - var(--doke-sidebar-width) - (var(--doke-page-gutter) * 2)) !important;
+    --doke-page-rail: min(var(--doke-page-available), var(--doke-page-max)) !important;
+    --doke-header-rail: var(--doke-page-rail) !important;
+    --doke-app-sidebar-width: var(--doke-sidebar-width) !important;
+    --doke-app-shell-max: var(--doke-page-max) !important;
+    --doke-shell-max-wide: var(--doke-page-max) !important;
+    --doke-shell-max-default: var(--doke-page-max) !important;
+    --doke-shell-max-narrow: var(--doke-page-max) !important;
+    --doke-app-shell-gutter: var(--doke-page-gutter) !important;
     --doke-desktop-page-gutter: 0px !important;
   }
 

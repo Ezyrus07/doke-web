@@ -11,6 +11,10 @@
 :root {
   --doke-shared-page-inline: 18px;
   --doke-shared-page-width: min(572px, calc(100vw - var(--doke-shared-page-inline) - var(--doke-shared-page-inline)));
+  --doke-page-gutter: var(--doke-shared-page-inline);
+  --doke-page-available: calc(100vw - (var(--doke-page-gutter) * 2));
+  --doke-page-rail: var(--doke-shared-page-width);
+  --doke-header-rail: var(--doke-page-rail);
   --doke-section-gap: 28px;
   --doke-header-height: 64px;
   --doke-first-block-top: 64px;
@@ -22,6 +26,10 @@
   :root {
     --doke-shared-page-inline: clamp(12px, 3.2vw, 16px);
     --doke-shared-page-width: min(620px, calc(100vw - var(--doke-shared-page-inline) - var(--doke-shared-page-inline)));
+    --doke-page-gutter: var(--doke-shared-page-inline);
+    --doke-page-available: calc(100vw - (var(--doke-page-gutter) * 2));
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
   }
 }
 
@@ -36,7 +44,11 @@
 @media (min-width: 761px) {
   :root {
     --doke-shared-page-inline: clamp(24px, 3vw, 48px);
-    --doke-shared-page-width: calc(100vw - 280px - var(--doke-shared-page-inline) - var(--doke-shared-page-inline));
+    --doke-page-gutter: var(--doke-shared-page-inline);
+    --doke-page-available: calc(100vw - var(--doke-sidebar-width, var(--doke-app-sidebar-width, 280px)) - (var(--doke-page-gutter) * 2));
+    --doke-shared-page-width: var(--doke-page-available);
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
     --doke-header-height: 96px;
     --doke-first-block-top: 108px;
     --doke-section-gap: 32px;
@@ -47,6 +59,11 @@
 @media (min-width: 1180px) {
   :root {
     --doke-shared-page-inline: 48px;
+    --doke-page-gutter: var(--doke-shared-page-inline);
+    --doke-page-available: calc(100vw - var(--doke-sidebar-width, var(--doke-app-sidebar-width, 280px)) - (var(--doke-page-gutter) * 2));
+    --doke-shared-page-width: var(--doke-page-available);
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
     --doke-section-gap: 36px;
   }
 }
@@ -55,13 +72,19 @@
   :root {
     --doke-shared-page-inline: 14px;
     --doke-shared-page-width: calc(100vw - var(--doke-shared-page-inline) - var(--doke-shared-page-inline));
+    --doke-page-gutter: var(--doke-shared-page-inline);
+    --doke-page-available: calc(100vw - (var(--doke-page-gutter) * 2));
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
   }
 }
 
 body[data-page] {
   --doke-mobile-page-edge: var(--doke-shared-page-inline);
   --doke-mobile-page-gutter: var(--doke-shared-page-inline);
-  --doke-current-page-rail: var(--doke-shared-page-inline);
+  --doke-page-rail: var(--doke-shared-page-width);
+  --doke-header-rail: var(--doke-page-rail);
+  --doke-current-page-rail: var(--doke-page-rail);
   --doke-tablet-page-edge: var(--doke-shared-page-inline);
   --doke-tablet-gutter: var(--doke-shared-page-inline);
   --detail-tablet-gutter: var(--doke-shared-page-inline);
@@ -638,10 +661,15 @@ body:is(
 @media (min-width: 761px) {
   body[data-page] {
     --doke-shared-page-inline: clamp(24px, 3vw, 48px);
-    --doke-page-available-width: calc(100vw - var(--doke-app-sidebar-width, 280px) - var(--doke-shared-page-inline) - var(--doke-shared-page-inline));
-    --doke-shared-page-width: min(var(--doke-page-available-width), var(--doke-page-family-max));
-    --doke-current-page-rail: var(--doke-shared-page-width);
-    --rail-max: var(--doke-shared-page-width);
+    --doke-page-gutter: var(--doke-shared-page-inline);
+    --doke-page-max: var(--doke-page-family-max);
+    --doke-page-available: calc(100vw - var(--doke-sidebar-width, var(--doke-app-sidebar-width, 280px)) - (var(--doke-page-gutter) * 2));
+    --doke-page-available-width: var(--doke-page-available);
+    --doke-page-rail: min(var(--doke-page-available), var(--doke-page-max));
+    --doke-header-rail: var(--doke-page-rail);
+    --doke-shared-page-width: var(--doke-page-rail);
+    --doke-current-page-rail: var(--doke-page-rail);
+    --rail-max: var(--doke-page-rail);
   }
 
   html body[data-page] .page {
@@ -766,6 +794,10 @@ body:is(
     --doke-large-mobile-rail: min(452px, calc(100vw - (var(--doke-large-mobile-edge) * 2)));
     --doke-shared-page-inline: var(--doke-large-mobile-edge);
     --doke-shared-page-width: var(--doke-large-mobile-rail);
+    --doke-page-gutter: var(--doke-large-mobile-edge);
+    --doke-page-available: calc(100vw - (var(--doke-page-gutter) * 2));
+    --doke-page-rail: var(--doke-large-mobile-rail);
+    --doke-header-rail: var(--doke-page-rail);
   }
 
   body[data-page],
@@ -776,10 +808,10 @@ body:is(
     --doke-mobile-page-edge: var(--doke-large-mobile-edge);
     --app-mobile-edge: var(--doke-large-mobile-edge);
     --doke-mobile-page-gutter: var(--doke-large-mobile-edge);
-    --doke-current-page-rail: var(--doke-large-mobile-rail);
+    --doke-current-page-rail: var(--doke-page-rail);
     --home-index-mobile-column-width: var(--doke-large-mobile-rail);
     --home-index-mobile-column-inline: var(--doke-large-mobile-edge);
-    --rail-max: var(--doke-large-mobile-rail);
+    --rail-max: var(--doke-page-rail);
   }
 
   body[data-page] :is(

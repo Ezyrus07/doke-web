@@ -1,0 +1,112 @@
+const { test, expect } = require('@playwright/test');
+
+const viewports = [
+  { name: 'desktop-1366', width: 1366, height: 768, isMobile: false, hasTouch: false },
+  { name: 'tablet-820', width: 820, height: 1180, isMobile: false, hasTouch: true },
+  { name: 'mobile-390', width: 390, height: 844, isMobile: true, hasTouch: true },
+];
+
+const routes = [
+  '/perfil.html',
+  '/pedidos.html',
+  '/mensagens.html',
+  '/notificacoes.html',
+  '/resultados.html',
+  '/detalhe-anuncio.html',
+  '/ajuda.html',
+];
+
+async function waitForStableRoute(page) {
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForLoadState('networkidle').catch(() => {});
+  await page.waitForTimeout(200);
+}
+
+async function scrollMetrics(page) {
+  return page.evaluate(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    const rootStyle = window.getComputedStyle(root);
+    const bodyStyle = window.getComputedStyle(body);
+    const shell = document.querySelector('.app-shell');
+    const pageNode = document.querySelector('.page');
+    const content = document.querySelector('.page__content');
+
+    return {
+      url: window.location.pathname,
+      bodyPage: body.getAttribute('data-page'),
+      scrollHeight: root.scrollHeight,
+      clientHeight: root.clientHeight,
+      scrollWidth: root.scrollWidth,
+      clientWidth: root.clientWidth,
+      scrollY: window.scrollY,
+      htmlOverflowY: rootStyle.overflowY,
+      bodyOverflowY: bodyStyle.overflowY,
+      htmlInlineOverflow: root.style.overflow || '',
+      bodyInlineOverflow: body.style.overflow || '',
+      htmlInlineOverflowY: root.style.overflowY || '',
+      bodyInlineOverflowY: body.style.overflowY || '',
+      htmlInlineHeight: root.style.height || '',
+      bodyInlineHeight: body.style.height || '',
+      htmlPosition: rootStyle.position,
+      bodyPosition: bodyStyle.position,
+      shellOverflowY: shell ? window.getComputedStyle(shell).overflowY : null,
+      pageOverflowY: pageNode ? window.getComputedStyle(pageNode).overflowY : null,
+      contentOverflowY: content ? window.getComputedStyle(content).overflowY : null,
+      blockingClasses: Array.from(body.classList).filter((className) => /open|overlay|modal|drawer|search-active|filter-sheet|sidebar-open/.test(className)),
+    };
+  });
+}
+
+async function assertDocumentScrollWorks(page, route, scenario) {
+  const before = await scrollMetrics(page);
+
+  expect(before.scrollWidth, `${scenario} ${route}: não pode gerar overflow horizontal`).toBeLessThanOrEqual(before.clientWidth + 1);
+  expect(['visible', 'auto', 'scroll'].includes(before.htmlOverflowY), `${scenario} ${route}: html não pode bloquear overflowY`).toBeTruthy();
+  expect(['visible', 'auto', 'scroll'].includes(before.bodyOverflowY), `${scenario} ${route}: body não pode bloquear overflowY`).toBeTruthy();
+  expect(before.htmlInlineOverflow, `${scenario} ${route}: html não pode manter overflow inline`).toBe('');
+  expect(before.bodyInlineOverflow, `${scenario} ${route}: body não pode manter overflow inline`).toBe('');
+  expect(before.htmlInlineOverflowY, `${scenario} ${route}: html não pode manter overflow-y inline`).toBe('');
+  expect(before.bodyInlineOverflowY, `${scenario} ${route}: body não pode manter overflow-y inline`).toBe('');
+  expect(before.blockingClasses, `${scenario} ${route}: classes temporárias de overlay/drawer não podem ficar presas`).toEqual([]);
+
+  const hasScrollableDocument = before.scrollHeight > before.clientHeight + 8;
+  if (hasScrollableDocument) {
+    await page.evaluate(() => window.scrollTo(0, 500));
+    await page.waitForTimeout(80);
+    const after = await scrollMetrics(page);
+    expect(after.scrollY, `${scenario} ${route}: window.scrollTo precisa mover o scroll do documento`).toBeGreaterThan(0);
+  }
+}
+
+test.describe('Stable shell document scroll contract', () => {
+  for (const viewport of viewports) {
+    test.describe(viewport.name, () => {
+      test.use({
+        viewport: { width: viewport.width, height: viewport.height },
+        isMobile: viewport.isMobile,
+        hasTouch: viewport.hasTouch,
+      });
+
+      for (const route of routes) {
+        test(`${route} keeps scroll via direct URL and DokeNavigate`, async ({ page }) => {
+          await page.goto(route);
+          await waitForStableRoute(page);
+          await assertDocumentScrollWorks(page, route, 'direct');
+
+          await page.goto('/index.html');
+          await waitForStableRoute(page);
+          await expect.poll(() => page.evaluate(() => typeof window.DokeNavigate)).toBe('function');
+
+          await page.evaluate(async (target) => {
+            const result = window.DokeNavigate(target);
+            if (result && typeof result.then === 'function') await result;
+          }, route);
+          await expect(page).toHaveURL(new RegExp(`${route.replace('.', '\\.')}(?:$|[?#])`));
+          await waitForStableRoute(page);
+          await assertDocumentScrollWorks(page, route, 'DokeNavigate');
+        });
+      }
+    });
+  }
+});

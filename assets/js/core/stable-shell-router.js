@@ -31,6 +31,8 @@
   var ROUTE_INIT = {
     '/index.html': ['DokeInitHome'],
     '/resultados.html': ['DokeInitSearchResults'],
+    '/detalhe-anuncio.html': ['DokeInitDetailAd'],
+    '/ajuda.html': ['DokeInitHelpCenter'],
     '/pedidos.html': ['DokeInitOrders'],
     '/mensagens.html': ['DokeInitMessages'],
     '/notificacoes.html': ['DokeInitNotifications'],
@@ -50,6 +52,57 @@
   var PRESERVED_HTML_CLASS_PREFIXES = [
     'doke-js-',
     'doke-mobile-shell-'
+  ];
+
+  var ROUTE_TRANSIENT_BODY_CLASSES = [
+    'before-after-preview-open',
+    'budget-modal-open',
+    'community-modal-open',
+    'detail-budget-open',
+    'doke-help-drawer-open',
+    'doke-mobile-drawer-open',
+    'doke-mobile-overlay-open',
+    'has-modal-open',
+    'home-address-modal-open',
+    'home-filter-sheet-open',
+    'home-inline-filters-open',
+    'home-search-overlay-active',
+    'is-media-lightbox-open',
+    'is-messages-header-search-open',
+    'is-search-open',
+    'is-wallet-modal-open',
+    'messages-thread-is-open',
+    'mobile-home-drawer-open',
+    'mobile-search-active',
+    'news-detail-open',
+    'order-feedback-active',
+    'orders-chat-open',
+    'orders-detail-open',
+    'orders-overlay-open',
+    'payment-finish-modal-open',
+    'payment-modal-open',
+    'pro-review-modal-open',
+    'results-filters-open',
+    'results-filters-open-from-home',
+    'search-open',
+    'sidebar-open',
+    'ui-modal-open',
+    'worker-modal-open',
+    'worker-preview-open'
+  ];
+
+  var ROUTE_SCROLL_LOCK_STYLE_PROPS = [
+    'overflow',
+    'overflow-x',
+    'overflow-y',
+    'height',
+    'min-height',
+    'max-height',
+    'position',
+    'top',
+    'left',
+    'right',
+    'width'
   ];
 
   var CORE_SCRIPT_RE = /assets\/js\/core\/(?:runtime-config|feature-flags|rollout-guard|app|stable-shell-router|social-page-router)\.js(?:\?.*)?$/i;
@@ -220,6 +273,39 @@
     preserved.forEach(function (className) { current.classList.add(className); });
   }
 
+  function clearInlineScrollLocks(node) {
+    if (!node || !node.style) return;
+    ROUTE_SCROLL_LOCK_STYLE_PROPS.forEach(function (prop) {
+      try { node.style.removeProperty(prop); } catch (error) {}
+    });
+  }
+
+  function clearTransientRouteState() {
+    if (!document.body) return;
+
+    ROUTE_TRANSIENT_BODY_CLASSES.forEach(function (className) {
+      document.body.classList.remove(className);
+    });
+
+    clearInlineScrollLocks(document.documentElement);
+    clearInlineScrollLocks(document.body);
+
+    document.querySelectorAll('[data-results-filters-backdrop], [data-sidebar-scrim], .mobile-scrim').forEach(function (node) {
+      try {
+        node.setAttribute('aria-hidden', 'true');
+        node.hidden = true;
+      } catch (error) {}
+    });
+
+    document.querySelectorAll('[aria-modal="true"], dialog[open], .ui-modal.is-open, .modal.is-open').forEach(function (node) {
+      try {
+        if (node.tagName === 'DIALOG' && typeof node.close === 'function') node.close();
+        node.classList.remove('is-open', 'open', 'active');
+        node.setAttribute('aria-hidden', 'true');
+      } catch (error) {}
+    });
+  }
+
   function syncBodyContract(nextBody) {
     if (!nextBody) return;
     var preserved = PRESERVED_BODY_CLASSES.filter(function (className) {
@@ -237,7 +323,8 @@
     });
 
     preserved.forEach(function (className) { document.body.classList.add(className); });
-    document.body.classList.remove('sidebar-open', 'mobile-search-active', 'home-search-overlay-active', 'is-stable-shell-routing');
+    clearTransientRouteState();
+    document.body.classList.remove('is-stable-shell-routing');
   }
 
 
@@ -290,6 +377,7 @@
   }
 
   function resetScroll() {
+    clearTransientRouteState();
     var previousHtmlBehavior = document.documentElement.style.scrollBehavior;
     var previousBodyBehavior = document.body.style.scrollBehavior;
     document.documentElement.style.scrollBehavior = 'auto';
@@ -301,6 +389,7 @@
       });
     });
     requestAnimationFrame(function () {
+      clearTransientRouteState();
       try { window.scrollTo(0, 0); } catch (error) {}
       if (document.documentElement) document.documentElement.style.scrollBehavior = previousHtmlBehavior;
       if (document.body) document.body.style.scrollBehavior = previousBodyBehavior;
@@ -365,7 +454,7 @@
       return;
     }
 
-    if (navigating) return;
+    if (navigating) return Promise.resolve(false);
     var id = ++navigationId;
     var committed = false;
     navigating = true;
@@ -377,10 +466,11 @@
       if (id !== navigationId) return;
       await ensureStyles(nextDoc);
       if (id !== navigationId) return;
-      await ensureScripts(nextDoc);
-      if (id !== navigationId) return;
       replaceShell(nextDoc, path);
       assertDocumentReadyForRoute();
+      if (id !== navigationId) return;
+      await ensureScripts(nextDoc);
+      if (id !== navigationId) return;
 
       if (options.replace) window.history.replaceState({ dokeStableShell: true, href: url.href }, '', url.href);
       else window.history.pushState({ dokeStableShell: true, href: url.href }, '', url.href);
@@ -447,7 +537,7 @@
 
     window.DokeStableShellRouter = Object.freeze({ version: ROUTER_VERSION, navigate: navigate, warm: warm });
     window.DokeNavigate = function (href, options) {
-      navigate(href, options || {});
+      return navigate(href, options || {});
     };
 
     applyRouteRuntimeClasses(currentPath());

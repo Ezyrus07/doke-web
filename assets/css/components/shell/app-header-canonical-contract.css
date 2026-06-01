@@ -534,3 +534,15 @@
     display: none !important;
   }
 }
+
+/* App Header Canonical Contract v4.1 — phase 2 rail bridge
+   Source of truth: --doke-header-rail from the global shell/page width contract.
+   This block does not remove legacy rules; it exposes the canonical rail so later
+   tablet/desktop authority layers can converge on one header/content width. */
+@media (min-width: 600px) {
+  body.has-global-header {
+    --doke-header-canonical-sidebar: var(--doke-sidebar-width, var(--doke-app-sidebar-width, 280px));
+    --doke-header-canonical-max: var(--doke-page-max, var(--doke-app-shell-max, 1180px));
+    --doke-header-canonical-rail: var(--doke-header-rail, var(--doke-page-rail, min(calc(100vw - var(--doke-header-canonical-sidebar) - (var(--doke-page-gutter, 48px) * 2)), var(--doke-header-canonical-max))));
+  }
+}
