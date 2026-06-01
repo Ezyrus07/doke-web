@@ -140,7 +140,6 @@ const isInternalViewUrl = (href) => {
 
 
 const isInstantShellNavigationEnabled = () => {
-  return false;
   try {
     return window.Doke?.flags?.isEnabled?.('instantShellNavigation') === true;
   } catch {
@@ -657,16 +656,28 @@ const discardStagedStyles = (stagedStyles = []) => {
   });
 };
 
+const canonicalRouteScriptKey = (src) => {
+  try {
+    const url = new URL(src, window.location.href);
+    url.search = "";
+    url.hash = "";
+    return url.href;
+  } catch {
+    return String(src || "");
+  }
+};
+
 const ensureScriptsFromDocument = async (nextDoc) => {
-  const existing = new Set([...document.querySelectorAll('script[src]')].map((node) => new URL(node.src, window.location.href).href));
+  const existing = new Set([...document.querySelectorAll('script[src]')].map((node) => canonicalRouteScriptKey(node.src)));
   const scripts = [...nextDoc.querySelectorAll('script[src]')]
     .map((node) => node.getAttribute('src'))
     .filter(Boolean)
-    .filter((src) => !/assets\/js\/core\/app\.js(?:\?.*)?$/i.test(src));
+    .filter((src) => !/assets\/js\/core\/(?:app|stable-shell-router|social-page-router|runtime-config|feature-flags)\.js(?:\?.*)?$/i.test(src));
 
   for (const src of scripts) {
     const absolute = new URL(src, window.location.href).href;
-    if (existing.has(absolute)) continue;
+    const key = canonicalRouteScriptKey(absolute);
+    if (existing.has(key)) continue;
     await new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = src;
@@ -674,7 +685,7 @@ const ensureScriptsFromDocument = async (nextDoc) => {
       script.onload = () => resolve();
       script.onerror = () => reject(new Error(`Falha ao carregar script: ${src}`));
       document.body.appendChild(script);
-      existing.add(absolute);
+      existing.add(key);
     });
   }
 };

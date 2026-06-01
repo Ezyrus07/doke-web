@@ -11,7 +11,8 @@
     desktopContracts: true,
     visualGuards: true,
     instantShellNavigation: false,
-    stableShellNavigation: true
+    stableShellNavigation: true,
+    socialPageNavigation: false
   });
 
   function readEnvironment() {

@@ -58,7 +58,6 @@
   var navigationId = 0;
 
   function isEnabled() {
-    return false;
     try {
       if (Doke.flags && typeof Doke.flags.isEnabled === 'function') {
         return Doke.flags.isEnabled('stableShellNavigation') === true;
@@ -275,9 +274,22 @@
     syncHtmlContract(nextDoc.documentElement);
     syncBodyContract(nextDoc.body);
     applyRouteRuntimeClasses(path);
-    currentShell.replaceWith(nextShellNode);
-    syncStandaloneUi(nextDoc);
+    Array.prototype.slice.call(nextDoc.body.childNodes).forEach(function (node) {
+      if (node === nextShell) node.replaceWith(nextShellNode);
+    });
+    document.body.replaceChildren.apply(
+      document.body,
+      Array.prototype.slice.call(nextDoc.body.childNodes).map(function (node) {
+        return node.cloneNode(true);
+      })
+    );
     document.title = nextDoc.title || document.title;
+  }
+
+  function assertDocumentReadyForRoute() {
+    if (!document.documentElement || !document.body) {
+      throw new Error('Documento invalido apos troca de rota.');
+    }
   }
 
   function resetScroll() {
@@ -362,13 +374,16 @@
       await ensureScripts(nextDoc);
       if (id !== navigationId) return;
       replaceShell(nextDoc, path);
+      assertDocumentReadyForRoute();
 
       if (options.replace) window.history.replaceState({ dokeStableShell: true, href: url.href }, '', url.href);
       else window.history.pushState({ dokeStableShell: true, href: url.href }, '', url.href);
 
       resetScroll();
       updateSidebar(path);
-      runInitializers(path);
+      try { window.lucide && window.lucide.createIcons && window.lucide.createIcons(); } catch (error) {}
+      document.dispatchEvent(new CustomEvent('doke:stable-route-ready', { detail: { path: path, router: ROUTER_VERSION } }));
+      assertDocumentReadyForRoute();
     } catch (error) {
       console.error('[DokeStableShell:navigate]', error);
       if (options.replace) window.location.replace(url.href);
