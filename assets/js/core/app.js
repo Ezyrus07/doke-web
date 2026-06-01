@@ -897,7 +897,84 @@ document.addEventListener("click", (event) => {
 window.DokeUiSelect = window.DokeUiSelect || createUiSelectApi();
 
 const PRESERVED_HTML_CLASS_NAMES = ["doke-js-mobile", "doke-js-desktop", "doke-mobile-shell-ready", "doke-mobile-shell-pending", SIDEBAR_COLLAPSED_HTML_CLASS, SIDEBAR_EXPANDED_HTML_CLASS, SIDEBAR_STATE_READY_HTML_CLASS];
-const PRESERVED_BODY_ATTRS = ["style"];
+const PRESERVED_BODY_ATTRS = [];
+
+const ROUTE_TRANSIENT_CLASSES = [
+  "before-after-preview-open",
+  "budget-modal-open",
+  "community-modal-open",
+  "detail-budget-open",
+  "doke-help-drawer-open",
+  "doke-mobile-drawer-open",
+  "doke-mobile-overlay-open",
+  "has-modal-open",
+  "home-address-modal-open",
+  "home-filter-sheet-open",
+  "home-inline-filters-open",
+  "home-search-overlay-active",
+  "is-media-lightbox-open",
+  "is-messages-header-search-open",
+  "is-search-open",
+  "is-wallet-modal-open",
+  "messages-thread-is-open",
+  "mobile-home-drawer-open",
+  "mobile-search-active",
+  "news-detail-open",
+  "order-feedback-active",
+  "orders-chat-open",
+  "orders-detail-open",
+  "orders-overlay-open",
+  "payment-finish-modal-open",
+  "payment-modal-open",
+  "pro-review-modal-open",
+  "results-filters-open",
+  "results-filters-open-from-home",
+  "search-open",
+  "ui-modal-open",
+  "worker-modal-open",
+  "worker-preview-open"
+];
+
+const ROUTE_SCROLL_LOCK_STYLE_PROPS = ["overflow", "overflow-x", "overflow-y", "height", "min-height", "max-height", "position", "top", "left", "right", "width"];
+
+const clearInlineRouteScrollLocks = (node) => {
+  if (!node?.style) return;
+  ROUTE_SCROLL_LOCK_STYLE_PROPS.forEach((prop) => node.style.removeProperty(prop));
+};
+
+const clearRouteTransientState = () => {
+  ROUTE_TRANSIENT_CLASSES.forEach((className) => {
+    document.documentElement.classList.remove(className);
+    body.classList.remove(className);
+  });
+
+  clearInlineRouteScrollLocks(document.documentElement);
+  clearInlineRouteScrollLocks(body);
+
+  document.documentElement.style.removeProperty("--messages-shell-sidebar-width");
+  document.documentElement.style.removeProperty("--messages-app-inline-size");
+
+  [".app-shell", ".page", ".page__content", ".page__content-inner", ".shell-home__workspace", ".doke-page-shell", ".messages-shell-content", ".messages-app"].forEach((selector) => {
+    document.querySelectorAll(selector).forEach(clearInlineRouteScrollLocks);
+  });
+};
+
+const runRouteLeavingCleanup = (toPath) => {
+  const fromPath = getCurrentPath();
+  try {
+    document.dispatchEvent(new CustomEvent("doke:route-leaving", { detail: { from: fromPath, to: toPath, router: "core-app-shell-swap" } }));
+  } catch {}
+
+  if (fromPath === MESSAGES_VIEW_PATH && typeof window.DokeCleanupMessages === "function") {
+    try {
+      window.DokeCleanupMessages({ from: fromPath, to: toPath, router: "core-app-shell-swap" });
+    } catch (error) {
+      console.error("[Doke:cleanup:messages]", error);
+    }
+  }
+
+  clearRouteTransientState();
+};
 
 const syncElementAttributesFromDocument = (target, source, { preserveAttrs = [], preserveClasses = [] } = {}) => {
   if (!target || !source) return;
@@ -945,6 +1022,7 @@ const syncDocumentStateFromDocument = (nextDoc) => {
     body.classList.remove("theme-dark");
   }
   syncSidebarCollapsedState();
+  clearRouteTransientState();
 };
 
 const suppressRouteTransitionsBriefly = () => {
@@ -1039,6 +1117,7 @@ const setScrollInstantly = (node) => {
 };
 
 const resetRouteScrollPosition = () => {
+  clearRouteTransientState();
   const html = document.documentElement;
   const previousHtmlBehavior = html.style.scrollBehavior;
   const previousBodyBehavior = body.style.scrollBehavior;
@@ -1071,6 +1150,7 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
   const cacheKey = url.pathname + url.search;
   let stagedStyles = [];
 
+  runRouteLeavingCleanup(getCurrentPath(url.href));
   body.classList.add("is-shell-swapping");
   suppressRouteTransitionsBriefly();
   hintInternalViewStyles(url.toString());
@@ -1148,6 +1228,7 @@ const swapView = async (href, { replace = false, preserveScroll = false } = {}) 
     throw error;
   } finally {
     window.requestAnimationFrame(() => {
+      clearRouteTransientState();
       body.classList.remove("is-shell-swapping");
     });
   }

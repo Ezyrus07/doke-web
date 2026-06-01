@@ -2,7 +2,7 @@
   'use strict';
 
   var Doke = window.Doke || (window.Doke = {});
-  var ROUTER_VERSION = '20260513-stable-shell-router-v2';
+  var ROUTER_VERSION = '20260601-stable-shell-router-route-style-lifecycle-v1';
 
   var SAFE_ROUTES = new Set([
     '/ajuda.html',
@@ -139,6 +139,45 @@
     } catch (error) {
       return '';
     }
+  }
+
+  function isSameOriginProjectStylesheet(link) {
+    if (!link || !link.href) return false;
+    try {
+      var url = new URL(link.href, window.location.href);
+      return url.origin === window.location.origin && /\/assets\/css\//i.test(url.pathname);
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function collectStylesheetKeys(doc) {
+    var keys = new Set();
+    Array.prototype.forEach.call(doc.querySelectorAll('link[rel="stylesheet"][href]'), function (link) {
+      var key = canonicalAssetUrl(link.getAttribute('href') || link.href);
+      if (key) keys.add(key);
+    });
+    return keys;
+  }
+
+  function removeObsoleteRouteStyles(nextDoc) {
+    if (!nextDoc) return;
+    var nextStyles = collectStylesheetKeys(nextDoc);
+
+    Array.prototype.forEach.call(document.querySelectorAll('link[rel="stylesheet"][href]'), function (link) {
+      var key = canonicalAssetUrl(link.getAttribute('href') || link.href);
+      if (!key || nextStyles.has(key)) return;
+      if (!isSameOriginProjectStylesheet(link)) return;
+      link.remove();
+    });
+
+    document.querySelectorAll('link[rel="preload"][as="style"][data-doke-style-hint]').forEach(function (link) {
+      try {
+        var href = link.getAttribute('href');
+        if (!href || nextStyles.has(canonicalAssetUrl(href))) return;
+        link.remove();
+      } catch (error) {}
+    });
   }
 
   function isSafeUrl(href) {
@@ -280,15 +319,28 @@
     });
   }
 
+  function clearRouteScrollSurfaces() {
+    ['.app-shell', '.page', '.page__content', '.page__content-inner', '.shell-home__workspace', '.doke-page-shell', '.messages-shell-content', '.messages-app'].forEach(function (selector) {
+      document.querySelectorAll(selector).forEach(function (node) {
+        clearInlineScrollLocks(node);
+      });
+    });
+  }
+
   function clearTransientRouteState() {
     if (!document.body) return;
 
     ROUTE_TRANSIENT_BODY_CLASSES.forEach(function (className) {
       document.body.classList.remove(className);
+      document.documentElement.classList.remove(className);
     });
 
     clearInlineScrollLocks(document.documentElement);
     clearInlineScrollLocks(document.body);
+    clearRouteScrollSurfaces();
+
+    document.documentElement.style.removeProperty('--messages-shell-sidebar-width');
+    document.documentElement.style.removeProperty('--messages-app-inline-size');
 
     document.querySelectorAll('[data-results-filters-backdrop], [data-sidebar-scrim], .mobile-scrim').forEach(function (node) {
       try {
@@ -304,6 +356,18 @@
         node.setAttribute('aria-hidden', 'true');
       } catch (error) {}
     });
+  }
+
+  function runRouteLeavingCleanup(fromPath, toPath) {
+    try {
+      document.dispatchEvent(new CustomEvent('doke:route-leaving', { detail: { from: fromPath, to: toPath, router: ROUTER_VERSION } }));
+    } catch (error) {}
+
+    if (fromPath === '/mensagens.html' && typeof window.DokeCleanupMessages === 'function') {
+      try { window.DokeCleanupMessages({ from: fromPath, to: toPath, router: ROUTER_VERSION }); } catch (error) { console.error('[DokeStableShell:cleanup:messages]', error); }
+    }
+
+    clearTransientRouteState();
   }
 
   function syncBodyContract(nextBody) {
@@ -457,7 +521,9 @@
     if (navigating) return Promise.resolve(false);
     var id = ++navigationId;
     var committed = false;
+    var fromPath = currentPath();
     navigating = true;
+    runRouteLeavingCleanup(fromPath, path);
     setBusy(true);
     updateSidebar(path);
 
@@ -467,6 +533,7 @@
       await ensureStyles(nextDoc);
       if (id !== navigationId) return;
       replaceShell(nextDoc, path);
+      removeObsoleteRouteStyles(nextDoc);
       assertDocumentReadyForRoute();
       if (id !== navigationId) return;
       await ensureScripts(nextDoc);
@@ -488,6 +555,7 @@
       }
     } finally {
       requestAnimationFrame(function () {
+        clearTransientRouteState();
         setBusy(false);
         navigating = false;
       });

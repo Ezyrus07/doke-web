@@ -54,6 +54,9 @@ async function scrollMetrics(page) {
       pageOverflowY: pageNode ? window.getComputedStyle(pageNode).overflowY : null,
       contentOverflowY: content ? window.getComputedStyle(content).overflowY : null,
       blockingClasses: Array.from(body.classList).filter((className) => /open|overlay|modal|drawer|search-active|filter-sheet|sidebar-open/.test(className)),
+      messageStylesheets: Array.from(document.querySelectorAll('link[rel="stylesheet"][href]'))
+        .map((link) => link.getAttribute('href') || '')
+        .filter((href) => /assets\/css\/(?:pages\/mensagens|patterns\/chat-screen-fill|components\/internal\/chat-workspace-contract)/.test(href)),
     };
   });
 }
@@ -69,6 +72,9 @@ async function assertDocumentScrollWorks(page, route, scenario) {
   expect(before.htmlInlineOverflowY, `${scenario} ${route}: html não pode manter overflow-y inline`).toBe('');
   expect(before.bodyInlineOverflowY, `${scenario} ${route}: body não pode manter overflow-y inline`).toBe('');
   expect(before.blockingClasses, `${scenario} ${route}: classes temporárias de overlay/drawer não podem ficar presas`).toEqual([]);
+  if (route !== '/mensagens.html' && route !== '/comunidade-interna.html') {
+    expect(before.messageStylesheets, `${scenario} ${route}: CSS de mensagens/chat não pode continuar ativo fora da rota`).toEqual([]);
+  }
 
   const hasScrollableDocument = before.scrollHeight > before.clientHeight + 8;
   if (hasScrollableDocument) {
@@ -88,6 +94,33 @@ test.describe('Stable shell document scroll contract', () => {
         hasTouch: viewport.hasTouch,
       });
 
+
+
+      test('leaving mensagens.html restores document scroll contract for subsequent routes', async ({ page }) => {
+        await page.goto('/index.html');
+        await waitForStableRoute(page);
+        await expect.poll(() => page.evaluate(() => typeof window.DokeNavigate)).toBe('function');
+
+        await page.evaluate(async () => {
+          window.__dokeReloadProbe = Math.random();
+          window.__dokeLoadCount = 1;
+          window.addEventListener('load', () => { window.__dokeLoadCount += 1; });
+        });
+
+        for (const route of ['/mensagens.html', '/perfil.html', '/pedidos.html', '/resultados.html', '/ajuda.html']) {
+          await page.evaluate(async (target) => {
+            const result = window.DokeNavigate(target);
+            if (result && typeof result.then === 'function') await result;
+          }, route);
+          await expect(page).toHaveURL(new RegExp(`${route.replace('.', '\.')}(?:$|[?#])`));
+          await waitForStableRoute(page);
+          await assertDocumentScrollWorks(page, route, 'after leaving mensagens sequence');
+        }
+
+        const reloadState = await page.evaluate(() => ({ probe: window.__dokeReloadProbe, loadCount: window.__dokeLoadCount }));
+        expect(reloadState.probe, 'DokeNavigate não deve perder sentinela de reload').toBeTruthy();
+        expect(reloadState.loadCount, 'DokeNavigate não deve disparar reload completo').toBe(1);
+      });
       for (const route of routes) {
         test(`${route} keeps scroll via direct URL and DokeNavigate`, async ({ page }) => {
           await page.goto(route);

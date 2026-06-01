@@ -77,12 +77,61 @@
     .map((part) => part[0]?.toUpperCase() || "")
     .join("") || "DK";
 
+  let activeMessagesCleanup = null;
+
+  const clearMessagesRouteState = () => {
+    document.body?.classList.remove(
+      "messages-thread-is-open",
+      "is-messages-header-search-open",
+      "messages-chat-is-focused",
+      "is-media-lightbox-open"
+    );
+    document.documentElement?.classList.remove(
+      "messages-thread-is-open",
+      "is-messages-header-search-open",
+      "messages-chat-is-focused",
+      "is-media-lightbox-open"
+    );
+    document.documentElement?.style.removeProperty("--messages-shell-sidebar-width");
+    document.documentElement?.style.removeProperty("--messages-app-inline-size");
+  };
+
+  const registerMessagesCleanup = (cleanup) => {
+    activeMessagesCleanup = cleanup;
+  };
+
+  window.DokeCleanupMessages = () => {
+    try { activeMessagesCleanup?.(); } catch (error) { console.error("[DokeMessages:cleanup]", error); }
+    activeMessagesCleanup = null;
+    clearMessagesRouteState();
+  };
+
+  document.addEventListener("doke:route-leaving", (event) => {
+    if (event.detail?.from === "/mensagens.html") {
+      window.DokeCleanupMessages?.(event.detail);
+    }
+  });
+
   const initMessagesPage = () => {
     const root = document.querySelector("[data-messages-page]");
     if (!root || root.dataset.messagesReady === "true") return;
     root.dataset.messagesReady = "true";
 
     const drawerController = new AbortController();
+    const routeCleanupCallbacks = [() => drawerController.abort(), clearMessagesRouteState];
+    const addRouteCleanup = (cleanup) => {
+      if (typeof cleanup === "function") routeCleanupCallbacks.push(cleanup);
+    };
+    registerMessagesCleanup(() => {
+      while (routeCleanupCallbacks.length) {
+        const cleanup = routeCleanupCallbacks.pop();
+        try { cleanup(); } catch (error) { console.error("[DokeMessages:route-cleanup]", error); }
+      }
+      if (root.isConnected) {
+        root.classList.remove("messages-app--thread-open");
+        delete root.dataset.messagesMode;
+      }
+    });
     window.DokeHomeDrawer?.create({ signal: drawerController.signal })?.();
 
     const items = Array.from(root.querySelectorAll(".message-item[data-message-id]"));
@@ -1346,7 +1395,12 @@
       if (event.target === lightbox) closeLightbox();
     });
 
-    window.addEventListener("resize", () => {
+    const handleMessagesResize = () => {
+      if (!root.isConnected || document.body?.dataset.page !== "mensagens") {
+        window.removeEventListener("resize", handleMessagesResize);
+        clearMessagesRouteState();
+        return;
+      }
       hideMessageMenu();
       syncComposerPlaceholder();
       setCompactThreadOpen(root.dataset.messagesMode === "thread");
@@ -1358,7 +1412,9 @@
       }
       setSearchExpanded(false);
       syncHeaderControls();
-    });
+    };
+    window.addEventListener("resize", handleMessagesResize);
+    addRouteCleanup(() => window.removeEventListener("resize", handleMessagesResize));
 
     syncFilterButtons();
     setSearchExpanded(false);
@@ -1565,7 +1621,19 @@
     return Math.max(0, Math.round(rect?.width || fallback));
   };
 
+  const stopMessagesWorkspaceMetrics = () => {
+    window.removeEventListener('resize', syncMessagesWorkspaceMetrics);
+    window.visualViewport?.removeEventListener('resize', syncMessagesWorkspaceMetrics);
+    window.visualViewport?.removeEventListener('scroll', syncMessagesWorkspaceMetrics);
+    root.style.removeProperty('--messages-shell-sidebar-width');
+    root.style.removeProperty('--messages-app-inline-size');
+  };
+
   const syncMessagesWorkspaceMetrics = () => {
+    if (document.body?.dataset.page !== 'mensagens') {
+      stopMessagesWorkspaceMetrics();
+      return;
+    }
     const viewportWidth = Math.round(window.visualViewport?.width || window.innerWidth || document.documentElement.clientWidth || 0);
     const sidebarWidth = readSidebarWidth();
     root.style.setProperty('--messages-shell-sidebar-width', `${sidebarWidth}px`);
@@ -1576,4 +1644,7 @@
   window.addEventListener('resize', syncMessagesWorkspaceMetrics, { passive: true });
   window.visualViewport?.addEventListener('resize', syncMessagesWorkspaceMetrics, { passive: true });
   window.visualViewport?.addEventListener('scroll', syncMessagesWorkspaceMetrics, { passive: true });
+  document.addEventListener('doke:route-leaving', (event) => {
+    if (event.detail?.from === '/mensagens.html') stopMessagesWorkspaceMetrics();
+  });
 })();
