@@ -1999,3 +1999,212 @@
     border-radius: 14px !important;
   }
 }
+
+
+/* 2026-06-01 — Index tablet hard layout authority v6.
+   Escopo restrito à home em tablet: espaçamento após header, categorias com
+   prévia lateral, publicações em carrossel real e load button centralizado. */
+@media (min-width: 700px) and (max-width: 1366px) {
+  html.home-index-root body.home-index-shell,
+  html body.home-index-shell {
+    --index-tablet-content-top-gap: 36px;
+    --index-tablet-section-gap: 44px;
+    --index-tablet-section-header-gap: 18px;
+  }
+
+  html.home-index-root body.home-index-shell main.page__content.doke-page,
+  html body.home-index-shell main.page__content.doke-page {
+    padding-top: var(--index-tablet-content-top-gap) !important;
+  }
+
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace,
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace--clean,
+  html body.home-index-shell .page__content-inner.shell-home__workspace,
+  html body.home-index-shell .page__content-inner.shell-home__workspace--clean {
+    row-gap: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell .home-search-hero,
+  html body.home-index-shell .home-search-hero {
+    margin-top: 0 !important;
+    margin-bottom: 38px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories,
+  html body.home-index-shell section.home-catégories {
+    margin-top: 0 !important;
+    margin-bottom: var(--index-tablet-section-gap) !important;
+    overflow: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories > .home-catégories__rail,
+  html body.home-index-shell section.home-catégories > .home-catégories__rail {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories > .home-catégories__rail::after,
+  html body.home-index-shell section.home-catégories > .home-catégories__rail::after {
+    content: "" !important;
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    z-index: 3 !important;
+    width: 54px !important;
+    height: 100% !important;
+    pointer-events: none !important;
+    background: linear-gradient(90deg, rgba(239,246,251,0), rgba(239,246,251,.96)) !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories :is(.home-catégories__arrow, .home-catégories__arrow--prev, .home-catégories__arrow--next),
+  html body.home-index-shell section.home-catégories :is(.home-catégories__arrow, .home-catégories__arrow--prev, .home-catégories__arrow--next) {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories [data-catégory-track].home-catégories__track,
+  html body.home-index-shell section.home-catégories [data-catégory-track].home-catégories__track,
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégories__track,
+  html body.home-index-shell section.home-catégories .home-catégories__track {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 72px 10px 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x proximity !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégories__track::-webkit-scrollbar,
+  html body.home-index-shell section.home-catégories .home-catégories__track::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégory,
+  html body.home-index-shell section.home-catégories .home-catégory {
+    flex: 0 0 132px !important;
+    inline-size: 132px !important;
+    width: 132px !important;
+    min-width: 132px !important;
+    max-width: 132px !important;
+    gap: 8px !important;
+    scroll-snap-align: start !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégory__icon,
+  html body.home-index-shell section.home-catégories .home-catégory__icon {
+    inline-size: 84px !important;
+    block-size: 84px !important;
+    width: 84px !important;
+    height: 84px !important;
+    min-width: 84px !important;
+    min-height: 84px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégory__label,
+  html body.home-index-shell section.home-catégories .home-catégory__label {
+    width: 132px !important;
+    max-width: 132px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    text-align: center !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications, section.more-services, section.featured-pros),
+  html body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications, section.more-services, section.featured-pros) {
+    margin-top: 0 !important;
+    margin-bottom: var(--index-tablet-section-gap) !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications, section.more-services, section.featured-pros) > .section-heading.home-section-header,
+  html body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications, section.more-services, section.featured-pros) > .section-heading.home-section-header {
+    margin: 0 0 var(--index-tablet-section-header-gap) !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail,
+  html body.home-index-shell section.home-publications > .content-rail {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track,
+  html body.home-index-shell section.home-publications #home-publications-track {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    grid-auto-flow: initial !important;
+    gap: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 84px 12px 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x proximity !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track::-webkit-scrollbar,
+  html body.home-index-shell section.home-publications #home-publications-track::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track > article.publication-card,
+  html body.home-index-shell section.home-publications #home-publications-track > article.publication-card {
+    flex: 0 0 clamp(320px, 40vw, 350px) !important;
+    inline-size: clamp(320px, 40vw, 350px) !important;
+    width: clamp(320px, 40vw, 350px) !important;
+    min-width: clamp(320px, 40vw, 350px) !important;
+    max-width: clamp(320px, 40vw, 350px) !important;
+    margin: 0 !important;
+    scroll-snap-align: start !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__load,
+  html body.home-index-shell section.more-services .more-services__load,
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-load-host],
+  html body.home-index-shell section.more-services [data-more-services-load-host] {
+    grid-column: 1 / -1 !important;
+    justify-self: stretch !important;
+    align-self: center !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 34px auto 0 !important;
+    padding: 0 !important;
+    text-align: center !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__load-button,
+  html.home-index-root body.home-index-shell section.more-services button[data-more-services-load],
+  html body.home-index-shell section.more-services .more-services__load-button,
+  html body.home-index-shell section.more-services button[data-more-services-load] {
+    display: inline-flex !important;
+    margin-inline: auto !important;
+    justify-self: center !important;
+    transform: none !important;
+  }
+}
