@@ -1717,3 +1717,285 @@
     margin-left: auto !important;
   }
 }
+
+/* 2026-06-01 — Index tablet final layout consolidation.
+   Escopo: somente home/index em tablet. Corrige ritmo com o header, trilhos
+   horizontais reais e card compacto de profissionais sem tocar no shell global. */
+@media (min-width: 700px) and (max-width: 1100px) {
+  html.home-index-root body.home-index-shell,
+  html body.home-index-shell {
+    --home-tablet-section-gap: 44px;
+    --home-tablet-section-header-gap: 18px;
+    --home-tablet-header-content-gap: 28px;
+  }
+
+  html.home-index-root body.home-index-shell .page__content,
+  html body.home-index-shell .page__content {
+    padding-top: var(--home-tablet-header-content-gap) !important;
+  }
+
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace,
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace--clean,
+  html body.home-index-shell .page__content-inner.shell-home__workspace,
+  html body.home-index-shell .page__content-inner.shell-home__workspace--clean {
+    row-gap: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories,
+  html body.home-index-shell section.home-catégories {
+    margin-bottom: var(--home-tablet-section-gap) !important;
+    overflow: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégories__rail,
+  html body.home-index-shell section.home-catégories .home-catégories__rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    position: relative !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégories__rail::after,
+  html body.home-index-shell section.home-catégories .home-catégories__rail::after {
+    content: "" !important;
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    width: 40px !important;
+    height: 100% !important;
+    pointer-events: none !important;
+    z-index: 2 !important;
+    background: linear-gradient(90deg, rgba(238, 245, 251, 0), rgba(238, 245, 251, 0.96)) !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégories__track,
+  html body.home-index-shell section.home-catégories .home-catégories__track {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 52px 10px 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x proximity !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégories__track::-webkit-scrollbar,
+  html body.home-index-shell section.home-catégories .home-catégories__track::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégory,
+  html body.home-index-shell section.home-catégories .home-catégory {
+    flex: 0 0 96px !important;
+    width: 96px !important;
+    min-width: 96px !important;
+    max-width: 96px !important;
+    gap: 8px !important;
+    scroll-snap-align: start !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégory__icon,
+  html body.home-index-shell section.home-catégories .home-catégory__icon {
+    width: 84px !important;
+    height: 84px !important;
+    min-width: 84px !important;
+    min-height: 84px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégory__label,
+  html body.home-index-shell section.home-catégories .home-catégory__label {
+    width: 96px !important;
+    max-width: 96px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications, section.more-services, section.featured-pros),
+  html body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications, section.more-services, section.featured-pros) {
+    margin-top: 0 !important;
+    margin-bottom: var(--home-tablet-section-gap) !important;
+  }
+
+  html.home-index-root body.home-index-shell :is(section.short-videos, section.home-publications, section.more-services, section.featured-pros) > .section-heading.home-section-header,
+  html body.home-index-shell :is(section.short-videos, section.home-publications, section.more-services, section.featured-pros) > .section-heading.home-section-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 0 var(--home-tablet-section-header-gap) !important;
+    padding: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications,
+  html body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track.publication-grid,
+  html body.home-index-shell section.home-publications #home-publications-track.publication-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    grid-auto-flow: initial !important;
+    gap: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 64px 10px 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x proximity !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track.publication-grid::-webkit-scrollbar,
+  html body.home-index-shell section.home-publications #home-publications-track.publication-grid::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track.publication-grid > article.publication-card,
+  html body.home-index-shell section.home-publications #home-publications-track.publication-grid > article.publication-card {
+    flex: 0 0 min(42vw, 336px) !important;
+    width: min(42vw, 336px) !important;
+    min-width: 300px !important;
+    max-width: 336px !important;
+    margin: 0 !important;
+    scroll-snap-align: start !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__load,
+  html body.home-index-shell section.more-services .more-services__load,
+  html.home-index-root body.home-index-shell section.more-services [data-more-services-load-host],
+  html body.home-index-shell section.more-services [data-more-services-load-host] {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 34px auto 0 !important;
+    padding: 0 !important;
+    text-align: center !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__load-button.doke-btn,
+  html.home-index-root body.home-index-shell section.more-services button[data-more-services-load],
+  html body.home-index-shell section.more-services .more-services__load-button.doke-btn,
+  html body.home-index-shell section.more-services button[data-more-services-load] {
+    display: inline-flex !important;
+    margin-inline: auto !important;
+    transform: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid,
+  html body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card,
+  html body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card {
+    min-height: 254px !important;
+    padding: 22px 16px 18px !important;
+    border-radius: 24px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: space-between !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    box-shadow: 0 16px 34px rgba(31, 68, 110, 0.08) !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card .pro-card__header,
+  html body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card .pro-card__header {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    text-align: center !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card .pro-card__avatar,
+  html body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card .pro-card__avatar {
+    width: 58px !important;
+    height: 58px !important;
+    min-width: 58px !important;
+    min-height: 58px !important;
+    margin: 0 auto !important;
+    border: 4px solid rgba(255, 255, 255, 0.86) !important;
+    box-shadow: 0 12px 24px rgba(31, 68, 110, 0.12) !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card .pro-card__identity,
+  html body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card .pro-card__identity {
+    display: grid !important;
+    justify-items: center !important;
+    gap: 4px !important;
+    min-width: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card .pro-card__name,
+  html body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card .pro-card__name {
+    font-size: 1.04rem !important;
+    line-height: 1.08 !important;
+    letter-spacing: 0.01em !important;
+    text-align: center !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card .pro-card__role,
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card .pro-card__location,
+  html body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card .pro-card__role,
+  html body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card .pro-card__location {
+    font-size: 0.86rem !important;
+    line-height: 1.18 !important;
+    text-align: center !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card .pro-card__score,
+  html body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card .pro-card__score {
+    align-self: center !important;
+    margin-top: 4px !important;
+    padding: 8px 14px !important;
+    border-radius: 999px !important;
+    background: rgba(31, 99, 152, 0.1) !important;
+    color: #164f7f !important;
+    font-weight: 800 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card .pro-card__footer,
+  html body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card .pro-card__footer {
+    margin-top: 16px !important;
+    width: 100% !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card .pro-card__cta,
+  html body.home-index-shell section.featured-pros #featured-pros-track.featured-pros__grid > article.pro-card .pro-card__cta {
+    width: 100% !important;
+    min-height: 44px !important;
+    border-radius: 14px !important;
+  }
+}
