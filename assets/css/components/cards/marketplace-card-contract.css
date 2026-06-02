@@ -21,11 +21,31 @@
   --doke-ad-media-height-mobile: 148px;
   --doke-ad-padding: 16px 18px 18px;
   --doke-ad-padding-mobile: 14px 14px 16px;
+  --doke-ad-body-display: flex;
+  --doke-ad-body-grid-template-rows: none;
+  --doke-ad-body-align-content: stretch;
+  --doke-ad-body-height: auto;
+  --doke-ad-body-min-height: 0;
+  --doke-ad-body-max-height: none;
+  --doke-ad-body-overflow: visible;
+  --doke-ad-body-padding-bottom: 18px;
+  --doke-ad-footer-display: flex;
+  --doke-ad-footer-visibility: visible;
+  --doke-ad-footer-opacity: 1;
+  --doke-ad-footer-min-height: 0;
+  --doke-ad-footer-margin-top: 2px;
+  --doke-ad-cta-display: inline-flex;
+  --doke-ad-cta-visibility: visible;
+  --doke-ad-cta-opacity: 1;
+  --doke-ad-cta-height: auto;
 
   --doke-publication-media-height: clamp(126px, 14vw, 156px);
   --doke-publication-media-height-mobile: 148px;
   --doke-publication-padding: 14px 16px 16px;
   --doke-publication-padding-mobile: 13px 14px 15px;
+  --doke-publication-content-min-height: 0;
+  --doke-publication-content-max-height: none;
+  --doke-publication-content-overflow: visible;
 
   --doke-worker-aspect: 9 / 16;
   --doke-worker-mobile-aspect: 281 / 381;
@@ -320,13 +340,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 38px;
-  padding: 0 14px;
+  min-width: var(--doke-ad-cta-min-width, 0);
+  min-height: var(--doke-ad-cta-min-height, 38px);
+  padding: 0 var(--doke-ad-cta-padding-inline, 14px);
   border: 0;
   border-radius: 999px;
   background: #1f8f7f;
   color: #fff;
-  font-size: 0.76rem;
+  font-size: var(--doke-ad-cta-font-size, 0.76rem);
   font-weight: 900;
   line-height: 1;
   text-decoration: none;
@@ -593,11 +614,13 @@
    This uses !important only for properties still redefined by legacy/page CSS.
    Scope is restricted to card internals; page layout remains outside this contract. */
 html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card) {
-  display: flex !important;
-  flex-direction: column !important;
-  height: auto !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
+  display: var(--doke-ad-card-display, flex) !important;
+  flex-direction: var(--doke-ad-card-flex-direction, column) !important;
+  grid-template-rows: var(--doke-ad-card-grid-template-rows, none) !important;
+  height: var(--doke-ad-card-height, auto) !important;
+  min-height: var(--doke-ad-card-min-height, 0) !important;
+  max-height: var(--doke-ad-card-max-height, none) !important;
+  overflow: var(--doke-ad-card-overflow, hidden) !important;
   border: var(--doke-card-border) !important;
   border-radius: var(--doke-card-radius) !important;
   background: var(--doke-card-bg) !important;
@@ -617,8 +640,16 @@ html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card) > :is(.dok
 }
 
 html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card) > :is(.doke-ad-card__body.doke-ad-card__body, .service-card__body.service-card__body) {
+  display: var(--doke-ad-body-display, flex) !important;
   flex: 0 0 auto !important;
+  grid-template-rows: var(--doke-ad-body-grid-template-rows, none) !important;
+  align-content: var(--doke-ad-body-align-content, stretch) !important;
+  height: var(--doke-ad-body-height, auto) !important;
+  min-height: var(--doke-ad-body-min-height, 0) !important;
+  max-height: var(--doke-ad-body-max-height, none) !important;
+  overflow: var(--doke-ad-body-overflow, visible) !important;
   padding: var(--doke-ad-padding) !important;
+  padding-bottom: var(--doke-ad-body-padding-bottom, 18px) !important;
 }
 
 html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card) :is(.doke-ad-card__title.doke-ad-card__title, .service-card__title.service-card__title) {
@@ -629,7 +660,22 @@ html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card) :is(.doke-
 }
 
 html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card) :is(.doke-ad-card__footer.doke-ad-card__footer, .service-card__footer.service-card__footer, .service-card__footer--compact) {
-  margin-top: 2px !important;
+  display: var(--doke-ad-footer-display, flex) !important;
+  visibility: var(--doke-ad-footer-visibility, visible) !important;
+  opacity: var(--doke-ad-footer-opacity, 1) !important;
+  min-height: var(--doke-ad-footer-min-height, 0) !important;
+  margin-top: var(--doke-ad-footer-margin-top, 2px) !important;
+}
+
+html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card) :is(.doke-ad-card__cta.doke-ad-card__cta, .service-card__cta.service-card__cta) {
+  display: var(--doke-ad-cta-display, inline-flex) !important;
+  visibility: var(--doke-ad-cta-visibility, visible) !important;
+  opacity: var(--doke-ad-cta-opacity, 1) !important;
+  min-width: var(--doke-ad-cta-min-width, 0) !important;
+  min-height: var(--doke-ad-cta-min-height, 38px) !important;
+  height: var(--doke-ad-cta-height, auto) !important;
+  padding-inline: var(--doke-ad-cta-padding-inline, 14px) !important;
+  font-size: var(--doke-ad-cta-font-size, 0.76rem) !important;
 }
 
 html body .publication-card.publication-card {
@@ -655,6 +701,9 @@ html body .publication-card.publication-card > :is(.publication-card__media.publ
 }
 
 html body .publication-card.publication-card > :is(.publication-card__content.publication-card__content, .publication-card__body.publication-card__body) {
+  min-height: var(--doke-publication-content-min-height) !important;
+  max-height: var(--doke-publication-content-max-height) !important;
+  overflow: var(--doke-publication-content-overflow) !important;
   padding: var(--doke-publication-padding) !important;
 }
 

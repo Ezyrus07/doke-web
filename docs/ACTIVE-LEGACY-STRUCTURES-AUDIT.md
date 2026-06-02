@@ -85,10 +85,10 @@ These files are active either as direct HTML links or through active import chai
 | `assets/css/components/shell/doke-shell-contract.css` | 234929 | 2662 | 0 |
 | `assets/css/pages/carteira.css` | 201234 | 1897 | 0 |
 | `assets/css/components/shell/desktop-page-rail-authority.css` | 148316 | 1739 | 0 |
-| `assets/css/pages/mensagens/desktop-visual-repair.css` | 108612 | 1584 | 0 |
+| `assets/css/pages/mensagens/desktop-workspace-layout.css` | 108612 | 1584 | 0 |
 | `assets/css/pages/home/tablet-safari-layout.css` | 125616 | 1520 | 0 |
 | `assets/css/components/internal/chat-workspace-contract.css` | 91231 | 1436 | 0 |
-| `assets/css/pages/home-tablet-v2.css` | 98225 | 1431 | 0 |
+| `assets/css/pages/home/tablet-responsive-layout.css` | 98225 | 1431 | 0 |
 | `assets/css/patterns/marketplace-responsive-stack.css` | 110448 | 1311 | 0 |
 | `assets/css/pages/perfil/header-rail.css` | 90083 | 1167 | 0 |
 | `assets/css/pages/home/mobile/sections.css` | 69492 | 1151 | 0 |

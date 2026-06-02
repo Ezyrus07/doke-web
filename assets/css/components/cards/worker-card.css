@@ -92,6 +92,55 @@ body.home-index-shell .short-videos .video-card.is-previewing .video-card__previ
   }
 }
 
+/* Home Worker card dimensions.
+   Authority: Worker card anatomy/sizing only. The home rail keeps ownership of
+   display mode, overflow and track spacing in pages/home/*.css. These rules
+   intentionally preserve the approved Phase 9/10 visual dimensions while
+   removing Worker card sizing from tablet-safari-layout.css. */
+@media (min-width: 561px) {
+  body.home-index-shell {
+    --doke-worker-home-card-width: clamp(168px, 13.2vw, 205px);
+    --doke-worker-home-card-height: clamp(292px, 22vw, 342px);
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.video-card,
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.video-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track > article.doke-worker-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track > article.video-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > div.content-rail.doke-scroll-rail.home-media-rail.home-media-rail--workers > div#short-videos-track.short-videos__track > article.doke-worker-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > div.content-rail.doke-scroll-rail.home-media-rail.home-media-rail--workers > div#short-videos-track.short-videos__track > article.video-card {
+    display: grid !important;
+    flex: 0 0 var(--doke-worker-home-card-width) !important;
+    width: var(--doke-worker-home-card-width) !important;
+    min-width: var(--doke-worker-home-card-width) !important;
+    max-width: var(--doke-worker-home-card-width) !important;
+    height: var(--doke-worker-home-card-height) !important;
+    min-height: var(--doke-worker-home-card-height) !important;
+    aspect-ratio: auto !important;
+    scroll-snap-align: start !important;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 700px) and (orientation: portrait) {
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.video-card,
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.video-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track > article.doke-worker-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track > article.video-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > div.content-rail.doke-scroll-rail.home-media-rail.home-media-rail--workers > div#short-videos-track.short-videos__track > article.doke-worker-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > div.content-rail.doke-scroll-rail.home-media-rail.home-media-rail--workers > div#short-videos-track.short-videos__track > article.video-card {
+    width: 152px !important;
+    min-width: 152px !important;
+    max-width: 152px !important;
+    height: 236px !important;
+    min-height: 236px !important;
+    scroll-snap-align: start !important;
+  }
+}
+
 /* Resultados workers parity.
    The same media-only Workers card contract from index.html is reused here so
    resultados.html does not maintain a parallel Workers card visual system. */

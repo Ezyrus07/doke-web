@@ -29,7 +29,8 @@ const forbiddenNameTokens = [
   'normalization',
   'legacy',
   'redesign',
-  'standardization'
+  'standardization',
+  'repair'
 ];
 
 const authorityGroups = {

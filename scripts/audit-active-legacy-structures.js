@@ -25,7 +25,9 @@ const bannedNameTokens = [
   'polish',
   'normalization',
   'legacy',
-  'redesign'
+  'redesign',
+  'standardization',
+  'repair'
 ];
 
 const authorityGroups = {

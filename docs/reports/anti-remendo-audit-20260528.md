@@ -6,7 +6,7 @@ Escopo: HTML, CSS e JS do repositório, ignorando `node_modules` e `.git`.
 
 - `mensagens.html`: cache-busting atualizado para o contrato limpo da página.
 - `assets/css/pages/mensagens/header-parity.css`: removidos blocos desktop duplicados/reativos; o arquivo volta a cuidar do header tablet/lista e do estado contextual da conversa.
-- `assets/css/pages/mensagens/desktop-visual-repair.css`: removido o bloco final de neutralização/authority que competia com outros contratos.
+- `assets/css/pages/mensagens/desktop-workspace-layout.css`: removido o bloco final de neutralização/authority que competia com outros contratos.
 - `assets/css/pages/mensagens/desktop-layout-contract.css`: novo contrato explícito para desktop de mensagens: sem header tablet no fluxo, sem faixa branca no topo, workspace centralizado por `max-width`.
 - `assets/css/pages/mensagens.css`: manifesto atualizado para importar o contrato desktop no lugar correto da cascata.
 
@@ -36,7 +36,7 @@ Escopo: HTML, CSS e JS do repositório, ignorando `node_modules` e `.git`.
 - `assets/css/pages/configuracoes/final-responsive-pass.css`
 - `assets/css/pages/detalhe-anuncio/detail-legacy.css`
 - `assets/css/pages/home/index-final-refinement.css`
-- `assets/css/pages/mensagens/desktop-visual-repair.css`
+- `assets/css/pages/mensagens/desktop-workspace-layout.css`
 - `assets/css/pages/mensagens/final-standardization.css`
 - `assets/css/pages/perfil-budget-modal/final-polish-success.css`
 - `assets/css/pages/search-results/final-normalization.css`
@@ -72,9 +72,9 @@ Escopo: HTML, CSS e JS do repositório, ignorando `node_modules` e `.git`.
 | `assets/css/pages/detalhe-anuncio-rail-parity.css` | 1911 |
 | `assets/css/pages/carteira.css` | 1897 |
 | `assets/css/components/shell/desktop-page-rail-authority.css` | 1714 |
-| `assets/css/pages/mensagens/desktop-visual-repair.css` | 1620 |
+| `assets/css/pages/mensagens/desktop-workspace-layout.css` | 1620 |
 | `assets/css/components/internal/chat-workspace-contract.css` | 1458 |
-| `assets/css/pages/home-tablet-v2.css` | 1431 |
+| `assets/css/pages/home/tablet-responsive-layout.css` | 1431 |
 | `assets/css/pages/mensagens/product-layout-contract.css` | 1213 |
 | `assets/css/pages/perfil-header-rail-parity.css` | 1167 |
 | `assets/css/pages/home/mobile/sections.css` | 1151 |

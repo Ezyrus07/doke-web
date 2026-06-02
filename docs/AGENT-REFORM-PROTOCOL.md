@@ -28,7 +28,7 @@ The agent must state the authority layer it is changing:
 
 The agent must not:
 
-- create files with remediation names such as `fix`, `hotfix`, `match`, `parity`, `final`, `rescue`, `adjustment`, `cleanup`, `polish`, `normalization`, or `redesign`;
+- create files with remediation names such as `fix`, `hotfix`, `match`, `parity`, `final`, `rescue`, `adjustment`, `cleanup`, `polish`, `normalization`, `legacy`, `redesign`, `standardization`, or `repair`;
 - use `!important` as the first solution;
 - increase selector specificity to hide an unresolved conflict;
 - duplicate width/header/sidebar/card contracts;

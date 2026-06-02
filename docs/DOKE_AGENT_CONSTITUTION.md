@@ -48,6 +48,7 @@ Do not create or keep active production CSS/JS files with these remediation name
 - `legacy`
 - `redesign`
 - `standardization`
+- `repair`
 
 Exception: audit/documentation files may use words such as `legacy` when they are not loaded by the product runtime.
 
