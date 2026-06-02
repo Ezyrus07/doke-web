@@ -141,6 +141,19 @@ window.scrollTo(0, 500);
 window.scrollY > 0;
 ```
 
+
+## Documentation and report hygiene
+
+Audit reports are tools, not architecture. Agents must prefer updating the living documents below instead of creating new permanent phase documents:
+
+- `docs/ARCHITECTURE.md`
+- `docs/CSS_AUTHORITY_MAP.md`
+- `docs/VALIDATION.md`
+- `docs/BASELINE-VISUAL-APPROVED.md`
+- `docs/DATA-READY-CONTRACTS.md`
+
+Large generated reports should be treated as disposable outputs. Do not create a new permanent `*-PHASE*.md` file unless the decision cannot be recorded in an existing living document.
+
 ## Cleanup rules
 
 A legacy/remediation file may stop being loaded only after the patch proves:
