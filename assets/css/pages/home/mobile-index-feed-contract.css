@@ -950,220 +950,135 @@
 }
 
 
-/* 2026-06-02 — Home mobile mounted rail contract.
-   Authority: home mobile rail and card containment after mobile-app-shell hydration.
-   Moved from index.html inline CSS so the home has one stylesheet-owned
-   contract for the hydrated mobile rails instead of an HTML-local override. */
-@media (max-width: 560px) {
-    body.home-index-shell.doke-mobile-shell-mounted {
-      --home-index-mobile-column-inline: var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 18px));
-      --home-index-mobile-column-width: calc(100vw - (var(--home-index-mobile-column-inline) * 2));
-      overflow-x: hidden !important;
-    }
+/* 2026-06-02 — Home mobile hydrated rail authority.
+   Root cause: after mobile-app-shell hydration, the mounted block was replacing
+   the readable horizontal ad-card rails with row/grid containment. On iOS this
+   created a visible good first frame followed by compressed card strips.
+   Authority: home mobile rail/card containment only; card anatomy remains in
+   marketplace-card-contract.css. */
+@media (max-width: 560px), (hover: none) and (pointer: coarse) and (max-device-width: 932px) {
+  html.home-index-root body.home-index-shell,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted {
+    --home-index-mobile-column-inline: var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 18px));
+    --home-index-mobile-column-width: calc(100vw - (var(--home-index-mobile-column-inline) * 2));
+    --home-mobile-ad-card-width: clamp(286px, 82vw, 344px);
+    --home-mobile-publication-card-width: clamp(272px, 84vw, 336px);
+    --home-mobile-ad-rail-gap: 16px;
+    overflow-x: hidden !important;
+  }
 
-    body.home-index-shell.doke-mobile-shell-mounted .page__content-inner.shell-home__workspace,
-    body.home-index-shell.doke-mobile-shell-mounted .page__content-inner.shell-home__workspace--clean {
-      width: 100% !important;
-      max-width: 100% !important;
-      padding-inline: 0 !important;
-      overflow-x: hidden !important;
-    }
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace,
+  html.home-index-root body.home-index-shell .page__content-inner.shell-home__workspace--clean,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted .page__content-inner.shell-home__workspace,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted .page__content-inner.shell-home__workspace--clean {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-inline: 0 !important;
+    overflow-x: hidden !important;
+  }
 
-    body.home-index-shell.doke-mobile-shell-mounted :is(.home-search-hero, section[class*="home-cat"], .featured-services, .home-recommendations, .short-videos, .home-publications, .more-services, .featured-pros) {
-      width: var(--home-index-mobile-column-width) !important;
-      max-width: var(--home-index-mobile-column-width) !important;
-      margin-inline: auto !important;
-      padding-inline: 0 !important;
-      overflow-x: hidden !important;
-      box-sizing: border-box !important;
-    }
+  html.home-index-root body.home-index-shell :is(.home-search-hero, section[class*="home-cat"], .featured-services, .home-recommendations, .short-videos, .home-publications, .more-services, .featured-pros),
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(.home-search-hero, section[class*="home-cat"], .featured-services, .home-recommendations, .short-videos, .home-publications, .more-services, .featured-pros) {
+    width: var(--home-index-mobile-column-width) !important;
+    max-width: var(--home-index-mobile-column-width) !important;
+    min-width: 0 !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
 
-    html body.home-index-shell.doke-mobile-shell-mounted .page__content-inner.shell-home__workspace > :is(.home-search-hero, section[class*="home-cat"], section.featured-services.featured-services, section.home-recommendations.home-recommendations, section.short-videos.short-videos, section.home-publications.home-publications, section.more-services.more-services, section.featured-pros.featured-pros),
-    html body.home-index-shell.doke-mobile-shell-mounted .page__content-inner.shell-home__workspace--clean > :is(.home-search-hero, section[class*="home-cat"], section.featured-services.featured-services, section.home-recommendations.home-recommendations, section.short-videos.short-videos, section.home-publications.home-publications, section.more-services.more-services, section.featured-pros.featured-pros) {
-      width: var(--home-index-mobile-column-width) !important;
-      max-width: var(--home-index-mobile-column-width) !important;
-      min-width: 0 !important;
-      margin-left: auto !important;
-      margin-right: auto !important;
-      padding-left: 0 !important;
-      padding-right: 0 !important;
-      box-sizing: border-box !important;
-      overflow-x: hidden !important;
-    }
+  html.home-index-root body.home-index-shell :is(.featured-services, .home-publications, .more-services) > .content-rail,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(.featured-services, .home-publications, .more-services) > .content-rail,
+  html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services > .content-rail.more-services__cards-rail {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
+  }
 
-    body.home-index-shell.doke-mobile-shell-mounted :is(.home-search-hero, section[class*="home-cat"], .featured-services, .home-recommendations, .short-videos, .home-publications, .more-services, .featured-pros) > :is(.section-heading, .home-section-header, .content-rail, .recommendation-list, .more-services__controls, .more-services__cards-rail, .more-services__tabs-rail, .more-services__filters-host) {
-      width: 100% !important;
-      max-width: 100% !important;
-      min-width: 0 !important;
-      margin-inline: 0 !important;
-      padding-inline: 0 !important;
-      box-sizing: border-box !important;
-    }
+  html.home-index-root body.home-index-shell :is(.featured-services, .home-publications, .more-services) > .content-rail::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(.featured-services, .home-publications, .more-services) > .content-rail::-webkit-scrollbar {
+    display: none !important;
+  }
 
-    body.home-index-shell.doke-mobile-shell-mounted :is(#featured-services-track, #home-publications-track) {
-      display: grid !important;
-      grid-auto-flow: column !important;
-      grid-auto-columns: minmax(0, 72%) !important;
-      grid-template-columns: none !important;
-      gap: 14px !important;
-      width: 100% !important;
-      max-width: 100% !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      overflow-x: auto !important;
-      overflow-y: hidden !important;
-      scrollbar-width: none !important;
-      box-sizing: border-box !important;
-    }
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-services #featured-services-track.service-grid,
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid],
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .service-grid[data-more-services-grid] {
+    display: flex !important;
+    flex-flow: row nowrap !important;
+    grid-template-columns: none !important;
+    grid-auto-flow: unset !important;
+    grid-auto-columns: unset !important;
+    align-items: stretch !important;
+    gap: var(--home-mobile-ad-rail-gap) !important;
+    width: max-content !important;
+    min-width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 2px 10px 0 !important;
+    overflow: visible !important;
+    scroll-snap-type: x proximity !important;
+    box-sizing: border-box !important;
+  }
 
-    body.home-index-shell.doke-mobile-shell-mounted section.featured-services #featured-services-track > article.doke-ad-card.doke-ad-card,
-    body.home-index-shell.doke-mobile-shell-mounted section.home-publications #home-publications-track > article.publication-card.publication-card,
-    body.home-index-shell.doke-mobile-shell-mounted section.more-services [data-more-services-grid] > article.doke-ad-card.doke-ad-card {
-      width: 100% !important;
-      min-width: 0 !important;
-      max-width: 100% !important;
-      flex: none !important;
-      margin-left: 0 !important;
-      margin-right: 0 !important;
-      box-sizing: border-box !important;
-    }
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid > article.doke-ad-card.doke-ad-card,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-services #featured-services-track.service-grid > article.doke-ad-card.doke-ad-card,
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] > article.doke-ad-card.doke-ad-card:not([hidden]),
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .service-grid[data-more-services-grid] > article.doke-ad-card.doke-ad-card:not([hidden]) {
+    display: flex !important;
+    flex: 0 0 var(--home-mobile-ad-card-width) !important;
+    flex-direction: column !important;
+    width: var(--home-mobile-ad-card-width) !important;
+    min-width: var(--home-mobile-ad-card-width) !important;
+    max-width: var(--home-mobile-ad-card-width) !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    align-self: stretch !important;
+    overflow: hidden !important;
+    scroll-snap-align: start !important;
+    box-sizing: border-box !important;
+  }
 
-    body.home-index-shell.doke-mobile-shell-mounted .more-services [data-more-services-grid] {
-      display: grid !important;
-      grid-template-columns: minmax(0, 1fr) !important;
-      grid-auto-flow: row !important;
-      gap: 14px !important;
-      width: 100% !important;
-      max-width: 100% !important;
-      overflow: visible !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      box-sizing: border-box !important;
-    }
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track.publication-grid,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.home-publications #home-publications-track.publication-grid {
+    display: flex !important;
+    flex-flow: row nowrap !important;
+    grid-template-columns: none !important;
+    grid-auto-flow: unset !important;
+    grid-auto-columns: unset !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+    width: max-content !important;
+    min-width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 2px 10px 0 !important;
+    overflow: visible !important;
+    scroll-snap-type: x proximity !important;
+    box-sizing: border-box !important;
+  }
 
-    body.home-index-shell.doke-mobile-shell-mounted section.home-recommendations .recommendation-list > article.recommendation-card.recommendation-card {
-      width: 100% !important;
-      min-width: 0 !important;
-      max-width: 100% !important;
-      flex: none !important;
-      margin-left: 0 !important;
-      margin-right: 0 !important;
-      box-sizing: border-box !important;
-    }
-
-    body.home-index-shell.doke-mobile-shell-mounted section.featured-services #featured-services-track > article.doke-ad-card.doke-ad-card > *,
-    body.home-index-shell.doke-mobile-shell-mounted section.home-publications #home-publications-track > article.publication-card.publication-card > *,
-    body.home-index-shell.doke-mobile-shell-mounted section.more-services [data-more-services-grid] > article.doke-ad-card.doke-ad-card > * {
-      width: 100% !important;
-      min-width: 0 !important;
-      max-width: 100% !important;
-      box-sizing: border-box !important;
-    }
-
-    }
-
-    @media (max-width: 560px) {
-      body.home-index-shell {
-        --home-index-mobile-column-inline: var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 18px));
-        --home-index-mobile-column-width: calc(100vw - (var(--home-index-mobile-column-inline) * 2));
-        overflow-x: hidden !important;
-      }
-
-      body.home-index-shell .page__content-inner.shell-home__workspace,
-      body.home-index-shell .page__content-inner.shell-home__workspace--clean {
-        width: 100% !important;
-        max-width: 100% !important;
-        padding-inline: 0 !important;
-        overflow-x: hidden !important;
-      }
-
-      body.home-index-shell :is(.home-search-hero, section[class*="home-cat"], .featured-services, .home-recommendations, .short-videos, .home-publications, .more-services, .featured-pros) {
-        width: var(--home-index-mobile-column-width) !important;
-        max-width: var(--home-index-mobile-column-width) !important;
-        margin-inline: auto !important;
-        padding-inline: 0 !important;
-        overflow-x: hidden !important;
-        box-sizing: border-box !important;
-      }
-
-      body.home-index-shell :is(.home-search-hero, section[class*="home-cat"], .featured-services, .home-recommendations, .short-videos, .home-publications, .more-services, .featured-pros) > :is(.section-heading, .home-section-header, .content-rail, .recommendation-list, .more-services__controls, .more-services__cards-rail, .more-services__tabs-rail, .more-services__filters-host) {
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
-        margin-inline: 0 !important;
-        padding-inline: 0 !important;
-        box-sizing: border-box !important;
-      }
-
-      body.home-index-shell :is(#featured-services-track, #home-publications-track) {
-        display: grid !important;
-        grid-auto-flow: column !important;
-        grid-auto-columns: minmax(0, 72%) !important;
-        grid-template-columns: none !important;
-        gap: 14px !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        overflow-x: auto !important;
-        overflow-y: hidden !important;
-        scrollbar-width: none !important;
-        box-sizing: border-box !important;
-      }
-
-      body.home-index-shell .more-services [data-more-services-grid] {
-        display: grid !important;
-        grid-template-columns: minmax(0, 1fr) !important;
-        grid-auto-flow: row !important;
-        gap: 14px !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        overflow: visible !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        box-sizing: border-box !important;
-      }
-
-      body.home-index-shell :is(#featured-services-track > article.doke-ad-card, #home-publications-track > article.publication-card, .more-services [data-more-services-grid] > article.doke-ad-card) {
-        display: block !important;
-        width: 100% !important;
-        min-width: 0 !important;
-        max-width: 100% !important;
-        flex: none !important;
-        margin-inline: 0 !important;
-        box-sizing: border-box !important;
-      }
-
-      body.home-index-shell :is(.featured-services, .more-services) .doke-ad-card :is(.doke-ad-card__media, .doke-ad-card__body, .doke-ad-card__footer),
-      body.home-index-shell .home-publications .publication-card :is(.publication-card__media, .publication-card__content) {
-        width: 100% !important;
-        min-width: 0 !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
-      }
-
-      body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card.doke-ad-card,
-      body.home-index-shell section.home-publications #home-publications-track > article.publication-card.publication-card,
-      body.home-index-shell section.more-services [data-more-services-grid] > article.doke-ad-card.doke-ad-card,
-      body.home-index-shell section.home-recommendations .recommendation-list > article.recommendation-card.recommendation-card {
-        width: 100% !important;
-        min-width: 0 !important;
-        max-width: 100% !important;
-        flex: none !important;
-        margin-left: 0 !important;
-        margin-right: 0 !important;
-        box-sizing: border-box !important;
-      }
-
-      body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card.doke-ad-card > *,
-      body.home-index-shell section.home-publications #home-publications-track > article.publication-card.publication-card > *,
-      body.home-index-shell section.more-services [data-more-services-grid] > article.doke-ad-card.doke-ad-card > * {
-        width: 100% !important;
-        min-width: 0 !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
-      }
-    }
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track > article.publication-card.publication-card,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.home-publications #home-publications-track > article.publication-card.publication-card {
+    flex: 0 0 var(--home-mobile-publication-card-width) !important;
+    width: var(--home-mobile-publication-card-width) !important;
+    min-width: var(--home-mobile-publication-card-width) !important;
+    max-width: var(--home-mobile-publication-card-width) !important;
+    margin: 0 !important;
+    scroll-snap-align: start !important;
+    box-sizing: border-box !important;
+  }
+}
 
     /* Home mobile rail patch: categorias devem começar no mesmo X da busca */
     html body.home-index-shell.doke-mobile-shell-mounted .home-catégories {
