@@ -1,29 +1,26 @@
-# Candidatos a assets não usados
+# Unused asset candidates
 
-Este documento acompanha a auditoria de candidatos a CSS/JS não usados. Ele **não autoriza remoção automática**.
+Phase 21 removed the current conservative unused CSS candidate set.
 
-## Regra
+## Result
 
-Um arquivo só pode ser removido quando for comprovado que:
+- Removed CSS assets: `43`
+- Removed bytes: `225471`
 
-1. não é linkado diretamente por HTML;
-2. não é importado por CSS ativo;
-3. não é carregado dinamicamente por JS;
-4. não é referenciado por documentação operacional ativa;
-5. não pertence a uma tela ainda em evolução que dependa dele por carregamento condicional.
-
-## Comando
-
-```bash
-npm run audit:unused-asset-candidates
-```
-
-Saída resumida:
+Detailed manifest:
 
 ```txt
-docs/validation/unused-asset-candidates-summary.json
+docs/PHASE21-UNUSED-CSS-REMOVAL-MANIFEST.json
 ```
 
-## Uso correto
+## Rule
 
-Use esta auditoria para priorizar investigação. Não apague arquivos apenas porque aparecem como candidatos.
+Unused asset deletion requires all of these checks:
+
+1. no direct HTML reference;
+2. no active `@import`;
+3. no runtime loader reference;
+4. no known dynamic path reference;
+5. audit re-run after removal.
+
+Do not delete active CSS/JS just because the filename looks old. Remove only with reference proof.

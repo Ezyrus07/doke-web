@@ -1,5 +1,11 @@
-# Validações
+# Validation outputs
 
-Esta pasta guarda saídas geradas por auditorias e scripts de validação.
+This folder is kept for compatibility and short human notes only. Machine-generated audit outputs should be generated locally under `reports/generated/` and should not become long-lived architecture documentation.
 
-Arquivos aqui são evidências de estado em um momento específico. Eles podem ficar desatualizados quando o código muda.
+Run:
+
+```bash
+npm run audit:agent-governance
+```
+
+The reports are intentionally ignored by Git so the repository does not accumulate large generated JSON/CSV files.

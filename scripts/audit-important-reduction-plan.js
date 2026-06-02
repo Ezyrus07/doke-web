@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = process.cwd();
-const OUT = path.join(ROOT, 'docs', 'validation', 'global-cycle-117-important-reduction-plan-report.json');
+const OUT = path.join(ROOT, 'reports', 'generated', 'css-important', 'global-cycle-117-important-reduction-plan-report.json');
 const CSS_ROOT = path.join(ROOT, 'assets', 'css');
 
 function walk(dir) {

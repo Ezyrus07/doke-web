@@ -4,7 +4,7 @@ const path = require('path');
 
 const ROOT = process.cwd();
 const CSS_ROOT = path.join(ROOT, 'assets', 'css');
-const REPORT_PATH = path.join(ROOT, 'docs', 'validation', 'global-cycle-121-important-baseline-by-group-report.json');
+const REPORT_PATH = path.join(ROOT, 'reports', 'generated', 'css-important', 'global-cycle-121-important-baseline-by-group-report.json');
 
 function walk(dir) {
   if (!fs.existsSync(dir)) return [];

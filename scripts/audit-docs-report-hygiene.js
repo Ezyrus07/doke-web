@@ -10,7 +10,8 @@ const path = require('path');
 const root = process.cwd();
 const docsDir = path.join(root, 'docs');
 const validationDir = path.join(docsDir, 'validation');
-const outputPath = path.join(validationDir, 'docs-report-hygiene-summary.json');
+const generatedReportsDir = path.join(root, 'reports', 'generated');
+const outputPath = path.join(generatedReportsDir, 'docs-report-hygiene-summary.json');
 
 function walk(dir, out = []) {
   if (!fs.existsSync(dir)) return out;
@@ -28,6 +29,7 @@ function rel(abs) {
 
 const docs = walk(docsDir).filter((file) => /\.(md|txt|json|csv)$/i.test(file));
 const phaseDocs = docs.filter((file) => /(?:^|\/)(?:PHASE\d+|.*PHASE\d+.*|GLOBAL-CYCLE-\d+.*|.*STAGE\d+.*)/i.test(rel(file)));
+const generatedReportFiles = walk(generatedReportsDir).filter((file) => /\.(json|csv|md)$/i.test(file));
 const validationReports = walk(validationDir).filter((file) => /\.(json|csv|md)$/i.test(file));
 const largeReports = validationReports
   .map((file) => ({ path: rel(file), bytes: fs.statSync(file).size }))
@@ -52,6 +54,7 @@ const summary = {
     docsAndReportFiles: docs.length,
     phaseOrCycleDocs: phaseDocs.length,
     validationReports: validationReports.length,
+    generatedReports: generatedReportFiles.length,
     largeValidationReports: largeReports.length,
   },
   preferredLivingDocs,
@@ -66,13 +69,14 @@ const summary = {
   ],
 };
 
-fs.mkdirSync(validationDir, { recursive: true });
+fs.mkdirSync(generatedReportsDir, { recursive: true });
 fs.writeFileSync(outputPath, `${JSON.stringify(summary, null, 2)}\n`);
 
 console.log('Docs/report hygiene audit complete.');
 console.log(`Docs/report files: ${summary.totals.docsAndReportFiles}`);
 console.log(`Phase/cycle docs: ${summary.totals.phaseOrCycleDocs}`);
 console.log(`Validation reports: ${summary.totals.validationReports}`);
+console.log(`Generated reports: ${summary.totals.generatedReports}`);
 console.log(`Large validation reports: ${summary.totals.largeValidationReports}`);
 if (missingLivingDocs.length) {
   console.log(`Missing living docs: ${missingLivingDocs.join(', ')}`);

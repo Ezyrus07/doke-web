@@ -10,8 +10,8 @@ const fs = require('fs');
 const path = require('path');
 
 const root = process.cwd();
-const validationDir = path.join(root, 'docs', 'validation');
-const reportPath = path.join(validationDir, 'active-legacy-structures-report.json');
+const generatedReportsDir = path.join(root, 'reports', 'generated');
+const reportPath = path.join(generatedReportsDir, 'active-legacy-structures-report.json');
 
 const bannedNameTokens = [
   'fix',
@@ -259,7 +259,7 @@ const report = {
   ]
 };
 
-fs.mkdirSync(validationDir, { recursive: true });
+fs.mkdirSync(generatedReportsDir, { recursive: true });
 fs.writeFileSync(reportPath, JSON.stringify(report, null, 2) + '\n');
 
 console.log(`[active-legacy-structures] ${report.status}`);

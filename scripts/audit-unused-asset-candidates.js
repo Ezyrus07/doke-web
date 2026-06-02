@@ -8,7 +8,8 @@ const fs = require('fs');
 const path = require('path');
 
 const root = process.cwd();
-const outputPath = path.join(root, 'docs/validation/unused-asset-candidates-summary.json');
+const generatedReportsDir = path.join(root, 'reports', 'generated');
+const outputPath = path.join(generatedReportsDir, 'unused-asset-candidates-summary.json');
 
 const IGNORE_DIRS = new Set(['.git', 'node_modules', 'reports', 'archive']);
 const TEXT_EXTENSIONS = new Set(['.html', '.css', '.js', '.json', '.md']);
@@ -97,7 +98,7 @@ const summary = {
   ],
 };
 
-fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+fs.mkdirSync(generatedReportsDir, { recursive: true });
 fs.writeFileSync(outputPath, `${JSON.stringify(summary, null, 2)}\n`);
 
 console.log('Unused asset candidate audit complete.');

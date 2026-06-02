@@ -36,3 +36,14 @@ Quando a reforma CSS da home estabilizar, consolidar os documentos de fase relev
 - `docs/VALIDATION.md`
 
 Depois disso, os documentos de fase podem ser movidos para histórico ou removidos, desde que suas decisões importantes já estejam preservadas na documentação viva.
+
+## Phase 21 — generated report removal
+
+Generated reports and historical report artifacts were removed from the active tree. The project now keeps only placeholder README files in `reports/` and `docs/reports/`.
+
+Rules:
+
+- generated evidence goes to `reports/generated/`;
+- generated evidence is ignored by Git;
+- durable decisions must be consolidated into living docs;
+- generated JSON/CSV/PNG/MD reports must not become architecture.
