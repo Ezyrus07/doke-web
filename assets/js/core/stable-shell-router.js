@@ -126,7 +126,10 @@
 
   function currentPath(value) {
     var url = new URL(value || window.location.href, window.location.href);
-    return url.pathname === '/' ? '/index.html' : url.pathname;
+    var pathname = url.pathname || '/';
+    if (pathname === '/') return '/index.html';
+    var filename = pathname.split('/').filter(Boolean).pop() || 'index.html';
+    return '/' + filename;
   }
 
   function canonicalAssetUrl(src) {
