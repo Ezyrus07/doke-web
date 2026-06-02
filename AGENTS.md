@@ -153,3 +153,19 @@ Sempre informe:
 - paginas e viewports testados
 - riscos restantes
 - se algum teste nao foi executado
+
+## Protocolo de Reforma para ChatGPT/Codex
+
+Antes de pedir alteracoes estruturais para ChatGPT, Codex ou qualquer agente, use tambem:
+
+- `docs/DOKE_AGENT_CONSTITUTION.md`
+- `docs/AGENT-REFORM-PROTOCOL.md`
+- `docs/ACTIVE-LEGACY-STRUCTURES-AUDIT.md`
+- `docs/PAGE-ASSET-AUTHORITY-MATRIX.md`
+- `docs/HOME-AUTHORITY-CLASSIFICATION.md`
+- `docs/validation/active-legacy-structures-report.json`
+- `docs/validation/page-asset-authority-matrix.json`
+
+O agente deve rodar `npm run audit:agent-governance` antes de mexer em CSS global, shell, header, rail, scroll, roteador ou links CSS.
+
+Se o agente nao conseguir provar causa raiz, autoridade correta e plano de validacao, ele nao deve alterar arquivos.

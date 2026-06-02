@@ -111,6 +111,28 @@ window.DokeHomeWorkers = (() => {
         { avatar: "LA", name: "Lia Alves", text: "Você também confere vazamento pequeno em sifão?", time: "11 min" },
         { avatar: "RG", name: "Rafael Gomes", text: "Confiro sim. Normalmente ja resolvo na mesma visita.", time: "agora" }
       ]
+    },
+    {
+      id: "vid-hidraulica",
+      title: "Ajuste hidráulico em bancada compacta",
+      author: "Nicolas Ribeiro",
+      avatar: "NR",
+      category: "Hidráulica residencial",
+      duration: "43 segundos",
+      mediaClass: "video-card--six",
+      poster: "https://images.pexels.com/photos/5691622/pexels-photo-5691622.jpeg?auto=compress&cs=tinysrgb&w=1200&q=80",
+      videoSrc: DEMO_VIDEO,
+      likes: "6,9k",
+      saves: "1,6k",
+      commentsCount: "71",
+      commentsLabel: "71 comentários",
+      primaryHref: "detalhe-anuncio.html",
+      secondaryHref: "perfil.html",
+      comments: [
+        { avatar: "VM", name: "Victor Martins", text: "Esse tipo de vazamento costuma aparecer só quando usa a pia.", time: "6 min" },
+        { avatar: "BI", name: "Bianca Lima", text: "Dá para fazer esse ajuste sem trocar a bancada?", time: "18 min" },
+        { avatar: "NR", name: "Nicolas Ribeiro", text: "Na maioria dos casos sim. Primeiro eu confiro sifão, vedação e pressão.", time: "agora" }
+      ]
     }
   ];
 

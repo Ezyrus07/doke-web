@@ -456,9 +456,14 @@
 
   function isMobileShellViewport() {
     try {
-      return window.matchMedia('(max-width: 560px)').matches;
+      return window.matchMedia('(max-width: 560px), ((hover: none) and (pointer: coarse) and (max-device-width: 560px))').matches;
     } catch (error) {
-      return (window.innerWidth || document.documentElement.clientWidth || 0) <= 560;
+      var width = window.innerWidth || document.documentElement.clientWidth || 0;
+      var touchPhone = false;
+      try {
+        touchPhone = navigator.maxTouchPoints > 0 && window.screen && Math.min(window.screen.width || 0, window.screen.height || 0) <= 560;
+      } catch (innerError) {}
+      return width <= 560 || touchPhone;
     }
   }
 

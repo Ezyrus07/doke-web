@@ -23,9 +23,14 @@
 
   function isMobileRuntime() {
     try {
-      return window.matchMedia("(max-width: 560px)").matches;
+      return window.matchMedia("(max-width: 560px), ((hover: none) and (pointer: coarse) and (max-device-width: 560px))").matches;
     } catch (error) {
-      return (window.innerWidth || root.clientWidth || 0) <= 560;
+      var width = window.innerWidth || root.clientWidth || 0;
+      var touchPhone = false;
+      try {
+        touchPhone = navigator.maxTouchPoints > 0 && window.screen && Math.min(window.screen.width || 0, window.screen.height || 0) <= 560;
+      } catch (innerError) {}
+      return width <= 560 || touchPhone;
     }
   }
 
@@ -53,12 +58,14 @@
 
   function applyShellState() {
     var desktopShell = isDesktopShell();
+    var mobileShell = isMobileRuntime();
     var shouldCollapse = desktopShell && readCollapsed();
     var sidebarWidth = desktopShell ? (shouldCollapse ? "96px" : "272px") : "0px";
 
     syncViewportContract();
     root.classList.toggle(COLLAPSED, shouldCollapse);
     root.classList.toggle(EXPANDED, !shouldCollapse);
+    root.classList.toggle("doke-mobile-shell-pending", mobileShell && !root.classList.contains("doke-mobile-shell-ready"));
     root.classList.add(READY);
 
     root.style.setProperty("--doke-current-sidebar-width", sidebarWidth);

@@ -407,6 +407,29 @@
     });
   }
 
+  function isMobileShellViewport() {
+    try {
+      return window.matchMedia('(max-width: 560px), ((hover: none) and (pointer: coarse) and (max-device-width: 560px))').matches;
+    } catch (error) {
+      var width = window.innerWidth || document.documentElement.clientWidth || 0;
+      var touchPhone = false;
+      try {
+        touchPhone = navigator.maxTouchPoints > 0 && window.screen && Math.min(window.screen.width || 0, window.screen.height || 0) <= 560;
+      } catch (innerError) {}
+      return width <= 560 || touchPhone;
+    }
+  }
+
+  function provisionalMobileShellConfig(nextBody) {
+    var page = nextBody && nextBody.getAttribute('data-page') || '';
+    var searchPages = ['home', 'resultados'];
+    var bottomNavDisabledPages = ['notificacoes'];
+    return {
+      search: searchPages.indexOf(page) !== -1,
+      bottomNav: bottomNavDisabledPages.indexOf(page) === -1
+    };
+  }
+
   function runRouteLeavingCleanup(fromPath, toPath) {
     try {
       document.dispatchEvent(new CustomEvent('doke:route-leaving', { detail: { from: fromPath, to: toPath, router: ROUTER_VERSION } }));
@@ -421,6 +444,8 @@
 
   function syncBodyContract(nextBody) {
     if (!nextBody) return;
+    var keepMobileShell = document.body.classList.contains('doke-mobile-shell-mounted') && isMobileShellViewport();
+    var mobileShellConfig = keepMobileShell ? provisionalMobileShellConfig(nextBody) : null;
     var preserved = PRESERVED_BODY_CLASSES.filter(function (className) {
       return document.body.classList.contains(className);
     });
@@ -436,6 +461,13 @@
     });
 
     preserved.forEach(function (className) { document.body.classList.add(className); });
+    if (keepMobileShell) {
+      document.body.classList.add('doke-mobile-shell-mounted');
+      document.body.setAttribute('data-shell-search', mobileShellConfig.search ? 'true' : 'false');
+      document.body.setAttribute('data-shell-bottom-nav', mobileShellConfig.bottomNav ? 'true' : 'false');
+      document.documentElement.classList.add('doke-mobile-shell-pending');
+      document.documentElement.classList.remove('doke-mobile-shell-ready');
+    }
     clearTransientRouteState();
     document.body.classList.remove('is-stable-shell-routing');
   }

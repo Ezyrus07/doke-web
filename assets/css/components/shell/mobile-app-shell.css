@@ -40,7 +40,44 @@
   display: none;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 760px), (hover: none) and (pointer: coarse) and (max-device-width: 560px) {
+  /* First-paint contract: reserve the same mobile shell space before JS mounts.
+     This removes the visible "wrong frame" where legacy page headers/content appear
+     and then jump after mobile-app-shell.js hydrates. */
+  html.doke-mobile-shell-pending body {
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+    padding-top: var(--doke-mobile-shell-without-search-height) !important;
+    padding-bottom: calc(var(--doke-mobile-shell-nav-height) + env(safe-area-inset-bottom, 0px) + 14px) !important;
+  }
+
+  html.doke-mobile-shell-pending body:is([data-page="home"], [data-page="resultados"], .home-index-shell, .search-results-body) {
+    padding-top: var(--doke-mobile-shell-with-search-height) !important;
+  }
+
+  html.doke-mobile-shell-pending body :is(
+    .sidebar,
+    .app-sidebar,
+    .desktop-sidebar,
+    .doke-desktop-sidebar,
+    .topbar,
+    .desktop-topbar,
+    .doke-desktop-topbar,
+    .doke-desktop-search,
+    .doke-desktop-search-panel,
+    .home-search-hero,
+    .home-side-meta,
+    .desktop-only,
+    .app-mobile-topbar,
+    .app-mobile-search,
+    .bottom-nav,
+    .doke-bottom-nav
+  ) {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
   html.doke-mobile-shell-pending .app-mobile-topbar,
   html.doke-mobile-shell-pending .app-mobile-search,
   html.doke-mobile-shell-pending .bottom-nav,
@@ -764,26 +801,6 @@
   body.doke-mobile-shell-mounted .doke-mobile-bottom-nav__item[aria-current="page"]::before,
   body.doke-mobile-shell-mounted .doke-mobile-bottom-nav__link[aria-current="page"]::before {
     background: var(--color-secondary, #14b8a6) !important;
-  }
-}
-
-/* First-paint stability contract: reserve the same mobile shell geometry before
-   mobile-app-shell.js mounts the runtime chrome. This prevents one-frame jumps
-   in page width/position/top offset on cold reload. */
-@media (max-width: 760px) {
-  html.doke-mobile-shell-pending body.app-shell-page {
-    min-width: 0 !important;
-    overflow-x: hidden !important;
-    padding-top: var(--doke-mobile-shell-without-search-height) !important;
-    padding-bottom: calc(var(--doke-mobile-shell-nav-height) + env(safe-area-inset-bottom, 0px) + 14px) !important;
-  }
-
-  html.doke-mobile-shell-pending body:is(.home-index-shell, .search-results-body) {
-    padding-top: var(--doke-mobile-shell-with-search-height) !important;
-  }
-
-  html.doke-mobile-shell-pending body.notifications-page-shell {
-    padding-bottom: 0 !important;
   }
 }
 

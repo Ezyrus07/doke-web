@@ -431,7 +431,7 @@ const INTERNAL_VIEW_STYLE_HINTS = {
     "assets/css/pages/home-shared.css",
     "assets/css/pages/home.css",
     "assets/css/pages/mensagens/message-boot.css",
-    "assets/css/pages/mensagens/desktop-redesign.css",
+    "assets/css/pages/mensagens/page-visual-contract.css",
     "assets/css/pages/mensagens.css",
     "assets/css/patterns/chat-screen-fill.css"
   ],
