@@ -453,8 +453,8 @@
 @media (max-width: 560px) {
   html.home-index-root body.home-index-shell {
     --home-mobile-feed-card-width-v96: min(84vw, 356px);
-    --home-mobile-worker-card-width-v96: clamp(150px, 42vw, 184px);
-    --home-mobile-feed-gap-v96: 14px;
+    --home-mobile-worker-card-width-v96: minmax(0, 1fr);
+    --home-mobile-feed-gap-v96: 18px;
     padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)) !important;
     overflow-x: hidden !important;
   }
@@ -475,7 +475,7 @@
     box-sizing: border-box !important;
   }
 
-  html.home-index-root body.home-index-shell :is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail,
+  html.home-index-root body.home-index-shell :is(.featured-services, .home-publications, .featured-pros) > .content-rail,
   html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail {
     overflow-x: auto !important;
     overflow-y: visible !important;
@@ -484,13 +484,20 @@
     scroll-padding-inline: 0 !important;
   }
 
-  html.home-index-root body.home-index-shell :is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell :is(.featured-services, .home-publications, .featured-pros) > .content-rail::-webkit-scrollbar,
   html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail::-webkit-scrollbar {
     display: none !important;
   }
 
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers {
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+  }
+
   html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid,
   html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail > .service-grid[data-more-services-grid] {
+    --doke-card-grid-gap: var(--home-mobile-feed-gap-v96);
+    --doke-mobile-card-rail-gap: var(--home-mobile-feed-gap-v96);
     display: grid !important;
     grid-auto-flow: column !important;
     grid-template-columns: none !important;
@@ -499,6 +506,8 @@
     min-width: 100% !important;
     max-width: none !important;
     gap: var(--home-mobile-feed-gap-v96) !important;
+    row-gap: var(--home-mobile-feed-gap-v96) !important;
+    column-gap: var(--home-mobile-feed-gap-v96) !important;
     align-items: stretch !important;
     justify-items: stretch !important;
     margin: 0 !important;
@@ -556,6 +565,8 @@
     align-items: center !important;
     justify-content: space-between !important;
     gap: 12px !important;
+    row-gap: 12px !important;
+    column-gap: 12px !important;
     min-width: 0 !important;
   }
 
@@ -569,18 +580,18 @@
 
   html.home-index-root body.home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track {
     display: grid !important;
-    grid-auto-flow: column !important;
-    grid-template-columns: none !important;
-    grid-auto-columns: minmax(0, var(--home-mobile-worker-card-width-v96)) !important;
-    width: max-content !important;
+    grid-auto-flow: row !important;
+    grid-template-columns: repeat(2, var(--home-mobile-worker-card-width-v96)) !important;
+    grid-auto-columns: unset !important;
+    width: 100% !important;
     min-width: 100% !important;
-    max-width: none !important;
-    gap: 14px !important;
+    max-width: 100% !important;
+    gap: 12px !important;
     align-items: stretch !important;
     margin: 0 !important;
-    padding: 0 2px 10px 0 !important;
+    padding: 0 0 10px !important;
     overflow: visible !important;
-    scroll-snap-type: x proximity !important;
+    scroll-snap-type: none !important;
     box-sizing: border-box !important;
   }
 
@@ -590,7 +601,7 @@
     min-width: 0 !important;
     max-width: 100% !important;
     height: auto !important;
-    min-height: 248px !important;
+    min-height: 0 !important;
     aspect-ratio: 9 / 16 !important;
     flex: none !important;
     border-radius: 22px !important;
@@ -676,6 +687,8 @@
   html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-services #featured-services-track.service-grid,
   html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid],
   html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .service-grid[data-more-services-grid] {
+    --doke-card-grid-gap: var(--home-mobile-ad-rail-gap);
+    --doke-mobile-card-rail-gap: var(--home-mobile-ad-rail-gap);
     display: flex !important;
     flex-flow: row nowrap !important;
     grid-template-columns: none !important;
@@ -963,7 +976,7 @@
     --home-index-mobile-column-width: calc(100vw - (var(--home-index-mobile-column-inline) * 2));
     --home-mobile-ad-card-width: clamp(286px, 82vw, 344px);
     --home-mobile-publication-card-width: clamp(272px, 84vw, 336px);
-    --home-mobile-ad-rail-gap: 16px;
+    --home-mobile-ad-rail-gap: 18px;
     overflow-x: hidden !important;
   }
 
@@ -1020,6 +1033,8 @@
     grid-auto-columns: unset !important;
     align-items: stretch !important;
     gap: var(--home-mobile-ad-rail-gap) !important;
+    row-gap: var(--home-mobile-ad-rail-gap) !important;
+    column-gap: var(--home-mobile-ad-rail-gap) !important;
     width: max-content !important;
     min-width: 100% !important;
     max-width: none !important;
@@ -1133,11 +1148,15 @@
       }
 
       html body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid {
+        --doke-card-grid-gap: 18px;
+        --doke-mobile-card-rail-gap: 18px;
         display: grid !important;
         grid-auto-flow: column !important;
         grid-template-columns: none !important;
         grid-auto-columns: minmax(0, 86%) !important;
-        gap: 14px !important;
+        gap: 18px !important;
+        row-gap: 18px !important;
+        column-gap: 18px !important;
         width: 100% !important;
         max-width: 100% !important;
         margin: 0 !important;
@@ -1224,11 +1243,15 @@
       }
 
       html body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] {
+        --doke-card-grid-gap: 18px;
+        --doke-mobile-card-rail-gap: 18px;
         display: grid !important;
         grid-template-columns: minmax(0, 1fr) !important;
         grid-auto-flow: row !important;
         grid-auto-columns: initial !important;
-        gap: 14px !important;
+        gap: 18px !important;
+        row-gap: 18px !important;
+        column-gap: 18px !important;
         width: 100% !important;
         max-width: 100% !important;
         min-width: 0 !important;
@@ -1269,7 +1292,6 @@
 @media (hover: none) and (pointer: coarse) and (max-device-width: 560px) {
   html.home-index-root body.home-index-shell section.featured-services > .content-rail,
   html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications,
-  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
   html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail {
     width: 100% !important;
     max-width: 100% !important;
@@ -1283,14 +1305,25 @@
 
   html.home-index-root body.home-index-shell section.featured-services > .content-rail::-webkit-scrollbar,
   html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications::-webkit-scrollbar,
-  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers::-webkit-scrollbar,
   html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail::-webkit-scrollbar {
     display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
   }
 
   html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid,
   html.home-index-root body.home-index-shell section.home-publications #home-publications-track.publication-grid,
   html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] {
+    --doke-card-grid-gap: 18px;
+    --doke-mobile-card-rail-gap: 18px;
     display: flex !important;
     flex-flow: row nowrap !important;
     grid-template-columns: none !important;
@@ -1299,7 +1332,9 @@
     grid-auto-columns: unset !important;
     align-items: stretch !important;
     justify-content: flex-start !important;
-    gap: 16px !important;
+    gap: 18px !important;
+    row-gap: 18px !important;
+    column-gap: 18px !important;
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
@@ -1340,21 +1375,23 @@
   }
 
   html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track {
-    display: flex !important;
-    flex-flow: row nowrap !important;
-    grid-template-columns: none !important;
-    grid-auto-flow: unset !important;
+    display: grid !important;
+    flex-flow: unset !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-flow: row !important;
     grid-auto-columns: unset !important;
     align-items: stretch !important;
-    gap: 16px !important;
+    gap: 12px !important;
+    row-gap: 12px !important;
+    column-gap: 12px !important;
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
     margin: 0 !important;
-    padding: 0 2px 10px 0 !important;
-    overflow-x: auto !important;
+    padding: 0 0 10px !important;
+    overflow-x: visible !important;
     overflow-y: visible !important;
-    scroll-snap-type: x proximity !important;
+    scroll-snap-type: none !important;
     -webkit-overflow-scrolling: touch !important;
     scrollbar-width: none !important;
     box-sizing: border-box !important;
@@ -1363,13 +1400,13 @@
   html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.video-card,
   html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card {
     display: grid !important;
-    flex: 0 0 45vw !important;
-    width: 45vw !important;
-    min-width: 45vw !important;
-    max-width: 45vw !important;
+    flex: none !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
     height: auto !important;
     min-height: 0 !important;
-    aspect-ratio: 3 / 5 !important;
+    aspect-ratio: 9 / 16 !important;
     margin: 0 !important;
     scroll-snap-align: start !important;
     box-sizing: border-box !important;
