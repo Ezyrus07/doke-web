@@ -92,10 +92,10 @@ window.DokeHomeWorkers = (() => {
     },
     {
       id: "vid-manutencao",
-      title: "Manutencao rapida antes da vistoria",
+      title: "Manutenção rápida antes da vistoria",
       author: "Rafael Gomes",
       avatar: "RG",
-      category: "Manutencao residencial",
+      category: "Manutenção residencial",
       duration: "45 segundos",
       mediaClass: "video-card--five",
       poster: "https://images.pexels.com/photos/8961065/pexels-photo-8961065.jpeg?auto=compress&cs=tinysrgb&w=1200&q=80",
@@ -103,12 +103,12 @@ window.DokeHomeWorkers = (() => {
       likes: "7,4k",
       saves: "1,9k",
       commentsCount: "83",
-      commentsLabel: "83 comentarios",
+      commentsLabel: "83 comentários",
       primaryHref: "detalhe-anuncio.html",
       secondaryHref: "perfil.html",
       comments: [
-        { avatar: "TN", name: "Thiago Nunes", text: "Essa revisao antes da entrega evita muita dor de cabeca.", time: "3 min" },
-        { avatar: "LA", name: "Lia Alves", text: "Voce tambem confere vazamento pequeno em sifao?", time: "11 min" },
+        { avatar: "TN", name: "Thiago Nunes", text: "Essa revisão antes da entrega evita muita dor de cabeça.", time: "3 min" },
+        { avatar: "LA", name: "Lia Alves", text: "Você também confere vazamento pequeno em sifão?", time: "11 min" },
         { avatar: "RG", name: "Rafael Gomes", text: "Confiro sim. Normalmente ja resolvo na mesma visita.", time: "agora" }
       ]
     }

@@ -55,6 +55,31 @@ window.DokeHomeBeforeAfter = (() => {
       ]
     },
     {
+      id: 'case-living-room',
+      mediaType: 'photo',
+      mediaImage: 'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1400',
+      title: 'Sala integrada com acabamento leve',
+      provider: 'Studio Casa Viva',
+      avatar: 'SC',
+      rating: '4,8',
+      meta: 'Reforma e interiores • Salvador, BA',
+      description: 'Sala integrada com acabamento claro, iluminação de apoio e circulação mais fluida para valorizar o uso diário.',
+      likes: '3,1k',
+      commentsCount: '86',
+      saves: '640',
+      serviceHref: 'detalhe-anuncio.html',
+      profileHref: 'perfil.html',
+      highlights: [
+        'Paleta leve para ampliar a percepção de espaço.',
+        'Integração visual entre estar, jantar e circulação.',
+        'Acabamento limpo para manter a reforma com leitura premium.'
+      ],
+      comments: [
+        { avatar: 'LT', name: 'Lucas Torres', time: '9 min', text: 'A integração ficou bem mais limpa.', likes: '3 curtidas' },
+        { avatar: 'SC', name: 'Studio Casa Viva', time: 'agora', text: 'A ideia foi reduzir ruído visual e destacar os materiais.', likes: '4 curtidas' }
+      ]
+    },
+    {
       id: 'case-bathroom',
       mediaType: 'before-after',
       title: 'Banheiro revitalizado sem quebra-quebra',
