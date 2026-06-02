@@ -143,3 +143,40 @@ test.describe('Stable shell document scroll contract', () => {
     });
   }
 });
+
+test.describe('Mensagens mobile thread interaction', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test('tap on a conversation opens the thread on phone viewport', async ({ page }) => {
+    await page.goto('/mensagens.html');
+    await waitForStableRoute(page);
+
+    await page.locator('.message-item[data-message-id="painting"]').first().click();
+    await page.waitForTimeout(120);
+
+    const state = await page.evaluate(() => {
+      const root = document.querySelector('[data-messages-page]');
+      const thread = document.querySelector('[data-messages-thread]');
+      const sidebar = document.querySelector('.messages-sidebar');
+      const threadRect = thread?.getBoundingClientRect();
+      const sidebarRect = sidebar?.getBoundingClientRect();
+      const threadStyle = thread ? window.getComputedStyle(thread) : null;
+      const sidebarStyle = sidebar ? window.getComputedStyle(sidebar) : null;
+
+      return {
+        bodyThreadOpen: document.body.classList.contains('messages-thread-is-open'),
+        htmlThreadOpen: document.documentElement.classList.contains('messages-thread-is-open'),
+        appThreadOpen: root?.classList.contains('messages-app--thread-open') || false,
+        messagesMode: root?.dataset.messagesMode || '',
+        threadVisible: Boolean(thread && threadRect.width > 0 && threadRect.height > 0 && threadStyle.display !== 'none' && threadStyle.visibility !== 'hidden'),
+        sidebarVisible: Boolean(sidebar && sidebarRect.width > 0 && sidebarRect.height > 0 && sidebarStyle.display !== 'none' && sidebarStyle.visibility !== 'hidden'),
+      };
+    });
+
+    expect(state.bodyThreadOpen, 'body deve receber estado de conversa aberta no mobile').toBe(true);
+    expect(state.htmlThreadOpen, 'html deve receber estado de conversa aberta no mobile').toBe(true);
+    expect(state.appThreadOpen, 'messages-app deve entrar em modo thread no mobile').toBe(true);
+    expect(state.messagesMode, 'data-messages-mode deve indicar thread no mobile').toBe('thread');
+    expect(state.threadVisible, 'conversa deve ficar visível após tocar em um item no mobile').toBe(true);
+  });
+});

@@ -2,7 +2,7 @@
   'use strict';
 
   var Doke = window.Doke || (window.Doke = {});
-  var ROUTER_VERSION = '20260601-stable-shell-router-route-style-lifecycle-v1';
+  var ROUTER_VERSION = '20260602-stable-shell-router-paint-before-scripts-v1';
 
   var SAFE_ROUTES = new Set([
     '/ajuda.html',
@@ -160,6 +160,53 @@
     return keys;
   }
 
+  function ensurePreloadHint(href, as) {
+    var key = canonicalAssetUrl(href);
+    if (!href || !key) return;
+    var exists = Array.prototype.some.call(document.querySelectorAll('link[data-doke-route-preload][href]'), function (link) {
+      return canonicalAssetUrl(link.getAttribute('href')) === key;
+    });
+    if (exists) return;
+
+    var preload = document.createElement('link');
+    preload.rel = 'preload';
+    preload.as = as;
+    preload.href = href;
+    preload.setAttribute('data-doke-route-preload', 'true');
+    preload.setAttribute('data-doke-route-preload-key', key);
+    document.head.appendChild(preload);
+  }
+
+  function preloadRouteAssets(nextDoc) {
+    if (!nextDoc) return;
+
+    var existingStyles = new Set(Array.prototype.map.call(document.querySelectorAll('link[rel="stylesheet"], link[rel="preload"][as="style"]'), function (link) {
+      return canonicalAssetUrl(link.getAttribute('href'));
+    }).filter(Boolean));
+
+    Array.prototype.forEach.call(nextDoc.querySelectorAll('link[rel="stylesheet"][href]'), function (link) {
+      var href = link.getAttribute('href');
+      var key = canonicalAssetUrl(href);
+      if (!href || !key || existingStyles.has(key)) return;
+      ensurePreloadHint(href, 'style');
+      existingStyles.add(key);
+    });
+
+    var existingScripts = new Set(loadedScripts);
+    Array.prototype.forEach.call(document.querySelectorAll('link[rel="preload"][as="script"][data-doke-route-preload]'), function (link) {
+      var key = canonicalAssetUrl(link.getAttribute('href'));
+      if (key) existingScripts.add(key);
+    });
+
+    Array.prototype.forEach.call(nextDoc.querySelectorAll('script[src]'), function (script) {
+      var src = script.getAttribute('src');
+      var key = canonicalAssetUrl(src);
+      if (!src || !key || existingScripts.has(key) || CORE_SCRIPT_RE.test(src)) return;
+      ensurePreloadHint(src, 'script');
+      existingScripts.add(key);
+    });
+  }
+
   function removeObsoleteRouteStyles(nextDoc) {
     if (!nextDoc) return;
     var nextStyles = collectStylesheetKeys(nextDoc);
@@ -280,25 +327,27 @@
       .map(function (script) { return script.getAttribute('src'); })
       .filter(Boolean)
       .filter(function (src) { return !CORE_SCRIPT_RE.test(src); });
+    var pending = [];
 
-    return scripts.reduce(function (promise, src) {
-      return promise.then(function () {
-        var key = canonicalAssetUrl(src);
-        if (!key || loadedScripts.has(key)) return undefined;
-        return new Promise(function (resolve) {
-          var script = document.createElement('script');
-          script.src = src;
-          script.async = false;
-          script.defer = false;
-          script.setAttribute('data-doke-stable-route-script', 'true');
-          script.setAttribute('data-doke-route-script-src', src);
-          script.addEventListener('load', resolve, { once: true });
-          script.addEventListener('error', resolve, { once: true });
-          document.body.appendChild(script);
-          loadedScripts.add(key);
-        });
-      });
-    }, Promise.resolve());
+    scripts.forEach(function (src) {
+      var key = canonicalAssetUrl(src);
+      if (!key || loadedScripts.has(key)) return;
+
+      pending.push(new Promise(function (resolve) {
+        var script = document.createElement('script');
+        script.src = src;
+        script.async = false;
+        script.defer = false;
+        script.setAttribute('data-doke-stable-route-script', 'true');
+        script.setAttribute('data-doke-route-script-src', src);
+        script.addEventListener('load', resolve, { once: true });
+        script.addEventListener('error', resolve, { once: true });
+        document.body.appendChild(script);
+        loadedScripts.add(key);
+      }));
+    });
+
+    return Promise.all(pending);
   }
 
   function syncHtmlContract(nextHtml) {
@@ -536,9 +585,6 @@
       removeObsoleteRouteStyles(nextDoc);
       assertDocumentReadyForRoute();
       if (id !== navigationId) return;
-      await ensureScripts(nextDoc);
-      if (id !== navigationId) return;
-
       if (options.replace) window.history.replaceState({ dokeStableShell: true, href: url.href }, '', url.href);
       else window.history.pushState({ dokeStableShell: true, href: url.href }, '', url.href);
       committed = true;
@@ -546,6 +592,17 @@
       resetScroll();
       updateSidebar(path);
       try { window.lucide && window.lucide.createIcons && window.lucide.createIcons(); } catch (error) {}
+      setBusy(false);
+
+      await new Promise(function (resolve) {
+        requestAnimationFrame(function () {
+          requestAnimationFrame(resolve);
+        });
+      });
+
+      await ensureScripts(nextDoc);
+      if (id !== navigationId) return;
+
       runInitializers(path);
     } catch (error) {
       console.error('[DokeStableShell:navigate]', error);
@@ -564,7 +621,7 @@
 
   function warm(href) {
     if (!isEnabled() || !isSafeUrl(href)) return;
-    fetchDocument(href).catch(function () {});
+    fetchDocument(href).then(preloadRouteAssets).catch(function () {});
   }
 
   function bind() {
@@ -610,6 +667,12 @@
 
     applyRouteRuntimeClasses(currentPath());
     updateSidebar(currentPath());
+
+    if (currentPath() !== '/index.html') {
+      var warmHome = function () { warm('/index.html'); };
+      if ('requestIdleCallback' in window) window.requestIdleCallback(warmHome, { timeout: 1200 });
+      else window.setTimeout(warmHome, 600);
+    }
   }
 
   Doke.stableShellRouter = Object.freeze({ version: ROUTER_VERSION, navigate: navigate, warm: warm, isEnabled: isEnabled });

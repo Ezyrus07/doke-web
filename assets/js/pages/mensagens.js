@@ -249,7 +249,7 @@
     const pageParams = new URLSearchParams(window.location.search);
     let activeId = pageParams.get("conversation") && conversations[pageParams.get("conversation")] ? pageParams.get("conversation") : "painting";
 
-    const isCompactThreadViewport = () => window.innerWidth >= 561 && window.innerWidth <= 1023;
+    const isCompactThreadViewport = () => window.innerWidth <= 1023;
 
     const setCompactThreadOpen = (isOpen) => {
       const open = Boolean(isOpen) && isCompactThreadViewport();

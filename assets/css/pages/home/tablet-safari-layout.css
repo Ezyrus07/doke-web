@@ -328,26 +328,53 @@
     display: none !important;
   }
 
-  body.home-index-shell section.home-publications #home-publications-track.publication-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 16px !important;
+  body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications {
+    display: block !important;
     width: 100% !important;
     max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-snap-type: x proximity !important;
+    padding: 0 42px 6px 0 !important;
+    margin: 0 !important;
+    scrollbar-width: none !important;
+  }
+
+  body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  body.home-index-shell section.home-publications #home-publications-track.publication-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    grid-auto-flow: column !important;
+    width: max-content !important;
+    min-width: max-content !important;
+    max-width: none !important;
     overflow: visible !important;
-    align-items: start !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   body.home-index-shell section.home-publications #home-publications-track.publication-grid > article.publication-card {
     display: grid !important;
     grid-template-rows: 150px auto !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
+    flex: 0 0 clamp(304px, 54vw, 336px) !important;
+    width: clamp(304px, 54vw, 336px) !important;
+    min-width: clamp(304px, 54vw, 336px) !important;
+    max-width: clamp(304px, 54vw, 336px) !important;
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
     overflow: hidden !important;
+    scroll-snap-align: start !important;
   }
 
   body.home-index-shell section.home-publications #home-publications-track.publication-grid > article.publication-card :is(.publication-card__media, .publication-card__comparison) {
@@ -2364,5 +2391,394 @@
   html.home-index-root body.home-index-shell section.featured-pros .pro-card--featured .pro-card__badges,
   html body.home-index-shell section.featured-pros .pro-card--featured .pro-card__badges {
     margin-top: 14px !important;
+  }
+}
+
+/* 2026-06-02 — Home category rail canonical boundary.
+   Authority: home tablet/narrow-desktop layout.
+   Reason: legacy category contracts with !important still exist in home.css/home-tablet*.
+   This block keeps the category row as a deterministic rail in zoomed desktop,
+   tablet landscape, and narrow desktop without touching shell/header/sidebar. */
+@media (min-width: 1025px) and (max-width: 1600px) {
+  html.home-index-root body.home-index-shell section.home-catégories,
+  html body.home-index-shell section.home-catégories {
+    overflow: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories > .home-catégories__rail,
+  html body.home-index-shell section.home-catégories > .home-catégories__rail {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 44px !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories [data-catégory-track].home-catégories__track,
+  html body.home-index-shell section.home-catégories [data-catégory-track].home-catégories__track,
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégories__track,
+  html body.home-index-shell section.home-catégories .home-catégories__track {
+    display: flex !important;
+    flex-flow: row nowrap !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 18px 12px 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-snap-type: x proximity !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégories__track::-webkit-scrollbar,
+  html body.home-index-shell section.home-catégories .home-catégories__track::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories > .home-catégories__rail::after,
+  html body.home-index-shell section.home-catégories > .home-catégories__rail::after {
+    content: "" !important;
+    position: absolute !important;
+    top: 0 !important;
+    right: 44px !important;
+    width: 72px !important;
+    height: 100% !important;
+    pointer-events: none !important;
+    z-index: 2 !important;
+    background: linear-gradient(90deg, rgba(239, 248, 253, 0), #eff8fd 72%) !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégory,
+  html body.home-index-shell section.home-catégories .home-catégory {
+    flex: 0 0 118px !important;
+    inline-size: 118px !important;
+    width: 118px !important;
+    min-width: 118px !important;
+    max-width: 118px !important;
+    display: grid !important;
+    justify-items: center !important;
+    align-content: start !important;
+    gap: 8px !important;
+    scroll-snap-align: start !important;
+    overflow: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégory__icon,
+  html body.home-index-shell section.home-catégories .home-catégory__icon {
+    width: 74px !important;
+    height: 74px !important;
+    min-width: 74px !important;
+    min-height: 74px !important;
+    margin-inline: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégory__label,
+  html body.home-index-shell section.home-catégories .home-catégory__label {
+    width: 100% !important;
+    max-width: 100% !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories :is(.home-catégories__arrow, .home-catégories__arrow--prev, .home-catégories__arrow--next),
+  html body.home-index-shell section.home-catégories :is(.home-catégories__arrow, .home-catégories__arrow--prev, .home-catégories__arrow--next) {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    top: 38px !important;
+    z-index: 3 !important;
+    pointer-events: auto !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégories__arrow--prev,
+  html body.home-index-shell section.home-catégories .home-catégories__arrow--prev {
+    left: 0 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégories__arrow--next,
+  html body.home-index-shell section.home-catégories .home-catégories__arrow--next {
+    right: 0 !important;
+  }
+}
+
+/* 2026-06-02 - Home tablet card scale contract.
+   Authority: home tablet/iPad cards. Existing tablet contracts still use !important,
+   so this closes the responsive card/CTA size conflict at the same scoped layer. */
+@media (min-width: 561px) and (max-width: 1024px) and (orientation: portrait) {
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid > article.doke-ad-card .doke-ad-card__footer,
+  html body.home-index-shell section.featured-services #featured-services-track.service-grid > article.doke-ad-card .doke-ad-card__footer,
+  html.home-index-root body.home-index-shell section.more-services .service-grid.service-grid--compact[data-more-services-grid] > article.doke-ad-card .doke-ad-card__footer,
+  html body.home-index-shell section.more-services .service-grid.service-grid--compact[data-more-services-grid] > article.doke-ad-card .doke-ad-card__footer {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    min-height: 42px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid > article.doke-ad-card .doke-ad-card__cta,
+  html body.home-index-shell section.featured-services #featured-services-track.service-grid > article.doke-ad-card .doke-ad-card__cta,
+  html.home-index-root body.home-index-shell section.more-services .service-grid.service-grid--compact[data-more-services-grid] > article.doke-ad-card .doke-ad-card__cta,
+  html body.home-index-shell section.more-services .service-grid.service-grid--compact[data-more-services-grid] > article.doke-ad-card .doke-ad-card__cta {
+    flex: 0 0 clamp(100px, 36%, 144px) !important;
+    width: clamp(100px, 36%, 144px) !important;
+    min-width: 100px !important;
+    max-width: 144px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 0 14px !important;
+    border-radius: 999px !important;
+    font-size: 0.76rem !important;
+    line-height: 1 !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.video-card,
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.video-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track > article.doke-worker-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track > article.video-card {
+    height: clamp(220px, 34vw, 300px) !important;
+    min-height: clamp(220px, 34vw, 300px) !important;
+    aspect-ratio: auto !important;
+    border-radius: 18px !important;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 700px) and (orientation: portrait) {
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
+  html body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers::-webkit-scrollbar,
+  html body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track,
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > div.content-rail.doke-scroll-rail.home-media-rail.home-media-rail--workers > div#short-videos-track.short-videos__track {
+    grid-auto-flow: column !important;
+    grid-template-columns: repeat(4, 152px) !important;
+    grid-auto-columns: 152px !important;
+    width: max-content !important;
+    min-width: 100% !important;
+    max-width: none !important;
+    gap: 14px !important;
+    padding-right: 2px !important;
+    overflow: visible !important;
+    scroll-snap-type: x proximity !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.video-card,
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.video-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track > article.doke-worker-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track > article.video-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > div.content-rail.doke-scroll-rail.home-media-rail.home-media-rail--workers > div#short-videos-track.short-videos__track > article.doke-worker-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > div.content-rail.doke-scroll-rail.home-media-rail.home-media-rail--workers > div#short-videos-track.short-videos__track > article.video-card {
+    width: 152px !important;
+    min-width: 152px !important;
+    max-width: 152px !important;
+    height: 236px !important;
+    min-height: 236px !important;
+    scroll-snap-align: start !important;
+  }
+}
+
+/* 2026-06-02 - Home media rails horizontal contract.
+   Authority: index/home rails above mobile. Featured ads, workers and
+   publications must remain horizontal carousels just like the mobile layout. */
+@media (min-width: 561px) {
+  html.home-index-root body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications),
+  html body.home-index-shell :is(section.featured-services, section.short-videos, section.home-publications) {
+    overflow: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail,
+  html body.home-index-shell section.featured-services > .content-rail,
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
+  html body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications,
+  html body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-inline: 0 !important;
+    padding: 0 42px 10px 0 !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail::-webkit-scrollbar,
+  html body.home-index-shell section.featured-services > .content-rail::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers::-webkit-scrollbar,
+  html body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers::-webkit-scrollbar,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications::-webkit-scrollbar,
+  html body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid,
+  html body.home-index-shell section.featured-services #featured-services-track.service-grid,
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track,
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track,
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail > .short-videos__track,
+  html body.home-index-shell section.short-videos > .content-rail > .short-videos__track,
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track.publication-grid,
+  html body.home-index-shell section.home-publications #home-publications-track.publication-grid,
+  html.home-index-root body[data-page="home"].home-index-shell #featured-services-track.service-grid.doke-grid,
+  html.home-index-root body[data-page="home"].home-index-shell section.featured-services.featured-services > .content-rail.content-rail > #featured-services-track.service-grid.doke-grid.service-grid.doke-grid,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > div.content-rail.doke-scroll-rail.home-media-rail.home-media-rail--workers > div#short-videos-track.short-videos__track,
+  html.home-index-root body[data-page="home"].home-index-shell section.home-publications > .content-rail > #home-publications-track.publication-grid,
+  html.home-index-root body[data-page="home"].home-index-shell section.home-publications > div.content-rail.doke-scroll-rail.home-media-rail.home-media-rail--publications > div#home-publications-track.publication-grid,
+  body.home-index-shell #featured-services-track.service-grid.doke-grid,
+  body.home-index-shell section.home-publications > .content-rail > #home-publications-track.publication-grid {
+    display: flex !important;
+    flex-flow: row nowrap !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    grid-auto-flow: unset !important;
+    grid-auto-columns: unset !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    width: max-content !important;
+    min-width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    scroll-snap-type: x proximity !important;
+    box-sizing: border-box !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid,
+  html body.home-index-shell section.featured-services #featured-services-track.service-grid {
+    gap: 18px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track,
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track,
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail > .short-videos__track,
+  html body.home-index-shell section.short-videos > .content-rail > .short-videos__track,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track:not(#dokeStableRailA):not(#dokeStableRailB):not(#dokeStableRailC) {
+    gap: 18px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track.publication-grid,
+  html body.home-index-shell section.home-publications #home-publications-track.publication-grid {
+    gap: 18px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid > article.doke-ad-card,
+  html body.home-index-shell section.featured-services #featured-services-track.service-grid > article.doke-ad-card,
+  html.home-index-root body[data-page="home"].home-index-shell #featured-services-track.service-grid.doke-grid > article.doke-ad-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.featured-services.featured-services > .content-rail.content-rail > #featured-services-track.service-grid.doke-grid.service-grid.doke-grid > article.doke-ad-card,
+  body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid.doke-grid > article.doke-ad-card:nth-child(n+3),
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid.doke-grid > article.doke-ad-card:nth-child(n+3) {
+    display: flex !important;
+    flex: 0 0 clamp(278px, 42vw, 321px) !important;
+    width: clamp(278px, 42vw, 321px) !important;
+    min-width: clamp(278px, 42vw, 321px) !important;
+    max-width: clamp(278px, 42vw, 321px) !important;
+    height: auto !important;
+    min-height: 302px !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    visibility: visible !important;
+    overflow: hidden !important;
+    pointer-events: auto !important;
+    scroll-snap-align: start !important;
+  }
+
+  html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid > article.doke-ad-card > *,
+  html body.home-index-shell section.featured-services #featured-services-track.service-grid > article.doke-ad-card > *,
+  body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid.doke-grid > article.doke-ad-card:nth-child(n+3) > *,
+  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid.doke-grid > article.doke-ad-card:nth-child(n+3) > * {
+    visibility: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.video-card,
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.video-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track > article.doke-worker-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track > article.video-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > div.content-rail.doke-scroll-rail.home-media-rail.home-media-rail--workers > div#short-videos-track.short-videos__track > article.doke-worker-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > div.content-rail.doke-scroll-rail.home-media-rail.home-media-rail--workers > div#short-videos-track.short-videos__track > article.video-card {
+    display: grid !important;
+    flex: 0 0 clamp(152px, 22vw, 185px) !important;
+    width: clamp(152px, 22vw, 185px) !important;
+    min-width: clamp(152px, 22vw, 185px) !important;
+    max-width: clamp(152px, 22vw, 185px) !important;
+    height: clamp(236px, 34vw, 329px) !important;
+    min-height: clamp(236px, 34vw, 329px) !important;
+    scroll-snap-align: start !important;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track.publication-grid > article.publication-card,
+  html body.home-index-shell section.home-publications #home-publications-track.publication-grid > article.publication-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.home-publications > .content-rail > #home-publications-track.publication-grid > article.publication-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.home-publications > div.content-rail.doke-scroll-rail.home-media-rail.home-media-rail--publications > div#home-publications-track.publication-grid > article.publication-card,
+  body.home-index-shell section.home-publications > .content-rail > #home-publications-track.publication-grid > article.publication-card {
+    display: grid !important;
+    flex: 0 0 clamp(304px, 44vw, 336px) !important;
+    width: clamp(304px, 44vw, 336px) !important;
+    min-width: clamp(304px, 44vw, 336px) !important;
+    max-width: clamp(304px, 44vw, 336px) !important;
+    scroll-snap-align: start !important;
+  }
+}
+
+@media (min-width: 1025px) {
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track,
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track,
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail > .short-videos__track,
+  html body.home-index-shell section.short-videos > .content-rail > .short-videos__track,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track:not(#dokeStableRailA):not(#dokeStableRailB):not(#dokeStableRailC) {
+    display: flex !important;
+    flex-flow: row nowrap !important;
+    grid-template-columns: none !important;
+    width: max-content !important;
+    min-width: 100% !important;
+    max-width: none !important;
+    overflow: visible !important;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.video-card,
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.video-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track:not(#dokeStableRailA):not(#dokeStableRailB):not(#dokeStableRailC) > article.doke-worker-card,
+  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track:not(#dokeStableRailA):not(#dokeStableRailB):not(#dokeStableRailC) > article.video-card {
+    flex: 0 0 260px !important;
+    width: 260px !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
+    height: 329px !important;
+    min-height: 329px !important;
   }
 }
