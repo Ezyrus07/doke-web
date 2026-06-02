@@ -57,22 +57,22 @@ These files are active either as direct HTML links or through active import chai
 
 | File | Tokens | Status |
 |---|---|---|
-| `assets/css/components/before-after-workers-preview/shared-publication-polish.css` | polish | active via direct link/import chain |
-| `assets/css/components/layout/marketplace-index-parity-contract.css` | parity | active via direct link/import chain |
-| `assets/css/pages/comunidade/mobile-rescue.css` | rescue | active via direct link/import chain |
-| `assets/css/pages/home-overlays/workers-feed-polish.css` | polish | active via direct link/import chain |
-| `assets/css/pages/mensagens/community-parity.css` | parity | active via direct link/import chain |
-| `assets/css/pages/mensagens/final-standardization.css` | final | active via direct link/import chain |
-| `assets/css/pages/mensagens/header-parity.css` | parity | active via direct link/import chain |
-| `assets/css/pages/notificacoes/pedidos-parity.css` | parity | active via direct link/import chain |
-| `assets/css/pages/notificacoes/selection-parity.css` | parity | active via direct link/import chain |
-| `assets/css/pages/perfil-budget-modal/final-polish-success.css` | final, polish | active via direct link/import chain |
-| `assets/css/pages/search-results/final-normalization.css` | final, normalization | active via direct link/import chain |
-| `assets/css/pages/search-results/final-parity.css` | parity, final | active via direct link/import chain |
-| `assets/css/pages/search-results/index-parity.css` | parity | active via direct link/import chain |
-| `assets/css/pages/search-results/mobile-polish.css` | polish | active via direct link/import chain |
-| `assets/css/pages/search-results/preview-parity.css` | parity | active via direct link/import chain |
-| `assets/css/pages/search-results/workers-index-parity.css` | parity | active via direct link/import chain |
+| `assets/css/components/before-after-workers-preview/shared-publication-card.css` | polish | active via direct link/import chain |
+| `assets/css/components/layout/marketplace-index-layout-contract.css` | parity | active via direct link/import chain |
+| `assets/css/pages/comunidade/mobile-layout-contract.css` | rescue | active via direct link/import chain |
+| `assets/css/pages/home-overlays/workers-feed-card-layout.css` | polish | active via direct link/import chain |
+| `assets/css/pages/mensagens/community-layout-contract.css` | parity | active via direct link/import chain |
+| `assets/css/pages/mensagens/page-foundation-contract.css` | final | active via direct link/import chain |
+| `assets/css/pages/mensagens/header-layout-contract.css` | parity | active via direct link/import chain |
+| `assets/css/pages/notificacoes/pedidos-notification-layout.css` | parity | active via direct link/import chain |
+| `assets/css/pages/notificacoes/selection-layout-contract.css` | parity | active via direct link/import chain |
+| `assets/css/pages/perfil-budget-modal/success-state-layout.css` | final, polish | active via direct link/import chain |
+| `assets/css/pages/search-results/results-layout-foundation.css` | final, normalization | active via direct link/import chain |
+| `assets/css/pages/search-results/results-page-alignment.css` | parity, final | active via direct link/import chain |
+| `assets/css/pages/search-results/index-rail-alignment.css` | parity | active via direct link/import chain |
+| `assets/css/pages/search-results/mobile-layout-contract.css` | polish | active via direct link/import chain |
+| `assets/css/pages/search-results/preview-layout-contract.css` | parity | active via direct link/import chain |
+| `assets/css/pages/search-results/workers-index-rail-alignment.css` | parity | active via direct link/import chain |
 
 ## Top high-risk active CSS layers
 
