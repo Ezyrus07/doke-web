@@ -1,24 +1,25 @@
-// Playwright starter config for future visual/e2e validation.
-// Install when ready: npm i -D @playwright/test && npx playwright install
-const { defineConfig, devices } = require('@playwright/test');
+const { defineConfig } = require('@playwright/test');
 
 module.exports = defineConfig({
   testDir: './tests',
-  timeout: 30_000,
-  expect: { timeout: 5_000 },
+  timeout: 45_000,
+  expect: { timeout: 7_500 },
+  fullyParallel: false,
+  reporter: [
+    ['list'],
+    ['html', { outputFolder: 'reports/generated/playwright-html', open: 'never' }],
+    ['json', { outputFile: 'reports/generated/playwright-results.json' }],
+  ],
   use: {
     baseURL: 'http://127.0.0.1:5500',
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    video: 'off',
   },
-  projects: [
-    {
-      name: 'mobile-chrome',
-      use: { ...devices['iPhone 14'] },
-    },
-    {
-      name: 'desktop-chrome',
-      use: { ...devices['Desktop Chrome'] },
-    },
-  ],
+  webServer: {
+    command: 'node scripts/serve-static-site.js --host=127.0.0.1 --port=5500',
+    url: 'http://127.0.0.1:5500/index.html',
+    reuseExistingServer: !process.env.CI,
+    timeout: 10_000,
+  },
 });

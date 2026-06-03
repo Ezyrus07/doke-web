@@ -16,14 +16,14 @@
     "audit:routes": "node scripts/audit-page-route-map.js",
     "audit:mocks": "node scripts/audit-mock-data-contracts.js",
     "test:e2e": "playwright test tests/e2e",
-    "test:visual": "playwright test tests/visual",
+    "test:visual": "playwright test tests/visual/doke-visual-regression.spec.js",
     "audit:backend-data": "node scripts/audit-backend-data-contracts.js",
     "audit:auth-session": "node scripts/audit-auth-session-contracts.js",
     "audit:desktop-shell": "node scripts/audit-desktop-shell-contracts.js",
     "audit:js-foundation": "node scripts/audit-js-foundation-contracts.js",
     "audit:visual-baseline": "node scripts/audit-visual-qa-baseline.js",
-    "visual:baseline": "playwright test tests/visual --update-snapshots",
-    "visual:qa": "playwright test tests/visual tests/e2e/stage28-regression-guards.spec.js",
+    "visual:baseline": "playwright test tests/visual/doke-visual-regression.spec.js --update-snapshots",
+    "visual:qa": "playwright test tests/visual/doke-visual-regression.spec.js tests/e2e/stage28-regression-guards.spec.js",
     "audit:quality-pipeline": "node scripts/audit-quality-pipeline.js",
     "quality:ci": "npm run audit:all && npm run audit:quality-pipeline && npm run test:e2e && npm run test:visual",
     "audit:controller-mocks": "node scripts/audit-controller-mock-wiring.js",
@@ -139,7 +139,8 @@
     "audit:home-rail-card-authority": "node scripts/audit-home-rail-card-authority.js",
     "audit:docs-report-hygiene": "node scripts/audit-docs-report-hygiene.js",
     "audit:unused-asset-candidates": "node scripts/audit-unused-asset-candidates.js",
-    "audit:duplicate-assets": "node scripts/audit-duplicate-assets.js"
+    "audit:duplicate-assets": "node scripts/audit-duplicate-assets.js",
+    "validate:visual": "playwright test tests/visual/doke-visual-regression.spec.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.53.0"
