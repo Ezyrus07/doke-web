@@ -1,28 +1,33 @@
-# Important reduction — notifications phase 25
+# Phase 25 — Notifications mobile interaction contract removal
 
 ## Scope
 
-This phase only changes:
+This phase continues the controlled `!important` reduction in `notificacoes` without touching the home, shell, router, global header, sidebar, cards, profile, or messages.
 
-- `assets/css/pages/notificacoes/mobile-interaction-contract.css`
+## Root cause
 
-## Cause
-
-The notifications mobile interaction contract was a page module, but its selectors were generic and used `!important` to beat reusable action/button contracts. That kept a local compatibility layer stronger than necessary.
+`assets/css/pages/notificacoes/mobile-interaction-contract.css` was imported by `assets/css/pages/notificacoes.css`, but its selectors target generic modal/media/favorite controls that are not part of the current notifications page DOM. The file acted as a page-local compatibility layer for components owned elsewhere and kept 10 unnecessary `!important` declarations active in the notifications cascade.
 
 ## Change
 
-The selectors are now scoped with `body.notifications-page-shell`, so the module keeps page-local authority without forcing every declaration through `!important`.
+- Removed the import from `assets/css/pages/notificacoes.css`.
+- Removed `assets/css/pages/notificacoes/mobile-interaction-contract.css` from the cleaned project.
 
-Removed declarations:
+## Removed `!important` count
 
-- 10 `!important` flags from mobile action sizing, placement and reset declarations.
+10 declarations were removed from the active notifications CSS cascade.
 
-## Guardrails
+## Guardrail
 
-No home, shell, router, sidebar, global header, card, worker or publication CSS was changed.
+If notifications later needs modal/media/favorite controls, the contract must be provided by the owning component CSS, not reintroduced as a page-specific compatibility layer.
 
 ## Validation
 
-- CSS brace balance checked for the changed file.
-- `git diff --check` / no-index patch check executed for the patch set.
+- CSS import reference check.
+- `npm run audit:agent-governance`.
+- `npm run audit:unused-asset-candidates`.
+- `git diff --no-index --check` against the previous phase baseline.
+
+## Visual risk
+
+Low for the current notifications page because the removed selectors do not match local notifications markup. No Playwright visual validation was run in this environment.

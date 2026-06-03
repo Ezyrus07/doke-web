@@ -1,36 +1,37 @@
-# Important Reduction — Notifications Phase 24
+# Notifications Important Reduction Phase 24
 
 ## Scope
 
-This phase continues the controlled `!important` reduction inside `assets/css/pages/notificacoes/mobile-header-alignment.css` only.
+This phase continues the notification-page-only `!important` reduction after Phase 23.
 
 ## Root cause
 
-The file still contained an older tablet-toolbar lineage (`v70` and `v73`) that had already been superseded by the final `v76` contract: on tablet, the local notifications mobile toolbar is hidden and header actions are owned by the global header contract.
+`assets/css/pages/notificacoes/mobile-header-alignment.css` still contained an older tablet toolbar contract (`Notifications tablet toolbar v70`) and a later override (`Notifications v73`) that were superseded by the final `Notifications v76` rule.
 
-Because the later `v76` block won in the cascade, the older tablet-toolbar declarations were dead/overridden and kept dozens of unnecessary `!important` declarations active in the source.
+The earlier blocks declared a visible tablet toolbar and then a later block hid the same `.notifications-mobile-header` in the same tablet range. Because the final active behavior is to hide the lower toolbar and let the global/header action contract own tablet actions, the older tablet toolbar block was dead cascade weight.
 
-## Change
+## Changes
 
-- Removed the obsolete `v70` descendant styling block for the hidden tablet toolbar.
-- Removed the duplicate `v73` tablet override block.
-- Kept one consolidated tablet contract in the same file:
-  - `.notifications-mobile-header` remains hidden on tablet.
-  - `.notifications-list` keeps `margin-top: 0` without `!important`.
+- Removed the obsolete `Notifications tablet toolbar v70` block.
+- Removed the duplicate `Notifications v73` hide block.
+- Kept the final `Notifications v76` rule as the active authority for tablet lower-toolbar visibility.
+- Removed one low-risk `padding-inline` `!important` from the 421px–760px page content rail rule.
 
-## Visual contract
+## Impact
 
-No intended visual change.
+- No runtime CSS outside notifications was touched.
+- No HTML, shell, header, sidebar, router, card, home, profile, or messages file was touched.
+- Tablet lower toolbar behavior remains owned by the final `Notifications v76` rule.
 
-The final computed behavior should remain:
+## Counts
 
-- tablet notifications toolbar is not duplicated below the global header;
-- notifications list starts without extra top margin;
-- mobile under `560px` keeps the existing mobile header behavior;
-- home, shell, sidebar, cards and router remain untouched.
+- `mobile-header-alignment.css`: 76 `!important` declarations before this phase.
+- `mobile-header-alignment.css`: 4 `!important` declarations after this phase.
+- Net reduction: 72 declarations.
 
-## Validation
+## Remaining important declarations in this file
 
-- `node --check scripts/audit-active-legacy-structures.js`
-- `npm run audit:agent-governance`
-- `git diff --no-index --check` against the previous phase tree
+The remaining declarations are state/display guards and were intentionally kept:
+
+- open filter/select panels on mobile;
+- tablet lower toolbar hidden state.

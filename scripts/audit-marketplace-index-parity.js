@@ -4,7 +4,7 @@ const path = require('path');
 const { chromium } = require('@playwright/test');
 
 const ROOT = path.resolve(__dirname, '..');
-const REPORTS = path.join(ROOT, 'reports');
+const REPORTS = path.join(ROOT, 'reports', 'generated', 'marketplace');
 const BREAKPOINTS = [
   { name: '390x844', width: 390, height: 844 },
   { name: '608x926', width: 608, height: 926 },
@@ -12,13 +12,13 @@ const BREAKPOINTS = [
   { name: '1280x800', width: 1280, height: 800 },
 ];
 const TARGETS = ['resultados.html','detalhe-anuncio.html','perfil.html','comunidade.html'];
-const NEW_CSS = 'assets/css/components/layout/marketplace-index-parity-contract.css';
+const NEW_CSS = 'assets/css/components/layout/marketplace-index-layout-contract.css';
 const TOL = 2;
 
 fs.mkdirSync(REPORTS, { recursive: true });
-const outJson = path.join(REPORTS, 'marketplace-index-parity-before-after.json');
-const outCsv = path.join(REPORTS, 'marketplace-index-parity-before-after.csv');
-const outMd = path.join(REPORTS, 'marketplace-index-parity-before-after.md');
+const outJson = path.join(REPORTS, 'marketplace-index-layout-before-after.json');
+const outCsv = path.join(REPORTS, 'marketplace-index-layout-before-after.csv');
+const outMd = path.join(REPORTS, 'marketplace-index-layout-before-after.md');
 
 function round(n){ return Number.isFinite(Number(n)) ? Math.round(Number(n)*100)/100 : null; }
 function csv(v){ const s = v == null ? '' : String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; }
@@ -51,7 +51,7 @@ function loadHtml(file, mode){
     const m = tag.match(/href=["']([^"']+)["']/i);
     if (!m) return tag;
     const href = stripQuery(m[1]);
-    if (mode === 'before' && href === NEW_CSS) return '<!-- marketplace parity disabled for before audit -->';
+    if (mode === 'before' && href === NEW_CSS) return '<!-- marketplace layout contract disabled for before audit -->';
     const p = resolveAsset(href, ROOT);
     if (!p) return '';
     let css = inlineCssFile(p);
@@ -60,8 +60,8 @@ function loadHtml(file, mode){
   });
   html = html.replace(/<script\b[^>]*\bsrc=["'][^"']+["'][^>]*><\/script>/gi, '<!-- scripts disabled for deterministic CSS audit -->');
   html = html.replace(/<head([^>]*)>/i, `<head$1><base href="file://${ROOT.replace(/\\/g,'/')}/">`);
-  if (mode === 'after' && !html.includes('marketplace-index-parity-inline')) {
-    html = html.replace(/<\/head>/i, `<style data-source-css="marketplace-index-parity-inline">${inlineCssFile(path.join(ROOT, NEW_CSS))}</style></head>`);
+  if (mode === 'after' && !html.includes('marketplace-index-layout-inline')) {
+    html = html.replace(/<\/head>/i, `<style data-source-css="marketplace-index-layout-inline">${inlineCssFile(path.join(ROOT, NEW_CSS))}</style></head>`);
   }
   return html;
 }

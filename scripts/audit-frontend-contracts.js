@@ -44,7 +44,6 @@ const deprecatedCssLinks = [
   'assets/css/components/navigation/mobile-search-header-shared.css',
   'assets/css/components/shell/mobile-page-rhythm-contract.css',
   'assets/css/components/navigation/mobile-bottom-nav-system.css',
-  'assets/css/components/navigation/mobile-bottom-nav.css',
   'assets/css/components/navigation/bottom-nav.css',
   'assets/css/components/navigation/mobile-internal-header.css',
   'assets/css/components/navigation/header-mobile.css',

@@ -35,7 +35,9 @@ body.notifications-page-shell .notifications-filters-panel__group p {
 
 body.notifications-page-shell {
   --home-desktop-content-width: min(1280px, calc(100vw - var(--sidebar-width) - 56px));
-  --notifications-card-border: 1px solid rgba(190, 210, 230, 0.62);
+  --notifications-card-border: transparent;
+  --notifications-card-border-hover: transparent;
+  --notifications-card-selected-border: rgba(118, 205, 151, 0.95);
 }
 
 body.notifications-page-shell .page__content {
@@ -315,6 +317,9 @@ body.notifications-page-shell .notifications-page-header__search--hero {
 }
 
 .notification-card {
+  --card-border: 1px solid var(--notifications-card-border);
+  --doke-card-border: var(--notifications-card-border);
+  --doke-card-border-strong: var(--notifications-card-border);
   position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -323,7 +328,7 @@ body.notifications-page-shell .notifications-page-header__search--hero {
   padding: 14px 16px;
   border-radius: var(--radius-md);
   background: #fff;
-  border: var(--notifications-card-border);
+  border: var(--card-border, 1px solid var(--notifications-card-border));
   box-shadow: 0 8px 20px rgba(32, 63, 104, 0.04);
   overflow: hidden;
   cursor: pointer;
@@ -368,7 +373,7 @@ body.notifications-page-shell .notifications-page-header__search--hero {
 .notification-card:hover {
   transform: translateY(-1px);
   box-shadow: 0 12px 20px rgba(26, 60, 96, 0.07);
-  border-color: var(--border-color-soft);
+  border-color: var(--notifications-card-border-hover);
 }
 
 .notification-card__icon {
@@ -471,7 +476,8 @@ body.notifications-page-shell .notifications-page-header__search--hero {
 }
 
 .notification-card.is-unread {
-  border-color: var(--border-color-soft);
+  --doke-card-border: var(--notifications-card-border);
+  border-color: var(--notifications-card-border);
   box-shadow: 0 10px 22px rgba(32, 63, 104, 0.05);
 }
 
@@ -499,7 +505,8 @@ body.notifications-page-shell .notifications-page-header__search--hero {
 }
 
 .notifications-page.is-selection-mode .notification-card.is-selected {
-  border-color: rgba(118, 205, 151, 0.95);
+  --doke-card-border: var(--notifications-card-selected-border);
+  border-color: var(--notifications-card-selected-border);
   background: linear-gradient(180deg, rgba(248, 254, 250, 0.98) 0%, rgba(255, 255, 255, 0.98) 100%);
   box-shadow: 0 12px 22px rgba(37, 111, 68, 0.06);
 }

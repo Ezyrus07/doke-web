@@ -912,3 +912,39 @@ body:is(
   }
 }
 
+
+/* 2026-06-03 — notifications large-mobile rail alignment.
+   The notifications page owns a denser list than generic mobile cards; on 561-760px
+   tablet-like viewports, keep the global mobile header and notifications rail on
+   the same wider column instead of letting the list collapse below the header. */
+@media (min-width: 561px) and (max-width: 760px) {
+  html body[data-page="notificacoes"].notifications-page-shell {
+    --doke-notifications-large-mobile-rail: min(560px, calc(100vw - 48px));
+    --doke-large-mobile-rail: var(--doke-notifications-large-mobile-rail);
+    --doke-mobile-shell-large-rail: var(--doke-notifications-large-mobile-rail);
+    --doke-mobile-app-max: var(--doke-notifications-large-mobile-rail);
+    --app-mobile-max: var(--doke-notifications-large-mobile-rail);
+    --doke-shared-page-width: var(--doke-notifications-large-mobile-rail);
+    --doke-page-rail: var(--doke-notifications-large-mobile-rail);
+    --doke-header-rail: var(--doke-notifications-large-mobile-rail);
+    --doke-current-page-rail: var(--doke-notifications-large-mobile-rail);
+    --rail-max: var(--doke-notifications-large-mobile-rail);
+  }
+
+  html body[data-page="notificacoes"].notifications-page-shell .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack,
+  html body[data-page="notificacoes"].notifications-page-shell :is(.notifications-page, .notifications-list, .notifications-group) {
+    inline-size: var(--doke-notifications-large-mobile-rail) !important;
+    width: var(--doke-notifications-large-mobile-rail) !important;
+    max-inline-size: var(--doke-notifications-large-mobile-rail) !important;
+    max-width: var(--doke-notifications-large-mobile-rail) !important;
+    margin-inline: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  html body[data-page="notificacoes"].notifications-page-shell .notification-card {
+    inline-size: 100% !important;
+    width: 100% !important;
+    max-inline-size: 100% !important;
+    max-width: 100% !important;
+  }
+}

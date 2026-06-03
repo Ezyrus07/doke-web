@@ -299,15 +299,14 @@ Este relatório mapeia imports por página antes de qualquer remoção de CSS an
 ### `notificacoes.html`
 
 - Severidade: **Crítica**
-- CSS carregados: **85** (635.7 KB)
+- CSS carregados: **84** (634.6 KB)
 - JS carregados: **32** (154.5 KB)
-- `!important` carregado: **4027**
+- `!important` carregado: **4017**
 - Inline styles: **0**
 - CSS suspeitos/legados carregados:
   - `assets/css/components/internal/surface-contract.css`
   - `assets/css/pages/notificacoes/pedidos-parity.css`
   - `assets/css/pages/notificacoes/selection-parity.css`
-  - `assets/css/pages/notificacoes/mobile-interaction-contract.css`
   - `assets/css/components/ui-surface/surface-contract.css`
   - `assets/css/components/cards/card-grid-contract.css`
   - `assets/css/components/overlays/overlay-contract.css`

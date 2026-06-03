@@ -1,34 +1,28 @@
-# Phase 26 — Notifications important reduction: selection and compact mobile
+# Phase 26 — Notificações: superfície sem borda pesada e remoção de CSS morto
 
-## Scope
+## Objetivo
 
-This phase continues the controlled `!important` reduction on `notificacoes.html` only.
-It does not change the home, cards, shell, sidebar, router, messages, profile, or global header.
+Corrigir a regressão visual percebida nos cards de notificações no desktop, onde a borda voltou a aparecer como contorno forte, e remover um CSS local de seleção que não era importado pela página.
 
-## Root cause
+## Alterações
 
-The notifications selection and compact mobile contracts still carried `!important` declarations from older stabilization passes. Most of them were not functional state locks; they were visual declarations that could be preserved by the existing page scope and cascade order.
+- `assets/css/pages/notificacoes/base-layout.css`
+  - manteve a anatomia dos cards;
+  - trocou a borda visível padrão por `1px solid transparent`;
+  - manteve a borda transparente em hover e estado não lido para evitar contorno visual sem mudar dimensões.
+- `assets/css/pages/notificacoes/selection-cleanup.css`
+  - removido do projeto limpo por não ser importado em `assets/css/pages/notificacoes.css`;
+  - esse arquivo continha uma camada antiga de seleção com `!important` e não fazia parte da cascata ativa.
 
-## Changes
+## Fora de escopo
 
-- Removed non-functional `!important` from `assets/css/pages/notificacoes/selection-state.css`.
-- Removed non-functional `!important` from `assets/css/pages/notificacoes/mobile-compact-list.css`.
-- Removed non-functional `!important` from the mobile controls portion of `assets/css/pages/notificacoes/mobile-header-alignment.css`.
-- Kept the tablet `display: none !important` lock for `.notifications-mobile-header`, because it is still a functional ownership guard against older tablet toolbar contracts.
-- Removed the inactive `assets/css/pages/notificacoes/selection-cleanup.css` file. It was not imported by the notifications page manifest and existed as an old cleanup remnant.
+- Home, cards da home, shell, sidebar, header global, roteador, mensagens e perfil.
+- Estados funcionais de seleção ativa continuam no CSS de estado correto.
 
-## Acceptance criteria
+## Validação
 
-- Notifications selection toggle keeps the approved green active state.
-- Notifications controls/select panel still open when not hidden.
-- Mobile compact list keeps the same spacing, hidden auxiliary header, hidden inline links, and compact card behavior.
-- Tablet continues to use the approved global header ownership instead of the old local notifications toolbar.
+- `npm run audit:agent-governance`
+- `npm run audit:unused-asset-candidates`
+- brace balance em `base-layout.css`
+- `git diff --no-index --check`
 
-## Validation
-
-- CSS brace balance checked for changed CSS files.
-- JavaScript audit script syntax checked.
-- `npm run audit:agent-governance` executed.
-- `git diff --check` executed.
-
-Visual Playwright validation was not executed in this environment.
