@@ -20,7 +20,7 @@
 
 ## Decisões arquiteturais
 1. `core/components.css` foi descontinuado como origem e virou ponte de compatibilidade.
-2. Componentes reutilizáveis foram centralizados em `assets/css/components/index.css`.
+2. Componentes reutilizáveis foram centralizados em `assets/css/components/profile/index.css`.
 3. As páginas agora carregam `core/index.css` + um stylesheet de página, em vez de 5-9 folhas independentes no HTML.
 4. CSS órfão ou experimental saiu de `assets/css` e foi para `archive/legacy-css`.
 

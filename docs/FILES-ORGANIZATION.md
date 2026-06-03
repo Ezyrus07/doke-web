@@ -16,7 +16,7 @@
 
 ## Exceções preservadas
 - `assets/js/core/auth.js` continua como camada de compatibilidade
-- `assets/js/supabase-config.example.js` continua como exemplo de configuração
+- `assets/js/core/supabase-config.example.js` continua como exemplo de configuração
 
 ## Próximo passo recomendado
 - consolidar padrões reais da interface em cima da base ativa já reduzida

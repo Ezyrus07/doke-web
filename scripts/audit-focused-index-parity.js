@@ -19,10 +19,6 @@ const BREAKPOINTS = [
   { name: '810x1080', width: 810, height: 1080 },
 ];
 
-const CONTRACT_HREFS = [
-  'assets/css/components/layout/focused-index-parity-contract.css',
-  'assets/css/components/layout/focused-index-final-parity-contract.css',
-];
 const TARGET_PAGES = ['detalhe-anuncio.html', 'perfil.html'];
 
 const COMPONENTS = [
@@ -55,7 +51,6 @@ function loadHtml(file, mode) {
     if (!hrefMatch) return tag;
     const href = hrefMatch[1].split('?')[0];
     if (/^(https?:)?\/\//i.test(href)) return '';
-    if (mode === 'before' && CONTRACT_HREFS.includes(href)) return '<!-- focused parity contract disabled for before measurement -->';
     const cssPath = path.join(ROOT, href);
     if (!fs.existsSync(cssPath)) return '';
     return `<style data-source-css="${href}">\n${fs.readFileSync(cssPath, 'utf8')}\n</style>`;
@@ -138,12 +133,12 @@ function compareRows({ mode, page, bp, component, baselineItems, actualItems, me
 }
 
 function probableCss(component, page) {
-  if (component.startsWith('header')) return 'assets/css/components/shell/app-header-canonical-contract.css; assets/css/components/layout/focused-index-parity-contract.css';
-  if (component.startsWith('container')) return 'assets/css/components/shell/shared-page-width-contract.css; assets/css/components/layout/focused-index-parity-contract.css';
-  if (component.startsWith('section-header')) return 'assets/css/components/sections/section-header-canonical-contract.css; assets/css/components/layout/focused-index-parity-contract.css';
-  if (component.includes('doke-ad')) return 'assets/css/components/cards/ad-card.css; assets/css/components/layout/focused-index-parity-contract.css';
-  if (component.includes('publication')) return 'assets/css/components/cards/publication-card.css; assets/css/components/layout/focused-index-parity-contract.css';
-  if (component.includes('worker')) return 'assets/css/components/cards/worker-card.css; assets/css/components/layout/focused-index-parity-contract.css';
+  if (component.startsWith('header')) return 'assets/css/components/shell/app-header-canonical-contract.css';
+  if (component.startsWith('container')) return 'assets/css/components/shell/shared-page-width-contract.css';
+  if (component.startsWith('section-header')) return 'assets/css/components/sections/section-header-canonical-contract.css';
+  if (component.includes('doke-ad')) return 'assets/css/components/cards/ad-card.css';
+  if (component.includes('publication')) return 'assets/css/components/cards/publication-card.css';
+  if (component.includes('worker')) return 'assets/css/components/cards/worker-card.css';
   return page.includes('detalhe') ? 'assets/css/pages/detalhe-anuncio.css' : 'assets/css/pages/perfil/*.css';
 }
 

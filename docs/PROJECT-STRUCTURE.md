@@ -59,4 +59,4 @@
 
 ## Regra de manutenção
 - editar layout ativo apenas em `assets/css/core/`, `assets/css/pages/`, `assets/js/core/` e `assets/js/pages/`
-- tratar `assets/js/supabase-config.example.js` apenas como arquivo de exemplo
+- tratar `assets/js/core/supabase-config.example.js` apenas como arquivo de exemplo

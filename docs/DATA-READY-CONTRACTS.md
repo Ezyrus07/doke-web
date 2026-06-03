@@ -1,4 +1,9 @@
-# Data-ready Contracts — Doke
+# Data-ready contracts
+
+This is the single active data-readiness contract for Doke. It consolidates API, backend, fallback and state boundaries.
+
+
+## Base contract
 
 ## Objetivo
 
@@ -41,58 +46,173 @@ Cards, listas, galerias, avaliações, pedidos, carteira, notificações e confi
 
 Enquanto o backend não estiver finalizado, dados podem vir de mocks ou providers internos. Quando Supabase/Firebase/API entrarem, a troca deve ocorrer no provider/repository, não no markup dos componentes.
 
-## Logic architecture checkpoint
 
-The project already has an initial logic-ready structure. Do not create a second parallel architecture such as `assets/js/app/**` or page-specific backend clients.
+## Api Contracts
 
-### Current runtime layers
+# Contratos de API — rascunho
 
-- `assets/js/core/`: runtime foundations such as routing, session, auth, DOM helpers, page bootstrap, runtime config and app-level state.
-- `assets/js/services/`: data access boundary, repositories/providers, Supabase contracts, domain services and fallback/mock strategy.
-- `assets/js/renderers/`: pure renderers that receive data and return/update UI without fetching from backend directly.
-- `assets/js/controllers/`: page controller registry and page controllers responsible for orchestration.
-- `assets/js/pages/`: page-specific interactions and thin page-level glue.
-- `assets/js/state/`: shared state contracts and state containers.
+## Auth
+- POST /auth/login
+- POST /auth/logout
+- POST /auth/register
+- POST /auth/recover
 
-### Rule for adding real logic
+## Services
+- GET /services
+- GET /services/:id
+- POST /services
+- PATCH /services/:id
 
-New logic should move through this path:
+## Orders
+- GET /orders
+- POST /orders
+- GET /orders/:id
+- POST /orders/:id/budgets
+- PATCH /orders/:id/status
 
-```txt
-backend/API/Supabase/Firebase
-  -> service or repository boundary
-  -> page-data-orchestrator/domain service
-  -> page controller
-  -> renderer/component
-  -> DOM
+## Messaging
+- GET /conversations
+- GET /conversations/:id/messages
+- POST /conversations/:id/messages
+
+## Payments
+- POST /checkout
+- GET /wallet
+- POST /payouts
+
+Observação: isto é contrato-alvo. A implementação real pode começar com Supabase client e evoluir para API/Edge Functions.
+
+
+
+## Data Backend Contracts
+
+# Contratos de dados e backend
+
+## Entidades principais
+
+- User
+- UserProfile
+- ProfessionalProfile
+- Service
+- ServiceCategory
+- ServiceMedia
+- Order
+- Budget
+- Conversation
+- Message
+- Review
+- Wallet
+- Transaction
+- Community
+- Notification
+- Report
+- AuditLog
+
+## Regras
+
+1. Toda entidade privada deve ter RLS antes de ir para produção.
+2. Toda ação sensível deve gerar `audit_logs`.
+3. Nenhuma página HTML/JS deve acessar tabelas diretamente.
+4. Toda lista pública precisa de paginação.
+5. Toda busca precisa ter limite e rate limiting no backend.
+6. Pagamentos, saques e reembolsos nunca devem depender só do cliente.
+7. Mensagens e anexos precisam validar participante da conversa.
+8. Reviews só devem existir para pedidos concluídos.
+
+## Papéis
+
+- `guest`: leitura pública limitada.
+- `client`: cria pedidos, conversa em pedidos, avalia pedidos concluídos.
+- `professional`: cria serviços, envia orçamentos, gerencia agenda e saques.
+- `moderator`: revisa denúncias, verificações e conteúdo.
+- `admin`: opera plataforma, finanças e configurações críticas.
+
+
+
+## Data Fallback Strategy
+
+# Data fallback strategy — Doke
+
+Este documento define a estratégia mínima para transição de mocks para backend sem acoplar UI ao formato provisório do HTML atual.
+
+## Ordem de fonte de dados
+
+1. Backend/repository real, quando disponível e autorizado.
+2. Repository boundary da página/domínio.
+3. Mock data service controlado.
+4. Fallback vazio com estado `empty`.
+5. Erro normalizado com estado `error`.
+
+## Regra de responsabilidade
+
+- `services` buscam ou normalizam dados.
+- `repositories` escondem origem real/mock.
+- `controllers` orquestram estado da página.
+- `renderers` transformam dados em DOM.
+- HTML provisório não deve ser fonte definitiva de verdade.
+
+## Estados obrigatórios de fallback
+
+- Sucesso com itens: `ready`.
+- Sucesso sem itens: `empty`.
+- Falha de request/parse/permissão: `error`.
+- Request em andamento: `loading`.
+
+## Restrições
+
+- Não usar dados sensíveis em estado global.
+- Não depender de texto mockado como ID definitivo.
+- Não usar `style=""` para fallback visual.
+- Não criar controller que escreva direto em muitos seletores sem boundary.
+
+
+
+## State Contracts
+
+# State contracts — Doke
+
+Este contrato define a base mínima para estados de UI em páginas que ainda podem mudar visualmente. Ele não consolida layout, não define responsivo e não substitui a reforma desktop futura.
+
+## Objetivo
+
+Preparar páginas, controllers e renderers para dados reais sem acoplar backend ao HTML mockado atual.
+
+## Estados obrigatórios de listas e regiões dinâmicas
+
+Toda região que renderiza dados externos, mocks ou repositórios deve conseguir representar:
+
+- `idle`: estado inicial antes da busca/renderização.
+- `loading`: operação em andamento.
+- `empty`: resposta válida sem itens.
+- `error`: falha de carregamento ou renderização.
+- `ready`: dados carregados e renderizados.
+
+## Contrato de atributos recomendado
+
+Use estes hooks quando uma área for dinâmica:
+
+```html
+<section data-list-region data-state="idle" aria-busy="false">
+  <div data-list></div>
+  <div data-list-loading hidden aria-live="polite"></div>
+  <div data-list-empty hidden></div>
+  <div data-list-error hidden role="alert"></div>
+</section>
 ```
 
-### Prohibited logic shortcuts
+Para regiões que não são listas, use:
 
-- Page scripts must not query Supabase/Firebase tables directly when a service/repository boundary exists.
-- Renderers must not fetch data.
-- CSS must not depend on mock content length or on the exact number of mock cards.
-- A controller must not duplicate data-shaping logic already owned by a service.
-- A page must not create its own private mock contract if `assets/js/services/mock-data-boundary.js` or `mock-data-service.js` can own it.
-- Do not create a new global data client if `assets/js/core/api-client.js`, `assets/js/core/auth-service.js`, `assets/js/services/repository-boundary.js`, or `assets/js/services/supabase-contract.js` already covers the boundary.
+```html
+<section data-view-state="idle" aria-busy="false">
+  <p data-view-state-message aria-live="polite"></p>
+</section>
+```
 
-### First recommended logic implementation area
+## Regras
 
-The safest next real-logic area is home/index data hydration, because it already has visible data surfaces:
-
-- featured services;
-- workers;
-- publications;
-- more services;
-- categories/search metadata.
-
-Do not start by integrating every page. Start with one read-only list surface, preserve the static fallback, and prove loading/empty/error states before expanding.
-
-### Minimum acceptance for a data-ready page
-
-- Static fallback still works without backend credentials.
-- Loading state exists and does not cause layout shift.
-- Empty state exists and preserves page spacing.
-- Error state is non-blocking and does not blank the shell.
-- Rendered cards use existing component classes and `data-*` hooks.
-- Navigation through `DokeNavigate(...)` initializes the same controller state as direct URL load.
+- Não usar `style=""` para alternar estados.
+- Não usar `!important` novo para esconder/mostrar estados.
+- Não acoplar mensagens de erro ao backend definitivo.
+- Não tratar HTML/CSS provisório como contrato visual final.
+- Manter a semântica acessível: `aria-busy`, `aria-live` e `role="alert"` quando fizer sentido.
+- Controllers devem acionar estado; renderers devem renderizar conteúdo; services/repositories devem retornar dados/erro.

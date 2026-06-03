@@ -69,3 +69,7 @@ Responsável por:
 ## Regra para `!important`
 
 `!important` é dívida técnica tolerada apenas onde já existe conflito legado. Novos usos exigem justificativa explícita e plano de remoção.
+
+## Phase 31 — notifications important cleanup
+
+`assets/css/pages/notificacoes` now keeps only the `[hidden]` state guard as an intentional `!important`. The previous mobile/header/selection display overrides were reduced to normal cascade rules after the mobile scope fixes. Future notification changes must not reintroduce `!important` for spacing, color, typography, borders, or normal display states.

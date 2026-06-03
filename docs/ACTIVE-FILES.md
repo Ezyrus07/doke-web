@@ -30,7 +30,7 @@
 
 ## Fora da base ativa
 - `archive/*`
-- `assets/js/supabase-config.example.js`
+- `assets/js/core/supabase-config.example.js`
 
 ## Regra de manutenção
 - resolver shell, sidebar, cards e perfis primeiro na base compartilhada

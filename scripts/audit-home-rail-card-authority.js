@@ -13,7 +13,7 @@ const path = require('path');
 const root = process.cwd();
 const generatedReportsDir = path.join(root, 'reports', 'generated');
 const reportPath = path.join(generatedReportsDir, 'home-rail-card-authority-report.json');
-const markdownPath = path.join(root, 'docs', 'HOME-RAIL-CARD-AUTHORITY-AUDIT.md');
+const markdownPath = path.join(generatedReportsDir, 'home-rail-card-authority-report.md');
 const indexPath = path.join(root, 'index.html');
 
 const htmlLinkRe = /<link\b[^>]*\bhref=["']([^"']+\.css(?:\?[^"']*)?)["'][^>]*>/gi;
