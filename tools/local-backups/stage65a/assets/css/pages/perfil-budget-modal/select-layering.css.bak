@@ -1,0 +1,259 @@
+/* Select layering and scroll behavior inside the modal. */
+/* 2026-04 budget modal select layering fix:
+   custom selects must float above the modal content/footer instead of being trapped below the form. */
+.profile-budget-modal .budget-panel {
+  position: relative;
+  z-index: 2;
+}
+
+.profile-budget-modal .budget-actions {
+  position: relative;
+  z-index: 12;
+}
+
+.profile-budget-modal .ui-select {
+  position: relative;
+  z-index: 20;
+}
+
+.profile-budget-modal .ui-select.is-open {
+  z-index: 4000;
+}
+
+.profile-budget-modal .ui-select__menu {
+  z-index: 4001 !important;
+  max-height: min(260px, 42vh);
+  overflow-y: auto;
+  border: 1px solid rgba(194, 215, 234, 0.96);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.995);
+  box-shadow: 0 24px 54px rgba(17, 48, 82, 0.18);
+  backdrop-filter: blur(8px);
+}
+
+.profile-budget-modal .ui-select__option {
+  background: transparent;
+  color: #173759;
+}
+
+.profile-budget-modal .ui-select__option:hover,
+.profile-budget-modal .ui-select__option.is-selected {
+  background: rgba(232, 243, 252, 0.98);
+  color: #174d7d;
+}
+
+/* When a select is open, allow its menu to escape the scroll panel and overlay the footer/neighbor fields. */
+.profile-budget-modal:has(.ui-select.is-open),
+.profile-budget-modal:has(.ui-select.is-open) .detail-budget-modal__dialog,
+.profile-budget-modal:has(.ui-select.is-open) .quote-main,
+.profile-budget-modal:has(.ui-select.is-open) .detail-budget-modal__flow,
+.profile-budget-modal:has(.ui-select.is-open) .budget-panel {
+  overflow: visible !important;
+}
+
+.profile-budget-modal:has(.ui-select.is-open) .budget-panel {
+  z-index: 100;
+}
+
+.profile-budget-modal:has(.ui-select.is-open) .budget-actions {
+  z-index: 40;
+}
+
+
+/* 2026-04 professional select behavior inside budget modal:
+   dropdowns stay inside the modal, preserve rounded corners, and flip upward near the footer. */
+.profile-budget-modal .detail-budget-modal__dialog,
+.profile-budget-modal .quote-main,
+.profile-budget-modal .detail-budget-modal__flow {
+  overflow: hidden !important;
+  border-radius: 32px;
+}
+
+.profile-budget-modal .budget-panel {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-bottom: 96px;
+}
+
+.profile-budget-modal:has(.ui-select.is-open) .detail-budget-modal__dialog,
+.profile-budget-modal:has(.ui-select.is-open) .quote-main,
+.profile-budget-modal:has(.ui-select.is-open) .detail-budget-modal__flow {
+  overflow: hidden !important;
+}
+
+.profile-budget-modal:has(.ui-select.is-open) .budget-panel {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.profile-budget-modal .ui-select {
+  position: relative;
+  z-index: 20;
+}
+
+.profile-budget-modal .ui-select.is-open {
+  z-index: 500;
+}
+
+.profile-budget-modal .ui-select__menu {
+  top: calc(100% + 8px) !important;
+  bottom: auto !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 501 !important;
+  max-height: min(228px, 34dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid rgba(193, 214, 235, 0.98);
+  border-radius: var(--radius-surface);
+  background: rgba(255, 255, 255, 0.995);
+  box-shadow: 0 22px 46px rgba(15, 43, 73, 0.16);
+  backdrop-filter: blur(10px);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(116, 145, 176, 0.58) transparent;
+}
+
+.profile-budget-modal .ui-select--drop-up .ui-select__menu {
+  top: auto !important;
+  bottom: calc(100% + 8px) !important;
+}
+
+.profile-budget-modal .ui-select__menu::-webkit-scrollbar {
+  width: 8px;
+}
+
+.profile-budget-modal .ui-select__menu::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-pill);
+  background: rgba(116, 145, 176, 0.5);
+}
+
+.profile-budget-modal .ui-select__option {
+  min-height: 48px;
+  padding: 0 18px;
+  border: 0;
+  background: transparent;
+  color: #173759;
+  font-weight: 800;
+  text-align: left;
+}
+
+.profile-budget-modal .ui-select__option:hover,
+.profile-budget-modal .ui-select__option:focus-visible,
+.profile-budget-modal .ui-select__option.is-selected {
+  background: rgba(232, 243, 252, 0.98);
+  color: #174d7d;
+  outline: none;
+}
+
+.profile-budget-modal .budget-actions {
+  z-index: 60;
+  border-radius: 0 0 32px 32px;
+}
+
+@media (max-width: 860px) {
+  .profile-budget-modal .detail-budget-modal__dialog,
+  .profile-budget-modal .quote-main,
+  .profile-budget-modal .detail-budget-modal__flow,
+  .profile-budget-modal .budget-actions {
+    border-radius: var(--radius-lg);
+  }
+
+  .profile-budget-modal .budget-actions {
+    border-radius: 0 0 24px 24px;
+  }
+
+  .profile-budget-modal .ui-select__menu {
+    max-height: min(220px, 32dvh);
+  }
+}
+
+
+/* 2026-04 final select placement: fixed dropdown, downward-first, no clipping and no unwanted upward overlap. */
+.profile-budget-modal .ui-select {
+  position: relative;
+}
+
+.profile-budget-modal .ui-select.is-open {
+  z-index: 700;
+}
+
+.profile-budget-modal .ui-select.is-open .ui-select__menu {
+  position: fixed !important;
+  left: var(--doke-select-left, auto) !important;
+  top: var(--doke-select-top, auto) !important;
+  bottom: auto !important;
+  width: var(--doke-select-width, auto) !important;
+  max-height: var(--doke-select-max-height, 260px) !important;
+  z-index: 9999 !important;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: var(--radius-surface);
+  border: 1px solid rgba(193, 214, 235, 0.98);
+  background: rgba(255, 255, 255, 0.995);
+  box-shadow: 0 24px 54px rgba(15, 43, 73, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+/* Keep previous drop-up class harmless unless JS explicitly chooses it. */
+.profile-budget-modal .ui-select--drop-up .ui-select__menu {
+  top: var(--doke-select-top, auto) !important;
+  bottom: auto !important;
+}
+
+.profile-budget-modal .detail-budget-modal__dialog,
+.profile-budget-modal .quote-main,
+.profile-budget-modal .detail-budget-modal__flow {
+  overflow: hidden !important;
+}
+
+.profile-budget-modal .budget-panel {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-bottom: 120px;
+}
+
+
+/* 2026-04 budget modal no internal scroll:
+   desktop quote steps now fit naturally without the ugly panel scrollbar. */
+@media (min-width: 861px) {
+  .profile-budget-modal {
+    max-height: none;
+  }
+
+  .profile-budget-modal .detail-budget-modal__dialog,
+  .profile-budget-modal .quote-main,
+  .profile-budget-modal .detail-budget-modal__flow {
+    max-height: none !important;
+  }
+
+  .profile-budget-modal .detail-budget-modal__flow {
+    grid-template-rows: auto auto auto auto !important;
+  }
+
+  .profile-budget-modal .budget-panel {
+    overflow: visible !important;
+    padding-bottom: 22px;
+    min-height: 0 !important;
+  }
+
+  .profile-budget-modal .budget-panel::-webkit-scrollbar {
+    display: none;
+  }
+
+  .profile-budget-modal .budget-panel {
+    scrollbar-width: none;
+  }
+
+  .profile-budget-modal .budget-actions {
+    position: relative;
+  }
+}
+
+/* Keep controlled scroll only on small screens where the viewport can actually be shorter. */
+@media (max-width: 860px) {
+  .profile-budget-modal .budget-panel {
+    padding-bottom: 88px;
+  }
+}
+
+
