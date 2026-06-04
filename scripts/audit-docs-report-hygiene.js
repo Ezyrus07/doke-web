@@ -38,9 +38,15 @@ const largeReports = validationReports
 
 const preferredLivingDocs = [
   'AGENTS.md',
+  'PROJECT-RULES.md',
   'docs/DOKE_AGENT_CONSTITUTION.md',
+  'docs/ACTIVE-CONTRACTS-INDEX.md',
   'docs/ARCHITECTURE.md',
   'docs/CSS_AUTHORITY_MAP.md',
+  'docs/GLOBAL-LAYOUT-CONTRACT.md',
+  'docs/DESIGN-SYSTEM-GUIDE.md',
+  'docs/FRONTEND-GOVERNANCE.md',
+  'docs/SURFACE-CONTRACT.md',
   'docs/VALIDATION.md',
   'docs/BASELINE-VISUAL-APPROVED.md',
   'docs/DATA-READY-CONTRACTS.md',
