@@ -24,6 +24,7 @@ Cards, listas, galerias, avaliações, pedidos, carteira, notificações e confi
 - `data-worker-card`
 - `data-publication-card`
 - `data-review-card`
+- `data-render-state`
 - `data-card-kind`
 - `data-rating-value`
 - `data-rating-count`
