@@ -32,7 +32,7 @@
    Keep results-specific ownership here so shared header/search/card CSS does not
    drift back into page HTML. */
 @import url("../components/before-after-workers-preview.css?v=20260505-publication-modal-v2");
-@import url("../components/cards/mobile-card-contract.css?v=20260426-final-mobile-cards");
+@import url("../components/cards/mobile-card-contract.css?v=20260426-mobile-cards-v1");
 @import url("../components/ui-surface-system.css?v=20260427-modal-alignment-v22");
 @import url("./results/open-filters-from-url.css?v=20260427-v26-open-filters");
 @import url("../core/responsive-foundation.css?v=20260510-mobile-width-contract-v1");
@@ -44,7 +44,7 @@
 @import url("../core/responsive-runtime.css?v=20260428-architecture");
 @import url("../patterns/responsive-layout-guards.css?v=20260428-architecture");
 @import url("../components/navigation/mobile-drawer-standard.css?v=20260428-architecture");
-@import url("../components/identity/avatar.css?v=20260429-avatar-circle-final");
+@import url("../components/identity/avatar.css?v=20260429-avatar-circle-v1");
 @import url("../components/internal/filter-select-standard.css?v=20260429-global-header-avatar");
 @import url("../components/shell/page-container-contract.css?v=20260510-mobile-width-contract-v1");
 @import url("../patterns/mobile-app-shell.css?v=20260501-canonical-mobile-architecture");
@@ -74,7 +74,7 @@
 @import url("./search-results/index-rail-alignment.css?v=20260505-results-index-rail-v1");
 @import url("./search-results/workers-index-layout-contract.css?v=20260505-workers-index-layout-v2");
 @import url("./search-results/filter-toggle-density.css?v=20260505-filter-toggle-density-v1");
-@import url("../components/cards/worker-card.css?v=20260505-results-worker-parity-v2");
+@import url("../components/cards/worker-card.css?v=20260505-results-worker-v2");
 @import url("./search-results/display-density.css?v=20260505-results-display-density-v4");
 
 /* resultados.html composition contract v6
@@ -1084,7 +1084,7 @@
 
 
 /* Results search bridge to shared search-pill contract.
-   This is page-owned only to neutralize older result search declarations until the legacy parity layers are removed. */
+   This is page-owned only to neutralize older result search declarations until shared layers are consolidated. */
 @media (min-width: 761px) {
   body.search-results-body .results-searchbar__form.doke-search-pill {
     position: relative !important;
@@ -1189,7 +1189,7 @@
 /* FINAL RESULTS CARD PARITY v13
    Ownership: resultados.html cards rendered by search-results.js.
    The result page must consume the same doke-ad-card component contract used by
-   index.html; page CSS controls only the grid. These rules neutralize legacy
+   index.html; page CSS controls only the grid. These rules neutralize older
    result-only anatomy overrides that made cards look different. */
 body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) > .doke-ad-card {
   display: flex !important;
@@ -1245,7 +1245,7 @@ body.search-results-body .results-layout[data-results-mode="services"] :is(.resu
 
 /* FINAL RESULTS WORKERS/PUBLICATIONS PARITY v13
    Workers and Publicações in resultados.html must use the same media-card
-   contracts consumed by index.html. This block is intentionally last so legacy
+   contracts consumed by index.html. This block is intentionally last so older
    density files cannot reintroduce overlay-heavy result cards. */
 body.search-results-body .results-layout[data-results-mode="workers"] .results-grid {
   display: grid !important;
@@ -2077,7 +2077,7 @@ body.search-results-body :is(.results-searchbar__mobile-filter, .filter-toggle):
   }
 }
 
-/* resultados.html header parity with index.html
+/* resultados.html header alignment with index.html
    Scope: page-specific guard. The shared .app-header geometry remains owned by components/shell. */
 @media (max-width: 599px) {
   body.search-results-body > .app-shell > .page > .app-header.app-header--results {
@@ -2091,7 +2091,7 @@ body.search-results-body :is(.results-searchbar__mobile-filter, .filter-toggle):
   }
 }
 
-/* RESULTADOS v97 — filter icon parity + focused input tap-state.
+/* RESULTADOS v97 — filter icon alignment + focused input tap-state.
    Scope: resultados.html only.
    Mantém o ícone padrão do botão Filtros e desfaz a neutralização agressiva
    da superfície da busca feita na v96. O campo volta ao contrato visual anterior;

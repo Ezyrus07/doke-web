@@ -7,14 +7,14 @@
    - home-shell.css: shell scaffolding and workspace spacing exclusive to home
    - home-search-chrome.css: hero, top chrome and search field/dropdown composition
    - home-sections.css: section structure, rails and cards rendered on the landing feed
-   - home-refresh.css: remaining home refinements, responsive cleanup and normalization
+   - home-refresh.css: remaining home refinements and responsive cleanup
    - home-overlays.css: location surfaces, drawers, address modal and layered UI
    - home/mobile/index.css: mobile-only refinements owned inside pages/home/mobile/
 
    Governance rule:
    - edit the runtime owners above first
    - do not recreate parallel owners under assets/css/pages/home/
-   - legacy parallel modules were archived to archive/legacy-home-css/ in 2026-04 */
+   - retired parallel modules were archived to archive/legacy-home-css/ in 2026-04 */
 @import url("./home-shell.css?v=20260428-architecture");
 @import url("./home-sections.css?v=20260501-search-dropdown-v4");
 @import url("./home-refresh.css?v=20260426-home-refresh-split-v10");
@@ -22,7 +22,7 @@
 @import url("../components/search/search-autocomplete.css?v=20260502-shared-search-autocomplete-v3");
 @import url("./home-search-chrome.css?v=20260428-architecture");
 @import url("../components/search/search-bar.css?v=20260505-shared-search-pill-v1");
-@import url("./home/mobile/index.css?v=20260515-mobile-card-width-normalization-v1") screen and (max-width: 560px);
+@import url("./home/mobile/index.css?v=20260515-mobile-card-width-v1") screen and (max-width: 560px);
 
 @import url("./home-ux-popovers.css?v=20260505-more-filters-popover-v1");
 
@@ -37,13 +37,13 @@
    index.html must load only core/index.css, pages/app-shell.css and this file.
    Keep home-specific ownership here so CSS order is visible in one place. */
 @import url("../components/before-after-workers-preview.css?v=20260429-index-recovery-comments");
-@import url("../components/cards/mobile-card-contract.css?v=20260426-final-mobile-cards");
+@import url("../components/cards/mobile-card-contract.css?v=20260426-mobile-cards-v1");
 @import url("../components/ui-surface-system.css?v=20260427-modal-alignment-v22");
 @import url("../core/responsive-foundation.css?v=20260510-mobile-width-contract-v1");
 @import url("../components/internal/topbar-standard.css?v=20260428-architecture");
 @import url("../components/cards/card-grid-contract.css?v=20260502-stage2-card-contract-v1");
 @import url("../components/cards/recommendation-card.css?v=20260428-index-recommendations-v3");
-@import url("../components/cards/ad-card.css?v=20260510-index-profile-card-parity-v1");
+@import url("../components/cards/ad-card.css?v=20260510-index-profile-card-v1");
 @import url("../patterns/home-results-card.css?v=20260428-architecture");
 @import url("../components/overlays/overlay-contract.css?v=20260428-architecture");
 @import url("../components/forms-actions/form-action-contract.css?v=20260428-architecture");
@@ -56,11 +56,11 @@
 @import url("../components/navigation/mobile-drawer-standard.css?v=20260428-architecture");
 @import url("./home/mobile-alignment.css?v=20260510-mobile-width-contract-v1");
 @import url("../components/shell/page-container-contract.css?v=20260510-mobile-width-contract-v1");
-@import url("../components/cards/mobile-list-card-system.css?v=20260428-v1-hotfix");
-@import url("../components/overlays/mobile-overlay-system.css?v=20260428-overlay-hotfix");
+@import url("../components/cards/mobile-list-card-system.css?v=20260428-v1");
+@import url("../components/overlays/mobile-overlay-system.css?v=20260428-overlay-v1");
 @import url("./home/mobile-hero-feed.css?v=20260602-home-mobile-hero-feed-v1");
 @import url("./home/publications-no-arrows.css?v=20260505-publications-no-arrows-v1");
-@import url("../components/identity/avatar.css?v=20260429-avatar-circle-final");
+@import url("../components/identity/avatar.css?v=20260429-avatar-circle-v1");
 @import url("../components/internal/filter-select-standard.css?v=20260429-global-header-avatar");
 @import url("../patterns/mobile-app-shell.css?v=20260501-canonical-mobile-architecture");
 @import url("../components/navigation/app-header.css?v=20260501-canonical-mobile-architecture");
@@ -419,7 +419,7 @@
   }
 }
 
-/* Follow-up desktop alignment pass after restoring the legacy search field. */
+/* Desktop alignment pass after restoring the canonical search field. */
 @media (min-width: 761px) {
   html body.home-index-shell.doke-app-shell-page {
     --doke-home-sidebar-width: var(--sidebar-width, 272px);
@@ -747,7 +747,7 @@
   }
 }
 
-/* 2026-05-01 — Home desktop width parity with internal pages
+/* 2026-05-01 — Home desktop width alignment with internal pages
    The home must use the same app frame as pedidos.html; sections may scroll
    internally, but the page itself cannot exceed the available workspace. */
 @media (min-width: 1025px) {
@@ -1341,7 +1341,7 @@ body.home-index-shell :where(.service-grid, .service-cards-grid, .featured-pros_
 
 /* V10 media-section alignment contract.
    Fixes the real issue: the title, arrows and first card must share one rail contract.
-   Scope stays restricted to Workers/Publicações, except the Mais anúncios repair below restores its grid after previous overrides. */
+   Scope stays restricted to Workers/Publicações; Mais anúncios keeps its own grid contract below. */
 @media (min-width: 761px) {
   body.home-index-shell {
     --home-media-arrow-size: 52px;
@@ -2129,9 +2129,9 @@ html.home-index-root body.home-index-shell section.featured-pros .pro-card {
    Arrows live inside the reserved gutter, never with negative offsets. */
 @media (min-width: 761px) {
   html.home-index-root body.home-index-shell {
-    --home-rail-arrow-size-final: 48px;
-    --home-rail-arrow-gutter-final: 64px;
-    --home-rail-arrow-edge-final: 8px;
+    --home-rail-arrow-size: 48px;
+    --home-rail-arrow-gutter: 64px;
+    --home-rail-arrow-edge: 8px;
   }
 
   html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) {
@@ -2143,7 +2143,7 @@ html.home-index-root body.home-index-shell section.featured-pros .pro-card {
     width: 100% !important;
     max-width: 100% !important;
     margin-inline: 0;
-    padding-inline: var(--home-rail-arrow-gutter-final);
+    padding-inline: var(--home-rail-arrow-gutter);
     overflow: visible !important;
     box-sizing: border-box;
   }
@@ -2154,21 +2154,21 @@ html.home-index-root body.home-index-shell section.featured-pros .pro-card {
     z-index: 30 !important;
     display: grid !important;
     place-items: center;
-    width: var(--home-rail-arrow-size-final) !important;
-    height: var(--home-rail-arrow-size-final) !important;
-    min-width: var(--home-rail-arrow-size-final) !important;
-    min-height: var(--home-rail-arrow-size-final) !important;
+    width: var(--home-rail-arrow-size) !important;
+    height: var(--home-rail-arrow-size) !important;
+    min-width: var(--home-rail-arrow-size) !important;
+    min-height: var(--home-rail-arrow-size) !important;
     margin: 0;
     transform: translateY(-50%) !important;
   }
 
   html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow--prev {
-    left: var(--home-rail-arrow-edge-final) !important;
+    left: var(--home-rail-arrow-edge) !important;
     right: auto !important;
   }
 
   html.home-index-root body.home-index-shell section:is(.featured-services, .short-videos, .home-publications, .featured-pros) > .content-rail > .content-rail__arrow--next {
-    right: var(--home-rail-arrow-edge-final) !important;
+    right: var(--home-rail-arrow-edge) !important;
     left: auto !important;
   }
 
@@ -2335,7 +2335,7 @@ html.home-index-root body.home-index-shell section.featured-pros .pro-card {
 }
 
 
-/* STRUCTURAL RAIL CONTRACT v21 — definitive index rail normalization.
+/* STRUCTURAL RAIL CONTRACT v21 — index rail contract.
    Purpose: match arrow placement across Destaques, Workers, Publicações and Profissionais
    without negative offsets or clipping. The arrow center sits on the first/last card edge. */
 @media (min-width: 761px) {
@@ -3042,7 +3042,7 @@ html.home-index-root body.home-index-shell section.more-services :is(.more-servi
 }
 
 
-/* MORE SERVICES FILTER BUTTON — parity with resultados filter toggle.
+/* MORE SERVICES FILTER BUTTON — aligned with resultados filter toggle.
    Responsibility: home Mais anúncios tab action only. This is a labeled action,
    not an icon-only button, so it must not inherit square .doke-icon-btn sizing. */
 html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track > .filter-toggle {
@@ -4216,7 +4216,7 @@ html.home-index-root body.home-index-shell section.more-services .service-grid.s
 
 
 /* Home mobile announcement card density alignment.
-   Page-level only because previous home rail contracts already use final mobile overrides. */
+   Page-level only because previous home rail contracts already define mobile overrides. */
 @media (max-width: 760px) {
   html.home-index-root body.home-index-shell .featured-services .doke-ad-card__media,
   html.home-index-root body.home-index-shell .more-services .doke-ad-card__media {
@@ -4581,7 +4581,7 @@ html.home-index-root body.home-index-shell section.more-services .service-grid.s
 }
 
 
-/* MOBILE AD CARD DENSITY LOCK v8 — final runtime contract.
+/* MOBILE AD CARD DENSITY LOCK v8 — runtime contract.
    The previous ZIP kept the same home.css cache key, so GitHub Pages/browser could
    keep serving the older loaded-card contract. This block is intentionally last.
    Scope: home mobile ad cards only. */
@@ -6062,9 +6062,9 @@ html.home-index-root body.home-index-shell section.home-publications .publicatio
   }
 }
 
-/* 2026-05-13 — Index header transparent rail final cleanup
+/* 2026-05-13 — Index header transparent rail cleanup
    Scope: index desktop only.
-   Remove the legacy parent surface around the marketplace header. Controls keep
+   Remove the retired parent surface around the marketplace header. Controls keep
    their own soft-surface backgrounds; only wrapper rails are transparent. */
 @media (min-width: 1025px) {
   html.home-index-root body.home-index-shell :is(
@@ -6095,7 +6095,7 @@ html.home-index-root body.home-index-shell section.home-publications .publicatio
   }
 }
 
-/* 2026-05-14: index desktop parity correction.
+/* 2026-05-14: index desktop alignment correction.
    The index must not define a wider header rail than pedidos.html.
    Header geometry stays in components/shell/app-header.css; home.css only keeps
    page content on the standard shell rail and consumes the shared search-pill size. */
@@ -6153,7 +6153,7 @@ html.home-index-root body.home-index-shell section.home-publications .publicatio
   }
 }
 
-/* 2026-05-15 - Mobile card width normalization.
+/* 2026-05-15 - Mobile card width contract.
    Keep carousel cards on one shared width and list cards on the page column. */
 @media (max-width: 760px) {
   html.home-index-root body.home-index-shell {
@@ -6262,7 +6262,7 @@ html.home-index-root body.home-index-shell section.home-publications .publicatio
 }
 
 /* 2026-05-15 - Mobile home rail hard stop.
-   Mirrors the final contract without depending on the html root class timing. */
+   Mirrors the contract without depending on the html root class timing. */
 @media (max-width: 1024px) {
   body.home-index-shell {
     --home-mobile-feed-card-width-v22: calc(100vw - 28px);
@@ -6621,7 +6621,7 @@ html.home-index-root body.home-index-shell section.home-publications .publicatio
   }
 }
 
-/* Home — mobile categories x-axis parity v2
+/* Home — mobile categories x-axis alignment v2
    As categorias precisam começar no mesmo X do search/header. A largura do
    bloco fica no rail da home; só a rolagem horizontal acontece dentro dele.
    Não usamos margem negativa nem padding externo que empurre o primeiro item. */
