@@ -77,7 +77,8 @@ function getDirectCssLinks(html) {
   let match;
 
   while ((match = linkPattern.exec(html))) {
-    links.push(match[1].split('?')[0]);
+    const href = match[1].split('?')[0];
+    if (!/^https?:\/\//i.test(href)) links.push(href);
   }
 
   return links;

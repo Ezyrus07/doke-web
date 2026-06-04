@@ -1,0 +1,2456 @@
+@import url("../components/internal/results-shell.css");
+@import url("../components/internal/results-states.css");
+@import url("../components/internal/results-collection.css");
+@import url("../components/internal/results-filters.css");
+@import url("../components/internal/results-discovery-rails.css");
+@import url("../patterns/service-card-grid.css?v=20260511-service-card-ownership-v1");
+@import url("../components/actions/favorite-action.css?v=20260511-action-favorite-ownership-v1");
+@import url("../components/cards/service-card.css?v=20260503-canonical-card-contract-v2");
+
+/* Search results page manifest.
+   Keep this file as an ordered import surface only. Page-specific behavior lives
+   in ./search-results/ modules so future changes do not turn this back into a monolith. */
+@import url("./search-results/base-layout.css?v=20260426-results-v12");
+@import url("./search-results/desktop-envelope.css?v=20260426-results-v12");
+@import url("./search-results/responsive-pass.css?v=20260426-results-v12");
+@import url("./search-results/preview-layout-contract.css?v=20260426-results-v12");
+@import url("./search-results/results-page-alignment.css?v=20260426-results-v12");
+@import url("./search-results/compact-services.css?v=20260426-results-v12");
+@import url("./search-results/mobile-layout-contract.css?v=20260426-results-v12");
+@import url("./search-results/mobile-density.css?v=20260426-results-v12");
+@import url("./search-results/mobile-card-contract.css?v=20260426-results-v12");
+@import url("./search-results/workers-desktop.css?v=20260426-results-v12");
+@import url("./search-results/rhythm.css?v=20260426-results-v12");
+@import url("./search-results/results-layout-foundation.css?v=20260426-results-v12");
+
+@import url("./search-results/results-density-preview-contract.css?v=20260427-v33-density-preview");
+@import url("./search-results/worker-preview-layout-v34.css?v=20260427-v34-workers-preview-grid");
+@import url("./search-results/mobile-header-refresh.css?v=20260430-results-mobile-header-refresh");
+
+/* Results page dependencies
+   resultados.html must load only core/index.css, pages/app-shell.css and this file.
+   Keep results-specific ownership here so shared header/search/card CSS does not
+   drift back into page HTML. */
+@import url("../components/before-after-workers-preview.css?v=20260505-publication-modal-v2");
+@import url("../components/cards/mobile-card-contract.css?v=20260426-final-mobile-cards");
+@import url("../components/ui-surface-system.css?v=20260427-modal-alignment-v22");
+@import url("./results/open-filters-from-url.css?v=20260427-v26-open-filters");
+@import url("../core/responsive-foundation.css?v=20260510-mobile-width-contract-v1");
+@import url("../components/internal/topbar-standard.css?v=20260428-architecture");
+@import url("../components/cards/card-grid-contract.css?v=20260502-stage2-card-contract-v1");
+@import url("../patterns/home-results-card.css?v=20260428-architecture");
+@import url("../components/overlays/overlay-contract.css?v=20260428-architecture");
+@import url("../components/forms-actions/form-action-contract.css?v=20260428-architecture");
+@import url("../core/responsive-runtime.css?v=20260428-architecture");
+@import url("../patterns/responsive-layout-guards.css?v=20260428-architecture");
+@import url("../components/navigation/mobile-drawer-standard.css?v=20260428-architecture");
+@import url("../components/identity/avatar.css?v=20260429-avatar-circle-final");
+@import url("../components/internal/filter-select-standard.css?v=20260429-global-header-avatar");
+@import url("../components/shell/page-container-contract.css?v=20260510-mobile-width-contract-v1");
+@import url("../patterns/mobile-app-shell.css?v=20260501-canonical-mobile-architecture");
+@import url("../components/navigation/app-header.css?v=20260501-canonical-mobile-architecture");
+@import url("../components/navigation/search-bar.css?v=20260501-canonical-mobile-architecture");
+@import url("../patterns/horizontal-rail.css?v=20260501-canonical-mobile-architecture");
+@import url("../components/shell/mobile-app-shell.css?v=20260501-app-shell-v2-governance");
+@import url("../components/ui/doke-ui-system.css?v=20260501-ui-contract-v2-components");
+@import url("../components/domain/doke-domain-cards.css?v=20260501-domain-cards-v1");
+@import url("../components/layout/doke-layout-system.css?v=20260501-layout-system-v1");
+@import url("../components/flows/doke-product-flows.css?v=20260501-product-flows-v1");
+@import url("../components/shell/desktop-shell.css?v=20260501-desktop-contract-v1");
+@import url("../components/shell/desktop-sidebar.css?v=20260501-desktop-contract-v1");
+@import url("../components/shell/desktop-topbar.css?v=20260501-desktop-contract-v1");
+@import url("../components/shell/desktop-search.css?v=20260501-desktop-contract-v1");
+@import url("../components/shell/responsive-boundary.css?v=20260501-responsive-boundary-v1");
+@import url("../components/shell/desktop-base-stability.css?v=20260501-desktop-base-stability-v1");
+@import url("../components/shell/mobile-base-stability.css?v=20260501-mobile-base-stability-v1");
+@import url("../components/search/search-autocomplete.css?v=20260502-shared-search-autocomplete-v3");
+@import url("../components/search/search-scope.css?v=20260502-search-scope-v1");
+@import url("../components/search/search-bar.css?v=20260505-shared-search-pill-v1");
+
+
+@import url("../components/search/search-filter-contract.css?v=20260502-stage3-search-filter-v1");
+@import url("../components/cards/ad-card.css?v=20260505-ad-card-actions-v1");
+@import url("../components/cards/publication-card.css?v=20260505-publication-card-hover-v1");
+@import url("./search-results/index-rail-alignment.css?v=20260505-results-index-rail-v1");
+@import url("./search-results/workers-index-layout-contract.css?v=20260505-workers-index-layout-v2");
+@import url("./search-results/filter-toggle-density.css?v=20260505-filter-toggle-density-v1");
+@import url("../components/cards/worker-card.css?v=20260505-results-worker-parity-v2");
+@import url("./search-results/display-density.css?v=20260505-results-display-density-v4");
+
+/* resultados.html composition contract v6
+   Ownership: page-specific layout only. Shared autocomplete visuals live in
+   assets/css/components/search/search-autocomplete.css and are consumed by index.html
+   and resultados.html to prevent drift. */
+.search-results-body .search-results-workspace {
+  gap: 16px;
+  padding-bottom: clamp(24px, 3vw, 36px);
+  overflow: visible !important;
+  contain: none !important;
+}
+
+.search-results-body .results-searchbar,
+.search-results-body .results-searchbar__form {
+  overflow: visible !important;
+  contain: none !important;
+}
+
+.search-results-body .results-searchbar {
+  position: relative;
+  z-index: 80;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.search-results-body .page__content {
+  padding-bottom: clamp(20px, 2.6vw, 32px);
+}
+
+.search-results-body .search-results-workspace {
+  min-height: 0 !important;
+  gap: 16px;
+  padding-bottom: clamp(20px, 2.6vw, 32px);
+  overflow: visible !important;
+  contain: none !important;
+}
+
+.search-results-body .results-layout,
+.search-results-body .results-main,
+.search-results-body .results-collection,
+.search-results-body .results-grid {
+  min-height: 0 !important;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.search-results-body .results-searchbar__form {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 54px;
+  align-items: center;
+  gap: 8px;
+  min-height: 62px;
+  padding: 4px 6px 4px 22px;
+  border: 1px solid rgba(187, 207, 226, 0.86);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 8px 20px rgba(29, 56, 88, 0.07);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.search-results-body .results-searchbar__form:focus-within,
+.search-results-body .results-searchbar.is-search-open .results-searchbar__form {
+  border-color: rgba(187, 207, 226, 0.86);
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(29, 56, 88, 0.07);
+}
+
+.search-results-body .results-searchbar__field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.search-results-body .results-searchbar__field:focus-within {
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+}
+
+.search-results-body .results-searchbar__field-icon {
+  width: 18px;
+  height: 18px;
+  color: #2364a0;
+  flex: 0 0 auto;
+}
+
+.search-results-body .results-searchbar__field-icon svg,
+.search-results-body .results-searchbar__button svg,
+.search-results-body .search-chip svg,
+.search-results-body .search-suggestion__icon svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.search-results-body .results-searchbar__field input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #18314f;
+  font: inherit;
+  font-size: 0.98rem;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.search-results-body .results-searchbar__field input:focus,
+.search-results-body .results-searchbar__field input:focus-visible {
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+}
+
+.search-results-body .results-searchbar__field input::-webkit-search-decoration,
+.search-results-body .results-searchbar__field input::-webkit-search-cancel-button,
+.search-results-body .results-searchbar__field input::-webkit-search-results-button,
+.search-results-body .results-searchbar__field input::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
+.search-results-body .results-searchbar__mobile-filter {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: auto !important;
+  min-width: 92px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 18px;
+  border: 1px solid rgba(191, 207, 224, 0.82);
+  border-radius: var(--radius-pill);
+  background: rgba(248, 251, 255, 0.9);
+  color: #1f5d93;
+  box-shadow: none;
+  font-size: 0.92rem;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.search-results-body .results-searchbar__mobile-filter:hover,
+.search-results-body .results-searchbar__mobile-filter:focus-visible {
+  border-color: rgba(191, 207, 224, 0.82);
+  background: rgba(241, 247, 253, 0.98);
+  color: #164f86;
+  outline: 0;
+  box-shadow: none;
+}
+
+.search-results-body .results-searchbar__button {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  min-height: 54px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: #147b8d;
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(20, 123, 141, 0.18);
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.search-results-body .results-searchbar__button:hover {
+  background: #0f7082;
+  box-shadow: 0 10px 20px rgba(20, 123, 141, 0.17);
+}
+
+.search-results-body .results-searchbar__button:active {
+  transform: scale(0.97);
+}
+
+.search-results-body .results-searchbar__button svg {
+  width: 22px;
+  height: 22px;
+}
+
+.search-results-body .results-searchbar__dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 120;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: none !important;
+  max-height: min(520px, calc(100dvh - 132px));
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.search-results-body .results-searchbar__dropdown:not([hidden]) {
+  display: grid !important;
+  gap: 0;
+}
+
+.search-results-body .results-searchbar__dropdown[hidden],
+.search-results-body .search-dropdown__section[hidden],
+.search-results-body .search-dropdown__empty[hidden] {
+  display: none !important;
+}
+
+.search-results-body .search-dropdown__section-header button {
+  border: 0;
+  background: transparent;
+  color: #1f65ad;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.search-results-body .results-layout {
+  grid-template-columns: minmax(248px, 292px) minmax(0, 1fr);
+  gap: 18px;
+  margin-top: 0;
+  align-items: start;
+  overflow: visible !important;
+}
+
+.search-results-body .results-panel {
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  margin-bottom: 0;
+}
+
+.search-results-body .results-panel__heading {
+  margin-bottom: 14px;
+}
+
+.search-results-body .results-panel__heading h2 {
+  font-size: 1.04rem;
+}
+
+.search-results-body .results-filters__form,
+.search-results-body .results-main {
+  gap: 14px;
+}
+
+.search-results-body .results-category-list {
+  gap: 7px;
+}
+
+.search-results-body .results-category-chip span,
+.search-results-body .results-active-chips > * {
+  min-height: 32px;
+  padding-inline: 11px;
+}
+
+.search-results-body .results-location-group {
+  padding: 14px;
+  border-radius: 20px;
+}
+
+.search-results-body .results-location-group__cep {
+  min-height: var(--control-height-md);
+}
+
+.search-results-body .results-summary {
+  min-height: 116px;
+  padding: 20px 24px;
+  border-radius: var(--radius-lg);
+}
+
+.search-results-body .results-summary__content h2 {
+  margin: 7px 0 4px;
+  font-size: clamp(1.45rem, 2.2vw, 1.82rem);
+}
+
+.search-results-body .results-summary__content p {
+  font-size: 0.98rem;
+}
+
+.search-results-body .results-summary__stats {
+  min-width: 96px;
+  padding-left: 12px;
+}
+
+.search-results-body .results-summary__stats strong {
+  font-size: 2.05rem;
+}
+
+.search-results-body .results-inline-empty {
+  gap: 10px;
+  padding: 20px 24px;
+  border-radius: var(--radius-lg);
+}
+
+.search-results-body .results-inline-empty strong {
+  font-size: 1rem;
+}
+
+.search-results-body .results-inline-empty span {
+  font-size: 0.96rem;
+}
+
+.search-results-body .results-inline-empty__actions {
+  margin-top: 2px;
+}
+
+.search-results-body .results-empty__button {
+  min-height: var(--control-height-md);
+  border-radius: 13px;
+}
+
+@media (min-width: 761px) {
+  html,
+  body.search-results-body {
+    height: auto !important;
+    min-height: 100vh !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  body.search-results-body > .app-shell,
+  body.search-results-body .app-shell,
+  body.search-results-body .page,
+  body.search-results-body .page__content,
+  body.search-results-body .page__content-inner,
+  body.search-results-body .app-shell-page__workspace {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+    overflow-x: visible !important;
+  }
+
+  body.search-results-body .page__content {
+    padding-bottom: 0;
+  }
+
+  body.search-results-body .results-filters,
+  body.search-results-body .results-panel,
+  body.search-results-body .results-filters__form {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
+
+@media (max-width: 960px) {
+  .search-results-body .results-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .search-results-body .search-results-workspace {
+    gap: 12px;
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .search-results-body .results-searchbar__form {
+    grid-template-columns: minmax(0, 1fr) auto 50px !important;
+    min-height: 60px !important;
+    padding: 5px 5px 5px 14px;
+    gap: 6px;
+  }
+
+  .search-results-body .results-searchbar__field {
+    min-height: 48px;
+    gap: 8px;
+  }
+
+  .search-results-body .results-searchbar__mobile-filter {
+    min-width: 78px !important;
+    height: var(--control-height-md) !important;
+    min-height: var(--control-height-md) !important;
+    padding: 0 12px;
+    font-size: 0.8rem;
+  }
+
+  .search-results-body .results-searchbar__button {
+    width: 50px;
+    height: var(--control-height-xl);
+    min-height: var(--control-height-xl);
+  }
+
+  .search-results-body .results-searchbar__dropdown {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: none !important;
+    max-height: min(420px, calc(100dvh - 124px));
+    border-radius: 20px;
+  }
+
+  .search-results-body .results-summary,
+  .search-results-body .results-inline-empty {
+    padding: 18px;
+  }
+
+}
+
+@import url("../components/cards/service-card.css?v=20260503-canonical-card-contract-v2");
+
+
+/* Results mobile search tap-state lock: only the top search remains, without gray active overlay. */
+@media (max-width: 760px) {
+  body.search-results-body .results-searchbar__form {
+    display: none !important;
+  }
+
+  body.search-results-body .topbar-search,
+  body.search-results-body .topbar-search input[type="search"],
+  body.search-results-body .topbar-search input[type="search"]:focus,
+  body.search-results-body .topbar-search input[type="search"]:active,
+  body.search-results-body .topbar-search:focus-within {
+    background: rgba(255, 255, 255, 0.92);
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+
+/* RESULTS SEARCH RESTORE v2
+   Desktop keeps the page-level search. Mobile keeps only the top search to avoid duplication. */
+@media (min-width: 761px) {
+  body.search-results-body .results-searchbar__form {
+    display: grid !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body.search-results-body .results-searchbar__form {
+    display: none !important;
+  }
+
+  body.search-results-body .topbar-search,
+  body.search-results-body .topbar-search:focus,
+  body.search-results-body .topbar-search:active,
+  body.search-results-body .topbar-search:focus-within,
+  body.search-results-body .topbar-search input[type="search"],
+  body.search-results-body .topbar-search input[type="search"]:focus,
+  body.search-results-body .topbar-search input[type="search"]:active,
+  body.search-results-body .topbar-search input[type="search"]:focus-visible {
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* RESULTS SEARCH PARITY v3
+   Desktop: page search follows the same search-panel contract used by index.
+   Mobile: duplicated page search stays hidden; only the top mobile search remains. */
+@media (min-width: 761px) {
+  body.search-results-body .results-searchbar__form {
+    display: grid !important;
+    grid-template-columns: 44px minmax(0, 1fr) 56px !important;
+    align-items: center;
+    gap: 10px;
+    width: 100% !important;
+    min-height: 64px !important;
+    padding: 6px 8px 6px 16px;
+    border: var(--border-muted);
+    border-radius: var(--radius-pill);
+    background: #ffffff;
+    box-shadow: 0 20px 48px rgba(31, 111, 174, 0.10);
+  }
+
+  body.search-results-body .results-searchbar__form:focus-within,
+  body.search-results-body .results-searchbar.is-search-open .results-searchbar__form {
+    border-color: var(--border-color-muted);
+    background: #ffffff;
+    box-shadow: 0 20px 48px rgba(31, 111, 174, 0.10);
+  }
+
+  body.search-results-body .results-searchbar__field {
+    display: contents !important;
+  }
+
+  body.search-results-body .results-searchbar__field-icon {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 40px !important;
+    height: 40px !important;
+    color: #2364a0;
+  }
+
+  body.search-results-body .results-searchbar__field-icon svg {
+    width: 21px !important;
+    height: 21px !important;
+  }
+
+  body.search-results-body .results-searchbar__field input {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 48px !important;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #18314f;
+    font: 800 1rem/1.2 Poppins, system-ui, sans-serif;
+  }
+
+  body.search-results-body .results-searchbar__field input::placeholder {
+    color: #8aa0b9;
+    opacity: 1 !important;
+  }
+
+  body.search-results-body .results-searchbar__mobile-filter {
+    display: none !important;
+  }
+
+  body.search-results-body .results-searchbar__button {
+    display: inline-grid !important;
+    place-items: center;
+    width: 52px !important;
+    height: 52px !important;
+    min-width: 52px !important;
+    min-height: 52px !important;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(135deg, #0f8f9a, #0b7185);
+    color: #ffffff;
+    box-shadow: 0 18px 34px rgba(15, 111, 142, 0.22);
+  }
+
+  body.search-results-body .results-searchbar__button svg {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  body.search-results-body .results-searchbar__dropdown {
+    top: calc(100% + 10px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body.search-results-body .results-searchbar__form {
+    display: none !important;
+  }
+}
+
+/* RESULTS SEARCH/TABS FINAL PARITY v4
+   Desktop search follows the home/index pill contract; mobile keeps only the top search. */
+@media (min-width: 761px) {
+  body.search-results-body .results-searchbar {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 0 14px;
+  }
+
+  body.search-results-body .results-searchbar__form {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 64px !important;
+    align-items: center;
+    gap: 12px;
+    width: 100% !important;
+    min-height: 76px !important;
+    padding: 7px 8px 7px 28px;
+    border: var(--border-muted);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 22px 52px rgba(31, 111, 174, 0.10);
+  }
+
+  body.search-results-body .results-searchbar__form:focus-within,
+  body.search-results-body .results-searchbar.is-search-open .results-searchbar__form {
+    border-color: var(--border-color-muted);
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 22px 52px rgba(31, 111, 174, 0.10);
+  }
+
+  body.search-results-body .results-searchbar__field {
+    display: flex !important;
+    align-items: center;
+    min-width: 0 !important;
+    min-height: 58px !important;
+    padding: 0;
+    gap: 12px;
+  }
+
+  body.search-results-body .results-searchbar__field-icon {
+    display: none !important;
+  }
+
+  body.search-results-body .results-searchbar__field input {
+    width: 100% !important;
+    min-height: 58px !important;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #18314f;
+    font: 800 1.05rem/1.2 Poppins, system-ui, sans-serif;
+  }
+
+  body.search-results-body .results-searchbar__field input::placeholder {
+    color: #7d8a9c;
+    opacity: 1 !important;
+  }
+
+  body.search-results-body .results-searchbar__mobile-filter {
+    display: none !important;
+  }
+
+  body.search-results-body .results-searchbar__button {
+    display: inline-grid !important;
+    place-items: center;
+    width: 60px !important;
+    height: 60px !important;
+    min-width: 60px !important;
+    min-height: 60px !important;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(135deg, #108a98, #0a7284);
+    color: #fff;
+    box-shadow: 0 18px 34px rgba(15, 111, 142, 0.22);
+  }
+
+  body.search-results-body .results-type-tabs {
+    margin-top: 14px;
+    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 760px) {
+  body.search-results-body .results-searchbar__form {
+    display: none !important;
+  }
+}
+
+
+/* RESULTS SEARCH PARITY v5 — same desktop composition language as index search.
+   Keeps the desktop search visible and removes only duplicated mobile search below the topbar. */
+@media (min-width: 761px) {
+  body.search-results-body .results-searchbar {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 0 18px;
+  }
+
+  body.search-results-body .results-searchbar__form {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) 60px !important;
+    align-items: center;
+    gap: 14px;
+    width: 100% !important;
+    min-height: 74px !important;
+    padding: 7px 8px 7px 28px;
+    border: var(--border-muted);
+    border-radius: var(--radius-xl);
+    background: #ffffff;
+    box-shadow: 0 22px 52px rgba(31, 111, 174, 0.10);
+    box-sizing: border-box;
+  }
+
+  body.search-results-body .results-searchbar__form:focus-within,
+  body.search-results-body .results-searchbar.is-search-open .results-searchbar__form {
+    border-color: var(--border-color-muted);
+    background: #ffffff;
+    box-shadow: 0 22px 52px rgba(31, 111, 174, 0.10);
+  }
+
+  body.search-results-body .results-searchbar__field {
+    display: contents !important;
+  }
+
+  body.search-results-body .results-searchbar__field-icon {
+    display: inline-grid !important;
+    place-items: center;
+    width: 34px !important;
+    height: var(--control-height-xs) !important;
+    color: #275f93;
+  }
+
+  body.search-results-body .results-searchbar__field-icon svg {
+    width: 22px !important;
+    height: 22px !important;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  body.search-results-body .results-searchbar__field input {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 56px !important;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #18314f;
+    font: 800 1.05rem/1.2 Poppins, system-ui, sans-serif;
+  }
+
+  body.search-results-body .results-searchbar__field input::placeholder {
+    color: #7d8a9c;
+    opacity: 1 !important;
+  }
+
+  body.search-results-body .results-searchbar__mobile-filter {
+    display: none !important;
+  }
+
+  body.search-results-body .results-searchbar__button {
+    display: inline-grid !important;
+    place-items: center;
+    width: 60px !important;
+    height: 60px !important;
+    min-width: 60px !important;
+    min-height: 60px !important;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(135deg, #108a98, #0a7284);
+    color: #ffffff;
+    box-shadow: 0 18px 34px rgba(15, 111, 142, 0.22);
+  }
+
+  body.search-results-body .results-searchbar__button svg {
+    width: 23px !important;
+    height: 23px !important;
+  }
+
+  body.search-results-body .results-type-tabs {
+    margin-top: 16px;
+    margin-bottom: 22px;
+  }
+}
+
+@media (max-width: 760px) {
+  body.search-results-body .results-searchbar__form {
+    display: none !important;
+  }
+}
+
+/* RESULTS SEARCH FINAL PARITY v6
+   Realign desktop search with the index search anatomy and keep duplicated mobile search hidden. */
+@media (min-width: 761px) {
+  body.search-results-body .results-searchbar {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 0 16px;
+  }
+
+  body.search-results-body .results-searchbar__form {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+    align-items: center;
+    gap: 12px;
+    width: 100% !important;
+    min-height: 76px !important;
+    padding: 8px;
+    padding-left: 26px;
+    border: var(--border-muted);
+    border-radius: var(--radius-xl);
+    background: #fff;
+    box-shadow: 0 22px 52px rgba(31, 111, 174, 0.10);
+    box-sizing: border-box;
+  }
+
+  body.search-results-body .results-searchbar__form:focus-within,
+  body.search-results-body .results-searchbar.is-search-open .results-searchbar__form {
+    border-color: var(--border-color-muted);
+    background: #fff;
+    box-shadow: 0 22px 52px rgba(31, 111, 174, 0.10);
+  }
+
+  body.search-results-body .results-searchbar__field {
+    display: flex !important;
+    align-items: center;
+    gap: 14px;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 58px !important;
+    padding: 0;
+  }
+
+  body.search-results-body .results-searchbar__field-icon {
+    display: inline-grid !important;
+    place-items: center;
+    width: 34px !important;
+    height: var(--control-height-xs) !important;
+    flex: 0 0 34px !important;
+    color: #275f93;
+  }
+
+  body.search-results-body .results-searchbar__field-icon svg {
+    width: 22px !important;
+    height: 22px !important;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  body.search-results-body .results-searchbar__field input {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 58px !important;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #18314f;
+    font: 800 1.05rem/1.2 Poppins, system-ui, sans-serif;
+  }
+
+  body.search-results-body .results-searchbar__field input::placeholder {
+    color: #7d8a9c;
+    opacity: 1 !important;
+  }
+
+  body.search-results-body .results-searchbar__mobile-filter {
+    display: inline-grid !important;
+    place-items: center;
+    height: 60px !important;
+    min-width: 118px !important;
+    padding-inline: 22px;
+    border: 1px solid rgba(190, 209, 225, 0.95);
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.96);
+    color: #1d4f80;
+    font: 900 0.98rem/1 Poppins, system-ui, sans-serif;
+    box-shadow: none;
+  }
+
+  body.search-results-body .results-searchbar__button {
+    display: inline-grid !important;
+    place-items: center;
+    width: 60px !important;
+    height: 60px !important;
+    min-width: 60px !important;
+    min-height: 60px !important;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(135deg, #108a98, #0a7284);
+    color: #fff;
+    box-shadow: 0 18px 34px rgba(15, 111, 142, 0.22);
+  }
+
+  body.search-results-body .results-searchbar__button svg {
+    width: 23px !important;
+    height: 23px !important;
+  }
+
+  body.search-results-body .results-type-tabs {
+    margin-top: 14px;
+    margin-bottom: 22px;
+  }
+}
+
+@media (max-width: 760px) {
+  body.search-results-body .results-searchbar__form {
+    display: none !important;
+  }
+}
+
+/* RESULTS SEARCH INPUT INDEX PARITY v7
+   Match resultados.html desktop search with the index search pill.
+   Scope limited to results search; no shell/body/header/sidebar changes. */
+@media (min-width: 761px) {
+  body.search-results-body .results-searchbar {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 0 14px;
+  }
+
+  body.search-results-body .results-searchbar__form {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center;
+    gap: 12px;
+    width: 100% !important;
+    min-height: 74px !important;
+    padding: 8px;
+    padding-left: 34px;
+    border: var(--border-muted);
+    border-radius: var(--radius-pill);
+    background: #ffffff;
+    box-shadow: 0 18px 42px rgba(31, 111, 174, 0.10);
+    box-sizing: border-box;
+  }
+
+  body.search-results-body .results-searchbar__form:focus-within,
+  body.search-results-body .results-searchbar.is-search-open .results-searchbar__form {
+    border-color: var(--border-color-muted);
+    background: #ffffff;
+    box-shadow: 0 18px 42px rgba(31, 111, 174, 0.10);
+  }
+
+  body.search-results-body .results-searchbar__field {
+    display: flex !important;
+    align-items: center;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 58px !important;
+    padding: 0;
+  }
+
+  body.search-results-body .results-searchbar__field-icon {
+    display: none !important;
+  }
+
+  body.search-results-body .results-searchbar__field input {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 58px !important;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #18314f;
+    font: 800 1.08rem/1.2 Poppins, system-ui, sans-serif;
+  }
+
+  body.search-results-body .results-searchbar__field input::placeholder {
+    color: #7d8a9c;
+    opacity: 1 !important;
+  }
+
+  body.search-results-body .results-searchbar__mobile-filter {
+    display: none !important;
+  }
+
+  body.search-results-body .results-searchbar__button {
+    display: inline-grid !important;
+    place-items: center;
+    width: 58px !important;
+    height: 58px !important;
+    min-width: 58px !important;
+    min-height: 58px !important;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(135deg, #108a98, #0a7284);
+    color: #ffffff;
+    box-shadow: 0 18px 34px rgba(15, 111, 142, 0.22);
+  }
+
+  body.search-results-body .results-searchbar__button svg {
+    width: 23px !important;
+    height: 23px !important;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  body.search-results-body .results-type-tabs {
+    margin-top: 12px;
+    margin-bottom: 22px;
+  }
+}
+
+
+/* Results search bridge to shared search-pill contract.
+   This is page-owned only to neutralize older result search declarations until the legacy parity layers are removed. */
+@media (min-width: 761px) {
+  body.search-results-body .results-searchbar__form.doke-search-pill {
+    position: relative !important;
+    display: block !important;
+    min-height: var(--doke-search-pill-min-height) !important;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  body.search-results-body .results-searchbar__field.doke-search-pill__field {
+    display: flex !important;
+    align-items: center;
+    min-height: var(--doke-search-pill-min-height) !important;
+    padding: var(--doke-search-pill-padding-y) var(--doke-search-pill-padding-right) var(--doke-search-pill-padding-y) var(--doke-search-pill-padding-left);
+    border: 1px solid var(--doke-search-pill-border);
+    border-radius: var(--doke-search-pill-radius);
+    background: var(--doke-search-pill-bg);
+    box-shadow: var(--doke-search-pill-shadow);
+  }
+
+  body.search-results-body .results-searchbar__form.doke-search-pill:focus-within .results-searchbar__field.doke-search-pill__field,
+  body.search-results-body .results-searchbar.is-search-open .results-searchbar__field.doke-search-pill__field {
+    border-color: var(--doke-search-pill-border);
+    box-shadow: var(--doke-search-pill-shadow);
+    transform: none !important;
+  }
+
+  body.search-results-body .results-searchbar__field .doke-search-pill__input {
+    color: var(--doke-search-pill-text);
+    font-size: clamp(0.98rem, 1.25vw, 1.14rem);
+    font-weight: 500;
+    line-height: 1.35;
+  }
+
+  body.search-results-body .results-searchbar__field .doke-search-pill__input::placeholder {
+    color: var(--doke-search-pill-placeholder);
+  }
+
+  body.search-results-body .results-searchbar__button.doke-search-pill__button {
+    position: absolute !important;
+    top: 50% !important;
+    right: var(--doke-search-pill-button-offset) !important;
+    transform: translateY(-50%) !important;
+    width: var(--doke-search-pill-button-size) !important;
+    height: var(--doke-search-pill-button-size) !important;
+    min-width: var(--doke-search-pill-button-size) !important;
+    min-height: var(--doke-search-pill-button-size) !important;
+    background: var(--doke-search-pill-button-bg);
+    box-shadow: var(--doke-search-pill-button-shadow);
+  }
+
+  body.search-results-body .results-searchbar__mobile-filter,
+  body.search-results-body .results-searchbar__field-icon {
+    display: none !important;
+  }
+}
+
+
+/* Results compact search scale.
+   The result page is a dense listing screen, so it consumes the shared search-pill
+   compact variant instead of recreating a larger hero input locally. */
+@media (min-width: 761px) {
+  body.search-results-body .results-searchbar__form.doke-search-pill--compact {
+    min-height: var(--doke-search-pill-min-height) !important;
+    height: auto !important;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  body.search-results-body .results-searchbar__form.doke-search-pill--compact .results-searchbar__field.doke-search-pill__field {
+    min-height: var(--doke-search-pill-min-height) !important;
+    height: var(--doke-search-pill-min-height) !important;
+    padding: var(--doke-search-pill-padding-y) var(--doke-search-pill-padding-right) var(--doke-search-pill-padding-y) var(--doke-search-pill-padding-left);
+  }
+
+  body.search-results-body .results-searchbar__form.doke-search-pill--compact .doke-search-pill__input {
+    min-height: 0 !important;
+    height: auto !important;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.35;
+  }
+
+  body.search-results-body .results-searchbar__form.doke-search-pill--compact .results-searchbar__button.doke-search-pill__button {
+    width: var(--doke-search-pill-button-size) !important;
+    height: var(--doke-search-pill-button-size) !important;
+    min-width: var(--doke-search-pill-button-size) !important;
+    min-height: var(--doke-search-pill-button-size) !important;
+    right: var(--doke-search-pill-button-offset) !important;
+  }
+
+  body.search-results-body .results-searchbar__scope.search-scope {
+    margin-top: 8px;
+  }
+}
+
+/* FINAL RESULTS CARD PARITY v13
+   Ownership: resultados.html cards rendered by search-results.js.
+   The result page must consume the same doke-ad-card component contract used by
+   index.html; page CSS controls only the grid. These rules neutralize legacy
+   result-only anatomy overrides that made cards look different. */
+body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) > .doke-ad-card {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  overflow: hidden !important;
+  border-radius: 26px;
+}
+
+body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .doke-ad-card__media {
+  height: clamp(148px, 12vw, 178px) !important;
+  min-height: 148px !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .doke-ad-card__body {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  padding: 18px 20px 20px;
+}
+
+body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .doke-ad-card__category,
+body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .doke-ad-card__title,
+body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .doke-ad-card__location-text span {
+  white-space: nowrap;
+  overflow: hidden !important;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+}
+
+body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .doke-ad-card__footer {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: center;
+  gap: 14px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .doke-ad-card__cta {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  flex: initial !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) .doke-ad-card__price {
+  flex: initial !important;
+}
+
+/* FINAL RESULTS WORKERS/PUBLICATIONS PARITY v13
+   Workers and Publicações in resultados.html must use the same media-card
+   contracts consumed by index.html. This block is intentionally last so legacy
+   density files cannot reintroduce overlay-heavy result cards. */
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(232px, 258px)) !important;
+  justify-content: start;
+  align-items: start;
+  gap: 22px;
+}
+
+body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="workers"] .results-grid {
+  grid-template-columns: repeat(auto-fit, minmax(232px, 258px)) !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card[data-worker-trigger] {
+  position: relative !important;
+  display: block !important;
+  width: clamp(232px, 18vw, 258px) !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  aspect-ratio: 9 / 16 !important;
+  padding: 0;
+  overflow: hidden !important;
+  border: var(--border-soft);
+  border-radius: var(--radius-2xl);
+  background-color: #15314a;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  box-shadow: 0 16px 34px rgba(15, 37, 60, 0.12);
+  color: transparent;
+  isolation: isolate !important;
+  cursor: pointer;
+}
+
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card[data-worker-trigger]::before,
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card[data-worker-trigger]::after {
+  content: none;
+  display: none !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card[data-worker-trigger] > :not(.video-card__poster):not(.video-card__preview) {
+  display: none !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card__poster,
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card__preview {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card__poster {
+  z-index: 0 !important;
+  display: block !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card__preview {
+  z-index: 1 !important;
+  display: block !important;
+  opacity: 0 !important;
+  transition: opacity 180ms ease;
+}
+
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card.is-previewing .video-card__preview {
+  opacity: 1 !important;
+}
+
+body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+  gap: 22px;
+  align-items: stretch;
+}
+
+body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid .publication-card {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+/* Results publications density contract.
+   With the desktop filter rail open, publicações should stay in a stable 2-up grid.
+   When the rail is collapsed, the content can expand to 3-up. */
+@media (min-width: 1181px) {
+  body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 22px;
+  }
+
+  body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="before-after"] .results-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
+
+/* RESULTS MOBILE CONTENT AXIS CONTRACT
+   Scope: resultados.html mobile content only.
+   Goal: everything below the mobile shell/header uses the same horizontal axis
+   as the header search, instead of the previous 10px local gutter. */
+@media (max-width: 760px) {
+  body.search-results-body.doke-mobile-shell-mounted {
+    --results-mobile-content-edge: var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 16px));
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .page__content {
+    padding-inline: 0;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .page__content-inner,
+  body.search-results-body.doke-mobile-shell-mounted .page__content-inner.container.app-shell-page__workspace.search-results-workspace.search-results-workspace--internal,
+  body.search-results-body.doke-mobile-shell-mounted .search-results-workspace,
+  body.search-results-body.doke-mobile-shell-mounted .search-results-workspace--internal {
+    width: 100% !important;
+    max-width: var(--doke-mobile-shell-max, min(430px, 100vw)) !important;
+    margin-inline: auto;
+    padding-inline: var(--results-mobile-content-edge);
+    padding-top: 0;
+    box-sizing: border-box;
+    overflow-x: clip !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-searchbar,
+  body.search-results-body.doke-mobile-shell-mounted .results-layout,
+  body.search-results-body.doke-mobile-shell-mounted .results-main,
+  body.search-results-body.doke-mobile-shell-mounted .results-summary,
+  body.search-results-body.doke-mobile-shell-mounted .results-active-chips,
+  body.search-results-body.doke-mobile-shell-mounted .results-grid,
+  body.search-results-body.doke-mobile-shell-mounted .results-empty__grid,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid,
+  body.search-results-body.doke-mobile-shell-mounted .results-videos-grid,
+  body.search-results-body.doke-mobile-shell-mounted .results-before-after-grid {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0;
+    box-sizing: border-box;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-searchbar {
+    padding-inline: 0;
+    overflow: visible !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-searchbar__scope.search-scope {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-inline: 0;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-padding-inline: 0;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-searchbar__scope.search-scope > * {
+    flex: 0 0 auto !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-summary {
+    padding: 18px;
+    border-radius: var(--radius-lg);
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-grid .doke-ad-card,
+  body.search-results-body.doke-mobile-shell-mounted .results-grid .service-card,
+  body.search-results-body.doke-mobile-shell-mounted .results-grid .publication-card,
+  body.search-results-body.doke-mobile-shell-mounted .results-empty__grid .doke-ad-card,
+  body.search-results-body.doke-mobile-shell-mounted .results-empty__grid .service-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+/* Mobile results filters: keep the sheet, remove the blue motion/scrim background.
+   Ownership: resultados.html page composition only; the shared overlay system remains unchanged. */
+@media (max-width: 960px) {
+  body.search-results-body .results-filters-backdrop {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* RESULTADOS MOBILE PEOPLE + WORKERS TWO-UP CONTRACT v3
+   Ownership: resultados.html page-specific mobile composition.
+   Goal: workers and professionals should fit in balanced 2-up grids on phones,
+   centered and compact, without falling back to oversized single-column cards. */
+@media (max-width: 760px) {
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="workers"] .results-grid,
+  body.search-results-body.doke-mobile-shell-mounted .results-videos-grid,
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    justify-content: center;
+    align-items: start;
+    gap: 12px;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="workers"] .results-grid .video-card,
+  body.search-results-body.doke-mobile-shell-mounted .results-videos-grid .video-card,
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="workers"] .results-grid .video-card[data-worker-trigger],
+  body.search-results-body.doke-mobile-shell-mounted .results-videos-grid .video-card[data-worker-trigger] {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    justify-self: stretch;
+    aspect-ratio: 4 / 6.65 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0;
+    border-radius: var(--radius-surface);
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    justify-self: stretch;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "head"
+      "score"
+      "cta" !important;
+    align-content: start;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 20px;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__header,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__header {
+    grid-area: head !important;
+    display: grid !important;
+    grid-template-columns: 40px minmax(0, 1fr) !important;
+    align-items: center;
+    gap: 8px;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__avatar,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__avatar {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: var(--radius-compact);
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__identity,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__identity {
+    min-width: 0 !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__identity strong,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__identity strong {
+    display: block !important;
+    font-size: 0.88rem;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden !important;
+    text-overflow: ellipsis;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__score,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__score {
+    grid-area: score !important;
+    justify-self: start;
+    align-self: start;
+    min-height: 28px !important;
+    padding: 0 10px;
+    border-radius: var(--radius-pill);
+    font-size: 0.78rem;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__body,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__body {
+    display: none !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__footer,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__footer {
+    grid-area: cta !important;
+    margin-top: 0;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__cta,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__cta {
+    width: 100% !important;
+    min-height: 36px !important;
+    border-radius: 13px;
+    font-size: 0.78rem;
+    padding: 0 10px;
+  }
+}
+
+/* RESULTADOS MOBILE USER CARD POSITIONING FIX v4
+   Tightens the 2-up professional cards so avatar, name, score and CTA align cleanly
+   within narrow mobile columns. */
+@media (max-width: 760px) {
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card {
+    grid-template-areas:
+      "head head"
+      "score score"
+      "cta cta" !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__header,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__header {
+    grid-area: head !important;
+    display: grid !important;
+    grid-template-columns: 40px minmax(0, 1fr) !important;
+    align-items: center;
+    gap: 8px;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__identity,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__identity {
+    min-width: 0 !important;
+    width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__identity strong,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__identity strong {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+    overflow: hidden !important;
+    text-overflow: ellipsis;
+    text-align: left;
+    font-size: 0.86rem;
+    line-height: 1.12;
+    min-height: 1.92rem !important;
+    max-width: 100% !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__score,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__score {
+    grid-area: score !important;
+    justify-self: start;
+    margin-top: -2px;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__footer,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__footer {
+    grid-area: cta !important;
+    width: 100% !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__cta,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__cta {
+    width: 100% !important;
+    justify-content: center;
+  }
+}
+
+/* RESULTADOS MOBILE USER CARD LAYOUT REFINE v5
+   Refines the 2-up professional cards on phones.
+   Instead of squeezing avatar + name in a narrow row, use a centered vertical card
+   that preserves readability and CTA clarity. */
+@media (max-width: 760px) {
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "head"
+      "score"
+      "cta" !important;
+    justify-items: center;
+    align-content: start;
+    gap: 8px;
+    padding: 12px;
+    min-height: 148px !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__header,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__header {
+    grid-area: head !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    justify-items: center;
+    align-items: start;
+    gap: 8px;
+    width: 100% !important;
+    min-width: 0 !important;
+    text-align: center;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__avatar,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__avatar {
+    width: 42px !important;
+    height: var(--control-height-md) !important;
+    border-radius: var(--radius-compact);
+    justify-self: center;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__identity,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__identity {
+    min-width: 0 !important;
+    width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__identity strong,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__identity strong {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden !important;
+    text-overflow: ellipsis;
+    white-space: normal;
+    text-align: center;
+    font-size: 0.84rem;
+    line-height: 1.12;
+    min-height: 1.88rem !important;
+    margin: 0;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__score,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__score {
+    grid-area: score !important;
+    justify-self: center;
+    align-self: start;
+    margin-top: -1px;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__footer,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__footer {
+    grid-area: cta !important;
+    width: 100% !important;
+    margin-top: 0;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__cta,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__cta {
+    width: 100% !important;
+    min-height: 36px !important;
+    border-radius: 13px;
+    padding-inline: 10px;
+    justify-content: center;
+  }
+}
+
+/* RESULTADOS MOBILE USER CARD HIERARCHY REFINE v6
+   Two-up user cards on phones need better information hierarchy.
+   Use avatar + score on the first row, full-width name on the second row,
+   and CTA on the third row. This avoids the squeezed name problem. */
+@media (max-width: 760px) {
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid {
+    gap: 10px;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card {
+    display: grid !important;
+    grid-template-columns: 34px minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "avatar . score"
+      "name name name"
+      "cta cta cta" !important;
+    align-content: start;
+    align-items: center;
+    justify-items: stretch;
+    gap: 8px 8px;
+    min-height: 132px !important;
+    padding: 10px;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__header,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__header {
+    display: contents !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__avatar,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__avatar {
+    grid-area: avatar !important;
+    width: 34px !important;
+    height: var(--control-height-xs) !important;
+    border-radius: var(--radius-xs);
+    justify-self: start;
+    align-self: center;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__identity,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__identity {
+    grid-area: name !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__identity strong,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__identity strong {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden !important;
+    text-overflow: ellipsis;
+    white-space: normal;
+    text-align: left;
+    font-size: 0.82rem;
+    line-height: 1.12;
+    min-height: 1.84rem !important;
+    margin: 0;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__score,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__score {
+    grid-area: score !important;
+    justify-self: end;
+    align-self: center;
+    min-height: 26px !important;
+    padding: 0 9px;
+    border-radius: var(--radius-pill);
+    font-size: 0.74rem;
+    margin: 0;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__footer,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__footer {
+    grid-area: cta !important;
+    width: 100% !important;
+    margin-top: 0;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__cta,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__cta {
+    width: 100% !important;
+    min-height: var(--control-height-xs) !important;
+    border-radius: var(--radius-compact);
+    padding-inline: 8px;
+    font-size: 0.76rem;
+    justify-content: center;
+  }
+}
+
+/* RESULTADOS MOBILE USER CARD CENTERED STACK v7
+   Final phone layout for professional cards in the users mode.
+   Keep the 2-up grid, but stack each card vertically: circular avatar on top,
+   centered name, centered rating below, and full-width CTA at the bottom. */
+@media (max-width: 760px) {
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid {
+    gap: 10px;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "avatar"
+      "name"
+      "score"
+      "cta" !important;
+    justify-items: center;
+    align-content: start;
+    align-items: start;
+    gap: 8px;
+    min-height: 154px !important;
+    padding: 12px;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__header,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__header,
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__body,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__body {
+    display: contents !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__avatar,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__avatar {
+    grid-area: avatar !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    border-radius: 50%;
+    justify-self: center;
+    align-self: start;
+    object-fit: cover;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__identity,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__identity {
+    grid-area: name !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-align: center;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__identity strong,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__identity strong {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden !important;
+    text-overflow: ellipsis;
+    white-space: normal;
+    text-align: center;
+    font-size: 0.84rem;
+    line-height: 1.12;
+    min-height: 1.88rem !important;
+    margin: 0;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__score,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__score {
+    grid-area: score !important;
+    justify-self: center;
+    align-self: start;
+    min-height: 28px !important;
+    padding: 0 10px;
+    border-radius: var(--radius-pill);
+    font-size: 0.76rem;
+    margin: 0;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__footer,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__footer {
+    grid-area: cta !important;
+    width: 100% !important;
+    margin-top: 0;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__cta,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__cta {
+    width: 100% !important;
+    min-height: 36px !important;
+    border-radius: 13px;
+    padding-inline: 10px;
+    justify-content: center;
+    font-size: 0.78rem;
+  }
+}
+
+/* RESULTADOS MOBILE USER CARD DATA CLEANUP v8
+   Remove the extra role/location/service meta from the compact user cards on phones.
+   Keep only avatar, name, rating and CTA. */
+@media (max-width: 760px) {
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__header,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__header {
+    display: contents !important;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .results-layout[data-results-mode="users"] .results-grid .pro-card__body,
+  body.search-results-body.doke-mobile-shell-mounted .results-users-grid .pro-card__body {
+    display: none !important;
+  }
+}
+/* Final interaction outline reset: keep hover/focus borders visually neutral. */
+body.search-results-body :is(
+  .results-searchbar__form,
+  .results-searchbar__field,
+  .results-searchbar__field input,
+  .results-searchbar__query,
+  .results-searchbar__mobile-filter,
+  .filter-toggle,
+  .topbar-search,
+  .topbar-search input,
+  .doke-search-pill__field,
+  .doke-btn,
+  .doke-button,
+  .doke-action-button
+):is(:hover, :focus, :focus-visible, :focus-within) {
+  outline: 0;
+  box-shadow: none;
+  transform: none !important;
+}
+
+body.search-results-body :is(.results-searchbar__form, .results-searchbar__field, .results-searchbar__query, .doke-search-pill__field):is(:hover, :focus-within) {
+  border-color: var(--doke-search-control-border, var(--doke-search-pill-border, var(--border-color-muted)));
+  box-shadow: var(--doke-search-control-shadow, var(--doke-search-pill-shadow, none));
+}
+
+body.search-results-body :is(.results-searchbar__mobile-filter, .filter-toggle):is(:hover, :focus-visible) {
+  border-color: var(--doke-filter-chip-border, var(--doke-action-border, rgba(34, 98, 154, 0.08)));
+}
+
+
+
+/* Resultados v86 — tablet rail correction.
+   Scope: resultados.html only.
+   Fixes the tablet regression where the hidden desktop sidebar/grid still reserves
+   horizontal space and pushes the results content to the right. */
+@media (min-width: 561px) and (max-width: 1180px) {
+  body.search-results-body {
+    --results-tablet-gutter: clamp(18px, 4.2vw, 52px);
+    --results-tablet-rail-max: 920px;
+    --results-tablet-rail: min(calc(100vw - (var(--results-tablet-gutter) * 2)), var(--results-tablet-rail-max));
+    overflow-x: hidden !important;
+    background: var(--doke-app-bg, #eef6fb);
+  }
+
+  html.doke-sidebar-expanded body.search-results-body > .app-shell,
+  html.doke-sidebar-collapsed body.search-results-body > .app-shell,
+  body.search-results-body > .app-shell,
+  body.search-results-body .app-shell {
+    display: block !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 100svh !important;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden !important;
+    background: var(--doke-app-bg, #eef6fb);
+  }
+
+  html.doke-sidebar-expanded body.search-results-body > .app-shell > .sidebar,
+  html.doke-sidebar-collapsed body.search-results-body > .app-shell > .sidebar,
+  body.search-results-body > .app-shell > .sidebar,
+  body.search-results-body .sidebar {
+    display: none !important;
+    width: 0 !important;
+    max-width: 0 !important;
+    min-width: 0 !important;
+    inline-size: 0 !important;
+    max-inline-size: 0 !important;
+    min-inline-size: 0 !important;
+    overflow: hidden !important;
+  }
+
+  html.doke-sidebar-expanded body.search-results-body > .app-shell > .page,
+  html.doke-sidebar-collapsed body.search-results-body > .app-shell > .page,
+  body.search-results-body > .app-shell > .page,
+  body.search-results-body .page {
+    grid-column: 1 / -1 !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0;
+    margin-left: 0;
+    padding: 0;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    translate: none !important;
+    overflow-x: hidden !important;
+    background: var(--doke-app-bg, #eef6fb);
+  }
+
+  body.search-results-body .page__content {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0;
+    padding: 0 0 calc(var(--doke-tablet-bottom-nav-height, 76px) + 30px);
+    overflow-x: hidden !important;
+    background: var(--doke-app-bg, #eef6fb);
+  }
+
+  body.search-results-body .page__content-inner,
+  body.search-results-body .app-shell-page__workspace,
+  body.search-results-body .search-results-workspace,
+  body.search-results-body .search-results-workspace--internal,
+  body.search-results-body .doke-page-shell {
+    display: grid !important;
+    width: var(--results-tablet-rail) !important;
+    max-width: var(--results-tablet-rail) !important;
+    min-width: 0 !important;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 0;
+    padding-right: 0;
+    box-sizing: border-box;
+    overflow: visible !important;
+    transform: none !important;
+    translate: none !important;
+  }
+
+  body.search-results-body .results-searchbar,
+  body.search-results-body .results-layout,
+  body.search-results-body .results-main,
+  body.search-results-body .results-summary,
+  body.search-results-body .results-quickbar,
+  body.search-results-body .results-list,
+  body.search-results-body .results-grid {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-left: 0;
+    margin-right: 0;
+    box-sizing: border-box;
+  }
+
+  body.search-results-body .results-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body.search-results-body .results-filters {
+    display: none !important;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 700px) {
+  body.search-results-body {
+    --results-tablet-gutter: 18px;
+  }
+}
+
+/* resultados.html header parity with index.html
+   Scope: page-specific guard. The shared .app-header geometry remains owned by components/shell. */
+@media (max-width: 599px) {
+  body.search-results-body > .app-shell > .page > .app-header.app-header--results {
+    display: none !important;
+  }
+}
+
+@media (min-width: 600px) {
+  body.search-results-body.has-global-header .page > .app-header.app-header--results {
+    margin-bottom: 4px;
+  }
+}
+
+/* RESULTADOS v97 — filter icon parity + focused input tap-state.
+   Scope: resultados.html only.
+   Mantém o ícone padrão do botão Filtros e desfaz a neutralização agressiva
+   da superfície da busca feita na v96. O campo volta ao contrato visual anterior;
+   só o input nativo fica sem highlight/outline ao clicar. */
+body.search-results-body .search-scope__filter-toggle svg,
+body.search-results-body .filter-toggle svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body.search-results-body .results-searchbar__field.doke-search-pill__field {
+  background: var(--doke-search-pill-bg);
+  box-shadow: var(--doke-search-pill-shadow);
+}
+
+body.search-results-body .results-searchbar__field .doke-search-pill__input,
+body.search-results-body .results-searchbar__field .doke-search-pill__input:focus,
+body.search-results-body .results-searchbar__field .doke-search-pill__input:active,
+body.search-results-body .results-searchbar__field .doke-search-pill__input:focus-visible {
+  background: transparent;
+  box-shadow: none;
+  outline: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+
+/* RESULTADOS v98 — mobile rail alignment contract.
+   Scope: resultados.html mobile only.
+   Purpose: align search scope tabs, summary, chips, empty state and result cards to
+   the same X/Y rail used by the mobile shell header/search. */
+@media (max-width: 760px) {
+  body.search-results-body {
+    --results-mobile-rail-x: clamp(22px, 6.15vw, 26px);
+    --results-mobile-section-gap: 10px;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .page__content,
+  body.search-results-body .page__content {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0;
+    padding-inline: 0;
+    overflow-x: hidden !important;
+    box-sizing: border-box;
+  }
+
+  body.search-results-body.doke-mobile-shell-mounted .page__content-inner,
+  body.search-results-body.doke-mobile-shell-mounted .page__content-inner.container.app-shell-page__workspace.search-results-workspace.search-results-workspace--internal,
+  body.search-results-body.doke-mobile-shell-mounted .search-results-workspace,
+  body.search-results-body.doke-mobile-shell-mounted .search-results-workspace--internal,
+  body.search-results-body .page__content-inner.container.app-shell-page__workspace.search-results-workspace.search-results-workspace--internal {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: var(--doke-mobile-shell-max, 430px) !important;
+    margin-inline: auto;
+    padding-inline: var(--results-mobile-rail-x);
+    padding-top: 0;
+    gap: var(--results-mobile-section-gap);
+    box-sizing: border-box;
+    overflow-x: hidden !important;
+  }
+
+  body.search-results-body .results-searchbar,
+  body.search-results-body .results-layout,
+  body.search-results-body .results-main,
+  body.search-results-body .results-summary,
+  body.search-results-body .results-active-chips,
+  body.search-results-body .results-inline-empty,
+  body.search-results-body .results-grid,
+  body.search-results-body .results-empty__grid,
+  body.search-results-body .results-users-grid,
+  body.search-results-body .results-videos-grid,
+  body.search-results-body .results-before-after-grid {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-left: 0;
+    margin-right: 0;
+    box-sizing: border-box;
+  }
+
+  body.search-results-body .results-searchbar {
+    padding: 0;
+    margin: 0;
+    overflow: visible !important;
+  }
+
+  body.search-results-body .results-searchbar__form {
+    display: none !important;
+  }
+
+  body.search-results-body .results-searchbar__scope.search-scope {
+    display: flex !important;
+    align-items: center;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0;
+    padding: 0;
+    gap: 8px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-padding-left: 0;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  body.search-results-body .results-searchbar__scope.search-scope::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  body.search-results-body .results-searchbar__scope.search-scope > .search-scope__option,
+  body.search-results-body .results-searchbar__scope.search-scope > .search-scope__filter-toggle {
+    flex: 0 0 auto !important;
+  }
+
+  body.search-results-body .results-summary {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center;
+    column-gap: 12px;
+    min-height: 112px !important;
+    margin-top: 0;
+    padding: 18px;
+    border-radius: var(--radius-lg);
+    overflow: hidden !important;
+  }
+
+  body.search-results-body .results-summary__content {
+    min-width: 0 !important;
+  }
+
+  body.search-results-body .results-summary__content h2,
+  body.search-results-body .results-summary__content p {
+    max-width: 100% !important;
+    overflow-wrap: anywhere;
+  }
+
+  body.search-results-body .results-summary__stats {
+    justify-self: end;
+    min-width: 42px !important;
+    text-align: right;
+  }
+
+  body.search-results-body .results-active-chips {
+    margin: 0;
+    padding: 0;
+  }
+
+  body.search-results-body .results-inline-empty {
+    margin: 0;
+    padding: 20px 18px;
+    border-radius: var(--radius-lg);
+  }
+
+  body.search-results-body .results-inline-empty__actions {
+    width: 100% !important;
+    max-width: 160px !important;
+    margin-inline: auto;
+  }
+
+  body.search-results-body .results-grid,
+  body.search-results-body .results-empty__grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+}
+
+/* RESULTADOS MOBILE RAIL LOCK v99
+   Scope: resultados.html mobile only.
+   Fixes the remaining drift where the scope tabs escaped the same X axis used by
+   the mobile search, summary card, active chip, empty state and result cards. */
+@media (max-width: 760px) {
+  body.search-results-body {
+    --results-mobile-rail-x: var(--doke-mobile-shell-edge, clamp(16px, 4.7vw, 18px));
+  }
+
+  body.search-results-body .page__content {
+    padding-inline: 0;
+    overflow-x: hidden !important;
+  }
+
+  body.search-results-body .page__content-inner,
+  body.search-results-body .page__content-inner.container.app-shell-page__workspace.search-results-workspace.search-results-workspace--internal,
+  body.search-results-body .app-shell-page__workspace,
+  body.search-results-body .search-results-workspace,
+  body.search-results-body .search-results-workspace--internal,
+  body.search-results-body .doke-page-shell {
+    width: 100% !important;
+    max-width: var(--doke-mobile-shell-max, min(430px, 100vw)) !important;
+    min-width: 0 !important;
+    margin-inline: auto;
+    padding-inline: var(--results-mobile-rail-x);
+    box-sizing: border-box;
+    overflow-x: clip !important;
+  }
+
+  body.search-results-body .results-searchbar,
+  body.search-results-body .results-layout,
+  body.search-results-body .results-main,
+  body.search-results-body .results-summary,
+  body.search-results-body .results-active-chips,
+  body.search-results-body .results-inline-empty,
+  body.search-results-body .results-grid,
+  body.search-results-body .results-empty__grid,
+  body.search-results-body .results-users-grid,
+  body.search-results-body .results-videos-grid,
+  body.search-results-body .results-before-after-grid {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-left: 0;
+    margin-right: 0;
+    box-sizing: border-box;
+  }
+
+  body.search-results-body .results-searchbar {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  body.search-results-body .results-searchbar__scope.search-scope {
+    width: calc(100% + (var(--results-mobile-rail-x) * 2)) !important;
+    max-width: none !important;
+    margin: 0 calc(var(--results-mobile-rail-x) * -1);
+    padding: 0 var(--results-mobile-rail-x) 2px;
+    box-sizing: border-box;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 8px;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-padding-inline: var(--results-mobile-rail-x);
+    scrollbar-width: none;
+  }
+
+  body.search-results-body .results-searchbar__scope.search-scope::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  body.search-results-body .results-searchbar__scope.search-scope > * {
+    flex: 0 0 auto !important;
+  }
+
+  body.search-results-body .results-summary,
+  body.search-results-body .results-inline-empty {
+    border-radius: var(--radius-lg, 22px);
+  }
+}
+
+/* RESULTADOS MOBILE RAIL LOCK v100
+   Scope: resultados.html mobile only.
+   Correction over v99: the tabs must not be full-bleed. They share the same
+   local rail as the summary card, active chip, empty state and result cards. */
+@media (max-width: 760px) {
+  body.search-results-body {
+    --results-mobile-rail-x: var(--doke-mobile-shell-edge, clamp(16px, 4.7vw, 18px));
+  }
+
+  body.search-results-body .page__content-inner,
+  body.search-results-body .page__content-inner.container.app-shell-page__workspace.search-results-workspace.search-results-workspace--internal,
+  body.search-results-body .app-shell-page__workspace,
+  body.search-results-body .search-results-workspace,
+  body.search-results-body .search-results-workspace--internal,
+  body.search-results-body .doke-page-shell {
+    padding-inline: var(--results-mobile-rail-x);
+  }
+
+  body.search-results-body .results-searchbar,
+  body.search-results-body .results-layout,
+  body.search-results-body .results-main,
+  body.search-results-body .results-summary,
+  body.search-results-body .results-active-chips,
+  body.search-results-body .results-inline-empty,
+  body.search-results-body .results-grid,
+  body.search-results-body .results-empty__grid,
+  body.search-results-body .results-users-grid,
+  body.search-results-body .results-videos-grid,
+  body.search-results-body .results-before-after-grid {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-inline: 0;
+    box-sizing: border-box;
+  }
+
+  body.search-results-body .results-searchbar__scope.search-scope {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0;
+    padding: 0 0 2px;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 8px;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scroll-padding-inline: 0;
+    box-sizing: border-box;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  body.search-results-body .results-searchbar__scope.search-scope > .search-scope__option:first-of-type {
+    margin-left: 0;
+  }
+
+  body.search-results-body .results-searchbar__scope.search-scope > :last-child {
+    margin-right: 0;
+  }
+}
+
+/* RESULTADOS MOBILE CONTENT RAIL v103
+   Align the content below search to the visual search field, not the outer app rail. */
+@media (max-width: 560px) {
+  body.search-results-body {
+    --results-mobile-search-field-inset: 15px;
+  }
+
+  body.search-results-body .page__content-inner,
+  body.search-results-body .page__content-inner.container.app-shell-page__workspace.search-results-workspace.search-results-workspace--internal,
+  body.search-results-body .app-shell-page__workspace,
+  body.search-results-body .search-results-workspace,
+  body.search-results-body .search-results-workspace--internal,
+  body.search-results-body .doke-page-shell {
+    width: 100% !important;
+    max-width: var(--doke-mobile-search-width, min(362px, calc(100vw - 28px))) !important;
+    padding-inline: 0;
+  }
+
+  body.search-results-body .results-searchbar {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0;
+  }
+
+  body.search-results-body .results-searchbar__scope.search-scope,
+  body.search-results-body .results-layout,
+  body.search-results-body .results-main,
+  body.search-results-body .results-summary,
+  body.search-results-body .results-active-chips,
+  body.search-results-body .results-inline-empty,
+  body.search-results-body .results-grid,
+  body.search-results-body .results-empty__grid,
+  body.search-results-body .results-users-grid,
+  body.search-results-body .results-videos-grid,
+  body.search-results-body .results-before-after-grid {
+    width: calc(100% - (var(--results-mobile-search-field-inset) * 2)) !important;
+    max-width: calc(100% - (var(--results-mobile-search-field-inset) * 2)) !important;
+    margin-inline: auto;
+  }
+}
