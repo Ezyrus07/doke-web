@@ -1,6 +1,6 @@
 # Relatório de auditoria frontend
 
-Gerado em: 2026-06-04T01:02:30.152Z
+Gerado em: 2026-06-04T01:14:53.152Z
 
 Críticos: 0
 Avisos: 356
@@ -9,65 +9,65 @@ Avisos: 356
 - **WARNING** — `index.html`: Ainda contém classe legada que deve ser removida depois da validação: home-search-hero__input
 - **WARNING** — `resultados.html`: Ainda contém classe legada que deve ser removida depois da validação: results-searchbar__
 - **WARNING** — `assets/css/components/ai/doke-ai-assistant.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/before-after-workers-preview/before-after-media.css`: Contém 38 uso(s) de !important. Auditar se ainda é necessário.
-- **WARNING** — `assets/css/components/before-after-workers-preview/before-after-responsive.css`: Contém 5 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/before-after-workers-preview/before-after-media.css`: Contém 26 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/before-after-workers-preview/before-after-responsive.css`: Contém 4 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/before-after-workers-preview/before-after-responsive.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
 - **WARNING** — `assets/css/components/before-after-workers-preview/before-after-shell.css`: Contém 1 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/before-after-workers-preview/before-after-sidebar.css`: Contém 1 uso(s) de !important. Auditar se ainda é necessário.
-- **WARNING** — `assets/css/components/before-after-workers-preview/before-after-single-media.css`: Contém 22 uso(s) de !important. Auditar se ainda é necessário.
-- **WARNING** — `assets/css/components/before-after-workers-preview/mobile-comment-sheets.css`: Contém 308 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/before-after-workers-preview/before-after-single-media.css`: Contém 18 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/before-after-workers-preview/mobile-comment-sheets.css`: Contém 200 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/before-after-workers-preview/mobile-comment-sheets.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/before-after-workers-preview/publication-light-modal.css`: Contém 30 uso(s) de !important. Auditar se ainda é necessário.
-- **WARNING** — `assets/css/components/before-after-workers-preview/shared-publication-card.css`: Contém 156 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/before-after-workers-preview/publication-light-modal.css`: Contém 16 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/before-after-workers-preview/shared-publication-card.css`: Contém 76 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/before-after-workers-preview/shared-publication-card.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/before-after-workers-preview/workers-mobile-fullscreen-contract.css`: Contém 296 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/before-after-workers-preview/workers-mobile-fullscreen-contract.css`: Contém 222 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/before-after-workers-preview/workers-modal.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/before-after-workers-preview.css`: Contém 672 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/before-after-workers-preview.css`: Contém 519 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/before-after-workers-preview.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
 - **WARNING** — `assets/css/components/cards/ad-card.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/cards/card-grid-contract.css`: Contém 12 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/cards/card-grid-contract.css`: Contém 10 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/cards/card-system.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/cards/marketplace-card-contract.css`: Contém 93 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/cards/marketplace-card-contract.css`: Contém 64 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/cards/marketplace-card-contract.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/cards/mobile-card-contract.css`: Contém 126 uso(s) de !important. Auditar se ainda é necessário.
-- **WARNING** — `assets/css/components/cards/mobile-card-distribution-contract.css`: Contém 211 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/cards/mobile-card-contract.css`: Contém 104 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/cards/mobile-card-distribution-contract.css`: Contém 183 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/cards/mobile-card-distribution-contract.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/cards/mobile-list-card-system.css`: Contém 44 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/cards/mobile-list-card-system.css`: Contém 39 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/cards/mobile-list-card-system.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
 - **WARNING** — `assets/css/components/cards/publication-card.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/cards/recommendation-card.css`: Contém 107 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/cards/recommendation-card.css`: Contém 56 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/cards/recommendation-card.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
 - **WARNING** — `assets/css/components/cards/review-card.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/cards/service-card.css`: Contém 34 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/cards/service-card.css`: Contém 26 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/cards/service-card.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/cards/shared-index-card-contract.css`: Contém 102 uso(s) de !important. Auditar se ainda é necessário.
-- **WARNING** — `assets/css/components/cards/worker-card.css`: Contém 80 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/cards/shared-index-card-contract.css`: Contém 96 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/cards/worker-card.css`: Contém 64 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/cards/worker-media-card.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
 - **WARNING** — `assets/css/components/chat-composer.css`: Contém 51 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/chat-composer.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/domain/doke-domain-cards.css`: Contém 453 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/domain/doke-domain-cards.css`: Contém 261 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/help/help-drawer.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
 - **WARNING** — `assets/css/components/interactions/mobile-action-contract.css`: Contém 10 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/internal/action-panel-standard.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/internal/chat-workspace-contract.css`: Contém 1436 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/internal/chat-workspace-contract.css`: Contém 650 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/internal/chat-workspace-contract.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
 - **WARNING** — `assets/css/components/internal/list-page-aliases.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/internal/list-page-toolbar.css`: Contém 123 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/internal/list-page-toolbar.css`: Contém 49 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/internal/list-page-toolbar.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/internal/page-header.css`: Contém 4 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/internal/page-header.css`: Contém 2 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/internal/selection-panel-standard.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/layout/index-compact-card-contract.css`: Contém 191 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/layout/index-compact-card-contract.css`: Contém 156 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/layout/index-compact-card-contract.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/layout/marketplace-index-layout-contract.css`: Contém 253 uso(s) de !important. Auditar se ainda é necessário.
-- **WARNING** — `assets/css/components/layout/overflow-text-clipping-contract.css`: Contém 17 uso(s) de !important. Auditar se ainda é necessário.
-- **WARNING** — `assets/css/components/layout/professional-responsive-layout.css`: Contém 79 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/layout/marketplace-index-layout-contract.css`: Contém 230 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/layout/overflow-text-clipping-contract.css`: Contém 15 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/layout/professional-responsive-layout.css`: Contém 72 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/layout/professional-responsive-layout.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/layout/responsive-page-contract.css`: Contém 267 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/layout/responsive-page-contract.css`: Contém 243 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/layout/responsive-page-contract.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/layout/responsive-priority-cards.css`: Contém 171 uso(s) de !important. Auditar se ainda é necessário.
-- **WARNING** — `assets/css/components/layout/responsive-priority-contract.css`: Contém 523 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/layout/responsive-priority-cards.css`: Contém 170 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/layout/responsive-priority-contract.css`: Contém 514 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/layout/responsive-priority-contract.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/media-lightbox.css`: Contém 204 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/media-lightbox.css`: Contém 177 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/media-lightbox.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
 - **WARNING** — `assets/css/components/navigation/app-mobile-header-contract.css`: Contém 700 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/navigation/app-mobile-search.css`: Contém 146 uso(s) de !important. Auditar se ainda é necessário.
@@ -86,11 +86,11 @@ Avisos: 356
 - **WARNING** — `assets/css/components/navigation/mobile-search-header-shared.css`: Contém 348 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/navigation/mobile-search-header-shared.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
 - **WARNING** — `assets/css/components/navigation/search-bar.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/overlays/financial-modal-system.css`: Contém 776 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/overlays/financial-modal-system.css`: Contém 413 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/overlays/financial-modal-system.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/overlays/mobile-action-surface-contract.css`: Contém 260 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/overlays/mobile-action-surface-contract.css`: Contém 140 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/overlays/mobile-action-surface-contract.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/overlays/mobile-overlay-system.css`: Contém 25 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/overlays/mobile-overlay-system.css`: Contém 19 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/overlays/mobile-overlay-system.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
 - **WARNING** — `assets/css/components/profile/profile-about.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
 - **WARNING** — `assets/css/components/profile/profile-achievements.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
@@ -99,9 +99,9 @@ Avisos: 356
 - **WARNING** — `assets/css/components/profile/profile-layout.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
 - **WARNING** — `assets/css/components/profile/profile-services-grid.css`: Contém 24 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/profile/profile-services-grid.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/search/search-autocomplete.css`: Contém 99 uso(s) de !important. Auditar se ainda é necessário.
-- **WARNING** — `assets/css/components/search/search-bar.css`: Contém 92 uso(s) de !important. Auditar se ainda é necessário.
-- **WARNING** — `assets/css/components/search/search-filter-contract.css`: Contém 152 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/search/search-autocomplete.css`: Contém 75 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/search/search-bar.css`: Contém 68 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/search/search-filter-contract.css`: Contém 132 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/search/search-filter-contract.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
 - **WARNING** — `assets/css/components/sections/section-header-canonical-contract.css`: Contém 119 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/shell/app-header-canonical-contract.css`: Contém 322 uso(s) de !important. Auditar se ainda é necessário.
@@ -122,16 +122,16 @@ Avisos: 356
 - **WARNING** — `assets/css/components/shell/shared-page-width-contract.css`: Contém 151 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/shell/tablet-internal-rail-contract.css`: Contém 426 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/shell/tablet-internal-rail-contract.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/ui-surface/buttons-close.css`: Contém 105 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/ui-surface/buttons-close.css`: Contém 59 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/ui-surface/buttons-close.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/ui-surface/cards-media.css`: Contém 29 uso(s) de !important. Auditar se ainda é necessário.
-- **WARNING** — `assets/css/components/ui-surface/dropdowns-menus.css`: Contém 8 uso(s) de !important. Auditar se ainda é necessário.
-- **WARNING** — `assets/css/components/ui-surface/forms-controls.css`: Contém 38 uso(s) de !important. Auditar se ainda é necessário.
-- **WARNING** — `assets/css/components/ui-surface/modal-alignment.css`: Contém 218 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/ui-surface/cards-media.css`: Contém 18 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/ui-surface/dropdowns-menus.css`: Contém 4 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/ui-surface/forms-controls.css`: Contém 8 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/ui-surface/modal-alignment.css`: Contém 181 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/components/ui-surface/modal-alignment.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/components/ui-surface/overlay-root.css`: Contém 31 uso(s) de !important. Auditar se ainda é necessário.
-- **WARNING** — `assets/css/components/ui-surface/responsive.css`: Contém 26 uso(s) de !important. Auditar se ainda é necessário.
-- **WARNING** — `assets/css/components/ui-surface/surface-contract.css`: Contém 25 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/ui-surface/overlay-root.css`: Contém 27 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/ui-surface/responsive.css`: Contém 22 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/components/ui-surface/surface-contract.css`: Contém 20 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/core/base.css`: Contém 4 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/core/layout/responsive-base.css`: Contém 7 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/core/layout/responsive-shell.css`: Contém 479 uso(s) de !important. Auditar se ainda é necessário.
@@ -352,12 +352,12 @@ Avisos: 356
 - **WARNING** — `assets/css/pages/stable-desktop-rail.css`: Contém 26 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/pages/tornar-profissional.css`: Contém 9 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/pages/tornar-profissional.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/patterns/chat-screen-fill.css`: Contém 45 uso(s) de !important. Auditar se ainda é necessário.
-- **WARNING** — `assets/css/patterns/internal-pages.css`: Contém 12 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/patterns/chat-screen-fill.css`: Contém 31 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/patterns/internal-pages.css`: Contém 9 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/patterns/internal-pages.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/patterns/marketplace-responsive-stack.css`: Contém 1311 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/patterns/marketplace-responsive-stack.css`: Contém 972 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/patterns/marketplace-responsive-stack.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/patterns/remaining-pages.css`: Contém 57 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/patterns/remaining-pages.css`: Contém 33 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/patterns/remaining-pages.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
-- **WARNING** — `assets/css/patterns/responsive-layout-guards.css`: Contém 74 uso(s) de !important. Auditar se ainda é necessário.
+- **WARNING** — `assets/css/patterns/responsive-layout-guards.css`: Contém 54 uso(s) de !important. Auditar se ainda é necessário.
 - **WARNING** — `assets/css/patterns/reviews-section.css`: Define radius literal. Preferir tokens do Doke UI System para evitar variação visual.
