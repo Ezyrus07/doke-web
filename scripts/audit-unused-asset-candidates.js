@@ -20,6 +20,13 @@ function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (IGNORE_DIRS.has(entry.name)) continue;
     const abs = path.join(dir, entry.name);
+    const relative = path.relative(root, abs).replace(/\\/g, '/');
+
+    // Generated validation reports and patch manifests mention asset filenames and can mask
+    // real unused candidates. They are audit/transfer outputs, not runtime references.
+    if (relative === 'docs/validation' || relative.startsWith('docs/validation/')) continue;
+    if (entry.name.startsWith('__PATCH_MANIFEST')) continue;
+
     if (entry.isDirectory()) walk(abs, out);
     else out.push(abs);
   }
