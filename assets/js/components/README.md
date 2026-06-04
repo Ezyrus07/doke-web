@@ -1,10 +1,12 @@
-# Camada de componentes JS
+# renderers
 
-Esta pasta foi criada como destino oficial para comportamentos reaproveitáveis (tabs, modal, drawer, gallery, filters, etc.).
+Camada de renderização de componentes do Doke.
 
-Use esta pasta quando a lógica:
-- não pertence a uma página específica;
-- é reutilizada por mais de uma tela;
-- precisa ter contrato estável e manutenção independente.
+Objetivo: permitir que cards e listas hoje mockados no HTML sejam alimentados futuramente por `assets/data`, Supabase, Firebase ou outro backend sem reescrever a estrutura visual.
 
-Enquanto isso, scripts existentes continuam em `assets/js/core/` e `assets/js/pages/`.
+Regras:
+- renderers não buscam dados;
+- renderers não conhecem páginas;
+- páginas passam dados normalizados;
+- componentes usam `data-*` previsíveis para preenchimento;
+- CSS não deve depender de conteúdo mockado.
