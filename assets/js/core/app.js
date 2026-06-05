@@ -74,7 +74,8 @@ const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalh
 const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
-const isMobileSidebarViewport = () => window.innerWidth <= 1024;
+const isMobileSidebarViewport = () => window.innerWidth < 768;
+const isTabletSidebarViewport = () => window.innerWidth >= 768 && window.innerWidth < 1180;
 
 
 if (window.localStorage.getItem(THEME_STORAGE_KEY) === "dark") {
@@ -109,8 +110,9 @@ const syncSidebarCollapsedState = () => {
     return;
   }
 
-  const isCollapsed = readStoredSidebarCollapsed();
-  const sidebarWidth = isCollapsed ? "96px" : "272px";
+  const isTabletSidebar = isTabletSidebarViewport();
+  const isCollapsed = !isTabletSidebar && readStoredSidebarCollapsed();
+  const sidebarWidth = isTabletSidebar ? "240px" : isCollapsed ? "96px" : "272px";
   body.classList.toggle("sidebar-collapsed", isCollapsed);
   root.classList.toggle(SIDEBAR_COLLAPSED_HTML_CLASS, isCollapsed);
   root.classList.toggle(SIDEBAR_EXPANDED_HTML_CLASS, !isCollapsed);
@@ -198,7 +200,6 @@ const SHARED_SIDEBAR_MARKUP = `
         <span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5.5 9.5V20h13V9.5"></path></svg></span>
         <span>Início</span>
       </span>
-      <span class="nav-link__count">Base</span>
     </a>
     <a class="nav-link nav-link--orders" href="pedidos.html">
       <span class="nav-link__start">
@@ -1534,7 +1535,7 @@ document.addEventListener("click", (event) => {
 });
 
 window.addEventListener("resize", () => {
-  if (window.innerWidth > 1024) {
+  if (window.innerWidth >= 768) {
     body.classList.remove("sidebar-open");
   }
 

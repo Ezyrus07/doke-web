@@ -2309,9 +2309,10 @@ html.home-index-root body.home-index-shell section.more-services button[data-mor
 }
 
 /* 2026-06-05 tablet landscape home shell parity.
-   Scope: only home tablet landscape. Match the other tablet HTMLs: no persistent
-   sidebar, and header/content share the same centered home rail. */
-@media (min-width: 768px) and (max-width: 1180px) and (orientation: landscape) {
+   Scope: only compact landscape tablets up to 1024px. Wider tablet landscape
+   (1025-1179px) uses the persistent compact sidebar contract from the shell
+   authority instead of the centered no-sidebar rail. */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
   body.home-index-shell {
     --sidebar-width: 0px !important;
     --doke-app-sidebar-width: 0px !important;
@@ -2444,5 +2445,119 @@ html.home-index-root body.home-index-shell section.more-services button[data-mor
     max-inline-size: var(--tablet-home-rail) !important;
     margin-left: auto;
     margin-right: auto;
+  }
+}
+
+/* 2026-06-05 tablet landscape home with persistent compact sidebar.
+   Authority: home tablet layout. This restores the approved desktop-like shell
+   only for wide landscape tablets; portrait/narrow tablets keep the no-sidebar
+   tablet contract above. */
+@media (min-width: 1025px) and (max-width: 1179px) and (orientation: landscape) {
+  html.home-index-root body[data-page="home"].home-index-shell {
+    --doke-home-tablet-sidebar-width: 208px;
+    --doke-home-tablet-shell-gap: 0px;
+    --sidebar-width: var(--doke-home-tablet-sidebar-width);
+    --doke-app-sidebar-width: var(--doke-home-tablet-sidebar-width);
+    --doke-app-shell-sidebar-width: var(--doke-home-tablet-sidebar-width);
+    --tablet-gutter: clamp(28px, 4vw, 40px);
+    --tablet-page-max: 760px;
+    --tablet-home-rail: min(
+      calc(100% - (var(--tablet-gutter) * 2)),
+      var(--tablet-page-max)
+    );
+    --doke-shared-page-width: var(--tablet-home-rail);
+    --doke-current-page-rail: var(--tablet-home-rail);
+    --rail-max: var(--tablet-home-rail);
+  }
+
+  html.home-index-root body[data-page="home"].home-index-shell > .app-shell {
+    display: block;
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  html.home-index-root body[data-page="home"].home-index-shell > .app-shell > .sidebar,
+  html.home-index-root body[data-page="home"].home-index-shell > .app-shell > [data-shell-sidebar],
+  html.home-index-root body[data-page="home"].home-index-shell .sidebar[data-shell-sidebar] {
+    position: fixed;
+    inset: 0 auto 0 0;
+    display: flex;
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    flex-direction: column;
+    gap: 14px;
+    width: var(--doke-home-tablet-sidebar-width);
+    min-width: var(--doke-home-tablet-sidebar-width);
+    max-width: var(--doke-home-tablet-sidebar-width);
+    inline-size: var(--doke-home-tablet-sidebar-width);
+    min-inline-size: var(--doke-home-tablet-sidebar-width);
+    max-inline-size: var(--doke-home-tablet-sidebar-width);
+    height: auto;
+    min-height: 100vh;
+    max-height: none;
+    margin: 0;
+    padding: 16px 12px 18px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: #ffffff;
+    border-right: 0;
+    box-shadow: 12px 0 28px rgba(16, 38, 60, 0.05);
+    transform: none;
+    z-index: 120;
+  }
+
+  html.home-index-root body[data-page="home"].home-index-shell > .app-shell > .page {
+    display: block;
+    min-width: 0;
+    width: calc(100vw - var(--doke-home-tablet-sidebar-width));
+    max-width: calc(100vw - var(--doke-home-tablet-sidebar-width));
+    margin-left: var(--doke-home-tablet-sidebar-width);
+    margin-right: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html.home-index-root body[data-page="home"].home-index-shell > .app-shell > .page > .home-index-topbar {
+    display: none;
+    visibility: hidden;
+    height: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  html.home-index-root body[data-page="home"].home-index-shell .app-header.app-header--home.home-side-meta,
+  html.home-index-root body[data-page="home"].home-index-shell > .app-shell > .page > .app-header {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  html.home-index-root body[data-page="home"].home-index-shell .app-header.app-header--home.home-side-meta .app-header__inner,
+  html.home-index-root body[data-page="home"].home-index-shell .page__content-inner.shell-home__workspace,
+  html.home-index-root body[data-page="home"].home-index-shell .page__content-inner.shell-home__workspace--clean {
+    width: var(--tablet-home-rail);
+    max-width: var(--tablet-home-rail);
+    inline-size: var(--tablet-home-rail);
+    max-inline-size: var(--tablet-home-rail);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 0;
+    padding-right: 0;
+    box-sizing: border-box;
+  }
+
+  html.home-index-root body[data-page="home"].home-index-shell section[class*="home-cat"] [class*="__rail"],
+  html.home-index-root body[data-page="home"].home-index-shell section[class*="home-cat"] [class*="__track"] {
+    width: 100%;
+    max-width: 100%;
   }
 }

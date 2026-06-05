@@ -15,10 +15,15 @@
 
   function isDesktopShell() {
     try {
-      return window.matchMedia("(min-width: 1025px)").matches;
+      return window.matchMedia("(min-width: 768px)").matches;
     } catch (error) {
-      return (window.innerWidth || root.clientWidth || 0) >= 1025;
+      return (window.innerWidth || root.clientWidth || 0) >= 768;
     }
+  }
+
+  function isTabletShell() {
+    var width = window.innerWidth || root.clientWidth || 0;
+    return width >= 768 && width < 1180;
   }
 
   function isMobileRuntime() {
@@ -59,8 +64,9 @@
   function applyShellState() {
     var desktopShell = isDesktopShell();
     var mobileShell = isMobileRuntime();
-    var shouldCollapse = desktopShell && readCollapsed();
-    var sidebarWidth = desktopShell ? (shouldCollapse ? "96px" : "272px") : "0px";
+    var tabletShell = isTabletShell();
+    var shouldCollapse = desktopShell && !tabletShell && readCollapsed();
+    var sidebarWidth = desktopShell ? (tabletShell ? "240px" : (shouldCollapse ? "96px" : "272px")) : "0px";
 
     syncViewportContract();
     root.classList.toggle(COLLAPSED, shouldCollapse);
