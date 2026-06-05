@@ -1415,14 +1415,14 @@
     flex-wrap: nowrap !important;
     justify-content: flex-start;
     align-items: flex-start;
-    gap: 16px;
+    gap: var(--home-ipad-category-gap, 16px);
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
     height: auto !important;
     min-height: 112px !important;
     margin: 0;
-    padding: 0 56px 10px 0;
+    padding: 0 var(--home-ipad-category-end-preview, 56px) 10px 0;
     overflow-x: auto !important;
     overflow-y: hidden !important;
     scroll-snap-type: x proximity !important;
@@ -1438,10 +1438,10 @@
 
   html.home-index-root body.home-index-shell section.home-catégories .home-catégory,
   html body.home-index-shell section.home-catégories .home-catégory {
-    flex: 0 0 104px !important;
-    width: 104px !important;
-    min-width: 104px !important;
-    max-width: 104px !important;
+    flex: 0 0 var(--home-ipad-category-width, 104px) !important;
+    width: var(--home-ipad-category-width, 104px) !important;
+    min-width: var(--home-ipad-category-width, 104px) !important;
+    max-width: var(--home-ipad-category-width, 104px) !important;
     display: inline-flex !important;
     flex-direction: column !important;
     align-items: center;
@@ -2095,6 +2095,9 @@
       --doke-ipad-home-rail: min(calc(100vw - 52px), 760px);
       --home-ipad-section-gap: 34px;
       --home-ipad-header-content-gap: 38px;
+      --home-ipad-category-gap: 12px;
+      --home-ipad-category-width: 112px;
+      --home-ipad-category-end-preview: 34px;
     }
 
     html.home-index-root body.home-index-shell > .app-shell > .page > .page__content > .page__content-inner.shell-home__workspace,
@@ -2122,7 +2125,7 @@
       overflow-y: visible !important;
       -webkit-overflow-scrolling: touch !important;
       scroll-snap-type: x proximity !important;
-      padding: 0 34px 4px 0;
+      padding: 0 var(--home-ipad-category-end-preview) 4px 0;
       margin: 0;
       scrollbar-width: none;
     }
@@ -2137,7 +2140,7 @@
       flex-wrap: nowrap !important;
       justify-content: flex-start;
       align-items: stretch;
-      gap: 12px;
+      gap: var(--home-ipad-category-gap);
       width: max-content !important;
       min-width: max-content !important;
       max-width: none !important;
@@ -2148,10 +2151,10 @@
     }
 
     html.home-index-root body.home-index-shell .home-catégories__track > .home-catégory {
-      flex: 0 0 112px !important;
-      width: 112px !important;
-      min-width: 112px !important;
-      max-width: 112px !important;
+      flex: 0 0 var(--home-ipad-category-width) !important;
+      width: var(--home-ipad-category-width) !important;
+      min-width: var(--home-ipad-category-width) !important;
+      max-width: var(--home-ipad-category-width) !important;
       scroll-snap-align: start;
     }
 
@@ -2517,6 +2520,12 @@
 }
 
 @media (min-width: 561px) and (max-width: 700px) and (orientation: portrait) {
+  html.home-index-root body.home-index-shell {
+    --home-ipad-category-gap: 8px;
+    --home-ipad-category-width: clamp(94px, 15.75vw, 96px);
+    --home-ipad-category-end-preview: 18px;
+  }
+
   html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
   html body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers {
     overflow-x: auto !important;
