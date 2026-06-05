@@ -2240,7 +2240,7 @@
    Goal: make every internal/app page use the same persistent left sidebar on tablet
    as the approved index tablet layout, without touching mobile or desktop. */
 @media (min-width: 768px) and (max-width: 1179px) and (orientation: landscape) {
-  body:is(.doke-app-shell-page, .shell-home)[data-page] {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) {
     --doke-tablet-sidebar-width: 168px;
     --doke-tablet-sidebar-gap: 0px;
     --doke-tablet-logo-width: 92px;
@@ -2248,8 +2248,8 @@
     --doke-app-sidebar-width: var(--doke-tablet-sidebar-width) !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page]:not(.sidebar-collapsed) .sidebar,
-  body:is(.doke-app-shell-page, .shell-home)[data-page]:not(.sidebar-collapsed) [data-shell-sidebar] {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell):not(.sidebar-collapsed) .sidebar,
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell):not(.sidebar-collapsed) [data-shell-sidebar] {
     position: fixed !important;
     inset: 0 auto 0 0 !important;
     width: var(--doke-tablet-sidebar-width) !important;
@@ -2267,39 +2267,39 @@
     z-index: 120 !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page]:not(.sidebar-collapsed) .page {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell):not(.sidebar-collapsed) .page {
     margin-left: calc(var(--doke-tablet-sidebar-width) + var(--doke-tablet-sidebar-gap)) !important;
     width: calc(100% - (var(--doke-tablet-sidebar-width) + var(--doke-tablet-sidebar-gap))) !important;
     max-width: calc(100% - (var(--doke-tablet-sidebar-width) + var(--doke-tablet-sidebar-gap))) !important;
     min-width: 0 !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page] .sidebar__brand {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) .sidebar__brand {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     padding: 0 2px 8px !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page] .brand-logo {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) .brand-logo {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     width: 100% !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page] .brand-logo img {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) .brand-logo img {
     width: var(--doke-tablet-logo-width) !important;
     max-width: var(--doke-tablet-logo-width) !important;
     height: auto !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page] .sidebar__group {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) .sidebar__group {
     display: grid !important;
     gap: 8px !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page] .sidebar__label {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) .sidebar__label {
     padding-inline: 6px !important;
     font-size: 0.62rem !important;
     font-weight: 800 !important;
@@ -2307,14 +2307,14 @@
     color: #6a7f98 !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page] .nav-link {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) .nav-link {
     min-height: 40px !important;
     padding: 8px 10px !important;
     gap: 8px !important;
     border-radius: 14px !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page] .nav-link__start {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) .nav-link__start {
     display: flex !important;
     align-items: center !important;
     gap: 8px !important;
@@ -2322,14 +2322,14 @@
     flex: 1 1 auto !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page] .nav-link__icon {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) .nav-link__icon {
     width: 24px !important;
     height: 24px !important;
     border-radius: 8px !important;
     flex: 0 0 auto !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page] .nav-link__start > span:last-child {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) .nav-link__start > span:last-child {
     display: block !important;
     min-width: 0 !important;
     overflow: hidden !important;
@@ -2340,7 +2340,7 @@
     line-height: 1.2 !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page] .nav-link__count {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) .nav-link__count {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -2355,48 +2355,48 @@
     line-height: 1 !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page] .sidebar > .sidebar__group--account {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) .sidebar > .sidebar__group--account {
     margin-top: 12px !important;
     padding-top: 0 !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page] .sidebar__footer {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) .sidebar__footer {
     padding-top: 8px !important;
   }
 
   /* Tablet must stay expanded like the approved sidebar, even if desktop collapse state is present. */
-  body:is(.doke-app-shell-page, .shell-home)[data-page].sidebar-collapsed {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell).sidebar-collapsed {
     --sidebar-width: var(--doke-tablet-sidebar-width) !important;
     --doke-app-sidebar-width: var(--doke-tablet-sidebar-width) !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page].sidebar-collapsed .sidebar,
-  body:is(.doke-app-shell-page, .shell-home)[data-page].sidebar-collapsed [data-shell-sidebar] {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell).sidebar-collapsed .sidebar,
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell).sidebar-collapsed [data-shell-sidebar] {
     width: var(--doke-tablet-sidebar-width) !important;
     min-width: var(--doke-tablet-sidebar-width) !important;
     max-width: var(--doke-tablet-sidebar-width) !important;
     padding-inline: 10px !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page].sidebar-collapsed .page {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell).sidebar-collapsed .page {
     margin-left: calc(var(--doke-tablet-sidebar-width) + var(--doke-tablet-sidebar-gap)) !important;
     width: calc(100% - (var(--doke-tablet-sidebar-width) + var(--doke-tablet-sidebar-gap))) !important;
     max-width: calc(100% - (var(--doke-tablet-sidebar-width) + var(--doke-tablet-sidebar-gap))) !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page].sidebar-collapsed .sidebar__label,
-  body:is(.doke-app-shell-page, .shell-home)[data-page].sidebar-collapsed .nav-link__count,
-  body:is(.doke-app-shell-page, .shell-home)[data-page].sidebar-collapsed .nav-link__start > span:last-child {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell).sidebar-collapsed .sidebar__label,
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell).sidebar-collapsed .nav-link__count,
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell).sidebar-collapsed .nav-link__start > span:last-child {
     display: revert !important;
     opacity: 1 !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page].sidebar-collapsed .nav-link {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell).sidebar-collapsed .nav-link {
     justify-content: space-between !important;
     padding-inline: 10px !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page].sidebar-collapsed .nav-link__start {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell).sidebar-collapsed .nav-link__start {
     justify-content: flex-start !important;
     gap: 8px !important;
   }
@@ -2407,18 +2407,18 @@
    The account group must stay near the main navigation on tablet, not be pushed
    to the bottom by the desktop sidebar contract. */
 @media (min-width: 768px) and (max-width: 1179px) and (orientation: landscape) {
-  body:is(.doke-app-shell-page, .shell-home)[data-page] .sidebar,
-  body:is(.doke-app-shell-page, .shell-home)[data-page] [data-shell-sidebar] {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) .sidebar,
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) [data-shell-sidebar] {
     justify-content: flex-start !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page] .sidebar > .sidebar__group--account,
-  body:is(.doke-app-shell-page, .shell-home)[data-page] .sidebar > .sidebar__footer {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) .sidebar > .sidebar__group--account,
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) .sidebar > .sidebar__footer {
     margin-top: 12px !important;
     padding-top: 0 !important;
   }
 
-  body:is(.doke-app-shell-page, .shell-home)[data-page] .sidebar__group--account + .sidebar__footer {
+  body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) .sidebar__group--account + .sidebar__footer {
     margin-top: 8px !important;
   }
 }
@@ -2464,24 +2464,24 @@
    Portrait tablet must keep the approved vertical/mobile layout: no persistent sidebar.
    The persistent left sidebar contract is intentionally landscape-only. */
 @media (min-width: 768px) and (max-width: 1179px) and (orientation: portrait) {
-  html body:is(.doke-app-shell-page, .shell-home)[data-page] {
+  html body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) {
     --sidebar-width: 0px !important;
     --doke-app-sidebar-width: 0px !important;
   }
 
-  html body:is(.doke-app-shell-page, .shell-home)[data-page] > .app-shell,
-  html body:is(.doke-app-shell-page, .shell-home)[data-page] > .app-shell > .page {
+  html body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell,
+  html body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page {
     display: block !important;
     grid-template-columns: minmax(0, 1fr) !important;
   }
 
-  html body:is(.doke-app-shell-page, .shell-home)[data-page] > .app-shell > .page {
+  html body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > .page {
     margin-left: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
   }
 
-  html body:is(.doke-app-shell-page, .shell-home)[data-page] > .app-shell > :is(.sidebar, [data-shell-sidebar]) {
+  html body:is(.doke-app-shell-page, .shell-home)[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell > :is(.sidebar, [data-shell-sidebar]) {
     display: none !important;
     visibility: hidden !important;
     inline-size: 0 !important;

@@ -2,20 +2,170 @@
    Stage 50 consolidates direct index.html page dependencies here while preserving
    the previous cascade order: legacy home runtime first, then the shell/card/tablet
    contracts that index.html previously linked after home.css. */
-@import url("./home-runtime.css?v=20260604-stage50-runtime-v1");
+@import url("./home-runtime.css?v=20260605-home-tablet-landscape-nosidebar-v1");
 @import url("../components/shell/app-header.css?v=20260517-header-gap-v3");
 @import url("../components/layout/responsive-page-contract.css?v=20260515-mobile-axis-v1");
-@import url("../components/shell/doke-shell-contract.css?v=20260531-ipad-scroll-stability-v1");
-@import url("./stable-desktop-rail.css?v=20260517-f5-stable-v2");
+@import url("../components/shell/doke-shell-contract.css?v=20260605-home-tablet-title-authority-v1");
+@import url("./stable-desktop-rail.css?v=20260605-tablet-landscape-arrow-contract-v1");
 @import url("./home/mobile-feed-rails.css?v=20260519-mobile-feed-rail-fix-v1");
-@import url("./home/tablet-responsive-layout.css?v=20260601-tablet-rail-boundary-v1");
+@import url("./home/tablet-responsive-layout.css?v=20260605-tablet-landscape-nosidebar-v1");
 @import url("../components/shell/app-header-canonical-contract.css?v=20260525-header-canonical-v3");
 @import url("../components/shell/shared-page-width-contract.css?v=20260531-large-mobile-contract-v33");
 @import url("../patterns/marketplace-responsive-stack.css?v=20260601-css-load-phase4-v1");
-@import url("../components/shell/desktop-page-rail-authority.css?v=20260526-home-narrow-tablet-no-sidebar-v9");
+@import url("../components/shell/desktop-page-rail-authority.css?v=20260605-home-tablet-landscape-nosidebar-v1");
 @import url("../components/cards/marketplace-card-contract.css?v=20260601-pro-card-premium-v1");
-@import url("./home/tablet-shell-rail.css?v=20260602-home-tablet-shell-rail-v1");
+@import url("./home/tablet-shell-rail.css?v=20260605-tablet-category-section-rhythm-v4");
 @import url("../components/shell/ipad-safari-scroll.css?v=20260601-shell-scroll-v1");
-@import url("./home/tablet-safari-layout.css?v=20260602-home-horizontal-rails-v2");
+@import url("./home/tablet-safari-layout.css?v=20260605-tablet-landscape-rhythm-v2");
 @import url("./home/mobile-index-feed-contract.css?v=20260602-home-mounted-rail-contract-v1");
 @import url("./home/publications-no-arrows.css?v=20260604-publication-rail-contract-v1");
+
+/* 2026-06-05 - canonical tablet landscape rhythm for index.
+   Authority: final home page contract after all home imports. This closes only
+   local index spacing and category rail behavior; sidebar/search shell remains
+   owned by tablet-responsive-layout.css. */
+@media (min-width: 768px) and (max-width: 1180px) and (orientation: landscape) {
+  html.home-index-root body.home-index-shell,
+  html body.home-index-shell {
+    --home-tablet-landscape-area-gap: 8px;
+    --home-tablet-landscape-section-gap: 10px;
+    --home-tablet-landscape-category-gap: clamp(12px, 1.8vw, 18px);
+    --home-tablet-landscape-category-width: clamp(82px, 9vw, 96px);
+    --home-tablet-landscape-category-icon: clamp(62px, 6.8vw, 74px);
+  }
+
+  html.home-index-root body.home-index-shell .home-search-hero,
+  html body.home-index-shell .home-search-hero {
+    margin-bottom: var(--home-tablet-landscape-area-gap);
+  }
+
+  html.home-index-root body.home-index-shell :is(
+    section[class*="home-cat"],
+    section.featured-services,
+    section.short-videos,
+    section.home-publications,
+    section.more-services
+  ),
+  html body.home-index-shell :is(
+    section[class*="home-cat"],
+    section.featured-services,
+    section.short-videos,
+    section.home-publications,
+    section.more-services
+  ) {
+    contain: none;
+    content-visibility: visible;
+    margin-top: 0;
+    margin-bottom: var(--home-tablet-landscape-section-gap);
+  }
+
+  html.home-index-root body.home-index-shell section[class*="home-cat"],
+  html body.home-index-shell section[class*="home-cat"] {
+    min-height: 98px;
+    height: auto;
+    overflow: visible;
+  }
+
+  html.home-index-root body.home-index-shell section[class*="home-cat"] [class*="__rail"],
+  html body.home-index-shell section[class*="home-cat"] [class*="__rail"] {
+    display: block;
+    min-height: 98px;
+    height: auto;
+    padding: 0 0 8px;
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-width: none;
+  }
+
+  html.home-index-root body.home-index-shell section[class*="home-cat"] [class*="__rail"]::after,
+  html body.home-index-shell section[class*="home-cat"] [class*="__rail"]::after {
+    right: 0;
+    width: 42px;
+  }
+
+  html.home-index-root body.home-index-shell section[class*="home-cat"] [class*="__track"],
+  html body.home-index-shell section[class*="home-cat"] [class*="__track"] {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: var(--home-tablet-landscape-category-gap);
+    width: max-content;
+    min-width: max-content;
+    max-width: none;
+    min-height: 98px;
+    height: auto;
+    padding: 0 18px 8px 0;
+    overflow: visible;
+    scroll-snap-type: x proximity;
+    box-sizing: border-box;
+  }
+
+  html.home-index-root body.home-index-shell section[class*="home-cat"] [class*="__track"] > a[class*="home-cat"],
+  html body.home-index-shell section[class*="home-cat"] [class*="__track"] > a[class*="home-cat"] {
+    flex: 0 0 var(--home-tablet-landscape-category-width);
+    inline-size: var(--home-tablet-landscape-category-width);
+    width: var(--home-tablet-landscape-category-width);
+    min-width: var(--home-tablet-landscape-category-width);
+    max-width: var(--home-tablet-landscape-category-width);
+    min-height: 92px;
+    height: auto;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 7px;
+    overflow: visible;
+    scroll-snap-align: start;
+  }
+
+  html.home-index-root body.home-index-shell section[class*="home-cat"] [class*="__track"] > a[class*="home-cat"] > [class*="__icon"],
+  html body.home-index-shell section[class*="home-cat"] [class*="__track"] > a[class*="home-cat"] > [class*="__icon"] {
+    width: var(--home-tablet-landscape-category-icon);
+    height: var(--home-tablet-landscape-category-icon);
+    min-width: var(--home-tablet-landscape-category-icon);
+    min-height: var(--home-tablet-landscape-category-icon);
+  }
+
+  html.home-index-root body.home-index-shell section[class*="home-cat"] [class*="__track"] > a[class*="home-cat"] > [class*="__label"],
+  html body.home-index-shell section[class*="home-cat"] [class*="__track"] > a[class*="home-cat"] > [class*="__label"] {
+    width: 100%;
+    max-width: 100%;
+    min-height: 14px;
+    font-size: clamp(8px, 0.9vw, 9px);
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  html.home-index-root body.home-index-shell section[class*="home-cat"] [class*="__arrow"],
+  html body.home-index-shell section[class*="home-cat"] [class*="__arrow"],
+  html.home-index-root body.home-index-shell section.home-catégories .home-catégories__arrow,
+  html body.home-index-shell section.home-catégories .home-catégories__arrow {
+    display: none;
+    visibility: hidden;
+    width: 0;
+    min-width: 0;
+    height: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    pointer-events: none;
+  }
+
+  html.home-index-root body.home-index-shell :is(
+    section.featured-services,
+    section.short-videos,
+    section.home-publications,
+    section.more-services
+  ) > :is(.section-heading, .home-section-header),
+  html body.home-index-shell :is(
+    section.featured-services,
+    section.short-videos,
+    section.home-publications,
+    section.more-services
+  ) > :is(.section-heading, .home-section-header) {
+    margin-bottom: 16px;
+  }
+}
