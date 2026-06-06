@@ -13,17 +13,23 @@
     "--home-desktop-content-width"
   ];
 
+  function isTabletLandscapeShell() {
+    var width = window.innerWidth || root.clientWidth || 0;
+    var height = window.innerHeight || root.clientHeight || 0;
+    return width >= 1025 && width < 1180 && width > height;
+  }
+
   function isDesktopShell() {
     try {
-      return window.matchMedia("(min-width: 768px)").matches;
+      return window.matchMedia("(min-width: 1180px), (min-width: 1025px) and (max-width: 1179px) and (orientation: landscape)").matches;
     } catch (error) {
-      return (window.innerWidth || root.clientWidth || 0) >= 768;
+      var width = window.innerWidth || root.clientWidth || 0;
+      return width >= 1180 || isTabletLandscapeShell();
     }
   }
 
   function isTabletShell() {
-    var width = window.innerWidth || root.clientWidth || 0;
-    return width >= 768 && width < 1180;
+    return isTabletLandscapeShell();
   }
 
   function isMobileRuntime() {

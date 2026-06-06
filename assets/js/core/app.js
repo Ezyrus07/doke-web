@@ -74,8 +74,9 @@ const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalh
 const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
-const isMobileSidebarViewport = () => window.innerWidth < 768;
-const isTabletSidebarViewport = () => window.innerWidth >= 768 && window.innerWidth < 1180;
+const isTabletLandscapeSidebarViewport = () => window.innerWidth >= 1025 && window.innerWidth < 1180 && window.innerWidth > window.innerHeight;
+const isMobileSidebarViewport = () => window.innerWidth < 768 || (window.innerWidth < 1180 && !isTabletLandscapeSidebarViewport());
+const isTabletSidebarViewport = () => isTabletLandscapeSidebarViewport();
 
 
 if (window.localStorage.getItem(THEME_STORAGE_KEY) === "dark") {
@@ -1535,7 +1536,7 @@ document.addEventListener("click", (event) => {
 });
 
 window.addEventListener("resize", () => {
-  if (window.innerWidth >= 768) {
+  if (!isMobileSidebarViewport()) {
     body.classList.remove("sidebar-open");
   }
 

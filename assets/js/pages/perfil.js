@@ -12,14 +12,11 @@ window.DokeInitProfile = () => {
   const ownerProfile = data.professionalOwner || {};
   const PROFESSIONAL_DEFAULT_TABS = {
     services: "Serviços",
-    workers: "Workers",
+    portfolio: "Portfólio",
     beforeAfter: "Publicações",
     reviews: "Avaliações",
     about: "Sobre",
-    portfolio: "Portfólio",
-    achievements: "Conquistas",
-    certificates: "Certificados",
-    faq: "FAQ"
+    certificates: "Certificados"
   };
   const professionalTabs = {
     ...PROFESSIONAL_DEFAULT_TABS,
@@ -96,7 +93,9 @@ window.DokeInitProfile = () => {
           hero: {
             ...(publicProfile.hero || {}),
             actions: [
-              { label: "Editar perfil", tone: "primary", role: "edit-profile" }
+              { label: "Enviar mensagem", href: "mensagens.html", role: "message" },
+              { label: "Solicitar serviço", href: "detalhe-anuncio.html", tone: "primary", role: "primary" },
+              { label: "Editar perfil", tone: "ghost", role: "edit-profile" }
             ],
             badges: [...((publicProfile.hero?.badges || []).slice(0, 2))]
           },
@@ -137,13 +136,13 @@ window.DokeInitProfile = () => {
           };
   const PROFILE_TAB_ORDER = [
     "services",
-    "workers",
+    "portfolio",
     "beforeAfter",
     "reviews",
     "about",
-    "portfolio",
-    "achievements",
     "certificates",
+    "workers",
+    "achievements",
     "faq",
     "overview",
     "listings"
@@ -233,9 +232,7 @@ window.DokeInitProfile = () => {
 
   const defaultPanel = requestedPanel
     ? requestedPanel
-    : profileMode === "owner" && availableTabs.includes("workers")
-      ? "workers"
-      : availableTabs[0] || "services";
+    : availableTabs[0] || "services";
 
   const state = {
     activeTab: availableTabs.includes(defaultPanel) ? defaultPanel : availableTabs[0] || "services",
@@ -566,6 +563,7 @@ window.DokeInitProfile = () => {
     if (item.role) return item.role;
     const key = normalizeActionLabel(item.label);
     if (key.includes("solicitar orcamento")) return "primary";
+    if (key.includes("solicitar servico")) return "primary";
     if (key.includes("orcamento")) return "primary";
     if (key.includes("seguir")) return "follow";
     if (key.includes("mensagem")) return "message";
@@ -1848,17 +1846,21 @@ window.DokeInitProfile = () => {
       ? `<span class="profile-bio__text">${shortHeadline}</span> <button class="profile-bio__more" type="button" data-profile-more>Ver mais</button>`
       : `<span class="profile-bio__text">${shortHeadline}</span>`;
     els.categories.innerHTML = profileMode === "client" || profileMode === "client-owner" ? "" : categories.map(categoryMarkup).join("");
-    els.verified.hidden = true;
+    const isVerified = Boolean(hero.verified);
+    els.verified.hidden = !isVerified;
+    if (isVerified) {
+      els.verified.setAttribute("aria-label", "Perfil verificado");
+    } else {
+      els.verified.removeAttribute("aria-label");
+    }
     els.verified.removeAttribute("data-tooltip");
-    els.verified.removeAttribute("aria-label");
     const heroActions = (isPhoneHero
       ? actions.filter((item) => normalizeActionLabel(item.label) !== "seguir")
       : actions).filter((item) => normalizeActionLabel(item.label) !== "seguir");
     els.stats.innerHTML = stats.map(statMarkup).join("");
     els.nameActions.innerHTML = profileMode === "owner" || profileMode === "client-owner" ? "" : followActionMarkup(followAction);
-    const showProfileOptions = profileMode !== "owner" && profileMode !== "client-owner";
     if (els.optionsHost) {
-      els.optionsHost.innerHTML = showProfileOptions ? profileOptionsMarkup() : "";
+      els.optionsHost.innerHTML = profileMode === "client-owner" ? "" : profileOptionsMarkup();
     }
     els.actions.innerHTML = heroActions.map((item) => actionMarkup(item)).join("");
     bindHeroHighlights(rotatingHighlights);
@@ -2254,4 +2256,3 @@ window.DokeInitProfile = () => {
 };
 
 window.DokeInitProfile();
-

@@ -7,20 +7,21 @@ window.DokeProfileData = {
       username: '@studioaquarela',
       location: 'Salvador, BA',
       verified: true,
-      headline: 'Pintura residencial e acabamento com escopo claro, comunicação organizada e execução limpa do início ao pós-obra.',
+      headline: 'Transformamos espaços em experiências únicas. Projetos autorais de interiores residenciais e comerciais com foco em funcionalidade, estética e bem-estar.',
       badges: [
-        { label: 'Profissional verificado', tone: 'accent' },
-        { label: 'Pintura e acabamento', iconKey: 'painting' }
+        { label: 'Profissional Verificado', tone: 'accent' },
+        { label: 'Design de Interiores', iconKey: 'renovation' }
       ],
       stats: [
-        { value: '4,9', label: 'nota média' },
-        { value: '128', label: 'avaliações' },
-        { value: '18,4 mil', label: 'seguidores' }
+        { value: '4,9', label: 'Avaliações' },
+        { value: '1.243', label: 'Seguidores' },
+        { value: '156', label: 'Serviços concluídos' },
+        { value: '98%', label: 'Satisfação' }
       ],
       actions: [
-        { label: 'Solicitar orçamento', href: 'detalhe-anuncio.html', tone: 'primary' },
-        { label: 'Mensagem', href: 'mensagens.html' },
-        { label: 'Compartilhar', tone: 'ghost' }
+        { label: 'Enviar mensagem', href: 'mensagens.html', role: 'message' },
+        { label: 'Solicitar serviço', href: 'detalhe-anuncio.html', tone: 'primary', role: 'primary' },
+        { label: 'Editar perfil', tone: 'ghost', role: 'edit-profile' }
       ],
       rotatingHighlights: [
         { label: 'Tempo de resposta', value: 'Até 1h', detail: 'em horário comercial' },
@@ -31,9 +32,11 @@ window.DokeProfileData = {
     },
     tabs: {
       services: 'Serviços',
-      workers: 'Workers',
+      portfolio: 'Portfólio',
       beforeAfter: 'Publicações',
-      reviews: 'Avaliações'
+      reviews: 'Avaliações',
+      about: 'Sobre',
+      certificates: 'Certificados'
     },
     sections: {
       services: {
