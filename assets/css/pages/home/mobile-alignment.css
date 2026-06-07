@@ -124,16 +124,20 @@
     scroll-snap-align: start;
   }
 
-  /* Workers 2x2 alinhado ao mesmo eixo, sem padding próprio conflitante. */
+  /* Workers follow the home horizontal rail axis without card anatomy changes. */
   body.home-index-shell #short-videos-track {
-    width: 100% !important;
-    max-width: 100% !important;
+    width: max-content;
+    max-width: none;
+    min-width: 100%;
     margin: 0;
-    padding: 0 0 8px 0;
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    padding: 0 2px 8px 0;
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-auto-columns: minmax(152px, 70vw);
     gap: 10px;
-    overflow: visible !important;
+    overflow: visible;
+    scroll-snap-type: x proximity;
   }
 
   /* Ações/abas inferiores também não podem escapar do eixo visual da página. */

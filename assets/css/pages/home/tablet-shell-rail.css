@@ -356,24 +356,40 @@
     scrollbar-width: none;
   }
 
-  body.home-index-shell #featured-services-track.service-grid.doke-grid,
-  body.home-index-shell section.home-publications > .content-rail > #home-publications-track.publication-grid,
   body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid],
-  html.home-index-root body.home-index-shell #featured-services-track.service-grid.doke-grid,
-  html.home-index-root body.home-index-shell section.home-publications > .content-rail > #home-publications-track.publication-grid,
   html.home-index-root body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] {
-    display: grid !important;
-    grid-auto-flow: row !important;
-    grid-auto-columns: initial !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    display: grid;
+    grid-auto-flow: row;
+    grid-auto-columns: initial;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     margin: 0;
     padding: 0;
-    overflow: visible !important;
-    scroll-snap-type: none !important;
+    overflow: visible;
+    scroll-snap-type: none;
+    box-sizing: border-box;
+  }
+
+  body.home-index-shell #featured-services-track.service-grid.doke-grid,
+  body.home-index-shell section.home-publications > .content-rail > #home-publications-track.publication-grid,
+  html.home-index-root body.home-index-shell #featured-services-track.service-grid.doke-grid,
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail > #home-publications-track.publication-grid {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: clamp(272px, 43vw, 350px);
+    grid-template-columns: none;
+    gap: 16px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0 2px 2px 0;
+    overflow: auto hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
     box-sizing: border-box;
   }
 
@@ -385,18 +401,18 @@
   html.home-index-root.doke-js-desktop body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid.doke-grid,
   html.home-index-root.doke-js-mobile body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid.doke-grid,
   html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-services > .content-rail > #featured-services-track.service-grid.doke-grid {
-    display: grid !important;
-    grid-auto-flow: row !important;
-    grid-auto-columns: initial !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: clamp(272px, 43vw, 350px);
+    grid-template-columns: none;
     gap: 16px;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     margin: 0;
     padding: 0;
-    overflow: visible !important;
-    scroll-snap-type: none !important;
+    overflow: auto hidden;
+    scroll-snap-type: x proximity;
     box-sizing: border-box;
   }
 
@@ -408,30 +424,16 @@
   html.home-index-root.doke-js-desktop body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid.doke-grid > article.doke-ad-card,
   html.home-index-root.doke-js-mobile body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid.doke-grid > article.doke-ad-card,
   html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.featured-services > .content-rail > #featured-services-track.service-grid.doke-grid > article.doke-ad-card {
-    display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    height: auto !important;
-    flex: none !important;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: auto;
+    flex: none;
     justify-self: stretch;
-    overflow: hidden !important;
-    scroll-snap-align: unset;
+    overflow: hidden;
+    scroll-snap-align: start;
     box-sizing: border-box;
-  }
-
-  body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid.doke-grid > article.doke-ad-card:nth-child(n + 3),
-  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid.doke-grid > article.doke-ad-card:nth-child(n + 3) {
-    display: none !important;
-    visibility: hidden !important;
-    width: 0 !important;
-    height: 0 !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    margin: 0;
-    padding: 0;
-    overflow: hidden !important;
-    pointer-events: none !important;
   }
 
   html,
