@@ -4,8 +4,8 @@
    page CSS because page-specific header geometry is legacy debt. */
 @media (min-width: 600px) {
   body.has-global-header {
-    --doke-header-canonical-sidebar: 272px;
-    --doke-header-canonical-max: 1000px;
+    --doke-header-canonical-sidebar: var(--doke-sidebar-width, var(--doke-app-sidebar-width, 272px));
+    --doke-header-canonical-max: var(--doke-desktop-page-max, var(--doke-page-max, var(--doke-app-shell-max, 1000px)));
     --doke-header-canonical-gutter: clamp(18px, 3vw, 40px);
     --doke-header-canonical-control: 48px;
     --doke-header-canonical-radius: 16px;
@@ -340,16 +340,16 @@
 @media (min-width: 761px) {
   html body.has-global-header.doke-app-shell-page.app-shell-page > .app-shell > .page > header.app-header.home-side-meta > .app-header__inner,
   html body.has-global-header.doke-app-shell-page.app-shell-page > .app-shell > .page > header.app-header[class*="app-header--"] > .app-header__inner {
-    width: min(calc(min(calc(100vw - var(--doke-header-canonical-sidebar, 272px)), var(--doke-header-canonical-max, 1000px)) - (var(--doke-header-canonical-gutter, clamp(18px, 3vw, 40px)) * 2)), var(--doke-header-canonical-max, 1000px));
-    max-width: min(calc(min(calc(100vw - var(--doke-header-canonical-sidebar, 272px)), var(--doke-header-canonical-max, 1000px)) - (var(--doke-header-canonical-gutter, clamp(18px, 3vw, 40px)) * 2)), var(--doke-header-canonical-max, 1000px));
+    width: var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-shared-page-width)));
+    max-width: var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-shared-page-width)));
     margin-left: auto !important;
     margin-right: auto !important;
   }
 
   html body.home-index-shell.has-global-header.doke-app-shell-page.app-shell-page > .app-shell > .page > header.app-header.home-side-meta > .app-header__inner,
   html body.home-index-shell.has-global-header.doke-app-shell-page.app-shell-page > .app-shell > .page > header.app-header[class*="app-header--"] > .app-header__inner {
-    width: min(calc(100% - (var(--doke-header-canonical-gutter, clamp(18px, 3vw, 40px)) * 2)), var(--doke-header-canonical-max, 1000px));
-    max-width: var(--doke-header-canonical-max, 1000px);
+    width: var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-shared-page-width)));
+    max-width: var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-shared-page-width)));
   }
 
   html body.has-global-header.doke-app-shell-page.app-shell-page > .app-shell > .page > header.app-header.home-side-meta .home-side-meta__tablet-menu,
@@ -371,6 +371,8 @@
   html body.has-global-header.doke-app-shell-page.app-shell-page > .app-shell > .page > header.app-header[class*="app-header--"] > .app-header__inner {
     width: min(calc(min(calc(100vw - var(--doke-header-canonical-sidebar, 272px)), var(--doke-header-canonical-max, 1000px)) - 172.78px), var(--doke-header-canonical-max, 1000px));
     max-width: min(calc(min(calc(100vw - var(--doke-header-canonical-sidebar, 272px)), var(--doke-header-canonical-max, 1000px)) - 172.78px), var(--doke-header-canonical-max, 1000px));
+    width: var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-shared-page-width)));
+    max-width: var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-shared-page-width)));
   }
 }
 
@@ -498,10 +500,10 @@
   html body.has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header,
   html body[data-page].has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header,
   html body.has-global-header:not(.home-index-shell) .page > .app-header.home-side-meta {
-    inline-size: calc(100vw - 272px) !important;
-    width: calc(100vw - 272px) !important;
-    min-inline-size: calc(100vw - 272px) !important;
-    max-inline-size: calc(100vw - 272px) !important;
+    inline-size: var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-shared-page-width))) !important;
+    width: var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-shared-page-width))) !important;
+    min-inline-size: 0 !important;
+    max-inline-size: var(--doke-current-page-rail, var(--doke-header-rail, var(--doke-shared-page-width))) !important;
     margin-left: auto !important;
     margin-right: 0 !important;
   }
@@ -509,10 +511,10 @@
   html body.has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header > .app-header__inner,
   html body[data-page].has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header > .app-header__inner,
   html body.has-global-header:not(.home-index-shell) .page > .app-header.home-side-meta > .app-header__inner {
-    inline-size: 835.22px;
-    width: 835.22px;
-    min-inline-size: 835.22px;
-    max-inline-size: 835.22px;
+    inline-size: 100%;
+    width: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
     block-size: 48px !important;
     height: 48px !important;
     min-block-size: 48px !important;
