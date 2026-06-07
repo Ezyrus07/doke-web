@@ -1,0 +1,234 @@
+{
+  "stage": "02",
+  "name": "Component Contract Ownership Map",
+  "principle": "Pages may compose shared components, but must not redefine their anatomy.",
+  "shared_components": [
+    {
+      "id": "publication-card",
+      "owner": "assets/css/components/cards/publication-card.css",
+      "fallback_current_sources": [
+        "assets/css/components/cards/publication-card.css",
+        "assets/css/pages/home-runtime.css",
+        "assets/css/pages/perfil/responsive.css",
+        "assets/css/pages/detalhe-anuncio.css"
+      ],
+      "owns": [
+        "card border",
+        "card radius",
+        "card shadow",
+        "internal padding",
+        "media aspect-ratio",
+        "title/meta/footer typography",
+        "stats layout",
+        "badges and internal icon positions"
+      ],
+      "page_may_control": [
+        "grid wrapper",
+        "gap",
+        "external margin",
+        "column count",
+        "horizontal rail behavior",
+        "section spacing"
+      ],
+      "page_must_not_control": [
+        ".publication-card width/height as anatomy",
+        ".publication-card__media aspect-ratio",
+        ".publication-card__body padding",
+        ".publication-card__title font-size/line-height",
+        ".publication-card__footer display/spacing",
+        ".publication-card border/radius/shadow"
+      ]
+    },
+    {
+      "id": "ad-service-card",
+      "owner": "assets/css/components/cards/ad-card.css",
+      "fallback_current_sources": [
+        "assets/css/components/cards/ad-card.css",
+        "assets/css/components/cards/service-card.css",
+        "assets/css/pages/home-runtime.css",
+        "assets/css/pages/home-sections.css",
+        "assets/css/pages/detalhe-anuncio.css",
+        "assets/css/pages/perfil/responsive.css"
+      ],
+      "owns": [
+        "card surface",
+        "media ratio",
+        "internal spacing",
+        "price/title/meta typography",
+        "rating layout",
+        "badges",
+        "footer/actions anatomy"
+      ],
+      "page_may_control": [
+        "grid wrapper",
+        "rail width",
+        "gap",
+        "carousel overflow",
+        "number of cards per row"
+      ],
+      "page_must_not_control": [
+        ".doke-ad-card internal padding",
+        ".doke-ad-card media height/aspect-ratio",
+        ".service-card media/body/footer anatomy",
+        "card border/radius/shadow from page CSS"
+      ]
+    },
+    {
+      "id": "worker-video-card",
+      "owner": "assets/css/components/cards/worker-card.css",
+      "fallback_current_sources": [
+        "assets/css/components/cards/worker-card.css",
+        "assets/css/components/cards/video-card.css",
+        "assets/css/pages/home-sections.css",
+        "assets/css/pages/home-runtime.css",
+        "assets/css/pages/perfil/responsive.css",
+        "assets/css/pages/detalhe-anuncio.css"
+      ],
+      "owns": [
+        "video card ratio",
+        "media frame",
+        "overlay",
+        "metadata typography",
+        "profile/thumb positioning",
+        "hover/preview base behavior"
+      ],
+      "page_may_control": [
+        "rail",
+        "grid",
+        "gap",
+        "overflow",
+        "number of visible cards"
+      ],
+      "page_must_not_control": [
+        ".video-card aspect-ratio/height",
+        ".video-card internal overlay spacing",
+        ".worker-card internal padding/radius/shadow"
+      ]
+    },
+    {
+      "id": "section-toolbar",
+      "owner": "assets/css/components/toolbars.css",
+      "fallback_current_sources": [
+        "assets/css/pages/perfil/responsive.css",
+        "assets/css/pages/perfil/mobile-public-profile.css"
+      ],
+      "owns": [
+        "toolbar surface",
+        "button height",
+        "button padding",
+        "button radius",
+        "button typography",
+        "button gap",
+        "active/hover/focus states"
+      ],
+      "page_may_control": [
+        "toolbar external margin",
+        "wrapper width",
+        "whether toolbar is rendered"
+      ],
+      "page_must_not_control": [
+        "button internal padding/radius/font",
+        "toolbar internal button anatomy",
+        "primary/secondary button colors"
+      ]
+    },
+    {
+      "id": "tabs",
+      "owner": "assets/css/components/tabs.css",
+      "fallback_current_sources": [
+        "assets/css/pages/perfil/responsive.css",
+        "assets/css/pages/perfil/mobile-public-profile.css"
+      ],
+      "owns": [
+        "tab height",
+        "tab padding",
+        "active state",
+        "focus state",
+        "text style",
+        "scroll affordance base"
+      ],
+      "page_may_control": [
+        "tabs wrapper external margin",
+        "available width",
+        "horizontal overflow when needed"
+      ],
+      "page_must_not_control": [
+        ".profile-tab height/padding/font",
+        ".profile-tabs active indicator anatomy",
+        "tab radius/border/background from page CSS"
+      ]
+    },
+    {
+      "id": "avatars",
+      "owner": "assets/css/components/avatar.css",
+      "fallback_current_sources": [
+        "assets/css/components/avatar.css",
+        "assets/css/pages/perfil/responsive.css",
+        "assets/css/pages/perfil/mobile-public-profile.css"
+      ],
+      "owns": [
+        "shape",
+        "base sizes",
+        "radius",
+        "object-fit",
+        "default border/shadow rules"
+      ],
+      "page_may_control": [
+        "avatar placement in hero",
+        "responsive size token only when documented"
+      ],
+      "page_must_not_control": [
+        "non-standard border/shadow/radius",
+        "inline object-fit overrides",
+        "shape changes between pages"
+      ]
+    },
+    {
+      "id": "buttons",
+      "owner": "assets/css/components/buttons.css",
+      "fallback_current_sources": [
+        "assets/css/components/buttons.css",
+        "assets/css/auth/login.css",
+        "assets/css/pages/perfil/responsive.css"
+      ],
+      "owns": [
+        "primary/secondary colors",
+        "height",
+        "padding",
+        "radius",
+        "font",
+        "hover/focus/disabled states"
+      ],
+      "page_may_control": [
+        "button placement",
+        "group layout",
+        "external gap",
+        "full-width composition"
+      ],
+      "page_must_not_control": [
+        "primary blue style",
+        "internal padding/radius/font",
+        "hover/focus color rules"
+      ]
+    }
+  ],
+  "page_css_allowed_responsibilities": [
+    "page rail width",
+    "section spacing",
+    "grid wrapper",
+    "column count",
+    "gap",
+    "external margins",
+    "overflow/carousel behavior",
+    "page-only composition exceptions with body[data-page] scope and comment"
+  ],
+  "page_css_forbidden_responsibilities": [
+    "shared card anatomy",
+    "shared component media aspect-ratio",
+    "shared component internal padding",
+    "shared component typography",
+    "shared component border/radius/shadow",
+    "shared component badges/footer/icon positioning",
+    "state styling that belongs to reusable component"
+  ]
+}

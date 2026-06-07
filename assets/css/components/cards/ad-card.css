@@ -659,3 +659,113 @@
     line-height: 1;
   }
 }
+
+/* 2026-06-07 - Stage 03B ad/service card global contract.
+   Owner: assets/css/components/cards/ad-card.css
+   Pages may control only grid/gap/rail/overflow around cards. They must not redefine
+   card anatomy such as media ratio, padding, border, radius, typography or footer layout. */
+
+:where(.doke-ad-card, .service-card) {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--doke-card-border, rgba(24, 75, 118, 0.10));
+  border-radius: var(--doke-card-radius, 22px);
+  background: var(--doke-card-surface, #fff);
+  box-shadow: var(--doke-card-shadow, 0 14px 34px rgba(20, 48, 78, 0.08));
+  color: var(--doke-card-ink, #102849);
+}
+
+:where(.doke-ad-card, .service-card) :where(img, video) {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  object-fit: cover;
+}
+
+:where(.doke-ad-card__media, .service-card__media, .service-card__image, .doke-ad-card__image) {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: var(--doke-ad-card-media-ratio, 4 / 3);
+  overflow: hidden;
+  background: var(--doke-card-media-bg, #eef4f8);
+}
+
+:where(.doke-ad-card__media, .service-card__media, .service-card__image, .doke-ad-card__image) > :where(img, video) {
+  height: 100%;
+}
+
+:where(.doke-ad-card__body, .service-card__body, .doke-ad-card__content, .service-card__content) {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  gap: var(--doke-ad-card-body-gap, 8px);
+  padding: var(--doke-ad-card-body-padding, 14px);
+}
+
+:where(.doke-ad-card__title, .service-card__title) {
+  margin: 0;
+  color: var(--doke-card-ink, #102849);
+  font-size: var(--doke-ad-card-title-size, 0.98rem);
+  font-weight: 760;
+  line-height: 1.18;
+}
+
+:where(.doke-ad-card__meta, .service-card__meta, .doke-ad-card__location, .service-card__location) {
+  color: var(--doke-card-muted, #667892);
+  font-size: var(--doke-ad-card-meta-size, 0.84rem);
+  line-height: 1.35;
+}
+
+:where(.doke-ad-card__price, .service-card__price) {
+  color: var(--doke-card-primary, var(--doke-color-primary, #2a5f90));
+  font-size: var(--doke-ad-card-price-size, 0.96rem);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+:where(.doke-ad-card__rating, .service-card__rating) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--doke-card-muted, #667892);
+  font-size: 0.82rem;
+  line-height: 1;
+}
+
+:where(.doke-ad-card__footer, .service-card__footer, .doke-ad-card__actions, .service-card__actions) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--doke-ad-card-footer-gap, 10px);
+  margin-top: auto;
+}
+
+:where(.doke-ad-card__badge, .service-card__badge) {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: max-content;
+  max-width: 100%;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(42, 95, 144, 0.09);
+  color: var(--doke-card-primary, var(--doke-color-primary, #2a5f90));
+  font-size: 0.76rem;
+  font-weight: 760;
+  line-height: 1;
+}
+
+@media (max-width: 760px) {
+  :where(.doke-ad-card, .service-card) {
+    border-radius: var(--doke-card-radius-mobile, 18px);
+  }
+
+  :where(.doke-ad-card__body, .service-card__body, .doke-ad-card__content, .service-card__content) {
+    padding: var(--doke-ad-card-body-padding-mobile, 12px);
+  }
+}

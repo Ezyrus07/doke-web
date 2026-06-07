@@ -778,13 +778,23 @@ window.DokeInitProfile = () => {
 
     const selectedCount = state.selectedServices.length;
 
+    const servicesRail = renderServicesRail();
+
     if (isVisitorProfessionalMobile()) {
-      return renderServicesRail();
+      return profileMode === "owner" ? `
+        <div class="profile-services-toolbar profile-services-toolbar--services" data-profile-services-toolbar>
+          <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Novo servi&ccedil;o</button>
+          <button class="profile-services-toolbar__action ${state.selectingServices ? "is-active" : ""}" type="button" data-profile-services-select-toggle>${state.selectingServices ? "Cancelar" : "Selecionar"}</button>
+          ${selectedCount === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-services-edit>Editar Servi&ccedil;o</button>` : ""}
+          ${selectedCount > 1 ? `<span class="profile-services-toolbar__hint">S&oacute; d&aacute; para editar um Servi&ccedil;o por vez.</span>` : ""}
+        </div>
+        ${servicesRail}
+      ` : servicesRail;
     }
 
     return `
       ${profileMode === "owner" ? `
-      <div class="profile-services-toolbar">
+      <div class="profile-services-toolbar profile-services-toolbar--services" data-profile-services-toolbar>
         <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Novo servi&ccedil;o</button>
         <button class="profile-services-toolbar__action ${state.selectingServices ? "is-active" : ""}" type="button" data-profile-services-select-toggle>${state.selectingServices ? "Cancelar" : "Selecionar"}</button>
         ${selectedCount === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-services-edit>Editar Servi&ccedil;o</button>` : ""}
