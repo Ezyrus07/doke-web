@@ -136,12 +136,12 @@ window.DokeInitProfile = () => {
             tabs: professionalTabs
           };
   const PROFILE_TAB_ORDER = [
-    "beforeAfter",
     "services",
-    "about",
-    "portfolio",
     "workers",
+    "beforeAfter",
     "reviews",
+    "portfolio",
+    "about",
     "achievements",
     "certificates",
     "faq",
@@ -236,7 +236,7 @@ window.DokeInitProfile = () => {
   });
   const availableTabs = Object.keys(baseProfile.tabs || {});
   const requestedPanelRaw = params.get("panel");
-  const requestedPanel = requestedPanelRaw === "posts" ? "workers" : requestedPanelRaw;
+  const requestedPanel = requestedPanelRaw === "posts" ? "beforeAfter" : requestedPanelRaw;
   const rebuildProfileTabs = () => {
     const tabsHost = root.querySelector('[data-profile-section="tabs"]');
     if (!tabsHost) return;
@@ -608,10 +608,10 @@ window.DokeInitProfile = () => {
     const labelKey = normalizeActionLabel(item.label);
     const role = actionRole(item);
     if (labelKey.includes("solicitar orcamento")) {
-      const compactLabel = window.matchMedia('(max-width: 760px)').matches ? "Or�amento" : normalize(item.label);
+      const compactLabel = window.matchMedia('(max-width: 760px)').matches ? "Or&ccedil;amento" : normalize(item.label);
       return `
-        <button class="${classes}" type="button" data-profile-action-role="${role}" data-profile-mobile-label="Or�amento" data-budget-open data-budget-provider="${escapeAttr(item.provider || "Studio Aquarela")}" data-budget-service="${escapeAttr(item.service || "reforma residencial de alto padrao")}">
-          <span class="profile-action__label" data-profile-mobile-label="Or�amento">${compactLabel}</span>
+        <button class="${classes}" type="button" data-profile-action-role="${role}" data-profile-mobile-label="Or&ccedil;amento" data-budget-open data-budget-provider="${escapeAttr(item.provider || "Studio Aquarela")}" data-budget-service="${escapeAttr(item.service || "reforma residencial de alto padrao")}">
+          <span class="profile-action__label" data-profile-mobile-label="Or&ccedil;amento">${compactLabel}</span>
         </button>
       `;
     }
@@ -762,8 +762,8 @@ window.DokeInitProfile = () => {
   const renderShowcaseServicesSection = () => `
     <section class="profile-showcase-section profile-showcase-section--services" aria-labelledby="profile-showcase-services-title">
       ${renderShowcaseSectionHeader({
-        eyebrow: 'Servi�os',
-        title: 'Servi�os em destaque',
+        eyebrow: 'Servi&ccedil;os',
+        title: 'Servi&ccedil;os em destaque',
         href: 'resultados.html?type=services',
         linkLabel: 'Ver todos'
       })}
@@ -788,7 +788,7 @@ window.DokeInitProfile = () => {
         <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Novo servi&ccedil;o</button>
         <button class="profile-services-toolbar__action ${state.selectingServices ? "is-active" : ""}" type="button" data-profile-services-select-toggle>${state.selectingServices ? "Cancelar" : "Selecionar"}</button>
         ${selectedCount === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-services-edit>Editar Servi&ccedil;o</button>` : ""}
-        ${selectedCount > 1 ? `<span class="profile-services-toolbar__hint">S� d� para editar um Servi�o por vez.</span>` : ""}
+        ${selectedCount > 1 ? `<span class="profile-services-toolbar__hint">S&oacute; d&aacute; para editar um Servi&ccedil;o por vez.</span>` : ""}
       </div>
       ` : ""}
       ${renderServicesRail()}
@@ -869,8 +869,8 @@ window.DokeInitProfile = () => {
       type: "video",
       cardClass: "publication-card--video",
       mediaClass: "publication-card__media--living",
-      label: "V�deo",
-      title: "Tour r�pido da reforma",
+      label: "V&iacute;deo",
+      title: "Tour r&aacute;pido da reforma",
       author: "Renato Acabamentos",
       likes: 98,
       comments: 19,
@@ -928,7 +928,7 @@ window.DokeInitProfile = () => {
     const postId = `publication-${index}`;
     const isSelected = state.selectedPosts.includes(postId);
     const selectButton = profileMode === "owner" && state.selectingPosts
-      ? `<button class="profile-post-select-indicator ${isSelected ? "is-selected" : ""}" type="button" data-profile-post-select="${postId}" aria-label="Selecionar publicacao">${isSelected ? "&#10003;" : ""}</button>`
+      ? `<button class="profile-post-select-indicator ${isSelected ? "is-selected" : ""}" type="button" data-profile-post-select="${postId}" aria-label="Selecionar publica&ccedil;&atilde;o">${isSelected ? "&#10003;" : ""}</button>`
       : "";
 
     const mediaMarkup = item.type === "beforeAfter"
@@ -963,13 +963,13 @@ window.DokeInitProfile = () => {
         role="button"
         tabindex="0"
         aria-haspopup="dialog"
-        aria-label="Abrir publicacao: ${normalize(item.title)}">
+        aria-label="Abrir publica&ccedil;&atilde;o: ${normalize(item.title)}">
         ${selectButton}
         ${mediaMarkup}
         <div class="publication-card__content">
           <h3 class="publication-card__title">${normalize(item.title)}</h3>
           <p class="publication-card__author">Por <a href="perfil.html">${normalize(item.author)}</a></p>
-          <div class="publication-card__actions" aria-label="Interacoes da publicacao">
+          <div class="publication-card__actions" aria-label="Interacoes da publica&ccedil;&atilde;o">
             <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.6c0 5.4-8.8 10.2-8.8 10.2S3.2 14 3.2 8.6A4.7 4.7 0 0 1 12 6.2a4.7 4.7 0 0 1 8.8 2.4Z"></path></svg>${item.likes}</span>
             <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 11.5a7.3 7.3 0 0 1 7.6-7.1 7.3 7.3 0 0 1 7.6 7.1 7.3 7.3 0 0 1-7.6 7.1 8.7 8.7 0 0 1-2.9-.5L5 19.4l1.2-3.2a6.7 6.7 0 0 1-2-4.7Z"></path></svg>${item.comments}</span>
             <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5h11A1.5 1.5 0 0 1 19 6v14l-7-4-7 4V6a1.5 1.5 0 0 1 1.5-1.5Z"></path></svg>${item.saves}</span>
@@ -1003,7 +1003,7 @@ window.DokeInitProfile = () => {
           <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Novo Worker</button>
           <button class="profile-services-toolbar__action ${state.selectingWorkers ? "is-active" : ""}" type="button" data-profile-workers-select-toggle>${state.selectingWorkers ? "Cancelar" : "Selecionar"}</button>
           ${state.selectedWorkers.length === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-workers-edit>Editar Worker</button>` : ""}
-          ${state.selectedWorkers.length > 1 ? `<span class="profile-services-toolbar__hint">So da para editar um Worker por vez.</span>` : ""}
+          ${state.selectedWorkers.length > 1 ? `<span class="profile-services-toolbar__hint">S&oacute; d&aacute; para editar um Worker por vez.</span>` : ""}
         </div>
         ` : ""}
         ${renderWorkersSection()}
@@ -1018,10 +1018,10 @@ window.DokeInitProfile = () => {
       <div class="profile-publications-stack ${profileMode === "owner" ? "profile-publications-stack--owner" : ""}">
         ${profileMode === "owner" ? `
         <div class="profile-services-toolbar">
-          <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Nova publica��o</button>
+          <button class="profile-services-toolbar__action profile-services-toolbar__action--primary" type="button">Nova publica&ccedil;&atilde;o</button>
           <button class="profile-services-toolbar__action ${state.selectingPosts ? "is-active" : ""}" type="button" data-profile-posts-select-toggle>${state.selectingPosts ? "Cancelar" : "Selecionar"}</button>
-          ${state.selectedPosts.length === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-posts-edit>Editar publica��o</button>` : ""}
-          ${state.selectedPosts.length > 1 ? `<span class="profile-services-toolbar__hint">S� d� para editar uma publica��o por vez.</span>` : ""}
+          ${state.selectedPosts.length === 1 ? `<button class="profile-services-toolbar__action" type="button" data-profile-posts-edit>Editar publica&ccedil;&atilde;o</button>` : ""}
+          ${state.selectedPosts.length > 1 ? `<span class="profile-services-toolbar__hint">S&oacute; d&aacute; para editar uma publica&ccedil;&atilde;o por vez.</span>` : ""}
         </div>
         ` : ""}
         ${renderPublicationsSection()}
@@ -1382,17 +1382,25 @@ window.DokeInitProfile = () => {
   const renderFaq = () => {
     const section = baseProfile.sections?.faq || {};
     const items = section.items || [];
+    const canReply = profileMode === "owner";
     return renderPanelShell(`
       <section class="profile-faq-accordion" aria-label="Perguntas frequentes">
         ${items
           .map(
             (item, index) => `
           <article class="profile-faq-card profile-faq-card--compact">
-            <button type="button" data-profile-faq-toggle aria-expanded="${index === 0 ? "true" : "false"}">
+            <button class="profile-faq-card__toggle" type="button" data-profile-faq-toggle aria-expanded="${index === 0 ? "true" : "false"}">
               <h3>${normalize(item.question)}</h3>
               <span aria-hidden="true">${index === 0 ? "&minus;" : "+"}</span>
             </button>
-            <p class="profile-faq-card__answer" ${index === 0 ? "" : "hidden"}>${normalize(item.answer)}</p>
+            <div class="profile-faq-card__content" ${index === 0 ? "" : "hidden"}>
+              <p class="profile-faq-card__answer">${normalize(item.answer)}</p>
+              ${canReply ? `
+                <div class="profile-faq-card__actions">
+                  <button class="profile-faq-card__reply" type="button" data-profile-faq-reply="${index}">Responder</button>
+                </div>
+              ` : ""}
+            </div>
           </article>
         `
           )
@@ -1437,7 +1445,7 @@ window.DokeInitProfile = () => {
       },
       {
         badge: "Conte?do da semana",
-        title: "Post recomendado: publica��es com prova visual curta",
+        title: "Post recomendado: publica&ccedil;&otilde;es com prova visual curta",
         text: "Seu perfil est? convertendo melhor quando mostra processo visual em menos de 20 segundos. A IA sugere publicar isso primeiro.",
         cta: "Gerar rascunho"
       }
@@ -2122,12 +2130,44 @@ window.DokeInitProfile = () => {
       button.addEventListener('click', () => {
         const card = button.closest('.profile-faq-card');
         if (!card) return;
-        const answer = card.querySelector('.profile-faq-card__answer');
+        const answer = card.querySelector('.profile-faq-card__content');
         const icon = button.querySelector('span[aria-hidden="true"]');
         const expanded = button.getAttribute('aria-expanded') === 'true';
         button.setAttribute('aria-expanded', String(!expanded));
         if (answer) answer.hidden = expanded;
         if (icon) icon.textContent = expanded ? '+' : '−';
+      });
+    });
+
+    root.querySelectorAll('[data-profile-faq-reply]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const card = button.closest('.profile-faq-card');
+        if (!card || card.querySelector('.profile-faq-card__reply-box')) return;
+        const actions = card.querySelector('.profile-faq-card__actions');
+        if (!actions) return;
+        actions.insertAdjacentHTML('beforebegin', `
+          <form class="profile-faq-card__reply-box" data-profile-faq-reply-box>
+            <label class="sr-only" for="profile-faq-reply-${button.dataset.profileFaqReply}">Resposta da pergunta</label>
+            <textarea id="profile-faq-reply-${button.dataset.profileFaqReply}" rows="3" placeholder="Escreva uma resposta objetiva para exibir no perfil"></textarea>
+            <div class="profile-faq-card__reply-actions">
+              <button type="submit">Salvar resposta</button>
+              <button type="button" data-profile-faq-reply-cancel>Cancelar</button>
+            </div>
+          </form>
+        `);
+        card.querySelector('textarea')?.focus();
+      });
+    });
+
+    root.querySelectorAll('[data-profile-faq-reply-box]').forEach((form) => {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+      });
+    });
+
+    root.querySelectorAll('[data-profile-faq-reply-cancel]').forEach((button) => {
+      button.addEventListener('click', () => {
+        button.closest('[data-profile-faq-reply-box]')?.remove();
       });
     });
 };

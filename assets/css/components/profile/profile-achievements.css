@@ -25,8 +25,7 @@
 }
 
 .profile-achievement-card:hover,
-.profile-certificate-card:hover,
-.profile-faq-card:hover {
+.profile-certificate-card:hover {
   transform: translateY(-2px);
   border-color: var(--surface-outline-hover);
   box-shadow: 0 18px 36px rgba(25, 56, 92, 0.08);
@@ -191,7 +190,7 @@
   gap: 16px;
 }
 
-.profile-faq-card button {
+.profile-faq-card__toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -205,7 +204,7 @@
   cursor: pointer;
 }
 
-.profile-faq-card button span[aria-hidden="true"] {
+.profile-faq-card__toggle span[aria-hidden="true"] {
   display: inline-grid;
   place-items: center;
   width: 34px;
@@ -220,4 +219,114 @@
 
 .profile-faq-card__answer[hidden] {
   display: none;
+}
+
+
+.profile-faq-accordion {
+  display: grid;
+  gap: 18px;
+}
+
+.profile-faq-card {
+  box-shadow: 0 12px 28px rgba(25, 56, 92, 0.05);
+}
+
+.profile-faq-card:hover {
+  transform: none;
+  border-color: rgba(214, 228, 242, 0.9);
+  box-shadow: 0 12px 28px rgba(25, 56, 92, 0.05);
+}
+
+.profile-faq-card__toggle:focus-visible {
+  outline: 2px solid rgba(42, 95, 144, 0.22);
+  outline-offset: 5px;
+  border-radius: 16px;
+}
+
+.profile-faq-card__content {
+  display: grid;
+  gap: 14px;
+}
+
+.profile-faq-card__content[hidden] {
+  display: none;
+}
+
+.profile-faq-card__actions,
+.profile-faq-card__reply-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.profile-faq-card__reply,
+.profile-faq-card__reply-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-width: 118px;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid rgba(42, 95, 144, 0.18);
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, #2f6da5 0%, #245b8d 100%);
+  color: #fff;
+  font-weight: 900;
+  line-height: 1;
+  text-decoration: none;
+  box-shadow: 0 12px 24px rgba(42, 95, 144, 0.16);
+  cursor: pointer;
+  transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base), background var(--transition-base);
+}
+
+.profile-faq-card__reply:hover,
+.profile-faq-card__reply-actions button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(42, 95, 144, 0.26);
+  box-shadow: 0 16px 30px rgba(42, 95, 144, 0.2);
+}
+
+.profile-faq-card__reply:focus-visible,
+.profile-faq-card__reply-actions button:focus-visible {
+  outline: 2px solid rgba(42, 95, 144, 0.22);
+  outline-offset: 3px;
+}
+
+.profile-faq-card__reply-actions button[type="button"] {
+  min-width: 104px;
+  border-color: rgba(214, 228, 242, 0.96);
+  background: rgba(255, 255, 255, 0.98);
+  color: #1f4d7a;
+  box-shadow: 0 10px 22px rgba(25, 56, 92, 0.08);
+}
+
+.profile-faq-card__reply-actions button[type="submit"] {
+  border-color: rgba(42, 95, 144, 0.24);
+  background: #2a5f90;
+  color: #fff;
+}
+
+.profile-faq-card__reply-box {
+  display: grid;
+  gap: 12px;
+}
+
+.profile-faq-card__reply-box textarea {
+  width: 100%;
+  min-height: 96px;
+  resize: vertical;
+  padding: 14px 16px;
+  border: 1px solid rgba(214, 228, 242, 0.95);
+  border-radius: 18px;
+  background: rgba(248, 251, 255, 0.96);
+  color: #182845;
+  font: inherit;
+  line-height: 1.45;
+}
+
+.profile-faq-card__reply-box textarea:focus {
+  outline: 2px solid rgba(42, 95, 144, 0.18);
+  outline-offset: 2px;
 }
