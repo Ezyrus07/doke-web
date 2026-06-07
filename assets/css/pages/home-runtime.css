@@ -705,207 +705,9 @@ body.home-index-shell :where(.service-grid, .service-cards-grid, .featured-pros_
 @import url("../components/cards/service-card.css?v=20260503-canonical-card-contract-v2");
 
 
-/* =========================================================
-   HOME SECTIONS + MORE SERVICES CANONICAL FIX
-   Escopo: pages/home.css
-   Motivo:
-   - "Mais anúncios" usa a classe real `.more-services`, não `.more-ads-section`.
-   - A seção estava herdando comportamento de rail/carrossel e espremendo os
-     `.doke-ad-card`.
-   - A correção abaixo restaura grid real e alinha títulos com o início dos cards.
-   Não toca em Workers, sidebar, header, body ou shell global.
-   ========================================================= */
-
-@media (min-width: 761px) {
-  body.home-index-shell {
-    --home-section-rail-width: 1080px;
-    --home-section-rail-gutter: clamp(16px, 2.4vw, 28px);
-    --home-section-gap: clamp(36px, 4.5vw, 56px);
-  }
-
-  /* Rail visual única para as seções principais da home. */
-  body.home-index-shell :is(
-    .featured-services,
-    .short-videos,
-    .before-after,
-    .more-services,
-    .featured-pros
-  ) {
-    width: min(100%, var(--home-section-rail-width)) !important;
-    max-width: var(--home-section-rail-width) !important;
-    margin-inline: auto;
-    padding-inline: var(--home-section-rail-gutter);
-    box-sizing: border-box;
-  }
-
-  body.home-index-shell :is(
-    .featured-services,
-    .short-videos,
-    .before-after,
-    .more-services,
-    .featured-pros
-  ) .section-heading,
-  body.home-index-shell :is(
-    .featured-services,
-    .short-videos,
-    .before-after,
-    .more-services,
-    .featured-pros
-  ) .home-section-header {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-inline: 0;
-    padding-inline: 0;
-    box-sizing: border-box;
-  }
-
-  body.home-index-shell :is(
-    .featured-services,
-    .short-videos,
-    .before-after,
-    .more-services,
-    .featured-pros
-  ) .section-heading__title,
-  body.home-index-shell :is(
-    .featured-services,
-    .short-videos,
-    .before-after,
-    .more-services,
-    .featured-pros
-  ) .home-section-title {
-    margin-left: 0;
-    margin-right: 0;
-  }
-
-  /* O body/rail interno não pode criar outro eixo. */
-  body.home-index-shell :is(
-    .featured-services,
-    .short-videos,
-    .before-after,
-    .more-services,
-    .featured-pros
-  ) .content-rail,
-  body.home-index-shell :is(
-    .featured-services,
-    .short-videos,
-    .before-after,
-    .more-services,
-    .featured-pros
-  ) .doke-scroll-rail {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-inline: 0;
-    padding-inline: 0;
-    box-sizing: border-box;
-  }
-
-  /* =========================================================
-     MAIS ANÚNCIOS — GRID REAL
-     ========================================================= */
-
-  body.home-index-shell .more-services .more-services__cards-rail,
-  body.home-index-shell .more-services .content-rail.more-services__cards-rail,
-  body.home-index-shell .more-services .doke-scroll-rail.more-services__cards-rail {
-    overflow: visible !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-inline: 0;
-    padding-inline: 0;
-  }
-
-  body.home-index-shell .more-services .service-grid,
-  body.home-index-shell .more-services .service-grid--compact,
-  body.home-index-shell .more-services .service-grid.doke-grid,
-  body.home-index-shell .more-services .service-grid.service-grid--compact.doke-grid {
-    display: grid;
-    grid-auto-flow: row;
-    grid-auto-columns: initial;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-    overflow: visible;
-    transform: none;
-    translate: none;
-  }
-
-  body.home-index-shell .more-services .doke-ad-card__title {
-    white-space: nowrap;
-  }
-
-  /* Se existir "Carregar mais" como link/texto simples, padroniza como ação. */
-  body.home-index-shell .more-services :is(
-    .load-more,
-    .load-more-button,
-    .more-services__load-more,
-    [data-load-more],
-    [data-more-services-load]
-  ) {
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
-    min-height: 44px !important;
-    padding: 0 24px;
-    margin: 24px auto 0;
-    border-radius: 999px;
-    border: 0;
-    background: #1f5f96;
-    color: #fff;
-    font-weight: 850;
-    text-decoration: none;
-  }
-}
-
-@media (min-width: 1180px) {
-  body.home-index-shell {
-    --home-section-rail-width: 1040px;
-  }
-}
-
-@media (max-width: 1100px) and (min-width: 761px) {
-  body.home-index-shell .more-services .service-grid,
-  body.home-index-shell .more-services .service-grid--compact,
-  body.home-index-shell .more-services .service-grid.doke-grid,
-  body.home-index-shell .more-services .service-grid.service-grid--compact.doke-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 760px) {
-  body.home-index-shell :is(
-    .featured-services,
-    .short-videos,
-    .before-after,
-    .more-services,
-    .featured-pros
-  ) {
-    width: 100% !important;
-    max-width: 100% !important;
-    padding-inline: 16px;
-    box-sizing: border-box;
-  }
-
-  body.home-index-shell .more-services .more-services__cards-rail {
-    overflow: visible !important;
-  }
-
-  body.home-index-shell .more-services .service-grid,
-  body.home-index-shell .more-services .service-grid--compact,
-  body.home-index-shell .more-services .service-grid.doke-grid,
-  body.home-index-shell .more-services .service-grid.service-grid--compact.doke-grid {
-    display: grid;
-    grid-auto-flow: row;
-    grid-auto-columns: initial;
-    grid-template-columns: 1fr;
-    gap: 14px;
-    width: 100%;
-    overflow: visible;
-  }
-}
-
-/* =============== END HOME SECTIONS + MORE SERVICES CANONICAL FIX =============== */
-
+/* Home sections legacy rail override removed.
+   Authority moved to assets/css/pages/home.css so Destaques, Workers,
+   Publicações and Mais anúncios share the same page rail without priority flags. */
 
 /* Home content width + media rail correction
    Purpose: let Workers/Publications use the available desktop content area without touching shell/header/sidebar. */
@@ -3055,8 +2857,8 @@ html.home-index-root body.home-index-shell section.more-services .service-grid.s
 @media (min-width: 761px) and (max-width: 1180px) {
   html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track {
     grid-template-columns: repeat(6, max-content) max-content !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
+    overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
   }
 
@@ -3088,22 +2890,24 @@ html.home-index-root body.home-index-shell section.more-services .service-grid.s
 
 
 
-/* MAIS ANÚNCIOS AXIS + FILTER FUNCTION REPAIR v6
-   Owner: home.css. This section follows the same content axis as Workers/Publicações,
-   while keeping the filters popover contextual and the cards visible. */
+/* MAIS ANÚNCIOS AXIS + FILTER FUNCTION REPAIR v7
+   Owner: home runtime. Keeps the left axis aligned with the feed title while
+   letting the card rail reach the same right edge as Workers/Publicações. */
 @media (min-width: 761px) {
   html.home-index-root body.home-index-shell {
     --more-services-axis-inset-v6: 68px;
+    --more-services-axis-start-v7: var(--more-services-axis-inset-v6);
+    --more-services-axis-end-v7: 0px;
   }
 
   html.home-index-root body.home-index-shell section.more-services > .section-heading,
   html.home-index-root body.home-index-shell section.more-services > .more-services__filters-host,
   html.home-index-root body.home-index-shell section.more-services > .more-services__cards-rail,
   html.home-index-root body.home-index-shell section.more-services > .content-rail.more-services__cards-rail {
-    width: 100% !important;
-    max-width: 100% !important;
+    width: 100%;
+    max-width: 100%;
     margin-inline: 0;
-    padding-inline: var(--more-services-axis-inset-v6);
+    padding-inline: var(--more-services-axis-start-v7) var(--more-services-axis-end-v7);
     box-sizing: border-box;
   }
 
@@ -3122,7 +2926,7 @@ html.home-index-root body.home-index-shell section.more-services .service-grid.s
   }
 
   html.home-index-root body.home-index-shell section.more-services .more-filters[data-more-filters-panel] {
-    right: var(--more-services-axis-inset-v6) !important;
+    right: var(--more-services-axis-start-v7);
   }
 
   html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track {
@@ -3183,25 +2987,39 @@ html.home-index-root body.home-index-shell section.more-services .service-grid.s
     opacity: 1 !important;
     height: auto !important;
     min-height: 1px !important;
-    overflow: visible !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
     margin-top: 22px;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .more-services__cards-rail::-webkit-scrollbar {
+    display: none;
   }
 
   html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] {
     display: grid;
-    grid-auto-flow: row;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-auto-columns: minmax(304px, calc((100% - 36px - clamp(44px, 4vw, 68px)) / 3));
     gap: 18px;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
+    width: max-content;
+    max-width: none;
+    min-width: 100%;
     overflow: visible;
+    scroll-snap-type: x proximity;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] > * {
+    scroll-snap-align: start;
   }
 }
 
 @media (min-width: 761px) and (max-width: 1180px) {
   html.home-index-root body.home-index-shell {
     --more-services-axis-inset-v6: 28px;
+    --more-services-axis-start-v7: var(--more-services-axis-inset-v6);
+    --more-services-axis-end-v7: 0px;
   }
 
   html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track {
@@ -3211,11 +3029,11 @@ html.home-index-root body.home-index-shell section.more-services .service-grid.s
   }
 
   html.home-index-root body.home-index-shell section.more-services .more-services__tabs-track::-webkit-scrollbar {
-    display: none !important;
+    display: none;
   }
 
   html.home-index-root body.home-index-shell section.more-services .service-grid[data-more-services-grid] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-columns: minmax(280px, calc((100% - 16px - clamp(36px, 6vw, 56px)) / 2));
   }
 }
 
