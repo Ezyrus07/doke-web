@@ -2684,10 +2684,19 @@ body {
    rail para app-header__inner e page__content-inner em qualquer zoom. */
 @media (min-width: 761px) {
   body.has-global-header:not(.home-index-shell) {
-    --doke-internal-shared-rail-v19: min(
-      calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)),
-      var(--doke-app-shell-max, 1180px)
-    ) !important;
+    /* Consume the canonical rail established by shared-page-width/desktop-page-rail.
+       The old local calc duplicated the same responsibility and could drift from
+       per-page rail families when specificity won over the later authority. */
+    --doke-internal-shared-rail-v19: var(
+      --doke-current-page-rail,
+      var(
+        --doke-page-rail,
+        min(
+          calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)),
+          var(--doke-app-shell-max, 1180px)
+        )
+      )
+    );
   }
 
   body.has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header {
@@ -4159,7 +4168,7 @@ body {
   :root {
     --doke-tablet-rail-max: 920px;
     --doke-tablet-gutter: clamp(18px, 4.2vw, 52px);
-    --doke-tablet-rail: min(calc(100vw - (var(--doke-tablet-gutter) * 2)), var(--doke-tablet-rail-max));
+    --doke-tablet-rail: var(--doke-current-page-rail, var(--doke-page-rail, min(calc(100vw - (var(--doke-tablet-gutter) * 2)), var(--doke-tablet-rail-max))));
     --doke-tablet-control: 48px;
     --doke-tablet-header-height: 86px;
     --doke-tablet-bottom-safe: calc(var(--doke-tablet-bottom-nav-height, 76px) + 30px);
@@ -5247,7 +5256,7 @@ body[data-page] .home-side-meta__tablet-menu {
     --doke-app-sidebar-width: 0px !important;
     --doke-tablet-rail-max: 920px !important;
     --doke-tablet-gutter: clamp(18px, 4.2vw, 52px) !important;
-    --doke-tablet-rail: min(calc(100vw - (var(--doke-tablet-gutter) * 2)), var(--doke-tablet-rail-max)) !important;
+    --doke-tablet-rail: var(--doke-current-page-rail, var(--doke-page-rail, min(calc(100vw - (var(--doke-tablet-gutter) * 2)), var(--doke-tablet-rail-max)))) !important;
   }
 
   html.doke-sidebar-expanded body[data-page]:not([data-page="home"]):not(.home-index-shell) > .app-shell,
@@ -5460,7 +5469,7 @@ body[data-page] .home-side-meta__tablet-menu {
 
   body[data-page="pedidos"],
   body[data-page="notificacoes"] {
-    --doke-tablet-rail: min(calc(100vw - 48px), 1180px);
+    --doke-tablet-rail: var(--doke-current-page-rail, var(--doke-page-rail, min(calc(100vw - 48px), 1180px)));
     --doke-tablet-control: 44px;
     --doke-tablet-control-radius: 16px;
     background: #eef5fb !important;
@@ -5665,7 +5674,7 @@ body[data-page] .home-side-meta__tablet-menu {
   body[data-page="home"],
   body[data-page="pedidos"],
   body[data-page="notificacoes"] {
-    --doke-tablet-rail: min(calc(100% - 36px), 1180px) !important;
+    --doke-tablet-rail: var(--doke-current-page-rail, var(--doke-page-rail, min(calc(100% - 36px), 1180px))) !important;
     --doke-tablet-control: 48px !important;
     --doke-tablet-control-radius: 16px !important;
     --doke-tablet-header-gap: 10px !important;

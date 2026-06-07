@@ -22,11 +22,11 @@ const TOLERANCE_RATIO = 0.03;
 const MAX_ELEMENTS_PER_COMPONENT = 6;
 
 const breakpoints = [
-  { name: '390x844', width: 390, height: 844 },
+  { name: '1366x768', width: 1366, height: 768 },
+  { name: '1280x802', width: 1280, height: 802 },
+  { name: '820x1180', width: 820, height: 1180 },
   { name: '608x926', width: 608, height: 926 },
-  { name: '810x1080', width: 810, height: 1080 },
-  { name: '1024x768', width: 1024, height: 768 },
-  { name: '1280x800', width: 1280, height: 800 },
+  { name: '390x844', width: 390, height: 844 },
 ];
 
 const targetPages = [
@@ -38,6 +38,7 @@ const targetPages = [
   'notificacoes.html',
   'comunidade.html',
   'carteira.html',
+  'ajuda.html',
 ];
 
 const bodyOverflowPages = ['index.html', ...targetPages];

@@ -47,9 +47,12 @@
   html body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page {
     --doke-tablet-gutter: clamp(18px, 3vw, 24px) !important;
     --doke-tablet-page-max: 760px !important;
-    --doke-tablet-page-rail: min(
-      calc(100vw - (var(--doke-tablet-gutter) * 2)),
-      var(--doke-tablet-page-max)
+    --doke-tablet-page-rail: var(
+      --doke-shared-page-width,
+      min(
+        calc(100vw - (var(--doke-tablet-gutter) * 2)),
+        var(--doke-tablet-page-max)
+      )
     ) !important;
     --doke-page-gutter: var(--doke-tablet-gutter) !important;
     --doke-page-max: var(--doke-tablet-page-max) !important;
@@ -240,7 +243,13 @@
 @media (min-width: 768px) and (max-width: 899px) and (orientation: portrait) {
   html body[data-page]:not(.home-index-shell).doke-app-shell-page.app-shell-page.internal-shell-page.has-global-header {
     --doke-internal-tablet-bg: #eef5fb;
-    --doke-internal-tablet-rail: min(calc(100vw - 48px), 760px);
+    /* Consume the shared rail established by desktop-page-rail-authority.css.
+       The previous hard-coded min(calc(100vw - 48px), 760px) made the tablet
+       header drift from page content at 768-899px portrait. */
+    --doke-internal-tablet-rail: var(
+      --doke-current-page-rail,
+      var(--doke-page-rail, min(calc(100vw - 48px), 760px))
+    );
     --doke-internal-tablet-header-height: 96px;
     --doke-internal-tablet-header-pad-top: 20px;
     --doke-internal-tablet-header-pad-bottom: 10px;

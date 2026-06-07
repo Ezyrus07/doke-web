@@ -74,3 +74,31 @@ Declarar explicitamente:
 - motivo;
 - comandos alternativos executados;
 - páginas/viewports que precisam de validação manual.
+
+## Reforma responsiva — gate obrigatório
+
+O contrato automatizado `npm run test:responsive-contract` deve usar o mesmo conjunto mínimo solicitado para mudanças de shell, header, rail/largura, scroll, CSS global ou links CSS em vários HTMLs:
+
+```txt
+1366x768
+1280x802
+820x1180
+608x926
+390x844
+```
+
+Páginas de validação obrigatória:
+
+```txt
+index.html
+pedidos.html
+perfil.html
+detalhe-anuncio.html
+resultados.html
+mensagens.html
+notificacoes.html
+comunidade.html
+ajuda.html
+```
+
+A primeira etapa da reforma responsiva não deve alterar visual global antes de o gate de validação refletir esses viewports e páginas.

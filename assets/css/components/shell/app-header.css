@@ -449,12 +449,11 @@
   }
 
   body.has-global-header > .app-shell > .page > .app-header > .app-header__inner {
-    --app-header-rail-max: var(--doke-app-shell-max, 1180px);
-    --app-header-rail-gutter: var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px));
-    inline-size: min(calc(100% - (var(--app-header-rail-gutter) * 2)), var(--app-header-rail-max));
-    width: min(calc(100% - (var(--app-header-rail-gutter) * 2)), var(--app-header-rail-max));
-    max-inline-size: var(--app-header-rail-max);
-    max-width: var(--app-header-rail-max);
+    --app-header-rail: var(--doke-header-rail, var(--doke-current-page-rail, var(--doke-page-rail, min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), var(--doke-app-shell-max, 1180px)))));
+    inline-size: var(--app-header-rail);
+    width: var(--app-header-rail);
+    max-inline-size: var(--app-header-rail);
+    max-width: var(--app-header-rail);
     min-height: var(--app-header-control-size, 48px) !important;
     margin-inline: auto !important;
     display: flex !important;
@@ -692,12 +691,11 @@
   body.has-global-header > .app-shell > .page > .app-header > .app-header__inner,
   body[data-page].has-global-header > .app-shell > .page > .app-header > .app-header__inner,
   body.has-global-header .app-header.app-header--detail > .app-header__inner {
-    --app-header-rail-max: var(--doke-app-shell-max, 1180px);
-    --app-header-rail-gutter: var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px));
-    inline-size: min(calc(100% - (var(--app-header-rail-gutter) * 4)), var(--app-header-rail-max));
-    width: min(calc(100% - (var(--app-header-rail-gutter) * 4)), var(--app-header-rail-max));
-    max-inline-size: var(--app-header-rail-max);
-    max-width: var(--app-header-rail-max);
+    --app-header-rail: var(--doke-header-rail, var(--doke-current-page-rail, var(--doke-page-rail, min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), var(--doke-app-shell-max, 1180px)))));
+    inline-size: var(--app-header-rail);
+    width: var(--app-header-rail);
+    max-inline-size: var(--app-header-rail);
+    max-width: var(--app-header-rail);
     margin-inline: auto !important;
   }
 }
@@ -707,12 +705,11 @@
    content rail used by .ad-detail-shell; no page/body/sidebar geometry changes. */
 @media (min-width: 761px) {
   body[data-page="detalhe-anuncio"].has-global-header > .app-shell > .page > .app-header.app-header--detail > .app-header__inner {
-    --app-header-rail-max: var(--doke-app-shell-max, 1180px);
-    --app-header-rail-gutter: var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px));
-    inline-size: min(calc(100% - (var(--app-header-rail-gutter) * 2)), var(--app-header-rail-max));
-    width: min(calc(100% - (var(--app-header-rail-gutter) * 2)), var(--app-header-rail-max));
-    max-inline-size: var(--app-header-rail-max);
-    max-width: var(--app-header-rail-max);
+    --app-header-rail: var(--doke-header-rail, var(--doke-current-page-rail, var(--doke-page-rail, min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), var(--doke-app-shell-max, 1180px)))));
+    inline-size: var(--app-header-rail);
+    width: var(--app-header-rail);
+    max-inline-size: var(--app-header-rail);
+    max-width: var(--app-header-rail);
     margin-inline: auto !important;
     padding-inline: 0 !important;
     box-sizing: border-box !important;
@@ -726,9 +723,15 @@
    o mesmo trilho em qualquer zoom, evitando header menor/maior que a página. */
 @media (min-width: 761px) {
   body.has-global-header:not(.home-index-shell) {
-    --doke-internal-page-rail: min(
-      calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)),
-      var(--doke-app-shell-max, 1180px)
+    --doke-internal-page-rail: var(
+      --doke-current-page-rail,
+      var(
+        --doke-page-rail,
+        min(
+          calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)),
+          var(--doke-app-shell-max, 1180px)
+        )
+      )
     );
   }
 
@@ -778,10 +781,10 @@
   }
 
   body.has-global-header:not(.home-index-shell) > .app-shell > .page > .app-header > .app-header__inner {
-    width: var(--doke-shared-internal-rail, min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), var(--doke-app-shell-max, 1180px)));
-    inline-size: var(--doke-shared-internal-rail, min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), var(--doke-app-shell-max, 1180px)));
-    max-width: var(--doke-shared-internal-rail, min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), var(--doke-app-shell-max, 1180px)));
-    max-inline-size: var(--doke-shared-internal-rail, min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), var(--doke-app-shell-max, 1180px)));
+    width: var(--doke-shared-internal-rail, var(--doke-current-page-rail, var(--doke-page-rail, min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), var(--doke-app-shell-max, 1180px)))));
+    inline-size: var(--doke-shared-internal-rail, var(--doke-current-page-rail, var(--doke-page-rail, min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), var(--doke-app-shell-max, 1180px)))));
+    max-width: var(--doke-shared-internal-rail, var(--doke-current-page-rail, var(--doke-page-rail, min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), var(--doke-app-shell-max, 1180px)))));
+    max-inline-size: var(--doke-shared-internal-rail, var(--doke-current-page-rail, var(--doke-page-rail, min(calc(100% - (var(--doke-app-shell-gutter, clamp(24px, 3vw, 40px)) * 2)), var(--doke-app-shell-max, 1180px)))));
     margin-inline: auto !important;
     padding-inline: 0 !important;
     box-sizing: border-box !important;
@@ -795,9 +798,9 @@
    gaps, radius, padding or shadow of the shared header pattern. */
 @media (min-width: 600px) {
   body.has-global-header {
-    --doke-header-canonical-sidebar: 272px;
-    --doke-header-canonical-max: 1000px;
-    --doke-header-canonical-gutter: clamp(18px, 3vw, 40px);
+    --doke-header-canonical-sidebar: var(--doke-sidebar-width, var(--doke-app-sidebar-width, 272px));
+    --doke-header-canonical-max: var(--doke-desktop-page-max, var(--doke-page-max, var(--doke-app-shell-max, 1000px)));
+    --doke-header-canonical-gutter: var(--doke-page-gutter, clamp(18px, 3vw, 40px));
     --doke-header-canonical-control: 48px;
     --doke-header-canonical-radius: 16px;
     --doke-header-canonical-gap: 10px;
@@ -839,8 +842,8 @@
   body.has-global-header > .app-shell > .page > .app-header > .app-header__inner,
   body[data-page].has-global-header > .app-shell > .page > .app-header > .app-header__inner,
   body.has-global-header .page > .app-header.home-side-meta > .app-header__inner {
-    width: min(calc(100% - (var(--doke-header-canonical-gutter) * 2)), var(--doke-header-canonical-max));
-    max-width: var(--doke-header-canonical-max);
+    width: var(--doke-header-rail, min(calc(100% - (var(--doke-header-canonical-gutter) * 2)), var(--doke-header-canonical-max)));
+    max-width: var(--doke-header-rail, var(--doke-header-canonical-max));
     min-height: var(--doke-header-canonical-control) !important;
     height: var(--doke-header-canonical-control) !important;
     margin: 0 auto !important;
@@ -1058,8 +1061,8 @@
   body.has-global-header > .app-shell > .page > .app-header > .app-header__inner,
   body[data-page].has-global-header > .app-shell > .page > .app-header > .app-header__inner,
   body.has-global-header .page > .app-header.home-side-meta > .app-header__inner {
-    width: min(calc(100% - (var(--doke-header-canonical-gutter) * 2)), var(--doke-header-canonical-max));
-    max-width: var(--doke-header-canonical-max);
+    width: var(--doke-header-rail, min(calc(100% - (var(--doke-header-canonical-gutter) * 2)), var(--doke-header-canonical-max)));
+    max-width: var(--doke-header-rail, var(--doke-header-canonical-max));
   }
 
   body.has-global-header .app-header .home-side-meta__tablet-menu {
