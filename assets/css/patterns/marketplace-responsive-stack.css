@@ -763,19 +763,8 @@ body[data-page] :is(
     padding-inline: 12px;
   }
 
-  body[data-page] :is(.service-grid--compact, .more-services__cards-rail .service-grid, .detail-related-grid--ads) {
-    display: flex !important;
-    flex-wrap: nowrap;
-    align-items: stretch;
-    overflow-x: auto;
-    grid-template-columns: none !important;
-  }
-
-  body[data-page] :is(.service-grid--compact, .more-services__cards-rail .service-grid, .detail-related-grid--ads) > :is(.doke-ad-card, .service-card) {
-    flex: 0 0 min(280px, calc(100vw - (var(--doke-shared-page-inline, 18px) * 2))) !important;
-    width: min(280px, calc(100vw - (var(--doke-shared-page-inline, 18px) * 2))) !important;
-    max-width: min(280px, calc(100vw - (var(--doke-shared-page-inline, 18px) * 2))) !important;
-  }
+  /* Stage 06C: compact/similar service grids keep their page-level axis.
+     This shared responsive stack must not force vertical sections into horizontal rails. */
 
   body[data-page] .publication-card :is(.publication-card__media, .publication-card__comparison) {
     width: calc(100% - 20px) !important;
@@ -839,10 +828,10 @@ body {
 #featured-services-track,
 #home-publications-track,
 [data-more-services-grid] {
-  max-inline-size: 100% !important;
-  min-inline-size: 0 !important;
-  overflow-x: auto !important;
-  overflow-y: visible !important;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  overflow-x: auto;
+  overflow-y: visible;
   overscroll-behavior-inline: contain;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
@@ -906,9 +895,6 @@ body {
 
 /* Mobile/tablet: cards occupy the canonical rail width; no half-card fragments. */
 @media (max-width: 760px) {
-  #featured-services-track,
-  #home-publications-track,
-  [data-more-services-grid],
   .ad-detail-shell :is(.related-services-grid, .similar-services-grid, .publication-grid, .workers-grid, .service-grid),
   .profile-shell-content :is(.publication-grid, .workers-grid, .service-grid),
   .results-shell :is(.service-grid, .results-grid),
@@ -954,8 +940,6 @@ body {
 
 /* Desktop/tablet landscape: use professional grids instead of oversized carousel cards. */
 @media (min-width: 761px) {
-  #featured-services-track,
-  [data-more-services-grid],
   .ad-detail-shell :is(.related-services-grid, .similar-services-grid, .service-grid),
   .results-shell :is(.service-grid, .results-grid) {
     display: grid !important;
@@ -965,7 +949,6 @@ body {
     overflow: visible !important;
   }
 
-  #home-publications-track,
   .ad-detail-shell :is(.publication-grid, .publications-grid),
   .profile-shell-content :is(.publication-grid, .publications-grid) {
     display: grid !important;
@@ -1016,11 +999,8 @@ body {
 }
 
 @media (min-width: 761px) and (max-width: 1100px) {
-  #featured-services-track,
-  [data-more-services-grid],
   .ad-detail-shell :is(.related-services-grid, .similar-services-grid, .service-grid),
   .results-shell :is(.service-grid, .results-grid),
-  #home-publications-track,
   .ad-detail-shell :is(.publication-grid, .publications-grid),
   .profile-shell-content :is(.publication-grid, .publications-grid) {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;

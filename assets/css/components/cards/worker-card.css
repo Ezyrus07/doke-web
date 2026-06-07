@@ -241,3 +241,136 @@ body.home-index-shell .short-videos .video-card.is-previewing .video-card__previ
     display: none !important;
   }
 }
+
+/* 2026-06-07 - Stage 03C worker/video card global contract.
+   Owner: assets/css/components/cards/worker-card.css
+   Pages may control only rail/grid/gap/overflow around worker/video cards.
+   Pages must not redefine media ratio, overlay anatomy, radius, padding or typography. */
+
+:where(.video-card, .worker-card, .short-video-card) {
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--doke-card-border, rgba(24, 75, 118, 0.10));
+  border-radius: var(--doke-worker-card-radius, var(--doke-card-radius, 22px));
+  background: var(--doke-worker-card-surface, #102849);
+  box-shadow: var(--doke-worker-card-shadow, 0 16px 36px rgba(16, 40, 73, 0.14));
+  color: #fff;
+}
+
+:where(.video-card__media, .worker-card__media, .short-video-card__media) {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: var(--doke-worker-card-ratio, 9 / 16);
+  overflow: hidden;
+  background: #0f2138;
+}
+
+:where(.video-card__media, .worker-card__media, .short-video-card__media) > :where(img, video),
+:where(.video-card, .worker-card, .short-video-card) > :where(img, video) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+:where(.video-card__overlay, .worker-card__overlay, .short-video-card__overlay) {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--doke-worker-card-overlay-gap, 6px);
+  padding: var(--doke-worker-card-overlay-padding, 14px);
+  background: linear-gradient(180deg, rgba(9, 20, 34, 0) 0%, rgba(9, 20, 34, 0.72) 100%);
+  color: #fff;
+}
+
+:where(.video-card__title, .worker-card__title, .short-video-card__title) {
+  margin: 0;
+  color: #fff;
+  font-size: var(--doke-worker-card-title-size, 0.95rem);
+  font-weight: 780;
+  line-height: 1.18;
+}
+
+:where(.video-card__meta, .worker-card__meta, .short-video-card__meta) {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: var(--doke-worker-card-meta-size, 0.8rem);
+  line-height: 1.3;
+}
+
+:where(.video-card__author, .worker-card__author, .short-video-card__author) {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+:where(.video-card__avatar, .worker-card__avatar, .short-video-card__avatar) {
+  flex: 0 0 auto;
+  width: var(--doke-worker-card-avatar-size, 28px);
+  height: var(--doke-worker-card-avatar-size, 28px);
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+:where(.video-card__badge, .worker-card__badge, .short-video-card__badge) {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: max-content;
+  max-width: calc(100% - 20px);
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--doke-color-primary, #2a5f90);
+  font-size: 0.72rem;
+  font-weight: 780;
+  line-height: 1;
+}
+
+:where(.video-card__actions, .worker-card__actions, .short-video-card__actions) {
+  position: absolute;
+  right: 10px;
+  bottom: 12px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+}
+
+:where(.video-card__action, .worker-card__action, .short-video-card__action) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--doke-worker-card-action-size, 34px);
+  height: var(--doke-worker-card-action-size, 34px);
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 999px;
+  background: rgba(15, 33, 56, 0.42);
+  color: #fff;
+  backdrop-filter: blur(10px);
+}
+
+@media (max-width: 760px) {
+  :where(.video-card, .worker-card, .short-video-card) {
+    border-radius: var(--doke-worker-card-radius-mobile, 18px);
+  }
+
+  :where(.video-card__overlay, .worker-card__overlay, .short-video-card__overlay) {
+    padding: var(--doke-worker-card-overlay-padding-mobile, 12px);
+  }
+}

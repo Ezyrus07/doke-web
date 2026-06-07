@@ -1,0 +1,90 @@
+
+
+/* 2026-06-07 - Stage 04C tabs global contract.
+   Owner: assets/css/components/tabs.css
+   Pages may control only available rail, external margin and overflow placement.
+   Tab anatomy, active state, focus state, padding, radius and typography belong here. */
+
+:where(.doke-tabs, .profile-tabs) {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--doke-tabs-gap, 8px);
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: var(--doke-tabs-padding-y, 6px) var(--doke-tabs-padding-x, 6px);
+  border: 1px solid var(--doke-tabs-border, rgba(24, 75, 118, 0.10));
+  border-radius: var(--doke-tabs-radius, 18px);
+  background: var(--doke-tabs-bg, #fff);
+  box-shadow: var(--doke-tabs-shadow, 0 10px 24px rgba(20, 48, 78, 0.05));
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+:where(.doke-tabs, .profile-tabs)::-webkit-scrollbar { display: none; }
+
+:where(.doke-tab, .profile-tab, .tab-item) {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: var(--doke-tab-height, 38px);
+  min-width: 0;
+  padding: var(--doke-tab-padding-y, 0) var(--doke-tab-padding-x, 14px);
+  border: 1px solid transparent;
+  border-radius: var(--doke-tab-radius, 999px);
+  background: transparent;
+  color: var(--doke-tab-color, #667892);
+  font: inherit;
+  font-size: var(--doke-tab-font-size, 0.88rem);
+  font-weight: var(--doke-tab-font-weight, 760);
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+:where(.doke-tab, .profile-tab, .tab-item):where(:hover) {
+  background: var(--doke-tab-hover-bg, rgba(42, 95, 144, 0.07));
+  color: var(--doke-tab-hover-color, var(--doke-color-primary, #2a5f90));
+}
+
+:where(.doke-tab, .profile-tab, .tab-item):where(:focus-visible) {
+  outline: 3px solid var(--doke-focus-ring, rgba(42, 95, 144, 0.22));
+  outline-offset: 2px;
+}
+
+:where(.doke-tab.is-active, .profile-tab.is-active, .tab-item.is-active, .doke-tab[aria-selected="true"], .profile-tab[aria-selected="true"], .tab-item[aria-selected="true"], .doke-tab[aria-current="page"], .profile-tab[aria-current="page"], .tab-item[aria-current="page"]) {
+  border-color: var(--doke-tab-active-border, rgba(42, 95, 144, 0.14));
+  background: var(--doke-tab-active-bg, rgba(42, 95, 144, 0.10));
+  color: var(--doke-tab-active-color, var(--doke-color-primary, #2a5f90));
+  box-shadow: var(--doke-tab-active-shadow, inset 0 0 0 1px rgba(42, 95, 144, 0.04));
+}
+
+:where(.doke-tabs--segmented, .profile-tabs--compact) {
+  --doke-tabs-padding-y: 5px;
+  --doke-tabs-padding-x: 5px;
+  --doke-tabs-gap: 6px;
+}
+
+@media (max-width: 760px) {
+  :where(.doke-tabs, .profile-tabs) {
+    border-radius: var(--doke-tabs-radius-mobile, 16px);
+    padding: var(--doke-tabs-padding-y-mobile, 5px) var(--doke-tabs-padding-x-mobile, 5px);
+  }
+  :where(.doke-tab, .profile-tab, .tab-item) {
+    min-height: var(--doke-tab-height-mobile, 36px);
+    padding-inline: var(--doke-tab-padding-x-mobile, 12px);
+    font-size: var(--doke-tab-font-size-mobile, 0.84rem);
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1179px) {
+  :where(.doke-tabs, .profile-tabs) {
+    padding-inline: var(--doke-tabs-padding-x-tablet, 6px);
+  }
+}

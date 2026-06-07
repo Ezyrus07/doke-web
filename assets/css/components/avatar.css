@@ -1,0 +1,100 @@
+
+
+/* 2026-06-07 - Stage 04D avatar/metrics global contract.
+   Owner: assets/css/components/avatar.css
+   Pages may control avatar placement in a specific composition.
+   Shape, base sizes, object-fit, frame, and metrics anatomy belong here. */
+
+:where(.doke-avatar, .avatar, .profile-avatar-frame, .profile-avatar) {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: var(--doke-avatar-size, 72px);
+  height: var(--doke-avatar-size, 72px);
+  min-width: var(--doke-avatar-size, 72px);
+  min-height: var(--doke-avatar-size, 72px);
+  overflow: hidden;
+  border-radius: var(--doke-avatar-radius, 999px);
+  background: var(--doke-avatar-bg, #eef4f8);
+  color: var(--doke-avatar-color, var(--doke-color-primary, #2a5f90));
+}
+
+:where(.doke-avatar, .avatar, .profile-avatar-frame, .profile-avatar) > :where(img, picture, svg),
+:where(.doke-avatar, .avatar, .profile-avatar-frame, .profile-avatar) img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+:where(.profile-avatar-frame) {
+  border: var(--doke-avatar-frame-border, 0);
+  box-shadow: var(--doke-avatar-frame-shadow, none);
+}
+
+:where(.profile-avatar-column) {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+:where(.profile-stats-row, .profile-metrics) {
+  box-sizing: border-box;
+  display: flex;
+  align-items: stretch;
+  gap: var(--doke-profile-metrics-gap, 10px);
+  min-width: 0;
+}
+
+:where(.profile-stat, .profile-metric) {
+  box-sizing: border-box;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--doke-profile-metric-gap, 4px);
+  min-width: 0;
+  padding: var(--doke-profile-metric-padding, 10px 12px);
+  border: 1px solid var(--doke-profile-metric-border, rgba(24, 75, 118, 0.10));
+  border-radius: var(--doke-profile-metric-radius, 16px);
+  background: var(--doke-profile-metric-bg, #fff);
+  color: var(--doke-profile-metric-color, #102849);
+}
+
+:where(.profile-stat__value, .profile-metric__value) {
+  color: var(--doke-profile-metric-value-color, #102849);
+  font-size: var(--doke-profile-metric-value-size, 0.96rem);
+  font-weight: 820;
+  line-height: 1.1;
+}
+
+:where(.profile-stat__label, .profile-metric__label) {
+  color: var(--doke-profile-metric-label-color, #667892);
+  font-size: var(--doke-profile-metric-label-size, 0.74rem);
+  font-weight: 650;
+  line-height: 1.2;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  :where(.doke-avatar, .avatar, .profile-avatar-frame, .profile-avatar) {
+    width: var(--doke-avatar-size-mobile, 76px);
+    height: var(--doke-avatar-size-mobile, 76px);
+    min-width: var(--doke-avatar-size-mobile, 76px);
+    min-height: var(--doke-avatar-size-mobile, 76px);
+  }
+
+  :where(.profile-stats-row, .profile-metrics) {
+    gap: var(--doke-profile-metrics-gap-mobile, 8px);
+  }
+
+  :where(.profile-stat, .profile-metric) {
+    padding: var(--doke-profile-metric-padding-mobile, 9px 8px);
+    border-radius: var(--doke-profile-metric-radius-mobile, 14px);
+  }
+}

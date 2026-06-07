@@ -169,3 +169,314 @@
     margin-bottom: 16px;
   }
 }
+
+/* Stage 06B — official home card composition by viewport.
+   Page responsibility only: grid/rail/gap/visible quantity. Card anatomy remains
+   owned by components/cards/*.css. This block intentionally avoids priority flags;
+   legacy grid priority declarations were removed from the older home modules. */
+body.home-index-shell {
+  --doke-home-card-gap: clamp(14px, 1.4vw, 18px);
+  --doke-home-featured-card-min: 284px;
+  --doke-home-featured-card-max: 336px;
+  --doke-home-publication-card-min: 300px;
+  --doke-home-publication-card-max: 344px;
+  --doke-home-worker-card-width: clamp(190px, 16vw, 236px);
+  --doke-home-more-card-min: 260px;
+}
+
+body.home-index-shell :is(
+  #featured-services-track,
+  #short-videos-track,
+  #home-publications-track,
+  [data-more-services-grid]
+) {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  gap: var(--doke-home-card-gap);
+}
+
+body.home-index-shell :is(
+  .featured-services,
+  .short-videos,
+  .home-publications,
+  .more-services
+) > :is(.content-rail, .doke-scroll-rail, .more-services__cards-rail) {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (min-width: 1025px) {
+  body.home-index-shell #featured-services-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(var(--doke-home-featured-card-min), var(--doke-home-featured-card-max));
+    grid-template-columns: none;
+    justify-content: start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  body.home-index-shell #featured-services-track > :is(.doke-ad-card, .service-card) {
+    scroll-snap-align: start;
+  }
+
+  body.home-index-shell #short-videos-track {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: stretch;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  body.home-index-shell #short-videos-track > .doke-worker-card {
+    flex: 0 0 var(--doke-home-worker-card-width);
+    inline-size: var(--doke-home-worker-card-width);
+    scroll-snap-align: start;
+  }
+
+  body.home-index-shell #home-publications-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(var(--doke-home-publication-card-min), var(--doke-home-publication-card-max));
+    grid-template-columns: none;
+    justify-content: start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  body.home-index-shell #home-publications-track > .publication-card {
+    scroll-snap-align: start;
+  }
+
+  body.home-index-shell [data-more-services-grid] {
+    display: grid;
+    grid-auto-flow: row;
+    grid-auto-columns: initial;
+    grid-template-columns: repeat(3, minmax(var(--doke-home-more-card-min), 1fr));
+    overflow: visible;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1024px) {
+  body.home-index-shell #featured-services-track,
+  body.home-index-shell #home-publications-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(280px, 42%);
+    grid-template-columns: none;
+    justify-content: start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  body.home-index-shell #short-videos-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: clamp(188px, 28vw, 228px);
+    grid-template-columns: none;
+    justify-content: start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  body.home-index-shell [data-more-services-grid] {
+    display: grid;
+    grid-auto-flow: row;
+    grid-auto-columns: initial;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+  }
+}
+
+@media (max-width: 760px) {
+  body.home-index-shell {
+    --doke-home-card-gap: 14px;
+  }
+
+  body.home-index-shell #featured-services-track,
+  body.home-index-shell #home-publications-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(248px, 78%);
+    grid-template-columns: none;
+    justify-content: start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  body.home-index-shell #short-videos-track {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row;
+    overflow: visible;
+  }
+
+  body.home-index-shell #short-videos-track > .doke-worker-card:nth-child(n + 5) {
+    display: none;
+  }
+
+  body.home-index-shell [data-more-services-grid] {
+    display: grid;
+    grid-auto-flow: row;
+    grid-auto-columns: initial;
+    grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
+  }
+}
+
+body.home-index-shell :is(
+  #featured-services-track,
+  #short-videos-track,
+  #home-publications-track
+)::-webkit-scrollbar {
+  display: none;
+}
+
+/* Stage 06C — official horizontal overflow/rail contract.
+   Page responsibility only: rail axis, overflow containment and scroll preview.
+   Card/component anatomy remains owned by components and patterns. */
+body.home-index-shell {
+  --doke-home-rail-peek: clamp(18px, 3vw, 42px);
+  --doke-home-category-width: clamp(92px, 8vw, 116px);
+  --doke-home-category-gap: clamp(12px, 1.4vw, 18px);
+  --doke-home-pro-card-width: clamp(276px, 24vw, 336px);
+}
+
+body.home-index-shell :is(
+  .home-catégories__rail,
+  .content-rail.doke-scroll-rail,
+  .home-media-rail,
+  .more-services__tabs-rail
+) {
+  position: relative;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+  overflow-y: visible;
+}
+
+body.home-index-shell :is(
+  .home-catégories__track,
+  #featured-services-track,
+  #short-videos-track,
+  #home-publications-track,
+  #featured-pros-track,
+  .more-services__tabs-track
+) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: var(--doke-home-rail-peek);
+}
+
+body.home-index-shell :is(
+  .home-catégories__track,
+  #featured-services-track,
+  #short-videos-track,
+  #home-publications-track,
+  #featured-pros-track,
+  .more-services__tabs-track
+)::-webkit-scrollbar {
+  display: none;
+}
+
+body.home-index-shell .home-catégories__track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--doke-home-category-width);
+  grid-template-columns: none;
+  align-items: start;
+  justify-content: start;
+  gap: var(--doke-home-category-gap);
+  padding: 2px var(--doke-home-rail-peek) 12px 0;
+}
+
+body.home-index-shell .home-catégories__track > .home-catégory {
+  min-width: 0;
+  inline-size: 100%;
+  scroll-snap-align: start;
+}
+
+@media (min-width: 1025px) {
+  body.home-index-shell #featured-pros-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: var(--doke-home-pro-card-width);
+    grid-template-columns: none;
+    align-items: stretch;
+    justify-content: start;
+    gap: var(--doke-home-card-gap);
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1024px) {
+  body.home-index-shell #featured-pros-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(270px, 42%);
+    grid-template-columns: none;
+    align-items: stretch;
+    justify-content: start;
+    gap: var(--doke-home-card-gap);
+  }
+}
+
+@media (max-width: 760px) {
+  body.home-index-shell {
+    --doke-home-rail-peek: 18px;
+    --doke-home-category-width: 84px;
+    --doke-home-category-gap: 12px;
+  }
+
+  body.home-index-shell .home-catégories__rail {
+    overflow-x: hidden;
+  }
+
+  body.home-index-shell .home-catégories__track {
+    padding-bottom: 10px;
+  }
+
+  body.home-index-shell #featured-pros-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(260px, 82%);
+    grid-template-columns: none;
+    align-items: stretch;
+    justify-content: start;
+    gap: var(--doke-home-card-gap);
+  }
+
+  body.home-index-shell .more-services__tabs-track {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 2px;
+  }
+
+  body.home-index-shell .more-services__tabs-track > * {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+}
