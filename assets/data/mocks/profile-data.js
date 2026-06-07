@@ -21,7 +21,6 @@ window.DokeProfileData = {
       actions: [
         { label: 'Enviar mensagem', href: 'mensagens.html', role: 'message' },
         { label: 'Solicitar serviço', href: 'detalhe-anuncio.html', tone: 'primary', role: 'primary' },
-        { label: 'Editar perfil', tone: 'ghost', role: 'edit-profile' }
       ],
       rotatingHighlights: [
         { label: 'Tempo de resposta', value: 'Até 1h', detail: 'em horário comercial' },
@@ -36,7 +35,10 @@ window.DokeProfileData = {
       beforeAfter: 'Publicações',
       reviews: 'Avaliações',
       about: 'Sobre',
-      certificates: 'Certificados'
+      certificates: 'Certificados',
+      workers: 'Workers',
+      achievements: 'Conquistas',
+      faq: 'Perguntas'
     },
     sections: {
       services: {

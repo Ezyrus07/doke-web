@@ -16,7 +16,10 @@ window.DokeInitProfile = () => {
     beforeAfter: "Publicações",
     reviews: "Avaliações",
     about: "Sobre",
-    certificates: "Certificados"
+    certificates: "Certificados",
+    workers: "Workers",
+    achievements: "Conquistas",
+    faq: "Perguntas"
   };
   const professionalTabs = {
     ...PROFESSIONAL_DEFAULT_TABS,
@@ -93,9 +96,7 @@ window.DokeInitProfile = () => {
           hero: {
             ...(publicProfile.hero || {}),
             actions: [
-              { label: "Enviar mensagem", href: "mensagens.html", role: "message" },
-              { label: "Solicitar serviço", href: "detalhe-anuncio.html", tone: "primary", role: "primary" },
-              { label: "Editar perfil", tone: "ghost", role: "edit-profile" }
+              { label: "Editar perfil", tone: "primary", role: "edit-profile" }
             ],
             badges: [...((publicProfile.hero?.badges || []).slice(0, 2))]
           },
@@ -135,14 +136,14 @@ window.DokeInitProfile = () => {
             tabs: professionalTabs
           };
   const PROFILE_TAB_ORDER = [
-    "services",
-    "portfolio",
     "beforeAfter",
-    "reviews",
+    "services",
     "about",
-    "certificates",
+    "portfolio",
     "workers",
+    "reviews",
     "achievements",
+    "certificates",
     "faq",
     "overview",
     "listings"
@@ -181,6 +182,9 @@ window.DokeInitProfile = () => {
     categories: root.querySelector("[data-profile-categories]"),
     headline: root.querySelector("[data-profile-headline]"),
     avatar: root.querySelector("[data-profile-avatar]"),
+    cover: root.querySelector(".profile-hero-shell__cover"),
+    coverUpload: root.querySelector("[data-profile-cover-upload]"),
+    avatarUpload: root.querySelector("[data-profile-avatar-upload]"),
     verified: root.querySelector("[data-profile-verified]"),
     nameActions: root.querySelector("[data-profile-name-actions]"),
     optionsHost: root.querySelector("[data-profile-options-host]"),
@@ -206,6 +210,30 @@ window.DokeInitProfile = () => {
   };
 
   const panelMap = Object.fromEntries(els.panels.map((panel) => [panel.dataset.profilePanel, panel]));
+  const mediaPreviewUrls = new Map();
+  const previewProfileMedia = (input, target, kind) => {
+    const file = input?.files?.[0];
+    if (!file || !file.type.startsWith("image/") || !target) return;
+
+    const previousUrl = mediaPreviewUrls.get(kind);
+    if (previousUrl) URL.revokeObjectURL(previousUrl);
+
+    const previewUrl = URL.createObjectURL(file);
+    mediaPreviewUrls.set(kind, previewUrl);
+    target.style.backgroundImage = `url("${previewUrl}")`;
+    target.classList.add("has-media-preview");
+    if (kind === "avatar") target.textContent = "";
+  };
+
+  els.coverUpload?.addEventListener("change", () => previewProfileMedia(els.coverUpload, els.cover, "cover"));
+  els.avatarUpload?.addEventListener("change", () => previewProfileMedia(els.avatarUpload, els.avatar, "avatar"));
+  root.querySelectorAll(".profile-media-edit").forEach((control) => {
+    control.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      document.getElementById(control.htmlFor)?.click();
+    });
+  });
   const availableTabs = Object.keys(baseProfile.tabs || {});
   const requestedPanelRaw = params.get("panel");
   const requestedPanel = requestedPanelRaw === "posts" ? "workers" : requestedPanelRaw;
@@ -2253,6 +2281,8 @@ window.DokeInitProfile = () => {
   bindHorizontalProfileRails();
 
   render();
+  root.dataset.profileRendered = "true";
+  root.setAttribute("aria-busy", "false");
 };
 
 window.DokeInitProfile();
