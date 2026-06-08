@@ -63,9 +63,9 @@ assert(
 assert(
   coreComponents.includes('ad-card.css?v=20260608-card-info-parity-v2') &&
   homeRuntime.includes('ad-card.css?v=20260608-card-info-parity-v2') &&
-  home.includes('marketplace-responsive-stack.css?v=20260608-card-info-parity-v2') &&
-  indexHtml.includes('home.css?v=20260608-card-info-parity-v2'),
-  'index/home/core must reference the cache-busted card information parity contract.'
+  /marketplace-responsive-stack\.css\?v=20260608-(?:card-info-parity-v2|publication-tablet-parity-v1)/.test(home) &&
+  /home\.css\?v=20260608-(?:card-info-parity-v2|publication-tablet-parity-v1)/.test(indexHtml),
+  'index/home/core must reference the cache-busted card information parity contract without blocking newer card contracts.'
 );
 
 if (failures.length) {

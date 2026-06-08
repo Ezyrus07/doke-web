@@ -12,7 +12,6 @@
 @import url("../components/shell/app-header-canonical-contract.css?v=20260608-header-rail-contract-v2");
 @import url("../components/shell/shared-page-width-contract.css?v=20260608-header-rail-contract-v2");
 @import url("../patterns/marketplace-responsive-stack.css?v=20260608-card-info-parity-v2");
-@import url("../components/cards/publication-card.css?v=20260607-index-profile-card-surface-v7");
 @import url("../components/shell/desktop-page-rail-authority.css?v=20260608-header-rail-contract-v2");
 @import url("../components/cards/marketplace-card-contract.css?v=20260607-pro-card-compact-v1");
 @import url("../components/cards/professional-showcase-card.css?v=20260607-doke-professional-showcase-v11");
@@ -21,6 +20,7 @@
 @import url("./home/tablet-safari-layout.css?v=20260608-card-info-parity-v2");
 @import url("./home/mobile-index-feed-contract.css?v=20260602-home-mounted-rail-contract-v1");
 @import url("./home/publications-no-arrows.css?v=20260604-publication-rail-contract-v1");
+@import url("../components/cards/publication-card.css?v=20260608-publication-final-authority-v1");
 
 /* 2026-06-05 - canonical tablet landscape rhythm for index.
    Authority: final home page contract after all home imports. This closes only
@@ -547,6 +547,11 @@ body.home-index-shell {
   --doke-home-publication-card-width: clamp(360px, 24vw, 392px);
   --doke-home-publication-card-width-tablet: clamp(248px, calc((100% - var(--doke-home-card-gap, 16px) - var(--doke-home-publication-card-preview-tablet, 44px)) / 2), 352px);
   --doke-home-publication-card-width-mobile: minmax(278px, 82%);
+  --doke-home-publication-card-width-narrow-tablet: clamp(
+    248px,
+    calc((100% - var(--doke-home-card-gap, 14px) - var(--doke-home-publication-card-preview-tablet, 44px)) / 2),
+    286px
+  );
   --doke-home-publication-card-preview: clamp(52px, 5vw, 72px);
   --doke-home-publication-card-preview-tablet: clamp(32px, 7vw, 56px);
 }
@@ -704,13 +709,13 @@ body.home-index-shell {
   }
 }
 
-@media (max-width: 760px) {
+@media (min-width: 561px) and (max-width: 760px) {
   html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications > #home-publications-track.publication-grid,
   html body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications > #home-publications-track.publication-grid {
     display: grid !important;
     grid-auto-flow: column !important;
     grid-template-columns: none !important;
-    grid-auto-columns: var(--doke-home-publication-card-width-mobile) !important;
+    grid-auto-columns: var(--doke-home-publication-card-width-narrow-tablet) !important;
     align-items: stretch !important;
     justify-content: start !important;
     gap: var(--doke-home-card-gap, 14px) !important;
