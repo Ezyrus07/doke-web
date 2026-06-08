@@ -66,6 +66,20 @@
     button.setAttribute('aria-label', isActive ? 'Remover anúncio dos salvos' : 'Salvar anúncio');
   };
 
+  const hydrateAdCardMedia = (card) => {
+    if (!card || card.dataset.adMediaHydrated === '1') return;
+
+    /* CSS-background cards already reserve their final media geometry in the
+       component stylesheet. Do not add a loading overlay after first paint; it
+       makes tablet cards look different while images are already being fetched
+       by CSS. Explicit data-rendered skeletons can use is-media-skeleton from
+       the renderer without changing the card shell. */
+    card.dataset.adMediaHydrated = '1';
+    card.dataset.mediaState = 'static-background';
+    card.classList.remove('is-media-loading', 'is-media-ready');
+  };
+
+
   const handleAdCardClick = (event) => {
     const card = event.target.closest('.doke-ad-card');
     if (!card) return;
@@ -180,6 +194,8 @@
       if (favorite) {
         favorite.setAttribute('aria-pressed', favorite.classList.contains('is-active') ? 'true' : 'false');
       }
+
+      hydrateAdCardMedia(card);
 
       const cta = card.querySelector('.doke-ad-card__cta');
       if (cta && cta.tagName === 'A') {

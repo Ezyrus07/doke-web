@@ -35,6 +35,42 @@
   isolation: isolate;
 }
 
+
+/* Media loading parity for advertisement cards.
+   CSS-background cards must not receive a JS-driven skeleton overlay after the
+   first paint. The media box itself owns the final dimensions, so the initial
+   state and the loaded state keep the same geometry without hiding the image.
+   Future data-rendered skeletons must opt in explicitly with is-media-skeleton. */
+.doke-ad-card__media::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(90deg, rgba(223, 234, 242, 0.92) 0%, rgba(240, 246, 251, 0.98) 44%, rgba(223, 234, 242, 0.92) 88%),
+    var(--doke-card-media-bg, #eef4f8);
+  background-size: 220% 100%;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateZ(0);
+}
+
+.doke-ad-card.is-media-skeleton .doke-ad-card__media::before {
+  opacity: 1;
+  animation: doke-ad-card-media-skeleton 1.25s ease-in-out infinite;
+}
+
+@keyframes doke-ad-card-media-skeleton {
+  0% { background-position: 120% 0; }
+  100% { background-position: -120% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .doke-ad-card.is-media-skeleton .doke-ad-card__media::before {
+    animation: none;
+  }
+}
+
 .doke-ad-card__media::after {
   content: "";
   position: absolute;
@@ -577,7 +613,8 @@
   }
 
   .doke-ad-card__tags {
-    display: none;
+    display: flex;
+    flex-wrap: nowrap;
   }
 
   .doke-ad-card__location {
@@ -657,6 +694,121 @@
     padding-inline: 10px;
     font-size: 0.72rem;
     line-height: 1;
+  }
+}
+
+/* Tablet first-paint parity for advertisement cards.
+   The index/home tablet range previously relied on later page/pattern CSS to
+   compact the card after the initial render, so the first tablet paint showed a
+   different card anatomy. The component now owns the tablet card anatomy early
+   in the cascade; pages may still own only rail width, gap and overflow. */
+@media (min-width: 761px) and (max-width: 900px) {
+  .doke-ad-card {
+    height: var(--doke-index-ad-card-tablet-height, 266px);
+    min-height: var(--doke-index-ad-card-tablet-height, 266px);
+    max-height: var(--doke-index-ad-card-tablet-height, 266px);
+    border-radius: var(--doke-index-ad-card-tablet-radius, 24px);
+  }
+
+  .doke-ad-card > .doke-ad-card__media {
+    height: var(--doke-index-ad-media-tablet-height, 96px);
+    min-height: var(--doke-index-ad-media-tablet-height, 96px);
+    max-height: var(--doke-index-ad-media-tablet-height, 96px);
+  }
+
+  .doke-ad-card > .doke-ad-card__body {
+    display: grid;
+    grid-template-rows: 10px 17px 16px 29px 44px;
+    align-content: start;
+    row-gap: 2px;
+    height: var(--doke-index-ad-body-tablet-height, 170px);
+    min-height: var(--doke-index-ad-body-tablet-height, 170px);
+    max-height: var(--doke-index-ad-body-tablet-height, 170px);
+    padding: 8px 10px 10px;
+    overflow: hidden;
+  }
+
+  .doke-ad-card .doke-ad-card__category {
+    margin: 0;
+    font-size: 0.58rem;
+    line-height: 1;
+    letter-spacing: 0.12em;
+  }
+
+  .doke-ad-card .doke-ad-card__title {
+    font-size: var(--doke-index-ad-title-size, 0.96rem);
+    line-height: var(--doke-index-ad-title-line, 1);
+    letter-spacing: -0.035em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .doke-ad-card .doke-ad-card__rating {
+    gap: 4px;
+    margin: -1px 0 0;
+    font-size: 0.74rem;
+    line-height: 1;
+  }
+
+  .doke-ad-card .doke-ad-card__tags {
+    display: flex;
+    flex-wrap: nowrap;
+  }
+
+  .doke-ad-card .doke-ad-card__location {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: center;
+    gap: 5px;
+    margin: 0;
+    font-size: 0.62rem;
+    line-height: 1.05;
+  }
+
+  .doke-ad-card .doke-ad-card__avatar {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+  }
+
+  .doke-ad-card .doke-ad-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 7px;
+    margin-top: 0;
+    padding-top: 7px;
+  }
+
+  .doke-ad-card .doke-ad-card__price {
+    font-size: 0.9rem;
+    line-height: 1;
+  }
+
+  .doke-ad-card .doke-ad-card__cta {
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+  }
+
+  .doke-ad-card .doke-ad-card__badge {
+    top: 10px;
+    left: 10px;
+    min-height: 24px;
+    padding-inline: 9px;
+    font-size: 0.67rem;
+  }
+
+  .doke-ad-card .doke-ad-card__favorite {
+    top: 8px;
+    right: 8px;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
   }
 }
 
@@ -767,5 +919,142 @@
 
   :where(.doke-ad-card__body, .service-card__body, .doke-ad-card__content, .service-card__content) {
     padding: var(--doke-ad-card-body-padding-mobile, 12px);
+  }
+}
+
+
+/* 2026-06-08 - Narrow tablet mandatory ad-card information contract.
+   Causa: no iPad mini/DevTools 561px-760px, CSS tardio da home mantinha o
+   card visualmente compacto demais e escondia conteúdo essencial após o
+   primeiro paint. O componente volta a ser a autoridade da anatomia: páginas
+   podem controlar apenas rail, gap e overflow do carrossel. */
+@media (min-width: 561px) and (max-width: 760px) {
+  .doke-ad-card {
+    --doke-ad-card-height: auto;
+    --doke-ad-card-min-height: 336px;
+    --doke-ad-card-max-height: none;
+    --doke-ad-media-height: 124px;
+    --doke-ad-media-height-mobile: 124px;
+    --doke-ad-padding: 10px 12px 12px;
+    --doke-ad-padding-mobile: 10px 12px 12px;
+    --doke-ad-body-display: flex;
+    --doke-ad-body-grid-template-rows: none;
+    --doke-ad-body-align-content: stretch;
+    --doke-ad-body-height: auto;
+    --doke-ad-body-min-height: 212px;
+    --doke-ad-body-max-height: none;
+    --doke-ad-body-overflow: visible;
+    --doke-ad-body-padding-bottom: 12px;
+    height: auto;
+    min-height: 336px;
+    max-height: none;
+  }
+
+  .doke-ad-card > .doke-ad-card__media {
+    flex: 0 0 124px;
+    height: 124px;
+    min-height: 124px;
+    max-height: 124px;
+  }
+
+  .doke-ad-card > .doke-ad-card__body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 212px;
+    height: auto;
+    max-height: none;
+    padding: 10px 12px 12px;
+    overflow: visible;
+  }
+
+  .doke-ad-card .doke-ad-card__category {
+    display: block;
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.66rem;
+    line-height: 1.08;
+    letter-spacing: 0.13em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .doke-ad-card .doke-ad-card__title {
+    display: block;
+    margin: 0;
+    overflow: hidden;
+    font-size: 1rem;
+    line-height: 1.08;
+    letter-spacing: -0.04em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .doke-ad-card .doke-ad-card__rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 15px;
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.76rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .doke-ad-card .doke-ad-card__tags {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 5px;
+    min-height: 22px;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  .doke-ad-card .doke-ad-card__tags span {
+    min-height: 22px;
+    padding-inline: 8px;
+    font-size: 0.68rem;
+    line-height: 1;
+  }
+
+  .doke-ad-card .doke-ad-card__location {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: center;
+    gap: 6px;
+    min-height: 26px;
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.66rem;
+    line-height: 1.08;
+  }
+
+  .doke-ad-card .doke-ad-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 34px;
+    margin-top: auto;
+    padding-top: 7px;
+  }
+
+  .doke-ad-card .doke-ad-card__cta {
+    min-height: 32px;
+    padding-inline: 12px;
+    font-size: 0.72rem;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 900px) {
+  .doke-ad-card .doke-ad-card__tags {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 5px;
+    min-height: 20px;
+    margin: 0;
+    overflow: hidden;
   }
 }

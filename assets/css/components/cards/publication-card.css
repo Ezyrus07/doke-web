@@ -263,6 +263,7 @@
 }
 
 
+
 @media (max-width: 760px) {
   .publication-card {
     min-height: 310px;
@@ -276,6 +277,73 @@
     padding: 12px 13px 13px;
   }
 }
+
+/* Canonical tablet density for publication cards.
+   Keeps the shared card component compact inside horizontal tablet rails without
+   letting page CSS redefine publication anatomy. */
+@media (min-width: 561px) and (max-width: 1024px) {
+  .publication-card {
+    min-height: 0;
+  }
+
+  .publication-card__media {
+    min-height: clamp(128px, 21vw, 154px);
+    margin: 8px 8px 0;
+    border-radius: calc(var(--publication-radius) - 8px);
+  }
+
+  .publication-card__type {
+    top: 8px;
+    left: 8px;
+    min-height: 24px;
+    padding-inline: 9px;
+    font-size: 0.58rem;
+  }
+
+  .publication-card__play {
+    width: 42px;
+    height: 42px;
+  }
+
+  .publication-card__play svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .publication-card__content {
+    gap: 5px;
+    padding: 10px 12px 12px;
+  }
+
+  .publication-card__title {
+    min-height: 0;
+    font-size: 0.88rem;
+    line-height: 1.12;
+  }
+
+  .publication-card__author {
+    font-size: 0.72rem;
+    line-height: 1.1;
+  }
+
+  .publication-card__actions {
+    gap: 8px;
+    margin-top: 0;
+    padding-top: 7px;
+  }
+
+  .publication-card__action {
+    gap: 4px;
+    font-size: 0.68rem;
+  }
+
+  .publication-card__action svg {
+    width: 11px;
+    height: 11px;
+    flex-basis: 11px;
+  }
+}
+
 
 /* Publication card interaction parity.
    Ownership: reusable publication-card hover/focus contract.

@@ -2,23 +2,23 @@
    Stage 50 consolidates direct index.html page dependencies here while preserving
    the previous cascade order: legacy home runtime first, then the shell/card/tablet
    contracts that index.html previously linked after home.css. */
-@import url("./home-runtime.css?v=20260608-component-consistency-v1");
+@import url("./home-runtime.css?v=20260608-card-info-parity-v2");
 @import url("../components/shell/app-header.css?v=20260517-header-gap-v3");
 @import url("../components/layout/responsive-page-contract.css?v=20260515-mobile-axis-v1");
 @import url("../components/shell/doke-shell-contract.css?v=20260608-index-header-rail-v3");
 @import url("./stable-desktop-rail.css?v=20260605-tablet-landscape-arrow-contract-v1");
 @import url("./home/mobile-feed-rails.css?v=20260519-mobile-feed-rail-fix-v1");
-@import url("./home/tablet-responsive-layout.css?v=20260608-component-consistency-v1");
+@import url("./home/tablet-responsive-layout.css?v=20260608-card-info-parity-v2");
 @import url("../components/shell/app-header-canonical-contract.css?v=20260608-header-rail-contract-v2");
 @import url("../components/shell/shared-page-width-contract.css?v=20260608-header-rail-contract-v2");
-@import url("../patterns/marketplace-responsive-stack.css?v=20260608-component-consistency-v1");
+@import url("../patterns/marketplace-responsive-stack.css?v=20260608-card-info-parity-v2");
 @import url("../components/cards/publication-card.css?v=20260607-index-profile-card-surface-v7");
 @import url("../components/shell/desktop-page-rail-authority.css?v=20260608-header-rail-contract-v2");
 @import url("../components/cards/marketplace-card-contract.css?v=20260607-pro-card-compact-v1");
 @import url("../components/cards/professional-showcase-card.css?v=20260607-doke-professional-showcase-v11");
 @import url("./home/tablet-shell-rail.css?v=20260605-tablet-category-section-rhythm-v4");
 @import url("../components/shell/ipad-safari-scroll.css?v=20260601-shell-scroll-v1");
-@import url("./home/tablet-safari-layout.css?v=20260608-component-consistency-v1");
+@import url("./home/tablet-safari-layout.css?v=20260608-card-info-parity-v2");
 @import url("./home/mobile-index-feed-contract.css?v=20260602-home-mounted-rail-contract-v1");
 @import url("./home/publications-no-arrows.css?v=20260604-publication-rail-contract-v1");
 
@@ -46,7 +46,8 @@
     section.featured-services,
     section.short-videos,
     section.home-publications,
-    section.more-services
+    section.more-services,
+    section.professional-showcase
   ),
   html body.home-index-shell :is(
     section[class*="home-cat"],
@@ -273,7 +274,7 @@ body.home-index-shell :is(
   body.home-index-shell #home-publications-track {
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: minmax(280px, 42%);
+    grid-auto-columns: clamp(248px, calc((100% - var(--doke-home-card-gap) - 48px) / 2), 352px);
     grid-template-columns: none;
     justify-content: start;
     overflow-x: auto;
@@ -312,7 +313,7 @@ body.home-index-shell :is(
   body.home-index-shell #home-publications-track {
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: minmax(248px, 78%);
+    grid-auto-columns: clamp(248px, calc((100% - var(--doke-home-card-gap) - 40px) / 2), 328px);
     grid-template-columns: none;
     justify-content: start;
     overflow-x: auto;
@@ -544,10 +545,10 @@ body.home-index-shell .home-catégories__track > .home-catégory {
    cards with a visible next-card preview instead of oversized cards or four compressed cards. */
 body.home-index-shell {
   --doke-home-publication-card-width: clamp(360px, 24vw, 392px);
-  --doke-home-publication-card-width-tablet: clamp(300px, 44%, 352px);
+  --doke-home-publication-card-width-tablet: clamp(248px, calc((100% - var(--doke-home-card-gap, 16px) - var(--doke-home-publication-card-preview-tablet, 44px)) / 2), 352px);
   --doke-home-publication-card-width-mobile: minmax(278px, 82%);
   --doke-home-publication-card-preview: clamp(52px, 5vw, 72px);
-  --doke-home-publication-card-preview-tablet: clamp(28px, 4vw, 40px);
+  --doke-home-publication-card-preview-tablet: clamp(32px, 7vw, 56px);
 }
 
 @media (min-width: 1025px) {
@@ -690,14 +691,7 @@ body.home-index-shell {
     display: grid !important;
     grid-auto-flow: column !important;
     grid-template-columns: none !important;
-    grid-auto-columns: min(
-      var(--doke-home-publication-card-width-tablet, 352px),
-      calc(
-        (
-          100% - (var(--doke-home-card-gap, 16px) * 2) - var(--doke-home-publication-card-preview-tablet)
-        ) / 2
-      )
-    ) !important;
+    grid-auto-columns: var(--doke-home-publication-card-width-tablet) !important;
     align-items: stretch !important;
     justify-content: start !important;
     gap: var(--doke-home-card-gap, 16px) !important;
