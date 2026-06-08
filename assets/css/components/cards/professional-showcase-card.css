@@ -9,18 +9,12 @@
 }
 
 .professional-showcase__header {
-  margin-bottom: clamp(12px, 1.6vw, 18px);
+  margin-bottom: var(--doke-section-header-margin-after, clamp(0.75rem, 1.6vw, 1.125rem));
 }
 
-.professional-showcase .home-section-title {
-  max-width: none;
-  color: #6e7f95;
-  font-size: 0.98rem;
-  font-weight: 800;
-  line-height: 1.18;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
+/* Section heading typography is intentionally not defined here.
+   Authority: components/sections/section-header-canonical-contract.css + index compact heading contract. */
+
 
 .professional-showcase__header {
   min-width: 0;
@@ -65,9 +59,9 @@ body.home-index-shell .professional-showcase > .professional-showcase__rail > .p
   inline-size: max-content;
   min-inline-size: max-content;
   max-inline-size: none;
-  padding: 0 clamp(16px, 2vw, 28px) 6px 0;
+  padding: 0 clamp(16px, 2vw, 28px) 14px 0;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: visible;
   scroll-snap-type: x proximity;
   overscroll-behavior-inline: contain;
   -webkit-overflow-scrolling: touch;
@@ -82,7 +76,7 @@ body.home-index-shell .professional-showcase > .professional-showcase__rail > .p
   text-align: center;
   gap: 10px;
   inline-size: 100%;
-  aspect-ratio: 1 / 1;
+  min-block-size: 276px;
   padding: 22px 18px 18px;
   overflow: hidden;
   border: 1px solid rgba(24, 75, 118, 0.11);
@@ -248,6 +242,49 @@ body.home-index-shell .professional-showcase > .professional-showcase__rail > .p
 
 .professional-showcase-card__cta span {
   display: none;
+}
+
+@media (min-width: 561px) and (max-width: 1024px) {
+  .professional-showcase-card {
+    min-block-size: 252px;
+    gap: 8px;
+    padding: 16px 16px 14px;
+  }
+
+  .professional-showcase-card__avatar-wrap {
+    width: 84px;
+    height: 84px;
+    margin-top: 0;
+  }
+
+  .professional-showcase-card__identity {
+    gap: 4px;
+  }
+
+  .professional-showcase-card__name {
+    font-size: 1.08rem;
+    line-height: 1.04;
+  }
+
+  .professional-showcase-card__summary {
+    font-size: 0.76rem;
+    line-height: 1.14;
+  }
+
+  .professional-showcase-card__role {
+    font-size: 0.84rem;
+    line-height: 1.1;
+  }
+
+  .professional-showcase-card__actions {
+    padding-top: 2px;
+  }
+
+  .professional-showcase-card__cta {
+    min-height: 38px;
+    border-radius: 14px;
+    font-size: 0.86rem;
+  }
 }
 
 @media (min-width: 1181px) {
