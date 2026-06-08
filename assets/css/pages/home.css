@@ -14,7 +14,8 @@
 @import url("../patterns/marketplace-responsive-stack.css?v=20260601-css-load-phase4-v1");
 @import url("../components/cards/publication-card.css?v=20260607-index-profile-card-surface-v7");
 @import url("../components/shell/desktop-page-rail-authority.css?v=20260605-tablet-sidebar-canonical-v11");
-@import url("../components/cards/marketplace-card-contract.css?v=20260601-pro-card-premium-v1");
+@import url("../components/cards/marketplace-card-contract.css?v=20260607-pro-card-compact-v1");
+@import url("../components/cards/professional-showcase-card.css?v=20260607-doke-professional-showcase-v11");
 @import url("./home/tablet-shell-rail.css?v=20260605-tablet-category-section-rhythm-v4");
 @import url("../components/shell/ipad-safari-scroll.css?v=20260601-shell-scroll-v1");
 @import url("./home/tablet-safari-layout.css?v=20260605-tablet-landscape-rhythm-v2");
@@ -342,6 +343,7 @@ body.home-index-shell :is(
   }
 }
 
+
 body.home-index-shell :is(
   #featured-services-track,
   #short-videos-track,
@@ -357,7 +359,6 @@ body.home-index-shell {
   --doke-home-rail-peek: clamp(18px, 3vw, 42px);
   --doke-home-category-width: clamp(92px, 8vw, 116px);
   --doke-home-category-gap: clamp(12px, 1.4vw, 18px);
-  --doke-home-pro-card-width: clamp(276px, 24vw, 336px);
 }
 
 body.home-index-shell :is(
@@ -379,7 +380,6 @@ body.home-index-shell :is(
   #featured-services-track,
   #short-videos-track,
   #home-publications-track,
-  #featured-pros-track,
   .more-services__tabs-track
 ) {
   min-width: 0;
@@ -398,7 +398,6 @@ body.home-index-shell :is(
   #featured-services-track,
   #short-videos-track,
   #home-publications-track,
-  #featured-pros-track,
   .more-services__tabs-track
 )::-webkit-scrollbar {
   display: none;
@@ -421,29 +420,7 @@ body.home-index-shell .home-catégories__track > .home-catégory {
   scroll-snap-align: start;
 }
 
-@media (min-width: 1025px) {
-  body.home-index-shell #featured-pros-track {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: var(--doke-home-pro-card-width);
-    grid-template-columns: none;
-    align-items: stretch;
-    justify-content: start;
-    gap: var(--doke-home-card-gap);
-  }
-}
 
-@media (min-width: 761px) and (max-width: 1024px) {
-  body.home-index-shell #featured-pros-track {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(270px, 42%);
-    grid-template-columns: none;
-    align-items: stretch;
-    justify-content: start;
-    gap: var(--doke-home-card-gap);
-  }
-}
 
 @media (max-width: 760px) {
   body.home-index-shell {
@@ -460,15 +437,6 @@ body.home-index-shell .home-catégories__track > .home-catégory {
     padding-bottom: 10px;
   }
 
-  body.home-index-shell #featured-pros-track {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(260px, 82%);
-    grid-template-columns: none;
-    align-items: stretch;
-    justify-content: start;
-    gap: var(--doke-home-card-gap);
-  }
 
   body.home-index-shell .more-services__tabs-track {
     display: flex;
@@ -758,5 +726,46 @@ body.home-index-shell {
     overflow-y: hidden !important;
     scroll-snap-type: x proximity !important;
     scrollbar-width: none !important;
+  }
+}
+
+
+/* 2026-06-07 — Home action buttons.
+   Authority: home section composition only. Professional highlight cards were
+   intentionally removed and will return under a new card contract. */
+body.home-index-shell :is(.more-services__load-button, .more-services__view-all) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 20px;
+  border: 1px solid rgba(42, 95, 144, 0.14);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(235, 245, 252, 0.92));
+  color: #2a5f90;
+  box-shadow: 0 10px 24px rgba(27, 62, 99, 0.07);
+  font-weight: 850;
+  line-height: 1;
+  text-decoration: none;
+}
+
+body.home-index-shell .more-services__load-button {
+  min-width: 156px;
+}
+
+body.home-index-shell .more-services__load {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+
+
+@media (max-width: 560px) {
+  body.home-index-shell :is(.more-services__load-button, .more-services__view-all) {
+    min-height: 38px;
+    padding-inline: 16px;
+    font-size: 0.82rem;
   }
 }

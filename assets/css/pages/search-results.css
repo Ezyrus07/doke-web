@@ -12,6 +12,7 @@
 @import url("../components/shell/tablet-internal-rail-contract.css?v=20260526-tablet-internal-rail-contract-v1");
 @import url("./search-results-runtime.css?v=20260604-runtime-v1");
 @import url("../components/cards/marketplace-card-contract.css?v=20260531-card-contract-v4");
+@import url("../components/cards/professional-showcase-card.css?v=20260607-doke-professional-showcase-v10");
 @import url("../components/shell/ipad-safari-scroll.css?v=20260601-shell-scroll-v1");
 
 /* Stage 06B — search results card composition by viewport.
@@ -47,4 +48,48 @@ body.results-page .results-grid {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--doke-results-card-gap-mobile, 14px);
   }
+}
+
+
+/* Users results reuse the exact professional showcase anatomy from index.
+   Page ownership here is limited to grid placement; card internals stay in components/cards. */
+body[data-page="resultados"] .results-users-grid,
+body.results-page .results-users-grid {
+  --professional-showcase-card-size: clamp(250px, 21vw, 276px);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--professional-showcase-card-size)), var(--professional-showcase-card-size)));
+  justify-content: start;
+  align-items: start;
+  gap: var(--doke-results-user-gap, 18px);
+}
+
+body[data-page="resultados"] .results-users-grid .professional-showcase-card,
+body.results-page .results-users-grid .professional-showcase-card,
+body.search-results-body .results-users-grid .professional-showcase-card,
+.results-users-grid > .results-user-card.professional-showcase-card {
+  inline-size: 100%;
+  max-inline-size: var(--professional-showcase-card-size);
+  aspect-ratio: auto;
+  min-block-size: 330px;
+  block-size: auto;
+  overflow: visible;
+}
+
+body[data-page="resultados"] .results-users-grid .professional-showcase-card__actions,
+body.results-page .results-users-grid .professional-showcase-card__actions,
+body.search-results-body .results-users-grid .professional-showcase-card__actions,
+.results-users-grid > .results-user-card .professional-showcase-card__actions {
+  display: block;
+  inline-size: 100%;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+body[data-page="resultados"] .results-users-grid .professional-showcase-card__cta,
+body.results-page .results-users-grid .professional-showcase-card__cta,
+body.search-results-body .results-users-grid .professional-showcase-card__cta,
+.results-users-grid > .results-user-card .professional-showcase-card__cta {
+  display: inline-flex;
+  inline-size: 100%;
+  min-block-size: 46px;
 }

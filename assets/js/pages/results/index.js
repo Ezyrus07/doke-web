@@ -316,23 +316,34 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
 
   const createUserCard = (item) => {
     const article = document.createElement('article');
-    article.className = 'pro-card pro-card--compact';
+    const rating = (Number(item.rating) || 0).toFixed(1).replace('.', ',');
+    const reviews = item.jobs || item.reviews || 0;
+    const normalizedText = normalize(`${item.id || ''} ${item.name || ''} ${item.role || ''}`);
+    const avatarMap = {
+      carlos: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=240',
+      marcos: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=240',
+      elaine: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=240',
+      renata: 'https://images.pexels.com/photos/5212339/pexels-photo-5212339.jpeg?auto=compress&cs=tinysrgb&w=240',
+      rafael: 'https://images.pexels.com/photos/8961438/pexels-photo-8961438.jpeg?auto=compress&cs=tinysrgb&w=240'
+    };
+    let avatarSrc = avatarMap.carlos;
+    if (normalizedText.includes('marcos') || normalizedText.includes('eletricista')) avatarSrc = avatarMap.marcos;
+    if (normalizedText.includes('elaine') || normalizedText.includes('diarista')) avatarSrc = avatarMap.elaine;
+    if (normalizedText.includes('renata') || normalizedText.includes('professora')) avatarSrc = avatarMap.renata;
+    if (normalizedText.includes('rafael') || normalizedText.includes('encanador')) avatarSrc = avatarMap.rafael;
+
+    article.className = 'professional-showcase-card professional-showcase-card--results results-user-card';
     article.innerHTML = `
-      <div class="pro-card__header">
-        <div class="pro-card__avatar ${item.avatarClass || ''}" aria-hidden="true"></div>
-        <div class="pro-card__identity">
-          <strong>${item.name || ''}</strong>
-          <span>${item.handle || ''}</span>
-        </div>
-        <span class="pro-card__score">★ ${(Number(item.rating) || 0).toFixed(1).replace('.', ',')}</span>
+      <div class="professional-showcase-card__avatar-wrap">
+        <img class="professional-showcase-card__avatar" src="${avatarSrc}" alt="${item.name || 'Profissional'}">
       </div>
-      <div class="pro-card__body">
-        <p>${item.role || ''}</p>
-        <span>${item.location || ''}</span>
-        <small>${item.jobs || 0} serviços</small>
+      <div class="professional-showcase-card__identity">
+        <h3 class="professional-showcase-card__name">${item.name || ''}</h3>
+        <p class="professional-showcase-card__summary"><strong>(${rating})</strong> · ${reviews} avaliações</p>
+        <p class="professional-showcase-card__role">${item.role || item.profession || 'Profissional Doke'}</p>
       </div>
-      <div class="pro-card__footer">
-        <a class="pro-card__cta" href="perfil.html">Ver perfil</a>
+      <div class="professional-showcase-card__actions">
+        <a class="professional-showcase-card__cta" href="perfil.html">Ver perfil</a>
       </div>
     `;
     return article;

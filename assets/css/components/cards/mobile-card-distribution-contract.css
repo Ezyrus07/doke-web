@@ -11,6 +11,7 @@
 
   body.home-index-shell {
     --doke-mobile-card-rail-gap: 14px;
+    --doke-mobile-media-card-width: min(70vw, 230px);
     --doke-mobile-card-width: min(82vw, 320px);
     --doke-mobile-page-bottom-safe: calc(96px + env(safe-area-inset-bottom, 0px));
   }
@@ -29,7 +30,27 @@
 
   /* Featured ads and publications are horizontal rails on phones. Never allow desktop/tablet columns here. */
   body.home-index-shell #featured-services-track.service-grid,
-  body.home-index-shell #featured-services-track.doke-grid,
+  body.home-index-shell #featured-services-track.doke-grid {
+    display: grid !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: var(--doke-mobile-media-card-width) !important;
+    align-items: stretch !important;
+    gap: var(--doke-mobile-card-rail-gap) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 2px 8px 0 !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    scroll-snap-type: x proximity !important;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch !important;
+    box-sizing: border-box;
+  }
+
   body.home-index-shell #home-publications-track.publication-grid,
   body.home-index-shell #home-publications-track.doke-grid {
     display: grid !important;
@@ -57,7 +78,17 @@
     display: none !important;
   }
 
-  body.home-index-shell #featured-services-track > article.doke-ad-card,
+  body.home-index-shell #featured-services-track > article.doke-ad-card {
+    width: var(--doke-mobile-media-card-width) !important;
+    min-width: var(--doke-mobile-media-card-width) !important;
+    max-width: var(--doke-mobile-media-card-width) !important;
+    flex: 0 0 var(--doke-mobile-media-card-width) !important;
+    justify-self: stretch !important;
+    scroll-snap-align: start !important;
+    margin: 0 !important;
+    box-sizing: border-box;
+  }
+
   body.home-index-shell #home-publications-track > article.publication-card {
     width: var(--doke-mobile-card-width) !important;
     min-width: var(--doke-mobile-card-width) !important;
@@ -280,7 +311,26 @@
   /* High-specificity mobile rail lock, placed last to beat legacy home files. */
   html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid.doke-grid,
   html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid.doke-grid,
-  html.home-index-root body.home-index-shell #featured-services-track.service-grid.doke-grid,
+  html.home-index-root body.home-index-shell #featured-services-track.service-grid.doke-grid {
+    display: grid !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: var(--doke-mobile-media-card-width) !important;
+    align-items: stretch !important;
+    gap: var(--doke-mobile-card-rail-gap) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 0 2px 8px 0 !important;
+    margin: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    scroll-snap-type: x proximity !important;
+    scrollbar-width: none;
+    box-sizing: border-box;
+  }
+
   html.home-index-root body.home-index-shell section.home-publications > .content-rail > #home-publications-track.publication-grid.doke-grid,
   html.home-index-root body.home-index-shell section.home-publications #home-publications-track.publication-grid.doke-grid,
   html.home-index-root body.home-index-shell #home-publications-track.publication-grid.doke-grid {
@@ -304,7 +354,18 @@
   }
 
   html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid.doke-grid > article.doke-ad-card.doke-ad-card,
-  html.home-index-root body.home-index-shell #featured-services-track.service-grid.doke-grid > article.doke-ad-card.doke-ad-card,
+  html.home-index-root body.home-index-shell #featured-services-track.service-grid.doke-grid > article.doke-ad-card.doke-ad-card {
+    width: var(--doke-mobile-media-card-width) !important;
+    min-width: var(--doke-mobile-media-card-width) !important;
+    max-width: var(--doke-mobile-media-card-width) !important;
+    flex: 0 0 var(--doke-mobile-media-card-width) !important;
+    justify-self: stretch !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+    margin: 0 !important;
+    box-sizing: border-box;
+  }
+
   html.home-index-root body.home-index-shell section.home-publications #home-publications-track.publication-grid.doke-grid > article.publication-card.publication-card,
   html.home-index-root body.home-index-shell #home-publications-track.publication-grid.doke-grid > article.publication-card.publication-card {
     width: var(--doke-mobile-card-width) !important;
