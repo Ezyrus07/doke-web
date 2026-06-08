@@ -93,3 +93,16 @@ body.search-results-body .results-users-grid .professional-showcase-card__cta,
   inline-size: 100%;
   min-block-size: 46px;
 }
+
+/* Zoom-out/ultrawide results density contract.
+   Responsibility: page grid composition only. Card anatomy remains in shared card components. */
+@media (min-width: 1180px) {
+  body[data-page="resultados"] .results-layout[data-results-mode="services"] .results-grid,
+  body.results-page .results-layout[data-results-mode="services"] .results-grid,
+  body.search-results-body .results-layout[data-results-mode="services"] .results-grid {
+    --doke-results-card-min: 260px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--doke-results-card-min)), 1fr));
+    align-items: start;
+  }
+}

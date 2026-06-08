@@ -217,3 +217,22 @@ Para regiões que não são listas, use:
 - Não tratar HTML/CSS provisório como contrato visual final.
 - Manter a semântica acessível: `aria-busy`, `aria-live` e `role="alert"` quando fizer sentido.
 - Controllers devem acionar estado; renderers devem renderizar conteúdo; services/repositories devem retornar dados/erro.
+
+## First Paint & Loading Contract
+
+Dynamic lists and future backend-rendered cards must preserve the final component shell during loading. A loading state may replace text with placeholders or add a non-geometric shimmer overlay, but it must not replace a reusable card with a separate `.skeleton-card` layout when the final UI is a `doke-ad-card`, `publication-card`, `service-card`, `video-card`, `worker-card` or professional card.
+
+Required rules:
+
+- Component anatomy stays in `assets/css/components/**`.
+- Page and pattern CSS may control rails, gaps, scroll behavior and section spacing only.
+- Loading, ready, hydrated and skeleton states must not change card width, height, padding, display, grid/flex structure, aspect ratio or overflow.
+- If a list needs to show loading while preserving existing cards, use `data-loading-contract="preserve-layout"` with `renderLoadingState(..., { preserveLayout: true })`.
+- If a card needs a skeleton, keep the final card class and add `is-skeleton` or `data-card-state="loading"`; do not render a different card shell.
+- Images/media inside cards must reserve their final slot through component media dimensions before the image finishes loading.
+
+Validation:
+
+```bash
+npm run test:first-paint-loading-contract
+```
