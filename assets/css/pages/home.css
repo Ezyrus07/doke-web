@@ -11,14 +11,14 @@
 @import url("./home/tablet-responsive-layout.css?v=20260608-card-info-parity-v2");
 @import url("../components/shell/app-header-canonical-contract.css?v=20260608-header-rail-contract-v2");
 @import url("../components/shell/shared-page-width-contract.css?v=20260608-header-rail-contract-v2");
-@import url("../patterns/marketplace-responsive-stack.css?v=20260608-section-heading-contract-v1");
+@import url("../patterns/marketplace-responsive-stack.css?v=20260609-card-hydration-stability-v2");
 @import url("../components/shell/desktop-page-rail-authority.css?v=20260608-header-rail-contract-v2");
-@import url("../components/cards/marketplace-card-contract.css?v=20260607-pro-card-compact-v1");
-@import url("../components/cards/professional-showcase-card.css?v=20260608-professional-heading-authority-v2");
+@import url("../components/cards/marketplace-card-contract.css?v=20260609-index-mobile-v5");
+@import url("../components/cards/professional-showcase-card.css?v=20260609-index-mobile-v5");
 @import url("./home/tablet-shell-rail.css?v=20260605-tablet-category-section-rhythm-v4");
 @import url("../components/shell/ipad-safari-scroll.css?v=20260601-shell-scroll-v1");
 @import url("./home/tablet-safari-layout.css?v=20260608-card-info-parity-v2");
-@import url("./home/mobile-index-feed-contract.css?v=20260602-home-mounted-rail-contract-v1");
+@import url("./home/mobile-index-feed-contract.css?v=20260609-index-mobile-v5");
 @import url("./home/publications-no-arrows.css?v=20260604-publication-rail-contract-v1");
 @import url("../components/cards/publication-card.css?v=20260608-publication-final-authority-v1");
 
@@ -323,16 +323,33 @@ body.home-index-shell :is(
   }
 
   body.home-index-shell #short-videos-track {
-    display: flex;
-    flex-flow: row nowrap;
-    grid-auto-flow: unset;
-    grid-auto-columns: unset;
-    grid-template-columns: none;
-    justify-content: start;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
+    display: grid;
+    grid-auto-flow: row;
+    grid-auto-columns: initial;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    justify-content: stretch;
+    gap: 12px;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    overflow: visible;
+    scroll-snap-type: none;
+    scrollbar-width: auto;
+  }
+
+  body.home-index-shell #short-videos-track > :nth-child(n + 5) {
+    display: none;
+  }
+
+  body.home-index-shell #short-videos-track > .doke-worker-card {
+    inline-size: 100%;
+    width: 100%;
+    min-inline-size: 0;
+    min-width: 0;
+    max-inline-size: 100%;
+    max-width: 100%;
+    aspect-ratio: 9 / 16;
+    scroll-snap-align: unset;
   }
 
   body.home-index-shell [data-more-services-grid] {
@@ -432,6 +449,72 @@ body.home-index-shell .home-catégories__track > .home-catégory {
 
   body.home-index-shell .home-catégories__rail {
     overflow-x: hidden;
+  }
+
+  body.home-index-shell :is(
+    .featured-services,
+    .short-videos,
+    .home-publications,
+    .more-services,
+    .professional-showcase
+  ) > :is(.section-heading, .home-section-header, .home-publications__header, .professional-showcase__header) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    min-inline-size: 0;
+    box-sizing: border-box;
+  }
+
+  body.home-index-shell :is(
+    .featured-services,
+    .short-videos,
+    .home-publications,
+    .more-services,
+    .professional-showcase
+  ) > :is(.section-heading, .home-section-header, .home-publications__header, .professional-showcase__header) > :first-child {
+    min-inline-size: 0;
+    flex: 1 1 auto;
+  }
+
+  body.home-index-shell :is(
+    .featured-services,
+    .short-videos,
+    .home-publications,
+    .more-services,
+    .professional-showcase
+  ) :is(.section-heading__link, .professional-showcase__view-all) {
+    flex: 0 1 auto;
+    max-inline-size: min(42vw, 156px);
+    min-inline-size: 0;
+    padding-inline: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.home-index-shell .home-media-rail--workers {
+    overflow: visible;
+  }
+
+  body.home-index-shell .home-media-rail--workers > #short-videos-track {
+    display: grid;
+    grid-auto-flow: row;
+    grid-auto-columns: initial;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    min-inline-size: 0;
+    padding: 0 0 4px;
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+
+  body.home-index-shell .home-media-rail--workers > #short-videos-track > :nth-child(n + 5) {
+    display: none;
   }
 
   body.home-index-shell .home-catégories__track {
@@ -766,5 +849,330 @@ body.home-index-shell .more-services__load {
     min-height: 38px;
     padding-inline: 16px;
     font-size: 0.82rem;
+  }
+}
+
+/* 2026-06-09 — Index mobile runtime contract.
+   Root cause: after first paint mobile-app-shell.js adds .doke-mobile-shell-mounted
+   and the legacy rail/card contracts can regain authority. This block is the final
+   home-page composition contract for the post-load mobile state. Card anatomy remains
+   owned by components/cards/ad-card.css and the existing marketplace mobile anatomy
+   variables below; this block controls only section header and rail layout. */
+@media (max-width: 560px) {
+  html.home-index-root body.home-index-shell,
+  html.home-index-root.doke-js-mobile body.home-index-shell,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted {
+    --doke-index-mobile-section-action-max: 134px;
+    --doke-index-mobile-workers-gap: 12px;
+  }
+
+  html.home-index-root body.home-index-shell :is(
+    section.featured-services,
+    section.short-videos,
+    section.home-publications,
+    section.more-services,
+    section.professional-showcase
+  ) > :is(.section-heading, .home-section-header, .home-publications__header, .professional-showcase__header),
+  html.home-index-root.doke-js-mobile body.home-index-shell :is(
+    section.featured-services,
+    section.short-videos,
+    section.home-publications,
+    section.more-services,
+    section.professional-showcase
+  ) > :is(.section-heading, .home-section-header, .home-publications__header, .professional-showcase__header),
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(
+    section.featured-services,
+    section.short-videos,
+    section.home-publications,
+    section.more-services,
+    section.professional-showcase
+  ) > :is(.section-heading, .home-section-header, .home-publications__header, .professional-showcase__header) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    min-inline-size: 0;
+    padding-inline: 0;
+    overflow: visible;
+    box-sizing: border-box;
+  }
+
+  html.home-index-root body.home-index-shell :is(.section-heading__title, .home-section-title),
+  html.home-index-root.doke-js-mobile body.home-index-shell :is(.section-heading__title, .home-section-title),
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(.section-heading__title, .home-section-title) {
+    min-inline-size: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  html.home-index-root body.home-index-shell :is(.section-heading__link, .professional-showcase__view-all),
+  html.home-index-root.doke-js-mobile body.home-index-shell :is(.section-heading__link, .professional-showcase__view-all),
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(.section-heading__link, .professional-showcase__view-all) {
+    flex: 0 1 var(--doke-index-mobile-section-action-max);
+    max-inline-size: var(--doke-index-mobile-section-action-max);
+    min-inline-size: 0;
+    padding-inline: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
+  html.home-index-root.doke-js-mobile body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.short-videos > .content-rail.home-media-rail--workers {
+    overflow: visible;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track,
+  html.home-index-root.doke-js-mobile body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, auto);
+    grid-auto-flow: row;
+    grid-auto-columns: initial;
+    align-items: stretch;
+    justify-content: stretch;
+    gap: var(--doke-index-mobile-workers-gap);
+    inline-size: 100%;
+    max-inline-size: 100%;
+    min-inline-size: 0;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0 0 4px;
+    margin: 0;
+    overflow: visible;
+    scroll-snap-type: none;
+    box-sizing: border-box;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5),
+  html.home-index-root.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5),
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5) {
+    display: none;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
+  html.home-index-root.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card {
+    inline-size: 100%;
+    width: 100%;
+    min-inline-size: 0;
+    min-width: 0;
+    max-inline-size: 100%;
+    max-width: 100%;
+    flex: initial;
+    aspect-ratio: 9 / 16;
+    scroll-snap-align: unset;
+  }
+
+  html.home-index-root body.home-index-shell section.professional-showcase > .professional-showcase__rail,
+  html.home-index-root.doke-js-mobile body.home-index-shell section.professional-showcase > .professional-showcase__rail,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.professional-showcase > .professional-showcase__rail {
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  html.home-index-root body.home-index-shell section.professional-showcase > .professional-showcase__rail > #professional-showcase-track.professional-showcase__track,
+  html.home-index-root.doke-js-mobile body.home-index-shell section.professional-showcase > .professional-showcase__rail > #professional-showcase-track.professional-showcase__track,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.professional-showcase > .professional-showcase__rail > #professional-showcase-track.professional-showcase__track {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 14px;
+    inline-size: max-content;
+    min-inline-size: max-content;
+    max-inline-size: none;
+    overflow: visible;
+    scroll-snap-type: x proximity;
+  }
+
+  html.home-index-root body.home-index-shell section.professional-showcase #professional-showcase-track > .professional-showcase-card,
+  html.home-index-root.doke-js-mobile body.home-index-shell section.professional-showcase #professional-showcase-track > .professional-showcase-card,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.professional-showcase #professional-showcase-track > .professional-showcase-card {
+    flex: 0 0 min(72vw, 236px);
+    inline-size: min(72vw, 236px);
+    scroll-snap-align: start;
+  }
+}
+
+
+
+/* 2026-06-09 - Runtime-safe index mobile contract.
+   Cause: app.js may resync html classes after load, so this contract must not depend on .home-index-root.
+   Scope: home/index mobile sections only. */
+@media (max-width: 760px) {
+  body.home-index-shell,
+  html.doke-js-mobile body.home-index-shell,
+  body.home-index-shell.doke-mobile-shell-mounted {
+    --doke-index-mobile-section-action-max: min(42vw, 150px);
+    --doke-mobile-card-width: min(76vw, 300px);
+    --doke-ad-media-height-mobile: 116px;
+    --doke-ad-padding-mobile: 10px 12px 12px;
+    --doke-ad-body-padding-bottom: 12px;
+    --doke-ad-footer-min-height: 32px;
+    --doke-ad-footer-margin-top: 8px;
+    --doke-ad-cta-min-height: 32px;
+    --doke-ad-cta-height: 32px;
+    --doke-ad-cta-padding-inline: 12px;
+    --doke-worker-mobile-aspect: 9 / 14.5;
+    --doke-mobile-video-height: clamp(214px, 58vw, 248px);
+  }
+
+  body.home-index-shell :is(
+    section.featured-services,
+    section.short-videos,
+    section.home-publications,
+    section.more-services,
+    section.professional-showcase
+  ) > :is(.section-heading, .home-section-header, .home-media-section__header),
+  body.home-index-shell.doke-mobile-shell-mounted :is(
+    section.featured-services,
+    section.short-videos,
+    section.home-publications,
+    section.more-services,
+    section.professional-showcase
+  ) > :is(.section-heading, .home-section-header, .home-media-section__header) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: visible;
+  }
+
+  body.home-index-shell :is(
+    section.featured-services,
+    section.short-videos,
+    section.home-publications,
+    section.more-services,
+    section.professional-showcase
+  ) > :is(.section-heading, .home-section-header, .home-media-section__header) :is(.section-heading__link, .professional-showcase__view-all, a),
+  body.home-index-shell.doke-mobile-shell-mounted :is(
+    section.featured-services,
+    section.short-videos,
+    section.home-publications,
+    section.more-services,
+    section.professional-showcase
+  ) > :is(.section-heading, .home-section-header, .home-media-section__header) :is(.section-heading__link, .professional-showcase__view-all, a) {
+    flex: 0 1 var(--doke-index-mobile-section-action-max);
+    max-width: var(--doke-index-mobile-section-action-max);
+    min-width: 0;
+    padding-inline: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card .doke-ad-card__category {
+    margin-bottom: 4px;
+    font-size: 0.64rem;
+    line-height: 1;
+  }
+
+  body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card .doke-ad-card__title {
+    margin-bottom: 6px;
+    font-size: 1rem;
+    line-height: 1.04;
+  }
+
+  body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card .doke-ad-card__rating {
+    margin-bottom: 7px;
+    font-size: 0.75rem;
+  }
+
+  body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card .doke-ad-card__tags {
+    margin-bottom: 7px;
+    min-height: 20px;
+  }
+
+  body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card .doke-ad-card__tags span {
+    min-height: 20px;
+    padding-inline: 8px;
+    font-size: 0.66rem;
+  }
+
+  body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card .doke-ad-card__location {
+    margin-bottom: 8px;
+    font-size: 0.64rem;
+    line-height: 1.05;
+  }
+
+  body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card .doke-ad-card__footer {
+    gap: 8px;
+    padding-top: 8px;
+  }
+
+  body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card .doke-ad-card__price {
+    font-size: 0.94rem;
+  }
+
+  body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card .doke-ad-card__cta {
+    min-height: 32px;
+    height: 32px;
+    padding-inline: 12px;
+    font-size: 0.72rem;
+  }
+
+  body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
+  body.home-index-shell.doke-mobile-shell-mounted section.short-videos > .content-rail.home-media-rail--workers {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: visible;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body.home-index-shell section.short-videos #short-videos-track.short-videos__track,
+  html.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track,
+  body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track {
+    display: grid;
+    grid-auto-flow: row;
+    grid-auto-columns: initial;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    justify-content: stretch;
+    gap: 14px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0 0 8px;
+    overflow: visible;
+    scroll-snap-type: none;
+    box-sizing: border-box;
+  }
+
+  body.home-index-shell section.short-videos #short-videos-track.short-videos__track > .doke-worker-card,
+  html.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track > .doke-worker-card,
+  body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track > .doke-worker-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    flex: none;
+    justify-self: stretch;
+    scroll-snap-align: unset;
+  }
+
+  body.home-index-shell section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5),
+  html.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5),
+  body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5) {
+    display: none;
   }
 }

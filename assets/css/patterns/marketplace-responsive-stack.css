@@ -884,15 +884,16 @@ body {
     flex: 0 0 100% !important;
   }
 
-  .doke-ad-card {
-    min-block-size: 426px !important;
-  }
+  /* Mobile doke-ad-card anatomy is owned by components/cards/ad-card.css.
+     Do not assign a non-home min-block-size here: during routed/hydrated states
+     body classes change before all page CSS settles, and this old catch-all was
+     making the same card grow after first paint. */
 
   /* Publication-card block-size is owned by components/cards/publication-card.css.
      Do not force a 330px mobile/tablet minimum here; it creates the empty white
      area seen in narrow tablet rails. */
 
-  :is(.doke-ad-card, .service-card) :is(.doke-ad-card__media, .service-card__media, [class*="__media"]):not(.publication-card__media) {
+  body:not(.home-index-shell) .service-card :is(.service-card__media, [class*="__media"]):not(.publication-card__media) {
     block-size: clamp(148px, 28vw, 178px) !important;
   }
 
@@ -1419,7 +1420,7 @@ body[data-page] :is(.page, .page__content, .app-shell, .app-header, .app-header_
     inline-size: 36px !important;
     block-size: 36px !important;
     min-width: 36px !important;
-    min-height: 36px !important;
+    min-height: 34px !important;
     max-width: 36px !important;
     max-height: 36px !important;
   }
@@ -2490,16 +2491,16 @@ html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(.detail-section
   }
 
   body.home-index-shell :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__media, .service-card__media) {
-    height: 142px !important;
-    min-height: 142px !important;
-    max-height: 142px !important;
+    height: 126px !important;
+    min-height: 126px !important;
+    max-height: 126px !important;
   }
 
   body.home-index-shell :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__body, .service-card__body) {
     display: flex !important;
     flex-direction: column !important;
     min-width: 0 !important;
-    padding: 13px 14px 14px;
+    padding: 11px 13px 12px;
     overflow: hidden !important;
   }
 
@@ -2511,8 +2512,8 @@ html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(.detail-section
   }
 
   body.home-index-shell :is(.doke-ad-card, .service-card) :is(.doke-ad-card__title, .service-card__title) {
-    margin-bottom: 8px;
-    font-size: 1.05rem;
+    margin-bottom: 6px;
+    font-size: 1rem;
     line-height: 1.06;
     letter-spacing: -0.045em;
     white-space: nowrap;
@@ -2522,8 +2523,8 @@ html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(.detail-section
 
   body.home-index-shell :is(.doke-ad-card, .service-card) :is(.doke-ad-card__rating, .service-card__rating) {
     gap: 5px;
-    margin-bottom: 9px;
-    font-size: 0.78rem;
+    margin-bottom: 7px;
+    font-size: 0.76rem;
     line-height: 1;
     min-width: 0 !important;
     overflow: hidden !important;
@@ -2539,7 +2540,7 @@ html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(.detail-section
   body.home-index-shell :is(.doke-ad-card, .service-card) :is(.doke-ad-card__tags, .service-card__tags) {
     display: flex;
     flex-wrap: nowrap;
-    min-height: 22px;
+    min-height: 20px;
     overflow: hidden;
   }
 
@@ -2548,8 +2549,8 @@ html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(.detail-section
     grid-template-columns: 28px minmax(0, 1fr) !important;
     align-items: center;
     gap: 7px;
-    margin-bottom: 12px;
-    font-size: 0.72rem;
+    margin-bottom: 9px;
+    font-size: 0.7rem;
     line-height: 1.1;
     min-width: 0 !important;
     overflow: hidden !important;
@@ -2570,7 +2571,7 @@ html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(.detail-section
     width: 100% !important;
     min-width: 0 !important;
     margin-top: auto;
-    padding-top: 12px;
+    padding-top: 9px;
     overflow: hidden !important;
   }
 
@@ -2588,7 +2589,7 @@ html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(.detail-section
     flex: 0 0 auto !important;
     min-width: 94px !important;
     max-width: 122px !important;
-    min-height: 36px !important;
+    min-height: 34px !important;
     padding: 0 13px;
     border-radius: 999px;
     font-size: 0.74rem;

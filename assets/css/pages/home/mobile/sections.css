@@ -964,14 +964,32 @@
   }
 
   body.home-index-shell .short-videos__track {
-    display: flex !important;
-    grid-template-columns: none !important;
-    gap: 10px;
-    width: max-content;
-    min-width: 100%;
-    max-width: none;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
+    display: grid !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    scroll-snap-type: none !important;
+  }
+
+  body.home-index-shell .short-videos__track > :nth-child(n + 5) {
+    display: none !important;
+  }
+
+  body.home-index-shell .short-videos__track > .doke-worker-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    flex: initial !important;
+    aspect-ratio: 9 / 16 !important;
+    justify-self: stretch;
+    scroll-snap-align: unset;
   }
 
   body.home-index-shell .more-services {
@@ -1162,5 +1180,53 @@
 
   html.home-index-root body.home-index-shell section.featured-pros .featured-pros__grid .pro-card {
     min-height: 210px !important;
+  }
+}
+
+
+/* 2026-06-09 — index mobile workers final authority.
+   Owner: home mobile sections. Keeps Workers as a 2x2 Shorts-style grid after
+   legacy rail repairs; no shell/header/body changes. */
+@media (max-width: 560px) {
+  body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: visible;
+    padding-inline: 0;
+    box-sizing: border-box;
+  }
+
+  body.home-index-shell section.short-videos #short-videos-track.short-videos__track {
+    display: grid !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 0 0 8px;
+    margin: 0;
+    overflow: visible !important;
+    scroll-snap-type: none !important;
+    -webkit-overflow-scrolling: auto;
+    box-sizing: border-box;
+  }
+
+  body.home-index-shell section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5) {
+    display: none !important;
+  }
+
+  body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    flex: initial !important;
+    aspect-ratio: 9 / 16 !important;
+    justify-self: stretch;
+    scroll-snap-align: unset;
   }
 }
