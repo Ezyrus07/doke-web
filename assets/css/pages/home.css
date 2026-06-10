@@ -2,23 +2,23 @@
    Stage 50 consolidates direct index.html page dependencies here while preserving
    the previous cascade order: legacy home runtime first, then the shell/card/tablet
    contracts that index.html previously linked after home.css. */
-@import url("./home-runtime.css?v=20260608-card-info-parity-v2");
+@import url("./home-runtime.css?v=20260609-workers-mobile-v3");
 @import url("../components/shell/app-header.css?v=20260517-header-gap-v3");
 @import url("../components/layout/responsive-page-contract.css?v=20260515-mobile-axis-v1");
 @import url("../components/shell/doke-shell-contract.css?v=20260608-index-header-rail-v3");
 @import url("./stable-desktop-rail.css?v=20260605-tablet-landscape-arrow-contract-v1");
 @import url("./home/mobile-feed-rails.css?v=20260519-mobile-feed-rail-fix-v1");
-@import url("./home/tablet-responsive-layout.css?v=20260608-card-info-parity-v2");
+@import url("./home/tablet-responsive-layout.css?v=20260609-workers-mobile-v3");
 @import url("../components/shell/app-header-canonical-contract.css?v=20260608-header-rail-contract-v2");
 @import url("../components/shell/shared-page-width-contract.css?v=20260608-header-rail-contract-v2");
-@import url("../patterns/marketplace-responsive-stack.css?v=20260609-card-hydration-stability-v2");
+@import url("../patterns/marketplace-responsive-stack.css?v=20260609-workers-mobile-v3");
 @import url("../components/shell/desktop-page-rail-authority.css?v=20260608-header-rail-contract-v2");
-@import url("../components/cards/marketplace-card-contract.css?v=20260609-index-mobile-v5");
-@import url("../components/cards/professional-showcase-card.css?v=20260609-index-mobile-v5");
+@import url("../components/cards/marketplace-card-contract.css?v=20260609-workers-mobile-v3");
+@import url("../components/cards/professional-showcase-card.css?v=20260609-workers-mobile-v3");
 @import url("./home/tablet-shell-rail.css?v=20260605-tablet-category-section-rhythm-v4");
 @import url("../components/shell/ipad-safari-scroll.css?v=20260601-shell-scroll-v1");
-@import url("./home/tablet-safari-layout.css?v=20260608-card-info-parity-v2");
-@import url("./home/mobile-index-feed-contract.css?v=20260609-index-mobile-v5");
+@import url("./home/tablet-safari-layout.css?v=20260609-workers-mobile-v3");
+@import url("./home/mobile-index-feed-contract.css?v=20260609-workers-mobile-v3");
 @import url("./home/publications-no-arrows.css?v=20260604-publication-rail-contract-v1");
 @import url("../components/cards/publication-card.css?v=20260608-publication-final-authority-v1");
 
@@ -1174,5 +1174,162 @@ body.home-index-shell .more-services__load {
   html.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5),
   body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5) {
     display: none;
+  }
+}
+
+
+/* 2026-06-09 - Home Workers mobile Shorts-like tile contract.
+   Scope: mobile rendering only. Keeps Workers as a 2x2 media grid without
+   letting legacy carousel/tablet locks stretch each tile to full rail width. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell,
+  html body.home-index-shell {
+    --doke-workers-mobile-tile-width: clamp(142px, 42vw, 168px);
+    --doke-worker-mobile-aspect: 10 / 16;
+    --doke-workers-mobile-gap: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
+  html body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
+  html.doke-js-mobile body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
+  html body.home-index-shell.doke-mobile-shell-mounted section.short-videos > .content-rail.home-media-rail--workers {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    box-sizing: border-box;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track,
+  html body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track,
+  html.doke-js-mobile body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track,
+  html body.home-index-shell.doke-mobile-shell-mounted section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, var(--doke-workers-mobile-tile-width)));
+    grid-auto-flow: row;
+    grid-auto-columns: initial;
+    justify-content: start;
+    align-items: stretch;
+    gap: var(--doke-workers-mobile-gap);
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+    padding: 0 0 6px;
+    overflow: visible;
+    scroll-snap-type: none;
+    box-sizing: border-box;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
+  html.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
+  html body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    height: auto;
+    min-height: 0;
+    flex: none;
+    justify-self: stretch;
+    aspect-ratio: var(--doke-worker-mobile-aspect, 10 / 16);
+    padding: 0;
+    scroll-snap-align: unset;
+  }
+
+  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5),
+  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5),
+  html.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5),
+  html body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5) {
+    display: none;
+  }
+}
+
+/* Mobile-shell fallback for preview tools that mount the mobile app shell while
+   reporting a wider CSS viewport. This is intentionally class-gated, not a
+   tablet/desktop media query. */
+html.doke-js-mobile body.home-index-shell,
+html body.home-index-shell.doke-mobile-shell-mounted {
+  --doke-workers-mobile-tile-width: clamp(142px, 42vw, 168px);
+  --doke-worker-mobile-aspect: 10 / 16;
+  --doke-workers-mobile-gap: 12px;
+}
+
+html.doke-js-mobile body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
+html body.home-index-shell.doke-mobile-shell-mounted section.short-videos > .content-rail.home-media-rail--workers {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+html.doke-js-mobile body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track,
+html body.home-index-shell.doke-mobile-shell-mounted section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, var(--doke-workers-mobile-tile-width)));
+  grid-auto-flow: row;
+  grid-auto-columns: initial;
+  justify-content: start;
+  align-items: stretch;
+  gap: var(--doke-workers-mobile-gap);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 0 0 6px;
+  overflow: visible;
+  scroll-snap-type: none;
+  box-sizing: border-box;
+}
+
+html.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
+html body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  min-height: 0;
+  flex: none;
+  justify-self: stretch;
+  aspect-ratio: var(--doke-worker-mobile-aspect, 10 / 16);
+  padding: 0;
+  scroll-snap-align: unset;
+}
+
+html.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5),
+html body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5) {
+  display: none;
+}
+
+/* 2026-06-09 - Home mobile publications-to-more-services rhythm.
+   Scope: index mobile only. Reduces the excessive blank area after the
+   publications carousel without changing card anatomy, shell, header or tablet/desktop. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section.home-publications {
+    margin-block-end: -8px;
+    padding-block-end: 0;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications,
+  html.home-index-root body.home-index-shell section.home-publications #home-publications-track.publication-grid {
+    height: auto;
+    min-height: 0;
+    margin-block-end: 0;
+    padding-block-end: 4px;
+  }
+
+  html.home-index-root body.home-index-shell section.home-publications + section.more-services {
+    margin-block-start: 0;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services > .section-heading.home-section-header {
+    margin-block-start: 0;
   }
 }

@@ -7663,10 +7663,15 @@ body[data-page="detalhe-anuncio"] .detail-related-grid--ads {
 
 
 /* Detail anuncio v51 — structural mobile width reset.
-   Root cause: --detail-mobile-content-rail used inside children resolves calc(100% - gap)
-   against the parent, making provider/reviews narrower than the cards above.
-   Contract: shell owns the rail; children fill 100% of that rail. */
+   Root cause: --detail-mobile-content-rail used inside children resolved against
+   intermediate parents, making hero/action surfaces narrower than the mobile shell header.
+   Contract: the mobile app shell owns the rail; detail content consumes that same viewport-based rail. */
 @media (max-width: 760px) {
+  body[data-page="detalhe-anuncio"] {
+    --detail-mobile-page-rail: calc(min(430px, 100vw) - (var(--doke-mobile-shell-edge, 22px) * 2));
+    --detail-mobile-content-rail: var(--detail-mobile-page-rail);
+  }
+
   body[data-page="detalhe-anuncio"] .ad-detail-shell,
   body[data-page="detalhe-anuncio"] .ad-detail-layout,
   body[data-page="detalhe-anuncio"] .ad-detail-main {
@@ -7753,8 +7758,8 @@ body[data-page="detalhe-anuncio"] .detail-related-grid--ads {
   }
 
   body[data-page="detalhe-anuncio"] .detail-mobile-action {
-    width: min(calc(100vw - 32px), 342px) !important;
-    max-width: min(calc(100vw - 32px), 342px) !important;
+    width: var(--detail-mobile-content-rail) !important;
+    max-width: var(--detail-mobile-content-rail) !important;
   }
 }
 

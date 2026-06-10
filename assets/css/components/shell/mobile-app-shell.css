@@ -55,6 +55,23 @@
     padding-top: var(--doke-mobile-shell-with-search-height) !important;
   }
 
+  /* Orders first-paint parity: pedidos uses the canonical injected mobile shell
+     for the compact topbar actions. During router transitions, the previous
+     page shell can remain mounted until the new page hydrates; keep that stale
+     shell invisible while .doke-mobile-shell-pending is active so the old
+     location/search layout never flashes over pedidos. */
+  html.doke-mobile-shell-pending .doke-mobile-shell,
+  html.doke-mobile-shell-pending .doke-mobile-bottom-nav {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  html.doke-mobile-shell-pending body.orders-page-shell .orders-page-header,
+  html.doke-mobile-shell-ready body.orders-page-shell .orders-page-header,
+  body.orders-page-shell.doke-mobile-shell-mounted .orders-page-header {
+    display: none;
+  }
+
   html.doke-mobile-shell-pending body :is(
     .sidebar,
     .app-sidebar,

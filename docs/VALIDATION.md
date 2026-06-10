@@ -102,3 +102,22 @@ ajuda.html
 ```
 
 A primeira etapa da reforma responsiva não deve alterar visual global antes de o gate de validação refletir esses viewports e páginas.
+
+## Global structural reform validation gate — 2026-06-09
+
+Before any whole-site cleanup, CSS consolidation, `!important` removal, header/rail rewrite, card-authority migration or script-loading change, run at minimum:
+
+```bash
+npm run audit:agent-governance
+npm run audit:global-structural-debt
+npm run test:card-loading-parity-contract
+npm run test:first-paint-loading-contract
+```
+
+If Playwright/browser validation is unavailable, runtime visual files must not be broadly rewritten. Limit work to generated audits, documentation, or one isolated page/component with explicit rollback.
+
+Required manual/visual matrix for runtime reform:
+
+- Viewports: `390x844`, `820x1180`, `1366x768`.
+- Pages: `index.html`, `perfil.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `comunidade.html`, `resultados.html`, `detalhe-anuncio.html`, `ajuda.html`.
+- Checks: no horizontal overflow, header/content rail alignment, direct URL equals internal navigation, no first-paint/loaded geometry shift, no new `!important`.

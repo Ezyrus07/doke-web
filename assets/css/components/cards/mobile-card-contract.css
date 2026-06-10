@@ -95,7 +95,7 @@
     height: var(--doke-mobile-action-icon) !important;
   }
 
-  :is(.video-card, .results-videos-grid .video-card, .profile-posts-stack .video-card, body.home-index-shell .video-card) {
+  body:not(.home-index-shell) :is(.video-card, .results-videos-grid .video-card, .profile-posts-stack .video-card) {
     width: 100% !important;
     min-height: var(--doke-mobile-video-height) !important;
     height: auto !important;
@@ -246,13 +246,16 @@
     border-radius: var(--doke-mobile-card-radius);
   }
 
+  /* Home Workers are media tiles. The grid owns column width; this component
+     contract prevents legacy mobile video locks from inflating the card. */
   body.home-index-shell .short-videos .short-videos__track > .video-card {
     width: 100%;
     min-width: 0;
-    max-width: none;
-    min-height: var(--doke-mobile-video-height);
-    height: var(--doke-mobile-video-height);
-    aspect-ratio: auto;
+    max-width: 100%;
+    min-height: 0;
+    height: auto;
+    aspect-ratio: var(--doke-worker-mobile-aspect, 10 / 16);
+    padding: 0;
     border-radius: var(--doke-mobile-card-radius);
   }
 
