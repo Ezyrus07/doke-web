@@ -1,7 +1,8 @@
 /* Home page CSS manifest.
-   Stage 50 consolidates direct index.html page dependencies here while preserving
-   the previous cascade order: legacy home runtime first, then the shell/card/tablet
-   contracts that index.html previously linked after home.css. */
+   Responsibility: index/home page composition only.
+   Shared card, rail and page-width contracts are loaded from core/components.
+   Do not re-import shared component contracts here; doing so creates late cascade
+   competition between loading and hydrated responsive states. */
 @import url("./home-runtime.css?v=20260609-workers-mobile-v3");
 @import url("../components/shell/app-header.css?v=20260517-header-gap-v3");
 @import url("../components/layout/responsive-page-contract.css?v=20260515-mobile-axis-v1");
@@ -10,17 +11,11 @@
 @import url("./home/mobile-feed-rails.css?v=20260519-mobile-feed-rail-fix-v1");
 @import url("./home/tablet-responsive-layout.css?v=20260609-workers-mobile-v3");
 @import url("../components/shell/app-header-canonical-contract.css?v=20260608-header-rail-contract-v2");
-@import url("../components/shell/shared-page-width-contract.css?v=20260608-header-rail-contract-v2");
-@import url("../patterns/marketplace-responsive-stack.css?v=20260609-workers-mobile-v3");
-@import url("../components/shell/desktop-page-rail-authority.css?v=20260608-header-rail-contract-v2");
-@import url("../components/cards/marketplace-card-contract.css?v=20260609-workers-mobile-v3");
 @import url("../components/cards/professional-showcase-card.css?v=20260609-workers-mobile-v3");
 @import url("./home/tablet-shell-rail.css?v=20260605-tablet-category-section-rhythm-v4");
 @import url("../components/shell/ipad-safari-scroll.css?v=20260601-shell-scroll-v1");
-@import url("./home/tablet-safari-layout.css?v=20260609-workers-mobile-v3");
-@import url("./home/mobile-index-feed-contract.css?v=20260610-phone-only-hydration-v1");
+@import url("./home/mobile-index-feed-contract.css?v=20260609-workers-mobile-v3");
 @import url("./home/publications-no-arrows.css?v=20260604-publication-rail-contract-v1");
-@import url("../components/cards/publication-card.css?v=20260608-publication-final-authority-v1");
 
 /* Shell state sync: ensure pending/ready match mounted layout on mobile.
    Prevents visual jump when shell finishes hydration. */
@@ -1915,5 +1910,38 @@ html
     section.more-services
     > .section-heading.home-section-header {
     margin-block-start: 0;
+  }
+}
+
+/* 2026-06-10 — Index featured services stable mobile contract.
+   Root cause: first paint and hydrated mobile states were not sharing the same
+   featured-card tokens; after runtime classes were synchronized, legacy mobile
+   distribution rules could expand the ad cards and media height. This page layer
+   owns only the index featured rail density through existing component tokens. */
+@media (max-width: 560px) {
+  body.home-index-shell section.featured-services,
+  body.home-index-shell.doke-mobile-shell-mounted section.featured-services,
+  html.doke-js-mobile body.home-index-shell section.featured-services {
+    --doke-mobile-card-width: clamp(154px, calc((100vw - 74px) / 2), 176px);
+    --doke-ad-media-height-mobile: clamp(68px, 18vw, 82px);
+    --doke-ad-padding-mobile: 8px 10px 10px;
+    --doke-ad-body-padding-bottom: 10px;
+    --doke-ad-footer-margin-top: 2px;
+    --doke-ad-footer-min-height: 28px;
+    --doke-ad-cta-min-height: 30px;
+    --doke-ad-cta-height: 30px;
+    --doke-ad-cta-padding-inline: 10px;
+    --doke-ad-cta-font-size: 0.68rem;
+  }
+
+  body.home-index-shell
+    section.featured-services
+    #featured-services-track.service-grid
+    > article.doke-ad-card {
+    --doke-ad-card-height: auto;
+    --doke-ad-card-min-height: 0;
+    --doke-ad-card-max-height: none;
+    --doke-ad-media-height: var(--doke-ad-media-height-mobile);
+    scroll-snap-align: start;
   }
 }
