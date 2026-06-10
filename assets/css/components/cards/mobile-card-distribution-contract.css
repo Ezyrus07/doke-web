@@ -16,6 +16,23 @@
     --doke-mobile-page-bottom-safe: calc(96px + env(safe-area-inset-bottom, 0px));
   }
 
+  body.home-index-shell section.featured-services {
+    --doke-mobile-media-card-width: clamp(154px, calc((100vw - 74px) / 2), 176px);
+    --doke-ad-media-height-mobile: clamp(68px, 18vw, 82px);
+    --doke-ad-padding-mobile: 8px 10px 10px;
+    --doke-ad-category-margin-mobile: 3px;
+    --doke-ad-title-margin-mobile: 5px;
+    --doke-ad-rating-margin-mobile: 6px;
+    --doke-ad-location-margin-mobile: 8px;
+    --doke-ad-footer-padding-mobile: 8px;
+    --doke-ad-cta-min-height-mobile: 30px;
+    --doke-ad-cta-min-width-mobile: 82px;
+    --doke-ad-cta-padding-mobile: 0 10px;
+    --doke-ad-cta-font-size-mobile: 0.68rem;
+    --doke-ad-badge-size-mobile: 26px;
+    --doke-ad-favorite-size-mobile: 34px;
+  }
+
   body.home-index-shell :is(.featured-services, .home-publications, .more-services, .short-videos, .featured-pros) {
     min-width: 0 !important;
     max-width: 100% !important;
@@ -154,28 +171,28 @@
   }
 
   body.home-index-shell :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__media, .service-card__media) {
-    height: 142px !important;
-    min-height: 142px !important;
-    max-height: 142px !important;
+    height: var(--doke-ad-media-height-mobile, 142px) !important;
+    min-height: var(--doke-ad-media-height-mobile, 142px) !important;
+    max-height: var(--doke-ad-media-height-mobile, 142px) !important;
   }
 
   body.home-index-shell :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__body, .service-card__body) {
     display: flex !important;
     flex-direction: column !important;
     min-width: 0 !important;
-    padding: 13px 14px 14px !important;
+    padding: var(--doke-ad-padding-mobile, 13px 14px 14px) !important;
     overflow: hidden !important;
   }
 
   body.home-index-shell :is(.doke-ad-card, .service-card) :is(.doke-ad-card__category, .service-card__category) {
-    margin-bottom: 6px !important;
+    margin-bottom: var(--doke-ad-category-margin-mobile, 6px) !important;
     font-size: 0.68rem;
     line-height: 1.05;
     letter-spacing: 0.13em;
   }
 
   body.home-index-shell :is(.doke-ad-card, .service-card) :is(.doke-ad-card__title, .service-card__title) {
-    margin-bottom: 8px !important;
+    margin-bottom: var(--doke-ad-title-margin-mobile, 8px) !important;
     font-size: 1.05rem;
     line-height: 1.06;
     letter-spacing: -0.045em;
@@ -186,7 +203,7 @@
 
   body.home-index-shell :is(.doke-ad-card, .service-card) :is(.doke-ad-card__rating, .service-card__rating) {
     gap: 5px !important;
-    margin-bottom: 9px !important;
+    margin-bottom: var(--doke-ad-rating-margin-mobile, 9px) !important;
     font-size: 0.78rem;
     line-height: 1;
     min-width: 0 !important;
@@ -212,7 +229,7 @@
     grid-template-columns: 28px minmax(0, 1fr) !important;
     align-items: center !important;
     gap: 7px !important;
-    margin-bottom: 12px !important;
+    margin-bottom: var(--doke-ad-location-margin-mobile, 12px) !important;
     font-size: 0.72rem;
     line-height: 1.1;
     min-width: 0 !important;
@@ -234,7 +251,7 @@
     width: 100% !important;
     min-width: 0 !important;
     margin-top: auto !important;
-    padding-top: 12px !important;
+    padding-top: var(--doke-ad-footer-padding-mobile, 12px) !important;
     overflow: hidden !important;
   }
 
@@ -250,12 +267,12 @@
 
   body.home-index-shell :is(.doke-ad-card, .service-card) :is(.doke-ad-card__cta, .service-card__cta) {
     flex: 0 0 auto !important;
-    min-width: 94px !important;
+    min-width: var(--doke-ad-cta-min-width-mobile, 94px) !important;
     max-width: 122px !important;
-    min-height: 36px !important;
-    padding: 0 13px !important;
+    min-height: var(--doke-ad-cta-min-height-mobile, 36px) !important;
+    padding: var(--doke-ad-cta-padding-mobile, 0 13px) !important;
     border-radius: 999px;
-    font-size: 0.74rem;
+    font-size: var(--doke-ad-cta-font-size-mobile, 0.74rem);
     line-height: 1;
     white-space: nowrap;
     overflow: hidden !important;
@@ -265,7 +282,7 @@
   body.home-index-shell :is(.doke-ad-card, .service-card) :is(.doke-ad-card__badge, .service-card__badge) {
     top: 12px !important;
     left: 12px !important;
-    min-height: 28px !important;
+    min-height: var(--doke-ad-badge-size-mobile, 28px) !important;
     max-width: calc(100% - 88px) !important;
     padding: 0 10px !important;
     font-size: 0.7rem;
@@ -274,10 +291,10 @@
   body.home-index-shell :is(.doke-ad-card, .service-card) :is(.doke-ad-card__favorite, .service-card__favorite) {
     top: 10px !important;
     right: 10px !important;
-    width: 42px !important;
-    height: 42px !important;
-    min-width: 42px !important;
-    min-height: 42px !important;
+    width: var(--doke-ad-favorite-size-mobile, 42px) !important;
+    height: var(--doke-ad-favorite-size-mobile, 42px) !important;
+    min-width: var(--doke-ad-favorite-size-mobile, 42px) !important;
+    min-height: var(--doke-ad-favorite-size-mobile, 42px) !important;
   }
 
   /* Publication-card internals are owned by components/cards/publication-card.css.

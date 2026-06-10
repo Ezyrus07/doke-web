@@ -18,9 +18,36 @@
 @import url("./home/tablet-shell-rail.css?v=20260605-tablet-category-section-rhythm-v4");
 @import url("../components/shell/ipad-safari-scroll.css?v=20260601-shell-scroll-v1");
 @import url("./home/tablet-safari-layout.css?v=20260609-workers-mobile-v3");
-@import url("./home/mobile-index-feed-contract.css?v=20260609-workers-mobile-v3");
+@import url("./home/mobile-index-feed-contract.css?v=20260610-phone-only-hydration-v1");
 @import url("./home/publications-no-arrows.css?v=20260604-publication-rail-contract-v1");
 @import url("../components/cards/publication-card.css?v=20260608-publication-final-authority-v1");
+
+/* Shell state sync: ensure pending/ready match mounted layout on mobile.
+   Prevents visual jump when shell finishes hydration. */
+@media (max-width: 560px) {
+  html.doke-mobile-shell-pending body.home-index-shell #featured-services-track,
+  html.doke-mobile-shell-ready body.home-index-shell #featured-services-track {
+    display: grid;
+    grid-auto-flow: column;
+    overflow-x: auto;
+    overflow-y: visible;
+    scroll-snap-type: x proximity;
+  }
+
+  html.doke-mobile-shell-pending
+    body.home-index-shell
+    section.more-services
+    .service-grid,
+  html.doke-mobile-shell-ready
+    body.home-index-shell
+    section.more-services
+    .service-grid {
+    display: grid;
+    grid-auto-flow: row;
+    gap: 14px;
+    overflow: visible;
+  }
+}
 
 /* 2026-06-05 - canonical tablet landscape rhythm for index.
    Authority: final home page contract after all home imports. This closes only
@@ -41,21 +68,25 @@
     margin-bottom: var(--home-tablet-landscape-area-gap);
   }
 
-  html.home-index-root body.home-index-shell :is(
-    section[class*="home-cat"],
-    section.featured-services,
-    section.short-videos,
-    section.home-publications,
-    section.more-services,
-    section.professional-showcase
-  ),
-  html body.home-index-shell :is(
-    section[class*="home-cat"],
-    section.featured-services,
-    section.short-videos,
-    section.home-publications,
-    section.more-services
-  ) {
+  html.home-index-root
+    body.home-index-shell
+    :is(
+      section[class*="home-cat"],
+      section.featured-services,
+      section.short-videos,
+      section.home-publications,
+      section.more-services,
+      section.professional-showcase
+    ),
+  html
+    body.home-index-shell
+    :is(
+      section[class*="home-cat"],
+      section.featured-services,
+      section.short-videos,
+      section.home-publications,
+      section.more-services
+    ) {
     contain: none;
     content-visibility: visible;
     margin-top: 0;
@@ -69,7 +100,10 @@
     overflow: visible;
   }
 
-  html.home-index-root body.home-index-shell section[class*="home-cat"] [class*="__rail"],
+  html.home-index-root
+    body.home-index-shell
+    section[class*="home-cat"]
+    [class*="__rail"],
   html body.home-index-shell section[class*="home-cat"] [class*="__rail"] {
     display: block;
     min-height: 98px;
@@ -80,13 +114,22 @@
     scrollbar-width: none;
   }
 
-  html.home-index-root body.home-index-shell section[class*="home-cat"] [class*="__rail"]::after,
-  html body.home-index-shell section[class*="home-cat"] [class*="__rail"]::after {
+  html.home-index-root
+    body.home-index-shell
+    section[class*="home-cat"]
+    [class*="__rail"]::after,
+  html
+    body.home-index-shell
+    section[class*="home-cat"]
+    [class*="__rail"]::after {
     right: 0;
     width: 42px;
   }
 
-  html.home-index-root body.home-index-shell section[class*="home-cat"] [class*="__track"],
+  html.home-index-root
+    body.home-index-shell
+    section[class*="home-cat"]
+    [class*="__track"],
   html body.home-index-shell section[class*="home-cat"] [class*="__track"] {
     display: flex;
     flex-flow: row nowrap;
@@ -104,8 +147,16 @@
     box-sizing: border-box;
   }
 
-  html.home-index-root body.home-index-shell section[class*="home-cat"] [class*="__track"] > a[class*="home-cat"],
-  html body.home-index-shell section[class*="home-cat"] [class*="__track"] > a[class*="home-cat"] {
+  html.home-index-root
+    body.home-index-shell
+    section[class*="home-cat"]
+    [class*="__track"]
+    > a[class*="home-cat"],
+  html
+    body.home-index-shell
+    section[class*="home-cat"]
+    [class*="__track"]
+    > a[class*="home-cat"] {
     flex: 0 0 var(--home-tablet-landscape-category-width);
     inline-size: var(--home-tablet-landscape-category-width);
     width: var(--home-tablet-landscape-category-width);
@@ -122,16 +173,36 @@
     scroll-snap-align: start;
   }
 
-  html.home-index-root body.home-index-shell section[class*="home-cat"] [class*="__track"] > a[class*="home-cat"] > [class*="__icon"],
-  html body.home-index-shell section[class*="home-cat"] [class*="__track"] > a[class*="home-cat"] > [class*="__icon"] {
+  html.home-index-root
+    body.home-index-shell
+    section[class*="home-cat"]
+    [class*="__track"]
+    > a[class*="home-cat"]
+    > [class*="__icon"],
+  html
+    body.home-index-shell
+    section[class*="home-cat"]
+    [class*="__track"]
+    > a[class*="home-cat"]
+    > [class*="__icon"] {
     width: var(--home-tablet-landscape-category-icon);
     height: var(--home-tablet-landscape-category-icon);
     min-width: var(--home-tablet-landscape-category-icon);
     min-height: var(--home-tablet-landscape-category-icon);
   }
 
-  html.home-index-root body.home-index-shell section[class*="home-cat"] [class*="__track"] > a[class*="home-cat"] > [class*="__label"],
-  html body.home-index-shell section[class*="home-cat"] [class*="__track"] > a[class*="home-cat"] > [class*="__label"] {
+  html.home-index-root
+    body.home-index-shell
+    section[class*="home-cat"]
+    [class*="__track"]
+    > a[class*="home-cat"]
+    > [class*="__label"],
+  html
+    body.home-index-shell
+    section[class*="home-cat"]
+    [class*="__track"]
+    > a[class*="home-cat"]
+    > [class*="__label"] {
     width: 100%;
     max-width: 100%;
     min-height: 14px;
@@ -142,9 +213,15 @@
     text-overflow: ellipsis;
   }
 
-  html.home-index-root body.home-index-shell section[class*="home-cat"] [class*="__arrow"],
+  html.home-index-root
+    body.home-index-shell
+    section[class*="home-cat"]
+    [class*="__arrow"],
   html body.home-index-shell section[class*="home-cat"] [class*="__arrow"],
-  html.home-index-root body.home-index-shell section.home-catégories .home-catégories__arrow,
+  html.home-index-root
+    body.home-index-shell
+    section.home-catégories
+    .home-catégories__arrow,
   html body.home-index-shell section.home-catégories .home-catégories__arrow {
     display: none;
     visibility: hidden;
@@ -157,18 +234,24 @@
     pointer-events: none;
   }
 
-  html.home-index-root body.home-index-shell :is(
-    section.featured-services,
-    section.short-videos,
-    section.home-publications,
-    section.more-services
-  ) > :is(.section-heading, .home-section-header),
-  html body.home-index-shell :is(
-    section.featured-services,
-    section.short-videos,
-    section.home-publications,
-    section.more-services
-  ) > :is(.section-heading, .home-section-header) {
+  html.home-index-root
+    body.home-index-shell
+    :is(
+      section.featured-services,
+      section.short-videos,
+      section.home-publications,
+      section.more-services
+    )
+    > :is(.section-heading, .home-section-header),
+  html
+    body.home-index-shell
+    :is(
+      section.featured-services,
+      section.short-videos,
+      section.home-publications,
+      section.more-services
+    )
+    > :is(.section-heading, .home-section-header) {
     margin-bottom: 16px;
   }
 }
@@ -187,24 +270,22 @@ body.home-index-shell {
   --doke-home-more-card-min: 304px;
 }
 
-body.home-index-shell :is(
-  #featured-services-track,
-  #short-videos-track,
-  #home-publications-track,
-  [data-more-services-grid]
-) {
+body.home-index-shell
+  :is(
+    #featured-services-track,
+    #short-videos-track,
+    #home-publications-track,
+    [data-more-services-grid]
+  ) {
   box-sizing: border-box;
   min-width: 0;
   max-width: 100%;
   gap: var(--doke-home-card-gap);
 }
 
-body.home-index-shell :is(
-  .featured-services,
-  .short-videos,
-  .home-publications,
-  .more-services
-) > :is(.content-rail, .doke-scroll-rail, .more-services__cards-rail) {
+body.home-index-shell
+  :is(.featured-services, .short-videos, .home-publications, .more-services)
+  > :is(.content-rail, .doke-scroll-rail, .more-services__cards-rail) {
   box-sizing: border-box;
   min-width: 0;
   max-width: 100%;
@@ -214,7 +295,10 @@ body.home-index-shell :is(
   body.home-index-shell #featured-services-track {
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: minmax(var(--doke-home-featured-card-min), var(--doke-home-featured-card-max));
+    grid-auto-columns: minmax(
+      var(--doke-home-featured-card-min),
+      var(--doke-home-featured-card-max)
+    );
     grid-template-columns: none;
     justify-content: start;
     overflow-x: auto;
@@ -223,7 +307,9 @@ body.home-index-shell :is(
     scrollbar-width: none;
   }
 
-  body.home-index-shell #featured-services-track > :is(.doke-ad-card, .service-card) {
+  body.home-index-shell
+    #featured-services-track
+    > :is(.doke-ad-card, .service-card) {
     scroll-snap-align: start;
   }
 
@@ -247,7 +333,10 @@ body.home-index-shell :is(
   body.home-index-shell #home-publications-track {
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: minmax(var(--doke-home-publication-card-min), var(--doke-home-publication-card-max));
+    grid-auto-columns: minmax(
+      var(--doke-home-publication-card-min),
+      var(--doke-home-publication-card-max)
+    );
     grid-template-columns: none;
     justify-content: start;
     overflow-x: auto;
@@ -264,7 +353,10 @@ body.home-index-shell :is(
     display: grid;
     grid-auto-flow: row;
     grid-auto-columns: initial;
-    grid-template-columns: repeat(3, minmax(var(--doke-home-more-card-min), 1fr));
+    grid-template-columns: repeat(
+      3,
+      minmax(var(--doke-home-more-card-min), 1fr)
+    );
     overflow: visible;
   }
 }
@@ -274,7 +366,11 @@ body.home-index-shell :is(
   body.home-index-shell #home-publications-track {
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: clamp(248px, calc((100% - var(--doke-home-card-gap) - 48px) / 2), 352px);
+    grid-auto-columns: clamp(
+      248px,
+      calc((100% - var(--doke-home-card-gap) - 48px) / 2),
+      352px
+    );
     grid-template-columns: none;
     justify-content: start;
     overflow-x: auto;
@@ -313,7 +409,11 @@ body.home-index-shell :is(
   body.home-index-shell #home-publications-track {
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: clamp(248px, calc((100% - var(--doke-home-card-gap) - 40px) / 2), 328px);
+    grid-auto-columns: clamp(
+      248px,
+      calc((100% - var(--doke-home-card-gap) - 40px) / 2),
+      328px
+    );
     grid-template-columns: none;
     justify-content: start;
     overflow-x: auto;
@@ -361,12 +461,12 @@ body.home-index-shell :is(
   }
 }
 
-
-body.home-index-shell :is(
-  #featured-services-track,
-  #short-videos-track,
-  #home-publications-track
-)::-webkit-scrollbar {
+body.home-index-shell
+  :is(
+    #featured-services-track,
+    #short-videos-track,
+    #home-publications-track
+  )::-webkit-scrollbar {
   display: none;
 }
 
@@ -379,12 +479,13 @@ body.home-index-shell {
   --doke-home-category-gap: clamp(12px, 1.4vw, 18px);
 }
 
-body.home-index-shell :is(
-  .home-catégories__rail,
-  .content-rail.doke-scroll-rail,
-  .home-media-rail,
-  .more-services__tabs-rail
-) {
+body.home-index-shell
+  :is(
+    .home-catégories__rail,
+    .content-rail.doke-scroll-rail,
+    .home-media-rail,
+    .more-services__tabs-rail
+  ) {
   position: relative;
   box-sizing: border-box;
   min-width: 0;
@@ -393,13 +494,14 @@ body.home-index-shell :is(
   overflow-y: visible;
 }
 
-body.home-index-shell :is(
-  .home-catégories__track,
-  #featured-services-track,
-  #short-videos-track,
-  #home-publications-track,
-  .more-services__tabs-track
-) {
+body.home-index-shell
+  :is(
+    .home-catégories__track,
+    #featured-services-track,
+    #short-videos-track,
+    #home-publications-track,
+    .more-services__tabs-track
+  ) {
   min-width: 0;
   max-width: 100%;
   overflow-x: auto;
@@ -411,13 +513,14 @@ body.home-index-shell :is(
   scroll-padding-inline: var(--doke-home-rail-peek);
 }
 
-body.home-index-shell :is(
-  .home-catégories__track,
-  #featured-services-track,
-  #short-videos-track,
-  #home-publications-track,
-  .more-services__tabs-track
-)::-webkit-scrollbar {
+body.home-index-shell
+  :is(
+    .home-catégories__track,
+    #featured-services-track,
+    #short-videos-track,
+    #home-publications-track,
+    .more-services__tabs-track
+  )::-webkit-scrollbar {
   display: none;
 }
 
@@ -438,8 +541,6 @@ body.home-index-shell .home-catégories__track > .home-catégory {
   scroll-snap-align: start;
 }
 
-
-
 @media (max-width: 760px) {
   body.home-index-shell {
     --doke-home-rail-peek: 18px;
@@ -451,13 +552,20 @@ body.home-index-shell .home-catégories__track > .home-catégory {
     overflow-x: hidden;
   }
 
-  body.home-index-shell :is(
-    .featured-services,
-    .short-videos,
-    .home-publications,
-    .more-services,
-    .professional-showcase
-  ) > :is(.section-heading, .home-section-header, .home-publications__header, .professional-showcase__header) {
+  body.home-index-shell
+    :is(
+      .featured-services,
+      .short-videos,
+      .home-publications,
+      .more-services,
+      .professional-showcase
+    )
+    > :is(
+      .section-heading,
+      .home-section-header,
+      .home-publications__header,
+      .professional-showcase__header
+    ) {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -468,24 +576,34 @@ body.home-index-shell .home-catégories__track > .home-catégory {
     box-sizing: border-box;
   }
 
-  body.home-index-shell :is(
-    .featured-services,
-    .short-videos,
-    .home-publications,
-    .more-services,
-    .professional-showcase
-  ) > :is(.section-heading, .home-section-header, .home-publications__header, .professional-showcase__header) > :first-child {
+  body.home-index-shell
+    :is(
+      .featured-services,
+      .short-videos,
+      .home-publications,
+      .more-services,
+      .professional-showcase
+    )
+    > :is(
+      .section-heading,
+      .home-section-header,
+      .home-publications__header,
+      .professional-showcase__header
+    )
+    > :first-child {
     min-inline-size: 0;
     flex: 1 1 auto;
   }
 
-  body.home-index-shell :is(
-    .featured-services,
-    .short-videos,
-    .home-publications,
-    .more-services,
-    .professional-showcase
-  ) :is(.section-heading__link, .professional-showcase__view-all) {
+  body.home-index-shell
+    :is(
+      .featured-services,
+      .short-videos,
+      .home-publications,
+      .more-services,
+      .professional-showcase
+    )
+    :is(.section-heading__link, .professional-showcase__view-all) {
     flex: 0 1 auto;
     max-inline-size: min(42vw, 156px);
     min-inline-size: 0;
@@ -513,14 +631,16 @@ body.home-index-shell .home-catégories__track > .home-catégory {
     scroll-snap-type: none;
   }
 
-  body.home-index-shell .home-media-rail--workers > #short-videos-track > :nth-child(n + 5) {
+  body.home-index-shell
+    .home-media-rail--workers
+    > #short-videos-track
+    > :nth-child(n + 5) {
     display: none;
   }
 
   body.home-index-shell .home-catégories__track {
     padding-bottom: 10px;
   }
-
 
   body.home-index-shell .more-services__tabs-track {
     display: flex;
@@ -542,8 +662,20 @@ body.home-index-shell .home-catégories__track > .home-catégory {
    home x-axis. Legacy home rail contracts still use priority width locks, so
    these declarations close that local conflict at the final page layer. */
 @media (min-width: 1025px) {
-  html.home-index-root body.home-index-shell section.home-publications > :is(.home-publications__header, .content-rail.home-media-rail--publications),
-  html body.home-index-shell section.home-publications > :is(.home-publications__header, .content-rail.home-media-rail--publications) {
+  html.home-index-root
+    body.home-index-shell
+    section.home-publications
+    > :is(
+      .home-publications__header,
+      .content-rail.home-media-rail--publications
+    ),
+  html
+    body.home-index-shell
+    section.home-publications
+    > :is(
+      .home-publications__header,
+      .content-rail.home-media-rail--publications
+    ) {
     width: 100% !important;
     max-width: 100% !important;
     inline-size: 100% !important;
@@ -553,19 +685,36 @@ body.home-index-shell .home-catégories__track > .home-catégory {
     box-sizing: border-box !important;
   }
 
-  html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications,
-  html body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications {
+  html.home-index-root
+    body.home-index-shell
+    section.home-publications
+    > .content-rail.home-media-rail--publications,
+  html
+    body.home-index-shell
+    section.home-publications
+    > .content-rail.home-media-rail--publications {
     overflow-x: auto !important;
     overflow-y: hidden !important;
     scroll-padding-inline: 0 !important;
   }
 
-  html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications > #home-publications-track.publication-grid,
-  html body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications > #home-publications-track.publication-grid {
+  html.home-index-root
+    body.home-index-shell
+    section.home-publications
+    > .content-rail.home-media-rail--publications
+    > #home-publications-track.publication-grid,
+  html
+    body.home-index-shell
+    section.home-publications
+    > .content-rail.home-media-rail--publications
+    > #home-publications-track.publication-grid {
     display: grid !important;
     grid-auto-flow: column !important;
     grid-template-columns: none !important;
-    grid-auto-columns: minmax(0, calc((100% - (var(--doke-home-card-gap) * 2)) / 3)) !important;
+    grid-auto-columns: minmax(
+      0,
+      calc((100% - (var(--doke-home-card-gap) * 2)) / 3)
+    ) !important;
     align-items: stretch !important;
     justify-content: start !important;
     width: 100% !important;
@@ -582,8 +731,16 @@ body.home-index-shell .home-catégories__track > .home-catégory {
     box-sizing: border-box !important;
   }
 
-  html.home-index-root body.home-index-shell section.home-publications #home-publications-track.publication-grid > article.publication-card,
-  html body.home-index-shell section.home-publications #home-publications-track.publication-grid > article.publication-card {
+  html.home-index-root
+    body.home-index-shell
+    section.home-publications
+    #home-publications-track.publication-grid
+    > article.publication-card,
+  html
+    body.home-index-shell
+    section.home-publications
+    #home-publications-track.publication-grid
+    > article.publication-card {
     width: 100% !important;
     min-width: 0 !important;
     max-width: none !important;
@@ -597,8 +754,20 @@ body.home-index-shell .home-catégories__track > .home-catégory {
 }
 
 @media (min-width: 761px) and (max-width: 1024px) {
-  html.home-index-root body.home-index-shell section.home-publications > :is(.home-publications__header, .content-rail.home-media-rail--publications),
-  html body.home-index-shell section.home-publications > :is(.home-publications__header, .content-rail.home-media-rail--publications) {
+  html.home-index-root
+    body.home-index-shell
+    section.home-publications
+    > :is(
+      .home-publications__header,
+      .content-rail.home-media-rail--publications
+    ),
+  html
+    body.home-index-shell
+    section.home-publications
+    > :is(
+      .home-publications__header,
+      .content-rail.home-media-rail--publications
+    ) {
     width: 100% !important;
     max-width: 100% !important;
     margin-inline: 0 !important;
@@ -606,12 +775,23 @@ body.home-index-shell .home-catégories__track > .home-catégory {
     box-sizing: border-box !important;
   }
 
-  html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications > #home-publications-track.publication-grid,
-  html body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications > #home-publications-track.publication-grid {
+  html.home-index-root
+    body.home-index-shell
+    section.home-publications
+    > .content-rail.home-media-rail--publications
+    > #home-publications-track.publication-grid,
+  html
+    body.home-index-shell
+    section.home-publications
+    > .content-rail.home-media-rail--publications
+    > #home-publications-track.publication-grid {
     display: grid !important;
     grid-auto-flow: column !important;
     grid-template-columns: none !important;
-    grid-auto-columns: minmax(0, calc((100% - var(--doke-home-card-gap)) / 2)) !important;
+    grid-auto-columns: minmax(
+      0,
+      calc((100% - var(--doke-home-card-gap)) / 2)
+    ) !important;
     align-items: stretch !important;
     gap: var(--doke-home-card-gap) !important;
     padding-inline: 0 !important;
@@ -621,18 +801,33 @@ body.home-index-shell .home-catégories__track > .home-catégory {
   }
 }
 
-
 /* 2026-06-07 — index publication rail/profile rhythm contract.
    Authority: home composition only. The shared publication-card controls anatomy;
    this block controls only the index rail width so desktop shows balanced profile-inspired
    cards with a visible next-card preview instead of oversized cards or four compressed cards. */
 body.home-index-shell {
   --doke-home-publication-card-width: clamp(360px, 24vw, 392px);
-  --doke-home-publication-card-width-tablet: clamp(248px, calc((100% - var(--doke-home-card-gap, 16px) - var(--doke-home-publication-card-preview-tablet, 44px)) / 2), 352px);
+  --doke-home-publication-card-width-tablet: clamp(
+    248px,
+    calc(
+      (
+          100% - var(--doke-home-card-gap, 16px) -
+            var(--doke-home-publication-card-preview-tablet, 44px)
+        ) /
+        2
+    ),
+    352px
+  );
   --doke-home-publication-card-width-mobile: minmax(278px, 82%);
   --doke-home-publication-card-width-narrow-tablet: clamp(
     248px,
-    calc((100% - var(--doke-home-card-gap, 14px) - var(--doke-home-publication-card-preview-tablet, 44px)) / 2),
+    calc(
+      (
+          100% - var(--doke-home-card-gap, 14px) -
+            var(--doke-home-publication-card-preview-tablet, 44px)
+        ) /
+        2
+    ),
     286px
   );
   --doke-home-publication-card-preview: clamp(52px, 5vw, 72px);
@@ -640,15 +835,29 @@ body.home-index-shell {
 }
 
 @media (min-width: 1025px) {
-  html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications,
-  html body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications {
+  html.home-index-root
+    body.home-index-shell
+    section.home-publications
+    > .content-rail.home-media-rail--publications,
+  html
+    body.home-index-shell
+    section.home-publications
+    > .content-rail.home-media-rail--publications {
     overflow-x: auto !important;
     overflow-y: hidden !important;
     scroll-padding-inline: 0 !important;
   }
 
-  html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications > #home-publications-track.publication-grid,
-  html body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications > #home-publications-track.publication-grid {
+  html.home-index-root
+    body.home-index-shell
+    section.home-publications
+    > .content-rail.home-media-rail--publications
+    > #home-publications-track.publication-grid,
+  html
+    body.home-index-shell
+    section.home-publications
+    > .content-rail.home-media-rail--publications
+    > #home-publications-track.publication-grid {
     display: grid !important;
     grid-auto-flow: column !important;
     grid-template-columns: none !important;
@@ -656,8 +865,10 @@ body.home-index-shell {
       var(--doke-home-publication-card-max, 456px),
       calc(
         (
-          100% - var(--doke-home-card-gap, 18px) - var(--doke-home-publication-card-preview)
-        ) / 2
+            100% - var(--doke-home-card-gap, 18px) -
+              var(--doke-home-publication-card-preview)
+          ) /
+          2
       )
     ) !important;
     align-items: stretch !important;
@@ -674,8 +885,16 @@ body.home-index-shell {
     box-sizing: border-box !important;
   }
 
-  html.home-index-root body.home-index-shell section.home-publications #home-publications-track.publication-grid > article.publication-card,
-  html body.home-index-shell section.home-publications #home-publications-track.publication-grid > article.publication-card {
+  html.home-index-root
+    body.home-index-shell
+    section.home-publications
+    #home-publications-track.publication-grid
+    > article.publication-card,
+  html
+    body.home-index-shell
+    section.home-publications
+    #home-publications-track.publication-grid
+    > article.publication-card {
     width: 100% !important;
     inline-size: 100% !important;
     min-width: 0 !important;
@@ -686,14 +905,24 @@ body.home-index-shell {
   }
 
   @media (min-width: 1440px) {
-    html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications > #home-publications-track.publication-grid,
-    html body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications > #home-publications-track.publication-grid {
+    html.home-index-root
+      body.home-index-shell
+      section.home-publications
+      > .content-rail.home-media-rail--publications
+      > #home-publications-track.publication-grid,
+    html
+      body.home-index-shell
+      section.home-publications
+      > .content-rail.home-media-rail--publications
+      > #home-publications-track.publication-grid {
       grid-auto-columns: min(
         var(--doke-home-publication-card-max, 456px),
         calc(
           (
-            100% - (var(--doke-home-card-gap, 18px) * 3) - var(--doke-home-publication-card-preview)
-          ) / 3
+              100% - (var(--doke-home-card-gap, 18px) * 3) -
+                var(--doke-home-publication-card-preview)
+            ) /
+            3
         )
       ) !important;
     }
@@ -710,8 +939,16 @@ body.home-index-shell {
 }
 
 @media (min-width: 1025px) {
-  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid,
-  html body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid {
+  html.home-index-root
+    body.home-index-shell
+    section.featured-services
+    > .content-rail
+    > #featured-services-track.service-grid,
+  html
+    body.home-index-shell
+    section.featured-services
+    > .content-rail
+    > #featured-services-track.service-grid {
     display: grid !important;
     grid-auto-flow: column !important;
     grid-template-columns: none !important;
@@ -719,8 +956,10 @@ body.home-index-shell {
       var(--doke-home-featured-card-min, 286px),
       calc(
         (
-          100% - (var(--doke-home-card-gap, 18px) * 4) - var(--doke-home-ad-card-preview)
-        ) / 4
+            100% - (var(--doke-home-card-gap, 18px) * 4) -
+              var(--doke-home-ad-card-preview)
+          ) /
+          4
       ),
       var(--doke-home-featured-card-max, 324px)
     ) !important;
@@ -736,37 +975,62 @@ body.home-index-shell {
     scrollbar-width: none !important;
   }
 
-  html.home-index-root body.home-index-shell section.featured-services #featured-services-track.service-grid > article.doke-ad-card,
-  html body.home-index-shell section.featured-services #featured-services-track.service-grid > article.doke-ad-card {
+  html.home-index-root
+    body.home-index-shell
+    section.featured-services
+    #featured-services-track.service-grid
+    > article.doke-ad-card,
+  html
+    body.home-index-shell
+    section.featured-services
+    #featured-services-track.service-grid
+    > article.doke-ad-card {
     width: 100% !important;
     min-width: 0 !important;
     max-width: none !important;
     scroll-snap-align: start !important;
   }
 
-  html.home-index-root body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid],
-  html body.home-index-shell section.more-services .service-grid.service-grid--compact.doke-grid[data-more-services-grid] {
+  html.home-index-root
+    body.home-index-shell
+    section.more-services
+    .service-grid.service-grid--compact.doke-grid[data-more-services-grid],
+  html
+    body.home-index-shell
+    section.more-services
+    .service-grid.service-grid--compact.doke-grid[data-more-services-grid] {
     display: grid !important;
     grid-auto-flow: row !important;
     grid-auto-columns: initial !important;
-    grid-template-columns: repeat(3, minmax(var(--doke-home-more-card-min, 304px), 1fr)) !important;
+    grid-template-columns: repeat(
+      3,
+      minmax(var(--doke-home-more-card-min, 304px), 1fr)
+    ) !important;
     align-items: stretch !important;
     gap: var(--doke-home-card-gap, 18px) !important;
     overflow: visible !important;
   }
 }
 
-
-
 @media (min-width: 1025px) and (max-width: 1439.98px) {
-  html.home-index-root body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid,
-  html body.home-index-shell section.featured-services > .content-rail > #featured-services-track.service-grid {
+  html.home-index-root
+    body.home-index-shell
+    section.featured-services
+    > .content-rail
+    > #featured-services-track.service-grid,
+  html
+    body.home-index-shell
+    section.featured-services
+    > .content-rail
+    > #featured-services-track.service-grid {
     grid-auto-columns: clamp(
       var(--doke-home-featured-card-min, 286px),
       calc(
         (
-          100% - (var(--doke-home-card-gap, 18px) * 3) - var(--doke-home-ad-card-preview)
-        ) / 3
+            100% - (var(--doke-home-card-gap, 18px) * 3) -
+              var(--doke-home-ad-card-preview)
+          ) /
+          3
       ),
       var(--doke-home-featured-card-max, 324px)
     ) !important;
@@ -774,12 +1038,22 @@ body.home-index-shell {
 }
 
 @media (min-width: 761px) and (max-width: 1024px) {
-  html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications > #home-publications-track.publication-grid,
-  html body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications > #home-publications-track.publication-grid {
+  html.home-index-root
+    body.home-index-shell
+    section.home-publications
+    > .content-rail.home-media-rail--publications
+    > #home-publications-track.publication-grid,
+  html
+    body.home-index-shell
+    section.home-publications
+    > .content-rail.home-media-rail--publications
+    > #home-publications-track.publication-grid {
     display: grid !important;
     grid-auto-flow: column !important;
     grid-template-columns: none !important;
-    grid-auto-columns: var(--doke-home-publication-card-width-tablet) !important;
+    grid-auto-columns: var(
+      --doke-home-publication-card-width-tablet
+    ) !important;
     align-items: stretch !important;
     justify-content: start !important;
     gap: var(--doke-home-card-gap, 16px) !important;
@@ -793,12 +1067,22 @@ body.home-index-shell {
 }
 
 @media (min-width: 561px) and (max-width: 760px) {
-  html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications > #home-publications-track.publication-grid,
-  html body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications > #home-publications-track.publication-grid {
+  html.home-index-root
+    body.home-index-shell
+    section.home-publications
+    > .content-rail.home-media-rail--publications
+    > #home-publications-track.publication-grid,
+  html
+    body.home-index-shell
+    section.home-publications
+    > .content-rail.home-media-rail--publications
+    > #home-publications-track.publication-grid {
     display: grid !important;
     grid-auto-flow: column !important;
     grid-template-columns: none !important;
-    grid-auto-columns: var(--doke-home-publication-card-width-narrow-tablet) !important;
+    grid-auto-columns: var(
+      --doke-home-publication-card-width-narrow-tablet
+    ) !important;
     align-items: stretch !important;
     justify-content: start !important;
     gap: var(--doke-home-card-gap, 14px) !important;
@@ -811,11 +1095,11 @@ body.home-index-shell {
   }
 }
 
-
 /* 2026-06-07 — Home action buttons.
    Authority: home section composition only. Professional highlight cards were
    intentionally removed and will return under a new card contract. */
-body.home-index-shell :is(.more-services__load-button, .more-services__view-all) {
+body.home-index-shell
+  :is(.more-services__load-button, .more-services__view-all) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -824,7 +1108,11 @@ body.home-index-shell :is(.more-services__load-button, .more-services__view-all)
   padding: 0 20px;
   border: 1px solid rgba(42, 95, 144, 0.14);
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(235, 245, 252, 0.92));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.88),
+    rgba(235, 245, 252, 0.92)
+  );
   color: #2a5f90;
   box-shadow: 0 10px 24px rgba(27, 62, 99, 0.07);
   font-weight: 850;
@@ -842,10 +1130,9 @@ body.home-index-shell .more-services__load {
   margin-top: 18px;
 }
 
-
-
 @media (max-width: 560px) {
-  body.home-index-shell :is(.more-services__load-button, .more-services__view-all) {
+  body.home-index-shell
+    :is(.more-services__load-button, .more-services__view-all) {
     min-height: 38px;
     padding-inline: 16px;
     font-size: 0.82rem;
@@ -866,27 +1153,51 @@ body.home-index-shell .more-services__load {
     --doke-index-mobile-workers-gap: 12px;
   }
 
-  html.home-index-root body.home-index-shell :is(
-    section.featured-services,
-    section.short-videos,
-    section.home-publications,
-    section.more-services,
-    section.professional-showcase
-  ) > :is(.section-heading, .home-section-header, .home-publications__header, .professional-showcase__header),
-  html.home-index-root.doke-js-mobile body.home-index-shell :is(
-    section.featured-services,
-    section.short-videos,
-    section.home-publications,
-    section.more-services,
-    section.professional-showcase
-  ) > :is(.section-heading, .home-section-header, .home-publications__header, .professional-showcase__header),
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(
-    section.featured-services,
-    section.short-videos,
-    section.home-publications,
-    section.more-services,
-    section.professional-showcase
-  ) > :is(.section-heading, .home-section-header, .home-publications__header, .professional-showcase__header) {
+  html.home-index-root
+    body.home-index-shell
+    :is(
+      section.featured-services,
+      section.short-videos,
+      section.home-publications,
+      section.more-services,
+      section.professional-showcase
+    )
+    > :is(
+      .section-heading,
+      .home-section-header,
+      .home-publications__header,
+      .professional-showcase__header
+    ),
+  html.home-index-root.doke-js-mobile
+    body.home-index-shell
+    :is(
+      section.featured-services,
+      section.short-videos,
+      section.home-publications,
+      section.more-services,
+      section.professional-showcase
+    )
+    > :is(
+      .section-heading,
+      .home-section-header,
+      .home-publications__header,
+      .professional-showcase__header
+    ),
+  html.home-index-root
+    body.home-index-shell.doke-mobile-shell-mounted
+    :is(
+      section.featured-services,
+      section.short-videos,
+      section.home-publications,
+      section.more-services,
+      section.professional-showcase
+    )
+    > :is(
+      .section-heading,
+      .home-section-header,
+      .home-publications__header,
+      .professional-showcase__header
+    ) {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -899,9 +1210,15 @@ body.home-index-shell .more-services__load {
     box-sizing: border-box;
   }
 
-  html.home-index-root body.home-index-shell :is(.section-heading__title, .home-section-title),
-  html.home-index-root.doke-js-mobile body.home-index-shell :is(.section-heading__title, .home-section-title),
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(.section-heading__title, .home-section-title) {
+  html.home-index-root
+    body.home-index-shell
+    :is(.section-heading__title, .home-section-title),
+  html.home-index-root.doke-js-mobile
+    body.home-index-shell
+    :is(.section-heading__title, .home-section-title),
+  html.home-index-root
+    body.home-index-shell.doke-mobile-shell-mounted
+    :is(.section-heading__title, .home-section-title) {
     min-inline-size: 0;
     flex: 1 1 auto;
     overflow: hidden;
@@ -909,9 +1226,15 @@ body.home-index-shell .more-services__load {
     white-space: nowrap;
   }
 
-  html.home-index-root body.home-index-shell :is(.section-heading__link, .professional-showcase__view-all),
-  html.home-index-root.doke-js-mobile body.home-index-shell :is(.section-heading__link, .professional-showcase__view-all),
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted :is(.section-heading__link, .professional-showcase__view-all) {
+  html.home-index-root
+    body.home-index-shell
+    :is(.section-heading__link, .professional-showcase__view-all),
+  html.home-index-root.doke-js-mobile
+    body.home-index-shell
+    :is(.section-heading__link, .professional-showcase__view-all),
+  html.home-index-root
+    body.home-index-shell.doke-mobile-shell-mounted
+    :is(.section-heading__link, .professional-showcase__view-all) {
     flex: 0 1 var(--doke-index-mobile-section-action-max);
     max-inline-size: var(--doke-index-mobile-section-action-max);
     min-inline-size: 0;
@@ -921,9 +1244,18 @@ body.home-index-shell .more-services__load {
     white-space: nowrap;
   }
 
-  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
-  html.home-index-root.doke-js-mobile body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.short-videos > .content-rail.home-media-rail--workers {
+  html.home-index-root
+    body.home-index-shell
+    section.short-videos
+    > .content-rail.home-media-rail--workers,
+  html.home-index-root.doke-js-mobile
+    body.home-index-shell
+    section.short-videos
+    > .content-rail.home-media-rail--workers,
+  html.home-index-root
+    body.home-index-shell.doke-mobile-shell-mounted
+    section.short-videos
+    > .content-rail.home-media-rail--workers {
     overflow: visible;
     inline-size: 100%;
     max-inline-size: 100%;
@@ -931,9 +1263,21 @@ body.home-index-shell .more-services__load {
     box-sizing: border-box;
   }
 
-  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track,
-  html.home-index-root.doke-js-mobile body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track {
+  html.home-index-root
+    body.home-index-shell
+    section.short-videos
+    > .content-rail.home-media-rail--workers
+    > #short-videos-track.short-videos__track,
+  html.home-index-root.doke-js-mobile
+    body.home-index-shell
+    section.short-videos
+    > .content-rail.home-media-rail--workers
+    > #short-videos-track.short-videos__track,
+  html.home-index-root
+    body.home-index-shell.doke-mobile-shell-mounted
+    section.short-videos
+    > .content-rail.home-media-rail--workers
+    > #short-videos-track.short-videos__track {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: repeat(2, auto);
@@ -955,15 +1299,39 @@ body.home-index-shell .more-services__load {
     box-sizing: border-box;
   }
 
-  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5),
-  html.home-index-root.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5),
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5) {
+  html.home-index-root
+    body.home-index-shell
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > :nth-child(n + 5),
+  html.home-index-root.doke-js-mobile
+    body.home-index-shell
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > :nth-child(n + 5),
+  html.home-index-root
+    body.home-index-shell.doke-mobile-shell-mounted
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > :nth-child(n + 5) {
     display: none;
   }
 
-  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
-  html.home-index-root.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card {
+  html.home-index-root
+    body.home-index-shell
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > article.doke-worker-card,
+  html.home-index-root.doke-js-mobile
+    body.home-index-shell
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > article.doke-worker-card,
+  html.home-index-root
+    body.home-index-shell.doke-mobile-shell-mounted
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > article.doke-worker-card {
     inline-size: 100%;
     width: 100%;
     min-inline-size: 0;
@@ -975,18 +1343,39 @@ body.home-index-shell .more-services__load {
     scroll-snap-align: unset;
   }
 
-  html.home-index-root body.home-index-shell section.professional-showcase > .professional-showcase__rail,
-  html.home-index-root.doke-js-mobile body.home-index-shell section.professional-showcase > .professional-showcase__rail,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.professional-showcase > .professional-showcase__rail {
+  html.home-index-root
+    body.home-index-shell
+    section.professional-showcase
+    > .professional-showcase__rail,
+  html.home-index-root.doke-js-mobile
+    body.home-index-shell
+    section.professional-showcase
+    > .professional-showcase__rail,
+  html.home-index-root
+    body.home-index-shell.doke-mobile-shell-mounted
+    section.professional-showcase
+    > .professional-showcase__rail {
     overflow-x: auto;
     overflow-y: visible;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }
 
-  html.home-index-root body.home-index-shell section.professional-showcase > .professional-showcase__rail > #professional-showcase-track.professional-showcase__track,
-  html.home-index-root.doke-js-mobile body.home-index-shell section.professional-showcase > .professional-showcase__rail > #professional-showcase-track.professional-showcase__track,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.professional-showcase > .professional-showcase__rail > #professional-showcase-track.professional-showcase__track {
+  html.home-index-root
+    body.home-index-shell
+    section.professional-showcase
+    > .professional-showcase__rail
+    > #professional-showcase-track.professional-showcase__track,
+  html.home-index-root.doke-js-mobile
+    body.home-index-shell
+    section.professional-showcase
+    > .professional-showcase__rail
+    > #professional-showcase-track.professional-showcase__track,
+  html.home-index-root
+    body.home-index-shell.doke-mobile-shell-mounted
+    section.professional-showcase
+    > .professional-showcase__rail
+    > #professional-showcase-track.professional-showcase__track {
     display: flex;
     flex-flow: row nowrap;
     align-items: stretch;
@@ -999,16 +1388,26 @@ body.home-index-shell .more-services__load {
     scroll-snap-type: x proximity;
   }
 
-  html.home-index-root body.home-index-shell section.professional-showcase #professional-showcase-track > .professional-showcase-card,
-  html.home-index-root.doke-js-mobile body.home-index-shell section.professional-showcase #professional-showcase-track > .professional-showcase-card,
-  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.professional-showcase #professional-showcase-track > .professional-showcase-card {
+  html.home-index-root
+    body.home-index-shell
+    section.professional-showcase
+    #professional-showcase-track
+    > .professional-showcase-card,
+  html.home-index-root.doke-js-mobile
+    body.home-index-shell
+    section.professional-showcase
+    #professional-showcase-track
+    > .professional-showcase-card,
+  html.home-index-root
+    body.home-index-shell.doke-mobile-shell-mounted
+    section.professional-showcase
+    #professional-showcase-track
+    > .professional-showcase-card {
     flex: 0 0 min(72vw, 236px);
     inline-size: min(72vw, 236px);
     scroll-snap-align: start;
   }
 }
-
-
 
 /* 2026-06-09 - Runtime-safe index mobile contract.
    Cause: app.js may resync html classes after load, so this contract must not depend on .home-index-root.
@@ -1031,20 +1430,24 @@ body.home-index-shell .more-services__load {
     --doke-mobile-video-height: clamp(214px, 58vw, 248px);
   }
 
-  body.home-index-shell :is(
-    section.featured-services,
-    section.short-videos,
-    section.home-publications,
-    section.more-services,
-    section.professional-showcase
-  ) > :is(.section-heading, .home-section-header, .home-media-section__header),
-  body.home-index-shell.doke-mobile-shell-mounted :is(
-    section.featured-services,
-    section.short-videos,
-    section.home-publications,
-    section.more-services,
-    section.professional-showcase
-  ) > :is(.section-heading, .home-section-header, .home-media-section__header) {
+  body.home-index-shell
+    :is(
+      section.featured-services,
+      section.short-videos,
+      section.home-publications,
+      section.more-services,
+      section.professional-showcase
+    )
+    > :is(.section-heading, .home-section-header, .home-media-section__header),
+  body.home-index-shell.doke-mobile-shell-mounted
+    :is(
+      section.featured-services,
+      section.short-videos,
+      section.home-publications,
+      section.more-services,
+      section.professional-showcase
+    )
+    > :is(.section-heading, .home-section-header, .home-media-section__header) {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1056,20 +1459,26 @@ body.home-index-shell .more-services__load {
     overflow: visible;
   }
 
-  body.home-index-shell :is(
-    section.featured-services,
-    section.short-videos,
-    section.home-publications,
-    section.more-services,
-    section.professional-showcase
-  ) > :is(.section-heading, .home-section-header, .home-media-section__header) :is(.section-heading__link, .professional-showcase__view-all, a),
-  body.home-index-shell.doke-mobile-shell-mounted :is(
-    section.featured-services,
-    section.short-videos,
-    section.home-publications,
-    section.more-services,
-    section.professional-showcase
-  ) > :is(.section-heading, .home-section-header, .home-media-section__header) :is(.section-heading__link, .professional-showcase__view-all, a) {
+  body.home-index-shell
+    :is(
+      section.featured-services,
+      section.short-videos,
+      section.home-publications,
+      section.more-services,
+      section.professional-showcase
+    )
+    > :is(.section-heading, .home-section-header, .home-media-section__header)
+    :is(.section-heading__link, .professional-showcase__view-all, a),
+  body.home-index-shell.doke-mobile-shell-mounted
+    :is(
+      section.featured-services,
+      section.short-videos,
+      section.home-publications,
+      section.more-services,
+      section.professional-showcase
+    )
+    > :is(.section-heading, .home-section-header, .home-media-section__header)
+    :is(.section-heading__link, .professional-showcase__view-all, a) {
     flex: 0 1 var(--doke-index-mobile-section-action-max);
     max-width: var(--doke-index-mobile-section-action-max);
     min-width: 0;
@@ -1079,58 +1488,99 @@ body.home-index-shell .more-services__load {
     text-overflow: ellipsis;
   }
 
-  body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card .doke-ad-card__category {
+  body.home-index-shell
+    section.featured-services
+    #featured-services-track
+    > article.doke-ad-card
+    .doke-ad-card__category {
     margin-bottom: 4px;
     font-size: 0.64rem;
     line-height: 1;
   }
 
-  body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card .doke-ad-card__title {
+  body.home-index-shell
+    section.featured-services
+    #featured-services-track
+    > article.doke-ad-card
+    .doke-ad-card__title {
     margin-bottom: 6px;
     font-size: 1rem;
     line-height: 1.04;
   }
 
-  body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card .doke-ad-card__rating {
+  body.home-index-shell
+    section.featured-services
+    #featured-services-track
+    > article.doke-ad-card
+    .doke-ad-card__rating {
     margin-bottom: 7px;
     font-size: 0.75rem;
   }
 
-  body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card .doke-ad-card__tags {
+  body.home-index-shell
+    section.featured-services
+    #featured-services-track
+    > article.doke-ad-card
+    .doke-ad-card__tags {
     margin-bottom: 7px;
     min-height: 20px;
   }
 
-  body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card .doke-ad-card__tags span {
+  body.home-index-shell
+    section.featured-services
+    #featured-services-track
+    > article.doke-ad-card
+    .doke-ad-card__tags
+    span {
     min-height: 20px;
     padding-inline: 8px;
     font-size: 0.66rem;
   }
 
-  body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card .doke-ad-card__location {
+  body.home-index-shell
+    section.featured-services
+    #featured-services-track
+    > article.doke-ad-card
+    .doke-ad-card__location {
     margin-bottom: 8px;
     font-size: 0.64rem;
     line-height: 1.05;
   }
 
-  body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card .doke-ad-card__footer {
+  body.home-index-shell
+    section.featured-services
+    #featured-services-track
+    > article.doke-ad-card
+    .doke-ad-card__footer {
     gap: 8px;
     padding-top: 8px;
   }
 
-  body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card .doke-ad-card__price {
+  body.home-index-shell
+    section.featured-services
+    #featured-services-track
+    > article.doke-ad-card
+    .doke-ad-card__price {
     font-size: 0.94rem;
   }
 
-  body.home-index-shell section.featured-services #featured-services-track > article.doke-ad-card .doke-ad-card__cta {
+  body.home-index-shell
+    section.featured-services
+    #featured-services-track
+    > article.doke-ad-card
+    .doke-ad-card__cta {
     min-height: 32px;
     height: 32px;
     padding-inline: 12px;
     font-size: 0.72rem;
   }
 
-  body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
-  body.home-index-shell.doke-mobile-shell-mounted section.short-videos > .content-rail.home-media-rail--workers {
+  body.home-index-shell
+    section.short-videos
+    > .content-rail.home-media-rail--workers,
+  body.home-index-shell.doke-mobile-shell-mounted
+    section.short-videos
+    > .content-rail.home-media-rail--workers {
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -1139,9 +1589,16 @@ body.home-index-shell .more-services__load {
     box-sizing: border-box;
   }
 
-  body.home-index-shell section.short-videos #short-videos-track.short-videos__track,
-  html.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track,
-  body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track {
+  body.home-index-shell
+    section.short-videos
+    #short-videos-track.short-videos__track,
+  html.doke-js-mobile
+    body.home-index-shell
+    section.short-videos
+    #short-videos-track.short-videos__track,
+  body.home-index-shell.doke-mobile-shell-mounted
+    section.short-videos
+    #short-videos-track.short-videos__track {
     display: grid;
     grid-auto-flow: row;
     grid-auto-columns: initial;
@@ -1159,9 +1616,19 @@ body.home-index-shell .more-services__load {
     box-sizing: border-box;
   }
 
-  body.home-index-shell section.short-videos #short-videos-track.short-videos__track > .doke-worker-card,
-  html.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track > .doke-worker-card,
-  body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track > .doke-worker-card {
+  body.home-index-shell
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > .doke-worker-card,
+  html.doke-js-mobile
+    body.home-index-shell
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > .doke-worker-card,
+  body.home-index-shell.doke-mobile-shell-mounted
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > .doke-worker-card {
     width: 100%;
     min-width: 0;
     max-width: 100%;
@@ -1170,13 +1637,22 @@ body.home-index-shell .more-services__load {
     scroll-snap-align: unset;
   }
 
-  body.home-index-shell section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5),
-  html.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5),
-  body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5) {
+  body.home-index-shell
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > :nth-child(n + 5),
+  html.doke-js-mobile
+    body.home-index-shell
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > :nth-child(n + 5),
+  body.home-index-shell.doke-mobile-shell-mounted
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > :nth-child(n + 5) {
     display: none;
   }
 }
-
 
 /* 2026-06-09 - Home Workers mobile Shorts-like tile contract.
    Scope: mobile rendering only. Keeps Workers as a 2x2 media grid without
@@ -1191,10 +1667,22 @@ body.home-index-shell .more-services__load {
 }
 
 @media (max-width: 760px) {
-  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
-  html body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
-  html.doke-js-mobile body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
-  html body.home-index-shell.doke-mobile-shell-mounted section.short-videos > .content-rail.home-media-rail--workers {
+  html.home-index-root
+    body.home-index-shell
+    section.short-videos
+    > .content-rail.home-media-rail--workers,
+  html
+    body.home-index-shell
+    section.short-videos
+    > .content-rail.home-media-rail--workers,
+  html.doke-js-mobile
+    body.home-index-shell
+    section.short-videos
+    > .content-rail.home-media-rail--workers,
+  html
+    body.home-index-shell.doke-mobile-shell-mounted
+    section.short-videos
+    > .content-rail.home-media-rail--workers {
     width: 100%;
     min-width: 0;
     max-width: 100%;
@@ -1204,12 +1692,31 @@ body.home-index-shell .more-services__load {
     box-sizing: border-box;
   }
 
-  html.home-index-root body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track,
-  html body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track,
-  html.doke-js-mobile body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track,
-  html body.home-index-shell.doke-mobile-shell-mounted section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track {
+  html.home-index-root
+    body.home-index-shell
+    section.short-videos
+    > .content-rail.home-media-rail--workers
+    > #short-videos-track.short-videos__track,
+  html
+    body.home-index-shell
+    section.short-videos
+    > .content-rail.home-media-rail--workers
+    > #short-videos-track.short-videos__track,
+  html.doke-js-mobile
+    body.home-index-shell
+    section.short-videos
+    > .content-rail.home-media-rail--workers
+    > #short-videos-track.short-videos__track,
+  html
+    body.home-index-shell.doke-mobile-shell-mounted
+    section.short-videos
+    > .content-rail.home-media-rail--workers
+    > #short-videos-track.short-videos__track {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, var(--doke-workers-mobile-tile-width)));
+    grid-template-columns: repeat(
+      2,
+      minmax(0, var(--doke-workers-mobile-tile-width))
+    );
     grid-auto-flow: row;
     grid-auto-columns: initial;
     justify-content: start;
@@ -1225,10 +1732,26 @@ body.home-index-shell .more-services__load {
     box-sizing: border-box;
   }
 
-  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
-  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
-  html.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
-  html body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card {
+  html.home-index-root
+    body.home-index-shell
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > article.doke-worker-card,
+  html
+    body.home-index-shell
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > article.doke-worker-card,
+  html.doke-js-mobile
+    body.home-index-shell
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > article.doke-worker-card,
+  html
+    body.home-index-shell.doke-mobile-shell-mounted
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > article.doke-worker-card {
     width: 100%;
     min-width: 0;
     max-width: 100%;
@@ -1241,10 +1764,26 @@ body.home-index-shell .more-services__load {
     scroll-snap-align: unset;
   }
 
-  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5),
-  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5),
-  html.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5),
-  html body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5) {
+  html.home-index-root
+    body.home-index-shell
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > :nth-child(n + 5),
+  html
+    body.home-index-shell
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > :nth-child(n + 5),
+  html.doke-js-mobile
+    body.home-index-shell
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > :nth-child(n + 5),
+  html
+    body.home-index-shell.doke-mobile-shell-mounted
+    section.short-videos
+    #short-videos-track.short-videos__track
+    > :nth-child(n + 5) {
     display: none;
   }
 }
@@ -1259,8 +1798,14 @@ html body.home-index-shell.doke-mobile-shell-mounted {
   --doke-workers-mobile-gap: 12px;
 }
 
-html.doke-js-mobile body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers,
-html body.home-index-shell.doke-mobile-shell-mounted section.short-videos > .content-rail.home-media-rail--workers {
+html.doke-js-mobile
+  body.home-index-shell
+  section.short-videos
+  > .content-rail.home-media-rail--workers,
+html
+  body.home-index-shell.doke-mobile-shell-mounted
+  section.short-videos
+  > .content-rail.home-media-rail--workers {
   width: 100%;
   min-width: 0;
   max-width: 100%;
@@ -1270,10 +1815,21 @@ html body.home-index-shell.doke-mobile-shell-mounted section.short-videos > .con
   box-sizing: border-box;
 }
 
-html.doke-js-mobile body.home-index-shell section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track,
-html body.home-index-shell.doke-mobile-shell-mounted section.short-videos > .content-rail.home-media-rail--workers > #short-videos-track.short-videos__track {
+html.doke-js-mobile
+  body.home-index-shell
+  section.short-videos
+  > .content-rail.home-media-rail--workers
+  > #short-videos-track.short-videos__track,
+html
+  body.home-index-shell.doke-mobile-shell-mounted
+  section.short-videos
+  > .content-rail.home-media-rail--workers
+  > #short-videos-track.short-videos__track {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, var(--doke-workers-mobile-tile-width)));
+  grid-template-columns: repeat(
+    2,
+    minmax(0, var(--doke-workers-mobile-tile-width))
+  );
   grid-auto-flow: row;
   grid-auto-columns: initial;
   justify-content: start;
@@ -1289,8 +1845,16 @@ html body.home-index-shell.doke-mobile-shell-mounted section.short-videos > .con
   box-sizing: border-box;
 }
 
-html.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
-html body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card {
+html.doke-js-mobile
+  body.home-index-shell
+  section.short-videos
+  #short-videos-track.short-videos__track
+  > article.doke-worker-card,
+html
+  body.home-index-shell.doke-mobile-shell-mounted
+  section.short-videos
+  #short-videos-track.short-videos__track
+  > article.doke-worker-card {
   width: 100%;
   min-width: 0;
   max-width: 100%;
@@ -1303,8 +1867,16 @@ html body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short
   scroll-snap-align: unset;
 }
 
-html.doke-js-mobile body.home-index-shell section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5),
-html body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short-videos-track.short-videos__track > :nth-child(n + 5) {
+html.doke-js-mobile
+  body.home-index-shell
+  section.short-videos
+  #short-videos-track.short-videos__track
+  > :nth-child(n + 5),
+html
+  body.home-index-shell.doke-mobile-shell-mounted
+  section.short-videos
+  #short-videos-track.short-videos__track
+  > :nth-child(n + 5) {
   display: none;
 }
 
@@ -1317,19 +1889,31 @@ html body.home-index-shell.doke-mobile-shell-mounted section.short-videos #short
     padding-block-end: 0;
   }
 
-  html.home-index-root body.home-index-shell section.home-publications > .content-rail.home-media-rail--publications,
-  html.home-index-root body.home-index-shell section.home-publications #home-publications-track.publication-grid {
+  html.home-index-root
+    body.home-index-shell
+    section.home-publications
+    > .content-rail.home-media-rail--publications,
+  html.home-index-root
+    body.home-index-shell
+    section.home-publications
+    #home-publications-track.publication-grid {
     height: auto;
     min-height: 0;
     margin-block-end: 0;
     padding-block-end: 4px;
   }
 
-  html.home-index-root body.home-index-shell section.home-publications + section.more-services {
+  html.home-index-root
+    body.home-index-shell
+    section.home-publications
+    + section.more-services {
     margin-block-start: 0;
   }
 
-  html.home-index-root body.home-index-shell section.more-services > .section-heading.home-section-header {
+  html.home-index-root
+    body.home-index-shell
+    section.more-services
+    > .section-heading.home-section-header {
     margin-block-start: 0;
   }
 }
