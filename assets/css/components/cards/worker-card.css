@@ -1,377 +1,119 @@
 /* Doke Worker card component.
-   Responsibility: reusable media-only Worker cards.
-   Page/rail placement is owned by patterns/home-media-rails.css or page-specific patterns. */
+   Owner: components/cards.
+   Responsibility: reusable vertical media cards only.
+   Rail/grid placement belongs to patterns or page composition. */
 
+:root {
+  --doke-worker-card-width: clamp(168px, 14vw, 220px);
+  --doke-worker-card-radius: var(--card-radius-lg, 22px);
+  --doke-worker-card-bg: #15314a;
+  --doke-worker-card-shadow: var(--card-shadow-media, 0 16px 32px rgba(18, 45, 78, 0.16));
+  --doke-worker-card-aspect: 9 / 16;
+}
 
-body.home-index-shell .short-videos .video-card {
+.video-card,
+.doke-worker-card {
   position: relative;
   display: block;
-  flex: 0 0 var(--doke-index-worker-width, clamp(240px, 16vw, 285px));
-  width: var(--doke-index-worker-width, clamp(240px, 16vw, 285px));
+  width: var(--doke-worker-card-width);
   min-width: 0;
-  aspect-ratio: var(--doke-worker-aspect, 9 / 16);
+  aspect-ratio: var(--doke-worker-card-aspect);
   padding: 0;
   overflow: hidden;
-  border: var(--card-border);
-  border-radius: var(--card-radius-lg);
-  background-color: #15314a;
+  border: var(--card-border, 1px solid rgba(24, 75, 118, 0.1));
+  border-radius: var(--doke-worker-card-radius);
+  background-color: var(--doke-worker-card-bg);
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
-  box-shadow: var(--card-shadow-media);
+  box-shadow: var(--doke-worker-card-shadow);
   color: transparent;
   isolation: isolate;
   cursor: pointer;
   scroll-snap-align: start;
 }
 
-body.home-index-shell .short-videos .video-card--one { background-image: url("../../../img/workers/worker-pintura.png"); }
-body.home-index-shell .short-videos .video-card--two { background-image: url("../../../img/workers/worker-cozinha.png"); }
-body.home-index-shell .short-videos .video-card--three { background-image: url("../../../img/workers/worker-eletrica.png"); }
-body.home-index-shell .short-videos .video-card--four { background-image: url("../../../img/workers/worker-limpeza.png"); }
-body.home-index-shell .short-videos .video-card--five { background-image: url("../../../img/community/covers/repairs-photo.jpg"); }
-body.home-index-shell .short-videos .video-card--six { background-image: url("../../../img/community/covers/tech-photo.jpg"); }
+.video-card--one { background-image: url("../../../img/workers/worker-pintura.png"); }
+.video-card--two { background-image: url("../../../img/workers/worker-cozinha.png"); }
+.video-card--three { background-image: url("../../../img/workers/worker-eletrica.png"); }
+.video-card--four { background-image: url("../../../img/workers/worker-limpeza.png"); }
+.video-card--five { background-image: url("../../../img/community/covers/repairs-photo.jpg"); }
+.video-card--six { background-image: url("../../../img/community/covers/tech-photo.jpg"); }
 
-body.home-index-shell .short-videos .video-card::before,
-body.home-index-shell .short-videos .video-card::after {
-  content: none !important;
-  display: none !important;
+.video-card::before,
+.video-card::after,
+.doke-worker-card::before,
+.doke-worker-card::after {
+  content: none;
 }
 
-body.home-index-shell .short-videos .video-card > :not(.video-card__poster):not(.video-card__preview) {
-  display: none !important;
+.video-card > :not(.video-card__poster):not(.video-card__preview),
+.doke-worker-card > :not(.video-card__poster):not(.video-card__preview) {
+  display: none;
 }
 
-body.home-index-shell .short-videos .video-card__poster,
-body.home-index-shell .short-videos .video-card__preview {
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover;
-  border-radius: inherit;
-}
-
-body.home-index-shell .short-videos .video-card__poster {
-  z-index: 0;
-  display: block !important;
-}
-
-body.home-index-shell .short-videos .video-card__preview {
-  z-index: 1;
-  display: block !important;
-  opacity: 0;
-  transition: opacity 180ms ease;
-}
-
-body.home-index-shell .short-videos .video-card.is-previewing .video-card__preview { opacity: 1; }
-
-@media (hover: hover) and (pointer: fine) {
-  body.home-index-shell .short-videos .video-card {
-    transition: var(--card-transition);
-  }
-
-  body.home-index-shell .short-videos .video-card:hover,
-  body.home-index-shell .short-videos .video-card:focus-visible,
-  body.home-index-shell .short-videos .video-card.is-previewing {
-    transform: translateY(-2px);
-    border-color: var(--card-border-color);
-    box-shadow: var(--card-shadow-hover);
-  }
-}
-
-@media (max-width: 760px) {
-  body.home-index-shell .short-videos .video-card {
-    flex: 0 1 auto;
-    flex-basis: auto;
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-    aspect-ratio: var(--doke-worker-mobile-aspect, 10 / 16);
-    border-radius: var(--card-radius);
-  }
-
-}
-
-/* Home Worker card dimensions.
-   Authority: Worker card anatomy/sizing only. The home rail keeps ownership of
-   display mode, overflow and track spacing in pages/home/*.css. These rules
-   intentionally preserve the approved Phase 9/10 visual dimensions while
-   removing Worker card sizing from tablet-safari-layout.css. */
-@media (min-width: 561px) {
-  body.home-index-shell {
-    --doke-worker-home-card-width: clamp(168px, 13.2vw, 205px);
-    --doke-worker-home-card-height: clamp(292px, 22vw, 342px);
-  }
-
-  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
-  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
-  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.video-card,
-  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.video-card,
-  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track > article.doke-worker-card,
-  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track > article.video-card,
-  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > div.content-rail.doke-scroll-rail.home-media-rail.home-media-rail--workers > div#short-videos-track.short-videos__track > article.doke-worker-card,
-  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > div.content-rail.doke-scroll-rail.home-media-rail.home-media-rail--workers > div#short-videos-track.short-videos__track > article.video-card {
-    display: grid !important;
-    flex: 0 0 var(--doke-worker-home-card-width) !important;
-    width: var(--doke-worker-home-card-width) !important;
-    min-width: var(--doke-worker-home-card-width) !important;
-    max-width: var(--doke-worker-home-card-width) !important;
-    height: var(--doke-worker-home-card-height) !important;
-    min-height: var(--doke-worker-home-card-height) !important;
-    aspect-ratio: auto !important;
-    scroll-snap-align: start !important;
-  }
-}
-
-@media (min-width: 561px) and (max-width: 700px) and (orientation: portrait) {
-  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
-  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.doke-worker-card,
-  html.home-index-root body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.video-card,
-  html body.home-index-shell section.short-videos #short-videos-track.short-videos__track > article.video-card,
-  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track > article.doke-worker-card,
-  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > .content-rail > #short-videos-track.short-videos__track > article.video-card,
-  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > div.content-rail.doke-scroll-rail.home-media-rail.home-media-rail--workers > div#short-videos-track.short-videos__track > article.doke-worker-card,
-  html.home-index-root body[data-page="home"].home-index-shell section.short-videos > div.content-rail.doke-scroll-rail.home-media-rail.home-media-rail--workers > div#short-videos-track.short-videos__track > article.video-card {
-    width: 152px !important;
-    min-width: 152px !important;
-    max-width: 152px !important;
-    height: 236px !important;
-    min-height: 236px !important;
-    scroll-snap-align: start !important;
-  }
-}
-
-/* Resultados workers parity.
-   The same media-only Workers card contract from index.html is reused here so
-   resultados.html does not maintain a parallel Workers card visual system. */
-@media (min-width: 761px) {
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid {
-    display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: clamp(18px, 2vw, 24px) !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    justify-content: stretch !important;
-    align-items: stretch !important;
-    overflow: visible !important;
-  }
-
-  body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="workers"] .results-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  }
-
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid > .video-card[data-worker-trigger] {
-    position: relative !important;
-    display: block !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    min-height: 0 !important;
-    aspect-ratio: 9 / 16 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    border: var(--card-border);
-    border-radius: var(--card-radius-lg);
-    background-color: #15314a;
-    background-position: center;
-    background-size: cover;
-    background-repeat: no-repeat;
-    box-shadow: var(--card-shadow-media);
-    color: transparent;
-    isolation: isolate !important;
-    cursor: pointer;
-    transform: none !important;
-  }
-
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid > .video-card--one { background-image: url("../../../img/workers/worker-pintura.png") !important; }
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid > .video-card--two { background-image: url("../../../img/workers/worker-cozinha.png") !important; }
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid > .video-card--three { background-image: url("../../../img/workers/worker-eletrica.png") !important; }
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid > .video-card--four { background-image: url("../../../img/workers/worker-limpeza.png") !important; }
-
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid > .video-card[data-worker-trigger]::before,
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid > .video-card[data-worker-trigger]::after {
-    content: none !important;
-    display: none !important;
-    background: none;
-  }
-
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid > .video-card[data-worker-trigger] > :not(.video-card__poster):not(.video-card__preview) {
-    display: none !important;
-  }
-
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid > .video-card[data-worker-trigger] :is(.video-card__poster, .video-card__preview) {
-    position: absolute !important;
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover;
-    border-radius: inherit;
-  }
-
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid > .video-card[data-worker-trigger]:hover,
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid > .video-card[data-worker-trigger]:focus-visible {
-    transform: translateY(-2px) !important;
-    border-color: var(--card-border-color);
-    box-shadow: var(--card-shadow-hover);
-  }
-}
-
-@media (min-width: 761px) and (max-width: 1180px) {
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid,
-  body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="workers"] .results-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-}
-
-@media (max-width: 760px) {
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 12px !important;
-  }
-
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid > .video-card[data-worker-trigger] {
-    width: 100% !important;
-    aspect-ratio: 9 / 16 !important;
-    padding: 0 !important;
-    border-radius: var(--card-radius);
-  }
-
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid > .video-card[data-worker-trigger] > :not(.video-card__poster):not(.video-card__preview) {
-    display: none !important;
-  }
-}
-
-/* 2026-06-07 - Stage 03C worker/video card global contract.
-   Owner: assets/css/components/cards/worker-card.css
-   Pages may control only rail/grid/gap/overflow around worker/video cards.
-   Pages must not redefine media ratio, overlay anatomy, radius, padding or typography. */
-
-:where(.video-card, .worker-card, .short-video-card) {
-  box-sizing: border-box;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  overflow: hidden;
-  border: 1px solid var(--doke-card-border, rgba(24, 75, 118, 0.10));
-  border-radius: var(--doke-worker-card-radius, var(--doke-card-radius, 22px));
-  background: var(--doke-worker-card-surface, #102849);
-  box-shadow: var(--doke-worker-card-shadow, 0 16px 36px rgba(16, 40, 73, 0.14));
-  color: #fff;
-}
-
-:where(.video-card__media, .worker-card__media, .short-video-card__media) {
-  position: relative;
-  display: block;
-  width: 100%;
-  aspect-ratio: var(--doke-worker-card-ratio, 9 / 16);
-  overflow: hidden;
-  background: #0f2138;
-}
-
-:where(.video-card__media, .worker-card__media, .short-video-card__media) > :where(img, video),
-:where(.video-card, .worker-card, .short-video-card) > :where(img, video) {
+.video-card__poster,
+.video-card__preview {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: inherit;
 }
 
-:where(.video-card__overlay, .worker-card__overlay, .short-video-card__overlay) {
-  position: absolute;
-  inset: auto 0 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--doke-worker-card-overlay-gap, 6px);
-  padding: var(--doke-worker-card-overlay-padding, 14px);
-  background: linear-gradient(180deg, rgba(9, 20, 34, 0) 0%, rgba(9, 20, 34, 0.72) 100%);
-  color: #fff;
+.video-card__poster { z-index: 0; }
+.video-card__preview {
+  z-index: 1;
+  opacity: 0;
+  transition: opacity var(--transition-fast, 180ms ease);
+}
+.video-card.is-previewing .video-card__preview { opacity: 1; }
+
+body.home-index-shell .short-videos .video-card,
+body.home-index-shell .short-videos .doke-worker-card {
+  flex: 0 0 var(--doke-worker-home-card-width, var(--doke-worker-card-width));
+  width: var(--doke-worker-home-card-width, var(--doke-worker-card-width));
 }
 
-:where(.video-card__title, .worker-card__title, .short-video-card__title) {
-  margin: 0;
-  color: #fff;
-  font-size: var(--doke-worker-card-title-size, 0.95rem);
-  font-weight: 780;
-  line-height: 1.18;
-}
-
-:where(.video-card__meta, .worker-card__meta, .short-video-card__meta) {
-  color: rgba(255, 255, 255, 0.82);
-  font-size: var(--doke-worker-card-meta-size, 0.8rem);
-  line-height: 1.3;
-}
-
-:where(.video-card__author, .worker-card__author, .short-video-card__author) {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: clamp(14px, 2vw, 24px);
   min-width: 0;
-  color: #fff;
-  font-size: 0.82rem;
-  font-weight: 700;
 }
 
-:where(.video-card__avatar, .worker-card__avatar, .short-video-card__avatar) {
-  flex: 0 0 auto;
-  width: var(--doke-worker-card-avatar-size, 28px);
-  height: var(--doke-worker-card-avatar-size, 28px);
-  border-radius: 999px;
-  object-fit: cover;
+body.search-results-body .results-layout[data-results-mode="workers"] .results-grid > .video-card[data-worker-trigger] {
+  width: 100%;
+  max-width: 100%;
 }
 
-:where(.video-card__badge, .worker-card__badge, .short-video-card__badge) {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  width: max-content;
-  max-width: calc(100% - 20px);
-  padding: 5px 9px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.92);
-  color: var(--doke-color-primary, #2a5f90);
-  font-size: 0.72rem;
-  font-weight: 780;
-  line-height: 1;
-}
+@media (hover: hover) and (pointer: fine) {
+  .video-card,
+  .doke-worker-card {
+    transition: transform var(--transition-fast, 180ms ease), box-shadow var(--transition-fast, 180ms ease), border-color var(--transition-fast, 180ms ease);
+  }
 
-:where(.video-card__actions, .worker-card__actions, .short-video-card__actions) {
-  position: absolute;
-  right: 10px;
-  bottom: 12px;
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  color: #fff;
-}
-
-:where(.video-card__action, .worker-card__action, .short-video-card__action) {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--doke-worker-card-action-size, 34px);
-  height: var(--doke-worker-card-action-size, 34px);
-  border: 1px solid rgba(255, 255, 255, 0.34);
-  border-radius: 999px;
-  background: rgba(15, 33, 56, 0.42);
-  color: #fff;
-  backdrop-filter: blur(10px);
+  .video-card:hover,
+  .video-card:focus-visible,
+  .video-card.is-previewing,
+  .doke-worker-card:hover,
+  .doke-worker-card:focus-visible {
+    transform: translateY(-2px);
+    border-color: var(--card-border-color, rgba(42, 95, 144, 0.22));
+    box-shadow: var(--card-shadow-hover, 0 18px 36px rgba(18, 45, 78, 0.18));
+  }
 }
 
 @media (max-width: 760px) {
-  :where(.video-card, .worker-card, .short-video-card) {
-    border-radius: var(--doke-worker-card-radius-mobile, 18px);
+  :root {
+    --doke-worker-card-width: min(46vw, 180px);
+    --doke-worker-card-radius: var(--card-radius, 18px);
   }
 
-  :where(.video-card__overlay, .worker-card__overlay, .short-video-card__overlay) {
-    padding: var(--doke-worker-card-overlay-padding-mobile, 12px);
+  body.home-index-shell .short-videos .video-card,
+  body.home-index-shell .short-videos .doke-worker-card {
+    flex-basis: var(--doke-worker-card-width);
   }
 }

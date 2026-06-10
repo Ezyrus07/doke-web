@@ -1,0 +1,61 @@
+/* Doke layout/page rail contract.
+   Responsibility: shared shell width and rail tokens only.
+   This file is intentionally small and replaces page-level imports of the
+   legacy doke-shell-contract.css for the home cleanup path.
+
+   Ownership:
+   - core owns foundation tokens/reset/base
+   - layout owns shell/header/rail/sidebar/breakpoints
+   - components own card/button/input/modal anatomy
+   - patterns own carousel/rail/grid/list composition
+   - pages own page-specific spacing/composition only
+*/
+:root {
+  --doke-sidebar-width: 272px;
+  --doke-page-gutter: clamp(24px, 3vw, 40px);
+  --doke-page-max: 1180px;
+  --doke-page-available: calc(100vw - var(--doke-sidebar-width) - (var(--doke-page-gutter) * 2));
+  --doke-page-rail: min(var(--doke-page-available), var(--doke-page-max));
+  --doke-header-rail: var(--doke-page-rail);
+
+  /* Legacy aliases kept while HTMLs migrate to layout/page-rail.css. */
+  --doke-app-sidebar-width: var(--doke-sidebar-width);
+  --doke-app-shell-max: var(--doke-page-max);
+  --doke-app-shell-gutter: var(--doke-page-gutter);
+  --doke-shared-page-width: var(--doke-page-rail);
+  --doke-desktop-page-available: var(--doke-page-available);
+  --doke-current-page-rail: var(--doke-page-rail);
+  --doke-desktop-page-max: var(--doke-page-max);
+}
+
+html,
+body {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+body.doke-app-shell-page,
+body.app-shell-page,
+body.internal-shell-page {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --doke-sidebar-width: 0px;
+    --doke-page-gutter: clamp(14px, 4vw, 18px);
+    --doke-page-available: calc(100vw - (var(--doke-page-gutter) * 2));
+    --doke-page-rail: min(var(--doke-page-available), var(--doke-page-max));
+    --doke-header-rail: var(--doke-page-rail);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1180px) {
+  :root {
+    --doke-page-gutter: clamp(18px, 3vw, 28px);
+    --doke-page-available: calc(100vw - var(--doke-sidebar-width) - (var(--doke-page-gutter) * 2));
+    --doke-page-rail: min(var(--doke-page-available), var(--doke-page-max));
+    --doke-header-rail: var(--doke-page-rail);
+  }
+}

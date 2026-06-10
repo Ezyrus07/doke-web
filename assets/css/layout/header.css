@@ -1,0 +1,139 @@
+/* Doke layout/header contract.
+   Responsibility: global app-header geometry and basic control layout.
+
+   Cleanup Stage 08 replaces the home import of components/shell/app-header.css,
+   which had become a late cascade authority with forced-priority declarations.
+
+   Ownership:
+   - layout owns header width, alignment and responsive geometry
+   - components own button/input/avatar anatomy
+   - pages may only choose which actions appear in the header
+
+   Do not add page-specific card, rail or carousel rules here.
+*/
+
+:root {
+  --doke-header-height: 84px;
+  --doke-header-control-size: 44px;
+  --doke-header-control-radius: 16px;
+  --doke-header-gap: 12px;
+  --doke-header-bg: rgba(255, 255, 255, 0.94);
+  --doke-header-border: 1px solid var(--surface-border-subtle, rgba(15, 45, 75, 0.08));
+  --doke-header-shadow: 0 8px 22px rgba(15, 45, 75, 0.055);
+  --doke-header-ink: var(--color-primary, #0b335d);
+}
+
+.app-header {
+  width: var(--doke-header-rail, var(--doke-page-rail, min(100%, 1180px)));
+  max-width: var(--doke-page-max, 1180px);
+  min-height: var(--doke-header-height);
+  margin-inline: auto;
+  padding-block: 18px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--doke-header-gap);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.app-header__group,
+.app-header .home-side-meta__group {
+  display: flex;
+  align-items: center;
+  gap: var(--doke-header-gap);
+  min-width: 0;
+}
+
+.app-header__group--primary,
+.app-header .home-side-meta__group--primary {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+}
+
+.app-header__group--secondary,
+.app-header .home-side-meta__group--secondary {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.app-header .home-side-meta__search,
+.app-header .home-side-meta__alert,
+.app-header .detail-standard-topbar__back,
+.app-header .topbar-shortcut,
+.app-header .doke-icon-btn {
+  inline-size: var(--doke-header-control-size);
+  block-size: var(--doke-header-control-size);
+  flex: 0 0 var(--doke-header-control-size);
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: var(--doke-header-border);
+  border-radius: var(--doke-header-control-radius);
+  background: var(--doke-header-bg);
+  color: var(--doke-header-ink);
+  box-shadow: var(--doke-header-shadow);
+  line-height: 1;
+  text-decoration: none;
+  appearance: none;
+}
+
+.app-header .home-side-meta__search svg,
+.app-header .home-side-meta__alert svg,
+.app-header .detail-standard-topbar__back svg,
+.app-header .topbar-shortcut svg,
+.app-header .doke-icon-btn svg {
+  inline-size: 18px;
+  block-size: 18px;
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.app-header .home-side-meta__location,
+.app-header .detail-standard-topbar__location,
+.app-header .home-side-meta__profile,
+.app-header .app-header__profile {
+  min-block-size: var(--doke-header-control-size);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-inline: 14px;
+  border: var(--doke-header-border);
+  border-radius: var(--doke-header-control-radius);
+  background: var(--doke-header-bg);
+  color: var(--doke-header-ink);
+  box-shadow: var(--doke-header-shadow);
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.app-header img,
+.app-header .home-side-meta__avatar {
+  inline-size: 34px;
+  block-size: 34px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --doke-header-height: 68px;
+    --doke-header-control-size: 42px;
+    --doke-header-gap: 8px;
+  }
+
+  .app-header {
+    width: var(--doke-header-rail, var(--doke-page-rail, calc(100vw - 32px)));
+    min-height: var(--doke-header-height);
+    padding-block: 12px 8px;
+  }
+
+  .app-header .home-side-meta__location,
+  .app-header .detail-standard-topbar__location {
+    display: none;
+  }
+}

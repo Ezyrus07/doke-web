@@ -1,39 +1,28 @@
-/* Doke canonical section header contract
-   Source of truth: index.html marketplace/feed section headings.
-   Responsibility: title/action anatomy only. Pages may still own section placement and grid composition. */
+/* Doke section header contract
+   Owner: components/sections.
+   Responsibility: reusable section heading anatomy only.
+   Placement, rails and card grids belong to pages/patterns. */
 
 :root {
   --doke-section-header-gap: clamp(0.625rem, 1.4vw, 1.125rem);
   --doke-section-header-margin-after: clamp(0.75rem, 1.6vw, 1.125rem);
-  --doke-section-title-size: clamp(1.3rem, 2vw, 1.9rem);
-  --doke-section-title-line: 1.1;
+  --doke-section-title-size: clamp(1.05rem, 1.55vw, 1.45rem);
+  --doke-section-title-line: 1.16;
   --doke-section-title-weight: 800;
   --doke-section-title-letter: 0;
   --doke-section-action-height: 2.125rem;
   --doke-section-action-padding-inline: 0.875rem;
   --doke-section-action-radius: 999px;
-  --doke-section-action-size: 0.94rem;
-  --doke-section-action-line: 1;
-  --doke-section-eyebrow-size: 0.78rem;
-  --doke-section-eyebrow-line: 1.1;
+  --doke-section-action-size: 0.9rem;
+  --doke-section-eyebrow-size: 0.76rem;
 }
 
-@media (max-width: 900px) {
-  :root {
-    --doke-section-title-size: 1rem;
-    --doke-section-title-line: 1.16;
-    --doke-section-title-letter: 0.11em;
-    --doke-section-action-height: 2rem;
-    --doke-section-action-padding-inline: 0.75rem;
-    --doke-section-action-size: 0.82rem;
-  }
-}
-
-@media (max-width: 560px) {
+@media (max-width: 760px) {
   :root {
     --doke-section-header-gap: 0.625rem;
     --doke-section-header-margin-after: 0.75rem;
-    --doke-section-title-size: 0.92rem;
+    --doke-section-title-size: 0.96rem;
+    --doke-section-title-letter: 0.08em;
     --doke-section-action-height: 1.875rem;
     --doke-section-action-padding-inline: 0.625rem;
     --doke-section-action-size: 0.78rem;
@@ -51,17 +40,14 @@
   .wallet-section-heading,
   .profile-section-heading
 ) {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: var(--doke-section-header-gap) !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  min-height: var(--doke-section-action-height) !important;
-  margin: 0 0 var(--doke-section-header-margin-after) !important;
-  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--doke-section-header-gap);
+  width: 100%;
+  min-width: 0;
+  margin: 0 0 var(--doke-section-header-margin-after);
+  padding: 0;
   box-sizing: border-box;
 }
 
@@ -76,10 +62,10 @@
   .wallet-section-heading,
   .profile-section-heading
 ) > :first-child {
-  display: grid !important;
-  gap: 0.25rem !important;
-  min-width: 0 !important;
-  max-width: min(100%, 42rem) !important;
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  max-width: min(100%, 42rem);
 }
 
 :where(
@@ -97,8 +83,7 @@
   .profile-section-heading h2,
   .doke-reviews-title
 ) {
-  margin: 0 !important;
-  max-width: none !important;
+  margin: 0;
   color: var(--doke-text-primary, var(--color-heading, #18314f));
   font-size: var(--doke-section-title-size);
   line-height: var(--doke-section-title-line);
@@ -114,12 +99,12 @@
   .results-panel__eyebrow,
   .doke-section-header__eyebrow
 ) {
-  display: inline-flex !important;
-  width: fit-content !important;
-  margin: 0 !important;
+  display: inline-flex;
+  width: fit-content;
+  margin: 0;
   color: var(--doke-text-muted, #6d8097);
   font-size: var(--doke-section-eyebrow-size);
-  line-height: var(--doke-section-eyebrow-line);
+  line-height: 1.1;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -135,313 +120,30 @@
   .wallet-section-heading > a,
   .profile-section-heading > a
 ) {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  flex: 0 0 auto !important;
-  min-width: max-content !important;
-  min-height: var(--doke-section-action-height) !important;
-  height: var(--doke-section-action-height) !important;
-  padding: 0 var(--doke-section-action-padding-inline) !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: max-content;
+  min-height: var(--doke-section-action-height);
+  padding-inline: var(--doke-section-action-padding-inline);
   border: 1px solid var(--doke-border-soft, rgba(30, 53, 87, 0.12));
   border-radius: var(--doke-section-action-radius);
-  background: var(--doke-surface, #ffffff);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  background: var(--doke-surface, #fff);
   color: var(--doke-accent, #2a5c92);
   font-size: var(--doke-section-action-size);
-  line-height: var(--doke-section-action-line);
+  line-height: 1;
   font-weight: 800;
-  letter-spacing: 0;
   text-decoration: none;
   white-space: nowrap;
-  box-sizing: border-box;
 }
 
-:where(
-  .section-heading__link,
-  .detail-section__header > a,
-  .detail-section__header--row > a,
-  .results-related__header > a,
-  .communities-v2-section__heading > a,
-  .settings-section-heading > a,
-  .wallet-section-heading > a,
-  .profile-section-heading > a
-):is(:hover, :focus-visible) {
-  border-color: color-mix(in srgb, var(--doke-accent, #2a5c92) 30%, transparent);
-  color: var(--doke-accent, #2a5c92);
-  transform: translateY(-1px);
+:where(.section-heading__link, .home-section-header a):hover {
+  border-color: rgba(42, 92, 146, 0.24);
 }
 
-/* Review panels keep their richer summary layout, but the heading itself follows the same title rhythm. */
-:where(.doke-reviews-panel__top) {
-  gap: var(--doke-section-header-gap) !important;
-}
-
-:where(.doke-reviews-summary) {
-  min-width: 0 !important;
-}
-
-@media (max-width: 900px) {
-  :where(
-    .section-heading,
-    .home-section-header,
-    .detail-section__header,
-    .detail-section__header--row,
-    .results-related__header,
-    .communities-v2-section__heading,
-    .settings-section-heading,
-    .wallet-section-heading,
-    .profile-section-heading
-  ) {
-    align-items: center !important;
+@media (max-width: 420px) {
+  :where(.home-section-header, .section-heading) {
+    align-items: flex-start;
   }
-}
-
-@media (max-width: 560px) {
-  :where(
-    .section-heading,
-    .home-section-header,
-    .detail-section__header,
-    .detail-section__header--row,
-    .results-related__header,
-    .communities-v2-section__heading,
-    .settings-section-heading,
-    .wallet-section-heading,
-    .profile-section-heading
-  ) {
-    gap: var(--doke-section-header-gap) !important;
-  }
-
-  :where(
-    .section-heading__eyebrow,
-    .detail-eyebrow,
-    .results-panel__eyebrow,
-    .doke-section-header__eyebrow
-  ) {
-    display: none !important;
-  }
-}
-
-/* High-specificity parity lock: loaded as the last contract layer to neutralize legacy page rules. */
-html body :is(
-  .section-heading.section-heading,
-  .home-section-header.home-section-header,
-  .detail-section__header.detail-section__header,
-  .detail-section__header--row.detail-section__header--row,
-  .results-related__header.results-related__header,
-  .communities-v2-section__heading.communities-v2-section__heading,
-  .settings-section-heading.settings-section-heading,
-  .wallet-section-heading.wallet-section-heading,
-  .profile-section-heading.profile-section-heading
-) {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: var(--doke-section-header-gap) !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  min-width: 0 !important;
-  min-height: var(--doke-section-action-height) !important;
-  margin: 0 0 var(--doke-section-header-margin-after) !important;
-  padding: 0 !important;
-  box-sizing: border-box;
-}
-
-html body :is(
-  .section-heading.section-heading,
-  .home-section-header.home-section-header,
-  .detail-section__header.detail-section__header,
-  .detail-section__header--row.detail-section__header--row,
-  .results-related__header.results-related__header,
-  .communities-v2-section__heading.communities-v2-section__heading,
-  .settings-section-heading.settings-section-heading,
-  .wallet-section-heading.wallet-section-heading,
-  .profile-section-heading.profile-section-heading
-) :is(
-  .section-heading__title,
-  .home-section-title,
-  h1,
-  h2,
-  h3
-) {
-  margin: 0 !important;
-  max-width: none !important;
-  font-size: var(--doke-section-title-size);
-  line-height: var(--doke-section-title-line);
-  font-weight: var(--doke-section-title-weight);
-  letter-spacing: var(--doke-section-title-letter);
-  text-transform: uppercase;
-}
-
-html body :is(
-  .section-heading.section-heading,
-  .home-section-header.home-section-header,
-  .detail-section__header.detail-section__header,
-  .detail-section__header--row.detail-section__header--row,
-  .results-related__header.results-related__header,
-  .communities-v2-section__heading.communities-v2-section__heading,
-  .settings-section-heading.settings-section-heading,
-  .wallet-section-heading.wallet-section-heading,
-  .profile-section-heading.profile-section-heading
-) > :is(a, button, .section-heading__link) {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  flex: 0 0 auto !important;
-  min-width: max-content !important;
-  height: var(--doke-section-action-height) !important;
-  min-height: var(--doke-section-action-height) !important;
-  padding: 0 var(--doke-section-action-padding-inline) !important;
-  border-radius: var(--doke-section-action-radius);
-  font-size: var(--doke-section-action-size);
-  line-height: var(--doke-section-action-line);
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-html body.home-index-shell section.more-services > .section-heading.home-section-header.home-section-header--stacked,
-html body.home-index-shell section.more-services > .section-heading.home-section-header,
-html body[data-page="detalhe-anuncio"] :is(.detail-related-workers, .detail-related-publications, .detail-section--similar-ads) > .detail-section__header.detail-section__header,
-html body[data-page="comunidade"] .communities-v2-section__heading.communities-v2-section__heading,
-html body[data-page="configuracoes"] .settings-section-heading.settings-section-heading {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: var(--doke-section-header-gap) !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  min-height: var(--doke-section-action-height) !important;
-  margin: 0 0 var(--doke-section-header-margin-after) !important;
-  padding: 0 !important;
-}
-
-/* 2026-05-25 — objective compact section-heading scale.
-   Reason: section titles were becoming visually dominant on tablet/desktop.
-   Scope: shared section/header anatomy only; no color/copy/hierarchy changes. */
-:root {
-  --doke-section-title-size: clamp(1.02rem, 1.28vw, 1.38rem);
-  --doke-section-title-line: 1.08;
-  --doke-section-eyebrow-size: 0.72rem;
-}
-
-@media (max-width: 900px) {
-  :root {
-    --doke-section-title-size: 0.95rem;
-    --doke-section-title-line: 1.12;
-    --doke-section-eyebrow-size: 0.68rem;
-  }
-}
-
-@media (max-width: 560px) {
-  :root {
-    --doke-section-title-size: 0.88rem;
-    --doke-section-title-line: 1.12;
-  }
-}
-
-html body :where(
-  .section-heading__title,
-  .home-section-title,
-  .detail-section__header h2,
-  .detail-section__header h3,
-  .results-related__header h2,
-  .results-related__header h3,
-  .communities-v2-section__heading h2,
-  .settings-section-heading h1,
-  .settings-section-heading h2,
-  .wallet-section-heading h1,
-  .wallet-section-heading h2,
-  .profile-section-heading h2,
-  .doke-reviews-title
-) {
-  font-size: var(--doke-section-title-size);
-  line-height: var(--doke-section-title-line);
-}
-
-html body :where(.section-heading__eyebrow, .detail-eyebrow, .results-panel__eyebrow, .doke-section-header__eyebrow) {
-  font-size: var(--doke-section-eyebrow-size);
-}
-
-/* 2026-05-25 — compact area-title parity lock.
-   Keep every section title on the same small scale as "Publicações em destaque",
-   even when older page/mobile contracts try to promote titles to hero size. */
-:root {
-  --doke-section-title-size: 0.86rem;
-  --doke-section-title-line: 1.14;
-  --doke-section-title-weight: 850;
-  --doke-section-title-letter: 0;
-  --doke-section-title-color: var(--doke-text-muted, #72839a);
-}
-
-@media (min-width: 701px) {
-  :root {
-    --doke-section-title-size: 0.82rem;
-  }
-}
-
-@media (max-width: 560px) {
-  :root {
-    --doke-section-title-size: 0.78rem;
-    --doke-section-title-line: 1.16;
-  }
-}
-
-html body :is(
-  .section-heading.section-heading,
-  .home-section-header.home-section-header,
-  .detail-section__header.detail-section__header,
-  .detail-section__header--row.detail-section__header--row,
-  .results-related__header.results-related__header,
-  .communities-v2-section__heading.communities-v2-section__heading,
-  .settings-section-heading.settings-section-heading,
-  .wallet-section-heading.wallet-section-heading,
-  .profile-section-heading.profile-section-heading,
-  .doke-section-header.doke-section-header
-) :is(
-  .section-heading__title,
-  .home-section-title,
-  .doke-section-header__title,
-  h1,
-  h2,
-  h3
-),
-html body :is(
-  .section-heading__title.home-section-title,
-  .home-section-title,
-  .detail-section__header h2,
-  .detail-section__header h3,
-  .results-related__header h2,
-  .results-related__header h3,
-  .communities-v2-section__heading h2,
-  .settings-section-heading h1,
-  .settings-section-heading h2,
-  .wallet-section-heading h1,
-  .wallet-section-heading h2,
-  .profile-section-heading h2,
-  .doke-reviews-title,
-  .doke-section-header__title
-) {
-  max-width: 100% !important;
-  min-width: 0 !important;
-  margin: 0 !important;
-  color: var(--doke-section-title-color);
-  font-size: var(--doke-section-title-size);
-  line-height: var(--doke-section-title-line);
-  font-weight: var(--doke-section-title-weight);
-  letter-spacing: var(--doke-section-title-letter);
-  text-transform: uppercase;
-  text-align: left;
-}
-
-html body.home-index-shell section.more-services > .section-heading.home-section-header > :first-child,
-html body.home-index-shell section.more-services > .section-heading.home-section-header.home-section-header--stacked > :first-child {
-  max-width: 100% !important;
-  margin-left: 0 !important;
-}
-
-html body.home-index-shell section.more-services #more-services-title {
-  overflow: visible !important;
-  text-overflow: clip;
 }

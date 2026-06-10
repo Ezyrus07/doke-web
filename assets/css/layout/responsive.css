@@ -1,0 +1,100 @@
+/* Shared responsive layout contract — CSS Cleanup Stage 10.
+   Responsibility: minimal shell geometry across desktop, tablet and mobile.
+   This replaces the legacy core/layout/responsive-shell.css cascade layer that
+   used broad selectors and hundreds of priority flags.
+
+   Keep this file small. Do not add page/card/carousel rules here.
+*/
+
+@media (min-width: 1025px) {
+  :root {
+    --header-height: 72px;
+  }
+
+  .page {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+    max-width: calc(100% - var(--sidebar-width));
+  }
+
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    transform: none;
+  }
+
+  .mobile-toggle,
+  .mobile-scrim,
+  .bottom-nav {
+    display: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --header-height: 68px;
+  }
+
+  body {
+    --sidebar-width: 0px;
+  }
+
+  .page {
+    margin-left: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(292px, calc(100vw - 28px));
+    transform: translateX(-105%);
+    transition: transform var(--transition-base, 180ms ease);
+    z-index: 180;
+    overflow-y: auto;
+  }
+
+  body.sidebar-open {
+    overflow: hidden;
+  }
+
+  body.sidebar-open .sidebar {
+    transform: translateX(0);
+  }
+
+  .mobile-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 170;
+    display: none;
+    background: rgba(15, 23, 42, 0.42);
+  }
+
+  body.sidebar-open .mobile-scrim {
+    display: block;
+  }
+
+  .page__content {
+    padding-top: 16px;
+  }
+}
+
+@media (max-width: 560px) {
+  .page__content {
+    padding-bottom: 84px;
+  }
+
+  .bottom-nav {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    z-index: 165;
+  }
+}

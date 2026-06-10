@@ -1,5 +1,6 @@
-/* Final modal alignment pass: prevents horizontal clipping and keeps Doke surfaces on one contract. */
-
+/* CSS Cleanup Stage 22 — simplified modal alignment.
+   This file is a small shared surface guard only. Page-specific modal anatomy must
+   remain in its component/page module, not in a final alignment override layer. */
 :is(
   .wallet-modal__card,
   .ui-modal__dialog,
@@ -16,11 +17,37 @@
   .image-lightbox__surface,
   .doke-media-lightbox__surface
 ) {
-  position: relative !important;
+  position: relative;
   box-sizing: border-box;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  overflow-x: hidden !important;
+  min-width: 0;
+  max-width: min(100%, calc(100vw - 32px));
+  overflow-x: hidden;
+}
+
+:is(
+  dialog.home-address-modal,
+  dialog.address-modal,
+  dialog.profile-budget-modal,
+  dialog.charge-modal,
+  .ui-modal__dialog,
+  .community-action-modal__dialog,
+  .detail-budget-modal__dialog
+) {
+  box-sizing: border-box;
+  max-width: min(880px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+}
+
+:is(
+  .home-address-modal__dialog,
+  .address-modal__dialog,
+  .ui-modal__dialog,
+  .community-action-modal__dialog,
+  .detail-budget-modal__dialog,
+  .charge-modal__surface
+) {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 :is(
@@ -33,520 +60,29 @@
   .detail-budget-modal__topbar,
   .ui-modal__header
 ) {
-  position: relative !important;
-  min-width: 0 !important;
+  position: relative;
+  min-width: 0;
 }
 
-:is(.surface-modal__intro, .detail-budget-modal__intro) {
-  max-width: 100% !important;
+:is(.surface-modal__intro, .detail-budget-modal__intro, .ui-modal__title, .ui-modal__text) {
+  max-width: 100%;
 }
 
-:is(dialog.home-address-modal, dialog.address-modal, dialog.profile-budget-modal, dialog.charge-modal) {
-  box-sizing: border-box;
-  max-width: calc(100vw - 32px) !important;
-}
-
-body.home-index-shell .home-address-modal[open] {
-  width: min(880px, calc(100vw - 48px)) !important;
-  max-width: calc(100vw - 48px) !important;
-  max-height: calc(100dvh - 48px) !important;
-  margin: auto !important;
-  padding: 0 !important;
-  overflow: visible !important;
-}
-
-body.home-index-shell .home-address-modal__dialog {
-  width: 100% !important;
-  max-height: calc(100dvh - 48px) !important;
-  padding: clamp(28px, 4vw, 44px) !important;
-  border-radius: 32px;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  scrollbar-gutter: stable !important;
-}
-
-body.home-index-shell .home-address-modal__head {
-  display: block !important;
-  padding-right: 72px !important;
-  margin-bottom: 24px !important;
-}
-
-body.home-index-shell .home-address-modal__head h2 {
-  max-width: 680px !important;
-  font-size: clamp(2.45rem, 5vw, 3.75rem);
-  line-height: 1.02;
-  letter-spacing: -0.055em;
-  overflow-wrap: anywhere;
-}
-
-body.home-index-shell .home-address-modal__head p {
-  max-width: 660px !important;
-  margin-top: 10px !important;
-  font-size: clamp(1rem, 1.6vw, 1.12rem);
-}
-
-body.home-index-shell .home-address-modal__close {
-  top: 28px !important;
-  right: 28px !important;
-}
-
-body.home-index-shell .home-address-modal__grid {
-  width: 100% !important;
-  min-width: 0 !important;
-}
-
-body.home-index-shell .home-address-modal__grid--2 {
-  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.68fr) !important;
-}
-
-body.home-index-shell .home-address-modal__grid--3 {
-  grid-template-columns: minmax(0, 1fr) minmax(92px, 0.28fr) minmax(0, 1fr) !important;
-}
-
-body.home-index-shell .home-address-modal__field,
-body.home-index-shell .home-address-modal__check {
-  min-width: 0 !important;
-}
-
-body.home-index-shell .home-address-modal__field input {
-  width: 100% !important;
-  box-sizing: border-box;
-}
-
-body.home-index-shell .home-address-modal__actions {
-  align-items: center !important;
-  margin-top: 24px !important;
-}
-
-.address-modal[open] {
-  width: min(880px, calc(100vw - 48px)) !important;
-  max-width: calc(100vw - 48px) !important;
-  max-height: calc(100dvh - 48px) !important;
-  margin: auto !important;
-}
-
-.address-modal__dialog {
-  width: 100% !important;
-  max-height: calc(100dvh - 48px) !important;
-  padding: clamp(28px, 4vw, 44px) !important;
-  border-radius: 32px;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  scrollbar-gutter: stable !important;
-}
-
-.address-modal__head {
-  display: block !important;
-  padding-right: 72px !important;
-  margin-bottom: 24px !important;
-}
-
-.address-modal__head h2 {
-  max-width: 680px !important;
-  font-size: clamp(2.35rem, 5vw, 3.55rem);
-  line-height: 1.02;
-  letter-spacing: -0.055em;
-}
-
-.address-modal__close {
-  top: 28px !important;
-  right: 28px !important;
-}
-
-.profile-budget-modal .detail-budget-modal__topbar {
-  padding: clamp(32px, 4vw, 42px) clamp(26px, 4vw, 34px) 24px !important;
-  align-items: flex-start !important;
-}
-
-.profile-budget-modal .detail-budget-modal__intro {
-  padding-right: 76px !important;
-}
-
-.profile-budget-modal .detail-budget-modal__eyebrow {
-  margin-bottom: 12px !important;
-}
-
-.profile-budget-modal .detail-budget-modal__title h1 {
-  font-size: clamp(2.35rem, 5vw, 3.65rem);
-  line-height: 1.02;
-  letter-spacing: -0.055em;
-  overflow-wrap: anywhere;
-}
-
-.profile-budget-modal .detail-budget-modal__close {
-  top: 26px !important;
-  right: 26px !important;
-}
-
-.community-action-modal__dialog {
-  max-height: calc(100dvh - 48px) !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  scrollbar-gutter: stable !important;
-}
-
-.community-action-modal__header {
-  display: block !important;
-  padding-right: 72px !important;
-}
-
-.community-action-modal__actions {
-  position: sticky !important;
-  bottom: 0 !important;
-  z-index: 2 !important;
-  padding-top: 16px !important;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0), #fff 34%);
-}
-
-.ui-modal__dialog {
-  width: min(860px, calc(100vw - 48px)) !important;
-  padding: clamp(28px, 4vw, 44px) !important;
-  border-radius: 32px;
-}
-
-.ui-modal__header {
-  display: block !important;
-  margin-bottom: 26px !important;
-}
-
-.ui-modal__title {
-  max-width: 520px !important;
-}
-
-.ui-modal__text {
-  max-width: 620px !important;
-  margin-top: 10px !important;
-}
-
-.ui-modal__actions {
-  margin-top: 22px !important;
-}
-
-@media (max-width: 760px) {
-  body.home-index-shell .home-address-modal[open],
-  .address-modal[open],
-  dialog.profile-budget-modal,
-  dialog.charge-modal {
-    width: calc(100vw - 20px) !important;
-    max-width: calc(100vw - 20px) !important;
-    max-height: calc(100dvh - 20px) !important;
-  }
-
-  body.home-index-shell .home-address-modal__dialog,
-  .address-modal__dialog,
-  .ui-modal__dialog {
-    width: 100% !important;
-    max-width: 100% !important;
-    max-height: calc(100dvh - 20px) !important;
-    padding: 24px 18px !important;
-    border-radius: var(--radius-lg);
-  }
-
-  body.home-index-shell .home-address-modal__head,
-  .address-modal__head,
-  .community-action-modal__header,
-  .profile-budget-modal .detail-budget-modal__intro {
-    padding-right: 58px !important;
-  }
-
-  body.home-index-shell .home-address-modal__head h2,
-  .address-modal__head h2,
-  .profile-budget-modal .detail-budget-modal__title h1,
-  .ui-modal__title {
-    font-size: clamp(2rem, 11vw, 2.75rem);
-  }
-
-  body.home-index-shell .home-address-modal__grid--2,
-  body.home-index-shell .home-address-modal__grid--3,
-  .address-modal .budget-grid--2,
-  .address-modal .budget-grid--3 {
-    grid-template-columns: 1fr !important;
-  }
-
-  body.home-index-shell .home-address-modal__actions,
-  .address-modal__actions,
-  .ui-modal__actions {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 10px !important;
-  }
-
-  body.home-index-shell .home-address-modal__close,
-  .address-modal__close,
-  .profile-budget-modal .detail-budget-modal__close {
-    top: 18px !important;
-    right: 18px !important;
-  }
-
-  .community-action-modal__dialog {
-    width: calc(100vw - 20px) !important;
-    max-width: calc(100vw - 20px) !important;
-    max-height: calc(100dvh - 20px) !important;
-  }
-}
-
-/* v23 density pass: remove unnecessary desktop scrollbars and normalize oversized modal variants. */
-@media (min-width: 761px) {
-  body.home-index-shell .home-address-modal[open] {
-    width: min(1040px, calc(100vw - 96px)) !important;
-    max-width: calc(100vw - 96px) !important;
-    max-height: calc(100dvh - 72px) !important;
-    overflow: visible !important;
-  }
-
-  body.home-index-shell .home-address-modal__dialog {
-    max-height: none !important;
-    padding: 34px 56px 32px !important;
-    overflow: visible !important;
-    scrollbar-gutter: auto !important;
-  }
-
-  body.home-index-shell .home-address-modal__head {
-    margin-bottom: 20px !important;
-    padding-right: 76px !important;
-  }
-
-  body.home-index-shell .home-address-modal__head h2 {
-    max-width: 760px !important;
-    font-size: clamp(3rem, 5vw, 3.65rem);
-    line-height: 0.98;
-  }
-
-  body.home-index-shell .home-address-modal__head p {
-    margin-top: 8px !important;
-  }
-
-  body.home-index-shell .home-address-modal__grid {
-    gap: 14px 16px !important;
-    margin-bottom: 12px !important;
-  }
-
-  body.home-index-shell .home-address-modal__field input,
-  body.home-index-shell .home-address-modal__check {
-    min-height: 56px !important;
-  }
-
-  body.home-index-shell .home-address-modal__field span,
-  body.home-index-shell .home-address-modal__check span:last-child {
-    margin-bottom: 8px !important;
-  }
-
-  body.home-index-shell .home-address-modal__actions {
-    margin-top: 16px !important;
-  }
-
-  .ui-modal__dialog {
-    width: min(760px, calc(100vw - 96px)) !important;
-    padding: 34px 52px 36px !important;
-    border-radius: var(--radius-2xl);
-  }
-
-  .ui-modal__header {
-    margin-bottom: 26px !important;
-  }
-
-  .ui-modal__title {
-    max-width: 520px !important;
-    font-size: clamp(2.75rem, 4.4vw, 3.45rem);
-    line-height: 1;
-  }
-
-  .ui-modal__field {
-    margin-top: 0 !important;
-  }
-
-  .ui-modal__input {
-    min-height: 58px !important;
-  }
-
-  .ui-modal__actions {
-    margin-top: 30px !important;
-  }
-
-  .community-action-modal__dialog--create {
-    width: min(1080px, calc(100vw - 96px)) !important;
-    max-height: none !important;
-    overflow: visible !important;
-    scrollbar-gutter: auto !important;
-    padding: 36px !important;
-  }
-
-  .community-action-modal__dialog--create .community-action-modal__header {
-    margin-bottom: 26px !important;
-    padding-right: 76px !important;
-  }
-
-  .community-action-modal__dialog--create .community-action-modal__header h2 {
-    font-size: clamp(3rem, 5vw, 3.75rem);
-    line-height: 0.98;
-  }
-
-  .community-action-modal__dialog--create .community-action-form {
-    gap: 14px 18px !important;
-  }
-
-  .community-action-modal__dialog--create textarea {
-    min-height: 118px !important;
-  }
-
-  .community-action-modal__dialog--create .community-action-cover > div {
-    min-height: 104px !important;
-  }
-
-  .community-action-modal__dialog--create .community-action-modal__actions {
-    position: static !important;
-    padding-top: 8px !important;
-    background: none;
-  }
-
-  .profile-budget-modal[open] {
-    width: min(1080px, calc(100vw - 96px)) !important;
-    max-width: calc(100vw - 96px) !important;
-    max-height: calc(100dvh - 72px) !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-  }
-
-  .profile-budget-modal .detail-budget-modal__dialog {
-    width: 100% !important;
-    max-width: 100% !important;
-    max-height: calc(100dvh - 72px) !important;
-    border-radius: var(--radius-2xl);
-    overflow: hidden !important;
-  }
-
-  .profile-budget-modal .detail-budget-modal__flow {
-    max-height: calc(100dvh - 72px) !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-  }
-
-  .profile-budget-modal .detail-budget-modal__topbar {
-    padding: 30px 42px 24px !important;
-  }
-
-  .profile-budget-modal .detail-budget-modal__title h1 {
-    font-size: clamp(3rem, 5vw, 3.8rem);
-    line-height: 0.98;
-  }
-
-  .profile-budget-modal .budget-progress {
-    padding: 16px 42px !important;
-  }
-
-  .profile-budget-modal .budget-progress__bar,
-  .profile-budget-modal .budget-progress__steps {
-    display: none !important;
-  }
-
-  .profile-budget-modal .budget-panel.is-active {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    overflow-y: auto !important;
-    padding: 28px 42px 24px !important;
-  }
-
-  .profile-budget-modal .budget-panel__head h2 {
-    font-size: clamp(2rem, 4vw, 2.55rem);
-  }
-
-  .profile-budget-modal .budget-field textarea {
-    min-height: 170px !important;
-  }
-
-  .profile-budget-modal .budget-actions {
-    flex: 0 0 auto !important;
-    padding: 18px 42px 24px !important;
-  }
-}
-
-
-/* v24 fit pass: prevent bottom clipping on desktop for address/create-community modals. */
-@media (min-width: 761px) {
-  body.home-index-shell .home-address-modal[open] {
-    width: min(1020px, calc(100vw - 88px)) !important;
-    max-width: calc(100vw - 88px) !important;
-    max-height: calc(100dvh - 36px) !important;
-  }
-
-  body.home-index-shell .home-address-modal__dialog {
-    max-height: calc(100dvh - 36px) !important;
-    padding: 26px 44px 22px !important;
-    overflow-y: auto !important;
-  }
-
-  body.home-index-shell .home-address-modal__head {
-    margin-bottom: 14px !important;
-  }
-
-  body.home-index-shell .home-address-modal__head h2 {
-    font-size: clamp(2.65rem, 4.4vw, 3.3rem);
-    line-height: 0.98;
-  }
-
-  body.home-index-shell .home-address-modal__head p {
-    font-size: 0.98rem;
-    margin-top: 6px !important;
-  }
-
-  body.home-index-shell .home-address-modal__grid {
-    gap: 10px 16px !important;
-    margin-bottom: 8px !important;
-  }
-
-  body.home-index-shell .home-address-modal__field span,
-  body.home-index-shell .home-address-modal__check span:last-child {
-    margin-bottom: 6px !important;
-    font-size: 0.9rem;
-  }
-
-  body.home-index-shell .home-address-modal__field input,
-  body.home-index-shell .home-address-modal__check {
-    min-height: 52px !important;
-  }
-
-  body.home-index-shell .home-address-modal__actions {
-    margin-top: 10px !important;
-    padding-bottom: 2px !important;
-  }
-
-  .community-action-modal__dialog--create {
-    width: min(1040px, calc(100vw - 88px)) !important;
-    max-width: calc(100vw - 88px) !important;
-    max-height: calc(100dvh - 36px) !important;
-    padding: 28px 34px 24px !important;
-    overflow-y: auto !important;
-  }
-
-  .community-action-modal__dialog--create .community-action-modal__header {
-    margin-bottom: 18px !important;
-  }
-
-  .community-action-modal__dialog--create .community-action-modal__header h2 {
-    font-size: clamp(2.7rem, 4.6vw, 3.45rem);
-    line-height: 0.98;
-  }
-
-  .community-action-modal__dialog--create .community-action-modal__header p {
-    margin-top: 6px !important;
-    font-size: 0.98rem;
-  }
-
-  .community-action-modal__dialog--create .community-action-form {
-    gap: 12px 18px !important;
-  }
-
-  .community-action-modal__dialog--create textarea {
-    min-height: 96px !important;
-  }
-
-  .community-action-modal__dialog--create .community-action-cover > div {
-    min-height: 82px !important;
-  }
-
-  .community-action-modal__dialog--create .community-action-modal__actions {
-    margin-top: 12px !important;
-    padding-bottom: 2px !important;
+@media (max-width: 560px) {
+  :is(
+    .wallet-modal__card,
+    .ui-modal__dialog,
+    .home-address-modal__dialog,
+    .address-modal__dialog,
+    .community-request-modal__dialog,
+    .community-action-modal__dialog,
+    .payment-overlay__dialog,
+    .detail-modal__card,
+    .profile-followers-modal__dialog,
+    .profile-edit-modal__dialog,
+    .detail-budget-modal__dialog,
+    .charge-modal__surface
+  ) {
+    max-width: calc(100vw - 20px);
   }
 }
