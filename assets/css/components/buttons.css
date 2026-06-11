@@ -1,114 +1,156 @@
+/*
+  Doke Base Buttons Contract
+  Global, low-specificity baseline for reusable buttons.
+  Pages may position buttons, but must not redefine their anatomy locally.
+*/
+:root {
+  --doke-btn-height-sm: var(--btn-height-sm);
+  --doke-btn-height-md: var(--btn-height-md);
+  --doke-btn-height-lg: var(--btn-height-lg);
+  --doke-btn-radius: var(--btn-radius);
+  --doke-btn-radius-pill: var(--btn-radius-pill);
+  --doke-btn-padding-x: var(--btn-padding-x-md);
+  --doke-btn-gap: var(--btn-gap);
+}
 
-
-/* 2026-06-07 - Stage 04A buttons/actions global contract.
-   Owner: assets/css/components/buttons.css
-   Pages may control only button placement, wrapping and external gaps.
-   Pages must not redefine shared button height, padding, radius, color, border,
-   typography, hover/focus or disabled states. */
-
-:where(.doke-btn, .doke-button, .profile-action, .profile-services-toolbar__action, .app-action, .section-action, .card-action, .primary-action, .secondary-action) {
-  box-sizing: border-box;
+:where(.doke-btn, .doke-button) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--doke-button-gap, 8px);
-  min-height: var(--doke-button-height, 42px);
-  min-width: 0;
-  padding: var(--doke-button-padding-y, 0) var(--doke-button-padding-x, 16px);
-  border: 1px solid var(--doke-button-border, rgba(42, 95, 144, 0.16));
-  border-radius: var(--doke-button-radius, 14px);
-  background: var(--doke-button-bg, #fff);
-  color: var(--doke-button-color, var(--doke-color-primary, #2a5f90));
+  gap: var(--doke-btn-gap);
+  min-height: var(--doke-btn-height-md);
+  padding: 0 var(--doke-btn-padding-x);
+  border: var(--btn-border);
+  border-color: transparent;
+  border-radius: var(--doke-btn-radius);
+  background: var(--btn-bg);
+  color: var(--btn-text);
   font: inherit;
-  font-size: var(--doke-button-font-size, 0.9rem);
-  font-weight: var(--doke-button-font-weight, 760);
-  line-height: 1;
+  font-weight: var(--control-font-weight);
+  line-height: var(--control-line-height);
   text-decoration: none;
-  white-space: nowrap;
   cursor: pointer;
   transition:
-    transform 160ms ease,
-    box-shadow 160ms ease,
-    border-color 160ms ease,
-    background-color 160ms ease,
-    color 160ms ease;
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
-:where(.doke-btn, .doke-button, .profile-action, .profile-services-toolbar__action, .app-action, .section-action, .card-action, .primary-action, .secondary-action):where(:hover) {
+:where(.doke-btn, .doke-button):where(:hover) {
   transform: translateY(-1px);
-  border-color: var(--doke-button-hover-border, rgba(42, 95, 144, 0.24));
-  box-shadow: var(--doke-button-hover-shadow, 0 10px 22px rgba(20, 48, 78, 0.10));
+  box-shadow: var(--btn-shadow-hover);
 }
 
-:where(.doke-btn, .doke-button, .profile-action, .profile-services-toolbar__action, .app-action, .section-action, .card-action, .primary-action, .secondary-action):where(:focus-visible) {
-  outline: 3px solid var(--doke-focus-ring, rgba(42, 95, 144, 0.22));
-  outline-offset: 2px;
+:where(.doke-btn, .doke-button):where(:active) {
+  transform: translateY(0);
 }
 
-:where(.doke-btn, .doke-button, .profile-action, .profile-services-toolbar__action, .app-action, .section-action, .card-action, .primary-action, .secondary-action):where(:disabled, [aria-disabled="true"], .is-disabled) {
+:where(.doke-btn, .doke-button):where(:focus-visible) {
+  outline: 0;
+  box-shadow: none;
+}
+
+:where(.doke-btn, .doke-button):where([disabled], [aria-disabled="true"]) {
   cursor: not-allowed;
-  opacity: 0.56;
+  opacity: 0.58;
   transform: none;
   box-shadow: none;
 }
 
-:where(.doke-btn--primary, .doke-button--primary, .profile-action--primary, .profile-services-toolbar__action--primary, .primary-action, [data-button-variant="primary"]) {
-  --doke-button-border: transparent;
-  --doke-button-bg: var(--doke-button-primary-bg, var(--doke-color-primary, #2a5f90));
-  --doke-button-color: #fff;
-  --doke-button-hover-border: transparent;
-  --doke-button-hover-shadow: 0 12px 26px rgba(42, 95, 144, 0.22);
+:where(.doke-btn--primary, .doke-button--primary) {
+  background: var(--gradient-button-primary, var(--color-primary));
+  border-color: transparent;
+  color: var(--color-white);
+  box-shadow: var(--shadow-action-primary);
 }
 
-:where(.doke-btn--secondary, .doke-button--secondary, .profile-action--secondary, .profile-services-toolbar__action--secondary, .secondary-action, [data-button-variant="secondary"]) {
-  --doke-button-bg: #fff;
-  --doke-button-color: var(--doke-color-primary, #2a5f90);
-  --doke-button-border: rgba(42, 95, 144, 0.18);
+:where(.doke-btn--secondary, .doke-button--secondary) {
+  background: var(--color-secondary-soft);
+  border-color: var(--color-secondary-border);
+  color: var(--color-secondary-strong);
+  box-shadow: var(--shadow-action-secondary);
 }
 
-:where(.doke-btn--ghost, .doke-button--ghost, .profile-action--ghost, [data-button-variant="ghost"]) {
-  --doke-button-bg: rgba(42, 95, 144, 0.06);
-  --doke-button-color: var(--doke-color-primary, #2a5f90);
-  --doke-button-border: transparent;
+:where(.doke-btn--ghost, .doke-button--ghost) {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: var(--border-color-soft);
+  color: var(--btn-text);
+  box-shadow: none;
 }
 
-:where(.icon-action, .profile-options-trigger, .profile-action--icon, [data-button-shape="icon"]) {
-  box-sizing: border-box;
+:where(.doke-btn--soft, .doke-button--soft) {
+  background: var(--btn-bg-soft);
+  border-color: var(--color-primary-border);
+  color: var(--color-primary-strong);
+}
+
+:where(.doke-btn--danger, .doke-button--danger) {
+  background: var(--color-danger-soft);
+  border-color: rgba(239, 68, 68, 0.26);
+  color: var(--color-danger-strong);
+}
+
+:where(.doke-btn--sm, .doke-button--sm) {
+  min-height: var(--doke-btn-height-sm);
+  padding-inline: var(--btn-padding-x-sm);
+  border-radius: var(--btn-radius-sm);
+  font-size: var(--control-font-size-sm);
+}
+
+:where(.doke-btn--lg, .doke-button--lg) {
+  min-height: var(--doke-btn-height-lg);
+  padding-inline: var(--btn-padding-x-lg);
+  border-radius: var(--btn-radius-lg);
+}
+
+:where(.doke-btn--pill, .doke-button--pill) {
+  border-radius: var(--doke-btn-radius-pill);
+}
+
+:where(.doke-btn--block, .doke-button--block) {
+  width: 100%;
+}
+
+:where(.doke-icon-btn, .doke-action-button) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  width: var(--doke-icon-button-size, 42px);
-  height: var(--doke-icon-button-size, 42px);
-  min-width: var(--doke-icon-button-size, 42px);
-  min-height: var(--doke-icon-button-size, 42px);
-  padding: 0;
-  border: 1px solid var(--doke-button-border, rgba(42, 95, 144, 0.16));
-  border-radius: var(--doke-icon-button-radius, 14px);
-  background: var(--doke-button-bg, #fff);
-  color: var(--doke-button-color, var(--doke-color-primary, #2a5f90));
+  width: var(--icon-button-size);
+  height: var(--icon-button-size);
+  border: var(--btn-border);
+  border-radius: var(--btn-radius-sm);
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--btn-text);
+  cursor: pointer;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
-:where(.button-group, .profile-actions-row, .profile-services-toolbar__actions) {
-  display: flex;
-  align-items: center;
-  gap: var(--doke-button-group-gap, 10px);
-  min-width: 0;
+:where(.doke-icon-btn, .doke-action-button):where(:hover) {
+  transform: translateY(-1px);
+  box-shadow: var(--btn-shadow-hover);
+  background: var(--color-surface);
 }
 
-@media (max-width: 760px) {
-  :where(.doke-btn, .doke-button, .profile-action, .profile-services-toolbar__action, .app-action, .section-action, .card-action, .primary-action, .secondary-action) {
-    min-height: var(--doke-button-height-mobile, 40px);
-    padding-inline: var(--doke-button-padding-x-mobile, 14px);
-    border-radius: var(--doke-button-radius-mobile, 13px);
-    font-size: var(--doke-button-font-size-mobile, 0.86rem);
-  }
+:where(.doke-icon-btn, .doke-action-button):where(:focus-visible) {
+  outline: 0;
+  box-shadow: none;
+}
 
-  :where(.icon-action, .profile-options-trigger, .profile-action--icon, [data-button-shape="icon"]) {
-    width: var(--doke-icon-button-size-mobile, 40px);
-    height: var(--doke-icon-button-size-mobile, 40px);
-    min-width: var(--doke-icon-button-size-mobile, 40px);
-    min-height: var(--doke-icon-button-size-mobile, 40px);
-    border-radius: var(--doke-icon-button-radius-mobile, 13px);
-  }
+:where(.doke-btn, .doke-button, .doke-icon-btn, .doke-action-button) svg {
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+  flex: 0 0 auto;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
 }

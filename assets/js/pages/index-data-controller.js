@@ -34,20 +34,9 @@
     else delete root.dataset.dataMessage;
   }
 
-  function regionHasStaticList(region) {
-    var list = region && region.querySelector ? region.querySelector('[data-list]') : null;
-    return Boolean(list && list.children && list.children.length && !region.querySelector('[data-list-loading]'));
-  }
-
   function setRegionState(root, kind, state, message) {
     var region = getRegion(root, kind);
     if (!region) return;
-
-    if (state === 'loading' && regionHasStaticList(region)) {
-      region.setAttribute('aria-busy', 'true');
-      if (region.dataset && region.dataset.state !== 'ready') region.dataset.state = 'idle';
-      return;
-    }
 
     if (Doke.listState && typeof Doke.listState.setListState === 'function') {
       Doke.listState.setListState(region, state, message ? { message: message } : {});
