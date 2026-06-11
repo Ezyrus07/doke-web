@@ -31,8 +31,12 @@ expect(
   'layout/page-rail-authority.css must mirror notifications zoom-out cap.'
 );
 expect(
-  /body:is\([\s\S]*\[data-page="home"\][\s\S]*\[data-page="resultados"\][\s\S]*\)\s*\{\s*--doke-rail-max:\s*1180px;/s.test(railAuthority),
-  'home/results/detail/profile desktop rail max must be bounded to the index-family zoom-out scale.'
+  /body:is\([\s\S]*\[data-page="detalhe-anuncio"\][\s\S]*\[data-page="perfil"\][\s\S]*\[data-page="resultados"\][\s\S]*\)\s*\{\s*--doke-rail-max:\s*1180px;/s.test(railAuthority),
+  'detail/profile/results desktop rail max must remain bounded to the index-family zoom-out scale.'
+);
+expect(
+  /body\[data-page="home"\]\s*\{[\s\S]*--doke-rail-max:\s*1040px;[\s\S]*\}/s.test(railAuthority),
+  'home desktop rail max must use the Visual Recovery compact product width.'
 );
 expect(
   /@media \(min-width: 1180px\)[\s\S]*results-layout\[data-results-mode="services"\][\s\S]*repeat\(auto-fit, minmax\(min\(100%, var\(--doke-results-card-min\)\), 1fr\)\)/s.test(results),

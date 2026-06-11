@@ -23,12 +23,19 @@ body[data-page] {
 }
 
 body:is(
-  [data-page="home"],
   [data-page="detalhe-anuncio"],
   [data-page="perfil"],
   [data-page="resultados"]
 ) {
   --doke-rail-max: 1180px;
+}
+
+body[data-page="home"] {
+  /* Visual Recovery 02: home uses the cleaned layout rail with the approved compact
+     product width. This restores the old visual containment without reactivating
+     legacy shell/page-width contracts. */
+  --doke-rail-max: 1040px;
+  --doke-home-rail-max: var(--doke-rail-max);
 }
 
 body:is(
@@ -144,6 +151,18 @@ body:is(
   }
 }
 
+@media (min-width: 1180px) {
+  body[data-page="home"] {
+    --doke-rail-inline-gutter: clamp(36px, 4vw, 52px);
+    --doke-rail-available: calc(100vw - var(--doke-rail-sidebar-width) - (var(--doke-rail-inline-gutter) * 2));
+    --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
+    --doke-current-page-rail: var(--doke-page-rail);
+    --rail-max: var(--doke-page-rail);
+  }
+}
+
 @media (min-width: 761px) {
   body[data-page].doke-app-shell-page,
   body[data-page].app-shell-page,
@@ -211,5 +230,119 @@ body:is(
   body[data-page].has-global-header > .app-shell > .page > :is(.app-header, .home-side-meta) > .app-header__inner > :is(.app-header__group--secondary, .home-side-meta__group--secondary) {
     justify-content: flex-end;
     margin-left: auto;
+  }
+}
+
+
+/* Visual Recovery 02.2 — global page/header parity across app pages.
+   Responsibility: shared page rail, first-block spacing and desktop density.
+   This is a layout-level contract: pages keep their composition, but header,
+   content rail and first block now use the same visual axis. Do not add card,
+   carousel or component anatomy here. */
+body[data-page].has-global-header {
+  --doke-visual-rail-max: 1040px;
+  --doke-page-top-gap: clamp(16px, 1.8vw, 26px);
+  --doke-page-bottom-gap: clamp(36px, 5vw, 56px);
+  --doke-section-gap: clamp(22px, 2.4vw, 34px);
+  --doke-first-block-top: var(--doke-page-top-gap);
+}
+
+body:is(
+  [data-page="home"],
+  [data-page="pedidos"],
+  [data-page="notificacoes"],
+  [data-page="perfil"],
+  [data-page="resultados"],
+  [data-page="detalhe-anuncio"],
+  [data-page="carteira"],
+  [data-page="configuracoes"],
+  [data-page="novidades"],
+  [data-page="ajuda"]
+).has-global-header {
+  --doke-rail-max: var(--doke-visual-rail-max);
+  --doke-page-max: var(--doke-visual-rail-max);
+  --doke-desktop-page-max: var(--doke-visual-rail-max);
+  --doke-app-shell-max: var(--doke-visual-rail-max);
+  --doke-shell-max-default: var(--doke-visual-rail-max);
+}
+
+body:is(
+  [data-page="mensagens"],
+  [data-page="comunidade"],
+  [data-page="comunidade-interna"]
+).has-global-header {
+  --doke-visual-rail-max: 1180px;
+  --doke-rail-max: var(--doke-visual-rail-max);
+}
+
+@media (min-width: 761px) {
+  body[data-page].has-global-header > .app-shell > .page > .app-header,
+  body[data-page].has-global-header > .app-shell > .page > .app-header > .app-header__inner,
+  body[data-page].has-global-header > .app-shell > .page > .page__content > :is(
+    .page__content-inner,
+    .page__content-inner.container,
+    .shell-home__workspace,
+    .shell-home__workspace--clean,
+    .app-shell-page__workspace,
+    .doke-page-shell,
+    .doke-page-stack,
+    .ad-detail-shell,
+    .profile-shell-content,
+    .search-results-workspace,
+    .orders-shell-content,
+    .messages-shell-content,
+    .settings-page-frame,
+    .settings-content,
+    .wallet-shell-content
+  ),
+  body[data-page="detalhe-anuncio"].has-global-header > .app-shell > .page > .page__content .ad-detail-shell {
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
+
+  body[data-page].has-global-header > .app-shell > .page > .page__content {
+    padding-block-start: var(--doke-page-top-gap);
+    padding-block-end: var(--doke-page-bottom-gap);
+  }
+
+  body[data-page].has-global-header > .app-shell > .page > .page__content > :is(
+    .page__content-inner,
+    .page__content-inner.container,
+    .shell-home__workspace,
+    .shell-home__workspace--clean,
+    .app-shell-page__workspace,
+    .doke-page-shell,
+    .doke-page-stack,
+    .profile-shell-content,
+    .search-results-workspace,
+    .orders-shell-content,
+    .wallet-shell-content
+  ) {
+    padding-block-start: 0;
+  }
+
+  body[data-page="detalhe-anuncio"].has-global-header > .app-shell > .page > .page__content {
+    padding-block-start: var(--doke-page-top-gap);
+  }
+
+  body[data-page].has-global-header .doke-page-stack,
+  body[data-page].has-global-header .page__content-inner.doke-page-stack {
+    gap: var(--doke-section-gap);
+  }
+}
+
+@media (min-width: 1180px) {
+  body[data-page].has-global-header {
+    --doke-rail-inline-gutter: clamp(36px, 4vw, 52px);
+    --doke-rail-available: calc(100vw - var(--doke-rail-sidebar-width) - (var(--doke-rail-inline-gutter) * 2));
+    --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
+    --doke-current-page-rail: var(--doke-page-rail);
+    --rail-max: var(--doke-page-rail);
   }
 }
