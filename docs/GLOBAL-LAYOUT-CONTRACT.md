@@ -34,6 +34,44 @@ Responsável por:
 
 Não resolver problema de uma página alterando header global sem provar impacto em todas as páginas principais.
 
+#### Contrato compartilhado do app header
+
+A autoridade ativa da anatomia e geometria compartilhadas de `.app-header` é:
+
+```txt
+assets/css/layout/header.css
+```
+
+O HTML escolhe conteúdo e variante por hooks declarativos, sem redefinir a anatomia:
+
+```html
+<header class="app-header ..." data-app-header data-header-contract="app-header" data-header-variant="standard">
+  <div class="app-header__inner" data-header-inner>
+    <div data-header-slot="primary">...</div>
+    <div data-header-slot="actions">...</div>
+  </div>
+</header>
+```
+
+Variantes permitidas:
+
+| variante | responsabilidade |
+| --- | --- |
+| `standard` | mantém busca e localização como controles globais fixos, além das ações compartilhadas |
+| `contextual` | mantém busca e adiciona exatamente um `[data-header-context]` para voltar, filtros ou ações próprias, sem herdar localização |
+
+Classes `home-side-meta__*` e modificadores como `app-header--home`, `app-header--profile` e `app-header--orders` permanecem temporariamente como compatibilidade visual. Elas não são permissão para criar uma nova anatomia global por página.
+
+A busca permanece disponível nos dois tipos de header. A localização pertence somente ao header `standard`, visualmente equivalente ao `index`; sem endereço salvo, ele exibe o fallback compartilhado `Belo Horizonte, MG`.
+
+Toda página ativa que renderiza `.app-header` deve participar da matriz verificada por `npm run audit:shared-app-header-contract`. Páginas sem header global, como autenticação ou workspaces especializados, não devem receber esse contrato artificialmente.
+
+Exceção ativa aprovada:
+
+| página | motivo |
+| --- | --- |
+| `comunidade-interna.html` | workspace de conversa em tela inteira, com headers próprios de lista e thread |
+
 ### Rail/conteúdo
 
 Variáveis preferenciais:
@@ -88,10 +126,12 @@ Autoridade primária para largura/eixo das páginas internas:
 ```txt
 assets/css/components/shell/desktop-page-rail-authority.css
 assets/css/components/shell/shared-page-width-contract.css
-assets/css/components/shell/app-header-canonical-contract.css
+assets/css/layout/header.css
 ```
 
 Arquivos de página só podem consumir esse contrato ou fazer exceções escopadas por `body[data-page="..."]`, sem redefinir anatomia de cards, header global ou sidebar.
+
+Arquivos antigos em `components/shell` ainda podem consumir tokens ou preservar compatibilidade de páginas não migradas, mas não são autoridade final para a anatomia compartilhada do header.
 
 ## Responsive reform Stage 02 — rail alias bridge
 

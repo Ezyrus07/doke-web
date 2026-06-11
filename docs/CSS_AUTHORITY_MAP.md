@@ -8,7 +8,8 @@ Este mapa define autoridade antes de novas correções visuais. Ele deve ser usa
 |---|---|---|
 | Tokens, reset, tipografia base | `assets/css/core` | `pages` |
 | Rail/largura global | `core/layout` ou contrato global existente | CSS de página sem escopo |
-| Header, shell, sidebar, bottom-nav | `components/shell` / `patterns/navigation` | páginas isoladas |
+| Header compartilhado | `assets/css/layout/header.css` | páginas isoladas, `components/shell` e patterns criando anatomia concorrente |
+| Shell, sidebar, bottom-nav | `components/shell` / `patterns/navigation` | páginas isoladas |
 | Cards de anúncio | `components/cards/ad-card.css` e contrato card compartilhado | `pages/*` alterando anatomia |
 | Workers/vídeos | `components/cards/worker-card.css` ou pattern canônico | `pages/home` alterando anatomia |
 | Publicações | `components/cards/publication-card.css` | `pages/*` alterando mídia/body/footer |

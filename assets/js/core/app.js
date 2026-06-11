@@ -339,16 +339,16 @@ const syncAuthUi = () => {
 
 const syncHeaderLocation = () => {
   const key = "doke.defaultServiceLocation";
-  let value = "Adicionar endereço";
+  let value = "";
   try {
     const raw = window.localStorage.getItem(key);
     if (raw) {
       const data = JSON.parse(raw);
-      value = data?.titulo || data?.rua || value;
+      value = data?.cidade && data?.uf ? `${data.cidade}, ${data.uf}` : data?.titulo || data?.rua || value;
     }
   } catch {}
   document.querySelectorAll("[data-topbar-location-value]").forEach((node) => {
-    node.textContent = value;
+    node.textContent = value || node.dataset.locationFallback || node.textContent.trim() || "Belo Horizonte, MG";
   });
 };
 
