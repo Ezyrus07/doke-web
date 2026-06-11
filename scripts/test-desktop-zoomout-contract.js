@@ -10,37 +10,28 @@ function expect(condition, message) {
   if (!condition) failures.push(message);
 }
 
-const shared = read('assets/css/components/shell/shared-page-width-contract.css');
-const rail = read('assets/css/components/shell/desktop-page-rail-authority.css');
+const pageRail = read('assets/css/layout/page-rail.css');
+const railAuthority = read('assets/css/layout/page-rail-authority.css');
+const legacyShared = read('assets/css/components/shell/shared-page-width-contract.css');
+const legacyDesktop = read('assets/css/components/shell/desktop-page-rail-authority.css');
 const results = read('assets/css/pages/search-results.css');
+const coreIndex = read('assets/css/core/index.css');
 const components = read('assets/css/core/components.css');
 
 expect(
-  !/width:\s*calc\(100vw\s*-\s*280px\s*-\s*96px\)\s*!important/.test(shared),
-  'shared-page-width-contract.css must not use unbounded 1180px+ literal desktop rails.'
+  !/width:\s*calc\(100vw\s*-\s*280px\s*-\s*96px\)\s*!important/.test(pageRail + railAuthority),
+  'layout rail files must not use unbounded 1180px+ literal desktop rails.'
 );
 expect(
-  !/max-width:\s*calc\(100vw\s*-\s*280px\s*-\s*96px\)\s*!important/.test(shared),
-  'shared-page-width-contract.css must not use unbounded 1180px+ max rails.'
+  !/max-width:\s*calc\(100vw\s*-\s*280px\s*-\s*96px\)\s*!important/.test(pageRail + railAuthority),
+  'layout rail files must not use unbounded 1180px+ max rails.'
 );
 expect(
-  !/width:\s*calc\(100vw\s*-\s*280px\s*-\s*clamp\(24px, 3vw, 48px\)\s*-\s*clamp\(24px, 3vw, 48px\)\)\s*!important/.test(shared),
-  'shared-page-width-contract.css must not use unbounded 761px-1179px literal rails.'
+  /body\[data-page="notificacoes"\]\s*\{\s*--doke-rail-max:\s*1040px;\s*\}/s.test(railAuthority),
+  'layout/page-rail-authority.css must mirror notifications zoom-out cap.'
 );
 expect(
-  shared.includes('var(--doke-page-family-max') && shared.includes('min(calc(100vw - 280px - 96px), var(--doke-page-family-max'),
-  'shared-page-width-contract.css must cap legacy literal fallbacks with --doke-page-family-max.'
-);
-expect(
-  /body\[data-page="notificacoes"\]\s*\{\s*--doke-page-family-max:\s*1040px;\s*\}/s.test(shared),
-  'notifications must have a bounded reading rail at zoom-out.'
-);
-expect(
-  /body\[data-page="notificacoes"\]\s*\{\s*--doke-rail-max:\s*1040px;\s*\}/s.test(rail),
-  'desktop rail authority must mirror notifications zoom-out cap.'
-);
-expect(
-  /body:is\([\s\S]*\[data-page="home"\][\s\S]*\[data-page="resultados"\][\s\S]*\)\s*\{\s*--doke-rail-max:\s*1180px;/s.test(rail),
+  /body:is\([\s\S]*\[data-page="home"\][\s\S]*\[data-page="resultados"\][\s\S]*\)\s*\{\s*--doke-rail-max:\s*1180px;/s.test(railAuthority),
   'home/results/detail/profile desktop rail max must be bounded to the index-family zoom-out scale.'
 );
 expect(
@@ -48,12 +39,19 @@ expect(
   'search-results.css must use auto-fit services grid at zoom-out instead of stretched desktop columns.'
 );
 expect(
-  components.includes('shared-page-width-contract.css?v=20260608-zoomout-contract-v1'),
-  'core/components.css must import the zoom-out shared rail contract version.'
+  coreIndex.includes('../layout/page-rail-authority.css?v=20260610-stage66-layout-rail-authority'),
+  'core/index.css must import the canonical layout rail authority after core components.'
 );
 expect(
-  components.includes('desktop-page-rail-authority.css?v=20260608-zoomout-contract-v1'),
-  'core/components.css must import the zoom-out desktop rail authority version.'
+  !components.includes('components/shell/shared-page-width-contract.css') &&
+    !components.includes('components/shell/desktop-page-rail-authority.css') &&
+    !components.includes('components/cards/mobile-card-distribution-contract.css'),
+  'core/components.css must not import retired legacy authority paths.'
+);
+expect(
+  /Canonical owner: assets\/css\/layout\/page-rail\.css/.test(legacyShared) &&
+    /Canonical owner: assets\/css\/layout\/page-rail-authority\.css/.test(legacyDesktop),
+  'retired legacy rail files must remain compatibility shims only.'
 );
 
 if (failures.length) {
