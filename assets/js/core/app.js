@@ -416,63 +416,25 @@ const BASE_SHELL_STYLE_PATTERNS = [
 ];
 
 const INTERNAL_VIEW_STYLE_HINTS = {
-  "/index.html": [
-    "assets/css/pages/home-shared.css",
-    "assets/css/pages/home.css",
+  "/index.html": ["assets/css/pages/home-foundation.css"],
+  "/resultados.html": [
+    "assets/css/pages/marketplace-foundation.css",
     "assets/css/pages/search-results.css"
   ],
-  "/resultados.html": [
-    "assets/css/pages/internal-shell.css",
-    "assets/css/pages/results/index.css"
-  ],
-  "/pedidos.html": [
-    "assets/css/pages/internal-shell.css",
-    "assets/css/pages/pedidos.css"
-  ],
-  "/mensagens.html": [
-    "assets/css/pages/home-shared.css",
-    "assets/css/pages/home.css",
-    "assets/css/pages/mensagens/message-boot.css",
-    "assets/css/pages/mensagens.css",
-    "assets/css/patterns/chat-screen-fill.css"
-  ],
-  "/notificacoes.html": [
-    "assets/css/pages/internal-shell.css",
-    "assets/css/pages/pedidos.css",
-    "assets/css/pages/notificacoes.css"
-  ],
-  "/carteira.html": [
-    "assets/css/pages/internal-shell.css",
-    "assets/css/pages/carteira.css"
-  ],
+  "/pedidos.html": ["assets/css/pages/pedidos-foundation.css"],
+  "/mensagens.html": ["assets/css/pages/messaging-foundation.css"],
+  "/notificacoes.html": ["assets/css/pages/notificacoes-foundation.css"],
+  "/carteira.html": ["assets/css/pages/carteira-foundation.css"],
   "/comunidade.html": [
-    "assets/css/pages/comunidade.css"
+    "assets/css/pages/comunidade-foundation.css",
+    "assets/css/pages/comunidade-ui-foundation.css",
+    "assets/css/pages/comunidade-post-shell-foundation.css"
   ],
-  "/comunidade-interna.html": [
-    "assets/css/pages/comunidade-interna.css",
-    "assets/css/components/internal/chat-workspace-contract.css",
-    "assets/css/patterns/chat-screen-fill.css"
-  ],
-  "/avaliacao.html": [
-    "assets/css/pages/home-shared.css",
-    "assets/css/pages/home.css",
-    "assets/css/pages/post-service.css"
-  ],
-  "/perfil.html": [
-    "assets/css/pages/perfil.css"
-  ],
-  "/configuracoes.html": [
-    "assets/css/pages/internal-shell.css",
-    "assets/css/pages/configuracoes.css",
-    "assets/js/pages/configuracoes.js"
-  ],
-  "/detalhe-anuncio.html": [
-    "assets/css/components/actions/action-button.css",
-    "assets/css/components/cards/card-system.css",
-    "assets/css/components/cards/publication-card.css",
-    "assets/css/components/cards/worker-media-card.css",
-    "assets/css/pages/detalhe-anuncio.css"
-  ]
+  "/comunidade-interna.html": ["assets/css/pages/comunidade-interna-foundation.css"],
+  "/avaliacao.html": ["assets/css/pages/avaliacao-foundation.css"],
+  "/perfil.html": ["assets/css/pages/profile-foundation.css"],
+  "/configuracoes.html": ["assets/css/pages/configuracoes-foundation.css"],
+  "/detalhe-anuncio.html": ["assets/css/pages/marketplace-detail-foundation.css"]
 };
 
 const preloadedStyleHrefs = new Set();
