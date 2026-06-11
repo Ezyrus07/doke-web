@@ -346,3 +346,25 @@ body:is(
     --rail-max: var(--doke-page-rail);
   }
 }
+
+/* Home desktop rail recovery.
+   The compact visual rail is valid for internal pages, but the approved home
+   baseline uses a wider marketplace rail on desktop so the hero, categories,
+   section headers and horizontal card rails start close to the sidebar axis.
+   Keep this scoped to the home desktop breakpoint; card anatomy and carousel
+   behavior remain owned by components/patterns. */
+@media (min-width: 1180px) {
+  body[data-page="home"].has-global-header {
+    --doke-visual-rail-max: 1360px;
+    --doke-rail-max: var(--doke-visual-rail-max);
+    --doke-page-max: var(--doke-visual-rail-max);
+    --doke-desktop-page-max: var(--doke-visual-rail-max);
+    --doke-app-shell-max: var(--doke-visual-rail-max);
+    --doke-shell-max-default: var(--doke-visual-rail-max);
+    --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
+    --doke-current-page-rail: var(--doke-page-rail);
+    --rail-max: var(--doke-page-rail);
+  }
+}
