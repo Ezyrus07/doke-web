@@ -26,8 +26,8 @@ O `index.html` continua sendo a referência visual inicial para cards e rails, m
 | `doke-ad-card` / `service-card` | `assets/css/components/cards/ad-card.css` | anatomia de anúncio/serviço, imagem, preço, rating, footer |
 | `worker/video-card` | `assets/css/components/cards/worker-card.css` | ratio, overlay, thumb, preview, metadados |
 | Toolbars | `assets/css/components/toolbars.css` | botões internos, altura, gap, estados |
-| Tabs | `assets/css/components/tabs.css` | item, ativo, foco, altura, padding, scroll affordance |
-| Avatar | `assets/css/components/avatar.css` | forma, object-fit, raio, tamanhos base |
+| Tabs | `assets/css/components/tabs/tabs.css` | item, ativo, foco, altura, padding, scroll affordance |
+| Avatar | `assets/css/components/identity/avatar.css` | forma, object-fit, raio, tamanhos base |
 | Botões | `assets/css/components/buttons.css` | cores, altura, padding, radius, hover/focus/disabled |
 
 ---
@@ -202,7 +202,7 @@ whether toolbar is rendered
 
 ### 5. Tabs
 
-**Dono:** `assets/css/components/tabs.css`
+**Dono:** `assets/css/components/tabs/tabs.css`
 
 **Components controla:**
 

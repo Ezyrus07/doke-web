@@ -70,7 +70,7 @@ const bridgeCss = [
   'assets/css/core/layout-shell.css',
   'assets/css/core/layout-topbar.css',
   'assets/css/core/layout-responsive.css',
-  'assets/css/core/patterns.css',
+  'assets/css/core/ui/patterns.css',
   'assets/css/core/primitives.css',
 ];
 
