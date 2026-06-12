@@ -3,14 +3,49 @@
    for index.html. Card anatomy belongs to components/. Rail/carousel mechanics
    belong to patterns/. Global width/header/shell belongs to layout/.
 */
-.home-catégories,
-.featured-services,
-.short-videos,
-.before-after,
-.more-services,
-.featured-pros {
+/* Home feed rhythm: one compact source for vertical section spacing. */
+body.home-index-shell {
+  --home-feed-section-gap: clamp(18px, 1.9vw, 28px);
+  --home-feed-section-gap-tight: clamp(16px, 1.55vw, 24px);
+  --doke-section-gap: var(--home-feed-section-gap-tight);
+}
+
+body.home-index-shell :is(
+  .home-catégories,
+  .featured-services,
+  .short-videos,
+  .home-publications,
+  .before-after,
+  .more-services,
+  .featured-pros
+) {
   min-width: 0;
-  margin-top: var(--doke-section-gap, 28px);
+  margin-top: 0;
+}
+
+body.home-index-shell :is(
+  .featured-services,
+  .short-videos,
+  .home-publications,
+  .more-services,
+  .featured-pros
+) > :is(.section-heading, .home-section-header) {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Featured services has no external rail arrows; its cards must start on the page axis. */
+body.home-index-shell .featured-services > .content-rail {
+  padding-inline: 0;
+}
+
+body.home-index-shell .featured-services > .content-rail > #featured-services-track {
+  margin-inline: 0;
+  scroll-padding-inline: 0;
+}
+
+body.home-index-shell .short-videos {
+  margin-inline: 0;
 }
 
 .home-catégories__title,
@@ -154,13 +189,9 @@
 }
 
 @media (max-width: 1024px) {
-  .home-catégories,
-  .featured-services,
-  .short-videos,
-  .before-after,
-  .more-services,
-  .featured-pros {
-    margin-top: 24px;
+  body.home-index-shell {
+    --home-feed-section-gap: 24px;
+    --home-feed-section-gap-tight: 20px;
   }
 
   .content-rail__arrow,
@@ -196,13 +227,9 @@
 }
 
 @media (max-width: 560px) {
-  .home-catégories,
-  .featured-services,
-  .short-videos,
-  .before-after,
-  .more-services,
-  .featured-pros {
-    margin-top: 22px;
+  body.home-index-shell {
+    --home-feed-section-gap: 22px;
+    --home-feed-section-gap-tight: 18px;
   }
 
   .section-heading,

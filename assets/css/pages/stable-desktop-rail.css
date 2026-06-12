@@ -1,50 +1,8 @@
-/* Stable desktop rail.
-   Keeps header and content on the same width before and after F5.
-   Starts at 1180px because 1025-1179px tablet landscape owns a compact
-   sidebar and a narrower page rail. */
+/* Profile desktop spacing remains page-specific; shared width belongs to the
+   layout/page-rail-authority.css contract. */
 @media (min-width: 1180px) {
-  body:is(.home-index-shell, .profile-page-shell) {
-    --doke-stable-desktop-rail: min(calc(100% - 96px), 1360px);
-  }
-
-  html body.home-index-shell.doke-app-shell-page.has-global-header > .app-shell > .page > .app-header.home-side-meta > .app-header__inner:not(#dokeStableRailA):not(#dokeStableRailB):not(#dokeStableRailC),
-  html body.home-index-shell.doke-app-shell-page.has-global-header > .app-shell > .page > .page__content > .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean:not(#dokeStableRailA):not(#dokeStableRailB):not(#dokeStableRailC),
-  html body[data-page="perfil"].profile-page-shell.doke-app-shell-page.has-global-header[data-profile-view][data-profile-type] > .app-shell > .page > .app-header > .app-header__inner:not(#dokeStableRailA):not(#dokeStableRailB):not(#dokeStableRailC),
-  html body[data-page="perfil"].profile-page-shell.doke-app-shell-page.has-global-header[data-profile-view][data-profile-type] > .app-shell > .page > .page__content > .page__content-inner.container.app-shell-page__workspace.shell-home__workspace.profile-shell-content:not(#dokeStableRailA):not(#dokeStableRailB):not(#dokeStableRailC) {
-    width: var(--doke-stable-desktop-rail);
-    max-width: var(--doke-stable-desktop-rail);
-    inline-size: var(--doke-stable-desktop-rail);
-    max-inline-size: var(--doke-stable-desktop-rail);
-    min-width: 0;
-    margin-left: auto;
-    margin-right: auto;
-    padding-left: 0;
-    padding-right: 0;
-    box-sizing: border-box;
-  }
-
-  html body.home-index-shell.doke-app-shell-page.has-global-header > .app-shell > .page > .page__content,
-  html body[data-page="perfil"].profile-page-shell.doke-app-shell-page.has-global-header[data-profile-view][data-profile-type] > .app-shell > .page > .page__content {
-    width: 100%;
-    max-width: none;
-    padding-left: 0;
-    padding-right: 0;
-    box-sizing: border-box;
-  }
-
-  html body[data-page="perfil"].profile-page-shell.doke-app-shell-page.has-global-header[data-profile-view][data-profile-type] > .app-shell > .page > .page__content {
+  body[data-page="perfil"].profile-page-shell > .app-shell > .page > .page__content {
     padding-top: clamp(28px, 3vw, 48px);
-  }
-
-  html body[data-page="perfil"].profile-page-shell.doke-app-shell-page.has-global-header[data-profile-view][data-profile-type] > .app-shell > .page > .page__content > .page__content-inner.profile-shell-content > .profile-screen,
-  html body[data-page="perfil"].profile-page-shell.doke-app-shell-page.has-global-header[data-profile-view][data-profile-type] > .app-shell > .page > .page__content > .page__content-inner.profile-shell-content .profile-hero-shell,
-  html body.home-index-shell.doke-app-shell-page.has-global-header > .app-shell > .page > .page__content > .page__content-inner.shell-home__workspace > :is(.home-search-hero, section[class*="home-cat"], .featured-services, .home-recommendations, .short-videos, .home-publications, .more-services, .featured-pros),
-  html body.home-index-shell.doke-app-shell-page.has-global-header > .app-shell > .page > .page__content > .page__content-inner.shell-home__workspace--clean > :is(.home-search-hero, section[class*="home-cat"], .featured-services, .home-recommendations, .short-videos, .home-publications, .more-services, .featured-pros) {
-    width: 100%;
-    max-width: 100%;
-    margin-left: 0;
-    margin-right: 0;
-    box-sizing: border-box;
   }
 }
 
