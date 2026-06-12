@@ -2,7 +2,7 @@
    Owns only the visual anatomy of service announcement cards.
    Page CSS owns grid/rail placement. This component intentionally does not target
    service-card, video-card, worker-card, shell, header or global wrappers. */
-.doke-ad-card {
+.doke-ad-card:not([hidden]) {
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -399,7 +399,7 @@
 
 /* Interactive polish for canonical announcement cards. */
 @media (hover: hover) and (pointer: fine) {
-  .doke-ad-card {
+  .doke-ad-card:not([hidden]) {
     transition:
       transform 180ms ease,
       box-shadow 180ms ease,
@@ -508,7 +508,7 @@
    This is the only mobile owner for .doke-ad-card internals.
    Page CSS may control only rails, gaps and external section spacing. */
 @media (max-width: 760px) {
-  .doke-ad-card {
+  .doke-ad-card:not([hidden]) {
     --doke-ad-card-height: auto;
     --doke-ad-card-min-height: 0;
     --doke-ad-card-max-height: none;
@@ -832,7 +832,7 @@
    Pages may control only grid/gap/rail/overflow around cards. They must not redefine
    card anatomy such as media ratio, padding, border, radius, typography or footer layout. */
 
-:where(.doke-ad-card, .service-card) {
+:where(.doke-ad-card, .service-card):not([hidden]) {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;

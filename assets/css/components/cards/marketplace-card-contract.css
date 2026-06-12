@@ -64,7 +64,7 @@
   color: var(--doke-card-ink);
 }
 
-:where(.doke-ad-card, .service-card, .publication-card) {
+:where(.doke-ad-card, .service-card, .publication-card):not([hidden]) {
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -483,7 +483,7 @@
 /* Component authority guard.
    This uses only for properties still redefined by legacy/page CSS.
    Scope is restricted to card internals; page layout remains outside this contract. */
-html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card) {
+html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card):not([hidden]) {
   display: var(--doke-ad-card-display, flex);
   flex-direction: var(--doke-ad-card-flex-direction, column);
   grid-template-rows: var(--doke-ad-card-grid-template-rows, none);
@@ -564,7 +564,7 @@ html body :is(.video-card[data-worker-trigger].video-card, .video-card.doke-work
 }
 
 @media (max-width: 760px) {
-  html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card) {
+  html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card):not([hidden]) {
     border-radius: var(--doke-card-radius-sm);
   }
 

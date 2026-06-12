@@ -6,10 +6,15 @@
 */
 
 @media (min-width: 761px) {
-  html,
-  body {
+  html {
     min-width: 1024px;
     overflow-x: auto;
+    overflow-y: auto;
+  }
+
+  body {
+    min-width: 1024px;
+    overflow: visible;
   }
 
   body.doke-app-shell-page {
@@ -22,13 +27,20 @@
   }
 
   body.doke-app-shell-page .sidebar[data-shell-sidebar] {
-    position: sticky;
+    position: fixed;
     top: 0;
-    align-self: start;
+    bottom: 0;
+    left: 0;
     height: 100vh;
     overflow-y: auto;
     overflow-x: hidden;
+    scrollbar-width: none;
     z-index: 30;
+  }
+
+  body.doke-app-shell-page .sidebar[data-shell-sidebar]::-webkit-scrollbar {
+    width: 0;
+    height: 0;
   }
 
   body.doke-app-shell-page .page,
