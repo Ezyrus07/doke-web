@@ -14,7 +14,7 @@
     '': { key: 'home', active: 'home', search: true },
     'resultados.html': { key: 'resultados', active: 'home', search: true },
     'detalhe-anuncio.html': { key: 'detalhe-anuncio', active: 'home', search: false, title: 'Anúncio', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
-    'pedidos.html': { key: 'pedidos', active: 'orders', search: false },
+    'pedidos.html': { key: 'pedidos', active: 'orders', search: false, hideSearchBar: true },
     'mensagens.html': { key: 'mensagens', active: 'messages', search: false },
     'comunidade.html': { key: 'comunidade', active: 'communities', search: false },
     'comunidade-interna.html': { key: 'comunidade', active: 'communities', search: false, title: 'Comunidade' },

@@ -589,3 +589,38 @@ body[data-page].has-global-header .app-header .home-side-meta__tablet-menu {
     min-inline-size: 0;
   }
 }
+
+/* Orders/notifications header rail parity — 2026-06-12
+   Authority: layout/header.css.
+   Keeps the migrated orders/notifications app-header on the same vertical rhythm
+   and content rail as the shared page workspace. Do not move this to page CSS. */
+@media (min-width: 761px) {
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header > .app-shell > .page > .app-header.app-header--orders,
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header > .app-shell > .page > .app-header.home-side-meta {
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    min-block-size: var(--doke-header-height);
+    margin-block: 0;
+    margin-inline: auto;
+    padding-block: 10px;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header > .app-shell > .page > .app-header.app-header--orders > .app-header__inner,
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header > .app-shell > .page > .app-header.home-side-meta > .app-header__inner {
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    min-block-size: var(--doke-header-control-size);
+    margin-inline: auto;
+    padding-block: 0;
+    align-items: center;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header > .app-shell > .page > .app-header + .page__content {
+    margin-block-start: 0;
+    padding-block-start: 0;
+  }
+}

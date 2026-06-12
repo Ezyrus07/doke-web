@@ -45,7 +45,7 @@ for (const page of pages) {
   const hasDesktopStability = desktopIndex !== -1;
   const hasResponsiveBoundary = responsiveBoundaryIndex !== -1;
   const hasSidebar = html.includes('data-shell-sidebar');
-  const hasDesktopTopbar = html.includes('topbar');
+  const hasDesktopTopbar = html.includes('data-app-header') || html.includes('topbar');
 
   if (!hasDesktopStability) failures.push(`${page} does not load ${cssPath}`);
   if (!hasResponsiveBoundary) {
