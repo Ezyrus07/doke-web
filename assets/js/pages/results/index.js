@@ -343,7 +343,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
         <p class="professional-showcase-card__role">${item.role || item.profession || 'Profissional Doke'}</p>
       </div>
       <div class="professional-showcase-card__actions">
-        <a class="professional-showcase-card__cta" href="perfil.html">Ver perfil</a>
+        <a class="professional-showcase-card__cta doke-btn doke-btn--primary" href="perfil.html">Ver perfil</a>
       </div>
     `;
     return article;

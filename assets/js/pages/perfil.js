@@ -744,7 +744,7 @@ window.DokeInitProfile = () => {
         </div>
         <div class="doke-ad-card__footer">
           <strong class="doke-ad-card__price">${normalize(item.price)}</strong>
-          <a class="doke-ad-card__cta" href="detalhe-anuncio.html">Ver an&uacute;ncio</a>
+          <a class="doke-ad-card__cta doke-btn doke-btn--success" href="detalhe-anuncio.html">Ver an&uacute;ncio</a>
         </div>
       </div>
     </article>

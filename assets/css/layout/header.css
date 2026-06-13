@@ -84,6 +84,7 @@
   appearance: none;
 }
 
+.app-header .home-side-meta__tablet-menu svg,
 .app-header .home-side-meta__search svg,
 .app-header .home-side-meta__alert svg,
 .app-header .detail-standard-topbar__back svg,
@@ -316,6 +317,7 @@ body[data-page].has-global-header .app-header [hidden] {
 }
 
 body[data-page].has-global-header .app-header :is(
+  .home-side-meta__tablet-menu,
   .home-side-meta__search,
   .home-side-meta__alert,
   .detail-standard-topbar__back,
@@ -340,6 +342,7 @@ body[data-page].has-global-header .app-header :is(
 }
 
 body[data-page].has-global-header .app-header :is(
+  .home-side-meta__tablet-menu,
   .home-side-meta__search,
   .home-side-meta__alert,
   .detail-standard-topbar__back,
@@ -590,37 +593,364 @@ body[data-page].has-global-header .app-header .home-side-meta__tablet-menu {
   }
 }
 
-/* Orders/notifications header rail parity — 2026-06-12
-   Authority: layout/header.css.
-   Keeps the migrated orders/notifications app-header on the same vertical rhythm
-   and content rail as the shared page workspace. Do not move this to page CSS. */
+/* Contextual app-header contract for pedidos/notificacoes.
+   Authority: layout/header.css owns header rail, height and slot distribution.
+   Page CSS may provide content/actions, but must not change the app-header frame. */
 @media (min-width: 761px) {
-  body:is(.orders-page-shell, .notifications-page-shell).has-global-header > .app-shell > .page > .app-header.app-header--orders,
-  body:is(.orders-page-shell, .notifications-page-shell).has-global-header > .app-shell > .page > .app-header.home-side-meta {
-    inline-size: var(--doke-page-rail);
-    width: var(--doke-page-rail);
-    max-inline-size: var(--doke-page-rail);
-    max-width: var(--doke-page-rail);
-    min-block-size: var(--doke-header-height);
-    margin-block: 0;
-    margin-inline: auto;
-    padding-block: 10px;
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header {
+    --doke-header-height: 70px;
+    --doke-header-control-size: 46px;
+    --doke-header-profile-height: 50px;
+    --doke-header-avatar-size: 38px;
+    --doke-header-gap: 10px;
   }
 
-  body:is(.orders-page-shell, .notifications-page-shell).has-global-header > .app-shell > .page > .app-header.app-header--orders > .app-header__inner,
-  body:is(.orders-page-shell, .notifications-page-shell).has-global-header > .app-shell > .page > .app-header.home-side-meta > .app-header__inner {
-    inline-size: var(--doke-page-rail);
-    width: var(--doke-page-rail);
-    max-inline-size: var(--doke-page-rail);
-    max-width: var(--doke-page-rail);
-    min-block-size: var(--doke-header-control-size);
-    margin-inline: auto;
-    padding-block: 0;
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  > .app-shell > .page > .app-header.home-side-meta {
+    position: static;
+    top: auto;
+    z-index: auto;
+    display: flex;
     align-items: center;
+    justify-content: space-between;
+    inline-size: var(--doke-header-rail, var(--doke-page-rail));
+    width: var(--doke-header-rail, var(--doke-page-rail));
+    max-inline-size: var(--doke-header-rail, var(--doke-page-rail));
+    max-width: var(--doke-header-rail, var(--doke-page-rail));
+    min-block-size: var(--doke-header-height);
+    block-size: var(--doke-header-height);
+    max-block-size: var(--doke-header-height);
+    margin: 0 auto;
+    padding-block: 10px;
+    padding-inline: 0;
+    gap: var(--doke-header-gap);
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+    box-sizing: border-box;
   }
 
-  body:is(.orders-page-shell, .notifications-page-shell).has-global-header > .app-shell > .page > .app-header + .page__content {
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  > .app-shell > .page > .app-header.home-side-meta > .app-header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    inline-size: var(--doke-header-rail, var(--doke-page-rail));
+    width: var(--doke-header-rail, var(--doke-page-rail));
+    max-inline-size: var(--doke-header-rail, var(--doke-page-rail));
+    max-width: var(--doke-header-rail, var(--doke-page-rail));
+    min-block-size: var(--doke-header-profile-height);
+    block-size: var(--doke-header-profile-height);
+    max-block-size: var(--doke-header-profile-height);
+    margin: 0 auto;
+    padding: 0;
+    gap: var(--doke-header-gap);
+    overflow: visible;
+    box-sizing: border-box;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  .app-header.home-side-meta :is(.home-side-meta__group, .app-header__group) {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    gap: var(--doke-header-gap);
+    overflow: visible;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  .app-header.home-side-meta :is(.home-side-meta__group--primary, .app-header__group--primary) {
+    flex: 1 1 auto;
+    justify-content: flex-start;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  .app-header.home-side-meta :is(.home-side-meta__group--secondary, .app-header__group--secondary) {
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    margin-left: auto;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  .app-header.home-side-meta .home-side-meta__tablet-menu {
+    display: none;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  .app-header.home-side-meta :is(.home-side-meta__search, .home-side-meta__alert) {
+    inline-size: var(--doke-header-control-size);
+    width: var(--doke-header-control-size);
+    min-inline-size: var(--doke-header-control-size);
+    min-width: var(--doke-header-control-size);
+    max-inline-size: var(--doke-header-control-size);
+    max-width: var(--doke-header-control-size);
+    block-size: var(--doke-header-control-size);
+    height: var(--doke-header-control-size);
+    min-block-size: var(--doke-header-control-size);
+    min-height: var(--doke-header-control-size);
+    max-block-size: var(--doke-header-control-size);
+    max-height: var(--doke-header-control-size);
+    flex: 0 0 var(--doke-header-control-size);
+    padding: 0;
+    border: var(--doke-header-border);
+    border-radius: var(--doke-header-control-radius);
+    background: var(--doke-header-bg);
+    color: var(--doke-header-ink);
+    box-shadow: var(--doke-header-shadow);
+    font-size: inherit;
+    line-height: 1;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  .app-header.home-side-meta [data-header-context] {
+    display: inline-flex;
+    visibility: visible;
+    opacity: 1;
+    align-items: center;
+    justify-content: flex-start;
+    flex: 0 1 auto;
+    min-inline-size: 0;
+    width: auto;
+    max-inline-size: min(44vw, 520px);
+    max-width: min(44vw, 520px);
+    min-block-size: var(--doke-header-control-size);
+    block-size: var(--doke-header-control-size);
+    max-block-size: var(--doke-header-control-size);
+    margin: 0;
+    padding: 0;
+    gap: var(--doke-header-gap);
+    overflow-x: auto;
+    overflow-y: hidden;
+    pointer-events: auto;
+    scrollbar-width: none;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  .app-header.home-side-meta [data-header-context]::-webkit-scrollbar {
+    display: none;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  .app-header.home-side-meta .page-header-context__action {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    min-inline-size: 0;
+    width: auto;
+    inline-size: auto;
+    max-inline-size: none;
+    max-width: none;
+    block-size: var(--doke-header-control-size);
+    height: var(--doke-header-control-size);
+    min-block-size: var(--doke-header-control-size);
+    min-height: var(--doke-header-control-size);
+    max-block-size: var(--doke-header-control-size);
+    max-height: var(--doke-header-control-size);
+    margin: 0;
+    padding: 0 18px;
+    gap: 8px;
+    border: var(--doke-header-border);
+    border-radius: var(--doke-header-control-radius);
+    background: var(--doke-header-bg);
+    color: var(--doke-header-ink);
+    box-shadow: var(--doke-header-shadow);
+    font-size: 0.9rem;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: visible;
+    appearance: none;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  .app-header.home-side-meta .page-header-context__action:is(:hover, :focus-visible) {
+    border-color: rgba(24, 75, 118, 0.12);
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: var(--doke-header-shadow-hover);
+    transform: translateY(-1px);
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  .app-header.home-side-meta .page-header-context__action[aria-expanded="true"],
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  .app-header.home-side-meta .page-header-context__action.is-view-active {
+    border-color: transparent;
+    background: linear-gradient(135deg, #1aa77a 0%, #137d74 100%);
+    color: #ffffff;
+    box-shadow: 0 12px 28px rgba(19, 125, 116, 0.18);
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  .app-header.home-side-meta .page-header-context__action > span {
+    position: static;
+    display: inline;
+    inline-size: auto;
+    block-size: auto;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    clip: auto;
+    clip-path: none;
+    white-space: nowrap;
+    font-size: inherit;
+    line-height: 1;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  .app-header.home-side-meta .page-header-context__action svg {
+    inline-size: 17px;
+    width: 17px;
+    min-inline-size: 17px;
+    min-width: 17px;
+    block-size: 17px;
+    height: 17px;
+    min-block-size: 17px;
+    min-height: 17px;
+    flex: 0 0 17px;
+    margin: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  > .app-shell > .page > .app-header.home-side-meta + .page__content {
     margin-block-start: 0;
-    padding-block-start: 0;
+    padding-block-start: var(--doke-page-top-gap);
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1024px) {
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  .app-header.home-side-meta .home-side-meta__tablet-menu {
+    display: inline-grid;
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  .app-header.home-side-meta [data-header-context] {
+    max-inline-size: min(42vw, 420px);
+    max-width: min(42vw, 420px);
+  }
+
+  body:is(.orders-page-shell, .notifications-page-shell).has-global-header
+  .app-header.home-side-meta .page-header-context__action {
+    padding-inline: 14px;
+    font-size: 0.84rem;
+  }
+}
+
+/* Header location pill contract — canonical desktop/tablet surface.
+   Authority: layout/header.css owns the topbar location pill anatomy.
+   Pages may change the trigger behavior/text, but must not resize or redraw it. */
+body[data-page].has-global-header {
+  --doke-header-location-width: 216px;
+  --doke-header-location-width-tablet: 190px;
+  --doke-header-location-padding-inline: 18px;
+  --doke-header-location-radius: var(--doke-header-control-radius, 16px);
+}
+
+@media (min-width: 761px) {
+  body[data-page].has-global-header .app-header .home-side-meta__location {
+    box-sizing: border-box;
+    inline-size: var(--doke-header-location-width);
+    width: var(--doke-header-location-width);
+    min-inline-size: var(--doke-header-location-width);
+    max-inline-size: var(--doke-header-location-width);
+    flex: 0 0 var(--doke-header-location-width);
+    block-size: var(--doke-header-control-size);
+    height: var(--doke-header-control-size);
+    min-block-size: var(--doke-header-control-size);
+    max-block-size: var(--doke-header-control-size);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin: 0;
+    padding: 0 var(--doke-header-location-padding-inline);
+    border: var(--doke-header-border);
+    border-radius: var(--doke-header-location-radius);
+    background: var(--doke-header-bg);
+    color: var(--doke-header-ink);
+    box-shadow: var(--doke-header-shadow);
+    appearance: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-decoration: none;
+  }
+
+  body[data-page].has-global-header .app-header .home-side-meta__location:is(:hover, :focus-visible) {
+    border-color: rgba(24, 75, 118, 0.12);
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: var(--doke-header-shadow-hover, var(--doke-header-shadow));
+  }
+
+  body[data-page].has-global-header .app-header .home-side-meta__location-text {
+    box-sizing: border-box;
+    position: static;
+    display: block;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--doke-header-ink);
+    font-size: 0.9rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  body[data-page].has-global-header .app-header .home-side-meta__location-dot,
+  body[data-page].has-global-header .app-header .home-side-meta__caret,
+  body[data-page].has-global-header .app-header .home-side-meta__location-text::before {
+    content: none;
+    display: none;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1024px) {
+  body[data-page].has-global-header .app-header .home-side-meta__location {
+    inline-size: var(--doke-header-location-width-tablet);
+    width: var(--doke-header-location-width-tablet);
+    min-inline-size: var(--doke-header-location-width-tablet);
+    max-inline-size: var(--doke-header-location-width-tablet);
+    flex-basis: var(--doke-header-location-width-tablet);
+  }
+}
+
+@media (min-width: 561px) and (max-width: 760px) {
+  body[data-page="home"].has-global-header {
+    --doke-header-height: 66px;
+    --doke-header-control-size: 42px;
+    --doke-header-profile-height: 46px;
+    --doke-header-avatar-size: 34px;
+    --doke-header-gap: 8px;
+    --doke-header-location-width-tablet: min(176px, 34vw);
+  }
+
+  body[data-page="home"].has-global-header .app-header .home-side-meta__location {
+    box-sizing: border-box;
+    inline-size: var(--doke-header-location-width-tablet);
+    width: var(--doke-header-location-width-tablet);
+    min-inline-size: var(--doke-header-location-width-tablet);
+    max-inline-size: var(--doke-header-location-width-tablet);
+    flex: 0 1 var(--doke-header-location-width-tablet);
+    display: inline-flex;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  body[data-page="home"].has-global-header .app-header .home-side-meta__identity span {
+    display: none;
   }
 }

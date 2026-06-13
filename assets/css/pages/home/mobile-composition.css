@@ -122,23 +122,34 @@
     margin-left: 0;
   }
 
-  /* Workers: 2x2 estilo shorts, sem cards gigantes */
+  /* Workers: 2x2 estilo shorts, sem cards gigantes nem avatar-strip. */
   body.home-index-shell .short-videos .content-rail {
-    padding-inline: var(--index-mobile-gutter);
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
+    padding-inline: 0;
+    overflow: visible !important;
   }
 
   body.home-index-shell #short-videos-track {
-    display: flex !important;
-    grid-template-columns: none !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: auto !important;
     gap: 10px;
-    width: max-content !important;
-    max-width: none !important;
-    min-width: 100% !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
     padding: 0;
+  }
+
+  body.home-index-shell #short-videos-track > .doke-worker-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    aspect-ratio: var(--doke-worker-mobile-aspect, 10 / 16);
+  }
+
+  body.home-index-shell #short-videos-track > .doke-worker-card:nth-child(n + 5) {
+    display: none;
   }
 
   /* Antes x Depois: carrossel horizontal real */

@@ -36,39 +36,93 @@
   pointer-events: none;
 }
 
+.doke-tab-pill,
 .search-scope__option span {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: var(--control-height-sm);
-  padding: 0 16px;
-  border: var(--border-muted);
-  border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.92);
-  color: #21598f;
-  box-shadow: 0 8px 20px rgba(29, 56, 88, 0.045);
+  min-height: var(--doke-control-pill-height, var(--control-height-sm));
+  padding: 0 var(--doke-control-pill-padding-x, 16px);
+  border: var(--doke-control-pill-border, var(--border-muted));
+  border-radius: var(--doke-control-pill-radius, var(--radius-pill));
+  background: var(--doke-control-pill-bg, rgba(255, 255, 255, 0.92));
+  color: var(--doke-control-pill-text, #21598f);
+  box-shadow: var(--doke-control-pill-shadow, 0 8px 20px rgba(29, 56, 88, 0.045));
   font: inherit;
-  font-size: 0.84rem;
-  font-weight: 900;
+  font-size: var(--doke-control-pill-font-size, 0.84rem);
+  font-weight: var(--doke-control-pill-font-weight, 900);
   line-height: 1;
   white-space: nowrap;
   transition: background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
 }
 
-.search-scope__option input:checked + span {
-  border-color: transparent;
-  background: #2a73b8;
-  color: #fff;
-  box-shadow: 0 10px 20px rgba(42, 115, 184, 0.16);
+.search-scope__option input:checked + :is(.doke-tab-pill, span),
+.doke-tab-pill.is-active {
+  border-color: var(--doke-control-pill-active-border, transparent);
+  background: var(--doke-control-pill-active-bg, #2a73b8);
+  color: var(--doke-control-pill-active-text, #fff);
+  box-shadow: var(--doke-control-pill-active-shadow, 0 10px 20px rgba(42, 115, 184, 0.16));
 }
 
-.search-scope__option input:focus-visible + span {
+.search-scope__option input:focus-visible + :is(.doke-tab-pill, span) {
   outline: 0;
-  box-shadow: 0 0 0 3px rgba(31, 101, 173, 0.14), 0 10px 20px rgba(42, 115, 184, 0.12);
+  box-shadow: var(--doke-control-pill-focus-shadow, 0 0 0 3px rgba(31, 101, 173, 0.14), 0 10px 20px rgba(42, 115, 184, 0.12));
 }
 
 .search-results-body .results-searchbar__scope {
   padding-left: 8px;
+}
+
+/* Shared refinement filter pill. Use beside search scope tabs when the control
+   opens a filter panel; page CSS owns only placement and responsive wrapping. */
+.doke-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--doke-control-pill-gap, 9px);
+  min-height: var(--doke-control-pill-height, var(--control-height-sm));
+  padding: 0 18px;
+  border: var(--doke-control-pill-border, var(--border-muted));
+  border-radius: var(--doke-control-pill-radius, var(--radius-pill));
+  background: var(--doke-control-pill-bg, rgba(255, 255, 255, 0.94));
+  color: var(--doke-control-pill-text, #15598f);
+  box-shadow: var(--doke-control-pill-shadow, 0 8px 20px rgba(29, 56, 88, 0.045));
+  font: inherit;
+  font-size: var(--doke-control-pill-font-size, 0.84rem);
+  font-weight: var(--doke-control-pill-font-weight, 900);
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.doke-filter-pill svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.doke-filter-pill[aria-expanded="true"] {
+  border-color: var(--doke-control-pill-filter-active-border, rgba(25, 200, 184, 0.34));
+  background: var(--doke-control-pill-filter-active-bg, #e8fbf5);
+  color: var(--doke-control-pill-filter-active-text, #08796d);
+}
+
+.doke-filter-pill:focus-visible {
+  outline: 0;
+  box-shadow: var(--doke-control-pill-focus-shadow, 0 0 0 3px rgba(31, 101, 173, 0.14), 0 10px 20px rgba(42, 115, 184, 0.12));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .doke-filter-pill:hover {
+    transform: translateY(-1px);
+    border-color: var(--doke-control-pill-hover-border, rgba(31, 101, 173, 0.22));
+    box-shadow: var(--doke-control-pill-hover-shadow, 0 12px 24px rgba(29, 56, 88, 0.075));
+  }
 }
 
 @media (max-width: 760px) {
@@ -85,9 +139,22 @@
     display: none;
   }
 
+  .doke-tab-pill,
   .search-scope__option span {
     min-height: 36px;
     padding: 0 13px;
     font-size: 0.78rem;
+  }
+
+  .doke-filter-pill {
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 0 14px;
+    font-size: 0.78rem;
+  }
+
+  .doke-filter-pill svg {
+    width: 16px;
+    height: 16px;
   }
 }

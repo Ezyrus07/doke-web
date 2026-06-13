@@ -10,9 +10,9 @@
    responsive contracts. Those belong to layout/, components/ or patterns/.
 */
 
-/* Visual Recovery 01 — Home hero/search/CTA restoration.
-   Authority: this file owns only home search hero composition.
-   Shared search input/button anatomy remains in components/search/search-bar.css via scoped variables. */
+/* Home hero/search composition.
+   Authority: this file owns only the home slot, card shell and dropdown placement.
+   Search input/button and CTA anatomy live in components/search/search-bar.css. */
 body.home-index-shell .home-search-hero {
   --home-search-hero-card-bg: rgba(255, 255, 255, 0.96);
   --home-search-hero-card-border: var(--doke-card-border, rgba(24, 75, 118, 0.10));
@@ -23,20 +23,6 @@ body.home-index-shell .home-search-hero {
   --home-search-hero-card-gap: 12px;
   --home-search-hero-form-width: 100%;
   --home-search-hero-actions-width: min(68%, 820px);
-  --home-search-hero-cta-height: 40px;
-  --home-search-hero-cta-radius: var(--radius-pill, 999px);
-  --home-search-hero-cta-shadow: 0 12px 24px rgba(31, 71, 110, 0.14);
-  --home-search-hero-secondary-bg: linear-gradient(135deg, #1d9a83 0%, #116a5b 100%);
-  --home-search-hero-secondary-bg-hover: linear-gradient(135deg, #1a8976 0%, #0f5e52 100%);
-  --doke-search-pill-min-height: 52px;
-  --doke-search-pill-padding-y: 6px;
-  --doke-search-pill-padding-left: 20px;
-  --doke-search-pill-padding-right: 62px;
-  --doke-search-pill-border: transparent;
-  --doke-search-pill-shadow: none;
-  --doke-search-pill-shadow-focus: var(--doke-search-pill-shadow);
-  --doke-search-pill-button-size: 40px;
-  --doke-search-pill-button-offset: 6px;
 }
 
 .home-search-hero {
@@ -136,90 +122,13 @@ body.home-index-shell .home-search-hero {
 }
 
 .home-search-hero__cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 100%;
-  min-width: 0;
-  min-height: var(--home-search-hero-cta-height);
-  padding-inline: clamp(18px, 2vw, 28px);
-  border: 0;
-  border-radius: var(--home-search-hero-cta-radius);
-  color: #fff;
-  font-size: 0.94rem;
-  font-weight: 800;
-  line-height: 1.15;
-  text-decoration: none;
-  box-shadow: var(--home-search-hero-cta-shadow);
-  white-space: nowrap;
-}
-
-.home-search-hero__cta--primary {
-  background: var(--gradient-button-primary, linear-gradient(135deg, #2f73b1 0%, #173f67 100%));
-}
-
-.home-search-hero__cta--secondary {
-  background: var(--home-search-hero-secondary-bg);
-}
-
-.home-search-hero__cta--primary:hover,
-.home-search-hero__cta--primary:focus-visible,
-.home-search-hero__cta--secondary:hover,
-.home-search-hero__cta--secondary:focus-visible {
-  color: #fff;
-  text-decoration: none;
-  box-shadow: 0 16px 30px rgba(31, 71, 110, 0.18);
-  transform: translateY(-1px);
-}
-
-.home-search-hero__cta--secondary:hover,
-.home-search-hero__cta--secondary:focus-visible {
-  background: var(--home-search-hero-secondary-bg-hover);
 }
 
 @media (min-width: 1180px) {
   body.home-index-shell .home-search-hero__card {
     padding-block: 18px 24px;
     gap: var(--home-search-hero-card-gap);
-  }
-
-  body.home-index-shell .home-search-hero .home-search-hero__form,
-  body.home-index-shell .home-search-hero .home-search-hero__field.doke-search-pill__field {
-    min-height: var(--doke-search-pill-min-height);
-  }
-
-  body.home-index-shell .home-search-hero .home-search-hero__field.doke-search-pill__field,
-  body.home-index-shell .home-search-hero .home-search-hero__field.doke-search-pill__field:hover,
-  body.home-index-shell .home-search-hero .home-search-hero__field.doke-search-pill__field.is-search-open,
-  body.home-index-shell .home-search-hero .home-search-hero__form.doke-search-pill:focus-within .home-search-hero__field.doke-search-pill__field,
-  body.home-index-shell .home-search-hero .home-search-hero__form.doke-search-pill.is-search-open .home-search-hero__field.doke-search-pill__field {
-    border-color: transparent;
-    background: var(--doke-search-pill-bg);
-    box-shadow: var(--doke-search-pill-shadow);
-    transform: none;
-  }
-
-  body.home-index-shell .home-search-hero .home-search-hero__input.doke-search-pill__input:focus,
-  body.home-index-shell .home-search-hero .home-search-hero__input.doke-search-pill__input:focus-visible {
-    border: 0;
-    outline: 0;
-    box-shadow: none;
-  }
-
-  body.home-index-shell .home-search-hero .home-search-hero__button.doke-search-pill__button {
-    width: var(--doke-search-pill-button-size);
-    height: var(--doke-search-pill-button-size);
-    min-width: var(--doke-search-pill-button-size);
-    min-height: var(--doke-search-pill-button-size);
-    right: var(--doke-search-pill-button-offset);
-  }
-
-  body.home-index-shell .home-search-hero .home-search-hero__cta {
-    min-height: var(--home-search-hero-cta-height);
-    height: var(--home-search-hero-cta-height);
-    padding-block: 0;
-    font-size: 0.88rem;
-    line-height: 1;
   }
 }
 
@@ -280,7 +189,7 @@ body.home-index-shell .home-search-hero [data-search-dropdown]:not([hidden]) {
   min-width: 0;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 560px) {
   body.home-index-shell .home-search-hero {
     --home-search-hero-card-radius: 22px;
     --home-search-hero-card-padding-block: 18px;

@@ -132,23 +132,34 @@
     display: none !important;
   }
 
-  /* Workers — shorts 2 em cima + 2 embaixo */
+  /* Workers — shorts 2x2 no mobile; rail horizontal fica em tablet/desktop. */
   body.home-index-shell .short-videos .content-rail {
     display: block !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
+    overflow: visible !important;
   }
 
   body.home-index-shell .short-videos .short-videos__track {
-    display: flex !important;
-    grid-template-columns: none !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: auto !important;
     gap: 10px;
-    width: max-content !important;
-    max-width: none !important;
-    min-width: 100% !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    padding: 0 2px 4px;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+    padding: 0;
+  }
+
+  body.home-index-shell .short-videos .short-videos__track > .doke-worker-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    aspect-ratio: var(--doke-worker-mobile-aspect, 10 / 16);
+  }
+
+  body.home-index-shell .short-videos .short-videos__track > .doke-worker-card:nth-child(n + 5) {
+    display: none;
   }
 
   /* Antes x Depois — carrossel horizontal */

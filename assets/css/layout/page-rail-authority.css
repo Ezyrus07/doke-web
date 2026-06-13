@@ -88,8 +88,24 @@ body:is(
   }
 }
 
+@media (min-width: 561px) and (max-width: 760px) {
+  body[data-page="home"] {
+    --doke-rail-inline-gutter: 20px;
+    --doke-rail-available: calc(100vw - (var(--doke-rail-inline-gutter) * 2));
+    --doke-rail-max: 560px;
+    --doke-shared-page-inline: var(--doke-rail-inline-gutter);
+    --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
+    --doke-page-gutter: var(--doke-rail-inline-gutter);
+    --doke-page-available: var(--doke-rail-available);
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
+    --doke-current-page-rail: var(--doke-page-rail);
+    --rail-max: var(--doke-page-rail);
+  }
+}
+
 @media (min-width: 608px) and (max-width: 760px) {
-  body[data-page] {
+  body[data-page]:not([data-page="home"]) {
     --doke-rail-max: 572px;
     --doke-header-height: 86px;
     --doke-first-block-top: 98px;
@@ -369,5 +385,43 @@ body:is(
     --doke-header-rail: var(--doke-page-rail);
     --doke-current-page-rail: var(--doke-page-rail);
     --rail-max: var(--doke-page-rail);
+  }
+}
+
+/* Notificacoes rail bridge.
+   The page still has legacy modules that consumed --home-desktop-content-width
+   and local workspace padding. Keep the notification list as a slot inside the
+   canonical page rail, so its cards start on the same x-axis as the global
+   contextual header without changing card anatomy. */
+@media (min-width: 761px) {
+  body[data-page="notificacoes"].has-global-header {
+    --home-desktop-content-width: var(
+      --doke-page-rail,
+      min(1280px, calc(100vw - var(--sidebar-width) - 56px))
+    );
+  }
+
+  body[data-page="notificacoes"].has-global-header > .app-shell > .page > .page__content {
+    padding-inline: 0;
+  }
+
+  body[data-page="notificacoes"].has-global-header
+    > .app-shell
+    > .page
+    > .page__content
+    > .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content {
+    padding-inline: 0;
+  }
+
+  body[data-page="notificacoes"].has-global-header :is(
+    .notifications-page,
+    .notifications-page-header--auxiliary,
+    .notifications-list
+  ) {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    margin-inline: 0;
   }
 }

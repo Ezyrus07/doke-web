@@ -259,17 +259,26 @@
 @media (min-width: 561px) and (max-width: 760px) {
   body.home-index-shell {
     --sidebar-width: 0px;
-    --home-desktop-content-width: min(100%, calc(100vw - 28px));
+    --doke-compact-tablet-rail: min(560px, calc(100vw - 40px));
+    --doke-page-rail: var(--doke-compact-tablet-rail);
+    --doke-header-rail: var(--doke-compact-tablet-rail);
+    --home-desktop-content-width: var(--doke-compact-tablet-rail);
   }
 
   body.home-index-shell .page,
-  body.home-index-shell .page__content,
-  body.home-index-shell .page__content-inner,
-  body.home-index-shell .page__content-inner.shell-home__workspace,
-  body.home-index-shell .page__content-inner.shell-home__workspace--clean {
+  body.home-index-shell .page__content {
     width: 100%;
     max-width: 100%;
     min-width: 0;
+  }
+
+  body.home-index-shell .page__content-inner,
+  body.home-index-shell .page__content-inner.shell-home__workspace,
+  body.home-index-shell .page__content-inner.shell-home__workspace--clean {
+    width: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    min-width: 0;
+    margin-inline: auto;
   }
 
   body.home-index-shell .page {
@@ -277,8 +286,8 @@
   }
 
   body.home-index-shell .page__content {
-    padding-top: calc(var(--header-height) + 10px);
-    padding-inline: 14px;
+    padding-top: 8px;
+    padding-inline: 0;
     padding-bottom: 24px;
     background: #eef4f9;
   }
@@ -292,12 +301,12 @@
     gap: 16px;
   }
 
-  body.home-index-shell .home-side-meta,
   body.home-index-shell .home-mobile-hero,
   body.home-index-shell .home-search-hero__mobile-submit,
   body.home-index-shell .home-search-hero__leading-filter,
-  body.home-index-shell .home-search-hero__button,
-  body.home-index-shell .home-search-hero__filters-host {
+  body.home-index-shell .home-search-hero__filters-host,
+  body.home-index-shell .home-search-hero__audio-button,
+  body.home-index-shell .home-search-hero__filter-button {
     display: none;
   }
 
@@ -347,13 +356,13 @@
     margin: 0;
   }
 
-  body.home-index-shell .home-search-hero__field {
-    min-height: 56px;
-    padding: 8px 102px 8px 18px;
-    border-radius: var(--radius-pill);
-    background: #ffffff;
-    border: var(--border-soft);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 10px 20px rgba(57, 81, 111, 0.06);
+  body.home-index-shell .home-search-hero__field.doke-search-pill__field {
+    min-height: var(--doke-search-pill-min-height);
+    padding: var(--doke-search-pill-padding-y) var(--doke-search-pill-padding-right) var(--doke-search-pill-padding-y) var(--doke-search-pill-padding-left);
+    border-radius: var(--doke-search-pill-radius);
+    background: var(--doke-search-pill-bg);
+    border: 1px solid var(--doke-search-pill-border);
+    box-shadow: var(--doke-search-pill-shadow);
   }
 
   body.home-index-shell .home-search-hero__field::before,
@@ -366,18 +375,8 @@
     font-size: 0.98rem;
   }
 
-  body.home-index-shell .home-search-hero__audio-button,
-  body.home-index-shell .home-search-hero__filter-button {
-    top: 50%;
-    transform: translateY(-50%);
-  }
-
-  body.home-index-shell .home-search-hero__audio-button {
-    right: 56px;
-  }
-
-  body.home-index-shell .home-search-hero__filter-button {
-    right: 12px;
+  body.home-index-shell .home-search-hero__button.doke-search-pill__button {
+    display: inline-flex;
   }
 
   body.home-index-shell .home-search-hero__actions {
@@ -393,6 +392,53 @@
     min-height: 52px;
     padding-inline: 16px;
   }
+
+  /* Compact tablet workers: iPad mini is tablet, not mobile.
+     Keep workers as a horizontal media rail so the section does not become a
+     tall two-column mobile grid with oversized vertical gaps. */
+  body.home-index-shell .short-videos .content-rail {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  body.home-index-shell .short-videos .content-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  body.home-index-shell #short-videos-track.short-videos__track {
+    display: flex;
+    flex-flow: row nowrap;
+    grid-template-columns: none;
+    grid-auto-flow: initial;
+    grid-auto-columns: auto;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 12px;
+    width: max-content;
+    max-width: none;
+    min-width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    scroll-snap-type: x proximity;
+  }
+
+  body.home-index-shell #short-videos-track.short-videos__track > .doke-worker-card {
+    flex: 0 0 clamp(132px, 24vw, 150px);
+    width: clamp(132px, 24vw, 150px);
+    min-width: clamp(132px, 24vw, 150px);
+    max-width: clamp(132px, 24vw, 150px);
+    aspect-ratio: 9 / 16;
+    scroll-snap-align: start;
+  }
+
 }
 
 

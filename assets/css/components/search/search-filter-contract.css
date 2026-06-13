@@ -67,7 +67,7 @@
   box-shadow: 0 0 0 3px rgba(41, 143, 127, 0.1);
 }
 
-.results-searchbar__form {
+.results-searchbar__form:not(.doke-search-pill) {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -78,6 +78,18 @@
   border-radius: var(--doke-search-control-radius);
   background: var(--doke-search-control-bg);
   box-shadow: var(--doke-search-control-shadow);
+}
+
+/* The results page can render its query form with the shared doke-search-pill
+   component. In that mode, search-bar.css owns the single visible border; this
+   legacy search/filter contract must not add a second outer frame. */
+.results-searchbar__form.doke-search-pill {
+  min-height: var(--doke-search-pill-min-height, var(--doke-search-control-height));
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .results-searchbar__field {

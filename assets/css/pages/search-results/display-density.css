@@ -91,14 +91,14 @@
 
   body.search-results-body .results-layout[data-results-mode="workers"] .results-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 28px;
-    justify-content: stretch;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--results-worker-card-width-open, var(--doke-worker-card-width, 220px))), var(--results-worker-card-width-open, var(--doke-worker-card-width, 220px))));
+    gap: var(--results-worker-card-gap, 22px);
+    justify-content: start;
     align-items: start;
   }
 
   body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="workers"] .results-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--results-worker-card-width-collapsed, var(--doke-worker-card-width, 220px))), var(--results-worker-card-width-collapsed, var(--doke-worker-card-width, 220px))));
   }
 
   body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid {
@@ -109,11 +109,16 @@
 
 @media (min-width: 761px) and (max-width: 1180px) {
   body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid),
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid,
   body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid,
   body.search-results-body .results-layout[data-results-mode="users"] .results-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 22px;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--results-worker-card-width-open, var(--doke-worker-card-width, 220px))), var(--results-worker-card-width-open, var(--doke-worker-card-width, 220px))));
+    gap: var(--results-worker-card-gap, 18px);
+    justify-content: start;
   }
 }
 

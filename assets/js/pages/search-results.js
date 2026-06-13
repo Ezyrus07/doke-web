@@ -505,7 +505,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     const category = item.category || item.catégory || '';
     const mediaClass = String(item.mediaClass || '').replace(/service-card__media/g, 'doke-ad-card__media');
 
-    article.className = 'doke-ad-card doke-ad-card--featured';
+    article.className = 'doke-ad-card doke-ad-card--featured doke-ad-card--results';
     article.innerHTML = `
       <div class="doke-ad-card__media ${mediaClass}">
         <span class="doke-ad-card__badge ${item.badgeModifier || ''}">${item.badge || 'Em destaque'}</span>
@@ -535,7 +535,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
 
         <div class="doke-ad-card__footer">
           <strong class="doke-ad-card__price">${item.price || ''}</strong>
-          <a class="doke-ad-card__cta" href="${detailHref}" aria-label="Ver anúncio">Ver anúncio</a>
+          <a class="doke-ad-card__cta doke-btn doke-btn--success" href="${detailHref}" aria-label="Ver anúncio">Ver anúncio</a>
         </div>
       </div>
     `;
@@ -571,7 +571,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
         <p class="professional-showcase-card__role">${item.role || item.profession || 'Profissional Doke'}</p>
       </div>
       <div class="professional-showcase-card__actions">
-        <a class="professional-showcase-card__cta" href="perfil.html">Ver perfil</a>
+        <a class="professional-showcase-card__cta doke-btn doke-btn--primary" href="perfil.html">Ver perfil</a>
       </div>
     `;
     return article;
@@ -728,7 +728,8 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     if (!els.resultsActiveChips) return;
 
     const chips = [];
-    if (query) chips.push(`Busca: ${query}`);
+    // The visible search pill already communicates the current query. Keep this
+    // rail for secondary filters only to avoid duplicate “Busca: ...” chips.
     if (filters.categories.length) chips.push(...filters.categories);
     if (filters.state) chips.push(filters.state);
     if (filters.city) chips.push(filters.city);
@@ -738,8 +739,8 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     if (filters.online) chips.push('Online');
     if (filters.availableToday) chips.push('Disponível hoje');
     if (filters.minRating) chips.push(`Nota mínima ${String(filters.minRating).replace('.', ',')}`);
-    if (!chips.length && count > 0) chips.push('Sem filtros extras');
 
+    els.resultsActiveChips.hidden = !chips.length;
     els.resultsActiveChips.innerHTML = chips.map((chip) => `<span class="results-active-chip">${chip}</span>`).join('');
   };
 

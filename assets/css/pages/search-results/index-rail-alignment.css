@@ -2,16 +2,47 @@
    Owns only results page composition drift: local search duplication, result cards,
    autocomplete/dropdown parity and mobile focus behavior. */
 
-.search-results-body .results-searchbar__form {
-  display: none;
+/* Desktop keeps the visible query as part of the results control surface.
+   The search input reuses the shared doke-search-pill anatomy also used by
+   index.html; this file only positions it before the result-type buttons. */
+@media (min-width: 761px) {
+  .search-results-body .results-searchbar {
+    display: grid;
+    grid-template-columns: minmax(360px, 1fr) max-content;
+    align-items: center;
+    gap: 18px;
+    padding: 20px 24px;
+  }
+
+  .search-results-body .results-searchbar__form.doke-search-pill {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+  }
+
+  .search-results-body .results-searchbar__scope.search-scope {
+    margin: 0;
+    padding: 0;
+    width: auto;
+    justify-content: flex-start;
+  }
+
+  .search-results-body .results-searchbar__form .results-searchbar__mobile-filter {
+    display: none;
+  }
 }
 
-.search-results-body .results-searchbar {
-  gap: 14px;
-}
+@media (min-width: 761px) and (max-width: 1180px) {
+  .search-results-body .results-searchbar {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
 
-.search-results-body .results-searchbar__scope.search-scope {
-  margin: 0;
+  .search-results-body .results-searchbar__form.doke-search-pill {
+    max-width: 100%;
+  }
 }
 
 .search-results-body .topbar-search,

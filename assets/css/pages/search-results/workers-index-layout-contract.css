@@ -4,10 +4,12 @@
    stop rendering with stretched/cropped proportions on the results page. */
 
 body.search-results-body {
-  --results-worker-card-width-open: clamp(220px, 18vw, 258px);
-  --results-worker-card-width-collapsed: clamp(220px, 17vw, 258px);
+  /* Keep resultados workers on the same media-card scale as the index rail.
+     The page owns the grid; components/cards/worker-card.css owns the card anatomy. */
+  --results-worker-card-width-open: var(--doke-worker-card-width, clamp(168px, 14vw, 220px));
+  --results-worker-card-width-collapsed: var(--doke-worker-card-width, clamp(168px, 14vw, 220px));
   --results-worker-card-gap: 22px;
-  --results-worker-card-radius: 30px;
+  --results-worker-card-radius: var(--doke-worker-card-radius, var(--card-radius-lg, 22px));
 }
 
 body.search-results-body .results-layout[data-results-mode="workers"] .results-grid {
