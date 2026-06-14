@@ -117,7 +117,10 @@ body:is(
 
 @media (min-width: 761px) and (max-width: 1024px) {
   body[data-page] {
-    --doke-header-inline-padding: 18px;
+    /* Header controls must sit on the same x-axis as the content rail.
+       Component-level gaps still live inside header.css; this token must not
+       create a second tablet inset inside .app-header__inner. */
+    --doke-header-inline-padding: 0px;
     --doke-rail-inline-gutter: clamp(24px, 4vw, 40px);
     --doke-rail-available: calc(100vw - (var(--doke-rail-inline-gutter) * 2));
     --doke-rail-max: min(100%, 720px);
@@ -132,11 +135,11 @@ body:is(
   }
 
   body[data-page].has-global-header .app-header__inner > :is(.app-header__group--primary, .home-side-meta__group--primary) {
-    margin-left: var(--doke-header-inline-padding);
+    margin-left: 0;
   }
 
   body[data-page].has-global-header .app-header__inner > :is(.app-header__group--secondary, .home-side-meta__group--secondary) {
-    margin-right: var(--doke-header-inline-padding);
+    margin-right: 0;
   }
 
   body:is([data-page="home"], [data-page="detalhe-anuncio"], [data-page="perfil"], [data-page="resultados"]) {
@@ -705,5 +708,43 @@ body:is(
     min-width: 0;
     margin-inline: 0;
     box-sizing: border-box;
+  }
+}
+
+/* Responsive header-control rail closure.
+   Contract: on tablet portrait/landscape, the first and last visible header
+   controls must align with the same rail used by the first page block. Older
+   tablet header contracts added side margins inside .app-header__inner, which
+   made the buttons drift while the header/content containers themselves still
+   measured as aligned. */
+@media (min-width: 761px) and (max-width: 1024px) {
+  body[data-page].has-global-header {
+    --doke-header-inline-padding: 0px;
+  }
+
+  body[data-page].has-global-header
+    > .app-shell
+    > .page
+    > :is(.app-header, .home-side-meta)
+    > .app-header__inner {
+    padding-inline: 0;
+  }
+
+  body[data-page].has-global-header
+    > .app-shell
+    > .page
+    > :is(.app-header, .home-side-meta)
+    > .app-header__inner
+    > :is(.app-header__group--primary, .home-side-meta__group--primary) {
+    margin-left: 0;
+  }
+
+  body[data-page].has-global-header
+    > .app-shell
+    > .page
+    > :is(.app-header, .home-side-meta)
+    > .app-header__inner
+    > :is(.app-header__group--secondary, .home-side-meta__group--secondary) {
+    margin-right: 0;
   }
 }
