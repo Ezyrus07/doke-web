@@ -74,7 +74,7 @@ const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalh
 const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
-const isTabletLandscapeSidebarViewport = () => window.innerWidth >= 1025 && window.innerWidth < 1180 && window.innerWidth > window.innerHeight;
+const isTabletLandscapeSidebarViewport = () => window.innerWidth >= 900 && window.innerWidth < 1180 && window.innerWidth > window.innerHeight;
 const isMobileSidebarViewport = () => window.innerWidth < 768 || (window.innerWidth < 1180 && !isTabletLandscapeSidebarViewport());
 const isTabletSidebarViewport = () => isTabletLandscapeSidebarViewport();
 
@@ -113,7 +113,7 @@ const syncSidebarCollapsedState = () => {
 
   const isTabletSidebar = isTabletSidebarViewport();
   const isCollapsed = !isTabletSidebar && readStoredSidebarCollapsed();
-  const sidebarWidth = isTabletSidebar ? "240px" : isCollapsed ? "96px" : "272px";
+  const sidebarWidth = isTabletSidebar ? "92px" : isCollapsed ? "92px" : "240px";
   body.classList.toggle("sidebar-collapsed", isCollapsed);
   root.classList.toggle(SIDEBAR_COLLAPSED_HTML_CLASS, isCollapsed);
   root.classList.toggle(SIDEBAR_EXPANDED_HTML_CLASS, !isCollapsed);

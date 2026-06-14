@@ -16,12 +16,12 @@
   function isTabletLandscapeShell() {
     var width = window.innerWidth || root.clientWidth || 0;
     var height = window.innerHeight || root.clientHeight || 0;
-    return width >= 1025 && width < 1180 && width > height;
+    return width >= 900 && width < 1180 && width > height;
   }
 
   function isDesktopShell() {
     try {
-      return window.matchMedia("(min-width: 1180px), (min-width: 1025px) and (max-width: 1179px) and (orientation: landscape)").matches;
+      return window.matchMedia("(min-width: 1180px), (min-width: 900px) and (max-width: 1179px) and (orientation: landscape)").matches;
     } catch (error) {
       var width = window.innerWidth || root.clientWidth || 0;
       return width >= 1180 || isTabletLandscapeShell();
@@ -72,7 +72,7 @@
     var mobileShell = isMobileRuntime();
     var tabletShell = isTabletShell();
     var shouldCollapse = desktopShell && !tabletShell && readCollapsed();
-    var sidebarWidth = desktopShell ? (tabletShell ? "240px" : (shouldCollapse ? "96px" : "272px")) : "0px";
+    var sidebarWidth = desktopShell ? (tabletShell ? "92px" : (shouldCollapse ? "92px" : "240px")) : "0px";
 
     syncViewportContract();
     root.classList.toggle(COLLAPSED, shouldCollapse);

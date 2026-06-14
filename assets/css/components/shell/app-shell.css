@@ -207,6 +207,44 @@ body.app-shell-page .bottom-nav__item.is-active {
   box-shadow: inset 0 0 0 1px rgba(191, 215, 235, 0.78);
 }
 
+
+/* Compact sidebar visual contract for landscape tablets and collapsed desktop.
+   Geometry is token-driven by the shell; this layer only keeps the rendered
+   navigation proportional inside the compact rail. */
+@media (min-width: 900px) and (max-width: 1179px) and (orientation: landscape) {
+  body.app-shell-page .sidebar[data-shell-sidebar],
+  body.doke-app-shell-page .sidebar[data-shell-sidebar] {
+    align-items: center;
+    gap: 12px;
+    padding-inline: 12px;
+  }
+
+  body.app-shell-page .sidebar[data-shell-sidebar] .sidebar__brand,
+  body.doke-app-shell-page .sidebar[data-shell-sidebar] .sidebar__brand,
+  body.app-shell-page .sidebar[data-shell-sidebar] .sidebar__label,
+  body.doke-app-shell-page .sidebar[data-shell-sidebar] .sidebar__label,
+  body.app-shell-page .sidebar[data-shell-sidebar] .nav-link__count,
+  body.doke-app-shell-page .sidebar[data-shell-sidebar] .nav-link__count,
+  body.app-shell-page .sidebar[data-shell-sidebar] .nav-link__start > span:last-child,
+  body.doke-app-shell-page .sidebar[data-shell-sidebar] .nav-link__start > span:last-child {
+    display: none;
+  }
+
+  body.app-shell-page .sidebar[data-shell-sidebar] .nav-link,
+  body.doke-app-shell-page .sidebar[data-shell-sidebar] .nav-link {
+    justify-content: center;
+    width: 52px;
+    min-height: 52px;
+    padding: 0;
+  }
+
+  body.app-shell-page .sidebar[data-shell-sidebar] .nav-link__start,
+  body.doke-app-shell-page .sidebar[data-shell-sidebar] .nav-link__start {
+    justify-content: center;
+    gap: 0;
+  }
+}
+
 .internal-mobile-header .orders-page-header__toolbar,
 .internal-mobile-header .notifications-page-header__toolbar,
 .internal-mobile-header .orders-page-header__actions,
