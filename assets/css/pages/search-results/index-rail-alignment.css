@@ -6,6 +6,15 @@
    The search input reuses the shared doke-search-pill anatomy also used by
    index.html; this file only positions it before the result-type buttons. */
 @media (min-width: 761px) {
+  /* The visible results rail must start on the same x-axis as the global header.
+     responsive-foundation.css adds generic inner padding to .page__content-inner;
+     resultados.html already receives its outer rail from page-rail-authority.css,
+     so this page composition layer removes only that nested gutter. */
+  .search-results-body .page__content-inner.container.app-shell-page__workspace.search-results-workspace.search-results-workspace--internal,
+  .search-results-body .search-results-workspace.search-results-workspace--internal {
+    padding-inline: 0;
+  }
+
   .search-results-body .results-searchbar {
     display: grid;
     grid-template-columns: minmax(360px, 1fr) max-content;
