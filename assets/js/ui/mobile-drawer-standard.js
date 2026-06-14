@@ -50,21 +50,54 @@
   const init=()=>{
     const drawer=ensureDrawer();
     const isMobile=()=>innerWidth<=1024;
+    let lastOpenAt=0;
+    const triggerSelector='[data-mobile-home-menu-open],[data-sidebar-open],[data-shell-profile],.mobile-toggle,.home-mobile-hero__profile,.orders-page-header__hero-profile,.settings-mobile-header__profile,.detail-topbar__menu';
     const setOpen=(open)=>{
-      if(open)syncActive(drawer);
+      if(open){
+        lastOpenAt=performance.now();
+        syncActive(drawer);
+      }
       drawer.hidden=false;
+      drawer.removeAttribute('hidden');
       drawer.classList.toggle('is-open',open);
       drawer.setAttribute('aria-hidden',String(!open));
+      drawer.setAttribute('data-mobile-drawer-state',open?'open':'closed');
       document.body.classList.toggle('mobile-home-drawer-open',open);
       document.body.classList.toggle('doke-mobile-drawer-open',open);
       if(!open)setTimeout(()=>{if(!drawer.classList.contains('is-open'))drawer.hidden=true;},260);
+      document.querySelectorAll('[data-mobile-home-menu-open],[data-home-profile-menu-toggle],[data-shell-profile]').forEach((trigger)=>{
+        trigger.setAttribute('aria-expanded',String(open));
+      });
+      return true;
     };
+    const recentlyOpened=()=>performance.now()-lastOpenAt<260;
+    const handleOpen=(event)=>{
+      const openTrigger=event.target.closest(triggerSelector);
+      if(!openTrigger||!isMobile())return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation&&event.stopImmediatePropagation();
+      setOpen(true);
+    };
+    window.DokeStandardMobileDrawerOpen=()=>setOpen(true);
+    window.DokeStandardMobileDrawerClose=()=>setOpen(false);
+    window.DokeOpenHomeDrawerDirect=window.DokeOpenHomeDrawerDirect||(()=>setOpen(true));
+    window.DokeCloseHomeDrawerDirect=window.DokeCloseHomeDrawerDirect||(()=>setOpen(false));
+    window.DokeHomeDrawerHardOpen=window.DokeHomeDrawerHardOpen||(()=>setOpen(true));
+    window.DokeHomeDrawerHardClose=window.DokeHomeDrawerHardClose||(()=>setOpen(false));
+    document.addEventListener('pointerdown',handleOpen,true);
     document.addEventListener('click',(event)=>{
-      const openTrigger=event.target.closest('[data-mobile-home-menu-open],[data-sidebar-open],.mobile-toggle,.home-mobile-hero__profile,.orders-page-header__hero-profile,.settings-mobile-header__profile,.detail-topbar__menu');
-      if(openTrigger&&isMobile()){event.preventDefault();event.stopPropagation();setOpen(true);return;}
+      const openTrigger=event.target.closest(triggerSelector);
+      if(openTrigger&&isMobile()){
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation&&event.stopImmediatePropagation();
+        setOpen(true);
+        return;
+      }
       if(event.target.closest('[data-mobile-home-menu-close]')){event.preventDefault();event.stopPropagation();setOpen(false);return;}
       const panel=drawer.querySelector('.home-mobile-drawer__panel');
-      if(drawer.classList.contains('is-open')&&panel&&!panel.contains(event.target))setOpen(false);
+      if(drawer.classList.contains('is-open')&&panel&&!panel.contains(event.target)&&!recentlyOpened())setOpen(false);
     },true);
     document.addEventListener('keydown',(event)=>{if(event.key==='Escape'&&drawer.classList.contains('is-open'))setOpen(false);});
     addEventListener('resize',()=>{if(!isMobile()&&drawer.classList.contains('is-open'))setOpen(false);});

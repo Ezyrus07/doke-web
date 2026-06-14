@@ -141,30 +141,36 @@
     return true;
   }
 
+  function openDrawerElementDirect() {
+    var drawer = document.querySelector('[data-mobile-home-drawer], .home-mobile-drawer, [data-mobile-drawer]');
+    if (!drawer) return false;
+
+    drawer.hidden = false;
+    drawer.removeAttribute('hidden');
+    drawer.classList.add('is-open');
+    drawer.setAttribute('aria-hidden', 'false');
+    drawer.setAttribute('data-mobile-drawer-state', 'open');
+    document.body.classList.add('mobile-home-drawer-open', 'doke-mobile-drawer-open');
+    document.body.classList.remove('home-filter-sheet-open', 'home-inline-filters-open', 'home-mobile-filters-open');
+    document.querySelectorAll('[data-mobile-home-menu-open], [data-home-profile-menu-toggle], [data-shell-profile]').forEach(function (trigger) {
+      trigger.setAttribute('aria-expanded', 'true');
+    });
+    dispatchShellAction('profile-menu');
+    return true;
+  }
+
   function openMobileDrawerDirect() {
-    if (config().key === 'home') {
-      if (window.DokeOpenHomeDrawerDirect && window.DokeOpenHomeDrawerDirect()) {
-        dispatchShellAction('profile-menu');
-        return true;
-      }
-
-      if (window.DokeHomeDrawerHardOpen && window.DokeHomeDrawerHardOpen()) {
-        dispatchShellAction('profile-menu');
-        return true;
-      }
-
-      var homeDrawer = document.querySelector('[data-mobile-home-drawer], .home-mobile-drawer, [data-mobile-drawer]');
-      if (homeDrawer) {
-        homeDrawer.hidden = false;
-        homeDrawer.removeAttribute('hidden');
-        homeDrawer.classList.add('is-open');
-        homeDrawer.setAttribute('aria-hidden', 'false');
-        document.body.classList.add('mobile-home-drawer-open', 'doke-mobile-drawer-open');
-        document.body.classList.remove('home-filter-sheet-open', 'home-inline-filters-open');
-        dispatchShellAction('profile-menu');
-        return true;
-      }
+    if (window.DokeOpenHomeDrawerDirect && window.DokeOpenHomeDrawerDirect()) {
+      dispatchShellAction('profile-menu');
+      return true;
     }
+
+    if (window.DokeHomeDrawerHardOpen && window.DokeHomeDrawerHardOpen()) {
+      dispatchShellAction('profile-menu');
+      return true;
+    }
+
+    if (openDrawerElementDirect()) return true;
 
     var sidebar = document.querySelector('.app-shell > .sidebar, [data-shell-sidebar], .sidebar');
     var scrim = document.querySelector('[data-sidebar-scrim], .mobile-scrim');

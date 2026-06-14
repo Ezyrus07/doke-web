@@ -148,7 +148,12 @@
   window.DokeCloseHomeDrawerDirect = () => setOpen(false);
 
   const autoBind = () => {
-    if (!document.body?.classList.contains('home-index-shell')) return;
+    if (!document.body) return;
+
+    const hasDrawerContract = Boolean(getDrawer());
+    const hasDrawerTrigger = Boolean(document.querySelector(openSelector));
+    if (!hasDrawerContract && !hasDrawerTrigger) return;
+
     if (document.documentElement.dataset.homeDrawerStableBound === 'true') return;
     document.documentElement.dataset.homeDrawerStableBound = 'true';
     bindDrawer();
