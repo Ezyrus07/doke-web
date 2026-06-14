@@ -171,7 +171,10 @@ async function collect(page, file, breakpoint) {
 
 async function run() {
   fs.mkdirSync(REPORT_DIR, { recursive: true });
-  const browser = await chromium.launch({ executablePath: '/usr/bin/chromium', headless: true, args: ['--no-sandbox'] });
+  const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
+    || process.env.CHROMIUM_PATH
+    || (fs.existsSync('/usr/bin/chromium') ? '/usr/bin/chromium' : undefined);
+  const browser = await chromium.launch({ executablePath, headless: true, args: ['--no-sandbox'] });
   const rows = [];
   for (const [breakpoint, width, height] of breakpoints) {
     for (const file of pages) {

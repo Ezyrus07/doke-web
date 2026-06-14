@@ -222,7 +222,12 @@ body:is(
     .orders-shell-content,
     .messages-shell-content,
     .settings-page-frame,
+    .settings-main,
+    .settings-layout,
     .settings-content,
+    .post-service-content,
+    .payment-screen__rail,
+    .pro-review-screen__rail,
     .wallet-shell-content
   ) {
     inline-size: var(--doke-page-rail);
@@ -337,7 +342,12 @@ body:is(
     .orders-shell-content,
     .messages-shell-content,
     .settings-page-frame,
+    .settings-main,
+    .settings-layout,
     .settings-content,
+    .post-service-content,
+    .payment-screen__rail,
+    .pro-review-screen__rail,
     .wallet-shell-content
   ),
   body[data-page="detalhe-anuncio"].has-global-header > .app-shell > .page > .page__content .ad-detail-shell {
@@ -365,6 +375,11 @@ body:is(
     .profile-shell-content,
     .search-results-workspace,
     .orders-shell-content,
+    .settings-main,
+    .settings-layout,
+    .post-service-content,
+    .payment-screen__rail,
+    .pro-review-screen__rail,
     .wallet-shell-content
   ) {
     padding-block-start: 0;
@@ -496,5 +511,199 @@ body:is(
     max-inline-size: 100%;
     max-width: 100%;
     margin-inline: 0;
+  }
+}
+
+
+/* Global rail standardization — index baseline promoted to layout contract.
+   Responsibility: one shared tablet/desktop x-axis for app-header and first
+   content rail across every HTML that uses the global shell. Pages may still
+   constrain readable modules inside this rail, but they must not redefine the
+   shell/header/page rail. */
+@media (min-width: 761px) {
+  body[data-page].has-global-header {
+    --doke-visual-rail-max: 1360px;
+    --doke-rail-max: var(--doke-visual-rail-max);
+    --doke-page-max: var(--doke-visual-rail-max);
+    --doke-desktop-page-max: var(--doke-visual-rail-max);
+    --doke-app-shell-max: var(--doke-visual-rail-max);
+    --doke-shell-max-default: var(--doke-visual-rail-max);
+    --doke-shell-max-wide: var(--doke-visual-rail-max);
+    --doke-internal-page-rail: var(--doke-page-rail);
+    --doke-shared-internal-rail: var(--doke-page-rail);
+  }
+
+  body[data-page].has-global-header > .app-shell > .page > .page__content {
+    padding-inline: 0;
+  }
+
+  body[data-page].has-global-header > .app-shell > .page > .app-header,
+  body[data-page].has-global-header > .app-shell > .page > .app-header > .app-header__inner,
+  body[data-page].has-global-header > .app-shell > .page > .page__content > :is(
+    .page__content-inner,
+    .page__content-inner.container,
+    .shell-home__workspace,
+    .shell-home__workspace--clean,
+    .app-shell-page__workspace,
+    .doke-page-shell,
+    .doke-page-stack,
+    .ad-detail-shell,
+    .profile-shell-content,
+    .search-results-workspace,
+    .orders-shell-content,
+    .messages-shell-content,
+    .settings-page-frame,
+    .settings-main,
+    .settings-layout,
+    .settings-content,
+    .post-service-content,
+    .payment-screen__rail,
+    .pro-review-screen__rail,
+    .wallet-shell-content
+  ),
+  body[data-page="detalhe-anuncio"].has-global-header > .app-shell > .page > .page__content.detalhe-anuncio-page {
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    min-inline-size: 0;
+    min-width: 0;
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
+
+  body[data-page].has-global-header > .app-shell > .page > .page__content > :is(
+    .page__content-inner,
+    .page__content-inner.container,
+    .shell-home__workspace,
+    .shell-home__workspace--clean,
+    .app-shell-page__workspace,
+    .doke-page-shell,
+    .doke-page-stack,
+    .profile-shell-content,
+    .search-results-workspace,
+    .orders-shell-content,
+    .messages-shell-content,
+    .settings-main,
+    .settings-layout,
+    .post-service-content,
+    .payment-screen__rail,
+    .pro-review-screen__rail,
+    .wallet-shell-content
+  ) {
+    padding-inline: 0;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1024px) {
+  body[data-page].has-global-header > .app-shell {
+    display: block;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body[data-page].has-global-header > .app-shell > .page {
+    display: block;
+    grid-column: 1;
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
+}
+
+
+/* Desktop shell grid closure. Some internal manifests did not import the desktop
+   shell geometry, leaving .page auto-placed in the sidebar column. The layout
+   layer owns this grid so every global-header HTML reserves the same sidebar
+   lane and centers header/content in the application workspace. */
+@media (min-width: 1025px) {
+  body[data-page].has-global-header > .app-shell {
+    display: grid;
+    grid-template-columns: var(--doke-rail-sidebar-width) minmax(0, 1fr);
+  }
+
+  body[data-page].has-global-header > .app-shell > :is(.sidebar, [data-shell-sidebar]) {
+    grid-column: 1;
+  }
+
+  body[data-page].has-global-header > .app-shell > .page {
+    grid-column: 2;
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    min-inline-size: 0;
+    min-width: 0;
+    margin-inline: 0;
+  }
+}
+
+
+/* Full-class bridge for legacy internal modules with highly specific width rules
+   (orders/wallet/messages). This keeps their page composition but removes their
+   authority over the external shell rail. */
+@media (min-width: 761px) {
+  body.orders-page-shell.has-global-header > .app-shell > .page > .page__content > .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack,
+  body.wallet-page-shell.has-global-header > .app-shell > .page > .page__content > .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.wallet-shell-content.doke-page-shell.doke-page-stack,
+  body.messages-page-shell.has-global-header > .app-shell > .page > .page__content > .page__content-inner.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.messages-shell-content.doke-page-shell.doke-page-stack {
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    min-inline-size: 0;
+    min-width: 0;
+    margin-inline: auto;
+    padding-inline: 0;
+    box-sizing: border-box;
+  }
+}
+
+/* Targeted legacy gutter closure for pages that still inherit v22 internal rails.
+   Cause: pedidos, detalhe-anuncio and carteira still consume --doke-app-shell-gutter
+   through old high-specificity shell/detail rules, creating a second inset inside
+   the global header/content rail. The global rail already owns the outer gutter,
+   so these page compositions must fill the shared rail instead of subtracting
+   another page gutter. */
+@media (min-width: 761px) {
+  body:is(
+    [data-page="pedidos"],
+    [data-page="detalhe-anuncio"],
+    [data-page="carteira"]
+  ).has-global-header {
+    --doke-app-shell-gutter: 0px;
+    --home-desktop-content-width: var(--doke-page-rail);
+    --detail-page-max: var(--doke-page-rail);
+    --app-header-width: var(--doke-page-rail);
+    --app-header-max: var(--doke-page-rail);
+  }
+
+  body.orders-page-shell.has-global-header :is(
+    .orders-page,
+    .orders-command-summary,
+    .orders-planner,
+    .orders-command-insights,
+    .orders-list
+  ),
+  body.wallet-page-shell.has-global-header :is(
+    .wallet-page,
+    .wallet-shell-content,
+    .wallet-layout,
+    .wallet-overview,
+    .wallet-grid
+  ),
+  body[data-page="detalhe-anuncio"].has-global-header :is(
+    .detalhe-anuncio-page,
+    .ad-detail-shell,
+    .ad-detail-layout
+  ) {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    min-inline-size: 0;
+    min-width: 0;
+    margin-inline: 0;
+    box-sizing: border-box;
   }
 }

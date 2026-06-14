@@ -15,9 +15,12 @@ const outMd = path.join(reportsDir, 'header-rail-contract-report.md');
 const TOLERANCE_PX = 2;
 
 const viewports = [
-  { name: 'desktop-1366x768', width: 1366, height: 768 },
-  { name: 'tablet-820x1180', width: 820, height: 1180 },
   { name: 'mobile-390x844', width: 390, height: 844 },
+  { name: 'tablet-810x1080', width: 810, height: 1080 },
+  { name: 'tablet-820x1180', width: 820, height: 1180 },
+  { name: 'tablet-1180x820', width: 1180, height: 820 },
+  { name: 'desktop-1366x768', width: 1366, height: 768 },
+  { name: 'desktop-1760x900', width: 1760, height: 900 },
 ];
 
 const pages = [
@@ -30,7 +33,22 @@ const pages = [
   'comunidade.html',
   'detalhe-anuncio.html',
   'ajuda.html',
+  'carteira.html',
+  'configuracoes.html',
+  'novidades.html',
+  'avaliacao.html',
+  'avaliacao-profissional.html',
+  'anunciar-servico.html',
+  'tornar-profissional.html',
+  'pagamento-profissional.html',
 ];
+
+const headerExemptPages = new Set([
+  'comunidade-interna.html',
+  'auth/login.html',
+  'auth/cadastro.html',
+  'auth/esqueci-senha.html',
+]);
 
 const contentSelectors = {
   'index.html': ['.shell-home__workspace', '.page__content-inner'],
@@ -42,6 +60,14 @@ const contentSelectors = {
   'comunidade.html': ['.communities-v2-shell', '.orders-shell-content', '.page__content-inner'],
   'detalhe-anuncio.html': ['.ad-detail-shell', '.page__content-inner'],
   'ajuda.html': ['.page__content-inner', '.app-shell-page__workspace'],
+  'carteira.html': ['.wallet-shell-content', '.page__content-inner'],
+  'configuracoes.html': ['.settings-layout', '.doke-page-shell', '.settings-main'],
+  'novidades.html': ['.page__content-inner', '.shell-home__workspace'],
+  'avaliacao.html': ['.post-service-layout', '.page__content-inner'],
+  'avaliacao-profissional.html': ['.pro-review-screen__rail', '.doke-page-shell', '.page__content-inner'],
+  'anunciar-servico.html': ['.post-service-layout', '.page__content-inner'],
+  'tornar-profissional.html': ['.become-pro-layout', '.doke-page-shell', '.page__content-inner'],
+  'pagamento-profissional.html': ['.payment-layout', '.doke-page-shell', '.page__content-inner'],
 };
 
 function loadHtml(pageFile) {
@@ -90,18 +116,32 @@ async function measure(page, pageFile) {
       }
       return { element: null, selector: selectors.join(', ') };
     };
+    const rootStyle = getComputedStyle(document.documentElement);
+    const sidebar = document.querySelector('.sidebar, [data-shell-sidebar]');
     const header = document.querySelector('.app-header__inner') || document.querySelector('.app-header');
     const content = findContent();
     const scrollWidth = Math.max(document.documentElement.scrollWidth, document.body.scrollWidth);
     return {
+      bodyPage: document.body.dataset.page || null,
       headerSelector: header ? '.app-header__inner' : null,
       headerVisible: isVisible(header),
       header: isVisible(header) ? toRect(header) : null,
       contentSelector: content.selector,
       contentVisible: isVisible(content.element),
       content: isVisible(content.element) ? toRect(content.element) : null,
+      sidebar: isVisible(sidebar) ? toRect(sidebar) : null,
+      tokens: {
+        sharedPageWidth: rootStyle.getPropertyValue('--doke-shared-page-width').trim(),
+        desktopPageAvailable: rootStyle.getPropertyValue('--doke-desktop-page-available').trim(),
+        currentPageRail: rootStyle.getPropertyValue('--doke-current-page-rail').trim(),
+        desktopPageMax: rootStyle.getPropertyValue('--doke-desktop-page-max').trim(),
+        headerRail: rootStyle.getPropertyValue('--doke-header-rail').trim(),
+        sidebarWidth: rootStyle.getPropertyValue('--doke-sidebar-width').trim()
+          || rootStyle.getPropertyValue('--doke-app-sidebar-width').trim(),
+      },
       overflow: {
         viewportWidth: window.innerWidth,
+        clientWidth: document.documentElement.clientWidth,
         scrollWidth,
         difference: Math.round((scrollWidth - window.innerWidth) * 100) / 100,
       },
@@ -170,6 +210,7 @@ function writeReport(report) {
     for (const viewport of viewports) {
       const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height }, deviceScaleFactor: 1, javaScriptEnabled: false });
       for (const pageFile of pages) {
+        if (headerExemptPages.has(pageFile)) continue;
         const page = await context.newPage();
         await page.setContent(loadHtml(pageFile), { waitUntil: 'domcontentloaded', timeout: 30_000 });
         await page.evaluate(() => document.fonts && document.fonts.ready).catch(() => {});

@@ -7932,10 +7932,10 @@ body[data-page="detalhe-anuncio"] .detail-related-grid--ads {
   }
 
   body[data-page="detalhe-anuncio"] .ad-detail-layout {
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--detail-sidebar-width);
     align-items: flex-start;
-    justify-content: center;
+    justify-content: stretch;
     gap: clamp(24px, 2.4vw, 34px);
     width: 100%;
     max-width: 100%;
@@ -7944,10 +7944,9 @@ body[data-page="detalhe-anuncio"] .detail-related-grid--ads {
   }
 
   body[data-page="detalhe-anuncio"] .ad-detail-main {
-    order: 1;
-    flex: 0 1 760px;
-    width: 760px;
-    max-width: 760px;
+    grid-column: 1 / 2;
+    width: 100%;
+    max-width: none;
     min-width: 0;
     display: grid;
     gap: clamp(18px, 2vw, 24px);
@@ -7957,9 +7956,8 @@ body[data-page="detalhe-anuncio"] .detail-related-grid--ads {
   }
 
   body[data-page="detalhe-anuncio"] .ad-detail-sidebar {
-    order: 2;
-    flex: 0 0 var(--detail-sidebar-width);
-    width: var(--detail-sidebar-width);
+    grid-column: 2 / 3;
+    width: 100%;
     max-width: var(--detail-sidebar-width);
     min-width: 0;
     display: grid;
@@ -7968,6 +7966,7 @@ body[data-page="detalhe-anuncio"] .detail-related-grid--ads {
     margin: 0;
     padding: 0;
     align-self: flex-start;
+    justify-self: stretch;
     position: sticky;
     top: clamp(18px, 2vw, 28px);
     z-index: 2;
