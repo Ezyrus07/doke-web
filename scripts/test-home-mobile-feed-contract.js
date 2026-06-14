@@ -1,0 +1,84 @@
+#!/usr/bin/env node
+const fs = require('fs');
+
+const failures = [];
+const assert = (condition, message) => { if (!condition) failures.push(message); };
+const read = (file) => fs.readFileSync(file, 'utf8');
+
+const horizontalRail = read('assets/css/patterns/horizontal-rail.css');
+const homeSections = read('assets/css/pages/home-sections.css');
+const mobileBase = read('assets/css/pages/home/mobile/base.css');
+const mobileHeroFeed = read('assets/css/pages/home/mobile-hero-feed.css');
+const adCard = read('assets/css/components/cards/ad-card.css');
+const mobileCardContract = read('assets/css/components/cards/mobile-card-contract.css');
+const overflowContract = read('assets/css/components/layout/overflow-text-clipping-contract.css');
+const indexHtml = read('index.html');
+
+assert(
+  !/body\.home-index-shell\s+:is\([^)]*\.service-grid[^)]*#home-publications-track[^)]*\)\s*\{[\s\S]*?grid-auto-flow:\s*column/i.test(horizontalRail),
+  'patterns/horizontal-rail.css must not turn every home .service-grid into a horizontal mobile rail.'
+);
+
+assert(
+  /body\.home-index-shell\s+:is\(#featured-services-track,\s*#home-publications-track\)\s*\{[\s\S]*?grid-auto-flow:\s*column/i.test(horizontalRail),
+  'patterns/horizontal-rail.css must scope the mobile horizontal rail to featured services and publications only.'
+);
+
+assert(
+  /body\.home-index-shell \[data-more-services-grid\][\s\S]*?grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/i.test(homeSections),
+  'home-sections.css must keep the desktop more-services grid contract as the base owner.'
+);
+
+
+assert(
+  /\.doke-ad-card:not\(\[hidden\]\)[\s\S]*?--doke-ad-card-mobile-width:\s*256px[\s\S]*?width:\s*var\(--doke-ad-card-mobile-width\)/i.test(adCard),
+  'components/cards/ad-card.css must expose a mobile width token instead of hard-coding mobile card width.'
+);
+
+assert(
+  /\.doke-ad-card__media\s*\{[\s\S]*?height:\s*var\(--doke-ad-media-height-mobile,\s*96px\)/i.test(adCard),
+  'components/cards/ad-card.css must expose the mobile media height token for page feed density.'
+);
+
+assert(
+  /more-services(?:__cards-rail)?[\s\S]*?\.service-grid[\s\S]*?grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)[\s\S]*?\.more-services \.service-grid > \.doke-ad-card[\s\S]*?--doke-ad-card-mobile-width:\s*100%[\s\S]*?--doke-ad-media-height-mobile:\s*clamp\(82px,\s*23vw,\s*100px\)[\s\S]*?--doke-ad-padding-mobile:\s*8px 9px 9px[\s\S]*?--doke-ad-body-display:\s*grid[\s\S]*?--doke-ad-body-grid-template-rows:\s*auto auto auto auto auto[\s\S]*?--doke-ad-body-gap-mobile:\s*3px[\s\S]*?--doke-ad-footer-display:\s*grid/i.test(mobileHeroFeed),
+  'home/mobile-hero-feed.css must keep Mais anúncios in a compact 2-column mobile grid while passing density tokens to the card component.'
+);
+
+assert(
+  !/grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)\s*!important/i.test(mobileHeroFeed),
+  'home/mobile-hero-feed.css must own the 2-column grid without relying on !important.'
+);
+
+assert(
+  !/:is\(\.service-grid,\s*\.service-grid--compact,/i.test(mobileCardContract),
+  'components/cards/mobile-card-contract.css must not apply a generic one-column contract to every service-grid.'
+);
+
+assert(
+  !/:is\(\.service-grid--compact,\s*\.more-services__cards-rail \.service-grid\)/i.test(overflowContract),
+  'overflow-text-clipping-contract.css must not turn Mais anuncios into a horizontal flex rail.'
+);
+
+assert(
+  /\.doke-ad-card\.doke-ad-card--mobile-grid[\s\S]*?--doke-ad-media-height-mobile:\s*clamp\(82px,\s*23vw,\s*100px\)[\s\S]*?--doke-ad-title-font-size-mobile:\s*0\.74rem[\s\S]*?--doke-ad-cta-height:\s*27px/i.test(adCard),
+  'components/cards/ad-card.css must own the compact 2-column mobile-grid density modifier for doke-ad-card.'
+);
+
+assert(
+  /<section class="more-services[\s\S]*?<article class="doke-ad-card doke-ad-card--mobile-feed doke-ad-card--mobile-grid"/i.test(indexHtml),
+  'index.html more-services cards must opt into the shared doke-ad-card--mobile-grid density modifier.'
+);
+
+assert(
+  /\.page__content\s*\{[\s\S]*?padding-bottom:\s*calc\(88px \+ env\(safe-area-inset-bottom, 0px\)\)/i.test(mobileBase),
+  'home mobile base must reserve safe bottom space for the fixed bottom nav.'
+);
+
+if (failures.length) {
+  console.error('Home mobile feed contract: FAIL');
+  failures.forEach((failure) => console.error(`- ${failure}`));
+  process.exit(1);
+}
+
+console.log('Home mobile feed contract: PASS');

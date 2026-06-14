@@ -4,7 +4,7 @@
 
 @media (max-width: 560px) {
   html.home-index-root body.home-index-shell{
-    --home-mobile-edge: var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 18px));
+    --home-mobile-edge: var(--doke-mobile-shell-edge, var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 18px)));
     --home-mobile-blue: #1266b0;
     --home-mobile-navy: #173d63;
     --home-mobile-mint: #dff7ed;
@@ -486,7 +486,7 @@ html.home-index-root body.home-index-shell .page__content-inner{
 
 @media (max-width: 560px) {
   html.home-index-root body.home-index-shell{
-    --home-mobile-edge: var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 18px));
+    --home-mobile-edge: var(--doke-mobile-shell-edge, var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 18px)));
   }
 
   html.home-index-root body.home-index-shell .home-search-hero{
@@ -630,7 +630,7 @@ html.home-index-root body.home-index-shell .featured-pros .content-rail{
 
 @media (max-width: 390px) {
   html.home-index-root body.home-index-shell{
-    --home-mobile-edge: var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 14px));
+    --home-mobile-edge: var(--doke-mobile-shell-edge, var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 14px)));
   }
 
   html.home-index-root body.home-index-shell .home-mobile-hero__quick-actions{
@@ -656,7 +656,7 @@ html.home-index-root body.home-index-shell .featured-pros .content-rail{
    Keep this at the end of this file. */
 @media (max-width: 560px) {
   html.home-index-root body.home-index-shell{
-    --home-mobile-edge: var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 18px)) !important;
+    --home-mobile-edge: var(--doke-mobile-shell-edge, var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 18px))) !important;
   }
 
   /* Top header: final compact light version, not the old blue block */
@@ -896,7 +896,7 @@ html.home-index-root body.home-index-shell .featured-services .service-card--fee
 
 @media (max-width: 390px) {
   html.home-index-root body.home-index-shell{
-    --home-mobile-edge: var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 14px)) !important;
+    --home-mobile-edge: var(--doke-mobile-shell-edge, var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 14px))) !important;
   }
 
   html.home-index-root body.home-index-shell .home-mobile-hero__quick-actions{
@@ -959,37 +959,116 @@ html.home-index-root body.home-index-shell .featured-pros .section-heading__link
   }
 }
 
-/* Hotfix — mobile "Mais anúncios" is vertical; cards must be full width. */
+/* Mobile grid contract — "Mais anúncios" uses a compact 2-column feed on phones; card anatomy remains in components/cards/ad-card.css. */
 @media (max-width: 560px) {
+
+  html.home-index-root body.home-index-shell .more-services__controls.more-services__tabs-rail{
+    width: 100%;
+    max-width: 100%;
+    margin: 0 0 12px;
+    padding: 8px;
+    border: 1px solid var(--border-color-muted, rgba(196, 211, 228, 0.62));
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 14px 34px rgba(26, 67, 105, 0.08);
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    box-sizing: border-box;
+  }
+
+  html.home-index-root body.home-index-shell .more-services__controls.more-services__tabs-rail::-webkit-scrollbar{
+    display: none;
+  }
+
+  html.home-index-root body.home-index-shell .more-services .mini-tabs.more-services__tabs-track{
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    width: max-content;
+    max-width: none;
+    min-width: max-content;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  html.home-index-root body.home-index-shell .more-services .more-services__tabs-track > :is(.mini-tab, .filter-toggle){
+    flex: 0 0 auto;
+    min-height: 30px;
+    padding-inline: 10px;
+    border-radius: var(--radius-pill);
+    font-size: 0.72rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
   html.home-index-root body.home-index-shell .more-services__cards-rail{
     padding-left: var(--home-mobile-edge);
     padding-right: var(--home-mobile-edge);
     box-sizing: border-box;
-    overflow: visible !important;
+    overflow: visible;
   }
 
   html.home-index-root body.home-index-shell .more-services__cards-rail .service-grid,
 html.home-index-root body.home-index-shell .more-services .service-grid,
 html.home-index-root body.home-index-shell .more-services .service-grid--compact{
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) !important;
-    width: 100% !important;
-    max-width: 100% !important;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    max-width: 100%;
     margin: 0;
     padding: 0;
-    gap: 14px;
-    overflow: visible !important;
+    gap: 10px;
+    overflow: visible;
+  }
+
+  html.home-index-root body.home-index-shell .more-services .service-grid > .doke-ad-card,
+html.home-index-root body.home-index-shell .more-services [data-more-services-grid] > .doke-ad-card{
+    --doke-ad-card-mobile-width: 100%;
+    --doke-ad-card-mobile-min-width: 0;
+    --doke-ad-card-mobile-max-width: 100%;
+    --doke-ad-card-mobile-flex: 0 1 auto;
+    --doke-ad-media-height-mobile: clamp(82px, 23vw, 100px);
+    --doke-ad-padding-mobile: 8px 9px 9px;
+    --doke-ad-body-display: grid;
+    --doke-ad-body-grid-template-rows: auto auto auto auto auto;
+    --doke-ad-body-align-content: start;
+    --doke-ad-body-height: auto;
+    --doke-ad-body-min-height: 0;
+    --doke-ad-body-max-height: none;
+    --doke-ad-body-overflow: visible;
+    --doke-ad-body-padding-bottom: 10px;
+    --doke-ad-body-gap-mobile: 3px;
+    --doke-ad-footer-display: grid;
+    --doke-ad-footer-padding-top-mobile: 6px;
+    --doke-ad-footer-margin-top: 0;
+    --doke-ad-cta-height: 27px;
+    --doke-ad-cta-min-height: 27px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    flex-basis: auto;
+    margin: 0;
+    scroll-snap-align: unset;
   }
 
   html.home-index-root body.home-index-shell .more-services .service-grid > .service-card,
 html.home-index-root body.home-index-shell .more-services .service-card--featured.service-card--feed,
 html.home-index-root body.home-index-shell .more-services .service-card--feed{
-    display: flex !important;
-    flex-direction: column !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: none !important;
-    flex-basis: auto !important;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    flex-basis: auto;
     margin: 0;
     scroll-snap-align: unset;
   }

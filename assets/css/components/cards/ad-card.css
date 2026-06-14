@@ -534,6 +534,10 @@
     --doke-ad-card-height: auto;
     --doke-ad-card-min-height: 0;
     --doke-ad-card-max-height: none;
+    --doke-ad-card-mobile-width: 256px;
+    --doke-ad-card-mobile-min-width: var(--doke-ad-card-mobile-width);
+    --doke-ad-card-mobile-max-width: var(--doke-ad-card-mobile-width);
+    --doke-ad-card-mobile-flex: 0 0 var(--doke-ad-card-mobile-width);
     --doke-ad-media-height: 96px;
     --doke-ad-media-height-mobile: 96px;
     --doke-ad-padding: 8px 10px 10px;
@@ -542,17 +546,36 @@
     --doke-ad-body-padding-bottom: 10px;
     --doke-ad-footer-min-height: 0;
     --doke-ad-footer-margin-top: 2px;
+    --doke-ad-body-gap-mobile: 4px;
+    --doke-ad-category-font-size-mobile: 0.58rem;
+    --doke-ad-category-line-height-mobile: 1;
+    --doke-ad-title-font-size-mobile: 0.96rem;
+    --doke-ad-title-line-height-mobile: 1;
+    --doke-ad-rating-font-size-mobile: 0.74rem;
+    --doke-ad-rating-gap-mobile: 4px;
+    --doke-ad-tags-gap-mobile: 4px;
+    --doke-ad-tag-min-height-mobile: 20px;
+    --doke-ad-tag-padding-inline-mobile: 7px;
+    --doke-ad-tag-font-size-mobile: 0.64rem;
+    --doke-ad-location-grid-mobile: 24px minmax(0, 1fr);
+    --doke-ad-location-gap-mobile: 5px;
+    --doke-ad-location-font-size-mobile: 0.62rem;
+    --doke-ad-location-line-height-mobile: 1.05;
+    --doke-ad-avatar-size-mobile: 24px;
+    --doke-ad-footer-gap-mobile: 7px;
+    --doke-ad-footer-padding-top-mobile: 7px;
+    --doke-ad-price-font-size-mobile: 0.88rem;
     --doke-ad-cta-min-height: 32px;
     --doke-ad-cta-height: 32px;
     --doke-ad-cta-padding-inline: 10px;
     --doke-ad-cta-font-size: 0.72rem;
     display: flex;
-    flex: 0 0 256px;
+    flex: var(--doke-ad-card-mobile-flex);
     flex-direction: column;
     align-self: flex-start;
-    width: 256px;
-    min-width: 256px;
-    max-width: 256px;
+    width: var(--doke-ad-card-mobile-width);
+    min-width: var(--doke-ad-card-mobile-min-width);
+    max-width: var(--doke-ad-card-mobile-max-width);
     min-height: 0;
     overflow: hidden;
     border-radius: 17px;
@@ -560,10 +583,10 @@
   }
 
   .doke-ad-card__media {
-    flex: 0 0 96px;
-    height: 96px;
-    min-height: 96px;
-    max-height: 96px;
+    flex: 0 0 var(--doke-ad-media-height-mobile, 96px);
+    height: var(--doke-ad-media-height-mobile, 96px);
+    min-height: var(--doke-ad-media-height-mobile, 96px);
+    max-height: var(--doke-ad-media-height-mobile, 96px);
     background-position: center;
     background-size: cover;
   }
@@ -609,10 +632,10 @@
     display: grid;
     grid-template-rows: auto auto auto auto;
     align-content: start;
-    row-gap: 4px;
+    row-gap: var(--doke-ad-body-gap-mobile, 4px);
     flex: 0 0 auto;
     min-height: 0;
-    padding: 8px 10px 10px;
+    padding: var(--doke-ad-padding-mobile, 8px 10px 10px);
     overflow: visible;
   }
 
@@ -626,16 +649,17 @@
   }
 
   .doke-ad-card__category {
-    font-size: 0.58rem;
-    line-height: 1;
+    font-size: var(--doke-ad-category-font-size-mobile, 0.58rem);
+    line-height: var(--doke-ad-category-line-height-mobile, 1);
     letter-spacing: 0.12em;
   }
 
   .doke-ad-card__title {
     display: block;
+    min-height: 0;
     overflow: hidden;
-    font-size: 0.96rem;
-    line-height: 1;
+    font-size: var(--doke-ad-title-font-size-mobile, 0.96rem);
+    line-height: var(--doke-ad-title-line-height-mobile, 1);
     white-space: nowrap;
     text-overflow: ellipsis;
   }
@@ -643,35 +667,45 @@
   .doke-ad-card__rating {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--doke-ad-rating-gap-mobile, 4px);
     min-height: 0;
-    font-size: 0.74rem;
+    font-size: var(--doke-ad-rating-font-size-mobile, 0.74rem);
     line-height: 1;
   }
 
   .doke-ad-card__tags {
     display: flex;
     flex-wrap: nowrap;
+    gap: var(--doke-ad-tags-gap-mobile, 4px);
+    min-height: 0;
+  }
+
+  .doke-ad-card__tags span {
+    min-height: var(--doke-ad-tag-min-height-mobile, 20px);
+    padding-inline: var(--doke-ad-tag-padding-inline-mobile, 7px);
+    font-size: var(--doke-ad-tag-font-size-mobile, 0.64rem);
+    line-height: 1;
   }
 
   .doke-ad-card__location {
     display: grid;
-    grid-template-columns: 24px minmax(0, 1fr);
+    grid-template-columns: var(--doke-ad-location-grid-mobile, 24px minmax(0, 1fr));
     align-items: center;
-    gap: 5px;
+    gap: var(--doke-ad-location-gap-mobile, 5px);
+    min-height: var(--doke-ad-avatar-size-mobile, 24px);
     overflow: hidden;
-    font-size: 0.62rem;
-    line-height: 1.05;
+    font-size: var(--doke-ad-location-font-size-mobile, 0.62rem);
+    line-height: var(--doke-ad-location-line-height-mobile, 1.05);
   }
 
   .doke-ad-card__avatar {
-    width: 24px;
-    height: 24px;
-    min-width: 24px;
-    min-height: 24px;
-    max-width: 24px;
-    max-height: 24px;
-    flex: 0 0 24px;
+    width: var(--doke-ad-avatar-size-mobile, 24px);
+    height: var(--doke-ad-avatar-size-mobile, 24px);
+    min-width: var(--doke-ad-avatar-size-mobile, 24px);
+    min-height: var(--doke-ad-avatar-size-mobile, 24px);
+    max-width: var(--doke-ad-avatar-size-mobile, 24px);
+    max-height: var(--doke-ad-avatar-size-mobile, 24px);
+    flex: 0 0 var(--doke-ad-avatar-size-mobile, 24px);
     border-width: 1px;
     border-radius: 999px;
   }
@@ -715,22 +749,124 @@
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
-    gap: 7px;
+    gap: var(--doke-ad-footer-gap-mobile, 7px);
     min-height: 0;
-    padding-top: 7px;
+    padding-top: var(--doke-ad-footer-padding-top-mobile, 7px);
   }
 
   .doke-ad-card__price {
-    font-size: 0.88rem;
+    font-size: var(--doke-ad-price-font-size-mobile, 0.88rem);
     line-height: 1;
   }
 
   .doke-ad-card__cta {
-    min-height: 34px;
-    height: 34px;
-    padding-inline: 10px;
-    font-size: 0.72rem;
+    min-height: var(--doke-ad-cta-min-height, 34px);
+    height: var(--doke-ad-cta-height, 34px);
+    padding-inline: var(--doke-ad-cta-padding-inline, 10px);
+    font-size: var(--doke-ad-cta-font-size, 0.72rem);
     line-height: 1;
+  }
+}
+
+@media (max-width: 560px) {
+  .doke-ad-card.doke-ad-card--mobile-feed {
+    --doke-ad-media-height-mobile: clamp(122px, 31vw, 138px);
+    --doke-ad-padding-mobile: 9px 12px 10px;
+    --doke-ad-body-display: grid;
+    --doke-ad-body-grid-template-rows: auto auto auto auto auto;
+    --doke-ad-body-align-content: start;
+    --doke-ad-body-height: auto;
+    --doke-ad-body-min-height: 0;
+    --doke-ad-body-max-height: none;
+    --doke-ad-body-overflow: visible;
+    --doke-ad-body-padding-bottom: 10px;
+    --doke-ad-body-gap-mobile: 4px;
+    --doke-ad-category-font-size-mobile: 0.6rem;
+    --doke-ad-title-font-size-mobile: 0.95rem;
+    --doke-ad-title-line-height-mobile: 1.05;
+    --doke-ad-rating-font-size-mobile: 0.72rem;
+    --doke-ad-tag-min-height-mobile: 18px;
+    --doke-ad-tag-padding-inline-mobile: 7px;
+    --doke-ad-tag-font-size-mobile: 0.61rem;
+    --doke-ad-location-grid-mobile: 22px minmax(0, 1fr);
+    --doke-ad-location-gap-mobile: 5px;
+    --doke-ad-location-font-size-mobile: 0.6rem;
+    --doke-ad-avatar-size-mobile: 22px;
+    --doke-ad-footer-display: grid;
+    --doke-ad-footer-gap-mobile: 7px;
+    --doke-ad-footer-padding-top-mobile: 6px;
+    --doke-ad-footer-min-height: 0;
+    --doke-ad-footer-margin-top: 0;
+    --doke-ad-price-font-size-mobile: 0.86rem;
+    --doke-ad-cta-min-height: 30px;
+    --doke-ad-cta-height: 30px;
+    --doke-ad-cta-padding-inline: 10px;
+    --doke-ad-cta-font-size: 0.7rem;
+  }
+
+  .doke-ad-card.doke-ad-card--mobile-grid {
+    --doke-ad-card-mobile-width: 100%;
+    --doke-ad-card-mobile-min-width: 0;
+    --doke-ad-card-mobile-max-width: 100%;
+    --doke-ad-card-mobile-flex: 0 1 auto;
+    --doke-ad-media-height-mobile: clamp(82px, 23vw, 100px);
+    --doke-ad-padding-mobile: 8px 9px 9px;
+    --doke-ad-body-gap-mobile: 3px;
+    --doke-ad-category-font-size-mobile: 0.52rem;
+    --doke-ad-title-font-size-mobile: 0.74rem;
+    --doke-ad-title-line-height-mobile: 1.02;
+    --doke-ad-rating-font-size-mobile: 0.58rem;
+    --doke-ad-tag-min-height-mobile: 16px;
+    --doke-ad-tag-padding-inline-mobile: 5px;
+    --doke-ad-tag-font-size-mobile: 0.52rem;
+    --doke-ad-location-grid-mobile: 18px minmax(0, 1fr);
+    --doke-ad-location-gap-mobile: 4px;
+    --doke-ad-location-font-size-mobile: 0.52rem;
+    --doke-ad-avatar-size-mobile: 18px;
+    --doke-ad-footer-gap-mobile: 5px;
+    --doke-ad-footer-padding-top-mobile: 5px;
+    --doke-ad-price-font-size-mobile: 0.74rem;
+    --doke-ad-cta-min-height: 27px;
+    --doke-ad-cta-height: 27px;
+    --doke-ad-cta-padding-inline: 8px;
+    --doke-ad-cta-font-size: 0.56rem;
+    border-radius: 15px;
+  }
+
+  .doke-ad-card.doke-ad-card--mobile-grid .doke-ad-card__badge {
+    top: 7px;
+    left: 7px;
+    min-height: 19px;
+    max-width: calc(100% - 44px);
+    padding-inline: 7px;
+    gap: 4px;
+    font-size: 0.52rem;
+  }
+
+  .doke-ad-card.doke-ad-card--mobile-grid .doke-ad-card__badge::before {
+    width: 6px;
+    height: 6px;
+    flex-basis: 6px;
+  }
+
+  .doke-ad-card.doke-ad-card--mobile-grid .doke-ad-card__favorite {
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    max-width: 28px;
+    max-height: 28px;
+  }
+
+  .doke-ad-card.doke-ad-card--mobile-grid .doke-ad-card__favorite svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .doke-ad-card.doke-ad-card--mobile-grid .doke-ad-card__tags span:nth-child(n+2) {
+    display: none;
   }
 }
 
