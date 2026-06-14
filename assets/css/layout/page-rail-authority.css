@@ -67,7 +67,10 @@ body:is(
   [data-page="avaliacao"],
   [data-page="avaliacao-profissional"]
 ) {
-  --doke-rail-max: 960px;
+  /* These pages use the global app header and must share the same desktop
+     marketplace rail as index/resultados. Their internal cards/forms may still
+     constrain their own readable columns; the shell/header rail should not. */
+  --doke-rail-max: 1360px;
 }
 
 @media (min-width: 390px) and (max-width: 760px) {
@@ -114,6 +117,7 @@ body:is(
 
 @media (min-width: 761px) and (max-width: 1024px) {
   body[data-page] {
+    --doke-header-inline-padding: 18px;
     --doke-rail-inline-gutter: clamp(24px, 4vw, 40px);
     --doke-rail-available: calc(100vw - (var(--doke-rail-inline-gutter) * 2));
     --doke-rail-max: min(100%, 720px);
@@ -125,6 +129,14 @@ body:is(
     --doke-header-rail: var(--doke-page-rail);
     --doke-current-page-rail: var(--doke-page-rail);
     --rail-max: var(--doke-page-rail);
+  }
+
+  body[data-page].has-global-header .app-header__inner > :is(.app-header__group--primary, .home-side-meta__group--primary) {
+    margin-left: var(--doke-header-inline-padding);
+  }
+
+  body[data-page].has-global-header .app-header__inner > :is(.app-header__group--secondary, .home-side-meta__group--secondary) {
+    margin-right: var(--doke-header-inline-padding);
   }
 
   body:is([data-page="home"], [data-page="detalhe-anuncio"], [data-page="perfil"], [data-page="resultados"]) {
@@ -231,7 +243,7 @@ body:is(
     min-inline-size: 0;
     min-width: 0;
     margin-inline: auto;
-    padding-inline: 0;
+    padding-inline: var(--doke-header-inline-padding, 0);
     box-sizing: border-box;
   }
 
@@ -260,6 +272,20 @@ body[data-page].has-global-header {
   --doke-page-top-gap: clamp(16px, 1.8vw, 26px);
   --doke-page-bottom-gap: clamp(36px, 5vw, 56px);
   --doke-first-block-top: var(--doke-page-top-gap);
+}
+
+/* Simple flow pages use .shell-home__workspace--clean as the first visual rail.
+   app-shell.css owns shell surface padding, but layout/page-rail-authority owns
+   the shared header/content x-axis. Keep these flows flush with the canonical
+   rail instead of creating a second 28px inset inside the rail. */
+body:is(
+  [data-page="ajuda"],
+  [data-page="novidades"],
+  [data-page="avaliacao"],
+  [data-page="perfil"],
+  [data-page="comunidade"]
+).has-global-header {
+  --doke-shell-workspace-inline: 0px;
 }
 
 body[data-page].has-global-header:not([data-page="home"]) {
@@ -352,6 +378,17 @@ body:is(
   body[data-page].has-global-header .page__content-inner.doke-page-stack {
     gap: var(--doke-section-gap);
   }
+
+  /* Rail closure: perfil/comunidade already inherit the correct external rail,
+     but their shared workspace kept the shell padding and created a second
+     horizontal inset. Keep the first visual section flush with the header rail. */
+  body:is([data-page="perfil"], [data-page="comunidade"]).has-global-header
+    > .app-shell
+    > .page
+    > .page__content
+    > :is(.page__content-inner, .profile-shell-content, .orders-shell-content, .app-shell-page__workspace, .shell-home__workspace) {
+    padding-inline: 0;
+  }
 }
 
 @media (min-width: 1180px) {
@@ -363,6 +400,21 @@ body:is(
     --doke-header-rail: var(--doke-page-rail);
     --doke-current-page-rail: var(--doke-page-rail);
     --rail-max: var(--doke-page-rail);
+  }
+}
+
+/* Settings uses a custom .page frame instead of the normal .page__content-inner
+   shell. On desktop it must still reserve the global sidebar lane before
+   centering the header/content rail; otherwise both header and settings content
+   become centered under the sidebar instead of the app workspace. */
+@media (min-width: 1025px) {
+  body[data-page="configuracoes"].has-global-header > .app-shell > .page.settings-page-frame {
+    inline-size: auto;
+    width: auto;
+    max-inline-size: none;
+    max-width: none;
+    margin-left: var(--doke-rail-sidebar-width);
+    margin-right: 0;
   }
 }
 
