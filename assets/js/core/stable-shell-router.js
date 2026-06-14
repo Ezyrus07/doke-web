@@ -132,6 +132,11 @@
     return '/' + filename;
   }
 
+  function projectRouteUrl(route) {
+    var filename = currentPath(route).slice(1) || 'index.html';
+    return new URL(filename, window.location.href).href;
+  }
+
   function canonicalAssetUrl(src) {
     if (!src) return '';
     try {
@@ -704,7 +709,7 @@
     updateSidebar(currentPath());
 
     if (currentPath() !== '/index.html') {
-      var warmHome = function () { warm('/index.html'); };
+      var warmHome = function () { warm(projectRouteUrl('/index.html')); };
       if ('requestIdleCallback' in window) window.requestIdleCallback(warmHome, { timeout: 1200 });
       else window.setTimeout(warmHome, 600);
     }
