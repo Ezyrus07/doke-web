@@ -147,11 +147,11 @@ body:is(
   }
 }
 
-@media (min-width: 1025px) and (max-width: 1199px) {
+@media (min-width: 1025px) and (max-width: 1179px) {
   body[data-page] {
-    --doke-rail-sidebar-width: 0px;
-    --doke-rail-inline-gutter: clamp(24px, 3.4vw, 40px);
-    --doke-rail-available: calc(100vw - (var(--doke-rail-inline-gutter) * 2));
+    --doke-rail-sidebar-width: 240px;
+    --doke-rail-inline-gutter: clamp(32px, 4vw, 48px);
+    --doke-rail-available: calc(100vw - var(--doke-rail-sidebar-width) - (var(--doke-rail-inline-gutter) * 2));
     --doke-rail-max: 760px;
     --doke-shared-page-inline: var(--doke-rail-inline-gutter);
     --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
@@ -164,7 +164,7 @@ body:is(
   }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1180px) {
   body[data-page] {
     --doke-rail-inline-gutter: 48px;
     --doke-rail-available: calc(100vw - var(--doke-rail-sidebar-width) - (var(--doke-rail-inline-gutter) * 2));
@@ -182,7 +182,7 @@ body:is(
   }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1180px) {
   body[data-page="home"] {
     --doke-rail-inline-gutter: clamp(36px, 4vw, 52px);
     --doke-rail-available: calc(100vw - var(--doke-rail-sidebar-width) - (var(--doke-rail-inline-gutter) * 2));
@@ -430,7 +430,7 @@ body:is(
   }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1180px) {
   body[data-page].has-global-header {
     --doke-rail-inline-gutter: clamp(36px, 4vw, 52px);
     --doke-rail-available: calc(100vw - var(--doke-rail-sidebar-width) - (var(--doke-rail-inline-gutter) * 2));
@@ -463,7 +463,7 @@ body:is(
    section headers and horizontal card rails start close to the sidebar axis.
    Keep this scoped to the home desktop breakpoint; card anatomy and carousel
    behavior remain owned by components/patterns. */
-@media (min-width: 1200px) {
+@media (min-width: 1180px) {
   body[data-page="home"].has-global-header {
     --doke-visual-rail-max: 1360px;
     --doke-rail-max: var(--doke-visual-rail-max);
@@ -763,18 +763,21 @@ body:is(
   }
 }
 
-/* Global drawer boundary: tablet remains drawer-first, never sidebar-fixed. */
+
+
+/* Tablet/touch shell boundary.
+   Up to 1199px, navigation is drawer-based and must not reserve or render
+   the persistent desktop sidebar. Desktop sidebar begins at 1200px. */
 @media (max-width: 1199px) {
   body[data-page].has-global-header {
-    --doke-rail-sidebar-width: 0px;
     --sidebar-width: 0px;
     --doke-desktop-sidebar-width: 0px;
     --doke-app-sidebar-width: 0px;
     --doke-app-shell-sidebar-width: 0px;
+    --doke-rail-sidebar-width: 0px;
   }
 
   body[data-page].has-global-header > .app-shell {
-    display: block;
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -784,8 +787,11 @@ body:is(
 
   body[data-page].has-global-header > .app-shell > .page {
     grid-column: 1;
+    inline-size: 100%;
     width: 100%;
+    min-inline-size: 0;
     min-width: 0;
     margin-inline: 0;
   }
 }
+

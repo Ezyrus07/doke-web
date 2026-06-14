@@ -160,11 +160,6 @@
   }
 
   function openMobileDrawerDirect() {
-    if (window.DokeStandardMobileDrawerOpen && window.DokeStandardMobileDrawerOpen()) {
-      dispatchShellAction('profile-menu');
-      return true;
-    }
-
     if (window.DokeOpenHomeDrawerDirect && window.DokeOpenHomeDrawerDirect()) {
       dispatchShellAction('profile-menu');
       return true;
@@ -177,7 +172,7 @@
 
     if (openDrawerElementDirect()) return true;
 
-    if (clickFirst('[data-mobile-home-menu-open], [data-home-profile-menu-toggle], [data-mobile-menu-open], [data-drawer-open], [data-mobile-drawer-open], .mobile-toggle')) return true;
+    if (clickFirst('[data-mobile-home-menu-open], [data-mobile-menu-open], [data-drawer-open], .mobile-toggle')) return true;
 
     var drawer = document.querySelector('[data-mobile-home-drawer], .home-mobile-drawer, [data-mobile-drawer]');
     if (drawer) {
@@ -185,11 +180,12 @@
       drawer.removeAttribute('hidden');
       drawer.classList.add('is-open');
       drawer.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('mobile-home-drawer-open', 'doke-mobile-drawer-open');
+      dispatchShellAction('profile-menu');
+      return true;
     }
 
-    document.body.classList.add('mobile-home-drawer-open', 'doke-mobile-drawer-open');
-    dispatchShellAction('profile-menu');
-    return true;
+    return false;
   }
 
   function createQuickActions(cfg) {

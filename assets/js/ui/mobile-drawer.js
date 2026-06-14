@@ -19,13 +19,7 @@
     '.home-mobile-hero__profile',
     '.orders-page-header__hero-profile',
     '.settings-mobile-header__profile',
-    '.detail-topbar__menu',
-    '[data-drawer-open]',
-    '[data-mobile-drawer-open]',
-    '[data-mobile-menu-open]',
-    '[data-sidebar-open]',
-    '[data-sidebar-toggle]',
-    '[data-shell-profile]'
+    '.detail-topbar__menu'
   ].join(',');
   const closeSelector = '[data-mobile-home-menu-close]';
 

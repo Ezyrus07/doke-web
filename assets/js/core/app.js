@@ -113,7 +113,7 @@ const syncSidebarCollapsedState = () => {
 
   const isTabletSidebar = isTabletSidebarViewport();
   const isCollapsed = !isTabletSidebar && readStoredSidebarCollapsed();
-  const sidebarWidth = isTabletSidebar ? "92px" : isCollapsed ? "92px" : "240px";
+  const sidebarWidth = isCollapsed ? "92px" : "240px";
   body.classList.toggle("sidebar-collapsed", isCollapsed);
   root.classList.toggle(SIDEBAR_COLLAPSED_HTML_CLASS, isCollapsed);
   root.classList.toggle(SIDEBAR_EXPANDED_HTML_CLASS, !isCollapsed);
