@@ -748,3 +748,18 @@ body:is(
     margin-right: 0;
   }
 }
+
+/* Pedidos/Notificacoes small-tablet rail closure.
+   Root cause: their mobile shell contract still used the phone column token
+   (--doke-mobile-app-max: 430px) while page children consumed the wider
+   tablet rail. That made the first content wrapper narrow and clipped the
+   orders/notifications modules on iPad mini portrait. The mobile header
+   component now reads this page-level source token; this layer only supplies
+   the responsive rail value for the two affected pages. */
+@media (min-width: 561px) and (max-width: 760px) {
+  body:is([data-page="pedidos"], [data-page="notificacoes"]).has-global-header {
+    --doke-mobile-app-max: min(var(--doke-page-rail), calc(100vw - 32px));
+    --doke-mobile-app-max-source: var(--doke-mobile-app-max);
+  }
+}
+
