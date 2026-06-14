@@ -32,6 +32,10 @@
         };
 
         let activeSearchIndex = -1;
+        const setSearchState = (state) => {
+          searchBox?.setAttribute("data-search-state", state);
+          searchDropdown?.setAttribute("data-search-state", state);
+        };
         const isMobileSearchViewport = () => window.innerWidth <= 760;
         const shouldUseSearchDropdown = () => Boolean(searchDropdown && searchInput);
 
@@ -98,6 +102,10 @@
           if (searchEmptyState) {
             searchEmptyState.hidden = hasVisibleResults || !hasQuery;
           }
+
+          if (!searchDropdown?.hidden) {
+            setSearchState(hasQuery ? (hasVisibleResults ? "results" : "no-results") : "empty");
+          }
         };
 
         const renderSearchHistory = () => {
@@ -151,6 +159,8 @@
         const openSearchDropdown = () => {
           if (!searchDropdown || !searchInput || !shouldUseSearchDropdown()) return;
           searchDropdown.hidden = false;
+          setSearchState(searchInput.value.trim().length >= 2 ? "typing" : "empty");
+          syncDropdownSections(searchInput.value);
           searchBox?.classList.add("is-search-open");
           searchField?.classList.add("is-search-open");
           searchInput.setAttribute("aria-expanded", "true");
@@ -161,6 +171,7 @@
         const closeSearchDropdown = () => {
           if (!searchDropdown || !searchInput) return;
           searchDropdown.hidden = true;
+          setSearchState("closed");
           searchBox?.classList.remove("is-search-open");
           searchField?.classList.remove("is-search-open");
           searchInput.setAttribute("aria-expanded", "false");
@@ -209,6 +220,7 @@
         renderSearchSuggestions("");
         syncDropdownSections("");
         if (searchDropdown) searchDropdown.hidden = true;
+        setSearchState("closed");
         if (searchInput) {
           searchInput.setAttribute("aria-haspopup", "dialog");
           searchInput.setAttribute("aria-controls", "main-search-dropdown");
@@ -298,11 +310,14 @@
             }, { signal });
           });
 
-          document.addEventListener("click", (event) => {
+          const closeSearchDropdownOnOutsidePointer = (event) => {
             if (!event.target.closest("[data-searchbox]")) {
               closeSearchDropdown();
             }
-          }, { signal });
+          };
+
+          document.addEventListener("pointerdown", closeSearchDropdownOnOutsidePointer, { signal });
+          document.addEventListener("click", closeSearchDropdownOnOutsidePointer, { signal });
 
           searchBox.addEventListener("submit", (event) => {
             event.preventDefault();
