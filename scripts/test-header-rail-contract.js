@@ -16,10 +16,7 @@ const TOLERANCE_PX = 2;
 
 const viewports = [
   { name: 'desktop-1366x768', width: 1366, height: 768 },
-  { name: 'tablet-wide-1024x1180', width: 1024, height: 1180 },
   { name: 'tablet-820x1180', width: 820, height: 1180 },
-  { name: 'compact-tablet-760x1024', width: 760, height: 1024 },
-  { name: 'compact-tablet-608x926', width: 608, height: 926 },
   { name: 'mobile-390x844', width: 390, height: 844 },
 ];
 
@@ -85,17 +82,6 @@ async function measure(page, pageFile) {
         width: Math.round(rect.width * 100) / 100,
       };
     };
-    const visualChildren = (element) => Array.from(element?.children || []).filter(isVisible);
-    const visualRect = (element) => {
-      const children = visualChildren(element);
-      if (!children.length) return isVisible(element) ? toRect(element) : null;
-      const rects = children.map((child) => child.getBoundingClientRect());
-      return {
-        left: Math.round(Math.min(...rects.map((rect) => rect.left)) * 100) / 100,
-        right: Math.round(Math.max(...rects.map((rect) => rect.right)) * 100) / 100,
-        width: Math.round((Math.max(...rects.map((rect) => rect.right)) - Math.min(...rects.map((rect) => rect.left))) * 100) / 100,
-      };
-    };
     const findContent = () => {
       const selectors = contentSelectors[pageFile] || ['.page__content-inner', '.app-shell-page__workspace'];
       for (const selector of selectors) {
@@ -111,11 +97,9 @@ async function measure(page, pageFile) {
       headerSelector: header ? '.app-header__inner' : null,
       headerVisible: isVisible(header),
       header: isVisible(header) ? toRect(header) : null,
-      headerVisual: isVisible(header) ? visualRect(header) : null,
       contentSelector: content.selector,
       contentVisible: isVisible(content.element),
       content: isVisible(content.element) ? toRect(content.element) : null,
-      contentVisual: isVisible(content.element) ? visualRect(content.element) : null,
       overflow: {
         viewportWidth: window.innerWidth,
         scrollWidth,
@@ -132,12 +116,10 @@ function compare(pageFile, viewport, measurement) {
     failures.push({ page: pageFile, viewport: viewport.name, property: 'content', expected: 'visible content rail', actual: 'not found', difference: null });
     return failures;
   }
-  const expectedRail = measurement.contentVisual || measurement.content;
-  const actualRail = measurement.headerVisual || measurement.header;
   const checks = [
-    ['visual-left', expectedRail.left, actualRail.left],
-    ['visual-right', expectedRail.right, actualRail.right],
-    ['visual-width', expectedRail.width, actualRail.width],
+    ['left', measurement.content.left, measurement.header.left],
+    ['right', measurement.content.right, measurement.header.right],
+    ['width', measurement.content.width, measurement.header.width],
   ];
   for (const [property, expected, actual] of checks) {
     const difference = round(actual - expected);

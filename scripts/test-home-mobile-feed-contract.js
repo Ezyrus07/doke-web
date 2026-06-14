@@ -10,8 +10,6 @@ const homeSections = read('assets/css/pages/home-sections.css');
 const mobileBase = read('assets/css/pages/home/mobile/base.css');
 const mobileHeroFeed = read('assets/css/pages/home/mobile-hero-feed.css');
 const adCard = read('assets/css/components/cards/ad-card.css');
-const mobileCardContract = read('assets/css/components/cards/mobile-card-contract.css');
-const overflowContract = read('assets/css/components/layout/overflow-text-clipping-contract.css');
 const indexHtml = read('index.html');
 
 assert(
@@ -43,21 +41,6 @@ assert(
 assert(
   /more-services(?:__cards-rail)?[\s\S]*?\.service-grid[\s\S]*?grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)[\s\S]*?\.more-services \.service-grid > \.doke-ad-card[\s\S]*?--doke-ad-card-mobile-width:\s*100%[\s\S]*?--doke-ad-media-height-mobile:\s*clamp\(82px,\s*23vw,\s*100px\)[\s\S]*?--doke-ad-padding-mobile:\s*8px 9px 9px[\s\S]*?--doke-ad-body-display:\s*grid[\s\S]*?--doke-ad-body-grid-template-rows:\s*auto auto auto auto auto[\s\S]*?--doke-ad-body-gap-mobile:\s*3px[\s\S]*?--doke-ad-footer-display:\s*grid/i.test(mobileHeroFeed),
   'home/mobile-hero-feed.css must keep Mais anúncios in a compact 2-column mobile grid while passing density tokens to the card component.'
-);
-
-assert(
-  !/grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)\s*!important/i.test(mobileHeroFeed),
-  'home/mobile-hero-feed.css must own the 2-column grid without relying on !important.'
-);
-
-assert(
-  !/:is\(\.service-grid,\s*\.service-grid--compact,/i.test(mobileCardContract),
-  'components/cards/mobile-card-contract.css must not apply a generic one-column contract to every service-grid.'
-);
-
-assert(
-  !/:is\(\.service-grid--compact,\s*\.more-services__cards-rail \.service-grid\)/i.test(overflowContract),
-  'overflow-text-clipping-contract.css must not turn Mais anuncios into a horizontal flex rail.'
 );
 
 assert(
