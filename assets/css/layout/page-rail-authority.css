@@ -750,16 +750,56 @@ body:is(
 }
 
 /* Pedidos/Notificacoes small-tablet rail closure.
-   Root cause: their mobile shell contract still used the phone column token
-   (--doke-mobile-app-max: 430px) while page children consumed the wider
-   tablet rail. That made the first content wrapper narrow and clipped the
-   orders/notifications modules on iPad mini portrait. The mobile header
-   component now reads this page-level source token; this layer only supplies
-   the responsive rail value for the two affected pages. */
+   Root cause: their phone/tablet boundary still mixed a 430px mobile column
+   with wider page children. This layer owns only rail tokens and first-level
+   shell widths; page-specific header control anatomy stays in page modules. */
 @media (min-width: 561px) and (max-width: 760px) {
   body:is([data-page="pedidos"], [data-page="notificacoes"]).has-global-header {
-    --doke-mobile-app-max: min(var(--doke-page-rail), calc(100vw - 32px));
-    --doke-mobile-app-max-source: var(--doke-mobile-app-max);
+    --doke-small-tablet-gutter: clamp(34px, 6vw, 52px);
+    --doke-small-tablet-rail: min(calc(100vw - (var(--doke-small-tablet-gutter) * 2)), 1420px);
+    --tablet-gutter: var(--doke-small-tablet-gutter);
+    --tablet-home-rail: var(--doke-small-tablet-rail);
+    --doke-page-rail: var(--doke-small-tablet-rail);
+    --doke-header-rail: var(--doke-small-tablet-rail);
+    --doke-current-page-rail: var(--doke-small-tablet-rail);
+    --doke-mobile-app-max: var(--doke-small-tablet-rail);
+    --doke-mobile-app-max-source: var(--doke-small-tablet-rail);
+    --rail-max: var(--doke-small-tablet-rail);
+    --doke-header-inline-padding: 0px;
+  }
+
+  body:is([data-page="pedidos"], [data-page="notificacoes"]).has-global-header > .app-shell,
+  body:is([data-page="pedidos"], [data-page="notificacoes"]).has-global-header > .app-shell > .page {
+    display: block;
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    min-inline-size: 0;
+    min-width: 0;
+    margin-inline: 0;
+  }
+
+  body:is([data-page="pedidos"], [data-page="notificacoes"]).has-global-header > .app-shell > .page > .app-header,
+  body:is([data-page="pedidos"], [data-page="notificacoes"]).has-global-header > .app-shell > .page > .app-header > .app-header__inner,
+  body:is([data-page="pedidos"], [data-page="notificacoes"]).has-global-header > .app-shell > .page > .page__content > .page__content-inner {
+    inline-size: var(--doke-small-tablet-rail);
+    width: var(--doke-small-tablet-rail);
+    max-inline-size: var(--doke-small-tablet-rail);
+    max-width: var(--doke-small-tablet-rail);
+    min-inline-size: 0;
+    min-width: 0;
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
+
+  body:is([data-page="pedidos"], [data-page="notificacoes"]).has-global-header > .app-shell > .page > .app-header > .app-header__inner,
+  body:is([data-page="pedidos"], [data-page="notificacoes"]).has-global-header > .app-shell > .page > .page__content > .page__content-inner {
+    padding-inline: 0;
+    padding-left: 0;
+    padding-right: 0;
   }
 }
+
+
 
