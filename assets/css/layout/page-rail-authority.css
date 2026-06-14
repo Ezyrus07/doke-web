@@ -374,6 +374,27 @@ body:is(
     padding-block-start: var(--doke-page-top-gap);
   }
 
+  /* detalhe-anuncio.html does not have the shared .page__content-inner wrapper.
+     Bind its main content element to the same rail as the global app header;
+     the ad-detail shell remains the page composition owner inside that rail. */
+  body[data-page="detalhe-anuncio"].has-global-header > .app-shell > .page > .page__content.detalhe-anuncio-page {
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    margin-inline: auto;
+    padding-inline: 0;
+    box-sizing: border-box;
+  }
+
+  body[data-page="detalhe-anuncio"].has-global-header > .app-shell > .page > .page__content.detalhe-anuncio-page > .ad-detail-shell {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
+
   body[data-page].has-global-header .doke-page-stack,
   body[data-page].has-global-header .page__content-inner.doke-page-stack {
     gap: var(--doke-section-gap);

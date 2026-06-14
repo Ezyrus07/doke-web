@@ -198,21 +198,19 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     const suggestionCount = els.resultsSearchResultsList?.children.length || 0;
     const hasQuery = cleanQuery.length >= 2;
 
-    if (els.resultsRecommendationsSection) {
-      // Keep the same autocomplete behavior used on index.html: recommendations
-      // remain available even when the user typed a query. This prevents the
-      // results page from opening an empty white dropdown when there are no
-      // direct suggestion matches.
-      els.resultsRecommendationsSection.hidden = recommendationCount === 0;
+    if (els.resultsSuggestionsSection) {
+      // Static recommendation chips live in the “Sugestões” section.
+      els.resultsSuggestionsSection.hidden = recommendationCount === 0;
     }
 
     if (els.resultsHistorySection) {
-      // Keep parity with index.html: recent searches remain visible while typing.
-      els.resultsHistorySection.hidden = historyCount === 0;
+      // Match index.html: empty input shows recent searches; typed queries prioritize suggestions/results.
+      els.resultsHistorySection.hidden = historyCount === 0 || hasQuery;
     }
 
-    if (els.resultsSuggestionsSection) {
-      els.resultsSuggestionsSection.hidden = suggestionCount === 0 || !hasQuery;
+    if (els.resultsRecommendationsSection) {
+      // Matched autocomplete rows live in the “Resultados” section.
+      els.resultsRecommendationsSection.hidden = suggestionCount === 0 || !hasQuery;
     }
 
     if (els.resultsSearchEmpty) {
