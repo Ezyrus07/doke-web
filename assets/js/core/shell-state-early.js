@@ -13,23 +13,13 @@
     "--home-desktop-content-width"
   ];
 
-  function isTabletLandscapeShell() {
-    var width = window.innerWidth || root.clientWidth || 0;
-    var height = window.innerHeight || root.clientHeight || 0;
-    return width >= 900 && width < 1180 && width > height;
-  }
-
   function isDesktopShell() {
     try {
-      return window.matchMedia("(min-width: 1180px), (min-width: 900px) and (max-width: 1179px) and (orientation: landscape)").matches;
+      return window.matchMedia("(min-width: 1200px)").matches;
     } catch (error) {
       var width = window.innerWidth || root.clientWidth || 0;
-      return width >= 1180 || isTabletLandscapeShell();
+      return width >= 1200;
     }
-  }
-
-  function isTabletShell() {
-    return isTabletLandscapeShell();
   }
 
   function isMobileRuntime() {
@@ -70,9 +60,8 @@
   function applyShellState() {
     var desktopShell = isDesktopShell();
     var mobileShell = isMobileRuntime();
-    var tabletShell = isTabletShell();
-    var shouldCollapse = desktopShell && !tabletShell && readCollapsed();
-    var sidebarWidth = desktopShell ? (tabletShell ? "92px" : (shouldCollapse ? "92px" : "240px")) : "0px";
+    var shouldCollapse = desktopShell && readCollapsed();
+    var sidebarWidth = desktopShell ? (shouldCollapse ? "92px" : "240px") : "0px";
 
     syncViewportContract();
     root.classList.toggle(COLLAPSED, shouldCollapse);

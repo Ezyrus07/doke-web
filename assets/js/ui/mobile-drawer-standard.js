@@ -49,7 +49,7 @@
   };
   const init=()=>{
     const drawer=ensureDrawer();
-    const isMobile=()=>innerWidth<=1024;
+    const isMobile=()=>innerWidth<=1199;
     let lastOpenAt=0;
     const triggerSelector='[data-mobile-home-menu-open],[data-sidebar-open],[data-shell-profile],.mobile-toggle,.home-mobile-hero__profile,.orders-page-header__hero-profile,.settings-mobile-header__profile,.detail-topbar__menu';
     const setOpen=(open)=>{

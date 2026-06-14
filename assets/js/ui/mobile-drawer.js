@@ -8,7 +8,7 @@
     return current;
   };
 
-  const isDrawerViewport = () => window.matchMedia?.('(max-width: 1024px)').matches ?? window.innerWidth <= 1024;
+  const isDrawerViewport = () => window.matchMedia?.('(max-width: 1199px)').matches ?? window.innerWidth <= 1199;
 
   const drawerSelector = '[data-mobile-home-drawer]';
   const panelSelector = '.home-mobile-drawer__panel';

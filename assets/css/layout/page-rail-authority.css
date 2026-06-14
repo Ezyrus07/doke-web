@@ -147,12 +147,14 @@ body:is(
   }
 }
 
-@media (min-width: 1025px) and (max-width: 1179px) {
+@media (min-width: 1025px) and (max-width: 1199px) {
   body[data-page] {
-    --doke-rail-sidebar-width: 240px;
-    --doke-rail-inline-gutter: clamp(32px, 4vw, 48px);
-    --doke-rail-available: calc(100vw - var(--doke-rail-sidebar-width) - (var(--doke-rail-inline-gutter) * 2));
-    --doke-rail-max: 760px;
+    /* Touch tablet landscape remains a drawer/header experience.
+       Do not reserve a persistent sidebar lane before desktop real estate. */
+    --doke-rail-sidebar-width: 0px;
+    --doke-rail-inline-gutter: clamp(28px, 3.4vw, 44px);
+    --doke-rail-available: calc(100vw - (var(--doke-rail-inline-gutter) * 2));
+    --doke-rail-max: min(100%, 1040px);
     --doke-shared-page-inline: var(--doke-rail-inline-gutter);
     --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
     --doke-page-gutter: var(--doke-rail-inline-gutter);
@@ -164,7 +166,7 @@ body:is(
   }
 }
 
-@media (min-width: 1180px) {
+@media (min-width: 1200px) {
   body[data-page] {
     --doke-rail-inline-gutter: 48px;
     --doke-rail-available: calc(100vw - var(--doke-rail-sidebar-width) - (var(--doke-rail-inline-gutter) * 2));
@@ -182,7 +184,7 @@ body:is(
   }
 }
 
-@media (min-width: 1180px) {
+@media (min-width: 1200px) {
   body[data-page="home"] {
     --doke-rail-inline-gutter: clamp(36px, 4vw, 52px);
     --doke-rail-available: calc(100vw - var(--doke-rail-sidebar-width) - (var(--doke-rail-inline-gutter) * 2));
@@ -430,7 +432,7 @@ body:is(
   }
 }
 
-@media (min-width: 1180px) {
+@media (min-width: 1200px) {
   body[data-page].has-global-header {
     --doke-rail-inline-gutter: clamp(36px, 4vw, 52px);
     --doke-rail-available: calc(100vw - var(--doke-rail-sidebar-width) - (var(--doke-rail-inline-gutter) * 2));
@@ -446,7 +448,7 @@ body:is(
    shell. On desktop it must still reserve the global sidebar lane before
    centering the header/content rail; otherwise both header and settings content
    become centered under the sidebar instead of the app workspace. */
-@media (min-width: 1025px) {
+@media (min-width: 1200px) {
   body[data-page="configuracoes"].has-global-header > .app-shell > .page.settings-page-frame {
     inline-size: auto;
     width: auto;
@@ -463,7 +465,7 @@ body:is(
    section headers and horizontal card rails start close to the sidebar axis.
    Keep this scoped to the home desktop breakpoint; card anatomy and carousel
    behavior remain owned by components/patterns. */
-@media (min-width: 1180px) {
+@media (min-width: 1200px) {
   body[data-page="home"].has-global-header {
     --doke-visual-rail-max: 1360px;
     --doke-rail-max: var(--doke-visual-rail-max);
@@ -598,10 +600,33 @@ body:is(
   }
 }
 
-@media (min-width: 761px) and (max-width: 1024px) {
+@media (min-width: 761px) and (max-width: 1199px) {
+  body[data-page].has-global-header {
+    --sidebar-width: 0px;
+    --doke-desktop-sidebar-width: 0px;
+    --doke-app-sidebar-width: 0px;
+    --doke-app-shell-sidebar-width: 0px;
+    --doke-rail-sidebar-width: 0px;
+  }
+
   body[data-page].has-global-header > .app-shell {
     display: block;
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  body[data-page].has-global-header > .app-shell > :is(.sidebar, [data-shell-sidebar]) {
+    display: none;
+    visibility: hidden;
+    inline-size: 0;
+    width: 0;
+    min-inline-size: 0;
+    min-width: 0;
+    max-inline-size: 0;
+    max-width: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    pointer-events: none;
   }
 
   body[data-page].has-global-header > .app-shell > .page {
@@ -620,7 +645,7 @@ body:is(
    shell geometry, leaving .page auto-placed in the sidebar column. The layout
    layer owns this grid so every global-header HTML reserves the same sidebar
    lane and centers header/content in the application workspace. */
-@media (min-width: 1025px) {
+@media (min-width: 1200px) {
   body[data-page].has-global-header > .app-shell {
     display: grid;
     grid-template-columns: var(--doke-rail-sidebar-width) minmax(0, 1fr);
@@ -717,7 +742,7 @@ body:is(
    tablet header contracts added side margins inside .app-header__inner, which
    made the buttons drift while the header/content containers themselves still
    measured as aligned. */
-@media (min-width: 761px) and (max-width: 1024px) {
+@media (min-width: 761px) and (max-width: 1199px) {
   body[data-page].has-global-header {
     --doke-header-inline-padding: 0px;
   }
@@ -760,53 +785,5 @@ body:is(
   body:is([data-page="pedidos"], [data-page="notificacoes"]).has-global-header {
     --doke-mobile-app-max: min(var(--doke-page-rail), calc(100vw - 32px));
     --doke-mobile-app-max-source: var(--doke-mobile-app-max);
-  }
-}
-
-
-
-/* Tablet landscape compact-sidebar contract.
-   Scope: landscape tablets with enough horizontal room. The global mobile/tablet
-   rail remains sidebar-free in portrait; landscape gets a slim app rail so the
-   content gains usable width without bringing back the old 272px sidebar. */
-@media (min-width: 900px) and (max-width: 1179px) and (orientation: landscape) {
-  body[data-page].has-global-header {
-    --sidebar-width: 92px;
-    --doke-desktop-sidebar-width: 92px;
-    --doke-app-sidebar-width: 92px;
-    --doke-app-shell-sidebar-width: 92px;
-    --doke-rail-sidebar-width: 92px;
-    --doke-rail-inline-gutter: clamp(20px, 2.4vw, 30px);
-    --doke-rail-available: calc(100vw - var(--doke-rail-sidebar-width) - (var(--doke-rail-inline-gutter) * 2));
-    --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
-    --doke-page-rail: var(--doke-shared-page-width);
-    --doke-header-rail: var(--doke-page-rail);
-    --doke-current-page-rail: var(--doke-page-rail);
-    --rail-max: var(--doke-page-rail);
-  }
-
-  body[data-page].has-global-header > .app-shell {
-    display: grid;
-    grid-template-columns: var(--doke-rail-sidebar-width) minmax(0, 1fr);
-  }
-
-  body[data-page].has-global-header > .app-shell > :is(.sidebar, [data-shell-sidebar]) {
-    display: flex;
-    grid-column: 1;
-    inline-size: var(--doke-rail-sidebar-width);
-    width: var(--doke-rail-sidebar-width);
-    min-inline-size: var(--doke-rail-sidebar-width);
-    min-width: var(--doke-rail-sidebar-width);
-    max-inline-size: var(--doke-rail-sidebar-width);
-    max-width: var(--doke-rail-sidebar-width);
-  }
-
-  body[data-page].has-global-header > .app-shell > .page {
-    grid-column: 2;
-    inline-size: 100%;
-    width: 100%;
-    min-inline-size: 0;
-    min-width: 0;
-    margin-inline: 0;
   }
 }
