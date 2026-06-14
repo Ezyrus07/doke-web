@@ -149,12 +149,10 @@ body:is(
 
 @media (min-width: 1025px) and (max-width: 1199px) {
   body[data-page] {
-    /* Touch tablet landscape remains a drawer/header experience.
-       Do not reserve a persistent sidebar lane before desktop real estate. */
     --doke-rail-sidebar-width: 0px;
-    --doke-rail-inline-gutter: clamp(28px, 3.4vw, 44px);
+    --doke-rail-inline-gutter: clamp(24px, 3.4vw, 40px);
     --doke-rail-available: calc(100vw - (var(--doke-rail-inline-gutter) * 2));
-    --doke-rail-max: min(100%, 1040px);
+    --doke-rail-max: 760px;
     --doke-shared-page-inline: var(--doke-rail-inline-gutter);
     --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
     --doke-page-gutter: var(--doke-rail-inline-gutter);
@@ -448,7 +446,7 @@ body:is(
    shell. On desktop it must still reserve the global sidebar lane before
    centering the header/content rail; otherwise both header and settings content
    become centered under the sidebar instead of the app workspace. */
-@media (min-width: 1200px) {
+@media (min-width: 1025px) {
   body[data-page="configuracoes"].has-global-header > .app-shell > .page.settings-page-frame {
     inline-size: auto;
     width: auto;
@@ -600,33 +598,10 @@ body:is(
   }
 }
 
-@media (min-width: 761px) and (max-width: 1199px) {
-  body[data-page].has-global-header {
-    --sidebar-width: 0px;
-    --doke-desktop-sidebar-width: 0px;
-    --doke-app-sidebar-width: 0px;
-    --doke-app-shell-sidebar-width: 0px;
-    --doke-rail-sidebar-width: 0px;
-  }
-
+@media (min-width: 761px) and (max-width: 1024px) {
   body[data-page].has-global-header > .app-shell {
     display: block;
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  body[data-page].has-global-header > .app-shell > :is(.sidebar, [data-shell-sidebar]) {
-    display: none;
-    visibility: hidden;
-    inline-size: 0;
-    width: 0;
-    min-inline-size: 0;
-    min-width: 0;
-    max-inline-size: 0;
-    max-width: 0;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    pointer-events: none;
   }
 
   body[data-page].has-global-header > .app-shell > .page {
@@ -645,7 +620,7 @@ body:is(
    shell geometry, leaving .page auto-placed in the sidebar column. The layout
    layer owns this grid so every global-header HTML reserves the same sidebar
    lane and centers header/content in the application workspace. */
-@media (min-width: 1200px) {
+@media (min-width: 1025px) {
   body[data-page].has-global-header > .app-shell {
     display: grid;
     grid-template-columns: var(--doke-rail-sidebar-width) minmax(0, 1fr);
@@ -742,7 +717,7 @@ body:is(
    tablet header contracts added side margins inside .app-header__inner, which
    made the buttons drift while the header/content containers themselves still
    measured as aligned. */
-@media (min-width: 761px) and (max-width: 1199px) {
+@media (min-width: 761px) and (max-width: 1024px) {
   body[data-page].has-global-header {
     --doke-header-inline-padding: 0px;
   }
@@ -785,5 +760,32 @@ body:is(
   body:is([data-page="pedidos"], [data-page="notificacoes"]).has-global-header {
     --doke-mobile-app-max: min(var(--doke-page-rail), calc(100vw - 32px));
     --doke-mobile-app-max-source: var(--doke-mobile-app-max);
+  }
+}
+
+/* Global drawer boundary: tablet remains drawer-first, never sidebar-fixed. */
+@media (max-width: 1199px) {
+  body[data-page].has-global-header {
+    --doke-rail-sidebar-width: 0px;
+    --sidebar-width: 0px;
+    --doke-desktop-sidebar-width: 0px;
+    --doke-app-sidebar-width: 0px;
+    --doke-app-shell-sidebar-width: 0px;
+  }
+
+  body[data-page].has-global-header > .app-shell {
+    display: block;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body[data-page].has-global-header > .app-shell > :is(.sidebar, [data-shell-sidebar]) {
+    display: none;
+  }
+
+  body[data-page].has-global-header > .app-shell > .page {
+    grid-column: 1;
+    width: 100%;
+    min-width: 0;
+    margin-inline: 0;
   }
 }

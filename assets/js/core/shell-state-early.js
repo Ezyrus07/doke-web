@@ -13,6 +13,10 @@
     "--home-desktop-content-width"
   ];
 
+  function isTabletLandscapeShell() {
+    return false;
+  }
+
   function isDesktopShell() {
     try {
       return window.matchMedia("(min-width: 1200px)").matches;
@@ -20,6 +24,10 @@
       var width = window.innerWidth || root.clientWidth || 0;
       return width >= 1200;
     }
+  }
+
+  function isTabletShell() {
+    return false;
   }
 
   function isMobileRuntime() {
@@ -60,8 +68,9 @@
   function applyShellState() {
     var desktopShell = isDesktopShell();
     var mobileShell = isMobileRuntime();
-    var shouldCollapse = desktopShell && readCollapsed();
-    var sidebarWidth = desktopShell ? (shouldCollapse ? "92px" : "240px") : "0px";
+    var tabletShell = isTabletShell();
+    var shouldCollapse = desktopShell && !tabletShell && readCollapsed();
+    var sidebarWidth = desktopShell ? (tabletShell ? "92px" : (shouldCollapse ? "92px" : "240px")) : "0px";
 
     syncViewportContract();
     root.classList.toggle(COLLAPSED, shouldCollapse);

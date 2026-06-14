@@ -51,7 +51,7 @@
     const drawer=ensureDrawer();
     const isMobile=()=>innerWidth<=1199;
     let lastOpenAt=0;
-    const triggerSelector='[data-mobile-home-menu-open],[data-sidebar-open],[data-shell-profile],.mobile-toggle,.home-mobile-hero__profile,.orders-page-header__hero-profile,.settings-mobile-header__profile,.detail-topbar__menu';
+    const triggerSelector='[data-mobile-home-menu-open],[data-home-profile-menu-toggle],[data-sidebar-open],[data-sidebar-toggle],[data-shell-profile],[data-drawer-open],[data-mobile-drawer-open],[data-mobile-menu-open],.mobile-toggle,.home-mobile-hero__profile,.orders-page-header__hero-profile,.settings-mobile-header__profile,.detail-topbar__menu';
     const setOpen=(open)=>{
       if(open){
         lastOpenAt=performance.now();
@@ -81,10 +81,10 @@
     };
     window.DokeStandardMobileDrawerOpen=()=>setOpen(true);
     window.DokeStandardMobileDrawerClose=()=>setOpen(false);
-    window.DokeOpenHomeDrawerDirect=window.DokeOpenHomeDrawerDirect||(()=>setOpen(true));
-    window.DokeCloseHomeDrawerDirect=window.DokeCloseHomeDrawerDirect||(()=>setOpen(false));
-    window.DokeHomeDrawerHardOpen=window.DokeHomeDrawerHardOpen||(()=>setOpen(true));
-    window.DokeHomeDrawerHardClose=window.DokeHomeDrawerHardClose||(()=>setOpen(false));
+    window.DokeOpenHomeDrawerDirect=()=>setOpen(true);
+    window.DokeCloseHomeDrawerDirect=()=>setOpen(false);
+    window.DokeHomeDrawerHardOpen=()=>setOpen(true);
+    window.DokeHomeDrawerHardClose=()=>setOpen(false);
     document.addEventListener('pointerdown',handleOpen,true);
     document.addEventListener('click',(event)=>{
       const openTrigger=event.target.closest(triggerSelector);

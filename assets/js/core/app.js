@@ -74,8 +74,9 @@ const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalh
 const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
-const DESKTOP_SIDEBAR_MIN_WIDTH = 1200;
-const isMobileSidebarViewport = () => window.innerWidth < DESKTOP_SIDEBAR_MIN_WIDTH;
+const isTabletLandscapeSidebarViewport = () => false;
+const isMobileSidebarViewport = () => window.innerWidth < 1200;
+const isTabletSidebarViewport = () => false;
 
 
 if (window.localStorage.getItem(THEME_STORAGE_KEY) === "dark") {
@@ -110,8 +111,9 @@ const syncSidebarCollapsedState = () => {
     return;
   }
 
-  const isCollapsed = readStoredSidebarCollapsed();
-  const sidebarWidth = isCollapsed ? "92px" : "240px";
+  const isTabletSidebar = isTabletSidebarViewport();
+  const isCollapsed = !isTabletSidebar && readStoredSidebarCollapsed();
+  const sidebarWidth = isTabletSidebar ? "92px" : isCollapsed ? "92px" : "240px";
   body.classList.toggle("sidebar-collapsed", isCollapsed);
   root.classList.toggle(SIDEBAR_COLLAPSED_HTML_CLASS, isCollapsed);
   root.classList.toggle(SIDEBAR_EXPANDED_HTML_CLASS, !isCollapsed);
