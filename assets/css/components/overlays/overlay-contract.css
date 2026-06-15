@@ -30,15 +30,14 @@ body:has(.ui-modal:not([hidden])),
 body:has(.wallet-modal:not([hidden])),
 body:has(.media-lightbox:not([hidden])),
 body:has(.before-after-preview:not([hidden])),
-body:has(.worker-preview:not([hidden])),
-body:has(.home-mobile-drawer:not([hidden])) {
+body:has(.worker-preview:not([hidden])) {
   overflow: hidden;
 }
 
 /* =============================
    Root overlays / scrims
    ============================= */
-:where(.ui-modal, .wallet-modal, .media-lightbox, .before-after-preview, .worker-preview, .home-mobile-drawer) {
+:where(.ui-modal, .wallet-modal, .media-lightbox, .before-after-preview, .worker-preview) {
   box-sizing: border-box;
 }
 
@@ -52,7 +51,7 @@ body:has(.home-mobile-drawer:not([hidden])) {
   overflow: hidden;
 }
 
-:where(.ui-modal__backdrop, .wallet-modal__scrim, .media-lightbox__backdrop, .before-after-preview__backdrop, .worker-preview__backdrop, .home-mobile-drawer__backdrop) {
+:where(.ui-modal__backdrop, .wallet-modal__scrim, .media-lightbox__backdrop, .before-after-preview__backdrop, .worker-preview__backdrop) {
   position: fixed;
   inset: 0;
   background: var(--doke-overlay-scrim);
@@ -317,30 +316,6 @@ body:has(.home-mobile-drawer:not([hidden])) {
   padding: 14px;
 }
 
-/* =============================
-   Mobile drawers
-   ============================= */
-:where(.home-mobile-drawer:not([hidden])) {
-  position: fixed;
-  inset: 0;
-  z-index: var(--doke-overlay-z-drawer);
-  display: block;
-}
-
-:where(.home-mobile-drawer__panel) {
-  position: fixed;
-  inset-block: 0;
-  inset-inline-start: 0;
-  width: min(88vw, 360px);
-  max-width: calc(100vw - 32px);
-  padding-block: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-bottom));
-  border-right: 1px solid var(--doke-overlay-border);
-  border-radius: 0 28px 28px 0;
-  background: #ffffff;
-  box-shadow: 24px 0 60px rgba(15, 23, 42, .24);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
 
 /* =============================
    Media overlay stabilization
@@ -439,10 +414,6 @@ body:has(.home-mobile-drawer:not([hidden])) {
 }
 
 @media (max-width: 430px) {
-  :where(.home-mobile-drawer__panel) {
-    width: min(92vw, 342px);
-    border-radius: 0 24px 24px 0;
-  }
 
   :where(.ui-modal__title, .profile-edit-modal__title, .profile-followers-modal__title, .address-modal__title, .detail-budget-modal__title, .wallet-modal__title) {
     font-size: 1.08rem;

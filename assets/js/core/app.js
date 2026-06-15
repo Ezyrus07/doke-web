@@ -442,7 +442,6 @@ const preloadedStyleHrefs = new Set();
 const INTERNAL_VIEW_SCRIPT_HINTS = {
   "/index.html": [
     "assets/js/pages/search-data.js",
-    "assets/js/ui/mobile-drawer.js",
     "assets/js/pages/home/filters.js",
     "assets/js/pages/home/search.js",
     "assets/js/pages/home.js"

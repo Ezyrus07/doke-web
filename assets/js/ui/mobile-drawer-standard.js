@@ -234,11 +234,16 @@
     });
   }
 
+  var initialized = false;
+
   function init() {
+    if (initialized || !document.body) return;
+    initialized = true;
     ensureDrawer();
     neutralizeDesktopSidebar();
     bindTriggers();
     document.addEventListener('pointerdown', handleOpen, true);
+    document.addEventListener('touchstart', handleOpen, { capture: true, passive: false });
     document.addEventListener('click', handleClick, true);
     document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape') setOpen(false);
@@ -264,6 +269,6 @@
   window.DokeHomeDrawerHardClose = function () { return setOpen(false); };
   window.DokeCanonicalDrawerEnsure = ensureDrawer;
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
-  else init();
+  if (document.body) init();
+  else document.addEventListener('DOMContentLoaded', init, { once: true });
 })();
