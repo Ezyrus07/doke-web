@@ -48,6 +48,8 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     citySelect: queryAny('[data-results-city-select]'),
     neighborhoodSelect: queryAny('[data-results-neighborhood-select]'),
     cepFillButton: queryAny('[data-results-cep-fill]'),
+    cepRow: queryAny('[data-results-cep-row]'),
+    cepInput: queryAny('[data-results-cep-input]'),
     loadingState: queryAny('[data-results-loading]'),
     resultsGrid: queryAny('[data-results-grid]'),
     resultsEmptyTitle: queryAny('[data-results-empty-title]'),
@@ -114,6 +116,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     previewController = null;
     closeResultsSearchDropdown();
     closeModal(false);
+    closeInlineCep(false);
   };
 
 
@@ -919,14 +922,43 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     activeModalResolver = null;
   };
 
-  const applyCep = async () => {
-    const cep = await openCepModal();
-    if (!cep) return;
+  const formatCepInputValue = (value = '') => {
+    const cleanValue = String(value || '').replace(/\D/g, '').slice(0, 8);
+    if (cleanValue.length <= 5) return cleanValue;
+    return `${cleanValue.slice(0, 5)}-${cleanValue.slice(5)}`;
+  };
 
-    const cleanCep = String(cep).replace(/\D/g, '');
+  const openInlineCep = () => {
+    if (!els.cepInput) return;
+    els.cepRow?.classList.add('is-editing');
+    if (els.cepFillButton) els.cepFillButton.hidden = true;
+    els.cepInput.hidden = false;
+    els.cepInput.removeAttribute('aria-invalid');
+    window.requestAnimationFrame(() => {
+      els.cepInput.focus();
+      els.cepInput.select?.();
+    });
+  };
+
+  const closeInlineCep = (clearValue = false) => {
+    if (!els.cepInput) return;
+    els.cepRow?.classList.remove('is-editing');
+    els.cepInput.hidden = true;
+    if (els.cepFillButton) els.cepFillButton.hidden = false;
+    if (clearValue) {
+      els.cepInput.value = '';
+      els.cepInput.removeAttribute('aria-invalid');
+    }
+  };
+
+  const applyCepValue = (cep) => {
+    const cleanCep = String(cep || '').replace(/\D/g, '');
     const formattedCep = cleanCep.length === 8 ? `${cleanCep.slice(0, 5)}-${cleanCep.slice(5)}` : cep;
     const cepData = cepLookup[formattedCep] || cepLookup[cleanCep];
-    if (!cepData) return;
+    if (!cepData) {
+      els.cepInput?.setAttribute('aria-invalid', 'true');
+      return false;
+    }
 
     if (els.stateSelect) {
       els.stateSelect.value = cepData.state || cepData.staté || '';
@@ -944,6 +976,28 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     }
 
     renderResults();
+    return true;
+  };
+
+  const applyCep = async () => {
+    const cep = await openCepModal();
+    if (!cep) return;
+    applyCepValue(cep);
+  };
+
+  const applyInlineCep = () => {
+    if (!els.cepInput) return;
+    const cleanCep = String(els.cepInput.value || '').replace(/\D/g, '');
+    if (!cleanCep) {
+      closeInlineCep(true);
+      return;
+    }
+    if (cleanCep.length < 8) return;
+    const applied = applyCepValue(els.cepInput.value);
+    if (applied) {
+      if (els.cepFillButton) els.cepFillButton.textContent = formatCepInputValue(els.cepInput.value);
+      closeInlineCep(false);
+    }
   };
 
   const handleSearchSubmit = (event, sourceInput) => {
@@ -1087,7 +1141,31 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     }
   }, { signal });
   els.cepFillButton?.addEventListener('click', () => {
-    applyCep();
+    openInlineCep();
+  }, { signal });
+
+  els.cepInput?.addEventListener('input', () => {
+    els.cepInput.value = formatCepInputValue(els.cepInput.value);
+    els.cepInput.removeAttribute('aria-invalid');
+    if (String(els.cepInput.value || '').replace(/\D/g, '').length === 8) {
+      applyInlineCep();
+    }
+  }, { signal });
+
+  els.cepInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeInlineCep(true);
+      return;
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      applyInlineCep();
+    }
+  }, { signal });
+
+  els.cepInput?.addEventListener('blur', () => {
+    applyInlineCep();
   }, { signal });
 
   els.filtersForm.addEventListener('submit', (event) => {
