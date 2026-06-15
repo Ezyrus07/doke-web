@@ -1,34 +1,35 @@
-/* Doke Web — canonical mobile/tablet drawer contract
-   Responsibility: one shared off-canvas menu for touch viewports.
-   Scope: visual anatomy and state only. JS owns open/close behavior.
-   Desktop persistent sidebar remains a separate shell component. */
+/* Doke Web — canonical mobile/tablet drawer contract v4
+   Responsibility: one shared off-canvas menu for every touch viewport.
+   Pages must not restyle drawer anatomy. This file is loaded after page
+   foundations and uses a canonical data attribute to outrank legacy page skins
+   without priority flags. */
 
 :root {
   --doke-drawer-breakpoint-max: 1199px;
-  --doke-drawer-panel-width: min(84vw, 318px);
-  --doke-drawer-panel-max: calc(100vw - 28px);
+  --doke-drawer-width: clamp(288px, 82vw, 316px);
+  --doke-drawer-edge: max(10px, env(safe-area-inset-left, 0px));
+  --doke-drawer-top: max(10px, env(safe-area-inset-top, 0px));
+  --doke-drawer-bottom: max(10px, env(safe-area-inset-bottom, 0px));
 }
 
 .home-mobile-drawer,
-.mobile-drawer,
 [data-mobile-home-drawer],
 [data-mobile-drawer],
+.mobile-drawer,
 .app-mobile-drawer {
   position: fixed;
   inset: 0;
-  z-index: var(--doke-z-drawer, 1300);
+  z-index: var(--doke-z-drawer, 1600);
   display: none;
   pointer-events: none;
 }
 
 .home-mobile-drawer.is-open,
-.mobile-drawer.is-open,
 [data-mobile-home-drawer].is-open,
 [data-mobile-drawer].is-open,
-body.mobile-home-drawer-open .home-mobile-drawer,
-body.doke-mobile-drawer-open .home-mobile-drawer,
-body.mobile-menu-open .mobile-drawer,
-body.mobile-menu-open [data-mobile-drawer] {
+.mobile-drawer.is-open,
+body.mobile-home-drawer-open [data-mobile-drawer-authority="canonical"],
+body.doke-mobile-drawer-open [data-mobile-drawer-authority="canonical"] {
   display: block;
   pointer-events: auto;
 }
@@ -41,9 +42,8 @@ body.doke-mobile-drawer-open {
 
 .home-mobile-drawer__backdrop,
 .mobile-drawer__backdrop,
-.mobile-drawer-backdrop,
-[data-mobile-home-menu-close].home-mobile-drawer__backdrop,
-[data-mobile-drawer-backdrop] {
+[data-mobile-drawer-backdrop],
+[data-mobile-home-menu-close].home-mobile-drawer__backdrop {
   position: absolute;
   inset: 0;
   background: rgba(14, 31, 54, 0.34);
@@ -54,24 +54,22 @@ body.doke-mobile-drawer-open {
 }
 
 .home-mobile-drawer.is-open .home-mobile-drawer__backdrop,
-.mobile-drawer.is-open .mobile-drawer__backdrop,
-[data-mobile-home-drawer].is-open .home-mobile-drawer__backdrop,
-[data-mobile-drawer].is-open [data-mobile-drawer-backdrop] {
+[data-mobile-drawer-authority="canonical"].is-open .home-mobile-drawer__backdrop,
+.mobile-drawer.is-open .mobile-drawer__backdrop {
   opacity: 1;
 }
 
 .home-mobile-drawer__panel,
 .mobile-drawer__panel,
-.mobile-drawer-panel,
 [data-mobile-drawer-panel] {
   position: absolute;
-  top: max(12px, env(safe-area-inset-top, 0px));
-  bottom: max(12px, env(safe-area-inset-bottom, 0px));
-  left: max(10px, env(safe-area-inset-left, 0px));
+  top: var(--doke-drawer-top);
+  bottom: var(--doke-drawer-bottom);
+  left: var(--doke-drawer-edge);
   display: flex;
   flex-direction: column;
-  width: var(--doke-drawer-panel-width);
-  max-width: var(--doke-drawer-panel-max);
+  width: min(var(--doke-drawer-width), calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
   min-width: 0;
   overflow: hidden;
   border: 1px solid rgba(183, 203, 224, 0.82);
@@ -85,19 +83,36 @@ body.doke-mobile-drawer-open {
 }
 
 .home-mobile-drawer.is-open .home-mobile-drawer__panel,
-.mobile-drawer.is-open .mobile-drawer__panel,
-[data-mobile-home-drawer].is-open .home-mobile-drawer__panel,
-[data-mobile-drawer].is-open [data-mobile-drawer-panel] {
+[data-mobile-drawer-authority="canonical"].is-open .home-mobile-drawer__panel,
+.mobile-drawer.is-open .mobile-drawer__panel {
   transform: translate3d(0, 0, 0);
   opacity: 1;
 }
 
-.home-mobile-drawer__header,
-.mobile-drawer__header,
-.mobile-drawer-header {
+/* Canonical skin. These selectors intentionally outrank old page-scoped drawer
+   skins such as body.orders-page-shell .home-mobile-drawer__panel. */
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__panel {
+  top: var(--doke-drawer-top);
+  bottom: var(--doke-drawer-bottom);
+  left: var(--doke-drawer-edge);
+  width: min(var(--doke-drawer-width), calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  min-width: 0;
+  border: 1px solid rgba(183, 203, 224, 0.82);
+  border-radius: 26px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 252, 255, 0.96) 100%);
+  box-shadow: 0 28px 70px rgba(15, 45, 80, 0.28), 0 8px 24px rgba(15, 45, 80, 0.12);
+  transform: translate3d(-112%, 0, 0);
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"].is-open .home-mobile-drawer__panel {
+  transform: translate3d(0, 0, 0);
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__header {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 42px;
+  grid-template-columns: minmax(0, 1fr) 40px;
   align-items: center;
   gap: 10px;
   padding: 14px 14px 12px;
@@ -105,7 +120,7 @@ body.doke-mobile-drawer-open {
   background: linear-gradient(180deg, #ffffff 0%, rgba(247, 251, 255, 0.94) 100%);
 }
 
-.home-mobile-drawer__profile {
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__profile {
   min-width: 0;
   display: flex;
   align-items: center;
@@ -115,7 +130,7 @@ body.doke-mobile-drawer-open {
   border-radius: var(--radius-md, 16px);
 }
 
-.home-mobile-drawer__avatar {
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__avatar {
   width: 42px;
   height: 42px;
   min-width: 42px;
@@ -125,19 +140,20 @@ body.doke-mobile-drawer-open {
   color: #fff;
   font-size: 15px;
   font-weight: 800;
+  line-height: 1;
   letter-spacing: -0.04em;
   background: linear-gradient(135deg, #1678d7 0%, #2fbea6 100%);
   box-shadow: 0 8px 18px rgba(31, 147, 184, 0.20);
 }
 
-.home-mobile-drawer__profile-copy {
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__profile-copy {
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 1px;
 }
 
-.home-mobile-drawer__profile-copy strong {
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__profile-copy strong {
   max-width: 170px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -149,7 +165,7 @@ body.doke-mobile-drawer-open {
   letter-spacing: -0.035em;
 }
 
-.home-mobile-drawer__profile-copy span {
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__profile-copy span {
   max-width: 170px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -160,44 +176,28 @@ body.doke-mobile-drawer-open {
   font-weight: 600;
 }
 
-.home-mobile-drawer__profile-arrow {
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__profile-arrow {
   display: none;
 }
 
-.home-mobile-drawer__close,
-.mobile-drawer__close,
-.mobile-drawer-close,
-[data-mobile-drawer-close] {
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__close {
+  appearance: none;
+  -webkit-appearance: none;
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
-  min-width: 42px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
   border: 1px solid rgba(198, 216, 235, 0.9);
-  border-radius: 15px;
+  border-radius: 14px;
   background: #fff;
   color: #28527c;
   box-shadow: 0 8px 18px rgba(35, 81, 124, 0.08);
   cursor: pointer;
 }
 
-.home-mobile-drawer__close svg,
-.mobile-drawer__close svg,
-.home-mobile-drawer__item-icon svg,
-.mobile-drawer__link svg,
-.mobile-drawer-link svg {
-  width: 18px;
-  height: 18px;
-  display: block;
-  flex: none;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.1;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.home-mobile-drawer__content {
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__content {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -206,9 +206,7 @@ body.doke-mobile-drawer-open {
   overscroll-behavior: contain;
 }
 
-.home-mobile-drawer__nav,
-.mobile-drawer__nav,
-.mobile-drawer-nav {
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__nav {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -216,10 +214,9 @@ body.doke-mobile-drawer-open {
   padding: 0;
 }
 
-.home-mobile-drawer__item,
-.mobile-drawer__link,
-.mobile-drawer-link,
-.mobile-drawer nav a {
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__item {
+  appearance: none;
+  -webkit-appearance: none;
   position: relative;
   width: 100%;
   min-height: 48px;
@@ -242,26 +239,24 @@ body.doke-mobile-drawer-open {
   text-align: left;
   cursor: pointer;
   box-shadow: none;
+  transform: none;
   transition: background-color 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
 }
 
-.home-mobile-drawer__item:hover,
-.home-mobile-drawer__item:focus-visible,
-.mobile-drawer__link:hover,
-.mobile-drawer__link:focus-visible,
-.mobile-drawer nav a:hover,
-.mobile-drawer nav a:focus-visible {
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__item:hover,
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__item:focus-visible {
   background: rgba(232, 242, 252, 0.86);
   outline: none;
 }
 
-.home-mobile-drawer__item:active {
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__item:active {
   transform: scale(0.985);
 }
 
-.home-mobile-drawer__item-icon {
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__item-icon {
   width: 34px;
   height: 34px;
+  min-width: 34px;
   border-radius: var(--radius-compact, 12px);
   display: grid;
   place-items: center;
@@ -270,14 +265,33 @@ body.doke-mobile-drawer-open {
   box-shadow: inset 0 0 0 1px rgba(190, 215, 237, 0.66);
 }
 
-.home-mobile-drawer__item-label {
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] :is(svg, path, circle, rect, line, polyline) {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] :is(.home-mobile-drawer__item-icon svg, .home-mobile-drawer__close svg) {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  display: block;
+  flex: none;
+  stroke-width: 2.1;
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__item-label {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: currentColor;
+  background: transparent;
 }
 
-.home-mobile-drawer__item-badge {
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__item-badge {
   min-width: 24px;
   height: 24px;
   padding: 0 8px;
@@ -291,132 +305,46 @@ body.doke-mobile-drawer-open {
   font-weight: 800;
 }
 
-.home-mobile-drawer__item--active,
-.home-mobile-drawer__item[aria-current="page"],
-.mobile-drawer__link[aria-current="page"],
-.mobile-drawer-link[aria-current="page"],
-.mobile-drawer nav a[aria-current="page"] {
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] :is(.home-mobile-drawer__item--active, .home-mobile-drawer__item[aria-current="page"]) {
   background: linear-gradient(135deg, #2f79bb 0%, #20669e 100%);
   color: #fff;
   box-shadow: 0 10px 22px rgba(38, 107, 170, 0.22);
 }
 
-.home-mobile-drawer__item--active .home-mobile-drawer__item-icon,
-.home-mobile-drawer__item[aria-current="page"] .home-mobile-drawer__item-icon {
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] :is(.home-mobile-drawer__item--active, .home-mobile-drawer__item[aria-current="page"]) .home-mobile-drawer__item-icon {
   background: rgba(255, 255, 255, 0.16);
   color: #fff;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
 }
 
-.home-mobile-drawer__divider {
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] :is(.home-mobile-drawer__item--active, .home-mobile-drawer__item[aria-current="page"]) :is(.home-mobile-drawer__item-label, .home-mobile-drawer__item-badge) {
+  color: #fff;
+  background: transparent;
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__divider {
   height: 1px;
   margin: 10px 4px;
   background: rgba(206, 221, 236, 0.88);
 }
 
-@media (min-width: 1200px) {
-  .home-mobile-drawer,
-  .mobile-drawer,
-  [data-mobile-home-drawer],
-  [data-mobile-drawer],
-  .app-mobile-drawer {
-    display: none;
+@media (max-width: 360px) {
+  :root {
+    --doke-drawer-width: min(292px, calc(100vw - 24px));
+  }
+
+  .home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__profile-copy strong,
+  .home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__profile-copy span {
+    max-width: 140px;
   }
 }
 
-/* Canonical drawer authority — loaded last by the HTMLs.
-   This block neutralizes legacy desktop sidebar fallback in touch widths and
-   keeps the shared drawer visual identical across pages. */
-@media (max-width: 1199px) {
-  body.sidebar-open,
-  body.sidebar-collapsed,
-  html.doke-sidebar-expanded,
-  html.doke-sidebar-collapsed {
-    --sidebar-width: 0px;
-    --doke-current-sidebar-width: 0px;
-    --doke-desktop-sidebar-width: 0px;
-    --doke-app-sidebar-width: 0px;
-    --doke-app-shell-sidebar-width: 0px;
-  }
-
-  body > .app-shell,
-  body[data-page] > .app-shell,
-  body.app-shell-page > .app-shell,
-  body.doke-app-shell-page > .app-shell,
-  body.internal-shell-page > .app-shell {
-    grid-template-columns: minmax(0, 1fr) !important;
-    padding-left: 0;
-    margin-left: 0;
-  }
-
-  body > .app-shell > :is(.sidebar, [data-shell-sidebar]),
-  body[data-page] > .app-shell > :is(.sidebar, [data-shell-sidebar]),
-  body.app-shell-page > .app-shell > :is(.sidebar, [data-shell-sidebar]),
-  body.doke-app-shell-page > .app-shell > :is(.sidebar, [data-shell-sidebar]),
-  body.internal-shell-page > .app-shell > :is(.sidebar, [data-shell-sidebar]),
-  body.sidebar-open > .app-shell > :is(.sidebar, [data-shell-sidebar]),
-  body.sidebar-collapsed > .app-shell > :is(.sidebar, [data-shell-sidebar]) {
-    display: none !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-    inline-size: 0 !important;
-    width: 0 !important;
-    min-inline-size: 0 !important;
-    min-width: 0 !important;
-    max-inline-size: 0 !important;
-    max-width: 0 !important;
-    overflow: hidden !important;
-    transform: none !important;
-  }
-
-  body > .app-shell > .page,
-  body[data-page] > .app-shell > .page,
-  body.app-shell-page > .app-shell > .page,
-  body.doke-app-shell-page > .app-shell > .page,
-  body.internal-shell-page > .app-shell > .page {
-    grid-column: 1 !important;
-    inline-size: 100%;
-    width: 100%;
-    min-inline-size: 0;
-    min-width: 0;
-    margin-inline: 0;
-  }
-
-  .home-mobile-drawer.doke-global-mobile-drawer,
-  [data-mobile-drawer-authority="canonical"] {
-    position: fixed;
-    inset: 0;
-    z-index: 1600;
+@media (min-width: 1200px) {
+  .home-mobile-drawer,
+  [data-mobile-home-drawer],
+  [data-mobile-drawer],
+  .mobile-drawer,
+  .app-mobile-drawer {
     display: none;
-    pointer-events: none;
-  }
-
-  .home-mobile-drawer.doke-global-mobile-drawer.is-open,
-  [data-mobile-drawer-authority="canonical"].is-open,
-  body.mobile-home-drawer-open [data-mobile-drawer-authority="canonical"],
-  body.doke-mobile-drawer-open [data-mobile-drawer-authority="canonical"] {
-    display: block;
-    pointer-events: auto;
-  }
-
-  [data-mobile-drawer-authority="canonical"] .home-mobile-drawer__panel {
-    width: min(84vw, 318px);
-    max-width: calc(100vw - 28px);
-  }
-
-  [data-mobile-drawer-authority="canonical"] :is(svg, path, circle, rect, line, polyline) {
-    fill: none;
-    stroke: currentColor;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  [data-mobile-drawer-authority="canonical"] .home-mobile-drawer__item-icon svg,
-  [data-mobile-drawer-authority="canonical"] .home-mobile-drawer__close svg {
-    width: 18px;
-    height: 18px;
-    min-width: 18px;
-    min-height: 18px;
-    stroke-width: 2.1;
   }
 }

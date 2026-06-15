@@ -1,12 +1,13 @@
-/* Doke Web — canonical mobile/tablet drawer authority
-   Responsibility: one shared drawer runtime for every HTML up to 1199px.
-   The desktop sidebar is not a mobile/tablet fallback. */
+/* Doke Web — canonical mobile/tablet drawer authority v4
+   Responsibility: inject and control one shared drawer in every HTML up to 1199px.
+   Desktop sidebar is never a fallback for touch/tablet navigation. */
 (function () {
-  if (window.__DokeCanonicalDrawerAuthorityV3) return;
-  window.__DokeCanonicalDrawerAuthorityV3 = true;
+  if (window.__DokeCanonicalDrawerAuthorityV4) return;
+  window.__DokeCanonicalDrawerAuthorityV4 = true;
 
-  const BREAKPOINT = 1199;
-  const ICONS = {
+  var BREAKPOINT = 1199;
+
+  var ICONS = {
     home: '<svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5.5 9.5V20h13V9.5"></path></svg>',
     orders: '<svg viewBox="0 0 24 24"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg>',
     messages: '<svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg>',
@@ -18,7 +19,7 @@
     close: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>'
   };
 
-  const OPEN_SELECTOR = [
+  var OPEN_SELECTOR = [
     '[data-mobile-home-menu-open]',
     '[data-home-profile-menu-toggle]',
     '[data-mobile-menu-open]',
@@ -30,114 +31,141 @@
     '.home-mobile-hero__profile',
     '.orders-page-header__hero-profile',
     '.settings-mobile-header__profile',
-    '.detail-topbar__menu'
+    '.detail-topbar__menu',
+    '.messages-sidebar-tools__menu',
+    '.doke-mobile-page-header__identity'
   ].join(',');
 
-  const CLOSE_SELECTOR = '[data-mobile-home-menu-close], [data-mobile-drawer-close], .home-mobile-drawer__close';
-  const DRAWER_SELECTOR = '[data-mobile-home-drawer], .home-mobile-drawer, [data-mobile-drawer], .app-mobile-drawer';
-  const SHELL_SIDEBAR_SELECTOR = '.app-shell > .sidebar, .app-shell > [data-shell-sidebar], [data-shell-sidebar].sidebar';
+  var CLOSE_SELECTOR = '[data-mobile-home-menu-close], [data-mobile-drawer-close], .home-mobile-drawer__close';
+  var DRAWER_SELECTOR = '[data-mobile-home-drawer], .home-mobile-drawer, [data-mobile-drawer], .mobile-drawer, .app-mobile-drawer';
+  var SHELL_SIDEBAR_SELECTOR = '.app-shell > .sidebar, .app-shell > [data-shell-sidebar], [data-shell-sidebar].sidebar';
 
-  const isDrawerViewport = () => (window.matchMedia ? window.matchMedia('(max-width: ' + BREAKPOINT + 'px)').matches : window.innerWidth <= BREAKPOINT);
-  const cleanPath = (value) => String(value || '').split('?')[0].split('#')[0].split('/').pop().toLowerCase() || 'index.html';
-  const routeGroup = (path) => {
-    const current = cleanPath(path);
-    if (current === 'detalhe-anuncio.html' || current === 'resultados.html') return 'index.html';
-    if (current === 'pagamento-profissional.html' || current === 'avaliacao.html' || current === 'avaliacao-profissional.html') return 'pedidos.html';
+  function isDrawerViewport() {
+    if (window.matchMedia) return window.matchMedia('(max-width: ' + BREAKPOINT + 'px)').matches;
+    return (window.innerWidth || document.documentElement.clientWidth || 0) <= BREAKPOINT;
+  }
+
+  function cleanPath(value) {
+    return String(value || '').split('?')[0].split('#')[0].split('/').pop().toLowerCase() || 'index.html';
+  }
+
+  function routeGroup(path) {
+    var current = cleanPath(path);
+    if (current === '' || current === 'index.html' || current === 'resultados.html' || current === 'detalhe-anuncio.html') return 'index.html';
+    if (current === 'pedidos.html' || current === 'pagamento-profissional.html' || current === 'avaliacao.html' || current === 'avaliacao-profissional.html') return 'pedidos.html';
+    if (current === 'mensagens.html') return 'mensagens.html';
+    if (current === 'notificacoes.html' || current === 'novidades.html') return 'notificacoes.html';
+    if (current === 'comunidade.html' || current === 'comunidade-interna.html') return 'comunidade.html';
+    if (current === 'configuracoes.html' || current === 'ajuda.html') return 'configuracoes.html';
+    if (current === 'perfil.html' || current === 'carteira.html' || current === 'tornar-profissional.html' || current === 'anunciar-servico.html') return 'perfil.html';
     return current;
-  };
+  }
 
-  const item = ({ href, label, icon, badge, button }) => {
-    const tag = button ? 'button' : 'a';
-    const attrs = button ? 'type="button" data-profile-logout' : 'href="' + href + '"';
-    return '<' + tag + ' class="home-mobile-drawer__item' + (button ? ' home-mobile-drawer__item--button' : '') + '" ' + attrs + '>' +
-      '<span class="home-mobile-drawer__item-icon" aria-hidden="true">' + ICONS[icon] + '</span>' +
-      '<span class="home-mobile-drawer__item-label">' + label + '</span>' +
-      (badge ? '<span class="home-mobile-drawer__item-badge">' + badge + '</span>' : '') +
+  function item(options) {
+    var tag = options.button ? 'button' : 'a';
+    var attrs = options.button ? 'type="button" data-profile-logout' : 'href="' + options.href + '"';
+    return '<' + tag + ' class="home-mobile-drawer__item' + (options.button ? ' home-mobile-drawer__item--button' : '') + '" ' + attrs + '>' +
+      '<span class="home-mobile-drawer__item-icon" aria-hidden="true">' + ICONS[options.icon] + '</span>' +
+      '<span class="home-mobile-drawer__item-label">' + options.label + '</span>' +
+      (options.badge ? '<span class="home-mobile-drawer__item-badge">' + options.badge + '</span>' : '') +
       '</' + tag + '>';
-  };
+  }
 
-  const markup = () => [
-    '<div class="home-mobile-drawer__backdrop" data-mobile-home-menu-close></div>',
-    '<div class="home-mobile-drawer__panel" role="dialog" aria-modal="true" aria-label="Menu da conta">',
-      '<div class="home-mobile-drawer__header">',
-        '<a class="home-mobile-drawer__profile" href="perfil.html?mode=owner&panel=posts">',
-          '<span class="home-mobile-drawer__avatar">DK</span>',
-          '<span class="home-mobile-drawer__profile-copy"><strong>Gabriel</strong><span>Editar meu perfil</span></span>',
-          '<span class="home-mobile-drawer__profile-arrow" aria-hidden="true"></span>',
-        '</a>',
-        '<button class="home-mobile-drawer__close" type="button" data-mobile-home-menu-close aria-label="Fechar menu lateral">' + ICONS.close + '</button>',
-      '</div>',
-      '<div class="home-mobile-drawer__content">',
-        '<nav class="home-mobile-drawer__nav" aria-label="Menu principal mobile">',
-          item({ href: 'index.html', label: 'Início', icon: 'home' }),
-          item({ href: 'pedidos.html', label: 'Pedidos', icon: 'orders' }),
-          item({ href: 'mensagens.html', label: 'Mensagens', icon: 'messages' }),
-          item({ href: 'notificacoes.html', label: 'Notificações', icon: 'notifications', badge: '3' }),
-          item({ href: 'comunidade.html', label: 'Comunidade', icon: 'community' }),
-        '</nav>',
-        '<div class="home-mobile-drawer__divider" aria-hidden="true"></div>',
-        '<nav class="home-mobile-drawer__nav" aria-label="Conta">',
-          item({ href: 'perfil.html?mode=owner&panel=posts', label: 'Meu perfil', icon: 'profile' }),
-          item({ href: 'configuracoes.html', label: 'Configurações', icon: 'settings' }),
-          item({ label: 'Sair', icon: 'logout', button: true }),
-        '</nav>',
-      '</div>',
-    '</div>'
-  ].join('');
+  function markup() {
+    return [
+      '<div class="home-mobile-drawer__backdrop" data-mobile-home-menu-close></div>',
+      '<div class="home-mobile-drawer__panel" role="dialog" aria-modal="true" aria-label="Menu da conta">',
+        '<div class="home-mobile-drawer__header">',
+          '<a class="home-mobile-drawer__profile" href="perfil.html?mode=owner&panel=posts">',
+            '<span class="home-mobile-drawer__avatar">DK</span>',
+            '<span class="home-mobile-drawer__profile-copy"><strong>Gabriel</strong><span>Editar meu perfil</span></span>',
+            '<span class="home-mobile-drawer__profile-arrow" aria-hidden="true"></span>',
+          '</a>',
+          '<button class="home-mobile-drawer__close" type="button" data-mobile-home-menu-close aria-label="Fechar menu lateral">' + ICONS.close + '</button>',
+        '</div>',
+        '<div class="home-mobile-drawer__content">',
+          '<nav class="home-mobile-drawer__nav" aria-label="Menu principal mobile">',
+            item({ href: 'index.html', label: 'Início', icon: 'home' }),
+            item({ href: 'pedidos.html', label: 'Pedidos', icon: 'orders' }),
+            item({ href: 'mensagens.html', label: 'Mensagens', icon: 'messages' }),
+            item({ href: 'notificacoes.html', label: 'Notificações', icon: 'notifications', badge: '3' }),
+            item({ href: 'comunidade.html', label: 'Comunidade', icon: 'community' }),
+          '</nav>',
+          '<div class="home-mobile-drawer__divider" aria-hidden="true"></div>',
+          '<nav class="home-mobile-drawer__nav" aria-label="Conta">',
+            item({ href: 'perfil.html?mode=owner&panel=posts', label: 'Meu perfil', icon: 'profile' }),
+            item({ href: 'configuracoes.html', label: 'Configurações', icon: 'settings' }),
+            item({ label: 'Sair', icon: 'logout', button: true }),
+          '</nav>',
+        '</div>',
+      '</div>'
+    ].join('');
+  }
 
-  const neutralizeDesktopSidebar = () => {
+  function removeLegacyDrawers(keep) {
+    Array.prototype.slice.call(document.querySelectorAll(DRAWER_SELECTOR)).forEach(function (node) {
+      if (node !== keep) node.remove();
+    });
+  }
+
+  function neutralizeDesktopSidebar() {
     if (!isDrawerViewport()) return;
     document.body.classList.remove('sidebar-open', 'sidebar-collapsed');
     document.documentElement.classList.remove('doke-sidebar-expanded', 'doke-sidebar-collapsed');
-    document.querySelectorAll(SHELL_SIDEBAR_SELECTOR).forEach((sidebar) => {
+    document.documentElement.setAttribute('data-doke-touch-drawer-authority', 'canonical');
+    Array.prototype.slice.call(document.querySelectorAll(SHELL_SIDEBAR_SELECTOR)).forEach(function (sidebar) {
       sidebar.setAttribute('aria-hidden', 'true');
       sidebar.setAttribute('data-drawer-disabled-sidebar', 'true');
     });
-  };
+  }
 
-  const ensureDrawer = () => {
-    const existing = Array.from(document.querySelectorAll(DRAWER_SELECTOR));
-    let drawer = existing.find((node) => node.matches('[data-mobile-home-drawer], .home-mobile-drawer')) || existing[0];
+  function ensureDrawer() {
+    var drawer = document.querySelector('[data-mobile-drawer-authority="canonical"]');
     if (!drawer) {
       drawer = document.createElement('aside');
       document.body.appendChild(drawer);
     }
-    existing.forEach((node) => { if (node !== drawer && node.matches('.home-mobile-drawer, [data-mobile-home-drawer], [data-mobile-drawer]')) node.remove(); });
+
+    removeLegacyDrawers(drawer);
     drawer.className = 'home-mobile-drawer doke-global-mobile-drawer';
     drawer.setAttribute('data-mobile-home-drawer', '');
     drawer.setAttribute('data-mobile-drawer-authority', 'canonical');
-    drawer.setAttribute('aria-hidden', 'true');
-    drawer.hidden = true;
+    drawer.setAttribute('aria-hidden', drawer.classList.contains('is-open') ? 'false' : 'true');
+    drawer.setAttribute('data-mobile-drawer-state', drawer.classList.contains('is-open') ? 'open' : 'closed');
+    if (!drawer.classList.contains('is-open')) {
+      drawer.hidden = true;
+      drawer.setAttribute('hidden', '');
+    }
     drawer.innerHTML = markup();
     syncActive(drawer);
     return drawer;
-  };
+  }
 
-  const getDrawer = () => document.querySelector('[data-mobile-drawer-authority="canonical"]') || ensureDrawer();
-  const getPanel = () => getDrawer().querySelector('.home-mobile-drawer__panel');
-
-  const syncActive = (drawer = getDrawer()) => {
-    const active = routeGroup(window.location.pathname);
-    drawer.querySelectorAll('.home-mobile-drawer__item[href]').forEach((link) => {
-      const target = routeGroup(link.getAttribute('href'));
-      const matched = target === active || (active === 'perfil.html' && target === 'perfil.html');
+  function syncActive(drawer) {
+    var root = drawer || document.querySelector('[data-mobile-drawer-authority="canonical"]');
+    if (!root) return;
+    var active = routeGroup(window.location.pathname);
+    Array.prototype.slice.call(root.querySelectorAll('.home-mobile-drawer__item[href]')).forEach(function (link) {
+      var target = routeGroup(link.getAttribute('href'));
+      var matched = target === active;
       link.classList.toggle('home-mobile-drawer__item--active', matched);
       if (matched) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
     });
-  };
+  }
 
-  let lastOpenAt = 0;
-  let closeTimer = 0;
+  var lastOpenAt = 0;
+  var closeTimer = 0;
 
-  const setOpen = (open) => {
-    const drawer = getDrawer();
+  function setOpen(open) {
     if (open && !isDrawerViewport()) return false;
+    var drawer = ensureDrawer();
     clearTimeout(closeTimer);
+
     if (open) {
       neutralizeDesktopSidebar();
       syncActive(drawer);
-      lastOpenAt = performance.now();
+      lastOpenAt = (window.performance && performance.now) ? performance.now() : Date.now();
       drawer.hidden = false;
       drawer.removeAttribute('hidden');
       drawer.classList.add('is-open');
@@ -150,64 +178,90 @@
       drawer.setAttribute('aria-hidden', 'true');
       drawer.setAttribute('data-mobile-drawer-state', 'closed');
       document.body.classList.remove('mobile-home-drawer-open', 'doke-mobile-drawer-open');
-      closeTimer = window.setTimeout(() => {
+      closeTimer = window.setTimeout(function () {
         if (!drawer.classList.contains('is-open')) {
           drawer.hidden = true;
           drawer.setAttribute('hidden', '');
         }
       }, 260);
     }
-    document.querySelectorAll(OPEN_SELECTOR).forEach((trigger) => trigger.setAttribute('aria-expanded', String(open)));
+
+    Array.prototype.slice.call(document.querySelectorAll(OPEN_SELECTOR)).forEach(function (trigger) {
+      trigger.setAttribute('aria-expanded', String(open));
+    });
     return true;
-  };
+  }
 
-  const recentlyOpened = () => performance.now() - lastOpenAt < 260;
+  function recentlyOpened() {
+    var now = (window.performance && performance.now) ? performance.now() : Date.now();
+    return now - lastOpenAt < 260;
+  }
 
-  const handleOpen = (event) => {
+  function handleOpen(event) {
     if (!isDrawerViewport()) return;
-    const trigger = event.target.closest(OPEN_SELECTOR);
+    var trigger = event.target.closest && event.target.closest(OPEN_SELECTOR);
     if (!trigger) return;
     event.preventDefault();
     event.stopPropagation();
     if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
     setOpen(true);
-  };
+  }
 
-  const handleClick = (event) => {
-    if (isDrawerViewport() && event.target.closest(OPEN_SELECTOR)) {
+  function handleClick(event) {
+    if (isDrawerViewport() && event.target.closest && event.target.closest(OPEN_SELECTOR)) {
       handleOpen(event);
       return;
     }
-    if (event.target.closest(CLOSE_SELECTOR)) {
+
+    if (event.target.closest && event.target.closest(CLOSE_SELECTOR)) {
       event.preventDefault();
       event.stopPropagation();
       if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
       setOpen(false);
       return;
     }
-    const drawer = getDrawer();
-    const panel = getPanel();
-    if (drawer.classList.contains('is-open') && panel && !panel.contains(event.target) && !recentlyOpened()) setOpen(false);
-  };
 
-  const init = () => {
+    var drawer = document.querySelector('[data-mobile-drawer-authority="canonical"]');
+    var panel = drawer && drawer.querySelector('.home-mobile-drawer__panel');
+    if (!drawer || !drawer.classList.contains('is-open') || !panel || recentlyOpened()) return;
+    if (!panel.contains(event.target)) setOpen(false);
+  }
+
+  function bindTriggers() {
+    Array.prototype.slice.call(document.querySelectorAll(OPEN_SELECTOR)).forEach(function (trigger) {
+      trigger.setAttribute('data-doke-drawer-open-boundary', 'canonical');
+      if (!trigger.hasAttribute('aria-haspopup')) trigger.setAttribute('aria-haspopup', 'dialog');
+    });
+  }
+
+  function init() {
     ensureDrawer();
     neutralizeDesktopSidebar();
+    bindTriggers();
     document.addEventListener('pointerdown', handleOpen, true);
     document.addEventListener('click', handleClick, true);
-    document.addEventListener('keydown', (event) => { if (event.key === 'Escape') setOpen(false); }, true);
-    window.addEventListener('resize', () => {
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') setOpen(false);
+    }, true);
+    window.addEventListener('resize', function () {
+      bindTriggers();
       if (!isDrawerViewport()) setOpen(false);
       else neutralizeDesktopSidebar();
     });
-  };
+    window.addEventListener('orientationchange', function () {
+      bindTriggers();
+      if (isDrawerViewport()) neutralizeDesktopSidebar();
+    });
+  }
 
-  window.DokeStandardMobileDrawerOpen = () => setOpen(true);
-  window.DokeStandardMobileDrawerClose = () => setOpen(false);
-  window.DokeOpenHomeDrawerDirect = () => setOpen(true);
-  window.DokeCloseHomeDrawerDirect = () => setOpen(false);
-  window.DokeHomeDrawerHardOpen = () => setOpen(true);
-  window.DokeHomeDrawerHardClose = () => setOpen(false);
+  window.DokeStandardMobileDrawerOpen = function () { return setOpen(true); };
+  window.DokeStandardMobileDrawerClose = function () { return setOpen(false); };
+  window.DokeCanonicalDrawerOpen = function () { return setOpen(true); };
+  window.DokeCanonicalDrawerClose = function () { return setOpen(false); };
+  window.DokeOpenHomeDrawerDirect = function () { return setOpen(true); };
+  window.DokeCloseHomeDrawerDirect = function () { return setOpen(false); };
+  window.DokeHomeDrawerHardOpen = function () { return setOpen(true); };
+  window.DokeHomeDrawerHardClose = function () { return setOpen(false); };
   window.DokeCanonicalDrawerEnsure = ensureDrawer;
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
