@@ -1,0 +1,1118 @@
+/*
+ * Doke Web - Detalhe Anuncio Related Sections
+ * Owner: pages/detail.
+ * Responsibility: late, page-local alignment of related section headers with the
+ * global section-heading contract after page rail/header imports.
+ * No card anatomy, shell, sidebar, body or global header rules.
+ */
+
+body[data-page="detalhe-anuncio"] {
+  overflow-x: clip;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) {
+  max-width: 100%;
+  min-width: 0;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) > .detail-related-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--doke-section-header-gap, clamp(0.625rem, 1.4vw, 1.125rem));
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0 0 var(--doke-section-header-margin-after, clamp(0.75rem, 1.6vw, 1.125rem));
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) > .detail-related-section-heading > div {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  max-width: min(100%, 42rem);
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) .detail-related-section-heading .section-heading__title.home-section-title {
+  max-width: none;
+  margin: 0;
+  color: var(--doke-text-primary, var(--color-heading, #18314f));
+  font-family: inherit;
+  font-size: var(--doke-section-title-size, clamp(1.05rem, 1.55vw, 1.45rem));
+  font-weight: var(--doke-section-title-weight, 800);
+  line-height: var(--doke-section-title-line, 1.16);
+  letter-spacing: var(--doke-section-title-letter, 0);
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) .detail-related-section-heading .section-heading__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: max-content;
+  min-height: var(--doke-section-action-height, 2.125rem);
+  padding-inline: var(--doke-section-action-padding-inline, 0.875rem);
+  border: 1px solid var(--doke-card-border, rgba(24, 75, 118, 0.12));
+  border-radius: var(--doke-section-action-radius, 999px);
+  background: #fff;
+  color: var(--doke-text-primary, var(--color-heading, #18314f));
+  font-size: var(--doke-section-action-size, 0.9rem);
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications
+) > .detail-related-media-rail,
+body[data-page="detalhe-anuncio"] .detail-section--ad-publications > .content-rail,
+body[data-page="detalhe-anuncio"] .detail-section--similar-ads .detail-related-grid--ads {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+@media (max-width: 760px) {
+  body[data-page="detalhe-anuncio"] {
+    overflow-x: hidden;
+  }
+
+  body[data-page="detalhe-anuncio"] :is(
+    .detail-section--ad-workers,
+    .detail-section--ad-publications,
+    .detail-section--similar-ads
+  ) > .detail-related-section-heading {
+    align-items: center;
+    gap: var(--doke-section-header-gap, 0.625rem);
+    margin-bottom: var(--doke-section-header-margin-after, 0.75rem);
+  }
+
+  body[data-page="detalhe-anuncio"] :is(
+    .detail-section--ad-workers,
+    .detail-section--ad-publications,
+    .detail-section--similar-ads
+  ) .detail-related-section-heading .section-heading__title.home-section-title {
+    font-size: var(--doke-section-title-size, 0.96rem);
+    letter-spacing: var(--doke-section-title-letter, 0.08em);
+  }
+}
+
+@supports not (overflow: clip) {
+  body[data-page="detalhe-anuncio"] {
+    overflow-x: hidden;
+  }
+}
+
+/* Detail anuncio — index baseline for related titles and card rails.
+   Scope: related-section composition only. Card anatomy remains owned by
+   components/cards; this layer only applies the same index density language
+   to titles, rails and card widths. */
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) .detail-related-section-heading .section-heading__title.home-section-title {
+  color: #2f5f94;
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) .detail-related-section-heading .section-heading__link {
+  min-height: 2.125rem;
+  padding-inline: 0.875rem;
+  border-radius: 999px;
+  background: #fff;
+  color: #18314f;
+  font-size: 0.9rem;
+  font-weight: 800;
+  box-shadow: 0 10px 22px rgba(35, 81, 124, 0.06);
+}
+
+@media (min-width: 761px) {
+  body[data-page="detalhe-anuncio"] :is(
+    .detail-section--ad-workers,
+    .detail-section--ad-publications
+  ) > .detail-related-media-rail {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-related-workers__track {
+    --detail-index-worker-gap: 16px;
+    --doke-worker-home-card-width: var(--doke-worker-card-width, clamp(168px, 14vw, 220px));
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: stretch;
+    gap: var(--detail-index-worker-gap);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-related-workers__track::-webkit-scrollbar {
+    display: none;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-related-workers__track > .video-card,
+  body[data-page="detalhe-anuncio"] .detail-related-workers__track > .doke-worker-card {
+    flex: 0 0 var(--doke-worker-home-card-width);
+    width: var(--doke-worker-home-card-width);
+    min-width: var(--doke-worker-home-card-width);
+    max-width: var(--doke-worker-home-card-width);
+    aspect-ratio: var(--doke-worker-card-aspect, 9 / 16);
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track {
+    --detail-index-publication-gap: clamp(14px, 2.2vw, 18px);
+    --detail-index-publication-preview: clamp(32px, 7vw, 56px);
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-auto-columns: clamp(
+      248px,
+      calc((100% - var(--detail-index-publication-gap) - var(--detail-index-publication-preview)) / 2),
+      352px
+    );
+    gap: var(--detail-index-publication-gap);
+    align-items: stretch;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track::-webkit-scrollbar {
+    display: none;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    scroll-snap-align: start;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-section--similar-ads .detail-related-grid--ads {
+    --detail-index-ad-gap: clamp(14px, 1.8vw, 18px);
+    --detail-index-ad-preview: clamp(24px, 4vw, 48px);
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-auto-columns: clamp(
+      248px,
+      calc((100% - (2 * var(--detail-index-ad-gap)) - var(--detail-index-ad-preview)) / 3),
+      340px
+    );
+    gap: var(--detail-index-ad-gap);
+    align-items: stretch;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0 2px 8px 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-section--similar-ads .detail-related-grid--ads::-webkit-scrollbar {
+    display: none;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-section--similar-ads .detail-related-grid--ads > .doke-ad-card {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    scroll-snap-align: start;
+  }
+}
+
+@media (max-width: 760px) {
+  body[data-page="detalhe-anuncio"] :is(
+    .detail-section--ad-workers,
+    .detail-section--ad-publications,
+    .detail-section--similar-ads
+  ) .detail-related-section-heading .section-heading__title.home-section-title {
+    font-size: 13px;
+    line-height: 1.15;
+    font-weight: 850;
+    letter-spacing: 0.06em;
+    color: #315a82;
+  }
+}
+
+/* Detail anuncio — section surface and heading normalization.
+   Removes the page-local hover/elevation from content sections and aligns
+   internal section titles with the same compact section-heading language used
+   by the index. */
+body[data-page="detalhe-anuncio"] {
+  --detail-section-title-color: #2f5f94;
+  --detail-section-title-size: 0.92rem;
+  --detail-section-title-weight: 800;
+  --detail-section-title-line: 1.1;
+  --detail-section-title-letter: 0.11em;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-surface,
+  .detail-section,
+  .doke-reviews-shell,
+  .doke-reviews-panel
+) {
+  box-shadow: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  body[data-page="detalhe-anuncio"] :is(
+    .detail-section,
+    .detail-surface,
+    .doke-reviews-shell,
+    .doke-reviews-panel
+  ):hover {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--detail-surface-border-color, rgba(15, 45, 75, 0.06));
+  }
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section__header,
+  .detail-section__header--row,
+  .detail-mobile-section-head
+) {
+  margin-bottom: var(--doke-section-header-margin-after, 0.75rem);
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section__header,
+  .detail-section__header--row,
+  .detail-mobile-section-head
+) :is(h2, h3) {
+  max-width: none;
+  margin: 0;
+  color: var(--detail-section-title-color);
+  font-size: var(--detail-section-title-size);
+  font-weight: var(--detail-section-title-weight);
+  line-height: var(--detail-section-title-line);
+  letter-spacing: var(--detail-section-title-letter);
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section__header,
+  .detail-section__header--row
+) .detail-eyebrow {
+  margin: 0 0 0.32rem;
+  color: #526b89;
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+body[data-page="detalhe-anuncio"] .doke-reviews-title,
+body[data-page="detalhe-anuncio"] .detail-mobile-section-head h2 {
+  color: var(--detail-section-title-color);
+  font-size: var(--detail-section-title-size);
+  font-weight: var(--detail-section-title-weight);
+  line-height: var(--detail-section-title-line);
+  letter-spacing: var(--detail-section-title-letter);
+  text-transform: uppercase;
+}
+
+body[data-page="detalhe-anuncio"] .ad-detail-title-block h1,
+body[data-page="detalhe-anuncio"] .provider-card h2,
+body[data-page="detalhe-anuncio"] .trust-card h2,
+body[data-page="detalhe-anuncio"] .location-card h2,
+body[data-page="detalhe-anuncio"] .detail-mobile-provider h2 {
+  text-transform: none;
+  letter-spacing: -0.035em;
+}
+
+@media (max-width: 760px) {
+  body[data-page="detalhe-anuncio"] {
+    --detail-section-title-size: 13px;
+    --detail-section-title-weight: 850;
+    --detail-section-title-line: 1.15;
+    --detail-section-title-letter: 0.06em;
+    --detail-section-title-color: #315a82;
+  }
+
+  body[data-page="detalhe-anuncio"] :is(
+    .detail-section__header,
+    .detail-section__header--row,
+    .detail-mobile-section-head
+  ) {
+    margin-bottom: 0.75rem;
+  }
+}
+
+/* Detail anuncio — horizontal carousel parity and gallery fill.
+   Related card sections must preview overflow horizontally like index rails.
+   Gallery stage media fills the top hero surface edge-to-edge. */
+body[data-page="detalhe-anuncio"] .ad-gallery__stage {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+body[data-page="detalhe-anuncio"] .ad-gallery__stage img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  object-fit: cover;
+  object-position: center;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-related-workers,
+  .detail-related-publications,
+  .detail-section--similar-ads
+) > .detail-related-media-rail,
+body[data-page="detalhe-anuncio"] .detail-section--similar-ads > .detail-related-grid--ads {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-related-workers__track,
+  .detail-related-publications__track,
+  .detail-related-grid--ads
+) {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: stretch;
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0 2px 8px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-related-workers__track,
+  .detail-related-publications__track,
+  .detail-related-grid--ads
+)::-webkit-scrollbar {
+  display: none;
+}
+
+body[data-page="detalhe-anuncio"] .detail-related-workers__track > .video-card {
+  flex: 0 0 clamp(168px, 14vw, 220px);
+  width: clamp(168px, 14vw, 220px);
+  min-width: clamp(168px, 14vw, 220px);
+  max-width: clamp(168px, 14vw, 220px);
+  aspect-ratio: var(--doke-worker-card-aspect, 9 / 16);
+  scroll-snap-align: start;
+}
+
+body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card {
+  flex: 0 0 clamp(248px, 29vw, 352px);
+  width: clamp(248px, 29vw, 352px);
+  min-width: clamp(248px, 29vw, 352px);
+  max-width: clamp(248px, 29vw, 352px);
+  scroll-snap-align: start;
+}
+
+body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card {
+  flex: 0 0 clamp(248px, 27vw, 340px);
+  width: clamp(248px, 27vw, 340px);
+  min-width: clamp(248px, 27vw, 340px);
+  max-width: clamp(248px, 27vw, 340px);
+  scroll-snap-align: start;
+}
+
+body[data-page="detalhe-anuncio"] .publication-card__media--bathroom {
+  background-image: url("https://images.pexels.com/photos/6585750/pexels-photo-6585750.jpeg?auto=compress&cs=tinysrgb&w=900");
+  background-position: center;
+  background-size: cover;
+}
+
+body[data-page="detalhe-anuncio"] .detail-related-grid--ads .doke-ad-card__media--similar-painting-suite {
+  background-image: url("https://images.pexels.com/photos/6474343/pexels-photo-6474343.jpeg?auto=compress&cs=tinysrgb&w=1200");
+  background-position: center;
+  background-size: cover;
+}
+
+@media (max-width: 760px) {
+  body[data-page="detalhe-anuncio"] :is(
+    .detail-related-workers__track,
+    .detail-related-publications__track,
+    .detail-related-grid--ads
+  ) {
+    gap: 12px;
+    padding-right: 14px;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-related-workers__track > .video-card {
+    flex-basis: min(46vw, 180px);
+    width: min(46vw, 180px);
+    min-width: min(46vw, 180px);
+    max-width: min(46vw, 180px);
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-related-publications__track > .publication-card,
+  body[data-page="detalhe-anuncio"] .detail-related-grid--ads > .doke-ad-card {
+    flex-basis: min(82vw, 320px);
+    width: min(82vw, 320px);
+    min-width: min(82vw, 320px);
+    max-width: min(82vw, 320px);
+  }
+}
+
+/* Detail anuncio — mobile/tablet portrait flow contract.
+   The desktop sidebar must not leak into the narrow/tablet-portrait content
+   flow. The floating mobile CTA owns the purchase action in this range. */
+@media (max-width: 760px) {
+  body[data-page="detalhe-anuncio"] .ad-detail-shell,
+  body[data-page="detalhe-anuncio"] .ad-detail-layout,
+  body[data-page="detalhe-anuncio"] .ad-detail-main {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-layout {
+    display: block;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-sidebar {
+    display: none;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-main {
+    padding-bottom: max(148px, calc(124px + env(safe-area-inset-bottom)));
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-action {
+    position: fixed;
+    left: max(14px, env(safe-area-inset-left));
+    right: max(14px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 60;
+    width: auto;
+    max-width: 520px;
+    margin-inline: auto;
+  }
+
+  body[data-page="detalhe-anuncio"] :is(
+    .detail-section--ad-workers,
+    .detail-section--ad-publications,
+    .detail-section--similar-ads
+  ) {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
+}
+
+/* Tablet portrait follows the mobile content model: no sticky desktop sidebar,
+   no duplicated desktop action stack, same rail and safe bottom spacing. */
+@media (min-width: 561px) and (max-width: 900px) and (orientation: portrait) {
+  body[data-page="detalhe-anuncio"] .ad-detail-layout {
+    display: block;
+    width: 100%;
+    max-width: var(--detail-tablet-rail-max, 920px);
+    min-width: 0;
+    margin-inline: auto;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-sidebar {
+    display: none;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-main {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding-bottom: max(156px, calc(132px + env(safe-area-inset-bottom)));
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-action {
+    position: fixed;
+    left: 50%;
+    right: auto;
+    bottom: max(18px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    z-index: 60;
+    width: min(520px, calc(100vw - 40px));
+    max-width: min(520px, calc(100vw - 40px));
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider,
+  body[data-page="detalhe-anuncio"] .detail-mobile-reviews {
+    display: block;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-hero,
+  body[data-page="detalhe-anuncio"] .detail-surface,
+  body[data-page="detalhe-anuncio"] .detail-section {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+}
+
+/* Keep desktop/tablet landscape sidebar behavior intact. */
+@media (min-width: 901px), (orientation: landscape) and (min-width: 761px) {
+  body[data-page="detalhe-anuncio"] .ad-detail-sidebar {
+    display: grid;
+  }
+}
+
+/* Detail anuncio — breakpoint authority contract.
+   Final viewport ownership for this page:
+   - <=760px: mobile-only content flow.
+   - 561px–900px portrait: tablet portrait uses compact/mobile flow.
+   - >=901px or landscape >=761px: desktop/tablet-landscape sidebar flow.
+   This block intentionally decides visibility only; it does not redesign card
+   anatomy, reviews content or provider anatomy. */
+body[data-page="detalhe-anuncio"] {
+  --detail-mobile-cta-safe-space: max(156px, calc(132px + env(safe-area-inset-bottom)));
+}
+
+@media (max-width: 760px) {
+  body[data-page="detalhe-anuncio"] .ad-detail-layout,
+  body[data-page="detalhe-anuncio"] .ad-detail-main {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-sidebar,
+  body[data-page="detalhe-anuncio"] .doke-reviews-shell {
+    display: none;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider,
+  body[data-page="detalhe-anuncio"] .detail-mobile-reviews {
+    display: block;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-action {
+    position: fixed;
+    left: max(14px, env(safe-area-inset-left));
+    right: max(14px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 70;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(148px, 1.25fr);
+    align-items: center;
+    gap: 10px;
+    width: auto;
+    max-width: 520px;
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-main {
+    padding-bottom: var(--detail-mobile-cta-safe-space);
+  }
+}
+
+@media (min-width: 561px) and (max-width: 900px) and (orientation: portrait) {
+  body[data-page="detalhe-anuncio"] {
+    --detail-mobile-cta-safe-space: max(168px, calc(140px + env(safe-area-inset-bottom)));
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-layout,
+  body[data-page="detalhe-anuncio"] .ad-detail-main {
+    display: block;
+    width: 100%;
+    max-width: var(--detail-tablet-rail-max, 920px);
+    min-width: 0;
+    margin-inline: auto;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-sidebar,
+  body[data-page="detalhe-anuncio"] .doke-reviews-shell {
+    display: none;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider,
+  body[data-page="detalhe-anuncio"] .detail-mobile-reviews {
+    display: block;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-action {
+    position: fixed;
+    left: 50%;
+    right: auto;
+    bottom: max(18px, env(safe-area-inset-bottom));
+    z-index: 70;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 1.35fr);
+    align-items: center;
+    gap: 12px;
+    width: min(560px, calc(100vw - 40px));
+    max-width: min(560px, calc(100vw - 40px));
+    margin: 0;
+    transform: translateX(-50%);
+    box-sizing: border-box;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-main {
+    padding-bottom: var(--detail-mobile-cta-safe-space);
+  }
+}
+
+@media (min-width: 901px), (min-width: 761px) and (orientation: landscape) {
+  body[data-page="detalhe-anuncio"] .ad-detail-layout {
+    display: grid;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-sidebar {
+    display: grid;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-action,
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider,
+  body[data-page="detalhe-anuncio"] .detail-mobile-reviews {
+    display: none;
+  }
+
+  body[data-page="detalhe-anuncio"] .doke-reviews-shell {
+    display: block;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-main {
+    padding-bottom: 0;
+  }
+}
+
+/* Detail anuncio — compact provider authority for mobile/tablet portrait.
+   Mobile/tablet must keep the same information hierarchy as the desktop
+   provider card, but in a single compact row. This prevents the provider
+   artwork/avatar from becoming a large visual block. */
+@media (max-width: 760px), (min-width: 561px) and (max-width: 900px) and (orientation: portrait) {
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider.detail-surface {
+    display: grid;
+    grid-template-columns: 54px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "avatar body cta"
+      "avatar verified cta";
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 7px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 0;
+    margin: clamp(14px, 2.4vw, 18px) 0 0;
+    padding: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(36, 88, 135, 0.07);
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: none;
+    box-sizing: border-box;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider__avatar {
+    grid-area: avatar;
+    display: block;
+    width: 54px;
+    height: 54px;
+    min-width: 54px;
+    max-width: 54px;
+    overflow: hidden;
+    border: 1px solid rgba(36, 88, 135, 0.08);
+    border-radius: 16px;
+    background: rgba(232, 247, 245, 0.82);
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider__avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0;
+    border-radius: inherit;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider__body {
+    grid-area: body;
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider h2 {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+    color: #18314f;
+    font-size: 0.92rem;
+    font-weight: 900;
+    line-height: 1.08;
+    letter-spacing: -0.035em;
+    text-transform: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider h2 span {
+    display: inline-grid;
+    flex: 0 0 17px;
+    place-items: center;
+    width: 17px;
+    height: 17px;
+    border-radius: 999px;
+    background: rgba(32, 143, 128, 0.12);
+    color: #0a8f80;
+    font-size: 0.68rem;
+    line-height: 1;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider p {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+    color: #607893;
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider p strong {
+    color: #18314f;
+    font-size: 0.78rem;
+    font-weight: 900;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider p span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider p span::before {
+    content: "· ";
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider__verified,
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider small.detail-mobile-provider__verified {
+    grid-area: verified;
+    display: inline-flex;
+    align-items: center;
+    justify-self: start;
+    gap: 5px;
+    width: max-content;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 24px;
+    margin: 0;
+    padding: 4px 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(32, 143, 128, 0.10);
+    color: #0a8f80;
+    font-size: 0.68rem;
+    font-weight: 850;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-sizing: border-box;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider__verified span,
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider small.detail-mobile-provider__verified span {
+    display: inline-grid;
+    place-items: center;
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    border-radius: 999px;
+    background: rgba(32, 143, 128, 0.14);
+    color: #0a8f80;
+    font-size: 0.62rem;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider__cta {
+    grid-area: cta;
+    position: static;
+    align-self: center;
+    justify-self: end;
+    min-width: 86px;
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 900;
+    line-height: 1;
+    transform: none;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 374px) {
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider.detail-surface {
+    grid-template-columns: 48px minmax(0, 1fr);
+    grid-template-areas:
+      "avatar body"
+      "verified verified"
+      "cta cta";
+    gap: 8px;
+    padding: 12px;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider__avatar {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    max-width: 48px;
+  }
+
+  body[data-page="detalhe-anuncio"] .detail-mobile-provider__cta {
+    justify-self: stretch;
+    width: 100%;
+  }
+}
+
+/* Detail anuncio — hero information parity.
+   Mobile and tablet portrait must keep the same hierarchy as desktop:
+   gallery, title block in the hero surface, then inline metrics. */
+@media (max-width: 760px), (min-width: 561px) and (max-width: 900px) and (orientation: portrait) {
+  body[data-page="detalhe-anuncio"] .ad-detail-hero.detail-surface {
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid rgba(36, 88, 135, 0.06);
+    border-radius: 22px;
+    box-shadow: none;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-title-block {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    column-gap: 12px;
+    row-gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 16px 18px 10px;
+    box-sizing: border-box;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-title-block > div {
+    min-width: 0;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-title-block .detail-eyebrow {
+    margin: 0 0 5px;
+    color: #2f5f94;
+    font-size: 0.76rem;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-title-block h1 {
+    max-width: 100%;
+    margin: 0;
+    color: #18314f;
+    font-size: clamp(1.28rem, 3.4vw, 1.55rem);
+    font-weight: 900;
+    line-height: 1.08;
+    letter-spacing: -0.045em;
+    text-wrap: balance;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-provider-line {
+    margin: 7px 0 0;
+    color: #526b89;
+    font-size: 0.8rem;
+    font-weight: 800;
+    line-height: 1.35;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-provider-line a {
+    color: #1d4f82;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-id {
+    align-self: end;
+    justify-self: end;
+    width: auto;
+    min-width: max-content;
+    margin: 0;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(29, 100, 177, 0.08);
+    color: #607893;
+    font-size: 0.68rem;
+    font-weight: 900;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-stats {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 9px 18px 15px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    list-style: none;
+    scrollbar-width: none;
+    box-sizing: border-box;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-stats::-webkit-scrollbar {
+    display: none;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-stats li {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 5px;
+    min-width: 0;
+    min-height: 0;
+    padding: 0 12px 0 0;
+    margin: 0 12px 0 0;
+    border: 0;
+    border-right: 1px solid rgba(36, 88, 135, 0.12);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #315a82;
+    text-align: left;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-stats li:last-child {
+    margin-right: 0;
+    padding-right: 0;
+    border-right: 0;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-stats svg {
+    flex: 0 0 14px;
+    width: 14px;
+    height: 14px;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #315a82;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-stat-copy {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-stat-copy strong,
+  body[data-page="detalhe-anuncio"] .ad-detail-stat-copy span {
+    color: #315a82;
+    font-size: 0.72rem;
+    font-weight: 850;
+    line-height: 1;
+  }
+}
+
+@media (max-width: 390px) {
+  body[data-page="detalhe-anuncio"] .ad-detail-title-block {
+    grid-template-columns: minmax(0, 1fr);
+    padding-inline: 14px;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-id {
+    justify-self: start;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-detail-stats {
+    padding-inline: 14px;
+  }
+}

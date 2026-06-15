@@ -8319,3 +8319,197 @@ body[data-page="detalhe-anuncio"] .detail-tablet-shell__menu {
     max-height: 410px;
   }
 }
+
+/* Detail anuncio — related section heading parity with index baseline.
+   Scope: only section headers for related Workers/Publicações/Anúncios.
+   Cards, rails, sidebar, shell and global header remain untouched. */
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) > .detail-related-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(12px, 2vw, 18px);
+  width: 100%;
+  max-width: 100%;
+  margin: 0 0 clamp(14px, 1.8vw, 22px);
+  padding: 0;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) > .detail-related-section-heading > div {
+  min-width: 0;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) .detail-related-section-heading .section-heading__title {
+  max-width: none;
+  margin: 0;
+  color: var(--color-heading, #102642);
+  font-size: clamp(1.18rem, 1.04rem + 0.72vw, 1.55rem);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  text-transform: none;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) .detail-related-section-heading .section-heading__link {
+  flex: 0 0 auto;
+  align-self: center;
+  color: var(--color-primary-strong, #0b4f86);
+  font-size: 0.88rem;
+  font-weight: 900;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  body[data-page="detalhe-anuncio"] :is(
+    .detail-section--ad-workers,
+    .detail-section--ad-publications,
+    .detail-section--similar-ads
+  ) > .detail-related-section-heading {
+    align-items: flex-end;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  body[data-page="detalhe-anuncio"] :is(
+    .detail-section--ad-workers,
+    .detail-section--ad-publications,
+    .detail-section--similar-ads
+  ) .detail-related-section-heading .section-heading__title {
+    font-size: clamp(1.02rem, 4.4vw, 1.18rem);
+    line-height: 1.1;
+    letter-spacing: -0.032em;
+  }
+
+  body[data-page="detalhe-anuncio"] :is(
+    .detail-section--ad-workers,
+    .detail-section--ad-publications,
+    .detail-section--similar-ads
+  ) .detail-related-section-heading .section-heading__link {
+    font-size: 0.8rem;
+  }
+}
+
+/* Detail anuncio — related section heading hard alignment with global section contract.
+   This overrides older detalhe-anuncio mobile/title passes and prevents the
+   related rails from creating a second horizontal scroll container. */
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) > .detail-related-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--doke-section-header-gap, clamp(0.625rem, 1.4vw, 1.125rem));
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0 0 var(--doke-section-header-margin-after, clamp(0.75rem, 1.6vw, 1.125rem));
+  padding: 0;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) > .detail-related-section-heading > div {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  max-width: min(100%, 42rem);
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) .detail-related-section-heading .section-heading__title {
+  max-width: none;
+  margin: 0;
+  color: var(--doke-text-primary, var(--color-heading, #18314f));
+  font-size: var(--doke-section-title-size, clamp(1.05rem, 1.55vw, 1.45rem));
+  font-weight: var(--doke-section-title-weight, 800);
+  line-height: var(--doke-section-title-line, 1.16);
+  letter-spacing: var(--doke-section-title-letter, 0);
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications,
+  .detail-section--similar-ads
+) .detail-related-section-heading .section-heading__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: max-content;
+  min-height: var(--doke-section-action-height, 2.125rem);
+  padding-inline: var(--doke-section-action-padding-inline, 0.875rem);
+  border: 1px solid var(--doke-card-border, rgba(24, 75, 118, 0.12));
+  border-radius: var(--doke-section-action-radius, 999px);
+  background: #fff;
+  color: var(--doke-text-primary, var(--color-heading, #18314f));
+  font-size: var(--doke-section-action-size, 0.9rem);
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-section--ad-workers,
+  .detail-section--ad-publications
+) > .detail-related-media-rail,
+body[data-page="detalhe-anuncio"] .detail-section--ad-publications > .content-rail {
+  max-width: 100%;
+  min-width: 0;
+}
+
+body[data-page="detalhe-anuncio"] :is(
+  .detail-related-workers__track,
+  .detail-related-publications__track
+) {
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  body[data-page="detalhe-anuncio"] :is(
+    .detail-section--ad-workers,
+    .detail-section--ad-publications,
+    .detail-section--similar-ads
+  ) > .detail-related-section-heading {
+    align-items: center;
+    gap: var(--doke-section-header-gap, 0.625rem);
+    margin-bottom: var(--doke-section-header-margin-after, 0.75rem);
+  }
+
+  body[data-page="detalhe-anuncio"] :is(
+    .detail-section--ad-workers,
+    .detail-section--ad-publications,
+    .detail-section--similar-ads
+  ) .detail-related-section-heading .section-heading__title {
+    font-size: var(--doke-section-title-size, 0.96rem);
+    letter-spacing: var(--doke-section-title-letter, 0.08em);
+  }
+}
