@@ -17,31 +17,8 @@ body.results-page .results-grid {
   gap: var(--doke-results-card-gap, 18px);
 }
 
-@media (min-width: 1025px) {
-  body[data-page="resultados"] .results-grid,
-  body.results-page .results-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(240px, 1fr));
-  }
-}
-
-@media (min-width: 761px) and (max-width: 1024px) {
-  body[data-page="resultados"] .results-grid,
-  body.results-page .results-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 760px) {
-  body[data-page="resultados"] .results-grid,
-  body.results-page .results-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--doke-results-card-gap-mobile, 14px);
-  }
-}
-
+/* Result grid columns are owned by search-results/display-density.css.
+   This manifest-level block keeps only shared grid box/gap safety. */
 
 /* Users results reuse the exact professional showcase anatomy from index.
    Page ownership here is limited to grid placement; card internals stay in components/cards. */
@@ -86,15 +63,4 @@ body.search-results-body .results-users-grid .professional-showcase-card__cta,
   min-block-size: 46px;
 }
 
-/* Zoom-out/ultrawide results density contract.
-   Responsibility: page grid composition only. Card anatomy remains in shared card components. */
-@media (min-width: 1180px) {
-  body[data-page="resultados"] .results-layout[data-results-mode="services"] .results-grid,
-  body.results-page .results-layout[data-results-mode="services"] .results-grid,
-  body.search-results-body .results-layout[data-results-mode="services"] .results-grid {
-    --doke-results-card-min: 260px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--doke-results-card-min)), 1fr));
-    align-items: start;
-  }
-}
+/* Result density is consolidated in search-results/display-density.css. */

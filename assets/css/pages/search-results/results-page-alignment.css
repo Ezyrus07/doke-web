@@ -1,33 +1,6 @@
-/* 2026-04-25 final results parity fix
-   Resultado usa os mesmos componentes da home, mas controla a escala por modo.
-   O objetivo aqui é parar de deixar anúncio/usuário gigantes e worker minúsculo. */
-@media (min-width: 1181px) {
-  .search-results-body .results-layout[data-results-mode="services"] .results-grid,
-  .search-results-body .results-layout[data-results-mode="services"] .results-empty__grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 24px;
-  }
-
-  .search-results-body .results-layout.is-filters-collapsed[data-results-mode="services"] .results-grid,
-  .search-results-body .results-layout.is-filters-collapsed[data-results-mode="services"] .results-empty__grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .search-results-body .results-layout[data-results-mode="users"] .results-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 22px;
-  }
-
-  .search-results-body .results-layout[data-results-mode="workers"] .results-grid {
-    grid-template-columns: repeat(2, minmax(280px, 1fr));
-    gap: 26px;
-  }
-
-  .search-results-body .results-layout[data-results-mode="before-after"] .results-grid {
-    grid-template-columns: repeat(2, minmax(320px, 1fr));
-    gap: 26px;
-  }
-}
+/* Results page alignment compatibility.
+   Grid/card track sizing now lives in display-density.css so this file keeps
+   only legacy detail selectors that are not part of collection sizing. */
 
 .search-results-body .results-layout[data-results-mode="users"] .results-grid .pro-card {
   min-height: 204px;
@@ -62,21 +35,3 @@
 .search-results-body .results-before-after-grid .comparison-card[data-before-after-trigger] {
   cursor: pointer;
 }
-
-@media (min-width: 761px) and (max-width: 1180px) {
-  .search-results-body .results-layout[data-results-mode="services"] .results-grid,
-  .search-results-body .results-layout[data-results-mode="users"] .results-grid,
-  .search-results-body .results-layout[data-results-mode="workers"] .results-grid,
-  .search-results-body .results-layout[data-results-mode="before-after"] .results-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 760px) {
-  .search-results-body .results-layout[data-results-mode] .results-grid,
-  .search-results-body .results-layout[data-results-mode] .results-empty__grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-

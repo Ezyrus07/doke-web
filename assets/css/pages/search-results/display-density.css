@@ -41,18 +41,26 @@
 }
 
 @media (min-width: 1181px) {
+  body.search-results-body {
+    /* resultado.html reuses the card scale approved on index.html.
+       This page owns only collection placement; card anatomy remains in
+       components/cards and patterns. */
+    --results-index-ad-card-column: clamp(286px, calc(25vw - 14px), 324px);
+    --results-index-publication-card-column: min(320px, calc(33.333vw - 12px));
+    --results-index-professional-card-column: clamp(250px, 21vw, 276px);
+    --results-index-worker-card-column: clamp(168px, 13.2vw, 205px);
+    --results-index-card-gap: var(--doke-index-card-gap, 18px);
+  }
+
   body.search-results-body .results-layout {
-    /* Keep the filter panel close to the results column.
-       The previous 272px sidebar + 24px gutter consumed too much horizontal
-       space and made service cards feel compressed with filters open. */
-    grid-template-columns: minmax(232px, 248px) minmax(0, 1fr);
-    column-gap: 14px;
+    grid-template-columns: minmax(220px, 236px) minmax(0, 1fr);
+    column-gap: 18px;
     align-items: start;
   }
 
   body.search-results-body .results-layout .results-filters {
     width: 100%;
-    max-width: 248px;
+    max-width: 236px;
   }
 
   body.search-results-body .results-layout.is-filters-collapsed {
@@ -61,14 +69,15 @@
 
   body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid) {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 28px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--results-index-card-gap);
     justify-content: stretch;
     align-items: stretch;
   }
 
   body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="services"] :is(.results-grid, .results-empty__grid) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(var(--results-index-ad-card-column), var(--results-index-ad-card-column)));
+    justify-content: start;
   }
 
   body.search-results-body .results-layout[data-results-mode="services"] :is(.doke-ad-card__title, .service-card__title),
@@ -76,55 +85,100 @@
     overflow-wrap: anywhere;
   }
 
-
-  /* Service card density contract:
-     Open filters reduce the available inline space, so services stay at 2 columns.
-     Collapsed filters recover the horizontal room and may use 3 columns.
-     This avoids clipped cards/buttons without moving filters to the top. */
-  body.search-results-body .results-layout:not(.is-filters-collapsed):is([data-results-mode="services"], :not([data-results-mode])) :is(.results-grid, .results-empty__grid) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  body.search-results-body .results-layout.is-filters-collapsed:is([data-results-mode="services"], :not([data-results-mode])) :is(.results-grid, .results-empty__grid) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   body.search-results-body .results-layout[data-results-mode="workers"] .results-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--results-worker-card-width-open, var(--doke-worker-card-width, 220px))), var(--results-worker-card-width-open, var(--doke-worker-card-width, 220px))));
-    gap: var(--results-worker-card-gap, 22px);
+    grid-template-columns: repeat(auto-fill, minmax(var(--results-index-worker-card-column), var(--results-index-worker-card-column)));
+    gap: var(--results-index-card-gap);
     justify-content: start;
     align-items: start;
   }
 
   body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="workers"] .results-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--results-worker-card-width-collapsed, var(--doke-worker-card-width, 220px))), var(--results-worker-card-width-collapsed, var(--doke-worker-card-width, 220px))));
+    grid-template-columns: repeat(auto-fill, minmax(var(--results-index-worker-card-column), var(--results-index-worker-card-column)));
   }
 
   body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 24px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--results-index-card-gap);
+    justify-content: stretch;
+    align-items: start;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="users"] .results-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--results-index-card-gap);
+    justify-content: stretch;
+    align-items: start;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="users"] .results-grid > .professional-showcase-card {
+    inline-size: 100%;
+    max-inline-size: none;
+  }
+
+  body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="before-after"] .results-grid {
+    grid-template-columns: repeat(auto-fill, minmax(var(--results-index-publication-card-column), var(--results-index-publication-card-column)));
+    justify-content: start;
+  }
+
+  body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="users"] .results-grid {
+    grid-template-columns: repeat(auto-fill, minmax(var(--results-index-professional-card-column), var(--results-index-professional-card-column)));
+    justify-content: start;
+  }
+
+  body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="users"] .results-grid > .professional-showcase-card {
+    max-inline-size: var(--results-index-professional-card-column);
   }
 }
 
 @media (min-width: 761px) and (max-width: 1180px) {
+  body.search-results-body {
+    --results-index-tablet-gap: var(--doke-index-card-gap, 18px);
+    --results-index-worker-card-column: min(220px, 31vw);
+  }
+
   body.search-results-body .results-layout[data-results-mode="services"] :is(.results-grid, .results-empty__grid),
-  body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid,
+  body.search-results-body .results-layout[data-results-mode="before-after"] .results-grid {
+    grid-template-columns: repeat(2, minmax(0, calc((100% - var(--results-index-tablet-gap)) / 2)));
+    gap: var(--results-index-tablet-gap);
+    justify-content: start;
+    align-items: start;
+  }
+
   body.search-results-body .results-layout[data-results-mode="users"] .results-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 22px;
+    grid-template-columns: repeat(auto-fill, minmax(var(--professional-showcase-card-size, clamp(250px, 21vw, 276px)), var(--professional-showcase-card-size, clamp(250px, 21vw, 276px))));
+    gap: var(--results-index-tablet-gap);
+    justify-content: start;
+    align-items: start;
   }
 
   body.search-results-body .results-layout[data-results-mode="workers"] .results-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--results-worker-card-width-open, var(--doke-worker-card-width, 220px))), var(--results-worker-card-width-open, var(--doke-worker-card-width, 220px))));
-    gap: var(--results-worker-card-gap, 18px);
+    grid-template-columns: repeat(auto-fill, minmax(var(--results-index-worker-card-column), var(--results-index-worker-card-column)));
+    gap: var(--results-index-tablet-gap);
     justify-content: start;
+    align-items: start;
   }
 }
 
 @media (max-width: 760px) {
   body.search-results-body .results-layout[data-results-mode] :is(.results-grid, .results-empty__grid) {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="users"] .results-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  body.search-results-body .results-layout[data-results-mode="users"] .results-grid > .professional-showcase-card {
+    max-inline-size: none;
   }
 
   .search-results-body .results-searchbar__scope {
@@ -143,4 +197,4 @@
   }
 }
 
-/* Grid-state contract v4: filters open = 2 service columns; filters collapsed = 3 service columns. */
+/* Grid-state contract v5: results collections reuse fixed index card columns instead of stretching cards to fill the row. */

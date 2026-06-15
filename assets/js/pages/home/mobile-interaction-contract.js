@@ -1,6 +1,6 @@
 /* Doke Home Mobile Interaction Contract
-   Responsibility: page-specific mobile header avatar drawer + search filter sheet.
-   This file intentionally does not touch global shell/sidebar/header behavior. */
+   Responsibility: page-specific mobile trigger bridge + search filter sheet.
+   Drawer anatomy and state belong to the canonical shared drawer authority when present. */
 (function () {
   const root = document.documentElement;
 
@@ -15,7 +15,8 @@
     '.home-index-topbar .home-side-meta__profile',
     '.home-index-topbar .home-side-meta__avatar',
     '.home-index-topbar .doke-avatar',
-    '[data-mobile-home-menu-open]'
+    '[data-mobile-home-menu-open]',
+    '[data-shell-profile]'
   ].join(',');
 
   const filterOpenSelector = [
@@ -27,6 +28,11 @@
 
   const getDrawer = () => document.querySelector(drawerSelector);
   const getDrawerPanel = () => getDrawer()?.querySelector('.home-mobile-drawer__panel');
+  const hasCanonicalDrawerAuthority = () => Boolean(
+    document.querySelector('[data-mobile-drawer-authority="canonical"]') ||
+    window.DokeCanonicalDrawerOpen ||
+    window.DokeStandardMobileDrawerOpen
+  );
 
   const getFilterPanel = () => document.querySelector('[data-more-filters-panel]');
   const getFilterHost = () => document.querySelector('[data-more-filters-tabs-host]');
@@ -62,6 +68,11 @@
   };
 
   const openDrawer = () => {
+    if (hasCanonicalDrawerAuthority()) {
+      const open = window.DokeCanonicalDrawerOpen || window.DokeStandardMobileDrawerOpen;
+      return typeof open === 'function' ? open() : false;
+    }
+
     const drawer = getDrawer();
     if (!drawer) return false;
 
@@ -84,6 +95,12 @@
   };
 
   const closeDrawer = () => {
+    if (hasCanonicalDrawerAuthority()) {
+      const close = window.DokeCanonicalDrawerClose || window.DokeStandardMobileDrawerClose;
+      if (typeof close === 'function') close();
+      return;
+    }
+
     const drawer = getDrawer();
     if (!drawer) return;
 

@@ -49,16 +49,51 @@
     return String(value || '').split('?')[0].split('#')[0].split('/').pop().toLowerCase() || 'index.html';
   }
 
+  var DRAWER_ROUTE_GROUPS = {
+    '': 'index.html',
+    '/': 'index.html',
+    home: 'index.html',
+    index: 'index.html',
+    resultados: 'index.html',
+    'detalhe-anuncio': 'index.html',
+    pedidos: 'pedidos.html',
+    'pagamento-profissional': 'pedidos.html',
+    avaliacao: 'pedidos.html',
+    'avaliacao-profissional': 'pedidos.html',
+    mensagens: 'mensagens.html',
+    notificacoes: 'notificacoes.html',
+    novidades: 'notificacoes.html',
+    comunidade: 'comunidade.html',
+    'comunidade-interna': 'comunidade.html',
+    configuracoes: 'configuracoes.html',
+    ajuda: 'configuracoes.html',
+    perfil: 'perfil.html',
+    carteira: 'perfil.html',
+    'tornar-profissional': 'perfil.html',
+    'anunciar-servico': 'perfil.html'
+  };
+
+  var DRAWER_NAV_GROUPS = {
+    'index.html': true,
+    'pedidos.html': true,
+    'mensagens.html': true,
+    'notificacoes.html': true,
+    'comunidade.html': true,
+    'perfil.html': true,
+    'configuracoes.html': true
+  };
+
   function routeGroup(path) {
     var current = cleanPath(path);
-    if (current === '' || current === 'index.html' || current === 'resultados.html' || current === 'detalhe-anuncio.html') return 'index.html';
-    if (current === 'pedidos.html' || current === 'pagamento-profissional.html' || current === 'avaliacao.html' || current === 'avaliacao-profissional.html') return 'pedidos.html';
-    if (current === 'mensagens.html') return 'mensagens.html';
-    if (current === 'notificacoes.html' || current === 'novidades.html') return 'notificacoes.html';
-    if (current === 'comunidade.html' || current === 'comunidade-interna.html') return 'comunidade.html';
-    if (current === 'configuracoes.html' || current === 'ajuda.html') return 'configuracoes.html';
-    if (current === 'perfil.html' || current === 'carteira.html' || current === 'tornar-profissional.html' || current === 'anunciar-servico.html') return 'perfil.html';
-    return current;
+    var key = current.replace(/\.html$/i, '');
+    return DRAWER_ROUTE_GROUPS[key] || current;
+  }
+
+  function currentRouteGroup() {
+    var bodyPage = document.body && document.body.getAttribute('data-page');
+    var bodyRoute = bodyPage ? routeGroup(bodyPage) : '';
+    if (DRAWER_NAV_GROUPS[bodyRoute]) return bodyRoute;
+    return routeGroup(window.location.pathname);
   }
 
   function item(options) {
@@ -144,7 +179,7 @@
   function syncActive(drawer) {
     var root = drawer || document.querySelector('[data-mobile-drawer-authority="canonical"]');
     if (!root) return;
-    var active = routeGroup(window.location.pathname);
+    var active = currentRouteGroup();
     Array.prototype.slice.call(root.querySelectorAll('.home-mobile-drawer__item[href]')).forEach(function (link) {
       var target = routeGroup(link.getAttribute('href'));
       var matched = target === active;
@@ -248,8 +283,22 @@
     document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape') setOpen(false);
     }, true);
+    document.addEventListener('doke:route-ready', function () { syncActive(); });
+    document.addEventListener('doke:stable-route-ready', function () { syncActive(); });
+    window.addEventListener('popstate', function () {
+      window.setTimeout(function () { syncActive(); }, 0);
+    });
+    if (window.MutationObserver) {
+      try {
+        new MutationObserver(function () { syncActive(); }).observe(document.body, {
+          attributes: true,
+          attributeFilter: ['data-page']
+        });
+      } catch (error) {}
+    }
     window.addEventListener('resize', function () {
       bindTriggers();
+      syncActive();
       if (!isDrawerViewport()) setOpen(false);
       else neutralizeDesktopSidebar();
     });
@@ -268,6 +317,7 @@
   window.DokeHomeDrawerHardOpen = function () { return setOpen(true); };
   window.DokeHomeDrawerHardClose = function () { return setOpen(false); };
   window.DokeCanonicalDrawerEnsure = ensureDrawer;
+  window.DokeCanonicalDrawerSyncActive = function () { return syncActive(); };
 
   if (document.body) init();
   else document.addEventListener('DOMContentLoaded', init, { once: true });

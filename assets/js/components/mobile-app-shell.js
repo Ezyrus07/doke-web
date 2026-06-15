@@ -141,7 +141,35 @@
     return true;
   }
 
+  function openCanonicalDrawerDirect() {
+    var apis = [
+      window.DokeCanonicalDrawerOpen,
+      window.DokeStandardMobileDrawerOpen,
+      window.DokeOpenHomeDrawerDirect,
+      window.DokeHomeDrawerHardOpen
+    ];
+
+    for (var index = 0; index < apis.length; index += 1) {
+      if (typeof apis[index] === 'function' && apis[index]()) {
+        dispatchShellAction('profile-menu');
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function hasCanonicalDrawerAuthority() {
+    return Boolean(
+      document.querySelector('[data-mobile-drawer-authority="canonical"]') ||
+      window.DokeCanonicalDrawerOpen ||
+      window.DokeStandardMobileDrawerOpen
+    );
+  }
+
   function openDrawerElementDirect() {
+    if (hasCanonicalDrawerAuthority()) return false;
+
     var drawer = document.querySelector('[data-mobile-home-drawer], .home-mobile-drawer, [data-mobile-drawer]');
     if (!drawer) return false;
 
@@ -160,15 +188,8 @@
   }
 
   function openMobileDrawerDirect() {
-    if (window.DokeOpenHomeDrawerDirect && window.DokeOpenHomeDrawerDirect()) {
-      dispatchShellAction('profile-menu');
-      return true;
-    }
-
-    if (window.DokeHomeDrawerHardOpen && window.DokeHomeDrawerHardOpen()) {
-      dispatchShellAction('profile-menu');
-      return true;
-    }
+    if (openCanonicalDrawerDirect()) return true;
+    if (hasCanonicalDrawerAuthority()) return false;
 
     if (openDrawerElementDirect()) return true;
 
@@ -267,8 +288,11 @@
     var input = shell.querySelector('.doke-mobile-shell__input');
     if (input) input.value = queryValue();
 
-    shell.querySelector('[data-shell-profile]').addEventListener('click', function () {
-      openMobileDrawerDirect();
+    shell.querySelector('[data-shell-profile]').addEventListener('click', function (event) {
+      if (openMobileDrawerDirect()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
     });
     var locationButton = shell.querySelector('[data-shell-location]');
     if (locationButton) {

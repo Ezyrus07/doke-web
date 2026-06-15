@@ -1,29 +1,6 @@
-/* Results workers alignment.
-   Ownership: workers-only card sizing/rendering inside resultados.html.
-   Goal: reuse the same media-only contract seen on index.html so worker cards
-   stop rendering with stretched/cropped proportions on the results page. */
-
-body.search-results-body {
-  /* Keep resultados workers on the same media-card scale as the index rail.
-     The page owns the grid; components/cards/worker-card.css owns the card anatomy. */
-  --results-worker-card-width-open: var(--doke-worker-card-width, clamp(168px, 14vw, 220px));
-  --results-worker-card-width-collapsed: var(--doke-worker-card-width, clamp(168px, 14vw, 220px));
-  --results-worker-card-gap: 22px;
-  --results-worker-card-radius: var(--doke-worker-card-radius, var(--card-radius-lg, 22px));
-}
-
-body.search-results-body .results-layout[data-results-mode="workers"] .results-grid {
-  display: grid;
-  align-items: start;
-  align-content: start;
-  justify-content: start;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--results-worker-card-width-open)), var(--results-worker-card-width-open)));
-  gap: var(--results-worker-card-gap);
-}
-
-body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="workers"] .results-grid {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--results-worker-card-width-collapsed)), var(--results-worker-card-width-collapsed)));
-}
+/* Results workers media contract.
+   Grid/card track sizing is centralized in display-density.css. This file keeps
+   only the worker-specific visual assets and interaction polish for resultados.html. */
 
 body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card--one {
   background-image: url("../../../img/workers/worker-pintura.png");
@@ -44,28 +21,5 @@ body.search-results-body .results-layout[data-results-mode="workers"] .results-g
 @media (hover: hover) and (pointer: fine) {
   body.search-results-body .results-layout[data-results-mode="workers"] .results-grid .video-card {
     transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-  }
-}
-
-@media (max-width: 1180px) {
-  body.search-results-body {
-    --results-worker-card-gap: 18px;
-  }
-
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid,
-  body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="workers"] .results-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 220px));
-  }
-}
-
-@media (max-width: 760px) {
-  body.search-results-body {
-    --results-worker-card-gap: 12px;
-    --results-worker-card-radius: 24px;
-  }
-
-  body.search-results-body .results-layout[data-results-mode="workers"] .results-grid,
-  body.search-results-body .results-layout.is-filters-collapsed[data-results-mode="workers"] .results-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 184px), 184px));
   }
 }

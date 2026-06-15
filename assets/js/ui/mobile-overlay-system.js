@@ -8,8 +8,8 @@
     '.ui-modal:not([hidden])',
     '.payment-overlay:not([hidden])',
     '.detail-modal:not([hidden])',
-    '.home-address-modal:not([hidden])',
-    '.address-modal:not([hidden])',
+    'dialog.home-address-modal[open]',
+    'dialog.address-modal[open]',
     '.community-action-modal:not([hidden])',
     '.community-request-modal:not([hidden])',
     '.orders-sidepanel.is-open',
@@ -41,6 +41,8 @@
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') requestSync();
     }, true);
+    document.addEventListener('close', requestSync, true);
+    document.addEventListener('cancel', requestSync, true);
     document.addEventListener('doke:overlay-sync', requestSync);
   };
 

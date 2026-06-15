@@ -1132,4 +1132,4 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
 };
 
 
-window.DokeInitSearchResults();
+// Initialized by assets/js/core/app.js on direct load and by stable-shell-router on route swaps.
