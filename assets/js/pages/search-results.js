@@ -417,7 +417,11 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   };
 
   const resultsLayout = queryAny('[data-results-layout]');
-  const isDesktopFilters = () => window.innerWidth > 960;
+  const RESULTS_FILTERS_DESKTOP_MEDIA = '(min-width: 961px)';
+  const filtersDesktopMedia = typeof window.matchMedia === 'function'
+    ? window.matchMedia(RESULTS_FILTERS_DESKTOP_MEDIA)
+    : null;
+  const isDesktopFilters = () => filtersDesktopMedia ? filtersDesktopMedia.matches : window.innerWidth > 960;
 
   const syncFilterUi = (isOpen) => {
     els.resultsFiltersOpenButtons.forEach((button) => button.setAttribute('aria-expanded', String(isOpen)));
