@@ -323,3 +323,100 @@ body.doke-mobile-drawer-open {
     display: none;
   }
 }
+
+/* Canonical drawer authority — loaded last by the HTMLs.
+   This block neutralizes legacy desktop sidebar fallback in touch widths and
+   keeps the shared drawer visual identical across pages. */
+@media (max-width: 1199px) {
+  body.sidebar-open,
+  body.sidebar-collapsed,
+  html.doke-sidebar-expanded,
+  html.doke-sidebar-collapsed {
+    --sidebar-width: 0px;
+    --doke-current-sidebar-width: 0px;
+    --doke-desktop-sidebar-width: 0px;
+    --doke-app-sidebar-width: 0px;
+    --doke-app-shell-sidebar-width: 0px;
+  }
+
+  body > .app-shell,
+  body[data-page] > .app-shell,
+  body.app-shell-page > .app-shell,
+  body.doke-app-shell-page > .app-shell,
+  body.internal-shell-page > .app-shell {
+    grid-template-columns: minmax(0, 1fr) !important;
+    padding-left: 0;
+    margin-left: 0;
+  }
+
+  body > .app-shell > :is(.sidebar, [data-shell-sidebar]),
+  body[data-page] > .app-shell > :is(.sidebar, [data-shell-sidebar]),
+  body.app-shell-page > .app-shell > :is(.sidebar, [data-shell-sidebar]),
+  body.doke-app-shell-page > .app-shell > :is(.sidebar, [data-shell-sidebar]),
+  body.internal-shell-page > .app-shell > :is(.sidebar, [data-shell-sidebar]),
+  body.sidebar-open > .app-shell > :is(.sidebar, [data-shell-sidebar]),
+  body.sidebar-collapsed > .app-shell > :is(.sidebar, [data-shell-sidebar]) {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    inline-size: 0 !important;
+    width: 0 !important;
+    min-inline-size: 0 !important;
+    min-width: 0 !important;
+    max-inline-size: 0 !important;
+    max-width: 0 !important;
+    overflow: hidden !important;
+    transform: none !important;
+  }
+
+  body > .app-shell > .page,
+  body[data-page] > .app-shell > .page,
+  body.app-shell-page > .app-shell > .page,
+  body.doke-app-shell-page > .app-shell > .page,
+  body.internal-shell-page > .app-shell > .page {
+    grid-column: 1 !important;
+    inline-size: 100%;
+    width: 100%;
+    min-inline-size: 0;
+    min-width: 0;
+    margin-inline: 0;
+  }
+
+  .home-mobile-drawer.doke-global-mobile-drawer,
+  [data-mobile-drawer-authority="canonical"] {
+    position: fixed;
+    inset: 0;
+    z-index: 1600;
+    display: none;
+    pointer-events: none;
+  }
+
+  .home-mobile-drawer.doke-global-mobile-drawer.is-open,
+  [data-mobile-drawer-authority="canonical"].is-open,
+  body.mobile-home-drawer-open [data-mobile-drawer-authority="canonical"],
+  body.doke-mobile-drawer-open [data-mobile-drawer-authority="canonical"] {
+    display: block;
+    pointer-events: auto;
+  }
+
+  [data-mobile-drawer-authority="canonical"] .home-mobile-drawer__panel {
+    width: min(84vw, 318px);
+    max-width: calc(100vw - 28px);
+  }
+
+  [data-mobile-drawer-authority="canonical"] :is(svg, path, circle, rect, line, polyline) {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  [data-mobile-drawer-authority="canonical"] .home-mobile-drawer__item-icon svg,
+  [data-mobile-drawer-authority="canonical"] .home-mobile-drawer__close svg {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    min-height: 18px;
+    stroke-width: 2.1;
+  }
+}
