@@ -2,6 +2,17 @@
 /* Doke shared media lightbox
    Used by messages, community chat and detail gallery. */
 .doke-media-lightbox {
+  --doke-lightbox-overlay-bg: var(--doke-overlay-bg, rgba(10, 28, 49, .48));
+  --doke-lightbox-overlay-blur: var(--doke-overlay-blur, 10px);
+  --doke-lightbox-control-size: var(--doke-icon-button-size, var(--icon-button-size, 42px));
+  --doke-lightbox-close-size: var(--doke-close-button-size, var(--close-button-size, 42px));
+  --doke-lightbox-control-radius: var(--radius-pill, 999px);
+  --doke-lightbox-control-bg: var(--color-surface, #fff);
+  --doke-lightbox-control-hover-bg: var(--doke-ui-bg-soft, #f7fbff);
+  --doke-lightbox-control-border: var(--doke-card-border, rgba(24, 75, 118, .10));
+  --doke-lightbox-control-color: var(--color-primary, #2a5f90);
+  --doke-lightbox-control-shadow: var(--shadow-surface-sm, 0 10px 24px rgba(2, 20, 40, .12));
+
   position: fixed;
   inset: 0;
   z-index: 9999;
@@ -9,9 +20,9 @@
   align-items: center;
   justify-content: center;
   padding: clamp(16px, 3vw, 44px);
-  background: rgba(7, 22, 39, .78);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  background: var(--doke-lightbox-overlay-bg);
+  -webkit-backdrop-filter: blur(var(--doke-lightbox-overlay-blur));
+  backdrop-filter: blur(var(--doke-lightbox-overlay-blur));
 }
 
 .doke-media-lightbox.is-open {
@@ -43,9 +54,9 @@
 .doke-media-lightbox__close,
 .doke-media-lightbox__nav,
 .doke-media-lightbox__thumb {
-  border: 1px solid rgba(206, 222, 239, .95);
-  background: rgba(255, 255, 255, .96);
-  color: #1f5f9f;
+  border: 1px solid var(--doke-lightbox-control-border);
+  background: var(--doke-lightbox-control-bg);
+  color: var(--doke-lightbox-control-color);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -56,10 +67,10 @@
 .doke-media-lightbox__close:hover,
 .doke-media-lightbox__nav:hover,
 .doke-media-lightbox__thumb:hover {
-  background: #f3f8fd;
-  color: #174a80;
-  border-color: rgba(162, 190, 220, .95);
-  box-shadow: 0 12px 28px rgba(2, 20, 40, .16);
+  background: var(--doke-lightbox-control-hover-bg);
+  color: var(--doke-lightbox-control-color);
+  border-color: var(--doke-lightbox-control-border);
+  box-shadow: var(--doke-lightbox-control-shadow);
 }
 
 .doke-media-lightbox__close {
@@ -67,13 +78,13 @@
   top: clamp(18px, 3vw, 34px);
   right: clamp(18px, 3vw, 34px);
   z-index: 2;
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-base);
+  width: var(--doke-lightbox-close-size);
+  height: var(--doke-lightbox-close-size);
+  border-radius: var(--doke-lightbox-control-radius);
   font-size: 1.18rem;
   font-weight: 900;
   line-height: 1;
-  box-shadow: 0 12px 30px rgba(2, 20, 40, .16);
+  box-shadow: var(--doke-lightbox-control-shadow);
 }
 
 .doke-media-lightbox__stage {
@@ -101,13 +112,13 @@
 .doke-media-lightbox__nav {
   position: absolute;
   top: 50%;
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-base);
+  width: var(--doke-lightbox-control-size);
+  height: var(--doke-lightbox-control-size);
+  border-radius: var(--doke-lightbox-control-radius);
   transform: translateY(-50%);
   font-size: 1.28rem;
   font-weight: 900;
-  box-shadow: 0 12px 30px rgba(2, 20, 40, .16);
+  box-shadow: var(--doke-lightbox-control-shadow);
 }
 
 .doke-media-lightbox__nav:hover {
@@ -119,6 +130,20 @@
   opacity: 0;
   pointer-events: none;
 }
+
+.doke-media-lightbox__close svg,
+.doke-media-lightbox__nav svg {
+  display: block;
+  width: var(--size-icon-sm, 18px);
+  height: var(--size-icon-sm, 18px);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
 
 .doke-media-lightbox__nav--prev { left: 0; }
 .doke-media-lightbox__nav--next { right: 0; }
@@ -152,8 +177,8 @@
 
 .doke-media-lightbox__thumb.is-active {
   opacity: 1;
-  border-color: #2f77bd;
-  box-shadow: 0 0 0 3px rgba(47,119,189,.28), 0 10px 24px rgba(2,20,40,.16);
+  border-color: var(--doke-lightbox-control-color);
+  box-shadow: 0 0 0 3px rgba(42, 95, 144, .18), var(--doke-lightbox-control-shadow);
 }
 
 .doke-media-lightbox__thumb img {
@@ -259,7 +284,7 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    background: rgba(7, 22, 39, .80);
+    background: var(--doke-lightbox-overlay-bg);
     z-index: 100000;
   }
 
@@ -284,10 +309,10 @@
     width: 42px;
     height: 42px;
     border-radius: 999px;
-    border: 1px solid rgba(206, 222, 239, .96);
-    background: rgba(255,255,255,.98);
-    color: var(--color-primary, #0d4f86);
-    box-shadow: 0 14px 30px rgba(2, 20, 40, .20);
+    border: 1px solid var(--doke-lightbox-control-border);
+    background: var(--doke-lightbox-control-bg);
+    color: var(--doke-lightbox-control-color);
+    box-shadow: var(--doke-lightbox-control-shadow);
   }
 
   body[data-page="detalhe-anuncio"] .doke-media-lightbox__stage {
@@ -322,8 +347,8 @@
     height: 40px;
     border-radius: 999px;
     transform: translateY(-50%);
-    background: rgba(255,255,255,.98);
-    box-shadow: 0 12px 28px rgba(2, 20, 40, .18);
+    background: var(--doke-lightbox-control-bg);
+    box-shadow: var(--doke-lightbox-control-shadow);
   }
 
   body[data-page="detalhe-anuncio"] .doke-media-lightbox__nav:hover {
@@ -415,7 +440,7 @@
     overflow: hidden;
     align-items: center;
     justify-content: center;
-    background: rgba(7, 22, 39, .82);
+    background: var(--doke-lightbox-overlay-bg);
     transform: translateZ(0);
   }
 
@@ -467,10 +492,10 @@
     width: 42px;
     height: 42px;
     border-radius: 999px;
-    border: 1px solid rgba(206, 222, 239, .95);
-    background: rgba(255, 255, 255, .98);
-    color: var(--color-primary, #0d4f86);
-    box-shadow: 0 14px 34px rgba(2, 20, 40, .22);
+    border: 1px solid var(--doke-lightbox-control-border);
+    background: var(--doke-lightbox-control-bg);
+    color: var(--doke-lightbox-control-color);
+    box-shadow: var(--doke-lightbox-control-shadow);
   }
 
   body[data-page="detalhe-anuncio"] .doke-media-lightbox__nav {
@@ -543,7 +568,7 @@
     max-height: none;
     margin: 0;
     overflow: hidden;
-    background: rgba(7, 22, 39, .84);
+    background: var(--doke-lightbox-overlay-bg);
   }
 
   body[data-page="detalhe-anuncio"] .doke-media-lightbox__surface {
@@ -553,4 +578,31 @@
     max-height: none;
     padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right));
   }
+}
+
+
+/* Detail anuncio lightbox control parity v28.
+   Uses the shared overlay tone and Doke circular action controls instead of dark page-local controls. */
+body[data-page="detalhe-anuncio"] .doke-media-lightbox {
+  --doke-lightbox-overlay-bg: var(--doke-overlay-bg, rgba(10, 28, 49, .48));
+  --doke-lightbox-overlay-blur: var(--doke-overlay-blur, 10px);
+}
+
+body[data-page="detalhe-anuncio"] .doke-media-lightbox__close,
+body[data-page="detalhe-anuncio"] .doke-media-lightbox__nav {
+  border: 1px solid var(--doke-lightbox-control-border);
+  border-radius: var(--radius-pill, 999px);
+  background: var(--doke-lightbox-control-bg);
+  color: var(--doke-lightbox-control-color);
+  box-shadow: var(--doke-lightbox-control-shadow);
+}
+
+body[data-page="detalhe-anuncio"] .doke-media-lightbox__close:hover,
+body[data-page="detalhe-anuncio"] .doke-media-lightbox__close:focus-visible,
+body[data-page="detalhe-anuncio"] .doke-media-lightbox__nav:hover,
+body[data-page="detalhe-anuncio"] .doke-media-lightbox__nav:focus-visible {
+  border-color: var(--doke-lightbox-control-border);
+  background: var(--doke-lightbox-control-hover-bg);
+  color: var(--doke-lightbox-control-color);
+  outline: 0;
 }

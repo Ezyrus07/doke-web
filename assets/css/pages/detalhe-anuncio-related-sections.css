@@ -1018,12 +1018,12 @@ body[data-page="detalhe-anuncio"] .detail-related-grid--ads .doke-ad-card__media
 
 /* Detail anuncio — mobile rail parity with the shared page-width contract.
    Root cause: older mobile detail rules capped the content at a local
-   --detail-mobile-content-rail value, so detalhe-anuncio did not consume the
+   narrow rail value, so detalhe-anuncio did not consume the
    same --doke-page-rail used by index/resultados mobile rails. */
 @media (max-width: 760px) {
   body[data-page="detalhe-anuncio"] {
-    --detail-mobile-page-rail: var(--doke-page-rail, var(--doke-shared-page-width, calc(100vw - 32px)));
-    --detail-mobile-content-rail: var(--detail-mobile-page-rail);
+    --detail-narrow-page-rail: var(--doke-page-rail, var(--doke-shared-page-width, calc(100vw - 32px)));
+    --detail-narrow-content-rail: var(--detail-narrow-page-rail);
   }
 
   body[data-page="detalhe-anuncio"] .detalhe-anuncio-page {
@@ -1040,10 +1040,10 @@ body[data-page="detalhe-anuncio"] .detail-related-grid--ads .doke-ad-card__media
   body[data-page="detalhe-anuncio"] .detail-section--ad-workers,
   body[data-page="detalhe-anuncio"] .detail-section--ad-publications,
   body[data-page="detalhe-anuncio"] .detail-section--similar-ads {
-    inline-size: var(--detail-mobile-content-rail);
-    width: var(--detail-mobile-content-rail);
-    max-inline-size: var(--detail-mobile-content-rail);
-    max-width: var(--detail-mobile-content-rail);
+    inline-size: var(--detail-narrow-content-rail);
+    width: var(--detail-narrow-content-rail);
+    max-inline-size: var(--detail-narrow-content-rail);
+    max-width: var(--detail-narrow-content-rail);
     margin-inline: auto;
     box-sizing: border-box;
   }
@@ -1106,5 +1106,76 @@ body[data-page="detalhe-anuncio"] .detail-related-grid--ads .doke-ad-card__media
     flex: 0 0 auto;
     align-self: center;
     margin-left: auto;
+  }
+}
+
+/* Detail anuncio — mobile gallery action icon parity.
+   Root cause: gallery controls still used local 44/20px proportions while
+   the approved mobile header contract uses 40px actions with 17px icons. */
+@media (max-width: 760px) {
+  body[data-page="detalhe-anuncio"] {
+    --detail-gallery-action-size: var(--doke-mobile-header-action, 40px);
+    --detail-gallery-action-radius: var(--doke-mobile-header-action-radius, 14px);
+    --detail-gallery-action-icon: var(--doke-mobile-header-icon, 17px);
+    --detail-gallery-action-stroke: var(--doke-mobile-header-icon-stroke, 2.2);
+    --detail-gallery-action-gap: var(--doke-mobile-header-gap, 8px);
+    --detail-gallery-action-inset: 12px;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-gallery__favorite.doke-favorite-button,
+  body[data-page="detalhe-anuncio"] .ad-gallery__share,
+  body[data-page="detalhe-anuncio"] .ad-gallery__nav {
+    inline-size: var(--detail-gallery-action-size);
+    block-size: var(--detail-gallery-action-size);
+    min-inline-size: var(--detail-gallery-action-size);
+    min-block-size: var(--detail-gallery-action-size);
+    max-inline-size: var(--detail-gallery-action-size);
+    max-block-size: var(--detail-gallery-action-size);
+    border-radius: var(--detail-gallery-action-radius);
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
+    color: var(--color-primary, #1266b0);
+    line-height: 1;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-gallery__favorite.doke-favorite-button svg,
+  body[data-page="detalhe-anuncio"] .ad-gallery__share svg,
+  body[data-page="detalhe-anuncio"] .ad-gallery__nav svg {
+    inline-size: var(--detail-gallery-action-icon);
+    block-size: var(--detail-gallery-action-icon);
+    min-inline-size: var(--detail-gallery-action-icon);
+    min-block-size: var(--detail-gallery-action-icon);
+    max-inline-size: var(--detail-gallery-action-icon);
+    max-block-size: var(--detail-gallery-action-icon);
+    display: block;
+    margin: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: var(--detail-gallery-action-stroke);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-gallery__share,
+  body[data-page="detalhe-anuncio"] .ad-gallery__nav--next {
+    right: var(--detail-gallery-action-inset);
+    inset-inline-end: var(--detail-gallery-action-inset);
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-gallery__favorite.doke-favorite-button {
+    right: calc(var(--detail-gallery-action-inset) + var(--detail-gallery-action-size) + var(--detail-gallery-action-gap));
+    inset-inline-end: calc(var(--detail-gallery-action-inset) + var(--detail-gallery-action-size) + var(--detail-gallery-action-gap));
+  }
+
+  body[data-page="detalhe-anuncio"] .ad-gallery__nav--prev {
+    left: var(--detail-gallery-action-inset);
+    inset-inline-start: var(--detail-gallery-action-inset);
+  }
+}
+
+@media (max-width: 360px) {
+  body[data-page="detalhe-anuncio"] {
+    --detail-gallery-action-inset: 10px;
   }
 }

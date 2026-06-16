@@ -1,0 +1,583 @@
+/* Pedidos tablet portrait rail contract.
+   Responsibility: make pedidos consume the same tablet portrait shell/header rail
+   as index instead of the phone-only pedidos header/430px column.
+   Scope: 561px-760px only. Phone layout remains owned by mobile-layout-contract.css. */
+@media (min-width: 561px) and (max-width: 760px) {
+  body.orders-page-shell {
+    --doke-rail-inline-gutter: 20px;
+    --doke-rail-available: calc(100vw - (var(--doke-rail-inline-gutter) * 2));
+    --doke-rail-max: 560px;
+    --doke-shared-page-inline: var(--doke-rail-inline-gutter);
+    --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
+    --doke-page-gutter: var(--doke-rail-inline-gutter);
+    --doke-page-available: var(--doke-rail-available);
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
+    --doke-current-page-rail: var(--doke-page-rail);
+    --rail-max: var(--doke-page-rail);
+    --tablet-gutter: var(--doke-rail-inline-gutter);
+    --tablet-page-max: var(--doke-rail-max);
+    --tablet-home-rail: var(--doke-page-rail);
+    --doke-header-height: 70px;
+    --doke-first-block-top: var(--doke-page-top-gap, 16px);
+    --orders-mobile-gutter: var(--doke-rail-inline-gutter);
+  }
+
+  body.orders-page-shell.has-global-header > .app-shell > .page > .app-header.app-header--orders.home-side-meta {
+    position: static;
+    top: auto;
+    z-index: auto;
+    display: flex;
+    visibility: visible;
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    min-block-size: var(--doke-header-height);
+    block-size: var(--doke-header-height);
+    min-height: var(--doke-header-height);
+    height: var(--doke-header-height);
+    margin: 0 auto;
+    padding: 12px 0 8px;
+    background: transparent;
+    overflow: visible;
+  }
+
+  body.orders-page-shell.has-global-header > .app-shell > .page > .app-header.app-header--orders.home-side-meta > .app-header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    min-block-size: var(--doke-header-control-size, 46px);
+    block-size: var(--doke-header-control-size, 46px);
+    min-height: var(--doke-header-control-size, 46px);
+    height: var(--doke-header-control-size, 46px);
+    margin-inline: auto;
+    padding: 0;
+    gap: var(--doke-header-gap, 10px);
+  }
+
+  body.orders-page-shell.has-global-header .app-header.app-header--orders.home-side-meta .home-side-meta__tablet-menu {
+    display: inline-grid;
+  }
+
+  body.orders-page-shell.has-global-header > .app-shell > .page > .page__content {
+    display: block;
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: var(--doke-page-top-gap, 16px) 0 var(--doke-page-bottom-gap, 56px);
+    background: #eef5fb;
+    overflow: visible;
+  }
+
+  body.orders-page-shell.has-global-header > .app-shell > .page > .page__content > .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content {
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    margin-inline: auto;
+    padding: 0;
+  }
+
+  body.orders-page-shell.has-global-header > .app-shell > .page > .page__content > .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content > .orders-page {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    gap: var(--doke-section-gap, 18px);
+    padding: 0;
+  }
+
+  body.orders-page-shell .orders-page-header {
+    display: none;
+  }
+
+  body.orders-page-shell :is(
+    .orders-command-summary,
+    .orders-planner,
+    .orders-command-insights,
+    .orders-list,
+    .orders-empty
+  ) {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
+}
+
+/* Pedidos small-screen header action contract.
+   Root cause: pedidos inherits the full secondary header action cluster on
+   tablet portrait, while index uses a compact profile affordance without
+   exposing news/help/notification controls in this page context.
+   Scope: phones plus tablet portrait where the drawer/header contract is active. */
+@media (max-width: 760px), (min-width: 761px) and (max-width: 900px) and (orientation: portrait) {
+  body.orders-page-shell.has-global-header .app-header.app-header--orders .home-side-meta__group--secondary {
+    gap: var(--doke-header-gap, 8px);
+    margin-left: auto;
+  }
+
+  body.orders-page-shell.has-global-header .app-header.app-header--orders .home-side-meta__group--secondary > .home-side-meta__alert {
+    display: none;
+    visibility: hidden;
+    inline-size: 0;
+    width: 0;
+    min-inline-size: 0;
+    min-width: 0;
+    max-inline-size: 0;
+    max-width: 0;
+    block-size: 0;
+    height: 0;
+    min-block-size: 0;
+    min-height: 0;
+    max-block-size: 0;
+    max-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  body.orders-page-shell.has-global-header .app-header.app-header--orders .home-side-meta__profile-wrap {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 var(--doke-header-profile-height, 46px);
+    inline-size: var(--doke-header-profile-height, 46px);
+    width: var(--doke-header-profile-height, 46px);
+    min-inline-size: var(--doke-header-profile-height, 46px);
+    min-width: var(--doke-header-profile-height, 46px);
+    max-inline-size: var(--doke-header-profile-height, 46px);
+    max-width: var(--doke-header-profile-height, 46px);
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
+  body.orders-page-shell.has-global-header .app-header.app-header--orders .home-side-meta__profile {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 var(--doke-header-profile-height, 46px);
+    inline-size: var(--doke-header-profile-height, 46px);
+    width: var(--doke-header-profile-height, 46px);
+    min-inline-size: var(--doke-header-profile-height, 46px);
+    min-width: var(--doke-header-profile-height, 46px);
+    max-inline-size: var(--doke-header-profile-height, 46px);
+    max-width: var(--doke-header-profile-height, 46px);
+    block-size: var(--doke-header-profile-height, 46px);
+    height: var(--doke-header-profile-height, 46px);
+    min-block-size: var(--doke-header-profile-height, 46px);
+    min-height: var(--doke-header-profile-height, 46px);
+    max-block-size: var(--doke-header-profile-height, 46px);
+    max-height: var(--doke-header-profile-height, 46px);
+    gap: 0;
+    margin: 0;
+    padding: calc((var(--doke-header-profile-height, 46px) - var(--doke-header-avatar-size, 34px)) / 2);
+    border: var(--doke-header-border, 1px solid rgba(15, 45, 75, 0.08));
+    border-radius: var(--doke-header-control-radius, 16px);
+    background: var(--doke-header-bg, rgba(255, 255, 255, 0.94));
+    box-shadow: var(--doke-header-shadow, 0 8px 22px rgba(15, 45, 75, 0.055));
+    overflow: hidden;
+  }
+
+  body.orders-page-shell.has-global-header .app-header.app-header--orders .home-side-meta__profile .home-side-meta__identity {
+    display: none;
+  }
+
+  body.orders-page-shell.has-global-header .app-header.app-header--orders .home-side-meta__profile .home-side-meta__avatar.doke-avatar {
+    display: grid;
+    place-items: center;
+    flex: 0 0 var(--doke-header-avatar-size, 34px);
+    inline-size: var(--doke-header-avatar-size, 34px);
+    width: var(--doke-header-avatar-size, 34px);
+    min-inline-size: var(--doke-header-avatar-size, 34px);
+    min-width: var(--doke-header-avatar-size, 34px);
+    max-inline-size: var(--doke-header-avatar-size, 34px);
+    max-width: var(--doke-header-avatar-size, 34px);
+    block-size: var(--doke-header-avatar-size, 34px);
+    height: var(--doke-header-avatar-size, 34px);
+    min-block-size: var(--doke-header-avatar-size, 34px);
+    min-height: var(--doke-header-avatar-size, 34px);
+    max-block-size: var(--doke-header-avatar-size, 34px);
+    max-height: var(--doke-header-avatar-size, 34px);
+    margin: 0;
+    padding: 0;
+    border-radius: 999px;
+    line-height: 1;
+  }
+}
+
+/* Pedidos tablet portrait command toolbar contract.
+   Root cause: the desktop order actions were being hidden from every 561px-1180px
+   viewport, so tablet portrait lost Filtros/Selecionar/Agenda and looked less
+   complete than the desktop command header. Phones remain compact; only tablet
+   portrait receives the desktop command actions in a denser form. */
+@media (min-width: 561px) and (max-width: 900px) and (orientation: portrait) {
+  body.orders-page-shell.has-global-header .app-header.app-header--orders .home-side-meta__group--primary {
+    display: flex;
+    align-items: center;
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    gap: 8px;
+  }
+
+  body.orders-page-shell.has-global-header .app-header.app-header--orders .home-side-meta__group--secondary {
+    flex: 0 0 auto;
+    margin-left: 8px;
+  }
+
+  body.orders-page-shell.has-global-header .app-header.app-header--orders .orders-page-actions,
+  body.orders-page-shell.has-global-header .app-header.app-header--orders .page-header-context.orders-page-actions {
+    display: inline-flex;
+    visibility: visible;
+    align-items: center;
+    flex: 0 1 auto;
+    inline-size: auto;
+    width: auto;
+    min-inline-size: 0;
+    min-width: 0;
+    max-inline-size: none;
+    max-width: none;
+    block-size: auto;
+    height: auto;
+    min-block-size: 0;
+    min-height: 0;
+    max-block-size: none;
+    max-height: none;
+    gap: 7px;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    pointer-events: auto;
+  }
+
+  body.orders-page-shell.has-global-header .app-header.app-header--orders .orders-page-actions .page-header-context__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    min-inline-size: 0;
+    min-width: 0;
+    min-block-size: 40px;
+    min-height: 40px;
+    block-size: 40px;
+    height: 40px;
+    padding: 0 12px;
+    gap: 6px;
+    border-radius: 14px;
+    font-size: 0.74rem;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  body.orders-page-shell.has-global-header .app-header.app-header--orders .orders-page-actions .page-header-context__action svg {
+    flex: 0 0 15px;
+    inline-size: 15px;
+    width: 15px;
+    block-size: 15px;
+    height: 15px;
+    stroke-width: 2.15;
+  }
+
+  body.orders-page-shell.has-global-header .app-header.app-header--orders .orders-page-actions .page-header-context__action span {
+    display: inline-block;
+  }
+
+  body.orders-page-shell.has-global-header .app-header.app-header--orders .orders-page-actions [data-orders-agenda-toggle][aria-expanded="true"] {
+    border-color: transparent;
+    background: #12937f;
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(18, 147, 127, 0.18);
+  }
+
+  body.orders-page-shell .orders-page-header {
+    display: none;
+  }
+}
+
+/* Pedidos tablet portrait order-card grid contract.
+   Root cause: the narrow-tablet rail already has enough width for two order
+   summaries, but the inherited phone/list rules force one oversized card per
+   row. Keep phones single-column; tablet portrait uses compact two-column
+   operational cards. */
+@media (min-width: 561px) and (max-width: 900px) and (orientation: portrait) {
+  body.orders-page-shell .orders-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 12px;
+  }
+
+  body.orders-page-shell .orders-list .order-card {
+    inline-size: 100%;
+    width: 100%;
+    min-inline-size: 0;
+    min-width: 0;
+    min-height: 0;
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__top,
+  body.orders-page-shell .orders-list .order-card__body,
+  body.orders-page-shell .orders-list .order-card__actions {
+    padding-inline: 0;
+  }
+
+  body.orders-page-shell .orders-list .order-card__top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    padding-top: 0;
+    padding-bottom: 8px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__statusline {
+    min-inline-size: 0;
+    margin-right: 0;
+    gap: 7px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__status-text {
+    font-size: 0.8rem;
+    line-height: 1.08;
+  }
+
+  body.orders-page-shell .orders-list .order-card__time {
+    flex-basis: auto;
+    max-inline-size: 100%;
+    font-size: 0.68rem;
+    line-height: 1.15;
+    text-align: left;
+    white-space: normal;
+  }
+
+  body.orders-page-shell .orders-list .order-card__smart-badge {
+    inline-size: fit-content;
+    max-inline-size: 100%;
+    min-height: 24px;
+    padding-inline: 8px;
+    font-size: 0.62rem;
+    line-height: 1;
+  }
+
+  body.orders-page-shell .orders-list .order-card__body {
+    gap: 7px;
+    padding-top: 10px;
+    padding-bottom: 0;
+  }
+
+  body.orders-page-shell .orders-list .order-card__body h2 {
+    font-size: clamp(0.98rem, 2.55vw, 1.08rem);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+  }
+
+  body.orders-page-shell .orders-list .order-card__subtitle {
+    font-size: 0.76rem;
+    line-height: 1.25;
+  }
+
+  body.orders-page-shell .orders-list .order-card__identity {
+    gap: 8px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__avatar {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 34px;
+    width: 34px;
+    block-size: 34px;
+    height: 34px;
+    min-inline-size: 34px;
+    min-width: 34px;
+    min-block-size: 34px;
+    min-height: 34px;
+    max-inline-size: 34px;
+    max-width: 34px;
+    max-block-size: 34px;
+    max-height: 34px;
+    flex: 0 0 34px;
+    aspect-ratio: 1 / 1;
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+    padding: 0;
+    line-height: 1;
+    font-size: 0.72rem;
+  }
+
+  body.orders-page-shell .orders-list .order-card__location {
+    font-size: 0.72rem;
+    line-height: 1.18;
+  }
+
+  body.orders-page-shell .orders-list .order-card__ai-insight {
+    max-inline-size: 100%;
+    min-height: 26px;
+    margin-top: 8px;
+    padding-inline: 8px;
+    font-size: 0.62rem;
+    line-height: 1;
+  }
+
+  body.orders-page-shell .orders-list .order-card__ai-insight-icon svg {
+    inline-size: 13px;
+    width: 13px;
+    block-size: 13px;
+    height: 13px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    margin-top: 0;
+    padding-top: 12px;
+    padding-bottom: 0;
+  }
+
+  body.orders-page-shell .orders-list .order-card__button {
+    inline-size: 100%;
+    width: 100%;
+    min-inline-size: 0;
+    min-width: 0;
+    min-height: 38px;
+    font-size: 0.76rem;
+    gap: 6px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__button::before {
+    inline-size: 14px;
+    width: 14px;
+    block-size: 14px;
+    height: 14px;
+  }
+}
+
+/* Pedidos phone rail parity contract.
+   Root cause: phone layout inherited both the shell-content gutter and a second
+   inner orders-page gutter from legacy mobile rules, narrowing the usable rail
+   compared with index/detalhe-anuncio. The shell owns the mobile edge; page
+   composition must consume the full inner rail. */
+@media (max-width: 560px) {
+  body.orders-page-shell {
+    --doke-orders-mobile-edge: var(--doke-mobile-shell-edge, var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 14px)));
+    --orders-mobile-gutter: var(--doke-orders-mobile-edge);
+    --doke-current-page-rail: min(
+      calc(100vw - (var(--doke-orders-mobile-edge) * 2)),
+      var(--doke-mobile-app-max, 430px)
+    );
+  }
+
+  body.orders-page-shell > .app-shell > .page > .page__content {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+    padding-inline: 0;
+    overflow-x: clip;
+  }
+
+  body.orders-page-shell > .app-shell > .page > .page__content > .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: var(--doke-mobile-app-max, 430px);
+    max-width: var(--doke-mobile-app-max, 430px);
+    margin-inline: auto;
+    padding-inline: var(--doke-orders-mobile-edge);
+    box-sizing: border-box;
+  }
+
+  body.orders-page-shell > .app-shell > .page > .page__content > .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content > .orders-page {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+    padding-inline: 0;
+    padding-left: 0;
+    padding-right: 0;
+    box-sizing: border-box;
+  }
+
+  body.orders-page-shell .orders-command-summary,
+  body.orders-page-shell .orders-planner,
+  body.orders-page-shell .orders-command-insights,
+  body.orders-page-shell .orders-list,
+  body.orders-page-shell .orders-empty {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+    box-sizing: border-box;
+  }
+
+  body.orders-page-shell .orders-command-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    gap: 10px;
+    padding: 0;
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+}
+
+/* Pedidos phone index-rail parity contract.
+   Root cause: phone surfaces were not all consuming the same visual rail.
+   Summary, agenda and order list had been moved to the index-like rail, but
+   intelligent insight cards still used the full wrapper and broke the shared
+   header/content axis. Apply the same rail to every large pedidos block. */
+@media (max-width: 560px) {
+  body.orders-page-shell {
+    --doke-orders-phone-rail-edge: clamp(16px, 4.7vw, 18px);
+    --doke-orders-phone-surface-inset: var(--doke-orders-phone-rail-edge);
+    --doke-orders-phone-surface-rail: calc(100% - (var(--doke-orders-phone-surface-inset) * 2));
+  }
+
+  body.orders-page-shell .orders-command-summary,
+  body.orders-page-shell .orders-planner,
+  body.orders-page-shell .orders-command-insights,
+  body.orders-page-shell .orders-list,
+  body.orders-page-shell .orders-empty {
+    inline-size: var(--doke-orders-phone-surface-rail);
+    width: var(--doke-orders-phone-surface-rail);
+    max-inline-size: var(--doke-orders-phone-surface-rail);
+    max-width: var(--doke-orders-phone-surface-rail);
+    margin-inline: auto;
+  }
+
+  body.orders-page-shell .orders-command-summary {
+    padding-inline: 0;
+  }
+
+  body.orders-page-shell .orders-command-summary > *,
+  body.orders-page-shell .orders-command-insights > *,
+  body.orders-page-shell .orders-planner__agenda,
+  body.orders-page-shell .orders-planner__calendar,
+  body.orders-page-shell .orders-planner__card,
+  body.orders-page-shell .order-card {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 380px) {
+  body.orders-page-shell {
+    --doke-orders-phone-rail-edge: 14px;
+  }
+}

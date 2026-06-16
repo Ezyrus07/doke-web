@@ -2256,10 +2256,6 @@ body[data-page="detalhe-anuncio"] .provider-card__cta {
 /* Detail anuncio responsive contract — 20260514
    Page-only layer. Goal: preserve the approved desktop visual while making the detail page
    fluid on tablet/mobile without touching shell, sidebar, body or global wrappers. */
-body[data-page="detalhe-anuncio"] {
-  --detail-mobile-bottom-bar: 92px;
-}
-
 body[data-page="detalhe-anuncio"] .ad-detail-shell,
 body[data-page="detalhe-anuncio"] .ad-detail-layout,
 body[data-page="detalhe-anuncio"] .ad-detail-main,
@@ -2376,7 +2372,6 @@ body[data-page="detalhe-anuncio"] .ad-gallery__thumbs::-webkit-scrollbar-thumb {
 @media (max-width: 760px) {
   body[data-page="detalhe-anuncio"] .detalhe-anuncio-page {
     padding-top: 14px;
-    padding-bottom: calc(var(--detail-mobile-bottom-bar) + env(safe-area-inset-bottom, 0px));
   }
 
   body[data-page="detalhe-anuncio"].has-global-header .ad-detail-shell,
@@ -2713,332 +2708,6 @@ body[data-page="detalhe-anuncio"] .ad-gallery__thumbs::-webkit-scrollbar-thumb {
 }
 
 
-/* Detail anuncio mobile topbar contract — 2026-05-14
-   Scope: detalhe-anuncio only. Restores the global header on mobile without
-   touching shell/sidebar/body global contracts. */
-@media (max-width: 760px) {
-  body[data-page="detalhe-anuncio"].has-global-header .page > .app-header.app-header--detail {
-    display: block;
-    visibility: visible;
-    opacity: 1;
-    position: sticky;
-    top: 0;
-    z-index: 90;
-    width: 100%;
-    min-height: auto;
-    margin: 0;
-    padding: calc(10px + env(safe-area-inset-top, 0px)) 0 8px;
-    background: rgba(238, 248, 253, 0.92);
-    border-bottom: 1px solid rgba(204, 221, 236, 0.58);
-    -webkit-backdrop-filter: blur(16px) saturate(1.05);
-    backdrop-filter: blur(16px) saturate(1.05);
-  }
-
-  body[data-page="detalhe-anuncio"].has-global-header .page > .app-header.app-header--detail .app-header__inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    width: min(calc(100% - 24px), 640px);
-    max-width: 640px;
-    min-height: 48px;
-    margin-inline: auto;
-    padding: 0;
-  }
-
-  body[data-page="detalhe-anuncio"] .app-header--detail .app-header__group,
-  body[data-page="detalhe-anuncio"] .app-header--detail .home-side-meta__group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-  }
-
-  body[data-page="detalhe-anuncio"] .app-header--detail .app-header__group--primary {
-    flex: 1 1 auto;
-    overflow: hidden;
-  }
-
-  body[data-page="detalhe-anuncio"] .app-header--detail .app-header__group--secondary {
-    flex: 0 0 auto;
-  }
-
-  body[data-page="detalhe-anuncio"] .app-header--detail .home-side-meta__alert,
-  body[data-page="detalhe-anuncio"] .app-header--detail .detail-standard-topbar__back {
-    display: inline-grid;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
-    padding: 0;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.96);
-    border: 1px solid rgba(215, 228, 240, 0.92);
-    color: #1f5f9f;
-    box-shadow: 0 10px 24px rgba(15, 45, 75, 0.08);
-  }
-
-  body[data-page="detalhe-anuncio"] .app-header--detail .home-side-meta__alert svg,
-  body[data-page="detalhe-anuncio"] .app-header--detail .detail-standard-topbar__back svg {
-    width: 18px;
-    height: 18px;
-    stroke: currentColor;
-    stroke-width: 2.35;
-    fill: none;
-  }
-
-  body[data-page="detalhe-anuncio"] .app-header--detail .home-side-meta__location {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    min-width: 0;
-    max-width: 100%;
-    height: 44px;
-    padding: 0 13px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.96);
-    border: 1px solid rgba(215, 228, 240, 0.92);
-    box-shadow: 0 10px 24px rgba(15, 45, 75, 0.08);
-    color: #184f86;
-  }
-
-  body[data-page="detalhe-anuncio"] .app-header--detail .home-side-meta__location-text {
-    display: block;
-    min-width: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    font-size: 0.86rem;
-    font-weight: 850;
-  }
-
-  body[data-page="detalhe-anuncio"] .app-header--detail .home-side-meta__location-dot {
-    width: 8px;
-    height: 8px;
-    flex: 0 0 8px;
-    border-radius: 999px;
-    background: #22c7a8;
-    box-shadow: 0 0 0 4px rgba(34, 199, 168, 0.12);
-  }
-
-  body[data-page="detalhe-anuncio"] .app-header--detail .home-side-meta__caret {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    flex: 0 0 8px;
-    border-right: 2px solid currentColor;
-    border-bottom: 2px solid currentColor;
-    transform: rotate(45deg) translateY(-2px);
-    opacity: 0.9;
-  }
-
-  body[data-page="detalhe-anuncio"] .app-header--detail .app-header__group--secondary > .home-side-meta__alert {
-    display: none;
-  }
-
-  body[data-page="detalhe-anuncio"] .app-header--detail .home-side-meta__profile-wrap {
-    display: block;
-    flex: 0 0 auto;
-  }
-
-  body[data-page="detalhe-anuncio"] .app-header--detail .home-side-meta__profile {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    padding: 0;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.96);
-    border: 1px solid rgba(215, 228, 240, 0.92);
-    box-shadow: 0 10px 24px rgba(15, 45, 75, 0.08);
-  }
-
-  body[data-page="detalhe-anuncio"] .app-header--detail .home-side-meta__avatar {
-    width: 34px;
-    height: 34px;
-    min-width: 34px;
-    font-size: 0.74rem;
-  }
-
-  body[data-page="detalhe-anuncio"] .app-header--detail .home-side-meta__identity {
-    display: none;
-  }
-
-  body[data-page="detalhe-anuncio"] .detalhe-anuncio-page {
-    padding-top: 12px;
-  }
-}
-
-@media (max-width: 430px) {
-  body[data-page="detalhe-anuncio"].has-global-header .page > .app-header.app-header--detail .app-header__inner {
-    width: min(calc(100% - 18px), 430px);
-    gap: 8px;
-  }
-
-  body[data-page="detalhe-anuncio"] .app-header--detail .home-side-meta__alert,
-  body[data-page="detalhe-anuncio"] .app-header--detail .detail-standard-topbar__back,
-  body[data-page="detalhe-anuncio"] .app-header--detail .home-side-meta__profile {
-    width: 42px;
-    height: 42px;
-    min-width: 42px;
-    min-height: 42px;
-    border-radius: 15px;
-  }
-
-  body[data-page="detalhe-anuncio"] .app-header--detail .home-side-meta__location {
-    height: 42px;
-    padding-inline: 11px;
-    border-radius: 15px;
-  }
-
-  body[data-page="detalhe-anuncio"] .app-header--detail .home-side-meta__location-text {
-    font-size: 0.8rem;
-  }
-}
-
-@media (max-width: 360px) {
-  body[data-page="detalhe-anuncio"] .app-header--detail .home-side-meta__location-text {
-    max-width: 132px;
-  }
-}
-
-
-/* Detail anuncio mobile header alignment — 2026-05-14
-   Scope: detalhe-anuncio only. Uses the same mobile header pattern as the site home:
-   profile + location + notification on first row, search pill on second row. */
-
-@media (max-width: 760px) {
-  body[data-page="detalhe-anuncio"].has-global-header .page > .app-header.app-header--detail {
-    display: none;
-  }
-
-  body[data-page="detalhe-anuncio"] .detalhe-anuncio-page {
-    padding-top: 12px;
-  }
-}
-
-
-/* Detail anuncio mobile header standard correction — 2026-05-14
-   Shows the actual shared mobile header pattern instead of leaving breadcrumb as first content. */
-@media (max-width: 760px) {
-  body[data-page="detalhe-anuncio"].has-global-header .page > .app-header.app-header--detail {
-    display: none;
-  }
-
-  body[data-page="detalhe-anuncio"] .detalhe-anuncio-page {
-    padding-top: 14px;
-  }
-}
-
-
-/* Detail anuncio mobile announcement header correction — 2026-05-14
-   Scope: detalhe-anuncio only. This page is not the home/search surface:
-   no search box, title must be "Anúncio", and the header stays compact. */
-@media (max-width: 760px) {
-
-  body[data-page="detalhe-anuncio"] .detalhe-anuncio-page {
-    padding-top: 12px;
-  }
-}
-
-
-/* Detail mobile header v8 — keep header in page flow, no custom sticky surface.
-   Scope: detalhe-anuncio mobile only. The header must not create a different
-   background band and must not stick while scrolling. */
-@media (max-width: 760px) {
-
-  body[data-page="detalhe-anuncio"] .ad-detail-breadcrumb {
-    margin-top: 0;
-  }
-}
-
-
-/* Detail mobile header v9 — align with the page rail and the real compact header pattern.
-   Scope: detalhe-anuncio only. No search surface here; header follows content width. */
-@media (max-width: 760px) {
-
-  body[data-page="detalhe-anuncio"] .detalhe-anuncio-page {
-    padding-top: 0;
-  }
-}
-
-
-/* Detail mobile header v10 — match the approved mobile rail without adding search.
-   Scope: detalhe-anuncio only. This corrects the visual width and header rhythm
-   after the v9 custom header still looked wider/different than the approved mobile pages. */
-@media (max-width: 760px) {
-  body[data-page="detalhe-anuncio"] {
-    --detail-mobile-page-rail: min(100% - 44px, 360px);
-    --detail-mobile-content-rail: min(100% - 44px, 360px);
-  }
-
-  body[data-page="detalhe-anuncio"] .detalhe-anuncio-page {
-    padding-top: 0;
-  }
-
-  body[data-page="detalhe-anuncio"] .ad-detail-shell {
-    inline-size: var(--detail-mobile-content-rail);
-    width: var(--detail-mobile-content-rail);
-    max-inline-size: var(--detail-mobile-content-rail);
-    max-width: var(--detail-mobile-content-rail);
-    margin-inline: auto;
-  }
-
-  body[data-page="detalhe-anuncio"] .ad-detail-breadcrumb {
-    margin-top: 0;
-    margin-bottom: 14px;
-  }
-}
-
-@media (max-width: 390px) {
-  body[data-page="detalhe-anuncio"] {
-    --detail-mobile-page-rail: min(100% - 36px, 344px);
-    --detail-mobile-content-rail: min(100% - 36px, 344px);
-  }
-}
-
-
-/* Detail mobile header v11 — alignment with approved home mobile rail.
-   Cause: v10 used 44px gutters, while the approved mobile pages use 16px page gutters.
-   Scope: detalhe-anuncio mobile only; no sticky, no search, no global shell changes. */
-@media (max-width: 760px) {
-  body[data-page="detalhe-anuncio"] {
-    --detail-mobile-page-rail: calc(100% - 32px);
-    --detail-mobile-content-rail: calc(100% - 32px);
-    --detail-mobile-page-edge: 16px;
-  }
-
-  body[data-page="detalhe-anuncio"] .page {
-    width: 100%;
-    max-width: none;
-    overflow-x: hidden;
-  }
-
-  body[data-page="detalhe-anuncio"] .detalhe-anuncio-page,
-  body[data-page="detalhe-anuncio"] .ad-detail-shell {
-    inline-size: var(--detail-mobile-content-rail);
-    width: var(--detail-mobile-content-rail);
-    max-inline-size: var(--detail-mobile-content-rail);
-    max-width: var(--detail-mobile-content-rail);
-    margin-inline: auto;
-  }
-
-  body[data-page="detalhe-anuncio"] .ad-detail-breadcrumb {
-    margin-top: 0;
-  }
-}
-
-@media (max-width: 374px) {
-  body[data-page="detalhe-anuncio"] {
-    --detail-mobile-page-rail: calc(100% - 24px);
-    --detail-mobile-content-rail: calc(100% - 24px);
-  }
-}
-
-
 /* Detail anuncio mobile header reset — 2026-05-15
    Remove the local/custom header attempt and let the canonical mobile-app-shell
    render the same header/search used by index.html. */
@@ -3065,7 +2734,7 @@ body[data-page="detalhe-anuncio"] .ad-gallery__thumbs::-webkit-scrollbar-thumb {
    breadcrumb/gallery entry area without touching global shell/sidebar/header. */
 @media (max-width: 760px) {
   body[data-page="detalhe-anuncio"] {
-    --detail-mobile-content-rail: min(calc(100% - 32px), 390px);
+    --detail-narrow-content-rail: min(calc(100% - 32px), 390px);
     background: var(--shell-content-bg, var(--color-background, #eef7fb));
   }
 
@@ -3079,8 +2748,8 @@ body[data-page="detalhe-anuncio"] .ad-gallery__thumbs::-webkit-scrollbar-thumb {
 
   body[data-page="detalhe-anuncio"].has-global-header .ad-detail-shell,
   body[data-page="detalhe-anuncio"] .ad-detail-shell {
-    width: var(--detail-mobile-content-rail);
-    max-width: var(--detail-mobile-content-rail);
+    width: var(--detail-narrow-content-rail);
+    max-width: var(--detail-narrow-content-rail);
     margin-inline: auto;
     padding: 0;
     gap: 10px;
@@ -3192,7 +2861,7 @@ body[data-page="detalhe-anuncio"] .ad-gallery__thumbs::-webkit-scrollbar-thumb {
 
 @media (max-width: 374px) {
   body[data-page="detalhe-anuncio"] {
-    --detail-mobile-content-rail: min(calc(100% - 24px), 350px);
+    --detail-narrow-content-rail: min(calc(100% - 24px), 350px);
   }
 
   body[data-page="detalhe-anuncio"] .ad-gallery__stage {
@@ -3217,21 +2886,21 @@ body[data-page="detalhe-anuncio"] .ad-gallery__thumbs::-webkit-scrollbar-thumb {
 
 @media (max-width: 760px) {
   body[data-page="detalhe-anuncio"] {
-    --detail-mobile-content-rail: min(calc(100% - 32px), 390px);
-    --detail-mobile-card-radius: 18px;
-    --detail-mobile-nav-offset: calc(var(--doke-mobile-shell-nav-height, 64px) + env(safe-area-inset-bottom, 0px));
+    --detail-narrow-content-rail: min(calc(100% - 32px), 390px);
+    --detail-compact-card-radius: 18px;
+    --detail-narrow-nav-offset: calc(var(--doke-mobile-shell-nav-height, 64px) + env(safe-area-inset-bottom, 0px));
     background: var(--shell-content-bg, #eef7fb);
   }
 
   body[data-page="detalhe-anuncio"] .detalhe-anuncio-page {
     padding-top: 0;
-    padding-bottom: calc(var(--detail-mobile-nav-offset) + 96px);
+    padding-bottom: calc(var(--detail-narrow-nav-offset) + 96px);
     background: transparent;
   }
 
   body[data-page="detalhe-anuncio"] .ad-detail-shell {
-    width: var(--detail-mobile-content-rail);
-    max-width: var(--detail-mobile-content-rail);
+    width: var(--detail-narrow-content-rail);
+    max-width: var(--detail-narrow-content-rail);
     margin-inline: auto;
     padding: 0;
     background: transparent;
@@ -3297,7 +2966,7 @@ body[data-page="detalhe-anuncio"] .ad-gallery__thumbs::-webkit-scrollbar-thumb {
     height: clamp(220px, 58vw, 260px);
     min-height: clamp(220px, 58vw, 260px);
     max-height: 260px;
-    border-radius: var(--detail-mobile-card-radius);
+    border-radius: var(--detail-compact-card-radius);
     box-shadow: 0 16px 34px rgba(15, 45, 75, .12);
     background: #dcebf3;
   }
@@ -3606,7 +3275,7 @@ body[data-page="detalhe-anuncio"] .ad-gallery__thumbs::-webkit-scrollbar-thumb {
 
 @media (max-width: 374px) {
   body[data-page="detalhe-anuncio"] {
-    --detail-mobile-content-rail: min(calc(100% - 24px), 350px);
+    --detail-narrow-content-rail: min(calc(100% - 24px), 350px);
   }
 
   body[data-page="detalhe-anuncio"] .ad-gallery__stage {
@@ -3737,18 +3406,18 @@ body[data-page="detalhe-anuncio"] .ad-gallery__thumbs::-webkit-scrollbar-thumb {
    description weight, review density and intentional horizontal carousels. */
 @media (max-width: 760px) {
   body[data-page="detalhe-anuncio"] {
-    --detail-mobile-cta-height: 78px;
-    --detail-mobile-cta-gap: 10px;
-    --detail-mobile-content-bottom-safe: calc(
-      var(--detail-mobile-nav-offset, calc(var(--doke-mobile-shell-nav-height, 64px) + env(safe-area-inset-bottom, 0px)))
-      + var(--detail-mobile-cta-height)
+    --detail-bottom-action-height: 78px;
+    --detail-bottom-action-gap: 10px;
+    --detail-content-bottom-safe: calc(
+      var(--detail-narrow-nav-offset, calc(var(--doke-mobile-shell-nav-height, 64px) + env(safe-area-inset-bottom, 0px)))
+      + var(--detail-bottom-action-height)
       + 52px
     );
   }
 
   body[data-page="detalhe-anuncio"] .detalhe-anuncio-page,
   body[data-page="detalhe-anuncio"] .ad-detail-shell {
-    padding-bottom: var(--detail-mobile-content-bottom-safe);
+    padding-bottom: var(--detail-content-bottom-safe);
   }
 
   body[data-page="detalhe-anuncio"] .ad-detail-main {
