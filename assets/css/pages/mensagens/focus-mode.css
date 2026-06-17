@@ -149,3 +149,52 @@ body[data-page="mensagens"] .messages-app[data-chat-mode="focus"] .messages-focu
     padding-inline: clamp(32px, 5vw, 96px);
   }
 }
+
+/* v3 — move the focus toggle into the chat surface.
+   Root cause addressed: the previous fixed positioning detached the control from the
+   workspace and left it floating in an awkward viewport location. */
+@media (min-width: 768px) {
+  body[data-page="mensagens"] .messages-focus-divider-toggle {
+    position: absolute;
+    z-index: 18;
+    inset-block-start: 18px;
+    inset-inline-start: calc(
+      var(--messages-tablet-list, var(--doke-internal-side-width, 320px))
+      + 10px
+    );
+    inline-size: 34px;
+    block-size: 34px;
+    border-radius: 14px;
+    transform: translateX(-50%);
+  }
+
+  body[data-page="mensagens"] .messages-focus-divider-toggle:hover,
+  body[data-page="mensagens"] .messages-focus-divider-toggle:focus-visible {
+    transform: translateX(-50%) translateY(-1px);
+  }
+
+  body[data-page="mensagens"] .messages-app[data-chat-mode="focus"] .messages-focus-divider-toggle {
+    inset-block-start: 18px;
+    inset-inline-start: 18px;
+    transform: none;
+  }
+
+  body[data-page="mensagens"] .messages-app[data-chat-mode="focus"] .messages-focus-divider-toggle:hover,
+  body[data-page="mensagens"] .messages-app[data-chat-mode="focus"] .messages-focus-divider-toggle:focus-visible {
+    transform: translateY(-1px);
+  }
+}
+
+@media (min-width: 1181px) {
+  body[data-page="mensagens"] .messages-focus-divider-toggle {
+    inset-block-start: 20px;
+    inset-inline-start: calc(
+      var(--messages-list-column-width, var(--doke-internal-side-width, clamp(400px, 27vw, 430px)))
+      + 10px
+    );
+  }
+
+  body[data-page="mensagens"] .messages-app[data-chat-mode="focus"] .messages-focus-divider-toggle {
+    inset-inline-start: 20px;
+  }
+}

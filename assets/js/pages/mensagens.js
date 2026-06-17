@@ -249,7 +249,7 @@
     const pageParams = new URLSearchParams(window.location.search);
     let activeId = pageParams.get("conversation") && conversations[pageParams.get("conversation")] ? pageParams.get("conversation") : "painting";
 
-    const isCompactThreadViewport = () => window.innerWidth <= 1023;
+    const isCompactThreadViewport = () => window.innerWidth <= 1180;
 
     const setCompactThreadOpen = (isOpen) => {
       const open = Boolean(isOpen) && isCompactThreadViewport();
@@ -266,6 +266,29 @@
       }
       return null;
     };
+
+    const renderLinkedOrderContext = () => `
+      <section class="messages-order-card messages-order-card--inline" data-messages-order-context aria-label="Pedido vinculado à conversa">
+        <div class="messages-order-card__head">
+          <span>Pedido vinculado</span>
+          <strong>Em negociação</strong>
+        </div>
+        <div class="messages-order-card__body">
+          <div class="messages-order-card__copy">
+            <h2>Pintura residencial com acabamento fino</h2>
+            <dl class="messages-order-card__facts">
+              <div><dt>Estimativa</dt><dd>R$ 850</dd></div>
+              <div><dt>Prazo</dt><dd>até 7 dias</dd></div>
+              <div><dt>Categoria</dt><dd>Pintura</dd></div>
+            </dl>
+          </div>
+          <div class="messages-order-card__actions">
+            <a class="messages-order-card__button messages-order-card__button--ghost doke-btn doke-btn--ghost" href="pedidos.html">Ver detalhes</a>
+            <button class="messages-order-card__button doke-btn doke-btn--primary" type="button" data-messages-proposal-action>Enviar proposta</button>
+          </div>
+        </div>
+      </section>
+    `;
     const syncPaymentFlowFromQuery = () => {
       const conversationId = pageParams.get("conversation");
       if (!conversationId || !conversations[conversationId]) return;
@@ -560,7 +583,7 @@
       if (threadEmpty) threadEmpty.hidden = conversation.messages.length !== 0;
       if (threadBody) threadBody.hidden = conversation.messages.length === 0;
       const activeInitials = getConversationInitials(conversation.name);
-      threadBody.innerHTML = conversation.messages.map((message, index) => `
+      threadBody.innerHTML = renderLinkedOrderContext() + conversation.messages.map((message, index) => `
         <article class="message-row${message.mine ? " message-row--me" : ""}" data-message-index="${index}">
           ${message.mine ? "" : `<span class="message-row__avatar doke-avatar" aria-hidden="true">${activeInitials}</span>`}
           <div class="message-bubble${message.mine ? " message-bubble--me" : ""}${message.type === "image" ? " message-bubble--image-only" : ""}${selectedMessageIndexes.has(index) ? " is-selected" : ""}" data-message-bubble data-message-index="${index}">
