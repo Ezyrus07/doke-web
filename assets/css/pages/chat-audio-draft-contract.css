@@ -1,0 +1,276 @@
+/* Doke chat audio draft contract.
+ * Scope: mensagens.html and comunidade-interna.html.
+ * Responsibility: keep the composer geometry stable when audio recording is active
+ * and provide one shared audio-draft/message audio visual contract for both chat pages.
+ */
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer, .community-room-composer) {
+  overflow: visible;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "draft draft draft"
+    "tools field send";
+  align-items: center;
+  row-gap: 10px;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer__tools, .community-room-composer__tools) {
+  grid-area: tools;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer__field, .community-room-composer__field) {
+  grid-area: field;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer__send, .community-room-composer__send) {
+  grid-area: send;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(
+    .messages-reply-preview,
+    .messages-audio-draft,
+    .messages-image-draft,
+    .community-audio-draft,
+    .community-room-attachment-preview,
+    .community-room-attachment-draft
+  ) {
+  grid-area: draft;
+  inline-size: 100%;
+  width: 100%;
+  min-inline-size: 0;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-audio-draft, .community-audio-draft)[hidden] {
+  display: none;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-audio-draft, .community-audio-draft):not([hidden]) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-block-size: 48px;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid rgba(185, 207, 229, 0.92);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #f9fcff 0%, #eef6ff 100%);
+  box-shadow: 0 10px 22px rgba(17, 52, 88, 0.07);
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-audio-draft__pulse, .community-audio-draft__pulse) {
+  flex: 0 0 auto;
+  inline-size: 10px;
+  width: 10px;
+  block-size: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #14b8a6;
+  box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.38);
+  animation: dokeChatAudioPulse 1.25s infinite;
+}
+
+@keyframes dokeChatAudioPulse {
+  0% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.38); }
+  70% { box-shadow: 0 0 0 10px rgba(20, 184, 166, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0); }
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-audio-draft__meta, .community-audio-draft__meta) {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  min-width: 0;
+  gap: 8px;
+  color: #173d6c;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-audio-draft__meta, .community-audio-draft__meta) strong {
+  min-inline-size: 0;
+  min-width: 0;
+  overflow: hidden;
+  color: #173d6c;
+  font-size: 0.84rem;
+  font-weight: 850;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-audio-draft__meta, .community-audio-draft__meta) span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-block-size: 26px;
+  min-height: 26px;
+  padding-inline: 10px;
+  border-radius: 999px;
+  background: #e4f1ff;
+  color: #2a5f90;
+  font-size: 0.76rem;
+  font-weight: 850;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-audio-draft__cancel, .community-audio-draft__cancel) {
+  flex: 0 0 auto;
+  min-block-size: 34px;
+  min-height: 34px;
+  padding-inline: 13px;
+  border: 1px solid rgba(185, 207, 229, 0.94);
+  border-radius: 999px;
+  background: #fff;
+  color: #174c83;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 850;
+  box-shadow: 0 6px 14px rgba(17, 52, 88, 0.05);
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.message-bubble__audio, .community-room-message__audio) {
+  display: grid;
+  grid-template-columns: auto minmax(84px, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  min-inline-size: min(280px, 100%);
+  margin-top: 2px;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.message-bubble__audio-play, .community-room-message__audio-play) {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 30px;
+  width: 30px;
+  block-size: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: #2a5f90;
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.message-bubble__audio-track, .community-room-message__audio-track) {
+  position: relative;
+  block-size: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(42, 95, 144, 0.18);
+  overflow: hidden;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.message-bubble__audio-track, .community-room-message__audio-track)::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 42%;
+  width: 42%;
+  border-radius: inherit;
+  background: #2a5f90;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.message-bubble__audio-meta, .message-bubble__audio-speed, .community-room-message__audio-meta) {
+  color: #5f7692;
+  font-size: 0.76rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  .message-bubble__audio-speed {
+  min-block-size: 28px;
+  min-height: 28px;
+  padding-inline: 9px;
+  border: 1px solid rgba(185, 207, 229, 0.9);
+  border-radius: 999px;
+  background: #fff;
+  color: #174c83;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+@media (max-width: 760px) {
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+    :is(.messages-composer, .community-room-composer) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "draft draft draft"
+      "tools field send";
+    column-gap: 8px;
+    row-gap: 8px;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+    :is(.messages-composer__tools, .community-room-composer__tools) {
+    display: flex;
+    gap: 6px;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+    :is(.messages-audio-draft, .community-audio-draft):not([hidden]) {
+    min-block-size: 44px;
+    min-height: 44px;
+    padding: 9px 10px;
+    border-radius: 16px;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+    :is(.messages-audio-draft__cancel, .community-audio-draft__cancel) {
+    min-block-size: 32px;
+    min-height: 32px;
+    padding-inline: 11px;
+  }
+}
+
+/* v2 — floating audio draft.
+   The recording draft is a transient composer state, not a new composer row.
+   Keep the composer height stable and render the draft as a compact surface
+   above the composer so the white interaction area does not grow. */
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer, .community-room-composer):has(:is(.messages-audio-draft, .community-audio-draft):not([hidden])) {
+  grid-template-areas: "tools field send";
+  grid-template-rows: auto;
+  row-gap: 0;
+  overflow: visible;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer, .community-room-composer):has(:is(.messages-audio-draft, .community-audio-draft):not([hidden]))
+  :is(.messages-audio-draft, .community-audio-draft):not([hidden]) {
+  position: absolute;
+  inset-inline: clamp(16px, 2.2vw, 28px);
+  inset-block-end: calc(100% + 10px);
+  inline-size: auto;
+  width: auto;
+  max-inline-size: none;
+  z-index: 3;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer, .community-room-composer):has(:is(.messages-audio-draft, .community-audio-draft):not([hidden]))::before {
+  border-radius: inherit;
+}

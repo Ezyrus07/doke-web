@@ -177,3 +177,68 @@ body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(
 ) {
   display: none;
 }
+
+/* v3 — shared chat contract for thread, bubbles and composer.
+   Root cause addressed: comunidade-interna.html still inherited the generic
+   end-aligned grid thread, which could clip the first message under the internal
+   header. The two chat screens now share the same readable top-start thread
+   flow, composer sizing and message width contract. */
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-thread__body, .community-room-thread__body) {
+  align-content: start;
+  gap: 14px;
+  scroll-padding-block: 96px 120px;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.message-row, .community-room-message) {
+  max-inline-size: min(760px, 82%);
+  max-width: min(760px, 82%);
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.message-bubble, .community-room-message__bubble) {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-composer, .community-room-composer) {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  min-block-size: 76px;
+  min-height: 76px;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-composer__tool, .community-room-composer__tool, .messages-composer__send, .community-room-composer__send) {
+  inline-size: 44px;
+  width: 44px;
+  min-inline-size: 44px;
+  min-width: 44px;
+  block-size: 44px;
+  height: 44px;
+  min-block-size: 44px;
+  min-height: 44px;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-composer__field, .community-room-composer__field) {
+  min-inline-size: 0;
+  min-width: 0;
+  min-block-size: 50px;
+  min-height: 50px;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.doke-chat-composer__input, .messages-composer__field textarea, .community-room-composer__field textarea) {
+  min-block-size: 24px;
+  min-height: 24px;
+  line-height: 1.45;
+}
+
+@media (max-width: 760px) {
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.message-row, .community-room-message) {
+    max-inline-size: 94%;
+    max-width: 94%;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-composer, .community-room-composer) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-block-size: 64px;
+    min-height: 64px;
+  }
+}

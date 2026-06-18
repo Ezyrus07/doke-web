@@ -1,0 +1,74 @@
+/* Doke chat interaction surface contract.
+ * Scope: mensagens.html and comunidade-interna.html.
+ * Responsibility: normalize sidebar search input native states and prevent
+ * thread content from visually bleeding underneath the composer surface.
+ * This file is scoped to chat screens only; it does not touch global shell,
+ * sidebar, header, body or shared site input contracts.
+ */
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-sidebar-search input, .community-room-search input) {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-sidebar-search input, .community-room-search input):is(:hover, :focus, :focus-visible, :active) {
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-sidebar-search input, .community-room-search input)::-webkit-search-decoration,
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-sidebar-search input, .community-room-search input)::-webkit-search-cancel-button,
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-sidebar-search input, .community-room-search input)::-webkit-search-results-button,
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-sidebar-search input, .community-room-search input)::-webkit-search-results-decoration {
+  display: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-sidebar-search, .community-room-search):focus-within {
+  border-color: var(--chat-sidebar-control-border, rgba(31, 95, 174, 0.14));
+  outline: 0;
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer, .community-room-composer) {
+  z-index: 12;
+  border-bottom: 0;
+  background: #fff;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer, .community-room-composer)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: #fff;
+  pointer-events: none;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer, .community-room-composer)::after {
+  display: none;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer, .community-room-composer) > * {
+  position: relative;
+  z-index: 1;
+}

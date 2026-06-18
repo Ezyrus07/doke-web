@@ -81,3 +81,29 @@ body[data-page="mensagens"] .messages-block--contacts .messages-list {
   overflow-x: hidden;
   padding-block-end: 18px;
 }
+
+/* v3 — single sidebar scroll authority.
+   Root cause addressed: the desktop workspace could still let the sidebar and
+   the remaining list compete for vertical overflow. The sidebar now acts as the
+   fixed shell; the single list region owns the useful scroll area. */
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .messages-sidebar {
+  overflow: hidden;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-sidebar-scroll-region {
+  flex: 1 1 0;
+  min-block-size: 0;
+  min-height: 0;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-sidebar-scroll-region > :is(.messages-block--contacts, .community-room-block--channels) {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  block-size: 100%;
+  min-block-size: 0;
+  min-height: 0;
+}
+
+body[data-page="comunidade-interna"] .community-room-block--channels .community-room-channel-list {
+  padding-block-end: 22px;
+}

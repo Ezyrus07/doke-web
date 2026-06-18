@@ -23,6 +23,10 @@
   var moreToggle = root.querySelector('[data-community-more-toggle]');
   var actionsMenu = root.querySelector('[data-community-actions-menu]');
   var attachButton = root.querySelector('[data-community-attach]');
+  var audioButton = root.querySelector('[data-community-audio]');
+  var audioDraft = root.querySelector('[data-community-audio-draft]');
+  var audioTime = root.querySelector('[data-community-audio-time]');
+  var audioCancel = root.querySelector('[data-community-audio-cancel]');
   var attachmentPreview = root.querySelector('[data-community-attachment-preview]');
   var attachmentDraft = root.querySelector('[data-community-attachment-draft]');
   var attachmentTitle = root.querySelector('[data-community-attachment-title]');
@@ -31,6 +35,8 @@
   var members = Array.prototype.slice.call(root.querySelectorAll('[data-member-search]'));
   var currentChannelName = '# Geral';
   var selectedAttachment = '';
+  var audioDraftSeconds = 0;
+  var audioDraftTimer = null;
 
   function closeFloatingMenus() {
     if (filterMenu) filterMenu.hidden = true;
@@ -48,6 +54,48 @@
   function scrollToStart() {
     if (!messageList) return;
     messageList.scrollTop = 0;
+  }
+
+  function formatAudioTime(totalSeconds) {
+    var minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+    var seconds = String(totalSeconds % 60).padStart(2, '0');
+    return minutes + ':' + seconds;
+  }
+
+  function hasActiveAudioDraft() {
+    return Boolean(audioDraft && !audioDraft.hidden);
+  }
+
+  function stopAudioDraftTimer() {
+    if (!audioDraftTimer) return;
+    window.clearInterval(audioDraftTimer);
+    audioDraftTimer = null;
+  }
+
+  function resetAudioDraft() {
+    stopAudioDraftTimer();
+    audioDraftSeconds = 0;
+    if (audioTime) audioTime.textContent = '00:00';
+    if (audioDraft) audioDraft.hidden = true;
+    if (audioButton) audioButton.classList.remove('is-recording');
+    if (audioButton) audioButton.setAttribute('aria-pressed', 'false');
+    updateSendState();
+  }
+
+  function startAudioDraft() {
+    if (!audioDraft) return;
+    clearAttachment();
+    closeFloatingMenus();
+    audioDraft.hidden = false;
+    if (audioButton) audioButton.classList.add('is-recording');
+    if (audioButton) audioButton.setAttribute('aria-pressed', 'true');
+    if (audioTime) audioTime.textContent = formatAudioTime(audioDraftSeconds);
+    stopAudioDraftTimer();
+    audioDraftTimer = window.setInterval(function () {
+      audioDraftSeconds += 1;
+      if (audioTime) audioTime.textContent = formatAudioTime(audioDraftSeconds);
+    }, 1000);
+    updateSendState();
   }
 
   function setMobileView(view) {
@@ -103,13 +151,7 @@
     if (channelCount) channelCount.textContent = String(visible);
   }
 
-  function createMessage(text) {
-    var article = document.createElement('article');
-    article.className = 'community-room-message community-room-message--self message-row message-row--me';
-
-    var bubble = document.createElement('div');
-    bubble.className = 'community-room-message__bubble message-bubble message-bubble--me';
-
+  function createMessageHeader() {
     var header = document.createElement('header');
     header.className = 'message-bubble__meta';
     var author = document.createElement('strong');
@@ -118,11 +160,20 @@
     author.textContent = 'Você';
     time.textContent = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     header.append(author, time);
+    return header;
+  }
+
+  function createMessage(text) {
+    var article = document.createElement('article');
+    article.className = 'community-room-message community-room-message--self message-row message-row--me';
+
+    var bubble = document.createElement('div');
+    bubble.className = 'community-room-message__bubble message-bubble message-bubble--me';
 
     var paragraph = document.createElement('p');
     paragraph.textContent = text;
 
-    bubble.append(header, paragraph);
+    bubble.append(createMessageHeader(), paragraph);
 
     if (selectedAttachment) {
       var media = document.createElement('div');
@@ -137,9 +188,36 @@
     return article;
   }
 
+  function createAudioMessage(duration) {
+    var article = document.createElement('article');
+    article.className = 'community-room-message community-room-message--self message-row message-row--me';
+
+    var bubble = document.createElement('div');
+    bubble.className = 'community-room-message__bubble message-bubble message-bubble--me';
+
+    var audio = document.createElement('div');
+    audio.className = 'community-room-message__audio message-bubble__audio';
+
+    var play = document.createElement('span');
+    play.className = 'community-room-message__audio-play message-bubble__audio-play';
+    play.textContent = '▶';
+
+    var track = document.createElement('span');
+    track.className = 'community-room-message__audio-track message-bubble__audio-track';
+
+    var meta = document.createElement('span');
+    meta.className = 'community-room-message__audio-meta message-bubble__audio-meta';
+    meta.textContent = duration;
+
+    audio.append(play, track, meta);
+    bubble.append(createMessageHeader(), audio);
+    article.appendChild(bubble);
+    return article;
+  }
+
   function updateSendState() {
     if (!sendButton || !composerInput) return;
-    sendButton.disabled = composerInput.value.trim().length === 0 && !selectedAttachment;
+    sendButton.disabled = composerInput.value.trim().length === 0 && !selectedAttachment && !hasActiveAudioDraft();
   }
 
   function clearAttachment() {
@@ -243,13 +321,30 @@
   if (attachButton && attachmentPreview) {
     attachButton.addEventListener('click', function () {
       var next = attachmentPreview.hidden;
+      resetAudioDraft();
       closeFloatingMenus();
       attachmentPreview.hidden = !next;
     });
   }
 
+  if (audioButton) {
+    audioButton.setAttribute('aria-pressed', 'false');
+    audioButton.addEventListener('click', function () {
+      if (hasActiveAudioDraft()) {
+        resetAudioDraft();
+        return;
+      }
+      startAudioDraft();
+    });
+  }
+
+  if (audioCancel) {
+    audioCancel.addEventListener('click', resetAudioDraft);
+  }
+
   root.querySelectorAll('[data-attachment-type]').forEach(function (button) {
     button.addEventListener('click', function () {
+      resetAudioDraft();
       selectedAttachment = button.dataset.attachmentType || 'Anexo';
       if (attachmentTitle) attachmentTitle.textContent = selectedAttachment + ' pronto para envio';
       if (attachmentDraft) attachmentDraft.hidden = false;
@@ -274,9 +369,16 @@
     composer.addEventListener('submit', function (event) {
       event.preventDefault();
       var text = composerInput ? composerInput.value.trim() : '';
-      if (!text && !selectedAttachment) return;
-      var messageText = text || 'Anexo enviado no canal ' + currentChannelName + '.';
-      messageList.appendChild(createMessage(messageText));
+      if (!text && !selectedAttachment && !hasActiveAudioDraft()) return;
+
+      if (hasActiveAudioDraft()) {
+        messageList.appendChild(createAudioMessage(formatAudioTime(Math.max(audioDraftSeconds, 1))));
+        resetAudioDraft();
+      } else {
+        var messageText = text || 'Anexo enviado no canal ' + currentChannelName + '.';
+        messageList.appendChild(createMessage(messageText));
+      }
+
       if (composerInput) {
         composerInput.value = '';
         composerInput.style.height = 'auto';
@@ -297,6 +399,7 @@
   document.addEventListener('keydown', function (event) {
     if (event.key !== 'Escape') return;
     closeFloatingMenus();
+    resetAudioDraft();
     root.querySelectorAll('[data-community-panel]').forEach(function (panel) {
       panel.classList.remove('is-open');
       panel.setAttribute('aria-hidden', 'true');

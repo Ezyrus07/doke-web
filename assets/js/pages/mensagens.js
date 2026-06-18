@@ -175,11 +175,9 @@
     const imageInput = root.querySelector("[data-messages-image-input]");
     const emojiButton = root.querySelector("[data-messages-emoji]");
     const audioButton = root.querySelector("[data-messages-audio]");
-    const messageMenu = root.querySelector("[data-message-menu]");
     const replyPreview = root.querySelector("[data-messages-reply-preview]");
     const replyAuthor = root.querySelector("[data-messages-reply-author]");
     const replyText = root.querySelector("[data-messages-reply-text]");
-    const copyToast = root.querySelector("[data-messages-copy-toast]");
     const selectionBar = root.querySelector("[data-messages-selection]");
     const selectionCount = root.querySelector("[data-messages-selection-count]");
     const selectionClear = root.querySelector("[data-messages-clear-selection]");
@@ -212,15 +210,11 @@
     const archiveConversationButtons = Array.from(root.querySelectorAll("[data-messages-archive-conversations]"));
     const clearSelectedButtons = Array.from(root.querySelectorAll("[data-messages-clear-selected]"));
 
-    let contextMessageIndex = -1;
-    let longPressTimer = null;
-    let activeBubble = null;
     let selectedMessageIndexes = new Set();
     let selectedConversationIds = new Set();
     let selectedFilterKeys = new Set();
     let selectionMode = false;
     let replyToMessage = null;
-    let copyToastTimer = null;
     let audioDraftSeconds = 0;
     let audioDraftTimer = null;
     let imageDraftSrc = "";
@@ -570,12 +564,8 @@
       const previousScrollTop = threadBody.scrollTop;
       const { scrollTo = isSameThread ? "preserve" : "start", openOnMobile = false } = options;
       activeId = id;
-      contextMessageIndex = -1;
       if (!isSameThread) clearSelection();
       clearReplyPreview();
-      messageMenu?.setAttribute("hidden", "");
-      activeBubble?.classList.remove("is-context-target");
-      activeBubble = null;
       items.forEach((item) => item.classList.toggle("is-active", item.dataset.messageId === id));
       if (threadAvatar) threadAvatar.textContent = getConversationInitials(conversation.name);
       if (threadName) threadName.textContent = conversation.name;
@@ -584,9 +574,9 @@
       if (threadBody) threadBody.hidden = conversation.messages.length === 0;
       const activeInitials = getConversationInitials(conversation.name);
       threadBody.innerHTML = renderLinkedOrderContext() + conversation.messages.map((message, index) => `
-        <article class="message-row${message.mine ? " message-row--me" : ""}" data-message-index="${index}">
+        <article class="message-row${message.mine ? " message-row--me" : ""}${message.type === "charge" ? " message-row--charge" : ""}" data-message-index="${index}">
           ${message.mine ? "" : `<span class="message-row__avatar doke-avatar" aria-hidden="true">${activeInitials}</span>`}
-          <div class="message-bubble${message.mine ? " message-bubble--me" : ""}${message.type === "image" ? " message-bubble--image-only" : ""}${selectedMessageIndexes.has(index) ? " is-selected" : ""}" data-message-bubble data-message-index="${index}">
+          <div class="message-bubble${message.mine ? " message-bubble--me" : ""}${message.type === "image" ? " message-bubble--image-only" : ""}${message.type === "charge" ? " message-bubble--charge" : ""}${selectedMessageIndexes.has(index) ? " is-selected" : ""}" data-message-bubble data-message-index="${index}">
             <div class="message-bubble__meta">
               <span>${message.mine ? message.author : ""}</span>
               <span>${message.time}</span>
@@ -626,22 +616,41 @@
             : message.paid
               ? "Pagamento confirmado"
               : "Aguardando pagamento";
+        const chargeState = message.reviewed
+          ? "reviewed"
+          : message.completed
+            ? "completed"
+            : message.paid
+              ? "paid"
+              : "pending";
         const chargeAction = message.reviewed
           ? ""
           : message.completed
             ? `<button class="message-bubble__charge-pay is-done" type="button" data-message-review>Avaliar</button>`
             : message.paid
               ? `<button class="message-bubble__charge-pay is-complete" type="button" data-message-complete>Finalizar pedido</button>`
-              : `<button class="message-bubble__charge-pay" type="button" data-message-pay>Pagar</button>`;
+              : `<button class="message-bubble__charge-pay" type="button" data-message-pay>Pagar agora</button>`;
         chargeCard.innerHTML = `
-          <div class="message-bubble__charge-head">
-            <span class="message-bubble__charge-label">Cobrança</span>
-            <strong class="message-bubble__charge-value">${message.amount}</strong>
+          <div class="message-bubble__charge-topline">
+            <span class="message-bubble__charge-label">Cobrança enviada</span>
+            <span class="message-bubble__charge-status message-bubble__charge-status--${chargeState}">${chargeStatus}</span>
           </div>
-          <div class="message-bubble__charge-text">${message.text}</div>
-          <div class="message-bubble__charge-text">${message.installments || "À vista"}</div>
+          <div class="message-bubble__charge-main">
+            <span class="message-bubble__charge-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 3.75h10a2 2 0 0 1 2 2v14.5l-2.4-1.25-2.3 1.25L12 19l-2.3 1.25L7.4 19 5 20.25V5.75a2 2 0 0 1 2-2Z"></path><path d="M8.5 8.25h7"></path><path d="M8.5 11.75h5"></path><path d="M8.5 15.25h7"></path></svg>
+            </span>
+            <div class="message-bubble__charge-content">
+              <span class="message-bubble__charge-kicker">Proposta para aprovação</span>
+              <strong class="message-bubble__charge-value">${message.amount}</strong>
+              <p class="message-bubble__charge-text">${message.text}</p>
+            </div>
+          </div>
+          <div class="message-bubble__charge-details" aria-label="Detalhes da cobrança">
+            <span>Pagamento seguro pela Doke</span>
+            <span>${message.installments || "À vista"}</span>
+          </div>
           <div class="message-bubble__charge-actions">
-            <span class="message-bubble__charge-status">${chargeStatus}</span>
+            <span class="message-bubble__charge-note">Confirme para liberar o atendimento.</span>
             ${chargeAction}
           </div>
         `;
@@ -667,13 +676,6 @@
       });
     };
 
-    const hideMessageMenu = () => {
-      messageMenu?.setAttribute("hidden", "");
-      activeBubble?.classList.remove("is-context-target");
-      activeBubble = null;
-      contextMessageIndex = -1;
-    };
-
     const formatAudioTime = (totalSeconds) => {
       const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
       const seconds = String(totalSeconds % 60).padStart(2, "0");
@@ -692,12 +694,14 @@
       if (audioTime) audioTime.textContent = "00:00";
       audioDraft?.setAttribute("hidden", "");
       audioButton?.classList.remove("is-recording");
+      audioButton?.setAttribute("aria-pressed", "false");
     };
 
     const startAudioDraft = () => {
       if (!audioDraft) return;
       audioDraft.removeAttribute("hidden");
       audioButton?.classList.add("is-recording");
+      audioButton?.setAttribute("aria-pressed", "true");
       if (audioTime) audioTime.textContent = formatAudioTime(audioDraftSeconds);
       stopAudioDraft();
       audioDraftTimer = window.setInterval(() => {
@@ -713,16 +717,6 @@
       if (imageInput) imageInput.value = "";
     };
 
-    const showCopyToast = (label = "Copiado") => {
-      if (!copyToast) return;
-      copyToast.textContent = label;
-      copyToast.hidden = false;
-      if (copyToastTimer) window.clearTimeout(copyToastTimer);
-      copyToastTimer = window.setTimeout(() => {
-        copyToast.hidden = true;
-      }, 900);
-    };
-
     const clearReplyPreview = () => {
       replyToMessage = null;
       replyPreview?.setAttribute("hidden", "");
@@ -736,21 +730,6 @@
       if (replyText) replyText.textContent = String(message.text || "").slice(0, 72);
       replyPreview?.removeAttribute("hidden");
       composerInput?.focus();
-    };
-
-    const openMessageMenu = (bubble, x, y) => {
-      if (!messageMenu || !bubble) return;
-      activeBubble?.classList.remove("is-context-target");
-      activeBubble = bubble;
-      bubble.classList.add("is-context-target");
-      contextMessageIndex = Number(bubble.dataset.messageIndex || -1);
-      messageMenu.hidden = false;
-      const menuWidth = 180;
-      const menuHeight = 150;
-      const left = Math.min(Math.max(12, x), window.innerWidth - menuWidth - 12);
-      const top = Math.min(Math.max(12, y), window.innerHeight - menuHeight - 12);
-      messageMenu.style.left = `${left}px`;
-      messageMenu.style.top = `${top}px`;
     };
 
     const openLightbox = (src, alt) => {
@@ -1041,13 +1020,6 @@
       });
     });
 
-    threadBody?.addEventListener("contextmenu", (event) => {
-      const bubble = event.target.closest("[data-message-bubble]");
-      if (!bubble) return;
-      event.preventDefault();
-      openMessageMenu(bubble, event.clientX, event.clientY);
-    });
-
     threadBody?.addEventListener("click", (event) => {
       const bubble = event.target.closest("[data-message-bubble]");
       const speedButton = event.target.closest("[data-audio-speed]");
@@ -1134,30 +1106,6 @@
       openLightbox(image.currentSrc || image.src, image.alt);
     });
 
-    threadBody?.addEventListener("pointerdown", (event) => {
-      const bubble = event.target.closest("[data-message-bubble]");
-      if (!bubble || event.pointerType === "mouse") return;
-      longPressTimer = window.setTimeout(() => {
-        openMessageMenu(bubble, event.clientX || 24, event.clientY || 24);
-      }, 420);
-    });
-
-    ["pointerup", "pointercancel", "pointermove", "scroll"].forEach((eventName) => {
-      threadBody?.addEventListener(eventName, () => {
-        if (longPressTimer) {
-          window.clearTimeout(longPressTimer);
-          longPressTimer = null;
-        }
-      });
-    });
-
-    document.addEventListener("click", (event) => {
-      if (messageMenu?.hidden) return;
-      if (event.target.closest("[data-message-menu]")) return;
-      if (event.target.closest("[data-message-bubble]")) return;
-      hideMessageMenu();
-    });
-
     document.addEventListener("click", (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
@@ -1184,41 +1132,8 @@
       resetActionSurfaces();
       closeThreadCallMenu();
       closeThreadMoreMenu();
-      hideMessageMenu();
     });
 
-    messageMenu?.addEventListener("click", async (event) => {
-      const action = event.target.closest("[data-message-action]")?.dataset.messageAction;
-      const conversation = conversations[activeId];
-      const message = conversation?.messages?.[contextMessageIndex];
-      if (!action || !message) return;
-
-      if (action === "select") {
-        selectedMessageIndexes.add(contextMessageIndex);
-        renderThread(activeId);
-      }
-
-      if (action === "reply" && composerInput) {
-        setReplyPreview(message);
-      }
-
-      if (action === "copy") {
-        try {
-          await navigator.clipboard.writeText(message.text);
-        } catch (_) {
-          composerInput && (composerInput.value = message.text);
-        }
-        showCopyToast();
-      }
-
-      if (action === "delete") {
-        conversation.messages.splice(contextMessageIndex, 1);
-        clearSelection();
-        renderThread(activeId);
-      }
-
-      hideMessageMenu();
-    });
 
     composer?.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -1365,7 +1280,13 @@
       composerInput.focus();
     });
 
+    audioButton?.setAttribute("aria-pressed", "false");
+
     audioButton?.addEventListener("click", () => {
+      if (audioDraft && !audioDraft.hidden) {
+        resetAudioDraft();
+        return;
+      }
       startAudioDraft();
     });
 
@@ -1394,7 +1315,6 @@
     });
 
     backButton?.addEventListener("click", () => {
-      hideMessageMenu();
       setCompactThreadOpen(false);
       replyPreview?.setAttribute("hidden", "");
       audioDraft?.setAttribute("hidden", "");
@@ -1424,7 +1344,6 @@
         clearMessagesRouteState();
         return;
       }
-      hideMessageMenu();
       syncComposerPlaceholder();
       setCompactThreadOpen(root.dataset.messagesMode === "thread");
       closeFiltersPanel();
@@ -1450,7 +1369,6 @@
     clearSelection();
     resetAudioDraft();
     resetImageDraft();
-    if (copyToast) copyToast.hidden = true;
     syncComposerPlaceholder();
     renderThread(activeId, { scrollTo: "start" });
     if (isCompactThreadViewport()) {
