@@ -1,0 +1,481 @@
+/* Doke chat room compact state contract.
+ * Scope: mensagens.html and comunidade-interna.html when a thread/channel is open.
+ * Responsibility: keep tablet/mobile room headers, message width and composer
+ * behavior stable without copying the list-page rail/header contract.
+ */
+
+@media (max-width: 1180px) {
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) > .app-shell > .page > .page__content {
+    display: block;
+    min-block-size: calc(100dvh - var(--mobile-bottom-nav-height, 78px));
+    min-height: calc(100dvh - var(--mobile-bottom-nav-height, 78px));
+    padding: 0;
+    overflow: hidden;
+    background: #eef5fb;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-shell-content, .community-room-shell) {
+    inline-size: min(100%, calc(100vw - 28px));
+    width: min(100%, calc(100vw - 28px));
+    max-inline-size: min(100%, calc(100vw - 28px));
+    max-width: min(100%, calc(100vw - 28px));
+    block-size: calc(100dvh - var(--mobile-bottom-nav-height, 78px));
+    height: calc(100dvh - var(--mobile-bottom-nav-height, 78px));
+    min-block-size: 0;
+    min-height: 0;
+    margin-inline: auto;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-app, .community-room-layout) {
+    block-size: 100%;
+    height: 100%;
+    min-block-size: 0;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: hidden;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread, .community-room-thread) {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    block-size: 100%;
+    height: 100%;
+    min-block-size: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: #eef5fb;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__header, .community-room-thread__header) {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    min-block-size: 62px;
+    min-height: 62px;
+    padding: 9px 10px;
+    gap: 8px;
+    border-block-end: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+    z-index: 5;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__shell-menu, .community-room-thread__shell-menu) {
+    display: none;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__back, .community-room-thread__back) {
+    grid-column: 1;
+    inline-size: 42px;
+    width: 42px;
+    min-inline-size: 42px;
+    min-width: 42px;
+    block-size: 42px;
+    height: 42px;
+    min-block-size: 42px;
+    min-height: 42px;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__profile, .community-room-thread__profile) {
+    grid-column: 2;
+    min-inline-size: 0;
+    min-width: 0;
+    gap: 10px;
+    overflow: hidden;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__avatar, .community-room-thread__avatar) {
+    inline-size: 40px;
+    width: 40px;
+    min-inline-size: 40px;
+    min-width: 40px;
+    block-size: 40px;
+    height: 40px;
+    min-block-size: 40px;
+    min-height: 40px;
+    font-size: 0.78rem;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__profile strong, .community-room-thread__profile strong) {
+    font-size: 0.92rem;
+    line-height: 1.05;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__profile p, .community-room-thread__profile p) {
+    font-size: 0.72rem;
+    line-height: 1.15;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__actions, .community-room-thread__actions) {
+    grid-column: 3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-inline-size: 0;
+    min-width: 0;
+    gap: 6px;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__action, .community-room-thread__action) {
+    min-block-size: 42px;
+    min-height: 42px;
+    block-size: 42px;
+    height: 42px;
+    border-radius: 16px;
+  }
+
+  body.messages-thread-is-open .messages-thread__action--call {
+    display: none;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-call-menu, .thread-more-menu, .community-room-actions-menu)[hidden] {
+    display: none;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-call-menu, .thread-more-menu, .community-room-actions-menu) {
+    top: calc(100% + 6px);
+    right: 10px;
+    z-index: 30;
+    width: min(260px, calc(100vw - 40px));
+    padding: 10px;
+    border: 1px solid rgba(31, 95, 174, 0.14);
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 18px 38px rgba(31, 68, 110, 0.16);
+  }
+
+  body[data-page="mensagens"] :is(.messages-call-menu, .thread-more-menu) button,
+  body[data-page="comunidade-interna"] .community-room-actions-menu button {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-block-size: 40px;
+    min-height: 40px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 13px;
+    background: #f2f7fd;
+    color: var(--chat-ink, #073264);
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 850;
+    text-align: left;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__body, .community-room-thread__body) {
+    min-block-size: 0;
+    min-height: 0;
+    padding: 16px;
+    gap: 14px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    align-content: start;
+    scroll-padding-block: 76px 96px;
+    scrollbar-gutter: stable;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.message-row, .community-room-message) {
+    max-inline-size: min(680px, 84%);
+    max-width: min(680px, 84%);
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.message-bubble, .community-room-message__bubble) {
+    max-inline-size: 100%;
+    max-width: 100%;
+    min-inline-size: 0;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-composer, .community-room-composer) {
+    z-index: 4;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    min-block-size: 70px;
+    min-height: 70px;
+    padding: 10px 12px calc(env(safe-area-inset-bottom, 0px) + 10px);
+    border-block-start: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-composer, .community-room-composer)::before,
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-composer, .community-room-composer)::after {
+    content: none;
+    display: none;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__body, .community-room-thread__body) {
+    padding-block-end: 24px;
+    scrollbar-width: none;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__body, .community-room-thread__body)::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 1180px) {
+  body.messages-thread-is-open :is(.messages-thread__action--charge, .messages-thread__action--call),
+  body.community-room-thread-is-open .community-room-thread__action--pinned {
+    display: none;
+  }
+
+  body.messages-thread-is-open .messages-thread__action--order,
+  body.community-room-thread-is-open .community-room-thread__action--members {
+    display: inline-flex;
+    inline-size: auto;
+    width: auto;
+    min-inline-size: max-content;
+    min-width: max-content;
+    padding-inline: 12px;
+  }
+
+  body.messages-thread-is-open .messages-thread__action--order span,
+  body.community-room-thread-is-open .community-room-thread__action--members span {
+    display: inline;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__action--more, .community-room-thread__action--icon) {
+    inline-size: 42px;
+    width: 42px;
+    min-inline-size: 42px;
+    min-width: 42px;
+    padding-inline: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-shell-content, .community-room-shell) {
+    inline-size: min(100%, calc(100vw - 20px));
+    width: min(100%, calc(100vw - 20px));
+    max-inline-size: min(100%, calc(100vw - 20px));
+    max-width: min(100%, calc(100vw - 20px));
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__header, .community-room-thread__header) {
+    grid-template-columns: 38px minmax(0, 1fr) 38px;
+    min-block-size: 58px;
+    min-height: 58px;
+    padding: 8px;
+    gap: 7px;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__back, .community-room-thread__back),
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__action--more, .community-room-thread__action--icon) {
+    inline-size: 38px;
+    width: 38px;
+    min-inline-size: 38px;
+    min-width: 38px;
+    block-size: 38px;
+    height: 38px;
+    min-block-size: 38px;
+    min-height: 38px;
+    padding: 0;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__avatar, .community-room-thread__avatar) {
+    inline-size: 34px;
+    width: 34px;
+    min-inline-size: 34px;
+    min-width: 34px;
+    block-size: 34px;
+    height: 34px;
+    min-block-size: 34px;
+    min-height: 34px;
+    font-size: 0.68rem;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__profile, .community-room-thread__profile) {
+    gap: 8px;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__profile strong, .community-room-thread__profile strong) {
+    font-size: 0.78rem;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__profile p, .community-room-thread__profile p) {
+    font-size: 0.64rem;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__action:not(.messages-thread__action--more), .community-room-thread__action:not(.community-room-thread__action--icon)) {
+    display: none;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__body, .community-room-thread__body) {
+    padding: 12px 10px 24px;
+    gap: 12px;
+    scroll-padding-block: 66px 98px;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.message-row, .community-room-message) {
+    max-inline-size: calc(100% - 42px);
+    max-width: calc(100% - 42px);
+    gap: 8px;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.message-row__avatar, .community-room-message__avatar) {
+    inline-size: 34px;
+    width: 34px;
+    min-inline-size: 34px;
+    min-width: 34px;
+    block-size: 34px;
+    height: 34px;
+    min-block-size: 34px;
+    min-height: 34px;
+    font-size: 0.68rem;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.message-bubble, .community-room-message__bubble) {
+    padding: 10px 12px;
+    border-radius: 16px 16px 16px 7px;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.message-row--me .message-bubble, .message-bubble--me, .community-room-message--self .message-bubble) {
+    border-radius: 16px 16px 7px 16px;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) .message-bubble p,
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) .message-bubble__text {
+    font-size: 0.82rem;
+    line-height: 1.36;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-composer, .community-room-composer) {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    min-block-size: 62px;
+    min-height: 62px;
+    padding: 8px;
+    gap: 6px;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-composer__tools, .community-room-composer__tools) {
+    display: contents;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-composer__tool, .community-room-composer__tool, .messages-composer__send, .community-room-composer__send) {
+    inline-size: 36px;
+    width: 36px;
+    min-inline-size: 36px;
+    min-width: 36px;
+    block-size: 36px;
+    height: 36px;
+    min-block-size: 36px;
+    min-height: 36px;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-composer__field, .community-room-composer__field) {
+    min-block-size: 40px;
+    min-height: 40px;
+  }
+
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.doke-chat-composer__input, .messages-composer__field textarea, .community-room-composer__field textarea) {
+    font-size: 0.82rem;
+  }
+}
+
+/* v3 — opened room surface authority.
+ * Scope: tablet/mobile opened thread/channel only.
+ * Responsibility: neutralize legacy composer/header surfaces that still have
+ * higher selector specificity in older page CSS, without changing list/canal
+ * state or global rails.
+ */
+@media (max-width: 1180px) {
+  html body[data-page="mensagens"].messages-thread-is-open .messages-app,
+  html body[data-page="comunidade-interna"].community-room-thread-is-open .community-room-layout {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  html body[data-page="mensagens"].messages-thread-is-open .messages-app > .messages-thread > .messages-thread__header,
+  html body[data-page="comunidade-interna"].community-room-thread-is-open .community-room-layout > .community-room-thread > .community-room-thread__header {
+    border-block-end: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  html body[data-page="mensagens"].messages-thread-is-open .messages-app > .messages-thread > .messages-composer,
+  html body[data-page="comunidade-interna"].community-room-thread-is-open .community-room-layout > .community-room-thread > .community-room-composer {
+    border-block-start: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    overflow: visible;
+  }
+
+  html body[data-page="mensagens"].messages-thread-is-open .messages-app > .messages-thread > .messages-composer::before,
+  html body[data-page="mensagens"].messages-thread-is-open .messages-app > .messages-thread > .messages-composer::after,
+  html body[data-page="comunidade-interna"].community-room-thread-is-open .community-room-layout > .community-room-thread > .community-room-composer::before,
+  html body[data-page="comunidade-interna"].community-room-thread-is-open .community-room-layout > .community-room-thread > .community-room-composer::after {
+    content: none;
+    display: none;
+  }
+}
+
+/* v5 — opened room action density + tablet landscape rail authority.
+ * Scope: opened thread/channel only.
+ * Responsibility: prevent header actions from crowding the identity area on
+ * tablet portrait and keep tablet landscape on the same page rail as the
+ * internal pages, without changing list/canal state or global shell tokens.
+ */
+@media (min-width: 561px) and (max-width: 760px) {
+  body:is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-thread__actions, .community-room-thread__actions) {
+    gap: 6px;
+  }
+
+  body.messages-thread-is-open .messages-thread__action--order,
+  body.community-room-thread-is-open .community-room-thread__action--members {
+    inline-size: 42px;
+    width: 42px;
+    min-inline-size: 42px;
+    min-width: 42px;
+    padding-inline: 0;
+  }
+
+  body.messages-thread-is-open .messages-thread__action--order span,
+  body.community-room-thread-is-open .community-room-thread__action--members span {
+    display: none;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  html body:is([data-page="mensagens"], [data-page="comunidade-interna"]):is(.messages-thread-is-open, .community-room-thread-is-open) > .app-shell > .page > .page__content > .page__content-inner.messages-shell-content {
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    margin-inline: auto;
+  }
+
+  html body:is([data-page="mensagens"], [data-page="comunidade-interna"]):is(.messages-thread-is-open, .community-room-thread-is-open) :is(.messages-shell-content, .community-room-shell) {
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+  }
+
+  body.messages-thread-is-open .messages-thread__action--order,
+  body.community-room-thread-is-open .community-room-thread__action--members {
+    max-inline-size: 132px;
+    max-width: 132px;
+  }
+
+  body.messages-thread-is-open .messages-thread__action--order span,
+  body.community-room-thread-is-open .community-room-thread__action--members span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+

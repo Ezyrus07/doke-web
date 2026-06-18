@@ -72,3 +72,95 @@ body:is([data-page="mensagens"], [data-page="comunidade-interna"])
   position: relative;
   z-index: 1;
 }
+
+/* v2 — sidebar search inner alignment.
+ * Scope: mensagens.html and comunidade-interna.html search controls.
+ * Responsibility: keep search icon, placeholder/input text and clear action on
+ * the same vertical axis in tablet/mobile without changing global header/rail.
+ */
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) {
+  --chat-sidebar-search-height: 44px;
+  --chat-sidebar-search-control-size: 34px;
+  --chat-sidebar-search-icon-size: 17px;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-sidebar-search, .community-room-search) {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: var(--chat-sidebar-search-control-size) minmax(0, 1fr) var(--chat-sidebar-search-control-size);
+  align-items: center;
+  column-gap: 4px;
+  block-size: var(--chat-sidebar-search-height);
+  height: var(--chat-sidebar-search-height);
+  min-block-size: var(--chat-sidebar-search-height);
+  min-height: var(--chat-sidebar-search-height);
+  padding-block: 0;
+  padding-inline: 6px;
+  line-height: 1;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-sidebar-search__icon, .messages-sidebar-search__close, .community-room-search__icon, .community-room-search__close, .community-room-search__clear) {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  align-self: center;
+  justify-self: center;
+  inline-size: var(--chat-sidebar-search-control-size);
+  width: var(--chat-sidebar-search-control-size);
+  min-inline-size: var(--chat-sidebar-search-control-size);
+  min-width: var(--chat-sidebar-search-control-size);
+  block-size: var(--chat-sidebar-search-control-size);
+  height: var(--chat-sidebar-search-control-size);
+  min-block-size: var(--chat-sidebar-search-control-size);
+  min-height: var(--chat-sidebar-search-control-size);
+  margin: 0;
+  padding: 0;
+  line-height: 0;
+  vertical-align: middle;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-sidebar-search__icon svg, .messages-sidebar-search__close svg, .community-room-search__icon svg, .community-room-search__close svg, .community-room-search__clear svg) {
+  display: block;
+  inline-size: var(--chat-sidebar-search-icon-size);
+  width: var(--chat-sidebar-search-icon-size);
+  block-size: var(--chat-sidebar-search-icon-size);
+  height: var(--chat-sidebar-search-icon-size);
+  margin: 0;
+  stroke-width: 2.2;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-sidebar-search input, .community-room-search input) {
+  box-sizing: border-box;
+  align-self: stretch;
+  display: block;
+  inline-size: 100%;
+  width: 100%;
+  min-inline-size: 0;
+  min-width: 0;
+  block-size: 100%;
+  height: 100%;
+  min-block-size: 0;
+  min-height: 0;
+  margin: 0;
+  padding-block: 0;
+  padding-inline: 0;
+  line-height: normal;
+  text-align: start;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-sidebar-search input::placeholder, .community-room-search input::placeholder) {
+  opacity: 1;
+}
+
+@media (max-width: 760px) {
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) {
+    --chat-sidebar-search-height: 42px;
+    --chat-sidebar-search-control-size: 32px;
+    --chat-sidebar-search-icon-size: 16px;
+  }
+}

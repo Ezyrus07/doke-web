@@ -1203,7 +1203,17 @@
       event.stopPropagation();
       const action = event.target.closest("[data-thread-more-action]")?.dataset.threadMoreAction;
       if (!action) return;
-      if (action === "search") {
+      if (action === "order") {
+        if (window.DokeNavigate) {
+          window.DokeNavigate("pedidos.html");
+        } else {
+          window.location.href = "pedidos.html";
+        }
+      } else if (action === "charge") {
+        openChargeModal();
+      } else if (action === "call") {
+        startThreadCall("audio");
+      } else if (action === "search") {
         setSearchExpanded(true);
         window.setTimeout(() => getVisibleSearchInput()?.focus(), 20);
       } else if (action === "archive") {
