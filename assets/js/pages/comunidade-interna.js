@@ -18,7 +18,9 @@
   var resetSearch = root.querySelector('[data-community-reset-search]');
   var channelCount = root.querySelector('[data-community-channel-count]');
   var backButton = root.querySelector('[data-community-back]');
-  var filterToggle = root.querySelector('[data-community-filter-toggle]');
+  var filterToggles = Array.prototype.slice.call(document.querySelectorAll('[data-community-filter-toggle]'));
+  var filterToggle = filterToggles[0] || null;
+  var searchTriggers = Array.prototype.slice.call(document.querySelectorAll('[data-community-search-trigger]'));
   var filterMenu = root.querySelector('[data-community-filter-menu]');
   var moreToggle = root.querySelector('[data-community-more-toggle]');
   var actionsMenu = root.querySelector('[data-community-actions-menu]');
@@ -40,7 +42,7 @@
 
   function closeFloatingMenus() {
     if (filterMenu) filterMenu.hidden = true;
-    if (filterToggle) filterToggle.setAttribute('aria-expanded', 'false');
+    filterToggles.forEach(function (toggle) { toggle.setAttribute('aria-expanded', 'false'); });
     if (actionsMenu) actionsMenu.hidden = true;
     if (moreToggle) moreToggle.setAttribute('aria-expanded', 'false');
     if (attachmentPreview) attachmentPreview.hidden = true;
@@ -100,6 +102,9 @@
 
   function setMobileView(view) {
     root.dataset.mobileView = view;
+    var isThread = view === 'thread';
+    document.body.classList.toggle('community-room-thread-is-open', isThread);
+    document.documentElement.classList.toggle('community-room-thread-is-open', isThread);
   }
 
   function activateChannel(channel) {
@@ -251,6 +256,13 @@
     searchInput.addEventListener('input', filterChannels);
   }
 
+  searchTriggers.forEach(function (button) {
+    button.addEventListener('click', function () {
+      if (searchInput) searchInput.focus();
+      closeFloatingMenus();
+    });
+  });
+
   if (searchClear) {
     searchClear.addEventListener('click', function () {
       if (searchInput) searchInput.value = '';
@@ -266,12 +278,14 @@
     });
   }
 
-  if (filterToggle && filterMenu) {
-    filterToggle.addEventListener('click', function () {
-      var next = filterMenu.hidden;
-      closeFloatingMenus();
-      filterMenu.hidden = !next;
-      filterToggle.setAttribute('aria-expanded', String(next));
+  if (filterToggles.length && filterMenu) {
+    filterToggles.forEach(function (toggle) {
+      toggle.addEventListener('click', function () {
+        var next = filterMenu.hidden;
+        closeFloatingMenus();
+        filterMenu.hidden = !next;
+        filterToggles.forEach(function (item) { item.setAttribute('aria-expanded', String(next)); });
+      });
     });
   }
 

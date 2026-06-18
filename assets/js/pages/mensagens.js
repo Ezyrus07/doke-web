@@ -159,7 +159,7 @@
     const threadCallMenu = root.querySelector("[data-thread-call-menu]");
     const threadMoreMenu = root.querySelector("[data-thread-more-menu]");
     const searchCloseButtons = Array.from(root.querySelectorAll(".orders-header-search__close"));
-    const searchToggleButtons = Array.from(root.querySelectorAll("[data-messages-mobile-search-toggle]"));
+    const searchToggleButtons = Array.from(document.querySelectorAll("[data-messages-mobile-search-toggle]"));
     const filterToggles = Array.from(document.querySelectorAll("[data-messages-filter-toggle]"));
     const desktopFilterToggle = root.querySelector("[data-messages-desktop-filter-toggle]");
     const filterButtons = Array.from(root.querySelectorAll("[data-messages-filter]"));

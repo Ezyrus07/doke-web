@@ -153,10 +153,6 @@ body:is([data-page="mensagens"], [data-page="comunidade-interna"]) {
 }
 
 @media (min-width: 761px) and (max-width: 1180px) {
-  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) {
-    --doke-page-rail: min(760px, calc(100vw - 48px));
-  }
-
   body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-shell-content, .community-room-shell) {
     padding-block: 12px;
     block-size: min(100dvh, calc(100dvh - 24px));
@@ -184,10 +180,6 @@ body:is([data-page="mensagens"], [data-page="comunidade-interna"]) {
 }
 
 @media (max-width: 760px) {
-  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) {
-    --doke-page-rail: 100vw;
-  }
-
   body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-shell-content, .community-room-shell) {
     block-size: calc(100dvh - var(--mobile-bottom-nav-height, 78px));
     height: calc(100dvh - var(--mobile-bottom-nav-height, 78px));
@@ -242,240 +234,400 @@ body:is([data-page="mensagens"], [data-page="comunidade-interna"]) {
   }
 }
 
-/* v6 — compact chat list rail/header authority.
-   Scope: mensagens.html and comunidade-interna.html list/canal states only.
-   Root cause addressed: previous profile/header rules were split across old
-   messages-only blocks and reused a narrower compact rail on tablet portrait.
-   This contract keeps thread state untouched and aligns the list state with the
-   same tablet rail/control geometry used by regular internal pages. */
-body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-list-header__profile {
-  display: none;
-  text-decoration: none;
-}
-
-@media (max-width: 1180px) {
-  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) {
-    --chat-list-profile-size: 40px;
-    --chat-list-profile-avatar-size: 30px;
-    --chat-list-control-radius: var(--doke-header-control-radius, 16px);
-    --chat-list-control-bg: var(--doke-header-bg, rgba(255, 255, 255, 0.96));
-    --chat-list-control-border: var(--doke-header-border, 1px solid rgba(199, 216, 232, 0.86));
-    --chat-list-control-shadow: var(--doke-header-shadow, 0 10px 22px rgba(23, 69, 110, 0.08));
-    --chat-list-control-shadow-hover: var(--doke-header-shadow-hover, 0 14px 28px rgba(23, 69, 110, 0.11));
-  }
-
-  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-sidebar-brand, .community-room-sidebar__header) {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+@media (min-width: 761px) and (max-width: 1180px) {
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]):not(.messages-thread-is-open):not(.community-room-thread-is-open).has-global-header
+  > .app-shell > .page > .chat-list-app-header .page-header-context {
+    display: inline-flex;
     align-items: center;
-    column-gap: 10px;
-    row-gap: 2px;
-    inline-size: 100%;
-    width: 100%;
-    min-block-size: var(--chat-list-profile-size);
-    min-height: var(--chat-list-profile-size);
-    padding: 0;
-  }
-
-  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-sidebar-brand h1, .community-room-sidebar__header h1, .community-room-sidebar__eyebrow) {
-    grid-column: 2;
+    flex: 0 0 auto;
+    inline-size: auto;
+    width: auto;
     min-inline-size: 0;
     min-width: 0;
-  }
-
-  body[data-page="comunidade-interna"] .community-room-sidebar__eyebrow {
-    grid-row: 2;
-  }
-
-  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-list-header__profile {
-    grid-column: 3;
-    grid-row: 1 / span 2;
-    justify-self: end;
-    align-self: center;
-    box-sizing: border-box;
-    display: inline-grid;
-    place-items: center;
-    inline-size: var(--chat-list-profile-size);
-    width: var(--chat-list-profile-size);
-    min-inline-size: var(--chat-list-profile-size);
-    min-width: var(--chat-list-profile-size);
-    max-inline-size: var(--chat-list-profile-size);
-    max-width: var(--chat-list-profile-size);
-    block-size: var(--chat-list-profile-size);
-    height: var(--chat-list-profile-size);
-    min-block-size: var(--chat-list-profile-size);
-    min-height: var(--chat-list-profile-size);
-    max-block-size: var(--chat-list-profile-size);
-    max-height: var(--chat-list-profile-size);
-    padding: 6px;
-    border: var(--chat-list-control-border);
-    border-radius: var(--chat-list-control-radius);
-    background: var(--chat-list-control-bg);
-    color: var(--doke-header-ink, #155a92);
-    box-shadow: var(--chat-list-control-shadow);
-    white-space: nowrap;
-    transform: none;
-  }
-
-  body[data-page="mensagens"] .chat-list-header__profile {
-    grid-row: 1;
-  }
-
-  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-list-header__profile:hover,
-  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-list-header__profile:focus-visible {
-    border-color: rgba(24, 75, 118, 0.12);
-    background: rgba(255, 255, 255, 0.98);
-    box-shadow: var(--chat-list-control-shadow-hover);
-    transform: translateY(-1px);
-  }
-
-  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-list-header__avatar {
-    inline-size: var(--chat-list-profile-avatar-size);
-    width: var(--chat-list-profile-avatar-size);
-    min-inline-size: var(--chat-list-profile-avatar-size);
-    min-width: var(--chat-list-profile-avatar-size);
-    max-inline-size: var(--chat-list-profile-avatar-size);
-    max-width: var(--chat-list-profile-avatar-size);
-    block-size: var(--chat-list-profile-avatar-size);
-    height: var(--chat-list-profile-avatar-size);
-    min-block-size: var(--chat-list-profile-avatar-size);
-    min-height: var(--chat-list-profile-avatar-size);
-    max-block-size: var(--chat-list-profile-avatar-size);
-    max-height: var(--chat-list-profile-avatar-size);
-    flex: 0 0 var(--chat-list-profile-avatar-size);
-    border-radius: 999px;
-    font-size: 0.68rem;
-    font-weight: 900;
-    letter-spacing: -0.02em;
-  }
-
-  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) .chat-sidebar-scroll-region :is(.messages-list, .community-room-channel-list),
-  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) .chat-sidebar-scroll-region :is(.messages-list, .community-room-channel-list) {
-    padding-inline: 0;
-  }
-}
-
-@media (max-width: 560px) {
-  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) {
-    --chat-list-phone-edge: var(--doke-mobile-shell-edge, var(--doke-mobile-page-gutter, var(--doke-mobile-page-edge, 14px)));
-    --chat-list-phone-rail: min(calc(100vw - (var(--chat-list-phone-edge) * 2)), var(--doke-mobile-app-max, 430px));
-    --chat-list-bottom-safe: calc(var(--doke-mobile-bottom-nav-height, var(--mobile-bottom-nav-height, 78px)) + 18px);
-  }
-
-  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-shell-content, .community-room-shell) {
-    inline-size: 100%;
-    width: 100%;
     max-inline-size: none;
     max-width: none;
-    margin-inline: 0;
+    block-size: auto;
+    height: auto;
+    gap: var(--doke-header-gap, 8px);
+    margin: 0;
+    padding: 0;
+    overflow: visible;
   }
 
-  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) > .messages-sidebar,
-  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) > .community-room-sidebar {
-    box-sizing: border-box;
-    inline-size: var(--chat-list-phone-rail);
-    width: var(--chat-list-phone-rail);
-    max-inline-size: var(--chat-list-phone-rail);
-    max-width: var(--chat-list-phone-rail);
-    margin-inline: auto;
-    padding: max(14px, env(safe-area-inset-top, 0px)) 0 var(--chat-list-bottom-safe);
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]):not(.messages-thread-is-open):not(.community-room-thread-is-open).has-global-header
+  > .app-shell > .page > .chat-list-app-header .page-header-context__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 var(--doke-header-control-size, 46px);
+    inline-size: var(--doke-header-control-size, 46px);
+    width: var(--doke-header-control-size, 46px);
+    min-inline-size: var(--doke-header-control-size, 46px);
+    min-width: var(--doke-header-control-size, 46px);
+    max-inline-size: var(--doke-header-control-size, 46px);
+    max-width: var(--doke-header-control-size, 46px);
+    block-size: var(--doke-header-control-size, 46px);
+    height: var(--doke-header-control-size, 46px);
+    min-block-size: var(--doke-header-control-size, 46px);
+    min-height: var(--doke-header-control-size, 46px);
+    max-block-size: var(--doke-header-control-size, 46px);
+    max-height: var(--doke-header-control-size, 46px);
+    margin: 0;
+    padding: 0;
+    gap: 0;
+    border: var(--doke-header-border, 1px solid rgba(24, 75, 118, 0.08));
+    border-radius: var(--doke-header-control-radius, 16px);
+    background: var(--doke-header-bg, rgba(255, 255, 255, 0.9));
+    color: var(--doke-header-ink, #2a5f90);
+    box-shadow: var(--doke-header-shadow, 0 4px 14px rgba(15, 45, 75, 0.03));
+    overflow: visible;
   }
 
-  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) :is(.messages-sidebar-tools, .chat-sidebar-scroll-region, .messages-block--contacts),
-  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) :is(.community-room-sidebar__tools, .chat-sidebar-scroll-region, .community-room-block--channels) {
-    inline-size: 100%;
-    width: 100%;
-    max-inline-size: 100%;
-    max-width: 100%;
-  }
-}
-
-@media (min-width: 561px) and (max-width: 760px) {
-  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) {
-    --chat-list-tablet-gutter: 20px;
-    --chat-list-tablet-rail: min(calc(100vw - (var(--chat-list-tablet-gutter) * 2)), 560px);
-    --chat-list-profile-size: var(--doke-header-control-size, 46px);
-    --chat-list-profile-avatar-size: var(--doke-header-avatar-size, 34px);
-    --doke-rail-inline-gutter: var(--chat-list-tablet-gutter);
-    --doke-rail-available: calc(100vw - (var(--doke-rail-inline-gutter) * 2));
-    --doke-rail-max: 560px;
-    --doke-shared-page-inline: var(--doke-rail-inline-gutter);
-    --doke-shared-page-width: var(--chat-list-tablet-rail);
-    --doke-page-gutter: var(--doke-rail-inline-gutter);
-    --doke-page-available: var(--doke-rail-available);
-    --doke-page-rail: var(--chat-list-tablet-rail);
-    --doke-header-rail: var(--chat-list-tablet-rail);
-    --doke-current-page-rail: var(--chat-list-tablet-rail);
-    --rail-max: var(--chat-list-tablet-rail);
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]):not(.messages-thread-is-open):not(.community-room-thread-is-open).has-global-header
+  > .app-shell > .page > .chat-list-app-header .page-header-context__action svg {
+    flex: 0 0 18px;
+    inline-size: 18px;
+    width: 18px;
+    block-size: 18px;
+    height: 18px;
+    stroke-width: 2;
   }
 
-  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) > .app-shell > .page > .page__content {
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]):not(.messages-thread-is-open):not(.community-room-thread-is-open).has-global-header
+  > .app-shell > .page > .page__content {
     display: block;
     inline-size: 100%;
     width: 100%;
     max-inline-size: 100%;
     max-width: 100%;
+    min-block-size: calc(100dvh - var(--doke-header-height, 70px));
+    min-height: calc(100dvh - var(--doke-header-height, 70px));
     margin: 0;
-    padding: 0;
+    padding: var(--doke-page-top-gap, 16px) 0 var(--doke-page-bottom-gap, 56px);
     background: #eef5fb;
-    overflow: hidden;
+    overflow: visible;
   }
 
-  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-shell-content, .community-room-shell) {
-    inline-size: 100%;
-    width: 100%;
-    max-inline-size: none;
-    max-width: none;
-    block-size: calc(100dvh - var(--mobile-bottom-nav-height, 78px));
-    height: calc(100dvh - var(--mobile-bottom-nav-height, 78px));
+  body[data-page="mensagens"]:not(.messages-thread-is-open) :is(.messages-shell-content, .community-room-shell),
+  body[data-page="comunidade-interna"]:not(.community-room-thread-is-open) :is(.messages-shell-content, .community-room-shell) {
+    block-size: auto;
+    height: auto;
     min-block-size: 0;
     min-height: 0;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
+    max-block-size: none;
+    max-height: none;
+    overflow: visible;
   }
 
-  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .messages-app,
-  body[data-page="comunidade-interna"] .community-room-layout {
-    inline-size: 100%;
-    width: 100%;
-    max-inline-size: none;
-    max-width: none;
-    block-size: 100%;
-    height: 100%;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    overflow: hidden;
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open),
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) {
+    block-size: auto;
+    height: auto;
+    min-block-size: 0;
+    min-height: 0;
+    max-block-size: none;
+    max-height: none;
+    overflow: visible;
   }
 
   body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) > .messages-sidebar,
   body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) > .community-room-sidebar {
-    box-sizing: border-box;
-    inline-size: var(--chat-list-tablet-rail);
-    width: var(--chat-list-tablet-rail);
-    max-inline-size: var(--chat-list-tablet-rail);
-    max-width: var(--chat-list-tablet-rail);
-    block-size: 100%;
-    height: 100%;
-    margin-inline: auto;
-    padding: 14px 0 calc(var(--mobile-bottom-nav-height, 78px) + 18px);
-    border: 0;
-    background: transparent;
-    box-shadow: none;
-    overflow: hidden;
-  }
-
-  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-sidebar-brand, .community-room-sidebar__header) {
-    min-block-size: var(--chat-list-profile-size);
-    min-height: var(--chat-list-profile-size);
-  }
-
-  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-sidebar-tools, .community-room-sidebar__tools, .chat-sidebar-scroll-region, .messages-block--contacts, .community-room-block--channels) {
     inline-size: 100%;
     width: 100%;
     max-inline-size: 100%;
     max-width: 100%;
+    block-size: auto;
+    height: auto;
+    min-block-size: 0;
+    min-height: 0;
+    margin-inline: 0;
+    padding: 0 0 calc(var(--mobile-bottom-nav-height, 78px) + 18px);
+    overflow: visible;
+  }
+
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) :is(.messages-sidebar-brand, .community-room-sidebar__header),
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) :is(.messages-sidebar-brand, .community-room-sidebar__header) {
+    display: none;
+  }
+
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) :is(.messages-sidebar-tools, .messages-list),
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) :is(.messages-sidebar-tools, .community-room-channel-list) {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+  }
+
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) .messages-sidebar-tools,
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) .messages-sidebar-tools {
+    grid-template-columns: minmax(0, 1fr);
+    margin-block-start: var(--doke-section-gap, 22px);
+  }
+
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) .messages-sidebar-tools__filter,
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) .messages-sidebar-tools__filter {
+    display: none;
+  }
+}
+
+/* Chat list global header adapter.
+   Scope: mensagens.html and comunidade-interna.html list/canal states only.
+   Responsibility: consume the existing global .app-header/home-side-meta contract
+   instead of recreating header/profile geometry inside chat CSS. Thread states
+   remain full chat workspaces without a global top header. */
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) > .app-shell > .page > .chat-list-app-header {
+  display: none;
+}
+
+@media (max-width: 1180px) {
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]).has-global-header > .app-shell > .page > .chat-list-app-header {
+    display: flex;
+    min-block-size: var(--doke-header-height, 70px);
+    block-size: var(--doke-header-height, 70px);
+    min-height: var(--doke-header-height, 70px);
+    height: var(--doke-header-height, 70px);
+    max-block-size: var(--doke-header-height, 70px);
+    max-height: var(--doke-header-height, 70px);
+    padding-block: 12px 8px;
+  }
+
+  body.messages-thread-is-open.has-global-header > .app-shell > .page > .chat-list-app-header,
+  body.community-room-thread-is-open.has-global-header > .app-shell > .page > .chat-list-app-header {
+    display: none;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]).has-global-header > .app-shell > .page > .chat-list-app-header .home-side-meta__search-form {
+    display: none;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]).has-global-header > .app-shell > .page > .chat-list-app-header .page-header-context__action span,
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]).has-global-header > .app-shell > .page > .chat-list-app-header .home-side-meta__identity {
+    display: none;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]).has-global-header > .app-shell > .page > .chat-list-app-header > .app-header__inner {
+    min-block-size: var(--doke-header-control-size, 46px);
+    block-size: var(--doke-header-control-size, 46px);
+    min-height: var(--doke-header-control-size, 46px);
+    height: var(--doke-header-control-size, 46px);
+    max-block-size: var(--doke-header-control-size, 46px);
+    max-height: var(--doke-header-control-size, 46px);
+  }
+}
+
+@media (max-width: 760px) {
+
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) :is(.messages-sidebar-brand, .community-room-sidebar__header),
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) :is(.messages-sidebar-brand, .community-room-sidebar__header) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 3px;
+    min-block-size: auto;
+    min-height: 0;
+    margin: 4px 0 14px;
+    padding: 0;
+  }
+
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) :is(.messages-sidebar-brand, .community-room-sidebar__header) .chat-shell-menu-button,
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) :is(.messages-sidebar-brand, .community-room-sidebar__header) .chat-shell-menu-button {
+    display: none;
+  }
+
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) :is(.messages-sidebar-brand h1, .community-room-sidebar__header h1, .community-room-sidebar__eyebrow),
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) :is(.messages-sidebar-brand h1, .community-room-sidebar__header h1, .community-room-sidebar__eyebrow) {
+    grid-column: 1;
+  }
+
+  body[data-page="mensagens"]:not(.messages-thread-is-open).has-global-header > .app-shell > .page > .page__content,
+  body[data-page="comunidade-interna"]:not(.community-room-thread-is-open).has-global-header > .app-shell > .page > .page__content {
+    min-block-size: calc(100dvh - var(--doke-header-height, 70px));
+    min-height: calc(100dvh - var(--doke-header-height, 70px));
+    padding: 0 0 var(--doke-page-bottom-gap, 0);
+    background: #eef5fb;
+    overflow: visible;
+  }
+
+  body[data-page="mensagens"]:not(.messages-thread-is-open) .messages-shell-content,
+  body[data-page="comunidade-interna"]:not(.community-room-thread-is-open) .community-room-shell {
+    inline-size: var(--doke-page-rail, min(calc(100vw - 40px), 560px));
+    width: var(--doke-page-rail, min(calc(100vw - 40px), 560px));
+    max-inline-size: var(--doke-page-rail, min(calc(100vw - 40px), 560px));
+    max-width: var(--doke-page-rail, min(calc(100vw - 40px), 560px));
+    block-size: auto;
+    height: auto;
+    min-block-size: calc(100dvh - var(--doke-header-height, 70px) - var(--mobile-bottom-nav-height, 78px));
+    min-height: calc(100dvh - var(--doke-header-height, 70px) - var(--mobile-bottom-nav-height, 78px));
+    margin-inline: auto;
+    padding: 0;
+    overflow: visible;
+  }
+
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open),
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) {
+    block-size: auto;
+    height: auto;
+    min-block-size: 0;
+    min-height: 0;
+    max-block-size: none;
+    max-height: none;
+    overflow: visible;
+  }
+
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) > .messages-sidebar,
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) > .community-room-sidebar {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    block-size: auto;
+    height: auto;
+    min-block-size: 0;
+    min-height: 0;
+    margin-inline: 0;
+    padding: 0 0 calc(var(--mobile-bottom-nav-height, 78px) + 18px);
+    overflow: visible;
+  }
+
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) .chat-sidebar-scroll-region,
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) .chat-sidebar-scroll-region,
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) .chat-sidebar-scroll-region > .messages-block--contacts,
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) .chat-sidebar-scroll-region > .community-room-block--channels,
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) .messages-list,
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) .community-room-channel-list {
+    block-size: auto;
+    height: auto;
+    min-block-size: 0;
+    min-height: 0;
+    max-block-size: none;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+/* Chat compact page-mode contract v2.
+   Authority consumed: layout/page-rail-authority.css + layout/header.css.
+   Scope: only the list/canal states on tablet portrait. The conversation/thread
+   states remain owned by the chat workspace contract. */
+@media (min-width: 561px) and (max-width: 760px) {
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]):not(.messages-thread-is-open):not(.community-room-thread-is-open).has-global-header {
+    --doke-chat-list-rail: var(--doke-current-page-rail, var(--doke-page-rail));
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]):not(.messages-thread-is-open):not(.community-room-thread-is-open).has-global-header
+  > .app-shell > .page > .chat-list-app-header .page-header-context {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    inline-size: auto;
+    width: auto;
+    min-inline-size: 0;
+    min-width: 0;
+    max-inline-size: none;
+    max-width: none;
+    block-size: auto;
+    height: auto;
+    gap: 7px;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]):not(.messages-thread-is-open):not(.community-room-thread-is-open).has-global-header
+  > .app-shell > .page > .chat-list-app-header .page-header-context__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 var(--doke-header-control-size, 46px);
+    inline-size: var(--doke-header-control-size, 46px);
+    width: var(--doke-header-control-size, 46px);
+    min-inline-size: var(--doke-header-control-size, 46px);
+    min-width: var(--doke-header-control-size, 46px);
+    max-inline-size: var(--doke-header-control-size, 46px);
+    max-width: var(--doke-header-control-size, 46px);
+    block-size: var(--doke-header-control-size, 46px);
+    height: var(--doke-header-control-size, 46px);
+    min-block-size: var(--doke-header-control-size, 46px);
+    min-height: var(--doke-header-control-size, 46px);
+    max-block-size: var(--doke-header-control-size, 46px);
+    max-height: var(--doke-header-control-size, 46px);
+    margin: 0;
+    padding: 0;
+    gap: 0;
+    border: var(--doke-header-border, 1px solid rgba(24, 75, 118, 0.08));
+    border-radius: var(--doke-header-control-radius, 16px);
+    background: var(--doke-header-bg, rgba(255, 255, 255, 0.9));
+    color: var(--doke-header-ink, #2a5f90);
+    box-shadow: var(--doke-header-shadow, 0 4px 14px rgba(15, 45, 75, 0.03));
+    overflow: visible;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]):not(.messages-thread-is-open):not(.community-room-thread-is-open).has-global-header
+  > .app-shell > .page > .chat-list-app-header .page-header-context__action svg {
+    flex: 0 0 18px;
+    inline-size: 18px;
+    width: 18px;
+    block-size: 18px;
+    height: 18px;
+    stroke-width: 2;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]):not(.messages-thread-is-open):not(.community-room-thread-is-open).has-global-header
+  > .app-shell > .page > .page__content {
+    display: block;
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    min-block-size: calc(100dvh - var(--doke-header-height, 70px));
+    min-height: calc(100dvh - var(--doke-header-height, 70px));
+    margin: 0;
+    padding: var(--doke-page-top-gap, 16px) 0 var(--doke-page-bottom-gap, 56px);
+    background: #eef5fb;
+    overflow: visible;
+  }
+
+  body[data-page="mensagens"]:not(.messages-thread-is-open) .messages-shell-content,
+  body[data-page="comunidade-interna"]:not(.community-room-thread-is-open) .community-room-shell {
+    inline-size: var(--doke-chat-list-rail, var(--doke-page-rail));
+    width: var(--doke-chat-list-rail, var(--doke-page-rail));
+    max-inline-size: var(--doke-chat-list-rail, var(--doke-page-rail));
+    max-width: var(--doke-chat-list-rail, var(--doke-page-rail));
+    block-size: auto;
+    height: auto;
+    min-block-size: 0;
+    min-height: 0;
+    margin-inline: auto;
+    padding: 0;
+    overflow: visible;
+  }
+
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) > .messages-sidebar,
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) > .community-room-sidebar,
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) :is(.messages-sidebar-brand, .community-room-sidebar__header),
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) :is(.messages-sidebar-brand, .community-room-sidebar__header),
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) .messages-sidebar-tools,
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) .messages-sidebar-tools,
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) .messages-list,
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) .community-room-channel-list {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+  }
+
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) :is(.messages-sidebar-brand, .community-room-sidebar__header),
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) :is(.messages-sidebar-brand, .community-room-sidebar__header) {
+    display: none;
+  }
+
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) .messages-sidebar-tools,
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) .messages-sidebar-tools {
+    grid-template-columns: minmax(0, 1fr);
+    margin-block-start: var(--doke-section-gap, 22px);
+  }
+
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) .messages-sidebar-tools__filter,
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) .messages-sidebar-tools__filter {
+    display: none;
   }
 }

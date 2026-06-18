@@ -1237,8 +1237,8 @@
    cards enough width for readable titles/actions at 575px. */
 @media (min-width: 561px) and (max-width: 760px) {
   body.communities-page-shell {
-    --community-tablet-rail: min(calc(100% - 36px), 1180px);
-    --community-tablet-control: 48px;
+    --community-tablet-rail: var(--doke-page-rail, min(calc(100% - 40px), 560px));
+    --community-tablet-control: var(--doke-header-control-size, 46px);
     --community-tablet-radius: 16px;
     --community-tablet-card-radius: 22px;
     --community-tablet-border: rgba(205, 221, 237, .82);
@@ -1258,13 +1258,15 @@
   }
 
   body.communities-page-shell > .app-shell > .page > .app-header.app-header--communities.home-side-meta {
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    min-height: 96px;
-    height: 96px;
-    margin: 0;
-    padding: 20px 0 10px;
+    display: flex;
+    inline-size: var(--community-tablet-rail);
+    width: var(--community-tablet-rail);
+    max-inline-size: var(--community-tablet-rail);
+    max-width: var(--community-tablet-rail);
+    min-height: var(--doke-header-height, 70px);
+    height: var(--doke-header-height, 70px);
+    margin: 0 auto;
+    padding: 12px 0 8px;
     background: transparent;
     border: 0;
     box-shadow: none;
@@ -1272,6 +1274,9 @@
   }
 
   body.communities-page-shell > .app-shell > .page > .app-header.app-header--communities.home-side-meta > .app-header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     width: var(--community-tablet-rail);
     max-width: var(--community-tablet-rail);
     height: var(--community-tablet-control);
@@ -1293,11 +1298,11 @@
     flex: 0 0 var(--community-tablet-control);
     margin: 0;
     padding: 0;
-    border: 1px solid rgba(15, 45, 75, .06);
-    border-radius: var(--community-tablet-radius);
-    background: rgba(255, 255, 255, .96);
-    color: #1f5f9f;
-    box-shadow: 0 10px 26px rgba(15, 45, 75, .06);
+    border: var(--doke-header-border, 1px solid rgba(24, 75, 118, 0.08));
+    border-radius: var(--doke-header-control-radius, 16px);
+    background: var(--doke-header-bg, rgba(255, 255, 255, 0.9));
+    color: var(--doke-header-ink, #2a5f90);
+    box-shadow: var(--doke-header-shadow, 0 4px 14px rgba(15, 45, 75, 0.03));
     overflow: hidden;
   }
 
@@ -2752,6 +2757,38 @@ body[data-page="comunidade"].communities-page-shell .app-header.app-header--comm
   stroke: none;
 }
 
+@media (min-width: 561px) and (max-width: 900px) and (orientation: portrait) {
+  body[data-page="comunidade"].communities-page-shell .app-header.app-header--communities .page-header-context__action:first-child {
+    border: var(--doke-header-border, 1px solid rgba(24, 75, 118, 0.08));
+    background: var(--doke-header-bg, rgba(255, 255, 255, 0.9));
+    color: var(--doke-header-ink, #2a5f90);
+    box-shadow: var(--doke-header-shadow, 0 4px 14px rgba(15, 45, 75, 0.03));
+  }
+
+  body[data-page="comunidade"].communities-page-shell .app-header.app-header--communities .page-header-context__action:first-child svg {
+    inline-size: 18px;
+    width: 18px;
+    block-size: 18px;
+    height: 18px;
+    color: currentColor;
+    stroke: currentColor;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 900px) and (orientation: portrait) {
+  body[data-page="comunidade"].communities-page-shell .app-header.app-header--communities .page-header-context__action:first-child {
+    border: var(--doke-header-border, 1px solid rgba(24, 75, 118, 0.08));
+    background: var(--doke-header-bg, rgba(255, 255, 255, 0.9));
+    color: var(--doke-header-ink, #2a5f90);
+    box-shadow: var(--doke-header-shadow, 0 4px 14px rgba(15, 45, 75, 0.03));
+  }
+
+  body[data-page="comunidade"].communities-page-shell .app-header.app-header--communities .page-header-context__action:first-child svg {
+    color: currentColor;
+    stroke: currentColor;
+  }
+}
+
 @media (max-width: 760px) {
   body[data-page="comunidade"].communities-page-shell .communities-discovery-v2 .communities-v2-section__heading h2,
   body[data-page="comunidade"].communities-page-shell .communities-discovery-v2 .communities-v2-section__heading--stack h2,
@@ -2945,11 +2982,15 @@ body[data-page="comunidade"].communities-page-shell .communities-discovery-v2 .c
    Responsibility: keep the highlighted contextual header action readable on
    compact/tablet shells without changing the global header contract. */
 body[data-page="comunidade"].communities-page-shell .app-header.app-header--communities .page-header-context__action:first-child {
-  color: #fff;
+  color: var(--doke-header-ink, #2a5f90);
 }
 
 body[data-page="comunidade"].communities-page-shell .app-header.app-header--communities .page-header-context__action:first-child svg {
-  color: #fff;
+  inline-size: 18px;
+  width: 18px;
+  block-size: 18px;
+  height: 18px;
+  color: currentColor;
   fill: none;
   stroke: currentColor;
 }

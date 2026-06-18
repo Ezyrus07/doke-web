@@ -115,6 +115,28 @@ body:is(
   }
 }
 
+/* Tablet portrait internal rail authority.
+   Responsibility: shared 561px-760px rail/header tokens for internal pages.
+   This keeps chat list/canal states, pedidos and other internal pages on the
+   same x-axis instead of letting pages recreate a local tablet width. */
+@media (min-width: 561px) and (max-width: 760px) {
+  body[data-page].internal-shell-page:not([data-page="home"]) {
+    --doke-rail-inline-gutter: 20px;
+    --doke-rail-available: calc(100vw - (var(--doke-rail-inline-gutter) * 2));
+    --doke-rail-max: 560px;
+    --doke-shared-page-inline: var(--doke-rail-inline-gutter);
+    --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
+    --doke-page-gutter: var(--doke-rail-inline-gutter);
+    --doke-page-available: var(--doke-rail-available);
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
+    --doke-current-page-rail: var(--doke-page-rail);
+    --rail-max: var(--doke-page-rail);
+    --doke-header-height: 70px;
+    --doke-first-block-top: var(--doke-page-top-gap, 16px);
+  }
+}
+
 @media (min-width: 761px) and (max-width: 1024px) {
   body[data-page] {
     /* Header controls must sit on the same x-axis as the content rail.
@@ -795,3 +817,72 @@ body:is(
   }
 }
 
+/* Small-tablet late mobile-contract closure.
+   Root cause: some page families compute the shared 561-760 rail correctly but
+   later mobile modules still assign full-width or calc(100% - local gutter)
+   containers. This layer owns the external header/content x-axis, so it binds
+   those first shell containers back to the shared rail without changing card,
+   filter, gallery or chat anatomy. */
+@media (min-width: 561px) and (max-width: 760px) {
+  body:is(
+    [data-page="comunidade"],
+    [data-page="resultados"],
+    [data-page="detalhe-anuncio"]
+  ).has-global-header > .app-shell > .page > .app-header,
+  body:is(
+    [data-page="comunidade"],
+    [data-page="resultados"],
+    [data-page="detalhe-anuncio"]
+  ).has-global-header > .app-shell > .page > .app-header > .app-header__inner,
+  body[data-page="comunidade"].has-global-header
+    > .app-shell
+    > .page
+    > .page__content
+    > .page__content-inner,
+  body[data-page="resultados"].has-global-header
+    > .app-shell
+    > .page
+    > .page__content
+    > :is(.page__content-inner, .search-results-workspace),
+  body[data-page="detalhe-anuncio"].has-global-header
+    > .app-shell
+    > .page
+    > .page__content.detalhe-anuncio-page,
+  body[data-page="detalhe-anuncio"].has-global-header
+    > .app-shell
+    > .page
+    > .page__content.detalhe-anuncio-page
+    > .ad-detail-shell {
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    min-inline-size: 0;
+    min-width: 0;
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
+
+  body:is([data-page="comunidade"], [data-page="resultados"], [data-page="detalhe-anuncio"]).has-global-header
+    > .app-shell
+    > .page
+    > .page__content {
+    padding-inline: 0;
+  }
+
+  body[data-page="resultados"].has-global-header
+    > .app-shell
+    > .page
+    > .page__content
+    > :is(.page__content-inner, .search-results-workspace) {
+    padding-inline: 0;
+  }
+
+  body[data-page="detalhe-anuncio"].has-global-header
+    > .app-shell
+    > .page
+    > .page__content.detalhe-anuncio-page
+    > .ad-detail-shell {
+    display: grid;
+  }
+}
