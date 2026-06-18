@@ -906,7 +906,7 @@
 
   /* Desktop-only context/side controls must never create a second mobile header. */
   body.app-shell-page:not(.home-index-shell) :is(
-    .home-side-meta,
+    .home-side-meta:not(.chat-list-app-header),
     .page-header-context,
     .internal-page-topbar,
     .topbar,
@@ -919,7 +919,7 @@
   }
 
   body.app-shell-page .page,
-  body.app-shell-page .page__content {
+  body.app-shell-page:not(.chat-room-mobile-open) .page__content {
     width: 100% !important;
     min-width: 0 !important;
     max-width: none !important;
@@ -927,13 +927,13 @@
     box-sizing: border-box !important;
   }
 
-  body.app-shell-page .page__content {
+  body.app-shell-page:not(.chat-room-mobile-open) .page__content {
     padding-top: 0 !important;
     padding-bottom: calc(var(--doke-mobile-bottom-nav-height, 64px) + env(safe-area-inset-bottom, 0px)) !important;
   }
 
-  body.app-shell-page .page__content-inner,
-  body.app-shell-page :is(.orders-shell-content, .messages-shell-content, .settings-shell-content, .profile-shell-content, .search-results-workspace, .communities-shell) {
+  body.app-shell-page:not(.chat-room-mobile-open) .page__content-inner,
+  body.app-shell-page:not(.chat-room-mobile-open) :is(.orders-shell-content, .messages-shell-content, .settings-shell-content, .profile-shell-content, .search-results-workspace, .communities-shell) {
     width: 100% !important;
     max-width: var(--doke-mobile-app-max) !important;
     margin-inline: auto !important;
@@ -943,7 +943,7 @@
   }
 
   /* Pages with the shared internal header receive the top origin from the content wrapper only. */
-  body.app-shell-page:not(.home-index-shell) .page__content-inner {
+  body.app-shell-page:not(.home-index-shell):not(.chat-room-mobile-open) .page__content-inner {
     padding-top: var(--doke-mobile-header-start-y) !important;
   }
 

@@ -631,3 +631,46 @@ body:is([data-page="mensagens"], [data-page="comunidade-interna"]) > .app-shell 
     display: none;
   }
 }
+
+
+/* Chat list duplicate title removal.
+   Scope: compact list/canal states. The global chat header already exposes the
+   page identity, so the legacy sidebar brand title/subtitle is suppressed only
+   before a conversation/channel is opened. */
+@media (max-width: 560px) {
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) .messages-sidebar-brand,
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) .community-room-sidebar__header {
+    display: none;
+  }
+
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) .messages-sidebar-tools,
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) .messages-sidebar-tools {
+    margin-block-start: 0;
+  }
+}
+
+
+/* Chat list search action dedupe.
+   Scope: mensagens.html and comunidade-interna.html in compact list/canal states.
+   The filter action is already exposed in the global mobile/tablet header, so
+   the sidebar search row should keep only the search field on compact rails. */
+@media (max-width: 760px) {
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) :is(.messages-sidebar-tools__filter, .community-room-filter, .community-room-sidebar__filter),
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) :is(.messages-sidebar-tools__filter, .community-room-filter, .community-room-sidebar__filter) {
+    display: none;
+  }
+
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) .messages-sidebar-tools,
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) .messages-sidebar-tools {
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
+  }
+
+  body[data-page="mensagens"] .messages-app:not(.messages-app--thread-open) .messages-sidebar-search,
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) :is(.messages-sidebar-search, .community-room-search) {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+  }
+}

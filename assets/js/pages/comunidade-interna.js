@@ -100,11 +100,25 @@
     updateSendState();
   }
 
+  function isPhoneThreadViewport() {
+    return window.innerWidth <= 560;
+  }
+
+  function syncCommunityMobileChrome(isThread) {
+    var mobileOpen = Boolean(isThread) && isPhoneThreadViewport();
+    document.body.classList.toggle('chat-room-mobile-open', mobileOpen);
+    document.documentElement.classList.toggle('chat-room-mobile-open', mobileOpen);
+    if (composerInput) {
+      composerInput.placeholder = window.innerWidth <= 760 ? 'Mensagem...' : 'Digite sua mensagem...';
+    }
+  }
+
   function setMobileView(view) {
     root.dataset.mobileView = view;
     var isThread = view === 'thread';
     document.body.classList.toggle('community-room-thread-is-open', isThread);
     document.documentElement.classList.toggle('community-room-thread-is-open', isThread);
+    syncCommunityMobileChrome(isThread);
   }
 
   function activateChannel(channel) {
@@ -418,6 +432,10 @@
       panel.classList.remove('is-open');
       panel.setAttribute('aria-hidden', 'true');
     });
+  });
+
+  window.addEventListener('resize', function () {
+    syncCommunityMobileChrome(root.dataset.mobileView === 'thread');
   });
 
   filterChannels();

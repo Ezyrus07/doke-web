@@ -84,13 +84,15 @@
       "messages-thread-is-open",
       "is-messages-header-search-open",
       "messages-chat-is-focused",
-      "is-media-lightbox-open"
+      "is-media-lightbox-open",
+      "chat-room-mobile-open"
     );
     document.documentElement?.classList.remove(
       "messages-thread-is-open",
       "is-messages-header-search-open",
       "messages-chat-is-focused",
-      "is-media-lightbox-open"
+      "is-media-lightbox-open",
+      "chat-room-mobile-open"
     );
     document.documentElement?.style.removeProperty("--messages-shell-sidebar-width");
     document.documentElement?.style.removeProperty("--messages-app-inline-size");
@@ -244,6 +246,13 @@
     let activeId = pageParams.get("conversation") && conversations[pageParams.get("conversation")] ? pageParams.get("conversation") : "painting";
 
     const isCompactThreadViewport = () => window.innerWidth <= 1180;
+    const isPhoneThreadViewport = () => window.innerWidth <= 560;
+
+    const syncMessagesMobileChrome = (open) => {
+      const mobileOpen = Boolean(open) && isPhoneThreadViewport();
+      document.body.classList.toggle("chat-room-mobile-open", mobileOpen);
+      document.documentElement.classList.toggle("chat-room-mobile-open", mobileOpen);
+    };
 
     const setCompactThreadOpen = (isOpen) => {
       const open = Boolean(isOpen) && isCompactThreadViewport();
@@ -251,6 +260,7 @@
       root.dataset.messagesMode = open ? "thread" : "list";
       document.body.classList.toggle("messages-thread-is-open", open);
       document.documentElement.classList.toggle("messages-thread-is-open", open);
+      syncMessagesMobileChrome(open);
     };
     const normalize = (value) => String(value || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
     const getLatestChargeMessage = (conversationId) => {
