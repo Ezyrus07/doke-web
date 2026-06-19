@@ -1,0 +1,224 @@
+/* Settings workspace contract.
+ * Responsibility: align configuracoes.html with the split workspace language used
+ * by message-oriented pages without changing settings form anatomy.
+ */
+
+@media (min-width: 1025px) {
+  body[data-page="configuracoes"].doke-settings-redesign {
+    --settings-workspace-rail: min(var(--doke-page-rail, 1320px), 1320px);
+    --settings-workspace-gap: clamp(20px, 2.4vw, 32px);
+    --settings-workspace-height: calc(100dvh - (var(--settings-workspace-gap) * 2));
+    --settings-menu-column: clamp(330px, 28vw, 382px);
+  }
+
+
+  body[data-page="configuracoes"].doke-settings-redesign .page.settings-page-frame {
+    min-height: 100dvh;
+    background: var(--settings-bg);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-main {
+    height: 100dvh;
+    min-height: 100dvh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--settings-workspace-gap) var(--doke-rail-inline-gutter, 18px);
+    overflow: hidden;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-layout {
+    inline-size: var(--settings-workspace-rail);
+    width: var(--settings-workspace-rail);
+    max-inline-size: var(--settings-workspace-rail);
+    max-width: var(--settings-workspace-rail);
+    block-size: var(--settings-workspace-height);
+    height: var(--settings-workspace-height);
+    min-block-size: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: var(--settings-menu-column) minmax(0, 1fr);
+    overflow: hidden;
+    border: 1px solid rgba(191, 209, 229, 0.72);
+    border-radius: 28px;
+    background: linear-gradient(180deg, rgba(246, 251, 255, 0.98) 0%, rgba(238, 247, 253, 0.98) 100%);
+    box-shadow: 0 22px 54px rgba(31, 68, 110, 0.1);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card {
+    border: 0;
+    box-shadow: none;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar {
+    height: 100%;
+    padding: 32px 28px;
+    border-right: 1px solid rgba(191, 209, 229, 0.72);
+    background: rgba(246, 251, 255, 0.78);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-content,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-panel,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-panel.is-active,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card {
+    height: 100%;
+    min-height: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card {
+    border-radius: 0;
+    background: rgba(255, 255, 255, 0.96);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__header {
+    min-height: 96px;
+    padding: 24px 40px;
+    border-bottom-color: rgba(191, 209, 229, 0.72);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__body {
+    padding: 30px 40px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__footer {
+    padding: 18px 40px;
+    border-top-color: rgba(191, 209, 229, 0.72);
+    background: rgba(248, 251, 254, 0.92);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search__input,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-field input,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-field textarea,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-field select {
+    background: #f5f9fd;
+    border-color: rgba(201, 221, 236, 0.86);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item {
+    border-radius: 16px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item.is-active {
+    background: #e8f4fc;
+    border-color: rgba(191, 209, 229, 0.9);
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1180px) {
+  body[data-page="configuracoes"].doke-settings-redesign {
+    --settings-menu-column: 320px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__header,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__body,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__footer {
+    padding-inline: 32px;
+  }
+}
+
+
+/* Settings no-header desktop workspace closure.
+ * The settings page intentionally does not render the global top header on
+ * desktop so its split workspace follows the message/chat surface language.
+ */
+@media (min-width: 1025px) {
+  body[data-page="configuracoes"].doke-settings-redesign > .app-shell > .page.settings-page-frame {
+    display: flex;
+    flex-direction: column;
+    min-block-size: 100dvh;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign > .app-shell > .page.settings-page-frame > .settings-main {
+    flex: 1 1 auto;
+  }
+}
+
+
+/* Settings workspace centering v3.
+ * Root cause: after removing the top header, the settings split surface was still
+ * behaving like a full-bleed internal page. This makes the workspace feel offset
+ * and visually wider than the centered rail used by mensagens.html.
+ *
+ * This closure keeps the no-header desktop contract, but makes the split surface
+ * obey the same centered rail logic: a constrained shell width, symmetric gutters,
+ * and auto margins so the rounded workspace sits visually centered inside the page.
+ */
+@media (min-width: 1025px) {
+  body[data-page="configuracoes"].doke-settings-redesign {
+    --settings-workspace-rail: min(1360px, 100%);
+    --settings-workspace-gutter: clamp(20px, 2.4vw, 42px);
+    --settings-workspace-height: clamp(620px, calc(100dvh - (var(--settings-workspace-gutter) * 2)), 780px);
+    --settings-menu-column: clamp(340px, 28vw, 400px);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .page.settings-page-frame {
+    min-width: 0;
+    margin-inline: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign.has-global-header > .app-shell > .page.settings-page-frame {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-main {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    max-inline-size: none;
+    padding: var(--settings-workspace-gutter);
+    box-sizing: border-box;
+    justify-content: center;
+    align-items: center;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign.has-global-header > .app-shell > .page.settings-page-frame > .settings-main {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: none;
+    max-width: none;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-layout {
+    inline-size: min(calc(100% - (var(--settings-workspace-gutter) * 0)), var(--settings-workspace-rail));
+    width: min(calc(100% - (var(--settings-workspace-gutter) * 0)), var(--settings-workspace-rail));
+    max-inline-size: min(calc(100% - (var(--settings-workspace-gutter) * 0)), var(--settings-workspace-rail));
+    max-width: min(calc(100% - (var(--settings-workspace-gutter) * 0)), var(--settings-workspace-rail));
+    margin-inline: auto;
+    margin-block: auto;
+    block-size: var(--settings-workspace-height);
+    height: var(--settings-workspace-height);
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1320px) {
+  body[data-page="configuracoes"].doke-settings-redesign {
+    --settings-workspace-gutter: 20px;
+    --settings-menu-column: 330px;
+  }
+}
+
+@media (min-width: 761px) {
+  body[data-page="configuracoes"].doke-settings-redesign .settings-layout > .settings-sidebar {
+    grid-column: 1;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-layout > .settings-content {
+    grid-column: 2;
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    justify-self: stretch;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-panel,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card {
+    inline-size: 100%;
+    max-inline-size: 100%;
+  }
+}

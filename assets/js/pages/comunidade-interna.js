@@ -100,26 +100,24 @@
     updateSendState();
   }
 
-  function isPhoneThreadViewport() {
+  function isMobileRoomViewport() {
     return window.innerWidth <= 560;
-  }
-
-  function syncCommunityMobileChrome(isThread) {
-    var mobileOpen = Boolean(isThread) && isPhoneThreadViewport();
-    document.body.classList.toggle('chat-room-mobile-open', mobileOpen);
-    document.documentElement.classList.toggle('chat-room-mobile-open', mobileOpen);
-    if (composerInput) {
-      composerInput.placeholder = window.innerWidth <= 760 ? 'Mensagem...' : 'Digite sua mensagem...';
-    }
   }
 
   function setMobileView(view) {
     root.dataset.mobileView = view;
     var isThread = view === 'thread';
+    var mobileOpen = isThread && isMobileRoomViewport();
     document.body.classList.toggle('community-room-thread-is-open', isThread);
     document.documentElement.classList.toggle('community-room-thread-is-open', isThread);
-    syncCommunityMobileChrome(isThread);
+    document.body.classList.toggle('chat-room-mobile-open', mobileOpen);
+    document.documentElement.classList.toggle('chat-room-mobile-open', mobileOpen);
   }
+
+  window.addEventListener('resize', function () {
+    if (!root.isConnected) return;
+    setMobileView(root.dataset.mobileView === 'thread' ? 'thread' : 'list');
+  });
 
   function activateChannel(channel) {
     if (!channel) return;
@@ -432,10 +430,6 @@
       panel.classList.remove('is-open');
       panel.setAttribute('aria-hidden', 'true');
     });
-  });
-
-  window.addEventListener('resize', function () {
-    syncCommunityMobileChrome(root.dataset.mobileView === 'thread');
   });
 
   filterChannels();

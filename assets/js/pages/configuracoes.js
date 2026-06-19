@@ -15,7 +15,7 @@
   const mobileSearchInput = document.querySelector('.settings-mobile-header__search-input');
   const mobileBackButton = document.querySelector('[data-settings-mobile-back]');
 
-  const isMobileSettings = () => window.innerWidth <= 1024;
+  const isMobileSettings = () => window.innerWidth <= 760;
 
   const setMobileMenuMode = (isMenuMode) => {
     if (!isMobileSettings()) {

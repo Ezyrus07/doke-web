@@ -84,15 +84,15 @@
       "messages-thread-is-open",
       "is-messages-header-search-open",
       "messages-chat-is-focused",
-      "is-media-lightbox-open",
-      "chat-room-mobile-open"
+      "chat-room-mobile-open",
+      "is-media-lightbox-open"
     );
     document.documentElement?.classList.remove(
       "messages-thread-is-open",
       "is-messages-header-search-open",
       "messages-chat-is-focused",
-      "is-media-lightbox-open",
-      "chat-room-mobile-open"
+      "chat-room-mobile-open",
+      "is-media-lightbox-open"
     );
     document.documentElement?.style.removeProperty("--messages-shell-sidebar-width");
     document.documentElement?.style.removeProperty("--messages-app-inline-size");
@@ -246,21 +246,17 @@
     let activeId = pageParams.get("conversation") && conversations[pageParams.get("conversation")] ? pageParams.get("conversation") : "painting";
 
     const isCompactThreadViewport = () => window.innerWidth <= 1180;
-    const isPhoneThreadViewport = () => window.innerWidth <= 560;
-
-    const syncMessagesMobileChrome = (open) => {
-      const mobileOpen = Boolean(open) && isPhoneThreadViewport();
-      document.body.classList.toggle("chat-room-mobile-open", mobileOpen);
-      document.documentElement.classList.toggle("chat-room-mobile-open", mobileOpen);
-    };
+    const isMobileRoomViewport = () => window.innerWidth <= 560;
 
     const setCompactThreadOpen = (isOpen) => {
       const open = Boolean(isOpen) && isCompactThreadViewport();
+      const mobileOpen = open && isMobileRoomViewport();
       root.classList.toggle("messages-app--thread-open", open);
       root.dataset.messagesMode = open ? "thread" : "list";
       document.body.classList.toggle("messages-thread-is-open", open);
       document.documentElement.classList.toggle("messages-thread-is-open", open);
-      syncMessagesMobileChrome(open);
+      document.body.classList.toggle("chat-room-mobile-open", mobileOpen);
+      document.documentElement.classList.toggle("chat-room-mobile-open", mobileOpen);
     };
     const normalize = (value) => String(value || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
     const getLatestChargeMessage = (conversationId) => {
@@ -1213,17 +1209,7 @@
       event.stopPropagation();
       const action = event.target.closest("[data-thread-more-action]")?.dataset.threadMoreAction;
       if (!action) return;
-      if (action === "order") {
-        if (window.DokeNavigate) {
-          window.DokeNavigate("pedidos.html");
-        } else {
-          window.location.href = "pedidos.html";
-        }
-      } else if (action === "charge") {
-        openChargeModal();
-      } else if (action === "call") {
-        startThreadCall("audio");
-      } else if (action === "search") {
+      if (action === "search") {
         setSearchExpanded(true);
         window.setTimeout(() => getVisibleSearchInput()?.focus(), 20);
       } else if (action === "archive") {
