@@ -803,3 +803,123 @@ body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__title 
     padding-inline: 0;
   }
 }
+
+/* Settings narrow entry contract v17.
+ * Authority: configuracoes page-specific responsive flow.
+ * Goal: tablets and mobile use a true list -> detail transition instead of
+ * stacking the active settings panel below the menu list.
+ */
+body[data-page="configuracoes"].doke-settings-redesign .settings-panel-topbar {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-menu-mode .settings-sidebar {
+    display: grid;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-menu-mode .settings-content {
+    display: none;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-panel-mode .settings-sidebar {
+    display: none;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-panel-mode .settings-content {
+    display: flex;
+    flex-direction: column;
+    inline-size: 100%;
+    width: 100%;
+    min-inline-size: 0;
+    min-width: 0;
+    min-block-size: 0;
+    min-height: 0;
+    gap: 12px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-panel-mode .settings-panel-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    inline-size: 100%;
+    width: 100%;
+    min-block-size: var(--doke-header-control-size, 46px);
+    min-height: var(--doke-header-control-size, 46px);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-panel-back {
+    display: inline-grid;
+    place-items: center;
+    inline-size: var(--doke-header-control-size, 46px);
+    width: var(--doke-header-control-size, 46px);
+    min-inline-size: var(--doke-header-control-size, 46px);
+    min-width: var(--doke-header-control-size, 46px);
+    block-size: var(--doke-header-control-size, 46px);
+    height: var(--doke-header-control-size, 46px);
+    min-block-size: var(--doke-header-control-size, 46px);
+    min-height: var(--doke-header-control-size, 46px);
+    padding: 0;
+    border: 1px solid rgba(201, 221, 236, 0.72);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--settings-primary, #1f5d91);
+    box-shadow: 0 12px 28px rgba(31, 68, 110, 0.06);
+    cursor: pointer;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-panel-back:is(:hover, :focus-visible) {
+    background: #f8fbff;
+    border-color: rgba(33, 103, 174, 0.24);
+    outline: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-panel-back svg {
+    display: block;
+    inline-size: 22px;
+    width: 22px;
+    block-size: 22px;
+    height: 22px;
+    stroke-width: 2.2;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-panel-mode .settings-panel.is-active,
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-panel-mode .settings-card {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    block-size: auto;
+    height: auto;
+    min-block-size: 0;
+    min-height: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-panel-mode .settings-panel.is-active {
+    display: flex;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-panel-mode .settings-card {
+    overflow: hidden;
+    border: 1px solid rgba(201, 221, 236, 0.72);
+    border-radius: var(--settings-row-radius, 20px);
+    background: #fff;
+    box-shadow: var(--settings-row-shadow, 0 14px 30px rgba(31, 68, 110, 0.055));
+  }
+}
+
+@media (max-width: 560px) {
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-brand {
+    display: none;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search {
+    margin-block-start: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-panel-mode .settings-main {
+    padding-block-end: calc(92px + env(safe-area-inset-bottom, 0px));
+  }
+}

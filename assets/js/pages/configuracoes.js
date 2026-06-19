@@ -16,16 +16,20 @@
   const mobileSearchForm = document.querySelector('.settings-mobile-header__search');
   const mobileSearchInput = document.querySelector('.settings-mobile-header__search-input');
   const mobileBackButton = document.querySelector('[data-settings-mobile-back]');
+  const narrowBreakpoint = 1024;
 
   const isMobileSettings = () => window.innerWidth <= 760;
+  const isNarrowSettings = () => window.innerWidth <= narrowBreakpoint;
 
-  const setMobileMenuMode = (isMenuMode) => {
-    if (!isMobileSettings()) {
-      pageBody.classList.remove('settings-mobile-menu-mode');
+  const setNarrowMenuMode = (isMenuMode) => {
+    if (!isNarrowSettings()) {
+      pageBody.classList.remove('settings-mobile-menu-mode', 'settings-narrow-menu-mode', 'settings-narrow-panel-mode');
       return;
     }
 
-    pageBody.classList.toggle('settings-mobile-menu-mode', isMenuMode);
+    pageBody.classList.toggle('settings-narrow-menu-mode', isMenuMode);
+    pageBody.classList.toggle('settings-narrow-panel-mode', !isMenuMode);
+    pageBody.classList.toggle('settings-mobile-menu-mode', isMenuMode && isMobileSettings());
   };
 
   const activateTab = (panelName, { scroll = true } = {}) => {
@@ -43,8 +47,9 @@
       panel.hidden = !isActive;
     });
 
-    if (isMobileSettings()) {
-      pageBody.classList.remove('settings-mobile-menu-mode');
+    if (isNarrowSettings()) {
+      setNarrowMenuMode(false);
+      document.querySelector('.settings-main')?.scrollTo({ top: 0, behavior: 'auto' });
       return;
     }
 
@@ -158,7 +163,7 @@
 
   mobileBackButton?.addEventListener('click', () => {
     setMobileSearchOpen(false);
-    setMobileMenuMode(true);
+    setNarrowMenuMode(true);
   }, { signal });
 
   document.querySelectorAll('.settings-card__footer .button--ghost').forEach((button) => {
@@ -190,29 +195,25 @@
     updateSearchClearState();
     setMobileSearchOpen(false);
 
-    if (isMobileSettings()) {
-      pageBody.classList.add('settings-mobile-menu-mode');
-    } else {
-      pageBody.classList.remove('settings-mobile-menu-mode');
-    }
+    setNarrowMenuMode(isNarrowSettings());
 
     document.querySelector('.settings-sidebar')?.removeAttribute('hidden');
   };
 
-  let wasMobile = isMobileSettings();
+  let wasNarrow = isNarrowSettings();
   let resizeRaf = null;
   window.addEventListener('resize', () => {
     if (resizeRaf) cancelAnimationFrame(resizeRaf);
     resizeRaf = requestAnimationFrame(() => {
-      const isMobile = isMobileSettings();
-      if (isMobile && !wasMobile) {
-        pageBody.classList.add('settings-mobile-menu-mode');
+      const isNarrow = isNarrowSettings();
+      if (isNarrow && !wasNarrow) {
+        setNarrowMenuMode(true);
       }
-      if (!isMobile) {
-        pageBody.classList.remove('settings-mobile-menu-mode');
+      if (!isNarrow) {
+        setNarrowMenuMode(false);
         setMobileSearchOpen(false);
       }
-      wasMobile = isMobile;
+      wasNarrow = isNarrow;
     });
   }, { signal });
 
