@@ -9,6 +9,8 @@
   const panels = Array.from(document.querySelectorAll('.settings-panel'));
   const sectionBlocks = Array.from(document.querySelectorAll('.settings-sidebar__section'));
   const searchInputs = Array.from(document.querySelectorAll('[data-settings-search-input], .settings-sidebar-search__input'));
+  const sidebarSearchForms = Array.from(document.querySelectorAll('.settings-sidebar-search'));
+  const searchClearButtons = Array.from(document.querySelectorAll('[data-settings-search-clear]'));
   const mobileSearchToggle = document.querySelector('[data-settings-mobile-search-toggle]');
   const mobileSearchClose = document.querySelector('[data-settings-mobile-search-close]');
   const mobileSearchForm = document.querySelector('.settings-mobile-header__search');
@@ -78,16 +80,34 @@
     }
   };
 
+  const updateSearchClearState = () => {
+    const hasValue = searchInputs.some((input) => Boolean(input.value.trim()));
+    sidebarSearchForms.forEach((form) => form.classList.toggle('has-value', hasValue));
+    searchClearButtons.forEach((button) => {
+      button.setAttribute('aria-disabled', String(!hasValue));
+    });
+  };
+
   const syncSearchInputs = (source) => {
     const value = source?.value || '';
     searchInputs.forEach((input) => {
       if (input !== source) input.value = value;
     });
     filterSettings(value);
+    updateSearchClearState();
   };
 
   const setMobileSearchOpen = (open) => {
-    if (!mobileSearchForm || !mobileSearchToggle) return;
+    if (!mobileSearchToggle) return;
+
+    if (!mobileSearchForm) {
+      mobileSearchToggle.setAttribute('aria-expanded', 'false');
+      if (open) {
+        document.querySelector('[data-settings-search-input], .settings-sidebar-search__input')?.focus();
+      }
+      return;
+    }
+
     mobileSearchForm.hidden = !open;
     mobileSearchToggle.setAttribute('aria-expanded', String(open));
     document.querySelector('.settings-mobile-header')?.classList.toggle('is-search-open', open);
@@ -104,6 +124,24 @@
 
   searchInputs.forEach((input) => {
     input.addEventListener('input', () => syncSearchInputs(input), { signal });
+  });
+
+  sidebarSearchForms.forEach((form) => {
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      syncSearchInputs(form.querySelector('[data-settings-search-input], .settings-sidebar-search__input'));
+    }, { signal });
+  });
+
+  searchClearButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      searchInputs.forEach((input) => {
+        input.value = '';
+      });
+      filterSettings('');
+      updateSearchClearState();
+      button.closest('.settings-sidebar-search')?.querySelector('[data-settings-search-input], .settings-sidebar-search__input')?.focus();
+    }, { signal });
   });
 
   mobileSearchToggle?.addEventListener('click', () => {
@@ -149,6 +187,7 @@
     }
 
     filterSettings('');
+    updateSearchClearState();
     setMobileSearchOpen(false);
 
     if (isMobileSettings()) {
