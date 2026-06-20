@@ -12,14 +12,14 @@
       rel="stylesheet"
     />
     <script src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
-    <link rel="stylesheet" href="assets/css/pages/profile-foundation.css?v=20260620-profile-zero-v1" />
+    <link rel="stylesheet" href="assets/css/pages/profile-foundation.css?v=20260620-profile-global-header-v1" />
   </head>
-  <body data-page="perfil" data-profile-contract="zero" class="doke-app-shell-page app-shell-page internal-shell-page profile-page-shell doke-flow doke-profile-flow has-global-header">
+  <body data-page="perfil" data-profile-contract="clean-v1" class="doke-app-shell-page app-shell-page internal-shell-page profile-page-shell doke-flow doke-profile-flow has-global-header">
     <div class="app-shell">
       <aside class="sidebar" data-shell-sidebar></aside>
 
       <div class="page">
-        <header id="doke-profile-header-lock" class="app-header app-header--profile home-side-meta" data-app-header data-header-contract="app-header" data-header-variant="standard" aria-label="Atalhos e contexto do perfil">
+        <header class="app-header home-side-meta" data-app-header data-header-contract="app-header" data-header-variant="standard" aria-label="Atalhos e contexto">
           <div class="app-header__inner" data-header-inner>
             <div class="home-side-meta__group home-side-meta__group--primary app-header__group app-header__group--primary" data-header-slot="primary">
               <button class="home-side-meta__tablet-menu" type="button" data-mobile-home-menu-open aria-label="Abrir menu lateral" aria-expanded="false" aria-haspopup="dialog">
@@ -29,7 +29,7 @@
                   <path d="M4 17h16"></path>
                 </svg>
               </button>
-              <button class="home-side-meta__search" type="button" aria-label="Buscar no perfil">
+              <button class="home-side-meta__search" type="button" aria-label="Buscar">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <circle cx="11" cy="11" r="5.75"></circle>
                   <path d="m16 16 4 4"></path>
@@ -40,56 +40,272 @@
                 <input id="desktop-quick-search-profile" class="home-side-meta__search-input doke-input" type="text" name="q" placeholder="Buscar serviço" autocomplete="off">
               </form>
               <button class="home-side-meta__location" type="button" aria-label="Alterar localização">
-                <span class="home-side-meta__location-dot" aria-hidden="true"></span>
                 <span class="home-side-meta__location-text" data-topbar-location-value data-location-fallback="Belo Horizonte, MG">Belo Horizonte, MG</span>
+                <span class="home-side-meta__caret" aria-hidden="true"></span>
               </button>
             </div>
 
-            <div class="home-side-meta__group home-side-meta__group--secondary app-header__group app-header__group--actions" data-header-slot="actions">
-              <a class="home-side-meta__action" href="pedidos.html" aria-label="Abrir pedidos">
+            <div class="home-side-meta__group home-side-meta__group--secondary app-header__group app-header__group--secondary" data-header-slot="actions">
+              <button class="home-side-meta__alert" type="button" aria-label="Novidades" data-header-nav="notificacoes.html">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <rect x="6" y="5" width="12" height="14" rx="2"></rect>
+                  <path d="M6 5.5h12v13H6z"></path>
                   <path d="M9 9h6"></path>
-                  <path d="M9 13h4"></path>
-                </svg>
-              </a>
-              <button class="home-side-meta__action" type="button" aria-label="Ajustes rápidos">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M5 12h14"></path>
-                  <path d="M12 5v14"></path>
+                  <path d="M9 12h6"></path>
+                  <path d="M9 15h4"></path>
                 </svg>
               </button>
-              <a class="home-side-meta__action" href="notificacoes.html" aria-label="Abrir notificações">
+              <button class="home-side-meta__alert" type="button" aria-label="Suporte" data-header-nav="configuracoes.html">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M18 10a6 6 0 1 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"></path>
-                  <path d="M9.8 20a2.2 2.2 0 0 0 4.4 0"></path>
+                  <path d="M5 13.5V10l10-4v12l-10-4z"></path>
+                  <path d="M15 9.5h2.2A2.8 2.8 0 0 1 20 12.3v.4a2.8 2.8 0 0 1-2.8 2.8H15"></path>
+                  <path d="M7.5 14.5v2.2a1.8 1.8 0 0 0 1.8 1.8h1.2"></path>
                 </svg>
-              </a>
-              <a class="home-side-meta__profile" href="perfil.html" aria-label="Abrir meu perfil">
-                <span class="home-side-meta__avatar" aria-hidden="true">DK</span>
-                <span class="home-side-meta__profile-copy">
-                  <strong>Gabriel</strong>
-                  <small>Pontos: 230</small>
-                </span>
-              </a>
+              </button>
+              <button class="home-side-meta__alert" type="button" aria-label="Notificações" data-header-nav="notificacoes.html">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 4.75a4 4 0 0 0-4 4v2.1c0 .7-.24 1.38-.68 1.92L5.9 14.5h12.2l-1.42-1.73a3 3 0 0 1-.68-1.92v-2.1a4 4 0 0 0-4-4Z"></path>
+                  <path d="M10 17.2a2.3 2.3 0 0 0 4 0"></path>
+                </svg>
+              </button>
+              <div class="home-side-meta__profile-wrap">
+                <button class="home-side-meta__profile" type="button" data-header-nav="perfil.html" aria-label="Abrir perfil de Gabriel">
+                  <span class="home-side-meta__avatar doke-avatar" aria-hidden="true">DK</span>
+                  <span class="home-side-meta__identity">
+                    <strong>Gabriel</strong>
+                    <span>Pontos: 230</span>
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </header>
 
-        <main class="page__content doke-page">
-          <div id="doke-profile-rail-lock" class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean profile-shell-content doke-page-shell doke-page-stack">
-            <section class="profile-zero doke-page-section" aria-labelledby="profile-zero-title">
-              <div class="profile-zero__card">
-                <span class="profile-zero__eyebrow">Perfil zerado</span>
-                <h1 id="profile-zero-title">Pronto para reconstruir do zero</h1>
-                <p>
-                  A estrutura antiga do perfil foi removida desta página. O próximo passo é criar uma nova anatomia
-                  responsiva com contratos limpos para desktop, tablet e mobile.
-                </p>
+        <div class="page__content doke-page">
+          <main id="doke-profile-rail-lock" class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean profile-shell-content profile-page doke-page-shell doke-page-stack" aria-labelledby="profile-title" data-state-boundary="perfil" data-state-scope="perfil" data-view-state="ready">
+            <section class="profile-hero" aria-labelledby="profile-title">
+              <div class="profile-hero__cover" aria-hidden="true">
+                <span class="profile-hero__cover-mark">Doke Pro</span>
               </div>
+
+              <div class="profile-hero__identity">
+                <div class="profile-avatar" aria-label="Avatar do Studio Aquarela">SA</div>
+
+                <div class="profile-heading">
+                  <p class="profile-heading__eyebrow">Profissional verificado</p>
+                  <h1 id="profile-title">Studio Aquarela</h1>
+                  <p class="profile-heading__meta">@studioaquarela · Salvador, BA</p>
+                  <div class="profile-badges" aria-label="Selos do perfil">
+                    <span class="doke-badge doke-badge--verified">Identidade verificada</span>
+                    <span class="doke-badge">Top pintura residencial</span>
+                    <span class="doke-badge">Responde rápido</span>
+                  </div>
+                </div>
+
+                <div class="profile-actions" aria-label="Ações do perfil">
+                  <a class="doke-button doke-button--primary profile-action" href="detalhe-anuncio.html">Solicitar orçamento</a>
+                  <button class="doke-button doke-button--ghost profile-action" type="button">Seguir</button>
+                  <button class="doke-icon-btn profile-action-icon" type="button" aria-label="Mais ações do perfil">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="5" cy="12" r="1.5"></circle>
+                      <circle cx="12" cy="12" r="1.5"></circle>
+                      <circle cx="19" cy="12" r="1.5"></circle>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <dl class="profile-reputation" aria-label="Números do perfil">
+                <div class="profile-reputation__item">
+                  <dt>Seguidores</dt>
+                  <dd>12,4 mil</dd>
+                </div>
+                <div class="profile-reputation__item">
+                  <dt>Seguindo</dt>
+                  <dd>324</dd>
+                </div>
+                <div class="profile-reputation__item">
+                  <dt>Trabalhos</dt>
+                  <dd>126</dd>
+                </div>
+              </dl>
+
+              <nav class="profile-tabs" aria-label="Seções do perfil">
+                <a class="profile-tabs__item" href="#profile-ads" aria-controls="profile-ads">Anúncios</a>
+                <a class="profile-tabs__item" href="#profile-workers" aria-controls="profile-workers">Workers</a>
+                <a class="profile-tabs__item" href="#profile-posts" aria-controls="profile-posts">Publicações</a>
+                <a class="profile-tabs__item" href="#profile-reviews" aria-controls="profile-reviews">Avaliações</a>
+              </nav>
             </section>
-          </div>
-        </main>
+
+            <section class="profile-feed" aria-label="Áreas do perfil">
+              <section id="profile-ads" class="profile-area profile-area--ads doke-page-section" aria-label="Anúncios do profissional">
+
+                <div class="profile-area__rail profile-area__rail--ads" aria-label="Anúncios de Studio Aquarela">
+                  <article class="doke-ad-card doke-ad-card--featured">
+                    <div class="doke-ad-card__media doke-ad-card__media--painter">
+                      <span class="doke-ad-card__badge">Mais contratado</span>
+                      <button class="doke-ad-card__favorite" type="button" aria-label="Salvar anúncio">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.6c0 5.4-8.8 10.2-8.8 10.2S3.2 14 3.2 8.6A4.7 4.7 0 0 1 12 6.2a4.7 4.7 0 0 1 8.8 2.4Z"></path></svg>
+                      </button>
+                    </div>
+                    <div class="doke-ad-card__body">
+                      <span class="doke-ad-card__category">Pintura residencial</span>
+                      <h3 class="doke-ad-card__title">Pintura de apartamento</h3>
+                      <div class="doke-ad-card__rating" aria-label="Avaliação 4,9 baseada em 126 trabalhos">
+                        <span class="doke-ad-card__rating-star">★</span><strong>4,9</strong><span>126 trabalhos</span>
+                      </div>
+                      <div class="doke-ad-card__tags" aria-label="Tags do anúncio"><span>#pintura</span><span>#apartamento</span></div>
+                      <div class="doke-ad-card__location">
+                        <span class="doke-ad-card__avatar doke-ad-card__avatar--carlos" aria-hidden="true"></span>
+                        <span class="doke-ad-card__location-text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.7A2.7 2.7 0 1 1 12 6.3a2.7 2.7 0 0 1 0 5.4Z"></path></svg><span>Salvador, BA</span></span>
+                      </div>
+                      <div class="doke-ad-card__footer"><strong class="doke-ad-card__price">R$ 480</strong><a class="doke-ad-card__cta doke-btn doke-btn--success" href="detalhe-anuncio.html">Ver anúncio</a></div>
+                    </div>
+                  </article>
+
+                  <article class="doke-ad-card doke-ad-card--featured">
+                    <div class="doke-ad-card__media doke-ad-card__media--handyman">
+                      <span class="doke-ad-card__badge">Acabamento fino</span>
+                      <button class="doke-ad-card__favorite" type="button" aria-label="Salvar anúncio">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.6c0 5.4-8.8 10.2-8.8 10.2S3.2 14 3.2 8.6A4.7 4.7 0 0 1 12 6.2a4.7 4.7 0 0 1 8.8 2.4Z"></path></svg>
+                      </button>
+                    </div>
+                    <div class="doke-ad-card__body">
+                      <span class="doke-ad-card__category">Textura decorativa</span>
+                      <h3 class="doke-ad-card__title">Efeito cimento queimado</h3>
+                      <div class="doke-ad-card__rating" aria-label="Avaliação 4,8 baseada em 42 trabalhos">
+                        <span class="doke-ad-card__rating-star">★</span><strong>4,8</strong><span>42 trabalhos</span>
+                      </div>
+                      <div class="doke-ad-card__tags" aria-label="Tags do anúncio"><span>#textura</span><span>#acabamento</span></div>
+                      <div class="doke-ad-card__location">
+                        <span class="doke-ad-card__avatar doke-ad-card__avatar--marcos" aria-hidden="true"></span>
+                        <span class="doke-ad-card__location-text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.7A2.7 2.7 0 1 1 12 6.3a2.7 2.7 0 0 1 0 5.4Z"></path></svg><span>Salvador e região</span></span>
+                      </div>
+                      <div class="doke-ad-card__footer"><strong class="doke-ad-card__price">R$ 690</strong><a class="doke-ad-card__cta doke-btn doke-btn--success" href="detalhe-anuncio.html">Ver anúncio</a></div>
+                    </div>
+                  </article>
+
+                  <article class="doke-ad-card doke-ad-card--featured">
+                    <div class="doke-ad-card__media doke-ad-card__media--ac">
+                      <span class="doke-ad-card__badge">Consulta rápida</span>
+                      <button class="doke-ad-card__favorite" type="button" aria-label="Salvar anúncio">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.6c0 5.4-8.8 10.2-8.8 10.2S3.2 14 3.2 8.6A4.7 4.7 0 0 1 12 6.2a4.7 4.7 0 0 1 8.8 2.4Z"></path></svg>
+                      </button>
+                    </div>
+                    <div class="doke-ad-card__body">
+                      <span class="doke-ad-card__category">Consultoria de cores</span>
+                      <h3 class="doke-ad-card__title">Paleta para ambientes</h3>
+                      <div class="doke-ad-card__rating" aria-label="Avaliação 5,0 baseada em 18 trabalhos">
+                        <span class="doke-ad-card__rating-star">★</span><strong>5,0</strong><span>18 trabalhos</span>
+                      </div>
+                      <div class="doke-ad-card__tags" aria-label="Tags do anúncio"><span>#cores</span><span>#decoração</span></div>
+                      <div class="doke-ad-card__location">
+                        <span class="doke-ad-card__avatar doke-ad-card__avatar--elaine" aria-hidden="true"></span>
+                        <span class="doke-ad-card__location-text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Zm0 9.7A2.7 2.7 0 1 1 12 6.3a2.7 2.7 0 0 1 0 5.4Z"></path></svg><span>Atendimento online</span></span>
+                      </div>
+                      <div class="doke-ad-card__footer"><strong class="doke-ad-card__price">R$ 180</strong><a class="doke-ad-card__cta doke-btn doke-btn--success" href="detalhe-anuncio.html">Ver anúncio</a></div>
+                    </div>
+                  </article>
+                </div>
+              </section>
+
+              <section id="profile-workers" class="profile-area profile-area--workers doke-page-section" aria-label="Workers do profissional">
+
+                <div class="profile-workers-track" aria-label="Workers de Studio Aquarela">
+                  <article class="video-card video-card--one doke-card doke-worker-card doke-media-card" role="button" tabindex="0" aria-label="Abrir worker: Pintura sem respingo"></article>
+                  <article class="video-card video-card--two doke-card doke-worker-card doke-media-card" role="button" tabindex="0" aria-label="Abrir worker: Acabamento de parede"></article>
+                  <article class="video-card video-card--three doke-card doke-worker-card doke-media-card" role="button" tabindex="0" aria-label="Abrir worker: Como escolher cor"></article>
+                  <article class="video-card video-card--four doke-card doke-worker-card doke-media-card" role="button" tabindex="0" aria-label="Abrir worker: Antes e depois de sala"></article>
+                </div>
+              </section>
+
+              <section id="profile-posts" class="profile-area profile-area--posts doke-page-section" aria-label="Publicações do profissional">
+
+                <div class="profile-area__rail profile-area__rail--posts" aria-label="Publicações de Studio Aquarela">
+                  <article class="publication-card publication-card--before-after doke-card" role="button" tabindex="0" aria-label="Abrir publicação: Sala integrada em Ondina">
+                    <div class="publication-card__media publication-card__comparison">
+                      <span class="publication-card__type publication-card__type--comparison"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"></path><path d="M4 12h16"></path><path d="M4 18h16"></path></svg>Antes/depois</span>
+                      <div class="publication-card__half publication-card__half--before"><span>Antes</span></div>
+                      <div class="publication-card__half publication-card__half--after"><span>Depois</span></div>
+                    </div>
+                    <div class="publication-card__content">
+                      <h3 class="publication-card__title">Sala integrada em Ondina</h3>
+                      <p class="publication-card__author">Por <a href="perfil.html">Studio Aquarela</a></p>
+                      <div class="publication-card__actions" aria-label="Interações da publicação">
+                        <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.6c0 5.4-8.8 10.2-8.8 10.2S3.2 14 3.2 8.6A4.7 4.7 0 0 1 12 6.2a4.7 4.7 0 0 1 8.8 2.4Z"></path></svg>248</span>
+                        <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 11.5a7.3 7.3 0 0 1 7.6-7.1 7.3 7.3 0 0 1 7.6 7.1 7.3 7.3 0 0 1-7.6 7.1 8.7 8.7 0 0 1-2.9-.5L5 19.4l1.2-3.2a6.7 6.7 0 0 1-2-4.7Z"></path></svg>31</span>
+                        <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5h11A1.5 1.5 0 0 1 19 6v14l-7-4-7 4V6a1.5 1.5 0 0 1 1.5-1.5Z"></path></svg>52</span>
+                      </div>
+                    </div>
+                  </article>
+
+                  <article class="publication-card publication-card--photo doke-card" role="button" tabindex="0" aria-label="Abrir publicação: Quarto com paleta clara">
+                    <div class="publication-card__media publication-card__media--kitchen">
+                      <span class="publication-card__type"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v10H4z"></path><path d="m8 11 2.2 2.2L15 8.5"></path></svg>Foto</span>
+                    </div>
+                    <div class="publication-card__content">
+                      <h3 class="publication-card__title">Quarto com paleta clara</h3>
+                      <p class="publication-card__author">Por <a href="perfil.html">Studio Aquarela</a></p>
+                      <div class="publication-card__actions" aria-label="Interações da publicação">
+                        <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.6c0 5.4-8.8 10.2-8.8 10.2S3.2 14 3.2 8.6A4.7 4.7 0 0 1 12 6.2a4.7 4.7 0 0 1 8.8 2.4Z"></path></svg>186</span>
+                        <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 11.5a7.3 7.3 0 0 1 7.6-7.1 7.3 7.3 0 0 1 7.6 7.1 7.3 7.3 0 0 1-7.6 7.1 8.7 8.7 0 0 1-2.9-.5L5 19.4l1.2-3.2a6.7 6.7 0 0 1-2-4.7Z"></path></svg>24</span>
+                        <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5h11A1.5 1.5 0 0 1 19 6v14l-7-4-7 4V6a1.5 1.5 0 0 1 1.5-1.5Z"></path></svg>40</span>
+                      </div>
+                    </div>
+                  </article>
+
+                  <article class="publication-card publication-card--video doke-card" role="button" tabindex="0" aria-label="Abrir publicação: Bastidores da textura">
+                    <div class="publication-card__media publication-card__media--living">
+                      <span class="publication-card__type"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7 8 5-8 5V7Z"></path></svg>Vídeo</span>
+                      <span class="publication-card__play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 7 8 5-8 5V7Z"></path></svg></span>
+                    </div>
+                    <div class="publication-card__content">
+                      <h3 class="publication-card__title">Bastidores da textura</h3>
+                      <p class="publication-card__author">Por <a href="perfil.html">Studio Aquarela</a></p>
+                      <div class="publication-card__actions" aria-label="Interações da publicação">
+                        <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.6c0 5.4-8.8 10.2-8.8 10.2S3.2 14 3.2 8.6A4.7 4.7 0 0 1 12 6.2a4.7 4.7 0 0 1 8.8 2.4Z"></path></svg>121</span>
+                        <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.2 11.5a7.3 7.3 0 0 1 7.6-7.1 7.3 7.3 0 0 1 7.6 7.1 7.3 7.3 0 0 1-7.6 7.1 8.7 8.7 0 0 1-2.9-.5L5 19.4l1.2-3.2a6.7 6.7 0 0 1-2-4.7Z"></path></svg>17</span>
+                        <span class="publication-card__action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5h11A1.5 1.5 0 0 1 19 6v14l-7-4-7 4V6a1.5 1.5 0 0 1 1.5-1.5Z"></path></svg>26</span>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              </section>
+
+              <section id="profile-reviews" class="profile-area profile-area--reviews doke-page-section" aria-label="Avaliações do profissional">
+
+                <div class="profile-reviews-list" aria-label="Avaliações de Studio Aquarela">
+                  <article class="profile-review-card">
+                    <div class="profile-review-card__header">
+                      <strong>Marina C.</strong>
+                      <span>★★★★★</span>
+                    </div>
+                    <p>Equipe pontual, organizada e com acabamento muito acima do esperado.</p>
+                    <small>Barra · pintura residencial</small>
+                  </article>
+
+                  <article class="profile-review-card">
+                    <div class="profile-review-card__header">
+                      <strong>Rafael M.</strong>
+                      <span>★★★★★</span>
+                    </div>
+                    <p>Explicaram bem as etapas, protegeram os móveis e entregaram no prazo.</p>
+                    <small>Rio Vermelho · textura decorativa</small>
+                  </article>
+
+                  <article class="profile-review-card">
+                    <div class="profile-review-card__header">
+                      <strong>Ana P.</strong>
+                      <span>★★★★★</span>
+                    </div>
+                    <p>Consultoria de cores objetiva e resultado final bem alinhado ao projeto.</p>
+                    <small>Ondina · consultoria de cores</small>
+                  </article>
+                </div>
+              </section>
+            </section>
+          </main>
+        </div>
       </div>
     </div>
 
