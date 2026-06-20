@@ -14,6 +14,7 @@
     notifications: '<svg viewBox="0 0 24 24"><path d="M12 4.75a4 4 0 0 0-4 4v2.1c0 .7-.24 1.38-.68 1.92L5.9 14.5h12.2l-1.42-1.73a3 3 0 0 1-.68-1.92v-2.1a4 4 0 0 0-4-4Z"></path><path d="M10 17.2a2.3 2.3 0 0 0 4 0"></path></svg>',
     community: '<svg viewBox="0 0 24 24"><circle cx="8" cy="10" r="2.5"></circle><circle cx="16" cy="9" r="2.5"></circle><path d="M3.5 18c.8-2.4 2.8-3.8 5.5-3.8S13.7 15.6 14.5 18"></path><path d="M12.5 18c.6-1.9 2.1-3.1 4.3-3.1 2 0 3.6 1.1 4.2 3.1"></path></svg>',
     profile: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.2-3.2 3.7-4.8 7-4.8s5.8 1.6 7 4.8"></path></svg>',
+    wallet: '<svg viewBox="0 0 24 24"><rect x="3.8" y="6.5" width="16.4" height="11" rx="2.4"></rect><path d="M6 9.5h12"></path><path d="M15.2 13.2h2"></path></svg>',
     settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 3.8v2.1"></path><path d="M12 18.1v2.1"></path><path d="m18.2 5.8-1.5 1.5"></path><path d="m7.3 16.7-1.5 1.5"></path><path d="M20.2 12h-2.1"></path><path d="M5.9 12H3.8"></path><path d="m18.2 18.2-1.5-1.5"></path><path d="m7.3 7.3-1.5-1.5"></path></svg>',
     logout: '<svg viewBox="0 0 24 24"><path d="M15 7.5V5.8A1.8 1.8 0 0 0 13.2 4H7.8A1.8 1.8 0 0 0 6 5.8v12.4A1.8 1.8 0 0 0 7.8 20h5.4a1.8 1.8 0 0 0 1.8-1.8v-1.7"></path><path d="M10 12h10"></path><path d="m17 8 3 4-3 4"></path></svg>',
     close: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>'
@@ -68,7 +69,7 @@
     configuracoes: 'configuracoes.html',
     ajuda: 'configuracoes.html',
     perfil: 'perfil.html',
-    carteira: 'perfil.html',
+    carteira: 'carteira.html',
     'tornar-profissional': 'perfil.html',
     'anunciar-servico': 'perfil.html'
   };
@@ -80,6 +81,7 @@
     'notificacoes.html': true,
     'comunidade.html': true,
     'perfil.html': true,
+    'carteira.html': true,
     'configuracoes.html': true
   };
 
@@ -129,6 +131,7 @@
           '<div class="home-mobile-drawer__divider" aria-hidden="true"></div>',
           '<nav class="home-mobile-drawer__nav" aria-label="Conta">',
             item({ href: 'perfil.html?mode=owner&panel=posts', label: 'Meu perfil', icon: 'profile' }),
+            item({ href: 'carteira.html', label: 'Carteira', icon: 'wallet' }),
             item({ href: 'configuracoes.html', label: 'Configurações', icon: 'settings' }),
             item({ label: 'Sair', icon: 'logout', button: true }),
           '</nav>',

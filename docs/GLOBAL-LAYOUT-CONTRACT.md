@@ -180,3 +180,71 @@ Older local formulas are kept only as fallbacks for pages that have not fully lo
 ## Stage 09 — Header rail alignment consumes canonical rail
 
 `assets/css/components/shell/header-rail-alignment-contract.css` still had active high-specificity header rules with hard-coded desktop formulas such as `min(calc(100vw - 280px), 1000px)`. Stage 09 keeps those formulas only as fallback and makes the outer header rail consume `--doke-header-rail`, `--doke-current-page-rail` and `--doke-page-rail` first. Header inner rules now resolve through the same canonical page rail before falling back to the older shared width calculation. No new selectors, files, `!important`, card anatomy, JS or HTML changes were introduced.
+
+## Configurações — contrato responsivo fechado
+
+`configuracoes.html` é uma página de workspace de configurações com comportamento responsivo próprio, mas deve consumir o rail/header global sem criar eixo local independente.
+
+Autoridade ativa da composição da página:
+
+```txt
+assets/css/pages/settings-workspace-contract.css
+assets/css/pages/configuracoes-foundation.css
+assets/js/pages/configuracoes.js
+```
+
+Contrato aprovado:
+
+- até `1180px`, incluindo tablet vertical e tablet horizontal, a página deve se comportar como lista de opções em uma única coluna;
+- até `1180px`, ao selecionar uma opção, a página entra no detalhe da seção ativa e não renderiza o painel abaixo da lista;
+- até `1180px`, o detalhe da seção ativa deve oferecer botão de voltar antes do painel, usando o padrão visual compartilhado já adotado em `detalhe-anuncio.html`;
+- a partir de `1181px`, o workspace pode usar duas colunas, com menu lateral de configurações e painel ativo à direita;
+- o header mobile deve receber o título pelo contrato global do `mobile-app-shell`, sem título duplicado dentro da área principal em mobile;
+- a área de conteúdo deve consumir `--doke-page-rail`, `--doke-header-rail` ou aliases canônicos existentes, sem criar gutter local para alinhar por tentativa.
+
+Proibições específicas:
+
+- não importar CSS de `mensagens.html` para simular paridade visual;
+- não criar regra local para `.doke-mobile-shell`, `.app-header`, `.page`, `.page__content` ou `.page__content-inner` para corrigir desalinhamento do `configuracoes.html`;
+- não reativar o layout de duas colunas em tablet horizontal;
+- não renderizar o formulário de `Perfil` abaixo da lista em mobile/tablet.
+
+## Carteira — contrato responsivo fechado
+
+`carteira.html` é uma página financeira operacional. O visual aprovado deve priorizar leitura rápida de saldo, status de repasse, KPIs, movimentações recentes e conta de recebimento, sem voltar ao padrão de hero/landing page.
+
+Autoridade ativa da composição da página:
+
+```txt
+carteira.html
+assets/css/pages/carteira.css
+assets/css/pages/carteira-foundation.css
+assets/css/pages/carteira/responsive-contract.css
+assets/js/pages/carteira.js
+assets/js/ui/mobile-drawer-standard.js
+```
+
+Contrato aprovado:
+
+- desktop usa a estrutura operacional canônica: `wallet-hero`, `wallet-kpis`, `wallet-layout`, `wallet-transactions`, `wallet-bank-panel` e `wallet-analytics`;
+- mobile e tablet devem usar a mesma estrutura canônica do desktop, adaptada por grid/stack responsivo, sem renderizar blocos mobile legados;
+- `Sacar saldo` abre modal com o mesmo padrão visual do modal de cobrança: badge no topo, título grande, botão fechar, campo de valor, resumo e footer de ações;
+- `Estatísticas` troca para a view analítica interna com gráficos, não abre modal compacto;
+- `Voltar ao extrato` retorna para a visão principal da carteira;
+- a view analítica deve manter o padrão desktop em telas menores: cards próprios, gráfico de fluxo financeiro legível, rosca de distribuição sem corte e sem fundo branco gigante atrás de toda a área;
+- o drawer mobile/tablet deve exibir `Carteira` como item próprio, com rota agrupada em `carteira.html`;
+- o header mobile da carteira deve usar título `Carteira` e ações alinhadas à direita conforme o número real de ações da página;
+- os ícones de KPI e movimentação devem ser `stroke-only` ou consumir contrato visual equivalente, sem herdar `fill` preto bruto em mobile/tablet;
+- a página deve continuar consumindo os contratos globais de shell/header/rail, sem redefinir sidebar, header global ou page shell para resolver problema local.
+
+Proibições específicas:
+
+- não reativar `wallet-mobile-layout`, `wallet-mobile-balance`, `wallet-mobile-strip` ou `wallet-mobile-metrics`;
+- não reativar a seção antiga quebrada de estatísticas dentro do fluxo principal;
+- não transformar `Estatísticas` em modal compacto;
+- não voltar ao hero gigante com saldo à esquerda e três cards grandes à direita;
+- não recriar a barra lateral colorida nos cards de movimentação;
+- não esconder a carteira do drawer mobile/tablet nem agrupar `carteira.html` como `perfil.html`;
+- não usar CSS de página para alterar `.app-shell`, `.sidebar`, `.page`, `.page__content`, `.page__content-inner` ou anatomia global do `mobile-app-shell`;
+- não usar `!important`, inline style ou JS para corrigir problema de layout da carteira.
+

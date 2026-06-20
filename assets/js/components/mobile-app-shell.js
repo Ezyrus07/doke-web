@@ -10,22 +10,25 @@
   }
 
   var PAGE_CONFIG = {
-    'index.html': { key: 'home', active: 'home', search: true },
-    '': { key: 'home', active: 'home', search: true },
-    'resultados.html': { key: 'resultados', active: 'home', search: true },
+    'index.html': { key: 'home', active: 'home', search: true, title: 'Olá Gabriel' },
+    '': { key: 'home', active: 'home', search: true, title: 'Olá Gabriel' },
+    'resultados.html': { key: 'resultados', active: 'home', search: true, title: 'Resultados' },
     'detalhe-anuncio.html': { key: 'detalhe-anuncio', active: 'home', search: false, title: 'Anúncio', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
-    'pedidos.html': { key: 'pedidos', active: 'orders', search: false, hideSearchBar: true },
-    'mensagens.html': { key: 'mensagens', active: 'messages', search: false },
-    'comunidade.html': { key: 'comunidade', active: 'communities', search: false },
+    'pedidos.html': { key: 'pedidos', active: 'orders', search: false, title: 'Pedidos', hideSearchBar: true },
+    'mensagens.html': { key: 'mensagens', active: 'messages', search: false, title: 'Mensagens' },
+    'comunidade.html': { key: 'comunidade', active: 'communities', search: false, title: 'Comunidade' },
     'comunidade-interna.html': { key: 'comunidade', active: 'communities', search: false, title: 'Comunidade' },
-    'perfil.html': { key: 'perfil', active: 'profile', search: false },
-    'carteira.html': { key: 'carteira', active: 'profile', search: false },
-    'notificacoes.html': { key: 'notificacoes', active: '', search: false, bottomNav: false },
+    'perfil.html': { key: 'perfil', active: 'profile', search: false, title: 'Perfil' },
+    'carteira.html': { key: 'carteira', active: 'profile', search: false, title: 'Carteira' },
+    'notificacoes.html': { key: 'notificacoes', active: '', search: false, title: 'Notificações', bottomNav: false },
     'novidades.html': { key: 'novidades', active: '', search: false, title: 'Novidades' },
     'ajuda.html': { key: 'ajuda', active: '', search: false, title: 'Ajuda' },
     'configuracoes.html': { key: 'configuracoes', active: 'profile', search: false, title: 'Configurações', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'tornar-profissional.html': { key: 'tornar-profissional', active: 'profile', search: false, title: 'Tornar-se profissional', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
-    'anunciar-servico.html': { key: 'anunciar-servico', active: 'profile', search: false, title: 'Anunciar serviço', compactSearchButton: true, hideSearchBar: true, hideLocation: true }
+    'anunciar-servico.html': { key: 'anunciar-servico', active: 'profile', search: false, title: 'Anunciar serviço', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
+    'pagamento-profissional.html': { key: 'pagamento-profissional', active: 'profile', search: false, title: 'Pagamento', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
+    'avaliacao-profissional.html': { key: 'avaliacao-profissional', active: 'profile', search: false, title: 'Avaliação', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
+    'avaliacao.html': { key: 'avaliacao', active: 'profile', search: false, title: 'Avaliação', compactSearchButton: true, hideSearchBar: true, hideLocation: true }
   };
 
   var ICONS = {
@@ -49,8 +52,20 @@
     return name.indexOf('.') === -1 ? name + '.html' : name;
   }
 
+  function titleFromPageName(key) {
+    return key
+      .split('-')
+      .filter(Boolean)
+      .map(function (part) {
+        return part.charAt(0).toUpperCase() + part.slice(1);
+      })
+      .join(' ');
+  }
+
   function config() {
-    return PAGE_CONFIG[pageName()] || { key: pageName().replace('.html', ''), active: '', search: false };
+    var name = pageName();
+    var fallbackKey = name.replace('.html', '');
+    return PAGE_CONFIG[name] || { key: fallbackKey, active: '', search: false, title: titleFromPageName(fallbackKey) };
   }
 
   function usesContextActions(cfg) {
@@ -259,17 +274,22 @@
     return buttons.join('');
   }
 
+  function hasCompactHeaderActions(cfg) {
+    return Boolean(cfg && cfg.compactSearchButton && cfg.hideLocation && !usesContextActions(cfg));
+  }
+
   function createShell(cfg) {
     var shell = document.createElement('div');
+    var actionsClass = 'doke-mobile-shell__actions' + (hasCompactHeaderActions(cfg) ? ' doke-mobile-shell__actions--compact' : '');
     shell.className = 'doke-mobile-shell';
     shell.setAttribute('data-doke-mobile-shell', '');
     shell.innerHTML = [
       '<header class="doke-mobile-shell__topbar" aria-label="Cabeçalho mobile global">',
       '  <button class="doke-mobile-shell__profile" type="button" data-shell-profile aria-label="Abrir menu da conta">',
       '    <span class="doke-mobile-shell__avatar">DK</span>',
-      '    <span class="doke-mobile-shell__hello">' + (cfg.title || (cfg.key === 'mensagens' ? 'Mensagens' : 'Olá Gabriel')) + '</span>',
+      '    <span class="doke-mobile-shell__hello">' + (cfg.title || titleFromPageName(cfg.key || '')) + '</span>',
       '  </button>',
-      '  <div class="doke-mobile-shell__actions" data-shell-context-actions>',
+      '  <div class="' + actionsClass + '" data-shell-context-actions>',
       createQuickActions(cfg),
       '  </div>',
       '</header>',

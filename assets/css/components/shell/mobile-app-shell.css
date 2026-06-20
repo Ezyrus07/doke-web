@@ -170,7 +170,7 @@
 
   body.doke-mobile-shell-mounted .doke-mobile-shell__topbar {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-columns: max-content minmax(0, 1fr) !important;
     align-items: center !important;
     gap: 8px !important;
     width: 100% !important;
@@ -188,7 +188,10 @@
     justify-content: flex-start !important;
     gap: 8px !important;
     height: var(--doke-mobile-shell-topbar-height) !important;
+    width: max-content !important;
+    max-width: 100% !important;
     min-width: 0 !important;
+    justify-self: start !important;
     padding: 0 !important;
     border: 0 !important;
     background: transparent !important;
@@ -248,6 +251,7 @@
     gap: 8px !important;
     height: var(--doke-mobile-shell-topbar-height) !important;
     min-width: 0 !important;
+    justify-self: end !important;
   }
 
   body.doke-mobile-shell-mounted .doke-mobile-shell__location {
@@ -801,7 +805,7 @@
     .doke-mobile-shell__actions:has(.doke-mobile-shell__quick-action) {
     display: grid !important;
     grid-template-columns: repeat(
-      4,
+      var(--doke-mobile-shell-action-count, 4),
       var(--doke-mobile-shell-action-size)
     ) !important;
     align-items: center !important;
@@ -810,6 +814,10 @@
     height: var(--doke-mobile-shell-action-size) !important;
     min-height: var(--doke-mobile-shell-action-size) !important;
     max-height: var(--doke-mobile-shell-action-size) !important;
+  }
+
+  body.doke-mobile-shell-mounted .doke-mobile-shell__actions--compact {
+    --doke-mobile-shell-action-count: 2;
   }
 
   body.doke-mobile-shell-mounted
