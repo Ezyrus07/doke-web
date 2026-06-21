@@ -328,3 +328,127 @@ body:is(
     font-size: clamp(1.06rem, 4.8vw, 1.28rem);
   }
 }
+
+
+/* Flow pages v6 — root-edge single scroll.
+ * Keep only one vertical scrollbar and place it on the viewport edge, matching
+ * index.html. The document/root is the scroll owner; app shell wrappers remain
+ * layout containers and must not create inset scrollbars inside the blue page
+ * surface.
+ */
+html:has(body:is(
+  [data-page="tornar-profissional"],
+  [data-page="pagamento-profissional"],
+  [data-page="novidades"],
+  [data-page="avaliacao-profissional"],
+  [data-page="ajuda"],
+  [data-page="anunciar-servico"]
+)) {
+  height: auto !important;
+  min-height: 100% !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-gutter: auto !important;
+}
+
+body:is(
+  [data-page="tornar-profissional"],
+  [data-page="pagamento-profissional"],
+  [data-page="novidades"],
+  [data-page="avaliacao-profissional"],
+  [data-page="ajuda"],
+  [data-page="anunciar-servico"]
+).has-global-header {
+  height: auto !important;
+  min-height: 100dvh !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: auto;
+}
+
+body:is(
+  [data-page="tornar-profissional"],
+  [data-page="pagamento-profissional"],
+  [data-page="novidades"],
+  [data-page="avaliacao-profissional"],
+  [data-page="ajuda"],
+  [data-page="anunciar-servico"]
+).has-global-header > .app-shell,
+body:is(
+  [data-page="tornar-profissional"],
+  [data-page="pagamento-profissional"],
+  [data-page="novidades"],
+  [data-page="avaliacao-profissional"],
+  [data-page="ajuda"],
+  [data-page="anunciar-servico"]
+).has-global-header > .app-shell > .page,
+body:is(
+  [data-page="tornar-profissional"],
+  [data-page="pagamento-profissional"],
+  [data-page="novidades"],
+  [data-page="avaliacao-profissional"],
+  [data-page="ajuda"],
+  [data-page="anunciar-servico"]
+).has-global-header > .app-shell > .page > .page__content,
+body:is(
+  [data-page="tornar-profissional"],
+  [data-page="pagamento-profissional"],
+  [data-page="novidades"],
+  [data-page="avaliacao-profissional"],
+  [data-page="ajuda"],
+  [data-page="anunciar-servico"]
+).has-global-header > .app-shell > .page > .page__content > .page__content-inner,
+body:is(
+  [data-page="tornar-profissional"],
+  [data-page="pagamento-profissional"],
+  [data-page="novidades"],
+  [data-page="avaliacao-profissional"],
+  [data-page="ajuda"],
+  [data-page="anunciar-servico"]
+).has-global-header :is(.doke-page, .doke-page-shell, .doke-page-stack, .app-shell-page__workspace, .shell-home__workspace) {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-x: clip !important;
+  overflow-y: visible !important;
+  scrollbar-gutter: auto !important;
+}
+
+body:is(
+  [data-page="tornar-profissional"],
+  [data-page="pagamento-profissional"],
+  [data-page="novidades"],
+  [data-page="avaliacao-profissional"],
+  [data-page="ajuda"],
+  [data-page="anunciar-servico"]
+).has-global-header > .app-shell,
+body:is(
+  [data-page="tornar-profissional"],
+  [data-page="pagamento-profissional"],
+  [data-page="novidades"],
+  [data-page="avaliacao-profissional"],
+  [data-page="ajuda"],
+  [data-page="anunciar-servico"]
+).has-global-header > .app-shell > .page {
+  min-height: 100dvh !important;
+}
+
+
+/* Flow pages v7 — mobile header-title deduplication.
+ * On mobile, the global header already names these pages. Hide only the
+ * duplicated local intro title/description so the first actionable block starts
+ * higher without changing desktop/tablet hierarchy.
+ */
+@media (max-width: 760px) {
+  body:is(
+    [data-page="tornar-profissional"],
+    [data-page="novidades"],
+    [data-page="ajuda"],
+    [data-page="anunciar-servico"]
+  ) :is(.become-pro-intro, .news-page__intro, .help-center__intro, .post-service-intro) {
+    display: none;
+  }
+}
