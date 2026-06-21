@@ -22,8 +22,7 @@ const pages = [
   'comunidade.html',
   'ajuda.html',
   'novidades.html',
-  'avaliacao.html',
-];
+  ];
 
 const viewports = [
   [1366, 768],

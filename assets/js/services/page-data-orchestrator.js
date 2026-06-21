@@ -76,12 +76,6 @@
       controller: 'finalizar-pedido',
       strategy: 'keep checkout/order review data separate from provisional page layout'
     }),
-    avaliacao: Object.freeze({
-      status: 'evolving',
-      resources: ['reviews', 'orders', 'services'],
-      controller: 'avaliacao',
-      strategy: 'prepare rating criteria and review submission without static coupling'
-    }),
     'adicionar-cartao': Object.freeze({
       status: 'evolving',
       resources: ['paymentMethods', 'wallet'],

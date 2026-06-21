@@ -6,9 +6,7 @@ const ROOT = process.cwd();
 const TARGET_PAGES = [
   'mensagens.html',
   'comunidade.html',
-  'pagamento-profissional.html',
-  'avaliacao.html'
-];
+  'pagamento-profissional.html',];
 
 const OUTPUT = 'docs/validation/global-cycle-76-product-script-inventory-report.json';
 

@@ -25,7 +25,6 @@ const REQUIRED_PAGES = [
   'pagamento-profissional.html',
   'configuracoes.html',
   'notificacoes.html',
-  'avaliacao.html',
   'mensagens.html',
   'comunidade.html',
   'comunidade.html',

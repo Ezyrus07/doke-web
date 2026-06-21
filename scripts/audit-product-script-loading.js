@@ -16,7 +16,6 @@ const TARGET_PAGES = [
   'mensagens.html',
   'comunidade.html',
   'pagamento-profissional.html',
-  'avaliacao.html',
   ];
 
 function read(file) {

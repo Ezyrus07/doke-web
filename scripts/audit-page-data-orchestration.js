@@ -20,7 +20,6 @@ const requiredPages = [
   'mensagens',
   'pagamento',
   'finalizar-pedido',
-  'avaliacao',
   'adicionar-cartao'
 ];
 
@@ -31,7 +30,6 @@ const evolvingPages = new Set([
   'finalizar-pedido',
   'pagamento',
   'configuracoes',
-  'avaliacao',
   'adicionar-cartao'
 ]);
 

@@ -9,8 +9,7 @@ const OUTPUT = 'docs/validation/global-cycle-84-product-script-budget-report.jso
 const BASELINE_BUDGETS = {
   'mensagens.html': { maxExternalScripts: 34 },
   'comunidade.html': { maxExternalScripts: 32 },
-  'pagamento-profissional.html': { maxExternalScripts: 17 },
-  'avaliacao.html': { maxExternalScripts: 16 }
+  'pagamento-profissional.html': { maxExternalScripts: 17 }
 };
 const GLOBAL_MAX_UNIQUE_EXTERNAL_SCRIPTS = 44;
 const GLOBAL_MAX_TOTAL_EXTERNAL_REFERENCES = 131;

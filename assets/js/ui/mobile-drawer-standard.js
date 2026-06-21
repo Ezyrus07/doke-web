@@ -59,7 +59,6 @@
     'detalhe-anuncio': 'index.html',
     pedidos: 'pedidos.html',
     'pagamento-profissional': 'pedidos.html',
-    avaliacao: 'pedidos.html',
     'avaliacao-profissional': 'pedidos.html',
     mensagens: 'mensagens.html',
     notificacoes: 'notificacoes.html',

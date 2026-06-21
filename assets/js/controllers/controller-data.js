@@ -14,7 +14,6 @@
     'finalizar-pedido': ['orders'],
     pagamento: ['orders', 'wallet'],
     'adicionar-cartao': ['wallet'],
-    avaliacao: ['reviews', 'orders', 'services'],
     notificacoes: ['notifications'],
     configuracoes: ['users']
   });

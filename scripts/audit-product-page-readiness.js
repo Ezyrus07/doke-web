@@ -16,7 +16,6 @@ const TARGET_PAGES = [
   'mensagens.html',
   'comunidade.html',
   'pagamento-profissional.html',
-  'avaliacao.html',
   ];
 
 function read(file) {
@@ -61,7 +60,6 @@ function inferPageRole(pageFile) {
     'mensagens.html': 'communication-inbox',
     'comunidade.html': 'community-discovery',
     'pagamento-profissional.html': 'payment-flow',
-    'avaliacao.html': 'review-flow',
   };
   return map[pageFile] || 'product-page';
 }

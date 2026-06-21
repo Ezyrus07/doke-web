@@ -20,9 +20,7 @@ const SCAN_FILES = [
   'assets/js/controllers/controller-data.js',
   'mensagens.html',
   'comunidade.html',
-  'pagamento-profissional.html',
-  'avaliacao.html'
-];
+  'pagamento-profissional.html',];
 
 const contracts = {
   'assets/js/services/auth-service.js': ['DokeAuth', 'requireAuth', 'getCurrentUser', 'isAuthenticated'],

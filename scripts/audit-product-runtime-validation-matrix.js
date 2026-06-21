@@ -6,9 +6,7 @@ const ROOT = process.cwd();
 const TARGET_PAGES = [
   'mensagens.html',
   'comunidade.html',
-  'pagamento-profissional.html',
-  'avaliacao.html'
-];
+  'pagamento-profissional.html',];
 const SOURCE_REPORT = 'docs/validation/global-cycle-83-product-script-reduction-candidates-report.json';
 const OUT = 'docs/validation/global-cycle-86-product-runtime-validation-matrix-report.json';
 
@@ -20,9 +18,7 @@ const scriptRegex = /<script\b([^>]*)\bsrc=["']([^"']+)["']([^>]*)><\/script>/gi
 const selectorContracts = {
   'assets/js/components/media-lightbox.js': ['data-media-lightbox', 'data-lightbox', 'data-gallery', 'data-community-image-preview', 'data-messages-image-input'],
   'assets/js/components/mobile-app-shell.js': ['doke-mobile-shell-pending', 'data-mobile-home-menu-open', 'data-mobile-shell', 'doke-mobile-page-header'],
-  'assets/js/pages/home/drawer.js': ['data-mobile-home-drawer', 'data-mobile-home-menu-open', 'data-home-profile-menu-toggle'],
-  'assets/js/pages/avaliacao.js': ['data-review-page', 'data-review-star', 'data-review-submit'],
-  'assets/js/pages/mensagens.js': ['data-messages-page', 'data-thread-body', 'data-messages-composer'],
+  'assets/js/pages/home/drawer.js': ['data-mobile-home-drawer', 'data-mobile-home-menu-open', 'data-home-profile-menu-toggle'],  'assets/js/pages/mensagens.js': ['data-messages-page', 'data-thread-body', 'data-messages-composer'],
   'assets/js/pages/pagamento-profissional.js': ['data-payment-page', 'data-payment-method', 'data-payment-submit'],
   'assets/js/services/community-service.js': ['data-community', 'data-community-feed'],
   'assets/js/services/conversation-service.js': ['data-messages-page', 'data-conversation', 'data-thread-body'],

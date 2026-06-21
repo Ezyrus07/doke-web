@@ -9,11 +9,6 @@ const controllers = {
     file: 'assets/js/pages/pagamento-profissional.js',
     api: ['Doke.paymentController', 'getLatest'],
     stateKey: 'pagamento'
-  },
-  'avaliacao.html': {
-    file: 'assets/js/controllers/avaliacao-controller.js',
-    api: ['Doke.reviewController', 'getLatest'],
-    stateKey: 'avaliacao'
   }
 };
 

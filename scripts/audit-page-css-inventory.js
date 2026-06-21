@@ -24,7 +24,6 @@ const EVOLVING_HTML = new Set([
   'pagamento-profissional.html',
   'configuracoes.html',
   'comunidade.html',
-  'avaliacao.html',
   ]);
 
 function walk(dir, acc = []) {

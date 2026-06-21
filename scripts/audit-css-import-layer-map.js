@@ -3,7 +3,7 @@ const path = require('path');
 
 const ROOT = process.cwd();
 const OUT = path.join(ROOT, 'docs', 'validation', 'global-cycle-118-css-import-layer-map-report.json');
-const PAGES = ['index.html','resultados.html','perfil.html','detalhe-anuncio.html','pedidos.html','carteira.html','pagamento-profissional.html','avaliacao.html','configuracoes.html','notificacoes.html','mensagens.html','comunidade.html','comunidade.html'];
+const PAGES = ['index.html','resultados.html','perfil.html','detalhe-anuncio.html','pedidos.html','carteira.html','pagamento-profissional.html','configuracoes.html','notificacoes.html','mensagens.html','comunidade.html','comunidade.html'];
 function read(file) { return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : ''; }
 function cssHrefs(html) { return [...html.matchAll(/<link\b[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi)].map((m) => m[1].split('?')[0].replace(/^\.\//, '')); }
 function layer(href) {

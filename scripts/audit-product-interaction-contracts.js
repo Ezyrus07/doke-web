@@ -23,15 +23,6 @@ const contracts = {
       paymentSubmit: ['data-payment-submit', 'data-pay-submit']
     },
     allowMissingGroups: ['paymentMethods', 'paymentSubmit']
-  },
-  'avaliacao.html': {
-    pageRoot: ['data-review-page'],
-    requiredHooks: ['data-review-page', 'data-review-star', 'data-review-submit'],
-    interactionGroups: {
-      rating: ['data-review-star'],
-      criteria: ['data-competency'],
-      notes: ['data-review-note']
-    }
   }
 };
 

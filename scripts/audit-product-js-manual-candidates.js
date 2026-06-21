@@ -16,9 +16,7 @@ const manual = (readiness.decisions || []).filter((item) => item.decision === 'm
 const targetPages = [
   'mensagens.html',
   'comunidade.html',
-  'pagamento-profissional.html',
-  'avaliacao.html'
-];
+  'pagamento-profissional.html',];
 
 const scriptSignals = {
   'assets/js/services/auth-service.js': {

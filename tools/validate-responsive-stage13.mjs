@@ -29,7 +29,6 @@ const pages = [
   'configuracoes.html',
   'detalhe-anuncio.html',
   'pagamento-profissional.html',
-  'avaliacao.html',
   'auth/login.html',
   'auth/cadastro.html',
   'auth/esqueci-senha.html',

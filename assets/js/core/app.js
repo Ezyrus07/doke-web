@@ -70,7 +70,7 @@ const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", 
 const ROUTE_SWAP_STATE_CLASSES = ["is-shell-swapping", "is-route-instant-swap"];
 const PRESERVED_BODY_STATE_CLASSES = [...SHELL_STATE_CLASSES, ...ROUTE_SWAP_STATE_CLASSES];
 const INTERNAL_PROFILE_PATH = "/perfil.html";
-const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/carteira.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento-profissional.html", "/avaliacao.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/"]);
+const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/carteira.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento-profissional.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/"]);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
@@ -165,7 +165,6 @@ const shouldBypassShellSwap = (href) => {
     // app-shell router, which removes the heavy reload feeling in daily use.
     const nativeOnlyPaths = new Set([
       "/pagamento-profissional.html",
-      "/avaliacao.html",
     ]);
 
     return nativeOnlyPaths.has(path);
@@ -257,7 +256,7 @@ const updateSidebarActiveState = (pathOverride = null) => {
   const path = pathOverride || getCurrentPath();
   const homeActive = path === "/index.html";
   const ordersActive = path === "/pedidos.html";
-  const messagesActive = path === "/mensagens.html" || path === "/pagamento-profissional.html" || path === "/avaliacao.html";
+  const messagesActive = path === "/mensagens.html" || path === "/pagamento-profissional.html";
   const notificationsActive = path === "/notificacoes.html";
   const communitiesActive = path === "/comunidade.html" || path === "/comunidade-interna.html";
   const profileActive = path === INTERNAL_PROFILE_PATH;
@@ -431,7 +430,6 @@ const INTERNAL_VIEW_STYLE_HINTS = {
     "assets/css/pages/comunidade-post-shell-foundation.css"
   ],
   "/comunidade-interna.html": ["assets/css/pages/comunidade-interna-foundation.css"],
-  "/avaliacao.html": ["assets/css/pages/avaliacao-foundation.css"],
   "/perfil.html": ["assets/css/pages/profile-foundation.css"],
   "/configuracoes.html": ["assets/css/pages/configuracoes-foundation.css"],
   "/detalhe-anuncio.html": ["assets/css/pages/marketplace-detail-foundation.css"]
@@ -456,7 +454,6 @@ const INTERNAL_VIEW_SCRIPT_HINTS = {
   "/carteira.html": ["assets/js/pages/carteira.js"],
   "/comunidade.html": ["assets/js/pages/comunidade.js"],
   "/comunidade-interna.html": ["assets/js/pages/comunidade-interna.js"],
-  "/avaliacao.html": ["assets/js/pages/avaliacao.js"],
   "/perfil.html": ["assets/js/pages/perfil.js"],
   "/detalhe-anuncio.html": ["assets/js/pages/detalhe-anuncio.js"],
   "/tornar-profissional.html": ["assets/js/pages/tornar-profissional.js"]

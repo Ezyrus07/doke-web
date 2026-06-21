@@ -11,7 +11,6 @@ const pageContracts = {
   'ajuda.html': { variant: 'standard', context: false },
   'anunciar-servico.html': { variant: 'standard', context: false },
   'avaliacao-profissional.html': { variant: 'contextual', context: true },
-  'avaliacao.html': { variant: 'standard', context: false },
   'carteira.html': { variant: 'contextual', context: true },
   'comunidade.html': { variant: 'contextual', context: true },
   'configuracoes.html': { variant: 'standard', context: false },

@@ -8,7 +8,6 @@
     '/ajuda.html',
     '/anunciar-servico.html',
     '/avaliacao-profissional.html',
-    '/avaliacao.html',
     '/carteira.html',
     '/comunidade-interna.html',
     '/comunidade.html',

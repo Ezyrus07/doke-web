@@ -77,20 +77,6 @@
               };
             })
           : ok({ wallet: null, paymentMethods: [], tokenizationProvider: null });
-      case 'avaliacao':
-        var reviewOrderId = '';
-        try {
-          reviewOrderId = new URLSearchParams(window.location.search || '').get('orderId') || '';
-        } catch (error) {
-          reviewOrderId = '';
-        }
-        return Promise.all([
-          services.orders && services.orders.getById && reviewOrderId ? services.orders.getById(reviewOrderId) : ok(null),
-          ok([]),
-          ok(null)
-        ]).then(function (values) {
-          return { order: values[0], reviews: values[1], service: values[2] };
-        });
       case 'notificacoes':
         return services.notifications && services.notifications.list
           ? services.notifications.list({}).then(function (notifications) { return { notifications: notifications }; })

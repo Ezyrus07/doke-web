@@ -11,7 +11,6 @@ const pages = [
   'pedidos.html',
   'carteira.html',
   'pagamento-profissional.html',
-  'avaliacao.html',
   'configuracoes.html',
   'notificacoes.html',
   'mensagens.html',

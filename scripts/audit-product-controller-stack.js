@@ -6,8 +6,7 @@ const ROOT = process.cwd();
 const OUTPUT = 'docs/validation/global-cycle-78-product-controller-stack-report.json';
 const TARGETS = [
   { page: 'mensagens.html', controller: 'assets/js/controllers/mensagens-controller.js' },
-  { page: 'pagamento-profissional.html', controller: 'assets/js/pages/pagamento-profissional.js' },
-  { page: 'avaliacao.html', controller: 'assets/js/controllers/avaliacao-controller.js' }
+  { page: 'pagamento-profissional.html', controller: 'assets/js/pages/pagamento-profissional.js' }
 ];
 
 function read(file) {

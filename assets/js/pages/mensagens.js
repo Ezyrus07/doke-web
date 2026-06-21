@@ -1086,7 +1086,7 @@
           avatar: "",
           title: `Avaliar ${conversations[activeId]?.name || "profissional"}`
         });
-        const nextUrl = `avaliacao.html?${query.toString()}`;
+        const nextUrl = `pedidos.html?${query.toString()}`;
         if (window.DokeNavigate) {
           window.DokeNavigate(nextUrl);
         } else {

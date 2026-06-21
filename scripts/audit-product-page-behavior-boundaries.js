@@ -12,13 +12,6 @@ const pages = [
     controller: 'assets/js/pages/pagamento-profissional.js',
     pageSignals: ['data-payment-method', 'data-payment-submit', 'DokeInitPaymentPage'],
     controllerSignals: ['Doke.paymentController', 'visualContract', 'provisional-layout-preserved']
-  },
-  {
-    page: 'avaliacao.html',
-    pageScript: 'assets/js/pages/avaliacao.js',
-    controller: 'assets/js/controllers/avaliacao-controller.js',
-    pageSignals: ['data-review-star', 'data-review-submit', 'DokeInitReviewPage'],
-    controllerSignals: ['Doke.reviewController', 'visualContract', 'provisional-layout-preserved']
   }
 ];
 

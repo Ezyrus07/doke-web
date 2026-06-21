@@ -8,10 +8,8 @@ const OUTPUT = 'docs/validation/global-cycle-81-product-script-dependency-map-re
 const TARGET_PAGES = [
   'mensagens.html',
   'comunidade.html',
-  'pagamento-profissional.html',
-  'avaliacao.html'
-];
-const TRANSACTION_PAGES = new Set(['pagamento-profissional.html', 'avaliacao.html']);
+  'pagamento-profissional.html',];
+const TRANSACTION_PAGES = new Set(['pagamento-profissional.html',]);
 const COMMUNICATION_PAGES = new Set(['mensagens.html', 'comunidade.html']);
 
 function readJson(file) {
