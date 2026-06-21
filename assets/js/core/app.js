@@ -70,7 +70,7 @@ const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", 
 const ROUTE_SWAP_STATE_CLASSES = ["is-shell-swapping", "is-route-instant-swap"];
 const PRESERVED_BODY_STATE_CLASSES = [...SHELL_STATE_CLASSES, ...ROUTE_SWAP_STATE_CLASSES];
 const INTERNAL_PROFILE_PATH = "/perfil.html";
-const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/carteira.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento-profissional.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/"]);
+const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/carteira.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento-profissional.html", "/orcamento.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/"]);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
@@ -432,6 +432,7 @@ const INTERNAL_VIEW_STYLE_HINTS = {
   "/comunidade-interna.html": ["assets/css/pages/comunidade-interna-foundation.css"],
   "/perfil.html": ["assets/css/pages/profile-foundation.css"],
   "/configuracoes.html": ["assets/css/pages/configuracoes-foundation.css"],
+  "/orcamento.html": ["assets/css/pages/orcamento.css"],
   "/detalhe-anuncio.html": ["assets/css/pages/marketplace-detail-foundation.css"]
 };
 
@@ -456,6 +457,7 @@ const INTERNAL_VIEW_SCRIPT_HINTS = {
   "/comunidade-interna.html": ["assets/js/pages/comunidade-interna.js"],
   "/perfil.html": ["assets/js/pages/perfil.js"],
   "/detalhe-anuncio.html": ["assets/js/pages/detalhe-anuncio.js"],
+  "/orcamento.html": ["assets/js/pages/orcamento.js"],
   "/tornar-profissional.html": ["assets/js/pages/tornar-profissional.js"]
 };
 

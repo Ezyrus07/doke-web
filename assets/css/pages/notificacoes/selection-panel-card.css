@@ -1,12 +1,19 @@
 /* 2026-04: painel de seleção das notificações com o mesmo card do Pedidos */
 body.notifications-page-shell .notifications-page-header__controls:not([hidden]) {
-  display: grid;
-  gap: 12px;
-  padding: 20px 22px;
-  border: var(--border-soft);
-  border-radius: var(--radius-xl);
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 18px 38px rgba(28, 63, 102, 0.05);
+  display: inline-grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  justify-items: stretch;
+  gap: 10px;
+  width: min(100%, var(--doke-action-panel-width, 480px));
+  max-width: var(--doke-action-panel-width, 480px);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
 }
 
 body.notifications-page-shell .notifications-select-panel:not([hidden]) {
@@ -91,8 +98,10 @@ body.notifications-page-shell .notifications-select-panel .orders-select-option-
 
 @media (max-width: 760px) {
   body.notifications-page-shell .notifications-page-header__controls:not([hidden]) {
-    padding: 16px;
-    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    border-radius: 0;
   }
 
   body.notifications-page-shell .notifications-select-panel__actions {

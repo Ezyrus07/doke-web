@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
-  <link rel="stylesheet" href="assets/css/pages/home-foundation.css?v=20260614-index-closure-v1">
+  <link rel="stylesheet" href="assets/css/pages/home-foundation.css?v=20260621-location-modal-nosidescroll-v4">
 </head>
 <body data-page="home" data-page-key="index" class="doke-app-shell-page app-shell-page internal-shell-page shell-home home-index-shell doke-flow doke-search-flow has-global-header">
   <div class="app-shell">
@@ -446,11 +446,11 @@
                 <button class="mini-tab doke-tab-pill" type="button">Com garantia</button>
                 <button class="mini-tab doke-tab-pill" type="button">Disponíveis hoje</button>
                 <button class="mini-tab doke-tab-pill" type="button">Novos</button>
-                <button class="filter-toggle" type="button" data-more-filters-toggle data-more-filters-source="tabs" aria-expanded="false" aria-controls="more-filters-panel">
+                <button class="filter-toggle filter-toggle--icon-only" type="button" data-more-filters-toggle data-more-filters-source="tabs" aria-label="Abrir filtros" aria-expanded="false" aria-controls="more-filters-panel">
                   <span class="filter-toggle__icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24"><path d="M5 6.5h14"></path><path d="M5 12h14"></path><path d="M5 17.5h14"></path><circle cx="9" cy="6.5" r="1.75"></circle><circle cx="15" cy="12" r="1.75"></circle><circle cx="11" cy="17.5" r="1.75"></circle></svg>
                   </span>
-                  <span>Filtros</span>
+                  <span class="sr-only">Filtros</span>
                 </button>
               </div>
             </div>
@@ -919,71 +919,79 @@
     <form class="home-address-modal__dialog doke-modal" method="dialog" data-home-address-form>
       <div class="home-address-modal__head surface-modal__hero">
         <div class="surface-modal__intro">
-<span class="home-address-modal__eyebrow">Localização</span>
-<h2>Belo Horizonte, MG</h2>
-          <p>Salve endereços para reutilizar neste topo e nos outros fluxos do site.</p>
+          <span class="home-address-modal__eyebrow">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 21s7-6.6 7-12a7 7 0 1 0-14 0c0 5.4 7 12 7 12Z"></path>
+              <circle cx="12" cy="9" r="2.4"></circle>
+            </svg>
+            <span>Localização</span>
+          </span>
+          <h2>Belo Horizonte, MG</h2>
+          <p>Cadastre o endereço usado nas buscas e nos próximos fluxos do Doke.</p>
         </div>
         <button class="home-address-modal__close doke-icon-btn doke-icon-btn--flat" type="button" data-home-address-close aria-label="Fechar">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
         </button>
       </div>
 
-      <div class="home-address-modal__grid home-address-modal__grid--2 doke-grid">
-        <label class="home-address-modal__field doke-field">
-          <span>Título do endereço</span>
-          <input type="text" name="titulo" placeholder="Ex: Casa, escritório, loja" required>
-        </label>
-        <label class="home-address-modal__field home-address-modal__field--sm doke-field">
-          <span>Número</span>
-          <input type="text" name="numero" placeholder="Ex: 120" required>
-        </label>
-      </div>
+      <div class="home-address-modal__body">
+        <div class="home-address-modal__grid home-address-modal__grid--2 doke-grid">
+          <label class="home-address-modal__field doke-field">
+            <span>Título do endereço</span>
+            <input type="text" name="titulo" placeholder="Ex: Casa, escritório, loja" required>
+          </label>
+          <label class="home-address-modal__field home-address-modal__field--sm doke-field">
+            <span>Número</span>
+            <input type="text" name="numero" placeholder="Ex: 120" required>
+          </label>
+        </div>
 
-      <div class="home-address-modal__grid home-address-modal__grid--2 doke-grid">
-        <label class="home-address-modal__field doke-field">
-          <span>Rua ou avenida</span>
-          <input type="text" name="rua" placeholder="Ex: Rua das Acácias" required>
-        </label>
-        <label class="home-address-modal__field doke-field">
-          <span>Bairro</span>
-          <input type="text" name="bairro" placeholder="Ex: Savassi" required>
-        </label>
-      </div>
+        <div class="home-address-modal__grid home-address-modal__grid--2 doke-grid">
+          <label class="home-address-modal__field doke-field">
+            <span>Rua ou avenida</span>
+            <input type="text" name="rua" placeholder="Ex: Rua das Acácias" required>
+          </label>
+          <label class="home-address-modal__field doke-field">
+            <span>Bairro</span>
+            <input type="text" name="bairro" placeholder="Ex: Savassi" required>
+          </label>
+        </div>
 
-      <div class="home-address-modal__grid home-address-modal__grid--3 doke-grid">
-        <label class="home-address-modal__field doke-field">
-          <span>Cidade</span>
-          <input type="text" name="cidade" placeholder="Ex: Belo Horizonte" required>
-        </label>
-        <label class="home-address-modal__field home-address-modal__field--sm doke-field">
-          <span>UF</span>
-          <input type="text" name="uf" placeholder="MG" maxlength="2" required>
-        </label>
-        <label class="home-address-modal__field doke-field">
-          <span>Complemento</span>
-          <input type="text" name="complemento" placeholder="Apto, sala, bloco, portaria">
-        </label>
-      </div>
+        <div class="home-address-modal__grid home-address-modal__grid--3 doke-grid">
+          <label class="home-address-modal__field doke-field">
+            <span>Cidade</span>
+            <input type="text" name="cidade" placeholder="Ex: Belo Horizonte" required>
+          </label>
+          <label class="home-address-modal__field home-address-modal__field--sm doke-field">
+            <span>UF</span>
+            <input type="text" name="uf" placeholder="MG" maxlength="2" required>
+          </label>
+          <label class="home-address-modal__field doke-field">
+            <span>Complemento</span>
+            <input type="text" name="complemento" placeholder="Apto, sala, bloco, portaria">
+          </label>
+        </div>
 
-      <div class="home-address-modal__grid home-address-modal__grid--2 doke-grid">
-        <label class="home-address-modal__field doke-field">
-          <span>Ponto de referência</span>
-          <input type="text" name="referencia" placeholder="Ex: próximo à praça">
-        </label>
-        <label class="home-address-modal__check">
-          <input type="checkbox" name="padrao" checked>
-          <span class="home-address-modal__checkmark" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M5 12.5 9.2 17 19 7.5"></path>
-            </svg>
-          </span>
-          <span>Usar como padrão</span>
-        </label>
+        <div class="home-address-modal__grid home-address-modal__grid--2 doke-grid">
+          <label class="home-address-modal__field doke-field">
+            <span>Ponto de referência</span>
+            <input type="text" name="referencia" placeholder="Ex: próximo à praça">
+          </label>
+          <label class="home-address-modal__check">
+            <input type="checkbox" name="padrao" checked>
+            <span class="home-address-modal__checkmark" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M5 12.5 9.2 17 19 7.5"></path>
+              </svg>
+            </span>
+            <span>Usar como padrão</span>
+          </label>
+        </div>
       </div>
 
       <div class="home-address-modal__actions">
         <button class="home-address-modal__button home-address-modal__button--ghost doke-btn doke-btn--ghost" type="button" data-home-address-close>Cancelar</button>
-        <button class="home-address-modal__button home-address-modal__button--primary doke-btn doke-btn--primary" type="submit" data-action-state="idle" data-action-loading-label="Processando ação da página inicial...">Salvar endereço</button>
+        <button class="home-address-modal__button home-address-modal__button--primary doke-btn doke-btn--primary" type="submit" data-action-state="idle" data-action-loading-label="Salvando endereço...">Salvar endereço</button>
       </div>
     </form>
   </dialog>

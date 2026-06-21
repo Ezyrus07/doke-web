@@ -25,6 +25,7 @@
     'ajuda.html': { key: 'ajuda', active: '', search: false, title: 'Ajuda' },
     'configuracoes.html': { key: 'configuracoes', active: 'profile', search: false, title: 'Configurações', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'tornar-profissional.html': { key: 'tornar-profissional', active: 'profile', search: false, title: 'Tornar-se profissional', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
+    'orcamento.html': { key: 'orcamento', active: 'orders', search: false, title: 'Orçamento' },
     'anunciar-servico.html': { key: 'anunciar-servico', active: 'profile', search: false, title: 'Anunciar serviço', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'pagamento-profissional.html': { key: 'pagamento-profissional', active: 'profile', search: false, title: 'Pagamento', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'avaliacao-profissional.html': { key: 'avaliacao-profissional', active: 'profile', search: false, title: 'Avaliação', compactSearchButton: true, hideSearchBar: true, hideLocation: true }

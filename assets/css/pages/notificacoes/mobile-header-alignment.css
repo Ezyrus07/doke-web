@@ -81,12 +81,16 @@ body.notifications-page-shell [data-notifications-select-toggle][aria-expanded="
 
   body.notifications-page-shell .notifications-page-header__controls:not([hidden]) {
     display: grid;
-    gap: 12px;
+    gap: 10px;
     width: 100%;
-    margin-top: 8px;
-    padding: 14px;
-    border-radius: var(--radius-surface);
-    overflow: hidden;
+    max-width: 100%;
+    margin-top: 10px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
     box-sizing: border-box;
   }
 
@@ -156,6 +160,78 @@ body.notifications-page-shell [data-notifications-select-toggle][aria-expanded="
 
 
 
+
+
+
+/* Notifications action-panel bridge.
+   The notification header actions live outside the page section, while the
+   panel markup lives inside it. This module loads after legacy notification
+   responsive rules, so it only restores the shared mobile bottom-sheet
+   placement and stacking from components/overlays/mobile-action-surface-contract.css. */
+@media (max-width: 760px) {
+  body.notifications-page-shell #notifications-action-controls:not([hidden]) {
+    display: contents;
+    width: auto;
+    max-width: none;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  body.notifications-page-shell #notifications-action-controls > .doke-mobile-action-panel:not([hidden]) {
+    position: fixed;
+    left: max(12px, env(safe-area-inset-left));
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 1002;
+    display: flex;
+    flex-direction: column;
+    width: auto;
+    max-width: min(420px, calc(100vw - 24px));
+    max-height: min(72dvh, 610px);
+    margin: 0 auto;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateZ(0);
+  }
+
+  body.notifications-page-shell #notifications-action-controls > .doke-mobile-action-panel[hidden] {
+    display: none;
+  }
+}
+
+
+
+/* Mobile notification panels are portalled to body by notificacoes.js so they can
+   escape page stacking contexts and sit above the shared backdrop. */
+@media (max-width: 760px) {
+  body.notifications-page-shell > :is([data-notifications-filters-panel], [data-notifications-select-panel]) {
+    display: none;
+  }
+
+  body.notifications-page-shell > :is([data-notifications-filters-panel], [data-notifications-select-panel]):not([hidden]) {
+    position: fixed;
+    left: max(12px, env(safe-area-inset-left));
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 1200;
+    display: flex;
+    flex-direction: column;
+    width: auto;
+    max-width: min(420px, calc(100vw - 24px));
+    max-height: min(72dvh, 610px);
+    margin: 0 auto;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateZ(0);
+  }
+}
 
 /* Notifications v76 — no duplicated lower toolbar. Header actions are owned by global contract. */
 @media (min-width: 561px) and (max-width: 1180px) {

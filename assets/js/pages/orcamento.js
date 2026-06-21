@@ -97,12 +97,23 @@ const initBudgetPage = () => {
       if (catégoryInput) catégoryInput.value = normalized;
     }
 
-    const readStoredLocation = () => {
+    const readDefaultLocation = () => {
+      const node = pageRoot.querySelector("[data-budget-default-location]");
+      if (!node) return null;
       try {
-        const parsed = JSON.parse(window.localStorage.getItem(defaultLocationKey) || "null");
+        const parsed = JSON.parse(node.textContent || "null");
         return parsed && typeof parsed === "object" ? parsed : null;
       } catch {
         return null;
+      }
+    };
+
+    const readStoredLocation = () => {
+      try {
+        const parsed = JSON.parse(window.localStorage.getItem(defaultLocationKey) || "null");
+        return parsed && typeof parsed === "object" ? parsed : readDefaultLocation();
+      } catch {
+        return readDefaultLocation();
       }
     };
 

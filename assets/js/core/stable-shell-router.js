@@ -17,6 +17,7 @@
     '/mensagens.html',
     '/notificacoes.html',
     '/novidades.html',
+    '/orcamento.html',
     '/pagamento-profissional.html',
     '/pedidos.html',
     '/perfil.html',
@@ -40,12 +41,20 @@
     '/comunidade-interna.html': [],
     '/perfil.html': ['DokeInitProfile'],
     '/configuracoes.html': [],
+    '/orcamento.html': ['DokeInitBudget'],
     '/tornar-profissional.html': ['DokeInitBecomePro']
   };
 
   var PRESERVED_BODY_CLASSES = [
     'sidebar-collapsed',
     'theme-dark'
+  ];
+
+  var PRESERVED_HTML_CLASSES = [
+    'doke-app-ready',
+    'doke-shell-state-ready',
+    'doke-sidebar-collapsed',
+    'doke-sidebar-expanded'
   ];
 
   var PRESERVED_HTML_CLASS_PREFIXES = [
@@ -141,18 +150,22 @@
     try {
       var url = new URL(src, window.location.href);
       url.hash = '';
-      url.search = '';
+      if (url.origin === window.location.origin && /^\/assets\//i.test(url.pathname)) {
+        url.search = '';
+      }
       return url.href;
     } catch (error) {
       return '';
     }
   }
 
-  function isSameOriginProjectStylesheet(link) {
+  function isRouteManagedStylesheet(link) {
     if (!link || !link.href) return false;
     try {
       var url = new URL(link.href, window.location.href);
-      return url.origin === window.location.origin && /\/assets\/css\//i.test(url.pathname);
+      if (url.origin === window.location.origin && /\/assets\/css\//i.test(url.pathname)) return true;
+      if (link.hasAttribute('data-doke-stable-route-style')) return true;
+      return url.hostname === 'fonts.googleapis.com';
     } catch (error) {
       return false;
     }
@@ -221,7 +234,7 @@
     Array.prototype.forEach.call(document.querySelectorAll('link[rel="stylesheet"][href]'), function (link) {
       var key = canonicalAssetUrl(link.getAttribute('href') || link.href);
       if (!key || nextStyles.has(key)) return;
-      if (!isSameOriginProjectStylesheet(link)) return;
+      if (!isRouteManagedStylesheet(link)) return;
       link.remove();
     });
 
@@ -295,7 +308,16 @@
     return routeCache.get(key);
   }
 
-  function ensureStyles(nextDoc) {
+  function activatePendingRouteStyles() {
+    Array.prototype.forEach.call(document.querySelectorAll('link[data-doke-route-style-pending="true"]'), function (link) {
+      link.media = link.getAttribute('data-doke-route-style-media') || 'all';
+      link.removeAttribute('data-doke-route-style-media');
+      link.removeAttribute('data-doke-route-style-pending');
+    });
+  }
+
+  function ensureStyles(nextDoc, options) {
+    var deferApply = !!(options && options.deferApply);
     var existing = new Set(Array.prototype.map.call(document.querySelectorAll('link[rel="stylesheet"]'), function (link) {
       return canonicalAssetUrl(link.getAttribute('href'));
     }).filter(Boolean));
@@ -309,8 +331,12 @@
       var clone = document.createElement('link');
       clone.rel = 'stylesheet';
       clone.href = href;
-      clone.media = nextLink.getAttribute('media') || 'all';
+      clone.media = deferApply ? 'not all' : (nextLink.getAttribute('media') || 'all');
       clone.setAttribute('data-doke-stable-route-style', 'true');
+      if (deferApply) {
+        clone.setAttribute('data-doke-route-style-media', nextLink.getAttribute('media') || 'all');
+        clone.setAttribute('data-doke-route-style-pending', 'true');
+      }
 
       pending.push(new Promise(function (resolve) {
         var done = function () {
@@ -361,7 +387,8 @@
     if (!nextHtml) return;
     var current = document.documentElement;
     var preserved = Array.prototype.filter.call(current.classList, function (className) {
-      return PRESERVED_HTML_CLASS_PREFIXES.some(function (prefix) { return className.indexOf(prefix) === 0; });
+      return PRESERVED_HTML_CLASSES.indexOf(className) !== -1 ||
+        PRESERVED_HTML_CLASS_PREFIXES.some(function (prefix) { return className.indexOf(prefix) === 0; });
     });
 
     current.className = nextHtml.className || '';
@@ -486,18 +513,27 @@
     document.documentElement.classList.toggle('home-index-root', isHome);
   }
 
-  function syncStandaloneUi(nextDoc) {
-    var currentScrim = document.querySelector('.mobile-scrim');
-    var nextScrim = nextDoc.querySelector('.mobile-scrim');
-    if (currentScrim && nextScrim) currentScrim.replaceWith(nextScrim.cloneNode(true));
-    else if (!currentScrim && nextScrim) document.body.appendChild(nextScrim.cloneNode(true));
-    else if (currentScrim && !nextScrim) currentScrim.remove();
+  function isRouteStandaloneNode(node) {
+    if (!node || node.nodeType !== 1) return false;
+    if (node.matches('.app-shell, script')) return false;
+    if (node.matches('[data-mobile-drawer-authority="canonical"], .doke-global-mobile-drawer')) return false;
+    return true;
+  }
 
-    var currentModal = document.querySelector('.ui-modal');
-    var nextModal = nextDoc.querySelector('.ui-modal');
-    if (currentModal && nextModal) currentModal.replaceWith(nextModal.cloneNode(true));
-    else if (!currentModal && nextModal) document.body.appendChild(nextModal.cloneNode(true));
-    else if (currentModal && !nextModal) currentModal.remove();
+  function syncStandaloneUi(nextDoc) {
+    if (!nextDoc || !nextDoc.body || !document.body) return;
+
+    Array.prototype.slice.call(document.body.children).forEach(function (node) {
+      if (isRouteStandaloneNode(node)) node.remove();
+    });
+
+    var anchor = document.body.querySelector('script');
+    Array.prototype.slice.call(nextDoc.body.children).forEach(function (node) {
+      if (!isRouteStandaloneNode(node)) return;
+      var clone = node.cloneNode(true);
+      if (anchor && anchor.parentNode === document.body) document.body.insertBefore(clone, anchor);
+      else document.body.appendChild(clone);
+    });
   }
 
   function replaceShell(nextDoc, path) {
@@ -618,9 +654,10 @@
     try {
       var nextDoc = await fetchDocument(url.href);
       if (id !== navigationId) return;
-      await ensureStyles(nextDoc);
+      await ensureStyles(nextDoc, { deferApply: true });
       if (id !== navigationId) return;
       replaceShell(nextDoc, path);
+      activatePendingRouteStyles();
       removeObsoleteRouteStyles(nextDoc);
       assertDocumentReadyForRoute();
       if (id !== navigationId) return;

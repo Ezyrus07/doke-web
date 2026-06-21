@@ -3594,3 +3594,42 @@ body.orders-page-shell .orders-page #orders-action-controls[data-active-panel="s
     padding: 16px;
   }
 }
+
+/* Context action panel placement contract
+   pedidos.html owns only the anchor/position of header utility panels.
+   Anatomy, density and shared arrow remain in components/internal/action-panel-standard.css. */
+body.orders-page-shell .orders-page #orders-action-controls:not([hidden]) {
+  display: inline-grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: min(100%, var(--doke-action-panel-width, 480px));
+  max-width: var(--doke-action-panel-width, 480px);
+  margin-top: 10px;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.orders-page-shell .orders-page [data-orders-filters-popover],
+body.orders-page-shell .orders-page [data-orders-select-panel] {
+  width: min(100%, var(--doke-action-panel-width, 480px));
+  max-width: var(--doke-action-panel-width, 480px);
+  position: relative;
+  transform-origin: top left;
+}
+
+body.orders-page-shell .orders-page [data-orders-filters-popover] .doke-mobile-action-panel__footer,
+body.orders-page-shell .orders-page [data-orders-select-panel] .doke-mobile-action-panel__footer {
+  margin-top: 16px;
+  padding-top: 14px;
+}
+
+@media (max-width: 900px) {
+  body.orders-page-shell .orders-page #orders-action-controls:not([hidden]),
+  body.orders-page-shell .orders-page [data-orders-filters-popover],
+  body.orders-page-shell .orders-page [data-orders-select-panel] {
+    width: 100%;
+    max-width: 100%;
+  }
+}

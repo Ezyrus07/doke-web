@@ -18,7 +18,7 @@
     const searchForms = [...new Set(searchInputs.map((input) => input.closest('form')).filter(Boolean))];
     const searchCloseButtons = [...root.querySelectorAll('.orders-header-search__close')];
     const mobileSearchToggle = root.querySelector('[data-notifications-mobile-search-toggle]');
-    const filtersToggles = [...root.querySelectorAll('[data-notifications-filters-toggle]')];
+    const filtersToggles = [...document.querySelectorAll('[data-notifications-filters-toggle]')];
     const filtersPanel = root.querySelector('[data-notifications-filters-panel]');
     const headerControls = root.querySelector('.notifications-page-header__controls');
     const selectToggles = [...document.querySelectorAll('[data-notifications-select-toggle]')];
@@ -58,7 +58,17 @@
     let currentTimeFilter = 'all';
     let selectionEnabled = false;
     const mobileSearchQuery = window.matchMedia('(max-width: 640px)');
+    const mobilePanelQuery = window.matchMedia('(max-width: 760px)');
     let longPressTimer = null;
+
+    const syncContextPanelHost = () => {
+      if (!headerControls) return;
+      const shouldPortalPanels = mobilePanelQuery.matches;
+      [filtersPanel, selectPanel].filter(Boolean).forEach((panel) => {
+        const targetHost = shouldPortalPanels ? document.body : headerControls;
+        if (panel.parentElement !== targetHost) targetHost.appendChild(panel);
+      });
+    };
 
     if (pageTitle) pageTitle.textContent = 'Notificações';
 
@@ -102,6 +112,7 @@
 
     const openSelectPanel = () => {
       if (!selectPanel) return;
+      syncContextPanelHost();
       if (headerControls) headerControls.hidden = false;
       selectPanel.hidden = false;
       selectPanel.removeAttribute('hidden');
@@ -142,6 +153,7 @@
 
     const openFiltersPanel = () => {
       if (!filtersPanel) return;
+      syncContextPanelHost();
       filtersPanel.hidden = false;
       setToggleExpanded(filtersToggles, true);
       closeSelectPanel();
@@ -570,6 +582,13 @@
       closeContextMenu();
     });
 
+    if (typeof mobilePanelQuery.addEventListener === 'function') {
+      mobilePanelQuery.addEventListener('change', syncContextPanelHost);
+    } else if (typeof mobilePanelQuery.addListener === 'function') {
+      mobilePanelQuery.addListener(syncContextPanelHost);
+    }
+
+    syncContextPanelHost();
     updatéUnread();
     updatéStats();
     applyFilter('all', 'all');
