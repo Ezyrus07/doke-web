@@ -43,7 +43,7 @@
     const openSelectedButton = root.querySelector('[data-orders-open-selected]');
     const openChatSelectedButton = root.querySelector('[data-orders-open-chat-selected]');
     const selectSummary = root.querySelector('[data-orders-select-summary]');
-    const agendaToggles = Array.from(root.querySelectorAll('[data-orders-agenda-toggle]'));
+    const agendaToggles = Array.from(document.querySelectorAll('[data-orders-agenda-toggle]'));
     const panelScrim = root.querySelector('.orders-panel-scrim');
     const sidePanels = Array.from(root.querySelectorAll('.orders-sidepanel'));
     const detailTitle = root.querySelector('[data-orders-detail-title]');
@@ -446,7 +446,7 @@
       }
 
       if (popover && !popover.hidden) {
-        const clickedFilterToggle = target.closest('[data-orders-filter-toggle]');
+        const clickedFilterToggle = target.closest('[data-orders-filter-toggle], [data-shell-filter]');
         if (!popover.contains(target) && !clickedFilterToggle) {
           closePopover();
         }
@@ -454,7 +454,7 @@
 
       if (selectPanel && !selectPanel.hidden) {
         const clickedInsideSelect = target.closest('[data-orders-select-panel]');
-        const clickedSelectToggle = target.closest('[data-orders-select-toggle]');
+        const clickedSelectToggle = target.closest('[data-orders-select-toggle], [data-shell-select]');
         if (!clickedInsideSelect && !clickedSelectToggle) {
           closeSelectPanel();
         }
@@ -576,12 +576,25 @@
       });
     });
 
+    const toggleAgenda = () => {
+      const expanded = root.classList.contains('is-agenda-collapsed');
+      closePopover();
+      closeSelectPanel();
+      setAgendaExpanded(expanded);
+    };
+
     agendaToggles.forEach((toggle) => {
-      toggle.addEventListener('click', () => {
-        const expanded = root.classList.contains('is-agenda-collapsed');
-        setAgendaExpanded(expanded);
+      toggle.addEventListener('click', (event) => {
+        event.preventDefault();
+        toggleAgenda();
       });
     });
+
+    window.DokeOrdersAgenda = {
+      toggle: toggleAgenda,
+      open: () => setAgendaExpanded(true),
+      close: () => setAgendaExpanded(false),
+    };
 
     plannerCalendarSummary?.addEventListener('click', () => {
       if (!mobileCalendarQuery.matches) return;

@@ -221,6 +221,13 @@
     let audioDraftTimer = null;
     let imageDraftSrc = "";
 
+    const updateComposerDraftState = () => {
+      if (!composer) return;
+      const hasVisibleDraft = [replyPreview, audioDraft, imageDraft].some((item) => item && !item.hidden);
+      composer.classList.toggle("has-composer-draft", hasVisibleDraft);
+    };
+
+
     const filterLabels = {
       all: "Tudo",
       unread: "Não lidas",
@@ -699,6 +706,7 @@
       audioDraftSeconds = 0;
       if (audioTime) audioTime.textContent = "00:00";
       audioDraft?.setAttribute("hidden", "");
+      updateComposerDraftState();
       audioButton?.classList.remove("is-recording");
       audioButton?.setAttribute("aria-pressed", "false");
     };
@@ -706,6 +714,7 @@
     const startAudioDraft = () => {
       if (!audioDraft) return;
       audioDraft.removeAttribute("hidden");
+      updateComposerDraftState();
       audioButton?.classList.add("is-recording");
       audioButton?.setAttribute("aria-pressed", "true");
       if (audioTime) audioTime.textContent = formatAudioTime(audioDraftSeconds);
@@ -720,12 +729,14 @@
       imageDraftSrc = "";
       if (imagePreview) imagePreview.src = "";
       imageDraft?.setAttribute("hidden", "");
+      updateComposerDraftState();
       if (imageInput) imageInput.value = "";
     };
 
     const clearReplyPreview = () => {
       replyToMessage = null;
       replyPreview?.setAttribute("hidden", "");
+      updateComposerDraftState();
       if (replyAuthor) replyAuthor.textContent = "Respondendo";
       if (replyText) replyText.textContent = "";
     };
@@ -735,6 +746,7 @@
       if (replyAuthor) replyAuthor.textContent = `Respondendo a ${message.author}`;
       if (replyText) replyText.textContent = String(message.text || "").slice(0, 72);
       replyPreview?.removeAttribute("hidden");
+      updateComposerDraftState();
       composerInput?.focus();
     };
 
@@ -1276,6 +1288,7 @@
         imageDraftSrc = String(reader.result || "");
         if (imagePreview) imagePreview.src = imageDraftSrc;
         imageDraft?.removeAttribute("hidden");
+        updateComposerDraftState();
       };
       reader.readAsDataURL(file);
     });

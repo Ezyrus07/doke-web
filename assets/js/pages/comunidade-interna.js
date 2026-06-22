@@ -25,12 +25,13 @@
   var moreToggle = root.querySelector('[data-community-more-toggle]');
   var actionsMenu = root.querySelector('[data-community-actions-menu]');
   var attachButton = root.querySelector('[data-community-attach]');
+  var attachmentInput = root.querySelector('[data-community-attachment-input]');
   var audioButton = root.querySelector('[data-community-audio]');
   var audioDraft = root.querySelector('[data-community-audio-draft]');
   var audioTime = root.querySelector('[data-community-audio-time]');
   var audioCancel = root.querySelector('[data-community-audio-cancel]');
-  var attachmentPreview = root.querySelector('[data-community-attachment-preview]');
   var attachmentDraft = root.querySelector('[data-community-attachment-draft]');
+  var attachmentPreviewImage = root.querySelector('[data-community-attachment-preview-image]');
   var attachmentTitle = root.querySelector('[data-community-attachment-title]');
   var attachmentCancel = root.querySelector('[data-community-attachment-cancel]');
   var memberSearch = root.querySelector('[data-community-member-search]');
@@ -40,12 +41,19 @@
   var audioDraftSeconds = 0;
   var audioDraftTimer = null;
 
+  function updateComposerDraftState() {
+    if (!composer) return;
+    var hasVisibleDraft = [audioDraft, attachmentDraft].some(function (item) {
+      return item && !item.hidden;
+    });
+    composer.classList.toggle('has-composer-draft', hasVisibleDraft);
+  }
+
   function closeFloatingMenus() {
     if (filterMenu) filterMenu.hidden = true;
     filterToggles.forEach(function (toggle) { toggle.setAttribute('aria-expanded', 'false'); });
     if (actionsMenu) actionsMenu.hidden = true;
     if (moreToggle) moreToggle.setAttribute('aria-expanded', 'false');
-    if (attachmentPreview) attachmentPreview.hidden = true;
   }
 
   function scrollToBottom() {
@@ -79,6 +87,7 @@
     audioDraftSeconds = 0;
     if (audioTime) audioTime.textContent = '00:00';
     if (audioDraft) audioDraft.hidden = true;
+    updateComposerDraftState();
     if (audioButton) audioButton.classList.remove('is-recording');
     if (audioButton) audioButton.setAttribute('aria-pressed', 'false');
     updateSendState();
@@ -89,6 +98,7 @@
     clearAttachment();
     closeFloatingMenus();
     audioDraft.hidden = false;
+    updateComposerDraftState();
     if (audioButton) audioButton.classList.add('is-recording');
     if (audioButton) audioButton.setAttribute('aria-pressed', 'true');
     if (audioTime) audioTime.textContent = formatAudioTime(audioDraftSeconds);
@@ -240,7 +250,10 @@
   function clearAttachment() {
     selectedAttachment = '';
     if (attachmentDraft) attachmentDraft.hidden = true;
-    if (attachmentTitle) attachmentTitle.textContent = 'Anexo pronto';
+    if (attachmentPreviewImage) attachmentPreviewImage.src = '';
+    updateComposerDraftState();
+    if (attachmentTitle) attachmentTitle.textContent = 'Imagem pronta para envio';
+    if (attachmentInput) attachmentInput.value = '';
     updateSendState();
   }
 
@@ -344,15 +357,6 @@
     });
   }
 
-  if (attachButton && attachmentPreview) {
-    attachButton.addEventListener('click', function () {
-      var next = attachmentPreview.hidden;
-      resetAudioDraft();
-      closeFloatingMenus();
-      attachmentPreview.hidden = !next;
-    });
-  }
-
   if (audioButton) {
     audioButton.setAttribute('aria-pressed', 'false');
     audioButton.addEventListener('click', function () {
@@ -368,16 +372,30 @@
     audioCancel.addEventListener('click', resetAudioDraft);
   }
 
-  root.querySelectorAll('[data-attachment-type]').forEach(function (button) {
-    button.addEventListener('click', function () {
+  if (attachmentInput) {
+    attachmentInput.addEventListener('change', function () {
+      if (!attachmentInput.files || !attachmentInput.files.length) return;
+      var file = attachmentInput.files[0];
       resetAudioDraft();
-      selectedAttachment = button.dataset.attachmentType || 'Anexo';
-      if (attachmentTitle) attachmentTitle.textContent = selectedAttachment + ' pronto para envio';
-      if (attachmentDraft) attachmentDraft.hidden = false;
-      if (attachmentPreview) attachmentPreview.hidden = true;
-      updateSendState();
+      selectedAttachment = file && file.name ? file.name : 'Imagem';
+      var showAttachmentDraft = function () {
+        if (attachmentTitle) attachmentTitle.textContent = 'Imagem pronta para envio';
+        if (attachmentDraft) attachmentDraft.hidden = false;
+        updateComposerDraftState();
+        updateSendState();
+      };
+      if (file && attachmentPreviewImage) {
+        var reader = new FileReader();
+        reader.onload = function () {
+          attachmentPreviewImage.src = String(reader.result || '');
+          showAttachmentDraft();
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+      showAttachmentDraft();
     });
-  });
+  }
 
   if (attachmentCancel) {
     attachmentCancel.addEventListener('click', clearAttachment);
@@ -417,7 +435,7 @@
 
   document.addEventListener('click', function (event) {
     if (root.contains(event.target)) {
-      var insideFloating = event.target.closest('[data-community-filter-toggle], [data-community-filter-menu], [data-community-more-toggle], [data-community-actions-menu], [data-community-attach], [data-community-attachment-preview]');
+      var insideFloating = event.target.closest('[data-community-filter-toggle], [data-community-filter-menu], [data-community-more-toggle], [data-community-actions-menu], [data-community-attach]');
       if (!insideFloating) closeFloatingMenus();
     }
   });
@@ -434,5 +452,6 @@
 
   filterChannels();
   updateSendState();
+  updateComposerDraftState();
   scrollToStart();
 })();

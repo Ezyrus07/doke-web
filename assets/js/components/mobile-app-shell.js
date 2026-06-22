@@ -224,12 +224,24 @@
     return false;
   }
 
+  function createShellSearchDisclosure() {
+    return [
+      '<button class="doke-mobile-shell__quick-action" type="button" data-shell-search-trigger aria-expanded="false" aria-controls="doke-shell-inline-search-input" aria-label="Abrir busca">' + ICONS.search + '</button>',
+      '<form class="doke-mobile-shell__inline-search" action="resultados.html" role="search" data-shell-inline-search autocomplete="off">',
+      '  <label class="doke-mobile-shell__inline-field" for="doke-shell-inline-search-input">',
+      '    <span class="doke-mobile-shell__inline-label">Buscar</span>',
+      '    <input id="doke-shell-inline-search-input" class="doke-mobile-shell__inline-input" type="search" name="q" placeholder="Buscar" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">',
+      '  </label>',
+      '</form>'
+    ].join('');
+  }
+
   function createQuickActions(cfg) {
     if (!usesContextActions(cfg)) {
       var baseActions = [];
 
       if (cfg && cfg.compactSearchButton) {
-        baseActions.push('    <button class="doke-mobile-shell__quick-action" type="button" data-shell-search-trigger aria-label="Abrir busca">' + ICONS.search + '</button>');
+        baseActions.push(createShellSearchDisclosure());
       }
 
       if (!cfg || !cfg.hideLocation) {
@@ -250,7 +262,7 @@
 
     if (cfg.key === 'comunidade') {
       return [
-        '<button class="doke-mobile-shell__quick-action" type="button" data-shell-search-trigger aria-label="Abrir busca">' + ICONS.search + '</button>',
+        createShellSearchDisclosure(),
         '<button class="doke-mobile-shell__quick-action" type="button" data-community-code-shell aria-label="Entrar por código">' + ICONS.communityCode + '</button>',
         '<button class="doke-mobile-shell__quick-action" type="button" data-community-create-shell aria-label="Criar comunidade">' + ICONS.plus + '</button>',
         '<a class="doke-mobile-shell__quick-action" href="notificacoes.html" aria-label="Notificações">' + ICONS.bell + '</a>'
@@ -259,7 +271,7 @@
 
     var buttons = [
       ((cfg.key === 'pedidos' || cfg.key === 'notificacoes' || cfg.key === 'mensagens')
-        ? '<button class="doke-mobile-shell__quick-action" type="button" data-shell-search-trigger aria-label="Abrir busca">' + ICONS.search + '</button>'
+        ? createShellSearchDisclosure()
         : '<a class="doke-mobile-shell__quick-action" href="resultados.html" aria-label="Buscar">' + ICONS.search + '</a>'),
       '<button class="doke-mobile-shell__quick-action" type="button" data-shell-filter aria-label="Abrir filtros">' + ICONS.sliders + '</button>',
       '<button class="doke-mobile-shell__quick-action" type="button" data-shell-select aria-label="Selecionar">' + ICONS.check + '</button>'
@@ -363,8 +375,20 @@
         if (openResultsFiltersDirect()) return true;
       }
 
-      if (pageCfg.key === 'pedidos' && clickFirst('[data-orders-filter-toggle]')) return true;
-      if (pageCfg.key === 'notificacoes' && clickFirst('[data-notifications-filters-toggle]')) return true;
+      if (pageCfg.key === 'pedidos') {
+        if (window.DokeOrdersActionPanels && typeof window.DokeOrdersActionPanels.toggleFilters === 'function') {
+          window.DokeOrdersActionPanels.toggleFilters();
+          return true;
+        }
+        if (clickFirst('[data-orders-filter-toggle]')) return true;
+      }
+      if (pageCfg.key === 'notificacoes') {
+        if (window.DokeNotificationsPanels && typeof window.DokeNotificationsPanels.toggleFilters === 'function') {
+          window.DokeNotificationsPanels.toggleFilters();
+          return true;
+        }
+        if (clickFirst('[data-notifications-filters-toggle]')) return true;
+      }
       if (pageCfg.key === 'mensagens') {
         dispatchShellAction('filters');
         return true;
@@ -375,8 +399,20 @@
 
     function triggerPageSelect() {
       var pageCfg = config();
-      if (pageCfg.key === 'pedidos' && clickFirst('[data-orders-select-toggle]')) return true;
-      if (pageCfg.key === 'notificacoes' && clickFirst('[data-notifications-select-toggle]')) return true;
+      if (pageCfg.key === 'pedidos') {
+        if (window.DokeOrdersActionPanels && typeof window.DokeOrdersActionPanels.toggleSelect === 'function') {
+          window.DokeOrdersActionPanels.toggleSelect();
+          return true;
+        }
+        if (clickFirst('[data-orders-select-toggle]')) return true;
+      }
+      if (pageCfg.key === 'notificacoes') {
+        if (window.DokeNotificationsPanels && typeof window.DokeNotificationsPanels.toggleSelect === 'function') {
+          window.DokeNotificationsPanels.toggleSelect();
+          return true;
+        }
+        if (clickFirst('[data-notifications-select-toggle]')) return true;
+      }
       if (pageCfg.key === 'mensagens') {
         dispatchShellAction('select');
         return true;
@@ -384,43 +420,80 @@
       return clickFirst('[data-orders-select-toggle], [data-notifications-select-toggle], [data-select-toggle], [data-bulk-select-toggle]');
     }
 
+    var shellInlineSearch = shell.querySelector('[data-shell-inline-search]');
+    var shellInlineSearchInput = shell.querySelector('.doke-mobile-shell__inline-input');
     var shellSearchButton = shell.querySelector('[data-shell-search-trigger]');
+
+    function setShellInlineSearchExpanded(expanded) {
+      if (!shellInlineSearch || !shellSearchButton) return;
+      shell.classList.toggle('is-search-expanded', expanded);
+      shellInlineSearch.classList.toggle('is-expanded', expanded);
+      shellInlineSearch.hidden = false;
+      shellSearchButton.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      if (expanded) {
+        window.setTimeout(function () { shellInlineSearchInput && shellInlineSearchInput.focus(); }, 0);
+      }
+    }
+
     if (shellSearchButton) {
       shellSearchButton.addEventListener('click', function (event) {
         event.preventDefault();
-        if (triggerPageSearch()) return;
-        window.location.href = 'resultados.html';
-      });
-    }
-
-    var filterButton = shell.querySelector('[data-shell-filter]');
-    if (filterButton) {
-      filterButton.addEventListener('click', function () {
-        if (triggerPageFilters()) return;
-        dispatchShellAction('filters');
-      });
-    }
-
-    if (config().key === 'home') {
-      filterButton && filterButton.addEventListener('pointerdown', function (event) {
         event.stopPropagation();
-      }, true);
+        if (!shellInlineSearch || !shellInlineSearchInput) {
+          if (triggerPageSearch()) return;
+          window.location.href = 'resultados.html';
+          return;
+        }
+        var isOpen = shellInlineSearch.classList.contains('is-expanded');
+        var value = shellInlineSearchInput.value.trim();
+        if (isOpen && value) {
+          window.location.href = 'resultados.html?q=' + encodeURIComponent(value);
+          return;
+        }
+        setShellInlineSearchExpanded(true);
+      });
+    }
 
-      filterButton && filterButton.addEventListener('click', function (event) {
+    if (shellInlineSearch && shellInlineSearchInput) {
+      shellInlineSearchInput.value = queryValue();
+      shellInlineSearch.addEventListener('submit', function (event) {
         event.preventDefault();
+        var value = shellInlineSearchInput.value.trim();
+        if (!value) return;
+        window.location.href = 'resultados.html?q=' + encodeURIComponent(value);
+      });
+      document.addEventListener('click', function (event) {
+        if (!shell.contains(event.target)) return;
+        if (event.target.closest('[data-shell-search-trigger], [data-shell-inline-search]')) return;
+        if (!shellInlineSearchInput.value.trim()) setShellInlineSearchExpanded(false);
+      });
+    }
+
+    shell.addEventListener('click', function (event) {
+      var filterTarget = event.target.closest('[data-shell-filter]');
+      if (!filterTarget || !shell.contains(filterTarget)) return;
+      event.preventDefault();
+      if (config().key === 'home') {
         event.stopPropagation();
         event.stopImmediatePropagation && event.stopImmediatePropagation();
         if (openHomeFiltersDirect()) return;
-        dispatchShellAction('filters');
-      }, true);
-    }
+      } else if (triggerPageFilters()) {
+        return;
+      }
+      dispatchShellAction('filters');
+    });
 
-    var selectButton = shell.querySelector('[data-shell-select]');
-    if (selectButton) {
-      selectButton.addEventListener('click', function () {
-        triggerPageSelect();
-      });
-    }
+    shell.addEventListener('pointerdown', function (event) {
+      var filterTarget = event.target.closest('[data-shell-filter]');
+      if (filterTarget && shell.contains(filterTarget) && config().key === 'home') event.stopPropagation();
+    }, true);
+
+    shell.addEventListener('click', function (event) {
+      var selectTarget = event.target.closest('[data-shell-select]');
+      if (!selectTarget || !shell.contains(selectTarget)) return;
+      event.preventDefault();
+      triggerPageSelect();
+    });
 
     var communityCodeButton = shell.querySelector('[data-community-code-shell]');
     if (communityCodeButton) {
@@ -441,6 +514,10 @@
     var agendaButton = shell.querySelector('[data-shell-agenda]');
     if (agendaButton) {
       agendaButton.addEventListener('click', function () {
+        if (document.body && document.body.dataset.page === 'pedidos' && window.DokeOrdersAgenda && typeof window.DokeOrdersAgenda.toggle === 'function') {
+          window.DokeOrdersAgenda.toggle();
+          return;
+        }
         clickFirst('[data-orders-agenda-toggle]');
       });
     }

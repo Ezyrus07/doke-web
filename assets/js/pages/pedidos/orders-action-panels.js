@@ -29,6 +29,10 @@
       });
     };
 
+    const syncBodyState = () => {
+      document.body.classList.toggle('has-orders-action-panel-open', !controls.hidden);
+    };
+
     const hide = () => {
       controls.hidden = true;
       filtersPanel.hidden = true;
@@ -36,6 +40,7 @@
       controls.dataset.activePanel = '';
       setButtons(filterToggles, false);
       setButtons(selectToggles, false);
+      syncBodyState();
     };
 
     const show = (type) => {
@@ -59,8 +64,23 @@
 
       setButtons(targetButtons, true);
       setButtons(otherButtons, false);
+      syncBodyState();
 
-      targetPanel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      if (!document.body.classList.contains('doke-mobile-shell-mounted')) {
+        targetPanel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    };
+
+    window.DokeOrdersActionPanels = {
+      close: hide,
+      toggleFilters: () => show('filters'),
+      toggleSelect: () => show('select'),
+      openFilters: () => {
+        if (controls.hidden || filtersPanel.hidden) show('filters');
+      },
+      openSelect: () => {
+        if (controls.hidden || selectPanel.hidden) show('select');
+      }
     };
 
     const bindToggle = (button, type) => {
@@ -89,8 +109,8 @@
 
     document.addEventListener('click', (event) => {
       if (controls.hidden) return;
-      if (event.target.closest(SELECTORS.filterToggle)) return;
-      if (event.target.closest(SELECTORS.selectToggle)) return;
+      if (event.target.closest(SELECTORS.filterToggle + ', [data-shell-filter]')) return;
+      if (event.target.closest(SELECTORS.selectToggle + ', [data-shell-select]')) return;
       if (event.target.closest(SELECTORS.controls)) return;
       hide();
     });

@@ -32,16 +32,18 @@
         <header class="orders-chat-panel__header">
           <div class="orders-chat-panel__top">
             <button class="orders-chat-panel__back" type="button" data-orders-chat-back aria-label="Voltar para os detalhes">${ICON_BACK}</button>
-            <span class="orders-chat-panel__eyebrow">Chat do pedido</span>
-            <button class="orders-chat-panel__close" type="button" data-orders-chat-close aria-label="Fechar chat">${ICON_CLOSE}</button>
+            <div class="orders-chat-panel__profile">
+              <span class="orders-chat-panel__avatar doke-avatar" data-chat-avatar aria-hidden="true">SA</span>
+              <span class="orders-chat-panel__identity">
+                <strong class="orders-chat-panel__title" id="orders-chat-title" data-chat-title>Conversa do pedido</strong>
+                <span class="orders-chat-panel__subtitle" data-chat-subtitle></span>
+              </span>
+            </div>
+            <div class="orders-chat-panel__actions">
+              <a class="orders-chat-panel__messages-link" href="mensagens.html" data-chat-messages-link>Mensagens</a>
+              <button class="orders-chat-panel__close" type="button" data-orders-chat-close aria-label="Fechar chat">${ICON_CLOSE}</button>
+            </div>
           </div>
-          <div>
-            <h2 class="orders-chat-panel__title" id="orders-chat-title" data-chat-title>Conversa do pedido</h2>
-            <p class="orders-chat-panel__subtitle" data-chat-subtitle></p>
-          </div>
-          <a class="orders-chat-panel__messages-link" href="mensagens.html" data-chat-messages-link>
-            Ver nas mensagens
-          </a>
         </header>
 
         <div class="orders-chat-panel__body" data-chat-messages></div>
@@ -56,11 +58,13 @@
         </div>
 
         <form class="orders-chat-panel__composer" data-chat-form>
-          <button class="orders-chat-panel__tool" type="button" aria-label="Anexar arquivo">${ICON_CLIP}</button>
-          <button class="orders-chat-panel__tool" type="button" aria-label="Enviar áudio">${ICON_MIC}</button>
+          <div class="orders-chat-panel__tools">
+            <button class="orders-chat-panel__tool" type="button" aria-label="Anexar arquivo">${ICON_CLIP}</button>
+            <button class="orders-chat-panel__tool" type="button" aria-label="Enviar áudio">${ICON_MIC}</button>
+          </div>
           <label class="orders-chat-panel__input-wrap">
             <span class="sr-only">Mensagem do pedido</span>
-            <input type="text" placeholder="Digite sua mensagem..." aria-label="Mensagem do pedido" />
+            <textarea rows="1" placeholder="Digite sua mensagem..." aria-label="Mensagem do pedido"></textarea>
             <button class="orders-chat-panel__emoji" type="button" aria-label="Adicionar emoji">${ICON_SMILE}</button>
           </label>
           <button class="orders-chat-panel__send" type="submit" aria-label="Enviar mensagem">${ICON_SEND}</button>
@@ -113,13 +117,18 @@
     const company = order?.company || 'Profissional';
 
     target.innerHTML = `
-      <article class="orders-chat-message">
-        <strong>${company}</strong>
-        <p>Recebi seu pedido e consigo continuar a conversa por aqui.</p>
+      <article class="orders-chat-row">
+        <span class="orders-chat-row__avatar doke-avatar" aria-hidden="true">${clean(company).slice(0, 2).toUpperCase() || 'PR'}</span>
+        <div class="orders-chat-message">
+          <strong>${company}</strong>
+          <p>Recebi seu pedido e consigo continuar a conversa por aqui.</p>
+        </div>
       </article>
-      <article class="orders-chat-message orders-chat-message--me">
-        <strong>Você</strong>
-        <p>Perfeito. Quero seguir com o orçamento.</p>
+      <article class="orders-chat-row orders-chat-row--me">
+        <div class="orders-chat-message orders-chat-message--me">
+          <strong>Você</strong>
+          <p>Perfeito. Quero seguir com o orçamento.</p>
+        </div>
       </article>
     `;
   };
@@ -149,8 +158,9 @@
     activeTrigger = cardOrTrigger;
     activeCard = card;
 
-    setText(layer, '[data-chat-title]', order.title);
-    setText(layer, '[data-chat-subtitle]', `${order.company} • ${order.address}`);
+    setText(layer, '[data-chat-title]', order.company || order.title);
+    setText(layer, '[data-chat-subtitle]', `${order.title} • ${order.address}`);
+    setText(layer, '[data-chat-avatar]', clean(order.company).slice(0, 2).toUpperCase(), 'PR');
     setText(layer, '[data-chat-ai-text]', buildAiReply(order));
     const messagesLink = layer.querySelector('[data-chat-messages-link]');
     if (messagesLink) {
@@ -237,7 +247,7 @@
       if (useAiButton) {
         event.preventDefault();
         const layer = document.querySelector('[data-orders-chat-layer]');
-        const input = layer?.querySelector('[data-chat-form] input');
+        const input = layer?.querySelector('[data-chat-form] textarea, [data-chat-form] input');
         const suggestion = layer?.querySelector('[data-chat-ai-text]');
         if (input && suggestion) {
           input.value = clean(suggestion.textContent);
@@ -260,18 +270,18 @@
       if (!form) return;
       event.preventDefault();
 
-      const input = form.querySelector('input');
+      const input = form.querySelector('textarea, input');
       const value = clean(input?.value);
       if (!value) return;
 
       const stack = document.querySelector('[data-chat-messages]');
       if (stack) {
-        const message = document.createElement('article');
-        message.className = 'orders-chat-message orders-chat-message--me';
-        message.innerHTML = '<strong>Você</strong><p></p>';
-        message.querySelector('p').textContent = value;
-        stack.appendChild(message);
-        message.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        const row = document.createElement('article');
+        row.className = 'orders-chat-row orders-chat-row--me';
+        row.innerHTML = '<div class="orders-chat-message orders-chat-message--me"><strong>Você</strong><p></p></div>';
+        row.querySelector('p').textContent = value;
+        stack.appendChild(row);
+        row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
 
       input.value = '';

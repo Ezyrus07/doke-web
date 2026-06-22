@@ -58,15 +58,20 @@
     let currentTimeFilter = 'all';
     let selectionEnabled = false;
     const mobileSearchQuery = window.matchMedia('(max-width: 640px)');
-    const mobilePanelQuery = window.matchMedia('(max-width: 760px)');
     let longPressTimer = null;
 
     const syncContextPanelHost = () => {
       if (!headerControls) return;
-      const shouldPortalPanels = mobilePanelQuery.matches;
       [filtersPanel, selectPanel].filter(Boolean).forEach((panel) => {
-        const targetHost = shouldPortalPanels ? document.body : headerControls;
-        if (panel.parentElement !== targetHost) targetHost.appendChild(panel);
+        if (panel.parentElement !== headerControls) headerControls.appendChild(panel);
+      });
+    };
+
+    const revealContextPanel = () => {
+      if (!headerControls || !window.matchMedia('(max-width: 760px)').matches) return;
+      if (document.body.classList.contains('doke-mobile-shell-mounted')) return;
+      window.requestAnimationFrame(() => {
+        headerControls.scrollIntoView({ block: 'nearest', inline: 'nearest' });
       });
     };
 
@@ -120,6 +125,7 @@
       closeFiltersPanel();
       if (headerControls) headerControls.hidden = false;
       syncHeaderControls();
+      revealContextPanel();
     };
 
     const clearSelection = () => {
@@ -159,6 +165,7 @@
       closeSelectPanel();
       closeSettingsPanel();
       syncHeaderControls();
+      revealContextPanel();
     };
 
     const openSettingsPanel = () => {
@@ -212,19 +219,49 @@
     };
 
     const syncHeaderControls = () => {
-      if (!headerControls) return;
       const showStatusStack = Boolean(
         (activeChip && !activeChip.hidden)
         || (activeTimeChip && !activeTimeChip.hidden)
         || (clearFilterButton && !clearFilterButton.hidden)
       );
       if (filterStatusStack) filterStatusStack.hidden = !showStatusStack && (!filtersPanel || filtersPanel.hidden);
-      const showControls = Boolean(
+      const hasOpenPanel = Boolean(
         (filtersPanel && !filtersPanel.hidden)
         || (selectPanel && !selectPanel.hidden)
-        || showStatusStack
       );
-      headerControls.hidden = !showControls;
+      const showControls = Boolean(hasOpenPanel || showStatusStack);
+      if (headerControls) headerControls.hidden = !showControls;
+      document.body.classList.toggle('has-notifications-action-panel-open', hasOpenPanel);
+      root.classList.toggle('has-action-panel-open', hasOpenPanel);
+    };
+
+    const toggleFiltersPanel = () => {
+      const willOpen = !filtersPanel || filtersPanel.hidden;
+      closeFiltersPanel();
+      closeSelectPanel();
+      if (willOpen) openFiltersPanel();
+      return willOpen;
+    };
+
+    const toggleSelectPanel = () => {
+      const willOpen = !selectPanel || selectPanel.hidden;
+      closeFiltersPanel();
+      if (willOpen) {
+        openSelectPanel();
+      } else {
+        setSelectionEnabled(false);
+        closeSelectPanel();
+      }
+      return willOpen;
+    };
+
+    window.DokeNotificationsPanels = {
+      openFilters: openFiltersPanel,
+      closeFilters: closeFiltersPanel,
+      toggleFilters: toggleFiltersPanel,
+      openSelect: openSelectPanel,
+      closeSelect: closeSelectPanel,
+      toggleSelect: toggleSelectPanel
     };
 
     const applyFilter = (filter = currentFilter, timeFilter = currentTimeFilter) => {
@@ -282,23 +319,13 @@
     filtersToggles.forEach((toggle) => toggle.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      const willOpen = !filtersPanel || filtersPanel.hidden;
-      closeFiltersPanel();
-      closeSelectPanel();
-      if (willOpen) openFiltersPanel();
+      toggleFiltersPanel();
     }));
 
     selectToggles.forEach((toggle) => toggle.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      const willOpen = !selectPanel || selectPanel.hidden;
-      closeFiltersPanel();
-      if (willOpen) {
-        openSelectPanel();
-      } else {
-        setSelectionEnabled(false);
-        closeSelectPanel();
-      }
+      toggleSelectPanel();
     }));
 
     root.querySelectorAll('[data-doke-panel-close]').forEach((button) => {
@@ -556,13 +583,13 @@
 
       if (filtersPanel && !filtersPanel.hidden) {
         const clickedInsideFilters = target.closest('[data-notifications-filters-panel]');
-        const clickedFiltersToggle = target.closest('[data-notifications-filters-toggle]');
+        const clickedFiltersToggle = target.closest('[data-notifications-filters-toggle], [data-shell-filter]');
         if (!clickedInsideFilters && !clickedFiltersToggle) closeFiltersPanel();
       }
 
       if (selectPanel && !selectPanel.hidden) {
         const clickedInsideSelect = target.closest('[data-notifications-select-panel]');
-        const clickedSelectToggle = target.closest('[data-notifications-select-toggle]');
+        const clickedSelectToggle = target.closest('[data-notifications-select-toggle], [data-shell-select]');
         if (!clickedInsideSelect && !clickedSelectToggle) {
           closeSelectPanel();
           setSelectionEnabled(false);
@@ -581,12 +608,6 @@
       setSelectionEnabled(false);
       closeContextMenu();
     });
-
-    if (typeof mobilePanelQuery.addEventListener === 'function') {
-      mobilePanelQuery.addEventListener('change', syncContextPanelHost);
-    } else if (typeof mobilePanelQuery.addListener === 'function') {
-      mobilePanelQuery.addListener(syncContextPanelHost);
-    }
 
     syncContextPanelHost();
     updatéUnread();

@@ -75,8 +75,9 @@ body.orders-page-shell .doke-ai-layer__backdrop {
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(7, 22, 38, 0.24);
-  backdrop-filter: blur(6px);
+  background: rgba(10, 17, 24, 0.22);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
   opacity: 0;
   transition: opacity 180ms ease;
 }
@@ -145,18 +146,45 @@ body.orders-page-shell .doke-ai-panel__eyebrow::before {
 }
 
 body.orders-page-shell .doke-ai-panel__close {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: var(--control-height-md);
-  border: 1px solid var(--doke-ai-border);
-  border-radius: var(--radius-sm);
-  background: #f5f9fd;
-  color: #153a61;
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 var(--doke-close-button-size, 42px);
+  width: var(--doke-close-button-size, 42px);
+  height: var(--doke-close-button-size, 42px);
+  padding: 0;
+  border: 1px solid var(--doke-close-button-border, rgba(24, 75, 118, 0.1));
+  border-radius: var(--doke-close-button-radius, 999px);
+  background: var(--doke-close-button-bg, #f3f7fb);
+  color: var(--doke-close-button-color, #315b84);
+  box-shadow: none;
   cursor: pointer;
+  transition: background-color var(--transition-fast, 160ms ease), transform var(--transition-fast, 160ms ease), border-color var(--transition-fast, 160ms ease);
 }
 
-body.orders-page-shell .doke-ai-panel__close svg,
+
+
+body.orders-page-shell .doke-ai-panel__close:hover,
+body.orders-page-shell .doke-ai-panel__close:focus-visible {
+  border-color: rgba(42, 95, 144, 0.18);
+  background: var(--doke-close-button-hover-bg, #e8f1f9);
+  outline: 0;
+  transform: translateY(-1px);
+}
+
+body.orders-page-shell .doke-ai-panel__close svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
 body.orders-page-shell .doke-ai-card__icon svg,
 body.orders-page-shell .doke-ai-suggestion__icon svg {
   width: 20px;

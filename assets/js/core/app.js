@@ -70,7 +70,7 @@ const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", 
 const ROUTE_SWAP_STATE_CLASSES = ["is-shell-swapping", "is-route-instant-swap"];
 const PRESERVED_BODY_STATE_CLASSES = [...SHELL_STATE_CLASSES, ...ROUTE_SWAP_STATE_CLASSES];
 const INTERNAL_PROFILE_PATH = "/perfil.html";
-const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/carteira.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento-profissional.html", "/orcamento.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/"]);
+const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/novidades.html", "/ajuda.html", "/carteira.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento-profissional.html", "/orcamento.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/"]);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
@@ -384,6 +384,83 @@ const closeMobileSearch = () => {
   body.classList.remove("mobile-search-active");
 };
 
+const HEADER_SEARCH_SELECTOR = ".app-header .home-side-meta__search-form";
+
+const headerSearchPlaceholderForPage = () => {
+  const page = document.body?.dataset?.page || "";
+  const labels = {
+    pedidos: "Buscar pedidos",
+    notificacoes: "Buscar notificações",
+    mensagens: "Buscar conversas",
+    comunidade: "Buscar comunidades",
+    carteira: "Buscar carteira",
+    configuracoes: "Buscar configurações",
+    ajuda: "Buscar ajuda"
+  };
+  return labels[page] || "Buscar serviço";
+};
+
+const ensureHeaderSearchDisclosure = (trigger) => {
+  if (!trigger) return null;
+  const group = trigger.closest(".home-side-meta__group, .app-header__group, [data-header-slot]");
+  if (!group) return null;
+
+  let form = group.querySelector(".home-side-meta__search-form");
+  if (!form) {
+    form = document.createElement("form");
+    form.className = "home-side-meta__search-form";
+    form.setAttribute("action", "resultados.html");
+    form.setAttribute("role", "search");
+    form.setAttribute("aria-label", trigger.getAttribute("aria-label") || "Busca rápida");
+
+    const label = document.createElement("label");
+    label.className = "home-side-meta__search-label doke-label";
+    const id = `doke-header-search-${document.body?.dataset?.page || "page"}`;
+    label.setAttribute("for", id);
+    label.textContent = "Buscar";
+
+    const input = document.createElement("input");
+    input.id = id;
+    input.className = "home-side-meta__search-input doke-input";
+    input.type = "search";
+    input.name = "q";
+    input.placeholder = headerSearchPlaceholderForPage();
+    input.autocomplete = "off";
+
+    form.append(label, input);
+    trigger.insertAdjacentElement("afterend", form);
+  }
+
+  if (!form.hasAttribute("data-header-search-disclosure")) {
+    form.setAttribute("data-header-search-disclosure", "");
+  }
+
+  if (!form.getAttribute("action") && !form.querySelector("[data-notifications-search], [data-community-search]")) {
+    form.setAttribute("action", "resultados.html");
+  }
+
+  return form;
+};
+
+const setHeaderSearchExpanded = (form, expanded) => {
+  if (!form) return;
+  const header = form.closest(".app-header");
+  const trigger = header?.querySelector(".home-side-meta__search");
+  form.classList.toggle("is-expanded", expanded);
+  form.toggleAttribute("data-search-expanded", expanded);
+  header?.classList.toggle("is-search-expanded", expanded);
+  trigger?.setAttribute("aria-expanded", expanded ? "true" : "false");
+};
+
+const closeHeaderSearchDisclosures = (except = null) => {
+  document.querySelectorAll(HEADER_SEARCH_SELECTOR).forEach((form) => {
+    if (form === except) return;
+    const input = form.querySelector("input[type='search'], input[type='text']");
+    if (String(input?.value || "").trim()) return;
+    setHeaderSearchExpanded(form, false);
+  });
+};
+
 const usesPageSearchOnlyMobile = () =>
   window.innerWidth <= 767 &&
   ["/pedidos.html", "/mensagens.html", "/notificacoes.html"].includes(getCurrentPath());
@@ -407,6 +484,71 @@ const syncTopbarScrollState = () => {
 };
 
 
+const HEADER_ACTION_ROUTES = new Map([
+  ["novidades", "novidades.html"],
+  ["noticias", "novidades.html"],
+  ["notícias", "novidades.html"],
+  ["ajuda", "ajuda.html"],
+  ["suporte", "ajuda.html"],
+  ["ajuda e suporte", "ajuda.html"],
+  ["notificacoes", "notificacoes.html"],
+  ["notificações", "notificacoes.html"],
+  ["pedidos", "pedidos.html"],
+  ["comunidade", "comunidade.html"],
+  ["mensagens", "mensagens.html"],
+  ["carteira", "carteira.html"],
+  ["configuracoes", "configuracoes.html"],
+  ["configurações", "configuracoes.html"],
+]);
+
+const normalizeHeaderActionLabel = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+const resolveHeaderActionHref = (trigger) => {
+  if (!trigger) return "";
+  const explicitHref = trigger.getAttribute("data-header-nav") || trigger.getAttribute("href");
+  if (explicitHref) return explicitHref;
+
+  const label = normalizeHeaderActionLabel(
+    trigger.getAttribute("aria-label") || trigger.textContent || ""
+  );
+  if (!label) return "";
+
+  for (const [key, href] of HEADER_ACTION_ROUTES) {
+    if (label === key || label.includes(key)) return href;
+  }
+
+  return "";
+};
+
+const navigateHeaderAction = (href) => {
+  if (!href) return;
+  const targetUrl = new URL(href, window.location.href);
+
+  if (window.DokeNavigate && isInternalViewUrl(targetUrl.href) && !shouldBypassShellSwap(targetUrl.href)) {
+    window.DokeNavigate(targetUrl.href);
+    return;
+  }
+
+  window.location.href = targetUrl.href;
+};
+
+const normalizeHeaderActionButtons = () => {
+  document.querySelectorAll(".home-side-meta__alert").forEach((button) => {
+    if (!(button instanceof HTMLElement)) return;
+    const href = resolveHeaderActionHref(button);
+    if (!href) return;
+    button.setAttribute("data-header-nav", href);
+    if (button.tagName === "BUTTON" && !button.getAttribute("type")) {
+      button.setAttribute("type", "button");
+    }
+  });
+};
+
+
 const BASE_SHELL_STYLE_PATTERNS = [
   /assets\/css\/core\/tokens\.css$/i,
   /assets\/css\/core\/base\.css$/i,
@@ -423,6 +565,8 @@ const INTERNAL_VIEW_STYLE_HINTS = {
   "/pedidos.html": ["assets/css/pages/pedidos-foundation.css"],
   "/mensagens.html": ["assets/css/pages/messaging-foundation.css"],
   "/notificacoes.html": ["assets/css/pages/notificacoes-foundation.css"],
+  "/novidades.html": ["assets/css/pages/novidades-foundation.css"],
+  "/ajuda.html": ["assets/css/pages/ajuda-foundation.css"],
   "/carteira.html": ["assets/css/pages/carteira-foundation.css"],
   "/comunidade.html": [
     "assets/css/pages/comunidade-foundation.css",
@@ -452,6 +596,8 @@ const INTERNAL_VIEW_SCRIPT_HINTS = {
   "/pedidos.html": ["assets/js/pages/pedidos.js"],
   "/mensagens.html": ["assets/js/pages/mensagens.js"],
   "/notificacoes.html": ["assets/js/pages/notificacoes.js"],
+  "/novidades.html": ["assets/js/pages/novidades.js"],
+  "/ajuda.html": ["assets/js/pages/ajuda.js"],
   "/carteira.html": ["assets/js/pages/carteira.js"],
   "/comunidade.html": ["assets/js/pages/comunidade.js"],
   "/comunidade-interna.html": ["assets/js/pages/comunidade-interna.js"],
@@ -1259,6 +1405,26 @@ document.addEventListener("keydown", (event) => {
   navigateToSearchResults(query);
 });
 
+normalizeHeaderActionButtons();
+
+
+document.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) return;
+  const trigger = event.target.closest("[data-header-nav], .home-side-meta__alert");
+  if (!trigger) return;
+  if (trigger.matches(".home-side-meta__search, [data-mobile-home-menu-open], [data-home-profile-menu-toggle], [data-home-account-menu-toggle]")) return;
+
+  const href = resolveHeaderActionHref(trigger);
+  if (!href) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+  if (typeof event.stopImmediatePropagation === "function") {
+    event.stopImmediatePropagation();
+  }
+  navigateHeaderAction(href);
+}, true);
+
 document.addEventListener("click", (event) => {
   if (!(event.target instanceof Element)) return;
   if (document.body.classList.contains("search-results-body")) {
@@ -1306,14 +1472,36 @@ document.addEventListener("click", (event) => {
   const quickSearchTrigger = event.target.closest(".home-side-meta__search");
   if (quickSearchTrigger) {
     event.preventDefault();
-    const group = quickSearchTrigger.closest(".home-side-meta__group");
-    const form = group?.querySelector(".home-side-meta__search-form");
+    const form = ensureHeaderSearchDisclosure(quickSearchTrigger);
     const input = form?.querySelector("input[type='search'], input[type='text']");
-    if (input) {
-      form?.classList.add("is-expanded");
+    if (form && input) {
+      const isOpen = form.classList.contains("is-expanded");
+      const value = String(input.value || "").trim();
+      closeHeaderSearchDisclosures(form);
+      if (isOpen && value) {
+        navigateToSearchResults(value);
+        return;
+      }
+      setHeaderSearchExpanded(form, true);
       window.setTimeout(() => input.focus(), 0);
     }
     return;
+  }
+
+  const headerSearchSubmit = event.target.closest(".home-side-meta__search-form button[type='submit']");
+  if (headerSearchSubmit) {
+    const form = headerSearchSubmit.closest(".home-side-meta__search-form");
+    const input = form?.querySelector("input[type='search'], input[type='text']");
+    const value = String(input?.value || "").trim();
+    if (value && form?.getAttribute("action")?.includes("resultados.html")) {
+      event.preventDefault();
+      navigateToSearchResults(value);
+      return;
+    }
+  }
+
+  if (!event.target.closest(".home-side-meta__search, .home-side-meta__search-form")) {
+    closeHeaderSearchDisclosures();
   }
 
   const cta = event.target.closest(".service-card__cta, .doke-ad-card__cta");
@@ -1323,14 +1511,14 @@ document.addEventListener("click", (event) => {
     return;
   }
 
-  const headerNavTrigger = event.target.closest("[data-header-nav]");
+  const headerNavTrigger = event.target.closest("[data-header-nav], .home-side-meta__alert");
   if (headerNavTrigger) {
-    event.preventDefault();
-    const href = headerNavTrigger.getAttribute("data-header-nav") || "";
+    const href = resolveHeaderActionHref(headerNavTrigger);
     if (href) {
-      window.DokeNavigate?.(href);
+      event.preventDefault();
+      navigateHeaderAction(href);
+      return;
     }
-    return;
   }
 
   const link = event.target.closest("a[href]");
@@ -1512,6 +1700,7 @@ document.addEventListener("keydown", (event) => {
     closeProfileMenu();
     closeSecondaryHeaderMenus();
     closeMobileSearch();
+    closeHeaderSearchDisclosures();
   }
 });
 

@@ -1,7 +1,7 @@
 /*
  * Doke Mobile Action Surface Contract v2
  * Owner: components/overlays
- * Purpose: shared bottom-sheet system for mobile search, filters and selection.
+ * Purpose: shared inline action-surface system for mobile search, filters and selection.
  * Rule: pages own content; this file owns all surface sizing, spacing and visual rhythm.
  */
 @media (max-width: 760px) {
@@ -16,20 +16,12 @@
     --doke-action-radius: 24px;
     --doke-action-gutter: 12px;
     --doke-action-shadow: 0 18px 44px rgba(15, 34, 52, 0.16);
+    --doke-action-backdrop-z: 1180;
+    --doke-action-panel-z: 1200;
   }
 
   body.app-shell-page:has(:is([data-orders-filters-popover], [data-orders-select-panel], [data-notifications-filters-panel], [data-notifications-select-panel]):not([hidden])) {
-    overflow: hidden;
-  }
-
-  body.app-shell-page:has(:is([data-orders-filters-popover], [data-orders-select-panel], [data-notifications-filters-panel], [data-notifications-select-panel]):not([hidden]))::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 880;
-    background: rgba(12, 22, 32, 0.18);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    overflow-x: hidden;
   }
 
   body.app-shell-page :is(.orders-page-header, .notifications-mobile-header) {
@@ -37,10 +29,13 @@
   }
 
   body.app-shell-page :is(.orders-page-header__controls, .notifications-page-header__controls) {
-    display: contents;
-    width: auto;
-    height: 0;
-    margin: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    margin: 10px 0 0;
     padding: 0;
     border: 0;
     background: transparent;
@@ -145,24 +140,22 @@
   }
 
   .doke-mobile-action-panel {
-    position: fixed;
-    left: max(12px, env(safe-area-inset-left));
-    right: max(12px, env(safe-area-inset-right));
-    bottom: max(12px, env(safe-area-inset-bottom));
-    z-index: 900;
+    position: relative;
+    inset: auto;
+    z-index: 8;
     flex-direction: column;
-    width: auto;
-    max-width: 420px;
-    max-height: min(72dvh, 610px);
-    margin: 0 auto;
-    padding: 16px var(--doke-action-gutter) 12px;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    margin: 0;
+    padding: 14px var(--doke-action-gutter) 12px;
     border: 1px solid rgba(204, 219, 232, 0.9);
-    border-radius: 24px;
+    border-radius: 20px;
     background: #fff;
-    box-shadow: var(--doke-action-shadow);
+    box-shadow: 0 12px 30px rgba(15, 34, 52, 0.10);
     box-sizing: border-box;
-    overflow: auto;
-    overscroll-behavior: contain;
+    overflow: visible;
+    overscroll-behavior: auto;
   }
 
   .doke-mobile-action-panel__handle {
@@ -369,8 +362,8 @@
   }
 
   .doke-mobile-action-panel__footer {
-    position: sticky;
-    bottom: -12px;
+    position: relative;
+    bottom: auto;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
