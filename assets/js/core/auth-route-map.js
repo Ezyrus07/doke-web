@@ -2,42 +2,45 @@
    Responsibility: classify routes as public, private or auth-only.
    This file has no side effects and does not redirect by itself. */
 (function () {
+  'use strict';
+
   const ns = (window.DokeAuth = window.DokeAuth || {});
 
   const PUBLIC_ROUTES = Object.freeze([
+    'index.html',
+    'resultados.html',
+    'resultado.html',
+    'detalhe-anuncio.html',
+    'perfil.html',
+    'perfil-profissional.html',
+    'perfil-cliente.html',
+    'ajuda.html',
+    'novidades.html',
     'auth/login.html',
-    'auth/register.html',
-    'auth/forgot-password.html',
-    'login.html',
-    'register.html',
-    'forgot-password.html'
+    'auth/cadastro.html',
+    'auth/esqueci-senha.html',
   ]);
 
   const AUTH_ONLY_ROUTES = Object.freeze([
     'auth/login.html',
-    'auth/register.html',
-    'auth/forgot-password.html',
-    'login.html',
-    'register.html',
-    'forgot-password.html'
+    'auth/cadastro.html',
+    'auth/esqueci-senha.html',
   ]);
 
   const PRIVATE_ROUTES = Object.freeze([
-    'index.html',
     'pedidos.html',
     'mensagens.html',
-    'comunidade.html',
-    'comunidade-interna.html',
-    'comunidades.html',
-    'comunidade.html',
-    'resultados.html',
-    'resultado.html',
-    'perfil.html',
     'notificacoes.html',
     'carteira.html',
+    'meu-perfil.html',
+    'orcamento.html',
+    'anunciar-servico.html',
     'configuracoes.html',
     'tornar-profissional.html',
-    'anunciar-servico.html'
+    'pagamento-profissional.html',
+    'avaliacao-profissional.html',
+    'comunidade.html',
+    'comunidade-interna.html'
   ]);
 
   const normalizePath = (path = window.location.pathname) => {
@@ -47,20 +50,20 @@
       .replace(/\\/g, '/')
       .replace(/^\/+/, '');
 
-    return clean || 'index.html';
+    const marker = clean.lastIndexOf('/auth/');
+    if (marker >= 0) return clean.slice(marker + 1);
+
+    return clean.split('/').filter(Boolean).slice(-1)[0] || 'index.html';
   };
 
   const getRouteType = (path = window.location.pathname) => {
     const route = normalizePath(path);
 
     if (AUTH_ONLY_ROUTES.includes(route)) return 'auth';
-    if (PUBLIC_ROUTES.includes(route)) return 'public';
     if (PRIVATE_ROUTES.includes(route)) return 'private';
+    if (PUBLIC_ROUTES.includes(route)) return 'public';
 
-    // Safe default for Doke internal HTML pages.
-    if (route.endsWith('.html')) return 'private';
-
-    return 'public';
+    return route.endsWith('.html') ? 'public' : 'public';
   };
 
   const isAuthRoute = (path) => getRouteType(path) === 'auth';

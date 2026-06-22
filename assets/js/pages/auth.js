@@ -123,8 +123,18 @@ function setButtonLoading(button, isLoading, loadingLabel) {
   button.textContent = isLoading ? loadingLabel : button.dataset.defaultLabel;
 }
 
-function redirectToHome() {
-  window.location.href = "../index.html";
+function getPostAuthRedirect() {
+  if (authService && typeof authService.getNextUrl === "function") {
+    return authService.getNextUrl("../index.html");
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const next = params.get("next");
+  return next || "../index.html";
+}
+
+function redirectAfterAuth() {
+  window.location.href = getPostAuthRedirect();
 }
 
 function isStrongPassword(password) {
@@ -155,7 +165,7 @@ if (authService && loginForm) {
       setFeedback(feedback, "success", "Validando seu acesso...");
       const user = await authService.signIn({ login, password });
       setFeedback(feedback, "success", `Acesso liberado. Bem-vindo, ${user.name}.`);
-      window.setTimeout(redirectToHome, 700);
+      window.setTimeout(redirectAfterAuth, 700);
     } catch (error) {
       setFeedback(feedback, "error", error.message);
     } finally {
@@ -173,6 +183,7 @@ if (authService && signupForm) {
     const nameInput = document.getElementById("nome-cadastro");
     const emailInput = document.getElementById("email-cadastro");
     const passwordInput = document.getElementById("senha-cadastro");
+    const roleInput = signupForm.querySelector('input[name="account-role"]:checked');
     const submitButton = signupForm.querySelector("[data-auth-submit]");
     const feedback = signupForm.querySelector("[data-auth-feedback]");
     const confirmationPanel = signupForm.querySelector("[data-confirmation-panel]");
@@ -180,6 +191,7 @@ if (authService && signupForm) {
     const name = nameInput ? nameInput.value.trim() : "";
     const email = emailInput ? emailInput.value.trim() : "";
     const password = passwordInput ? passwordInput.value : "";
+    const role = roleInput ? roleInput.value : "client";
 
     if (!name || !email || !password) {
       setFeedback(feedback, "error", "Preencha nome, e-mail e senha.");
@@ -199,14 +211,14 @@ if (authService && signupForm) {
     try {
       setButtonLoading(submitButton, true, "Criando conta...");
       setFeedback(feedback, "success", "Preparando seu acesso no Doke...");
-      const user = await authService.register({ name, email, password });
+      const user = await authService.register({ name, email, password, role });
       if (user.pendingConfirmation) {
         setFeedback(feedback, "success", "Conta criada. Agora confirme o e-mail para liberar o acesso.");
         confirmationPanel?.classList.remove("is-hidden");
       } else {
         confirmationPanel?.classList.add("is-hidden");
         setFeedback(feedback, "success", `Conta criada com sucesso. Bem-vindo, ${user.name}.`);
-        window.setTimeout(redirectToHome, 900);
+        window.setTimeout(redirectAfterAuth, 900);
       }
     } catch (error) {
       setFeedback(feedback, "error", error.message);
