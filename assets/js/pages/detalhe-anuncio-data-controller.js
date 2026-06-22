@@ -3,7 +3,7 @@
 
   var Doke = window.Doke || (window.Doke = {});
   var PAGE_NAME = 'detalhe-anuncio';
-  var DEFAULT_SERVICE_ID = 'service-pintura-premium';
+  var DEFAULT_SERVICE_ID = 'service-reforma-banheiro-premium';
 
   function getRoot() {
     return document.querySelector('[data-detail-page-root], [data-page="detalhe-anuncio"], .ad-detail-page, .detalhe-anuncio-reset');

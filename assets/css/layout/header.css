@@ -153,7 +153,7 @@ body[data-page="home"].has-global-header {
   --doke-header-height: 68px;
   --doke-header-control-size: 46px;
   --doke-header-control-radius: 16px;
-  --doke-header-gap: 10px;
+  --doke-header-gap: 8px;
 }
 
 body[data-page="home"].has-global-header > .app-shell > .page > .app-header {
@@ -231,9 +231,11 @@ body[data-page].has-global-header {
   --doke-header-height: 70px;
   --doke-header-control-size: 46px;
   --doke-header-control-radius: 16px;
-  --doke-header-profile-height: 50px;
-  --doke-header-avatar-size: 38px;
-  --doke-header-gap: 10px;
+  --doke-header-profile-height: 42px;
+  --doke-header-profile-width: clamp(108px, 8.5vw, 124px);
+  --doke-header-profile-copy-width: calc(var(--doke-header-profile-width) - var(--doke-header-avatar-size) - 24px);
+  --doke-header-avatar-size: 32px;
+  --doke-header-gap: 8px;
   --doke-header-bg: rgba(255, 255, 255, 0.9);
   --doke-header-border: 1px solid rgba(24, 75, 118, 0.08);
   --doke-header-shadow: 0 4px 14px rgba(15, 45, 75, 0.03);
@@ -410,21 +412,27 @@ body[data-page].has-global-header .app-header .home-side-meta__profile-wrap {
 }
 
 body[data-page].has-global-header .app-header :is(.home-side-meta__profile, .app-header__profile) {
+  inline-size: var(--doke-header-profile-width);
+  min-inline-size: min(100%, var(--doke-header-profile-width));
+  max-inline-size: var(--doke-header-profile-width);
   min-block-size: var(--doke-header-profile-height);
   block-size: var(--doke-header-profile-height);
   max-block-size: var(--doke-header-profile-height);
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 14px 6px 8px;
+  flex: 0 1 var(--doke-header-profile-width);
+  gap: 8px;
+  padding: 4px 9px 4px 6px;
   border: var(--doke-header-border);
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--doke-header-bg);
   color: var(--doke-header-ink);
   box-shadow: var(--doke-header-shadow);
   white-space: nowrap;
   text-decoration: none;
   transform: none;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 body[data-page].has-global-header .app-header .topbar-search {
@@ -495,22 +503,28 @@ body[data-page].has-global-header .app-header :is(
 body[data-page].has-global-header .app-header .home-side-meta__identity {
   display: grid;
   min-inline-size: 0;
+  max-inline-size: var(--doke-header-profile-copy-width);
   gap: 1px;
   line-height: 1.05;
+  overflow: hidden;
 }
 
 body[data-page].has-global-header .app-header .home-side-meta__identity strong {
-  font-size: 0.9rem;
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.78rem;
   font-weight: 850;
   color: var(--doke-header-ink);
 }
 
 body[data-page].has-global-header .app-header .home-side-meta__identity span {
-  max-inline-size: 88px;
+  max-inline-size: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.72rem;
+  font-size: 0.63rem;
   font-weight: 750;
   color: var(--color-text-muted, #69809d);
 }
@@ -520,7 +534,7 @@ body[data-page].has-global-header .app-header .home-side-meta__profile-caret-but
   block-size: var(--doke-header-profile-height);
   flex: 0 0 var(--doke-header-control-size);
   border: var(--doke-header-border);
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--doke-header-bg);
   box-shadow: var(--doke-header-shadow);
 }
@@ -551,7 +565,9 @@ body[data-page].has-global-header .app-header .home-side-meta__profile-caret-but
     --doke-header-height: 64px;
     --doke-header-control-size: 42px;
     --doke-header-profile-height: 46px;
-    --doke-header-avatar-size: 34px;
+    --doke-header-profile-width: 46px;
+    --doke-header-profile-copy-width: 0px;
+    --doke-header-avatar-size: 32px;
     --doke-header-gap: 8px;
   }
 
@@ -645,8 +661,8 @@ body[data-page].has-global-header .app-header .home-side-meta__profile-caret-but
 body[data-page].has-global-header {
   --doke-header-height: 70px;
   --doke-header-control-size: 46px;
-  --doke-header-profile-height: 50px;
-  --doke-header-avatar-size: 38px;
+  --doke-header-profile-height: 42px;
+  --doke-header-avatar-size: 32px;
   --doke-header-bg: rgba(255, 255, 255, 0.9);
   --doke-header-shadow: 0 4px 14px rgba(15, 45, 75, 0.03);
   --doke-header-shadow-hover: 0 8px 18px rgba(15, 45, 75, 0.05);
@@ -703,9 +719,9 @@ body[data-page].has-global-header .app-header .home-side-meta__tablet-menu {
   body:is(.orders-page-shell, .notifications-page-shell).has-global-header {
     --doke-header-height: 70px;
     --doke-header-control-size: 46px;
-    --doke-header-profile-height: 50px;
-    --doke-header-avatar-size: 38px;
-    --doke-header-gap: 10px;
+    --doke-header-profile-height: 42px;
+    --doke-header-avatar-size: 32px;
+    --doke-header-gap: 8px;
   }
 
   body:is(.orders-page-shell, .notifications-page-shell).has-global-header
@@ -1022,6 +1038,11 @@ body[data-page].has-global-header {
 }
 
 @media (min-width: 761px) and (max-width: 1024px) {
+  body[data-page].has-global-header {
+    --doke-header-profile-width: 124px;
+    --doke-header-profile-copy-width: calc(var(--doke-header-profile-width) - var(--doke-header-avatar-size) - 24px);
+  }
+
   body[data-page].has-global-header .app-header .home-side-meta__location {
     inline-size: var(--doke-header-location-width-tablet);
     width: var(--doke-header-location-width-tablet);
@@ -1036,7 +1057,7 @@ body[data-page].has-global-header {
     --doke-header-height: 66px;
     --doke-header-control-size: 42px;
     --doke-header-profile-height: 46px;
-    --doke-header-avatar-size: 34px;
+    --doke-header-avatar-size: 32px;
     --doke-header-gap: 8px;
     --doke-header-location-width-tablet: min(176px, 34vw);
   }

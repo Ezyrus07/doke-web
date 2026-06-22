@@ -77,6 +77,134 @@
     .map((part) => part[0]?.toUpperCase() || "")
     .join("") || "DK";
 
+  const escapeHtml = (value) => String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+  const getCurrentUser = () => {
+    try {
+      return window.Doke?.session?.getCurrentUser?.() || window.DokeAuth?.service?.getCurrentUser?.() || null;
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const getCurrentUserId = () => getCurrentUser()?.id || "";
+  const getCurrentUserRole = () => getCurrentUser()?.role || "client";
+
+  const normalizeLocalMessage = (message, conversation) => {
+    const currentUserId = getCurrentUserId();
+    const mine = message?.mine === true || Boolean(currentUserId && message?.senderId && String(message.senderId) === String(currentUserId));
+    return {
+      author: mine ? "Você" : message?.author || conversation?.name || "Doke",
+      time: message?.time || "agora",
+      text: message?.text || message?.body || "",
+      mine,
+      type: message?.type || "text",
+      src: message?.src || "",
+      duration: message?.duration || "",
+      speed: message?.speed || "1x",
+      amount: message?.amount || "",
+      installments: message?.installments || "",
+      paid: message?.paid === true,
+      completed: message?.completed === true,
+      reviewed: message?.reviewed === true,
+      replyTo: message?.replyTo || null
+    };
+  };
+
+  const mapLocalConversation = (conversation) => {
+    const order = conversation?.order || {};
+    return {
+      avatar: conversation?.avatar || conversation?.peerInitials || "",
+      name: conversation?.name || conversation?.peerName || "Profissional Doke",
+      peerRole: conversation?.peerRole || "professional",
+      lastSeen: conversation?.lastSeen || "Conversa do pedido",
+      unread: Number(conversation?.unread || conversation?.unreadCount || 0),
+      group: conversation?.group || "orders",
+      orderId: conversation?.orderId || order.id || "",
+      serviceId: conversation?.serviceId || order.serviceId || "",
+      order: {
+        id: conversation?.orderId || order.id || "",
+        clientId: conversation?.clientId || order.clientId || "",
+        clientName: conversation?.clientName || order.clientName || "Cliente Doke",
+        professionalId: conversation?.professionalId || order.professionalId || order.providerId || "",
+        professionalName: conversation?.professionalName || order.providerName || order.provider || "Profissional Doke",
+        title: order.title || order.serviceTitle || conversation?.orderTitle || "Pedido de serviço",
+        statusLabel: order.statusLabel || conversation?.statusLabel || "Aguardando resposta",
+        budget: order.budget || conversation?.budget || "A definir",
+        category: order.category || conversation?.category || "Serviço",
+        location: order.location || conversation?.location || ""
+      },
+      messages: (conversation?.messages || []).map((message) => normalizeLocalMessage(message, conversation))
+    };
+  };
+
+  const getStatusToneClass = (label) => {
+    const normalized = String(label || "").toLowerCase();
+    if (normalized.includes("conclu") || normalized.includes("final")) return "message-item__deal-status--done";
+    if (normalized.includes("cancel")) return "message-item__deal-status--done";
+    return "message-item__deal-status--pending";
+  };
+
+  const getMessagePreview = (message) => {
+    if (!message) return "";
+    if (message.type === "audio") return "Áudio enviado";
+    if (message.type === "image") return "Imagem enviada";
+    if (message.type === "charge") return `Cobrança ${message.amount}`;
+    return String(message.text || "");
+  };
+
+  const renderLocalConversationItem = (id, conversation) => {
+    const lastMessage = conversation.messages[conversation.messages.length - 1];
+    const statusLabel = conversation.order?.statusLabel || "Aguardando resposta";
+    return `
+      <button class="message-item doke-message-card doke-card" type="button" data-message-id="${escapeHtml(id)}" data-local-conversation="true">
+        <span class="message-item__avatar doke-avatar" aria-hidden="true">${escapeHtml(conversation.avatar || getConversationInitials(conversation.name))}</span>
+        <span class="message-item__content">
+          <span class="message-item__line"><strong>${escapeHtml(conversation.name)}</strong><span class="message-item__time">${escapeHtml(lastMessage?.time || "agora")}</span></span>
+          <span class="message-item__deal-status ${getStatusToneClass(statusLabel)}">${escapeHtml(statusLabel)}</span>
+          <span class="message-item__preview">${escapeHtml(getMessagePreview(lastMessage) || "Conversa criada para acompanhar o pedido.")}</span>
+          <span class="message-item__status">${escapeHtml(conversation.lastSeen || "Conversa do pedido")}</span>
+        </span>
+        <span class="message-item__badge" ${conversation.unread ? "" : "hidden"}>${escapeHtml(conversation.unread || "")}</span>
+      </button>
+    `;
+  };
+
+  const hydrateLocalConversations = (root) => {
+    const service = window.Doke?.services?.messages;
+    const list = root.querySelector("[data-messages-orders-list]") || root.querySelector("[data-messages-contacts-list]") || root.querySelector(".messages-list");
+    if (!service?.listLocalConversations || !list) return;
+
+    const localConversations = service.listLocalConversations({ currentUser: true }) || [];
+    localConversations.slice().reverse().forEach((conversation) => {
+      if (!conversation?.id || conversations[conversation.id]) return;
+      const mapped = mapLocalConversation(conversation);
+      conversations[conversation.id] = mapped;
+      list.insertAdjacentHTML("afterbegin", renderLocalConversationItem(conversation.id, mapped));
+    });
+  };
+
+  const persistConversationMessage = (conversationId, message) => {
+    window.Doke?.services?.messages?.sendMessage?.(conversationId, {
+      body: message.text || message.body || "",
+      text: message.text || message.body || "",
+      type: message.type || "text",
+      src: message.src || "",
+      duration: message.duration || "",
+      speed: message.speed || "1x",
+      amount: message.amount || "",
+      installments: message.installments || "",
+      mine: message.mine !== false,
+      author: message.author || "Você",
+      replyTo: message.replyTo || null
+    }).catch((error) => console.warn("[DokeMessages:sendMessage]", error));
+  };
+
   let activeMessagesCleanup = null;
 
   const clearMessagesRouteState = () => {
@@ -138,6 +266,7 @@
       }
     });
     window.DokeHomeDrawer?.create({ signal: drawerController.signal })?.();
+    hydrateLocalConversations(root);
 
     const items = Array.from(root.querySelectorAll(".message-item[data-message-id]"));
     const messagesList = root.querySelector(".messages-list");
@@ -264,7 +393,14 @@
     };
 
     const pageParams = new URLSearchParams(window.location.search);
-    let activeId = pageParams.get("conversation") && conversations[pageParams.get("conversation")] ? pageParams.get("conversation") : "painting";
+    const requestedConversationId = pageParams.get("conversation");
+    const requestedOrderId = pageParams.get("order") || pageParams.get("orderId");
+    const conversationFromOrder = requestedOrderId
+      ? Object.keys(conversations).find((id) => String(conversations[id]?.orderId || conversations[id]?.order?.id || "") === String(requestedOrderId))
+      : "";
+    let activeId = requestedConversationId && conversations[requestedConversationId]
+      ? requestedConversationId
+      : conversationFromOrder || "painting";
 
     const isCompactThreadViewport = () => window.innerWidth <= 1180;
     const isMobileRoomViewport = () => window.innerWidth <= 560;
@@ -288,28 +424,42 @@
       return null;
     };
 
-    const renderLinkedOrderContext = () => `
+    const renderLinkedOrderContext = (conversation) => {
+      const order = conversation?.order || {};
+      const role = getCurrentUserRole();
+      const professionalView = role === "professional";
+      const orderHref = order.id ? `pedidos.html?orderId=${encodeURIComponent(order.id)}` : 'pedidos.html';
+      const peerLabel = professionalView ? 'Cliente' : 'Profissional';
+      const peerName = professionalView
+        ? order.clientName || conversation.name || 'Cliente Doke'
+        : order.professionalName || conversation.name || 'Profissional Doke';
+      const primaryLabel = professionalView ? 'Enviar proposta' : 'Aguardando proposta';
+      const primaryClass = professionalView ? 'doke-btn--primary' : 'doke-btn--soft';
+      const primaryAttrs = professionalView ? 'data-messages-proposal-action' : 'aria-disabled="true" disabled';
+      return `
       <section class="messages-order-card messages-order-card--inline" data-messages-order-context aria-label="Pedido vinculado à conversa">
         <div class="messages-order-card__head">
           <span>Pedido vinculado</span>
-          <strong>Em negociação</strong>
+          <strong>${escapeHtml(order.statusLabel || 'Em negociação')}</strong>
         </div>
         <div class="messages-order-card__body">
           <div class="messages-order-card__copy">
-            <h2>Pintura residencial com acabamento fino</h2>
+            <h2>${escapeHtml(order.title || 'Pedido de serviço')}</h2>
             <dl class="messages-order-card__facts">
-              <div><dt>Estimativa</dt><dd>R$ 850</dd></div>
-              <div><dt>Prazo</dt><dd>até 7 dias</dd></div>
-              <div><dt>Categoria</dt><dd>Pintura</dd></div>
+              <div><dt>${escapeHtml(peerLabel)}</dt><dd>${escapeHtml(peerName)}</dd></div>
+              <div><dt>Estimativa</dt><dd>${escapeHtml(order.budget || 'A definir')}</dd></div>
+              <div><dt>Local</dt><dd>${escapeHtml(order.location || 'A combinar')}</dd></div>
+              <div><dt>Categoria</dt><dd>${escapeHtml(order.category || 'Serviço')}</dd></div>
             </dl>
           </div>
           <div class="messages-order-card__actions">
-            <a class="messages-order-card__button messages-order-card__button--ghost doke-btn doke-btn--ghost" href="pedidos.html">Ver detalhes</a>
-            <button class="messages-order-card__button doke-btn doke-btn--primary" type="button" data-messages-proposal-action>Enviar proposta</button>
+            <a class="messages-order-card__button messages-order-card__button--ghost doke-btn doke-btn--ghost" href="${escapeHtml(orderHref)}">Ver detalhes</a>
+            <button class="messages-order-card__button doke-btn ${primaryClass}" type="button" ${primaryAttrs}>${primaryLabel}</button>
           </div>
         </div>
       </section>
     `;
+    };
     const syncPaymentFlowFromQuery = () => {
       const conversationId = pageParams.get("conversation");
       if (!conversationId || !conversations[conversationId]) return;
@@ -522,13 +672,6 @@
       syncHeaderControls();
     };
 
-    const getMessagePreview = (message) => {
-      if (!message) return "";
-      if (message.type === "audio") return "Audio enviado";
-      if (message.type === "image") return "Imagem enviada";
-      if (message.type === "charge") return `Cobrança ${message.amount}`;
-      return String(message.text || "");
-    };
 
     const refreshConversationCards = () => {
       items.forEach((item) => {
@@ -596,16 +739,26 @@
       const previousScrollTop = threadBody.scrollTop;
       const { scrollTo = isSameThread ? "preserve" : "start", openOnMobile = false } = options;
       activeId = id;
+      if (conversation.unread) {
+        conversation.unread = 0;
+        window.Doke?.services?.messages?.markAsRead?.(id)?.catch?.((error) => console.warn("[DokeMessages:markAsRead]", error));
+      }
+      const orderAction = root.querySelector(".messages-thread__action--order[data-header-nav]");
+      if (orderAction) {
+        const orderHref = conversation.orderId ? `pedidos.html?orderId=${encodeURIComponent(conversation.orderId)}` : "pedidos.html";
+        orderAction.setAttribute("data-header-nav", orderHref);
+      }
       if (!isSameThread) clearSelection();
       clearReplyPreview();
       items.forEach((item) => item.classList.toggle("is-active", item.dataset.messageId === id));
       if (threadAvatar) threadAvatar.textContent = getConversationInitials(conversation.name);
       if (threadName) threadName.textContent = conversation.name;
       if (threadLastSeen) threadLastSeen.textContent = conversation.lastSeen;
+      if (chargeButton) chargeButton.hidden = getCurrentUserRole() !== "professional";
       if (threadEmpty) threadEmpty.hidden = conversation.messages.length !== 0;
       if (threadBody) threadBody.hidden = conversation.messages.length === 0;
       const activeInitials = getConversationInitials(conversation.name);
-      threadBody.innerHTML = renderLinkedOrderContext() + conversation.messages.map((message, index) => `
+      threadBody.innerHTML = renderLinkedOrderContext(conversation) + conversation.messages.map((message, index) => `
         <article class="message-row${message.mine ? " message-row--me" : ""}${message.type === "charge" ? " message-row--charge" : ""}" data-message-index="${index}">
           ${message.mine ? "" : `<span class="message-row__avatar doke-avatar" aria-hidden="true">${activeInitials}</span>`}
           <div class="message-bubble doke-selectable-card${message.mine ? " message-bubble--me" : ""}${message.type === "image" ? " message-bubble--image-only" : ""}${message.type === "charge" ? " message-bubble--charge" : ""}${selectedMessageIndexes.has(index) ? " is-selected" : ""}" data-message-bubble data-message-index="${index}" role="option" tabindex="0" aria-selected="${selectedMessageIndexes.has(index) ? "true" : "false"}">
@@ -1204,7 +1357,9 @@
       event.preventDefault();
       const value = String(composerInput?.value || "").trim();
       if (audioDraft && !audioDraft.hidden) {
-        conversations[activeId].messages.push({ author: "Você", time: "agora", mine: true, type: "audio", duration: formatAudioTime(Math.max(audioDraftSeconds, 1)), speed: "1x", replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null });
+        const audioMessage = { author: "Você", time: "agora", mine: true, type: "audio", duration: formatAudioTime(Math.max(audioDraftSeconds, 1)), speed: "1x", replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null };
+        conversations[activeId].messages.push(audioMessage);
+        persistConversationMessage(activeId, audioMessage);
         renderThread(activeId, { scrollTo: "end" });
         composer.reset();
         clearReplyPreview();
@@ -1213,7 +1368,9 @@
         return;
       }
       if (imageDraftSrc) {
-        conversations[activeId].messages.push({ author: "Você", time: "agora", mine: true, type: "image", src: imageDraftSrc, replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null });
+        const imageMessage = { author: "Você", time: "agora", mine: true, type: "image", src: imageDraftSrc, replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null };
+        conversations[activeId].messages.push(imageMessage);
+        persistConversationMessage(activeId, imageMessage);
         renderThread(activeId, { scrollTo: "end" });
         composer.reset();
         clearReplyPreview();
@@ -1222,7 +1379,9 @@
         return;
       }
       if (!value) return;
-      conversations[activeId].messages.push({ author: "Você", time: "agora", text: value, mine: true, replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null });
+      const textMessage = { author: "Você", time: "agora", text: value, mine: true, replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null };
+      conversations[activeId].messages.push(textMessage);
+      persistConversationMessage(activeId, textMessage);
       renderThread(activeId, { scrollTo: "end" });
       composer.reset();
       clearReplyPreview();
@@ -1291,7 +1450,7 @@
       event.preventDefault();
       const normalized = String(chargeAmountInput?.value || "").trim();
       if (!normalized) return;
-      conversations[activeId].messages.push({
+      const chargeMessage = {
         author: conversations[activeId].name,
         time: "agora",
         text: "Proposta pronta para aprovação. Você pode pagar por aqui para confirmar o atendimento.",
@@ -1300,7 +1459,9 @@
         amount: normalized.startsWith("R$") ? normalized : `R$ ${normalized}`,
         installments: chargeInstallments?.selectedOptions?.[0]?.textContent || "À vista",
         paid: false
-      });
+      };
+      conversations[activeId].messages.push(chargeMessage);
+      persistConversationMessage(activeId, chargeMessage);
       closeChargeModal();
       renderThread(activeId, { scrollTo: "end" });
     });

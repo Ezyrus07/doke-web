@@ -14,9 +14,14 @@
   }
 
   function loadServices() {
+    if (services.services && typeof services.services.list === 'function') {
+      return services.services.list({ status: 'active' });
+    }
+
     if (!Doke.mockData || typeof Doke.mockData.load !== 'function') {
       return Promise.resolve([]);
     }
+
     return Doke.mockData.load('services');
   }
 

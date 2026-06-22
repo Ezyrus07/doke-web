@@ -55,6 +55,25 @@
     return { min, max, average: Math.round((min + max) / 2) };
   };
 
+  const parseAttachments = (value) => {
+    if (!value) return [];
+    try {
+      const parsed = JSON.parse(value);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map((attachment) => ({
+        name: clean(attachment?.name) || 'anexo',
+        type: clean(attachment?.type),
+        size: Number(attachment?.size) || 0,
+        url: clean(attachment?.url),
+        previewable: Boolean(attachment?.previewable || attachment?.url),
+        tooLarge: Boolean(attachment?.tooLarge),
+        error: Boolean(attachment?.error)
+      })).filter((attachment) => attachment.name || attachment.url);
+    } catch {
+      return [];
+    }
+  };
+
   const readProgress = (card) => {
     const steps = qsa('.order-card__progress-step', card);
     const done = steps.filter((step) => step.classList.contains('is-done')).length;
@@ -80,6 +99,11 @@
       title,
       subtitle: clean(qs('.order-card__subtitle', card)?.textContent),
       company: clean(qs('.order-card__subtitle strong', card)?.textContent),
+      viewerRole: clean(card.dataset.viewerRole),
+      peerRole: clean(card.dataset.peerRole),
+      peerRoleLabel: clean(card.dataset.peerRoleLabel),
+      clientName: clean(card.dataset.clientName),
+      professionalName: clean(card.dataset.professionalName),
       address: clean(card.dataset.detailAddress) || clean(qs('.order-card__location', card)?.textContent),
       scope: clean(card.dataset.detailScope),
       timeline: clean(card.dataset.detailTimeline),
@@ -88,6 +112,7 @@
       budgetRange: parseCurrencyRange(detailBudget),
       payment: clean(card.dataset.detailPayment),
       flow: clean(card.dataset.detailFlow),
+      attachments: parseAttachments(card.dataset.attachments),
       updatedLabel: clean(qs('.order-card__time', card)?.textContent),
       deadlineLabel: clean(qs('.order-card__footer', card)?.textContent),
       progress: readProgress(card),

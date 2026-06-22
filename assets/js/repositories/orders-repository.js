@@ -1,8 +1,301 @@
-import { createOrdersService } from '../services/orders-service.js';
+/* Doke Orders Repository
+   Responsibility: local/mock persistence boundary for order entities.
+   Backend migration rule: pages/services must call this repository instead of localStorage directly. */
+(function () {
+  'use strict';
 
-export function createOrdersRepository({ service = createOrdersService() } = {}) {
-  return Object.freeze({
-    list: (params) => service.list(params),
-    getById: (id) => service.getById(id)
+  var root = window;
+  var Doke = root.Doke || (root.Doke = {});
+  var repositories = Doke.repositories || (Doke.repositories = {});
+
+  var STORAGE_KEY = 'doke.orders.local.v1';
+  var LEGACY_STORAGE_KEY = 'doke.orders';
+  var FALLBACK_URL = 'assets/data/mock-orders.json';
+  var cache = null;
+
+  function clone(value) {
+    if (value == null) return value;
+    try {
+      return JSON.parse(JSON.stringify(value));
+    } catch (error) {
+      return value;
+    }
+  }
+
+  function normalizeText(value) {
+    return String(value || '').trim();
+  }
+
+  function nowIso() {
+    return new Date().toISOString();
+  }
+
+  function toCurrencyLabel(value) {
+    var amount = Number(value || 0);
+    if (!Number.isFinite(amount) || amount <= 0) return '';
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      maximumFractionDigits: 0
+    }).format(amount);
+  }
+
+  function normalizeAttachment(raw) {
+    if (!raw) return null;
+    if (typeof raw === 'string') {
+      return {
+        name: raw,
+        type: '',
+        size: 0,
+        url: '',
+        previewable: false
+      };
+    }
+
+    if (typeof raw !== 'object') return null;
+    return {
+      name: normalizeText(raw.name || raw.filename || 'anexo'),
+      type: normalizeText(raw.type || raw.mimeType || ''),
+      size: Number(raw.size) || 0,
+      url: normalizeText(raw.url || raw.dataUrl || raw.preview || ''),
+      previewable: Boolean(raw.previewable || raw.url || raw.dataUrl || raw.preview),
+      tooLarge: Boolean(raw.tooLarge),
+      error: Boolean(raw.error)
+    };
+  }
+
+  function normalizeAttachments(value) {
+    if (!Array.isArray(value)) return [];
+    return value.map(normalizeAttachment).filter(Boolean).slice(0, 8);
+  }
+
+  function safeRead(key) {
+    try {
+      var raw = root.localStorage.getItem(key);
+      var parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function safeWrite(key, items) {
+    try {
+      root.localStorage.setItem(key, JSON.stringify(Array.isArray(items) ? items : []));
+    } catch (error) {
+      // localStorage can be unavailable in restricted contexts; reads still work with mocks.
+    }
+  }
+
+  function getSessionUser() {
+    var user = Doke.session && typeof Doke.session.getCurrentUser === 'function'
+      ? Doke.session.getCurrentUser()
+      : null;
+
+    if (user) return user;
+
+    try {
+      var raw = root.localStorage.getItem('doke.auth.session.v1');
+      var session = raw ? JSON.parse(raw) : null;
+      return session && session.user ? session.user : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function getStatusLabel(status) {
+    var labels = {
+      draft: 'Rascunho',
+      pending: 'Aguardando resposta',
+      quoted: 'Orçamento enviado',
+      budget_sent: 'Orçamento enviado',
+      accepted: 'Aprovado',
+      in_progress: 'Em andamento',
+      completed: 'Concluído',
+      cancelled: 'Cancelado',
+      disputed: 'Em disputa',
+      conversation: 'Em conversa',
+      responded: 'Respondido'
+    };
+    return labels[status] || 'Aguardando resposta';
+  }
+
+  function makeId() {
+    return 'order_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+  }
+
+  function normalizeOrder(raw) {
+    raw = raw || {};
+    var status = raw.status || 'pending';
+    var createdAt = raw.createdAt || raw.creatédAt || nowIso();
+    var updatedAt = raw.updatedAt || createdAt;
+    var provider = raw.providerName || raw.provider || raw.professionalName || 'Profissional Doke';
+    var service = raw.serviceTitle || raw.service || raw.title || 'Serviço solicitado';
+    var location = raw.location || raw.address || raw.detailAddress || '';
+    var statusLabel = raw.statusLabel || getStatusLabel(status);
+    var budgetLabel = raw.budget || raw.detailBudget || raw.budgetLabel || (raw.budgetAmount ? toCurrencyLabel(raw.budgetAmount) : 'A definir');
+
+    return Object.assign({}, raw, {
+      id: normalizeText(raw.id) || makeId(),
+      clientId: raw.clientId || '',
+      clientName: raw.clientName || raw.customerName || 'Cliente Doke',
+      clientInitials: raw.clientInitials || raw.customerInitials || 'CL',
+      professionalId: raw.professionalId || raw.providerId || '',
+      providerId: raw.providerId || raw.professionalId || '',
+      serviceId: raw.serviceId || '',
+      title: raw.title || service,
+      serviceTitle: service,
+      service: service,
+      providerName: provider,
+      provider: provider,
+      providerInitials: raw.providerInitials || raw.avatar || 'DK',
+      description: raw.description || raw.details || '',
+      details: raw.details || raw.description || '',
+      status: status,
+      statusLabel: statusLabel,
+      createdAt: createdAt,
+      creatédAt: createdAt,
+      updatedAt: updatedAt,
+      location: location,
+      locationTitle: raw.locationTitle || raw.addressTitle || '',
+      locationDetails: raw.locationDetails || {},
+      scope: raw.scope || '',
+      requestType: raw.requestType || 'Orçamento para execução',
+      urgency: raw.urgency || 'Sem pressa',
+      desiredDate: raw.desiredDate || raw.date || raw.daté || '',
+      daté: raw.daté || raw.desiredDate || raw.date || '',
+      shift: raw.shift || 'Flexível',
+      attachments: normalizeAttachments(raw.attachments),
+      budget: budgetLabel,
+      detailBudget: raw.detailBudget || budgetLabel,
+      nextAction: raw.nextAction || 'Acompanhar pedido',
+      source: raw.source || 'budget'
+    });
+  }
+
+  function mergeById() {
+    var map = Object.create(null);
+    Array.prototype.slice.call(arguments).forEach(function (items) {
+      (items || []).forEach(function (item) {
+        var normalized = normalizeOrder(item);
+        if (!normalized.id) return;
+        map[normalized.id] = Object.assign({}, map[normalized.id] || {}, normalized);
+      });
+    });
+    return Object.keys(map).map(function (id) { return map[id]; });
+  }
+
+  function readLocal() {
+    return mergeById(safeRead(STORAGE_KEY), safeRead(LEGACY_STORAGE_KEY))
+      .sort(function (a, b) { return new Date(b.createdAt || 0) - new Date(a.createdAt || 0); });
+  }
+
+  function writeLocal(items) {
+    var normalized = (Array.isArray(items) ? items : []).map(normalizeOrder);
+    safeWrite(STORAGE_KEY, normalized);
+    safeWrite(LEGACY_STORAGE_KEY, normalized);
+    cache = null;
+    return clone(normalized);
+  }
+
+  function loadBase(options) {
+    options = options || {};
+    if (Doke.mockData && typeof Doke.mockData.load === 'function') {
+      return Doke.mockData.load('orders', options);
+    }
+
+    return fetch(FALLBACK_URL, { cache: 'no-cache', credentials: 'same-origin' })
+      .then(function (response) {
+        if (!response.ok) throw new Error('Não foi possível carregar pedidos mockados.');
+        return response.json();
+      });
+  }
+
+  function load(options) {
+    options = options || {};
+    if (cache && !options.fresh) return Promise.resolve(clone(cache));
+
+    return loadBase(options)
+      .catch(function () { return []; })
+      .then(function (base) {
+        cache = mergeById(Array.isArray(base) ? base : [], readLocal());
+        return clone(cache);
+      });
+  }
+
+  function matchesCurrentUser(order, user) {
+    if (!user || !user.id) return true;
+    if (user.role === 'professional') return String(order.professionalId || order.providerId) === String(user.id);
+    if (user.role === 'client') return String(order.clientId) === String(user.id);
+    return true;
+  }
+
+  function list(filters) {
+    filters = filters || {};
+    var status = normalizeText(filters.status || '');
+    var clientId = normalizeText(filters.clientId || '');
+    var professionalId = normalizeText(filters.professionalId || filters.providerId || '');
+    var serviceId = normalizeText(filters.serviceId || '');
+    var currentUser = filters.currentUser === false ? null : getSessionUser();
+
+    return load(filters).then(function (items) {
+      return clone((items || []).filter(function (item) {
+        if (status && item.status !== status) return false;
+        if (clientId && item.clientId !== clientId) return false;
+        if (professionalId && String(item.professionalId || item.providerId) !== professionalId) return false;
+        if (serviceId && item.serviceId !== serviceId) return false;
+        if (filters.currentUser !== false && !matchesCurrentUser(item, currentUser)) return false;
+        return true;
+      }));
+    });
+  }
+
+  function listLocal(filters) {
+    filters = filters || {};
+    var currentUser = filters.currentUser === false ? null : getSessionUser();
+    return clone(readLocal().filter(function (item) {
+      if (filters.currentUser !== false && !matchesCurrentUser(item, currentUser)) return false;
+      if (filters.status && item.status !== filters.status) return false;
+      return true;
+    }));
+  }
+
+  function getById(orderId) {
+    var id = normalizeText(orderId);
+    if (!id) return Promise.resolve(null);
+    return load({ currentUser: false }).then(function (items) {
+      return clone((items || []).find(function (item) { return String(item.id) === id; }) || null);
+    });
+  }
+
+  function save(order) {
+    var normalized = normalizeOrder(order);
+    var local = readLocal().filter(function (item) { return String(item.id) !== String(normalized.id); });
+    local.unshift(normalized);
+    writeLocal(local);
+    return Promise.resolve(clone(normalized));
+  }
+
+  function remove(orderId) {
+    var id = normalizeText(orderId);
+    if (!id) return Promise.resolve(false);
+    var next = readLocal().filter(function (item) { return String(item.id) !== id; });
+    writeLocal(next);
+    return Promise.resolve(true);
+  }
+
+  repositories.orders = Object.freeze({
+    storageKey: STORAGE_KEY,
+    legacyStorageKey: LEGACY_STORAGE_KEY,
+    normalize: normalizeOrder,
+    readLocal: readLocal,
+    listLocal: listLocal,
+    load: load,
+    list: list,
+    getById: getById,
+    save: save,
+    remove: remove,
+    writeLocal: writeLocal,
+    clearLocal: function () { writeLocal([]); }
   });
-}
+})();

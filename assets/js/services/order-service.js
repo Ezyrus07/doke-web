@@ -37,5 +37,7 @@
     });
   }
 
-  services.orders = Object.freeze({ list: list, getById: getById, summary: summary });
+  if (!services.orders || typeof services.orders.create !== 'function') {
+    services.orders = Object.freeze({ list: list, getById: getById, summary: summary });
+  }
 })();

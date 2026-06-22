@@ -4,9 +4,31 @@
   const ns = (window.DokeOrders = window.DokeOrders || {});
   let activeTrigger = null;
   let activeCard = null;
+  let activeConversationId = '';
   const TRANSITION_MS = 180;
 
   const clean = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+  const escapeHtml = (value) => clean(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+  const getCurrentUser = () => {
+    try {
+      return window.Doke?.session?.getCurrentUser?.() || window.DokeAuth?.service?.getCurrentUser?.() || null;
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const getInitials = (value) => clean(value || 'Doke')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('') || 'DK';
 
   const ICON_CLOSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>';
   const ICON_BACK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>';
@@ -40,7 +62,7 @@
               </span>
             </div>
             <div class="orders-chat-panel__actions">
-              <a class="orders-chat-panel__messages-link" href="mensagens.html" data-chat-messages-link>Mensagens</a>
+              <a class="orders-chat-panel__messages-link" href="mensagens.html" data-chat-messages-link>Abrir conversa</a>
               <button class="orders-chat-panel__close" type="button" data-orders-chat-close aria-label="Fechar chat">${ICON_CLOSE}</button>
             </div>
           </div>
@@ -110,27 +132,72 @@
     return ns.intelligence.classifyOrder(ns.data.readOrderCard(card));
   };
 
-  const renderMessages = (layer, order) => {
+  const getConversationForOrder = (order) => {
+    const service = window.Doke?.services?.messages;
+    if (!service?.listLocalConversations || !order?.id) return null;
+    const conversations = service.listLocalConversations({ orderId: order.id, currentUser: false }) || [];
+    return conversations[0] || null;
+  };
+
+  const isMineMessage = (message) => {
+    const user = getCurrentUser();
+    if (user?.id && message?.senderId) return String(message.senderId) === String(user.id);
+    return message?.mine === true;
+  };
+
+  const getPanelMessages = (order, conversation) => {
+    if (conversation?.messages?.length) return conversation.messages;
+
+    if (order?.viewerRole === 'professional') {
+      return [
+        { author: order.company || 'Cliente', text: 'Olá! Enviei uma solicitação e quero alinhar o orçamento por aqui.', mine: false },
+        { author: 'Você', text: 'Recebi seu pedido e consigo continuar a conversa por aqui.', mine: true }
+      ];
+    }
+
+    return [
+      { author: order.company || 'Profissional', text: 'Recebi seu pedido e consigo continuar a conversa por aqui.', mine: false },
+      { author: 'Você', text: 'Perfeito. Quero seguir com o orçamento.', mine: true }
+    ];
+  };
+
+  const renderOrderContext = (order) => `
+    <section class="orders-chat-order-card" aria-label="Pedido vinculado à conversa">
+      <div class="orders-chat-order-card__head">
+        <span>Pedido vinculado</span>
+        <strong>${escapeHtml(order?.statusLabel || 'Aguardando resposta')}</strong>
+      </div>
+      <h3>${escapeHtml(order?.title || 'Pedido de serviço')}</h3>
+      <dl>
+        <div><dt>${escapeHtml(order?.viewerRole === 'professional' ? 'Cliente' : 'Profissional')}</dt><dd>${escapeHtml(order?.company || 'Doke')}</dd></div>
+        <div><dt>Orçamento</dt><dd>${escapeHtml(order?.budget || 'A definir')}</dd></div>
+        <div><dt>Local</dt><dd>${escapeHtml(order?.address || 'A combinar')}</dd></div>
+      </dl>
+    </section>
+  `;
+
+  const renderMessages = (layer, order, conversation) => {
     const target = layer.querySelector('[data-chat-messages]');
     if (!target) return;
 
-    const company = order?.company || 'Profissional';
+    const peerName = order?.company || 'Profissional';
+    const peerInitials = getInitials(peerName);
+    const messages = getPanelMessages(order, conversation);
 
-    target.innerHTML = `
-      <article class="orders-chat-row">
-        <span class="orders-chat-row__avatar doke-avatar" aria-hidden="true">${clean(company).slice(0, 2).toUpperCase() || 'PR'}</span>
-        <div class="orders-chat-message">
-          <strong>${company}</strong>
-          <p>Recebi seu pedido e consigo continuar a conversa por aqui.</p>
-        </div>
-      </article>
-      <article class="orders-chat-row orders-chat-row--me">
-        <div class="orders-chat-message orders-chat-message--me">
-          <strong>Você</strong>
-          <p>Perfeito. Quero seguir com o orçamento.</p>
-        </div>
-      </article>
-    `;
+    target.innerHTML = renderOrderContext(order) + messages.map((message) => {
+      const mine = isMineMessage(message);
+      const author = mine ? 'Você' : message?.author || peerName;
+      const text = message?.text || message?.body || '';
+      return `
+        <article class="orders-chat-row${mine ? ' orders-chat-row--me' : ''}">
+          ${mine ? '' : `<span class="orders-chat-row__avatar doke-avatar" aria-hidden="true">${escapeHtml(peerInitials)}</span>`}
+          <div class="orders-chat-message${mine ? ' orders-chat-message--me' : ''}">
+            <strong>${escapeHtml(author)}</strong>
+            <p>${escapeHtml(text)}</p>
+          </div>
+        </article>
+      `;
+    }).join('');
   };
 
 
@@ -158,15 +225,18 @@
     activeTrigger = cardOrTrigger;
     activeCard = card;
 
+    const conversation = getConversationForOrder(order);
+    activeConversationId = conversation?.id || '';
+
     setText(layer, '[data-chat-title]', order.company || order.title);
     setText(layer, '[data-chat-subtitle]', `${order.title} • ${order.address}`);
-    setText(layer, '[data-chat-avatar]', clean(order.company).slice(0, 2).toUpperCase(), 'PR');
+    setText(layer, '[data-chat-avatar]', getInitials(order.company || order.title), 'PR');
     setText(layer, '[data-chat-ai-text]', buildAiReply(order));
     const messagesLink = layer.querySelector('[data-chat-messages-link]');
     if (messagesLink) {
       messagesLink.href = `mensagens.html?order=${encodeURIComponent(order.id)}`;
     }
-    renderMessages(layer, order);
+    renderMessages(layer, order, conversation);
 
     layer.hidden = false;
     layer.setAttribute('aria-hidden', 'false');
@@ -210,6 +280,7 @@
         if (!preserveCard) {
           activeTrigger = null;
           activeCard = null;
+          activeConversationId = '';
         }
 
         resolve();
@@ -282,6 +353,16 @@
         row.querySelector('p').textContent = value;
         stack.appendChild(row);
         row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      if (activeConversationId) {
+        window.Doke?.services?.messages?.sendMessage?.(activeConversationId, {
+          body: value,
+          text: value,
+          type: 'text',
+          author: 'Você',
+          mine: true
+        })?.catch?.((error) => console.warn('[DokeOrdersChat:sendMessage]', error));
       }
 
       input.value = '';

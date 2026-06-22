@@ -4,7 +4,7 @@
   var Doke = window.Doke || (window.Doke = {});
 
   var registry = Object.freeze({
-    services: 'assets/data/mocks/marketplace/services.json',
+    services: 'assets/data/mock-services.json',
     workers: 'assets/data/mocks/marketplace/workers.json',
     publications: 'assets/data/mocks/marketplace/publications.json',
     reviews: 'assets/data/mocks/marketplace/reviews.json',

@@ -16,6 +16,12 @@
   const TRANSITION_MS = 180;
 
   const clean = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+  const escapeHtml = (value) => clean(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
   const createLayer = () => {
     let layer = document.querySelector('[data-orders-detail-layer]');
@@ -68,7 +74,7 @@
           <section class="orders-detail-section">
             <span class="orders-detail-section__eyebrow">Visão geral</span>
             <dl class="orders-detail-list">
-              <div class="orders-detail-row"><dt>Profissional</dt><dd data-detail-company></dd></div>
+              <div class="orders-detail-row"><dt data-detail-peer-label>Profissional</dt><dd data-detail-company></dd></div>
               <div class="orders-detail-row"><dt>Local</dt><dd data-detail-address></dd></div>
               <div class="orders-detail-row"><dt>Escopo</dt><dd data-detail-scope></dd></div>
               <div class="orders-detail-row"><dt>Orçamento</dt><dd data-detail-budget></dd></div>
@@ -83,6 +89,11 @@
             <p class="orders-detail-flow" data-detail-flow></p>
           </section>
 
+          <section class="orders-detail-section" data-detail-attachments-section hidden>
+            <span class="orders-detail-section__eyebrow">Anexos enviados</span>
+            <div class="orders-detail-attachments" data-detail-attachments></div>
+          </section>
+
           <section class="orders-detail-section">
             <span class="orders-detail-section__eyebrow">Etapas do pedido</span>
             <div class="orders-detail-timeline" data-detail-timeline></div>
@@ -91,10 +102,10 @@
         </div>
 
         <footer class="orders-detail-actions">
-          <button class="orders-detail-actions__button doke-btn doke-btn--primary" type="button" data-detail-chat>
-            ${ICONS.chat}<span>Abrir chat</span>
+          <button class="orders-detail-actions__button orders-detail-actions__button--primary doke-btn doke-btn--primary" type="button" data-detail-chat>
+            ${ICONS.chat}<span>Abrir conversa</span>
           </button>
-          <button class="orders-detail-actions__button doke-btn doke-btn--ghost" type="button" data-orders-detail-close>Fechar</button>
+          <button class="orders-detail-actions__button orders-detail-actions__button--secondary doke-btn doke-btn--ghost" type="button" data-orders-detail-close>Fechar</button>
         </footer>
       </section>
     `;
@@ -126,6 +137,45 @@
       <span class="orders-detail-pill" data-tone="${tone}">${order.smartBadge}</span>
       <span class="orders-detail-pill" data-tone="${tone}">Risco ${order.risk.label}</span>
     `;
+  };
+
+  const renderAttachments = (layer, order) => {
+    const section = layer.querySelector('[data-detail-attachments-section]');
+    const target = layer.querySelector('[data-detail-attachments]');
+    if (!section || !target) return;
+
+    const attachments = Array.isArray(order.attachments) ? order.attachments : [];
+    section.hidden = attachments.length === 0;
+    if (!attachments.length) {
+      target.innerHTML = '';
+      return;
+    }
+
+    target.innerHTML = attachments.map((attachment) => {
+      const name = escapeHtml(attachment.name || 'Imagem anexada');
+      const url = clean(attachment.url || '');
+      const status = attachment.tooLarge
+        ? '<span class="orders-detail-attachment__status">Arquivo grande demais para prévia local</span>'
+        : attachment.error
+          ? '<span class="orders-detail-attachment__status">Prévia indisponível</span>'
+          : '';
+
+      if (url && /^data:image\//.test(url)) {
+        return `
+          <figure class="orders-detail-attachment orders-detail-attachment--image">
+            <img src="${url}" alt="${name}">
+            <figcaption>${name}</figcaption>
+          </figure>
+        `;
+      }
+
+      return `
+        <article class="orders-detail-attachment orders-detail-attachment--file">
+          <span class="orders-detail-attachment__icon" aria-hidden="true">📎</span>
+          <span><strong>${name}</strong>${status}</span>
+        </article>
+      `;
+    }).join('');
   };
 
   const renderTimeline = (layer, order) => {
@@ -179,9 +229,12 @@
 
   const render = (layer, order) => {
     setText(layer, '[data-detail-title]', order.title);
-    setText(layer, '[data-detail-subtitle]', `${order.company} • ${order.address}`);
+    const peerLabel = order.peerRoleLabel || (order.viewerRole === 'professional' ? 'Cliente' : 'Profissional');
+    const subtitle = order.address ? `${order.company} • ${order.address}` : order.company;
+    setText(layer, '[data-detail-subtitle]', subtitle);
     setText(layer, '[data-detail-action-title]', order.nextAction.title);
     setText(layer, '[data-detail-action-note]', order.nextAction.note);
+    setText(layer, '[data-detail-peer-label]', peerLabel);
     setText(layer, '[data-detail-company]', order.company);
     setText(layer, '[data-detail-address]', order.address);
     setText(layer, '[data-detail-scope]', order.scope);
@@ -204,6 +257,7 @@
     if (icon) icon.innerHTML = order.status === 'completed' ? ICONS.check : ICONS.action;
 
     renderStatusbar(layer, order);
+    renderAttachments(layer, order);
     renderTimeline(layer, order);
   };
 

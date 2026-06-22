@@ -322,15 +322,15 @@ const syncAuthUi = () => {
 
   if (profileHandle) {
     if (session && session.user) {
-      const sourceName = session.user.name || session.user.email || session.user.phone || "gabriel";
+      const sourceName = session.user.name || session.user.email || session.user.phone || "conta";
       const handle = String(sourceName)
         .split("@")[0]
         .trim()
         .toLowerCase()
         .replace(/\s+/g, "");
-      profileHandle.textContent = `@${handle || "gabriel"}`;
+      profileHandle.textContent = `@${handle || "conta"}`;
     } else {
-      profileHandle.textContent = "@gabriel";
+      profileHandle.textContent = "Conta Doke";
     }
   }
 };

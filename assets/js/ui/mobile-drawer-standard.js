@@ -114,7 +114,7 @@
         '<div class="home-mobile-drawer__header">',
           '<a class="home-mobile-drawer__profile" href="perfil.html?mode=owner&panel=posts">',
             '<span class="home-mobile-drawer__avatar">DK</span>',
-            '<span class="home-mobile-drawer__profile-copy"><strong>Gabriel</strong><span>Editar meu perfil</span></span>',
+            '<span class="home-mobile-drawer__profile-copy"><strong>Entrar</strong><span>Conta Doke</span></span>',
             '<span class="home-mobile-drawer__profile-arrow" aria-hidden="true"></span>',
           '</a>',
           '<button class="home-mobile-drawer__close" type="button" data-mobile-home-menu-close aria-label="Fechar menu lateral">' + ICONS.close + '</button>',

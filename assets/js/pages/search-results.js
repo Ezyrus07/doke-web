@@ -506,11 +506,12 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     const rating = (Number(item.rating) || 0).toFixed(1).replace('.', ',');
     const reviews = item.reviews || '0 avaliações';
     const tags = (item.tags || []).slice(0, 2);
-    const detailHref = item.href || 'detalhe-anuncio.html';
+    const detailHref = item.href || (item.id ? `detalhe-anuncio.html?id=${encodeURIComponent(item.id)}` : 'detalhe-anuncio.html');
     const category = item.category || item.catégory || '';
     const mediaClass = String(item.mediaClass || '').replace(/service-card__media/g, 'doke-ad-card__media');
 
     article.className = 'doke-ad-card doke-ad-card--featured doke-ad-card--results';
+    if (item.id) article.dataset.serviceId = item.id;
     article.innerHTML = `
       <div class="doke-ad-card__media ${mediaClass}">
         <span class="doke-ad-card__badge ${item.badgeModifier || ''}">${item.badge || 'Em destaque'}</span>
@@ -539,7 +540,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
         </div>
 
         <div class="doke-ad-card__footer">
-          <strong class="doke-ad-card__price">${item.price || ''}</strong>
+          <strong class="doke-ad-card__price">${item.priceLabel || item.price || ''}</strong>
           <a class="doke-ad-card__cta doke-btn doke-btn--success" href="${detailHref}" aria-label="Ver anúncio">Ver anúncio</a>
         </div>
       </div>

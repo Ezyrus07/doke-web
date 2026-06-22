@@ -288,7 +288,9 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
   const createServiceCard = (item) => {
     const article = document.createElement('article');
     const category = item.category || item.catégory || '';
+    const detailHref = item.href || (item.id ? `detalhe-anuncio.html?id=${encodeURIComponent(item.id)}` : 'detalhe-anuncio.html');
     article.className = 'service-card service-card--featured service-card--feed';
+    if (item.id) article.dataset.serviceId = item.id;
     article.innerHTML = `
       <div class="service-card__media ${item.mediaClass || ''}">
         <button class="service-card__favorite" type="button" aria-label="Salvar anúncio">
@@ -307,7 +309,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
         </div>
         <div class="service-card__footer">
           <strong class="service-card__price">${item.price || ''}</strong>
-          <a class="service-card__cta" href="detalhe-anuncio.html" aria-label="Ver anúncio">Ver anúncio</a>
+          <a class="service-card__cta" href="${detailHref}" aria-label="Ver anúncio de ${item.title || 'serviço'}">Ver anúncio</a>
         </div>
       </div>
     `;

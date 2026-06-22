@@ -8,20 +8,63 @@ const initBudgetPage = () => {
   const defaultLocationKey = "doke.defaultServiceLocation";
 
   const query = new URLSearchParams(window.location.search);
-  const provider = pageRoot.dataset.budgetProvider || query.get("pro") || "Studio Aquarela";
-  const service = (pageRoot.dataset.budgetService || query.get("service") || "reforma residencial premium").replace(/-/g, " ");
-  const successUrl = pageRoot.dataset.budgetSuccessUrl || "index.html?quote=sent";
+  const serviceId = query.get("serviceId") || query.get("id") || query.get("servico") || "";
+  const requestedProfessionalId = query.get("professionalId") || query.get("providerId") || "";
+  const successUrl = pageRoot.dataset.budgetSuccessUrl || "pedidos.html";
+  const authService = window.DokeAuth?.service;
   const formatTitleCase = (value) => String(value || "").replace(/\b\w/g, (c) => c.toUpperCase());
+  const normalizeBudgetLabel = (value) => String(value || "").replace(/-/g, " ").trim();
+  const slugify = (value) => String(value || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 
-  pageRoot.querySelectorAll("[data-budget-provider]").forEach((node) => {
-    node.textContent = provider;
-  });
+  if (authService && !authService.isAuthenticated()) {
+    authService.requireAuth({ enforce: true, redirectToLogin: "auth/login.html" });
+    return;
+  }
 
-  pageRoot.querySelectorAll("[data-budget-service]").forEach((node) => {
-    node.textContent = formatTitleCase(service);
-  });
+  let selectedService = null;
+  let provider = pageRoot.dataset.budgetProvider || query.get("pro") || "Studio Aquarela";
+  let service = normalizeBudgetLabel(pageRoot.dataset.budgetService || query.get("service") || query.get("servico") || "reforma residencial premium");
+  let professionalId = requestedProfessionalId;
 
+  const syncBudgetContext = () => {
+    pageRoot.querySelectorAll("[data-budget-provider]").forEach((node) => {
+      node.textContent = provider;
+    });
+
+    pageRoot.querySelectorAll("[data-budget-service]").forEach((node) => {
+      node.textContent = formatTitleCase(service);
+    });
+  };
+
+  const hydrateServiceContext = () => {
+    if (!serviceId || !window.Doke?.services?.services?.getById) return Promise.resolve(null);
+
+    return window.Doke.services.services.getById(serviceId).then((serviceItem) => {
+      if (!serviceItem) return null;
+      selectedService = serviceItem;
+      provider = serviceItem.providerName || serviceItem.professionalName || provider;
+      service = normalizeBudgetLabel(serviceItem.title || serviceItem.detailTitle || serviceItem.category || service);
+      professionalId = serviceItem.professionalId || serviceItem.providerId || professionalId;
+      syncBudgetContext();
+      document.dispatchEvent(new CustomEvent("doke:budget-service-context", {
+        detail: {
+          service: serviceItem,
+          provider,
+          professionalId
+        }
+      }));
+      return serviceItem;
+    }).catch(() => null);
+  };
+
+  syncBudgetContext();
   window.DokeUiSelect?.enhanceAll(pageRoot);
+  hydrateServiceContext();
 
   const getStoredOrders = () => {
     try {
@@ -81,7 +124,8 @@ const initBudgetPage = () => {
 
     const catégorySelect = getNativeSelect("catégoria");
     const catégoryInput = form.querySelector('input[name="catégoria"]');
-    if (service) {
+    const applyServiceCategory = () => {
+      if (!service) return;
       const normalized = formatTitleCase(service);
       if (catégorySelect) {
         const hasOption = [...catégorySelect.options].some((option) => option.textContent.toLowerCase() === normalized.toLowerCase());
@@ -95,7 +139,9 @@ const initBudgetPage = () => {
         catégorySelect.dispatchEvent(new Event("change", { bubbles: true }));
       }
       if (catégoryInput) catégoryInput.value = normalized;
-    }
+    };
+    applyServiceCategory();
+    document.addEventListener("doke:budget-service-context", applyServiceCategory);
 
     const readDefaultLocation = () => {
       const node = pageRoot.querySelector("[data-budget-default-location]");
@@ -232,6 +278,51 @@ const initBudgetPage = () => {
       });
     };
 
+    const readFileAsDataUrl = (file) => new Promise((resolve) => {
+      if (!file || !file.type?.startsWith("image/")) {
+        resolve(null);
+        return;
+      }
+
+      if (file.size > 1200000) {
+        resolve({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          tooLarge: true
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        resolve({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          url: String(reader.result || "")
+        });
+      });
+      reader.addEventListener("error", () => {
+        resolve({ name: file.name, type: file.type, size: file.size, error: true });
+      });
+      reader.readAsDataURL(file);
+    });
+
+    const readAttachments = async () => {
+      const files = [...(filesInput?.files || [])];
+      const mapped = await Promise.all(files.map(readFileAsDataUrl));
+      return mapped.filter(Boolean).map((file) => ({
+        name: file.name || "imagem-anexada",
+        type: file.type || "image/*",
+        size: Number(file.size) || 0,
+        url: file.url || "",
+        previewable: Boolean(file.url),
+        tooLarge: Boolean(file.tooLarge),
+        error: Boolean(file.error)
+      }));
+    };
+
     const validatéStep = (index) => {
       const panel = panels[index];
       if (!panel) return true;
@@ -320,7 +411,7 @@ const initBudgetPage = () => {
     });
     goToStep(0);
 
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (currentStep !== panels.length - 1) {
         goToStep(panels.length - 1);
@@ -330,10 +421,18 @@ const initBudgetPage = () => {
       if (!form.reportValidity()) return;
 
       const data = new FormData(form);
+      const createdAt = new Date().toISOString();
+      const serviceName = data.get("catégoria") || service;
       const payload = {
-        id: `order-${Date.now()}`,
         provider,
-        service: data.get("catégoria") || service,
+        providerName: provider,
+        providerInitials: selectedService?.providerInitials || selectedService?.avatar || "DK",
+        professionalId: professionalId || selectedService?.professionalId || selectedService?.providerId || `provider-${slugify(provider) || "doke"}`,
+        providerId: professionalId || selectedService?.providerId || selectedService?.professionalId || `provider-${slugify(provider) || "doke"}`,
+        serviceId: serviceId || selectedService?.id || `service-${slugify(serviceName) || "orcamento"}`,
+        service: serviceName,
+        serviceTitle: serviceName,
+        title: serviceName,
         requestType: data.get("tipo") || "Orçamento para execução",
         scope: data.get("escopo") || "Ambiente completo",
         location: summarizeAddress(savedLocation),
@@ -341,26 +440,50 @@ const initBudgetPage = () => {
         locationDetails: savedLocation || {},
         property: data.get("imovel") || "Não informado",
         urgency: data.get("urgencia") || "Sem pressa",
+        desiredDate: data.get("data") || "",
         daté: data.get("data") || "",
         shift: data.get("turno") || "Flexível",
+        budget: data.get("orcamento_estimado") || selectedService?.priceLabel || "A definir",
         details: data.get("detalhes") || "",
+        description: data.get("detalhes") || "",
         triage: {
           ocupacao: data.get("triagem_ocupacao") || "",
           medidas: data.get("triagem_medidas") || "",
           observacoes: data.get("triagem_observacoes") || ""
         },
         area: data.get("area") || "",
-        attachments: [...(filesInput?.files || [])].map((file) => file.name),
+        attachments: await readAttachments(),
         status: "pending",
         statusLabel: "Aguardando resposta",
         nextAction: "Acompanhar pedido",
-        creatédAt: new Date().toISOString()
+        createdAt,
+        creatédAt: createdAt,
+        updatedAt: createdAt
       };
 
-      window.sessionStorage.setItem(storageKey, JSON.stringify(payload));
-      persistOrderFromSubmission(payload);
-      window.sessionStorage.setItem("doke.quoteOverlay", JSON.stringify(payload));
-      window.location.href = successUrl;
+      const ordersService = window.Doke?.services?.orders;
+      const previousSubmitText = submitButton?.textContent || "Enviar solicitação";
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = "Enviando...";
+      }
+
+      try {
+        const savedOrder = ordersService?.create
+          ? await ordersService.create(payload)
+          : Object.assign({ id: `order-${Date.now()}` }, payload);
+
+        window.sessionStorage.setItem(storageKey, JSON.stringify(savedOrder));
+        persistOrderFromSubmission(savedOrder);
+        window.sessionStorage.setItem("doke.quoteOverlay", JSON.stringify(savedOrder));
+        window.location.href = successUrl;
+      } catch (error) {
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = previousSubmitText;
+        }
+        window.alert(error?.message || "Não foi possível enviar o orçamento agora.");
+      }
     });
   }
 
