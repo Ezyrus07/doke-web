@@ -5,6 +5,8 @@
   if (!root) return;
 
   var channels = Array.prototype.slice.call(root.querySelectorAll('[data-channel-id]'));
+  var selectedChannelIds = new Set();
+  var isSelectingChannels = false;
   var channelTitle = root.querySelector('[data-community-thread-title]');
   var channelStatus = root.querySelector('[data-community-thread-status]');
   var messageList = root.querySelector('[data-community-message-list]');
@@ -54,6 +56,39 @@
     filterToggles.forEach(function (toggle) { toggle.setAttribute('aria-expanded', 'false'); });
     if (actionsMenu) actionsMenu.hidden = true;
     if (moreToggle) moreToggle.setAttribute('aria-expanded', 'false');
+  }
+
+
+  function updateChannelSelectionVisuals() {
+    channels.forEach(function (channel) {
+      var selected = selectedChannelIds.has(channel.dataset.channelId || '');
+      channel.classList.add('doke-selectable-card');
+      channel.classList.toggle('is-selected', selected);
+      channel.setAttribute('aria-selected', String(selected));
+      channel.setAttribute('aria-pressed', String(selected));
+    });
+  }
+
+  function setChannelSelectionMode(enabled) {
+    isSelectingChannels = Boolean(enabled);
+    root.classList.toggle('is-selection-mode', isSelectingChannels);
+    document.body.classList.toggle('community-room-selection-mode', isSelectingChannels);
+    if (!isSelectingChannels) {
+      selectedChannelIds.clear();
+    }
+    closeFloatingMenus();
+    updateChannelSelectionVisuals();
+  }
+
+  function toggleChannelSelection(channel) {
+    var id = channel && channel.dataset.channelId;
+    if (!id) return;
+    if (selectedChannelIds.has(id)) {
+      selectedChannelIds.delete(id);
+    } else {
+      selectedChannelIds.add(id);
+    }
+    updateChannelSelectionVisuals();
   }
 
   function scrollToBottom() {
@@ -258,7 +293,14 @@
   }
 
   channels.forEach(function (channel) {
+    channel.classList.add('doke-selectable-card');
+    channel.setAttribute('role', 'option');
+    channel.setAttribute('aria-selected', 'false');
     channel.addEventListener('click', function () {
+      if (isSelectingChannels) {
+        toggleChannelSelection(channel);
+        return;
+      }
       activateChannel(channel);
     });
   });
@@ -448,6 +490,11 @@
       panel.classList.remove('is-open');
       panel.setAttribute('aria-hidden', 'true');
     });
+  });
+
+  document.addEventListener('doke:mobile-shell-action', function (event) {
+    if (!event.detail || event.detail.action !== 'select') return;
+    setChannelSelectionMode(!isSelectingChannels);
   });
 
   filterChannels();

@@ -243,9 +243,6 @@
 <section aria-labelledby="wallet-bank-title" class="wallet-panel wallet-bank-panel doke-card doke-page-section" data-wallet-account-panel="">
 <div class="wallet-panel__header wallet-panel__header--overview wallet-bank-panel__header">
 <h2 id="wallet-bank-title">Conta de recebimento</h2>
-<button aria-label="Gerenciar conta de recebimento" class="wallet-bank-manage" data-wallet-account-action="manage" type="button">
-             Gerenciar
-            </button>
 </div>
 <article class="wallet-bank-card wallet-bank-card--featured doke-card">
 <div class="wallet-bank-card__mark wallet-bank-card__mark--nubank" data-wallet-account-field="bankMark">nu</div>
@@ -272,7 +269,6 @@
 <article class="wallet-empty-state wallet-empty-state--bank" data-wallet-empty-state="bank-account" hidden="">
 <strong>Nenhuma conta cadastrada</strong>
 <p>Adicione uma conta para receber seus repasses automaticamente.</p>
-<button class="wallet-bank-manage" data-wallet-account-action="manage-empty" type="button">Adicionar conta</button>
 </article>
 <div aria-label="Status da conta bancária" class="wallet-bank-status">
 <span class="wallet-bank-status__item">PIX verificado</span>
@@ -456,110 +452,6 @@
 </section>
 </div>
 
-<div class="wallet-modal" data-wallet-account-modal="" hidden="">
-<div class="wallet-modal__scrim wallet-dialog__scrim" data-wallet-close-account=""></div>
-<section aria-describedby="wallet-account-description" aria-labelledby="wallet-account-title" aria-modal="true" class="wallet-dialog wallet-dialog--account" role="dialog">
-<button aria-label="Fechar gerenciamento da conta" class="wallet-dialog__close doke-icon-btn doke-icon-btn--flat" data-wallet-close-account="" type="button">
-<svg aria-hidden="true" viewbox="0 0 24 24"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
-</button>
-<form class="wallet-dialog__form" data-wallet-account-form="">
-<div class="wallet-dialog__scroll">
-<header class="wallet-dialog__header">
-<span class="wallet-dialog__badge wallet-dialog__badge--receiving">
-<svg aria-hidden="true" viewbox="0 0 24 24"><path d="M12 4v11"></path><path d="m8 11 4 4 4-4"></path><path d="M5 19h14"></path></svg>
-        Recebimento
-       </span>
-<h2 id="wallet-account-title">Gerenciar conta</h2>
-<p id="wallet-account-description">Atualize a conta usada para receber seus repasses.</p>
-</header>
-<div class="wallet-dialog__body">
-<div class="wallet-dialog-grid">
-<label class="wallet-dialog-field wallet-dialog-field--bank">
-<span>Banco</span>
-<input data-wallet-account-input="bankName" type="hidden" value="Nubank"/>
-<div class="wallet-dialog-dropdown wallet-dialog-dropdown--bank" data-wallet-dialog-select="" data-wallet-dialog-select-name="bankName">
-<button aria-expanded="false" aria-haspopup="listbox" class="wallet-dialog-dropdown__button" data-wallet-dialog-select-button="" type="button">
-<span class="wallet-dialog-dropdown__value">
-<i class="wallet-dialog-bank-mark" data-wallet-account-preview-mark-mini="">NU</i>
-<span data-wallet-dialog-select-label="">Nubank</span>
-</span>
-<svg aria-hidden="true" viewbox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
-</button>
-<div class="wallet-dialog-dropdown__menu" data-wallet-dialog-select-menu="" hidden="" role="listbox">
-<button aria-selected="true" data-mark="nu" data-theme="nubank" data-value="Nubank" data-wallet-dialog-option="" role="option" type="button"><i>NU</i><span>Nubank</span></button>
-<button aria-selected="false" data-mark="inter" data-theme="inter" data-value="Banco Inter" data-wallet-dialog-option="" role="option" type="button"><i>IN</i><span>Banco Inter</span></button>
-<button aria-selected="false" data-mark="itaú" data-theme="generic" data-value="Itaú" data-wallet-dialog-option="" role="option" type="button"><i>IT</i><span>Itaú</span></button>
-<button aria-selected="false" data-mark="bra" data-theme="generic" data-value="Bradesco" data-wallet-dialog-option="" role="option" type="button"><i>BR</i><span>Bradesco</span></button>
-<button aria-selected="false" data-mark="cx" data-theme="generic" data-value="Caixa" data-wallet-dialog-option="" role="option" type="button"><i>CX</i><span>Caixa</span></button>
-<button aria-selected="false" data-mark="bb" data-theme="generic" data-value="Banco do Brasil" data-wallet-dialog-option="" role="option" type="button"><i>BB</i><span>Banco do Brasil</span></button>
-</div>
-</div>
-</label>
-<label class="wallet-dialog-field">
-<span>Final da conta</span>
-<input aria-label="Final da conta" data-wallet-account-input="accountLastDigits" inputmode="numeric" maxlength="4" type="text" value="9821"/>
-</label>
-<label class="wallet-dialog-field">
-<span>Tipo</span>
-<input data-wallet-account-input="accountType" type="hidden" value="Conta corrente"/>
-<div class="wallet-dialog-dropdown" data-wallet-dialog-select="" data-wallet-dialog-select-name="accountType">
-<button aria-expanded="false" aria-haspopup="listbox" class="wallet-dialog-dropdown__button" data-wallet-dialog-select-button="" type="button">
-<span class="wallet-dialog-dropdown__value"><span data-wallet-dialog-select-label="">Conta corrente</span></span>
-<svg aria-hidden="true" viewbox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
-</button>
-<div class="wallet-dialog-dropdown__menu" data-wallet-dialog-select-menu="" hidden="" role="listbox">
-<button aria-selected="true" data-value="Conta corrente" data-wallet-dialog-option="" role="option" type="button"><span>Conta corrente</span></button>
-<button aria-selected="false" data-value="Conta poupança" data-wallet-dialog-option="" role="option" type="button"><span>Conta poupança</span></button>
-<button aria-selected="false" data-value="Conta de pagamento" data-wallet-dialog-option="" role="option" type="button"><span>Conta de pagamento</span></button>
-</div>
-</div>
-</label>
-<label class="wallet-dialog-field">
-<span>Chave PIX</span>
-<input data-wallet-account-input="pixStatus" type="hidden" value="CPF verificado"/>
-<div class="wallet-dialog-dropdown" data-wallet-dialog-select="" data-wallet-dialog-select-name="pixStatus">
-<button aria-expanded="false" aria-haspopup="listbox" class="wallet-dialog-dropdown__button" data-wallet-dialog-select-button="" type="button">
-<span class="wallet-dialog-dropdown__value"><span data-wallet-dialog-select-label="">CPF verificado</span></span>
-<svg aria-hidden="true" viewbox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg>
-</button>
-<div class="wallet-dialog-dropdown__menu" data-wallet-dialog-select-menu="" hidden="" role="listbox">
-<button aria-selected="true" data-value="CPF verificado" data-wallet-dialog-option="" role="option" type="button"><span>CPF verificado</span></button>
-<button aria-selected="false" data-value="E-mail verificado" data-wallet-dialog-option="" role="option" type="button"><span>E-mail verificado</span></button>
-<button aria-selected="false" data-value="Telefone verificado" data-wallet-dialog-option="" role="option" type="button"><span>Telefone verificado</span></button>
-</div>
-</div>
-</label>
-<label class="wallet-dialog-field wallet-dialog-field--wide wallet-dialog-field--date">
-<span>Próximo envio</span>
-<span class="wallet-dialog-control wallet-dialog-control--date">
-<svg aria-hidden="true" viewbox="0 0 24 24"><rect height="14" rx="2" width="16" x="4" y="5.5"></rect><path d="M8 3.5v4"></path><path d="M16 3.5v4"></path><path d="M4 10.5h16"></path></svg>
-<input data-wallet-account-input="nextPayout" type="text" value="12 abr · 08:00"/>
-<svg aria-hidden="true" viewbox="0 0 24 24"><rect height="14" rx="2" width="16" x="4" y="5.5"></rect><path d="M8 3.5v4"></path><path d="M16 3.5v4"></path><path d="M4 10.5h16"></path></svg>
-</span>
-</label>
-</div>
-<section aria-label="Prévia da conta de recebimento" class="wallet-dialog-preview">
-<span class="wallet-dialog-preview__label">Prévia da conta</span>
-<div class="wallet-dialog-preview__card">
-<span class="wallet-dialog-preview__mark" data-wallet-account-preview-mark="">NU</span>
-<div class="wallet-dialog-preview__content">
-<strong data-wallet-account-preview-bank="">Nubank</strong>
-<p data-wallet-account-preview-copy="">Conta principal · final 9821</p>
-</div>
-<span aria-label="Conta verificada" class="wallet-dialog-preview__verified">
-<svg aria-hidden="true" viewbox="0 0 24 24"><path d="M12 3.5 18 6v5.2c0 4.4-2.6 7.3-6 9.3-3.4-2-6-4.9-6-9.3V6l6-2.5Z"></path><path d="m9.5 12 1.8 1.8 3.7-4"></path></svg>
-</span>
-</div>
-</section>
-</div>
-</div>
-<footer class="wallet-dialog__footer">
-<button class="wallet-dialog-btn wallet-dialog-btn--secondary doke-btn doke-btn--ghost" data-wallet-close-account="" type="button">Cancelar</button>
-<button class="wallet-dialog-btn wallet-dialog-btn--primary doke-btn doke-btn--primary" type="submit">Salvar alterações</button>
-</footer>
-</form>
-</section>
-</div>
 <div aria-atomic="true" aria-live="polite" class="wallet-toast-region" data-wallet-toast-region=""></div>
 <script defer="" src="assets/js/core/runtime-config.js?v=20260531-stable-smooth-v1"></script>
 <script defer="" src="assets/js/core/feature-flags.js?v=20260501-stage32-runtime-flags"></script>

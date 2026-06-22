@@ -33,6 +33,13 @@
       document.body.classList.toggle('has-orders-action-panel-open', !controls.hidden);
     };
 
+    const syncSelectionMode = (active) => {
+      document.querySelector('.orders-page')?.dispatchEvent(new CustomEvent('doke:orders-selection-panel', {
+        bubbles: true,
+        detail: { active }
+      }));
+    };
+
     const hide = () => {
       controls.hidden = true;
       filtersPanel.hidden = true;
@@ -41,6 +48,7 @@
       setButtons(filterToggles, false);
       setButtons(selectToggles, false);
       syncBodyState();
+      syncSelectionMode(false);
     };
 
     const show = (type) => {
@@ -65,6 +73,7 @@
       setButtons(targetButtons, true);
       setButtons(otherButtons, false);
       syncBodyState();
+      syncSelectionMode(type === 'select');
 
       if (!document.body.classList.contains('doke-mobile-shell-mounted')) {
         targetPanel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });

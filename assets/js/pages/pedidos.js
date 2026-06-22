@@ -9,6 +9,7 @@
 
     const filterButtons = Array.from(root.querySelectorAll('.orders-filter-item[data-filter]'));
     const cards = Array.from(root.querySelectorAll('.order-card[data-status]'));
+    const ordersList = root.querySelector('.orders-list');
     const searchInput = root.querySelector('.orders-header-search input');
     const searchForm = searchInput?.closest('form');
     const searchTrigger = root.querySelector('[data-orders-mobile-search-toggle]') || searchForm?.querySelector('.orders-header-search__icon');
@@ -456,7 +457,8 @@
         const clickedInsideSelect = target.closest('[data-orders-select-panel]');
         const clickedSelectToggle = target.closest('[data-orders-select-toggle], [data-shell-select]');
         if (!clickedInsideSelect && !clickedSelectToggle) {
-          closeSelectPanel();
+          selecting = false;
+          syncSelectState();
         }
       }
 
@@ -512,12 +514,48 @@
 
     let selecting = false;
     const cardSelectButtons = Array.from(root.querySelectorAll('.order-card__select'));
+    const selectableCardInteractiveSelector = 'a, button, input, textarea, select, summary, [role="button"], [data-order-open]';
 
-    const clearSelectedCards = () => cards.forEach((card) => card.classList.remove('is-selected'));
+    ordersList?.setAttribute('role', 'listbox');
+    ordersList?.setAttribute('aria-multiselectable', 'false');
+
+    cards.forEach((card, index) => {
+      card.classList.add('doke-selectable-card');
+      card.setAttribute('role', 'option');
+      card.setAttribute('aria-selected', 'false');
+      if (!card.hasAttribute('tabindex')) card.tabIndex = 0;
+
+      const selectButton = card.querySelector('.order-card__select');
+      if (selectButton) {
+        selectButton.classList.add('doke-selection-check');
+        selectButton.setAttribute('aria-label', `Selecionar pedido ${index + 1}`);
+        selectButton.setAttribute('aria-pressed', 'false');
+      }
+    });
+
+    const setCardSelected = (card, selected) => {
+      if (!card) return;
+      card.classList.toggle('is-selected', selected);
+      card.setAttribute('aria-selected', selected ? 'true' : 'false');
+      card.querySelector('.order-card__select')?.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    };
+
+    const toggleCardSelected = (card) => {
+      if (!card) return;
+      setCardSelected(card, !card.classList.contains('is-selected'));
+    };
+
+    const clearSelectedCards = () => cards.forEach((card) => setCardSelected(card, false));
 
     const selectedCards = () => cards.filter((card) => !card.hidden && card.classList.contains('is-selected'));
 
     const syncSelectedActions = () => {
+      cards.forEach((card) => {
+        const selected = card.classList.contains('is-selected');
+        card.setAttribute('aria-selected', selected ? 'true' : 'false');
+        card.querySelector('.order-card__select')?.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      });
+
       const selected = selectedCards();
       const count = selected.length;
       if (selectSummary) selectSummary.textContent = `${count} selecionado${count === 1 ? '' : 's'}`;
@@ -542,6 +580,7 @@
 
     const syncSelectState = () => {
       root.classList.toggle('orders-is-selecting', selecting);
+      ordersList?.setAttribute('aria-multiselectable', selecting ? 'true' : 'false');
       if (selecting) openSelectPanel();
       else {
         closeSelectPanel();
@@ -555,16 +594,14 @@
         event.stopPropagation();
         const willOpen = !selectPanel || selectPanel.hidden;
         closePopover();
-        if (willOpen) {
-          openSelectPanel();
-        } else {
-          selecting = false;
-          closeSelectPanel();
-          clearSelectedCards();
-          root.classList.remove('orders-is-selecting');
-        }
-        syncSelectedActions();
+        selecting = willOpen;
+        syncSelectState();
       });
+    });
+
+    root.addEventListener('doke:orders-selection-panel', (event) => {
+      selecting = Boolean(event.detail?.active);
+      syncSelectState();
     });
 
     root.querySelectorAll('[data-doke-panel-close]').forEach((button) => {
@@ -572,14 +609,16 @@
         event.preventDefault();
         event.stopPropagation();
         closePopover();
-        closeSelectPanel();
+        selecting = false;
+        syncSelectState();
       });
     });
 
     const toggleAgenda = () => {
       const expanded = root.classList.contains('is-agenda-collapsed');
       closePopover();
-      closeSelectPanel();
+      selecting = false;
+      syncSelectState();
       setAgendaExpanded(expanded);
     };
 
@@ -608,7 +647,7 @@
         syncSelectState();
         clearSelectedCards();
         if (mode === 'all') {
-          cards.filter((card) => !card.hidden).forEach((card) => card.classList.add('is-selected'));
+          cards.filter((card) => !card.hidden).forEach((card) => setCardSelected(card, true));
         }
         syncSelectedActions();
         syncHeaderControls();
@@ -620,7 +659,7 @@
         event.preventDefault();
         event.stopPropagation();
         if (!selecting) return;
-        button.closest('.order-card')?.classList.toggle('is-selected');
+        toggleCardSelected(button.closest('.order-card'));
         syncSelectedActions();
       });
     });
@@ -658,7 +697,30 @@
       button.addEventListener('click', (event) => {
         event.preventDefault();
         const card = button.closest('.order-card');
+        if (selecting) {
+          toggleCardSelected(card);
+          syncSelectedActions();
+          return;
+        }
         openPanel(button.dataset.orderOpen, card);
+      });
+    });
+
+    cards.forEach((card) => {
+      card.addEventListener('click', (event) => {
+        if (!selecting) return;
+        const target = event.target;
+        if (target instanceof Element && target.closest(selectableCardInteractiveSelector)) return;
+        event.preventDefault();
+        toggleCardSelected(card);
+        syncSelectedActions();
+      });
+
+      card.addEventListener('keydown', (event) => {
+        if (!selecting || (event.key !== ' ' && event.key !== 'Enter')) return;
+        event.preventDefault();
+        toggleCardSelected(card);
+        syncSelectedActions();
       });
     });
 
@@ -683,7 +745,7 @@
           event.stopPropagation();
           selecting = true;
           syncSelectState();
-          card.classList.toggle('is-selected');
+          toggleCardSelected(card);
           if (!cards.some((item) => item.classList.contains('is-selected'))) {
             selecting = false;
             syncSelectState();

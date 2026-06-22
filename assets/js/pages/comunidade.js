@@ -11,8 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const filters = [...page.querySelectorAll('[data-community-filter]')];
   const emptyState = page.querySelector('[data-community-empty]');
   const searchInputs = [...page.querySelectorAll('[data-community-search], [data-community-search-mobile]')];
-  const codeTriggers = [...page.querySelectorAll('[data-community-code-trigger]')];
-  const createTriggers = [...page.querySelectorAll('[data-community-create]')];
+  const codeTriggers = [...document.querySelectorAll('[data-community-code-trigger]')];
+  const createTriggers = [...document.querySelectorAll('[data-community-create]')];
   const focusSearchTriggers = [...page.querySelectorAll('[data-community-focus-search]')];
   const mobileSearchToggle = page.querySelector('[data-community-mobile-search-toggle]');
   const mobileSearchPanel = page.querySelector('[data-community-mobile-search]');
@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const codeModal = document.querySelector('[data-community-code-modal]');
   const createModal = document.querySelector('[data-community-create-modal]');
   let activeRequestButton = null;
+  let activeActionModalTrigger = null;
   let currentFilter = 'all';
 
   const getSearchTerm = () => {
@@ -116,21 +117,59 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.remove('community-modal-open');
   };
 
-  const openActionModal = (modal) => {
-    if (!modal) return;
-    modal.hidden = false;
-    modal.setAttribute('aria-hidden', 'false');
-    document.body.classList.add('community-modal-open');
-    window.setTimeout(() => modal.querySelector('input, select, textarea, button')?.focus(), 80);
+  const setActionTriggersExpanded = (modal, expanded) => {
+    const modalId = modal?.id;
+    if (!modalId) return;
+    document.querySelectorAll(`[aria-controls="${modalId}"]`).forEach((trigger) => {
+      trigger.setAttribute('aria-expanded', String(expanded));
+    });
   };
 
-  const closeActionModals = () => {
+  const resetActionModalFeedback = (modal) => {
+    const feedback = modal?.querySelector('[data-community-action-feedback]');
+    if (!feedback) return;
+    feedback.hidden = true;
+    feedback.textContent = '';
+    delete feedback.dataset.state;
+  };
+
+  const getActionModalFocusables = (modal) => {
+    if (!modal) return [];
+    return [...modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+      .filter((item) => !item.disabled && item.offsetParent !== null);
+  };
+
+  const getOpenActionModal = () => [codeModal, createModal].find((modal) => modal && !modal.hidden);
+
+  const openActionModal = (modal, trigger = null) => {
+    if (!modal) return;
+    closeActionModals({ restoreFocus: false });
+    activeActionModalTrigger = trigger;
+    resetActionModalFeedback(modal);
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
+    setActionTriggersExpanded(modal, true);
+    document.body.classList.add('community-modal-open', 'doke-action-modal-open');
+    window.setTimeout(() => {
+      const focusTarget = modal.querySelector('input, textarea, select, button:not([data-community-action-close])')
+        || modal.querySelector('[role="dialog"]');
+      focusTarget?.focus?.();
+    }, 80);
+  };
+
+  const closeActionModals = ({ restoreFocus = true } = {}) => {
     [codeModal, createModal].forEach((modal) => {
       if (!modal) return;
       modal.hidden = true;
       modal.setAttribute('aria-hidden', 'true');
+      setActionTriggersExpanded(modal, false);
+      resetActionModalFeedback(modal);
     });
-    if (!requestModal || requestModal.hidden) document.body.classList.remove('community-modal-open');
+    if (!requestModal || requestModal.hidden) {
+      document.body.classList.remove('community-modal-open', 'doke-action-modal-open');
+    }
+    if (restoreFocus) activeActionModalTrigger?.focus?.();
+    activeActionModalTrigger = null;
   };
 
   filters.forEach((filter) => {
@@ -176,6 +215,22 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.addEventListener('keydown', (event) => {
+    if (event.key === 'Tab') {
+      const modal = getOpenActionModal();
+      if (!modal) return;
+      const focusables = getActionModalFocusables(modal);
+      if (!focusables.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+      return;
+    }
     if (event.key !== 'Escape') return;
     if (requestModal && !requestModal.hidden) closeRequestModal();
     closeActionModals();
@@ -197,11 +252,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   codeTriggers.forEach((trigger) => {
-    trigger.addEventListener('click', () => openActionModal(codeModal));
+    trigger.addEventListener('click', () => openActionModal(codeModal, trigger));
   });
 
   createTriggers.forEach((trigger) => {
-    trigger.addEventListener('click', () => openActionModal(createModal));
+    trigger.addEventListener('click', () => openActionModal(createModal, trigger));
   });
 
   focusSearchTriggers.forEach((trigger) => {
@@ -217,8 +272,42 @@ document.addEventListener('DOMContentLoaded', () => {
     button.addEventListener('click', closeActionModals);
   });
 
+  const setActionFormFeedback = (form, message, state = 'success') => {
+    const feedback = form.querySelector('[data-community-action-feedback]');
+    if (!feedback) return;
+    feedback.textContent = message;
+    feedback.dataset.state = state;
+    feedback.hidden = false;
+  };
+
+  const validateRequiredField = (field, message) => {
+    if (!field || field.value.trim()) return true;
+    field.focus();
+    field.setAttribute('aria-invalid', 'true');
+    const form = field.closest('form');
+    if (form) setActionFormFeedback(form, message, 'error');
+    return false;
+  };
+
   document.querySelectorAll('[data-community-code-modal-form], [data-community-create-modal-form]').forEach((form) => {
-    form.addEventListener('submit', (event) => event.preventDefault());
+    form.addEventListener('input', (event) => {
+      const field = event.target.closest('input, textarea');
+      if (field) field.removeAttribute('aria-invalid');
+    });
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (form.matches('[data-community-code-modal-form]')) {
+        const codeField = form.querySelector('input[name="communityCode"]');
+        if (!validateRequiredField(codeField, 'Digite o código da comunidade para continuar.')) return;
+        setActionFormFeedback(form, `Código ${codeField.value.trim().toUpperCase()} pronto para validação.`, 'success');
+        return;
+      }
+
+      const nameField = form.querySelector('input[name="communityName"]');
+      if (!validateRequiredField(nameField, 'Informe o nome da comunidade para criar o espaço.')) return;
+      setActionFormFeedback(form, 'Comunidade criada como rascunho visual. A integração real entra na etapa de backend.', 'success');
+    });
   });
 
   const closeCustomSelects = (except = null) => {

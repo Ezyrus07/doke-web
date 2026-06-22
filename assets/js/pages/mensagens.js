@@ -130,13 +130,17 @@
         try { cleanup(); } catch (error) { console.error("[DokeMessages:route-cleanup]", error); }
       }
       if (root.isConnected) {
-        root.classList.remove("messages-app--thread-open");
+        selectedConversationIds.clear();
+        selectedMessageIndexes.clear();
+        root.classList.remove("messages-app--thread-open", "is-selection-mode");
+        messagesList?.setAttribute("aria-multiselectable", "false");
         delete root.dataset.messagesMode;
       }
     });
     window.DokeHomeDrawer?.create({ signal: drawerController.signal })?.();
 
     const items = Array.from(root.querySelectorAll(".message-item[data-message-id]"));
+    const messagesList = root.querySelector(".messages-list");
     const searchForms = Array.from(root.querySelectorAll("[data-messages-search-form]"));
     const searchInputs = Array.from(root.querySelectorAll("[data-messages-search-input]"));
     const resetSearchButton = root.querySelector("[data-messages-reset-search]");
@@ -216,6 +220,16 @@
     let selectedConversationIds = new Set();
     let selectedFilterKeys = new Set();
     let selectionMode = false;
+
+    messagesList?.setAttribute("role", "listbox");
+    messagesList?.setAttribute("aria-multiselectable", "false");
+
+    items.forEach((item) => {
+      item.classList.add("doke-selectable-card");
+      item.setAttribute("role", "option");
+      item.setAttribute("aria-selected", "false");
+      if (!item.hasAttribute("tabindex")) item.tabIndex = 0;
+    });
     let replyToMessage = null;
     let audioDraftSeconds = 0;
     let audioDraftTimer = null;
@@ -355,7 +369,11 @@
 
     const updateConversationSelectionUI = () => {
       const total = selectedConversationIds.size;
-      items.forEach((item) => item.classList.toggle("is-selected", selectedConversationIds.has(item.dataset.messageId)));
+      items.forEach((item) => {
+        const selected = selectedConversationIds.has(item.dataset.messageId);
+        item.classList.toggle("is-selected", selected);
+        item.setAttribute("aria-selected", selected ? "true" : "false");
+      });
       cardSelectionCountNodes.forEach((node) => {
         node.textContent = `${total} ${total === 1 ? "selecionada" : "selecionadas"}`;
       });
@@ -371,6 +389,7 @@
       const { preserveSelection = false } = options;
       selectionMode = enabled;
       root.classList.toggle("is-selection-mode", enabled);
+      messagesList?.setAttribute("aria-multiselectable", enabled ? "true" : "false");
       if (!enabled) {
         setToggleExpanded(selectToggles, false);
         desktopSelectToggle?.setAttribute("aria-expanded", "false");
@@ -589,7 +608,7 @@
       threadBody.innerHTML = renderLinkedOrderContext() + conversation.messages.map((message, index) => `
         <article class="message-row${message.mine ? " message-row--me" : ""}${message.type === "charge" ? " message-row--charge" : ""}" data-message-index="${index}">
           ${message.mine ? "" : `<span class="message-row__avatar doke-avatar" aria-hidden="true">${activeInitials}</span>`}
-          <div class="message-bubble${message.mine ? " message-bubble--me" : ""}${message.type === "image" ? " message-bubble--image-only" : ""}${message.type === "charge" ? " message-bubble--charge" : ""}${selectedMessageIndexes.has(index) ? " is-selected" : ""}" data-message-bubble data-message-index="${index}">
+          <div class="message-bubble doke-selectable-card${message.mine ? " message-bubble--me" : ""}${message.type === "image" ? " message-bubble--image-only" : ""}${message.type === "charge" ? " message-bubble--charge" : ""}${selectedMessageIndexes.has(index) ? " is-selected" : ""}" data-message-bubble data-message-index="${index}" role="option" tabindex="0" aria-selected="${selectedMessageIndexes.has(index) ? "true" : "false"}">
             <div class="message-bubble__meta">
               <span>${message.mine ? message.author : ""}</span>
               <span>${message.time}</span>
@@ -1020,21 +1039,33 @@
     });
 
     items.forEach((item) => {
+      const toggleConversationSelected = () => {
+        const id = item.dataset.messageId;
+        if (!id || item.dataset.deleted === "true") return;
+        if (selectedConversationIds.has(id)) {
+          selectedConversationIds.delete(id);
+        } else {
+          selectedConversationIds.add(id);
+        }
+        updateConversationSelectionUI();
+        syncHeaderControls();
+      };
+
       item.addEventListener("click", () => {
         const id = item.dataset.messageId;
         if (!id || item.dataset.deleted === "true") return;
         if (selectionMode) {
-          if (selectedConversationIds.has(id)) {
-            selectedConversationIds.delete(id);
-          } else {
-            selectedConversationIds.add(id);
-          }
-          updateConversationSelectionUI();
-          syncHeaderControls();
+          toggleConversationSelected();
           return;
         }
         setCompactThreadOpen(true);
         renderThread(id, { scrollTo: "start", openOnMobile: true });
+      });
+
+      item.addEventListener("keydown", (event) => {
+        if (!selectionMode || (event.key !== " " && event.key !== "Enter")) return;
+        event.preventDefault();
+        toggleConversationSelected();
       });
     });
 
@@ -1122,6 +1153,22 @@
       const image = event.target.closest(".message-bubble__image img");
       if (!image) return;
       openLightbox(image.currentSrc || image.src, image.alt);
+    });
+
+
+    threadBody?.addEventListener("keydown", (event) => {
+      const bubble = event.target.closest("[data-message-bubble]");
+      if (!bubble || (event.key !== " " && event.key !== "Enter")) return;
+      if (!selectedMessageIndexes.size) return;
+      event.preventDefault();
+      const index = Number(bubble.dataset.messageIndex || -1);
+      if (index < 0) return;
+      if (selectedMessageIndexes.has(index)) {
+        selectedMessageIndexes.delete(index);
+      } else {
+        selectedMessageIndexes.add(index);
+      }
+      renderThread(activeId);
     });
 
     document.addEventListener("click", (event) => {

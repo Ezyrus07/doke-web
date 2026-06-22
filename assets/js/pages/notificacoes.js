@@ -10,6 +10,7 @@
     const buttons = [...root.querySelectorAll('[data-filter]')];
     const timeButtons = [...root.querySelectorAll('[data-time-filter]')];
     const cards = [...root.querySelectorAll('.notification-card')];
+    const notificationsList = root.querySelector('.notifications-list');
     const empty = root.querySelector('[data-notifications-empty]');
     const countNodes = [...document.querySelectorAll('[data-notifications-unread-count], [data-notifications-hero-count]')];
     const pageTitle = root.querySelector('.notifications-page-header__heading h2');
@@ -91,6 +92,29 @@
       card.classList.add('is-context-open');
     };
 
+    const selectableCardInteractiveSelector = 'a, button, input, textarea, select, summary, [role="button"]';
+
+    notificationsList?.setAttribute('role', 'listbox');
+    notificationsList?.setAttribute('aria-multiselectable', 'false');
+
+    cards.forEach((card) => {
+      card.classList.add('doke-selectable-card');
+      card.setAttribute('role', 'option');
+      card.setAttribute('aria-selected', 'false');
+      if (!card.hasAttribute('tabindex')) card.tabIndex = 0;
+    });
+
+    const setCardSelected = (card, selected) => {
+      if (!card) return;
+      card.classList.toggle('is-selected', selected);
+      card.setAttribute('aria-selected', selected ? 'true' : 'false');
+    };
+
+    const toggleCardSelected = (card) => {
+      if (!card) return;
+      setCardSelected(card, !card.classList.contains('is-selected'));
+    };
+
     const selectedCards = () => cards.filter((card) => card.classList.contains('is-selected') && card.dataset.dismissed !== 'true');
 
     const setToggleExpanded = (toggles, expanded) => {
@@ -112,6 +136,7 @@
       selectPanel.hidden = true;
       selectPanel.setAttribute('hidden', '');
       setToggleExpanded(selectToggles, false);
+      if (selectionEnabled) setSelectionEnabled(false);
       syncHeaderControls();
     };
 
@@ -124,15 +149,20 @@
       setToggleExpanded(selectToggles, true);
       closeFiltersPanel();
       if (headerControls) headerControls.hidden = false;
+      setSelectionEnabled(true);
       syncHeaderControls();
       revealContextPanel();
     };
 
     const clearSelection = () => {
-      cards.forEach((card) => card.classList.remove('is-selected'));
+      cards.forEach((card) => setCardSelected(card, false));
     };
 
     const syncSelectedActions = () => {
+      cards.forEach((card) => {
+        card.setAttribute('aria-selected', card.classList.contains('is-selected') ? 'true' : 'false');
+      });
+
       const selected = selectedCards();
       const count = selected.length;
       const hasConversation = selected.some((card) => (card.dataset.catégory || '').split(/\s+/).includes('messages'));
@@ -145,6 +175,7 @@
     const setSelectionEnabled = (enabled) => {
       selectionEnabled = enabled;
       root.classList.toggle('is-selection-mode', enabled);
+      notificationsList?.setAttribute('aria-multiselectable', enabled ? 'true' : 'false');
       setToggleExpanded(selectToggles, enabled);
       if (!enabled) clearSelection();
       syncSelectedActions();
@@ -343,7 +374,7 @@
       clearSelection();
       if (mode === 'all') {
         cards.forEach((card) => {
-          if (card.dataset.dismissed !== 'true' && !card.hidden) card.classList.add('is-selected');
+          if (card.dataset.dismissed !== 'true' && !card.hidden) setCardSelected(card, true);
         });
       }
       syncSelectedActions();
@@ -486,21 +517,31 @@
       syncSelectedActions();
     });
 
-    cards.forEach((card) => card.addEventListener('click', (event) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      if (target.closest('.notification-card__inline-actions')) return;
-      if (selectionEnabled) {
-        event.preventDefault();
-        card.classList.toggle('is-selected');
-        syncSelectedActions();
-        return;
-      }
+    cards.forEach((card) => {
+      card.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        if (target.closest('.notification-card__inline-actions')) return;
+        if (selectionEnabled) {
+          if (target.closest(selectableCardInteractiveSelector)) return;
+          event.preventDefault();
+          toggleCardSelected(card);
+          syncSelectedActions();
+          return;
+        }
 
-      const primaryAction = card.querySelector('.notification-card__inline-actions a[href]');
-      const href = primaryAction?.getAttribute('href');
-      if (href) window.location.href = href;
-    }));
+        const primaryAction = card.querySelector('.notification-card__inline-actions a[href]');
+        const href = primaryAction?.getAttribute('href');
+        if (href) window.location.href = href;
+      });
+
+      card.addEventListener('keydown', (event) => {
+        if (!selectionEnabled || (event.key !== ' ' && event.key !== 'Enter')) return;
+        event.preventDefault();
+        toggleCardSelected(card);
+        syncSelectedActions();
+      });
+    });
 
     cards.forEach((card) => {
       if (!card.querySelector('.notification-card__context-actions')) {
@@ -523,7 +564,7 @@
           event.stopPropagation();
           setSelectionEnabled(true);
           openSelectPanel();
-          card.classList.toggle('is-selected');
+          toggleCardSelected(card);
           if (!selectedCards().length) {
             setSelectionEnabled(false);
             closeSelectPanel();

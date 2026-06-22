@@ -5,6 +5,190 @@ body[data-page="comunidade-interna"] [hidden] {
   display: none;
 }
 
+
+/* Community room return navigation contract.
+ * Responsibility: expose an explicit, low-noise path back to comunidade.html in
+ * both the channel-list surface and the active room header, without changing
+ * the shared shell/header authority.
+ */
+body[data-page="comunidade-interna"] .community-room-return {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 42px;
+  border: 1px solid rgba(31, 95, 174, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--chat-primary, #2167ae);
+  font-size: 0.86rem;
+  font-weight: 850;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 10px 24px rgba(31, 68, 110, 0.055);
+}
+
+body[data-page="comunidade-interna"] .community-room-return svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body[data-page="comunidade-interna"] .community-room-return:is(:hover, :focus-visible) {
+  border-color: rgba(31, 95, 174, 0.24);
+  background: #eef6ff;
+  color: var(--chat-ink, #073264);
+}
+
+body[data-page="comunidade-interna"] .community-room-return:focus-visible {
+  outline: 3px solid rgba(33, 103, 174, 0.18);
+  outline-offset: 2px;
+}
+
+body[data-page="comunidade-interna"] .community-room-return--sidebar {
+  justify-self: start;
+  padding: 0 15px 0 12px;
+}
+
+body[data-page="comunidade-interna"] .community-room-return--thread {
+  padding: 0 14px 0 11px;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout .community-room-sidebar {
+  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout .community-room-filter-menu {
+  grid-row: 4;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout .chat-sidebar-scroll-region {
+  grid-row: 5;
+}
+
+@media (min-width: 1024px) {
+  body[data-page="comunidade-interna"] .community-room-return--sidebar {
+    margin-top: -2px;
+  }
+}
+
+@media (max-width: 1180px) {
+  body[data-page="comunidade-interna"] .community-room-return--thread span {
+    display: none;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-return--thread {
+    width: 42px;
+    min-width: 42px;
+    padding-inline: 0;
+    border-radius: 15px;
+  }
+}
+
+@media (max-width: 560px) {
+  body[data-page="comunidade-interna"] .community-room-return {
+    min-height: 34px;
+    font-size: 0.76rem;
+    box-shadow: none;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-return--sidebar {
+    width: auto;
+    justify-self: start;
+    align-self: start;
+    min-height: 32px;
+    margin: -4px 0 2px;
+    padding: 0 10px 0 7px;
+    border-color: transparent;
+    background: transparent;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-return--sidebar svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-return--thread {
+    width: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    border-radius: 14px;
+  }
+}
+
+
+
+/* Community room mobile return refinement v2.
+ * Responsibility: on compact list mode, keep the return affordance inside the
+ * global mobile header instead of adding an extra content row above search.
+ */
+body[data-page="comunidade-interna"] .community-room-return--global {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  body[data-page="comunidade-interna"]:not(.community-room-thread-is-open).has-global-header
+  > .app-shell > .page > .chat-list-app-header .community-room-return--global {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 var(--doke-header-control-size, 46px);
+    inline-size: var(--doke-header-control-size, 46px);
+    width: var(--doke-header-control-size, 46px);
+    min-inline-size: var(--doke-header-control-size, 46px);
+    min-width: var(--doke-header-control-size, 46px);
+    block-size: var(--doke-header-control-size, 46px);
+    height: var(--doke-header-control-size, 46px);
+    min-block-size: var(--doke-header-control-size, 46px);
+    min-height: var(--doke-header-control-size, 46px);
+    padding: 0;
+    gap: 0;
+    border: var(--doke-header-border, 1px solid rgba(24, 75, 118, 0.08));
+    border-radius: var(--doke-header-control-radius, 16px);
+    background: var(--doke-header-bg, rgba(255, 255, 255, 0.92));
+    color: var(--doke-header-ink, #2a5f90);
+    box-shadow: var(--doke-header-shadow, 0 4px 14px rgba(15, 45, 75, 0.03));
+  }
+
+  body[data-page="comunidade-interna"]:not(.community-room-thread-is-open).has-global-header
+  > .app-shell > .page > .chat-list-app-header .community-room-return--global span {
+    display: none;
+  }
+
+  body[data-page="comunidade-interna"]:not(.community-room-thread-is-open).has-global-header
+  > .app-shell > .page > .chat-list-app-header .community-room-return--global svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.2;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) .community-room-return--sidebar {
+    display: none;
+  }
+}
+
+@media (max-width: 390px) {
+  body[data-page="comunidade-interna"]:not(.community-room-thread-is-open).has-global-header
+  > .app-shell > .page > .chat-list-app-header .community-room-return--global {
+    flex-basis: 42px;
+    inline-size: 42px;
+    width: 42px;
+    min-inline-size: 42px;
+    min-width: 42px;
+    block-size: 42px;
+    height: 42px;
+    min-block-size: 42px;
+    min-height: 42px;
+    border-radius: 15px;
+  }
+}
+
 body[data-page="comunidade-interna"] .community-room-message__pin {
   justify-self: start;
   padding: 4px 8px;

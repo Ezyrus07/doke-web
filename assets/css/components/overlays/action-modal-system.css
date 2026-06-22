@@ -3,15 +3,15 @@
    Scope: reusable overlays such as budget requests and community creation/join flows. */
 :root {
   --doke-action-modal-width: 620px;
-  --doke-action-modal-wide-width: 760px;
+  --doke-action-modal-wide-width: 620px;
   --doke-action-modal-radius: 28px;
   --doke-action-modal-padding-x: 36px;
-  --doke-action-modal-border: rgba(196, 213, 232, 0.86);
-  --doke-action-modal-ink: #0a376b;
-  --doke-action-modal-text: #536f91;
-  --doke-action-modal-muted: #6f85a1;
-  --doke-action-modal-soft: #f5f9fd;
-  --doke-action-modal-shadow: 0 30px 86px rgba(13, 35, 58, 0.26);
+  --doke-action-modal-border: rgba(207, 224, 240, 0.95);
+  --doke-action-modal-ink: #0b3c7c;
+  --doke-action-modal-text: #6f85a1;
+  --doke-action-modal-muted: #6a819e;
+  --doke-action-modal-soft: #f8fbff;
+  --doke-action-modal-shadow: 0 30px 80px rgba(18, 39, 62, 0.24);
 }
 
 .doke-action-modal {
@@ -20,7 +20,7 @@
   z-index: 1600;
   display: grid;
   place-items: center;
-  padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+  padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
   overflow-y: auto;
 }
 
@@ -49,9 +49,10 @@
   position: relative;
   z-index: 1;
   width: min(92vw, var(--doke-action-modal-width));
-  max-height: min(760px, calc(100dvh - 48px));
+  max-height: calc(100dvh - 48px);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
+  padding: 0;
   overflow: hidden;
   border: 1px solid var(--doke-action-modal-border);
   border-radius: var(--doke-action-modal-radius);
@@ -81,17 +82,17 @@
   min-height: 32px;
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  margin: 0 0 16px;
-  padding: 0 14px;
+  gap: 8px;
+  margin: 0 0 26px;
+  padding: 0 18px;
   border: 1px solid rgba(191, 230, 220, 0.92);
   border-radius: 999px;
   background: #eefaf6;
   color: #087e72;
   font-size: 0.74rem;
   line-height: 1;
-  font-weight: 900;
-  letter-spacing: 0.09em;
+  font-weight: 800;
+  letter-spacing: 0.085em;
   text-transform: uppercase;
 }
 
@@ -123,22 +124,22 @@
   font-size: clamp(2.15rem, 3.35vw, 2.55rem);
   line-height: 1.04;
   letter-spacing: -0.058em;
-  font-weight: 900;
+  font-weight: 800;
 }
 
 .doke-action-modal__text {
-  max-width: 560px;
+  max-width: 455px;
   margin: 0;
   color: var(--doke-action-modal-text);
-  font-size: clamp(0.98rem, 1.5vw, 1.12rem);
-  line-height: 1.5;
+  font-size: 1rem;
+  line-height: 1.48;
   font-weight: 600;
 }
 
 .doke-action-modal__close {
   position: absolute;
-  top: 30px;
-  right: 30px;
+  top: 28px;
+  right: 28px;
   width: 42px;
   height: 42px;
   min-width: 42px;
@@ -146,7 +147,7 @@
   display: inline-grid;
   place-items: center;
   border: 1px solid var(--doke-action-modal-border);
-  border-radius: 16px;
+  border-radius: 999px;
   background: #f3f8fd;
   color: var(--doke-action-modal-ink);
   cursor: pointer;
@@ -178,9 +179,25 @@
 .doke-action-modal__body {
   min-height: 0;
   display: grid;
-  gap: 18px;
-  padding: 0 var(--doke-action-modal-padding-x) 28px;
+  gap: 16px;
+  padding: 0 var(--doke-action-modal-padding-x) 26px;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(126, 151, 181, 0.34) transparent;
+}
+
+.doke-action-modal__body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.doke-action-modal__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.doke-action-modal__body::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(126, 151, 181, 0.34);
 }
 
 .doke-action-modal__grid {
@@ -203,7 +220,8 @@
   display: grid;
   gap: 8px;
   color: var(--doke-action-modal-muted);
-  font-size: 0.9rem;
+  font-size: 0.86rem;
+  line-height: 1.25;
   font-weight: 800;
 }
 
@@ -217,9 +235,10 @@
 .doke-action-modal__field textarea,
 .doke-action-modal__money-field {
   width: 100%;
-  min-height: 58px;
-  border: 1px solid #cfdeef;
-  border-radius: 17px;
+  min-height: 56px;
+  height: 56px;
+  border: 1px solid #cfe0f0;
+  border-radius: 16px;
   background: var(--doke-action-modal-soft);
   color: var(--doke-action-modal-ink);
   font: inherit;
@@ -236,8 +255,9 @@
 }
 
 .doke-action-modal__field textarea {
-  min-height: 118px;
-  padding-block: 16px;
+  min-height: 88px;
+  height: auto;
+  padding-block: 14px;
   resize: vertical;
   line-height: 1.55;
 }
@@ -261,14 +281,14 @@
 .doke-action-modal__money-field span {
   display: inline-grid;
   place-items: center;
-  border-right: 1px solid #cfdeef;
+  border-right: 1px solid #dce8f4;
   color: var(--doke-action-modal-ink);
   font-weight: 900;
   background: rgba(255, 255, 255, 0.42);
 }
 
 .doke-action-modal__money-field input {
-  min-height: 58px;
+  min-height: 56px;
   border: 0;
   background: transparent;
   padding: 0 22px;
@@ -282,30 +302,31 @@
   display: grid;
   gap: 6px;
   padding: 16px 18px;
-  border: 1px solid #dce7f3;
-  border-radius: 18px;
+  border: 1px solid #dce8f4;
+  border-radius: 16px;
   background: #f8fbff;
   color: var(--doke-action-modal-text);
-  font-size: 0.92rem;
+  font-size: 0.94rem;
   line-height: 1.45;
   font-weight: 600;
 }
 
 .doke-action-modal__summary-card strong {
   color: var(--doke-action-modal-ink);
-  font-size: 1rem;
+  font-size: 0.94rem;
   line-height: 1.2;
   font-weight: 900;
 }
 
 .doke-action-modal__check {
-  min-height: 54px;
+  min-height: 50px;
+  height: 50px;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 16px;
+  padding: 0 14px;
   border: 1px solid #cfdeef;
-  border-radius: 17px;
+  border-radius: 15px;
   background: var(--doke-action-modal-soft);
   color: #2f4d71;
   font-weight: 800;
@@ -329,17 +350,31 @@
 .doke-action-modal__footer .doke-btn,
 .doke-action-modal__footer .doke-button,
 .doke-action-modal__button {
-  min-height: 56px;
+  min-height: 52px;
+  height: 52px;
   width: 100%;
   justify-content: center;
 }
 
+.doke-action-modal__footer .doke-action-modal__button--primary,
 .doke-action-modal__button--primary {
-  border: 0;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #2f76ba, #0f8373);
+  border: 1px solid #2475bd;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #2475bd 0%, #145fa7 100%);
   color: #fff;
-  box-shadow: 0 18px 38px rgba(22, 105, 143, 0.18);
+  box-shadow: 0 12px 24px rgba(20, 95, 167, 0.18);
+}
+
+.doke-action-modal__footer .community-action-modal__button--ghost {
+  border: 1px solid var(--doke-action-modal-border);
+  background: #f8fbff;
+  color: var(--doke-action-modal-ink);
+  box-shadow: none;
+}
+
+.doke-action-modal__footer .community-action-modal__button--ghost:is(:hover, :focus-visible) {
+  border-color: #bed2e8;
+  background: #edf5fc;
 }
 
 body.doke-action-modal-open {
@@ -349,7 +384,7 @@ body.doke-action-modal-open {
 @media (max-width: 720px) {
   .doke-action-modal {
     align-items: end;
-    padding: 10px;
+    padding: 12px;
   }
 
   :root {
@@ -358,13 +393,13 @@ body.doke-action-modal-open {
 
   .doke-action-modal__surface {
     width: 100%;
-    max-height: calc(100dvh - 20px);
+    max-height: calc(100dvh - 24px);
     border-radius: 24px;
   }
 
   .doke-action-modal__header {
     padding-top: 28px;
-    padding-bottom: 18px;
+    padding-bottom: 22px;
     padding-right: 72px;
   }
 
@@ -373,17 +408,17 @@ body.doke-action-modal-open {
   }
 
   .doke-action-modal__text {
-    font-size: 0.95rem;
+    font-size: 0.94rem;
   }
 
   .doke-action-modal__close {
     top: 22px;
     right: 22px;
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
-    border-radius: 16px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    border-radius: 999px;
   }
 
   .doke-action-modal__body {
@@ -404,6 +439,7 @@ body.doke-action-modal-open {
   .doke-action-modal__footer .doke-btn,
   .doke-action-modal__footer .doke-button,
   .doke-action-modal__button {
-    min-height: 54px;
+    min-height: 50px;
+    height: 50px;
   }
 }

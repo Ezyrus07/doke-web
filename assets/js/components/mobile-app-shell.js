@@ -17,7 +17,7 @@
     'pedidos.html': { key: 'pedidos', active: 'orders', search: false, title: 'Pedidos', hideSearchBar: true },
     'mensagens.html': { key: 'mensagens', active: 'messages', search: false, title: 'Mensagens' },
     'comunidade.html': { key: 'comunidade', active: 'communities', search: false, title: 'Comunidade' },
-    'comunidade-interna.html': { key: 'comunidade', active: 'communities', search: false, title: 'Comunidade' },
+    'comunidade-interna.html': { key: 'comunidade-interna', active: 'communities', search: false, title: 'Comunidade' },
     'perfil.html': { key: 'perfil', active: 'profile', search: false, title: 'Perfil' },
     'carteira.html': { key: 'carteira', active: 'profile', search: false, title: 'Carteira' },
     'notificacoes.html': { key: 'notificacoes', active: '', search: false, title: 'Notificações', bottomNav: false },
@@ -33,6 +33,7 @@
 
   var ICONS = {
     bell: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.75a4 4 0 0 0-4 4v2.1c0 .7-.24 1.38-.68 1.92L5.9 14.5h12.2l-1.42-1.73a3 3 0 0 1-.68-1.92v-2.1a4 4 0 0 0-4-4Z"></path><path d="M10 17.2a2.3 2.3 0 0 0 4 0"></path></svg>',
+    back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg>',
     search: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg>',
     mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5a2.8 2.8 0 0 0-2.8 2.8v4.2a2.8 2.8 0 1 0 5.6 0V7.8A2.8 2.8 0 0 0 12 5Z"></path><path d="M7.8 11.4a4.2 4.2 0 1 0 8.4 0"></path><path d="M12 17v2.2"></path><path d="M9.6 19.2h4.8"></path></svg>',
     sliders: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6.5h14"></path><path d="M5 12h14"></path><path d="M5 17.5h14"></path><circle cx="9" cy="6.5" r="1.75"></circle><circle cx="15" cy="12" r="1.75"></circle><circle cx="11" cy="17.5" r="1.75"></circle></svg>',
@@ -69,7 +70,7 @@
   }
 
   function usesContextActions(cfg) {
-    return Boolean(cfg && !cfg.search && ['pedidos', 'mensagens', 'comunidade', 'carteira', 'notificacoes', 'perfil'].indexOf(cfg.key) !== -1);
+    return Boolean(cfg && !cfg.search && ['pedidos', 'mensagens', 'comunidade', 'comunidade-interna', 'carteira', 'notificacoes', 'perfil'].indexOf(cfg.key) !== -1);
   }
 
   function queryValue() {
@@ -236,6 +237,10 @@
     ].join('');
   }
 
+  function createShellSearchButton() {
+    return '<button class="doke-mobile-shell__quick-action" type="button" data-shell-search-trigger aria-label="Focar busca">' + ICONS.search + '</button>';
+  }
+
   function createQuickActions(cfg) {
     if (!usesContextActions(cfg)) {
       var baseActions = [];
@@ -266,6 +271,15 @@
         '<button class="doke-mobile-shell__quick-action" type="button" data-community-code-shell aria-label="Entrar por código">' + ICONS.communityCode + '</button>',
         '<button class="doke-mobile-shell__quick-action" type="button" data-community-create-shell aria-label="Criar comunidade">' + ICONS.plus + '</button>',
         '<a class="doke-mobile-shell__quick-action" href="notificacoes.html" aria-label="Notificações">' + ICONS.bell + '</a>'
+      ].join('');
+    }
+
+    if (cfg.key === 'comunidade-interna') {
+      return [
+        '<a class="doke-mobile-shell__quick-action doke-mobile-shell__quick-action--back" href="comunidade.html" aria-label="Voltar para comunidades">' + ICONS.back + '</a>',
+        createShellSearchButton(),
+        '<button class="doke-mobile-shell__quick-action" type="button" data-shell-select aria-label="Selecionar canais">' + ICONS.check + '</button>',
+        '<button class="doke-mobile-shell__quick-action" type="button" data-shell-filter aria-label="Filtrar canais">' + ICONS.sliders + '</button>'
       ].join('');
     }
 
@@ -355,6 +369,16 @@
         return true;
       }
 
+      if (pageCfg.key === 'comunidade-interna') {
+        var communitySearch = document.querySelector('[data-community-search-input]');
+        if (communitySearch && typeof communitySearch.focus === 'function') {
+          communitySearch.focus();
+          return true;
+        }
+        dispatchShellAction('search');
+        return true;
+      }
+
       return clickFirst('[data-mobile-search-toggle], [data-search-toggle]');
     }
 
@@ -413,7 +437,7 @@
         }
         if (clickFirst('[data-notifications-select-toggle]')) return true;
       }
-      if (pageCfg.key === 'mensagens') {
+      if (pageCfg.key === 'mensagens' || pageCfg.key === 'comunidade-interna') {
         dispatchShellAction('select');
         return true;
       }
