@@ -1,0 +1,149 @@
+/* Doke Horizontal Rail Contract — owner: patterns. */
+@media (max-width: 760px) {
+  body.home-index-shell :is(.home-catégories, .featured-services, .home-recommendations, .short-videos, .before-after-section, .more-services-section, .content-rail, .home-catégories__rail),
+  body.search-results-body :is(.results-layout, .results-main, .results-grid, .results-collection, .results-list) {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  body.home-index-shell :is(.home-catégories__track, #featured-services-track, [data-rail-track]) {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: visible;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  body.home-index-shell :is(.home-catégories__track, #featured-services-track, [data-rail-track])::-webkit-scrollbar { display: none; }
+
+  body.home-index-shell :is(#featured-services-track, #home-publications-track) {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(236px, 82%);
+    grid-template-columns: none;
+    gap: 14px;
+    padding-right: 16px;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+
+  body.home-index-shell #home-publications-track::-webkit-scrollbar { display: none; }
+
+  body.home-index-shell #short-videos-track {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  body.home-index-shell .service-card { max-width: 100%; min-width: 0; }
+  body.search-results-body .results-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+}
+
+@media (min-width: 561px) and (max-width: 1024px) {
+  body.home-index-shell #home-publications-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(300px, 45.5%);
+    grid-template-columns: none;
+    gap: var(--doke-index-card-gap, 18px);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+
+  body.home-index-shell #home-publications-track::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Shared desktop rail baseline. Page files may define section-specific grids,
+   but the rail axis, arrows and overflow behavior belong to the pattern. */
+@media (min-width: 1025px) {
+  .doke-page-section,
+  .content-rail,
+  .doke-scroll-rail {
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .content-rail,
+  .doke-scroll-rail {
+    position: relative;
+  }
+
+  .doke-grid {
+    min-width: 0;
+    gap: var(--grid-card-gap);
+  }
+
+  .content-rail__arrow {
+    width: var(--rail-arrow-size);
+    height: var(--rail-arrow-size);
+    border-radius: var(--radius-pill);
+    border: var(--border-soft);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow-control-soft);
+  }
+
+  body.home-index-shell {
+    --doke-home-featured-rail-column: clamp(286px, calc(25% - 14px), 324px);
+    --doke-home-publication-rail-column: min(320px, calc(25% - 14px));
+    --doke-worker-home-card-width: clamp(168px, 13.2vw, 205px);
+  }
+
+  body.home-index-shell :is(
+    #featured-services-track,
+    #home-publications-track
+  ) {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    align-items: start;
+    gap: var(--doke-index-card-gap, 18px);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+
+  body.home-index-shell #featured-services-track {
+    grid-auto-columns: var(--doke-home-featured-rail-column);
+  }
+
+  body.home-index-shell #home-publications-track {
+    grid-auto-columns: var(--doke-home-publication-rail-column);
+  }
+
+  body.home-index-shell #short-videos-track {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: start;
+    gap: var(--doke-index-card-gap, 18px);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+
+  body.home-index-shell :is(
+    #featured-services-track,
+    #home-publications-track,
+    #short-videos-track
+  )::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1599px) {
+  body.home-index-shell {
+    --doke-home-publication-rail-column: min(320px, calc(33.3333% - 12px));
+  }
+}

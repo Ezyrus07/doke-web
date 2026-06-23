@@ -1,0 +1,380 @@
+/* Doke Cleanup Stage 36: removed priority-based overrides from active mensagens cascade. */
+/*
+ * Mensagens — alinhamento tablet com o shell global.
+ * Escopo permitido: geometria do rail e do workspace de mensagens.
+ * Nao estilizar logo, labels, nav-link, badges ou qualquer anatomia interna da sidebar.
+ */
+
+@media (min-width: 768px) and (max-width: 1180px) and (orientation: landscape) {
+  html body[data-page="mensagens"].messages-page-shell {
+    --messages-tablet-shell-sidebar: var(--doke-app-shell-sidebar-width, var(--doke-desktop-sidebar-width, var(--doke-app-sidebar-width, var(--sidebar-width, 272px))));
+    --messages-tablet-list: clamp(276px, 35vw, 304px);
+    --messages-tablet-rail-gutter-start: 10px;
+    --messages-tablet-rail-gutter-end: 12px;
+    overflow: hidden;
+    background: #eef5fb;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell {
+    position: relative;
+    display: block;
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #eef5fb;
+  }
+  /* A sidebar global é consumida integralmente do shell. Esta página só posiciona o workspace à direita dela. */
+
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page,
+  html body[data-page="mensagens"].messages-page-shell > .app-shell > .page > main.page__content.doke-page,
+  html body[data-page="mensagens"].messages-page-shell .page__content-inner.messages-shell-content {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: var(--messages-tablet-shell-sidebar);
+    inset-inline-end: 0;
+    display: block;
+    width: calc(100vw - var(--messages-tablet-shell-sidebar));
+    max-width: calc(100vw - var(--messages-tablet-shell-sidebar));
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #eef5fb;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-tablet-header,
+  html body[data-page="mensagens"].messages-page-shell .bottom-nav {
+    display: none;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: var(--messages-tablet-list) minmax(0, 1fr);
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: #fff;
+    overflow: hidden;
+    box-shadow: none;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-app > [data-state-region],
+  html body[data-page="mensagens"].messages-page-shell .messages-order-card,
+  html body[data-page="mensagens"].messages-page-shell .messages-empty,
+  html body[data-page="mensagens"].messages-page-shell .messages-thread-empty {
+    display: none;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100dvh;
+    min-width: 0;
+    min-height: 0;
+    padding: 24px var(--messages-tablet-rail-gutter-end) 18px var(--messages-tablet-rail-gutter-start);
+    border: 0;
+    border-right: 1px solid rgba(207, 222, 238, 0.82);
+    border-radius: 0;
+    background: #f3f8fd;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar > :is(.messages-sidebar-brand, .messages-sidebar-tools, .messages-block, .messages-list) {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: auto;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-sidebar :is(.messages-sidebar-tools, .messages-block__header, .messages-list) {
+    justify-self: center;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread {
+    grid-column: 2;
+    grid-row: 1;
+    display: grid;
+    grid-template-rows: 72px minmax(0, 1fr) 72px;
+    width: 100%;
+    height: 100dvh;
+    min-width: 0;
+    min-height: 0;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-thread__body {
+    grid-row: 2;
+    min-height: 0;
+    padding: 18px clamp(18px, 4vw, 46px) 14px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  html body[data-page="mensagens"].messages-page-shell .messages-composer {
+    grid-row: 3;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: 72px;
+    min-height: 72px;
+    margin: 0;
+    padding: 10px 14px 12px;
+    background: #fff;
+    border-top: 0;
+    box-shadow: none;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1180px) and (orientation: landscape) {
+  /* Nenhuma geometria da sidebar aqui: width, padding, logo, itens e badges vêm do contrato global. */
+
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page,
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page,
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page > div.page__content-inner.messages-shell-content {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: var(--messages-tablet-shell-sidebar);
+    inset-inline-end: 0;
+    display: block;
+    inline-size: calc(100vw - var(--messages-tablet-shell-sidebar));
+    width: calc(100vw - var(--messages-tablet-shell-sidebar));
+    max-inline-size: calc(100vw - var(--messages-tablet-shell-sidebar));
+    max-width: calc(100vw - var(--messages-tablet-shell-sidebar));
+    block-size: 100dvh;
+    height: 100dvh;
+    max-block-size: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #eef5fb;
+  }
+
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page .messages-app {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: var(--messages-tablet-shell-sidebar);
+    inset-inline-end: 0;
+    display: grid;
+    grid-template-columns: var(--messages-tablet-list) minmax(0, 1fr);
+    inline-size: calc(100vw - var(--messages-tablet-shell-sidebar));
+    width: calc(100vw - var(--messages-tablet-shell-sidebar));
+    max-inline-size: calc(100vw - var(--messages-tablet-shell-sidebar));
+    max-width: calc(100vw - var(--messages-tablet-shell-sidebar));
+    block-size: 100dvh;
+    height: 100dvh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page > div.page__content-inner.messages-shell-content > section.messages-app {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: var(--messages-tablet-shell-sidebar);
+    inset-inline-end: 0;
+    display: grid;
+    grid-template-columns: var(--messages-tablet-list) minmax(0, 1fr);
+    inline-size: calc(100vw - var(--messages-tablet-shell-sidebar));
+    width: calc(100vw - var(--messages-tablet-shell-sidebar));
+    max-inline-size: calc(100vw - var(--messages-tablet-shell-sidebar));
+    max-width: calc(100vw - var(--messages-tablet-shell-sidebar));
+    block-size: 100dvh;
+    height: 100dvh;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page:not(.messages-thread-is-open) .messages-app:not(.messages-app--thread-open) .messages-thread,
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page .messages-thread {
+    grid-column: 2;
+    grid-row: 1;
+    display: grid;
+    visibility: visible;
+    opacity: 1;
+    grid-template-rows: 72px minmax(0, 1fr) 72px;
+    inline-size: 100%;
+    width: 100%;
+    block-size: 100dvh;
+    height: 100dvh;
+    min-inline-size: 0;
+    min-width: 0;
+    min-block-size: 0;
+    min-height: 0;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page > div.page__content-inner.messages-shell-content > section.messages-app::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: var(--messages-tablet-list);
+    inset-inline-end: 0;
+    z-index: 0;
+    background: #fff;
+    pointer-events: none;
+  }
+
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page > div.page__content-inner.messages-shell-content > section.messages-app > section.messages-sidebar {
+    grid-column: 1;
+    grid-row: 1;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: none;
+    max-width: none;
+    block-size: 100dvh;
+    height: 100dvh;
+    min-inline-size: 0;
+    min-width: 0;
+    margin: 0;
+    padding: 24px var(--messages-tablet-rail-gutter-end) 18px var(--messages-tablet-rail-gutter-start);
+    border: 0;
+    border-right: 1px solid rgba(207, 222, 238, 0.82);
+    border-radius: 0;
+    background: #f3f8fd;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page > div.page__content-inner.messages-shell-content > section.messages-app > section.messages-sidebar > :is(.messages-sidebar-brand, .messages-sidebar-tools, .messages-block, .messages-list) {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: auto;
+  }
+
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page > div.page__content-inner.messages-shell-content > section.messages-app > section.messages-sidebar :is(.messages-sidebar-tools, .messages-block__header, .messages-list) {
+    justify-self: center;
+  }
+
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page > div.page__content-inner.messages-shell-content > section.messages-app > section.messages-thread {
+    grid-column: 2;
+    grid-row: 1;
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-rows: 72px minmax(0, 1fr) 72px;
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: none;
+    max-width: none;
+    block-size: 100dvh;
+    height: 100dvh;
+    min-inline-size: 0;
+    min-width: 0;
+    min-block-size: 0;
+    min-height: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page > div.page__content-inner.messages-shell-content > section.messages-app > section.messages-thread > .messages-thread__header {
+    grid-row: 1;
+    position: relative;
+    z-index: 4;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    inline-size: 100%;
+    width: 100%;
+    block-size: 72px;
+    height: 72px;
+    min-block-size: 72px;
+    min-height: 72px;
+    max-block-size: 72px;
+    max-height: 72px;
+    margin: 0;
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(207, 222, 238, 0.82);
+    background: #fff;
+    overflow: hidden;
+  }
+
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page > div.page__content-inner.messages-shell-content > section.messages-app > section.messages-thread > .messages-thread__body {
+    grid-row: 2;
+    position: relative;
+    z-index: 2;
+    display: block;
+    inline-size: 100%;
+    width: 100%;
+    block-size: auto;
+    height: auto;
+    min-block-size: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 18px 22px 14px;
+    background: #fff;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page > div.page__content-inner.messages-shell-content > section.messages-app > section.messages-thread > .messages-thread__body .message-row,
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page > div.page__content-inner.messages-shell-content > section.messages-app > section.messages-thread > .messages-thread__body .message-row--me {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
+
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page > div.page__content-inner.messages-shell-content > section.messages-app > section.messages-thread > .messages-thread__body .message-bubble {
+    max-inline-size: min(86%, 330px);
+    max-width: min(86%, 330px);
+    overflow-wrap: break-word;
+  }
+
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page > div.page__content-inner.messages-shell-content > section.messages-app > section.messages-thread > .messages-thread__body .message-bubble--me,
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page > div.page__content-inner.messages-shell-content > section.messages-app > section.messages-thread > .messages-thread__body .message-row--me .message-bubble {
+    max-inline-size: min(78%, 320px);
+    max-width: min(78%, 320px);
+  }
+
+  html body[data-page="mensagens"].has-global-header.doke-app-shell-page.app-shell-page.internal-shell-page > div.app-shell > div.page > main.page__content.doke-page > div.page__content-inner.messages-shell-content > section.messages-app > section.messages-thread > .messages-composer {
+    grid-row: 3;
+    position: relative;
+    z-index: 5;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    inline-size: 100%;
+    width: 100%;
+    block-size: 72px;
+    height: 72px;
+    min-block-size: 72px;
+    min-height: 72px;
+    margin: 0;
+    padding: 10px 14px 12px;
+    border: 0;
+    background: #fff;
+    box-shadow: none;
+    overflow: hidden;
+  }
+}

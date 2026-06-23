@@ -1,0 +1,303 @@
+@import url("../components/shell/internal-workspace.css?v=20260516-design-system-consolidation-v1");
+@import url("../components/internal/surface-contract.css");
+@import url("../components/internal/list-page-toolbar.css?v=20260613-shared-context-actions-v1");
+@import url("./home-shared.css");
+
+/* Padronização visual da sidebar interna entre páginas */
+.internal-sidebar,
+.sidebar[data-internal-sidebar],
+.internal-shell-page .sidebar,
+.shell-home .sidebar {
+  width: var(--sidebar-width);
+}
+
+.internal-sidebar .sidebar__header,
+.sidebar[data-internal-sidebar] .sidebar__header,
+.internal-shell-page .sidebar .sidebar__header,
+.shell-home .sidebar .sidebar__header {
+  padding: 20px 18px 16px;
+}
+
+.internal-sidebar .sidebar__nav,
+.sidebar[data-internal-sidebar] .sidebar__nav,
+.internal-shell-page .sidebar .sidebar__nav,
+.shell-home .sidebar .sidebar__nav {
+  gap: 10px;
+}
+
+.internal-sidebar .sidebar__group,
+.sidebar[data-internal-sidebar] .sidebar__group,
+.internal-shell-page .sidebar .sidebar__group,
+.shell-home .sidebar .sidebar__group {
+  margin-bottom: 18px;
+}
+
+.internal-sidebar .sidebar__toggle,
+.sidebar[data-internal-sidebar] .sidebar__toggle,
+.internal-shell-page .sidebar .sidebar__toggle,
+.shell-home .sidebar .sidebar__toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+}
+
+.internal-sidebar .sidebar__link,
+.sidebar[data-internal-sidebar] .sidebar__link,
+.internal-shell-page .sidebar .sidebar__link,
+.shell-home .sidebar .sidebar__link {
+  min-height: 56px;
+  border-radius: var(--radius-md);
+}
+
+.internal-sidebar .sidebar__link-icon,
+.sidebar[data-internal-sidebar] .sidebar__link-icon,
+.internal-shell-page .sidebar .sidebar__link-icon,
+.shell-home .sidebar .sidebar__link-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-compact);
+}
+
+.internal-sidebar .sidebar__footer,
+.sidebar[data-internal-sidebar] .sidebar__footer,
+.internal-shell-page .sidebar .sidebar__footer,
+.shell-home .sidebar .sidebar__footer {
+  padding-top: 18px;
+}
+
+/* Legacy helpers for pages that still stretch the workspace.
+   Do not apply to profile, which now owns its own internal workspace width. */
+.messages-page-shell .page__content-inner,
+.notifications-page-shell .page__content-inner {
+  max-width: none;
+}
+
+@media (max-width: 1024px) {
+  body.internal-shell-page {
+    --header-height: 62px;
+  }
+
+  body.internal-shell-page .topbar {
+    background: linear-gradient(180deg, #f7fbff 0%, #eef5fb 100%);
+  }
+}
+
+
+
+/* Consistência fina do cabeçalho interno entre páginas */
+body.internal-shell-page .internal-page-topbar {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+@media (min-width: 1025px) {
+  body.internal-shell-page .internal-page-topbar {
+    left: var(--sidebar-width);
+    right: 0;
+    padding-left: 26px;
+    padding-right: 26px;
+    min-height: var(--header-height);
+  }
+}
+
+@media (max-width: 760px) {
+  body.internal-shell-page .internal-page-topbar {
+    left: 0;
+    right: 0;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
+    padding-bottom: 10px;
+  }
+}
+
+
+/* 2026-04-13 internal consistency: same sidebar rhythm and topbar baseline */
+body.internal-shell-page .sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
+body.internal-shell-page .sidebar__group + .sidebar__group {
+  margin-top: 2px;
+}
+
+body.internal-shell-page .sidebar__footer {
+  margin-top: auto;
+}
+
+body.internal-shell-page .topbar {
+  top: 0;
+}
+
+body.internal-shell-page .topbar,
+body.internal-shell-page .internal-page-topbar,
+body.internal-shell-page .topbar.topbar--location.internal-page-topbar {
+  top: 0;
+  inset-block-start: 0;
+  margin-top: 0;
+}
+
+
+/* 2026-04-13 final shell audit: lock internal header/sidebar baseline across pages */
+body.internal-shell-page {
+  --internal-topbar-desktop-pad-y: 8px;
+  --internal-topbar-mobile-pad-y: 8px;
+  --internal-content-offset-desktop: 6px;
+  --internal-content-offset-mobile: 6px;
+}
+
+body.internal-shell-page .page {
+  min-width: 0;
+}
+
+body.internal-shell-page .internal-page-topbar,
+body.internal-shell-page .topbar.topbar--location.internal-page-topbar {
+  min-height: var(--header-height);
+  padding-top: var(--internal-topbar-desktop-pad-y);
+  padding-bottom: var(--internal-topbar-desktop-pad-y);
+  align-items: center;
+}
+
+body.internal-shell-page .topbar,
+body.internal-shell-page .internal-page-topbar,
+body.internal-shell-page .topbar.topbar--location.internal-page-topbar {
+  box-sizing: border-box;
+}
+
+body.internal-shell-page .page__content {
+  padding-top: var(--internal-content-offset-desktop);
+}
+
+body.internal-shell-page .sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  max-width: var(--sidebar-width);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  padding: 18px 16px 16px;
+  gap: 16px;
+}
+
+body.internal-shell-page .sidebar__collapse-button {
+  top: 18px;
+  right: 10px;
+}
+
+body.internal-shell-page .sidebar__brand {
+  flex: 0 0 auto;
+  padding: 4px 0 10px;
+}
+
+body.internal-shell-page .sidebar__group {
+  margin: 0;
+  padding: 0;
+  gap: 10px;
+}
+
+body.internal-shell-page .sidebar__group + .sidebar__group {
+  margin-top: 0;
+  padding-top: 6px;
+}
+
+body.internal-shell-page .sidebar__footer {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+body.internal-shell-page .sidebar__group--footer {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+body.internal-shell-page .sidebar__label {
+  margin: 0;
+  padding: 0 8px;
+}
+
+body.internal-shell-page .nav-link {
+  min-height: 52px;
+}
+
+@media (max-width: 1024px) {
+  body.internal-shell-page .internal-page-topbar,
+  body.internal-shell-page .topbar.topbar--location.internal-page-topbar {
+    min-height: var(--header-height);
+    padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
+    padding-bottom: var(--internal-topbar-mobile-pad-y);
+  }
+
+  body.internal-shell-page .page__content {
+    padding-top: var(--internal-content-offset-mobile);
+  }
+}
+
+
+
+/* 2026-04-13 canonical sidebar unification:
+   home and mensagens must use the exact same shared sidebar contract as the other internal pages.
+   Keep only home-specific topbar spacing here; sidebar layout remains owned by sidebar-unified.css + shell-normalize.css. */
+body.home-index-shell {
+  --internal-topbar-desktop-pad-y: 8px;
+  --internal-topbar-mobile-pad-y: 8px;
+}
+
+body.home-index-shell .internal-page-topbar,
+body.home-index-shell .topbar.topbar--location.internal-page-topbar {
+  min-height: var(--header-height);
+  padding-top: var(--internal-topbar-desktop-pad-y);
+  padding-bottom: var(--internal-topbar-desktop-pad-y);
+  align-items: center;
+}
+
+body.home-index-shell .topbar,
+body.home-index-shell .internal-page-topbar,
+body.home-index-shell .topbar.topbar--location.internal-page-topbar {
+  box-sizing: border-box;
+}
+
+@media (max-width: 1024px) {
+  body.home-index-shell .internal-page-topbar,
+  body.home-index-shell .topbar.topbar--location.internal-page-topbar {
+    min-height: var(--header-height);
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+    padding-bottom: var(--internal-topbar-mobile-pad-y);
+  }
+}
+
+@media (max-width: 1024px) {
+  body.internal-shell-page,
+  body.home-index-shell {
+    --sidebar-width: 0px;
+  }
+
+  body.internal-shell-page .page,
+  body.home-index-shell .page {
+    margin-left: 0;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  body.internal-shell-page .sidebar,
+  body.home-index-shell .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(292px, calc(100vw - 28px));
+    max-width: min(292px, calc(100vw - 28px));
+    transform: translateX(-110%);
+  }
+
+  body.internal-shell-page.sidebar-open .sidebar,
+  body.home-index-shell.sidebar-open .sidebar {
+    transform: translateX(0);
+  }
+
+  body.internal-shell-page .topbar,
+  body.home-index-shell .topbar {
+    left: 0;
+    right: 0;
+  }
+}

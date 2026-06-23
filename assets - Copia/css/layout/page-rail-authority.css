@@ -1,0 +1,887 @@
+/* Doke layout/page rail authority.
+
+   Responsibility:
+   - Owns page-family rail tokens and shared first-level shell widths.
+   - Keeps global header/topbar and page content on the same rail contract.
+   - Does not own card anatomy, carousel behavior, sidebar visuals or page-specific internals.
+
+   Stage 66 containment moved these rules from the legacy component/shell path
+   to the layout layer without changing selectors or values.
+*/
+
+body[data-page] {
+  --doke-rail-sidebar-width: var(--doke-app-sidebar-width, var(--doke-sidebar-width, var(--sidebar-width, 240px)));
+  --doke-rail-inline-gutter: var(--doke-shared-page-inline, 18px);
+  --doke-rail-available: calc(100vw - (var(--doke-rail-inline-gutter) * 2));
+  --doke-rail-max: 572px;
+  --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
+  --doke-page-available: var(--doke-rail-available);
+  --doke-page-rail: var(--doke-shared-page-width);
+  --doke-header-rail: var(--doke-page-rail);
+  --doke-current-page-rail: var(--doke-page-rail);
+  --rail-max: var(--doke-page-rail);
+}
+
+body:is(
+  [data-page="detalhe-anuncio"],
+  [data-page="perfil"],
+  [data-page="resultados"]
+) {
+  --doke-rail-max: 1180px;
+}
+
+body[data-page="home"] {
+  /* Visual Recovery 02: home uses the cleaned layout rail with the approved compact
+     product width. This restores the old visual containment without reactivating
+     legacy shell/page-width contracts. */
+  --doke-rail-max: 1040px;
+  --doke-home-rail-max: var(--doke-rail-max);
+}
+
+body:is(
+  [data-page="pedidos"],
+  [data-page="mensagens"],
+  [data-page="comunidade"],
+  [data-page="comunidade-interna"]
+) {
+  --doke-rail-max: 1320px;
+}
+
+body[data-page="notificacoes"] {
+  --doke-rail-max: 1040px;
+}
+
+body:is(
+  [data-page="carteira"],
+  [data-page="novidades"],
+  [data-page="ajuda"]
+) {
+  --doke-rail-max: 1120px;
+}
+
+body:is(
+  [data-page="configuracoes"],
+  [data-page="anunciar-servico"],
+  [data-page="tornar-profissional"],
+  [data-page="orcamento"],
+  [data-page="pagamento-profissional"],
+  [data-page="avaliacao-profissional"]
+) {
+  /* These pages use the global app header and must share the same desktop
+     marketplace rail as index/resultados. Their internal cards/forms may still
+     constrain their own readable columns; the shell/header rail should not. */
+  --doke-rail-max: 1360px;
+}
+
+@media (min-width: 390px) and (max-width: 760px) {
+  body[data-page] {
+    --doke-rail-inline-gutter: clamp(12px, 3.4vw, 16px);
+    --doke-rail-available: calc(100vw - (var(--doke-rail-inline-gutter) * 2));
+    --doke-rail-max: 452px;
+    --doke-shared-page-inline: var(--doke-rail-inline-gutter);
+    --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
+    --doke-page-gutter: var(--doke-rail-inline-gutter);
+    --doke-page-available: var(--doke-rail-available);
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
+    --doke-current-page-rail: var(--doke-page-rail);
+    --home-index-mobile-column-width: var(--doke-page-rail);
+    --home-index-mobile-column-inline: var(--doke-rail-inline-gutter);
+    --rail-max: var(--doke-page-rail);
+  }
+}
+
+@media (min-width: 561px) and (max-width: 760px) {
+  body[data-page="home"] {
+    --doke-rail-inline-gutter: 20px;
+    --doke-rail-available: calc(100vw - (var(--doke-rail-inline-gutter) * 2));
+    --doke-rail-max: 560px;
+    --doke-shared-page-inline: var(--doke-rail-inline-gutter);
+    --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
+    --doke-page-gutter: var(--doke-rail-inline-gutter);
+    --doke-page-available: var(--doke-rail-available);
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
+    --doke-current-page-rail: var(--doke-page-rail);
+    --rail-max: var(--doke-page-rail);
+  }
+}
+
+@media (min-width: 608px) and (max-width: 760px) {
+  body[data-page]:not([data-page="home"]) {
+    --doke-rail-max: 572px;
+    --doke-header-height: 86px;
+    --doke-first-block-top: 98px;
+  }
+}
+
+/* Tablet portrait internal rail authority.
+   Responsibility: shared 561px-760px rail/header tokens for internal pages.
+   This keeps chat list/canal states, pedidos and other internal pages on the
+   same x-axis instead of letting pages recreate a local tablet width. */
+@media (min-width: 561px) and (max-width: 760px) {
+  body[data-page].internal-shell-page:not([data-page="home"]) {
+    --doke-rail-inline-gutter: 20px;
+    --doke-rail-available: calc(100vw - (var(--doke-rail-inline-gutter) * 2));
+    --doke-rail-max: 560px;
+    --doke-shared-page-inline: var(--doke-rail-inline-gutter);
+    --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
+    --doke-page-gutter: var(--doke-rail-inline-gutter);
+    --doke-page-available: var(--doke-rail-available);
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
+    --doke-current-page-rail: var(--doke-page-rail);
+    --rail-max: var(--doke-page-rail);
+    --doke-header-height: 70px;
+    --doke-first-block-top: var(--doke-page-top-gap, 16px);
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1024px) {
+  body[data-page] {
+    /* Header controls must sit on the same x-axis as the content rail.
+       Component-level gaps still live inside header.css; this token must not
+       create a second tablet inset inside .app-header__inner. */
+    --doke-header-inline-padding: 0px;
+    --doke-rail-inline-gutter: clamp(24px, 4vw, 40px);
+    --doke-rail-available: calc(100vw - (var(--doke-rail-inline-gutter) * 2));
+    --doke-rail-max: min(100%, 720px);
+    --doke-shared-page-inline: var(--doke-rail-inline-gutter);
+    --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
+    --doke-page-gutter: var(--doke-rail-inline-gutter);
+    --doke-page-available: var(--doke-rail-available);
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
+    --doke-current-page-rail: var(--doke-page-rail);
+    --rail-max: var(--doke-page-rail);
+  }
+
+  body[data-page].has-global-header .app-header__inner > :is(.app-header__group--primary, .home-side-meta__group--primary) {
+    margin-left: 0;
+  }
+
+  body[data-page].has-global-header .app-header__inner > :is(.app-header__group--secondary, .home-side-meta__group--secondary) {
+    margin-right: 0;
+  }
+
+  body:is([data-page="home"], [data-page="detalhe-anuncio"], [data-page="perfil"], [data-page="resultados"]) {
+    --doke-rail-max: min(100%, 760px);
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1179px) {
+  body[data-page] {
+    --doke-rail-sidebar-width: 240px;
+    --doke-rail-inline-gutter: clamp(32px, 4vw, 48px);
+    --doke-rail-available: calc(100vw - var(--doke-rail-sidebar-width) - (var(--doke-rail-inline-gutter) * 2));
+    --doke-rail-max: 760px;
+    --doke-shared-page-inline: var(--doke-rail-inline-gutter);
+    --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
+    --doke-page-gutter: var(--doke-rail-inline-gutter);
+    --doke-page-available: var(--doke-rail-available);
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
+    --doke-current-page-rail: var(--doke-page-rail);
+    --rail-max: var(--doke-page-rail);
+  }
+}
+
+@media (min-width: 1180px) {
+  body[data-page] {
+    --doke-rail-inline-gutter: 48px;
+    --doke-rail-available: calc(100vw - var(--doke-rail-sidebar-width) - (var(--doke-rail-inline-gutter) * 2));
+    --doke-shared-page-inline: var(--doke-rail-inline-gutter);
+    --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
+    --doke-page-gutter: var(--doke-rail-inline-gutter);
+    --doke-page-available: var(--doke-rail-available);
+    --doke-page-max: var(--doke-rail-max);
+    --doke-desktop-page-max: var(--doke-rail-max);
+    --doke-desktop-page-available: var(--doke-rail-available);
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
+    --doke-current-page-rail: var(--doke-page-rail);
+    --rail-max: var(--doke-page-rail);
+  }
+}
+
+@media (min-width: 1180px) {
+  body[data-page="home"] {
+    --doke-rail-inline-gutter: clamp(36px, 4vw, 52px);
+    --doke-rail-available: calc(100vw - var(--doke-rail-sidebar-width) - (var(--doke-rail-inline-gutter) * 2));
+    --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
+    --doke-current-page-rail: var(--doke-page-rail);
+    --rail-max: var(--doke-page-rail);
+  }
+}
+
+@media (min-width: 761px) {
+  body[data-page].doke-app-shell-page,
+  body[data-page].app-shell-page,
+  body[data-page].internal-shell-page {
+    --doke-page-max: var(--doke-rail-max);
+    --doke-desktop-page-max: var(--doke-rail-max);
+    --doke-desktop-page-available: var(--doke-rail-available);
+    --doke-app-shell-max: var(--doke-rail-max);
+    --doke-shell-max-default: var(--doke-rail-max);
+    --doke-shell-max-wide: var(--doke-rail-max);
+    --doke-shell-max-narrow: var(--doke-rail-max);
+    --doke-internal-page-rail: var(--doke-page-rail);
+    --doke-shared-internal-rail: var(--doke-page-rail);
+  }
+
+  body[data-page].has-global-header > .app-shell > .page > :is(.app-header, .home-side-meta),
+  body[data-page] > .app-shell > .page > :is(.topbar, .internal-page-topbar),
+  body[data-page] :is(
+    .page__content-inner,
+    .page__content-inner.container,
+    .shell-home__workspace,
+    .shell-home__workspace--clean,
+    .app-shell-page__workspace,
+    .doke-page-shell,
+    .doke-page-stack,
+    .ad-detail-shell,
+    .profile-shell-content,
+    .search-results-workspace,
+    .orders-shell-content,
+    .messages-shell-content,
+    .settings-page-frame,
+    .settings-main,
+    .settings-layout,
+    .settings-content,
+    .post-service-content,
+    .payment-screen__rail,
+    .pro-review-screen__rail,
+    .wallet-shell-content
+  ) {
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    min-inline-size: 0;
+    min-width: 0;
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
+
+  body[data-page].has-global-header > .app-shell > .page > :is(.app-header, .home-side-meta) > .app-header__inner {
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    min-inline-size: 0;
+    min-width: 0;
+    margin-inline: auto;
+    padding-inline: var(--doke-header-inline-padding, 0);
+    box-sizing: border-box;
+  }
+
+  body[data-page].has-global-header > .app-shell > .page > :is(.app-header, .home-side-meta) > .app-header__inner > :is(.app-header__group, .home-side-meta__group) {
+    min-inline-size: 0;
+  }
+
+  body[data-page].has-global-header > .app-shell > .page > :is(.app-header, .home-side-meta) > .app-header__inner > :is(.app-header__group--primary, .home-side-meta__group--primary) {
+    justify-content: flex-start;
+  }
+
+  body[data-page].has-global-header > .app-shell > .page > :is(.app-header, .home-side-meta) > .app-header__inner > :is(.app-header__group--secondary, .home-side-meta__group--secondary) {
+    justify-content: flex-end;
+    margin-left: auto;
+  }
+}
+
+
+/* Visual Recovery 02.2 — global page/header parity across app pages.
+   Responsibility: shared page rail, first-block spacing and desktop density.
+   This is a layout-level contract: pages keep their composition, but header,
+   content rail and first block now use the same visual axis. Do not add card,
+   carousel or component anatomy here. */
+body[data-page].has-global-header {
+  --doke-visual-rail-max: 1040px;
+  --doke-page-top-gap: clamp(16px, 1.8vw, 26px);
+  --doke-page-bottom-gap: clamp(36px, 5vw, 56px);
+  --doke-first-block-top: var(--doke-page-top-gap);
+}
+
+/* Simple flow pages use .shell-home__workspace--clean as the first visual rail.
+   app-shell.css owns shell surface padding, but layout/page-rail-authority owns
+   the shared header/content x-axis. Keep these flows flush with the canonical
+   rail instead of creating a second 28px inset inside the rail. */
+body:is(
+  [data-page="ajuda"],
+  [data-page="novidades"],
+  [data-page="perfil"],
+  [data-page="comunidade"]
+).has-global-header {
+  --doke-shell-workspace-inline: 0px;
+}
+
+body[data-page].has-global-header:not([data-page="home"]) {
+  --doke-section-gap: clamp(22px, 2.4vw, 34px);
+}
+
+body:is(
+  [data-page="home"],
+  [data-page="pedidos"],
+  [data-page="notificacoes"],
+  [data-page="perfil"],
+  [data-page="resultados"],
+  [data-page="detalhe-anuncio"],
+  [data-page="carteira"],
+  [data-page="novidades"],
+  [data-page="ajuda"]
+).has-global-header {
+  --doke-visual-rail-max: 1360px;
+  --doke-rail-max: var(--doke-visual-rail-max);
+  --doke-page-max: var(--doke-visual-rail-max);
+  --doke-desktop-page-max: var(--doke-visual-rail-max);
+  --doke-app-shell-max: var(--doke-visual-rail-max);
+  --doke-shell-max-default: var(--doke-visual-rail-max);
+}
+
+body:is(
+  [data-page="mensagens"],
+  [data-page="comunidade"],
+  [data-page="comunidade-interna"]
+).has-global-header {
+  --doke-visual-rail-max: 1180px;
+  --doke-rail-max: var(--doke-visual-rail-max);
+}
+
+@media (min-width: 761px) {
+  body[data-page].has-global-header > .app-shell > .page > .app-header,
+  body[data-page].has-global-header > .app-shell > .page > .app-header > .app-header__inner,
+  body[data-page].has-global-header > .app-shell > .page > .page__content > :is(
+    .page__content-inner,
+    .page__content-inner.container,
+    .shell-home__workspace,
+    .shell-home__workspace--clean,
+    .app-shell-page__workspace,
+    .doke-page-shell,
+    .doke-page-stack,
+    .ad-detail-shell,
+    .profile-shell-content,
+    .search-results-workspace,
+    .orders-shell-content,
+    .messages-shell-content,
+    .settings-page-frame,
+    .settings-main,
+    .settings-layout,
+    .settings-content,
+    .post-service-content,
+    .payment-screen__rail,
+    .pro-review-screen__rail,
+    .wallet-shell-content
+  ),
+  body[data-page="detalhe-anuncio"].has-global-header > .app-shell > .page > .page__content .ad-detail-shell {
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
+
+  body[data-page].has-global-header > .app-shell > .page > .page__content {
+    padding-block-start: var(--doke-page-top-gap);
+    padding-block-end: var(--doke-page-bottom-gap);
+  }
+
+  body[data-page].has-global-header > .app-shell > .page > .page__content > :is(
+    .page__content-inner,
+    .page__content-inner.container,
+    .shell-home__workspace,
+    .shell-home__workspace--clean,
+    .app-shell-page__workspace,
+    .doke-page-shell,
+    .doke-page-stack,
+    .profile-shell-content,
+    .search-results-workspace,
+    .orders-shell-content,
+    .settings-main,
+    .settings-layout,
+    .post-service-content,
+    .payment-screen__rail,
+    .pro-review-screen__rail,
+    .wallet-shell-content
+  ) {
+    padding-block-start: 0;
+  }
+
+  body[data-page="detalhe-anuncio"].has-global-header > .app-shell > .page > .page__content {
+    padding-block-start: var(--doke-page-top-gap);
+  }
+
+  /* detalhe-anuncio.html does not have the shared .page__content-inner wrapper.
+     Bind its main content element to the same rail as the global app header;
+     the ad-detail shell remains the page composition owner inside that rail. */
+  body[data-page="detalhe-anuncio"].has-global-header > .app-shell > .page > .page__content.detalhe-anuncio-page {
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    margin-inline: auto;
+    padding-inline: 0;
+    box-sizing: border-box;
+  }
+
+  body[data-page="detalhe-anuncio"].has-global-header > .app-shell > .page > .page__content.detalhe-anuncio-page > .ad-detail-shell {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
+
+  body[data-page].has-global-header .doke-page-stack,
+  body[data-page].has-global-header .page__content-inner.doke-page-stack {
+    gap: var(--doke-section-gap);
+  }
+
+  /* Rail closure: perfil/comunidade already inherit the correct external rail,
+     but their shared workspace kept the shell padding and created a second
+     horizontal inset. Keep the first visual section flush with the header rail. */
+  body:is([data-page="perfil"], [data-page="comunidade"]).has-global-header
+    > .app-shell
+    > .page
+    > .page__content
+    > :is(.page__content-inner, .profile-shell-content, .orders-shell-content, .app-shell-page__workspace, .shell-home__workspace) {
+    padding-inline: 0;
+  }
+}
+
+@media (min-width: 1180px) {
+  body[data-page].has-global-header {
+    --doke-rail-inline-gutter: clamp(36px, 4vw, 52px);
+    --doke-rail-available: calc(100vw - var(--doke-rail-sidebar-width) - (var(--doke-rail-inline-gutter) * 2));
+    --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
+    --doke-current-page-rail: var(--doke-page-rail);
+    --rail-max: var(--doke-page-rail);
+  }
+}
+
+/* Settings uses a custom .page frame instead of the normal .page__content-inner
+   shell. On desktop it must still reserve the global sidebar lane before
+   centering the header/content rail; otherwise both header and settings content
+   become centered under the sidebar instead of the app workspace. */
+@media (min-width: 1025px) {
+  body[data-page="configuracoes"].has-global-header > .app-shell > .page.settings-page-frame {
+    inline-size: auto;
+    width: auto;
+    max-inline-size: none;
+    max-width: none;
+    margin-left: var(--doke-rail-sidebar-width);
+    margin-right: 0;
+  }
+}
+
+/* Home desktop rail recovery.
+   The compact visual rail is valid for internal pages, but the approved home
+   baseline uses a wider marketplace rail on desktop so the hero, categories,
+   section headers and horizontal card rails start close to the sidebar axis.
+   Keep this scoped to the home desktop breakpoint; card anatomy and carousel
+   behavior remain owned by components/patterns. */
+@media (min-width: 1180px) {
+  body[data-page="home"].has-global-header {
+    --doke-visual-rail-max: 1360px;
+    --doke-rail-max: var(--doke-visual-rail-max);
+    --doke-page-max: var(--doke-visual-rail-max);
+    --doke-desktop-page-max: var(--doke-visual-rail-max);
+    --doke-app-shell-max: var(--doke-visual-rail-max);
+    --doke-shell-max-default: var(--doke-visual-rail-max);
+    --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
+    --doke-current-page-rail: var(--doke-page-rail);
+    --rail-max: var(--doke-page-rail);
+  }
+}
+
+/* Notificacoes rail bridge.
+   The page still has legacy modules that consumed --home-desktop-content-width
+   and local workspace padding. Keep the notification list as a slot inside the
+   canonical page rail, so its cards start on the same x-axis as the global
+   contextual header without changing card anatomy. */
+@media (min-width: 761px) {
+  body[data-page="notificacoes"].has-global-header {
+    --home-desktop-content-width: var(
+      --doke-page-rail,
+      min(1280px, calc(100vw - var(--sidebar-width) - 56px))
+    );
+  }
+
+  body[data-page="notificacoes"].has-global-header > .app-shell > .page > .page__content {
+    padding-inline: 0;
+  }
+
+  body[data-page="notificacoes"].has-global-header
+    > .app-shell
+    > .page
+    > .page__content
+    > .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content {
+    padding-inline: 0;
+  }
+
+  body[data-page="notificacoes"].has-global-header :is(
+    .notifications-page,
+    .notifications-page-header--auxiliary,
+    .notifications-list
+  ) {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
+}
+
+
+/* Global rail standardization — index baseline promoted to layout contract.
+   Responsibility: one shared tablet/desktop x-axis for app-header and first
+   content rail across every HTML that uses the global shell. Pages may still
+   constrain readable modules inside this rail, but they must not redefine the
+   shell/header/page rail. */
+@media (min-width: 761px) {
+  body[data-page].has-global-header {
+    --doke-visual-rail-max: 1360px;
+    --doke-rail-max: var(--doke-visual-rail-max);
+    --doke-page-max: var(--doke-visual-rail-max);
+    --doke-desktop-page-max: var(--doke-visual-rail-max);
+    --doke-app-shell-max: var(--doke-visual-rail-max);
+    --doke-shell-max-default: var(--doke-visual-rail-max);
+    --doke-shell-max-wide: var(--doke-visual-rail-max);
+    --doke-internal-page-rail: var(--doke-page-rail);
+    --doke-shared-internal-rail: var(--doke-page-rail);
+  }
+
+  body[data-page].has-global-header > .app-shell > .page > .page__content {
+    padding-inline: 0;
+  }
+
+  body[data-page].has-global-header > .app-shell > .page > .app-header,
+  body[data-page].has-global-header > .app-shell > .page > .app-header > .app-header__inner,
+  body[data-page].has-global-header > .app-shell > .page > .page__content > :is(
+    .page__content-inner,
+    .page__content-inner.container,
+    .shell-home__workspace,
+    .shell-home__workspace--clean,
+    .app-shell-page__workspace,
+    .doke-page-shell,
+    .doke-page-stack,
+    .ad-detail-shell,
+    .profile-shell-content,
+    .search-results-workspace,
+    .orders-shell-content,
+    .messages-shell-content,
+    .settings-page-frame,
+    .settings-main,
+    .settings-layout,
+    .settings-content,
+    .post-service-content,
+    .payment-screen__rail,
+    .pro-review-screen__rail,
+    .wallet-shell-content
+  ),
+  body[data-page="detalhe-anuncio"].has-global-header > .app-shell > .page > .page__content.detalhe-anuncio-page {
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    min-inline-size: 0;
+    min-width: 0;
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
+
+  body[data-page].has-global-header > .app-shell > .page > .page__content > :is(
+    .page__content-inner,
+    .page__content-inner.container,
+    .shell-home__workspace,
+    .shell-home__workspace--clean,
+    .app-shell-page__workspace,
+    .doke-page-shell,
+    .doke-page-stack,
+    .profile-shell-content,
+    .search-results-workspace,
+    .orders-shell-content,
+    .messages-shell-content,
+    .settings-main,
+    .settings-layout,
+    .post-service-content,
+    .payment-screen__rail,
+    .pro-review-screen__rail,
+    .wallet-shell-content
+  ) {
+    padding-inline: 0;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1024px) {
+  body[data-page].has-global-header > .app-shell {
+    display: block;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body[data-page].has-global-header > .app-shell > .page {
+    display: block;
+    grid-column: 1;
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
+}
+
+
+/* Desktop shell grid closure. Some internal manifests did not import the desktop
+   shell geometry, leaving .page auto-placed in the sidebar column. The layout
+   layer owns this grid so every global-header HTML reserves the same sidebar
+   lane and centers header/content in the application workspace. */
+@media (min-width: 1025px) {
+  body[data-page].has-global-header > .app-shell {
+    display: grid;
+    grid-template-columns: var(--doke-rail-sidebar-width) minmax(0, 1fr);
+  }
+
+  body[data-page].has-global-header > .app-shell > :is(.sidebar, [data-shell-sidebar]) {
+    grid-column: 1;
+  }
+
+  body[data-page].has-global-header > .app-shell > .page {
+    grid-column: 2;
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    min-inline-size: 0;
+    min-width: 0;
+    margin-inline: 0;
+  }
+}
+
+
+/* Full-class bridge for legacy internal modules with highly specific width rules
+   (orders/wallet/messages). This keeps their page composition but removes their
+   authority over the external shell rail. */
+@media (min-width: 761px) {
+  body.orders-page-shell.has-global-header > .app-shell > .page > .page__content > .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.orders-shell-content.doke-page-shell.doke-page-stack,
+  body.wallet-page-shell.has-global-header > .app-shell > .page > .page__content > .page__content-inner.container.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.wallet-shell-content.doke-page-shell.doke-page-stack,
+  body.messages-page-shell.has-global-header > .app-shell > .page > .page__content > .page__content-inner.app-shell-page__workspace.app-shell-page__workspace--clean.shell-home__workspace.shell-home__workspace--clean.messages-shell-content.doke-page-shell.doke-page-stack {
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    min-inline-size: 0;
+    min-width: 0;
+    margin-inline: auto;
+    padding-inline: 0;
+    box-sizing: border-box;
+  }
+}
+
+/* Targeted legacy gutter closure for pages that still inherit v22 internal rails.
+   Cause: pedidos, detalhe-anuncio and carteira still consume --doke-app-shell-gutter
+   through old high-specificity shell/detail rules, creating a second inset inside
+   the global header/content rail. The global rail already owns the outer gutter,
+   so these page compositions must fill the shared rail instead of subtracting
+   another page gutter. */
+@media (min-width: 761px) {
+  body:is(
+    [data-page="pedidos"],
+    [data-page="detalhe-anuncio"],
+    [data-page="carteira"]
+  ).has-global-header {
+    --doke-app-shell-gutter: 0px;
+    --home-desktop-content-width: var(--doke-page-rail);
+    --detail-page-max: var(--doke-page-rail);
+    --app-header-width: var(--doke-page-rail);
+    --app-header-max: var(--doke-page-rail);
+  }
+
+  body.orders-page-shell.has-global-header :is(
+    .orders-page,
+    .orders-command-summary,
+    .orders-planner,
+    .orders-command-insights,
+    .orders-list
+  ),
+  body.wallet-page-shell.has-global-header :is(
+    .wallet-page,
+    .wallet-shell-content,
+    .wallet-layout,
+    .wallet-overview,
+    .wallet-grid
+  ),
+  body[data-page="detalhe-anuncio"].has-global-header :is(
+    .detalhe-anuncio-page,
+    .ad-detail-shell,
+    .ad-detail-layout
+  ) {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    min-inline-size: 0;
+    min-width: 0;
+    margin-inline: 0;
+    box-sizing: border-box;
+  }
+}
+
+/* Responsive header-control rail closure.
+   Contract: on tablet portrait/landscape, the first and last visible header
+   controls must align with the same rail used by the first page block. Older
+   tablet header contracts added side margins inside .app-header__inner, which
+   made the buttons drift while the header/content containers themselves still
+   measured as aligned. */
+@media (min-width: 761px) and (max-width: 1024px) {
+  body[data-page].has-global-header {
+    --doke-header-inline-padding: 0px;
+  }
+
+  body[data-page].has-global-header
+    > .app-shell
+    > .page
+    > :is(.app-header, .home-side-meta)
+    > .app-header__inner {
+    padding-inline: 0;
+  }
+
+  body[data-page].has-global-header
+    > .app-shell
+    > .page
+    > :is(.app-header, .home-side-meta)
+    > .app-header__inner
+    > :is(.app-header__group--primary, .home-side-meta__group--primary) {
+    margin-left: 0;
+  }
+
+  body[data-page].has-global-header
+    > .app-shell
+    > .page
+    > :is(.app-header, .home-side-meta)
+    > .app-header__inner
+    > :is(.app-header__group--secondary, .home-side-meta__group--secondary) {
+    margin-right: 0;
+  }
+}
+
+/* Pedidos/Notificacoes small-tablet rail closure.
+   Root cause: their mobile shell contract still used the phone column token
+   (--doke-mobile-app-max: 430px) while page children consumed the wider
+   tablet rail. That made the first content wrapper narrow and clipped the
+   orders/notifications modules on iPad mini portrait. The mobile header
+   component now reads this page-level source token; this layer only supplies
+   the responsive rail value for the two affected pages. */
+@media (min-width: 561px) and (max-width: 760px) {
+  body:is([data-page="pedidos"], [data-page="notificacoes"]).has-global-header {
+    --doke-mobile-app-max: min(var(--doke-page-rail), calc(100vw - 32px));
+    --doke-mobile-app-max-source: var(--doke-mobile-app-max);
+  }
+}
+
+
+
+/* Tablet/touch shell boundary.
+   Up to 1199px, navigation is drawer-based and must not reserve or render
+   the persistent desktop sidebar. Desktop sidebar begins at 1200px. */
+@media (max-width: 1199px) {
+  body[data-page].has-global-header {
+    --sidebar-width: 0px;
+    --doke-desktop-sidebar-width: 0px;
+    --doke-app-sidebar-width: 0px;
+    --doke-app-shell-sidebar-width: 0px;
+    --doke-rail-sidebar-width: 0px;
+  }
+
+  body[data-page].has-global-header > .app-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body[data-page].has-global-header > .app-shell > :is(.sidebar, [data-shell-sidebar]) {
+    display: none;
+  }
+
+  body[data-page].has-global-header > .app-shell > .page {
+    grid-column: 1;
+    inline-size: 100%;
+    width: 100%;
+    min-inline-size: 0;
+    min-width: 0;
+    margin-inline: 0;
+  }
+}
+
+/* Small-tablet late mobile-contract closure.
+   Root cause: some page families compute the shared 561-760 rail correctly but
+   later mobile modules still assign full-width or calc(100% - local gutter)
+   containers. This layer owns the external header/content x-axis, so it binds
+   those first shell containers back to the shared rail without changing card,
+   filter, gallery or chat anatomy. */
+@media (min-width: 561px) and (max-width: 760px) {
+  body:is(
+    [data-page="comunidade"],
+    [data-page="resultados"],
+    [data-page="detalhe-anuncio"]
+  ).has-global-header > .app-shell > .page > .app-header,
+  body:is(
+    [data-page="comunidade"],
+    [data-page="resultados"],
+    [data-page="detalhe-anuncio"]
+  ).has-global-header > .app-shell > .page > .app-header > .app-header__inner,
+  body[data-page="comunidade"].has-global-header
+    > .app-shell
+    > .page
+    > .page__content
+    > .page__content-inner,
+  body[data-page="resultados"].has-global-header
+    > .app-shell
+    > .page
+    > .page__content
+    > :is(.page__content-inner, .search-results-workspace),
+  body[data-page="detalhe-anuncio"].has-global-header
+    > .app-shell
+    > .page
+    > .page__content.detalhe-anuncio-page,
+  body[data-page="detalhe-anuncio"].has-global-header
+    > .app-shell
+    > .page
+    > .page__content.detalhe-anuncio-page
+    > .ad-detail-shell {
+    inline-size: var(--doke-page-rail);
+    width: var(--doke-page-rail);
+    max-inline-size: var(--doke-page-rail);
+    max-width: var(--doke-page-rail);
+    min-inline-size: 0;
+    min-width: 0;
+    margin-inline: auto;
+    box-sizing: border-box;
+  }
+
+  body:is([data-page="comunidade"], [data-page="resultados"], [data-page="detalhe-anuncio"]).has-global-header
+    > .app-shell
+    > .page
+    > .page__content {
+    padding-inline: 0;
+  }
+
+  body[data-page="resultados"].has-global-header
+    > .app-shell
+    > .page
+    > .page__content
+    > :is(.page__content-inner, .search-results-workspace) {
+    padding-inline: 0;
+  }
+
+  body[data-page="detalhe-anuncio"].has-global-header
+    > .app-shell
+    > .page
+    > .page__content.detalhe-anuncio-page
+    > .ad-detail-shell {
+    display: grid;
+  }
+}

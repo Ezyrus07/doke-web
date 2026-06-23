@@ -1,0 +1,242 @@
+/* Doke chat sidebar controls contract.
+ * Scope: mensagens.html and comunidade-interna.html.
+ * Responsibility: keep sidebar header/search/filter fixed while each content section owns
+ * its own scroll, and flatten search action controls so icons do not visually overlap the input.
+ */
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) {
+  --chat-sidebar-header-gap: 14px;
+  --chat-sidebar-controls-bg: rgba(244, 250, 255, 0.98);
+  --chat-sidebar-control-border: rgba(31, 95, 174, 0.14);
+  --chat-sidebar-section-gap: 14px;
+}
+
+@media (min-width: 1024px) {
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-sidebar, .community-room-sidebar) {
+    display: grid;
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    gap: var(--chat-sidebar-header-gap);
+    min-block-size: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-sidebar-brand, .community-room-sidebar__header) {
+    position: relative;
+    z-index: 5;
+    margin: 0;
+    padding: 0 2px;
+    background: transparent;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-sidebar-tools, .community-room-sidebar__tools) {
+    position: relative;
+    z-index: 5;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .messages-sidebar-panel {
+    z-index: 4;
+    margin: -2px 0 0;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-sidebar-scroll-region {
+    display: grid;
+    gap: var(--chat-sidebar-section-gap);
+    min-block-size: 0;
+    min-height: 0;
+    padding-block: 2px 10px;
+    overflow: hidden;
+  }
+
+  body[data-page="mensagens"] .chat-sidebar-scroll-region {
+    grid-template-rows: minmax(0, 1fr) minmax(0, 0.72fr);
+  }
+
+  body[data-page="comunidade-interna"] .chat-sidebar-scroll-region {
+    grid-template-rows: minmax(0, 1fr) minmax(104px, 0.38fr);
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-sidebar-scroll-region > :is(.messages-block, .community-room-block) {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-content: stretch;
+    min-block-size: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-sidebar-scroll-region > :is(.messages-empty, .community-room-empty):not([hidden]) {
+    grid-row: 1 / -1;
+    align-self: start;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-sidebar-scroll-region :is(.messages-list, .community-room-channel-list, .community-room-online-list) {
+    min-block-size: 0;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-sidebar-scroll-region :is(.messages-block__header, .community-room-block__header) {
+    flex: none;
+    margin: 0;
+    padding-block: 0 2px;
+    background: transparent;
+  }
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-sidebar-search, .community-room-search) {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 6px;
+  border: 1px solid var(--chat-sidebar-control-border);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: none;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-sidebar-search__icon, .messages-sidebar-search__close, .community-room-search__icon, .community-room-search__close, .community-room-search__clear) {
+  position: static;
+  inset: auto;
+  transform: none;
+  inline-size: 34px;
+  width: 34px;
+  min-inline-size: 34px;
+  min-width: 34px;
+  block-size: 34px;
+  height: 34px;
+  min-block-size: 34px;
+  min-height: 34px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--chat-primary, #2167ae);
+  box-shadow: none;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-sidebar-search__icon:hover, .messages-sidebar-search__close:hover, .community-room-search__icon:hover, .community-room-search__close:hover, .community-room-search__clear:hover) {
+  background: rgba(33, 103, 174, 0.08);
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-sidebar-search input, .community-room-search input) {
+  min-inline-size: 0;
+  min-width: 0;
+  padding: 0 2px;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-sidebar-tools__filter, .community-room-filter, .community-room-sidebar__filter) {
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.92);
+  border-color: var(--chat-sidebar-control-border);
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-sidebar-tools__filter:hover, .community-room-filter:hover, .community-room-sidebar__filter:hover) {
+  background: rgba(33, 103, 174, 0.08);
+}
+
+@media (max-width: 1023px) {
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-sidebar-scroll-region {
+    display: grid;
+    gap: 14px;
+    min-block-size: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body[data-page="mensagens"] .chat-sidebar-scroll-region {
+    grid-template-rows: minmax(0, 1fr) minmax(0, 0.72fr);
+  }
+
+  body[data-page="comunidade-interna"] .chat-sidebar-scroll-region {
+    grid-template-rows: minmax(0, 1fr) minmax(104px, 0.38fr);
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-sidebar-scroll-region > :is(.messages-block, .community-room-block) {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-block-size: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-sidebar-scroll-region :is(.messages-list, .community-room-channel-list, .community-room-online-list) {
+    min-block-size: 0;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+  }
+}
+
+/* v2 — sidebar split-scroll calibration.
+   Root cause addressed: the first split used proportional tracks that were too restrictive,
+   which clipped the last cards and left the members section cramped.
+   This pass gives both sections explicit useful minima and end padding so each list can be
+   fully scrolled without the headers collapsing into one another. */
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-sidebar-scroll-region {
+  align-content: stretch;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-sidebar-scroll-region > :is(.messages-block, .community-room-block) {
+  min-block-size: 0;
+  min-height: 0;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-sidebar-scroll-region :is(.messages-list, .community-room-channel-list, .community-room-online-list) {
+  align-content: start;
+  padding-block: 0 12px;
+  padding-inline: 0 6px;
+}
+
+body[data-page="mensagens"] .messages-block--orders .messages-list,
+body[data-page="mensagens"] .messages-block--contacts .messages-list {
+  padding-block-end: 14px;
+}
+
+body[data-page="comunidade-interna"] .community-room-channel-list,
+body[data-page="comunidade-interna"] .community-room-online-list {
+  padding-block-end: 14px;
+}
+
+body[data-page="comunidade-interna"] .community-room-block--members {
+  min-block-size: 216px;
+  min-height: 216px;
+}
+
+body[data-page="comunidade-interna"] .community-room-online-list {
+  gap: 12px;
+}
+
+body[data-page="comunidade-interna"] .community-room-online-list > span {
+  min-block-size: 72px;
+  min-height: 72px;
+  padding: 12px 14px;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  body[data-page="mensagens"] .chat-sidebar-scroll-region {
+    grid-template-rows: minmax(248px, 1fr) minmax(224px, 0.94fr);
+  }
+
+  body[data-page="comunidade-interna"] .chat-sidebar-scroll-region {
+    grid-template-rows: minmax(288px, 1fr) minmax(216px, 0.78fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  body[data-page="mensagens"] .chat-sidebar-scroll-region {
+    grid-template-rows: minmax(252px, 1fr) minmax(236px, 0.96fr);
+  }
+
+  body[data-page="comunidade-interna"] .chat-sidebar-scroll-region {
+    grid-template-rows: minmax(300px, 1fr) minmax(224px, 0.8fr);
+  }
+}

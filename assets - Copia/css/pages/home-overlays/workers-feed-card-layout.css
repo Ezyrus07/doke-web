@@ -1,0 +1,110 @@
+/* Workers feed overlay layout
+   Owner: pages/home-overlays.
+   Responsibility: overlay composition only. Card/reel anatomy belongs to worker modal components. */
+
+.worker-preview__stage {
+  display: grid;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.worker-preview__feed {
+  width: min(520px, calc(100vw - 32px));
+  max-width: 100%;
+  margin-inline: auto;
+  overflow: visible;
+}
+
+.worker-preview__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(12px, 2vw, 20px);
+  width: 100%;
+  min-width: 0;
+}
+
+.worker-preview__reel {
+  width: min(420px, calc(100vw - 96px));
+  max-width: 100%;
+  height: min(84vh, 790px);
+  margin-inline: auto;
+}
+
+.worker-preview__comments {
+  max-width: min(360px, calc(100vw - 32px));
+}
+
+.worker-preview__comments-count {
+  color: #6a83a0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.worker-preview__scroll-hint {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+@media (min-width: 1181px) {
+  .worker-preview__stage {
+    grid-template-columns: minmax(420px, 560px) minmax(320px, 420px);
+    gap: 30px;
+    padding-inline: 34px;
+  }
+
+  .worker-preview__feed {
+    width: min(560px, calc(100vw - 520px));
+  }
+
+  .worker-preview__comments {
+    width: min(360px, 28vw);
+  }
+}
+
+@media (min-width: 821px) and (max-width: 1180px) {
+  .worker-preview__stage {
+    padding-inline: 24px;
+  }
+
+  .worker-preview__feed {
+    width: min(520px, calc(100vw - 120px));
+  }
+
+  .worker-preview__comments {
+    position: absolute;
+    left: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 6;
+  }
+}
+
+@media (max-width: 820px) {
+  .worker-preview__stage {
+    display: flex;
+    padding-inline: 12px;
+  }
+
+  .worker-preview__feed {
+    width: min(430px, 100%);
+  }
+
+  .worker-preview__item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .worker-preview__reel {
+    width: min(100%, 390px);
+    height: min(78vh, 720px);
+  }
+
+  .worker-preview__comments {
+    position: static;
+    width: 100%;
+    margin-top: 12px;
+    transform: none;
+  }
+}

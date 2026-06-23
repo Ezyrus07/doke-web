@@ -1,0 +1,195 @@
+/* Shared search autocomplete contract.
+   Owner: components/search.
+   Page CSS positions the host; this file owns dropdown anatomy only. */
+
+.search-dropdown {
+  padding: 18px;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  border: var(--border-muted, 1px solid rgba(24, 75, 118, 0.1));
+  border-radius: var(--radius-xl, 22px);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 24px 48px rgba(29, 56, 88, 0.16);
+  color: #18314f;
+}
+
+.search-dropdown[hidden],
+.search-dropdown__section[hidden],
+.search-dropdown__empty[hidden] {
+  display: none;
+}
+
+.search-dropdown__section { min-width: 0; }
+
+.search-dropdown__section + .search-dropdown__section:not([hidden]) {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: var(--border-muted, 1px solid rgba(24, 75, 118, 0.1));
+}
+
+.search-dropdown__section-header,
+.search-dropdown__heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  color: #18314f;
+  font-size: 0.85rem;
+  font-weight: 900;
+}
+
+.search-dropdown__section-header button {
+  border: 0;
+  background: transparent;
+  color: #1f65ad;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.search-dropdown__list {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.search-dropdown__chips,
+.search-dropdown__refine-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.search-chip,
+.search-refine-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  padding: 8px 12px;
+  border: var(--border-muted, 1px solid rgba(24, 75, 118, 0.1));
+  border-radius: var(--radius-pill, 999px);
+  background: #f7fbff;
+  color: #285f99;
+  box-shadow: none;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.search-chip:hover,
+.search-chip:focus-visible,
+.search-refine-chip:hover,
+.search-refine-chip:focus-visible {
+  border-color: rgba(31, 101, 173, 0.32);
+  background: #f1f7fd;
+  outline: 0;
+}
+
+.search-chip svg,
+.search-refine-chip svg {
+  display: block;
+  flex: 0 0 15px;
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.search-chip span,
+.search-refine-chip span {
+  display: inline-block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-suggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  min-height: 54px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--radius-md, 14px);
+  background: transparent;
+  color: #18314f;
+  box-shadow: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.search-suggestion:hover,
+.search-suggestion.is-active,
+.search-suggestion:focus-visible {
+  background: #f2f7fc;
+  outline: 0;
+}
+
+.search-suggestion__main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.search-suggestion__icon {
+  display: grid;
+  flex: 0 0 36px;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm, 12px);
+  background: #edf4fb;
+  color: #28619d;
+}
+
+.search-suggestion__icon svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.search-suggestion__text { min-width: 0; }
+
+.search-suggestion__label,
+.search-suggestion__meta {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-suggestion__label { font-weight: 900; }
+.search-suggestion__meta,
+.search-suggestion__badge,
+.search-dropdown__empty {
+  color: #6f8198;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.search-dropdown__empty { margin: 0; }

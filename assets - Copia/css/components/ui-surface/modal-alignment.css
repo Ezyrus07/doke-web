@@ -1,0 +1,88 @@
+/* CSS Cleanup Stage 22 — simplified modal alignment.
+   This file is a small shared surface guard only. Page-specific modal anatomy must
+   remain in its component/page module, not in a final alignment override layer. */
+:is(
+  .wallet-modal__card,
+  .ui-modal__dialog,
+  .home-address-modal__dialog,
+  .address-modal__dialog,
+  .community-request-modal__dialog,
+  .community-action-modal__dialog,
+  .payment-overlay__dialog,
+  .detail-modal__card,
+  .profile-followers-modal__dialog,
+  .profile-edit-modal__dialog,
+  .detail-budget-modal__dialog,
+  .charge-modal__surface,
+  .image-lightbox__surface,
+  .doke-media-lightbox__surface
+) {
+  position: relative;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: min(100%, calc(100vw - 32px));
+  overflow-x: hidden;
+}
+
+:is(
+  dialog.home-address-modal,
+  dialog.address-modal,
+  dialog.profile-budget-modal,
+  dialog.charge-modal,
+  .ui-modal__dialog,
+  .community-action-modal__dialog,
+  .detail-budget-modal__dialog
+) {
+  box-sizing: border-box;
+  max-width: min(880px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+}
+
+:is(
+  .home-address-modal__dialog,
+  .address-modal__dialog,
+  .ui-modal__dialog,
+  .community-action-modal__dialog,
+  .detail-budget-modal__dialog,
+  .charge-modal__surface
+) {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+:is(
+  .home-address-modal__head,
+  .address-modal__head,
+  .community-request-modal__header,
+  .community-action-modal__header,
+  .charge-modal__header,
+  .profile-edit-modal__head,
+  .detail-budget-modal__topbar,
+  .ui-modal__header
+) {
+  position: relative;
+  min-width: 0;
+}
+
+:is(.surface-modal__intro, .detail-budget-modal__intro, .ui-modal__title, .ui-modal__text) {
+  max-width: 100%;
+}
+
+@media (max-width: 560px) {
+  :is(
+    .wallet-modal__card,
+    .ui-modal__dialog,
+    .home-address-modal__dialog,
+    .address-modal__dialog,
+    .community-request-modal__dialog,
+    .community-action-modal__dialog,
+    .payment-overlay__dialog,
+    .detail-modal__card,
+    .profile-followers-modal__dialog,
+    .profile-edit-modal__dialog,
+    .detail-budget-modal__dialog,
+    .charge-modal__surface
+  ) {
+    max-width: calc(100vw - 20px);
+  }
+}

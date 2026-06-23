@@ -1,0 +1,284 @@
+/* Shared selectable card contract.
+   Authority: visual state for cards that can enter bulk/selection mode.
+   Page CSS may own layout only; check geometry and selected feedback stay here. */
+
+:root {
+  --doke-selection-accent: var(--color-primary, #245f96);
+  --doke-selection-accent-strong: var(--color-primary-strong, #184a76);
+  --doke-selection-accent-rgb: var(--color-primary-rgb, 36, 95, 150);
+  --doke-selection-check-size: 30px;
+  --doke-selection-check-offset: 12px;
+  --doke-selection-check-radius: 11px;
+  --doke-selection-check-border: rgba(var(--doke-selection-accent-rgb), 0.28);
+  --doke-selection-card-bg: rgba(232, 242, 250, 0.48);
+  --doke-selection-card-ring: rgba(var(--doke-selection-accent-rgb), 0.12);
+  --doke-selection-card-shadow: 0 0 0 3px var(--doke-selection-card-ring), 0 14px 32px rgba(15, 23, 42, 0.07);
+}
+
+.doke-selectable-card,
+.order-card,
+.notification-card,
+.message-item,
+.message-bubble {
+  position: relative;
+}
+
+:is(
+  .orders-page.orders-is-selecting,
+  .notifications-page.is-selection-mode,
+  .messages-app.is-selection-mode
+) :is(.doke-selectable-card, .order-card, .notification-card, .message-item, .message-bubble) {
+  cursor: pointer;
+}
+
+.doke-selection-check,
+.order-card__select {
+  position: absolute;
+  inset-block-start: var(--doke-selection-check-offset);
+  inset-inline-end: var(--doke-selection-check-offset);
+  z-index: 6;
+  width: var(--doke-selection-check-size);
+  height: var(--doke-selection-check-size);
+  min-width: var(--doke-selection-check-size);
+  min-height: var(--doke-selection-check-size);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--doke-selection-check-border);
+  border-radius: var(--doke-selection-check-radius);
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--doke-selection-accent);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    color 0.16s ease,
+    transform 0.16s ease;
+}
+
+.orders-page.orders-is-selecting .order-card__select,
+.orders-is-selecting .order-card__select {
+  display: inline-flex;
+}
+
+.doke-selection-check:hover,
+.order-card__select:hover {
+  border-color: rgba(var(--doke-selection-accent-rgb), 0.42);
+  background: #fff;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
+  transform: translateY(-1px);
+}
+
+.doke-selection-check:focus-visible,
+.order-card__select:focus-visible {
+  outline: 2px solid rgba(var(--doke-selection-accent-rgb), 0.32);
+  outline-offset: 3px;
+}
+
+.order-card__select span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 11px;
+  display: block;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  border-radius: 0;
+  background: transparent;
+  opacity: 0;
+  transform: translate(-50%, -58%) rotate(45deg) scale(0.82);
+  transform-origin: center;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.order-card__select span::after {
+  content: none;
+}
+
+.order-card.is-selected .order-card__select {
+  border-color: var(--doke-selection-accent-strong);
+  background: var(--doke-selection-accent-strong);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(var(--doke-selection-accent-rgb), 0.22);
+}
+
+.order-card.is-selected .order-card__select span {
+  opacity: 1;
+  transform: translate(-50%, -58%) rotate(45deg) scale(1);
+}
+
+.notifications-page.is-selection-mode .notification-card__read-toggle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.notifications-page.is-selection-mode .notification-card::before,
+.messages-app.is-selection-mode .message-item::before,
+.message-bubble.is-selected::before {
+  content: "";
+  position: absolute;
+  inset-block-start: var(--doke-selection-check-offset);
+  inset-inline-end: var(--doke-selection-check-offset);
+  z-index: 6;
+  width: var(--doke-selection-check-size);
+  height: var(--doke-selection-check-size);
+  border: 1px solid var(--doke-selection-check-border);
+  border-radius: var(--doke-selection-check-radius);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.notifications-page.is-selection-mode .notification-card.is-selected::before,
+.messages-app.is-selection-mode .message-item.is-selected::before,
+.message-bubble.is-selected::before {
+  border-color: var(--doke-selection-accent-strong);
+  background: var(--doke-selection-accent-strong);
+  box-shadow: 0 10px 24px rgba(var(--doke-selection-accent-rgb), 0.22);
+}
+
+.notifications-page.is-selection-mode .notification-card.is-selected::after,
+.messages-app.is-selection-mode .message-item.is-selected::after,
+.message-bubble.is-selected::after {
+  content: "";
+  position: absolute;
+  z-index: 7;
+  inset-block-start: calc(var(--doke-selection-check-offset) + 7px);
+  inset-inline-end: calc(var(--doke-selection-check-offset) + 11px);
+  width: 6px;
+  height: 11px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+.orders-page.orders-is-selecting .order-card:hover,
+.notifications-page.is-selection-mode .notification-card:hover,
+.messages-app.is-selection-mode .message-item:hover {
+  border-color: rgba(var(--doke-selection-accent-rgb), 0.24);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
+}
+
+:is(
+  .orders-page.orders-is-selecting .order-card,
+  .notifications-page.is-selection-mode .notification-card,
+  .messages-app.is-selection-mode .message-item
+):focus-visible {
+  outline: 2px solid rgba(var(--doke-selection-accent-rgb), 0.34);
+  outline-offset: 3px;
+}
+
+.orders-page.orders-is-selecting .order-card.is-selected,
+.notifications-page.is-selection-mode .notification-card.is-selected {
+  border-color: rgba(var(--doke-selection-accent-rgb), 0.42);
+  background: linear-gradient(180deg, var(--doke-selection-card-bg), rgba(255, 255, 255, 0.98));
+  box-shadow: var(--doke-selection-card-shadow);
+}
+
+body[data-page="mensagens"] .messages-app.is-selection-mode .message-item.is-selected {
+  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12), 0 12px 28px rgba(6, 18, 35, 0.16);
+}
+
+.message-bubble.is-selected {
+  border-color: rgba(var(--doke-selection-accent-rgb), 0.38);
+  box-shadow: var(--doke-selection-card-shadow);
+}
+
+.doke-selection-toolbar,
+.doke-mobile-action-panel--select,
+.messages-selection-bar {
+  border: 1px solid rgba(var(--doke-selection-accent-rgb), 0.13);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
+}
+
+.doke-mobile-selection-action,
+.doke-mobile-panel-button,
+.messages-selection-bar__button {
+  border-radius: var(--radius-pill, 999px);
+}
+
+.doke-mobile-selection-action:focus-visible,
+.doke-mobile-panel-button:focus-visible,
+.messages-selection-bar__button:focus-visible {
+  outline: 2px solid rgba(var(--doke-selection-accent-rgb), 0.30);
+  outline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --doke-selection-check-size: 28px;
+    --doke-selection-check-offset: 10px;
+  }
+
+  .messages-app.is-selection-mode .message-item::before,
+  .messages-app.is-selection-mode .message-item.is-selected::after {
+    inset-block-start: 10px;
+  }
+}
+
+/* Community room channel selection.
+   Responsibility: reuse the same selection/check visual for channel cards
+   when the mobile shell exposes Selecionar on comunidade-interna.html. */
+body[data-page="comunidade-interna"] .community-room-layout.is-selection-mode .community-room-channel {
+  cursor: pointer;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-selection-mode .community-room-channel::before {
+  content: "";
+  position: absolute;
+  inset-block-start: var(--doke-selection-check-offset);
+  inset-inline-end: var(--doke-selection-check-offset);
+  z-index: 6;
+  width: var(--doke-selection-check-size);
+  height: var(--doke-selection-check-size);
+  border: 1px solid var(--doke-selection-check-border);
+  border-radius: var(--doke-selection-check-radius);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-selection-mode .community-room-channel.is-selected::before {
+  border-color: var(--doke-selection-accent-strong);
+  background: var(--doke-selection-accent-strong);
+  box-shadow: 0 10px 24px rgba(var(--doke-selection-accent-rgb), 0.22);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-selection-mode .community-room-channel.is-selected::after {
+  content: "";
+  position: absolute;
+  z-index: 7;
+  inset-block-start: calc(var(--doke-selection-check-offset) + 7px);
+  inset-inline-end: calc(var(--doke-selection-check-offset) + 11px);
+  width: 6px;
+  height: 11px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-selection-mode .community-room-channel:hover {
+  border-color: rgba(var(--doke-selection-accent-rgb), 0.24);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-selection-mode .community-room-channel.is-selected {
+  border-color: rgba(var(--doke-selection-accent-rgb), 0.42);
+  background: linear-gradient(180deg, var(--doke-selection-card-bg), rgba(255, 255, 255, 0.98));
+  box-shadow: var(--doke-selection-card-shadow);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-selection-mode .community-room-channel__badge {
+  opacity: 0;
+  pointer-events: none;
+}

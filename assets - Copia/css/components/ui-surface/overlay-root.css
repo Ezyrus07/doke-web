@@ -1,0 +1,112 @@
+/* Overlay/root behavior for modals, drawers, lightboxes and scrims. */
+/* -------------------------------------------------------------------------
+   Overlay/root behavior
+------------------------------------------------------------------------- */
+html:has(:is(dialog[open], .wallet-modal:not([hidden]), .ui-modal:not([hidden]), .community-request-modal:not([hidden]), .community-action-modal:not([hidden]), .payment-overlay:not([hidden]), .detail-modal:not([hidden]), .orders-sidepanel:not([hidden]), .doke-media-lightbox.is-open, .before-after-preview:not([hidden]), .worker-preview:not([hidden]))) {
+  overflow: hidden;
+}
+
+:is(
+  .wallet-modal,
+  .ui-modal,
+  .community-request-modal,
+  .community-action-modal,
+  .payment-overlay,
+  .detail-modal,
+  .home-address-modal,
+  .address-modal,
+  .profile-followers-modal,
+  .profile-edit-modal,
+  .detail-budget-modal,
+  .profile-budget-modal,
+  .image-lightbox,
+  .charge-modal,
+  .doke-media-lightbox,
+  .detail-lightbox,
+  .before-after-preview,
+  .worker-preview,
+  .orders-panel-scrim,
+  .results-filters-backdrop
+),
+:is(
+  .wallet-modal,
+  .ui-modal,
+  .community-request-modal,
+  .community-action-modal,
+  .payment-overlay,
+  .detail-modal,
+  .home-address-modal,
+  .address-modal,
+  .profile-followers-modal,
+  .profile-edit-modal,
+  .detail-budget-modal,
+  .profile-budget-modal,
+  .image-lightbox,
+  .charge-modal,
+  .doke-media-lightbox,
+  .detail-lightbox,
+  .before-after-preview,
+  .worker-preview,
+  .orders-panel-scrim,
+  .results-filters-backdrop
+) * {
+  box-sizing: border-box;
+}
+
+:is(
+  .wallet-modal__scrim,
+  .ui-modal__backdrop,
+  .community-request-modal__backdrop,
+  .community-action-modal__backdrop,
+  .payment-overlay__backdrop,
+  .detail-modal__scrim,
+  .doke-media-lightbox,
+  .detail-lightbox,
+  .before-after-preview,
+  .worker-preview,
+  .orders-panel-scrim,
+  .results-filters-backdrop
+),
+:is(.home-address-modal, .address-modal, .profile-followers-modal, .profile-edit-modal, .detail-budget-modal, .profile-budget-modal, .image-lightbox, .charge-modal)::backdrop {
+  background: var(--doke-overlay-bg);
+  backdrop-filter: blur(var(--doke-overlay-blur));
+  -webkit-backdrop-filter: blur(var(--doke-overlay-blur));
+}
+
+:is(.wallet-modal:not([hidden]), .ui-modal:not([hidden]), .community-request-modal:not([hidden]), .community-action-modal:not([hidden]), .payment-overlay:not([hidden]), .detail-modal:not([hidden])) {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+  overflow: hidden;
+}
+
+:is(dialog.address-modal, dialog.home-address-modal, dialog.profile-followers-modal, dialog.profile-edit-modal, dialog.detail-budget-modal, dialog.profile-budget-modal, dialog.image-lightbox, dialog.charge-modal) {
+  max-width: none;
+  max-height: none;
+  width: auto;
+  height: auto;
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  overflow: visible;
+}
+
+:is(dialog.address-modal, dialog.home-address-modal, dialog.profile-followers-modal, dialog.profile-edit-modal, dialog.detail-budget-modal, dialog.profile-budget-modal, dialog.image-lightbox, dialog.charge-modal)[open] {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  width: 100vw;
+  height: 100dvh;
+  max-width: 100vw;
+  max-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+  overflow: hidden;
+}
+

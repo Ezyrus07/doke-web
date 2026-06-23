@@ -1,0 +1,91 @@
+/* Selection Panel Standard
+   Shared contract for selection utility panels in internal flows.
+   This file only owns selection content anatomy; generic surface tokens live in action-panel-standard.css. */
+
+.doke-mobile-action-panel--select {
+  --doke-action-panel-width: 460px;
+}
+
+.doke-mobile-action-panel--select .doke-mobile-action-panel__head {
+  margin-bottom: 16px;
+}
+
+.doke-mobile-action-panel--select .doke-mobile-action-panel__head strong[data-orders-select-summary],
+.doke-mobile-action-panel--select .doke-mobile-action-panel__head strong[data-notifications-select-summary] {
+  display: block;
+  margin: 0;
+  color: #12375f;
+  font-size: 1.18rem;
+  font-weight: 850;
+  line-height: 1.06;
+  letter-spacing: -0.04em;
+}
+
+.doke-mobile-action-panel--select .doke-mobile-selection-stack {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.doke-mobile-action-panel--select .doke-mobile-selection-action {
+  width: 100%;
+  min-width: 0;
+  min-height: 66px;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid rgba(31, 94, 151, 0.12);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fbfdff 0%, #fff 100%);
+  color: #12375f;
+  text-align: left;
+  box-shadow: none;
+  box-sizing: border-box;
+}
+
+.doke-mobile-action-panel--select .doke-mobile-selection-action:is(:hover, :focus-visible) {
+  border-color: rgba(31, 109, 168, 0.22);
+  background: #f7fbff;
+  outline: 0;
+}
+
+.doke-mobile-action-panel--select .doke-mobile-selection-action span {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  background: #edf5fc;
+  color: #2b5e96;
+  font-size: 0.66rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.doke-mobile-action-panel--select .doke-mobile-selection-action strong {
+  color: inherit;
+  font-size: 0.86rem;
+  font-weight: 850;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.doke-mobile-action-panel--select .doke-mobile-action-panel__footer {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 900px) {
+  .doke-mobile-action-panel--select .doke-mobile-selection-stack,
+  .doke-mobile-action-panel--select .doke-mobile-action-panel__footer {
+    grid-template-columns: 1fr;
+  }
+
+  .doke-mobile-action-panel--select .doke-mobile-selection-action {
+    min-height: 66px;
+  }
+}

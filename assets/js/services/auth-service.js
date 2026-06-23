@@ -12,7 +12,6 @@
   const DEFAULT_LOGIN_URL = 'auth/login.html';
   const DEFAULT_APP_URL = 'index.html';
   const DELAY_MS = 120;
-  const HEADER_NAME_MAX = 22;
 
   const delay = (ms = DELAY_MS) => new Promise((resolve) => root.setTimeout(resolve, ms));
   const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
@@ -42,19 +41,6 @@
       return;
     }
     root.localStorage.setItem(key, JSON.stringify(value));
-  };
-
-  const truncateText = (value, maxLength = HEADER_NAME_MAX) => {
-    const normalized = normalizeText(value);
-    if (normalized.length <= maxLength) return normalized;
-    return `${normalized.slice(0, Math.max(1, maxLength - 1)).trimEnd()}…`;
-  };
-
-  const formatHeaderDisplayName = (value) => {
-    const normalized = normalizeText(value || 'Entrar');
-    const parts = normalized.split(' ').filter(Boolean);
-    const firstName = parts[0] || normalized;
-    return truncateText(firstName);
   };
 
   const toPublicUser = (user) => {
@@ -287,54 +273,27 @@
 
   const updateAccountSurfaces = () => {
     const user = getCurrentUser();
-    const name = user?.name || 'Entrar';
-    const headerName = user ? formatHeaderDisplayName(name) : 'Entrar';
+    const name = user?.name || 'Visitante';
     const initials = user?.initials || user?.avatarInitials || 'DK';
-    const roleLabel = user?.role === 'professional' ? 'Profissional' : user?.role === 'client' ? 'Cliente' : 'Conta';
+    const roleLabel = user?.role === 'professional' ? 'Profissional' : user?.role === 'client' ? 'Cliente' : 'Entrar';
     const pointsLabel = user ? `${roleLabel}${Number.isFinite(Number(user.points)) && Number(user.points) > 0 ? ` · Pontos: ${user.points}` : ''}` : 'Acesse sua conta';
-    const headerRoleLabel = user ? roleLabel : 'Conta';
 
     document.querySelectorAll('.home-side-meta__avatar.doke-avatar, .sidebar__avatar, [data-user-avatar]').forEach((element) => {
       element.textContent = initials;
-      element.setAttribute('title', name);
     });
 
-    document.querySelectorAll('.home-side-meta__identity strong').forEach((element) => {
-      element.textContent = headerName;
-      element.setAttribute('title', name);
-    });
-
-    document.querySelectorAll('[data-user-name]').forEach((element) => {
+    document.querySelectorAll('.home-side-meta__identity strong, [data-user-name]').forEach((element) => {
       element.textContent = name;
-      element.setAttribute('title', name);
     });
 
-    document.querySelectorAll('.home-side-meta__identity span').forEach((element) => {
-      element.textContent = headerRoleLabel;
-      element.setAttribute('title', pointsLabel);
-    });
-
-    document.querySelectorAll('[data-user-role]').forEach((element) => {
+    document.querySelectorAll('.home-side-meta__identity span, [data-user-role]').forEach((element) => {
       element.textContent = pointsLabel;
-      element.setAttribute('title', pointsLabel);
-    });
-
-    document.querySelectorAll('.home-side-meta__profile').forEach((element) => {
-      const opensMenu = element.hasAttribute('data-home-profile-menu-toggle');
-      if (element.matches('[aria-label]')) {
-        element.setAttribute('aria-label', user
-          ? `${opensMenu ? 'Abrir menu da conta de' : 'Abrir perfil de'} ${name}`
-          : 'Entrar na conta');
-      }
-      element.setAttribute('title', user ? `${name} · ${roleLabel}` : 'Entrar na conta');
     });
 
     document.querySelectorAll('.profile-dropdown__header').forEach((element) => {
       if (user?.handle) element.textContent = `@${user.handle}`;
       else element.textContent = user?.email || 'Conta Doke';
     });
-
-    document.documentElement.dataset.authSurfaceReady = 'true';
   };
 
   const bindLogoutButtons = () => {
@@ -351,9 +310,6 @@
     updateAccountSurfaces();
     bindLogoutButtons();
     onAuthChange(updateAccountSurfaces);
-    document.addEventListener('doke:route-ready', updateAccountSurfaces);
-    document.addEventListener('doke:stable-route-ready', updateAccountSurfaces);
-    root.addEventListener('pageshow', updateAccountSurfaces);
   };
 
   const api = Object.freeze({
@@ -376,8 +332,7 @@
     isEmail,
     isPhone,
     normalizeEmail,
-    normalizePhone,
-    formatHeaderDisplayName
+    normalizePhone
   });
 
   ns.service = api;

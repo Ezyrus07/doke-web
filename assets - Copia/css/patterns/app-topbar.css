@@ -1,0 +1,251 @@
+/*
+  Doke Global Cycle 159 — App Topbar Pattern
+  Responsabilidade: contrato estrutural desktop do header/topbar.
+  A página controla apenas o conteúdo do slot contextual; altura, eixo, gaps,
+  busca persistente à esquerda e ações globais à direita pertencem a este pattern.
+*/
+
+@media (min-width: 761px) {
+  .app-topbar.topbar,
+  .app-topbar.internal-page-topbar {
+    --app-topbar-height: var(--doke-desktop-topbar-height, 96px);
+    --app-topbar-control: var(--doke-app-topbar-control, 54px);
+    --app-topbar-gutter: var(--doke-desktop-page-gutter, clamp(24px, 4vw, 56px));
+    --app-topbar-gap: 24px;
+    --app-topbar-control-gap: 14px;
+
+    position: relative;
+    inset: auto;
+    transform: none;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: var(--app-topbar-height);
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr) max-content;
+    align-items: center;
+    column-gap: var(--app-topbar-gap);
+    padding: 26px var(--app-topbar-gutter) 18px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    z-index: 10;
+  }
+
+  .app-topbar__left,
+  .app-topbar__context,
+  .app-topbar__right {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--app-topbar-control-gap);
+  }
+
+  .app-topbar__left {
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  .app-topbar__context {
+    grid-column: 2;
+    justify-self: start;
+    inline-size: 100%;
+  }
+
+  .app-topbar__right {
+    grid-column: 3;
+    justify-self: end;
+    justify-content: flex-end;
+    margin-left: 0;
+  }
+
+  .app-topbar__context[data-topbar-context-empty="true"] {
+    pointer-events: none;
+  }
+
+  .app-topbar .topbar-search,
+  .app-topbar .topbar-search--subtle,
+  .app-topbar .topbar-search-icon,
+  .app-topbar .topbar-search__icon,
+  .app-topbar .home-index-topbar__location,
+  .app-topbar .topbar-location,
+  .app-topbar .page-header-context__action,
+  .app-topbar .settings-topbar__action,
+  .app-topbar .profile-topbar-pill,
+  .app-topbar .home-side-meta__alert,
+  .app-topbar .topbar-profile__button {
+    min-height: var(--app-topbar-control);
+  }
+
+  .app-topbar .topbar-search,
+  .app-topbar .topbar-search--subtle {
+    inline-size: var(--app-topbar-control);
+    min-inline-size: var(--app-topbar-control);
+    max-inline-size: var(--app-topbar-control);
+    flex: 0 0 var(--app-topbar-control);
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .app-topbar .topbar-search input {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .app-topbar .topbar-search__icon,
+  .app-topbar .topbar-search-icon {
+    inline-size: var(--app-topbar-control);
+    min-inline-size: var(--app-topbar-control);
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .app-topbar__global-actions,
+  .app-topbar .topbar-account-cluster,
+  .app-topbar .home-tablet-topbar__right-clone {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--app-topbar-control-gap);
+    min-width: 0;
+  }
+
+  .app-topbar .topbar-points {
+    display: none;
+  }
+
+  .app-topbar .topbar-profile__button,
+  .app-topbar .home-side-meta__profile {
+    min-width: 170px;
+  }
+
+  .app-topbar .topbar-profile__button .avatar,
+  .app-topbar .topbar-profile__button .doke-avatar,
+  .app-topbar .home-side-meta__avatar {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .app-topbar .mobile-toggle,
+  .app-topbar .mobile-header-logo,
+  .app-topbar .mobile-header-location,
+  .app-topbar .mobile-header-shortcuts,
+  .app-topbar .topbar-search-close {
+    display: none;
+  }
+}
+
+/* Global Cycle 163 — desktop topbar baseline.
+   This file is linked after page CSS in topbar pages so the shell contract owns
+   desktop topbar geometry. Pages may vary only the contextual slot content. */
+@media (min-width: 761px) {
+  body.app-shell-page :is(header, .topbar)[data-app-topbar].app-topbar,
+  body.doke-app-shell-page :is(header, .topbar)[data-app-topbar].app-topbar,
+  body :is(header, .topbar)[data-app-topbar].app-topbar[data-topbar-contract="desktop-app-topbar"] {
+    --app-topbar-height: 96px;
+    --app-topbar-control: 54px;
+    --app-topbar-gutter: var(--doke-desktop-page-gutter, clamp(24px, 4vw, 56px));
+    --app-topbar-gap: 24px;
+    --app-topbar-control-gap: 14px;
+
+    position: relative;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    width: 100%;
+    max-width: none;
+    min-height: var(--app-topbar-height);
+    height: auto;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr) max-content;
+    align-items: center;
+    gap: 0 var(--app-topbar-gap);
+    padding: 26px var(--app-topbar-gutter) 18px;
+    margin: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    overflow: visible;
+    z-index: 20;
+  }
+
+  body :is(header, .topbar)[data-app-topbar].app-topbar > [data-topbar-left],
+  body :is(header, .topbar)[data-app-topbar].app-topbar > [data-topbar-context],
+  body :is(header, .topbar)[data-app-topbar].app-topbar > [data-topbar-actions] {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--app-topbar-control-gap);
+    margin: 0;
+    padding: 0;
+  }
+
+  body :is(header, .topbar)[data-app-topbar].app-topbar > [data-topbar-left] {
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  body :is(header, .topbar)[data-app-topbar].app-topbar > [data-topbar-context] {
+    grid-column: 2;
+    justify-self: start;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  body :is(header, .topbar)[data-app-topbar].app-topbar > [data-topbar-actions] {
+    grid-column: 3;
+    justify-self: end;
+    justify-content: flex-end;
+  }
+
+  body :is(header, .topbar)[data-app-topbar].app-topbar [data-topbar-search-control],
+  body :is(header, .topbar)[data-app-topbar].app-topbar [data-global-topbar-search],
+  body :is(header, .topbar)[data-app-topbar].app-topbar .topbar-search,
+  body :is(header, .topbar)[data-app-topbar].app-topbar .topbar-search--subtle {
+    width: var(--app-topbar-control);
+    min-width: var(--app-topbar-control);
+    max-width: var(--app-topbar-control);
+    min-height: var(--app-topbar-control);
+    flex: 0 0 var(--app-topbar-control);
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  body :is(header, .topbar)[data-app-topbar].app-topbar [data-topbar-search-control] input,
+  body :is(header, .topbar)[data-app-topbar].app-topbar [data-global-topbar-search] input,
+  body :is(header, .topbar)[data-app-topbar].app-topbar .topbar-search input {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  body :is(header, .topbar)[data-app-topbar].app-topbar :is(.topbar-search__icon, .topbar-search-icon, .doke-icon-btn, .topbar-action) {
+    min-width: var(--app-topbar-control);
+    min-height: var(--app-topbar-control);
+  }
+
+  body :is(header, .topbar)[data-app-topbar].app-topbar [data-topbar-global-actions],
+  body :is(header, .topbar)[data-app-topbar].app-topbar .topbar-account-cluster {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--app-topbar-control-gap);
+  }
+
+  body :is(header, .topbar)[data-app-topbar].app-topbar :is(.topbar-profile__button, .home-side-meta__profile) {
+    min-width: 170px;
+    min-height: var(--app-topbar-control);
+  }
+}

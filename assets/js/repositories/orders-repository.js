@@ -40,6 +40,13 @@
     }).format(amount);
   }
 
+  function compactDataUrl(value) {
+    var url = normalizeText(value || '');
+    if (!url) return '';
+    if (url.indexOf('data:') !== 0) return url;
+    return url.length <= 160000 ? url : '';
+  }
+
   function normalizeAttachment(raw) {
     if (!raw) return null;
     if (typeof raw === 'string') {
@@ -57,8 +64,8 @@
       name: normalizeText(raw.name || raw.filename || 'anexo'),
       type: normalizeText(raw.type || raw.mimeType || ''),
       size: Number(raw.size) || 0,
-      url: normalizeText(raw.url || raw.dataUrl || raw.preview || ''),
-      previewable: Boolean(raw.previewable || raw.url || raw.dataUrl || raw.preview),
+      url: compactDataUrl(raw.url || raw.dataUrl || raw.preview || ''),
+      previewable: Boolean(raw.previewable || raw.url || raw.dataUrl || raw.preview) && Boolean(compactDataUrl(raw.url || raw.dataUrl || raw.preview || '')),
       tooLarge: Boolean(raw.tooLarge),
       error: Boolean(raw.error)
     };
@@ -79,11 +86,30 @@
     }
   }
 
+  function stripAttachmentPreviews(items) {
+    return (Array.isArray(items) ? items : []).map(function (item) {
+      var next = Object.assign({}, item);
+      next.attachments = normalizeAttachments(next.attachments).map(function (attachment) {
+        return Object.assign({}, attachment, {
+          url: '',
+          previewable: false,
+          tooLarge: attachment.tooLarge || Boolean(attachment.url)
+        });
+      });
+      return next;
+    });
+  }
+
   function safeWrite(key, items) {
+    var normalized = Array.isArray(items) ? items : [];
     try {
-      root.localStorage.setItem(key, JSON.stringify(Array.isArray(items) ? items : []));
+      root.localStorage.setItem(key, JSON.stringify(normalized));
     } catch (error) {
-      // localStorage can be unavailable in restricted contexts; reads still work with mocks.
+      try {
+        root.localStorage.setItem(key, JSON.stringify(stripAttachmentPreviews(normalized)));
+      } catch (fallbackError) {
+        // localStorage can be unavailable or full; reads still work with mocks.
+      }
     }
   }
 

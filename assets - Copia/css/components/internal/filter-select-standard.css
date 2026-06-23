@@ -1,0 +1,625 @@
+:root {
+  --doke-action-trigger-height: var(--btn-height-md);
+  --doke-action-trigger-radius: var(--btn-radius-lg);
+  --doke-action-panel-radius: var(--radius-card);
+  --doke-action-panel-padding: var(--space-4);
+  --doke-action-gap: var(--control-gap);
+}
+
+body.orders-page-shell :is(.page-header-context, .orders-page-header__hero-chips),
+body.notifications-page-shell :is(.page-header-context, .orders-page-header__hero-chips),
+body.messages-page-shell :is(.orders-page-header__hero-chips, .messages-desktop-toolbar .orders-page-header__hero-strip),
+body.home-index-shell :is(.home-search-hero__actions, .search-dropdown__actions),
+body.search-results-body .results-searchbar__form {
+  gap: var(--doke-action-gap);
+}
+
+body.orders-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip),
+body.notifications-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip),
+body.messages-page-shell :is(.orders-page-header__hero-chip, .messages-thread__action[data-messages-filter-toggle], .messages-thread__action[data-messages-select-toggle]),
+body.home-index-shell :is(.home-search-hero__leading-filter, .home-search-hero__filter-button, .search-dropdown__filter-button, .filter-toggle),
+body.search-results-body .results-searchbar__mobile-filter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--control-gap);
+  min-height: var(--doke-action-trigger-height);
+  padding: 0 var(--control-padding-x-md);
+  border-radius: var(--doke-action-trigger-radius);
+  border: var(--border);
+  background: var(--color-surface);
+  color: var(--color-heading);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: var(--btn-shadow);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
+}
+
+body.orders-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip) svg,
+body.notifications-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip) svg,
+body.messages-page-shell :is(.orders-page-header__hero-chip, .messages-thread__action[data-messages-filter-toggle], .messages-thread__action[data-messages-select-toggle]) svg,
+body.home-index-shell :is(.home-search-hero__leading-filter, .home-search-hero__filter-button, .search-dropdown__filter-button, .filter-toggle) svg,
+body.search-results-body .results-searchbar__mobile-filter svg {
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+  flex: 0 0 var(--size-icon-sm);
+  stroke: currentColor;
+  stroke-width: 1.9;
+  fill: none;
+}
+
+body.orders-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip, .orders-active-filter-clear, .orders-select-option):hover,
+body.notifications-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip, .orders-active-filter-clear, .orders-select-option):hover,
+body.messages-page-shell :is(.orders-page-header__hero-chip, .messages-thread__action[data-messages-filter-toggle], .messages-thread__action[data-messages-select-toggle], .orders-active-filter-clear, .orders-select-option):hover,
+body.home-index-shell :is(.home-search-hero__leading-filter, .home-search-hero__filter-button, .search-dropdown__filter-button, .filter-toggle, .filter-action):hover,
+body.search-results-body :is(.results-searchbar__mobile-filter, .results-filters__actions button):hover {
+  border-color: var(--color-primary-border);
+  box-shadow: var(--btn-shadow-hover);
+  transform: translateY(-1px);
+}
+
+body.orders-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip)[aria-expanded="true"],
+body.orders-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip)[aria-pressed="true"],
+body.notifications-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip)[aria-expanded="true"],
+body.notifications-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip)[aria-pressed="true"],
+body.messages-page-shell :is(.orders-page-header__hero-chip, .messages-thread__action[data-messages-filter-toggle], .messages-thread__action[data-messages-select-toggle])[aria-expanded="true"],
+body.messages-page-shell :is(.orders-page-header__hero-chip, .messages-thread__action[data-messages-filter-toggle], .messages-thread__action[data-messages-select-toggle])[aria-pressed="true"],
+body.home-index-shell :is(.home-search-hero__leading-filter, .home-search-hero__filter-button, .search-dropdown__filter-button, .filter-toggle)[aria-expanded="true"],
+body.search-results-body .results-searchbar__mobile-filter[aria-expanded="true"] {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  border-color: transparent;
+  color: #fff;
+  box-shadow: var(--shadow-action-primary);
+}
+
+body.orders-page-shell .page-header-context__action[data-orders-agenda-toggle],
+body.orders-page-shell .orders-page-header__hero-chip[data-orders-agenda-toggle],
+body.notifications-page-shell .page-header-context__action[aria-label="Agenda"] {
+  background: linear-gradient(135deg, #22a06b, #2ac59f);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: var(--shadow-action-secondary-strong);
+}
+
+body.home-index-shell :is(.home-search-hero__leading-filter, .home-search-hero__filter-button, .search-dropdown__filter-button, .filter-toggle),
+body.search-results-body .results-searchbar__mobile-filter {
+  width: var(--btn-height-md);
+  min-width: var(--btn-height-md);
+  padding: 0;
+}
+
+body.orders-page-shell :is(.orders-page-header__controls, .notifications-page-header__controls):not([hidden]),
+body.notifications-page-shell .notifications-page-header__controls:not([hidden]),
+body.messages-page-shell .messages-header-controls:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  margin-top: 16px;
+}
+
+body.orders-page-shell .orders-active-filter-row,
+body.notifications-page-shell .orders-active-filter-row,
+body.messages-page-shell .orders-active-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--control-gap);
+}
+
+body.orders-page-shell .orders-active-filter-chip,
+body.notifications-page-shell .orders-active-filter-chip,
+body.messages-page-shell .orders-active-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--chip-height);
+  padding: 0 var(--control-padding-x-sm);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-primary-border);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+body.orders-page-shell .orders-active-filter-clear,
+body.notifications-page-shell .orders-active-filter-clear,
+body.messages-page-shell .orders-active-filter-clear,
+body.orders-page-shell .orders-select-panel__heading,
+body.notifications-page-shell .notifications-select-panel__heading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--chip-height);
+  padding: 0 var(--control-padding-x-sm);
+  border-radius: var(--radius-pill);
+  border: var(--border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  box-shadow: var(--shadow-control-soft);
+}
+
+body.orders-page-shell :is(.orders-filters-popover:not([hidden]), .orders-select-panel:not([hidden])),
+body.notifications-page-shell :is(.orders-filters-popover:not([hidden]), .orders-select-panel:not([hidden])),
+body.messages-page-shell :is(.orders-filters-popover:not([hidden]), .orders-select-panel:not([hidden])),
+body.home-index-shell .more-filters,
+body.search-results-body .results-panel {
+  position: static;
+  inset: auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: var(--doke-action-panel-padding);
+  border-radius: var(--doke-action-panel-radius);
+  border: var(--border);
+  background: var(--color-surface);
+  box-shadow: var(--dropdown-shadow);
+}
+
+body.orders-page-shell :is(.orders-filters-panel__group, .notifications-filters-panel__group),
+body.notifications-page-shell :is(.orders-filters-panel__group, .notifications-filters-panel__group),
+body.messages-page-shell .orders-filters-panel__group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+body.orders-page-shell :is(.orders-filters-panel__group + .orders-filters-panel__group, .notifications-filters-panel__group + .notifications-filters-panel__group),
+body.notifications-page-shell :is(.orders-filters-panel__group + .orders-filters-panel__group, .notifications-filters-panel__group + .notifications-filters-panel__group),
+body.messages-page-shell .orders-filters-panel__group + .orders-filters-panel__group {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: var(--border);
+}
+
+body.orders-page-shell :is(.orders-filters-panel__group > p, .notifications-filters-panel__group > p),
+body.notifications-page-shell :is(.orders-filters-panel__group > p, .notifications-filters-panel__group > p),
+body.messages-page-shell .orders-filters-panel__group > p,
+body.home-index-shell .more-filters__header span,
+body.search-results-body .results-panel__eyebrow {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+body.orders-page-shell :is(.orders-filters-panel__chips, .notifications-filters-panel__chips),
+body.notifications-page-shell :is(.orders-filters-panel__chips, .notifications-filters-panel__chips),
+body.messages-page-shell .orders-filters-panel__chips,
+body.home-index-shell .more-filters__quick-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--control-gap);
+}
+
+body.orders-page-shell .filter-chip,
+body.notifications-page-shell .filter-chip,
+body.messages-page-shell .filter-chip,
+body.home-index-shell .more-filters__nav-button,
+body.home-index-shell .quick-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--chip-height);
+  padding: 0 var(--control-padding-x-sm);
+  border-radius: var(--radius-pill);
+  border: var(--border);
+  background: var(--color-bg-soft);
+  color: var(--color-heading);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+body.orders-page-shell .filter-chip span,
+body.notifications-page-shell .filter-chip span,
+body.messages-page-shell .filter-chip span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  min-height: 22px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: rgba(16, 38, 74, 0.08);
+  color: inherit;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+body.orders-page-shell .filter-chip.is-active,
+body.notifications-page-shell .filter-chip.is-active,
+body.messages-page-shell .filter-chip.is-active,
+body.home-index-shell .more-filters__nav-button.is-active,
+body.home-index-shell .quick-filter-chip.is-active {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary-border);
+  color: var(--color-primary-strong);
+}
+
+body.orders-page-shell .orders-select-panel__actions,
+body.notifications-page-shell .notifications-select-panel__actions,
+body.messages-page-shell .orders-select-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--control-gap);
+}
+
+body.orders-page-shell .orders-select-summary,
+body.notifications-page-shell .orders-select-summary {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--control-padding-x-sm);
+  border-radius: var(--radius-base);
+  background: var(--color-bg-soft);
+  color: var(--color-heading);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+body.orders-page-shell .orders-select-option,
+body.notifications-page-shell .orders-select-option,
+body.messages-page-shell .orders-select-option,
+body.home-index-shell .filter-action,
+body.search-results-body .results-filters__actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--control-height-lg);
+  padding: 0 var(--control-padding-x-sm);
+  border-radius: var(--radius-base);
+  border: var(--border);
+  background: var(--color-surface);
+  color: var(--color-heading);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: var(--shadow-control-soft);
+}
+
+body.orders-page-shell .orders-select-option--danger,
+body.notifications-page-shell .orders-select-option--danger,
+body.messages-page-shell .orders-select-option--danger {
+  color: var(--color-danger);
+  border-color: rgba(210, 77, 87, 0.24);
+  background: rgba(210, 77, 87, 0.06);
+}
+
+body.orders-page-shell .orders-select-option:disabled,
+body.notifications-page-shell .orders-select-option:disabled,
+body.messages-page-shell .orders-select-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  box-shadow: none;
+  transform: none;
+}
+
+body.home-index-shell .more-filters__header,
+body.search-results-body .results-panel__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: var(--border);
+}
+
+body.home-index-shell .more-filters__header strong,
+body.search-results-body .results-panel__heading h2 {
+  margin: 0;
+  color: var(--color-heading);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+body.home-index-shell .more-filters__split-body {
+  gap: 16px;
+}
+
+body.home-index-shell .more-filters__split-nav {
+  gap: var(--control-gap);
+}
+
+body.home-index-shell .more-filters__actions,
+body.search-results-body .results-filters__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+body.search-results-body .results-filters__actions {
+  margin-top: 20px;
+}
+
+body.home-index-shell .filter-action--ghost,
+body.search-results-body button[data-results-filters-reset] {
+  background: var(--color-bg-soft);
+}
+
+body.home-index-shell .filter-field__select,
+body.search-results-body :is(.results-field select, .results-field input),
+body.search-results-body .results-location-group__cep,
+body.home-index-shell .more-filters__cep {
+  border-radius: var(--radius-base);
+}
+
+@media (max-width: 860px) {
+  :root {
+    --doke-action-trigger-height: 44px;
+    --doke-action-trigger-radius: 16px;
+    --doke-action-panel-radius: 22px;
+    --doke-action-panel-padding: 14px;
+  }
+
+  body.orders-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip),
+  body.notifications-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip),
+  body.messages-page-shell :is(.orders-page-header__hero-chip, .messages-thread__action[data-messages-filter-toggle], .messages-thread__action[data-messages-select-toggle]),
+  body.home-index-shell :is(.home-search-hero__leading-filter, .home-search-hero__filter-button, .search-dropdown__filter-button, .filter-toggle),
+  body.search-results-body .results-searchbar__mobile-filter {
+    font-size: 0.84rem;
+    padding-inline: 14px;
+  }
+
+  body.home-index-shell :is(.home-search-hero__leading-filter, .home-search-hero__filter-button, .search-dropdown__filter-button, .filter-toggle),
+  body.search-results-body .results-searchbar__mobile-filter {
+    width: 44px;
+    min-width: 44px;
+  }
+
+  body.orders-page-shell .orders-select-panel__actions,
+  body.notifications-page-shell .notifications-select-panel__actions,
+  body.messages-page-shell .orders-select-panel,
+  body.home-index-shell .more-filters__actions,
+  body.search-results-body .results-filters__actions {
+    grid-template-columns: 1fr;
+  }
+
+  body.home-index-shell .more-filters__split-body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  body.home-index-shell .more-filters__split-nav {
+    display: flex;
+    flex-wrap: wrap;
+  }
+}
+
+/* Global hardening: filtros e selecionar devem usar a mesma superfície/card. */
+body.orders-page-shell .orders-page-header__controls:not([hidden]) > :is(.orders-filters-popover, .orders-select-panel),
+body.orders-page-shell .orders-filters-popover.orders-filters-panel:not([hidden]),
+body.orders-page-shell .orders-select-panel:not([hidden]),
+body.notifications-page-shell .notifications-page-header__controls:not([hidden]) :is(.orders-filters-popover, .orders-select-panel),
+body.notifications-page-shell .orders-filters-popover.notifications-filters-panel:not([hidden]),
+body.notifications-page-shell .notifications-select-panel:not([hidden]),
+body.messages-page-shell .messages-header-controls:not([hidden]) :is(.orders-filters-popover, .orders-select-panel),
+body.messages-page-shell .messages-filters-panel:not([hidden]),
+body.messages-page-shell .orders-select-panel:not([hidden]) {
+  width: 100%;
+  max-width: min(100%, 680px);
+  margin: 0;
+  padding: 18px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border, var(--border-color-muted));
+  background: var(--color-surface, #fff);
+  box-shadow: var(--dropdown-shadow);
+}
+
+body.orders-page-shell .orders-filters-popover.orders-filters-panel:not([hidden]),
+body.notifications-page-shell .orders-filters-popover.notifications-filters-panel:not([hidden]),
+body.messages-page-shell .messages-filters-panel:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+body.orders-page-shell .orders-select-panel__heading,
+body.notifications-page-shell .notifications-select-panel__heading {
+  display: none;
+}
+
+body.orders-page-shell .orders-select-panel:not([hidden]) .orders-select-panel__actions,
+body.notifications-page-shell .notifications-select-panel:not([hidden]) .notifications-select-panel__actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--control-gap);
+}
+
+body.orders-page-shell .orders-filter-status-stack,
+body.notifications-page-shell .notifications-filter-stack,
+body.messages-page-shell .messages-header-controls {
+  width: 100%;
+}
+
+@media (max-width: 520px) {
+  body.orders-page-shell .orders-page-header__controls:not([hidden]),
+  body.notifications-page-shell .notifications-page-header__controls:not([hidden]),
+  body.messages-page-shell .messages-header-controls:not([hidden]) {
+    margin-top: 10px;
+  }
+
+  body.orders-page-shell .orders-page-header__controls:not([hidden]) > :is(.orders-filters-popover, .orders-select-panel),
+  body.orders-page-shell .orders-filters-popover.orders-filters-panel:not([hidden]),
+  body.orders-page-shell .orders-select-panel:not([hidden]),
+  body.notifications-page-shell .orders-filters-popover.notifications-filters-panel:not([hidden]),
+  body.notifications-page-shell .notifications-select-panel:not([hidden]),
+  body.messages-page-shell .messages-filters-panel:not([hidden]),
+  body.messages-page-shell .orders-select-panel:not([hidden]) {
+    max-width: 100%;
+    padding: 16px;
+    border-radius: var(--radius-surface);
+  }
+}
+
+
+/* --- Doke unified action standard ---
+   Shared trigger/panel language for pedidos, notificacoes and mensagens. */
+:root {
+  --doke-action-trigger-height: var(--control-height-lg);
+  --doke-action-trigger-radius: 16px;
+  --doke-action-panel-radius: var(--radius-card);
+  --doke-action-panel-padding: 18px;
+  --doke-action-gap: 10px;
+}
+
+body.orders-page-shell,
+body.notifications-page-shell,
+body.messages-page-shell {
+  --doke-action-solid-bg: linear-gradient(180deg, color-mix(in srgb, var(--color-primary, #4a7de8) 84%, white), var(--color-primary-strong, #2f62c9));
+  --doke-action-solid-shadow: 0 18px 36px color-mix(in srgb, var(--color-primary, #4a7de8) 20%, transparent);
+  --doke-action-surface-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 249, 255, 0.96));
+  --doke-action-surface-border: color-mix(in srgb, var(--color-border, var(--border-color-muted)) 82%, white);
+  --doke-action-surface-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88), 0 20px 44px rgba(16, 38, 74, 0.08);
+  --doke-action-chip-bg: rgba(247, 250, 255, 0.98);
+  --doke-action-chip-border: var(--border-color-muted);
+  --doke-action-chip-active-bg: rgba(55, 108, 255, 0.10);
+  --doke-action-chip-active-border: var(--border-color-selected);
+}
+
+body.orders-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip),
+body.notifications-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip),
+body.messages-page-shell :is(.orders-page-header__hero-chip, .messages-thread__action[data-messages-filter-toggle], .messages-thread__action[data-messages-select-toggle]) {
+  min-height: var(--doke-action-trigger-height);
+  padding-inline: 16px;
+  border-radius: var(--doke-action-trigger-radius);
+  border-color: var(--doke-action-chip-border);
+  background: var(--doke-action-chip-bg);
+  color: #173a67;
+  box-shadow: 0 12px 28px rgba(16, 38, 74, 0.06);
+}
+
+body.orders-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip):hover,
+body.notifications-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip):hover,
+body.messages-page-shell :is(.orders-page-header__hero-chip, .messages-thread__action[data-messages-filter-toggle], .messages-thread__action[data-messages-select-toggle]):hover {
+  border-color: color-mix(in srgb, var(--color-primary, #4a7de8) 26%, white);
+  background: #fff;
+  box-shadow: 0 16px 30px rgba(16, 38, 74, 0.10);
+}
+
+body.orders-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip)[aria-expanded="true"],
+body.orders-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip)[aria-pressed="true"],
+body.notifications-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip)[aria-expanded="true"],
+body.notifications-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip)[aria-pressed="true"],
+body.messages-page-shell :is(.orders-page-header__hero-chip, .messages-thread__action[data-messages-filter-toggle], .messages-thread__action[data-messages-select-toggle])[aria-expanded="true"],
+body.messages-page-shell :is(.orders-page-header__hero-chip, .messages-thread__action[data-messages-filter-toggle], .messages-thread__action[data-messages-select-toggle])[aria-pressed="true"] {
+  background: var(--doke-action-solid-bg);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: var(--doke-action-solid-shadow);
+}
+
+body.orders-page-shell .page-header-context__action[data-orders-agenda-toggle],
+body.orders-page-shell .orders-page-header__hero-chip[data-orders-agenda-toggle],
+body.notifications-page-shell .page-header-context__action[aria-label="Agenda"] {
+  background: var(--doke-action-solid-bg);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: var(--doke-action-solid-shadow);
+}
+
+body.orders-page-shell :is(.orders-page-header__controls, .notifications-page-header__controls):not([hidden]),
+body.notifications-page-shell .notifications-page-header__controls:not([hidden]),
+body.messages-page-shell .messages-header-controls:not([hidden]) {
+  margin-top: 14px;
+  padding: 18px;
+  border-radius: var(--doke-action-panel-radius);
+  border: 1px solid var(--doke-action-surface-border);
+  background: var(--doke-action-surface-bg);
+  box-shadow: var(--doke-action-surface-shadow);
+}
+
+body.orders-page-shell .orders-active-filter-chip,
+body.notifications-page-shell .orders-active-filter-chip,
+body.messages-page-shell .orders-active-filter-chip {
+  min-height: 36px;
+  border-color: var(--doke-action-chip-active-border);
+  background: var(--doke-action-chip-active-bg);
+  color: var(--color-primary-strong, #2f62c9);
+}
+
+body.orders-page-shell .orders-active-filter-clear,
+body.notifications-page-shell .orders-active-filter-clear,
+body.messages-page-shell .orders-active-filter-clear,
+body.orders-page-shell .orders-select-panel__heading,
+body.notifications-page-shell .notifications-select-panel__heading {
+  min-height: var(--control-height-sm);
+  border-color: var(--doke-action-chip-border);
+  background: rgba(255, 255, 255, 0.92);
+  color: #6983a3;
+  box-shadow: none;
+}
+
+body.orders-page-shell :is(.orders-filters-popover:not([hidden]), .orders-select-panel:not([hidden])),
+body.notifications-page-shell :is(.orders-filters-popover:not([hidden]), .orders-select-panel:not([hidden])),
+body.messages-page-shell :is(.orders-filters-popover:not([hidden]), .orders-select-panel:not([hidden])) {
+  padding: var(--doke-action-panel-padding);
+  border-radius: var(--doke-action-panel-radius);
+  border-color: var(--doke-action-surface-border);
+  background: var(--doke-action-surface-bg);
+  box-shadow: var(--doke-action-surface-shadow);
+}
+
+body.orders-page-shell .filter-chip,
+body.notifications-page-shell .filter-chip,
+body.messages-page-shell .filter-chip {
+  min-height: var(--control-height-sm);
+  border-color: var(--doke-action-chip-border);
+  background: var(--doke-action-chip-bg);
+}
+
+body.orders-page-shell .filter-chip.is-active,
+body.notifications-page-shell .filter-chip.is-active,
+body.messages-page-shell .filter-chip.is-active {
+  background: var(--doke-action-chip-active-bg);
+  border-color: var(--doke-action-chip-active-border);
+  color: var(--color-primary-strong, #2f62c9);
+}
+
+body.orders-page-shell .orders-select-option,
+body.notifications-page-shell .orders-select-option,
+body.messages-page-shell .orders-select-option {
+  min-height: 44px;
+  border-radius: var(--radius-base);
+  border-color: var(--doke-action-chip-border);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: none;
+}
+
+body.orders-page-shell .orders-select-option:not(:disabled):hover,
+body.notifications-page-shell .orders-select-option:not(:disabled):hover,
+body.messages-page-shell .orders-select-option:not(:disabled):hover {
+  border-color: var(--border-color-selected);
+  background: #fff;
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip),
+  body.notifications-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip),
+  body.messages-page-shell :is(.orders-page-header__hero-chip, .messages-thread__action[data-messages-filter-toggle], .messages-thread__action[data-messages-select-toggle]) {
+    min-height: 44px;
+  }
+
+  body.orders-page-shell .orders-page-header__controls:not([hidden]),
+  body.notifications-page-shell .notifications-page-header__controls:not([hidden]),
+  body.messages-page-shell .messages-header-controls:not([hidden]) {
+    padding: 16px;
+    border-radius: var(--radius-surface);
+  }
+}

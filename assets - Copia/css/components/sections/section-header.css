@@ -1,0 +1,54 @@
+/* Doke section header contract
+   Owns reusable section title/action alignment, not page-specific spacing. */
+:where(.doke-section-header) {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--doke-space-3, 0.75rem);
+  min-width: 0;
+}
+
+:where(.doke-section-header__copy) {
+  display: grid;
+  gap: var(--doke-space-1, 0.25rem);
+  min-width: 0;
+}
+
+:where(.doke-section-header__eyebrow) {
+  margin: 0;
+  font-size: var(--doke-font-size-xs, 0.75rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--doke-accent, #1b8dff);
+}
+
+:where(.doke-section-header__title) {
+  margin: 0;
+  color: var(--doke-text-primary, #14213d);
+}
+
+:where(.doke-section-header__description) {
+  margin: 0;
+  color: var(--doke-text-muted, #667085);
+}
+
+:where(.doke-section-header__actions) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--doke-space-2, 0.5rem);
+  flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+  :where(.doke-section-header) {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  :where(.doke-section-header__actions) {
+    justify-content: flex-start;
+    width: 100%;
+  }
+}

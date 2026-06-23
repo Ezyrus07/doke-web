@@ -1,0 +1,848 @@
+/* Doke chat audio draft contract.
+ * Scope: mensagens.html and comunidade-interna.html.
+ * Responsibility: keep the composer geometry stable when audio recording is active
+ * and provide one shared audio-draft/message audio visual contract for both chat pages.
+ */
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer, .community-room-composer) {
+  overflow: visible;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "draft draft draft"
+    "tools field send";
+  align-items: center;
+  row-gap: 10px;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer__tools, .community-room-composer__tools) {
+  grid-area: tools;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer__field, .community-room-composer__field) {
+  grid-area: field;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer__send, .community-room-composer__send) {
+  grid-area: send;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(
+    .messages-reply-preview,
+    .messages-audio-draft,
+    .messages-image-draft,
+    .community-audio-draft,
+    .community-room-attachment-preview,
+    .community-room-attachment-draft
+  ) {
+  grid-area: draft;
+  inline-size: 100%;
+  width: 100%;
+  min-inline-size: 0;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-audio-draft, .community-audio-draft)[hidden] {
+  display: none;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-audio-draft, .community-audio-draft):not([hidden]) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-block-size: 48px;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid rgba(185, 207, 229, 0.92);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #f9fcff 0%, #eef6ff 100%);
+  box-shadow: 0 10px 22px rgba(17, 52, 88, 0.07);
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-audio-draft__pulse, .community-audio-draft__pulse) {
+  flex: 0 0 auto;
+  inline-size: 10px;
+  width: 10px;
+  block-size: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #14b8a6;
+  box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.38);
+  animation: dokeChatAudioPulse 1.25s infinite;
+}
+
+@keyframes dokeChatAudioPulse {
+  0% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.38); }
+  70% { box-shadow: 0 0 0 10px rgba(20, 184, 166, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0); }
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-audio-draft__meta, .community-audio-draft__meta) {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  min-width: 0;
+  gap: 8px;
+  color: #173d6c;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-audio-draft__meta, .community-audio-draft__meta) strong {
+  min-inline-size: 0;
+  min-width: 0;
+  overflow: hidden;
+  color: #173d6c;
+  font-size: 0.84rem;
+  font-weight: 850;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-audio-draft__meta, .community-audio-draft__meta) span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-block-size: 26px;
+  min-height: 26px;
+  padding-inline: 10px;
+  border-radius: 999px;
+  background: #e4f1ff;
+  color: #2a5f90;
+  font-size: 0.76rem;
+  font-weight: 850;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-audio-draft__cancel, .community-audio-draft__cancel) {
+  flex: 0 0 auto;
+  min-block-size: 34px;
+  min-height: 34px;
+  padding-inline: 13px;
+  border: 1px solid rgba(185, 207, 229, 0.94);
+  border-radius: 999px;
+  background: #fff;
+  color: #174c83;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 850;
+  box-shadow: 0 6px 14px rgba(17, 52, 88, 0.05);
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.message-bubble__audio, .community-room-message__audio) {
+  display: grid;
+  grid-template-columns: auto minmax(84px, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  min-inline-size: min(280px, 100%);
+  margin-top: 2px;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.message-bubble__audio-play, .community-room-message__audio-play) {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 30px;
+  width: 30px;
+  block-size: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: #2a5f90;
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.message-bubble__audio-track, .community-room-message__audio-track) {
+  position: relative;
+  block-size: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(42, 95, 144, 0.18);
+  overflow: hidden;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.message-bubble__audio-track, .community-room-message__audio-track)::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 42%;
+  width: 42%;
+  border-radius: inherit;
+  background: #2a5f90;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.message-bubble__audio-meta, .message-bubble__audio-speed, .community-room-message__audio-meta) {
+  color: #5f7692;
+  font-size: 0.76rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  .message-bubble__audio-speed {
+  min-block-size: 28px;
+  min-height: 28px;
+  padding-inline: 9px;
+  border: 1px solid rgba(185, 207, 229, 0.9);
+  border-radius: 999px;
+  background: #fff;
+  color: #174c83;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+@media (max-width: 760px) {
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+    :is(.messages-composer, .community-room-composer) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "draft draft draft"
+      "tools field send";
+    column-gap: 8px;
+    row-gap: 8px;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+    :is(.messages-composer__tools, .community-room-composer__tools) {
+    display: flex;
+    gap: 6px;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+    :is(.messages-audio-draft, .community-audio-draft):not([hidden]) {
+    min-block-size: 44px;
+    min-height: 44px;
+    padding: 9px 10px;
+    border-radius: 16px;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+    :is(.messages-audio-draft__cancel, .community-audio-draft__cancel) {
+    min-block-size: 32px;
+    min-height: 32px;
+    padding-inline: 11px;
+  }
+}
+
+/* v2 — floating audio draft.
+   The recording draft is a transient composer state, not a new composer row.
+   Keep the composer height stable and render the draft as a compact surface
+   above the composer so the white interaction area does not grow. */
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer, .community-room-composer):has(:is(.messages-audio-draft, .community-audio-draft):not([hidden])) {
+  grid-template-areas: "tools field send";
+  grid-template-rows: auto;
+  row-gap: 0;
+  overflow: visible;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer, .community-room-composer):has(:is(.messages-audio-draft, .community-audio-draft):not([hidden]))
+  :is(.messages-audio-draft, .community-audio-draft):not([hidden]) {
+  position: absolute;
+  inset-inline: clamp(16px, 2.2vw, 28px);
+  inset-block-end: calc(100% + 10px);
+  inline-size: auto;
+  width: auto;
+  max-inline-size: none;
+  z-index: 3;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer, .community-room-composer):has(:is(.messages-audio-draft, .community-audio-draft):not([hidden]))::before {
+  border-radius: inherit;
+}
+
+/* Shared compact attachment preview contract.
+   Responsibility: keep image/file drafts inside the composer flow for mensagens.html
+   and comunidade-interna.html. The older absolute-floating draft contract caused
+   image previews to overlap the thread and create large blank surfaces. */
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(
+    .messages-image-draft,
+    .community-room-attachment-preview,
+    .community-room-attachment-draft
+  ) {
+  position: static;
+  inset: auto;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  z-index: auto;
+  inline-size: 100%;
+  width: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+body.messages-page-shell .messages-composer .messages-image-draft:not([hidden]) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-block-size: 64px;
+  min-height: 64px;
+  padding: 10px 12px;
+  border: 1px solid rgba(190, 211, 232, 0.96);
+  border-radius: 18px;
+  background: #f8fbff;
+  box-shadow: 0 10px 24px rgba(18, 53, 88, 0.08);
+  backdrop-filter: none;
+}
+
+body.messages-page-shell .messages-composer .messages-image-draft__preview,
+body.messages-page-shell .messages-composer .doke-composer-draft__image {
+  inline-size: 48px;
+  width: 48px;
+  block-size: 48px;
+  height: 48px;
+  aspect-ratio: 1;
+  flex: 0 0 auto;
+  object-fit: cover;
+  border: 1px solid rgba(190, 211, 232, 0.96);
+  border-radius: 14px;
+  background: #eef5fc;
+}
+
+body.messages-page-shell .messages-composer .messages-image-draft__meta {
+  min-inline-size: 0;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+body.messages-page-shell .messages-composer .messages-image-draft__meta strong {
+  overflow: hidden;
+  color: #123b68;
+  font-size: 0.88rem;
+  line-height: 1.2;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.messages-page-shell .messages-composer .messages-image-draft__meta span {
+  display: block;
+  min-height: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #6d83a0;
+  font-size: 0.76rem;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+body.messages-page-shell .messages-composer .messages-image-draft__cancel,
+body[data-page="comunidade-interna"] .community-room-composer .community-room-attachment-draft button {
+  min-block-size: 36px;
+  min-height: 36px;
+  padding-inline: 13px;
+  border: 1px solid rgba(190, 211, 232, 0.96);
+  border-radius: 999px;
+  background: #fff;
+  color: #174c83;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 850;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-composer .community-room-attachment-draft button {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: center;
+}
+
+body[data-page="comunidade-interna"] .community-room-composer .community-room-attachment-preview:not([hidden]) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 8px;
+  min-block-size: 54px;
+  min-height: 54px;
+  padding: 8px;
+  border: 1px solid rgba(190, 211, 232, 0.96);
+  border-radius: 18px;
+  background: #f8fbff;
+  box-shadow: 0 10px 24px rgba(18, 53, 88, 0.08);
+  backdrop-filter: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-composer .community-room-attachment-preview button {
+  min-block-size: 38px;
+  min-height: 38px;
+  padding-inline: 12px;
+  border: 1px solid rgba(204, 220, 237, 0.92);
+  border-radius: 14px;
+  background: #fff;
+  color: #173d6c;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 850;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-composer .community-room-attachment-preview button:is(:hover, :focus-visible) {
+  border-color: rgba(42, 95, 144, 0.34);
+  background: #eef6ff;
+  outline: 0;
+}
+
+body[data-page="comunidade-interna"] .community-room-composer .community-room-attachment-draft:not([hidden]) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-block-size: 58px;
+  min-height: 58px;
+  padding: 10px 12px;
+  border: 1px solid rgba(190, 211, 232, 0.96);
+  border-radius: 18px;
+  background: #f8fbff;
+  box-shadow: 0 10px 24px rgba(18, 53, 88, 0.08);
+  backdrop-filter: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-composer .community-room-attachment-draft::before {
+  content: "";
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  inline-size: 42px;
+  width: 42px;
+  block-size: 42px;
+  height: 42px;
+  border: 1px solid rgba(190, 211, 232, 0.96);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(42, 95, 144, 0.16) 0%, rgba(47, 189, 166, 0.14) 100%),
+    #eef6ff;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-composer .community-room-attachment-draft strong,
+body[data-page="comunidade-interna"] .community-room-composer .community-room-attachment-draft span {
+  min-inline-size: 0;
+  min-width: 0;
+}
+
+body[data-page="comunidade-interna"] .community-room-composer .community-room-attachment-draft strong {
+  grid-column: 2;
+  grid-row: 1;
+  overflow: hidden;
+  color: #123b68;
+  font-size: 0.88rem;
+  line-height: 1.2;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body[data-page="comunidade-interna"] .community-room-composer .community-room-attachment-draft span {
+  grid-column: 2;
+  grid-row: 2;
+  display: block;
+  min-height: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #6d83a0;
+  font-size: 0.76rem;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .message-bubble--image-only {
+  padding: 8px;
+  border-radius: 20px;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .message-bubble__image {
+  overflow: hidden;
+  border-radius: 16px;
+  background: #edf5fc;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .message-bubble__image img {
+  display: block;
+  inline-size: 100%;
+  width: 100%;
+  max-inline-size: min(320px, 66vw);
+  max-width: min(320px, 66vw);
+  max-block-size: 220px;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+body[data-page="comunidade-interna"] .community-room-media-card {
+  inline-size: min(100%, 360px);
+  width: min(100%, 360px);
+  min-block-size: 132px;
+  min-height: 132px;
+  max-block-size: 210px;
+  max-height: 210px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(190, 211, 232, 0.82);
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(42, 95, 144, 0.10) 0%, rgba(47, 189, 166, 0.12) 100%),
+    #eef6ff;
+}
+
+body[data-page="comunidade-interna"] .community-room-media-card span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding-inline: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #174c83;
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+@media (max-width: 760px) {
+  body.messages-page-shell .messages-composer .messages-image-draft:not([hidden]),
+  body[data-page="comunidade-interna"] .community-room-composer .community-room-attachment-draft:not([hidden]) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px;
+    min-block-size: 56px;
+    min-height: 56px;
+    padding: 8px 10px;
+    border-radius: 16px;
+  }
+
+  body.messages-page-shell .messages-composer .messages-image-draft__preview,
+  body.messages-page-shell .messages-composer .doke-composer-draft__image,
+  body[data-page="comunidade-interna"] .community-room-composer .community-room-attachment-draft::before {
+    inline-size: 40px;
+    width: 40px;
+    block-size: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-composer .community-room-attachment-preview:not([hidden]) {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-composer .community-room-attachment-preview button {
+    min-block-size: 36px;
+    min-height: 36px;
+  }
+
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .message-bubble__image img {
+    max-inline-size: min(270px, 72vw);
+    max-width: min(270px, 72vw);
+    max-block-size: 190px;
+    max-height: 190px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-media-card {
+    min-block-size: 112px;
+    min-height: 112px;
+    max-block-size: 170px;
+    max-height: 170px;
+  }
+}
+
+/* v2.1 — composer draft row guard.
+   Hidden attachment/draft blocks must not reserve composer height. The previous
+   compact attachment pass kept a permanent "draft" grid row, which created the
+   blank white band above the composer when no preview was active. */
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(
+    .messages-reply-preview,
+    .messages-image-draft,
+    .community-room-attachment-preview,
+    .community-room-attachment-draft
+  )[hidden] {
+  display: none;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer, .community-room-composer) {
+  grid-template-areas: "tools field send";
+  grid-template-rows: auto;
+  row-gap: 0;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer, .community-room-composer):has(
+    :is(
+      .messages-reply-preview,
+      .messages-image-draft,
+      .community-room-attachment-preview,
+      .community-room-attachment-draft
+    ):not([hidden])
+  ) {
+  grid-template-areas:
+    "draft draft draft"
+    "tools field send";
+  grid-template-rows: auto auto;
+  row-gap: 10px;
+}
+
+@media (max-width: 760px) {
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+    :is(.messages-composer, .community-room-composer):has(
+      :is(
+        .messages-reply-preview,
+        .messages-image-draft,
+        .community-room-attachment-preview,
+        .community-room-attachment-draft
+      ):not([hidden])
+    ) {
+    row-gap: 8px;
+  }
+}
+
+
+/* v2.2 — explicit composer draft state.
+   The composer must not grow until JS confirms a visible draft/attachment state.
+   This avoids the blank white band that appeared when the attach button toggled
+   layout state but the preview surface remained hidden or was overridden by
+   older chat workspace rules. */
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer, .community-room-composer, .doke-chat-composer) {
+  grid-template-areas: "tools field send";
+  grid-template-rows: auto;
+  row-gap: 0;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer, .community-room-composer, .doke-chat-composer).has-composer-draft {
+  grid-template-areas:
+    "draft draft draft"
+    "tools field send";
+  grid-template-rows: auto auto;
+  row-gap: 10px;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+  :is(.messages-composer, .community-room-composer, .doke-chat-composer).has-composer-draft:has(
+    :is(.messages-audio-draft, .community-audio-draft):not([hidden])
+  ) {
+  grid-template-areas:
+    "draft draft draft"
+    "tools field send";
+  grid-template-rows: auto auto;
+  row-gap: 10px;
+  overflow: visible;
+}
+
+body.messages-page-shell
+  form.messages-composer.doke-chat-composer.has-composer-draft
+  > :is(.messages-reply-preview, .messages-audio-draft, .messages-image-draft):not([hidden]),
+body[data-page="comunidade-interna"]
+  form.community-room-composer.doke-chat-composer.has-composer-draft
+  > :is(.community-audio-draft, .community-room-attachment-preview, .community-room-attachment-draft):not([hidden]) {
+  grid-area: draft;
+  inline-size: 100%;
+  width: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  position: relative;
+  inset: auto;
+  transform: none;
+  z-index: 1;
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+body.messages-page-shell
+  form.messages-composer.doke-chat-composer.has-composer-draft
+  > .messages-audio-draft:not([hidden]),
+body[data-page="comunidade-interna"]
+  form.community-room-composer.doke-chat-composer.has-composer-draft
+  > .community-audio-draft:not([hidden]) {
+  position: relative;
+  inset: auto;
+  inline-size: 100%;
+  width: 100%;
+  max-inline-size: 100%;
+  z-index: 1;
+}
+
+body[data-page="comunidade-interna"]
+  form.community-room-composer.doke-chat-composer.has-composer-draft
+  > .community-room-attachment-preview:not([hidden]) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 8px;
+  min-block-size: 52px;
+  min-height: 52px;
+  padding: 8px;
+  overflow: visible;
+  border: 1px solid rgba(190, 211, 232, 0.96);
+  border-radius: 18px;
+  background: #f8fbff;
+  box-shadow: 0 10px 24px rgba(18, 53, 88, 0.08);
+  backdrop-filter: none;
+}
+
+body[data-page="comunidade-interna"]
+  form.community-room-composer.doke-chat-composer.has-composer-draft
+  > .community-room-attachment-preview:not([hidden])
+  > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 38px;
+  min-height: 38px;
+  padding-inline: 12px;
+  border: 1px solid rgba(204, 220, 237, 0.92);
+  border-radius: 14px;
+  background: #fff;
+  color: #173d6c;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"]
+  form.community-room-composer.doke-chat-composer.has-composer-draft
+  > .community-room-attachment-preview:not([hidden])
+  > button:is(:hover, :focus-visible) {
+  border-color: rgba(42, 95, 144, 0.34);
+  background: #eef6ff;
+  outline: 0;
+}
+
+body.messages-page-shell
+  form.messages-composer.doke-chat-composer.has-composer-draft
+  > .messages-image-draft:not([hidden]) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-block-size: 64px;
+  min-height: 64px;
+  padding: 10px 12px;
+  overflow: visible;
+  border: 1px solid rgba(190, 211, 232, 0.96);
+  border-radius: 18px;
+  background: #f8fbff;
+  box-shadow: 0 10px 24px rgba(18, 53, 88, 0.08);
+  backdrop-filter: none;
+}
+
+body[data-page="comunidade-interna"]
+  form.community-room-composer.doke-chat-composer.has-composer-draft
+  > .community-room-attachment-draft.messages-image-draft:not([hidden]) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto;
+  align-items: center;
+  gap: 12px;
+  min-block-size: 64px;
+  min-height: 64px;
+  padding: 10px 12px;
+  overflow: visible;
+  border: 1px solid rgba(190, 211, 232, 0.96);
+  border-radius: 18px;
+  background: #f8fbff;
+  box-shadow: 0 10px 24px rgba(18, 53, 88, 0.08);
+  backdrop-filter: none;
+}
+
+body[data-page="comunidade-interna"]
+  form.community-room-composer.doke-chat-composer.has-composer-draft
+  > .community-room-attachment-draft.messages-image-draft::before {
+  content: none;
+  display: none;
+}
+
+body[data-page="comunidade-interna"]
+  form.community-room-composer.doke-chat-composer.has-composer-draft
+  > .community-room-attachment-draft.messages-image-draft
+  > .community-room-attachment-draft__preview {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+body[data-page="comunidade-interna"]
+  form.community-room-composer.doke-chat-composer.has-composer-draft
+  > .community-room-attachment-draft.messages-image-draft
+  > .community-room-attachment-draft__meta {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+body[data-page="comunidade-interna"]
+  form.community-room-composer.doke-chat-composer.has-composer-draft
+  > .community-room-attachment-draft.messages-image-draft
+  > .community-room-attachment-draft__cancel {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: center;
+}
+
+@media (max-width: 760px) {
+  body:is([data-page="mensagens"], [data-page="comunidade-interna"])
+    :is(.messages-composer, .community-room-composer, .doke-chat-composer).has-composer-draft {
+    row-gap: 8px;
+  }
+
+  body[data-page="comunidade-interna"]
+    form.community-room-composer.doke-chat-composer.has-composer-draft
+    > .community-room-attachment-preview:not([hidden]) {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  body[data-page="comunidade-interna"]
+    form.community-room-composer.doke-chat-composer.has-composer-draft
+    > .community-room-attachment-preview:not([hidden])
+    > button {
+    min-block-size: 36px;
+    min-height: 36px;
+  }
+
+  body[data-page="comunidade-interna"]
+    form.community-room-composer.doke-chat-composer.has-composer-draft
+    > .community-room-attachment-draft.messages-image-draft:not([hidden]) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px;
+    min-block-size: 56px;
+    min-height: 56px;
+    padding: 8px 10px;
+    border-radius: 16px;
+  }
+}

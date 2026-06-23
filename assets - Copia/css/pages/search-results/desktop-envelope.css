@@ -1,0 +1,75 @@
+/* 2026-06-09 Stage 03A — resultados.html desktop rail/header parity.
+   Responsibility: bind the results page workspace to the canonical page rail
+   already defined by components/shell/desktop-page-rail-authority.css.
+   This file owns page envelope only; it must not alter card anatomy. */
+.search-results-body {
+  --results-desktop-content-width: var(
+    --doke-current-page-rail,
+    var(--doke-page-rail, min(1180px, calc(100vw - var(--sidebar-width, 272px) - 96px)))
+  );
+}
+
+.search-results-body .page__content {
+  padding-inline: 0;
+}
+
+.search-results-body .page__content-inner,
+.search-results-body .page__content-inner.container.app-shell-page__workspace.search-results-workspace.search-results-workspace--internal,
+.search-results-body .search-results-workspace,
+.search-results-body .search-results-workspace--internal {
+  width: var(--results-desktop-content-width);
+  max-width: var(--results-desktop-content-width);
+  margin-inline: auto;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.search-results-body .results-searchbar,
+.search-results-body .results-layout,
+.search-results-body .results-main,
+.search-results-body .results-related,
+.search-results-body .results-loading,
+.search-results-body .results-inline-empty,
+.search-results-body .results-summary,
+.search-results-body .results-grid,
+.search-results-body .results-empty__grid,
+.search-results-body .results-users-grid,
+.search-results-body .results-videos-grid,
+.search-results-body .results-before-after-grid {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.search-results-body .results-searchbar__form,
+.search-results-body .results-layout,
+.search-results-body .results-grid,
+.search-results-body .results-empty__grid,
+.search-results-body .results-users-grid,
+.search-results-body .results-main,
+.search-results-body .results-filters,
+.search-results-body .results-summary__content,
+.search-results-body .results-summary__stats {
+  min-width: 0;
+}
+
+.search-results-body .results-summary {
+  border: 1px solid var(--doke-card-border, rgba(24, 75, 118, 0.10));
+  outline: 0;
+}
+
+@media (max-width: 1180px) {
+  .search-results-body {
+    --results-desktop-content-width: var(
+      --doke-current-page-rail,
+      var(--doke-page-rail, min(100%, calc(100vw - var(--sidebar-width, 272px) - 36px)))
+    );
+  }
+}
+
+@media (max-width: 900px) {
+  .search-results-body {
+    --results-desktop-content-width: var(--doke-current-page-rail, var(--doke-page-rail, min(100%, calc(100vw - 24px))));
+  }
+}

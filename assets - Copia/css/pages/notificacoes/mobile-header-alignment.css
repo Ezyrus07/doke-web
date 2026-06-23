@@ -1,0 +1,200 @@
+/* 2026-04-17 notifications mobile header aligned with pedidos */
+.notifications-mobile-header {
+  display: none;
+}
+
+body.notifications-page-shell [data-notifications-filters-toggle][aria-expanded="true"],
+body.notifications-page-shell [data-notifications-select-toggle][aria-expanded="true"],
+body.notifications-page-shell [data-notifications-dismiss-toggle][aria-expanded="true"] {
+  background: #1f9d74;
+  border-color: transparent;
+  color: #fff;
+}
+
+body.notifications-page-shell [data-notifications-filters-toggle][aria-expanded="true"] span,
+body.notifications-page-shell [data-notifications-select-toggle][aria-expanded="true"] span {
+  color: inherit;
+}
+
+@media (max-width: 760px) {
+  body.notifications-page-shell .notifications-mobile-header {
+    display: grid;
+    gap: 6px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+
+  body.notifications-page-shell .notifications-page-header__search--hero {
+    display: none;
+    order: 3;
+  }
+
+  body.notifications-page-shell .notifications-page.is-search-open .notifications-page-header__search--hero {
+    display: flex;
+    order: 3;
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    min-height: var(--control-height-lg);
+    margin-top: 2px;
+    padding-inline: 12px;
+    border-radius: var(--radius-base);
+    background: #fff;
+    box-shadow: none;
+  }
+
+  body.notifications-page-shell .notifications-page.is-search-open .notifications-page-header__search--hero input {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    opacity: 1;
+    pointer-events: auto;
+    font-size: 0.92rem;
+  }
+
+  body.notifications-page-shell .notifications-page.is-search-open .notifications-page-header__search--hero .orders-header-search__close {
+    display: inline-flex;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  body.notifications-page-shell .orders-header-search {
+    gap: 8px;
+    justify-content: flex-start;
+  }
+
+  body.notifications-page-shell .orders-page-header__hero-chips {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    flex: 0 0 auto;
+  }
+
+  body.notifications-page-shell .notifications-page-header--auxiliary,
+  body.notifications-page-shell .notifications-list {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body.notifications-page-shell .notifications-page-header__controls:not([hidden]) {
+    display: grid;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+    margin-top: 10px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+    box-sizing: border-box;
+  }
+
+  body.notifications-page-shell .notifications-filters-panel:not([hidden]) {
+    display: grid;
+    gap: 12px;
+    width: 100%;
+    overflow: visible;
+  }
+
+  body.notifications-page-shell .notifications-filters-panel__group {
+    width: 100%;
+  }
+
+  body.notifications-page-shell .notifications-filters-panel__chips {
+    width: 100%;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  body.notifications-page-shell .notifications-filters-panel .filter-chip {
+    min-height: var(--control-height-md);
+    padding-inline: 14px;
+  }
+
+  body.notifications-page-shell .notifications-select-panel:not([hidden]) {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero {
+    gap: 6px 8px;
+  }
+
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero-strip,
+  body.notifications-page-shell .notifications-mobile-header .orders-page-header__hero-chips {
+    gap: 6px;
+  }
+}
+
+@media (min-width: 421px) and (max-width: 560px) {
+  body.notifications-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content {
+    padding-inline: 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  body.notifications-page-shell .page__content {
+    padding-inline: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  body.notifications-page-shell .notifications-page,
+  body.notifications-page-shell .notifications-mobile-header,
+  body.notifications-page-shell .notifications-page-header--auxiliary,
+  body.notifications-page-shell .notifications-list {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
+}
+
+/* Notifications action-panel bridge.
+   Notification action panels now stay in the page flow at every responsive size.
+   This prevents tablet-sized viewports from receiving phone bottom-sheet behavior
+   and keeps the mobile header out of overlay/modal stacking contexts. */
+@media (max-width: 760px) {
+  body.notifications-page-shell #notifications-action-controls:not([hidden]) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    margin: 10px 0 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  body.notifications-page-shell #notifications-action-controls > .doke-mobile-action-panel:not([hidden]) {
+    position: relative;
+    inset: auto;
+    z-index: 8;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    margin: 0;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
+  }
+
+  body.notifications-page-shell #notifications-action-controls > .doke-mobile-action-panel[hidden] {
+    display: none;
+  }
+}

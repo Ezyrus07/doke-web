@@ -1,0 +1,70 @@
+/* Shared internal workspace surface.
+   Owns neutral internal-page background only.
+   Geometry, gutters, safe-area and container width are owned by components/shell/app-shell.css. */
+
+:root {
+  --doke-internal-page-bg: var(--doke-app-bg, #edf4fb);
+}
+
+body.internal-shell-page,
+body.profile-page-shell {
+  background: var(--doke-internal-page-bg);
+}
+
+body.internal-shell-page .app-shell,
+body.internal-shell-page .page,
+body.internal-shell-page .page__content,
+body.profile-page-shell .app-shell,
+body.profile-page-shell .page,
+body.profile-page-shell .page__content {
+  background: var(--doke-internal-page-bg);
+}
+
+body.internal-shell-page .page,
+body.internal-shell-page .page__content,
+body.internal-shell-page .page__content-inner,
+body.profile-page-shell .page,
+body.profile-page-shell .page__content,
+body.profile-page-shell .page__content-inner {
+  min-height: 100%;
+}
+
+body.internal-shell-page .page__content,
+body.profile-page-shell .page__content {
+  position: relative;
+}
+
+body.internal-shell-page .page__content::before,
+body.profile-page-shell .page__content::before {
+  content: none;
+}
+
+body.internal-shell-page .page__content-inner,
+body.profile-page-shell .page__content-inner {
+  position: relative;
+  z-index: 1;
+}
+
+/* Internal Workspace Contract — flat app background (20260516-design-system-consolidation-v1)
+   Responsabilidade: fundo das páginas internas. Remove faixas/overlays sem
+   alterar geometria do shell, sidebar ou conteúdo de página. */
+:root {
+  --doke-internal-page-bg: var(--doke-app-bg, #edf4fb);
+}
+
+body.internal-shell-page:not(.home-index-shell),
+body.internal-shell-page:not(.home-index-shell) > .app-shell,
+body.internal-shell-page:not(.home-index-shell) > .app-shell > .page,
+body.internal-shell-page:not(.home-index-shell) > .app-shell > .page > .app-header,
+body.internal-shell-page:not(.home-index-shell) > .app-shell > .page > .page__content {
+  background: var(--doke-internal-page-bg);
+  background-color: var(--doke-internal-page-bg);
+  background-image: none;
+}
+
+body.internal-shell-page:not(.home-index-shell) > .app-shell > .page > .page__content::before,
+body.internal-shell-page:not(.home-index-shell) > .app-shell > .page > .page__content::after {
+  content: none;
+  display: none;
+  background: none;
+}

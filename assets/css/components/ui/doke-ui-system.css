@@ -544,3 +544,138 @@
 }
 
 }
+
+
+/* Form/Button Contract v1
+   Authority: shared UI system owns button/action geometry.
+   Pages may position form surfaces, but must not redefine primary/secondary action anatomy. */
+:root {
+  --doke-action-height: 56px;
+  --doke-action-height-mobile: 52px;
+  --doke-action-radius: 16px;
+  --doke-action-gap: 14px;
+  --doke-action-primary-bg: var(--color-primary, #2a5f90);
+  --doke-action-primary-bg-strong: var(--color-primary-strong, #184a76);
+  --doke-action-secondary-bg: #eef5fb;
+  --doke-action-secondary-border: rgba(42, 95, 144, 0.16);
+  --doke-action-secondary-ink: var(--color-primary-strong, #184a76);
+}
+
+.doke-form-actions {
+  --doke-action-radius: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  align-items: center;
+  gap: var(--doke-action-gap);
+  width: 100%;
+}
+
+.doke-form-actions .doke-btn,
+.doke-form-actions .budget-button,
+.doke-form-actions .become-pro-btn,
+.doke-form-actions .post-service-btn,
+.doke-form-actions .address-modal__actions button,
+.doke-form-actions .budget-success__actions :is(a, button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--doke-action-height);
+  height: var(--doke-action-height);
+  border-radius: var(--doke-action-radius);
+  font-size: 0.98rem;
+  font-weight: 850;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+
+.doke-btn--primary,
+.doke-form-actions .doke-btn--primary,
+.doke-form-actions .budget-button--primary,
+.doke-form-actions .become-pro-btn--primary,
+.doke-form-actions .post-service-btn--primary {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--doke-action-primary-bg), var(--doke-action-primary-bg-strong));
+  color: #ffffff;
+  box-shadow: 0 16px 34px rgba(42, 95, 144, 0.2);
+}
+
+.doke-btn--secondary,
+.doke-form-actions .doke-btn--secondary,
+.doke-form-actions .doke-btn--ghost,
+.doke-form-actions .budget-button--ghost,
+.doke-form-actions .become-pro-btn--soft,
+.doke-form-actions .post-service-btn--soft {
+  border-color: var(--doke-action-secondary-border);
+  background: var(--doke-action-secondary-bg);
+  color: var(--doke-action-secondary-ink);
+  box-shadow: none;
+}
+
+.doke-btn--success,
+.doke-form-actions .doke-btn--success,
+.doke-form-actions .budget-button--success {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--color-secondary, #298f7f), #1f7d70);
+  color: #ffffff;
+  box-shadow: 0 16px 34px rgba(41, 143, 127, 0.18);
+}
+
+.doke-form-actions .doke-action--primary,
+.doke-form-actions .doke-btn--primary,
+.doke-form-actions .budget-button--primary,
+.doke-form-actions .budget-button--success,
+.doke-form-actions .become-pro-btn--primary,
+.doke-form-actions .post-service-btn--primary {
+  order: 2;
+}
+
+.doke-form-actions .doke-action--secondary,
+.doke-form-actions .doke-btn--secondary,
+.doke-form-actions .doke-btn--ghost,
+.doke-form-actions .budget-button--ghost,
+.doke-form-actions .become-pro-btn--soft,
+.doke-form-actions .post-service-btn--soft {
+  order: 1;
+}
+
+.doke-form-actions .doke-btn,
+.doke-form-actions .budget-button,
+.doke-form-actions .become-pro-btn,
+.doke-form-actions .post-service-btn {
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .doke-form-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .doke-form-actions .doke-btn,
+  .doke-form-actions .budget-button,
+  .doke-form-actions .become-pro-btn,
+  .doke-form-actions .post-service-btn,
+  .doke-form-actions .address-modal__actions button,
+  .doke-form-actions .budget-success__actions :is(a, button) {
+    min-height: var(--doke-action-height-mobile);
+    height: var(--doke-action-height-mobile);
+  }
+
+  .doke-form-actions .doke-action--primary,
+  .doke-form-actions .doke-btn--primary,
+  .doke-form-actions .budget-button--primary,
+  .doke-form-actions .budget-button--success,
+  .doke-form-actions .become-pro-btn--primary,
+  .doke-form-actions .post-service-btn--primary {
+    order: 1;
+  }
+
+  .doke-form-actions .doke-action--secondary,
+  .doke-form-actions .doke-btn--secondary,
+  .doke-form-actions .doke-btn--ghost,
+  .doke-form-actions .budget-button--ghost,
+  .doke-form-actions .become-pro-btn--soft,
+  .doke-form-actions .post-service-btn--soft {
+    order: 2;
+  }
+}

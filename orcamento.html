@@ -11,7 +11,7 @@
     <script src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
     <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
     <script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
-    <link rel="stylesheet" href="assets/css/pages/orcamento.css?v=20260621-close-button-contract-v1" />
+    <link rel="stylesheet" href="assets/css/pages/orcamento.css?v=20260623-form-page-rail-v2" />
   </head>
   <body data-page="orcamento" data-auth-guard="enforce" class="doke-app-shell-page app-shell-page internal-shell-page quote-shell-page doke-flow has-global-header">
     <div class="app-shell">
@@ -65,12 +65,12 @@
         </header>
 
         <main class="page__content doke-page">
-          <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean quote-shell-content doke-page-shell doke-page-stack">
+          <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean quote-shell-content doke-page-shell doke-page-stack doke-form-page-rail">
             <section class="quote-shell-page__surface" aria-labelledby="quote-page-title" data-budget-page data-budget-success-url="pedidos.html">
-              <header class="quote-context-head">
+              <header class="quote-context-head doke-form-page-top">
                 <div>
-                  <p class="quote-context-head__eyebrow">Orçamento com profissional</p>
-                  <h1 id="quote-page-title">Solicitar orçamento</h1>
+                  <p class="quote-context-head__eyebrow doke-form-page-eyebrow">Orçamento com profissional</p>
+                  <h1 id="quote-page-title" class="doke-form-page-title">Solicitar orçamento</h1>
                   <div class="quote-context-head__meta" aria-label="Contexto do pedido">
                     <span data-budget-service>Pintura residencial</span>
                     <span>Salvador BA</span>
@@ -83,40 +83,28 @@
                 </button>
               </header>
 
-              <div class="quote-main">
-                <article class="quote-provider-summary" aria-label="Resumo do profissional e serviço">
-                  <div class="quote-provider-summary__avatar" aria-hidden="true">SA</div>
-                  <div class="quote-provider-summary__text">
-                    <strong data-budget-provider>Studio Aquarela</strong>
-                    <span><span data-budget-service>Pintura residencial</span> · Salvador BA</span>
-                  </div>
-                  <div class="quote-provider-summary__chips" aria-label="Dados rápidos do atendimento">
-                    <span class="quote-provider-summary__chip">Profissional verificado</span>
-                    <span class="quote-provider-summary__chip">Resposta média em 18 min</span>
-                  </div>
-                </article>
-
+              <div class="quote-main doke-form-page-grid">
                 <form class="budget-flow" action="#" autocomplete="off" data-budget-form>
                   <script type="application/json" data-budget-default-location>{"titulo":"Casa principal","rua":"Rua Chile","numero":"120","bairro":"Comércio","cidade":"Salvador","uf":"BA","complemento":"Apartamento 802","referencia":"Próximo ao Elevador Lacerda"}</script>
 
-                  <div class="budget-progress" aria-label="Progresso do orçamento">
-                    <div class="budget-progress__top">
+                  <div class="budget-progress doke-flow-progress" aria-label="Progresso do orçamento">
+                    <div class="budget-progress__top doke-flow-progress__top">
                       <span data-step-progress-label>Passo 1 de 3</span>
                       <span>Pedido rápido</span>
                     </div>
-                    <div class="budget-progress__track" aria-hidden="true"><span class="budget-progress__fill" data-step-progress-fill></span></div>
+                    <div class="budget-progress__track doke-flow-progress__track" aria-hidden="true"><span class="budget-progress__fill doke-flow-progress__fill" data-step-progress-fill></span></div>
                   </div>
 
-                  <nav class="budget-steps" aria-label="Etapas do orçamento">
-                    <button class="budget-step is-active" type="button" data-step-target="0">
+                  <nav class="budget-steps doke-flow-steps" aria-label="Etapas do orçamento">
+                    <button class="budget-step doke-flow-step is-active" type="button" data-step-target="0">
                       <span class="budget-progress-step__bullet">1</span>
                       <div><strong>Serviço</strong><small>Escopo e detalhes</small></div>
                     </button>
-                    <button class="budget-step" type="button" data-step-target="1">
+                    <button class="budget-step doke-flow-step" type="button" data-step-target="1">
                       <span class="budget-progress-step__bullet">2</span>
                       <div><strong>Prazo</strong><small>Data e referências</small></div>
                     </button>
-                    <button class="budget-step" type="button" data-step-target="2">
+                    <button class="budget-step doke-flow-step" type="button" data-step-target="2">
                       <span class="budget-progress-step__bullet">3</span>
                       <div><strong>Revisão</strong><small>Endereço e envio</small></div>
                     </button>
@@ -251,7 +239,7 @@
                           <strong data-address-title>Casa principal</strong>
                           <p data-address-summary>Apartamento 802 · próximo ao Elevador Lacerda</p>
                         </div>
-                        <button class="budget-button budget-button--ghost budget-button--sm" type="button" data-open-address-modal>Alterar endereço</button>
+                        <button class="budget-button budget-button--ghost budget-button--sm doke-btn doke-btn--ghost doke-btn--sm" type="button" data-open-address-modal>Alterar endereço</button>
                       </div>
                       <div class="budget-address-card__meta" data-address-meta>
                         <span data-address-line>Rua Chile, 120 · Comércio · Salvador · BA</span>
@@ -266,15 +254,71 @@
                     <label class="budget-check budget-check--simple"><input type="checkbox" name="confirmacao" required checked /><span>Confirmo que as informações estão corretas.</span></label>
                   </section>
 
-                  <footer class="budget-actions" aria-label="Ações do orçamento">
-                    <a class="budget-button budget-button--ghost" href="perfil.html">Voltar ao perfil</a>
+                  <footer class="budget-actions doke-form-actions" aria-label="Ações do orçamento">
+                    <a class="budget-button budget-button--ghost doke-btn doke-btn--ghost" href="perfil.html" data-step-exit>Voltar ao perfil</a>
                     <div class="budget-actions__right">
-                      <button class="budget-button budget-button--ghost budget-button--nav" type="button" data-step-prev hidden><span>Voltar</span></button>
-                      <button class="budget-button budget-button--primary budget-button--nav" type="button" data-step-next><span>Continuar</span></button>
-                      <button class="budget-button budget-button--success budget-button--nav" type="submit" data-step-submit hidden><span>Enviar solicitação</span></button>
+                      <button class="budget-button budget-button--ghost budget-button--nav doke-btn doke-btn--ghost" type="button" data-step-prev hidden><span>Voltar</span></button>
+                      <button class="budget-button budget-button--primary budget-button--nav doke-btn doke-btn--primary" type="button" data-step-next><span>Continuar</span></button>
+                      <button class="budget-button budget-button--primary budget-button--nav doke-btn doke-btn--primary" type="submit" data-step-submit hidden><span>Enviar solicitação</span></button>
                     </div>
                   </footer>
                 </form>
+
+                <aside class="quote-provider-summary" aria-label="Orientações para um bom pedido">
+                  <h2>Um bom pedido precisa</h2>
+                  <ul class="quote-provider-summary__checklist">
+                    <li><span>✓</span> Serviço e escopo claros</li>
+                    <li><span>✓</span> Prazo ou turno desejado</li>
+                    <li><span>✓</span> Endereço de atendimento</li>
+                    <li><span>✓</span> Fotos ou referências reais</li>
+                    <li><span>✓</span> Orçamento ou expectativa</li>
+                    <li><span>✓</span> Observações objetivas</li>
+                  </ul>
+                  <div class="quote-provider-summary__profile">
+                    <div class="quote-provider-summary__avatar" aria-hidden="true">SA</div>
+                    <div class="quote-provider-summary__text">
+                      <strong data-budget-provider>Studio Aquarela</strong>
+                      <span><span data-budget-service>Pintura residencial</span> · Salvador BA</span>
+                    </div>
+                  </div>
+                  <span class="quote-provider-summary__chip">Pedido privado</span>
+                  <p>Quanto mais claro o pedido, melhor o retorno do profissional e menor a chance de retrabalho.</p>
+                </aside>
+
+                <dialog class="budget-success-modal" data-budget-success aria-labelledby="budget-success-title">
+                  <div class="budget-success-modal__dialog doke-card">
+                    <button class="budget-success-modal__close" type="button" aria-label="Fechar confirmação" data-budget-success-close>
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M6 6l12 12"></path>
+                        <path d="M18 6 6 18"></path>
+                      </svg>
+                    </button>
+
+                    <span class="budget-success__eyebrow">Solicitação enviada</span>
+
+                    <div class="budget-success__icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <path d="m7 12 3 3 7-7"></path>
+                      </svg>
+                    </div>
+
+                    <h2 id="budget-success-title">Tudo certo com seu pedido</h2>
+                    <p>
+                      Sua solicitação foi enviada para <strong data-budget-success-provider>o profissional</strong>.
+                      Agora você pode acompanhar o retorno, anexos e conversa na área de pedidos.
+                    </p>
+
+                    <div class="budget-success__summary">
+                      <span>Pedido</span>
+                      <strong data-budget-success-service>Serviço solicitado</strong>
+                    </div>
+
+                    <div class="budget-success__actions doke-form-actions">
+                      <button class="budget-button budget-button--ghost doke-btn doke-btn--ghost" type="button" data-budget-success-close>Fechar</button>
+                      <a class="budget-button budget-button--primary doke-btn doke-btn--primary" href="pedidos.html" data-budget-success-order-link>Ver pedido</a>
+                    </div>
+                  </div>
+                </dialog>
               </div>
             </section>
           </div>
@@ -305,9 +349,9 @@
 
         <label class="budget-check budget-check--boxed budget-grid--compact"><input type="checkbox" name="padrao" checked /><span>Salvar como endereço padrão</span></label>
 
-        <div class="address-modal__actions">
-          <button class="budget-button budget-button--ghost" type="button" data-close-address-modal>Cancelar</button>
-          <button class="budget-button budget-button--primary" type="submit">Salvar endereço</button>
+        <div class="address-modal__actions doke-form-actions">
+          <button class="budget-button budget-button--ghost doke-btn doke-btn--ghost" type="button" data-close-address-modal>Cancelar</button>
+          <button class="budget-button budget-button--primary doke-btn doke-btn--primary" type="submit">Salvar endereço</button>
         </div>
       </form>
     </dialog>
@@ -349,7 +393,7 @@
     <script src="assets/js/controllers/page-controller-registry.js?v=20260501-stage31-domain-services" defer></script>
     <script src="assets/js/controllers/controller-bootstrap.js?v=20260501-stage32-runtime-flags" defer></script>
     <script src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1" defer></script>
-    <script src="assets/js/pages/orcamento.js?v=20260622-budget-order-flow-v2" defer></script>
+    <script src="assets/js/pages/orcamento.js?v=20260623-actions-rhythm-v1" defer></script>
     <script src="assets/js/dev/flow-state-tools.js?v=20260622-flow-contract-v1" defer></script>
 </body>
 </html>

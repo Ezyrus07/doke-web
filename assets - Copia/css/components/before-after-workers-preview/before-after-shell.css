@@ -1,0 +1,85 @@
+/* Doke before/after modal — Instagram-like publication structure with Doke visual tokens. */
+body.home-index-shell.before-after-preview-open {
+  overflow: hidden;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  overscroll-behavior: none;
+}
+
+body.before-after-preview-open .app-shell {
+  pointer-events: none;
+  user-select: none;
+}
+
+body.before-after-preview-open .before-after-preview {
+  pointer-events: auto;
+}
+
+.before-after-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 132;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  isolation: isolate;
+}
+
+.before-after-preview[hidden] {
+  display: none;
+}
+
+.before-after-preview__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(7, 18, 31, 0.64);
+  -webkit-backdrop-filter: blur(12px) saturate(0.88);
+  backdrop-filter: blur(12px) saturate(0.88);
+}
+
+.before-after-preview__dialog {
+  position: relative;
+  z-index: 1;
+  width: min(1180px, calc(100vw - 96px));
+  height: min(720px, calc(100dvh - 64px));
+  overflow: visible;
+}
+
+.before-after-preview__close--fixed {
+  position: fixed;
+  z-index: 5;
+  top: 22px;
+  right: 26px;
+  width: 42px;
+  height: var(--control-height-md);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: rgba(12, 25, 40, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.24);
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.before-after-preview__close--fixed:hover,
+.before-after-preview__close--fixed:focus-visible {
+  transform: translateY(-1px);
+  background: rgba(18, 40, 64, 0.9);
+  border-color: rgba(255, 255, 255, 0.34);
+  outline: 0;
+}
+
+.before-after-preview__close--fixed svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+

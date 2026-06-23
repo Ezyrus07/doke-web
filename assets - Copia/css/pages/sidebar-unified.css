@@ -1,0 +1,132 @@
+/* Shared sidebar normalization for every shell page.
+   Keeps the lateral menu visually identical even when body/page classes differ. */
+body.app-shell-page .sidebar,
+body.shell-home .sidebar {
+  background: #ffffff;
+  border-right: 0;
+  box-shadow: 12px 0 28px rgba(16, 38, 60, 0.05);
+}
+
+body.app-shell-page .brand-logo img,
+body.shell-home .brand-logo img {
+  width: min(152px, 68%);
+  filter: saturate(1.04) contrast(1.02);
+}
+
+body.app-shell-page .sidebar__brand,
+body.shell-home .sidebar__brand {
+  padding: 4px 0 10px;
+}
+
+body.app-shell-page .sidebar__group,
+body.shell-home .sidebar__group {
+  gap: 10px;
+}
+
+body.app-shell-page .sidebar__label,
+body.shell-home .sidebar__label {
+  padding-inline: 8px;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  color: #6a7f98;
+}
+
+body.app-shell-page .nav-link,
+body.shell-home .nav-link {
+  min-height: 52px;
+  padding: 11px 12px;
+  border-radius: var(--radius-md);
+  gap: 10px;
+}
+
+body.app-shell-page .nav-link__start,
+body.shell-home .nav-link__start {
+  gap: 10px;
+  min-width: 0;
+}
+
+body.app-shell-page .nav-link__start > span:last-child,
+body.shell-home .nav-link__start > span:last-child {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+body.app-shell-page .nav-link__icon,
+body.shell-home .nav-link__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
+}
+
+body.app-shell-page .nav-link.is-active,
+body.shell-home .nav-link.is-active {
+  box-shadow: var(--shadow-action-primary);
+}
+
+body.app-shell-page .nav-link__count,
+body.shell-home .nav-link__count {
+  min-width: 38px;
+  min-height: var(--control-height-sm);
+  padding: 0 10px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+body.app-shell-page .sidebar__group + .sidebar__group,
+body.shell-home .sidebar__group + .sidebar__group {
+  padding-top: 6px;
+}
+
+body.app-shell-page .sidebar__group:not(.sidebar__group--footer),
+body.shell-home .sidebar__group:not(.sidebar__group--footer) {
+  padding-bottom: 2px;
+}
+
+body.app-shell-page .sidebar__footer,
+body.shell-home .sidebar__footer {
+  padding-top: 10px;
+}
+
+body.app-shell-page .sidebar__group--footer .nav-link,
+body.shell-home .sidebar__group--footer .nav-link {
+  min-height: 48px;
+  padding-inline: 8px;
+  color: #58708d;
+}
+
+@media (max-width: 1024px) {
+  body.app-shell-page .sidebar,
+  body.shell-home .sidebar {
+    padding: 20px 14px 16px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 249, 253, 0.98) 100%);
+    box-shadow: 20px 0 44px rgba(15, 33, 54, 0.12);
+    gap: 16px;
+  }
+
+  body.app-shell-page .sidebar__brand,
+  body.shell-home .sidebar__brand {
+    padding: 2px 0 6px;
+  }
+
+  body.app-shell-page .brand-logo img,
+  body.shell-home .brand-logo img {
+    width: min(148px, 62%);
+  }
+}
+
+
+/* Keep the account cluster anchored near the bottom across every shell page.
+   The sidebar markup is shared, so the account group gets its own semantic class
+   and becomes the lower cluster above the logout footer. */
+body.app-shell-page .sidebar > .sidebar__group--account,
+body.shell-home .sidebar > .sidebar__group--account {
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+body.app-shell-page .sidebar > .sidebar__footer,
+body.shell-home .sidebar > .sidebar__footer {
+  margin-top: 0;
+  padding-top: 12px;
+}

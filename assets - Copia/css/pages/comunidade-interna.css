@@ -1,0 +1,780 @@
+/* comunidade-interna.html aliases.
+ * This page consumes the shared chat workspace baseline and keeps only community-room-specific affordances here.
+ */
+body[data-page="comunidade-interna"] [hidden] {
+  display: none;
+}
+
+
+/* Community room return navigation contract.
+ * Responsibility: expose an explicit, low-noise path back to comunidade.html in
+ * both the channel-list surface and the active room header, without changing
+ * the shared shell/header authority.
+ */
+body[data-page="comunidade-interna"] .community-room-return {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 42px;
+  border: 1px solid rgba(31, 95, 174, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--chat-primary, #2167ae);
+  font-size: 0.86rem;
+  font-weight: 850;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 10px 24px rgba(31, 68, 110, 0.055);
+}
+
+body[data-page="comunidade-interna"] .community-room-return svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body[data-page="comunidade-interna"] .community-room-return:is(:hover, :focus-visible) {
+  border-color: rgba(31, 95, 174, 0.24);
+  background: #eef6ff;
+  color: var(--chat-ink, #073264);
+}
+
+body[data-page="comunidade-interna"] .community-room-return:focus-visible {
+  outline: 3px solid rgba(33, 103, 174, 0.18);
+  outline-offset: 2px;
+}
+
+body[data-page="comunidade-interna"] .community-room-return--sidebar {
+  justify-self: start;
+  padding: 0 15px 0 12px;
+}
+
+body[data-page="comunidade-interna"] .community-room-return--thread {
+  padding: 0 14px 0 11px;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout .community-room-sidebar {
+  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout .community-room-filter-menu {
+  grid-row: 4;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout .chat-sidebar-scroll-region {
+  grid-row: 5;
+}
+
+@media (min-width: 1024px) {
+  body[data-page="comunidade-interna"] .community-room-return--sidebar {
+    margin-top: -2px;
+  }
+}
+
+@media (max-width: 1180px) {
+  body[data-page="comunidade-interna"] .community-room-return--thread span {
+    display: none;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-return--thread {
+    width: 42px;
+    min-width: 42px;
+    padding-inline: 0;
+    border-radius: 15px;
+  }
+}
+
+@media (max-width: 560px) {
+  body[data-page="comunidade-interna"] .community-room-return {
+    min-height: 34px;
+    font-size: 0.76rem;
+    box-shadow: none;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-return--sidebar {
+    width: auto;
+    justify-self: start;
+    align-self: start;
+    min-height: 32px;
+    margin: -4px 0 2px;
+    padding: 0 10px 0 7px;
+    border-color: transparent;
+    background: transparent;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-return--sidebar svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-return--thread {
+    width: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    border-radius: 14px;
+  }
+}
+
+
+
+/* Community room mobile return refinement v2.
+ * Responsibility: on compact list mode, keep the return affordance inside the
+ * global mobile header instead of adding an extra content row above search.
+ */
+body[data-page="comunidade-interna"] .community-room-return--global {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  body[data-page="comunidade-interna"]:not(.community-room-thread-is-open).has-global-header
+  > .app-shell > .page > .chat-list-app-header .community-room-return--global {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 var(--doke-header-control-size, 46px);
+    inline-size: var(--doke-header-control-size, 46px);
+    width: var(--doke-header-control-size, 46px);
+    min-inline-size: var(--doke-header-control-size, 46px);
+    min-width: var(--doke-header-control-size, 46px);
+    block-size: var(--doke-header-control-size, 46px);
+    height: var(--doke-header-control-size, 46px);
+    min-block-size: var(--doke-header-control-size, 46px);
+    min-height: var(--doke-header-control-size, 46px);
+    padding: 0;
+    gap: 0;
+    border: var(--doke-header-border, 1px solid rgba(24, 75, 118, 0.08));
+    border-radius: var(--doke-header-control-radius, 16px);
+    background: var(--doke-header-bg, rgba(255, 255, 255, 0.92));
+    color: var(--doke-header-ink, #2a5f90);
+    box-shadow: var(--doke-header-shadow, 0 4px 14px rgba(15, 45, 75, 0.03));
+  }
+
+  body[data-page="comunidade-interna"]:not(.community-room-thread-is-open).has-global-header
+  > .app-shell > .page > .chat-list-app-header .community-room-return--global span {
+    display: none;
+  }
+
+  body[data-page="comunidade-interna"]:not(.community-room-thread-is-open).has-global-header
+  > .app-shell > .page > .chat-list-app-header .community-room-return--global svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.2;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout:not([data-mobile-view="thread"]) .community-room-return--sidebar {
+    display: none;
+  }
+}
+
+@media (max-width: 390px) {
+  body[data-page="comunidade-interna"]:not(.community-room-thread-is-open).has-global-header
+  > .app-shell > .page > .chat-list-app-header .community-room-return--global {
+    flex-basis: 42px;
+    inline-size: 42px;
+    width: 42px;
+    min-inline-size: 42px;
+    min-width: 42px;
+    block-size: 42px;
+    height: 42px;
+    min-block-size: 42px;
+    min-height: 42px;
+    border-radius: 15px;
+  }
+}
+
+body[data-page="comunidade-interna"] .community-room-message__pin {
+  justify-self: start;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #eaf3ff;
+  color: var(--chat-primary, #2167ae);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+body[data-page="comunidade-interna"] .community-room-actions-menu button,
+body[data-page="comunidade-interna"] .community-room-attachment-preview button,
+body[data-page="comunidade-interna"] .community-room-attachment-draft button,
+body[data-page="comunidade-interna"] .community-room-panel__header button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 12px;
+  padding: 0 12px;
+  background: #f2f7fd;
+  color: var(--chat-ink, #073264);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+body[data-page="comunidade-interna"] .community-room-panel__search {
+  display: grid;
+  gap: 8px;
+  color: var(--chat-ink, #073264);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+body[data-page="comunidade-interna"] .community-room-panel__search input {
+  min-height: 44px;
+  border: 1px solid var(--chat-border, rgba(31, 95, 174, 0.12));
+  border-radius: 14px;
+  padding: 0 12px;
+  background: #f8fbff;
+  color: var(--chat-ink, #073264);
+  font: inherit;
+}
+
+/* v2 — community side panels visual recovery.
+   Root cause addressed: members and pinned panels were using generic card grid rules,
+   which broke text flow on narrow widths and made the overlays feel unfinished.
+   This pass gives the panel its own content anatomy, spacing and overflow contract. */
+body[data-page="comunidade-interna"] .community-room-panel__surface {
+  width: min(460px, 100vw);
+  max-width: 100%;
+  gap: 18px;
+  padding: 22px 22px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+body[data-page="comunidade-interna"] .community-room-panel__header {
+  position: sticky;
+  top: -22px;
+  z-index: 2;
+  margin: -22px -22px 0;
+  padding: 22px 22px 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,251,255,0.94) 100%);
+  backdrop-filter: blur(10px);
+}
+
+body[data-page="comunidade-interna"] .community-room-panel__header h2 {
+  margin: 0;
+  color: #123b68;
+  font-size: clamp(1.4rem, 2vw, 1.9rem);
+  line-height: 1.1;
+  font-weight: 800;
+}
+
+body[data-page="comunidade-interna"] .community-room-panel__header button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid rgba(197, 214, 233, 0.9);
+  border-radius: 16px;
+  background: #f3f8fe;
+  box-shadow: 0 10px 20px rgba(19, 54, 90, 0.08);
+}
+
+body[data-page="comunidade-interna"] .community-room-panel__search {
+  gap: 10px;
+}
+
+body[data-page="comunidade-interna"] .community-room-panel__search span {
+  color: #123b68;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+body[data-page="comunidade-interna"] .community-room-panel__search input {
+  min-height: 48px;
+  padding: 0 14px;
+  border-color: rgba(197, 214, 233, 0.95);
+  border-radius: 16px;
+  background: #f9fbfe;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.65);
+}
+
+body[data-page="comunidade-interna"] .community-room-member-list,
+body[data-page="comunidade-interna"] .community-room-pinned-list {
+  display: grid;
+  gap: 12px;
+  min-height: 0;
+}
+
+body[data-page="comunidade-interna"] .community-room-member {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "avatar identity"
+    "meta meta";
+  gap: 12px 14px;
+  align-items: start;
+  padding: 16px;
+  border: 1px solid rgba(197, 214, 233, 0.95);
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 12px 22px rgba(17, 52, 88, 0.06);
+}
+
+body[data-page="comunidade-interna"] .community-room-member b {
+  grid-area: avatar;
+  width: 46px;
+  height: 46px;
+  font-size: 1rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #2fbda6 0%, #2f64b5 100%);
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(47, 100, 181, 0.18);
+}
+
+body[data-page="comunidade-interna"] .community-room-member > div {
+  grid-area: identity;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+body[data-page="comunidade-interna"] .community-room-member strong,
+body[data-page="comunidade-interna"] .community-room-pinned-list strong {
+  color: #123b68;
+  font-size: 1rem;
+  line-height: 1.25;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+body[data-page="comunidade-interna"] .community-room-member span {
+  color: #6f89a8;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+body[data-page="comunidade-interna"] .community-room-member em {
+  grid-area: meta;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: #edf5ff;
+  color: #2a5f90;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+body[data-page="comunidade-interna"] .community-room-pinned-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-content: start;
+  padding: 16px 18px;
+  border: 1px solid rgba(197, 214, 233, 0.95);
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 12px 22px rgba(17, 52, 88, 0.06);
+}
+
+body[data-page="comunidade-interna"] .community-room-pinned-list article > span {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #edf5ff;
+  color: #2a5f90;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+body[data-page="comunidade-interna"] .community-room-pinned-list article p {
+  margin: 0;
+  color: #173d6c;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  body[data-page="comunidade-interna"] .community-room-panel__surface {
+    width: min(100vw, 420px);
+    padding: 18px 14px 18px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-panel__header {
+    top: -18px;
+    margin: -18px -14px 0;
+    padding: 18px 14px 10px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-panel__header h2 {
+    font-size: 1.2rem;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-member,
+  body[data-page="comunidade-interna"] .community-room-pinned-list article {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-member strong,
+  body[data-page="comunidade-interna"] .community-room-pinned-list strong {
+    font-size: 0.96rem;
+  }
+}
+
+/* v3 — community drawer panels final structure.
+   Root cause addressed: the member and pinned drawers were still vulnerable to the
+   generic chat card grid contract, which could force content into narrow columns and
+   make text appear concatenated or vertical. This block gives drawer cards their own
+   explicit layout and a close button aligned with the Doke icon-button language. */
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel[aria-hidden="false"] {
+  display: grid;
+  place-items: stretch end;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-panel__surface {
+  box-sizing: border-box;
+  inline-size: min(420px, calc(100vw - 32px));
+  width: min(420px, calc(100vw - 32px));
+  max-inline-size: calc(100vw - 32px);
+  max-width: calc(100vw - 32px);
+  min-inline-size: 0;
+  height: 100%;
+  max-height: 100%;
+  padding: 22px;
+  gap: 18px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #fff;
+  border-left: 1px solid rgba(198, 214, 232, 0.72);
+  box-shadow: -18px 0 44px rgba(17, 52, 88, 0.14);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-panel__header {
+  position: sticky;
+  inset-block-start: -22px;
+  top: -22px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-inline-size: 0;
+  margin: -22px -22px 0;
+  padding: 22px 22px 12px;
+  border-bottom: 1px solid rgba(198, 214, 232, 0.58);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-panel__header h2 {
+  margin: 0;
+  min-inline-size: 0;
+  color: #123b68;
+  font-size: clamp(1.45rem, 2vw, 1.82rem);
+  line-height: 1.08;
+  font-weight: 850;
+  letter-spacing: -0.025em;
+  white-space: normal;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-panel__close {
+  position: relative;
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 0 0 var(--doke-close-button-size, 42px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--doke-close-button-size, 42px);
+  width: var(--doke-close-button-size, 42px);
+  min-inline-size: var(--doke-close-button-size, 42px);
+  min-width: var(--doke-close-button-size, 42px);
+  block-size: var(--doke-close-button-size, 42px);
+  height: var(--doke-close-button-size, 42px);
+  min-block-size: var(--doke-close-button-size, 42px);
+  min-height: var(--doke-close-button-size, 42px);
+  padding: 0;
+  border: 1px solid var(--doke-close-button-border, rgba(24, 75, 118, 0.1));
+  border-radius: var(--doke-close-button-radius, 999px);
+  background: var(--doke-close-button-bg, #f3f7fb);
+  color: var(--doke-close-button-color, #315b84);
+  cursor: pointer;
+  box-shadow: none;
+  transition: background-color var(--transition-fast, 160ms ease), transform var(--transition-fast, 160ms ease), border-color var(--transition-fast, 160ms ease);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-panel__close:hover,
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-panel__close:focus-visible {
+  background: var(--doke-close-button-hover-bg, #e8f1f9);
+  border-color: rgba(42, 95, 144, 0.18);
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-panel__close:active {
+  transform: translateY(1px);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-panel__close svg {
+  inline-size: 18px;
+  width: 18px;
+  block-size: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-panel__search {
+  display: grid;
+  gap: 10px;
+  min-inline-size: 0;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-panel__search span {
+  color: #123b68;
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-panel__search input {
+  box-sizing: border-box;
+  inline-size: 100%;
+  width: 100%;
+  min-inline-size: 0;
+  min-block-size: 48px;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgba(198, 214, 232, 0.96);
+  border-radius: 16px;
+  background: #f8fbff;
+  color: #123b68;
+  font: inherit;
+  font-weight: 700;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel :is(.community-room-member-list, .community-room-pinned-list) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  inline-size: 100%;
+  width: 100%;
+  min-inline-size: 0;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-member {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-areas:
+    "avatar identity"
+    "avatar role";
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 6px;
+  inline-size: 100%;
+  width: 100%;
+  min-inline-size: 0;
+  min-height: 84px;
+  padding: 14px;
+  border: 1px solid rgba(198, 214, 232, 0.92);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+  color: #123b68;
+  box-shadow: 0 12px 24px rgba(17, 52, 88, 0.055);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-member b {
+  grid-area: avatar;
+  display: inline-grid;
+  place-items: center;
+  inline-size: 44px;
+  width: 44px;
+  block-size: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2fbda6 0%, #2f64b5 100%);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 850;
+  line-height: 1;
+  box-shadow: 0 10px 22px rgba(47, 100, 181, 0.18);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-member > div {
+  grid-area: identity;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+  min-width: 0;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-member strong {
+  display: block;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  color: #123b68;
+  font-size: 0.96rem;
+  line-height: 1.2;
+  font-weight: 850;
+  letter-spacing: -0.015em;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-member span {
+  display: block;
+  color: #6c86a6;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  font-weight: 750;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-member em {
+  grid-area: role;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-inline-size: 0;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #edf7f4;
+  color: #147f70;
+  font-size: 0.75rem;
+  line-height: 1;
+  font-style: normal;
+  font-weight: 850;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-pinned-list article {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  inline-size: 100%;
+  width: 100%;
+  min-inline-size: 0;
+  min-height: 0;
+  padding: 16px;
+  border: 1px solid rgba(198, 214, 232, 0.92);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+  color: #123b68;
+  box-shadow: 0 12px 24px rgba(17, 52, 88, 0.055);
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-pinned-list article > span {
+  display: inline-flex;
+  align-items: center;
+  max-inline-size: 100%;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #edf5ff;
+  color: #2a5f90;
+  font-size: 0.72rem;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-pinned-list strong {
+  display: block;
+  max-inline-size: 100%;
+  color: #123b68;
+  font-size: 1rem;
+  line-height: 1.22;
+  font-weight: 850;
+  letter-spacing: -0.015em;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-pinned-list article p {
+  margin: 0;
+  max-inline-size: 100%;
+  color: #536f91;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  font-weight: 650;
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+}
+
+@media (max-width: 760px) {
+  body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-panel__surface {
+    inline-size: min(100vw, 390px);
+    width: min(100vw, 390px);
+    max-inline-size: 100vw;
+    max-width: 100vw;
+    padding: 18px 16px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-panel__header {
+    inset-block-start: -18px;
+    top: -18px;
+    margin: -18px -16px 0;
+    padding: 18px 16px 10px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-member {
+    grid-template-columns: 40px minmax(0, 1fr);
+    min-height: 78px;
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-member b {
+    inline-size: 40px;
+    width: 40px;
+    block-size: 40px;
+    height: 40px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-pinned-list article {
+    padding: 14px;
+    border-radius: 16px;
+  }
+}

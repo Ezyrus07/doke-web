@@ -1,0 +1,430 @@
+/* Doke index compact card contract
+   Canonical compact anatomy for marketplace cards/section headings derived from index.html.
+   Purpose: keep equivalent cards/headers from becoming oversized on tablet rails. */
+
+:root {
+  --doke-index-section-title-tablet: 0.8125rem;
+  --doke-index-section-title-mobile: 0.78rem;
+  --doke-index-ad-card-tablet-height: 266px;
+  --doke-index-ad-media-tablet-height: 96px;
+  --doke-index-ad-body-tablet-height: 170px;
+  --doke-index-ad-card-tablet-radius: 24px;
+  --doke-index-ad-title-size: 0.96rem;
+  --doke-index-ad-title-line: 1;
+  --doke-index-publication-title-size: 0.98rem;
+  --doke-index-publication-title-line: 1.14;
+}
+
+@media (max-width: 900px) {
+  html body :where(
+    .section-heading__title,
+    .home-section-title,
+    .detail-section__header h2,
+    .detail-section__header h3,
+    .results-related__header h2,
+    .results-related__header h3,
+    .communities-v2-section__heading h2,
+    .wallet-section-heading h1,
+    .wallet-section-heading h2,
+    .profile-section-heading h2,
+    .doke-reviews-title
+  ) {
+    font-size: var(--doke-index-section-title-tablet);
+    line-height: 1.15;
+    letter-spacing: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  html body :where(
+    .section-heading__title,
+    .home-section-title,
+    .detail-section__header h2,
+    .detail-section__header h3,
+    .results-related__header h2,
+    .results-related__header h3,
+    .communities-v2-section__heading h2,
+    .wallet-section-heading h1,
+    .wallet-section-heading h2,
+    .profile-section-heading h2,
+    .doke-reviews-title
+  ) {
+    font-size: var(--doke-index-section-title-mobile);
+  }
+}
+
+html.home-index-root body.home-index-shell :is(
+  #featured-services-title,
+  #short-videos-title,
+  #home-publications-title,
+  #more-services-title,
+  #professional-showcase-title,
+  #featured-pros-title
+) {
+  color: var(--doke-section-title-color, #72839a);
+  font-size: var(--doke-index-section-title-tablet);
+  line-height: 1.15;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+html.home-index-root body.home-index-shell :is(
+  section.featured-services,
+  section.short-videos,
+  section.home-publications,
+  section.more-services,
+  section.professional-showcase,
+  section.featured-pros
+) > .section-heading.home-section-header > :first-child {
+  max-width: none !important;
+  min-width: 0 !important;
+}
+
+html.home-index-root body.home-index-shell :is(#professional-showcase-title, #featured-pros-title) {
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  html.home-index-root body.home-index-shell :is(
+    #featured-services-title,
+    #short-videos-title,
+    #home-publications-title,
+    #more-services-title,
+    #professional-showcase-title,
+    #featured-pros-title
+  ) {
+    font-size: var(--doke-index-section-title-mobile);
+  }
+}
+
+html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__title, .service-card__title, .service-card__media-content strong) {
+  font-size: var(--doke-index-ad-title-size);
+  line-height: var(--doke-index-ad-title-line);
+  letter-spacing: -0.035em;
+}
+
+html body .publication-card .publication-card__title {
+  font-size: var(--doke-index-publication-title-size);
+  line-height: var(--doke-index-publication-title-line);
+  letter-spacing: -0.028em;
+}
+
+@media (min-width: 761px) and (max-width: 900px) {
+  html body :is(.doke-ad-card, .service-card) {
+    height: var(--doke-index-ad-card-tablet-height) !important;
+    min-height: var(--doke-index-ad-card-tablet-height) !important;
+    max-height: var(--doke-index-ad-card-tablet-height) !important;
+    border-radius: var(--doke-index-ad-card-tablet-radius);
+  }
+
+  html body :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__media, .service-card__media) {
+    height: var(--doke-index-ad-media-tablet-height) !important;
+    min-height: var(--doke-index-ad-media-tablet-height) !important;
+    max-height: var(--doke-index-ad-media-tablet-height) !important;
+  }
+
+  html body :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__body, .service-card__body) {
+    display: grid !important;
+    grid-template-rows: 10px 17px 16px 29px 44px !important;
+    align-content: start !important;
+    row-gap: 2px !important;
+    height: var(--doke-index-ad-body-tablet-height) !important;
+    min-height: var(--doke-index-ad-body-tablet-height) !important;
+    max-height: var(--doke-index-ad-body-tablet-height) !important;
+    padding: 8px 10px 10px !important;
+    overflow: hidden !important;
+  }
+
+  html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__category, .service-card__category) {
+    margin: 0 !important;
+    font-size: 0.58rem;
+    line-height: 1;
+    letter-spacing: 0.12em;
+  }
+
+  html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__rating, .service-card__rating) {
+    gap: 4px !important;
+    margin: -1px 0 0 !important;
+    font-size: 0.74rem;
+    line-height: 1;
+  }
+
+  html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__tags, .service-card__tags) {
+    display: none !important;
+  }
+
+  html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__location, .service-card__location, .service-card__meta-row, .service-card__profile) {
+    display: grid !important;
+    grid-template-columns: 24px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 5px !important;
+    margin: 0 !important;
+    font-size: 0.62rem;
+    line-height: 1.05;
+  }
+
+  html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__avatar, .service-card__avatar) {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+  }
+
+  html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__footer, .service-card__footer, .service-card__footer--compact) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 7px !important;
+    margin-top: 0 !important;
+    padding-top: 7px !important;
+  }
+
+  html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__price, .service-card__price) {
+    font-size: 0.9rem;
+    line-height: 1;
+  }
+
+  html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__cta, .service-card__cta) {
+    min-height: 30px !important;
+    padding: 0 12px !important;
+    border-radius: 999px;
+    font-size: 0.72rem;
+  }
+
+  html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__badge, .service-card__badge) {
+    top: 10px !important;
+    left: 10px !important;
+    min-height: 24px !important;
+    padding-inline: 9px !important;
+    font-size: 0.67rem;
+  }
+
+  html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__favorite, .service-card__favorite) {
+    top: 8px !important;
+    right: 8px !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detail-section--similar-ads .detail-related-grid--ads {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: var(--doke-card-grid-gap, 18px) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detail-section--similar-ads .detail-related-grid--ads > .doke-ad-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    flex: 0 1 auto !important;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 760px) {
+  html body :is(.doke-ad-card, .service-card) :is(.doke-ad-card__title, .service-card__title) {
+    font-size: 0.98rem;
+    line-height: 1.02;
+  }
+
+  html body :is(.doke-ad-card, .service-card) > :is(.doke-ad-card__media, .service-card__media) {
+    height: 104px !important;
+    min-height: 104px !important;
+    max-height: 104px !important;
+  }
+}
+
+/* Detail page must not keep legacy oversized anatomy for shared ad cards. */
+@media (min-width: 761px) and (max-width: 900px) {
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads .detail-related-grid--ads > article.doke-ad-card.doke-ad-card.doke-ad-card--similar {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: var(--doke-index-ad-card-tablet-height) !important;
+    min-height: var(--doke-index-ad-card-tablet-height) !important;
+    max-height: var(--doke-index-ad-card-tablet-height) !important;
+    flex: 0 1 auto !important;
+    border-radius: var(--doke-index-ad-card-tablet-radius);
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads .detail-related-grid--ads > article.doke-ad-card.doke-ad-card.doke-ad-card--similar > .doke-ad-card__media {
+    height: var(--doke-index-ad-media-tablet-height) !important;
+    min-height: var(--doke-index-ad-media-tablet-height) !important;
+    max-height: var(--doke-index-ad-media-tablet-height) !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads .detail-related-grid--ads > article.doke-ad-card.doke-ad-card.doke-ad-card--similar > .doke-ad-card__body {
+    display: grid !important;
+    grid-template-rows: 10px 17px 16px 29px 44px !important;
+    align-content: start !important;
+    row-gap: 2px !important;
+    height: var(--doke-index-ad-body-tablet-height) !important;
+    min-height: var(--doke-index-ad-body-tablet-height) !important;
+    max-height: var(--doke-index-ad-body-tablet-height) !important;
+    padding: 8px 10px 10px !important;
+    overflow: hidden !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads .detail-related-grid--ads > article.doke-ad-card.doke-ad-card.doke-ad-card--similar .doke-ad-card__title {
+    margin: 0 !important;
+    font-size: var(--doke-index-ad-title-size);
+    line-height: var(--doke-index-ad-title-line);
+    letter-spacing: -0.035em;
+    white-space: nowrap;
+    overflow: hidden !important;
+    text-overflow: ellipsis;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads .detail-related-grid--ads > article.doke-ad-card.doke-ad-card.doke-ad-card--similar .doke-ad-card__category {
+    margin: 0 !important;
+    font-size: 0.58rem;
+    line-height: 1;
+    letter-spacing: 0.12em;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads .detail-related-grid--ads > article.doke-ad-card.doke-ad-card.doke-ad-card--similar .doke-ad-card__rating {
+    gap: 4px !important;
+    margin: -1px 0 0 !important;
+    font-size: 0.74rem;
+    line-height: 1;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads .detail-related-grid--ads > article.doke-ad-card.doke-ad-card.doke-ad-card--similar .doke-ad-card__tags {
+    display: none !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads .detail-related-grid--ads > article.doke-ad-card.doke-ad-card.doke-ad-card--similar .doke-ad-card__location {
+    display: grid !important;
+    grid-template-columns: 24px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 5px !important;
+    margin: 0 !important;
+    font-size: 0.62rem;
+    line-height: 1.05;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads .detail-related-grid--ads > article.doke-ad-card.doke-ad-card.doke-ad-card--similar .doke-ad-card__footer {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 7px !important;
+    margin-top: 0 !important;
+    padding-top: 7px !important;
+  }
+}
+
+@media (max-width: 900px) {
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section__header.detail-section__header--row h2,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section__header h2,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section__header h3,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .doke-reviews-title {
+    font-size: var(--doke-index-section-title-tablet);
+    line-height: 1.15;
+    letter-spacing: 0.08em;
+  }
+}
+
+/* 2026-05-25 — detalhe-anuncio compact two-column similar ads.
+   Reason: the detail rail has a narrower content area than index; three columns make cards visually different and squeezed.
+   Page still owns rail composition; card internals keep shared compact anatomy. */
+@media (min-width: 600px) {
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-flow: row !important;
+    gap: var(--doke-card-grid-gap, 18px) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads > article.doke-ad-card.doke-ad-card--similar {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    flex: 0 1 auto !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1179px) {
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads > article.doke-ad-card.doke-ad-card--similar {
+    height: var(--doke-index-ad-card-tablet-height) !important;
+    min-height: var(--doke-index-ad-card-tablet-height) !important;
+    max-height: var(--doke-index-ad-card-tablet-height) !important;
+    border-radius: var(--doke-index-ad-card-tablet-radius);
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads > article.doke-ad-card.doke-ad-card--similar > .doke-ad-card__media {
+    height: var(--doke-index-ad-media-tablet-height) !important;
+    min-height: var(--doke-index-ad-media-tablet-height) !important;
+    max-height: var(--doke-index-ad-media-tablet-height) !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads > article.doke-ad-card.doke-ad-card--similar > .doke-ad-card__body {
+    height: var(--doke-index-ad-body-tablet-height) !important;
+    min-height: var(--doke-index-ad-body-tablet-height) !important;
+    max-height: var(--doke-index-ad-body-tablet-height) !important;
+  }
+}
+
+@media (min-width: 1180px) {
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads > article.doke-ad-card.doke-ad-card--similar {
+    height: 376px !important;
+    min-height: 376px !important;
+    max-height: 376px !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads > article.doke-ad-card.doke-ad-card--similar > .doke-ad-card__media {
+    height: 132px !important;
+    min-height: 132px !important;
+    max-height: 132px !important;
+  }
+
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page .detail-section--similar-ads [data-similar-ads-grid].detail-related-grid--ads > article.doke-ad-card.doke-ad-card--similar > .doke-ad-card__body {
+    height: 244px !important;
+    min-height: 244px !important;
+    max-height: 244px !important;
+  }
+}
+
+/* 2026-05-25 — detail generic section titles compactness.
+   Overrides old page CSS that oversized description/detail h2 outside related rails. */
+html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(.detail-section__header h2, .detail-section__header h3, .detail-section__header--row h2, .detail-section__header--row h3) {
+  font-size: var(--doke-section-title-size, clamp(1.02rem, 1.28vw, 1.38rem));
+  line-height: var(--doke-section-title-line, 1.08);
+  letter-spacing: 0.04em;
+  max-width: none !important;
+}
+
+@media (max-width: 900px) {
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page :is(.detail-section__header h2, .detail-section__header h3, .detail-section__header--row h2, .detail-section__header--row h3) {
+    font-size: 0.95rem;
+    line-height: 1.12;
+    letter-spacing: 0.08em;
+  }
+}
+
+@media (max-width: 900px) {
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page #descricao-title,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page #detalhes-title {
+    font-size: 0.95rem;
+    line-height: 1.12;
+    letter-spacing: 0.08em;
+    max-width: none !important;
+  }
+}
+
+@media (min-width: 901px) {
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page #descricao-title,
+  html body[data-page="detalhe-anuncio"] .detalhe-anuncio-page #detalhes-title {
+    font-size: var(--doke-section-title-size, clamp(1.02rem, 1.28vw, 1.38rem));
+    line-height: var(--doke-section-title-line, 1.08);
+    letter-spacing: 0.04em;
+    max-width: none !important;
+  }
+}

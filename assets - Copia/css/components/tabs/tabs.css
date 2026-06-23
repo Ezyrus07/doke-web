@@ -1,0 +1,72 @@
+/* Global tabs ownership contract.
+   Profile-specific tabs remain in profile-tabs.css until migrated. */
+
+:where(.doke-tabs, [data-tabs]) {
+  display: grid;
+  gap: 16px;
+}
+
+:where(.doke-tabs__list, [data-tabs-list]) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 6px;
+  border: 1px solid var(--doke-card-border, var(--border-color-interactive));
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--doke-subtle-shadow, 0 14px 28px rgba(25, 56, 92, 0.05));
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+:where(.doke-tabs__list, [data-tabs-list])::-webkit-scrollbar {
+  display: none;
+}
+
+:where(.doke-tabs__tab, [data-tab]) {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--doke-muted, #516783);
+  font: inherit;
+  font-size: 0.94rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+:where(.doke-tabs__tab:hover, [data-tab]:hover) {
+  background: var(--border-color-soft);
+  color: var(--doke-primary, #1f4d7a);
+}
+
+:where(.doke-tabs__tab.is-active, .doke-tabs__tab[aria-selected="true"], [data-tab].is-active, [data-tab][aria-selected="true"]) {
+  background: var(--border-color-soft);
+  color: var(--doke-primary, #214a77);
+  box-shadow: inset 0 0 0 1px rgba(137, 177, 221, 0.52);
+}
+
+:where(.doke-tabs__panel, [data-tab-panel]) {
+  min-width: 0;
+}
+
+:where(.doke-tabs__panel[hidden], [data-tab-panel][hidden]) {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  :where(.doke-tabs__list, [data-tabs-list]) {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  :where(.doke-tabs__tab, [data-tab]) {
+    min-height: var(--control-height-sm);
+    padding-inline: 14px;
+    font-size: 0.9rem;
+  }
+}

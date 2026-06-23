@@ -1,0 +1,693 @@
+/* Doke publication card component.
+   Responsibility: reusable publication cards for photo, video and before/after media.
+   Page/rail placement is owned by patterns/home-media-rails.css or page-specific patterns. */
+
+
+.publication-card {
+  --publication-radius: var(--card-radius-lg);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  overflow: hidden;
+  border: var(--border-width) var(--border-style) rgba(36, 88, 135, 0.04);
+  border-radius: var(--publication-radius);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-surface-sm);
+  color: #163553;
+  scroll-snap-align: start;
+}
+
+.publication-card[role="button"] {
+  cursor: pointer;
+}
+
+.publication-card {
+  transition: var(--card-transition);
+}
+
+.publication-card:hover,
+.publication-card:focus-within {
+  border-color: rgba(36, 88, 135, 0.04);
+  box-shadow: var(--shadow-surface);
+  transform: translateY(-1px);
+}
+
+.publication-card:focus-visible {
+  outline: 3px solid rgba(29, 100, 177, 0.28);
+  outline-offset: 4px;
+}
+
+.publication-card__media {
+  position: relative;
+  min-height: 178px;
+  margin: 10px 10px 0;
+  overflow: hidden;
+  border-radius: calc(var(--publication-radius) - 6px);
+  background-color: #dbe7f2;
+  background-position: center;
+  background-size: cover;
+  isolation: isolate;
+}
+
+.publication-card__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(9, 22, 36, 0.02) 0%, rgba(9, 22, 36, 0.01) 52%, rgba(5, 16, 29, 0.22) 100%);
+}
+
+
+.publication-card__poster,
+.publication-card__preview {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 180ms ease, transform 260ms ease;
+}
+
+.publication-card__preview {
+  opacity: 0;
+}
+
+.publication-card.is-previewing .publication-card__poster {
+  opacity: 0;
+}
+
+.publication-card.is-previewing .publication-card__preview {
+  opacity: 1;
+}
+
+.publication-card.is-previewing .publication-card__play {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.9);
+}
+
+.publication-card__media--kitchen {
+  background-image: url("https://images.pexels.com/photos/6489127/pexels-photo-6489127.jpeg?auto=compress&cs=tinysrgb&w=900");
+}
+
+.publication-card__media--living {
+  background-image: url("https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=900");
+}
+
+.publication-card__type {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(18, 31, 44, 0.74);
+  color: #fff;
+  backdrop-filter: blur(12px);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.publication-card__type svg,
+.publication-card__action svg,
+.publication-card__play svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.publication-card__type svg {
+  width: 14px;
+  height: 14px;
+}
+
+.publication-card__play {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.94);
+  color: #12385e;
+  box-shadow: 0 12px 26px rgba(10, 25, 42, 0.18);
+}
+
+.publication-card__play svg {
+  width: 23px;
+  height: 23px;
+  margin-left: 2px;
+  fill: currentColor;
+  stroke: none;
+}
+
+.publication-card__comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+  background: #c9d6e3;
+}
+
+.publication-card__comparison::after {
+  z-index: 2;
+}
+
+.publication-card__half {
+  position: relative;
+  min-width: 0;
+  background-position: center;
+  background-size: cover;
+}
+
+.publication-card__half--before {
+  background-image: url("https://images.pexels.com/photos/6444235/pexels-photo-6444235.jpeg?auto=compress&cs=tinysrgb&w=900");
+}
+
+.publication-card__half--after {
+  background-image: url("https://images.pexels.com/photos/7031408/pexels-photo-7031408.jpeg?auto=compress&cs=tinysrgb&w=900");
+}
+
+.publication-card__half span {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #6c4426;
+  box-shadow: 0 6px 14px rgba(10, 25, 42, 0.12);
+  font-size: 0.7rem;
+  font-weight: 900;
+  transform: translateY(-50%);
+}
+
+.publication-card__half--before span { left: 10px; }
+.publication-card__half--after span { right: 10px; }
+
+.publication-card__content {
+  display: grid;
+  gap: 7px;
+  padding: 13px 15px 15px;
+  min-height: 0;
+}
+
+.publication-card__title {
+  display: -webkit-box;
+  min-height: 2.15em;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: #143557;
+  font-size: 0.98rem;
+  line-height: 1.14;
+  font-weight: 900;
+  letter-spacing: -0.028em;
+}
+
+.publication-card__author {
+  margin: 0;
+  min-width: 0;
+  color: #6f8198;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.publication-card__author a {
+  color: #075fb8;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.publication-card__author a:hover { text-decoration: underline; }
+.publication-card__description { display: none; }
+
+.publication-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 2px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(214, 226, 238, 0.9);
+}
+
+.publication-card__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #294d74;
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.publication-card__action svg {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 13px;
+}
+
+
+
+@media (max-width: 760px) {
+  .publication-card {
+    min-height: 310px;
+  }
+
+  .publication-card__media {
+    min-height: 162px;
+  }
+
+  .publication-card__content {
+    padding: 12px 13px 13px;
+  }
+}
+
+/* Canonical tablet density for publication cards.
+   Keeps the shared card component compact inside horizontal tablet rails without
+   letting page CSS redefine publication anatomy. */
+@media (min-width: 561px) and (max-width: 1024px) {
+  .publication-card {
+    min-height: 0;
+  }
+
+  .publication-card__media {
+    min-height: clamp(128px, 21vw, 154px);
+    margin: 8px 8px 0;
+    border-radius: calc(var(--publication-radius) - 8px);
+  }
+
+  .publication-card__type {
+    top: 8px;
+    left: 8px;
+    min-height: 24px;
+    padding-inline: 9px;
+    font-size: 0.58rem;
+  }
+
+  .publication-card__play {
+    width: 42px;
+    height: 42px;
+  }
+
+  .publication-card__play svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .publication-card__content {
+    gap: 5px;
+    padding: 10px 12px 12px;
+  }
+
+  .publication-card__title {
+    min-height: 0;
+    font-size: 0.88rem;
+    line-height: 1.12;
+  }
+
+  .publication-card__author {
+    font-size: 0.72rem;
+    line-height: 1.1;
+  }
+
+  .publication-card__actions {
+    gap: 8px;
+    margin-top: 0;
+    padding-top: 7px;
+  }
+
+  .publication-card__action {
+    gap: 4px;
+    font-size: 0.68rem;
+  }
+
+  .publication-card__action svg {
+    width: 11px;
+    height: 11px;
+    flex-basis: 11px;
+  }
+}
+
+
+/* Publication card interaction parity.
+   Ownership: reusable publication-card hover/focus contract.
+   Matches the elevation language used by announcement cards without changing
+   layout, spacing, shell, arrows, page-specific wrappers, or zooming media. */
+.publication-card {
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    opacity 180ms ease;
+  will-change: transform;
+}
+
+.publication-card__media,
+.publication-card__comparison,
+.publication-card__half {
+  transition:
+    opacity 180ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) and (min-width: 1025px) {
+  body.home-index-shell .publication-card:hover,
+  body.home-index-shell .publication-card:focus-within,
+  body.search-results-body .publication-card:hover,
+  body.search-results-body .publication-card:focus-within {
+    transform: translateY(-5px);
+    box-shadow: 0 22px 38px rgba(21, 45, 73, 0.16);
+    border-color: rgba(76, 133, 198, 0.24);
+  }
+
+  body.home-index-shell .publication-card:hover .publication-card__media,
+  body.home-index-shell .publication-card:focus-within .publication-card__media,
+  body.search-results-body .publication-card:hover .publication-card__media,
+  body.search-results-body .publication-card:focus-within .publication-card__media {
+    opacity: 0.99;
+  }
+
+  body.home-index-shell .publication-card:hover .publication-card__half,
+  body.home-index-shell .publication-card:focus-within .publication-card__half,
+  body.search-results-body .publication-card:hover .publication-card__half,
+  body.search-results-body .publication-card:focus-within .publication-card__half {
+  }
+}
+
+
+
+/* Mobile publication card compact profile.
+   Component owns density only; page owns rail/grid placement. */
+@media (max-width: 760px) {
+  .publication-card {
+    min-width: 0;
+  }
+
+  .publication-card__media {
+    border-radius: 18px;
+  }
+}
+
+/* Mobile publication border refinement.
+   Final mobile contract: remove the oversized white frame and keep the card
+   visually closer to the desktop composition. */
+@media (max-width: 760px) {
+  .publication-card {
+    --publication-radius: 22px;
+    min-height: auto;
+    border-width: 1px;
+    border-color: rgba(196, 212, 228, 0.82);
+    box-shadow: 0 10px 22px rgba(19, 48, 82, 0.07);
+  }
+
+  .publication-card__media {
+    margin: 0;
+    min-height: 168px;
+    border-radius: 22px 22px 0 0;
+  }
+
+  .publication-card__type {
+    top: 10px;
+    left: 10px;
+  }
+
+  .publication-card__content {
+    gap: 6px;
+    padding: 12px 14px 14px;
+  }
+
+  .publication-card__actions {
+    margin-top: 0;
+    padding-top: 8px;
+  }
+}
+
+
+/* Mobile publication card frame contract v19.
+   Component-level rule: the media must not create a thick white inner frame. */
+@media (max-width: 760px) {
+  .publication-card {
+    --publication-radius: 22px;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .publication-card > .publication-card__media {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: 164px;
+    min-height: 164px;
+    margin: 0;
+    border-radius: 22px 22px 0 0;
+    background-size: cover;
+    background-position: center;
+  }
+
+  .publication-card > .publication-card__content {
+    padding: 11px 13px 13px;
+  }
+}
+
+
+
+/* 2026-06-07 - Stage 03A canonical publication-card anatomy.
+   Owner: components/cards/publication-card.css.
+   Pages may control only wrapper grid/gap/rail/overflow, not card internals. */
+:root {
+  --doke-publication-card-radius: var(--doke-card-radius, 18px);
+  --doke-publication-card-radius-sm: var(--doke-card-radius-sm, 16px);
+  --doke-publication-card-border: var(--doke-card-border, 1px solid rgba(25, 70, 108, 0.08));
+  --doke-publication-card-shadow: var(--doke-card-shadow, 0 10px 28px rgba(19, 48, 82, 0.075));
+  --doke-publication-card-shadow-hover: var(--doke-card-shadow-hover, 0 16px 34px rgba(19, 48, 82, 0.12));
+  --doke-publication-card-bg: var(--doke-card-bg, #fff);
+  --doke-publication-card-ink: var(--doke-card-ink, #082747);
+  --doke-publication-card-muted: var(--doke-card-muted, #667b95);
+  --doke-publication-media-height: auto;
+  --doke-publication-media-aspect: 16 / 9;
+  --doke-publication-media-height-mobile: 164px;
+  --doke-publication-media-height-narrow-tablet: 164px;
+  --doke-publication-padding: 14px 16px 16px;
+  --doke-publication-padding-mobile: 13px 14px 15px;
+  --doke-publication-padding-narrow-tablet: 13px 14px 15px;
+}
+
+.publication-card.publication-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  overflow: hidden;
+  border: var(--doke-publication-card-border);
+  border-radius: var(--doke-publication-card-radius);
+  background: var(--doke-publication-card-bg);
+  box-shadow: var(--doke-publication-card-shadow);
+  color: var(--doke-publication-card-ink);
+  scroll-snap-align: start;
+}
+
+.publication-card.publication-card > :is(.publication-card__media, .publication-card__comparison),
+.publication-card.publication-card :is(.publication-card__media, .publication-card__comparison) {
+  position: relative;
+  flex: 0 0 auto;
+  width: 100%;
+  aspect-ratio: var(--doke-publication-media-aspect);
+  block-size: auto;
+  min-block-size: 0;
+  max-block-size: none;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 0;
+  background-color: #dbe7f2;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  isolation: isolate;
+}
+
+.publication-card.publication-card :is(.publication-card__poster, .publication-card__preview, img, picture, video) {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0;
+}
+
+.publication-card.publication-card :is(.publication-card__content, .publication-card__body) {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+  padding: var(--doke-publication-padding);
+}
+
+.publication-card.publication-card .publication-card__title {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: #122f4f;
+  font-size: clamp(0.92rem, 0.86rem + 0.2vw, 1rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.12;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.publication-card.publication-card :is(.publication-card__author, .publication-card__meta) {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--doke-publication-card-muted);
+  font-size: 0.76rem;
+  font-weight: 750;
+  line-height: 1.25;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.publication-card.publication-card :is(.publication-card__author, .publication-card__meta) a {
+  color: #145fa5;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.publication-card.publication-card .publication-card__actions,
+.publication-card.publication-card .publication-card__footer,
+.publication-card.publication-card .publication-card__stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  overflow: hidden;
+  color: #6f839c;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.publication-card.publication-card .publication-card__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.publication-card.publication-card .publication-card__action svg {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.publication-card.publication-card :is(.publication-card__type, .publication-card__badge) {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(38, 41, 47, 0.88);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 850;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.publication-card.publication-card :is(.publication-card__type, .publication-card__badge) svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.publication-card.publication-card .publication-card__play {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  transform: none;
+  background: rgba(255,255,255,.96);
+  color: #145fa5;
+  box-shadow: 0 8px 18px rgba(7, 24, 41, 0.1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .publication-card.publication-card {
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  }
+
+  .publication-card.publication-card:is(:hover, :focus-within) {
+    transform: translateY(-1px);
+    border-color: rgba(18, 159, 146, 0.16);
+    box-shadow: var(--doke-publication-card-shadow-hover);
+  }
+}
+
+@media (min-width: 561px) and (max-width: 760px) {
+  .publication-card.publication-card {
+    --doke-publication-media-height-mobile: var(--doke-publication-media-height-narrow-tablet);
+    --doke-publication-padding-mobile: var(--doke-publication-padding-narrow-tablet);
+  }
+}
+
+@media (max-width: 760px) {
+  .publication-card.publication-card {
+    border-radius: var(--doke-publication-card-radius-sm);
+  }
+
+  .publication-card.publication-card > :is(.publication-card__media, .publication-card__comparison),
+  .publication-card.publication-card :is(.publication-card__media, .publication-card__comparison) {
+    block-size: var(--doke-publication-media-height-mobile);
+    min-block-size: var(--doke-publication-media-height-mobile);
+    max-block-size: var(--doke-publication-media-height-mobile);
+    height: var(--doke-publication-media-height-mobile);
+    min-height: var(--doke-publication-media-height-mobile);
+    max-height: var(--doke-publication-media-height-mobile);
+  }
+
+  .publication-card.publication-card :is(.publication-card__content, .publication-card__body) {
+    padding: var(--doke-publication-padding-mobile);
+  }
+}

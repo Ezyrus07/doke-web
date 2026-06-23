@@ -1,0 +1,128 @@
+/* Doke home media rails pattern.
+   Responsibility: section/rail/grid placement for Workers and Publications on index.html.
+   Cards remain owned by components/cards/worker-card.css and components/cards/publication-card.css. */
+
+body.home-index-shell {
+  --home-media-arrow-size: 52px;
+  --home-media-rail-inset: 68px;
+  --home-media-section-gap: 30px;
+}
+
+body.home-index-shell .short-videos,
+body.home-index-shell .home-publications {
+  display: grid;
+  gap: 14px;
+  margin-top: var(--home-media-section-gap);
+}
+
+body.home-index-shell .home-publications__header {
+  align-items: center;
+}
+
+body.home-index-shell .short-videos .content-rail.home-media-rail,
+body.home-index-shell .home-publications .content-rail.home-media-rail {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding-inline: var(--home-media-rail-inset);
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+body.home-index-shell .short-videos .home-catégories__arrow,
+body.home-index-shell .short-videos .content-rail__arrow,
+body.home-index-shell .home-publications .home-catégories__arrow,
+body.home-index-shell .home-publications .content-rail__arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: var(--home-media-arrow-size);
+  height: var(--home-media-arrow-size);
+  transform: translateY(-50%);
+}
+
+body.home-index-shell .short-videos .content-rail__arrow--prev,
+body.home-index-shell .home-publications .content-rail__arrow--prev {
+  left: 0;
+}
+
+body.home-index-shell .short-videos .content-rail__arrow--next,
+body.home-index-shell .home-publications .content-rail__arrow--next {
+  right: 0;
+}
+
+body.home-index-shell .short-videos .short-videos__track {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 22px;
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0 10px;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+
+body.home-index-shell .short-videos .short-videos__track::-webkit-scrollbar {
+  display: none;
+}
+
+body.home-index-shell .publication-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(280px, 320px);
+  gap: 18px;
+  justify-content: start;
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0 10px;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+
+body.home-index-shell .publication-grid::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 1080px) {
+  body.home-index-shell .publication-grid {
+    grid-auto-columns: calc((100% - 18px) / 2);
+  }
+}
+
+@media (max-width: 760px) {
+  body.home-index-shell .short-videos,
+  body.home-index-shell .home-publications {
+    margin-top: 22px;
+    gap: 12px;
+  }
+
+  body.home-index-shell .short-videos .content-rail.home-media-rail,
+  body.home-index-shell .home-publications .content-rail.home-media-rail {
+    display: block;
+    padding-inline: 0;
+  }
+
+  body.home-index-shell .short-videos .content-rail__arrow,
+  body.home-index-shell .home-publications .content-rail__arrow {
+    display: none;
+  }
+
+  body.home-index-shell .short-videos .short-videos__track,
+  body.home-index-shell .publication-grid {
+    gap: 12px;
+    padding-bottom: 8px;
+  }
+
+  body.home-index-shell .publication-grid {
+    grid-auto-columns: min(86vw, 330px);
+  }
+}

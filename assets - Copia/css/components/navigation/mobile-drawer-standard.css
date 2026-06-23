@@ -1,0 +1,353 @@
+/* Doke Web — canonical mobile/tablet drawer contract v4
+   Responsibility: one shared off-canvas menu for every touch viewport.
+   Pages must not restyle drawer anatomy. This file is loaded after page
+   foundations and uses a canonical data attribute to outrank legacy page skins
+   without priority flags. */
+
+:root {
+  --doke-drawer-breakpoint-max: 1199px;
+  --doke-drawer-width: clamp(238px, 64vw, 272px);
+  --doke-drawer-edge: max(10px, env(safe-area-inset-left, 0px));
+  --doke-drawer-top: max(10px, env(safe-area-inset-top, 0px));
+  --doke-drawer-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  --doke-drawer-panel-max-height: calc(100dvh - var(--doke-drawer-top) - var(--doke-drawer-bottom));
+}
+
+.home-mobile-drawer,
+[data-mobile-home-drawer],
+[data-mobile-drawer],
+.mobile-drawer,
+.app-mobile-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--doke-z-drawer, 1600);
+  display: none;
+  pointer-events: none;
+}
+
+.home-mobile-drawer.is-open,
+[data-mobile-home-drawer].is-open,
+[data-mobile-drawer].is-open,
+.mobile-drawer.is-open,
+body.mobile-home-drawer-open [data-mobile-drawer-authority="canonical"],
+body.doke-mobile-drawer-open [data-mobile-drawer-authority="canonical"] {
+  display: block;
+  pointer-events: auto;
+}
+
+body.mobile-home-drawer-open,
+body.doke-mobile-drawer-open {
+  overflow: hidden;
+  touch-action: none;
+}
+
+.home-mobile-drawer__backdrop,
+.mobile-drawer__backdrop,
+[data-mobile-drawer-backdrop],
+[data-mobile-home-menu-close].home-mobile-drawer__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.08);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+.home-mobile-drawer.is-open .home-mobile-drawer__backdrop,
+[data-mobile-drawer-authority="canonical"].is-open .home-mobile-drawer__backdrop,
+.mobile-drawer.is-open .mobile-drawer__backdrop {
+  opacity: 1;
+}
+
+.home-mobile-drawer__panel,
+.mobile-drawer__panel,
+[data-mobile-drawer-panel] {
+  position: absolute;
+  top: var(--doke-drawer-top);
+  bottom: var(--doke-drawer-bottom);
+  left: var(--doke-drawer-edge);
+  display: flex;
+  flex-direction: column;
+  width: min(var(--doke-drawer-width), calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  min-width: 0;
+  max-height: var(--doke-drawer-panel-max-height);
+  overflow: hidden;
+  border: 1px solid rgba(183, 203, 224, 0.82);
+  border-radius: 26px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 252, 255, 0.96) 100%);
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.18), 0 8px 20px rgba(15, 23, 42, 0.08);
+  transform: translate3d(-112%, 0, 0);
+  opacity: 0.96;
+  transition: transform 260ms cubic-bezier(.2,.8,.2,1), opacity 220ms ease;
+  overscroll-behavior: contain;
+}
+
+.home-mobile-drawer.is-open .home-mobile-drawer__panel,
+[data-mobile-drawer-authority="canonical"].is-open .home-mobile-drawer__panel,
+.mobile-drawer.is-open .mobile-drawer__panel {
+  transform: translate3d(0, 0, 0);
+  opacity: 1;
+}
+
+/* Canonical skin. These selectors intentionally outrank old page-scoped drawer
+   skins such as body.orders-page-shell .home-mobile-drawer__panel. */
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__panel {
+  top: var(--doke-drawer-top);
+  bottom: var(--doke-drawer-bottom);
+  left: var(--doke-drawer-edge);
+  width: min(var(--doke-drawer-width), calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  min-width: 0;
+  max-height: var(--doke-drawer-panel-max-height);
+  border: 1px solid rgba(183, 203, 224, 0.82);
+  border-radius: 26px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 252, 255, 0.96) 100%);
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.18), 0 8px 20px rgba(15, 23, 42, 0.08);
+  transform: translate3d(-112%, 0, 0);
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"].is-open .home-mobile-drawer__panel {
+  transform: translate3d(0, 0, 0);
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__header {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid rgba(210, 223, 237, 0.88);
+  background: linear-gradient(180deg, #ffffff 0%, rgba(247, 251, 255, 0.94) 100%);
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__profile {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius-md, 16px);
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__avatar {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  background: linear-gradient(135deg, #1678d7 0%, #2fbea6 100%);
+  box-shadow: 0 8px 18px rgba(31, 147, 184, 0.20);
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__profile-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__profile-copy strong {
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #18365d;
+  font-size: 16px;
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__profile-copy span {
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #6f86a2;
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__profile-arrow {
+  display: none;
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__close {
+  appearance: none;
+  -webkit-appearance: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+  border: 1px solid rgba(198, 216, 235, 0.9);
+  border-radius: 14px;
+  background: #fff;
+  color: #28527c;
+  box-shadow: 0 8px 18px rgba(35, 81, 124, 0.08);
+  cursor: pointer;
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 10px max(12px, env(safe-area-inset-bottom, 0px));
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__item {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 100%;
+  min-height: 48px;
+  height: auto;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--radius-base, 16px);
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+  background: transparent;
+  color: #365575;
+  text-decoration: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: none;
+  transform: none;
+  transition: background-color 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__item:hover,
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__item:focus-visible {
+  background: rgba(232, 242, 252, 0.86);
+  outline: none;
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__item:active {
+  transform: scale(0.985);
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__item-icon {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  border-radius: var(--radius-compact, 12px);
+  display: grid;
+  place-items: center;
+  background: rgba(233, 242, 250, 0.9);
+  color: #2d6fae;
+  box-shadow: inset 0 0 0 1px rgba(190, 215, 237, 0.66);
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] :is(svg, path, circle, rect, line, polyline) {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] :is(.home-mobile-drawer__item-icon svg, .home-mobile-drawer__close svg) {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  display: block;
+  flex: none;
+  stroke-width: 2.1;
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__item-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: currentColor;
+  background: transparent;
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__item-badge {
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  background: rgba(222, 238, 253, 0.95);
+  color: #2268a0;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] :is(.home-mobile-drawer__item--active, .home-mobile-drawer__item[aria-current="page"]) {
+  background: linear-gradient(135deg, #2f79bb 0%, #20669e 100%);
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(38, 107, 170, 0.22);
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] :is(.home-mobile-drawer__item--active, .home-mobile-drawer__item[aria-current="page"]) .home-mobile-drawer__item-icon {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] :is(.home-mobile-drawer__item--active, .home-mobile-drawer__item[aria-current="page"]) :is(.home-mobile-drawer__item-label, .home-mobile-drawer__item-badge) {
+  color: #fff;
+  background: transparent;
+}
+
+.home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__divider {
+  height: 1px;
+  margin: 10px 4px;
+  background: rgba(206, 221, 236, 0.88);
+}
+
+@media (max-width: 360px) {
+  :root {
+    --doke-drawer-width: min(260px, calc(100vw - 28px));
+  }
+
+  .home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__profile-copy strong,
+  .home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__profile-copy span {
+    max-width: 140px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .home-mobile-drawer,
+  [data-mobile-home-drawer],
+  [data-mobile-drawer],
+  .mobile-drawer,
+  .app-mobile-drawer {
+    display: none;
+  }
+}

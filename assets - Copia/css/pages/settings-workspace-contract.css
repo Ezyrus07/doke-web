@@ -1,0 +1,925 @@
+/* Settings workspace contract.
+ * Responsibility: make configuracoes.html consume the global app header and page
+ * rail tokens, while this page owns only its settings workspace/list composition.
+ * No chat CSS imports, no forced priority, no component duplication.
+ */
+
+body[data-page="configuracoes"].doke-settings-redesign {
+  --settings-page-bg: var(--settings-bg, #eef5fb);
+  --settings-shell-rail: var(--doke-header-rail, var(--doke-current-page-rail, var(--doke-page-rail, min(calc(100vw - 40px), 560px))));
+  --settings-list-gap: 10px;
+  --settings-row-radius: 20px;
+  --settings-row-border: rgba(31, 95, 174, 0.12);
+  --settings-row-shadow: 0 14px 30px rgba(31, 68, 110, 0.055);
+  --settings-search-height: 46px;
+  --settings-search-control-size: 36px;
+  --settings-search-icon-size: 18px;
+  background: var(--settings-page-bg);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .page.settings-page-frame {
+  min-inline-size: 0;
+  min-width: 0;
+  min-block-size: 100dvh;
+  min-height: 100dvh;
+  background: var(--settings-page-bg);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-list-app-header {
+  display: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign :is(.doke-bottom-nav, [data-bottom-nav]) {
+  display: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar {
+  scrollbar-width: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search {
+  display: grid;
+  grid-template-columns: var(--settings-search-control-size) minmax(0, 1fr) var(--settings-search-control-size);
+  align-items: center;
+  gap: 4px;
+  min-block-size: var(--settings-search-height);
+  min-height: var(--settings-search-height);
+  margin: 0 0 18px;
+  padding: 5px 8px;
+  border: 1px solid rgba(31, 95, 174, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: none;
+  box-sizing: border-box;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search:focus-within {
+  border-color: rgba(31, 95, 174, 0.18);
+  outline: 0;
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.98);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign :is(.settings-search-icon, .settings-sidebar-search__clear) {
+  position: static;
+  inset: auto;
+  transform: none;
+  display: grid;
+  place-items: center;
+  inline-size: var(--settings-search-control-size);
+  width: var(--settings-search-control-size);
+  min-inline-size: var(--settings-search-control-size);
+  min-width: var(--settings-search-control-size);
+  block-size: var(--settings-search-control-size);
+  height: var(--settings-search-control-size);
+  min-block-size: var(--settings-search-control-size);
+  min-height: var(--settings-search-control-size);
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--settings-primary, #1f5d91);
+  box-shadow: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-search-icon {
+  pointer-events: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search__clear {
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search.has-value .settings-sidebar-search__clear {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search__clear:hover,
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search__clear:focus-visible {
+  background: rgba(33, 103, 174, 0.08);
+  outline: 0;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign :is(.settings-search-icon svg, .settings-sidebar-search__clear svg) {
+  display: block;
+  inline-size: var(--settings-search-icon-size);
+  width: var(--settings-search-icon-size);
+  block-size: var(--settings-search-icon-size);
+  height: var(--settings-search-icon-size);
+  margin: 0;
+  stroke-width: 2.2;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search__input {
+  appearance: none;
+  -webkit-appearance: none;
+  align-self: stretch;
+  display: block;
+  inline-size: 100%;
+  width: 100%;
+  min-inline-size: 0;
+  min-width: 0;
+  block-size: 100%;
+  height: 100%;
+  min-block-size: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0 2px;
+  border: 0;
+  outline: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--settings-text, #062045);
+  font-size: 0.92rem;
+  font-weight: 750;
+  line-height: normal;
+  text-align: start;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search__input:is(:hover, :focus, :focus-visible, :active) {
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search__input::placeholder {
+  color: #6b82a0;
+  opacity: 1;
+  font-weight: 800;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search__input::-webkit-search-decoration,
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search__input::-webkit-search-cancel-button,
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search__input::-webkit-search-results-button,
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search__input::-webkit-search-results-decoration {
+  display: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-brand {
+  margin: 0 0 14px;
+  padding-inline: 2px;
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__title {
+  margin: 0;
+  color: var(--settings-primary, #1f5d91);
+  font-size: clamp(1.35rem, 1.9vw, 1.8rem);
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+}
+
+@media (min-width: 1181px) {
+  body[data-page="configuracoes"].doke-settings-redesign {
+    --settings-workspace-gap: clamp(20px, 2.4vw, 42px);
+    --settings-workspace-height: clamp(620px, calc(100dvh - (var(--settings-workspace-gap) * 2)), 780px);
+    --settings-menu-column: clamp(340px, 28vw, 400px);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign > .app-shell > .page.settings-page-frame {
+    display: flex;
+    flex-direction: column;
+    min-block-size: 100dvh;
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-main {
+    flex: 1 1 auto;
+    inline-size: 100%;
+    width: 100%;
+    min-block-size: 100dvh;
+    min-height: 100dvh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--settings-workspace-gap);
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-layout {
+    inline-size: min(100%, var(--doke-page-rail, 1360px));
+    width: min(100%, var(--doke-page-rail, 1360px));
+    max-inline-size: var(--doke-page-rail, 1360px);
+    max-width: var(--doke-page-rail, 1360px);
+    block-size: var(--settings-workspace-height);
+    height: var(--settings-workspace-height);
+    min-block-size: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: var(--settings-menu-column) minmax(0, 1fr);
+    margin: auto;
+    overflow: hidden;
+    border: 1px solid rgba(191, 209, 229, 0.72);
+    border-radius: 28px;
+    background: linear-gradient(180deg, rgba(246, 251, 255, 0.98) 0%, rgba(238, 247, 253, 0.98) 100%);
+    box-shadow: 0 22px 54px rgba(31, 68, 110, 0.1);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card {
+    border: 0;
+    box-shadow: none;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar {
+    height: 100%;
+    padding: 32px 28px;
+    border-right: 1px solid rgba(191, 209, 229, 0.72);
+    background: rgba(246, 251, 255, 0.78);
+    overflow: hidden;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__section + .settings-sidebar__section {
+    margin-top: 20px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item {
+    min-block-size: 46px;
+    min-height: 46px;
+    border-radius: 16px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item.is-active {
+    background: #e8f4fc;
+    border-color: rgba(191, 209, 229, 0.9);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-content,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-panel,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-panel.is-active,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    height: 100%;
+    min-height: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card {
+    border-radius: 0;
+    background: rgba(255, 255, 255, 0.96);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__header {
+    min-height: 96px;
+    padding: 24px 40px;
+    border-bottom-color: rgba(191, 209, 229, 0.72);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__body {
+    padding: 30px 40px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-card__footer {
+    padding: 18px 40px;
+    border-top-color: rgba(191, 209, 229, 0.72);
+    background: rgba(248, 251, 254, 0.92);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign :is(.settings-sidebar-search__input, .settings-field input, .settings-field textarea, .settings-field select) {
+    background: transparent;
+    border-color: rgba(201, 221, 236, 0.86);
+  }
+}
+
+@media (min-width: 1181px) and (max-width: 1320px) {
+  body[data-page="configuracoes"].doke-settings-redesign {
+    --settings-workspace-gap: 20px;
+    --settings-menu-column: 330px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign :is(.settings-card__header, .settings-card__body, .settings-card__footer) {
+    padding-inline: 32px;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  body[data-page="configuracoes"].doke-settings-redesign .page.settings-page-frame {
+    min-block-size: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-list-app-header {
+    display: flex;
+    flex: 0 0 auto;
+    padding-block: 12px 8px;
+    padding-inline: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-list-app-header .home-side-meta__identity,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-list-app-header .home-side-meta__search-form {
+    display: none;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-main {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    min-height: 0;
+    height: auto;
+    padding: var(--doke-page-top-gap, 16px) 0 28px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-layout {
+    inline-size: var(--settings-shell-rail);
+    width: var(--settings-shell-rail);
+    max-inline-size: var(--settings-shell-rail);
+    max-width: var(--settings-shell-rail);
+    margin-inline: auto;
+    margin-block: 0;
+    block-size: auto;
+    height: auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    display: grid;
+    gap: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 760px) {
+  body[data-page="configuracoes"].doke-settings-redesign {
+    --settings-shell-rail: var(--doke-header-rail, var(--doke-current-page-rail, var(--doke-page-rail, min(calc(100vw - 40px), 560px))));
+    --settings-search-height: 42px;
+    --settings-search-control-size: 32px;
+    --settings-search-icon-size: 16px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .page.settings-page-frame {
+    min-block-size: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-list-app-header {
+    display: flex;
+    flex: 0 0 auto;
+    min-block-size: var(--doke-header-height, 70px);
+    block-size: var(--doke-header-height, 70px);
+    min-height: var(--doke-header-height, 70px);
+    height: var(--doke-header-height, 70px);
+    padding-block: 12px 8px;
+    padding-inline: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-list-app-header > .app-header__inner {
+    min-block-size: var(--doke-header-control-size, 46px);
+    block-size: var(--doke-header-control-size, 46px);
+    min-height: var(--doke-header-control-size, 46px);
+    height: var(--doke-header-control-size, 46px);
+    margin-inline: auto;
+    padding-inline: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-list-app-header .home-side-meta__identity,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-list-app-header .home-side-meta__search-form {
+    display: none;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-main {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    min-height: 0;
+    height: auto;
+    padding: 12px 0 24px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-layout {
+    inline-size: var(--settings-shell-rail);
+    width: var(--settings-shell-rail);
+    max-inline-size: var(--settings-shell-rail);
+    max-width: var(--settings-shell-rail);
+    margin-inline: auto;
+    margin-block: 0;
+    block-size: auto;
+    height: auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    display: grid;
+    gap: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-brand {
+    margin: 0 0 14px;
+    padding-inline: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__title {
+    font-size: 1.42rem;
+    line-height: 1.05;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search {
+    inline-size: 100%;
+    width: 100%;
+    min-block-size: var(--settings-search-height);
+    min-height: var(--settings-search-height);
+    margin: 0 0 14px;
+    padding: 4px 6px;
+    border: 1px solid var(--settings-row-border);
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 12px 28px rgba(31, 68, 110, 0.06);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__section {
+    display: grid;
+    gap: var(--settings-list-gap);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__section + .settings-sidebar__section {
+    margin-block-start: 18px;
+    padding-block-start: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__label {
+    margin: 0;
+    padding: 0 2px;
+    color: var(--settings-text, #062045);
+    font-size: 0.72rem;
+    line-height: 1;
+    font-weight: 900;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item {
+    position: relative;
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    inline-size: 100%;
+    width: 100%;
+    min-block-size: 58px;
+    min-height: 58px;
+    margin: 0;
+    padding: 0 14px;
+    border: 1px solid var(--settings-row-border);
+    border-radius: var(--settings-row-radius);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: var(--settings-row-shadow);
+    color: var(--settings-text, #062045);
+    text-align: left;
+    box-sizing: border-box;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item::before,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item::after {
+    content: none;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item svg {
+    inline-size: 20px;
+    width: 20px;
+    block-size: 20px;
+    height: 20px;
+    justify-self: center;
+    stroke: var(--settings-primary, #1f5d91);
+    stroke-width: 2;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item span {
+    min-inline-size: 0;
+    min-width: 0;
+    color: currentColor;
+    font-size: 0.9rem;
+    line-height: 1.15;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item:is(:hover, :focus-visible) {
+    background: #f8fbff;
+    border-color: rgba(33, 103, 174, 0.24);
+    color: var(--settings-primary-strong, #174f7d);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item.is-active {
+    background: #e8f4fc;
+    border-color: rgba(33, 103, 174, 0.22);
+    color: var(--settings-primary-strong, #174f7d);
+  }
+}
+
+/* Settings tablet list-state closure v16.
+ * Responsibility: keep tablet and iPad landscape widths up to 1180px on the same list/menu
+ * contract approved at 608px. The editable settings panels remain available
+ * on true desktop workspace widths only, avoiding a mixed menu + form composition
+ * inside tablet rails.
+ */
+@media (min-width: 761px) and (max-width: 1180px) {
+  body[data-page="configuracoes"].doke-settings-redesign {
+    --settings-shell-rail: var(--doke-header-rail, var(--doke-current-page-rail, var(--doke-page-rail)));
+    --settings-search-height: 42px;
+    --settings-search-control-size: 32px;
+    --settings-search-icon-size: 16px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .page.settings-page-frame {
+    min-block-size: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-list-app-header {
+    display: flex;
+    flex: 0 0 auto;
+    min-block-size: var(--doke-header-height, 70px);
+    block-size: var(--doke-header-height, 70px);
+    min-height: var(--doke-header-height, 70px);
+    height: var(--doke-header-height, 70px);
+    padding-block: 12px 8px;
+    padding-inline: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-list-app-header > .app-header__inner {
+    min-block-size: var(--doke-header-control-size, 46px);
+    block-size: var(--doke-header-control-size, 46px);
+    min-height: var(--doke-header-control-size, 46px);
+    height: var(--doke-header-control-size, 46px);
+    margin-inline: auto;
+    padding-inline: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-list-app-header .home-side-meta__identity,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-list-app-header .home-side-meta__search-form {
+    display: none;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-main {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    min-height: 0;
+    height: auto;
+    padding: 12px 0 28px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-layout {
+    inline-size: var(--settings-shell-rail);
+    width: var(--settings-shell-rail);
+    max-inline-size: var(--settings-shell-rail);
+    max-width: var(--settings-shell-rail);
+    block-size: auto;
+    height: auto;
+    min-block-size: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    margin-inline: auto;
+    margin-block: 0;
+    padding-inline: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    height: auto;
+    display: grid;
+    gap: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-content {
+    display: none;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-brand {
+    margin: 0 0 14px;
+    padding-inline: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__title {
+    font-size: 1.42rem;
+    line-height: 1.05;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search {
+    inline-size: 100%;
+    width: 100%;
+    min-block-size: var(--settings-search-height);
+    min-height: var(--settings-search-height);
+    margin: 0 0 14px;
+    padding: 4px 6px;
+    border: 1px solid var(--settings-row-border);
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 12px 28px rgba(31, 68, 110, 0.06);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__section {
+    display: grid;
+    gap: var(--settings-list-gap);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__section + .settings-sidebar__section {
+    margin-block-start: 18px;
+    padding-block-start: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__label {
+    margin: 0;
+    padding: 0 2px;
+    color: var(--settings-text, #062045);
+    font-size: 0.72rem;
+    line-height: 1;
+    font-weight: 900;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item {
+    position: relative;
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    inline-size: 100%;
+    width: 100%;
+    min-block-size: 58px;
+    min-height: 58px;
+    margin: 0;
+    padding: 0 14px;
+    border: 1px solid var(--settings-row-border);
+    border-radius: var(--settings-row-radius);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: var(--settings-row-shadow);
+    color: var(--settings-text, #062045);
+    text-align: left;
+    box-sizing: border-box;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item::before,
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item::after {
+    content: none;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item svg {
+    inline-size: 20px;
+    width: 20px;
+    block-size: 20px;
+    height: 20px;
+    justify-self: center;
+    stroke: var(--settings-primary, #1f5d91);
+    stroke-width: 2;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item span {
+    min-inline-size: 0;
+    min-width: 0;
+    color: currentColor;
+    font-size: 0.9rem;
+    line-height: 1.15;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item:is(:hover, :focus-visible) {
+    background: #f8fbff;
+    border-color: rgba(33, 103, 174, 0.24);
+    color: var(--settings-primary-strong, #174f7d);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar__item.is-active {
+    background: #e8f4fc;
+    border-color: rgba(33, 103, 174, 0.22);
+    color: var(--settings-primary-strong, #174f7d);
+  }
+}
+
+@media (max-width: 760px) {
+  body[data-page="configuracoes"].doke-settings-redesign {
+    --settings-shell-rail: var(--doke-header-rail, var(--doke-current-page-rail, var(--doke-page-rail)));
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-main {
+    padding-inline: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-layout {
+    inline-size: var(--settings-shell-rail);
+    width: var(--settings-shell-rail);
+    max-inline-size: var(--settings-shell-rail);
+    max-width: var(--settings-shell-rail);
+    margin-inline: auto;
+    padding-inline: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar {
+    padding-inline: 0;
+  }
+}
+
+/* Settings narrow entry contract v17.
+ * Authority: configuracoes page-specific responsive flow.
+ * Goal: tablets and mobile use a true list -> detail transition instead of
+ * stacking the active settings panel below the menu list.
+ */
+body[data-page="configuracoes"].doke-settings-redesign .settings-panel-topbar {
+  display: none;
+}
+
+@media (max-width: 1180px) {
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-menu-mode .settings-sidebar {
+    display: grid;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-menu-mode .settings-content {
+    display: none;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-panel-mode .settings-sidebar {
+    display: none;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-panel-mode .settings-content {
+    display: flex;
+    flex-direction: column;
+    inline-size: 100%;
+    width: 100%;
+    min-inline-size: 0;
+    min-width: 0;
+    min-block-size: 0;
+    min-height: 0;
+    gap: 12px;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-panel-mode .settings-panel-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    inline-size: 100%;
+    width: 100%;
+    min-block-size: var(--doke-header-control-size, 46px);
+    min-height: var(--doke-header-control-size, 46px);
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-panel-back {
+    display: inline-grid;
+    place-items: center;
+    inline-size: var(--doke-header-control-size, 46px);
+    width: var(--doke-header-control-size, 46px);
+    min-inline-size: var(--doke-header-control-size, 46px);
+    min-width: var(--doke-header-control-size, 46px);
+    block-size: var(--doke-header-control-size, 46px);
+    height: var(--doke-header-control-size, 46px);
+    min-block-size: var(--doke-header-control-size, 46px);
+    min-height: var(--doke-header-control-size, 46px);
+    padding: 0;
+    border: 1px solid rgba(201, 221, 236, 0.72);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--settings-primary, #1f5d91);
+    box-shadow: 0 12px 28px rgba(31, 68, 110, 0.06);
+    cursor: pointer;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-panel-back:is(:hover, :focus-visible) {
+    background: #f8fbff;
+    border-color: rgba(33, 103, 174, 0.24);
+    outline: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-panel-back svg {
+    display: block;
+    inline-size: 22px;
+    width: 22px;
+    block-size: 22px;
+    height: 22px;
+    stroke-width: 2.2;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-panel-mode .settings-panel.is-active,
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-panel-mode .settings-card {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    block-size: auto;
+    height: auto;
+    min-block-size: 0;
+    min-height: 0;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-panel-mode .settings-panel.is-active {
+    display: flex;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-panel-mode .settings-card {
+    overflow: hidden;
+    border: 1px solid rgba(201, 221, 236, 0.72);
+    border-radius: var(--settings-row-radius, 20px);
+    background: #fff;
+    box-shadow: var(--settings-row-shadow, 0 14px 30px rgba(31, 68, 110, 0.055));
+  }
+}
+
+@media (max-width: 560px) {
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-brand {
+    display: none;
+  }
+
+  body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search {
+    margin-block-start: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  body[data-page="configuracoes"].doke-settings-redesign.settings-narrow-panel-mode .settings-main {
+    padding-block-end: calc(92px + env(safe-area-inset-bottom, 0px));
+  }
+}

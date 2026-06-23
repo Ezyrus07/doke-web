@@ -1,0 +1,85 @@
+/* Resultados card density token bridge.
+   Page composition exposes tokens; assets/css/components/cards/ad-card.css
+   consumes them on .doke-ad-card--results. Values match the component fallbacks
+   to preserve the approved visual baseline while satisfying the ownership
+   contract. */
+body.search-results-body {
+  --doke-ad-results-media-height: clamp(148px, 12vw, 178px);
+  --doke-ad-results-media-min-height: 148px;
+  --doke-ad-results-body-padding: 18px 20px 20px;
+  --doke-ad-results-footer-gap: 14px;
+  --doke-ad-results-cta-min-width: 0;
+}
+
+/* Resultados — acionamento visual do botão de filtros.
+   Card/grid density is owned by display-density.css; this file only keeps the
+   local trigger alignment for the search scope. */
+
+.search-results-body .results-searchbar__scope.search-scope {
+  align-items: center;
+}
+
+.search-results-body .search-scope__filter-toggle.doke-filter-pill {
+  flex: 0 0 auto;
+}
+
+/* Resultados: close control for the filters panel.
+   The panel close is page composition, not the shared modal-close primitive. */
+.search-results-body .results-filters__close {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 40px;
+  height: 40px;
+  inline-size: 40px;
+  block-size: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  min-inline-size: 40px;
+  min-block-size: 40px;
+  padding: 0;
+  border: 1px solid rgba(198, 216, 235, 0.9);
+  border-radius: 14px;
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  background: #fff;
+  color: #28527c;
+  box-shadow: 0 8px 18px rgba(35, 81, 124, 0.08);
+  line-height: 1;
+  cursor: pointer;
+  transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base), background var(--transition-base), color var(--transition-base);
+}
+
+.search-results-body .results-filters__close span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.search-results-body .results-filters__close svg {
+  inline-size: 18px;
+  block-size: 18px;
+  min-inline-size: 18px;
+  min-block-size: 18px;
+  display: block;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.search-results-body .results-filters__close:hover {
+  transform: translateY(-1px);
+  border-color: rgba(174, 202, 229, 0.95);
+  background: #fff;
+  box-shadow: 0 10px 22px rgba(35, 81, 124, 0.1);
+}

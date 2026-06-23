@@ -1,0 +1,109 @@
+/* Chat sidebar single-list contract v1.
+   mensagens.html keeps only Conversas.
+   comunidade-interna.html keeps only Canais.
+   This removes the cramped split-scroll UX and makes the remaining list own the sidebar scroll. */
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-sidebar-scroll-region {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
+  min-block-size: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-sidebar-scroll-region > :is(.messages-block, .community-room-block) {
+  min-block-size: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-sidebar-scroll-region :is(.messages-list, .community-room-channel-list) {
+  min-block-size: 0;
+  min-height: 0;
+  max-block-size: none;
+  max-height: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding-block: 0 18px;
+  padding-inline: 0 8px;
+  scrollbar-width: thin;
+}
+
+body[data-page="mensagens"] .messages-block--contacts,
+body[data-page="comunidade-interna"] .community-room-block--channels {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 14px;
+}
+
+body[data-page="mensagens"] .messages-block--contacts .messages-block__header,
+body[data-page="comunidade-interna"] .community-room-block--channels .community-room-block__header {
+  position: static;
+  padding-block: 0;
+  background: transparent;
+}
+
+body[data-page="mensagens"] .messages-block--contacts .messages-list,
+body[data-page="comunidade-interna"] .community-room-block--channels .community-room-channel-list {
+  align-content: start;
+}
+
+/* Defensive: if legacy markup appears from stale cache, do not render the removed sections. */
+body[data-page="mensagens"] .messages-block--orders,
+body[data-page="comunidade-interna"] .community-room-block--members {
+  display: none;
+}
+
+/* v2 — mensagens.html sidebar keeps only Conversas. */
+body[data-page="mensagens"] :is(.messages-block--orders, [data-messages-orders], [data-messages-orders-list], [data-messages-orders-count]) {
+  display: none;
+}
+
+body[data-page="mensagens"] .messages-sidebar-panel [data-messages-filter="orders"] {
+  display: none;
+}
+
+body[data-page="mensagens"] .chat-sidebar-scroll-region {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+body[data-page="mensagens"] .messages-block--contacts {
+  min-block-size: 0;
+  min-height: 0;
+}
+
+body[data-page="mensagens"] .messages-block--contacts .messages-list {
+  min-block-size: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-block-end: 18px;
+}
+
+/* v3 — single sidebar scroll authority.
+   Root cause addressed: the desktop workspace could still let the sidebar and
+   the remaining list compete for vertical overflow. The sidebar now acts as the
+   fixed shell; the single list region owns the useful scroll area. */
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .messages-sidebar {
+  overflow: hidden;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-sidebar-scroll-region {
+  flex: 1 1 0;
+  min-block-size: 0;
+  min-height: 0;
+}
+
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .chat-sidebar-scroll-region > :is(.messages-block--contacts, .community-room-block--channels) {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  block-size: 100%;
+  min-block-size: 0;
+  min-height: 0;
+}
+
+body[data-page="comunidade-interna"] .community-room-block--channels .community-room-channel-list {
+  padding-block-end: 22px;
+}

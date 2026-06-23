@@ -1,0 +1,76 @@
+/* Comunidade overflow guard.
+ * Responsibility: keep only the active v2 community structure from creating
+ * horizontal overflow on mobile. Legacy .communities-layout/.communities-grid
+ * selectors were removed from the active cascade in the CSS authority cleanup.
+ */
+@media (max-width: 760px) {
+  body.communities-page-shell,
+  body.communities-page-shell .page,
+  body.communities-page-shell .page__content,
+  body.communities-page-shell .page__content-inner,
+  body.communities-page-shell .orders-shell-content,
+  body.communities-page-shell .communities-page,
+  body.communities-page-shell .communities-discovery,
+  body.communities-page-shell .communities-v2-shell,
+  body.communities-page-shell .communities-v2-main,
+  body.communities-page-shell .communities-v2-sidebar,
+  body.communities-page-shell .communities-v2-section,
+  body.communities-page-shell .communities-v2-continue-grid,
+  body.communities-page-shell .communities-v2-grid,
+  body.communities-page-shell .community-continue-card,
+  body.communities-page-shell .community-card-v2,
+  body.communities-page-shell .community-side-card-v2 {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  body.communities-page-shell {
+    overflow-x: hidden;
+  }
+
+  body.communities-page-shell .page__content {
+    padding-inline: 0;
+  }
+
+  body.communities-page-shell .page__content-inner.container.shell-home__workspace.shell-home__workspace--clean.orders-shell-content {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+    padding: 0 12px 18px;
+  }
+
+  body.communities-page-shell .home-side-meta,
+  body.communities-page-shell .topbar {
+    display: none;
+  }
+
+  body.communities-page-shell .communities-mobile-header {
+    display: grid;
+  }
+
+  body.communities-page-shell .communities-v2-shell,
+  body.communities-page-shell .communities-v2-main,
+  body.communities-page-shell .communities-v2-sidebar,
+  body.communities-page-shell .communities-v2-continue-grid,
+  body.communities-page-shell .communities-v2-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.communities-page-shell .communities-v2-sidebar {
+    margin-top: 0;
+    gap: 14px;
+  }
+
+  body.communities-page-shell .communities-v2-section__heading {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  body.communities-page-shell .community-continue-card,
+  body.communities-page-shell .community-card-v2,
+  body.communities-page-shell .community-side-card-v2 {
+    overflow: hidden;
+  }
+}

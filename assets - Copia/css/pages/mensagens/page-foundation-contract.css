@@ -1,0 +1,99 @@
+/* Doke Cleanup Stage 36: removed priority-based overrides from active mensagens cascade. */
+/* 2026-04-25 - Padronizacao com comunidade.html */
+body.messages-page-shell .messages-app {
+  grid-template-columns: 320px minmax(0, 1fr);
+}
+
+body.messages-page-shell .messages-sidebar {
+  padding: 24px 22px 28px;
+}
+
+body.messages-page-shell .messages-thread {
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+
+body.messages-page-shell .messages-thread__header {
+  grid-row: 1;
+  min-height: 84px;
+}
+
+body.messages-page-shell .messages-selection-bar {
+  grid-row: 2;
+}
+
+body.messages-page-shell .messages-thread-empty,
+body.messages-page-shell .messages-thread__body {
+  grid-row: 3;
+}
+
+body.messages-page-shell .messages-thread__body {
+  padding: 18px 24px 96px;
+}
+
+body.messages-page-shell .messages-composer {
+  grid-row: 4;
+  align-self: end;
+  min-height: 0;
+  padding: 8px 18px calc(env(safe-area-inset-bottom, 0px) + 6px);
+  margin: 0;
+}
+
+body.messages-page-shell .message-bubble {
+  max-width: min(760px, 82%);
+}
+
+body.messages-page-shell .messages-desktop-toolbar .orders-page-header__search-toggle,
+body.messages-page-shell .messages-desktop-toolbar .orders-page-header__hero-chip,
+body.messages-page-shell .messages-thread__action {
+  width: 46px;
+  height: var(--control-height-lg);
+  min-width: 46px;
+  min-height: var(--control-height-lg);
+  border-radius: 17px;
+}
+
+@media (max-width: 1180px) {
+  body.messages-page-shell .messages-app {
+    grid-template-columns: 320px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  body.messages-page-shell .app-shell > .sidebar {
+    display: none;
+  }
+
+  body.messages-page-shell .messages-desktop-toolbar {
+    display: none;
+  }
+
+  body.messages-page-shell .messages-app {
+    grid-template-columns: 1fr;
+  }
+
+  body.messages-page-shell .messages-thread {
+    display: none;
+  }
+
+  body.messages-page-shell .messages-app.messages-app--thread-open .messages-sidebar {
+    display: none;
+  }
+
+  body.messages-page-shell .messages-app.messages-app--thread-open .messages-thread {
+    display: grid;
+  }
+
+  body.messages-page-shell .messages-thread__body {
+    padding: 14px 14px 76px;
+  }
+
+  body.messages-page-shell .messages-composer {
+    padding-inline: 10px;
+  }
+}
+
+@media (max-width: 760px) {
+  body.messages-page-shell:has(.messages-app.messages-app--thread-open) .bottom-nav {
+    display: none;
+  }
+}

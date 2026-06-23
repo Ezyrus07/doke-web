@@ -1,0 +1,325 @@
+/* Reusable internal action surfaces.
+   Shared filter chips, inline action panels and popover control surfaces for pedidos/notificacoes/mensagens. */
+body.orders-page-shell,
+body.notifications-page-shell,
+body.messages-page-shell {
+  --action-surface-bg: rgba(255, 255, 255, 0.88);
+  --action-surface-border: var(--border-color-muted);
+  --action-surface-shadow: 0 18px 38px rgba(28, 63, 102, 0.05);
+  --action-chip-bg: rgba(245, 248, 252, 0.98);
+  --action-chip-border: var(--border-color-muted);
+  --action-chip-text: #173a67;
+  --action-chip-muted: #6882a2;
+  --action-accent: #1f9d74;
+  --action-accent-strong: #1f4f84;
+  --action-control-size: 44px;
+  --action-control-radius: 16px;
+}
+
+body.orders-page-shell .orders-page-header__controls,
+body.notifications-page-shell .notifications-page-header__controls,
+body.messages-page-shell .messages-header-controls {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--action-surface-border);
+  border-radius: var(--radius-lg);
+  background: var(--action-surface-bg);
+  box-shadow: var(--action-surface-shadow);
+  backdrop-filter: blur(14px);
+}
+
+body.orders-page-shell .orders-filter-status-stack,
+body.notifications-page-shell .notifications-filter-stack,
+body.messages-page-shell .orders-active-filter-row {
+  display: grid;
+  gap: 8px;
+  align-items: start;
+}
+
+body.orders-page-shell .orders-active-filter-row,
+body.notifications-page-shell .orders-active-filter-row,
+body.messages-page-shell .orders-active-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+body.orders-page-shell .orders-active-filter-chip,
+body.notifications-page-shell .orders-active-filter-chip,
+body.messages-page-shell .orders-active-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--control-height-xs);
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--action-chip-border);
+  background: var(--action-chip-bg);
+  color: var(--action-chip-text);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+body.orders-page-shell .orders-active-filter-clear,
+body.notifications-page-shell .orders-active-filter-clear,
+body.messages-page-shell .orders-active-filter-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--control-height-xs);
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--action-chip-muted);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+body.orders-page-shell .orders-filters-popover,
+body.notifications-page-shell .notifications-filters-panel,
+body.messages-page-shell .messages-filters-panel {
+  position: relative;
+  z-index: 4;
+}
+
+body.orders-page-shell .orders-filters-panel,
+body.notifications-page-shell .notifications-filters-panel,
+body.messages-page-shell .messages-filters-panel {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+
+body.orders-page-shell .orders-filters-panel__group,
+body.notifications-page-shell .notifications-filters-panel__group,
+body.messages-page-shell .orders-filters-panel__group {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+body.orders-page-shell .orders-filters-panel__chips,
+body.notifications-page-shell .notifications-filters-panel__chips,
+body.messages-page-shell .orders-filters-panel__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+body.orders-page-shell .orders-filter-item,
+body.orders-page-shell .orders-select-option,
+body.notifications-page-shell .notifications-filter-chip,
+body.notifications-page-shell .notifications-time-filter,
+body.notifications-page-shell .orders-select-option,
+body.messages-page-shell .orders-filter-item,
+body.messages-page-shell .orders-select-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--control-height-sm);
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--action-chip-border);
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--action-chip-text);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+body.orders-page-shell .orders-filter-item.is-active,
+body.notifications-page-shell .notifications-filter-chip.is-active,
+body.notifications-page-shell .notifications-time-filter.is-active,
+body.messages-page-shell .orders-filter-item.is-active,
+body.orders-page-shell .orders-page-header__hero-chip[aria-expanded="true"],
+body.notifications-page-shell .orders-page-header__hero-chip[aria-expanded="true"],
+body.messages-page-shell .orders-page-header__hero-chip[aria-expanded="true"],
+body.orders-page-shell .orders-page-header__search-toggle[aria-expanded="true"],
+body.notifications-page-shell .orders-page-header__search-toggle[aria-expanded="true"],
+body.messages-page-shell .orders-page-header__search-toggle[aria-expanded="true"] {
+  border-color: transparent;
+  background: #1f9d74;
+  color: #fff;
+}
+
+body.orders-page-shell .orders-filters-panel .orders-filter-item span,
+body.notifications-page-shell .notifications-filters-panel .filter-chip span {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--border-color-soft);
+  color: var(--border-color-selected);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+body.orders-page-shell .orders-filter-item.is-active span,
+body.notifications-page-shell .notifications-filters-panel .filter-chip.is-active span {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+body.orders-page-shell .orders-select-panel,
+body.notifications-page-shell .notifications-select-panel,
+body.messages-page-shell .orders-select-panel {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.orders-page-shell .orders-select-option--danger,
+body.notifications-page-shell .orders-select-option--danger,
+body.messages-page-shell .orders-select-option--danger {
+  color: #8a3144;
+}
+
+body.orders-page-shell .orders-select-summary,
+body.notifications-page-shell .orders-select-summary,
+body.messages-page-shell .orders-select-summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--control-height-sm);
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--action-chip-border);
+  background: rgba(245, 248, 252, 0.98);
+  color: var(--action-chip-text);
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+body.orders-page-shell .orders-select-option:disabled,
+body.notifications-page-shell .orders-select-option:disabled,
+body.messages-page-shell .orders-select-option:disabled {
+  opacity: 0.45;
+}
+
+@media (min-width: 761px) {
+  body.orders-page-shell .orders-page-header__controls,
+  body.notifications-page-shell .notifications-page-header__controls,
+  body.messages-page-shell .messages-header-controls {
+    align-items: start;
+  }
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell .orders-page-header__controls:not([hidden]),
+  body.notifications-page-shell .notifications-page-header__controls:not([hidden]),
+  body.messages-page-shell .messages-header-controls:not([hidden]) {
+    gap: 12px;
+    width: 100%;
+    margin-top: 8px;
+    padding: 14px;
+    border-radius: var(--radius-surface);
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  body.orders-page-shell .orders-page-header__search-toggle,
+  body.notifications-page-shell .orders-page-header__search-toggle,
+  body.messages-page-shell .orders-page-header__search-toggle,
+  body.orders-page-shell .orders-page-header__hero-chip,
+  body.notifications-page-shell .orders-page-header__hero-chip,
+  body.messages-page-shell .orders-page-header__hero-chip {
+    width: var(--action-control-size);
+    height: var(--action-control-size);
+    min-width: var(--action-control-size);
+    min-height: var(--action-control-size);
+    border: var(--border-soft);
+    border-radius: var(--action-control-radius);
+    background: #fff;
+    color: var(--action-accent-strong);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    gap: 0;
+    box-shadow: none;
+  }
+
+  body.orders-page-shell .orders-page-header__hero-chip span,
+  body.notifications-page-shell .orders-page-header__hero-chip span,
+  body.messages-page-shell .orders-page-header__hero-chip span {
+    display: none;
+  }
+
+  body.orders-page-shell .orders-filters-popover:not([hidden]),
+  body.notifications-page-shell .notifications-filters-panel:not([hidden]),
+  body.messages-page-shell .messages-filters-panel:not([hidden]) {
+    display: grid;
+    width: 100%;
+    overflow: visible;
+  }
+
+  body.orders-page-shell .orders-filters-panel__group,
+  body.notifications-page-shell .notifications-filters-panel__group,
+  body.messages-page-shell .orders-filters-panel__group {
+    width: 100%;
+  }
+
+  body.orders-page-shell .orders-filters-panel__chips,
+  body.notifications-page-shell .notifications-filters-panel__chips,
+  body.messages-page-shell .orders-filters-panel__chips {
+    width: 100%;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  body.orders-page-shell .orders-select-panel:not([hidden]),
+  body.notifications-page-shell .notifications-select-panel:not([hidden]),
+  body.messages-page-shell .orders-select-panel:not([hidden]) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    width: 100%;
+  }
+
+  body.orders-page-shell .orders-select-option,
+  body.orders-page-shell .orders-select-option--danger,
+  body.notifications-page-shell .orders-select-option,
+  body.notifications-page-shell .orders-select-option--danger,
+  body.messages-page-shell .orders-select-option,
+  body.messages-page-shell .orders-select-option--danger {
+    width: 100%;
+  }
+}
+
+
+/* --- Doke action surface base ownership ---
+   Component owns the expandable control surfaces. Fine-grained trigger polish
+   stays in filter-select-standard.css, which is loaded later. */
+body.orders-page-shell,
+body.notifications-page-shell,
+body.messages-page-shell {
+  --action-surface-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 249, 255, 0.96));
+  --action-surface-border: color-mix(in srgb, var(--color-border, var(--border-color-muted)) 82%, white);
+  --action-surface-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88), 0 20px 44px rgba(16, 38, 74, 0.08);
+  --action-chip-bg: rgba(247, 250, 255, 0.98);
+  --action-chip-border: var(--border-color-muted);
+  --action-chip-text: #173a67;
+  --action-chip-muted: #6983a3;
+  --action-accent: var(--color-primary, #4a7de8);
+  --action-accent-strong: var(--color-primary-strong, #2f62c9);
+}

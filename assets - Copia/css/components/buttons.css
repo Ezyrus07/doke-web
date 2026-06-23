@@ -1,0 +1,156 @@
+/*
+  Doke Base Buttons Contract
+  Global, low-specificity baseline for reusable buttons.
+  Pages may position buttons, but must not redefine their anatomy locally.
+*/
+:root {
+  --doke-btn-height-sm: var(--btn-height-sm);
+  --doke-btn-height-md: var(--btn-height-md);
+  --doke-btn-height-lg: var(--btn-height-lg);
+  --doke-btn-radius: var(--btn-radius);
+  --doke-btn-radius-pill: var(--btn-radius-pill);
+  --doke-btn-padding-x: var(--btn-padding-x-md);
+  --doke-btn-gap: var(--btn-gap);
+}
+
+:where(.doke-btn, .doke-button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--doke-btn-gap);
+  min-height: var(--doke-btn-height-md);
+  padding: 0 var(--doke-btn-padding-x);
+  border: var(--btn-border);
+  border-color: transparent;
+  border-radius: var(--doke-btn-radius);
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  font: inherit;
+  font-weight: var(--control-font-weight);
+  line-height: var(--control-line-height);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+:where(.doke-btn, .doke-button):where(:hover) {
+  transform: translateY(-1px);
+  box-shadow: var(--btn-shadow-hover);
+}
+
+:where(.doke-btn, .doke-button):where(:active) {
+  transform: translateY(0);
+}
+
+:where(.doke-btn, .doke-button):where(:focus-visible) {
+  outline: 0;
+  box-shadow: none;
+}
+
+:where(.doke-btn, .doke-button):where([disabled], [aria-disabled="true"]) {
+  cursor: not-allowed;
+  opacity: 0.58;
+  transform: none;
+  box-shadow: none;
+}
+
+:where(.doke-btn--primary, .doke-button--primary) {
+  background: var(--gradient-button-primary, var(--color-primary));
+  border-color: transparent;
+  color: var(--color-white);
+  box-shadow: var(--shadow-action-primary);
+}
+
+:where(.doke-btn--secondary, .doke-button--secondary) {
+  background: var(--color-secondary-soft);
+  border-color: var(--color-secondary-border);
+  color: var(--color-secondary-strong);
+  box-shadow: var(--shadow-action-secondary);
+}
+
+:where(.doke-btn--ghost, .doke-button--ghost) {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: var(--border-color-soft);
+  color: var(--btn-text);
+  box-shadow: none;
+}
+
+:where(.doke-btn--soft, .doke-button--soft) {
+  background: var(--btn-bg-soft);
+  border-color: var(--color-primary-border);
+  color: var(--color-primary-strong);
+}
+
+:where(.doke-btn--danger, .doke-button--danger) {
+  background: var(--color-danger-soft);
+  border-color: rgba(239, 68, 68, 0.26);
+  color: var(--color-danger-strong);
+}
+
+:where(.doke-btn--sm, .doke-button--sm) {
+  min-height: var(--doke-btn-height-sm);
+  padding-inline: var(--btn-padding-x-sm);
+  border-radius: var(--btn-radius-sm);
+  font-size: var(--control-font-size-sm);
+}
+
+:where(.doke-btn--lg, .doke-button--lg) {
+  min-height: var(--doke-btn-height-lg);
+  padding-inline: var(--btn-padding-x-lg);
+  border-radius: var(--btn-radius-lg);
+}
+
+:where(.doke-btn--pill, .doke-button--pill) {
+  border-radius: var(--doke-btn-radius-pill);
+}
+
+:where(.doke-btn--block, .doke-button--block) {
+  width: 100%;
+}
+
+:where(.doke-icon-btn, .doke-action-button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: var(--icon-button-size);
+  height: var(--icon-button-size);
+  border: var(--btn-border);
+  border-radius: var(--btn-radius-sm);
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--btn-text);
+  cursor: pointer;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+:where(.doke-icon-btn, .doke-action-button):where(:hover) {
+  transform: translateY(-1px);
+  box-shadow: var(--btn-shadow-hover);
+  background: var(--color-surface);
+}
+
+:where(.doke-icon-btn, .doke-action-button):where(:focus-visible) {
+  outline: 0;
+  box-shadow: none;
+}
+
+:where(.doke-btn, .doke-button, .doke-icon-btn, .doke-action-button) svg {
+  width: var(--size-icon-sm);
+  height: var(--size-icon-sm);
+  flex: 0 0 auto;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}

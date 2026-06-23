@@ -558,13 +558,13 @@ body.post-service-page-shell svg {
 
 .post-service-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--doke-action-gap, 14px);
   margin-top: 24px;
 }
 
 .post-service-actions.has-back-action {
-  grid-template-columns: 1fr .95fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .post-service-btn {
@@ -598,6 +598,13 @@ body.post-service-page-shell svg {
 
 .post-service-btn[hidden] {
   display: none;
+}
+
+@media (max-width: 760px) {
+  .post-service-actions,
+  .post-service-actions.has-back-action {
+    grid-template-columns: 1fr;
+  }
 }
 
 .post-service-tips-card {
@@ -886,5 +893,82 @@ body.post-service-page-shell svg {
   body[data-page="anunciar-servico"].post-service-page-shell .post-service-confirm {
     min-width: 0;
     overflow-wrap: anywhere;
+  }
+}
+
+
+/* Form Page Top Contract adoption — anunciar serviço. */
+.post-service-screen {
+  width: var(--doke-form-page-rail, var(--doke-header-rail, var(--doke-page-rail, min(100%, 1180px))));
+  max-width: var(--doke-form-page-rail, var(--doke-header-rail, var(--doke-page-rail, min(100%, 1180px))));
+}
+
+.post-service-intro.doke-form-page-top {
+  max-width: 820px;
+}
+
+.post-service-intro.doke-form-page-top h1 {
+  color: var(--post-service-blue);
+}
+
+.post-service-intro.doke-form-page-top p {
+  margin: 0;
+}
+
+.post-service-layout.doke-form-page-grid {
+  grid-template-columns: var(--doke-form-main-column, minmax(0, 1fr)) var(--doke-form-side-column, minmax(280px, 360px));
+  gap: var(--doke-form-page-gap, 28px);
+  justify-content: start;
+}
+
+@media (max-width: 1180px) {
+  .post-service-layout.doke-form-page-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Flow progress contract adoption - anunciar serviço.
+   Keeps the service publishing progress anatomy aligned with the shared form flow pattern. */
+.post-service-form-card {
+  max-width: none;
+}
+
+.post-service-progress.doke-flow-progress {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.post-service-progress__track.doke-flow-progress__track {
+  display: block;
+  height: 8px;
+  border-radius: var(--radius-pill, 999px);
+  background: rgba(42, 95, 144, 0.1);
+}
+
+.post-service-progress__fill.doke-flow-progress__fill {
+  width: 25%;
+  background: linear-gradient(90deg, var(--post-service-blue), var(--post-service-green));
+}
+
+.post-service-progress__fill.doke-flow-progress__fill::after {
+  content: none;
+}
+
+.post-service-steps.doke-flow-steps {
+  --doke-flow-step-count: 4;
+}
+
+@media (max-width: 1180px) {
+  .post-service-steps.doke-flow-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .post-service-steps.doke-flow-steps {
+    grid-template-columns: 1fr;
   }
 }

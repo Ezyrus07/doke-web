@@ -1,0 +1,154 @@
+/* Doke search field contract
+   Owns reusable search wrappers and data hooks. It intentionally avoids page layout. */
+:where(.doke-searchbox, .doke-search-field) {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+:where(.doke-searchbox__input, .doke-search-field__input) {
+  min-width: 0;
+  width: 100%;
+  font: inherit;
+}
+
+:where(.doke-searchbox__button, .doke-searchbox__icon, .doke-search-field__button, .doke-search-field__icon) {
+  flex: 0 0 auto;
+}
+
+:where([data-search-list], [data-results-list], [data-services-list]) {
+  min-width: 0;
+}
+
+:where([data-search-empty], [data-search-loading], [data-search-error]) {
+  min-width: 0;
+}
+
+:where(.topbar-search, .home-side-meta__search-form, .settings-sidebar-search, .messages-sidebar-search, .community-message-search) {
+  min-width: 0;
+}
+
+:where(.topbar-search input[type="search"], .home-side-meta__search-input, .settings-sidebar-search__input, .messages-sidebar-search input[type="search"], .community-message-search input[type="search"]) {
+  min-width: 0;
+}
+
+
+/* Inline search clear buttons live inside the input plane.
+   Modal/drawer close buttons keep their own raised surface contract. */
+:where(
+  .topbar-search,
+  .home-side-meta__search-form,
+  .settings-sidebar-search,
+  .messages-sidebar-search,
+  .messages-desktop-search,
+  .messages-mobile-search,
+  .community-room-search,
+  .community-message-search,
+  .orders-page-header__search,
+  .notifications-page-header__search--hero,
+  .doke-searchbox,
+  .doke-search-field
+) :is(
+  .messages-sidebar-search__close,
+  .orders-header-search__close,
+  .settings-sidebar-search__clear,
+  .community-room-search__close,
+  .community-room-search__clear,
+  [data-search-clear],
+  [data-results-search-clear],
+  [data-community-search-clear],
+  [data-settings-search-clear],
+  button[aria-label*="busca" i]
+) {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 34px;
+  inline-size: 34px;
+  width: 34px;
+  min-inline-size: 34px;
+  min-width: 34px;
+  block-size: 34px;
+  height: 34px;
+  min-block-size: 34px;
+  min-height: 34px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--doke-inline-search-action-color, #2a5f90);
+  box-shadow: none;
+  transform: none;
+}
+
+:where(
+  .topbar-search,
+  .home-side-meta__search-form,
+  .settings-sidebar-search,
+  .messages-sidebar-search,
+  .messages-desktop-search,
+  .messages-mobile-search,
+  .community-room-search,
+  .community-message-search,
+  .orders-page-header__search,
+  .notifications-page-header__search--hero,
+  .doke-searchbox,
+  .doke-search-field
+) :is(
+  .messages-sidebar-search__close,
+  .orders-header-search__close,
+  .settings-sidebar-search__clear,
+  .community-room-search__close,
+  .community-room-search__clear,
+  [data-search-clear],
+  [data-results-search-clear],
+  [data-community-search-clear],
+  [data-settings-search-clear],
+  button[aria-label*="busca" i]
+):is(:hover, :focus-visible) {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: 0;
+  transform: none;
+}
+
+:where(
+  .topbar-search,
+  .home-side-meta__search-form,
+  .settings-sidebar-search,
+  .messages-sidebar-search,
+  .messages-desktop-search,
+  .messages-mobile-search,
+  .community-room-search,
+  .community-message-search,
+  .orders-page-header__search,
+  .notifications-page-header__search--hero,
+  .doke-searchbox,
+  .doke-search-field
+) :is(
+  .messages-sidebar-search__close,
+  .orders-header-search__close,
+  .settings-sidebar-search__clear,
+  .community-room-search__close,
+  .community-room-search__clear,
+  [data-search-clear],
+  [data-results-search-clear],
+  [data-community-search-clear],
+  [data-settings-search-clear],
+  button[aria-label*="busca" i]
+) :is(svg, img) {
+  display: block;
+  inline-size: 18px;
+  width: 18px;
+  block-size: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

@@ -9,8 +9,12 @@
     const panels = [...root.querySelectorAll('[data-step-panel]')];
     const stepCurrent = root.querySelector('[data-step-current]');
     const progressSteps = [...root.querySelectorAll('.post-service-progress__track span')];
+    const progressLabel = root.querySelector('[data-step-progress-label]');
+    const progressFill = root.querySelector('[data-step-progress-fill]');
+    const stepTargets = [...root.querySelectorAll('[data-step-target]')];
     const nextButton = root.querySelector('[data-step-next]');
     const backButton = root.querySelector('[data-step-back]');
+    const exitButton = root.querySelector('[data-step-exit]');
     const actions = root.querySelector('.post-service-actions');
     const submitState = root.querySelector('[data-submit-state]');
     if (submitState && submitState.parentElement !== document.body) document.body.appendChild(submitState);
@@ -26,8 +30,15 @@
       });
 
       if (stepCurrent) stepCurrent.textContent = String(currentStep);
+      if (progressLabel) progressLabel.textContent = `Etapa ${currentStep} de ${totalSteps}`;
+      if (progressFill) progressFill.style.width = `${(currentStep / totalSteps) * 100}%`;
       progressSteps.forEach((item, index) => {
         item.classList.toggle('is-active', index < currentStep);
+      });
+      stepTargets.forEach((target) => {
+        const targetStep = Number(target.dataset.stepTarget);
+        target.classList.toggle('is-active', targetStep === currentStep);
+        target.classList.toggle('is-complete', targetStep < currentStep);
       });
 
       if (nextButton) {
@@ -42,6 +53,10 @@
         backButton.disabled = !showBack;
         backButton.classList.toggle('is-disabled', !showBack);
         actions?.classList.toggle('has-back-action', showBack);
+      }
+
+      if (exitButton) {
+        exitButton.hidden = currentStep > 1;
       }
     };
 
@@ -172,6 +187,13 @@
         nextButton.disabled = true;
         submitState?.querySelector('.post-service-submit-state__button')?.focus({ preventScroll: true });
       }
+    });
+
+    stepTargets.forEach((target) => {
+      target.addEventListener('click', () => {
+        const targetStep = Number(target.dataset.stepTarget);
+        if (Number.isFinite(targetStep)) setStep(targetStep);
+      });
     });
 
 

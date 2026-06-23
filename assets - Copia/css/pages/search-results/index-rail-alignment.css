@@ -1,0 +1,200 @@
+/* resultados.html ↔ index.html parity layer.
+   Owns only results page composition drift: local search duplication, result cards,
+   autocomplete/dropdown parity and mobile focus behavior. */
+
+/* Desktop keeps the visible query as part of the results control surface.
+   The search input reuses the shared doke-search-pill anatomy also used by
+   index.html; this file only positions it before the result-type buttons. */
+@media (min-width: 761px) {
+  /* The visible results rail must start on the same x-axis as the global header.
+     responsive-foundation.css adds generic inner padding to .page__content-inner;
+     resultados.html already receives its outer rail from page-rail-authority.css,
+     so this page composition layer removes only that nested gutter. */
+  .search-results-body .page__content-inner.container.app-shell-page__workspace.search-results-workspace.search-results-workspace--internal,
+  .search-results-body .search-results-workspace.search-results-workspace--internal {
+    padding-inline: 0;
+  }
+
+  .search-results-body .results-searchbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 12px;
+    padding: 20px 24px;
+  }
+
+  .search-results-body .results-searchbar.is-search-open {
+    position: relative;
+    z-index: 90;
+  }
+
+  .search-results-body .results-searchbar__form.doke-search-pill {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+  }
+
+  .search-results-body .results-searchbar__scope.search-scope {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .search-results-body .results-searchbar__form .results-searchbar__mobile-filter {
+    display: none;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  .search-results-body .results-searchbar {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .search-results-body .results-searchbar__form.doke-search-pill {
+    max-width: 100%;
+  }
+}
+
+.search-results-body .topbar-search,
+.search-results-body .topbar-search--subtle {
+  min-height: 64px;
+  border: var(--border-muted);
+  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 44px rgba(15, 53, 88, 0.08);
+}
+
+.search-results-body .topbar-search input[type="search"] {
+  font-weight: 800;
+  color: #123154;
+  background: transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.search-results-body .topbar-search input[type="search"]:focus,
+.search-results-body .topbar-search input[type="search"]:active,
+.search-results-body .topbar-search:focus-within {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 44px rgba(15, 53, 88, 0.08);
+}
+
+.search-results-body .results-grid > .service-card,
+.search-results-body .results-grid > .doke-ad-card {
+  width: 100%;
+  min-width: 0;
+}
+
+.search-results-body .results-grid .doke-ad-card {
+  display: flex;
+  overflow: hidden;
+}
+
+/* Card media height is owned by components/cards.
+   This page layer may only control rail/grid placement. */
+
+.search-results-body .results-grid .doke-ad-card__title,
+.search-results-body .results-grid .doke-ad-card__category,
+.search-results-body .results-grid .doke-ad-card__location-text span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-results-body .results-grid .doke-ad-card__footer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.search-results-body .results-grid .doke-ad-card__cta {
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .search-results-body .search-results-workspace {
+    padding-top: 12px;
+  }
+
+  .search-results-body .results-searchbar {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .search-results-body .results-searchbar__scope.search-scope {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    overflow-x: auto;
+    padding: 0 2px 6px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    scrollbar-width: none;
+  }
+
+  .search-results-body .results-searchbar__scope.search-scope::-webkit-scrollbar {
+    display: none;
+  }
+
+  .search-results-body .results-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .search-results-body .results-grid .doke-ad-card,
+  .search-results-body .results-grid .service-card {
+    min-width: 0;
+    max-width: none;
+    width: 100%;
+  }
+
+  /* Mobile card media height stays in components/cards to keep first paint
+     and hydrated state identical. */
+}
+
+/* Tablet portrait: resultados keeps the query search visible while phone keeps
+   the compact mobile-shell search contract. The shared search component hides
+   .doke-search-pill under 760px; this page composition layer opts tablets back
+   into the same toolbar anatomy used by tablet landscape/desktop. */
+@media (min-width: 561px) and (max-width: 760px) {
+  body.search-results-body .results-searchbar {
+    display: grid;
+    gap: 12px;
+    padding: 20px 24px;
+    border: var(--border-muted);
+    border-radius: var(--radius-xl);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 18px 44px rgba(15, 53, 88, 0.08);
+  }
+
+  body.search-results-body .results-searchbar__form.doke-search-pill {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+  }
+
+  body.search-results-body .results-searchbar__form .results-searchbar__button {
+    display: inline-flex;
+  }
+
+  body.search-results-body .results-searchbar__form .results-searchbar__mobile-filter {
+    display: none;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 640px) {
+  body.search-results-body .results-searchbar {
+    padding: 16px;
+    border-radius: 24px;
+  }
+}

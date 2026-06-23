@@ -1,0 +1,400 @@
+/* Etapa 8 — contrato responsivo para HTMLs restantes.
+   Escopo: comunidade-interna, detalhe-anuncio, finalizar-pedido,
+   pagamento e adicionar-cartao.
+   Este arquivo evita correções locais por tela: apenas normaliza shell,
+   grids, superfícies e áreas seguras sem alterar JS/comportamento. */
+
+:root {
+  --stage8-page-max: 1280px;
+  --stage8-gutter-desktop: clamp(20px, 2.2vw, 32px);
+  --stage8-gutter-mobile: clamp(14px, 4vw, 18px);
+  --stage8-card-radius: clamp(20px, 5vw, 28px);
+  --stage8-card-padding: clamp(16px, 4.6vw, 24px);
+  --stage8-mobile-bottom-safe: calc(98px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Base compartilhada — só páginas que ainda não tinham contrato direto. */
+.community-room-shell .page__content,
+.detalhe-shell-page .detail-page,
+.post-service-shell .page__content,
+.payment-page-shell .page__content,
+.wallet-manage-shell .page__content {
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.community-room-shell .page__content-inner,
+.post-service-shell .page__content-inner,
+.payment-page-shell .page__content-inner,
+.wallet-manage-shell .page__content-inner {
+  width: min(100%, var(--stage8-page-max));
+  margin-inline: auto;
+}
+
+/* Mantém o padrão desktop de topbar, neutralizando variações antigas. */
+.community-room-shell .topbar,
+.detalhe-shell-page .topbar,
+.post-service-shell .topbar,
+.payment-page-shell .topbar {
+  min-width: 0;
+}
+
+/* Superfícies restantes com geometria previsível. */
+.community-room-shell :where(.community-room__channels, .community-room__chat, .community-room__members, .community-room__summary, .community-room__quick-info),
+.detalhe-shell-page :where(.detail-gallery, .detail-summary, .detail-section, .detail-aside > *, .detail-strip),
+.post-service-shell :where(.post-service-hero, .post-service-card, .post-service-summary > *),
+.payment-page-shell :where(.payment-hero, .payment-card, .payment-summary__card, .payment-points),
+.wallet-manage-shell :where(.bank-card, .bank-side-card, .bank-section, .bank-toolbar__button) {
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Form controls não podem criar overflow em telas estreitas. */
+.community-room-shell :where(input, select, textarea, button, a),
+.detalhe-shell-page :where(input, select, textarea, button, a),
+.post-service-shell :where(input, select, textarea, button, a),
+.payment-page-shell :where(input, select, textarea, button, a),
+.wallet-manage-shell :where(input, select, textarea, button, a) {
+  max-width: 100%;
+}
+
+.community-room-shell :where(img, video, canvas, svg),
+.detalhe-shell-page :where(img, video, canvas, svg),
+.post-service-shell :where(img, video, canvas, svg),
+.payment-page-shell :where(img, video, canvas, svg),
+.wallet-manage-shell :where(img, video, canvas, svg) {
+  max-width: 100%;
+}
+
+@media (max-width: 1180px) {
+  .community-room-page {
+    grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
+  }
+
+  .community-room__members {
+    grid-column: 1 / -1;
+  }
+
+  .detail-layout,
+  .post-service-layout,
+  .payment-layout,
+  .bank-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .detail-aside,
+  .post-service-summary,
+  .payment-summary,
+  .bank-layout__aside {
+    position: static;
+    width: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  .community-room-shell .page__content-inner,
+  .post-service-shell .page__content-inner,
+  .payment-page-shell .page__content-inner,
+  .wallet-manage-shell .page__content-inner {
+    padding-inline: var(--stage8-gutter-mobile);
+    padding-bottom: var(--stage8-mobile-bottom-safe);
+  }
+
+  .detalhe-shell-page .detail-page {
+    padding: 18px var(--stage8-gutter-mobile) var(--stage8-mobile-bottom-safe);
+  }
+
+  .community-room-page,
+  .detail-layout,
+  .post-service-layout,
+  .payment-layout,
+  .bank-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .post-service-layout--single {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .detail-head,
+  .post-service-hero,
+  .payment-hero,
+  .bank-toolbar,
+  .payment-card__header,
+  .bank-card__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .detail-head h1,
+  .post-service-hero h1,
+  .payment-hero h1,
+  .bank-page__header h1 {
+    font-size: clamp(1.42rem, 8vw, 2rem);
+    letter-spacing: -0.045em;
+  }
+
+  .post-service-hero,
+  .post-service-card,
+  .payment-hero,
+  .payment-card,
+  .payment-summary__card,
+  .payment-points,
+  .bank-card,
+  .bank-side-card {
+    border-radius: var(--stage8-card-radius);
+    padding: var(--stage8-card-padding);
+    box-shadow: 0 10px 24px rgba(24, 50, 79, 0.055);
+  }
+
+  .post-service-back,
+  .payment-back,
+  .bank-toolbar__button,
+  .bank-primary-button,
+  .bank-secondary-button,
+  .payment-primary-button,
+  .payment-secondary-button,
+  .post-service-primary {
+    min-height: 44px;
+    border-radius: var(--radius-pill);
+  }
+
+  .post-service-back,
+  .payment-back,
+  .bank-toolbar__button:not(.bank-toolbar__button--icon) {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 760px) {
+  /* As páginas restantes passam a usar o mesmo comportamento mobile das páginas internas. */
+  .community-room-shell .topbar,
+  .detalhe-shell-page .topbar,
+  .post-service-shell .topbar,
+  .payment-page-shell .topbar {
+    display: none;
+  }
+
+  .community-room-shell .page,
+  .detalhe-shell-page .page,
+  .post-service-shell .page,
+  .payment-page-shell .page,
+  .wallet-manage-shell .page {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .community-room-shell .app-shell,
+  .detalhe-shell-page .app-shell,
+  .post-service-shell .app-shell,
+  .payment-page-shell .app-shell,
+  .wallet-manage-shell .app-shell {
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  /* Comunidade interna: chat primeiro, canais/membros compactos abaixo/acima sem largura fixa. */
+  .community-room-page {
+    grid-template-areas: none;
+  }
+
+  .community-room__channels,
+  .community-room__members,
+  .community-room__chat {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .community-room__channels {
+    order: 1;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .community-room__chat {
+    order: 2;
+    min-height: min(68vh, 620px);
+  }
+
+  .community-room__members {
+    order: 3;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .community-chat-header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    border-radius: 0;
+  }
+
+  .chat-composer,
+  .community-composer,
+  [data-chat-composer] {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  /* Detalhe do anúncio: galeria e orçamento em coluna única, sem sticky lateral em mobile. */
+  .detail-head {
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .detail-head__meta {
+    gap: 8px;
+  }
+
+  .detail-head__meta-item {
+    min-height: 32px;
+    font-size: 0.82rem;
+    padding-inline: 10px;
+  }
+
+  .detail-gallery {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .detail-gallery,
+  .detail-layout,
+  .detail-summary,
+  .detail-aside {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .detail-aside {
+    position: static;
+    top: auto;
+  }
+
+  .detail-section {
+    padding-inline: var(--stage8-card-padding);
+  }
+
+  /* Fluxos de pedido/pagamento/avaliação: reduzir densidade sem quebrar desktop. */
+  .post-service-main,
+  .payment-main,
+  .bank-layout__main,
+  .bank-layout__aside {
+    gap: 14px;
+  }
+
+  .payment-methods,
+  .payment-saved-cards,
+  .review-competencies {
+    gap: 10px;
+  }
+
+  .payment-method,
+  .payment-saved-card,
+  .payment-add-card,
+  .review-row,
+  .bank-card,
+  .bank-side-card {
+    width: 100%;
+  }
+
+  .review-row--overall {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .review-stars,
+  .review-scale {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .review-scale {
+    grid-template-columns: repeat(5, minmax(42px, 1fr));
+    border-radius: var(--radius-surface);
+  }
+
+  .payment-card__header {
+    margin-bottom: 14px;
+  }
+
+  .payment-summary {
+    order: 2;
+  }
+
+  .payment-main {
+    order: 1;
+  }
+
+  /* Wallet/adicionar cartão: toolbar e cards sem estouro lateral. */
+  .wallet-manage-page,
+  .bank-page {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .bank-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .bank-toolbar__button {
+    min-width: 0;
+    padding-inline: 12px;
+  }
+
+  .bank-toolbar__button--icon {
+    width: 100%;
+  }
+}
+
+@media (max-width: 430px) {
+  .community-room-shell .page__content-inner,
+  .post-service-shell .page__content-inner,
+  .payment-page-shell .page__content-inner,
+  .wallet-manage-shell .page__content-inner {
+    padding-inline: 12px;
+  }
+
+  .detalhe-shell-page .detail-page {
+    padding-inline: 12px;
+  }
+
+  .post-service-hero,
+  .post-service-card,
+  .payment-hero,
+  .payment-card,
+  .payment-summary__card,
+  .payment-points,
+  .bank-card,
+  .bank-side-card {
+    border-radius: 20px;
+    padding: 15px;
+  }
+
+  .payment-methods {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .payment-method,
+  .payment-saved-card,
+  .payment-add-card {
+    min-height: 56px;
+  }
+
+  .review-stars__button {
+    width: 34px;
+    height: var(--control-height-xs);
+  }
+
+  .bank-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
