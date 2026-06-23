@@ -169,6 +169,11 @@
     const currentRole = getCurrentUser()?.role;
     return Array.isArray(role) ? role.includes(currentRole) : currentRole === role;
   };
+  const bootstrap = () => {
+    const session = read();
+    notify(session);
+    return session;
+  };
 
   const subscribe = (listener) => {
     if (typeof listener !== 'function') return () => {};
@@ -190,6 +195,7 @@
     getSession,
     getCurrentUser,
     getUser,
+    bootstrap,
     setCurrentUser,
     isAuthenticated,
     hasRole,

@@ -1,459 +1,138 @@
 /* Doke Web - orçamento page
-   Responsibility: page-specific composition for the quote request flow.
-   Shell, sidebar, header, rail, buttons and base controls stay in their shared authorities. */
-@import url("../core/index.css?v=20260621-orcamento-page-v1");
-@import url("./internal-foundation.css?v=20260621-close-button-contract-v1");
-@import url("./internal-workspace-foundation.css?v=20260621-orcamento-page-v1");
-@import url("../components/help/help-drawer.css?v=20260621-close-button-contract-v1");
+   Responsibility: local mapping for the budget request flow.
+   Visual anatomy is inherited from tornar-profissional.html through the shared form/page contracts. */
+@import url("./tornar-profissional-foundation.css?v=20260623-form-page-rail-v2");
 
-body[data-page="orcamento"].quote-shell-page {
-  --budget-blue: var(--color-primary, #2a5f90);
-  --budget-blue-strong: var(--color-primary-strong, #184a76);
-  --budget-green: var(--color-secondary, #298f7f);
-  --budget-soft: #f6f9fc;
-  --budget-surface: rgba(255, 255, 255, 0.96);
-  --budget-border: var(--doke-card-border, rgba(24, 75, 118, 0.10));
-  --budget-text: var(--color-heading, #10233a);
-  --budget-muted: var(--color-text-muted, #5b718c);
-  background: linear-gradient(180deg, #eef5fb 0, #f6f9fc 34%, #f7fafc 100%);
-  color: var(--budget-text);
+body[data-page="orcamento"] {
+  --budget-blue: var(--pro-blue, var(--color-primary, #2a5f90));
+  --budget-blue-strong: var(--pro-blue-dark, var(--color-primary-strong, #184a76));
+  --budget-green: var(--pro-green, var(--color-secondary, #298f7f));
+  --budget-border: var(--pro-border, var(--doke-card-border, rgba(24, 75, 118, 0.10)));
+  --budget-text: var(--pro-text, var(--color-heading, #10233a));
+  --budget-muted: var(--pro-muted, var(--color-text-muted, #627a99));
 }
 
-body[data-page="orcamento"] .quote-shell-content {
-  inline-size: var(--doke-page-rail, min(100%, 1180px));
-  width: var(--doke-page-rail, min(100%, 1180px));
-  max-inline-size: var(--doke-page-rail, min(100%, 1180px));
-  max-width: var(--doke-page-rail, min(100%, 1180px));
-  min-width: 0;
-  margin-inline: auto;
-  padding-block: clamp(14px, 1.8vw, 22px) clamp(28px, 4vw, 52px);
-  padding-inline: 0;
-  box-sizing: border-box;
+body[data-page="orcamento"] .budget-steps.doke-flow-steps {
+  --doke-flow-step-count: 3;
 }
 
-body[data-page="orcamento"] .quote-shell-page__surface,
-body[data-page="orcamento"] .quote-main,
-body[data-page="orcamento"] .budget-flow {
-  min-width: 0;
-}
-
-body[data-page="orcamento"] .quote-shell-page__surface {
-  display: grid;
-  gap: 14px;
-}
-
-body[data-page="orcamento"] .quote-context-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 14px;
-  padding: clamp(16px, 2vw, 22px);
-  border: 1px solid var(--budget-border);
-  border-radius: clamp(22px, 2.6vw, 30px);
-  background: var(--budget-surface);
-  box-shadow: 0 18px 44px rgba(24, 75, 118, 0.07);
-}
-
-body[data-page="orcamento"] .quote-context-head__eyebrow {
-  margin: 0 0 6px;
-  color: var(--budget-green);
-  font-size: 0.76rem;
-  font-weight: 850;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-}
-
-body[data-page="orcamento"] .quote-context-head h1 {
-  margin: 0;
-  color: var(--budget-blue);
-  font-size: clamp(1.72rem, 2.2vw, 2.35rem);
-  line-height: 1.02;
-  letter-spacing: -0.045em;
-  font-weight: 900;
-}
-
-body[data-page="orcamento"] .quote-context-head__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-body[data-page="orcamento"] .quote-context-head__meta span,
-body[data-page="orcamento"] .quote-provider-summary__chip,
-body[data-page="orcamento"] .saved-location-chip {
-  min-height: 34px;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 0 12px;
-  border: 1px solid var(--budget-border);
-  border-radius: var(--radius-pill, 999px);
-  background: rgba(248, 251, 255, 0.92);
-  color: var(--budget-muted);
-  font-size: 0.88rem;
-  font-weight: 750;
-}
-
-body[data-page="orcamento"] .saved-location-chip {
-  min-height: 42px;
-  background: #fff;
-  color: var(--budget-text);
-  font: inherit;
-  cursor: pointer;
-}
-
-body[data-page="orcamento"] .saved-location-chip__label {
-  color: var(--budget-muted);
-  font-size: 0.82rem;
-  font-weight: 750;
-}
-
-body[data-page="orcamento"] .saved-location-chip strong {
-  font-size: 0.92rem;
-  font-weight: 850;
-}
-
-body[data-page="orcamento"] .quote-main {
-  display: grid;
-  gap: 14px;
-}
-
-body[data-page="orcamento"] .quote-provider-summary {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 14px;
-  padding: clamp(14px, 1.8vw, 18px);
-  border: 1px solid var(--budget-border);
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.92);
-}
-
-body[data-page="orcamento"] .quote-provider-summary__avatar {
-  width: 54px;
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius-full, 999px);
-  background: linear-gradient(135deg, rgba(42, 95, 144, 0.12), rgba(41, 143, 127, 0.16));
-  color: var(--budget-blue-strong);
-  font-weight: 900;
-  letter-spacing: -0.08em;
-}
-
-body[data-page="orcamento"] .quote-provider-summary__text {
-  min-width: 0;
-}
-
-body[data-page="orcamento"] .quote-provider-summary__text strong {
-  display: block;
-  color: var(--budget-text);
-  font-size: clamp(1.02rem, 1.3vw, 1.16rem);
-  line-height: 1.15;
-}
-
-body[data-page="orcamento"] .quote-provider-summary__text span {
-  display: block;
-  margin-top: 4px;
-  color: var(--budget-muted);
-  font-size: 0.92rem;
-  font-weight: 650;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-body[data-page="orcamento"] .quote-provider-summary__chips {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-body[data-page="orcamento"] .budget-flow {
-  padding: clamp(16px, 2vw, 22px);
-  border: 1px solid var(--budget-border);
-  border-radius: clamp(24px, 2.8vw, 32px);
-  background: var(--budget-surface);
-  box-shadow: 0 18px 44px rgba(24, 75, 118, 0.07);
-}
-
-body[data-page="orcamento"] .budget-progress {
-  display: grid;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-body[data-page="orcamento"] .budget-progress__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  color: var(--budget-muted);
-  font-size: 0.9rem;
-  font-weight: 750;
-}
-
-body[data-page="orcamento"] .budget-progress__track {
-  height: 8px;
-  overflow: hidden;
-  border-radius: var(--radius-pill, 999px);
-  background: rgba(42, 95, 144, 0.10);
-}
-
-body[data-page="orcamento"] .budget-progress__fill {
-  display: block;
-  width: 33%;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--budget-blue), var(--budget-green));
-  transition: width 180ms ease;
-}
-
-body[data-page="orcamento"] .budget-steps {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-body[data-page="orcamento"] .budget-step {
-  min-height: 72px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--budget-border);
-  border-radius: 18px;
-  background: #fff;
-  color: var(--budget-muted);
-  text-align: left;
-  cursor: pointer;
-}
-
-body[data-page="orcamento"] .budget-step span {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  border-radius: 12px;
-  background: rgba(42, 95, 144, 0.08);
-  color: var(--budget-blue-strong);
-  font-weight: 900;
-}
-
-body[data-page="orcamento"] .budget-step strong,
-body[data-page="orcamento"] .budget-step small {
-  display: block;
-}
-
-body[data-page="orcamento"] .budget-step strong {
-  color: var(--budget-text);
-  font-size: 0.97rem;
-  line-height: 1.1;
-}
-
-body[data-page="orcamento"] .budget-step small {
-  margin-top: 3px;
-  color: var(--budget-muted);
-  font-size: 0.84rem;
-  line-height: 1.18;
-}
-
-body[data-page="orcamento"] .budget-step.is-active {
-  border-color: rgba(42, 95, 144, 0.36);
-  background: linear-gradient(180deg, rgba(246, 250, 255, 0.98), #fff);
-  box-shadow: inset 0 0 0 1px rgba(42, 95, 144, 0.06);
-}
-
-body[data-page="orcamento"] .budget-step.is-active span,
-body[data-page="orcamento"] .budget-step.is-complete span {
-  background: var(--budget-blue);
-  color: #fff;
-}
-
-body[data-page="orcamento"] .budget-panel {
-  padding-top: 4px;
-  border: 0;
-  background: transparent;
-}
-
-body[data-page="orcamento"] .budget-panel__head {
-  margin-bottom: 12px;
-}
-
-body[data-page="orcamento"] .budget-panel__head h2 {
-  margin: 0;
-  color: var(--budget-text);
-  font-size: clamp(1.14rem, 1.5vw, 1.32rem);
-  line-height: 1.16;
-  letter-spacing: -0.025em;
-}
-
-body[data-page="orcamento"] .budget-panel__head p {
-  margin: 6px 0 0;
-  color: var(--budget-muted);
-  font-size: 0.93rem;
-  line-height: 1.45;
-  font-weight: 650;
-}
-
-body[data-page="orcamento"] .budget-grid {
-  display: grid;
-  gap: 12px;
-}
-
-body[data-page="orcamento"] .budget-grid--2 {
+body[data-page="orcamento"] .budget-grid--2.become-pro-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-body[data-page="orcamento"] .budget-grid--3 {
+body[data-page="orcamento"] .budget-grid--3.become-pro-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 body[data-page="orcamento"] .budget-grid--compact {
-  margin-top: 12px;
-}
-
-body[data-page="orcamento"] .budget-field,
-body[data-page="orcamento"] .budget-upload {
-  display: grid;
-  gap: 6px;
-}
-
-body[data-page="orcamento"] .budget-field > span,
-body[data-page="orcamento"] .budget-choices-wrap > span,
-body[data-page="orcamento"] .budget-check span {
-  color: #21476f;
-  font-size: 0.9rem;
-  font-weight: 800;
-}
-
-body[data-page="orcamento"] .budget-field input,
-body[data-page="orcamento"] .budget-field textarea,
-body[data-page="orcamento"] .budget-field select,
-body[data-page="orcamento"] .budget-flow .ui-select__trigger {
-  width: 100%;
-  min-height: 52px;
-  border: 1px solid var(--budget-border);
-  border-radius: 16px;
-  background: #fff;
-  color: var(--budget-text);
-  font: inherit;
-  padding: 0 14px;
-  box-shadow: none;
-}
-
-body[data-page="orcamento"] .budget-flow .ui-select__trigger {
-  font-weight: 700;
-}
-
-body[data-page="orcamento"] .budget-field input:focus,
-body[data-page="orcamento"] .budget-field textarea:focus,
-body[data-page="orcamento"] .budget-field select:focus,
-body[data-page="orcamento"] .budget-flow .ui-select__trigger:focus-visible,
-body[data-page="orcamento"] .budget-flow .ui-select.is-open .ui-select__trigger {
-  outline: 0;
-  border-color: rgba(42, 95, 144, 0.5);
-  box-shadow: 0 0 0 4px rgba(42, 95, 144, 0.08);
-}
-
-body[data-page="orcamento"] .budget-flow .ui-select__option.is-selected {
-  background: var(--budget-blue);
-}
-
-body[data-page="orcamento"] .budget-field textarea {
-  min-height: 118px;
-  padding: 12px 14px;
-  resize: vertical;
-}
-
-body[data-page="orcamento"] .budget-field small {
-  color: #7a8ea8;
-  font-size: 0.82rem;
-  font-weight: 650;
-}
-
-body[data-page="orcamento"] .budget-choices-wrap {
-  margin-top: 12px;
-}
-
-body[data-page="orcamento"] .budget-choices {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
+  margin-top: 16px;
 }
 
 body[data-page="orcamento"] .budget-choice {
-  min-height: 40px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 0 14px;
-  border: 1px solid var(--budget-border);
-  border-radius: var(--radius-pill, 999px);
+  border: 1px solid #d7e4f2;
+  border-radius: 999px;
   background: #fff;
-  color: #21476f;
+  color: #285077;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 800;
+  text-align: center;
   cursor: pointer;
-  text-decoration: none;
 }
 
 body[data-page="orcamento"] .budget-choice.is-active {
-  border-color: rgba(42, 95, 144, 0.34);
-  background: rgba(42, 95, 144, 0.08);
-  color: var(--budget-blue-strong);
+  border-color: rgba(38, 116, 217, 0.42);
+  background: #eef6ff;
+  color: var(--pro-blue-strong, #15599f);
+  box-shadow: 0 10px 24px rgba(38, 116, 217, 0.08);
 }
 
-body[data-page="orcamento"] .budget-triage {
-  margin-top: 12px;
-  padding: 14px;
+body[data-page="orcamento"] .budget-choices-wrap,
+body[data-page="orcamento"] .budget-triage,
+body[data-page="orcamento"] .budget-address-card,
+body[data-page="orcamento"] .budget-helper-card,
+body[data-page="orcamento"] .budget-confirm-card {
+  margin-top: 16px;
+}
+
+body[data-page="orcamento"] .budget-choices-wrap > span,
+body[data-page="orcamento"] .budget-check span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--pro-blue-dark, #0f376f);
+  font-size: 0.84rem;
+  line-height: 1.25;
+  font-weight: 800;
+}
+
+body[data-page="orcamento"] .budget-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+body[data-page="orcamento"] .budget-triage,
+body[data-page="orcamento"] .budget-address-card,
+body[data-page="orcamento"] .budget-helper-card {
+  padding: 18px;
   border: 1px solid var(--budget-border);
-  border-radius: 20px;
-  background: #f8fbff;
+  border-radius: 18px;
+  background: #f7fbff;
+  color: var(--budget-muted);
+  font-weight: 600;
 }
 
 body[data-page="orcamento"] .budget-triage__head {
   display: grid;
-  gap: 2px;
-  margin-bottom: 10px;
+  gap: 4px;
+  margin-bottom: 16px;
 }
 
-body[data-page="orcamento"] .budget-triage__head strong {
-  color: var(--budget-text);
-  font-size: 1rem;
+body[data-page="orcamento"] .budget-triage__head strong,
+body[data-page="orcamento"] .budget-address-card strong,
+body[data-page="orcamento"] .budget-helper-card strong {
+  color: var(--pro-blue-dark, #0f376f);
+  font-weight: 800;
 }
 
-body[data-page="orcamento"] .budget-triage__head span {
+body[data-page="orcamento"] .budget-triage__head span,
+body[data-page="orcamento"] .budget-address-card p,
+body[data-page="orcamento"] .budget-helper-card span {
   color: var(--budget-muted);
-  font-size: 0.9rem;
+  line-height: 1.45;
+  font-weight: 600;
 }
 
-body[data-page="orcamento"] .budget-upload {
-  min-height: 104px;
-  align-content: center;
-  justify-items: start;
-  padding: 16px;
-  border: 1px dashed rgba(137, 165, 194, 0.98);
-  border-radius: 18px;
-  background: #f8fbff;
-  color: #21476f;
-  cursor: pointer;
+body[data-page="orcamento"] .budget-address-card__head,
+body[data-page="orcamento"] .budget-address-card__meta:not([hidden]) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
 }
 
-body[data-page="orcamento"] .budget-upload input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
+body[data-page="orcamento"] .budget-address-card__eyebrow {
+  display: block;
+  color: var(--pro-green-dark, #0d8f77);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-body[data-page="orcamento"] .budget-files {
+body[data-page="orcamento"] .budget-address-card__meta:not([hidden]) {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--budget-border);
+}
+
+body[data-page="orcamento"] .budget-files:not([hidden]) {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -461,135 +140,24 @@ body[data-page="orcamento"] .budget-files {
 }
 
 body[data-page="orcamento"] .budget-files span {
+  min-height: 30px;
   display: inline-flex;
   align-items: center;
-  min-height: 30px;
   padding: 0 12px;
-  border-radius: var(--radius-pill, 999px);
-  background: #eef4fb;
-  color: #21476f;
-  font-size: 0.86rem;
-  font-weight: 750;
+  border-radius: 999px;
+  background: #eef6ff;
+  color: var(--pro-blue-strong, #15599f);
+  font-size: 0.84rem;
+  font-weight: 800;
 }
 
-body[data-page="orcamento"] .budget-check {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #5d7898;
-  font-weight: 750;
-}
-
-body[data-page="orcamento"] .budget-check input {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 auto;
-  accent-color: var(--budget-blue);
-}
-
-body[data-page="orcamento"] .budget-check--boxed {
-  min-height: 52px;
-  padding: 0 14px;
-  border: 1px solid var(--budget-border);
-  border-radius: 16px;
-  background: #fff;
-}
-
-body[data-page="orcamento"] .budget-check--simple {
-  margin-top: 12px;
-}
-
-body[data-page="orcamento"] .budget-address-card,
-body[data-page="orcamento"] .budget-helper-card {
-  padding: 14px;
-  border: 1px solid var(--budget-border);
-  border-radius: 20px;
-  background: linear-gradient(180deg, rgba(248, 251, 255, 0.96), rgba(255, 255, 255, 0.98));
-}
-
-body[data-page="orcamento"] .budget-helper-card {
-  margin-top: 14px;
-  padding: 16px 18px;
-}
-
-body[data-page="orcamento"] .budget-helper-card strong {
-  display: block;
-  margin-bottom: 4px;
-  color: var(--budget-text);
-}
-
-body[data-page="orcamento"] .budget-helper-card span {
-  display: block;
-  margin: 0;
-  color: var(--budget-muted);
-  line-height: 1.5;
-}
-
-body[data-page="orcamento"] .budget-address-card__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-body[data-page="orcamento"] .budget-address-card__eyebrow {
-  display: block;
-  color: var(--budget-muted);
-  font-size: 0.78rem;
-  font-weight: 850;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-body[data-page="orcamento"] .budget-address-card strong {
-  color: var(--budget-text);
-  font-size: 1rem;
-}
-
-body[data-page="orcamento"] .budget-address-card p {
-  margin: 8px 0 0;
-  color: var(--budget-muted);
-}
-
-body[data-page="orcamento"] .budget-address-card__meta:not([hidden]) {
-  margin-top: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--budget-border);
-}
-
-body[data-page="orcamento"] .budget-address-card__meta span {
-  color: var(--budget-text);
-  font-size: 0.92rem;
-  font-weight: 750;
-}
-
-body[data-page="orcamento"] .budget-actions {
-  position: sticky;
-  bottom: 0;
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 16px -6px -6px;
-  padding: 12px 6px 6px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0), var(--budget-surface) 28%);
-}
-
-body[data-page="orcamento"] .budget-actions__right {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-body[data-page="orcamento"] .budget-button[hidden],
-body[data-page="orcamento"] .budget-panel[hidden] {
+body[data-page="orcamento"] .budget-panel[hidden],
+body[data-page="orcamento"] .budget-button[hidden] {
   display: none;
+}
+
+body[data-page="orcamento"] .budget-actions.become-pro-actions.doke-form-actions .budget-actions__right {
+  display: contents;
 }
 
 body[data-page="orcamento"] .address-modal {
@@ -600,6 +168,99 @@ body[data-page="orcamento"] .address-modal {
   background: transparent;
 }
 
+body[data-page="orcamento"] .address-modal::backdrop,
+body[data-page="orcamento"] .budget-success-modal::backdrop {
+  background: rgba(8, 42, 85, 0.24);
+  backdrop-filter: blur(8px);
+}
+
+body[data-page="orcamento"] .address-modal__dialog {
+  display: grid;
+  gap: 16px;
+  padding: clamp(22px, 2.4vw, 32px);
+  border: 1px solid var(--budget-border);
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: var(--pro-shadow, 0 18px 42px rgba(13, 47, 89, 0.06));
+}
+
+body[data-page="orcamento"] .address-modal__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+body[data-page="orcamento"] .address-modal__head h2 {
+  margin: 0;
+  color: var(--pro-blue-dark, #0f376f);
+  font-size: 1.25rem;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  font-weight: 800;
+}
+
+body[data-page="orcamento"] .address-modal__head p {
+  margin: 6px 0 0;
+  color: var(--budget-muted);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+body[data-page="orcamento"] .address-modal__close,
+body[data-page="orcamento"] .budget-success-modal__close {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid #d7e4f2;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--pro-blue-dark, #0f376f);
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+body[data-page="orcamento"] .budget-success-modal {
+  width: min(100%, 460px);
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+body[data-page="orcamento"] .budget-success-modal__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+body[data-page="orcamento"] .budget-success__eyebrow,
+body[data-page="orcamento"] .budget-success__summary span {
+  color: var(--pro-green-dark, #0d8f77);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+body[data-page="orcamento"] .budget-success__summary {
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--budget-border);
+  border-radius: 16px;
+  background: #f7fbff;
+  text-align: left;
+}
+
+body[data-page="orcamento"] .budget-success__summary strong {
+  color: var(--pro-blue-dark, #0f376f);
+}
+
 body.budget-modal-open {
   position: fixed;
   inset: 0;
@@ -608,770 +269,33 @@ body.budget-modal-open {
   touch-action: none;
 }
 
-body[data-page="orcamento"] .address-modal::backdrop {
-  background: rgba(11, 27, 45, 0.42);
-  backdrop-filter: blur(3px);
-}
-
-body[data-page="orcamento"] .address-modal__dialog {
-  padding: 18px;
-  border: 1px solid var(--budget-border);
-  border-radius: 28px;
-  background: #fff;
-  box-shadow: 0 24px 48px rgba(16, 41, 68, 0.18);
-  overscroll-behavior: contain;
-}
-
-body[data-page="orcamento"] .address-modal__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 14px;
-}
-
-body[data-page="orcamento"] .address-modal__head h2 {
-  margin: 0;
-  color: var(--budget-text);
-  font-size: 1.45rem;
-  letter-spacing: -0.035em;
-}
-
-body[data-page="orcamento"] .address-modal__head p {
-  margin: 6px 0 0;
-  color: var(--budget-muted);
-}
-
-body[data-page="orcamento"] .address-modal__close {
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--budget-border);
-  border-radius: 14px;
-  background: #fff;
-  color: var(--budget-text);
-  font-size: 1.4rem;
-  line-height: 1;
-}
-
-body[data-page="orcamento"] .address-modal__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-body[data-page="orcamento"] .address-modal input,
-body[data-page="orcamento"] .address-modal textarea,
-body[data-page="orcamento"] .address-modal select {
-  font-size: 16px;
-}
-
-
-@media (max-width: 560px), (hover: none) and (pointer: coarse) and (max-device-width: 560px) {
-  html.doke-mobile-shell-pending body[data-page="orcamento"] .quote-shell-content,
-  body[data-page="orcamento"].doke-mobile-shell-mounted .quote-shell-content {
-    inline-size: var(--doke-mobile-shell-max, min(430px, 100vw));
-    width: var(--doke-mobile-shell-max, min(430px, 100vw));
-    max-inline-size: var(--doke-mobile-shell-max, min(430px, 100vw));
-    max-width: var(--doke-mobile-shell-max, min(430px, 100vw));
-    padding-inline: var(--doke-mobile-shell-edge, clamp(18px, 5.6vw, 24px));
-  }
-}
-
-@media (max-width: 1024px) {
-  body[data-page="orcamento"] .quote-provider-summary {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  body[data-page="orcamento"] .quote-provider-summary__chips {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
-  }
-
-  body[data-page="orcamento"] .budget-grid--3 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  body[data-page="orcamento"] .budget-grid--3 .budget-field:last-child {
-    grid-column: 1 / -1;
+@media (max-width: 1180px) {
+  body[data-page="orcamento"] .budget-grid--3.become-pro-grid {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 760px) {
-  body[data-page="orcamento"] .quote-shell-content {
-    padding-block: 10px 88px;
-  }
-
-  body[data-page="orcamento"] .quote-context-head {
+  body[data-page="orcamento"] .budget-grid--2.become-pro-grid,
+  body[data-page="orcamento"] .budget-grid--3.become-pro-grid,
+  body[data-page="orcamento"] .address-modal__actions.become-pro-actions.doke-form-actions,
+  body[data-page="orcamento"] .budget-success__actions.become-pro-actions.doke-form-actions {
     grid-template-columns: 1fr;
-    align-items: stretch;
-    padding: 15px;
-    border-radius: 22px;
-  }
-
-  body[data-page="orcamento"] .quote-context-head h1 {
-    font-size: clamp(1.45rem, 6vw, 1.82rem);
-  }
-
-  body[data-page="orcamento"] .saved-location-chip {
-    justify-content: space-between;
-  }
-
-  body[data-page="orcamento"] .quote-provider-summary {
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 12px;
-    padding: 14px;
-    border-radius: 20px;
-  }
-
-  body[data-page="orcamento"] .quote-provider-summary__avatar {
-    width: 46px;
-  }
-
-  body[data-page="orcamento"] .budget-flow {
-    padding: 14px;
-    border-radius: 22px;
-  }
-
-  body[data-page="orcamento"] .budget-steps {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-  }
-
-  body[data-page="orcamento"] .budget-step {
-    min-height: 54px;
-    padding: 8px;
-    gap: 7px;
-    border-radius: 14px;
-    min-width: 0;
-  }
-
-  body[data-page="orcamento"] .budget-step span {
-    width: 28px;
-    height: 28px;
-    border-radius: 10px;
-  }
-
-  body[data-page="orcamento"] .budget-step > div {
-    min-width: 0;
-  }
-
-  body[data-page="orcamento"] .budget-step strong {
-    font-size: 0.82rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  body[data-page="orcamento"] .budget-step small {
-    display: none;
-  }
-
-  body[data-page="orcamento"] .budget-panel__head p {
-    font-size: 0.88rem;
-  }
-
-  body[data-page="orcamento"] .budget-grid--2,
-  body[data-page="orcamento"] .budget-grid--3 {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  body[data-page="orcamento"] .budget-grid--3 .budget-field:last-child {
-    grid-column: auto;
-  }
-
-  body[data-page="orcamento"] .budget-field input,
-  body[data-page="orcamento"] .budget-field textarea,
-  body[data-page="orcamento"] .budget-field select,
-  body[data-page="orcamento"] .budget-flow .ui-select__trigger {
-    min-height: 50px;
-    font-size: 0.96rem;
-  }
-
-  body[data-page="orcamento"] .budget-field textarea {
-    min-height: 128px;
-  }
-
-  body[data-page="orcamento"] .budget-upload {
-    min-height: 92px;
-    padding: 14px;
-    border-radius: 16px;
   }
 
   body[data-page="orcamento"] .budget-address-card__head,
   body[data-page="orcamento"] .budget-address-card__meta:not([hidden]),
-  body[data-page="orcamento"] .address-modal__head,
-  body[data-page="orcamento"] .address-modal__actions {
-    flex-direction: column;
+  body[data-page="orcamento"] .address-modal__head {
     align-items: stretch;
-  }
-
-  body[data-page="orcamento"] .budget-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    display: grid;
-    gap: 10px;
-    margin-inline: -2px;
-    padding-inline: 2px;
-    padding-bottom: calc(6px + env(safe-area-inset-bottom));
-  }
-
-  body[data-page="orcamento"] .budget-actions__right {
-    display: contents;
-  }
-
-  body[data-page="orcamento"] .budget-actions > .budget-button,
-  body[data-page="orcamento"] .budget-actions__right .budget-button,
-  body[data-page="orcamento"] .address-modal__actions .budget-button,
-  body[data-page="orcamento"] .budget-address-card__head .budget-button {
-    width: 100%;
+    flex-direction: column;
   }
 
   body[data-page="orcamento"] .address-modal {
-    width: calc(100vw - 12px);
-    max-width: calc(100vw - 12px);
-    min-height: 100dvh;
-    padding: 6px 0;
-    background: transparent;
-  }
-
-  body[data-page="orcamento"] .address-modal::backdrop {
-    background: rgba(9, 20, 34, 0.56);
-    backdrop-filter: blur(6px);
+    width: calc(100vw - 24px);
   }
 
   body[data-page="orcamento"] .address-modal__dialog {
-    width: calc(100vw - 24px);
-    max-width: calc(100vw - 24px);
-    max-height: calc(100dvh - 20px);
-    margin: 10px auto;
-    padding: 14px;
-    border-radius: 20px;
+    max-height: calc(100dvh - 24px);
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  body[data-page="orcamento"] .address-modal__head {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    margin: -14px -14px 10px;
-    padding: 14px;
-    background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid var(--budget-border);
-  }
-
-  body[data-page="orcamento"] .address-modal__actions {
-    position: sticky;
-    bottom: -14px;
-    z-index: 2;
-    margin: 14px -14px -14px;
-    padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
-    background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(10px);
-    border-top: 1px solid var(--budget-border);
-  }
-}
-
-/* Quote success modal
-   Owns only the post-submit confirmation overlay inside orcamento.html. */
-body[data-page="orcamento"] .budget-success-modal {
-  width: min(780px, calc(100vw - 32px));
-  max-width: min(780px, calc(100vw - 32px));
-  padding: 0;
-  border: 0;
-  background: transparent;
-  overflow: visible;
-}
-
-body[data-page="orcamento"] .budget-success-modal::backdrop {
-  background: rgba(13, 29, 48, 0.56);
-  backdrop-filter: blur(8px);
-}
-
-body[data-page="orcamento"] .budget-success-modal__dialog {
-  position: relative;
-  display: grid;
-  gap: 18px;
-  padding: clamp(30px, 4vw, 50px);
-  border: 1px solid var(--budget-border);
-  border-radius: 30px;
-  background:
-    radial-gradient(circle at 50% 0%, rgba(41, 143, 127, 0.12), transparent 40%),
-    rgba(255, 255, 255, 0.97);
-  box-shadow: 0 36px 90px rgba(6, 24, 43, 0.28);
-}
-
-body[data-page="orcamento"] .budget-success-modal__close {
-  position: absolute;
-  top: 26px;
-  right: 26px;
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  padding: 0;
-  border: 1px solid rgba(24, 75, 118, 0.12);
-  border-radius: 999px;
-  background: rgba(248, 251, 255, 0.96);
-  color: var(--budget-blue-strong);
-  cursor: pointer;
-}
-
-body[data-page="orcamento"] .budget-success-modal__close svg {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.4;
-  stroke-linecap: round;
-}
-
-body[data-page="orcamento"] .budget-success-modal .budget-success__icon {
-  display: grid;
-  place-items: center;
-  width: 76px;
-  height: 76px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, var(--budget-green), #1f7d70);
-  color: #ffffff;
-  box-shadow: 0 18px 38px rgba(41, 143, 127, 0.22);
-}
-
-body[data-page="orcamento"] .budget-success-modal .budget-success__icon svg {
-  width: 34px;
-  height: 34px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-body[data-page="orcamento"] .budget-success-modal .budget-success__eyebrow {
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  padding: 0 16px;
-  border: 1px solid rgba(41, 143, 127, 0.18);
-  border-radius: 999px;
-  background: rgba(41, 143, 127, 0.09);
-  color: var(--budget-green);
-  font-size: 0.76rem;
-  font-weight: 850;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-}
-
-body[data-page="orcamento"] .budget-success-modal h2 {
-  max-width: 620px;
-  margin: 0;
-  color: var(--budget-blue-strong);
-  font-size: clamp(2.05rem, 5vw, 3.1rem);
-  line-height: 1.02;
-  letter-spacing: -0.045em;
-}
-
-body[data-page="orcamento"] .budget-success-modal p {
-  max-width: 610px;
-  margin: 0;
-  color: var(--budget-muted);
-  font-size: 1.08rem;
-  line-height: 1.56;
-}
-
-body[data-page="orcamento"] .budget-success-modal .budget-success__summary {
-  display: inline-grid;
-  gap: 3px;
-  width: min(100%, 420px);
-  padding: 15px 18px;
-  border: 1px solid rgba(24, 75, 118, 0.08);
-  border-radius: 18px;
-  background: rgba(246, 250, 253, 0.92);
-  text-align: left;
-}
-
-body[data-page="orcamento"] .budget-success-modal .budget-success__summary span {
-  color: var(--budget-muted);
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-body[data-page="orcamento"] .budget-success-modal .budget-success__summary strong {
-  color: var(--budget-blue-strong);
-  font-size: 1rem;
-}
-
-body[data-page="orcamento"] .budget-success-modal .budget-success__actions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-  gap: 14px;
-  margin-top: 10px;
-  padding-top: 24px;
-  border-top: 1px solid rgba(24, 75, 118, 0.1);
-}
-
-body[data-page="orcamento"] .budget-success-modal .budget-success__actions .budget-button {
-  width: 100%;
-  min-height: 58px;
-}
-
-@media (max-width: 760px) {
-  body[data-page="orcamento"] .budget-success-modal {
-    width: calc(100vw - 24px);
-    max-width: calc(100vw - 24px);
-  }
-
-  body[data-page="orcamento"] .budget-success-modal__dialog {
-    padding: 26px 18px 18px;
-    border-radius: 24px;
-  }
-
-  body[data-page="orcamento"] .budget-success-modal__close {
-    top: 18px;
-    right: 18px;
-    width: 42px;
-    height: 42px;
-  }
-
-  body[data-page="orcamento"] .budget-success-modal h2 {
-    padding-right: 42px;
-  }
-
-  body[data-page="orcamento"] .budget-success-modal .budget-success__actions {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-/* Form/Button Contract adoption — page composition only. */
-body[data-page="orcamento"] .budget-actions.doke-form-actions,
-body[data-page="orcamento"] .address-modal__actions.doke-form-actions,
-body[data-page="orcamento"] .budget-success__actions.doke-form-actions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-  gap: var(--doke-action-gap, 14px);
-  align-items: center;
-}
-
-body[data-page="orcamento"] .budget-actions.doke-form-actions {
-  justify-content: normal;
-}
-
-body[data-page="orcamento"] .budget-actions.doke-form-actions .budget-actions__right {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--doke-action-gap, 14px);
-  min-width: 0;
-}
-
-body[data-page="orcamento"] .budget-actions.doke-form-actions .budget-actions__right .budget-button {
-  min-width: min(100%, 180px);
-}
-
-body[data-page="orcamento"] .budget-actions.doke-form-actions .budget-button,
-body[data-page="orcamento"] .address-modal__actions.doke-form-actions .budget-button,
-body[data-page="orcamento"] .budget-success-modal .budget-success__actions.doke-form-actions .budget-button {
-  width: 100%;
-  min-height: var(--doke-action-height, 56px);
-  height: var(--doke-action-height, 56px);
-  border-radius: var(--doke-action-radius, 16px);
-}
-
-body[data-page="orcamento"] .budget-success-modal .budget-success__actions.doke-form-actions {
-  margin-top: 10px;
-  padding-top: 24px;
-  border-top: 1px solid rgba(24, 75, 118, 0.1);
-}
-
-@media (max-width: 760px) {
-  body[data-page="orcamento"] .budget-actions.doke-form-actions,
-  body[data-page="orcamento"] .address-modal__actions.doke-form-actions,
-  body[data-page="orcamento"] .budget-success__actions.doke-form-actions {
-    grid-template-columns: 1fr;
-  }
-
-  body[data-page="orcamento"] .budget-actions.doke-form-actions .budget-button,
-  body[data-page="orcamento"] .address-modal__actions.doke-form-actions .budget-button,
-  body[data-page="orcamento"] .budget-success-modal .budget-success__actions.doke-form-actions .budget-button {
-    min-height: var(--doke-action-height-mobile, 52px);
-    height: var(--doke-action-height-mobile, 52px);
-  }
-
-  body[data-page="orcamento"] .budget-actions.doke-form-actions .budget-actions__right {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  body[data-page="orcamento"] .budget-actions.doke-form-actions .budget-actions__right .budget-button {
-    min-width: 0;
-  }
-}
-
-
-/* Orçamento actions rhythm: action footer participates in the form flow. */
-body[data-page="orcamento"] .budget-actions,
-body[data-page="orcamento"] .budget-actions.doke-form-actions {
-  position: static;
-  bottom: auto;
-  z-index: auto;
-  margin-top: 22px;
-  margin-bottom: 0;
-  padding-top: 18px;
-  padding-bottom: 0;
-  background: transparent;
-  border-top: 1px solid var(--budget-border);
-}
-
-
-/* Orçamento step actions: exactly two visible actions per step.
-   Step 1: Voltar ao perfil + Continuar.
-   Steps 2/3: Voltar + Continuar/Enviar. */
-body[data-page="orcamento"] .budget-actions.doke-form-actions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--doke-action-gap, 14px);
-  align-items: center;
-}
-
-body[data-page="orcamento"] .budget-actions.doke-form-actions .budget-actions__right {
-  display: contents;
-}
-
-body[data-page="orcamento"] .budget-actions.doke-form-actions .budget-button[hidden] {
-  display: none;
-}
-
-body[data-page="orcamento"] .budget-actions.doke-form-actions .budget-button {
-  width: 100%;
-  min-width: 0;
-}
-
-body[data-page="orcamento"] .budget-actions.doke-form-actions .budget-button svg {
-  width: 20px;
-  height: 20px;
-}
-
-@media (max-width: 760px) {
-  body[data-page="orcamento"] .budget-actions.doke-form-actions {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-/* Orçamento Form Structure v1
-   Converges orçamento.html with the standard form-page composition:
-   page context, primary form card, secondary guidance card. */
-@media (min-width: 1025px) {
-  body[data-page="orcamento"] .quote-shell-content {
-    --doke-form-page-rail: var(--doke-header-rail, var(--doke-page-rail, min(100%, 1180px)));
-    padding-block: clamp(18px, 2vw, 28px) clamp(34px, 4vw, 58px);
-  }
-
-  body[data-page="orcamento"] .quote-shell-page__surface {
-    gap: 22px;
-  }
-
-  body[data-page="orcamento"] .quote-context-head {
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-
-  body[data-page="orcamento"] .quote-context-head h1 {
-    color: var(--budget-blue-strong);
-    font-size: clamp(1.6rem, 2vw, 2rem);
-  }
-
-  body[data-page="orcamento"] .quote-context-head__meta {
-    margin-top: 10px;
-  }
-
-  body[data-page="orcamento"] .quote-main {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(280px, 330px);
-    align-items: start;
-    gap: 26px;
-  }
-
-  body[data-page="orcamento"] .budget-flow {
-    order: 1;
-    padding: clamp(22px, 2.2vw, 30px);
-    border-radius: 28px;
-  }
-
-  body[data-page="orcamento"] .quote-provider-summary {
-    order: 2;
-    position: sticky;
-    top: calc(var(--doke-header-height, 70px) + 22px);
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 16px;
-    padding: 24px;
-    border-radius: 24px;
-    background: rgba(255, 255, 255, 0.96);
-    box-shadow: 0 22px 54px rgba(24, 75, 118, 0.08);
-  }
-
-  body[data-page="orcamento"] .quote-provider-summary h2 {
-    margin: 0;
-    color: var(--budget-blue-strong);
-    font-size: 1.15rem;
-    line-height: 1.2;
-  }
-
-  body[data-page="orcamento"] .quote-provider-summary__checklist {
-    display: grid;
-    gap: 13px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  body[data-page="orcamento"] .quote-provider-summary__checklist li {
-    display: grid;
-    grid-template-columns: 24px minmax(0, 1fr);
-    align-items: center;
-    gap: 10px;
-    color: var(--budget-text);
-    font-size: 0.9rem;
-    font-weight: 820;
-    line-height: 1.35;
-  }
-
-  body[data-page="orcamento"] .quote-provider-summary__checklist span {
-    display: grid;
-    place-items: center;
-    width: 24px;
-    height: 24px;
-    border: 1px solid rgba(41, 143, 127, 0.28);
-    border-radius: 999px;
-    color: var(--budget-green);
-    font-size: 0.76rem;
-    font-weight: 900;
-  }
-
-  body[data-page="orcamento"] .quote-provider-summary__profile {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 12px;
-    align-items: center;
-    padding-top: 16px;
-    border-top: 1px solid var(--budget-border);
-  }
-
-  body[data-page="orcamento"] .quote-provider-summary__avatar {
-    width: 42px;
-  }
-
-  body[data-page="orcamento"] .quote-provider-summary__chips {
-    display: contents;
-  }
-
-  body[data-page="orcamento"] .quote-provider-summary__chip {
-    justify-self: start;
-    min-height: 30px;
-    color: var(--budget-green);
-    background: rgba(41, 143, 127, 0.09);
-    border-color: rgba(41, 143, 127, 0.14);
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    font-size: 0.72rem;
-    font-weight: 900;
-  }
-
-  body[data-page="orcamento"] .quote-provider-summary p {
-    margin: 0;
-    color: var(--budget-muted);
-    font-size: 0.9rem;
-    line-height: 1.55;
-  }
-
-  body[data-page="orcamento"] .budget-progress {
-    margin-bottom: 18px;
-  }
-
-  body[data-page="orcamento"] .budget-steps {
-    gap: 12px;
-    margin-bottom: 22px;
-  }
-
-  body[data-page="orcamento"] .budget-panel__head {
-    margin-bottom: 18px;
-  }
-}
-
-@media (max-width: 1024px) {
-  body[data-page="orcamento"] .quote-provider-summary {
-    display: none;
-  }
-
-  body[data-page="orcamento"] .quote-context-head {
-    margin-bottom: 0;
-  }
-}
-
-
-/* Form Page Top Contract adoption — orçamento.
-   Aligns page title, form card and side card on the same rail as other form pages. */
-body[data-page="orcamento"] .quote-shell-content.doke-form-page-rail {
-  --doke-form-page-rail: var(--doke-header-rail, var(--doke-page-rail, min(100%, 1180px)));
-  inline-size: var(--doke-form-page-rail);
-  width: var(--doke-form-page-rail);
-  max-inline-size: var(--doke-form-page-rail);
-  max-width: var(--doke-form-page-rail);
-}
-
-body[data-page="orcamento"] .quote-context-head.doke-form-page-top {
-  max-width: 820px;
-}
-
-body[data-page="orcamento"] .quote-context-head.doke-form-page-top .quote-context-head__eyebrow {
-  margin: 0;
-}
-
-body[data-page="orcamento"] .quote-context-head.doke-form-page-top h1 {
-  color: var(--budget-blue);
-}
-
-body[data-page="orcamento"] .quote-main.doke-form-page-grid {
-  grid-template-columns: var(--doke-form-main-column, minmax(0, 900px)) var(--doke-form-side-column, minmax(280px, 360px));
-  gap: var(--doke-form-page-gap, 28px);
-  justify-content: start;
-}
-
-@media (min-width: 1025px) {
-  body[data-page="orcamento"] .quote-main.doke-form-page-grid {
-    display: grid;
-  }
-}
-
-@media (max-width: 1180px) {
-  body[data-page="orcamento"] .quote-main.doke-form-page-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-/* Flow progress contract adoption - orçamento. */
-body[data-page="orcamento"] .budget-steps.doke-flow-steps {
-  --doke-flow-step-count: 3;
-}
-
-@media (max-width: 1180px) {
-  body[data-page="orcamento"] .budget-steps.doke-flow-steps {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 760px) {
-  body[data-page="orcamento"] .budget-steps.doke-flow-steps {
-    grid-template-columns: 1fr;
   }
 }

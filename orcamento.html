@@ -1,399 +1,336 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Doke | Solicitar orçamento</title>
-      <script src="assets/js/core/header-auth-surface-early.js?v=20260623-profile-mount-v1"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <script src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
-    <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
-    <script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
-    <link rel="stylesheet" href="assets/css/pages/orcamento.css?v=20260623-form-page-rail-v2" />
-  </head>
-  <body data-page="orcamento" data-auth-guard="enforce" class="doke-app-shell-page app-shell-page internal-shell-page quote-shell-page doke-flow has-global-header">
-    <div class="app-shell">
-      <aside class="sidebar" data-shell-sidebar></aside>
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Doke | Solicitar orçamento</title>
+<script src="assets/js/core/header-auth-surface-early.js?v=20260623-profile-mount-v1"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 
-      <div class="page">
-        <header class="app-header home-side-meta" data-app-header data-header-contract="app-header" data-header-variant="standard" aria-label="Atalhos e contexto">
-          <div class="app-header__inner" data-header-inner>
-            <div class="home-side-meta__group home-side-meta__group--primary app-header__group app-header__group--primary" data-header-slot="primary">
-              <button class="home-side-meta__tablet-menu" type="button" data-mobile-home-menu-open aria-label="Abrir menu lateral" aria-expanded="false" aria-haspopup="dialog">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M4 7h16"></path>
-                  <path d="M4 12h16"></path>
-                  <path d="M4 17h16"></path>
-                </svg>
-              </button>
-              <button class="home-side-meta__search" type="button" aria-label="Buscar">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="11" cy="11" r="5.75"></circle>
-                  <path d="m16 16 4 4"></path>
-                </svg>
-              </button>
-              <form class="home-side-meta__search-form" action="resultados.html" role="search" aria-label="Busca rápida">
-                <label class="home-side-meta__search-label doke-label" for="desktop-quick-search-budget">Buscar</label>
-                <input id="desktop-quick-search-budget" class="home-side-meta__search-input doke-input" type="text" name="q" placeholder="Buscar serviço" autocomplete="off" />
-              </form>
-              <button class="home-side-meta__location" type="button" aria-label="Alterar localização">
-                <span class="home-side-meta__location-text" data-topbar-location-value data-location-fallback="Salvador, BA">Salvador, BA</span>
-                <span class="home-side-meta__caret" aria-hidden="true"></span>
-              </button>
-            </div>
-
-            <div class="home-side-meta__group home-side-meta__group--secondary app-header__group app-header__group--secondary" data-header-slot="actions">
-              <button class="home-side-meta__alert" type="button" aria-label="Novidades" data-header-nav="novidades.html">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5.5h12v13H6z"></path><path d="M9 9h6"></path><path d="M9 12h6"></path><path d="M9 15h4"></path></svg>
-              </button>
-              <button class="home-side-meta__alert" type="button" aria-label="Suporte" data-header-nav="ajuda.html">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 13.5V10l10-4v12l-10-4z"></path><path d="M15 9.5h2.2A2.8 2.8 0 0 1 20 12.3v.4a2.8 2.8 0 0 1-2.8 2.8H15"></path><path d="M7.5 14.5v2.2a1.8 1.8 0 0 0 1.8 1.8h1.2"></path></svg>
-              </button>
-              <button class="home-side-meta__alert" type="button" aria-label="Notificações" data-header-nav="notificacoes.html">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.75a4 4 0 0 0-4 4v2.1c0 .7-.24 1.38-.68 1.92L5.9 14.5h12.2l-1.42-1.73a3 3 0 0 1-.68-1.92v-2.1a4 4 0 0 0-4-4Z"></path><path d="M10 17.2a2.3 2.3 0 0 0 4 0"></path></svg>
-              </button>
-              <div class="home-side-meta__profile-wrap">
-                <button class="home-side-meta__profile" type="button" data-header-nav="perfil.html" aria-label="Abrir conta">
-                  <span class="home-side-meta__avatar doke-avatar" aria-hidden="true">DK</span>
-                  <span class="home-side-meta__identity"><strong>Entrar</strong><span>Conta</span></span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <main class="page__content doke-page">
-          <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean quote-shell-content doke-page-shell doke-page-stack doke-form-page-rail">
-            <section class="quote-shell-page__surface" aria-labelledby="quote-page-title" data-budget-page data-budget-success-url="pedidos.html">
-              <header class="quote-context-head doke-form-page-top">
-                <div>
-                  <p class="quote-context-head__eyebrow doke-form-page-eyebrow">Orçamento com profissional</p>
-                  <h1 id="quote-page-title" class="doke-form-page-title">Solicitar orçamento</h1>
-                  <div class="quote-context-head__meta" aria-label="Contexto do pedido">
-                    <span data-budget-service>Pintura residencial</span>
-                    <span>Salvador BA</span>
-                    <span>Resposta média em 18 min</span>
-                  </div>
-                </div>
-                <button class="saved-location-chip" type="button" data-open-address-modal>
-                  <span class="saved-location-chip__label">Endereço</span>
-                  <strong data-saved-address-chip>Casa principal</strong>
-                </button>
-              </header>
-
-              <div class="quote-main doke-form-page-grid">
-                <form class="budget-flow" action="#" autocomplete="off" data-budget-form>
-                  <script type="application/json" data-budget-default-location>{"titulo":"Casa principal","rua":"Rua Chile","numero":"120","bairro":"Comércio","cidade":"Salvador","uf":"BA","complemento":"Apartamento 802","referencia":"Próximo ao Elevador Lacerda"}</script>
-
-                  <div class="budget-progress doke-flow-progress" aria-label="Progresso do orçamento">
-                    <div class="budget-progress__top doke-flow-progress__top">
-                      <span data-step-progress-label>Passo 1 de 3</span>
-                      <span>Pedido rápido</span>
-                    </div>
-                    <div class="budget-progress__track doke-flow-progress__track" aria-hidden="true"><span class="budget-progress__fill doke-flow-progress__fill" data-step-progress-fill></span></div>
-                  </div>
-
-                  <nav class="budget-steps doke-flow-steps" aria-label="Etapas do orçamento">
-                    <button class="budget-step doke-flow-step is-active" type="button" data-step-target="0">
-                      <span class="budget-progress-step__bullet">1</span>
-                      <div><strong>Serviço</strong><small>Escopo e detalhes</small></div>
-                    </button>
-                    <button class="budget-step doke-flow-step" type="button" data-step-target="1">
-                      <span class="budget-progress-step__bullet">2</span>
-                      <div><strong>Prazo</strong><small>Data e referências</small></div>
-                    </button>
-                    <button class="budget-step doke-flow-step" type="button" data-step-target="2">
-                      <span class="budget-progress-step__bullet">3</span>
-                      <div><strong>Revisão</strong><small>Endereço e envio</small></div>
-                    </button>
-                  </nav>
-
-                  <section class="budget-panel is-active" data-step-panel="servico" aria-labelledby="budget-step-service-title">
-                    <div class="budget-panel__head">
-                      <h2 id="budget-step-service-title">Serviço</h2>
-                      <p>Defina o tipo de solicitação e o ambiente para o profissional entender o pedido.</p>
-                    </div>
-
-                    <div class="budget-grid budget-grid--2">
-                      <label class="budget-field"><span>Tipo de solicitação</span>
-                        <select name="tipo" required data-ui-select>
-                          <option value="">Selecione</option>
-                          <option value="Orçamento para execução" selected>Orçamento para execução</option>
-                          <option value="Visita técnica">Visita técnica</option>
-                          <option value="Consultoria antes da obra">Consultoria antes da obra</option>
-                        </select>
-                      </label>
-                      <label class="budget-field"><span>Serviço principal</span>
-                        <select name="catégoria" required data-ui-select>
-                          <option value="">Selecione</option>
-                          <option value="Pintura residencial" selected>Pintura residencial</option>
-                          <option value="Pintura comercial">Pintura comercial</option>
-                          <option value="Textura e acabamento">Textura e acabamento</option>
-                          <option value="Consultoria de cores">Consultoria de cores</option>
-                        </select>
-                      </label>
-                    </div>
-
-                    <div class="budget-choices-wrap">
-                      <span>Escopo</span>
-                      <input type="hidden" name="escopo" value="Ambiente completo" data-choice-input />
-                      <div class="budget-choices" data-choice-group aria-label="Escopo do serviço">
-                        <button class="budget-choice is-active" type="button" data-choice-value="Ambiente completo">Ambiente completo</button>
-                        <button class="budget-choice" type="button" data-choice-value="Parede específica">Parede específica</button>
-                        <button class="budget-choice" type="button" data-choice-value="Imóvel inteiro">Imóvel inteiro</button>
-                        <button class="budget-choice" type="button" data-choice-value="Retoque ou reparo">Retoque ou reparo</button>
-                      </div>
-                    </div>
-
-                    <div class="budget-grid budget-grid--3 budget-grid--compact">
-                      <label class="budget-field"><span>Imóvel</span>
-                        <select name="imovel" required data-ui-select>
-                          <option value="">Selecione</option>
-                          <option value="Apartamento" selected>Apartamento</option>
-                          <option value="Casa">Casa</option>
-                          <option value="Sala comercial">Sala comercial</option>
-                          <option value="Condomínio">Condomínio</option>
-                        </select>
-                      </label>
-                      <label class="budget-field"><span>Ambiente</span><input type="text" name="ambiente" value="Sala e corredor" required /></label>
-                      <label class="budget-field"><span>Área aproximada</span><input type="text" name="area" value="35 m²" /></label>
-                    </div>
-
-                    <label class="budget-field budget-grid--compact"><span>Detalhes do pedido</span><textarea name="detalhes" maxlength="500" required data-details-input>Quero renovar a pintura da sala e do corredor com acabamento fosco. As paredes estão em bom estado, mas preciso de orientação sobre tons claros.</textarea><small><span data-details-count>0</span>/500</small></label>
-                  </section>
-
-                  <section class="budget-panel" data-step-panel="prazo" aria-labelledby="budget-step-schedule-title" hidden>
-                    <div class="budget-panel__head">
-                      <h2 id="budget-step-schedule-title">Prazo e referência</h2>
-                      <p>Informe urgência, melhor turno e referências para reduzir idas e vindas.</p>
-                    </div>
-
-                    <div class="budget-choices-wrap">
-                      <span>Urgência</span>
-                      <input type="hidden" name="urgencia" value="Esta semana" data-choice-input />
-                      <div class="budget-choices" data-choice-group aria-label="Urgência do orçamento">
-                        <button class="budget-choice" type="button" data-choice-value="Hoje ou amanhã">Hoje ou amanhã</button>
-                        <button class="budget-choice is-active" type="button" data-choice-value="Esta semana">Esta semana</button>
-                        <button class="budget-choice" type="button" data-choice-value="Sem pressa">Sem pressa</button>
-                      </div>
-                    </div>
-
-                    <div class="budget-grid budget-grid--3 budget-grid--compact">
-                      <label class="budget-field"><span>Data desejada</span><input type="date" name="data" /></label>
-                      <label class="budget-field"><span>Turno</span>
-                        <select name="turno" data-ui-select>
-                          <option value="Flexível" selected>Flexível</option>
-                          <option value="Manhã">Manhã</option>
-                          <option value="Tarde">Tarde</option>
-                          <option value="Noite">Noite</option>
-                        </select>
-                      </label>
-                      <label class="budget-field"><span>Orçamento estimado</span>
-                        <select name="orcamento_estimado" data-ui-select>
-                          <option value="A definir" selected>A definir</option>
-                          <option value="Até R$ 500">Até R$ 500</option>
-                          <option value="R$ 500 a R$ 1.500">R$ 500 a R$ 1.500</option>
-                          <option value="Acima de R$ 1.500">Acima de R$ 1.500</option>
-                        </select>
-                      </label>
-                    </div>
-
-                    <div class="budget-triage">
-                      <div class="budget-triage__head"><strong>Referência rápida</strong><span>Esses dados ajudam o profissional a responder com mais precisão.</span></div>
-                      <div class="budget-grid budget-grid--3">
-                        <label class="budget-field"><span>O imóvel está ocupado?</span>
-                          <select name="triagem_ocupacao" data-ui-select>
-                            <option value="Sim, morando no local" selected>Sim, morando no local</option>
-                            <option value="Não, imóvel vazio">Não, imóvel vazio</option>
-                            <option value="Uso comercial">Uso comercial</option>
-                          </select>
-                        </label>
-                        <label class="budget-field"><span>Medidas confirmadas?</span>
-                          <select name="triagem_medidas" data-ui-select>
-                            <option value="Aproximadas" selected>Aproximadas</option>
-                            <option value="Confirmadas">Confirmadas</option>
-                            <option value="Preciso de ajuda para medir">Preciso de ajuda para medir</option>
-                          </select>
-                        </label>
-                        <label class="budget-field"><span>Observação</span><input type="text" name="triagem_observacoes" value="Tenho fotos do ambiente." /></label>
-                      </div>
-                    </div>
-
-                    <label class="budget-upload budget-grid--compact"><span>Anexos ou referências</span><small>Fotos, inspiração de cor ou vídeo curto.</small><input type="file" name="anexos" multiple accept="image/*,video/*,.pdf" /></label>
-                    <div class="budget-files" data-files-list hidden></div>
-                  </section>
-
-                  <section class="budget-panel" data-step-panel="revisao" aria-labelledby="budget-step-review-title" hidden>
-                    <div class="budget-panel__head">
-                      <h2 id="budget-step-review-title">Endereço e revisão</h2>
-                      <p>Confirme o local do atendimento e envie a solicitação para o profissional.</p>
-                    </div>
-
-                    <input type="hidden" name="endereco" data-address-required />
-                    <article class="budget-address-card" aria-live="polite">
-                      <div class="budget-address-card__head">
-                        <div>
-                          <span class="budget-address-card__eyebrow">Endereço salvo</span>
-                          <strong data-address-title>Casa principal</strong>
-                          <p data-address-summary>Apartamento 802 · próximo ao Elevador Lacerda</p>
-                        </div>
-                        <button class="budget-button budget-button--ghost budget-button--sm doke-btn doke-btn--ghost doke-btn--sm" type="button" data-open-address-modal>Alterar endereço</button>
-                      </div>
-                      <div class="budget-address-card__meta" data-address-meta>
-                        <span data-address-line>Rua Chile, 120 · Comércio · Salvador · BA</span>
-                      </div>
-                    </article>
-
-                    <div class="budget-helper-card">
-                      <strong>Resumo para envio</strong>
-                      <span><span data-budget-provider>Studio Aquarela</span> receberá seu pedido de <span data-budget-service>Pintura residencial</span> com o endereço salvo e os detalhes acima.</span>
-                    </div>
-
-                    <label class="budget-check budget-check--simple"><input type="checkbox" name="confirmacao" required checked /><span>Confirmo que as informações estão corretas.</span></label>
-                  </section>
-
-                  <footer class="budget-actions doke-form-actions" aria-label="Ações do orçamento">
-                    <a class="budget-button budget-button--ghost doke-btn doke-btn--ghost" href="perfil.html" data-step-exit>Voltar ao perfil</a>
-                    <div class="budget-actions__right">
-                      <button class="budget-button budget-button--ghost budget-button--nav doke-btn doke-btn--ghost" type="button" data-step-prev hidden><span>Voltar</span></button>
-                      <button class="budget-button budget-button--primary budget-button--nav doke-btn doke-btn--primary" type="button" data-step-next><span>Continuar</span></button>
-                      <button class="budget-button budget-button--primary budget-button--nav doke-btn doke-btn--primary" type="submit" data-step-submit hidden><span>Enviar solicitação</span></button>
-                    </div>
-                  </footer>
-                </form>
-
-                <aside class="quote-provider-summary" aria-label="Orientações para um bom pedido">
-                  <h2>Um bom pedido precisa</h2>
-                  <ul class="quote-provider-summary__checklist">
-                    <li><span>✓</span> Serviço e escopo claros</li>
-                    <li><span>✓</span> Prazo ou turno desejado</li>
-                    <li><span>✓</span> Endereço de atendimento</li>
-                    <li><span>✓</span> Fotos ou referências reais</li>
-                    <li><span>✓</span> Orçamento ou expectativa</li>
-                    <li><span>✓</span> Observações objetivas</li>
-                  </ul>
-                  <div class="quote-provider-summary__profile">
-                    <div class="quote-provider-summary__avatar" aria-hidden="true">SA</div>
-                    <div class="quote-provider-summary__text">
-                      <strong data-budget-provider>Studio Aquarela</strong>
-                      <span><span data-budget-service>Pintura residencial</span> · Salvador BA</span>
-                    </div>
-                  </div>
-                  <span class="quote-provider-summary__chip">Pedido privado</span>
-                  <p>Quanto mais claro o pedido, melhor o retorno do profissional e menor a chance de retrabalho.</p>
-                </aside>
-
-                <dialog class="budget-success-modal" data-budget-success aria-labelledby="budget-success-title">
-                  <div class="budget-success-modal__dialog doke-card">
-                    <button class="budget-success-modal__close" type="button" aria-label="Fechar confirmação" data-budget-success-close>
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M6 6l12 12"></path>
-                        <path d="M18 6 6 18"></path>
-                      </svg>
-                    </button>
-
-                    <span class="budget-success__eyebrow">Solicitação enviada</span>
-
-                    <div class="budget-success__icon" aria-hidden="true">
-                      <svg viewBox="0 0 24 24">
-                        <path d="m7 12 3 3 7-7"></path>
-                      </svg>
-                    </div>
-
-                    <h2 id="budget-success-title">Tudo certo com seu pedido</h2>
-                    <p>
-                      Sua solicitação foi enviada para <strong data-budget-success-provider>o profissional</strong>.
+<script src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
+<script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
+<script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
+<link href="assets/css/pages/orcamento.css?v=20260623-budget-become-pro-contract-v1" rel="stylesheet"/>
+</head>
+<body data-page="orcamento" data-auth-guard="enforce" class="doke-app-shell-page app-shell-page internal-shell-page become-pro-page-shell doke-flow has-global-header">
+<div class="app-shell">
+<aside class="sidebar" data-shell-sidebar=""></aside>
+<div class="page become-pro-page-frame">
+<header aria-label="Atalhos e contexto do orçamento" class="app-header app-header--become-pro home-side-meta" data-app-header="" data-header-contract="app-header" data-header-variant="standard">
+<div class="app-header__inner" data-header-inner="">
+<div class="home-side-meta__group home-side-meta__group--primary app-header__group app-header__group--primary" data-header-slot="primary">
+<button aria-expanded="false" aria-haspopup="dialog" aria-label="Abrir menu lateral" class="home-side-meta__tablet-menu" data-mobile-home-menu-open="" type="button">
+<svg aria-hidden="true" viewBox="0 0 24 24">
+<path d="M4 7h16"></path>
+<path d="M4 12h16"></path>
+<path d="M4 17h16"></path>
+</svg>
+</button>
+<button aria-label="Buscar" class="home-side-meta__search" type="button">
+<svg aria-hidden="true" viewBox="0 0 24 24">
+<circle cx="11" cy="11" r="5.75"></circle>
+<path d="m16 16 4 4"></path>
+</svg>
+</button>
+<button aria-label="Alterar localização" class="home-side-meta__location" type="button">
+<span aria-hidden="true" class="home-side-meta__location-dot"></span>
+<span class="home-side-meta__location-text" data-location-fallback="Salvador, BA" data-topbar-location-value="">Salvador, BA</span>
+<span aria-hidden="true" class="home-side-meta__caret"></span>
+</button>
+</div>
+<div class="home-side-meta__group home-side-meta__group--secondary app-header__group app-header__group--secondary" data-header-slot="actions">
+<button aria-label="Novidades" class="home-side-meta__alert" data-header-nav="novidades.html" type="button">
+<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 5.5h12v13H6z"></path><path d="M9 9h6"></path><path d="M9 12h6"></path><path d="M9 15h4"></path></svg>
+</button>
+<button aria-label="Suporte" class="home-side-meta__alert" data-header-nav="ajuda.html" type="button">
+<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 13.5V10l10-4v12l-10-4z"></path><path d="M15 9.5h2.2A2.8 2.8 0 0 1 20 12.3v.4a2.8 2.8 0 0 1-2.8 2.8H15"></path><path d="M7.5 14.5v2.2a1.8 1.8 0 0 0 1.8 1.8h1.2"></path></svg>
+</button>
+<button aria-label="Notificações" class="home-side-meta__alert" data-header-nav="notificacoes.html" type="button">
+<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 4.75a4 4 0 0 0-4 4v2.1c0 .7-.24 1.38-.68 1.92L5.9 14.5h12.2l-1.42-1.73a3 3 0 0 1-.68-1.92v-2.1a4 4 0 0 0-4-4Z"></path><path d="M10 17.2a2.3 2.3 0 0 0 4 0"></path></svg>
+</button>
+<div class="home-side-meta__profile-wrap">
+<button aria-label="Abrir menu da conta" aria-expanded="false" aria-haspopup="true" class="home-side-meta__profile" data-home-profile-menu-toggle="" type="button">
+<span aria-hidden="true" class="home-side-meta__avatar doke-avatar">DK</span>
+<span class="home-side-meta__identity"><strong>Entrar</strong><span>Conta</span></span>
+</button>
+</div>
+</div>
+</div>
+</header>
+<main class="page__content doke-page">
+<div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean doke-page-shell doke-page-stack doke-form-page-rail">
+<section aria-labelledby="quote-page-title" class="become-pro-screen" data-budget-page="" data-budget-success-url="pedidos.html">
+<header class="become-pro-intro doke-form-page-top">
+<h1 class="doke-form-page-title" id="quote-page-title">Solicitar orçamento</h1>
+<p class="doke-form-page-description">Envie os dados do pedido para receber uma proposta objetiva.</p>
+</header>
+<div class="become-pro-layout doke-form-page-grid">
+<section aria-labelledby="budget-step-service-title" class="become-pro-form-card">
+<script data-budget-default-location="" type="application/json">{"titulo":"Casa principal","rua":"Rua Chile","numero":"120","bairro":"Comércio","cidade":"Salvador","uf":"BA","complemento":"Apartamento 802","referencia":"Próximo ao Elevador Lacerda"}</script>
+<div aria-label="Progresso do orçamento" class="budget-progress doke-flow-progress become-pro-progress">
+<div class="budget-progress__top doke-flow-progress__top become-pro-progress__top">
+<span data-step-progress-label="">Etapa 1 de 3</span>
+<span>Pedido rápido</span>
+</div>
+<div aria-hidden="true" class="budget-progress__track doke-flow-progress__track become-pro-progress__track"><span class="budget-progress__fill doke-flow-progress__fill become-pro-progress__fill" data-step-progress-fill=""></span></div>
+</div>
+<nav aria-label="Etapas do orçamento" class="budget-steps doke-flow-steps become-pro-steps">
+<button class="budget-step doke-flow-step is-active become-pro-step" data-step-target="0" type="button">
+<span class="budget-progress-step__bullet">1</span>
+<div><strong>Serviço</strong><small>Escopo e detalhes</small></div>
+</button>
+<button class="budget-step doke-flow-step become-pro-step" data-step-target="1" type="button">
+<span class="budget-progress-step__bullet">2</span>
+<div><strong>Prazo</strong><small>Data e referências</small></div>
+</button>
+<button class="budget-step doke-flow-step become-pro-step" data-step-target="2" type="button">
+<span class="budget-progress-step__bullet">3</span>
+<div><strong>Revisão</strong><small>Endereço e envio</small></div>
+</button>
+</nav>
+<form action="#" autocomplete="off" class="become-pro-form" data-budget-form="">
+<section aria-labelledby="budget-step-service-title" class="budget-panel is-active become-pro-step-panel" data-step-panel="servico">
+<div class="budget-panel__head become-pro-section-head">
+<h2 id="budget-step-service-title">Serviço</h2>
+<p>Defina o tipo de solicitação e o ambiente para o profissional entender o pedido.</p>
+</div>
+<div class="budget-grid budget-grid--2 become-pro-grid">
+<label class="budget-field become-pro-field"><span>Tipo de solicitação</span>
+<select data-ui-select="" name="tipo" required="">
+<option value="">Selecione</option>
+<option selected="" value="Orçamento para execução">Orçamento para execução</option>
+<option value="Visita técnica">Visita técnica</option>
+<option value="Consultoria antes da obra">Consultoria antes da obra</option>
+</select>
+</label>
+<label class="budget-field become-pro-field"><span>Serviço principal</span>
+<select data-ui-select="" name="catégoria" required="">
+<option value="">Selecione</option>
+<option selected="" value="Pintura residencial">Pintura residencial</option>
+<option value="Pintura comercial">Pintura comercial</option>
+<option value="Textura e acabamento">Textura e acabamento</option>
+<option value="Consultoria de cores">Consultoria de cores</option>
+</select>
+</label>
+</div>
+<div class="budget-choices-wrap">
+<span>Escopo</span>
+<input data-choice-input="" name="escopo" type="hidden" value="Ambiente completo"/>
+<div aria-label="Escopo do serviço" class="budget-choices" data-choice-group="">
+<button class="budget-choice is-active" data-choice-value="Ambiente completo" type="button">Ambiente completo</button>
+<button class="budget-choice" data-choice-value="Parede específica" type="button">Parede específica</button>
+<button class="budget-choice" data-choice-value="Imóvel inteiro" type="button">Imóvel inteiro</button>
+<button class="budget-choice" data-choice-value="Retoque ou reparo" type="button">Retoque ou reparo</button>
+</div>
+</div>
+<div class="budget-grid budget-grid--3 budget-grid--compact become-pro-grid">
+<label class="budget-field become-pro-field"><span>Imóvel</span>
+<select data-ui-select="" name="imovel" required="">
+<option value="">Selecione</option>
+<option selected="" value="Apartamento">Apartamento</option>
+<option value="Casa">Casa</option>
+<option value="Sala comercial">Sala comercial</option>
+<option value="Condomínio">Condomínio</option>
+</select>
+</label>
+<label class="budget-field become-pro-field"><span>Ambiente</span><input name="ambiente" required="" type="text" value="Sala e corredor"/></label>
+<label class="budget-field become-pro-field"><span>Área aproximada</span><input name="area" type="text" value="35 m²"/></label>
+</div>
+<label class="budget-field budget-grid--compact become-pro-field become-pro-field--full"><span>Detalhes do pedido</span><textarea data-details-input="" maxlength="500" name="detalhes" required="">Quero renovar a pintura da sala e do corredor com acabamento fosco. As paredes estão em bom estado, mas preciso de orientação sobre tons claros.</textarea><small><span data-details-count="">0</span>/500</small></label>
+</section>
+<section aria-labelledby="budget-step-schedule-title" class="budget-panel become-pro-step-panel" data-step-panel="prazo" hidden="">
+<div class="budget-panel__head become-pro-section-head">
+<h2 id="budget-step-schedule-title">Prazo e referência</h2>
+<p>Informe urgência, melhor turno e referências para reduzir idas e vindas.</p>
+</div>
+<div class="budget-choices-wrap">
+<span>Urgência</span>
+<input data-choice-input="" name="urgencia" type="hidden" value="Esta semana"/>
+<div aria-label="Urgência do orçamento" class="budget-choices" data-choice-group="">
+<button class="budget-choice" data-choice-value="Hoje ou amanhã" type="button">Hoje ou amanhã</button>
+<button class="budget-choice is-active" data-choice-value="Esta semana" type="button">Esta semana</button>
+<button class="budget-choice" data-choice-value="Sem pressa" type="button">Sem pressa</button>
+</div>
+</div>
+<div class="budget-grid budget-grid--3 budget-grid--compact become-pro-grid">
+<label class="budget-field become-pro-field"><span>Data desejada</span><input name="data" type="date"/></label>
+<label class="budget-field become-pro-field"><span>Turno</span>
+<select data-ui-select="" name="turno">
+<option selected="" value="Flexível">Flexível</option>
+<option value="Manhã">Manhã</option>
+<option value="Tarde">Tarde</option>
+<option value="Noite">Noite</option>
+</select>
+</label>
+<label class="budget-field become-pro-field"><span>Orçamento estimado</span>
+<select data-ui-select="" name="orcamento_estimado">
+<option selected="" value="A definir">A definir</option>
+<option value="Até R$ 500">Até R$ 500</option>
+<option value="R$ 500 a R$ 1.500">R$ 500 a R$ 1.500</option>
+<option value="Acima de R$ 1.500">Acima de R$ 1.500</option>
+</select>
+</label>
+</div>
+<div class="budget-triage">
+<div class="budget-triage__head"><strong>Referência rápida</strong><span>Esses dados ajudam o profissional a responder com mais precisão.</span></div>
+<div class="budget-grid budget-grid--3 become-pro-grid">
+<label class="budget-field become-pro-field"><span>O imóvel está ocupado?</span>
+<select data-ui-select="" name="triagem_ocupacao">
+<option selected="" value="Sim, morando no local">Sim, morando no local</option>
+<option value="Não, imóvel vazio">Não, imóvel vazio</option>
+<option value="Uso comercial">Uso comercial</option>
+</select>
+</label>
+<label class="budget-field become-pro-field"><span>Medidas confirmadas?</span>
+<select data-ui-select="" name="triagem_medidas">
+<option selected="" value="Aproximadas">Aproximadas</option>
+<option value="Confirmadas">Confirmadas</option>
+<option value="Preciso de ajuda para medir">Preciso de ajuda para medir</option>
+</select>
+</label>
+<label class="budget-field become-pro-field"><span>Observação</span><input name="triagem_observacoes" type="text" value="Tenho fotos do ambiente."/></label>
+</div>
+</div>
+<label class="budget-upload budget-grid--compact become-pro-upload-card"><span>Anexos ou referências</span><small>Fotos, inspiração de cor ou vídeo curto.</small><input accept="image/*,video/*,.pdf" multiple="" name="anexos" type="file"/></label>
+<div class="budget-files" data-files-list="" hidden=""></div>
+</section>
+<section aria-labelledby="budget-step-review-title" class="budget-panel become-pro-step-panel" data-step-panel="revisao" hidden="">
+<div class="budget-panel__head become-pro-section-head">
+<h2 id="budget-step-review-title">Endereço e revisão</h2>
+<p>Confirme o local do atendimento e envie a solicitação para o profissional.</p>
+</div>
+<input data-address-required="" name="endereco" type="hidden"/>
+<article aria-live="polite" class="budget-address-card">
+<div class="budget-address-card__head">
+<div>
+<span class="budget-address-card__eyebrow">Endereço salvo</span>
+<strong data-address-title="">Casa principal</strong>
+<p data-address-summary="">Apartamento 802 · próximo ao Elevador Lacerda</p>
+</div>
+<button class="budget-button budget-button--ghost budget-button--sm doke-btn doke-btn--ghost doke-btn--sm become-pro-btn become-pro-btn--soft" data-open-address-modal="" type="button">Alterar endereço</button>
+</div>
+<div class="budget-address-card__meta" data-address-meta="">
+<span data-address-line="">Rua Chile, 120 · Comércio · Salvador · BA</span>
+</div>
+</article>
+<div class="budget-helper-card">
+<strong>Resumo para envio</strong>
+<span><span data-budget-provider="">Studio Aquarela</span> receberá seu pedido de <span data-budget-service="">Pintura residencial</span> com o endereço salvo e os detalhes acima.</span>
+</div>
+<label class="budget-check budget-check--simple"><input checked="" name="confirmacao" required="" type="checkbox"/><span>Confirmo que as informações estão corretas.</span></label>
+</section>
+<footer aria-label="Ações do orçamento" class="budget-actions doke-form-actions become-pro-actions">
+<a class="budget-button budget-button--ghost doke-btn doke-btn--ghost become-pro-btn become-pro-btn--soft" data-step-exit="" href="perfil.html">Voltar ao perfil</a>
+<div class="budget-actions__right">
+<button class="budget-button budget-button--ghost budget-button--nav doke-btn doke-btn--ghost become-pro-btn become-pro-btn--soft" data-step-prev="" hidden="" type="button"><span>Voltar</span></button>
+<button class="budget-button budget-button--primary budget-button--nav doke-btn doke-btn--primary become-pro-btn become-pro-btn--primary" data-step-next="" type="button"><span>Continuar</span></button>
+<button class="budget-button budget-button--primary budget-button--nav doke-btn doke-btn--primary become-pro-btn become-pro-btn--primary" data-step-submit="" hidden="" type="submit"><span>Enviar solicitação</span></button>
+</div>
+</footer>
+</form>
+</section>
+<aside aria-label="Orientações para um bom pedido" class="become-pro-benefits-card"><h2>Para receber uma boa resposta</h2><ul><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Escopo claro</strong><p>Explique o serviço, o ambiente e o tamanho aproximado.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Prazo definido</strong><p>Informe urgência, data desejada e melhor turno.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Endereço confirmado</strong><p>Mantenha o local do atendimento salvo antes do envio.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Referências úteis</strong><p>Anexe fotos, vídeos ou inspirações quando ajudarem.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Resumo privado</strong><p>Seu pedido vai direto para o profissional escolhido.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong data-budget-provider="">Studio Aquarela</strong><p>Pedido de <span data-budget-service="">Pintura residencial</span> em Salvador BA.</p></div></li></ul></aside>
+</div>
+<dialog aria-labelledby="budget-success-title" class="budget-success-modal become-pro-submit-state" data-budget-success="">
+<div class="budget-success-modal__dialog doke-card become-pro-submit-state__card">
+<button aria-label="Fechar confirmação" class="budget-success-modal__close" data-budget-success-close="" type="button">
+<svg aria-hidden="true" viewBox="0 0 24 24">
+<path d="M6 6l12 12"></path>
+<path d="M18 6 6 18"></path>
+</svg>
+</button>
+<span class="budget-success__eyebrow">Solicitação enviada</span>
+<div aria-hidden="true" class="budget-success__icon become-pro-submit-state__icon">
+<svg viewBox="0 0 24 24">
+<path d="m7 12 3 3 7-7"></path>
+</svg>
+</div>
+<h2 id="budget-success-title">Tudo certo com seu pedido</h2>
+<p>
+                      Sua solicitação foi enviada para <strong data-budget-success-provider="">o profissional</strong>.
                       Agora você pode acompanhar o retorno, anexos e conversa na área de pedidos.
                     </p>
-
-                    <div class="budget-success__summary">
-                      <span>Pedido</span>
-                      <strong data-budget-success-service>Serviço solicitado</strong>
-                    </div>
-
-                    <div class="budget-success__actions doke-form-actions">
-                      <button class="budget-button budget-button--ghost doke-btn doke-btn--ghost" type="button" data-budget-success-close>Fechar</button>
-                      <a class="budget-button budget-button--primary doke-btn doke-btn--primary" href="pedidos.html" data-budget-success-order-link>Ver pedido</a>
-                    </div>
-                  </div>
-                </dialog>
-              </div>
-            </section>
-          </div>
-        </main>
-      </div>
-    </div>
-
-    <dialog class="address-modal" data-address-modal aria-labelledby="budget-address-title">
-      <form class="address-modal__dialog" method="dialog" data-address-form>
-        <header class="address-modal__head">
-          <div>
-            <h2 id="budget-address-title">Endereço do atendimento</h2>
-            <p>Use um endereço salvo ou ajuste os dados para este orçamento.</p>
-          </div>
-          <button class="address-modal__close" type="button" aria-label="Fechar" data-close-address-modal>×</button>
-        </header>
-
-        <div class="budget-grid budget-grid--2">
-          <label class="budget-field"><span>Nome do endereço</span><input type="text" name="titulo" value="Casa principal" required /></label>
-          <label class="budget-field"><span>Bairro</span><input type="text" name="bairro" value="Comércio" required /></label>
-          <label class="budget-field"><span>Rua</span><input type="text" name="rua" value="Rua Chile" required /></label>
-          <label class="budget-field"><span>Número</span><input type="text" name="numero" value="120" required /></label>
-          <label class="budget-field"><span>Cidade</span><input type="text" name="cidade" value="Salvador" required /></label>
-          <label class="budget-field"><span>UF</span><input type="text" name="uf" value="BA" maxlength="2" required /></label>
-          <label class="budget-field"><span>Complemento</span><input type="text" name="complemento" value="Apartamento 802" /></label>
-          <label class="budget-field"><span>Referência</span><input type="text" name="referencia" value="Próximo ao Elevador Lacerda" /></label>
-        </div>
-
-        <label class="budget-check budget-check--boxed budget-grid--compact"><input type="checkbox" name="padrao" checked /><span>Salvar como endereço padrão</span></label>
-
-        <div class="address-modal__actions doke-form-actions">
-          <button class="budget-button budget-button--ghost doke-btn doke-btn--ghost" type="button" data-close-address-modal>Cancelar</button>
-          <button class="budget-button budget-button--primary doke-btn doke-btn--primary" type="submit">Salvar endereço</button>
-        </div>
-      </form>
-    </dialog>
-
-    <script src="assets/js/core/runtime-config.js?v=20260531-stable-smooth-v1" defer></script>
-    <script src="assets/js/core/feature-flags.js?v=20260501-stage32-runtime-flags" defer></script>
-    <script src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags" defer></script>
-    <script src="assets/js/core/app.js?v=20260622-header-visitor-neutral-v1" defer></script>
-    <script src="assets/js/core/stable-shell-router.js?v=20260621-orcamento-route-v1" defer></script>
-    <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
-    <script src="assets/js/ui/mobile-drawer-standard.js?v=20260622-header-neutral-account-v1"></script>
-    <script src="assets/js/components/mobile-app-shell.js?v=20260621-header-search-width-v2" defer></script>
-    <script src="assets/js/core/app-state.js?v=20260501-auth-session-v1" defer></script>
-    <script src="assets/js/state/state-contracts.js?v=20260512-state-contracts-v1" defer></script>
-    <script src="assets/js/core/permissions.js?v=20260501-auth-session-v1" defer></script>
-    <script src="assets/js/core/auth-route-map.js?v=20260622-budget-order-flow-v1" defer></script>
-    <script src="assets/js/core/session.js?v=20260501-auth-session-v1" defer></script>
-    <script src="assets/js/services/auth-service.js?v=20260622-auth-surface-ready-v1" defer></script>
-    <script src="assets/js/core/route-guard.js?v=20260622-budget-order-flow-v1" defer></script>
-    <script src="assets/js/services/mock-data-service.js?v=20260501-stage31-domain-services" defer></script>
-    <script src="assets/js/repositories/services-repository.js?v=20260622-services-data-v1" defer></script>
-    <script src="assets/js/services/services-service.js?v=20260622-services-data-v1" defer></script>
-    <script src="assets/js/services/search-service.js?v=20260501-stage31-domain-services" defer></script>
-    <script src="assets/js/services/order-service.js?v=20260622-budget-order-flow-v1" defer></script>
-    <script src="assets/js/repositories/orders-repository.js?v=20260622-order-chat-role-v1" defer></script>
-    <script src="assets/js/repositories/messages-repository.js?v=20260622-order-chat-role-v1" defer></script>
-    <script src="assets/js/services/message-service.js?v=20260622-notifications-events-v1" defer></script>
-    <script src="assets/js/services/orders-service.js?v=20260622-notifications-events-v1" defer></script>
-    <script src="assets/js/services/community-service.js?v=20260501-stage31-domain-services" defer></script>
-    <script src="assets/js/repositories/notifications-repository.js?v=20260622-notifications-events-v1" defer></script>
-<script src="assets/js/services/notification-service.js?v=20260622-notifications-events-v1" defer></script>
-    <script src="assets/js/services/wallet-service.js?v=20260501-auth-session-v1" defer></script>
-    <script src="assets/js/services/domain-data-service.js?v=20260501-stage31-domain-services" defer></script>
-    <script src="assets/js/controllers/controller-data.js?v=20260501-stage32-runtime-flags" defer></script>
-    <script src="assets/js/core/dom.js?v=20260501-stage31-domain-services" defer></script>
-    <script src="assets/js/core/events.js?v=20260501-stage31-domain-services" defer></script>
-    <script src="assets/js/core/view-state.js?v=20260501-stage31-domain-services" defer></script>
-    <script src="assets/js/core/page-bootstrap.js?v=20260501-stage32-runtime-flags" defer></script>
-    <script src="assets/js/controllers/page-controller-registry.js?v=20260501-stage31-domain-services" defer></script>
-    <script src="assets/js/controllers/controller-bootstrap.js?v=20260501-stage32-runtime-flags" defer></script>
-    <script src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1" defer></script>
-    <script src="assets/js/pages/orcamento.js?v=20260623-actions-rhythm-v1" defer></script>
-    <script src="assets/js/dev/flow-state-tools.js?v=20260622-flow-contract-v1" defer></script>
+<div class="budget-success__summary">
+<span>Pedido</span>
+<strong data-budget-success-service="">Serviço solicitado</strong>
+</div>
+<div class="budget-success__actions doke-form-actions become-pro-actions">
+<button class="budget-button budget-button--ghost doke-btn doke-btn--ghost become-pro-btn become-pro-btn--soft" data-budget-success-close="" type="button">Fechar</button>
+<a class="budget-button budget-button--primary doke-btn doke-btn--primary become-pro-btn become-pro-btn--primary" data-budget-success-order-link="" href="pedidos.html">Ver pedido</a>
+</div>
+</div>
+</dialog>
+</section>
+</div>
+</main>
+</div>
+</div>
+<dialog aria-labelledby="budget-address-title" class="address-modal" data-address-modal="">
+<form class="address-modal__dialog" data-address-form="" method="dialog">
+<header class="address-modal__head">
+<div>
+<h2 id="budget-address-title">Endereço do atendimento</h2>
+<p>Use um endereço salvo ou ajuste os dados para este orçamento.</p>
+</div>
+<button aria-label="Fechar" class="address-modal__close" data-close-address-modal="" type="button">×</button>
+</header>
+<div class="budget-grid budget-grid--2 become-pro-grid">
+<label class="budget-field become-pro-field"><span>Nome do endereço</span><input name="titulo" required="" type="text" value="Casa principal"/></label>
+<label class="budget-field become-pro-field"><span>Bairro</span><input name="bairro" required="" type="text" value="Comércio"/></label>
+<label class="budget-field become-pro-field"><span>Rua</span><input name="rua" required="" type="text" value="Rua Chile"/></label>
+<label class="budget-field become-pro-field"><span>Número</span><input name="numero" required="" type="text" value="120"/></label>
+<label class="budget-field become-pro-field"><span>Cidade</span><input name="cidade" required="" type="text" value="Salvador"/></label>
+<label class="budget-field become-pro-field"><span>UF</span><input maxlength="2" name="uf" required="" type="text" value="BA"/></label>
+<label class="budget-field become-pro-field"><span>Complemento</span><input name="complemento" type="text" value="Apartamento 802"/></label>
+<label class="budget-field become-pro-field"><span>Referência</span><input name="referencia" type="text" value="Próximo ao Elevador Lacerda"/></label>
+</div>
+<label class="budget-check budget-check--boxed budget-grid--compact"><input checked="" name="padrao" type="checkbox"/><span>Salvar como endereço padrão</span></label>
+<div class="address-modal__actions doke-form-actions become-pro-actions">
+<button class="budget-button budget-button--ghost doke-btn doke-btn--ghost become-pro-btn become-pro-btn--soft" data-close-address-modal="" type="button">Cancelar</button>
+<button class="budget-button budget-button--primary doke-btn doke-btn--primary become-pro-btn become-pro-btn--primary" type="submit">Salvar endereço</button>
+</div>
+</form>
+</dialog>
+<script defer="" src="assets/js/core/runtime-config.js?v=20260531-stable-smooth-v1"></script>
+<script defer="" src="assets/js/core/feature-flags.js?v=20260501-stage32-runtime-flags"></script>
+<script defer="" src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags"></script>
+<script defer="" src="assets/js/core/app.js?v=20260622-header-visitor-neutral-v1"></script>
+<script defer="" src="assets/js/core/stable-shell-router.js?v=20260621-orcamento-route-v1"></script>
+<script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
+<script src="assets/js/ui/mobile-drawer-standard.js?v=20260622-header-neutral-account-v1"></script>
+<script defer="" src="assets/js/components/mobile-app-shell.js?v=20260621-header-search-width-v2"></script>
+<script defer="" src="assets/js/core/app-state.js?v=20260501-auth-session-v1"></script>
+<script defer="" src="assets/js/state/state-contracts.js?v=20260512-state-contracts-v1"></script>
+<script defer="" src="assets/js/core/permissions.js?v=20260501-auth-session-v1"></script>
+<script defer="" src="assets/js/core/auth-route-map.js?v=20260622-budget-order-flow-v1"></script>
+<script defer="" src="assets/js/core/session.js?v=20260501-auth-session-v1"></script>
+<script defer="" src="assets/js/services/auth-service.js?v=20260622-auth-surface-ready-v1"></script>
+<script defer="" src="assets/js/core/route-guard.js?v=20260622-budget-order-flow-v1"></script>
+<script defer="" src="assets/js/services/mock-data-service.js?v=20260501-stage31-domain-services"></script>
+<script defer="" src="assets/js/repositories/services-repository.js?v=20260622-services-data-v1"></script>
+<script defer="" src="assets/js/services/services-service.js?v=20260622-services-data-v1"></script>
+<script defer="" src="assets/js/services/search-service.js?v=20260501-stage31-domain-services"></script>
+<script defer="" src="assets/js/services/order-service.js?v=20260622-budget-order-flow-v1"></script>
+<script defer="" src="assets/js/repositories/orders-repository.js?v=20260622-order-chat-role-v1"></script>
+<script defer="" src="assets/js/repositories/messages-repository.js?v=20260622-order-chat-role-v1"></script>
+<script defer="" src="assets/js/services/message-service.js?v=20260622-notifications-events-v1"></script>
+<script defer="" src="assets/js/services/orders-service.js?v=20260622-notifications-events-v1"></script>
+<script defer="" src="assets/js/services/community-service.js?v=20260501-stage31-domain-services"></script>
+<script defer="" src="assets/js/repositories/notifications-repository.js?v=20260622-notifications-events-v1"></script>
+<script defer="" src="assets/js/services/notification-service.js?v=20260622-notifications-events-v1"></script>
+<script defer="" src="assets/js/services/wallet-service.js?v=20260501-auth-session-v1"></script>
+<script defer="" src="assets/js/services/domain-data-service.js?v=20260501-stage31-domain-services"></script>
+<script defer="" src="assets/js/controllers/controller-data.js?v=20260501-stage32-runtime-flags"></script>
+<script defer="" src="assets/js/core/dom.js?v=20260501-stage31-domain-services"></script>
+<script defer="" src="assets/js/core/events.js?v=20260501-stage31-domain-services"></script>
+<script defer="" src="assets/js/core/view-state.js?v=20260501-stage31-domain-services"></script>
+<script defer="" src="assets/js/core/page-bootstrap.js?v=20260501-stage32-runtime-flags"></script>
+<script defer="" src="assets/js/controllers/page-controller-registry.js?v=20260501-stage31-domain-services"></script>
+<script defer="" src="assets/js/controllers/controller-bootstrap.js?v=20260501-stage32-runtime-flags"></script>
+<script defer="" src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1"></script>
+<script defer="" src="assets/js/pages/orcamento.js?v=20260623-budget-become-pro-contract-v1"></script>
+<script defer="" src="assets/js/dev/flow-state-tools.js?v=20260622-flow-contract-v1"></script>
 </body>
 </html>

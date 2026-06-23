@@ -182,19 +182,18 @@ const initBudgetPage = () => {
     const addressMeta = form.querySelector("[data-address-meta]");
     const addressModal = document.querySelector("[data-address-modal]");
     const addressForm = addressModal?.querySelector("[data-address-form]");
-    const headerChipLabel = pageRoot.querySelector("[data-saved-address-chip]");
-    const headerChipButton = headerChipLabel?.closest("[data-open-address-modal]");
     const openAddressButtons = [...pageRoot.querySelectorAll("[data-open-address-modal]")];
     const closeAddressButtons = [...(addressModal?.querySelectorAll("[data-close-address-modal]") || [])];
 
     const panels = [...form.querySelectorAll("[data-step-panel]")];
-    const indicators = [...form.querySelectorAll("[data-step-target]")];
-    const progressLabel = form.querySelector("[data-step-progress-label]");
-    const progressFill = form.querySelector("[data-step-progress-fill]");
+    const indicators = [...pageRoot.querySelectorAll("[data-step-target]")];
+    const progressLabel = pageRoot.querySelector("[data-step-progress-label]");
+    const progressFill = pageRoot.querySelector("[data-step-progress-fill]");
     const prevButton = form.querySelector("[data-step-prev]");
     const nextButton = form.querySelector("[data-step-next]");
     const submitButton = form.querySelector("[data-step-submit]");
     const exitButton = form.querySelector("[data-step-exit]");
+    const actions = form.querySelector(".become-pro-actions");
     let currentStep = 0;
     let savedLocation = null;
     let lockedScrollY = 0;
@@ -257,7 +256,6 @@ const initBudgetPage = () => {
         if (addressSummary) addressSummary.textContent = "";
         if (addressLine) addressLine.textContent = "";
         if (addressMeta) addressMeta.hidden = true;
-        if (headerChipButton) headerChipButton.hidden = false;
         return;
       }
 
@@ -266,8 +264,6 @@ const initBudgetPage = () => {
       if (addressSummary) addressSummary.textContent = address.complemento || address.referencia || "Endereço pronto para este pedido e para os próximos.";
       if (addressLine) addressLine.textContent = summarizeAddress(address);
       if (addressMeta) addressMeta.hidden = false;
-      if (headerChipLabel) headerChipLabel.textContent = address.titulo || "Endereço salvo";
-      if (headerChipButton) headerChipButton.hidden = false;
     };
 
     applySavedLocation(readStoredLocation());
@@ -440,10 +436,11 @@ const initBudgetPage = () => {
           bullet.textContent = isComplete ? "✓" : String(indicatorIndex + 1);
         }
       });
-      if (progressLabel) progressLabel.textContent = `Passo ${currentStep + 1} de ${panels.length}`;
+      if (progressLabel) progressLabel.textContent = `Etapa ${currentStep + 1} de ${panels.length}`;
       if (progressFill) progressFill.style.width = `${((currentStep + 1) / panels.length) * 100}%`;
       if (prevButton) prevButton.hidden = currentStep === 0;
       if (exitButton) exitButton.hidden = currentStep !== 0;
+      actions?.classList.toggle("has-back-action", currentStep > 0);
       if (nextButton) nextButton.hidden = currentStep === panels.length - 1;
       if (submitButton) submitButton.hidden = currentStep !== panels.length - 1;
       const scrollTarget = pageRoot.closest(".detail-budget-modal__dialog") || pageRoot;
