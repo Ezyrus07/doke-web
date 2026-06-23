@@ -195,18 +195,17 @@
     return article;
   }
 
-  function render() {
+  function render(options) {
+    options = options || {};
     if (document.body?.dataset.page !== 'pedidos') return;
     var list = document.querySelector('.orders-list');
-    if (!list || list.dataset.localOrdersRendered === 'true') return;
+    if (!list) return;
     var repository = Doke.repositories && Doke.repositories.orders;
     if (!repository || typeof repository.listLocal !== 'function') return;
 
     var orders = repository.listLocal({ currentUser: true });
-    if (!orders.length) {
-      list.dataset.localOrdersRendered = 'true';
-      return;
-    }
+    var signature = orders.map(function (order) { return order && order.id; }).filter(Boolean).join('|');
+    if (!options.force && list.dataset.localOrdersRendered === 'true' && list.dataset.localOrdersSignature === signature) return;
 
     orders.slice().reverse().forEach(function (order) {
       var exists = Array.from(list.querySelectorAll('.order-card[data-id]')).some(function (card) {
@@ -216,11 +215,26 @@
       list.insertBefore(createOrderCard(order), list.firstElementChild);
     });
     list.dataset.localOrdersRendered = 'true';
+    list.dataset.localOrdersSignature = signature;
+    document.dispatchEvent(new CustomEvent('doke:orders-list-hydrated', {
+      detail: {
+        localCount: orders.length,
+        totalCount: list.querySelectorAll('.order-card[data-id]').length
+      }
+    }));
+  }
+
+  function scheduleRender(options) {
+    window.requestAnimationFrame(function () { render(options); });
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', render, { once: true });
+    document.addEventListener('DOMContentLoaded', function () { render(); }, { once: true });
   } else {
     render();
   }
+
+  document.addEventListener('doke:route-ready', function () { scheduleRender({ force: true }); });
+  document.addEventListener('doke:stable-route-ready', function () { scheduleRender({ force: true }); });
+  document.addEventListener('doke:order-created', function () { scheduleRender({ force: true }); });
 })();

@@ -74,7 +74,28 @@
       type: type,
       mine: payload.mine !== false,
       read: true
-    }));
+    })).then(function (message) {
+      var notificationsService = services.notifications;
+      if (!message || !notificationsService || typeof notificationsService.createMessageReceived !== 'function') return message;
+
+      return repository.getById(conversationId).then(function (conversation) {
+        if (!conversation) return message;
+        return notificationsService.createMessageReceived(conversation, message, {
+          actor: user
+        }).catch(function (error) {
+          console.warn('[DokeMessages:createMessageNotification]', error);
+          return null;
+        }).then(function () {
+          document.dispatchEvent(new CustomEvent('doke:message-sent', {
+            detail: {
+              conversation: conversation,
+              message: message
+            }
+          }));
+          return message;
+        });
+      });
+    });
   }
 
   function markAsRead(conversationId) {

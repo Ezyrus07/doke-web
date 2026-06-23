@@ -9,8 +9,9 @@
 
     const buttons = [...root.querySelectorAll('[data-filter]')];
     const timeButtons = [...root.querySelectorAll('[data-time-filter]')];
-    const cards = [...root.querySelectorAll('.notification-card')];
     const notificationsList = root.querySelector('.notifications-list');
+    const localCards = [];
+    let cards = [...root.querySelectorAll('.notification-card')];
     const empty = root.querySelector('[data-notifications-empty]');
     const countNodes = [...document.querySelectorAll('[data-notifications-unread-count], [data-notifications-hero-count]')];
     const pageTitle = root.querySelector('.notifications-page-header__heading h2');
@@ -60,6 +61,179 @@
     let selectionEnabled = false;
     const mobileSearchQuery = window.matchMedia('(max-width: 640px)');
     let longPressTimer = null;
+
+    const getNotificationsService = () => window.Doke?.services?.notifications || null;
+
+    const escapeHtml = (value) => String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+
+    const toAgeToken = (value) => {
+      const date = value ? new Date(value) : new Date();
+      const diff = Math.max(0, Date.now() - (Number.isNaN(date.getTime()) ? Date.now() : date.getTime()));
+      const minutes = Math.max(1, Math.round(diff / 60000));
+      if (minutes < 60) return `${minutes}m`;
+      const hours = Math.round(minutes / 60);
+      if (hours < 48) return `${hours}h`;
+      return `${Math.round(hours / 24)}d`;
+    };
+
+    const toTimeLabel = (value) => {
+      const date = value ? new Date(value) : new Date();
+      if (Number.isNaN(date.getTime())) return 'agora';
+      const diff = Math.max(0, Date.now() - date.getTime());
+      const minutes = Math.round(diff / 60000);
+      if (minutes < 1) return 'agora';
+      if (minutes < 60) return `há ${minutes} min`;
+      const hours = Math.round(minutes / 60);
+      if (hours < 24) return `há ${hours} h`;
+      return `há ${Math.round(hours / 24)} d`;
+    };
+
+    const getCategoryClass = (category) => {
+      if (category === 'messages') return 'notification-card--message doke-message-card';
+      if (category === 'orders') return 'notification-card--order doke-order-card';
+      if (category === 'ads') return 'notification-card--ad';
+      return 'notification-card--info';
+    };
+
+    const getIconSvg = (category) => {
+      if (category === 'messages') return '<svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg>';
+      if (category === 'orders') return '<svg viewBox="0 0 24 24"><path d="M5 6.5h14"></path><path d="M5 11.5h14"></path><path d="M5 16.5h8"></path><rect x="3.5" y="4" width="17" height="16" rx="2.5"></rect></svg>';
+      return '<svg viewBox="0 0 24 24"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>';
+    };
+
+    const renderLocalNotificationCard = (notification) => {
+      const category = notification.category || 'social';
+      const unreadClass = notification.read ? '' : ' is-unread';
+      const unreadToken = notification.read ? '' : ' unread';
+      const card = document.createElement('article');
+      card.className = `notification-card${unreadClass} ${getCategoryClass(category)} doke-card doke-notification-card`;
+      card.dataset.category = `${category}${unreadToken}`;
+      card.dataset.catégory = `${category}${unreadToken}`;
+      card.dataset.age = toAgeToken(notification.createdAt);
+      card.dataset.notificationId = notification.id;
+      card.dataset.localNotification = 'true';
+      card.innerHTML = `
+        <button class="notification-card__read-toggle doke-icon-btn doke-icon-btn--flat" type="button" data-mark-read-icon aria-label="Marcar como lida">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 12 3 3 7-7"></path><rect x="4" y="4" width="16" height="16" rx="3"></rect></svg>
+        </button>
+        <div class="notification-card__icon" aria-hidden="true">${getIconSvg(category)}</div>
+        <div class="notification-card__body">
+          <div class="notification-card__meta">
+            <span class="notification-card__tag doke-badge">${category === 'messages' ? 'Mensagem' : category === 'orders' ? 'Pedido' : 'Doke'}</span>
+            <span class="notification-card__time">${toTimeLabel(notification.createdAt)}</span>
+          </div>
+          <h3>${escapeHtml(notification.title)}</h3>
+          <p>${escapeHtml(notification.body)}</p>
+          <div class="notification-card__inline-actions">
+            <a href="${escapeHtml(notification.targetUrl || 'notificacoes.html')}">${escapeHtml(notification.actionLabel || 'Abrir')}</a>
+            <button type="button" data-mark-read>Marcar lida</button>
+            <button type="button" data-dismiss-notification>Dispensar</button>
+          </div>
+        </div>
+      `;
+      return card;
+    };
+
+    const getLocalGroup = () => {
+      if (!notificationsList) return null;
+      let group = notificationsList.querySelector('[data-local-notifications-group]');
+      if (group) return group;
+
+      group = document.createElement('div');
+      group.className = 'notifications-group';
+      group.dataset.localNotificationsGroup = 'true';
+      group.innerHTML = '<div class="notifications-group__title">Recentes</div>';
+      notificationsList.prepend(group);
+      return group;
+    };
+
+    const bindNotificationCard = (card) => {
+      if (!card || card.dataset.runtimeBound === 'true') return;
+      card.dataset.runtimeBound = 'true';
+      card.classList.add('doke-selectable-card');
+      card.setAttribute('role', 'option');
+      card.setAttribute('aria-selected', 'false');
+      if (!card.hasAttribute('tabindex')) card.tabIndex = 0;
+
+      card.querySelectorAll('[data-mark-read], [data-mark-read-icon]').forEach((button) => {
+        button.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const id = card.dataset.notificationId || '';
+          getNotificationsService()?.markAsRead?.(id);
+          card.classList.remove('is-unread');
+          const tokens = (card.dataset.catégory || card.dataset.category || '').split(/\s+/).filter((token) => token !== 'unread');
+          card.dataset.catégory = tokens.join(' ');
+          card.dataset.category = tokens.join(' ');
+          updatéUnread();
+          updatéStats();
+          applyFilter(currentFilter, currentTimeFilter);
+        });
+      });
+
+      card.querySelectorAll('[data-dismiss-notification]').forEach((button) => {
+        button.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const id = card.dataset.notificationId || '';
+          getNotificationsService()?.dismiss?.(id);
+          card.dataset.dismissed = 'true';
+          card.hidden = true;
+          updatéUnread();
+          updatéStats();
+          applyFilter(currentFilter, currentTimeFilter);
+        });
+      });
+
+      card.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        if (target.closest('.notification-card__inline-actions')) return;
+        if (selectionEnabled) {
+          if (target.closest(selectableCardInteractiveSelector)) return;
+          event.preventDefault();
+          toggleCardSelected(card);
+          syncSelectedActions();
+          return;
+        }
+        const id = card.dataset.notificationId || '';
+        if (id) getNotificationsService()?.markAsRead?.(id);
+        const primaryAction = card.querySelector('.notification-card__inline-actions a[href]');
+        const href = primaryAction?.getAttribute('href');
+        if (href) window.location.href = href;
+      });
+    };
+
+    const hydrateLocalNotifications = () => {
+      const service = getNotificationsService();
+      if (!service || typeof service.listLocal !== 'function') return;
+      const group = getLocalGroup();
+      if (!group) return;
+
+      localCards.forEach((card) => card.remove());
+      localCards.length = 0;
+
+      const items = service.listLocal({ dismissed: false }) || [];
+      items
+        .filter((notification) => !notification.dismissed)
+        .forEach((notification) => {
+          const card = renderLocalNotificationCard(notification);
+          group.appendChild(card);
+          localCards.push(card);
+          bindNotificationCard(card);
+        });
+
+      cards = [...root.querySelectorAll('.notification-card')];
+      updatéUnread();
+      updatéStats();
+      applyFilter(currentFilter, currentTimeFilter);
+      syncSelectedActions();
+    };
+
 
     const syncContextPanelHost = () => {
       if (!headerControls) return;
@@ -651,6 +825,11 @@
     });
 
     syncContextPanelHost();
+    cards.forEach(bindNotificationCard);
+    hydrateLocalNotifications();
+    document.addEventListener('doke:notification-created', hydrateLocalNotifications);
+    document.addEventListener('doke:order-created', hydrateLocalNotifications);
+    document.addEventListener('doke:message-sent', hydrateLocalNotifications);
     updatéUnread();
     updatéStats();
     applyFilter('all', 'all');

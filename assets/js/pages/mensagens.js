@@ -177,13 +177,14 @@
 
   const hydrateLocalConversations = (root) => {
     const service = window.Doke?.services?.messages;
-    const list = root.querySelector("[data-messages-orders-list]") || root.querySelector("[data-messages-contacts-list]") || root.querySelector(".messages-list");
+    const list = root.querySelector("[data-messages-contacts-list]") || root.querySelector(".messages-list");
     if (!service?.listLocalConversations || !list) return;
 
     const localConversations = service.listLocalConversations({ currentUser: true }) || [];
     localConversations.slice().reverse().forEach((conversation) => {
       if (!conversation?.id || conversations[conversation.id]) return;
       const mapped = mapLocalConversation(conversation);
+      mapped.group = 'contacts';
       conversations[conversation.id] = mapped;
       list.insertAdjacentHTML("afterbegin", renderLocalConversationItem(conversation.id, mapped));
     });
@@ -398,9 +399,10 @@
     const conversationFromOrder = requestedOrderId
       ? Object.keys(conversations).find((id) => String(conversations[id]?.orderId || conversations[id]?.order?.id || "") === String(requestedOrderId))
       : "";
+    const firstListedConversationId = items.find((item) => item.dataset.messageId && conversations[item.dataset.messageId])?.dataset.messageId || "";
     let activeId = requestedConversationId && conversations[requestedConversationId]
       ? requestedConversationId
-      : conversationFromOrder || "painting";
+      : conversationFromOrder || firstListedConversationId || "amanda";
 
     const isCompactThreadViewport = () => window.innerWidth <= 1180;
     const isMobileRoomViewport = () => window.innerWidth <= 560;
@@ -424,11 +426,227 @@
       return null;
     };
 
+    let activeOrderDetailTrigger = null;
+
+    const orderDetailIcons = {
+      close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>',
+      action: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16v10H8.2L4 20V6.5Z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg>',
+      check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>',
+      chat: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16v10H8.2L4 20V6.5Z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg>',
+      spark: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6L12 3Z"></path><path d="M19 15l.9 2.6L22 18l-2.1.4L19 21l-.9-2.6L16 18l2.1-.4L19 15Z"></path></svg>'
+    };
+
+    const createMessagesOrderDetailLayer = () => {
+      let layer = document.querySelector("[data-messages-order-detail-layer]");
+      if (layer) return layer;
+
+      layer = document.createElement("aside");
+      layer.className = "orders-detail-layer";
+      layer.dataset.messagesOrderDetailLayer = "true";
+      layer.hidden = true;
+      layer.setAttribute("aria-hidden", "true");
+      layer.innerHTML = `
+        <button class="orders-detail-backdrop" type="button" data-messages-order-detail-close aria-label="Fechar detalhes do pedido"></button>
+        <section class="orders-detail-drawer" role="dialog" aria-modal="true" aria-labelledby="messages-order-detail-title" tabindex="-1">
+          <header class="orders-detail-drawer__header">
+            <div class="orders-detail-drawer__header-top">
+              <span class="orders-detail-drawer__eyebrow">Detalhes do pedido</span>
+              <button class="orders-detail-drawer__close" type="button" data-messages-order-detail-close aria-label="Fechar">${orderDetailIcons.close}</button>
+            </div>
+            <div>
+              <h2 class="orders-detail-drawer__title" id="messages-order-detail-title" data-detail-title></h2>
+              <p class="orders-detail-drawer__subtitle" data-detail-subtitle></p>
+            </div>
+            <div class="orders-detail-statusbar" data-detail-statusbar></div>
+          </header>
+
+          <div class="orders-detail-drawer__body">
+            <section class="orders-detail-section">
+              <span class="orders-detail-section__eyebrow">Próxima ação</span>
+              <div class="orders-detail-action" data-detail-action>
+                <span class="orders-detail-action__icon" data-detail-action-icon aria-hidden="true">${orderDetailIcons.action}</span>
+                <div>
+                  <strong class="orders-detail-action__title" data-detail-action-title></strong>
+                  <p class="orders-detail-action__text" data-detail-action-note></p>
+                </div>
+              </div>
+            </section>
+
+            <section class="orders-detail-section orders-detail-ai" aria-label="Análise IA do pedido">
+              <span class="orders-detail-section__eyebrow">Análise IA</span>
+              <div class="orders-detail-ai__box">
+                <span class="orders-detail-ai__icon" aria-hidden="true">${orderDetailIcons.spark}</span>
+                <div>
+                  <strong class="orders-detail-ai__title" data-detail-ai-title></strong>
+                  <p class="orders-detail-ai__text" data-detail-ai-text></p>
+                </div>
+              </div>
+            </section>
+
+            <section class="orders-detail-section">
+              <span class="orders-detail-section__eyebrow">Visão geral</span>
+              <dl class="orders-detail-list">
+                <div class="orders-detail-row"><dt data-detail-peer-label>Profissional</dt><dd data-detail-company></dd></div>
+                <div class="orders-detail-row"><dt>Local</dt><dd data-detail-address></dd></div>
+                <div class="orders-detail-row"><dt>Escopo</dt><dd data-detail-scope></dd></div>
+                <div class="orders-detail-row"><dt>Orçamento</dt><dd data-detail-budget></dd></div>
+                <div class="orders-detail-row"><dt>Pagamento</dt><dd data-detail-payment></dd></div>
+                <div class="orders-detail-row"><dt>Prazo</dt><dd data-detail-deadline></dd></div>
+                <div class="orders-detail-row"><dt>Materiais</dt><dd data-detail-materials></dd></div>
+              </dl>
+            </section>
+
+            <section class="orders-detail-section">
+              <span class="orders-detail-section__eyebrow">Contexto do pedido</span>
+              <p class="orders-detail-flow" data-detail-flow></p>
+            </section>
+
+            <section class="orders-detail-section">
+              <span class="orders-detail-section__eyebrow">Etapas do pedido</span>
+              <div class="orders-detail-timeline" data-detail-timeline></div>
+            </section>
+          </div>
+
+          <footer class="orders-detail-actions">
+            <button class="orders-detail-actions__button orders-detail-actions__button--primary doke-btn doke-btn--primary" type="button" data-messages-order-detail-close>
+              ${orderDetailIcons.chat}<span>Voltar para conversa</span>
+            </button>
+            <button class="orders-detail-actions__button orders-detail-actions__button--secondary doke-btn doke-btn--ghost" type="button" data-messages-order-detail-close>Fechar</button>
+          </footer>
+        </section>
+      `;
+
+      document.body.appendChild(layer);
+      return layer;
+    };
+
+    const getMessagesOrderDetails = (conversation) => {
+      const order = conversation?.order || {};
+      const professionalView = getCurrentUserRole() === "professional";
+      const peerLabel = professionalView ? "Cliente" : "Profissional";
+      const peerName = professionalView
+        ? order.clientName || conversation?.name || "Cliente Doke"
+        : order.professionalName || conversation?.name || "Profissional Doke";
+      const statusLabel = order.statusLabel || "Em negociação";
+      const title = order.title || "Pedido de serviço";
+      const location = order.location || "A combinar";
+      const budget = order.budget || "A definir";
+      const category = order.category || "Serviço";
+
+      return {
+        title,
+        subtitle: location ? `${peerName} • ${location}` : peerName,
+        peerLabel,
+        peerName,
+        statusLabel,
+        smartBadge: conversation?.messages?.length ? "Conversa ativa" : "Sem mensagens",
+        address: location,
+        scope: order.scope || `Atendimento de ${category.toLowerCase()} acompanhado pela conversa.`,
+        budget,
+        payment: order.payment || "A combinar na proposta",
+        deadline: order.timeline || order.deadline || "Próxima atualização pela conversa",
+        materials: order.materials || "A confirmar com o profissional",
+        flow: order.flow || "Este pedido está vinculado à conversa atual. Use este painel para revisar o contexto sem sair de mensagens.",
+        actionTitle: professionalView ? "Enviar proposta" : statusLabel,
+        actionNote: professionalView
+          ? "Revise o escopo e envie a proposta dentro desta conversa."
+          : "Acompanhe a resposta do profissional e combine os próximos passos pelo chat.",
+        aiTitle: "Fluxo centralizado em mensagens",
+        aiText: "Abrir os detalhes aqui preserva o histórico da conversa e evita perder o contexto do atendimento."
+      };
+    };
+
+    const setOrderDetailText = (layer, selector, value, fallback = "—") => {
+      const node = layer.querySelector(selector);
+      if (node) node.textContent = String(value || "").trim() || fallback;
+    };
+
+    const renderMessagesOrderDetail = (layer, details) => {
+      setOrderDetailText(layer, "[data-detail-title]", details.title);
+      setOrderDetailText(layer, "[data-detail-subtitle]", details.subtitle);
+      setOrderDetailText(layer, "[data-detail-action-title]", details.actionTitle);
+      setOrderDetailText(layer, "[data-detail-action-note]", details.actionNote);
+      setOrderDetailText(layer, "[data-detail-peer-label]", details.peerLabel);
+      setOrderDetailText(layer, "[data-detail-company]", details.peerName);
+      setOrderDetailText(layer, "[data-detail-address]", details.address);
+      setOrderDetailText(layer, "[data-detail-scope]", details.scope);
+      setOrderDetailText(layer, "[data-detail-budget]", details.budget);
+      setOrderDetailText(layer, "[data-detail-payment]", details.payment);
+      setOrderDetailText(layer, "[data-detail-deadline]", details.deadline);
+      setOrderDetailText(layer, "[data-detail-materials]", details.materials);
+      setOrderDetailText(layer, "[data-detail-flow]", details.flow);
+      setOrderDetailText(layer, "[data-detail-ai-title]", details.aiTitle);
+      setOrderDetailText(layer, "[data-detail-ai-text]", details.aiText);
+
+      const action = layer.querySelector("[data-detail-action]");
+      const icon = layer.querySelector("[data-detail-action-icon]");
+      if (action) {
+        action.dataset.risk = "low";
+        action.dataset.status = "conversation";
+      }
+      if (icon) icon.innerHTML = orderDetailIcons.action;
+
+      const statusbar = layer.querySelector("[data-detail-statusbar]");
+      if (statusbar) {
+        statusbar.innerHTML = `
+          <span class="orders-detail-pill">${escapeHtml(details.statusLabel)}</span>
+          <span class="orders-detail-pill" data-tone="info">${escapeHtml(details.smartBadge)}</span>
+          <span class="orders-detail-pill" data-tone="info">Risco baixo</span>
+        `;
+      }
+
+      const timeline = layer.querySelector("[data-detail-timeline]");
+      if (timeline) {
+        timeline.innerHTML = `
+          <article class="orders-detail-timeline__item is-done">
+            <span class="orders-detail-timeline__bullet">${orderDetailIcons.check}</span>
+            <div><div class="orders-detail-timeline__title">Pedido criado</div><div class="orders-detail-timeline__date">Registrado na Doke</div></div>
+          </article>
+          <article class="orders-detail-timeline__item is-current">
+            <span class="orders-detail-timeline__bullet"></span>
+            <div><div class="orders-detail-timeline__title">Negociação</div><div class="orders-detail-timeline__date">Etapa atual</div></div>
+          </article>
+          <article class="orders-detail-timeline__item">
+            <span class="orders-detail-timeline__bullet"></span>
+            <div><div class="orders-detail-timeline__title">Proposta</div><div class="orders-detail-timeline__date">Próxima etapa</div></div>
+          </article>
+        `;
+      }
+    };
+
+    const openMessagesOrderDetail = (trigger) => {
+      const conversation = conversations[activeId];
+      if (!conversation) return;
+      const layer = createMessagesOrderDetailLayer();
+      const drawer = layer.querySelector(".orders-detail-drawer");
+      activeOrderDetailTrigger = trigger || null;
+      renderMessagesOrderDetail(layer, getMessagesOrderDetails(conversation));
+      layer.hidden = false;
+      layer.setAttribute("aria-hidden", "false");
+      document.body.classList.add("orders-detail-open");
+      requestAnimationFrame(() => {
+        layer.classList.add("is-open");
+        drawer?.focus({ preventScroll: true });
+      });
+    };
+
+    const closeMessagesOrderDetail = () => {
+      const layer = document.querySelector("[data-messages-order-detail-layer]");
+      if (!layer) return;
+      layer.classList.remove("is-open");
+      layer.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("orders-detail-open");
+      window.setTimeout(() => {
+        if (!layer.classList.contains("is-open")) layer.hidden = true;
+        activeOrderDetailTrigger?.focus?.({ preventScroll: true });
+        activeOrderDetailTrigger = null;
+      }, 220);
+    };
+
     const renderLinkedOrderContext = (conversation) => {
       const order = conversation?.order || {};
       const role = getCurrentUserRole();
       const professionalView = role === "professional";
-      const orderHref = order.id ? `pedidos.html?orderId=${encodeURIComponent(order.id)}` : 'pedidos.html';
       const peerLabel = professionalView ? 'Cliente' : 'Profissional';
       const peerName = professionalView
         ? order.clientName || conversation.name || 'Cliente Doke'
@@ -453,7 +671,7 @@
             </dl>
           </div>
           <div class="messages-order-card__actions">
-            <a class="messages-order-card__button messages-order-card__button--ghost doke-btn doke-btn--ghost" href="${escapeHtml(orderHref)}">Ver detalhes</a>
+            <button class="messages-order-card__button messages-order-card__button--ghost doke-btn doke-btn--ghost" type="button" data-messages-open-order-detail>Ver detalhes</button>
             <button class="messages-order-card__button doke-btn ${primaryClass}" type="button" ${primaryAttrs}>${primaryLabel}</button>
           </div>
         </div>
@@ -743,11 +961,8 @@
         conversation.unread = 0;
         window.Doke?.services?.messages?.markAsRead?.(id)?.catch?.((error) => console.warn("[DokeMessages:markAsRead]", error));
       }
-      const orderAction = root.querySelector(".messages-thread__action--order[data-header-nav]");
-      if (orderAction) {
-        const orderHref = conversation.orderId ? `pedidos.html?orderId=${encodeURIComponent(conversation.orderId)}` : "pedidos.html";
-        orderAction.setAttribute("data-header-nav", orderHref);
-      }
+      const orderAction = root.querySelector(".messages-thread__action--order[data-messages-open-order-detail]");
+      if (orderAction) orderAction.disabled = false;
       if (!isSameThread) clearSelection();
       clearReplyPreview();
       items.forEach((item) => item.classList.toggle("is-active", item.dataset.messageId === id));
@@ -1189,6 +1404,33 @@
       syncFilterButtons();
       syncVisibility();
       syncHeaderControls();
+    });
+
+    root.addEventListener("click", (event) => {
+      const detailButton = event.target.closest("[data-messages-open-order-detail]");
+      if (!detailButton || !root.contains(detailButton)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      openMessagesOrderDetail(detailButton);
+    });
+
+    const handleOrderDetailDocumentClick = (event) => {
+      const closeButton = event.target.closest("[data-messages-order-detail-close]");
+      if (!closeButton) return;
+      event.preventDefault();
+      closeMessagesOrderDetail();
+    };
+
+    const handleOrderDetailKeydown = (event) => {
+      if (event.key === "Escape") closeMessagesOrderDetail();
+    };
+
+    document.addEventListener("click", handleOrderDetailDocumentClick);
+    document.addEventListener("keydown", handleOrderDetailKeydown);
+    addRouteCleanup(() => {
+      document.removeEventListener("click", handleOrderDetailDocumentClick);
+      document.removeEventListener("keydown", handleOrderDetailKeydown);
+      closeMessagesOrderDetail();
     });
 
     items.forEach((item) => {

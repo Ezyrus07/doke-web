@@ -333,6 +333,8 @@
       if (user?.handle) element.textContent = `@${user.handle}`;
       else element.textContent = user?.email || 'Conta Doke';
     });
+
+    document.documentElement.dataset.authSurfaceReady = 'true';
   };
 
   const bindLogoutButtons = () => {

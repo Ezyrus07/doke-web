@@ -132,6 +132,20 @@
     return ns.intelligence.classifyOrder(ns.data.readOrderCard(card));
   };
 
+  const getMessagesHref = (order) => order?.id
+    ? `mensagens.html?order=${encodeURIComponent(order.id)}`
+    : 'mensagens.html';
+
+  const navigateToConversation = (order) => {
+    const href = getMessagesHref(order);
+    if (window.DokeNavigate) {
+      window.DokeNavigate(href);
+      return true;
+    }
+    window.location.href = href;
+    return true;
+  };
+
   const getConversationForOrder = (order) => {
     const service = window.Doke?.services?.messages;
     if (!service?.listLocalConversations || !order?.id) return null;
@@ -219,35 +233,7 @@
     const card = cardOrTrigger?.closest ? cardOrTrigger.closest('.order-card') : cardOrTrigger;
     const order = readOrder(card);
     if (!order) return false;
-
-    const layer = createLayer();
-    const panel = layer.querySelector('.orders-chat-panel');
-    activeTrigger = cardOrTrigger;
-    activeCard = card;
-
-    const conversation = getConversationForOrder(order);
-    activeConversationId = conversation?.id || '';
-
-    setText(layer, '[data-chat-title]', order.company || order.title);
-    setText(layer, '[data-chat-subtitle]', `${order.title} • ${order.address}`);
-    setText(layer, '[data-chat-avatar]', getInitials(order.company || order.title), 'PR');
-    setText(layer, '[data-chat-ai-text]', buildAiReply(order));
-    const messagesLink = layer.querySelector('[data-chat-messages-link]');
-    if (messagesLink) {
-      messagesLink.href = `mensagens.html?order=${encodeURIComponent(order.id)}`;
-    }
-    renderMessages(layer, order, conversation);
-
-    layer.hidden = false;
-    layer.setAttribute('aria-hidden', 'false');
-    document.body.classList.add('orders-chat-open');
-
-    requestAnimationFrame(() => {
-      layer.classList.add('is-open');
-      panel?.focus({ preventScroll: true });
-    });
-
-    return true;
+    return navigateToConversation(order);
   };
 
   const close = (options = {}) => {

@@ -403,6 +403,10 @@ body[data-page].has-global-header .app-header :is(
   transform: none;
 }
 
+html:not([data-auth-surface-ready="true"]) body[data-page].has-global-header .app-header .home-side-meta__profile-wrap {
+  visibility: hidden;
+}
+
 body[data-page].has-global-header .app-header .home-side-meta__profile-wrap {
   position: relative;
   display: inline-flex;
@@ -1194,5 +1198,149 @@ body[data-page].has-global-header {
     width: min(var(--doke-header-search-disclosure-width), 34vw) !important;
     max-width: min(var(--doke-header-search-disclosure-width), 34vw) !important;
     min-width: min(var(--doke-header-search-disclosure-min-width), 28vw) !important;
+  }
+}
+
+/* Shared account pill convergence.
+   Authority: layout/header.css owns the account affordance geometry. This block
+   neutralizes older page-specific profile-chip dimensions without touching page
+   composition or shell rails. */
+@media (min-width: 761px) {
+  body[data-page].has-global-header {
+    --doke-header-profile-height: 42px;
+    --doke-header-profile-width: clamp(108px, 8.5vw, 124px);
+    --doke-header-profile-copy-width: calc(var(--doke-header-profile-width) - var(--doke-header-avatar-size) - 24px);
+    --doke-header-avatar-size: 32px;
+  }
+
+  body[data-page].has-global-header
+    > .app-shell
+    > .page
+    > .app-header.home-side-meta
+    .home-side-meta__profile-wrap {
+    display: inline-flex;
+    align-items: center;
+    block-size: var(--doke-header-profile-height);
+    height: var(--doke-header-profile-height);
+    min-block-size: var(--doke-header-profile-height);
+    min-height: var(--doke-header-profile-height);
+    max-block-size: var(--doke-header-profile-height);
+    max-height: var(--doke-header-profile-height);
+    inline-size: var(--doke-header-profile-width);
+    width: var(--doke-header-profile-width);
+    min-inline-size: var(--doke-header-profile-width);
+    min-width: var(--doke-header-profile-width);
+    max-inline-size: var(--doke-header-profile-width);
+    max-width: var(--doke-header-profile-width);
+    overflow: visible;
+  }
+
+  body[data-page].has-global-header
+    > .app-shell
+    > .page
+    > .app-header.home-side-meta
+    .home-side-meta__profile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex: 0 0 var(--doke-header-profile-width);
+    inline-size: var(--doke-header-profile-width);
+    width: var(--doke-header-profile-width);
+    min-inline-size: var(--doke-header-profile-width);
+    min-width: var(--doke-header-profile-width);
+    max-inline-size: var(--doke-header-profile-width);
+    max-width: var(--doke-header-profile-width);
+    block-size: var(--doke-header-profile-height);
+    height: var(--doke-header-profile-height);
+    min-block-size: var(--doke-header-profile-height);
+    min-height: var(--doke-header-profile-height);
+    max-block-size: var(--doke-header-profile-height);
+    max-height: var(--doke-header-profile-height);
+    gap: 8px;
+    margin: 0;
+    padding: 4px 9px 4px 6px;
+    border: var(--doke-header-border);
+    border-radius: 16px;
+    background: var(--doke-header-bg);
+    box-shadow: var(--doke-header-shadow);
+    overflow: hidden;
+  }
+
+  body[data-page].has-global-header
+    > .app-shell
+    > .page
+    > .app-header.home-side-meta
+    .home-side-meta__profile-caret-button {
+    display: none;
+  }
+
+  body[data-page].has-global-header
+    > .app-shell
+    > .page
+    > .app-header.home-side-meta
+    .home-side-meta__profile .home-side-meta__avatar.doke-avatar {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 var(--doke-header-avatar-size);
+    inline-size: var(--doke-header-avatar-size);
+    width: var(--doke-header-avatar-size);
+    min-inline-size: var(--doke-header-avatar-size);
+    min-width: var(--doke-header-avatar-size);
+    max-inline-size: var(--doke-header-avatar-size);
+    max-width: var(--doke-header-avatar-size);
+    block-size: var(--doke-header-avatar-size);
+    height: var(--doke-header-avatar-size);
+    min-block-size: var(--doke-header-avatar-size);
+    min-height: var(--doke-header-avatar-size);
+    max-block-size: var(--doke-header-avatar-size);
+    max-height: var(--doke-header-avatar-size);
+    margin: 0;
+    padding: 0;
+    border-radius: 999px;
+    line-height: 1;
+  }
+
+  body[data-page].has-global-header
+    > .app-shell
+    > .page
+    > .app-header.home-side-meta
+    .home-side-meta__profile .home-side-meta__identity {
+    display: grid;
+    min-inline-size: 0;
+    max-inline-size: var(--doke-header-profile-copy-width);
+    gap: 1px;
+    text-align: left;
+    line-height: 1.05;
+    overflow: hidden;
+  }
+
+  body[data-page].has-global-header
+    > .app-shell
+    > .page
+    > .app-header.home-side-meta
+    .home-side-meta__profile .home-side-meta__identity strong {
+    display: block;
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.78rem;
+    font-weight: 850;
+    line-height: 1.08;
+  }
+
+  body[data-page].has-global-header
+    > .app-shell
+    > .page
+    > .app-header.home-side-meta
+    .home-side-meta__profile .home-side-meta__identity span {
+    display: block;
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.63rem;
+    font-weight: 750;
+    line-height: 1.05;
   }
 }

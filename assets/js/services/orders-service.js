@@ -95,14 +95,29 @@
         : Promise.resolve(null);
 
       return conversationTask.then(function (conversation) {
-        document.dispatchEvent(new CustomEvent('doke:order-created', {
-          detail: {
-            order: saved,
-            user: user,
-            conversation: conversation
-          }
-        }));
-        return saved;
+        var notificationsService = services.notifications;
+        var notificationTask = notificationsService && typeof notificationsService.createOrderCreated === 'function'
+          ? notificationsService.createOrderCreated(saved, {
+              actor: user,
+              conversation: conversation,
+              conversationId: conversation && conversation.id
+            }).catch(function (error) {
+              console.warn('[DokeOrders:createOrderNotification]', error);
+              return null;
+            })
+          : Promise.resolve(null);
+
+        return notificationTask.then(function (notification) {
+          document.dispatchEvent(new CustomEvent('doke:order-created', {
+            detail: {
+              order: saved,
+              user: user,
+              conversation: conversation,
+              notification: notification
+            }
+          }));
+          return saved;
+        });
       });
     });
   }
