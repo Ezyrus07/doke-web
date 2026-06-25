@@ -249,9 +249,18 @@
       });
   }
 
+  function isDemoProfessional(user) {
+    return Boolean(user && user.role === 'professional' && String(user.id) === 'user_profissional_demo');
+  }
+
   function matchesCurrentUser(order, user) {
     if (!user || !user.id) return true;
-    if (user.role === 'professional') return String(order.professionalId || order.providerId) === String(user.id);
+    if (user.role === 'professional') {
+      if (String(order.professionalId || order.providerId) === String(user.id)) return true;
+      // Backward-compatible mock rule: orders created from service-card provider IDs
+      // must still be visible to the single demo professional account.
+      return isDemoProfessional(user) && Boolean(order.id && (order.clientId || order.serviceId));
+    }
     if (user.role === 'client') return String(order.clientId) === String(user.id);
     return true;
   }

@@ -1,7 +1,7 @@
 /* Doke Web - orçamento page
    Responsibility: local mapping for the budget request flow.
    Visual anatomy is inherited from tornar-profissional.html through the shared form/page contracts. */
-@import url("./tornar-profissional-foundation.css?v=20260623-form-page-rail-v2");
+@import url("./tornar-profissional-foundation.css?v=20260625-submission-feedback-v2");
 
 body[data-page="orcamento"] {
   --budget-blue: var(--pro-blue, var(--color-primary, #2a5f90));
@@ -10,10 +10,6 @@ body[data-page="orcamento"] {
   --budget-border: var(--pro-border, var(--doke-card-border, rgba(24, 75, 118, 0.10)));
   --budget-text: var(--pro-text, var(--color-heading, #10233a));
   --budget-muted: var(--pro-muted, var(--color-text-muted, #627a99));
-}
-
-body[data-page="orcamento"] .budget-steps.doke-flow-steps {
-  --doke-flow-step-count: 3;
 }
 
 body[data-page="orcamento"] .budget-grid--2.become-pro-grid {
@@ -26,6 +22,64 @@ body[data-page="orcamento"] .budget-grid--3.become-pro-grid {
 
 body[data-page="orcamento"] .budget-grid--compact {
   margin-top: 16px;
+}
+
+body[data-page="orcamento"] .budget-field textarea {
+  padding: 14px 16px 28px;
+}
+
+body[data-page="orcamento"] .budget-field .ui-select__trigger {
+  min-height: 52px;
+  height: 52px;
+  padding: 0 14px 0 16px;
+  border: 1px solid #d4e0ef;
+  border-radius: 14px;
+  background: #fbfdff;
+  color: var(--pro-text, #082a55);
+  box-sizing: border-box;
+  transform: none;
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+body[data-page="orcamento"] .budget-field .ui-select:not(.has-value) .ui-select__trigger {
+  color: #8192aa;
+}
+
+body[data-page="orcamento"] .budget-field .ui-select__trigger:hover {
+  border-color: #d4e0ef;
+  background: #fbfdff;
+  transform: none;
+}
+
+body[data-page="orcamento"] .budget-field .ui-select__trigger:focus-visible,
+body[data-page="orcamento"] .budget-field .ui-select.is-open .ui-select__trigger {
+  border-color: rgba(38, 116, 217, .45);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(38, 116, 217, .08);
+}
+
+body[data-page="orcamento"] .budget-field .ui-select__caret {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  color: var(--pro-blue-strong, #15599f);
+  opacity: 1;
+  transform: none;
+  transition: transform .18s ease;
+}
+
+body[data-page="orcamento"] .budget-field .ui-select__caret::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  -webkit-mask: center / 18px 18px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  mask: center / 18px 18px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+body[data-page="orcamento"] .budget-field .ui-select.is-open .ui-select__caret {
+  transform: rotate(180deg);
 }
 
 body[data-page="orcamento"] .budget-choice {
@@ -62,13 +116,70 @@ body[data-page="orcamento"] .budget-confirm-card {
 }
 
 body[data-page="orcamento"] .budget-choices-wrap > span,
-body[data-page="orcamento"] .budget-check span {
+body[data-page="orcamento"] .budget-check__text {
   display: block;
   margin-bottom: 8px;
   color: var(--pro-blue-dark, #0f376f);
   font-size: 0.84rem;
   line-height: 1.25;
   font-weight: 800;
+}
+
+body[data-page="orcamento"] .budget-check {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  color: var(--pro-blue-dark, #0f376f);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+body[data-page="orcamento"] .budget-check input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+body[data-page="orcamento"] .budget-check__box {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.6px solid #c9d8ea;
+  border-radius: 7px;
+  background: #fff;
+  color: #fff;
+  transition: border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+
+body[data-page="orcamento"] .budget-check__box svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0;
+  transition: opacity .16s ease;
+}
+
+body[data-page="orcamento"] .budget-check input:checked + .budget-check__box {
+  border-color: var(--pro-blue-strong, #15599f);
+  background: var(--pro-blue-strong, #15599f);
+  box-shadow: 0 0 0 3px rgba(21, 89, 159, .12);
+}
+
+body[data-page="orcamento"] .budget-check input:checked + .budget-check__box svg {
+  opacity: 1;
+}
+
+body[data-page="orcamento"] .budget-check input:focus-visible + .budget-check__box {
+  box-shadow: 0 0 0 4px rgba(38, 116, 217, .16);
+}
+
+body[data-page="orcamento"] .budget-check__text {
+  margin-bottom: 0;
 }
 
 body[data-page="orcamento"] .budget-choices {
@@ -207,37 +318,135 @@ body[data-page="orcamento"] .address-modal__head p {
   line-height: 1.45;
 }
 
-body[data-page="orcamento"] .address-modal__close,
-body[data-page="orcamento"] .budget-success-modal__close {
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  border: 1px solid #d7e4f2;
-  border-radius: 14px;
-  background: #fff;
-  color: var(--pro-blue-dark, #0f376f);
-  font: inherit;
-  font-size: 1.25rem;
-  font-weight: 800;
-  cursor: pointer;
+body[data-page="orcamento"] :is(.address-modal__close, .budget-success-modal__close) svg {
+  width: 18px;
+  height: 18px;
 }
 
 body[data-page="orcamento"] .budget-success-modal {
-  width: min(100%, 460px);
+  width: min(calc(100vw - 48px), var(--doke-financial-modal-width, 620px));
+  max-width: var(--doke-financial-modal-width, 620px);
   border: 0;
   padding: 0;
   background: transparent;
 }
 
-body[data-page="orcamento"] .budget-success-modal__close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
+body[data-page="orcamento"] .budget-success-modal:not([open]) {
+  display: none;
 }
 
-body[data-page="orcamento"] .budget-success__eyebrow,
+body[data-page="orcamento"] .budget-success-modal__dialog {
+  width: 100%;
+  overflow: hidden;
+  display: grid;
+  justify-items: stretch;
+  align-items: stretch;
+  gap: 0;
+  position: relative;
+  padding: 0;
+  border: 1px solid rgba(207, 222, 239, .92);
+  border-radius: var(--doke-financial-modal-radius, 28px);
+  background: #fff;
+  text-align: left;
+  box-shadow: var(--doke-financial-shadow, 0 28px 80px rgba(18, 39, 62, .24));
+  transform: none;
+  opacity: 1;
+  animation: none;
+}
+
+body[data-page="orcamento"] .budget-success-modal__close {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  z-index: 2;
+  width: var(--doke-close-button-size, 42px);
+  height: var(--doke-close-button-size, 42px);
+  min-width: var(--doke-close-button-size, 42px);
+  min-height: var(--doke-close-button-size, 42px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--doke-close-button-border, rgba(24, 75, 118, 0.1));
+  border-radius: var(--doke-close-button-radius, 999px);
+  background: var(--doke-close-button-bg, #f3f7fb);
+  color: var(--doke-close-button-color, #315b84);
+  box-shadow: none;
+}
+
+body[data-page="orcamento"] .budget-success-modal__close:is(:hover, :focus-visible) {
+  background: var(--doke-close-button-hover-bg, #e8f1f9);
+  border-color: rgba(42, 95, 144, 0.18);
+  box-shadow: none;
+}
+
+body[data-page="orcamento"] .budget-success-modal__dialog > :not(.budget-success-modal__close):not(.budget-success__actions) {
+  margin-inline: var(--doke-financial-padding-x, 36px);
+}
+
+body[data-page="orcamento"] .budget-success__eyebrow {
+  width: fit-content;
+  justify-self: start;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 34px var(--doke-financial-padding-x, 36px) 28px;
+  padding: 0 16px;
+  border: 1px solid #bfe6dc;
+  border-radius: 999px;
+  background: #eefaf6;
+  color: var(--pro-green-dark, #0d8f77);
+  font-size: 0.78rem;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+body[data-page="orcamento"] .budget-success__icon {
+  display: none;
+}
+
+body[data-page="orcamento"] .budget-success-modal__dialog h2 {
+  width: auto;
+  justify-self: stretch;
+  max-width: none;
+  margin-block: 0;
+  color: var(--doke-financial-title, #0b3778);
+  font-size: clamp(2.05rem, 3vw, 2.7rem);
+  line-height: 1.02;
+  letter-spacing: -.055em;
+  font-weight: 800;
+  text-align: left;
+}
+
+body[data-page="orcamento"] .budget-success-modal__dialog p {
+  width: auto;
+  justify-self: stretch;
+  max-width: 480px;
+  margin-block: 14px 0;
+  color: var(--doke-financial-muted, #6f85a1);
+  font-size: 1rem;
+  line-height: 1.48;
+  font-weight: 500;
+  text-align: left;
+}
+
+body[data-page="orcamento"] .budget-success__summary {
+  width: auto;
+  justify-self: stretch;
+  display: grid;
+  gap: 10px;
+  margin-top: 24px;
+  margin-bottom: 28px;
+  padding: 18px 20px;
+  border: 1px solid var(--doke-financial-border-soft, #dce7f3);
+  border-radius: var(--doke-financial-card-radius, 18px);
+  background: var(--doke-financial-surface-soft, #f8fbff);
+  text-align: left;
+}
+
 body[data-page="orcamento"] .budget-success__summary span {
   color: var(--pro-green-dark, #0d8f77);
   font-size: 0.78rem;
@@ -246,19 +455,40 @@ body[data-page="orcamento"] .budget-success__summary span {
   text-transform: uppercase;
 }
 
-body[data-page="orcamento"] .budget-success__summary {
-  width: 100%;
-  display: grid;
-  gap: 4px;
-  padding: 14px;
-  border: 1px solid var(--budget-border);
-  border-radius: 16px;
-  background: #f7fbff;
-  text-align: left;
-}
-
 body[data-page="orcamento"] .budget-success__summary strong {
   color: var(--pro-blue-dark, #0f376f);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+body[data-page="orcamento"] .budget-success__actions.doke-form-actions {
+  width: 100%;
+  max-width: none;
+  justify-self: stretch;
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.15fr);
+  gap: 14px;
+  margin: 0;
+  padding: 22px var(--doke-financial-padding-x, 36px) 30px;
+  border-top: 1px solid var(--doke-financial-border-soft, #dce7f3);
+  background: linear-gradient(180deg, #fbfdff 0%, #f8fbff 100%);
+}
+
+body[data-page="orcamento"] .budget-success__actions .budget-button {
+  width: 100%;
+  min-height: 52px;
+  height: 52px;
+  border-radius: 16px;
+  font-size: .96rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+body[data-page="orcamento"] .budget-success__actions .budget-button--ghost {
+  border: 1px solid var(--doke-financial-border, #cfdeef);
+  background: #f8fbff;
+  color: var(--doke-financial-title, #0b3778);
+  box-shadow: none;
 }
 
 body.budget-modal-open {

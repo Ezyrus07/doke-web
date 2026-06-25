@@ -11,7 +11,11 @@
     const timeButtons = [...root.querySelectorAll('[data-time-filter]')];
     const notificationsList = root.querySelector('.notifications-list');
     const localCards = [];
-    let cards = [...root.querySelectorAll('.notification-card')];
+    let cards = [];
+    const refreshCards = () => {
+      cards = [...root.querySelectorAll('.notification-card')];
+      return cards;
+    };
     const empty = root.querySelector('[data-notifications-empty]');
     const countNodes = [...document.querySelectorAll('[data-notifications-unread-count], [data-notifications-hero-count]')];
     const pageTitle = root.querySelector('.notifications-page-header__heading h2');
@@ -141,24 +145,16 @@
     const getCanonicalTodayGroup = () => {
       if (!notificationsList) return null;
 
-      notificationsList.querySelectorAll('[data-local-notifications-group]').forEach((group) => {
-        const title = group.querySelector('.notifications-group__title')?.textContent?.trim().toLowerCase() || '';
-        if (title !== 'hoje') group.remove();
-      });
-
-      let group = [...notificationsList.querySelectorAll('.notifications-group')].find((candidate) => {
-        const title = candidate.querySelector('.notifications-group__title')?.textContent?.trim().toLowerCase() || '';
-        return title === 'hoje';
-      });
+      let group = notificationsList.querySelector('[data-local-notifications-group="true"]');
 
       if (!group) {
         group = document.createElement('div');
         group.className = 'notifications-group';
-        group.innerHTML = '<div class="notifications-group__title">Hoje</div>';
-        notificationsList.prepend(group);
+        group.dataset.localNotificationsGroup = 'true';
+        const emptyState = notificationsList.querySelector('[data-notifications-empty]');
+        notificationsList.insertBefore(group, emptyState || notificationsList.firstChild);
       }
 
-      group.dataset.localNotificationsGroup = 'true';
       return group;
     };
 
@@ -221,14 +217,14 @@
 
     const hydrateLocalNotifications = () => {
       const service = getNotificationsService();
-      if (!service || typeof service.listLocal !== 'function') return;
+      if (!service || typeof service.listLocal !== 'function') return false;
       const group = getCanonicalTodayGroup();
-      if (!group) return;
+      if (!group) return false;
 
       root.querySelectorAll('[data-local-notification="true"]').forEach((card) => card.remove());
       localCards.length = 0;
 
-      const insertionAnchor = group.querySelector('.notifications-group__title')?.nextSibling || group.firstChild;
+      const insertionAnchor = group.firstChild;
       const items = service.listLocal({ dismissed: false }) || [];
       items
         .filter((notification) => !notification.dismissed)
@@ -241,11 +237,20 @@
           bindNotificationCard(card);
         });
 
-      cards = [...root.querySelectorAll('.notification-card')];
+      if (!localCards.length) group.remove();
+
+      refreshCards().forEach(bindNotificationCard);
       updatéUnread();
       updatéStats();
       applyFilter(currentFilter, currentTimeFilter);
       syncSelectedActions();
+      return true;
+    };
+
+    const refreshLocalNotifications = () => {
+      if (hydrateLocalNotifications()) return;
+      window.setTimeout(hydrateLocalNotifications, 120);
+      window.setTimeout(hydrateLocalNotifications, 420);
     };
 
 
@@ -272,7 +277,7 @@
     };
 
     const closeContextMenu = () => {
-      cards.forEach((card) => card.classList.remove('is-context-open'));
+      refreshCards().forEach((card) => card.classList.remove('is-context-open'));
     };
 
     const openContextMenu = (card) => {
@@ -285,7 +290,7 @@
     notificationsList?.setAttribute('role', 'listbox');
     notificationsList?.setAttribute('aria-multiselectable', 'false');
 
-    cards.forEach((card) => {
+    refreshCards().forEach((card) => {
       card.classList.add('doke-selectable-card');
       card.setAttribute('role', 'option');
       card.setAttribute('aria-selected', 'false');
@@ -303,7 +308,7 @@
       setCardSelected(card, !card.classList.contains('is-selected'));
     };
 
-    const selectedCards = () => cards.filter((card) => card.classList.contains('is-selected') && card.dataset.dismissed !== 'true');
+    const selectedCards = () => refreshCards().filter((card) => card.classList.contains('is-selected') && card.dataset.dismissed !== 'true');
 
     const setToggleExpanded = (toggles, expanded) => {
       toggles.forEach((toggle) => {
@@ -343,11 +348,11 @@
     };
 
     const clearSelection = () => {
-      cards.forEach((card) => setCardSelected(card, false));
+      refreshCards().forEach((card) => setCardSelected(card, false));
     };
 
     const syncSelectedActions = () => {
-      cards.forEach((card) => {
+      refreshCards().forEach((card) => {
         card.setAttribute('aria-selected', card.classList.contains('is-selected') ? 'true' : 'false');
       });
 
@@ -400,7 +405,7 @@
     };
 
     const updatéStats = () => {
-      const activeCards = cards.filter((card) => card.dataset.dismissed !== 'true');
+      const activeCards = refreshCards().filter((card) => card.dataset.dismissed !== 'true');
       const all = activeCards.length;
       const unread = activeCards.filter((card) => card.classList.contains('is-unread')).length;
       const countBy = (token) => activeCards.filter((card) => (card.dataset.catégory || '').split(/\s+/).includes(token)).length;
@@ -500,7 +505,7 @@
         return true;
       };
 
-      cards.forEach((card) => {
+      refreshCards().forEach((card) => {
         const tokens = (card.dataset.catégory || '').split(/\s+/);
         const text = card.textContent.toLowerCase();
         const matchFilter = filter === 'all' || tokens.includes(filter);
@@ -561,7 +566,7 @@
       setSelectionEnabled(true);
       clearSelection();
       if (mode === 'all') {
-        cards.forEach((card) => {
+        refreshCards().forEach((card) => {
           if (card.dataset.dismissed !== 'true' && !card.hidden) setCardSelected(card, true);
         });
       }
@@ -705,7 +710,7 @@
       syncSelectedActions();
     });
 
-    cards.forEach((card) => {
+    refreshCards().forEach((card) => {
       card.addEventListener('click', (event) => {
         const target = event.target;
         if (!(target instanceof Element)) return;
@@ -731,7 +736,7 @@
       });
     });
 
-    cards.forEach((card) => {
+    refreshCards().forEach((card) => {
       if (!card.querySelector('.notification-card__context-actions')) {
         const actions = document.createElement('div');
         actions.className = 'notification-card__context-actions';
@@ -839,11 +844,13 @@
     });
 
     syncContextPanelHost();
-    cards.forEach(bindNotificationCard);
-    hydrateLocalNotifications();
-    document.addEventListener('doke:notification-created', hydrateLocalNotifications);
-    document.addEventListener('doke:order-created', hydrateLocalNotifications);
-    document.addEventListener('doke:message-sent', hydrateLocalNotifications);
+    refreshCards().forEach(bindNotificationCard);
+    refreshLocalNotifications();
+    document.addEventListener('doke:notification-created', refreshLocalNotifications);
+    document.addEventListener('doke:order-created', refreshLocalNotifications);
+    document.addEventListener('doke:message-sent', refreshLocalNotifications);
+    document.addEventListener('doke:auth-session-change', refreshLocalNotifications);
+    document.addEventListener('doke:auth-surface-ready', refreshLocalNotifications);
     updatéUnread();
     updatéStats();
     applyFilter('all', 'all');

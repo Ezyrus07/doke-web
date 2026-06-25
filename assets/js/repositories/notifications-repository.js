@@ -186,10 +186,20 @@
       });
   }
 
+  function isDemoProfessional(user) {
+    return Boolean(user && user.role === 'professional' && String(user.id) === 'user_profissional_demo');
+  }
+
   function matchesCurrentUser(notification, user) {
     if (!user || !user.id) return true;
     if (!notification.userId) return true;
-    return String(notification.userId) === String(user.id);
+    if (String(notification.userId) === String(user.id)) return true;
+    // Backward-compatible mock rule: only new-order notifications may have been addressed
+    // to the service provider ID, not the demo professional login ID. Status changes
+    // such as accepted/refused are client-facing and must not leak into professional view.
+    return isDemoProfessional(user)
+      && String(notification.category || '').toLowerCase() === 'orders'
+      && String(notification.type || '').toLowerCase() === 'order_created';
   }
 
   function list(filters) {

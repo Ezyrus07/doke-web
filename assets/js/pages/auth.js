@@ -164,8 +164,10 @@ if (authService && loginForm) {
       setButtonLoading(submitButton, true, "Entrando...");
       setFeedback(feedback, "success", "Validando seu acesso...");
       const user = await authService.signIn({ login, password });
+      window.DokeHeaderProfileMount?.mount?.();
+      document.dispatchEvent(new CustomEvent("doke:auth-login-success", { detail: { user } }));
       setFeedback(feedback, "success", `Acesso liberado. Bem-vindo, ${user.name}.`);
-      window.setTimeout(redirectAfterAuth, 700);
+      window.setTimeout(redirectAfterAuth, 350);
     } catch (error) {
       setFeedback(feedback, "error", error.message);
     } finally {
@@ -218,7 +220,9 @@ if (authService && signupForm) {
       } else {
         confirmationPanel?.classList.add("is-hidden");
         setFeedback(feedback, "success", `Conta criada com sucesso. Bem-vindo, ${user.name}.`);
-        window.setTimeout(redirectAfterAuth, 900);
+        window.DokeHeaderProfileMount?.mount?.();
+        document.dispatchEvent(new CustomEvent("doke:auth-login-success", { detail: { user } }));
+        window.setTimeout(redirectAfterAuth, 500);
       }
     } catch (error) {
       setFeedback(feedback, "error", error.message);

@@ -183,7 +183,14 @@
         category: order.category || raw.category || '',
         location: order.location || raw.location || ''
       }),
-      messages: messages.map(function (message) { return normalizeMessage(message, { id: id, peerName: peerName }); }),
+      messages: messages
+        .filter(function (message) {
+          var text = String(message && (message.text || message.body) || '');
+          var type = String(message && message.type || '');
+          if (type === 'system' && /Pedido aceito\. A conversa foi liberada|Pedido recusado\. Justificativa:/i.test(text)) return false;
+          return true;
+        })
+        .map(function (message) { return normalizeMessage(message, { id: id, peerName: peerName }); }),
       createdAt: raw.createdAt || raw.creatédAt || updatedAt,
       creatédAt: raw.creatédAt || raw.createdAt || updatedAt,
       updatedAt: updatedAt,
@@ -220,10 +227,17 @@
     return clone(normalized);
   }
 
+  function isDemoProfessional(user) {
+    return Boolean(user && user.role === 'professional' && String(user.id) === 'user_profissional_demo');
+  }
+
   function matchesCurrentUser(conversation, user) {
     if (!user || !user.id) return true;
     if ((conversation.participants || []).map(String).indexOf(String(user.id)) !== -1) return true;
-    if (user.role === 'professional') return String(conversation.professionalId) === String(user.id);
+    if (user.role === 'professional') {
+      if (String(conversation.professionalId) === String(user.id)) return true;
+      return isDemoProfessional(user) && Boolean(conversation.orderId || conversation.order && conversation.order.id);
+    }
     if (user.role === 'client') return String(conversation.clientId) === String(user.id);
     return false;
   }
@@ -244,6 +258,11 @@
   function load(options) {
     options = options || {};
     if (cache && !options.fresh) return Promise.resolve(clone(cache));
+
+    if (options.currentUser !== false) {
+      cache = mergeById(readLocal());
+      return Promise.resolve(clone(cache));
+    }
 
     return loadBase(options)
       .catch(function () { return []; })
@@ -305,18 +324,6 @@
     var existing = readLocal().find(function (item) { return item.orderId && String(item.orderId) === String(order.id); });
     if (existing) return Promise.resolve(clone(existing));
 
-    var firstMessage = normalizeMessage({
-      id: 'msg_' + id.replace(/^conv_/, '') + '_created',
-      conversationId: id,
-      senderId: order.professionalId || order.providerId || '',
-      author: professionalName,
-      body: 'Recebi sua solicitação. Vamos acompanhar o orçamento por esta conversa.',
-      text: 'Recebi sua solicitação. Vamos acompanhar o orçamento por esta conversa.',
-      mine: false,
-      read: false,
-      createdAt: createdAt
-    }, { id: id, peerName: professionalName });
-
     return save({
       id: id,
       type: 'order',
@@ -332,15 +339,58 @@
       avatar: order.providerInitials || 'DK',
       peerInitials: order.providerInitials || 'DK',
       group: 'orders',
-      unread: currentUser && currentUser.id === order.clientId ? 1 : 0,
-      unreadCount: currentUser && currentUser.id === order.clientId ? 1 : 0,
-      order: order,
-      messages: [firstMessage],
-      lastMessage: firstMessage.text,
-      lastSeen: 'Pedido enviado agora',
+      unread: currentUser && currentUser.id !== order.clientId ? 1 : 0,
+      unreadCount: currentUser && currentUser.id !== order.clientId ? 1 : 0,
+      order: Object.assign({}, order, {
+        status: order.status || 'pending',
+        statusLabel: order.statusLabel || 'Aguardando resposta'
+      }),
+      messages: [],
+      locked: true,
+      lastMessage: 'Pedido enviado. Aguardando aceite do profissional.',
+      lastSeen: 'Aguardando aceite do profissional',
       createdAt: createdAt,
       updatedAt: createdAt
     });
+  }
+
+  function updateOrderContext(order, options) {
+    order = order || {};
+    options = options || {};
+    var orderId = normalizeText(order.id || order.orderId || '');
+    if (!orderId) return Promise.resolve(null);
+    var conversations = readLocal();
+    var index = conversations.findIndex(function (item) { return String(item.orderId || item.order && item.order.id) === String(orderId); });
+    if (index < 0) return Promise.resolve(null);
+
+    var conversation = conversations[index];
+    var status = order.status || options.status || conversation.status || conversation.order && conversation.order.status || 'pending';
+    var statusLabel = order.statusLabel || (status === 'conversation' ? 'Pedido aceito' : status === 'cancelled' ? 'Pedido recusado' : 'Aguardando resposta');
+    var updatedAt = nowIso();
+    conversation.status = status;
+    conversation.statusLabel = statusLabel;
+    conversation.locked = !(status === 'conversation' || status === 'responded' || status === 'quoted' || status === 'in_progress' || status === 'completed');
+    conversation.order = Object.assign({}, conversation.order || {}, order, {
+      status: status,
+      statusLabel: statusLabel,
+      refusalReason: options.reason || order.refusalReason || ''
+    });
+    conversation.lastSeen = status === 'conversation'
+      ? 'Conversa liberada'
+      : status === 'cancelled'
+        ? 'Pedido recusado'
+        : 'Aguardando aceite do profissional';
+    conversation.lastMessage = status === 'conversation'
+      ? 'Conversa liberada'
+      : status === 'cancelled'
+        ? 'Pedido recusado'
+        : conversation.lastMessage || 'Aguardando aceite do profissional';
+    conversation.updatedAt = updatedAt;
+
+    conversations.splice(index, 1);
+    conversations.unshift(conversation);
+    writeLocal(conversations);
+    return Promise.resolve(clone(normalizeConversation(conversation)));
   }
 
   function addMessage(conversationId, message) {
@@ -390,6 +440,7 @@
     getById: getById,
     save: save,
     createForOrder: createForOrder,
+    updateOrderContext: updateOrderContext,
     addMessage: addMessage,
     markAsRead: markAsRead,
     clearLocal: function () { writeLocal([]); }

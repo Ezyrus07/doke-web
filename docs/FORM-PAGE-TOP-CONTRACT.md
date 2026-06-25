@@ -2,7 +2,7 @@
 
 ## Authority
 
-Shared title/intro rail and form-grid rhythm for form-led pages is owned by:
+Shared title/intro rail, screen width, form-grid rhythm and base form card surfaces for form-led pages are owned by:
 
 - `assets/css/components/forms/form-page-top-contract.css`
 
@@ -13,6 +13,12 @@ Shared title/intro rail and form-grid rhythm for form-led pages is owned by:
 - `tornar-profissional.html`
 
 ## Required classes
+
+Top-level form screen:
+
+```html
+<section class="... doke-form-page-screen">
+```
 
 Top-level content rail:
 
@@ -35,7 +41,19 @@ Main form grid:
 <div class="... doke-form-page-grid">
 ```
 
-Pages may style their own field anatomy, but the title block, form card and side card must share one horizontal rail.
+Main form card:
+
+```html
+<section class="... doke-form-page-card">
+```
+
+Side card / aside:
+
+```html
+<aside class="... doke-form-page-side-card">
+```
+
+Pages may style their own field anatomy and content-specific inner blocks, but the screen, title block, main card and side card must share one horizontal rail and one surface contract.
 
 
 ## Content rhythm
@@ -50,7 +68,7 @@ To reduce top-level noise on form-led pages, follow this shared structure:
 
 ## Authority lock
 
-The top block visual anatomy is owned only by `assets/css/components/forms/form-page-top-contract.css`.
+The top block visual anatomy, form screen width and base card surface geometry are owned only by `assets/css/components/forms/form-page-top-contract.css`.
 
 The following page CSS files must not style the form-page title/description/top meta directly:
 
@@ -58,4 +76,4 @@ The following page CSS files must not style the form-page title/description/top 
 - `assets/css/pages/anunciar-servico.css`
 - `assets/css/pages/tornar-profissional.css`
 
-Allowed page CSS responsibility: internal form layout, card layout and page-specific field composition. Not allowed: `h1`, top description, eyebrow, chips/meta or page-specific title scale/color.
+Allowed page CSS responsibility: internal form layout, step content, modal content and page-specific field composition. Not allowed: `h1`, top description, eyebrow, chips/meta, page-specific title scale/color, base form card width, base card radius, base card padding or base card shadow.

@@ -255,11 +255,11 @@ const renderSharedSidebar = () => {
 const updateSidebarActiveState = (pathOverride = null) => {
   const path = pathOverride || getCurrentPath();
   const homeActive = path === "/index.html";
-  const ordersActive = path === "/pedidos.html";
+  const ordersActive = path === "/pedidos.html" || path === "/orcamento.html";
   const messagesActive = path === "/mensagens.html" || path === "/pagamento-profissional.html";
   const notificationsActive = path === "/notificacoes.html";
   const communitiesActive = path === "/comunidade.html" || path === "/comunidade-interna.html";
-  const profileActive = path === INTERNAL_PROFILE_PATH;
+  const profileActive = path === INTERNAL_PROFILE_PATH || path === "/tornar-profissional.html" || path === "/anunciar-servico.html" || path === "/avaliacao-profissional.html";
   const walletActive = path === "/carteira.html";
   const settingsActive = path === "/configuracoes.html";
 
@@ -897,6 +897,7 @@ const createUiSelectApi = () => {
 
     const selectedOption = select.options[select.selectedIndex];
     instance.label.textContent = selectedOption?.textContent || select.options[0]?.textContent || "";
+    instance.root.classList.toggle("has-value", Boolean(select.value));
     instance.menu.innerHTML = "";
 
     [...select.options].forEach((option) => {

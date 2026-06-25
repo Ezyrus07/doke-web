@@ -55,6 +55,17 @@
     return repository.createForOrder(order, options || {});
   }
 
+  function isConversationUnlocked(conversation) {
+    var status = conversation && conversation.order && conversation.order.status || conversation && conversation.status || '';
+    return ['conversation', 'accepted', 'responded', 'quoted', 'in_progress', 'completed'].indexOf(status) !== -1;
+  }
+
+  function updateConversationOrder(order, options) {
+    var repository = getRepository();
+    if (!repository || typeof repository.updateOrderContext !== 'function') return Promise.resolve(null);
+    return repository.updateOrderContext(order, options || {});
+  }
+
   function sendMessage(conversationId, payload) {
     payload = payload || {};
     var repository = getRepository();
@@ -66,15 +77,22 @@
     if (!conversationId) return Promise.reject(new Error('Conversa inválida.'));
     if (type === 'text' && !body) return Promise.reject(new Error('Escreva uma mensagem para enviar.'));
 
-    return repository.addMessage(conversationId, Object.assign({}, payload, {
-      senderId: payload.senderId || user && user.id || '',
-      author: payload.author || 'Você',
-      body: payload.body || body,
-      text: payload.text || body,
-      type: type,
-      mine: payload.mine !== false,
-      read: true
-    })).then(function (message) {
+    return repository.getById(conversationId).then(function (conversationBeforeSend) {
+      if (!conversationBeforeSend) throw new Error('Conversa não encontrada.');
+      if (!isConversationUnlocked(conversationBeforeSend)) {
+        throw new Error('A conversa será liberada quando o profissional aceitar o pedido.');
+      }
+
+      return repository.addMessage(conversationId, Object.assign({}, payload, {
+        senderId: payload.senderId || user && user.id || '',
+        author: payload.author || 'Você',
+        body: payload.body || body,
+        text: payload.text || body,
+        type: type,
+        mine: payload.mine !== false,
+        read: true
+      }));
+    }).then(function (message) {
       var notificationsService = services.notifications;
       if (!message || !notificationsService || typeof notificationsService.createMessageReceived !== 'function') return message;
 
@@ -115,6 +133,7 @@
     listConversations: listConversations,
     listLocalConversations: listLocalConversations,
     createConversationForOrder: createConversationForOrder,
+    updateConversationOrder: updateConversationOrder,
     sendMessage: sendMessage,
     markAsRead: markAsRead,
     unreadCount: unreadCount

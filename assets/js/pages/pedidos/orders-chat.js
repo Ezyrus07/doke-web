@@ -55,7 +55,7 @@
           <div class="orders-chat-panel__top">
             <button class="orders-chat-panel__back" type="button" data-orders-chat-back aria-label="Voltar para os detalhes">${ICON_BACK}</button>
             <div class="orders-chat-panel__profile">
-              <span class="orders-chat-panel__avatar doke-avatar" data-chat-avatar aria-hidden="true">SA</span>
+              <span class="orders-chat-panel__avatar doke-avatar" data-chat-avatar aria-hidden="true">DK</span>
               <span class="orders-chat-panel__identity">
                 <strong class="orders-chat-panel__title" id="orders-chat-title" data-chat-title>Conversa do pedido</strong>
                 <span class="orders-chat-panel__subtitle" data-chat-subtitle></span>
@@ -159,21 +159,7 @@
     return message?.mine === true;
   };
 
-  const getPanelMessages = (order, conversation) => {
-    if (conversation?.messages?.length) return conversation.messages;
-
-    if (order?.viewerRole === 'professional') {
-      return [
-        { author: order.company || 'Cliente', text: 'Olá! Enviei uma solicitação e quero alinhar o orçamento por aqui.', mine: false },
-        { author: 'Você', text: 'Recebi seu pedido e consigo continuar a conversa por aqui.', mine: true }
-      ];
-    }
-
-    return [
-      { author: order.company || 'Profissional', text: 'Recebi seu pedido e consigo continuar a conversa por aqui.', mine: false },
-      { author: 'Você', text: 'Perfeito. Quero seguir com o orçamento.', mine: true }
-    ];
-  };
+  const getPanelMessages = (order, conversation) => (conversation?.messages?.length ? conversation.messages : []);
 
   const renderOrderContext = (order) => `
     <section class="orders-chat-order-card" aria-label="Pedido vinculado à conversa">
@@ -197,6 +183,16 @@
     const peerName = order?.company || 'Profissional';
     const peerInitials = getInitials(peerName);
     const messages = getPanelMessages(order, conversation);
+
+    if (!messages.length) {
+      target.innerHTML = renderOrderContext(order) + `
+        <section class="orders-chat-empty" aria-label="Conversa sem mensagens">
+          <strong>Sem mensagens ainda</strong>
+          <p>A conversa fica vazia até alguém enviar uma mensagem real.</p>
+        </section>
+      `;
+      return;
+    }
 
     target.innerHTML = renderOrderContext(order) + messages.map((message) => {
       const mine = isMineMessage(message);
@@ -331,27 +327,27 @@
       const value = clean(input?.value);
       if (!value) return;
 
-      const stack = document.querySelector('[data-chat-messages]');
-      if (stack) {
-        const row = document.createElement('article');
-        row.className = 'orders-chat-row orders-chat-row--me';
-        row.innerHTML = '<div class="orders-chat-message orders-chat-message--me"><strong>Você</strong><p></p></div>';
-        row.querySelector('p').textContent = value;
-        stack.appendChild(row);
-        row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
+      const messagesService = window.Doke?.services?.messages;
+      if (!activeConversationId || !messagesService?.sendMessage) return;
 
-      if (activeConversationId) {
-        window.Doke?.services?.messages?.sendMessage?.(activeConversationId, {
-          body: value,
-          text: value,
-          type: 'text',
-          author: 'Você',
-          mine: true
-        })?.catch?.((error) => console.warn('[DokeOrdersChat:sendMessage]', error));
-      }
-
-      input.value = '';
+      messagesService.sendMessage(activeConversationId, {
+        body: value,
+        text: value,
+        type: 'text',
+        author: 'Você',
+        mine: true
+      }).then(() => {
+        const stack = document.querySelector('[data-chat-messages]');
+        if (stack) {
+          const row = document.createElement('article');
+          row.className = 'orders-chat-row orders-chat-row--me';
+          row.innerHTML = '<div class="orders-chat-message orders-chat-message--me"><strong>Você</strong><p></p></div>';
+          row.querySelector('p').textContent = value;
+          stack.appendChild(row);
+          row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        input.value = '';
+      }).catch((error) => console.warn('[DokeOrdersChat:sendMessage]', error));
     }, true);
 
     document.addEventListener('keydown', (event) => {

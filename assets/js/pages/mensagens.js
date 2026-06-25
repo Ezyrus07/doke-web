@@ -1,73 +1,5 @@
 (() => {
-  const conversations = {
-    painting: {
-      avatar: "",
-      name: "Studio Aquarela",
-      lastSeen: "Online agora",
-      unread: 2,
-      group: "orders",
-      messages: [
-        { author: "Studio Aquarela", time: "09:12", text: "Recebemos seu pedido e já separamos uma proposta base para pintura interna com pequenos reparos.", mine: false },
-        { author: "Você", time: "09:18", text: "Perfeito. Quero entender prazo, materiais incluídos e se vocês conseguem começar ainda esta semana.", mine: true },
-        { author: "Studio Aquarela", time: "09:22", text: "Conseguimos iniciar em até 7 dias. Tinta, proteção e acabamento já entram no pacote. Posso te enviar o detalhamento?", mine: false },
-        { author: "Você", time: "09:24", text: "Sim, por favor! Assim consigo alinhar com a equipe e já fechamos.", mine: true },
-        { author: "Studio Aquarela", time: "09:26", text: "Enviando agora o PDF com tudo detalhado. Qualquer dúvida, estou por aqui!", mine: false },
-        { author: "Você", time: "09:28", text: "Recebido aqui. Muito claro 👋 Obrigado pelo atendimento!", mine: true }
-      ]
-    },
-    "living-room": {
-      avatar: "",
-      name: "Casa Viva Decoração",
-      lastSeen: "Visto há 12 min",
-      unread: 1,
-      group: "orders",
-      messages: [
-        { author: "Casa Viva Reformas", time: "11:48", text: "Analisei as fotos e dá para concentrar a obra em 3 frentes: gesso, pintura e marcenaria leve.", mine: false },
-        { author: "Você", time: "11:54", text: "Quero priorizar primeiro a pintura e os ajustes de elétrica. Marcenaria pode ficar para uma segunda etapa.", mine: true },
-        { author: "Casa Viva Reformas", time: "12:11", text: "Fechado. Com essa divisão, o prazo fica mais confortável e consigo te mandar um escopo enxuto ainda hoje.", mine: false }
-      ]
-    },
-    electrical: {
-      avatar: "",
-      name: "Luz Técnica",
-      lastSeen: "Visto ontem",
-      unread: 0,
-      group: "orders",
-      messages: [
-        { author: "Luz Técnica", time: "Ontem", text: "Finalizamos a instalação elétrica e deixamos o quadro identificado para facilitar manutenção futura.", mine: false },
-        { author: "Você", time: "Ontem", text: "Recebi tudo certo. Obrigado pelo cuidado com a limpeza e a organização.", mine: true },
-        { author: "Luz Técnica", time: "Ontem", text: "Quando puder, deixe sua avaliação aqui na plataforma para encerrar o atendimento.", mine: false }
-      ]
-    },
-    amanda: {
-      avatar: "",
-      name: "Amanda Ribeiro",
-      lastSeen: "Online há 5 min",
-      unread: 0,
-      group: "contacts",
-      messages: [
-        { author: "Amanda Rocha", time: "08:33", text: "Conseguiu fechar com aquele profissional que eu te indiquei?", mine: false },
-        { author: "Você", time: "08:37", text: "Consegui sim. O atendimento foi ótimo e já estamos alinhando o orçamento.", mine: true },
-        { author: "Amanda Rocha", time: "08:40", text: "Fechou, depois me manda as fotos daquele ambiente.", mine: false }
-      ]
-    },
-    marcos: {
-      avatar: "",
-      name: "Marcos Lima",
-      lastSeen: "Visto ontem às 20:18",
-      unread: 0,
-      group: "contacts",
-      messages: [
-        { author: "Marcos Lima", time: "Ontem", text: "Valeu por indicar o profissional. Gostei bastante do atendimento.", mine: false },
-        { author: "Você", time: "Ontem", text: "Boa. Depois me conta como ficou o resultado final.", mine: true }
-      ]
-    }
-  };
-
-
-  conversations.marcos.archived = true;
-  conversations.electrical.archived = false;
-
+  const conversations = {};
 
   const getConversationInitials = (name) => String(name || "")
     .trim()
@@ -86,7 +18,16 @@
 
   const getCurrentUser = () => {
     try {
-      return window.Doke?.session?.getCurrentUser?.() || window.DokeAuth?.service?.getCurrentUser?.() || null;
+      const sessionUser = window.Doke?.session?.getCurrentUser?.() || window.DokeAuth?.service?.getCurrentUser?.();
+      if (sessionUser) return sessionUser;
+    } catch (error) {
+      // fallback below
+    }
+
+    try {
+      const raw = window.localStorage.getItem("doke.auth.session.v1");
+      const session = raw ? JSON.parse(raw) : null;
+      return session?.user || null;
     } catch (error) {
       return null;
     }
@@ -94,6 +35,25 @@
 
   const getCurrentUserId = () => getCurrentUser()?.id || "";
   const getCurrentUserRole = () => getCurrentUser()?.role || "client";
+  const isProfessionalUser = (user = getCurrentUser()) => Boolean(user?.role === "professional");
+  const isDemoProfessionalUser = (user = getCurrentUser()) => Boolean(isProfessionalUser(user) && String(user?.id) === "user_profissional_demo");
+  const isProfessionalConversationView = (conversation) => {
+    const user = getCurrentUser();
+    if (!isProfessionalUser(user)) return false;
+    const professionalId = String(conversation?.professionalId || conversation?.order?.professionalId || conversation?.order?.providerId || "");
+    if (professionalId && professionalId === String(user.id)) return true;
+    return isDemoProfessionalUser(user) && Boolean(conversation?.orderId || conversation?.order?.id);
+  };
+  const canUseChargeAction = (conversation) => Boolean(isProfessionalConversationView(conversation));
+  const syncChargeActionVisibility = (conversation) => {
+    const allowed = canUseChargeAction(conversation);
+    const button = document.querySelector("[data-messages-charge]");
+    if (!button) return false;
+    button.hidden = !allowed;
+    button.setAttribute("aria-hidden", allowed ? "false" : "true");
+    if (!allowed) button.disabled = true;
+    return allowed;
+  };
 
   const normalizeLocalMessage = (message, conversation) => {
     const currentUserId = getCurrentUserId();
@@ -118,13 +78,14 @@
 
   const mapLocalConversation = (conversation) => {
     const order = conversation?.order || {};
+    const hasOrderContext = Boolean(conversation?.orderId || order.id);
     return {
       avatar: conversation?.avatar || conversation?.peerInitials || "",
       name: conversation?.name || conversation?.peerName || "Profissional Doke",
       peerRole: conversation?.peerRole || "professional",
       lastSeen: conversation?.lastSeen || "Conversa do pedido",
       unread: Number(conversation?.unread || conversation?.unreadCount || 0),
-      group: conversation?.group || "orders",
+      group: hasOrderContext ? "orders" : conversation?.group || "contacts",
       orderId: conversation?.orderId || order.id || "",
       serviceId: conversation?.serviceId || order.serviceId || "",
       order: {
@@ -134,6 +95,7 @@
         professionalId: conversation?.professionalId || order.professionalId || order.providerId || "",
         professionalName: conversation?.professionalName || order.providerName || order.provider || "Profissional Doke",
         title: order.title || order.serviceTitle || conversation?.orderTitle || "Pedido de serviço",
+        status: order.status || conversation?.status || "",
         statusLabel: order.statusLabel || conversation?.statusLabel || "Aguardando resposta",
         budget: order.budget || conversation?.budget || "A definir",
         category: order.category || conversation?.category || "Serviço",
@@ -146,9 +108,23 @@
   const getStatusToneClass = (label) => {
     const normalized = String(label || "").toLowerCase();
     if (normalized.includes("conclu") || normalized.includes("final")) return "message-item__deal-status--done";
-    if (normalized.includes("cancel")) return "message-item__deal-status--done";
+    if (normalized.includes("cancel") || normalized.includes("recus")) return "message-item__deal-status--done";
     return "message-item__deal-status--pending";
   };
+
+  const ORDER_UNLOCKED_STATUSES = new Set(["conversation", "accepted", "responded", "quoted", "in_progress", "completed"]);
+
+  const getOrderStatus = (conversation) => {
+    const explicit = String(conversation?.order?.status || conversation?.status || "").trim();
+    if (explicit) return explicit;
+    const label = String(conversation?.order?.statusLabel || conversation?.statusLabel || "").toLowerCase();
+    if (label.includes("aceito") || label.includes("liberad")) return "conversation";
+    if (label.includes("recus")) return "cancelled";
+    return "pending";
+  };
+  const isOrderConversationUnlocked = (conversation) => ORDER_UNLOCKED_STATUSES.has(getOrderStatus(conversation));
+  const isOrderPendingAcceptance = (conversation) => getOrderStatus(conversation) === "pending";
+  const isOrderDeclined = (conversation) => getOrderStatus(conversation) === "cancelled";
 
   const getMessagePreview = (message) => {
     if (!message) return "";
@@ -167,7 +143,7 @@
         <span class="message-item__content">
           <span class="message-item__line"><strong>${escapeHtml(conversation.name)}</strong><span class="message-item__time">${escapeHtml(lastMessage?.time || "agora")}</span></span>
           <span class="message-item__deal-status ${getStatusToneClass(statusLabel)}">${escapeHtml(statusLabel)}</span>
-          <span class="message-item__preview">${escapeHtml(getMessagePreview(lastMessage) || "Conversa criada para acompanhar o pedido.")}</span>
+          <span class="message-item__preview">${escapeHtml(getMessagePreview(lastMessage) || "Sem mensagens ainda.")}</span>
           <span class="message-item__status">${escapeHtml(conversation.lastSeen || "Conversa do pedido")}</span>
         </span>
         <span class="message-item__badge" ${conversation.unread ? "" : "hidden"}>${escapeHtml(conversation.unread || "")}</span>
@@ -175,19 +151,61 @@
     `;
   };
 
+  const getConversationLists = (root) => ({
+    ordersList: root.querySelector("[data-messages-orders-list]") || root.querySelector(".messages-list"),
+    contactsList: root.querySelector("[data-messages-contacts-list]") || root.querySelector(".messages-list")
+  });
+
+  const isRenderedList = (list) => {
+    if (!list || !list.isConnected) return false;
+    const listStyle = window.getComputedStyle?.(list);
+    if (listStyle?.display === "none" || listStyle?.visibility === "hidden") return false;
+    const block = list.closest(".messages-block");
+    const blockStyle = block ? window.getComputedStyle?.(block) : null;
+    if (blockStyle?.display === "none" || blockStyle?.visibility === "hidden") return false;
+    return true;
+  };
+
+  const getConversationTargetList = (root, conversation) => {
+    const { ordersList, contactsList } = getConversationLists(root);
+    if (conversation?.group === "orders" && isRenderedList(ordersList)) return ordersList;
+    return contactsList || ordersList;
+  };
+
+  const ensureLocalConversationCard = (root, conversationId, conversation) => {
+    if (!root || !conversationId || !conversation) return false;
+    const targetList = getConversationTargetList(root, conversation);
+    if (!targetList) return false;
+
+    const existingCard = Array.from(root.querySelectorAll(".message-item[data-message-id]")).find((item) => item.dataset.messageId === String(conversationId));
+    if (existingCard) {
+      if (existingCard.parentElement !== targetList) {
+        targetList.prepend(existingCard);
+        return true;
+      }
+      return false;
+    }
+
+    targetList.insertAdjacentHTML("afterbegin", renderLocalConversationItem(conversationId, conversation));
+    return true;
+  };
+
   const hydrateLocalConversations = (root) => {
     const service = window.Doke?.services?.messages;
-    const list = root.querySelector("[data-messages-contacts-list]") || root.querySelector(".messages-list");
-    if (!service?.listLocalConversations || !list) return;
+    const { ordersList } = getConversationLists(root);
+    if (!service?.listLocalConversations || !ordersList) return false;
 
     const localConversations = service.listLocalConversations({ currentUser: true }) || [];
     localConversations.slice().reverse().forEach((conversation) => {
-      if (!conversation?.id || conversations[conversation.id]) return;
+      if (!conversation?.id) return;
+      const conversationId = String(conversation.id);
       const mapped = mapLocalConversation(conversation);
-      mapped.group = 'contacts';
-      conversations[conversation.id] = mapped;
-      list.insertAdjacentHTML("afterbegin", renderLocalConversationItem(conversation.id, mapped));
+      const isOrderConversation = Boolean(mapped.orderId || mapped.order?.id || mapped.group === "orders");
+      mapped.group = isOrderConversation ? "orders" : "contacts";
+      conversations[conversationId] = Object.assign({}, conversations[conversationId] || {}, mapped);
+      ensureLocalConversationCard(root, conversationId, conversations[conversationId]);
     });
+    return true;
   };
 
   const persistConversationMessage = (conversationId, message) => {
@@ -200,6 +218,7 @@
       speed: message.speed || "1x",
       amount: message.amount || "",
       installments: message.installments || "",
+      senderId: message.senderId || getCurrentUserId(),
       mine: message.mine !== false,
       author: message.author || "Você",
       replyTo: message.replyTo || null
@@ -269,8 +288,21 @@
     window.DokeHomeDrawer?.create({ signal: drawerController.signal })?.();
     hydrateLocalConversations(root);
 
-    const items = Array.from(root.querySelectorAll(".message-item[data-message-id]"));
-    const messagesList = root.querySelector(".messages-list");
+    let items = [];
+    const refreshConversationItems = () => {
+      items = Array.from(root.querySelectorAll(".message-item[data-message-id]"));
+      return items;
+    };
+    const prepareConversationItems = () => {
+      refreshConversationItems().forEach((item) => {
+        item.classList.add("doke-selectable-card");
+        item.setAttribute("role", "option");
+        item.setAttribute("aria-selected", selectedConversationIds?.has?.(item.dataset.messageId) ? "true" : "false");
+        if (!item.hasAttribute("tabindex")) item.tabIndex = 0;
+      });
+    };
+    refreshConversationItems();
+    const messagesList = root.querySelector("[data-chat-sidebar-scroll]") || root.querySelector("[data-messages-contacts-list]") || root.querySelector(".messages-list");
     const searchForms = Array.from(root.querySelectorAll("[data-messages-search-form]"));
     const searchInputs = Array.from(root.querySelectorAll("[data-messages-search-input]"));
     const resetSearchButton = root.querySelector("[data-messages-reset-search]");
@@ -309,6 +341,8 @@
     const desktopFiltersPanel = root.querySelector("[data-messages-desktop-filters-panel]");
     const desktopSelectPanel = root.querySelector("[data-messages-desktop-select-panel]");
     const imageInput = root.querySelector("[data-messages-image-input]");
+    const imageTool = imageInput?.closest(".messages-composer__tool, .doke-chat-composer__tool");
+    const sendButton = composer?.querySelector('button[type="submit"]');
     const emojiButton = root.querySelector("[data-messages-emoji]");
     const audioButton = root.querySelector("[data-messages-audio]");
     const replyPreview = root.querySelector("[data-messages-reply-preview]");
@@ -354,12 +388,7 @@
     messagesList?.setAttribute("role", "listbox");
     messagesList?.setAttribute("aria-multiselectable", "false");
 
-    items.forEach((item) => {
-      item.classList.add("doke-selectable-card");
-      item.setAttribute("role", "option");
-      item.setAttribute("aria-selected", "false");
-      if (!item.hasAttribute("tabindex")) item.tabIndex = 0;
-    });
+    prepareConversationItems();
     let replyToMessage = null;
     let audioDraftSeconds = 0;
     let audioDraftTimer = null;
@@ -395,14 +424,19 @@
 
     const pageParams = new URLSearchParams(window.location.search);
     const requestedConversationId = pageParams.get("conversation");
-    const requestedOrderId = pageParams.get("order") || pageParams.get("orderId");
+    const requestedOrderId = pageParams.get("order") || pageParams.get("orderId") || pageParams.get("pedido");
     const conversationFromOrder = requestedOrderId
       ? Object.keys(conversations).find((id) => String(conversations[id]?.orderId || conversations[id]?.order?.id || "") === String(requestedOrderId))
       : "";
     const firstListedConversationId = items.find((item) => item.dataset.messageId && conversations[item.dataset.messageId])?.dataset.messageId || "";
     let activeId = requestedConversationId && conversations[requestedConversationId]
       ? requestedConversationId
-      : conversationFromOrder || firstListedConversationId || "amanda";
+      : conversationFromOrder || firstListedConversationId || "";
+
+    if (activeId && conversations[activeId]) {
+      ensureLocalConversationCard(root, activeId, conversations[activeId]);
+      prepareConversationItems();
+    }
 
     const isCompactThreadViewport = () => window.innerWidth <= 1180;
     const isMobileRoomViewport = () => window.innerWidth <= 560;
@@ -424,6 +458,21 @@
         if (messages[index]?.type === "charge") return messages[index];
       }
       return null;
+    };
+
+    const requestDeclineReason = (orderId, trigger) => {
+      const conversation = conversations[activeId];
+      const orderTitle = conversation?.order?.title || conversation?.order?.serviceTitle || "";
+      if (window.DokeDeclineReasonDialog && typeof window.DokeDeclineReasonDialog.request === "function") {
+        return window.DokeDeclineReasonDialog.request({
+          trigger,
+          orderTitle,
+          title: "Recusar pedido",
+          text: "Explique ao cliente por que este pedido não poderá ser atendido."
+        });
+      }
+      showCopyToast("Não foi possível abrir o modal de justificativa. Recarregue a página e tente novamente.");
+      return Promise.resolve(null);
     };
 
     let activeOrderDetailTrigger = null;
@@ -522,7 +571,7 @@
 
     const getMessagesOrderDetails = (conversation) => {
       const order = conversation?.order || {};
-      const professionalView = getCurrentUserRole() === "professional";
+      const professionalView = isProfessionalConversationView(conversation);
       const peerLabel = professionalView ? "Cliente" : "Profissional";
       const peerName = professionalView
         ? order.clientName || conversation?.name || "Cliente Doke"
@@ -646,14 +695,30 @@
     const renderLinkedOrderContext = (conversation) => {
       const order = conversation?.order || {};
       const role = getCurrentUserRole();
-      const professionalView = role === "professional";
+      const professionalView = isProfessionalConversationView(conversation);
       const peerLabel = professionalView ? 'Cliente' : 'Profissional';
       const peerName = professionalView
         ? order.clientName || conversation.name || 'Cliente Doke'
         : order.professionalName || conversation.name || 'Profissional Doke';
-      const primaryLabel = professionalView ? 'Enviar proposta' : 'Aguardando proposta';
-      const primaryClass = professionalView ? 'doke-btn--primary' : 'doke-btn--soft';
-      const primaryAttrs = professionalView ? 'data-messages-proposal-action' : 'aria-disabled="true" disabled';
+      const orderStatus = getOrderStatus(conversation);
+      const isPending = isOrderPendingAcceptance(conversation);
+      const isDeclined = isOrderDeclined(conversation);
+      const unlocked = isOrderConversationUnlocked(conversation);
+      const primaryLabel = isPending
+        ? professionalView ? 'Aceitar pedido' : 'Aguardando aceite'
+        : isDeclined
+          ? 'Pedido recusado'
+          : professionalView ? 'Enviar proposta' : 'Aguardando proposta';
+      const primaryClass = isPending && professionalView
+        ? 'doke-btn--primary'
+        : unlocked && professionalView
+          ? 'doke-btn--primary'
+          : 'doke-btn--soft';
+      const primaryAttrs = isPending && professionalView
+        ? 'data-messages-accept-order'
+        : unlocked && professionalView
+          ? 'data-messages-proposal-action'
+          : 'aria-disabled="true" disabled';
       return `
       <section class="messages-order-card messages-order-card--inline" data-messages-order-context aria-label="Pedido vinculado à conversa">
         <div class="messages-order-card__head">
@@ -672,6 +737,7 @@
           </div>
           <div class="messages-order-card__actions">
             <button class="messages-order-card__button messages-order-card__button--ghost doke-btn doke-btn--ghost" type="button" data-messages-open-order-detail>Ver detalhes</button>
+            ${isPending && professionalView ? `<button class="messages-order-card__button doke-btn doke-btn--ghost" type="button" data-messages-decline-order>Recusar</button>` : ""}
             <button class="messages-order-card__button doke-btn ${primaryClass}" type="button" ${primaryAttrs}>${primaryLabel}</button>
           </div>
         </div>
@@ -714,9 +780,16 @@
     };
 
     const syncCounts = () => {
-      const visibleItems = items.filter((item) => !item.hidden && item.dataset.deleted !== "true");
-      const orders = visibleItems.filter((item) => conversations[item.dataset.messageId]?.group === "orders").length;
-      const contacts = visibleItems.filter((item) => conversations[item.dataset.messageId]?.group === "contacts").length;
+      const visibleItems = refreshConversationItems().filter((item) => !item.hidden && item.dataset.deleted !== "true");
+      const { ordersList, contactsList } = getConversationLists(root);
+      const ordersListVisible = isRenderedList(ordersList);
+      const orders = ordersListVisible
+        ? visibleItems.filter((item) => item.parentElement === ordersList || conversations[item.dataset.messageId]?.group === "orders").length
+        : 0;
+      const contacts = visibleItems.filter((item) => {
+        if (!contactsList) return conversations[item.dataset.messageId]?.group === "contacts";
+        return item.parentElement === contactsList || (!ordersListVisible && conversations[item.dataset.messageId]?.group === "orders");
+      }).length;
       const unread = visibleItems.reduce((total, item) => total + Number(conversations[item.dataset.messageId]?.unread || 0), 0);
       if (ordersCount) ordersCount.textContent = String(orders);
       if (contactsCount) contactsCount.textContent = String(contacts);
@@ -737,7 +810,7 @@
 
     const updateConversationSelectionUI = () => {
       const total = selectedConversationIds.size;
-      items.forEach((item) => {
+      refreshConversationItems().forEach((item) => {
         const selected = selectedConversationIds.has(item.dataset.messageId);
         item.classList.toggle("is-selected", selected);
         item.setAttribute("aria-selected", selected ? "true" : "false");
@@ -866,9 +939,12 @@
     const matchesConversationFilter = (conversation) => {
       if (!conversation) return false;
       if (selectedFilterKeys.size === 0) return true;
+      const { ordersList } = getConversationLists(root);
+      const ordersListVisible = isRenderedList(ordersList);
       const scopeKeys = ["orders", "contacts"].filter((key) => selectedFilterKeys.has(key));
-      if (scopeKeys.length && !scopeKeys.includes(conversation.group)) {
-        return false;
+      if (scopeKeys.length) {
+        const displayGroup = !ordersListVisible && conversation.group === "orders" ? "contacts" : conversation.group;
+        if (!scopeKeys.includes(displayGroup)) return false;
       }
       if (selectedFilterKeys.has("unread") && Number(conversation.unread || 0) <= 0) {
         return false;
@@ -892,7 +968,7 @@
 
 
     const refreshConversationCards = () => {
-      items.forEach((item) => {
+      refreshConversationItems().forEach((item) => {
         const id = item.dataset.messageId;
         const conversation = id ? conversations[id] : null;
         if (!conversation) return;
@@ -950,9 +1026,72 @@
       });
     };
 
+    const getConversationLockMessage = (conversation) => {
+      if (!conversation || !(conversation.group === "orders" || conversation.orderId || conversation.order?.id)) return "";
+      if (isOrderDeclined(conversation)) {
+        const reason = conversation.order?.refusalReason ? ` Justificativa: ${conversation.order.refusalReason}` : "";
+        return `Pedido recusado pelo profissional.${reason}`;
+      }
+      if (isOrderPendingAcceptance(conversation)) {
+        return isProfessionalConversationView(conversation)
+          ? "Aceite o pedido para liberar a conversa com o cliente. Para recusar, informe uma justificativa."
+          : "A conversa será liberada quando o profissional aceitar o pedido.";
+      }
+      return "";
+    };
+
+    const syncComposerLock = (conversation) => {
+      if (!composer) return;
+      const lockedMessage = getConversationLockMessage(conversation);
+      const locked = Boolean(lockedMessage);
+      composer.classList.toggle("is-locked", locked);
+      if (composerInput) {
+        composerInput.disabled = locked;
+        composerInput.placeholder = locked ? lockedMessage : (window.innerWidth <= 760 ? "Mensagem..." : "Digite sua mensagem...");
+      }
+      [imageTool, audioButton, emojiButton, sendButton, chargeButton].forEach((button) => {
+        if (!button) return;
+        button.disabled = locked || (button === chargeButton && !canUseChargeAction(conversation));
+      });
+    };
+
+    const renderEmptyThread = () => {
+      activeId = "";
+      clearSelection();
+      refreshConversationItems().forEach((item) => item.classList.remove("is-active"));
+      if (threadAvatar) threadAvatar.textContent = "DK";
+      if (threadName) threadName.textContent = "Selecione uma conversa";
+      if (threadLastSeen) threadLastSeen.textContent = "Pedidos e mensagens aparecem aqui";
+      const orderAction = root.querySelector(".messages-thread__action--order[data-messages-open-order-detail]");
+      if (orderAction) orderAction.disabled = true;
+      if (chargeButton) syncChargeActionVisibility(null);
+      if (threadBody) {
+        threadBody.innerHTML = "";
+        threadBody.hidden = true;
+      }
+      if (threadEmpty) {
+        threadEmpty.hidden = false;
+        const title = threadEmpty.querySelector("h3");
+        const text = threadEmpty.querySelector("p");
+        if (title) title.textContent = "Selecione uma conversa.";
+        if (text) text.textContent = "Pedidos aceitos e mensagens reais aparecerão aqui.";
+      }
+      if (composer) composer.classList.add("is-locked");
+      if (composerInput) {
+        composerInput.disabled = true;
+        composerInput.placeholder = "Selecione uma conversa para iniciar.";
+      }
+      [imageTool, audioButton, emojiButton, sendButton, chargeButton].forEach((button) => {
+        if (button) button.disabled = true;
+      });
+    };
+
     const renderThread = (id, options = {}) => {
       const conversation = conversations[id];
-      if (!conversation || !threadBody) return;
+      if (!conversation || !threadBody) {
+        renderEmptyThread();
+        return;
+      }
       const isSameThread = activeId === id;
       const previousScrollTop = threadBody.scrollTop;
       const { scrollTo = isSameThread ? "preserve" : "start", openOnMobile = false } = options;
@@ -965,15 +1104,46 @@
       if (orderAction) orderAction.disabled = false;
       if (!isSameThread) clearSelection();
       clearReplyPreview();
-      items.forEach((item) => item.classList.toggle("is-active", item.dataset.messageId === id));
+      refreshConversationItems().forEach((item) => item.classList.toggle("is-active", item.dataset.messageId === id));
       if (threadAvatar) threadAvatar.textContent = getConversationInitials(conversation.name);
       if (threadName) threadName.textContent = conversation.name;
       if (threadLastSeen) threadLastSeen.textContent = conversation.lastSeen;
-      if (chargeButton) chargeButton.hidden = getCurrentUserRole() !== "professional";
-      if (threadEmpty) threadEmpty.hidden = conversation.messages.length !== 0;
-      if (threadBody) threadBody.hidden = conversation.messages.length === 0;
+      syncChargeActionVisibility(conversation);
+      syncComposerLock(conversation);
+      const hasOrderContext = conversation.group === "orders" || Boolean(conversation.orderId || conversation.order?.id);
+      if (threadEmpty) threadEmpty.hidden = hasOrderContext || conversation.messages.length !== 0;
+      if (threadBody) threadBody.hidden = !hasOrderContext && conversation.messages.length === 0;
       const activeInitials = getConversationInitials(conversation.name);
-      threadBody.innerHTML = renderLinkedOrderContext(conversation) + conversation.messages.map((message, index) => `
+      const lockMessage = getConversationLockMessage(conversation);
+      const lockTitle = isOrderDeclined(conversation) ? "Pedido recusado" : "Aguardando aceite do profissional";
+      threadBody.innerHTML = (hasOrderContext ? renderLinkedOrderContext(conversation) : "") + (lockMessage ? `
+        <section class="messages-thread-lock${isOrderDeclined(conversation) ? " messages-thread-lock--declined" : ""}" data-messages-thread-lock aria-live="polite">
+          <div class="messages-thread-lock__icons" aria-hidden="true">
+            <span class="messages-thread-lock__icon messages-thread-lock__icon--paint">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M4 7.75h10.6a2.4 2.4 0 0 1 0 4.8H8.9l-1.8 3.1a1.9 1.9 0 0 1-1.65.95H4.9v-3.3H4a2 2 0 0 1-2-2v-1.55a2 2 0 0 1 2-2Z"/>
+                <path d="M16.7 8.4 21.2 3.9"/>
+                <path d="m18.1 7 2 2"/>
+              </svg>
+            </span>
+            <span class="messages-thread-lock__icon messages-thread-lock__icon--wrench">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M14.6 5.2a4.2 4.2 0 0 0 4.2 5.2l-7.95 7.95a2.1 2.1 0 1 1-2.97-2.97L15.85 7.4a4.2 4.2 0 0 1-1.25-2.2Z"/>
+                <path d="M13.85 4.35A4.2 4.2 0 0 1 19.7 9.1"/>
+              </svg>
+            </span>
+            <span class="messages-thread-lock__icon messages-thread-lock__icon--bolt">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M13.2 2.75 5.9 13.2h4.55L9.95 21.25l8.15-11.3h-4.55l-.35-7.2Z"/>
+              </svg>
+            </span>
+          </div>
+          <div class="messages-thread-lock__content">
+            <strong>${escapeHtml(lockTitle)}</strong>
+            <p>${escapeHtml(lockMessage)}</p>
+          </div>
+        </section>
+      ` : "") + conversation.messages.map((message, index) => `
         <article class="message-row${message.mine ? " message-row--me" : ""}${message.type === "charge" ? " message-row--charge" : ""}" data-message-index="${index}">
           ${message.mine ? "" : `<span class="message-row__avatar doke-avatar" aria-hidden="true">${activeInitials}</span>`}
           <div class="message-bubble doke-selectable-card${message.mine ? " message-bubble--me" : ""}${message.type === "image" ? " message-bubble--image-only" : ""}${message.type === "charge" ? " message-bubble--charge" : ""}${selectedMessageIndexes.has(index) ? " is-selected" : ""}" data-message-bubble data-message-index="${index}" role="option" tabindex="0" aria-selected="${selectedMessageIndexes.has(index) ? "true" : "false"}">
@@ -1232,7 +1402,7 @@
     const syncVisibility = () => {
       const query = getSearchQuery();
       let visibleCount = 0;
-      items.forEach((item) => {
+      refreshConversationItems().forEach((item) => {
         const conversation = conversations[item.dataset.messageId];
         const notDeleted = item.dataset.deleted !== "true";
         const matchesFilter = matchesConversationFilter(conversation);
@@ -1407,6 +1577,54 @@
     });
 
     root.addEventListener("click", (event) => {
+      const acceptOrderButton = event.target.closest("[data-messages-accept-order]");
+      const declineOrderButton = event.target.closest("[data-messages-decline-order]");
+      if ((acceptOrderButton || declineOrderButton) && root.contains(acceptOrderButton || declineOrderButton)) {
+        event.preventDefault();
+        event.stopPropagation();
+        const conversation = conversations[activeId];
+        const orderId = conversation?.order?.id || conversation?.orderId;
+        if (!orderId || !window.Doke?.services?.orders) return;
+
+        if (acceptOrderButton) {
+          acceptOrderButton.disabled = true;
+          acceptOrderButton.textContent = "Aceitando...";
+          window.Doke.services.orders.accept(orderId).then((order) => {
+            if (conversation) {
+              conversation.order = Object.assign({}, conversation.order || {}, order || {}, { status: "conversation", statusLabel: "Pedido aceito" });
+              conversation.lastSeen = "Conversa liberada";
+              conversation.lastMessage = "Conversa liberada";
+            }
+            renderThread(activeId, { scrollTo: "end" });
+          }).catch((error) => {
+            acceptOrderButton.disabled = false;
+            acceptOrderButton.textContent = "Aceitar pedido";
+            showCopyToast(error?.message || "Não foi possível aceitar o pedido.");
+          });
+          return;
+        }
+
+        requestDeclineReason(orderId, declineOrderButton).then((reason) => {
+          if (!reason || !reason.trim()) return;
+
+          declineOrderButton.disabled = true;
+          declineOrderButton.textContent = "Recusando...";
+          window.Doke.services.orders.decline(orderId, reason.trim()).then((order) => {
+            if (conversation) {
+              conversation.order = Object.assign({}, conversation.order || {}, order || {}, { status: "cancelled", statusLabel: "Pedido recusado", refusalReason: reason.trim() });
+              conversation.lastSeen = "Pedido recusado";
+              conversation.lastMessage = "Pedido recusado";
+            }
+            renderThread(activeId, { scrollTo: "end" });
+          }).catch((error) => {
+            declineOrderButton.disabled = false;
+            declineOrderButton.textContent = "Recusar";
+            showCopyToast(error?.message || "Não foi possível recusar o pedido.");
+          });
+        });
+        return;
+      }
+
       const detailButton = event.target.closest("[data-messages-open-order-detail]");
       if (!detailButton || !root.contains(detailButton)) return;
       event.preventDefault();
@@ -1433,36 +1651,69 @@
       closeMessagesOrderDetail();
     });
 
-    items.forEach((item) => {
-      const toggleConversationSelected = () => {
-        const id = item.dataset.messageId;
-        if (!id || item.dataset.deleted === "true") return;
-        if (selectedConversationIds.has(id)) {
-          selectedConversationIds.delete(id);
-        } else {
-          selectedConversationIds.add(id);
-        }
-        updateConversationSelectionUI();
-        syncHeaderControls();
-      };
+    const toggleConversationSelectedByItem = (item) => {
+      const id = item?.dataset.messageId;
+      if (!id || item.dataset.deleted === "true") return;
+      if (selectedConversationIds.has(id)) {
+        selectedConversationIds.delete(id);
+      } else {
+        selectedConversationIds.add(id);
+      }
+      updateConversationSelectionUI();
+      syncHeaderControls();
+    };
 
-      item.addEventListener("click", () => {
-        const id = item.dataset.messageId;
-        if (!id || item.dataset.deleted === "true") return;
-        if (selectionMode) {
-          toggleConversationSelected();
-          return;
-        }
-        setCompactThreadOpen(true);
-        renderThread(id, { scrollTo: "start", openOnMobile: true });
-      });
-
-      item.addEventListener("keydown", (event) => {
-        if (!selectionMode || (event.key !== " " && event.key !== "Enter")) return;
-        event.preventDefault();
-        toggleConversationSelected();
-      });
+    messagesList?.addEventListener("click", (event) => {
+      const item = event.target.closest(".message-item[data-message-id]");
+      if (!item || !messagesList.contains(item)) return;
+      const id = item.dataset.messageId;
+      if (!id || item.dataset.deleted === "true") return;
+      if (selectionMode) {
+        toggleConversationSelectedByItem(item);
+        return;
+      }
+      setCompactThreadOpen(true);
+      renderThread(id, { scrollTo: "start", openOnMobile: true });
     });
+
+    messagesList?.addEventListener("keydown", (event) => {
+      const item = event.target.closest(".message-item[data-message-id]");
+      if (!item || !messagesList.contains(item)) return;
+      if (!selectionMode || (event.key !== " " && event.key !== "Enter")) return;
+      event.preventDefault();
+      toggleConversationSelectedByItem(item);
+    });
+
+    const refreshLocalConversationSurface = ({ preferRequested = false } = {}) => {
+      const hadActiveConversation = Boolean(activeId && conversations[activeId]);
+      hydrateLocalConversations(root);
+      prepareConversationItems();
+      refreshConversationCards();
+      syncVisibility();
+      const nextConversationFromOrder = requestedOrderId
+        ? Object.keys(conversations).find((id) => String(conversations[id]?.orderId || conversations[id]?.order?.id || "") === String(requestedOrderId))
+        : "";
+      if (preferRequested && !hadActiveConversation) {
+        const nextId = (requestedConversationId && conversations[requestedConversationId] ? requestedConversationId : "")
+          || nextConversationFromOrder
+          || refreshConversationItems().find((item) => item.dataset.messageId && conversations[item.dataset.messageId])?.dataset.messageId
+          || "";
+        if (nextId) {
+          ensureLocalConversationCard(root, nextId, conversations[nextId]);
+          prepareConversationItems();
+          refreshConversationCards();
+          syncVisibility();
+          renderThread(nextId, { scrollTo: "start", openOnMobile: Boolean(requestedOrderId || requestedConversationId) });
+        }
+      }
+    };
+
+    document.addEventListener("doke:auth-session-change", () => refreshLocalConversationSurface({ preferRequested: true }));
+    document.addEventListener("doke:auth-surface-ready", () => refreshLocalConversationSurface({ preferRequested: true }));
+    document.addEventListener("doke:order-created", () => refreshLocalConversationSurface({ preferRequested: true }));
+    document.addEventListener("doke:order-status-changed", () => refreshLocalConversationSurface({ preferRequested: true }));
+    document.addEventListener("doke:message-sent", () => refreshLocalConversationSurface({ preferRequested: true }));
+    window.setTimeout(() => refreshLocalConversationSurface({ preferRequested: true }), 120);
 
     threadBody?.addEventListener("click", (event) => {
       const bubble = event.target.closest("[data-message-bubble]");
@@ -1597,6 +1848,18 @@
 
     composer?.addEventListener("submit", (event) => {
       event.preventDefault();
+      const activeConversation = conversations[activeId];
+      if (!activeConversation) {
+        showCopyToast("Selecione uma conversa para enviar mensagem.");
+        renderEmptyThread();
+        return;
+      }
+      const lockMessage = getConversationLockMessage(activeConversation);
+      if (lockMessage) {
+        showCopyToast(lockMessage);
+        syncComposerLock(activeConversation);
+        return;
+      }
       const value = String(composerInput?.value || "").trim();
       if (audioDraft && !audioDraft.hidden) {
         const audioMessage = { author: "Você", time: "agora", mine: true, type: "audio", duration: formatAudioTime(Math.max(audioDraftSeconds, 1)), speed: "1x", replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null };
@@ -1631,6 +1894,22 @@
     });
 
     chargeButton?.addEventListener("click", () => {
+      const activeConversation = conversations[activeId];
+      if (!activeConversation) {
+        showCopyToast("Selecione uma conversa para enviar proposta.");
+        renderEmptyThread();
+        return;
+      }
+      if (!canUseChargeAction(activeConversation)) {
+        syncChargeActionVisibility(activeConversation);
+        showCopyToast("Cobrança é uma ação disponível apenas para profissionais.");
+        return;
+      }
+      const lockMessage = getConversationLockMessage(activeConversation);
+      if (lockMessage) {
+        showCopyToast(lockMessage);
+        return;
+      }
       openChargeModal();
     });
 
@@ -1690,13 +1969,15 @@
 
     chargeForm?.addEventListener("submit", (event) => {
       event.preventDefault();
+      if (!conversations[activeId]) return;
       const normalized = String(chargeAmountInput?.value || "").trim();
       if (!normalized) return;
       const chargeMessage = {
-        author: conversations[activeId].name,
+        author: "Você",
         time: "agora",
         text: "Proposta pronta para aprovação. Você pode pagar por aqui para confirmar o atendimento.",
-        mine: false,
+        mine: true,
+        senderId: getCurrentUserId(),
         type: "charge",
         amount: normalized.startsWith("R$") ? normalized : `R$ ${normalized}`,
         installments: chargeInstallments?.selectedOptions?.[0]?.textContent || "À vista",

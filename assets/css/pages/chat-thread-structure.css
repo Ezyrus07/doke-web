@@ -252,6 +252,12 @@ body:is([data-page="mensagens"], [data-page="comunidade-interna"]) {
   }
 }
 
+
+body[data-page="mensagens"] .messages-thread__action[hidden],
+body[data-page="mensagens"] .messages-thread__action[aria-hidden="true"] {
+  display: none;
+}
+
 @media (min-width: 1024px) and (max-width: 1180px) {
   body:is([data-page="mensagens"], [data-page="comunidade-interna"]) {
     --chat-thread-header-height: 60px;
@@ -270,5 +276,211 @@ body:is([data-page="mensagens"], [data-page="comunidade-interna"]) {
   body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-thread__body, .community-room-thread__body) {
     align-content: start;
     scroll-padding-block: 82px 92px;
+  }
+}
+
+/* Order acceptance gate for order-linked conversations.
+   Lives in the chat thread structure contract because the state belongs to the
+   conversation surface, not to a single page layout or JS visual workaround. */
+body[data-page="mensagens"] .messages-thread-lock {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  inline-size: min(620px, calc(100% - 32px));
+  margin: clamp(18px, 3.5vh, 34px) auto 28px;
+  padding: 20px 24px;
+  overflow: hidden;
+  border: 1px solid rgba(42, 95, 144, 0.12);
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(244, 249, 253, 0.88));
+  box-shadow: 0 14px 30px rgba(31, 68, 110, 0.07), 0 4px 12px rgba(31, 68, 110, 0.04);
+  color: var(--color-primary-strong, #184a76);
+  text-align: left;
+  backdrop-filter: blur(8px) saturate(1.02);
+  -webkit-backdrop-filter: blur(8px) saturate(1.02);
+}
+
+body[data-page="mensagens"] .messages-thread-lock::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: 10%;
+  inset-block-start: 50%;
+  inline-size: 96px;
+  block-size: 96px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: rgba(41, 143, 127, 0.06);
+  filter: blur(36px);
+  pointer-events: none;
+}
+
+body[data-page="mensagens"] .messages-thread-lock__icons {
+  position: relative;
+  inline-size: 30px;
+  block-size: 30px;
+  flex: 0 0 auto;
+}
+
+body[data-page="mensagens"] .messages-thread-lock__icon {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: translateY(3px) scale(0.92);
+  animation: dokeThreadLockIconCycle 4.8s ease-in-out infinite;
+}
+
+body[data-page="mensagens"] .messages-thread-lock__icon--wrench {
+  animation-delay: 1.6s;
+}
+
+body[data-page="mensagens"] .messages-thread-lock__icon--bolt {
+  animation-delay: 3.2s;
+}
+
+body[data-page="mensagens"] .messages-thread-lock__icon svg {
+  inline-size: 28px;
+  block-size: 28px;
+  fill: none;
+  stroke: var(--color-primary, #2a5f90);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body[data-page="mensagens"] .messages-thread-lock__content {
+  min-inline-size: 0;
+  display: grid;
+  gap: 4px;
+}
+
+body[data-page="mensagens"] .messages-thread-lock strong {
+  min-inline-size: 0;
+  color: var(--color-heading, #092345);
+  font-size: clamp(1.02rem, 1.25vw, 1.24rem);
+  font-weight: 900;
+  line-height: 1.14;
+  letter-spacing: -0.03em;
+}
+
+body[data-page="mensagens"] .messages-thread-lock p {
+  max-inline-size: 500px;
+  margin: 0;
+  color: var(--color-text-muted, #627a99);
+  font-size: clamp(0.88rem, 0.94vw, 0.96rem);
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+body[data-page="mensagens"] .messages-thread-lock--declined .messages-thread-lock__icon svg {
+  stroke: #8b5549;
+}
+
+body[data-page="mensagens"] .messages-thread-lock--declined .messages-thread-lock p,
+body[data-page="mensagens"] .messages-thread-lock--declined strong {
+  color: #6c4b44;
+}
+
+@keyframes dokeThreadLockIconCycle {
+  0%, 23% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.94);
+  }
+  8%, 15% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  31%, 100% {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+  }
+}
+
+@keyframes dokeThreadLockGlow {
+  0%, 100% { opacity: 0.45; transform: scale(0.96); }
+  50% { opacity: 0.78; transform: scale(1.08); }
+}
+
+@media (max-width: 760px) {
+  body[data-page="mensagens"] .messages-thread-lock {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    inline-size: min(100%, calc(100% - 18px));
+    margin-block: 18px 24px;
+    padding: 18px 16px 20px;
+    border-radius: 24px;
+    text-align: center;
+  }
+
+  body[data-page="mensagens"] .messages-thread-lock__icons {
+    inline-size: 28px;
+    block-size: 28px;
+  }
+
+  body[data-page="mensagens"] .messages-thread-lock__content {
+    justify-items: center;
+  }
+
+  body[data-page="mensagens"] .messages-thread-lock p {
+    text-align: center;
+  }
+}
+
+
+/* Locked composer contract: when an order chat is not released yet, the input
+   acts as a static one-line notice, not as an editable multiline textarea. */
+body[data-page="mensagens"] .messages-composer.is-locked .messages-composer__field {
+  align-items: center;
+  min-block-size: 52px;
+  block-size: 52px;
+  overflow: hidden;
+}
+
+body[data-page="mensagens"] .messages-composer.is-locked textarea,
+body[data-page="mensagens"] .messages-composer.is-locked .doke-chat-composer__input {
+  min-block-size: 52px;
+  block-size: 52px;
+  max-block-size: 52px;
+  overflow: hidden;
+  resize: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding-block: 15px;
+  scrollbar-width: none;
+}
+
+body[data-page="mensagens"] .messages-composer.is-locked textarea::-webkit-scrollbar,
+body[data-page="mensagens"] .messages-composer.is-locked .doke-chat-composer__input::-webkit-scrollbar {
+  display: none;
+}
+
+body[data-page="mensagens"] .messages-composer.is-locked textarea::placeholder,
+body[data-page="mensagens"] .messages-composer.is-locked .doke-chat-composer__input::placeholder {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+body[data-page="mensagens"] .messages-composer.is-locked .messages-composer__send,
+body[data-page="mensagens"] .messages-composer.is-locked .doke-chat-composer__send {
+  opacity: 0.52;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="mensagens"] .messages-thread-lock::after {
+    animation: none;
+  }
+
+  body[data-page="mensagens"] .messages-thread-lock__icon {
+    animation: none;
+    opacity: 0;
+    transform: none;
+  }
+
+  body[data-page="mensagens"] .messages-thread-lock__icon--paint {
+    opacity: 1;
   }
 }

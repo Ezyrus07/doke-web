@@ -11,10 +11,12 @@ const initBudgetPage = () => {
   const serviceId = query.get("serviceId") || query.get("id") || query.get("servico") || "";
   const requestedProfessionalId = query.get("professionalId") || query.get("providerId") || "";
   const successUrl = pageRoot.dataset.budgetSuccessUrl || "pedidos.html";
+  const loadingScreen = pageRoot.querySelector("[data-budget-loading]");
   const successScreen = pageRoot.querySelector("[data-budget-success]");
   const successOrderLink = pageRoot.querySelector("[data-budget-success-order-link]");
   const successProvider = pageRoot.querySelector("[data-budget-success-provider]");
   const successService = pageRoot.querySelector("[data-budget-success-service]");
+  if (successScreen && !successScreen.open) successScreen.hidden = true;
   const authService = window.DokeAuth?.service;
   const formatTitleCase = (value) => String(value || "").replace(/\b\w/g, (c) => c.toUpperCase());
   const normalizeBudgetLabel = (value) => String(value || "").replace(/-/g, " ").trim();
@@ -32,7 +34,8 @@ const initBudgetPage = () => {
 
   let selectedService = null;
   let provider = pageRoot.dataset.budgetProvider || query.get("pro") || "Studio Aquarela";
-  let service = normalizeBudgetLabel(pageRoot.dataset.budgetService || query.get("service") || query.get("servico") || "reforma residencial premium");
+  const explicitServiceLabel = normalizeBudgetLabel(pageRoot.dataset.budgetService || query.get("service") || query.get("servico") || "");
+  let service = explicitServiceLabel || "pintura residencial";
   let professionalId = requestedProfessionalId;
 
   const syncBudgetContext = () => {
@@ -98,6 +101,7 @@ const initBudgetPage = () => {
       successScreen.close();
     } else {
       successScreen.removeAttribute("open");
+      successScreen.hidden = true;
     }
   };
 
@@ -107,6 +111,10 @@ const initBudgetPage = () => {
 
   successScreen?.addEventListener("click", (event) => {
     if (event.target === successScreen) closeSuccessScreen();
+  });
+
+  successScreen?.addEventListener("close", () => {
+    successScreen.hidden = true;
   });
 
   syncBudgetContext();
@@ -194,6 +202,7 @@ const initBudgetPage = () => {
     const submitButton = form.querySelector("[data-step-submit]");
     const exitButton = form.querySelector("[data-step-exit]");
     const actions = form.querySelector(".become-pro-actions");
+    const visualStepCount = Math.max(4, panels.length);
     let currentStep = 0;
     let savedLocation = null;
     let lockedScrollY = 0;
@@ -203,7 +212,7 @@ const initBudgetPage = () => {
     const catégorySelect = getNativeSelect("catégoria");
     const catégoryInput = form.querySelector('input[name="catégoria"]');
     const applyServiceCategory = () => {
-      if (!service) return;
+      if (!service || !(selectedService || serviceId || explicitServiceLabel)) return;
       const normalized = formatTitleCase(service);
       if (catégorySelect) {
         const hasOption = [...catégorySelect.options].some((option) => option.textContent.toLowerCase() === normalized.toLowerCase());
@@ -437,7 +446,7 @@ const initBudgetPage = () => {
         }
       });
       if (progressLabel) progressLabel.textContent = `Etapa ${currentStep + 1} de ${panels.length}`;
-      if (progressFill) progressFill.style.width = `${((currentStep + 1) / panels.length) * 100}%`;
+      if (progressFill) progressFill.style.width = `${((currentStep + 1) / visualStepCount) * 100}%`;
       if (prevButton) prevButton.hidden = currentStep === 0;
       if (exitButton) exitButton.hidden = currentStep !== 0;
       actions?.classList.toggle("has-back-action", currentStep > 0);
@@ -496,10 +505,25 @@ const initBudgetPage = () => {
       }
       if (!validatéStep(currentStep)) return;
       if (!form.reportValidity()) return;
+      if (form.dataset.submitState === "loading") return;
+      form.dataset.submitState = "loading";
 
       const data = new FormData(form);
       const createdAt = new Date().toISOString();
       const serviceName = data.get("catégoria") || service;
+      const ordersService = window.Doke?.services?.orders;
+      const previousSubmitText = submitButton?.textContent || "Enviar solicitação";
+      const loadingFeedback = window.DokeSubmissionFeedback?.show?.(loadingScreen, {
+        title: "Enviando solicitação",
+        message: "Criando seu pedido e avisando o profissional.",
+        minDuration: 1100
+      });
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.setAttribute("aria-busy", "true");
+        submitButton.textContent = "Enviando...";
+      }
+
       const payload = {
         provider,
         providerName: provider,
@@ -538,13 +562,6 @@ const initBudgetPage = () => {
         updatedAt: createdAt
       };
 
-      const ordersService = window.Doke?.services?.orders;
-      const previousSubmitText = submitButton?.textContent || "Enviar solicitação";
-      if (submitButton) {
-        submitButton.disabled = true;
-        submitButton.textContent = "Enviando...";
-      }
-
       try {
         const savedOrder = ordersService?.create
           ? await ordersService.create(payload)
@@ -553,10 +570,18 @@ const initBudgetPage = () => {
         safeSetStorage(window.sessionStorage, storageKey, savedOrder);
         persistOrderFromSubmission(savedOrder);
         safeSetStorage(window.sessionStorage, "doke.quoteOverlay", savedOrder);
+        if (loadingFeedback?.close) {
+          await loadingFeedback.close();
+        }
         showSuccessScreen(savedOrder);
       } catch (error) {
+        if (loadingFeedback?.close) {
+          await loadingFeedback.close();
+        }
+        form.dataset.submitState = "idle";
         if (submitButton) {
           submitButton.disabled = false;
+          submitButton.removeAttribute("aria-busy");
           submitButton.textContent = previousSubmitText;
         }
         window.alert(error?.message || "Não foi possível enviar o orçamento agora.");

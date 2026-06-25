@@ -76,7 +76,7 @@
       eventKey: ['order_created', order.id || '', recipientId].filter(Boolean).join(':'),
       title: 'Novo pedido recebido',
       body: (order.clientName || 'Cliente') + ' solicitou orçamento para ' + (order.serviceTitle || order.title || 'um serviço') + '.',
-      targetUrl: 'pedidos.html?orderId=' + encodeURIComponent(order.id || ''),
+      targetUrl: 'pedidos.html?order=' + encodeURIComponent(order.id || ''),
       actionLabel: 'Ver pedido',
       read: false
     });
@@ -89,6 +89,25 @@
     var recipientId = normalizeText(options.recipientId || (actor.id === order.clientId ? order.professionalId || order.providerId : order.clientId));
     if (!recipientId) return Promise.resolve(null);
 
+    var normalizedStatus = normalizeText(status || order.status || '');
+    var title = 'Status do pedido atualizado';
+    var body = 'O pedido "' + (order.serviceTitle || order.title || 'Pedido') + '" mudou para ' + (order.statusLabel || normalizedStatus || 'nova etapa') + '.';
+    var actionLabel = 'Ver pedido';
+    var targetUrl = 'pedidos.html?order=' + encodeURIComponent(order.id || '');
+
+    if (normalizedStatus === 'conversation') {
+      title = 'Pedido aceito';
+      body = (actor.name || 'Profissional') + ' aceitou o pedido "' + (order.serviceTitle || order.title || 'Pedido') + '". A conversa foi liberada.';
+      actionLabel = 'Abrir conversa';
+      targetUrl = 'mensagens.html?order=' + encodeURIComponent(order.id || '') + (options.conversationId ? '&conversation=' + encodeURIComponent(options.conversationId) : '');
+    }
+
+    if (normalizedStatus === 'cancelled') {
+      title = 'Pedido recusado';
+      body = (actor.name || 'Profissional') + ' recusou o pedido "' + (order.serviceTitle || order.title || 'Pedido') + '".';
+      if (options.reason || order.refusalReason) body += ' Justificativa: ' + (options.reason || order.refusalReason);
+    }
+
     return create({
       type: 'order_status_changed',
       category: 'orders',
@@ -98,11 +117,11 @@
       orderId: order.id,
       conversationId: options.conversationId || '',
       serviceId: order.serviceId,
-      eventKey: ['order_status_changed', order.id || '', status || order.status || '', recipientId].filter(Boolean).join(':'),
-      title: 'Status do pedido atualizado',
-      body: 'O pedido "' + (order.serviceTitle || order.title || 'Pedido') + '" mudou para ' + (order.statusLabel || status || order.status || 'nova etapa') + '.',
-      targetUrl: 'pedidos.html?orderId=' + encodeURIComponent(order.id || ''),
-      actionLabel: 'Ver pedido',
+      eventKey: ['order_status_changed', order.id || '', normalizedStatus || '', recipientId].filter(Boolean).join(':'),
+      title: title,
+      body: body,
+      targetUrl: targetUrl,
+      actionLabel: actionLabel,
       read: false
     });
   }

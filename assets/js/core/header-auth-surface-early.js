@@ -171,6 +171,8 @@
   doc.addEventListener('doke:route-ready', mountProfileSurface);
   doc.addEventListener('doke:stable-route-ready', mountProfileSurface);
   doc.addEventListener('doke:session-changed', mountProfileSurface);
+  doc.addEventListener('doke:auth-session-change', mountProfileSurface);
+  doc.addEventListener('doke:auth-surface-ready', mountProfileSurface);
   root.addEventListener('storage', function (event) {
     if (!event || event.key === SESSION_KEY) syncIfSessionChanged();
   });

@@ -178,23 +178,10 @@
   };
 
   const ensureEmptyState = () => {
-    let empty = data.qs('[data-orders-empty-state]');
-    const list = data.qs('.orders-list');
-    if (!list) return null;
-
-    if (!empty) {
-      empty = document.createElement('div');
-      empty.className = 'orders-empty-state doke-card';
-      empty.dataset.ordersEmptyState = 'true';
-      empty.hidden = true;
-      empty.innerHTML = `
-        <strong>Nenhum pedido encontrado</strong>
-        <span>Ajuste o filtro para ver outros pedidos.</span>
-      `;
-      list.appendChild(empty);
-    }
-
-    return empty;
+    // pedidos.html already owns the canonical empty state.
+    // This bridge must not inject a second card inside the order list because
+    // localStorage orders are hydrated after the command center snapshot.
+    return data.qs('[data-orders-empty-state]');
   };
 
   const render = (snapshot) => {

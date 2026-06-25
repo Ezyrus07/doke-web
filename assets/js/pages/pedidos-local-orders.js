@@ -35,9 +35,18 @@
 
   function getCurrentUser() {
     try {
-      return Doke.session && typeof Doke.session.getCurrentUser === 'function'
-        ? Doke.session.getCurrentUser()
-        : null;
+      if (Doke.session && typeof Doke.session.getCurrentUser === 'function') {
+        var sessionUser = Doke.session.getCurrentUser();
+        if (sessionUser) return sessionUser;
+      }
+    } catch (error) {
+      // keep fallback below
+    }
+
+    try {
+      var raw = window.localStorage.getItem('doke.auth.session.v1');
+      var session = raw ? JSON.parse(raw) : null;
+      return session && session.user ? session.user : null;
     } catch (error) {
       return null;
     }
@@ -53,15 +62,21 @@
       .join('') || 'DK';
   }
 
+  function isDemoProfessional(user) {
+    return Boolean(user && user.role === 'professional' && String(user.id) === 'user_profissional_demo');
+  }
+
   function isProfessionalView(order) {
     var user = getCurrentUser();
-    return Boolean(user && user.id && String(user.id) === String(order.professionalId || order.providerId));
+    if (!user || !user.id) return false;
+    if (String(user.id) === String(order.professionalId || order.providerId)) return true;
+    return isDemoProfessional(user) && Boolean(order && order.id && (order.clientId || order.serviceId));
   }
 
   function statusClass(status) {
     if (status === 'completed') return 'completed';
     if (status === 'cancelled') return 'cancelled';
-    if (status === 'conversation') return 'conversation';
+    if (status === 'conversation' || status === 'accepted') return 'conversation';
     if (status === 'responded' || status === 'quoted') return 'responded';
     return 'pending';
   }
@@ -118,6 +133,7 @@
     var article = document.createElement('article');
     article.className = 'order-card doke-card doke-order-card';
     article.dataset.id = order.id;
+    article.dataset.localOrder = 'true';
     article.dataset.status = order.status || 'pending';
     article.dataset.detailStatus = order.statusLabel || 'Aguardando resposta';
     article.dataset.detailAddress = order.location || order.locationTitle || 'Endereço a confirmar';
@@ -143,25 +159,6 @@
         </div>
         <span class="order-card__time">${createdLabel}</span>
       </div>
-      <ol class="order-card__progress" aria-label="Progresso do pedido">
-        <li class="order-card__progress-step is-done">
-          <span class="order-card__progress-marker" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span>
-          <span class="order-card__progress-label doke-label">Solicitado</span>
-          <span class="order-card__progress-date">${progressDate}</span>
-        </li>
-        <li class="order-card__progress-step is-current">
-          <span class="order-card__progress-marker" aria-hidden="true"></span>
-          <span class="order-card__progress-label doke-label">Conf.</span>
-          <span class="order-card__progress-date">Pendente</span>
-        </li>
-        <li class="order-card__progress-step"><span class="order-card__progress-marker" aria-hidden="true"></span><span class="order-card__progress-label doke-label">Andamento</span></li>
-        <li class="order-card__progress-step"><span class="order-card__progress-marker" aria-hidden="true"></span><span class="order-card__progress-label doke-label">Revisão</span></li>
-        <li class="order-card__progress-step"><span class="order-card__progress-marker" aria-hidden="true"></span><span class="order-card__progress-label doke-label">Concl.</span></li>
-      </ol>
-      <div class="order-card__progress-summary doke-order-card doke-stat-card doke-card" aria-label="Resumo do progresso">
-        <span class="order-card__progress-summary-bar"><span data-progress-value="20"></span></span>
-        <span><strong>Etapa 1 de 5</strong> · Solicitação enviada</span>
-      </div>
       <div class="order-card__body">
         <h2>${title}</h2>
         <p class="order-card__subtitle">${professionalView ? 'Solicitação de' : 'Aguardando resposta de'} <strong>${provider}</strong></p>
@@ -169,20 +166,17 @@
           <span class="order-card__avatar doke-avatar">${initials}</span>
           <span class="order-card__location">${location}</span>
         </div>
-        <div class="order-card__meta-grid doke-grid">
-          <div class="order-card__meta"><span class="order-card__meta-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5v5l3.5 2"></path></svg></span><span>${timeline}</span></div>
-          <div class="order-card__meta"><span class="order-card__meta-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 7.5h11"></path><path d="M6.5 12h11"></path><path d="M6.5 16.5h7"></path></svg></span><span>${requestType}</span></div>
-        </div>
       </div>
       <div class="order-card__actions">
+        ${professionalView && (order.status || 'pending') === 'pending' ? `
+        <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-accept="${id}">Aceitar pedido</button>
+        <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-decline="${id}">Recusar</button>
+        ` : `
         <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-open="details">Ver detalhes</button>
         <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-open="chat">${professionalView ? 'Responder cliente' : 'Abrir conversa'}</button>
+        `}
       </div>
-      <button class="order-card__footer" type="button" data-order-open="details">
-        <span class="order-card__deadline"><span class="order-card__meta-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v3"></path><path d="M17 4.5v3"></path><rect x="4.5" y="6.5" width="15" height="13" rx="2"></rect><path d="M4.5 10h15"></path></svg></span><span>Aguardando resposta</span></span>
-        <span class="order-card__footer-arrow">›</span>
-      </button>
-    `;
+`;
 
     article.dataset.detailScope = scope;
     article.dataset.detailTimeline = timeline;
@@ -203,26 +197,99 @@
     var repository = Doke.repositories && Doke.repositories.orders;
     if (!repository || typeof repository.listLocal !== 'function') return;
 
+    var user = getCurrentUser();
     var orders = repository.listLocal({ currentUser: true });
-    var signature = orders.map(function (order) { return order && order.id; }).filter(Boolean).join('|');
+    var signature = [
+      user && user.id || 'guest',
+      user && user.role || 'guest',
+      orders.map(function (order) {
+        return [
+          order && order.id,
+          order && order.status,
+          order && order.updatedAt,
+          isProfessionalView(order) ? 'professional' : 'client'
+        ].filter(Boolean).join(':');
+      }).filter(Boolean).join('|')
+    ].join('::');
+
     if (!options.force && list.dataset.localOrdersRendered === 'true' && list.dataset.localOrdersSignature === signature) return;
 
+    Array.from(list.querySelectorAll('.order-card[data-local-order="true"]')).forEach(function (card) {
+      card.remove();
+    });
+
     orders.slice().reverse().forEach(function (order) {
-      var exists = Array.from(list.querySelectorAll('.order-card[data-id]')).some(function (card) {
-        return String(card.dataset.id) === String(order && order.id);
-      });
-      if (!order || !order.id || exists) return;
+      if (!order || !order.id) return;
       list.insertBefore(createOrderCard(order), list.firstElementChild);
     });
+
     list.dataset.localOrdersRendered = 'true';
     list.dataset.localOrdersSignature = signature;
     document.dispatchEvent(new CustomEvent('doke:orders-list-hydrated', {
       detail: {
         localCount: orders.length,
-        totalCount: list.querySelectorAll('.order-card[data-id]').length
+        totalCount: list.querySelectorAll('.order-card[data-id]').length,
+        user: user
       }
     }));
   }
+
+
+  function requestDeclineReason(orderId, trigger) {
+    var card = trigger && trigger.closest ? trigger.closest('.order-card') : null;
+    var orderTitle = card && card.querySelector ? card.querySelector('.order-card__body h2')?.textContent : '';
+    if (window.DokeDeclineReasonDialog && typeof window.DokeDeclineReasonDialog.request === 'function') {
+      return window.DokeDeclineReasonDialog.request({
+        trigger: trigger,
+        orderTitle: orderTitle,
+        title: 'Recusar pedido',
+        text: 'Explique ao cliente por que este pedido não poderá ser atendido.'
+      });
+    }
+    window.alert('Não foi possível abrir o modal de justificativa. Recarregue a página e tente novamente.');
+    return Promise.resolve(null);
+  }
+
+  document.addEventListener('click', function (event) {
+    var acceptButton = event.target && event.target.closest && event.target.closest('[data-order-accept]');
+    var declineButton = event.target && event.target.closest && event.target.closest('[data-order-decline]');
+    if (!acceptButton && !declineButton) return;
+
+    var orderId = acceptButton ? acceptButton.dataset.orderAccept : declineButton.dataset.orderDecline;
+    if (!orderId || !Doke.services || !Doke.services.orders) return;
+
+    event.preventDefault();
+
+    if (acceptButton) {
+      acceptButton.disabled = true;
+      acceptButton.textContent = 'Aceitando...';
+      Doke.services.orders.accept(orderId).then(function () {
+        scheduleRender({ force: true });
+        window.location.href = 'mensagens.html?order=' + encodeURIComponent(orderId);
+      }).catch(function (error) {
+        acceptButton.disabled = false;
+        acceptButton.textContent = 'Aceitar pedido';
+        window.alert(error && error.message ? error.message : 'Não foi possível aceitar o pedido.');
+      });
+      return;
+    }
+
+    requestDeclineReason(orderId, declineButton).then(function (reason) {
+      if (!reason || !reason.trim()) return;
+
+      declineButton.disabled = true;
+      declineButton.textContent = 'Recusando...';
+      Doke.services.orders.decline(orderId, reason.trim()).then(function () {
+        scheduleRender({ force: true });
+        window.location.reload();
+      }).catch(function (error) {
+        declineButton.disabled = false;
+        declineButton.textContent = 'Recusar';
+        window.alert(error && error.message ? error.message : 'Não foi possível recusar o pedido.');
+      });
+    });
+  });
+
 
   function scheduleRender(options) {
     window.requestAnimationFrame(function () { render(options); });
@@ -236,5 +303,10 @@
 
   document.addEventListener('doke:route-ready', function () { scheduleRender({ force: true }); });
   document.addEventListener('doke:stable-route-ready', function () { scheduleRender({ force: true }); });
+  document.addEventListener('doke:auth-session-change', function () { scheduleRender({ force: true }); });
+  document.addEventListener('doke:auth-surface-ready', function () { scheduleRender({ force: true }); });
   document.addEventListener('doke:order-created', function () { scheduleRender({ force: true }); });
+  document.addEventListener('doke:order-status-changed', function () { scheduleRender({ force: true }); });
+  window.setTimeout(function () { scheduleRender({ force: true }); }, 120);
+  window.setTimeout(function () { scheduleRender({ force: true }); }, 420);
 })();

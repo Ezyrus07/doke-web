@@ -93,6 +93,7 @@
     }
 
     const session = setSessionForUser(user, { remember });
+    updateAccountSurfaces();
     return session.user;
   };
 
@@ -112,6 +113,7 @@
     });
 
     const session = setSessionForUser(user, { remember: true });
+    updateAccountSurfaces();
     return {
       ...session.user,
       pendingConfirmation: false
@@ -271,36 +273,70 @@
     return resolveUrlForCurrentPage(clean);
   };
 
+  const getFirstName = (name) => normalizeText(name).split(/\s+/).filter(Boolean)[0] || name || 'Conta';
+  const getRoleLabel = (user) => user?.role === 'professional' ? 'Profissional' : user?.role === 'client' ? 'Cliente' : 'Conta';
+
   const updateAccountSurfaces = () => {
     const user = getCurrentUser();
-    const name = user?.name || 'Visitante';
-    const initials = user?.initials || user?.avatarInitials || 'DK';
-    const roleLabel = user?.role === 'professional' ? 'Profissional' : user?.role === 'client' ? 'Cliente' : 'Entrar';
-    const pointsLabel = user ? `${roleLabel}${Number.isFinite(Number(user.points)) && Number(user.points) > 0 ? ` · Pontos: ${user.points}` : ''}` : 'Acesse sua conta';
+    const authenticated = Boolean(user);
+    const displayName = authenticated ? getFirstName(user.name || user.email || 'Conta Doke') : 'Entrar';
+    const initials = authenticated ? user?.initials || user?.avatarInitials || 'DK' : 'DK';
+    const roleLabel = authenticated ? getRoleLabel(user) : 'Conta';
+
+    document.documentElement.dataset.authenticated = String(authenticated);
+    document.documentElement.dataset.authRole = user?.role || 'guest';
+
+    document.querySelectorAll('.home-side-meta__profile-wrap').forEach((element) => {
+      element.hidden = false;
+      element.dataset.authenticated = String(authenticated);
+    });
+
+    document.querySelectorAll('.home-side-meta__profile').forEach((element) => {
+      element.hidden = false;
+      element.setAttribute('aria-label', authenticated ? 'Abrir menu da conta' : 'Entrar na Doke');
+      element.dataset.authenticated = String(authenticated);
+    });
 
     document.querySelectorAll('.home-side-meta__avatar.doke-avatar, .sidebar__avatar, [data-user-avatar]').forEach((element) => {
       element.textContent = initials;
     });
 
     document.querySelectorAll('.home-side-meta__identity strong, [data-user-name]').forEach((element) => {
-      element.textContent = name;
+      element.textContent = displayName;
     });
 
     document.querySelectorAll('.home-side-meta__identity span, [data-user-role]').forEach((element) => {
-      element.textContent = pointsLabel;
+      element.textContent = roleLabel;
     });
 
     document.querySelectorAll('.profile-dropdown__header').forEach((element) => {
-      if (user?.handle) element.textContent = `@${user.handle}`;
-      else element.textContent = user?.email || 'Conta Doke';
+      if (authenticated && user?.handle) element.textContent = `@${user.handle}`;
+      else if (authenticated) element.textContent = user?.email || 'Conta Doke';
+      else element.textContent = 'Conta Doke';
     });
+
+    document.querySelectorAll('[data-authenticated-only]').forEach((element) => {
+      element.hidden = !authenticated;
+    });
+
+    document.querySelectorAll('[data-guest-only]').forEach((element) => {
+      element.hidden = authenticated;
+    });
+
+    document.dispatchEvent(new CustomEvent('doke:auth-surface-ready', {
+      detail: {
+        user,
+        authenticated
+      }
+    }));
   };
 
   const bindLogoutButtons = () => {
     document.querySelectorAll('[data-profile-logout], [data-sidebar-logout], [data-auth-logout]').forEach((button) => {
       if (button.dataset.authLogoutBound === 'true') return;
       button.dataset.authLogoutBound = 'true';
-      button.addEventListener('click', () => {
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
         logout({ redirect: true, redirectTo: appendNext(DEFAULT_LOGIN_URL, getCurrentPathForNext()) });
       });
     });
@@ -310,6 +346,18 @@
     updateAccountSurfaces();
     bindLogoutButtons();
     onAuthChange(updateAccountSurfaces);
+    document.addEventListener('doke:auth-session-change', updateAccountSurfaces);
+    document.addEventListener('doke:route-ready', () => {
+      bindLogoutButtons();
+      updateAccountSurfaces();
+    });
+    document.addEventListener('doke:stable-route-ready', () => {
+      bindLogoutButtons();
+      updateAccountSurfaces();
+    });
+    root.setTimeout(updateAccountSurfaces, 0);
+    root.setTimeout(updateAccountSurfaces, 120);
+    root.setTimeout(updateAccountSurfaces, 420);
   };
 
   const api = Object.freeze({

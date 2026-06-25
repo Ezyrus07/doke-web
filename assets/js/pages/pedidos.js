@@ -8,8 +8,12 @@
     window.DokeHomeDrawer?.create({ signal: drawerController.signal })?.();
 
     const filterButtons = Array.from(root.querySelectorAll('.orders-filter-item[data-filter]'));
-    const cards = Array.from(root.querySelectorAll('.order-card[data-status]'));
+    let cards = [];
     const ordersList = root.querySelector('.orders-list');
+    const refreshCards = () => {
+      cards = Array.from(root.querySelectorAll('.order-card[data-status]'));
+      return cards;
+    };
     const searchInput = root.querySelector('.orders-header-search input');
     const searchForm = searchInput?.closest('form');
     const searchTrigger = root.querySelector('[data-orders-mobile-search-toggle]') || searchForm?.querySelector('.orders-header-search__icon');
@@ -168,7 +172,7 @@
       const active = root.dataset.activeFilter || 'all';
       const query = normalize(searchInput?.value || '');
       let visibleCount = 0;
-      cards.forEach((card) => {
+      refreshCards().forEach((card) => {
         const matchesFilter = active === 'all' || card.dataset.status === active;
         const matchesSearch = !query || normalize(card.textContent || '').includes(query);
         const visible = matchesFilter && matchesSearch;
@@ -177,7 +181,9 @@
       });
       if (emptyStaté) {
         const hasQuery = Boolean(query);
-        emptyStaté.hidden = visibleCount > 0;
+        const hasVisibleOrder = visibleCount > 0 || refreshCards().some((card) => !card.hidden && card.offsetParent !== null);
+        emptyStaté.hidden = hasVisibleOrder;
+        emptyStaté.setAttribute('aria-hidden', hasVisibleOrder ? 'true' : 'false');
         if (emptyText) {
           emptyText.textContent = hasQuery
             ? 'Nenhum pedido combinou com essa busca. Tente outro termo ou limpe os filtros para voltar a ver tudo.'
@@ -203,7 +209,7 @@
     };
 
     const closeContextMenu = () => {
-      cards.forEach((card) => card.classList.remove('is-context-open'));
+      refreshCards().forEach((card) => card.classList.remove('is-context-open'));
     };
 
     const openContextMenu = (card) => {
@@ -214,7 +220,7 @@
     const openPanel = (type, card) => {
       if (type === 'chat') {
         const id = card?.dataset.id || '';
-        const href = `mensagens.html?pedido=${encodeURIComponent(id)}`;
+        const href = `mensagens.html?order=${encodeURIComponent(id)}`;
         if (window.DokeNavigate) {
           window.DokeNavigate(href);
         } else {
@@ -531,25 +537,10 @@
     });
 
     let selecting = false;
-    const cardSelectButtons = Array.from(root.querySelectorAll('.order-card__select'));
     const selectableCardInteractiveSelector = 'a, button, input, textarea, select, summary, [role="button"], [data-order-open]';
 
     ordersList?.setAttribute('role', 'listbox');
     ordersList?.setAttribute('aria-multiselectable', 'false');
-
-    cards.forEach((card, index) => {
-      card.classList.add('doke-selectable-card');
-      card.setAttribute('role', 'option');
-      card.setAttribute('aria-selected', 'false');
-      if (!card.hasAttribute('tabindex')) card.tabIndex = 0;
-
-      const selectButton = card.querySelector('.order-card__select');
-      if (selectButton) {
-        selectButton.classList.add('doke-selection-check');
-        selectButton.setAttribute('aria-label', `Selecionar pedido ${index + 1}`);
-        selectButton.setAttribute('aria-pressed', 'false');
-      }
-    });
 
     const setCardSelected = (card, selected) => {
       if (!card) return;
@@ -563,12 +554,12 @@
       setCardSelected(card, !card.classList.contains('is-selected'));
     };
 
-    const clearSelectedCards = () => cards.forEach((card) => setCardSelected(card, false));
+    const clearSelectedCards = () => refreshCards().forEach((card) => setCardSelected(card, false));
 
-    const selectedCards = () => cards.filter((card) => !card.hidden && card.classList.contains('is-selected'));
+    const selectedCards = () => refreshCards().filter((card) => !card.hidden && card.classList.contains('is-selected'));
 
     const syncSelectedActions = () => {
-      cards.forEach((card) => {
+      refreshCards().forEach((card) => {
         const selected = card.classList.contains('is-selected');
         card.setAttribute('aria-selected', selected ? 'true' : 'false');
         card.querySelector('.order-card__select')?.setAttribute('aria-pressed', selected ? 'true' : 'false');
@@ -606,6 +597,112 @@
       }
       syncSelectedActions();
     };
+
+    const syncOrderCardBindings = () => {
+      refreshCards().forEach((card, index) => {
+        card.classList.add('doke-selectable-card');
+        card.setAttribute('role', 'option');
+        card.setAttribute('aria-selected', card.classList.contains('is-selected') ? 'true' : 'false');
+        if (!card.hasAttribute('tabindex')) card.tabIndex = 0;
+
+        const selectButton = card.querySelector('.order-card__select');
+        if (selectButton) {
+          selectButton.classList.add('doke-selection-check');
+          selectButton.setAttribute('aria-label', `Selecionar pedido ${index + 1}`);
+          selectButton.setAttribute('aria-pressed', card.classList.contains('is-selected') ? 'true' : 'false');
+        }
+
+        if (!card.querySelector('.order-card__context-actions')) {
+          const actions = document.createElement('div');
+          actions.className = 'order-card__context-actions';
+          actions.innerHTML = `
+            <button class="order-card__context-button" type="button" data-context-action="select">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 12 3 3 7-7"></path><rect x="4" y="4" width="16" height="16" rx="3"></rect></svg>
+              <span>Selecionar</span>
+            </button>
+            <button class="order-card__context-button order-card__context-button--danger" type="button" data-context-action="delete"${card.dataset.status !== 'completed' ? ' disabled' : ''}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5h6"></path><path d="M5.5 7.5h13"></path><path d="M8 7.5v11"></path><path d="M16 7.5v11"></path><path d="M6.5 7.5 7 19a2 2 0 0 0 2 1.9h6a2 2 0 0 0 2-1.9l.5-11.5"></path></svg>
+              <span>Apagar</span>
+            </button>
+          `;
+          card.appendChild(actions);
+
+          actions.querySelector('[data-context-action="select"]')?.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            selecting = true;
+            syncSelectState();
+            toggleCardSelected(card);
+            if (!refreshCards().some((item) => item.classList.contains('is-selected'))) {
+              selecting = false;
+              syncSelectState();
+            }
+            syncSelectedActions();
+            closeContextMenu();
+          });
+
+          actions.querySelector('[data-context-action="delete"]')?.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (card.dataset.status !== 'completed') return;
+            card.remove();
+            recountCards();
+            syncStats();
+            applyFilters();
+            closeContextMenu();
+          });
+        }
+
+        if (card.dataset.ordersCardBound === 'true') return;
+        card.dataset.ordersCardBound = 'true';
+
+        card.addEventListener('click', (event) => {
+          if (!selecting) return;
+          const target = event.target;
+          if (target instanceof Element && target.closest(selectableCardInteractiveSelector)) return;
+          event.preventDefault();
+          toggleCardSelected(card);
+          syncSelectedActions();
+        });
+
+        card.addEventListener('keydown', (event) => {
+          if (!selecting || (event.key !== ' ' && event.key !== 'Enter')) return;
+          event.preventDefault();
+          toggleCardSelected(card);
+          syncSelectedActions();
+        });
+
+        card.addEventListener('contextmenu', (event) => {
+          event.preventDefault();
+          openContextMenu(card);
+        });
+
+        card.addEventListener('pointerdown', (event) => {
+          if (event.pointerType === 'mouse' && event.button !== 0) return;
+          longPressTimer = window.setTimeout(() => {
+            openContextMenu(card);
+          }, 450);
+        });
+
+        ['pointerup', 'pointerleave', 'pointercancel', 'pointermove'].forEach((eventName) => {
+          card.addEventListener(eventName, () => {
+            if (longPressTimer) {
+              window.clearTimeout(longPressTimer);
+              longPressTimer = null;
+            }
+          });
+        });
+      });
+    };
+
+    const refreshOrdersSurface = () => {
+      syncOrderCardBindings();
+      recountCards();
+      syncStats();
+      applyFilters();
+      syncSelectedActions();
+    };
+
     selectToggles.forEach((toggle) => {
       toggle.addEventListener('click', (event) => {
         event.preventDefault();
@@ -620,6 +717,32 @@
     root.addEventListener('doke:orders-selection-panel', (event) => {
       selecting = Boolean(event.detail?.active);
       syncSelectState();
+    });
+
+    root.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const selectButton = target.closest('.order-card__select');
+      if (selectButton && root.contains(selectButton)) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!selecting) return;
+        toggleCardSelected(selectButton.closest('.order-card'));
+        syncSelectedActions();
+        return;
+      }
+
+      const openButton = target.closest('[data-order-open]');
+      if (!openButton || !root.contains(openButton)) return;
+      event.preventDefault();
+      const card = openButton.closest('.order-card');
+      if (selecting) {
+        toggleCardSelected(card);
+        syncSelectedActions();
+        return;
+      }
+      openPanel(openButton.dataset.orderOpen, card);
     });
 
     root.querySelectorAll('[data-doke-panel-close]').forEach((button) => {
@@ -665,20 +788,10 @@
         syncSelectState();
         clearSelectedCards();
         if (mode === 'all') {
-          cards.filter((card) => !card.hidden).forEach((card) => setCardSelected(card, true));
+          refreshCards().filter((card) => !card.hidden).forEach((card) => setCardSelected(card, true));
         }
         syncSelectedActions();
         syncHeaderControls();
-      });
-    });
-
-    cardSelectButtons.forEach((button) => {
-      button.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        if (!selecting) return;
-        toggleCardSelected(button.closest('.order-card'));
-        syncSelectedActions();
       });
     });
 
@@ -709,101 +822,6 @@
     });
     root.querySelectorAll('[data-orders-panel-close]').forEach((button) => {
       button.addEventListener('click', closePanels);
-    });
-
-    root.querySelectorAll('[data-order-open]').forEach((button) => {
-      button.addEventListener('click', (event) => {
-        event.preventDefault();
-        const card = button.closest('.order-card');
-        if (selecting) {
-          toggleCardSelected(card);
-          syncSelectedActions();
-          return;
-        }
-        openPanel(button.dataset.orderOpen, card);
-      });
-    });
-
-    cards.forEach((card) => {
-      card.addEventListener('click', (event) => {
-        if (!selecting) return;
-        const target = event.target;
-        if (target instanceof Element && target.closest(selectableCardInteractiveSelector)) return;
-        event.preventDefault();
-        toggleCardSelected(card);
-        syncSelectedActions();
-      });
-
-      card.addEventListener('keydown', (event) => {
-        if (!selecting || (event.key !== ' ' && event.key !== 'Enter')) return;
-        event.preventDefault();
-        toggleCardSelected(card);
-        syncSelectedActions();
-      });
-    });
-
-    cards.forEach((card) => {
-      if (!card.querySelector('.order-card__context-actions')) {
-        const actions = document.createElement('div');
-        actions.className = 'order-card__context-actions';
-        actions.innerHTML = `
-          <button class="order-card__context-button" type="button" data-context-action="select">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 12 3 3 7-7"></path><rect x="4" y="4" width="16" height="16" rx="3"></rect></svg>
-            <span>Selecionar</span>
-          </button>
-          <button class="order-card__context-button order-card__context-button--danger" type="button" data-context-action="delete"${card.dataset.status !== 'completed' ? ' disabled' : ''}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5h6"></path><path d="M5.5 7.5h13"></path><path d="M8 7.5v11"></path><path d="M16 7.5v11"></path><path d="M6.5 7.5 7 19a2 2 0 0 0 2 1.9h6a2 2 0 0 0 2-1.9l.5-11.5"></path></svg>
-            <span>Apagar</span>
-          </button>
-        `;
-        card.appendChild(actions);
-
-        actions.querySelector('[data-context-action="select"]')?.addEventListener('click', (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          selecting = true;
-          syncSelectState();
-          toggleCardSelected(card);
-          if (!cards.some((item) => item.classList.contains('is-selected'))) {
-            selecting = false;
-            syncSelectState();
-          }
-          syncSelectedActions();
-          closeContextMenu();
-        });
-
-        actions.querySelector('[data-context-action="delete"]')?.addEventListener('click', (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          if (card.dataset.status !== 'completed') return;
-          card.remove();
-          recountCards();
-          syncStats();
-          applyFilters();
-          closeContextMenu();
-        });
-      }
-
-      card.addEventListener('contextmenu', (event) => {
-        event.preventDefault();
-        openContextMenu(card);
-      });
-
-      card.addEventListener('pointerdown', (event) => {
-        if (event.pointerType === 'mouse' && event.button !== 0) return;
-        longPressTimer = window.setTimeout(() => {
-          openContextMenu(card);
-        }, 450);
-      });
-
-      ['pointerup', 'pointerleave', 'pointercancel', 'pointermove'].forEach((eventName) => {
-        card.addEventListener(eventName, () => {
-          if (longPressTimer) {
-            window.clearTimeout(longPressTimer);
-            longPressTimer = null;
-          }
-        });
-      });
     });
 
     const syncPlannerDatéToMonth = () => {
@@ -871,15 +889,16 @@
     }
 
 
-    recountCards();
-    syncStats();
     root.dataset.activeFilter = 'all';
     syncSelectState();
     setAgendaExpanded(true);
-    applyFilters();
+    refreshOrdersSurface();
     syncHeaderControls();
     scheduleRequestedOrderFocus();
-    document.addEventListener('doke:orders-list-hydrated', scheduleRequestedOrderFocus);
+    document.addEventListener('doke:orders-list-hydrated', () => {
+      refreshOrdersSurface();
+      scheduleRequestedOrderFocus();
+    });
     if (planner) {
       syncPlannerFirstPaintState();
       renderPlannerCalendar();
