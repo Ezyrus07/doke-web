@@ -19,6 +19,17 @@ body.auth-page {
   color: var(--auth-text-strong);
   overflow-x: hidden;
   overflow-y: auto;
+  --doke-form-control-min-height: 54px;
+  --doke-form-control-radius: var(--radius-sm);
+  --doke-form-control-border: var(--auth-line);
+  --doke-form-control-bg: var(--auth-input-bg);
+  --doke-form-control-focus-border: color-mix(in srgb, var(--auth-accent) 42%, white);
+  --doke-form-control-focus-ring: 0 0 0 4px color-mix(in srgb, var(--auth-accent) 16%, transparent);
+  --doke-choice-size: 18px;
+  --doke-choice-radius: 6px;
+  --doke-choice-border: rgba(15, 23, 42, 0.18);
+  --doke-choice-active: var(--auth-accent);
+  --doke-choice-focus: color-mix(in srgb, var(--auth-accent) 16%, transparent);
 }
 
 body.auth-page--login {
@@ -138,8 +149,8 @@ body.auth-page--signup {
   overflow: hidden;
 }
 
-.auth-input input,
-.auth-password input {
+.auth-input .doke-input,
+.auth-password .doke-input {
   width: 100%;
   height: 54px;
   padding: 0 16px;
@@ -150,14 +161,14 @@ body.auth-page--signup {
   font: inherit;
 }
 
-.auth-input input::placeholder,
-.auth-password input::placeholder {
+.auth-input .doke-input::placeholder,
+.auth-password .doke-input::placeholder {
   color: #98a2b3;
 }
 
 .auth-input:focus-within,
 .auth-password:focus-within,
-.auth-choice input:focus-visible + .auth-choice-card {
+.auth-choice__input:focus-visible + .auth-choice-card {
   border-color: color-mix(in srgb, var(--auth-accent) 42%, white);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--auth-accent) 16%, transparent);
 }
@@ -210,26 +221,14 @@ body.auth-page--signup {
   font-size: 0.92rem;
 }
 
-.auth-check input {
+.auth-check input:not(.doke-checkbox) {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
-.auth-check__box {
-  width: 18px;
-  height: 18px;
-  border-radius: 6px;
-  border: 1px solid rgba(15, 23, 42, 0.18);
-  background: #fff;
+.auth-check .doke-checkbox {
   flex: 0 0 auto;
-  transition: all 0.18s ease;
-}
-
-.auth-check input:checked + .auth-check__box {
-  border-color: var(--auth-accent);
-  background: var(--auth-accent);
-  box-shadow: inset 0 0 0 4px #fff;
 }
 
 .auth-link,
@@ -406,7 +405,7 @@ body.auth-page--signup {
   position: relative;
 }
 
-.auth-choice input {
+.auth-choice__input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
@@ -434,7 +433,7 @@ body.auth-page--signup {
   line-height: 1.45;
 }
 
-.auth-choice input:checked + .auth-choice-card {
+.auth-choice__input:checked + .auth-choice-card {
   border-color: color-mix(in srgb, var(--auth-accent) 40%, white);
   background: var(--auth-soft);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--auth-accent) 10%, transparent);

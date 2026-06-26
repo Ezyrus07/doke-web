@@ -16,9 +16,11 @@ const reportMd = path.join(reportsDir, 'card-cta-contract-report.md');
 const sources = [
   'index.html',
   'detalhe-anuncio.html',
+  'perfil.html',
+  'perfil-profissional.html',
   'assets/js/pages/search-results.js',
   'assets/js/pages/results/index.js',
-  'assets/js/pages/perfil.js',
+  'assets/js/controllers/perfil-controller.js',
 ];
 
 const contracts = [

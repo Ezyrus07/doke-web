@@ -662,7 +662,16 @@
     } catch (error) {
       console.error('[DokeStableShell:init:controller]', error);
     }
-    try { window.DokeUiSelect && window.DokeUiSelect.refresh && window.DokeUiSelect.refresh(); } catch (error) {}
+    try {
+      if (window.DokeUiSelect && typeof window.DokeUiSelect.enhanceAll === 'function') {
+        window.DokeUiSelect.enhanceAll(document);
+      }
+      if (window.DokeUiSelect && typeof window.DokeUiSelect.refresh === 'function') {
+        window.DokeUiSelect.refresh(document);
+      }
+    } catch (error) {
+      console.error('[DokeStableShell:init:ui-select]', error);
+    }
     try { window.DokeMobileAppShell && window.DokeMobileAppShell.refresh && window.DokeMobileAppShell.refresh(); } catch (error) {}
     try { window.lucide && window.lucide.createIcons && window.lucide.createIcons(); } catch (error) {}
     document.dispatchEvent(new CustomEvent('doke:stable-route-ready', { detail: { path: path, router: ROUTER_VERSION } }));

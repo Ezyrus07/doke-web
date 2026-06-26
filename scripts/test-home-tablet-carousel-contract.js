@@ -41,9 +41,15 @@ requireIncludes(
   'Professional showcase must be part of the shared tablet section heading contract.'
 );
 requireIncludes(
-  homeCss,
-  '--doke-home-publication-card-width-tablet: clamp(248px',
-  'Publication tablet width must keep a readable minimum instead of falling back to mobile/oversized variants.'
+  tabletCss,
+  `--doke-home-publication-card-width-tablet: clamp(
+      248px`,
+  'Publication tablet width must keep a readable minimum in the tablet rail composition owner instead of falling back to mobile/oversized variants.'
+);
+requireIncludes(
+  tabletCss,
+  'grid-auto-columns: var(--doke-home-publication-card-width-narrow-tablet)',
+  'Publication tablet rail must consume the dedicated width token instead of inlining the carousel width.'
 );
 
 rejectPattern(

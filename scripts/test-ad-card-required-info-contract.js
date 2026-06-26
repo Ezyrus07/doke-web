@@ -20,6 +20,7 @@ const home = read('assets/css/pages/home.css');
 const homeRuntime = read('assets/css/pages/home-runtime.css');
 const coreComponents = read('assets/css/core/components.css');
 const indexHtml = read('index.html');
+const homeFoundation = read('assets/css/pages/home-foundation.css');
 
 assert(
   adCard.includes('Narrow tablet mandatory ad-card information contract'),
@@ -57,15 +58,16 @@ assert(
   'tablet-safari-layout.css must feed the same minimum card/body heights into the shared marketplace contract on real iPad Safari.'
 );
 assert(
-  marketplace.includes('height: var(--doke-ad-body-height, auto) !important') && marketplace.includes('overflow: var(--doke-ad-body-overflow, visible) !important'),
+  marketplace.includes('height: var(--doke-ad-body-height, auto)') && marketplace.includes('overflow: var(--doke-ad-body-overflow, visible)'),
   'marketplace-card-contract.css must keep consuming variables instead of hardcoding a hidden/clipped body.'
 );
 assert(
-  coreComponents.includes('ad-card.css?v=20260608-card-info-parity-v2') &&
-  homeRuntime.includes('ad-card.css?v=20260608-card-info-parity-v2') &&
-  /marketplace-responsive-stack\.css\?v=20260608-(?:card-info-parity-v2|publication-tablet-parity-v1)/.test(home) &&
-  /home\.css\?v=20260608-(?:card-info-parity-v2|publication-tablet-parity-v1)/.test(indexHtml),
-  'index/home/core must reference the cache-busted card information parity contract without blocking newer card contracts.'
+  /ad-card\.css\?v=[^\"')]+/.test(coreComponents) &&
+  /ad-card\.css\?v=[^\"')]+/.test(homeRuntime) &&
+  /home-runtime\.css\?v=[^\"')]+/.test(home) &&
+  /home\.css\?v=[^\"')]+/.test(homeFoundation) &&
+  /home-foundation\.css\?v=[^\"']+/.test(indexHtml),
+  'index/home/core must reference cache-busted card/home contracts without blocking newer card contracts.'
 );
 
 if (failures.length) {

@@ -4,7 +4,10 @@ const path = require('path');
 
 const ROOT = process.cwd();
 const CSS_ROOT = path.join(ROOT, 'assets', 'css');
-const REPORT_PATH = path.join(ROOT, 'reports', 'generated', 'css-important', 'global-cycle-121-important-baseline-by-group-report.json');
+const REPORT_PATHS = [
+  path.join(ROOT, 'docs', 'validation', 'global-cycle-121-important-baseline-by-group-report.json'),
+  path.join(ROOT, 'reports', 'generated', 'css-important', 'global-cycle-121-important-baseline-by-group-report.json'),
+];
 
 function walk(dir) {
   if (!fs.existsSync(dir)) return [];
@@ -98,6 +101,8 @@ const report = {
   topFiles: filesWithImportant.slice(0, 50),
 };
 
-fs.mkdirSync(path.dirname(REPORT_PATH), { recursive: true });
-fs.writeFileSync(REPORT_PATH, `${JSON.stringify(report, null, 2)}\n`);
+for (const reportPath of REPORT_PATHS) {
+  fs.mkdirSync(path.dirname(reportPath), { recursive: true });
+  fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
+}
 console.log(`[global-cycle-121] important baseline by group: ${report.summary.totalImportant} !important declarations mapped.`);

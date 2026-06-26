@@ -13,6 +13,41 @@
   font: inherit;
 }
 
+/* Canonical input reset for search controls that also opt into .doke-input.
+   Page files may still own layout, dimensions and local color tokens. */
+:where(.doke-search-pill, .doke-search-field)
+  :is(.doke-search-pill__input, .doke-search-field__input, .doke-input) {
+  appearance: none;
+  -webkit-appearance: none;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+:where(.doke-search-pill, .doke-search-field)
+  :is(.doke-search-pill__input, .doke-search-field__input, .doke-input):is(:hover, :focus, :focus-visible, :active) {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+:where(.doke-search-pill, .doke-search-field)
+  :is(.doke-search-pill__input, .doke-search-field__input, .doke-input)::-webkit-search-decoration,
+:where(.doke-search-pill, .doke-search-field)
+  :is(.doke-search-pill__input, .doke-search-field__input, .doke-input)::-webkit-search-cancel-button,
+:where(.doke-search-pill, .doke-search-field)
+  :is(.doke-search-pill__input, .doke-search-field__input, .doke-input)::-webkit-search-results-button,
+:where(.doke-search-pill, .doke-search-field)
+  :is(.doke-search-pill__input, .doke-search-field__input, .doke-input)::-webkit-search-results-decoration {
+  display: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
 :where(.doke-searchbox__button, .doke-searchbox__icon, .doke-search-field__button, .doke-search-field__icon) {
   flex: 0 0 auto;
 }

@@ -707,7 +707,7 @@ const INTERNAL_VIEW_SCRIPT_HINTS = {
   "/carteira.html": ["assets/js/pages/carteira.js"],
   "/comunidade.html": ["assets/js/pages/comunidade.js"],
   "/comunidade-interna.html": ["assets/js/pages/comunidade-interna.js"],
-  "/perfil.html": ["assets/js/pages/perfil.js"],
+  "/perfil.html": ["assets/js/controllers/perfil-controller.js"],
   "/detalhe-anuncio.html": ["assets/js/pages/detalhe-anuncio.js"],
   "/orcamento.html": ["assets/js/pages/orcamento.js"],
   "/tornar-profissional.html": ["assets/js/pages/tornar-profissional.js"]
@@ -996,8 +996,7 @@ const createUiSelectApi = () => {
     });
   };
 
-  const refresh = (select) => {
-    pruneDisconnected();
+  const refreshInstance = (select) => {
     const instance = registry.get(select);
     if (!instance) return;
 
@@ -1019,12 +1018,33 @@ const createUiSelectApi = () => {
 
       button.addEventListener("click", () => {
         select.value = option.value;
-        refresh(select);
+        refreshInstance(select);
         closeAll();
         select.dispatchEvent(new Event("change", { bubbles: true }));
       });
 
       instance.menu.appendChild(button);
+    });
+  };
+
+  const isSelectElement = (node) => node instanceof HTMLSelectElement;
+
+  const refresh = (target = document) => {
+    pruneDisconnected();
+
+    if (isSelectElement(target)) {
+      refreshInstance(target);
+      return;
+    }
+
+    const root = target && typeof target.querySelectorAll === "function" ? target : document;
+    enhanceAll(root);
+    pruneDisconnected();
+
+    registry.forEach((instance, select) => {
+      if (root === document || root === select || root.contains(select) || root.contains(instance.root)) {
+        refreshInstance(select);
+      }
     });
   };
 
@@ -1073,10 +1093,10 @@ const createUiSelectApi = () => {
     });
 
     select.addEventListener("change", () => {
-      refresh(select);
+      refreshInstance(select);
     });
 
-    refresh(select);
+    refreshInstance(select);
     return select;
   };
 
@@ -1109,6 +1129,17 @@ document.addEventListener("click", (event) => {
 };
 
 window.DokeUiSelect = window.DokeUiSelect || createUiSelectApi();
+
+const initDokeUiSelects = () => {
+  window.DokeUiSelect?.enhanceAll?.(document);
+  window.DokeUiSelect?.refresh?.(document);
+};
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initDokeUiSelects, { once: true });
+} else {
+  initDokeUiSelects();
+}
 
 const PRESERVED_HTML_CLASS_NAMES = ["doke-js-mobile", "doke-js-desktop", "doke-mobile-shell-ready", "doke-mobile-shell-pending", SIDEBAR_COLLAPSED_HTML_CLASS, SIDEBAR_EXPANDED_HTML_CLASS, SIDEBAR_STATE_READY_HTML_CLASS];
 const PRESERVED_BODY_ATTRS = [];

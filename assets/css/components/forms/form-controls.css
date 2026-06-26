@@ -3,10 +3,29 @@
    Keep selectors low-specificity so page-specific legacy styles can be migrated gradually. */
 :where(.doke-input, .doke-select, .doke-textarea) {
   box-sizing: border-box;
-  max-width: 100%;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-block-size: var(--doke-form-control-min-height, 52px);
+  border: 1px solid var(--doke-form-control-border, #d4e0ef);
+  border-radius: var(--doke-form-control-radius, 14px);
+  background: var(--doke-form-control-bg, var(--doke-surface, #fff));
+  color: var(--doke-form-control-color, var(--doke-text-primary, var(--color-text, #14213d)));
   font: inherit;
-  color: var(--doke-text-primary, var(--color-text, #14213d));
-  background: var(--doke-surface, #fff);
+  outline: 0;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+:where(.doke-input, .doke-select) {
+  padding-inline: var(--doke-form-control-padding-inline, 16px);
+}
+
+:where(.doke-textarea) {
+  min-block-size: var(--doke-textarea-min-height, 108px);
+  padding: var(--doke-textarea-padding, 14px 16px 28px);
+  resize: vertical;
 }
 
 :where(.doke-input, .doke-select, .doke-textarea)::placeholder {
@@ -14,8 +33,10 @@
 }
 
 :where(.doke-input, .doke-select, .doke-textarea):where(:focus, :focus-visible) {
+  border-color: var(--doke-form-control-focus-border, rgba(38, 116, 217, 0.45));
+  background: var(--doke-form-control-focus-bg, #fff);
   outline: 0;
-  box-shadow: none;
+  box-shadow: var(--doke-form-control-focus-ring, 0 0 0 4px rgba(38, 116, 217, 0.08));
 }
 
 :where(.doke-input, .doke-select, .doke-textarea):disabled,
@@ -46,4 +67,154 @@
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--color-danger-strong);
+}
+
+/* Shared choice-control contract.
+   Owns reusable checkbox, radio and switch anatomy/state hooks.
+   Page CSS may position choice groups, but should not redefine the inner mark,
+   checked color, focus ring or switch thumb geometry. */
+:root {
+  --doke-choice-size: 20px;
+  --doke-choice-radius: 7px;
+  --doke-choice-border: rgba(104, 133, 166, 0.42);
+  --doke-choice-bg: #fff;
+  --doke-choice-active: var(--doke-ui-blue-600, var(--color-primary, #2a5f90));
+  --doke-choice-focus: rgba(42, 95, 144, 0.18);
+  --doke-switch-width: 52px;
+  --doke-switch-height: 30px;
+  --doke-switch-padding: 3px;
+  --doke-switch-thumb: 24px;
+}
+
+:where(.doke-checkbox, .doke-radio) {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--doke-choice-size);
+  block-size: var(--doke-choice-size);
+  min-inline-size: var(--doke-choice-size);
+  min-block-size: var(--doke-choice-size);
+  margin: 0;
+  border: 1.6px solid var(--doke-choice-border);
+  background: var(--doke-choice-bg);
+  color: #fff;
+  box-shadow: none;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+:where(.doke-checkbox) {
+  border-radius: var(--doke-choice-radius);
+}
+
+:where(.doke-radio) {
+  border-radius: 999px;
+}
+
+:where(.doke-checkbox)::after,
+:where(.doke-radio)::after {
+  content: "";
+  display: block;
+  transform: scale(0);
+  transition: transform 160ms ease;
+}
+
+:where(.doke-checkbox)::after {
+  inline-size: 10px;
+  block-size: 10px;
+  background: center / 10px 10px no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 6.2 4.4 8.6 10 3'/%3E%3C/svg%3E");
+}
+
+:where(.doke-radio)::after {
+  inline-size: 10px;
+  block-size: 10px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+:where(.doke-checkbox, .doke-radio):checked {
+  border-color: var(--doke-choice-active);
+  background: var(--doke-choice-active);
+  box-shadow: 0 0 0 3px var(--doke-choice-focus);
+}
+
+:where(.doke-checkbox, .doke-radio):checked::after {
+  transform: scale(1);
+}
+
+:where(.doke-checkbox, .doke-radio):focus-visible {
+  outline: 3px solid var(--doke-choice-focus);
+  outline-offset: 2px;
+}
+
+:where(.doke-checkbox, .doke-radio):disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+:where(.doke-switch, .toggle-switch) {
+  position: relative;
+  inline-size: var(--doke-switch-width);
+  block-size: var(--doke-switch-height);
+  flex: 0 0 auto;
+  display: inline-flex;
+  cursor: pointer;
+}
+
+:where(.doke-switch, .toggle-switch) > input[type="checkbox"] {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+:where(.doke-switch, .toggle-switch) > :where(.doke-switch__track, span) {
+  position: relative;
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: 999px;
+  background: var(--doke-switch-bg, #d7e5ef);
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+:where(.doke-switch, .toggle-switch) > :where(.doke-switch__track, span)::before {
+  content: "";
+  position: absolute;
+  inline-size: var(--doke-switch-thumb);
+  block-size: var(--doke-switch-thumb);
+  inset-block-start: var(--doke-switch-padding);
+  inset-inline-start: var(--doke-switch-padding);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 4px 10px rgba(30, 65, 96, 0.18);
+  transition: transform 160ms ease;
+}
+
+:where(.doke-switch, .toggle-switch) > input[type="checkbox"]:checked + :where(.doke-switch__track, span) {
+  background: var(--doke-switch-active, var(--doke-choice-active));
+}
+
+:where(.doke-switch, .toggle-switch) > input[type="checkbox"]:checked + :where(.doke-switch__track, span)::before {
+  transform: translateX(calc(var(--doke-switch-width) - var(--doke-switch-thumb) - (var(--doke-switch-padding) * 2)));
+}
+
+:where(.doke-switch, .toggle-switch) > input[type="checkbox"]:focus-visible + :where(.doke-switch__track, span) {
+  outline: 3px solid var(--doke-choice-focus);
+  outline-offset: 3px;
+}
+
+:where(.doke-switch, .toggle-switch) > input[type="checkbox"]:disabled + :where(.doke-switch__track, span) {
+  opacity: 0.62;
+  cursor: not-allowed;
 }

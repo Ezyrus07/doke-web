@@ -69,15 +69,15 @@ assert(
   'ad-card hydration must keep a media-state hook for future data-rendered cards.'
 );
 assert(
-  indexHtml.includes('ad-card-interactions.js?v=20260608-card-info-parity-v2'),
-  'index.html must reference the cache-busted ad-card interactions controller.'
+  /ad-card-interactions\.js\?v=[^\"']+/.test(indexHtml),
+  'index.html must reference a cache-busted ad-card interactions controller.'
 );
 assert(
-  homeRuntime.includes('components/cards/ad-card.css?v=20260608-card-info-parity-v2'),
+  /components\/cards\/ad-card\.css\?v=[^\"')]+/.test(homeRuntime),
   'home-runtime.css must import the cache-busted canonical ad-card component.'
 );
 assert(
-  coreComponents.includes('components/cards/ad-card.css?v=20260608-card-info-parity-v2'),
+  /components\/cards\/ad-card\.css\?v=[^\"')]+/.test(coreComponents),
   'core/components.css must import the cache-busted canonical ad-card component.'
 );
 

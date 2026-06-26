@@ -20,11 +20,15 @@
       <aside class="sidebar" data-shell-sidebar></aside>
 
       <div class="page settings-page-frame">
-        <header class="app-header app-header--settings home-side-meta settings-list-app-header" data-app-header data-settings-list-global-header data-header-contract="app-header" data-header-variant="contextual" aria-label="Atalhos de configurações">
+        <header class="app-header app-header--settings home-side-meta settings-list-app-header" data-app-header data-settings-list-global-header data-header-contract="app-header" data-header-variant="standard" aria-label="Atalhos de configurações">
           <div class="app-header__inner" data-header-inner>
             <div class="home-side-meta__group home-side-meta__group--primary app-header__group app-header__group--primary" data-header-slot="primary">
               <button class="home-side-meta__tablet-menu" type="button" data-mobile-home-menu-open aria-label="Abrir menu lateral" aria-expanded="false" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h16"></path></svg></button>
               <button class="home-side-meta__search" type="button" data-settings-mobile-search-toggle aria-controls="settings-sidebar-search" aria-expanded="false" aria-label="Focar busca de configurações"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="5.75"></circle><path d="m16 16 4 4"></path></svg></button>
+              <button class="home-side-meta__location" type="button" aria-label="Alterar localização">
+                <span class="home-side-meta__location-text" data-topbar-location-value data-location-fallback="Belo Horizonte, MG">Belo Horizonte, MG</span>
+                <span class="home-side-meta__caret" aria-hidden="true"></span>
+              </button>
             </div>
             <div class="home-side-meta__group home-side-meta__group--secondary app-header__group app-header__group--secondary" data-header-slot="actions">
               <div class="home-side-meta__profile-wrap">
@@ -64,10 +68,10 @@
                 <h1 class="settings-sidebar__title">Configurações</h1>
               </div>
 
-              <form class="settings-sidebar-search" role="search" aria-label="Pesquisar nas configurações">
-                <span class="settings-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg></span>
+              <form class="settings-sidebar-search doke-search-field" role="search" aria-label="Pesquisar nas configurações">
+                <span class="settings-search-icon doke-search-field__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg></span>
                 <label class="sr-only" for="settings-sidebar-search">Pesquisar configurações</label>
-                <input id="settings-sidebar-search" class="settings-sidebar-search__input" type="search" name="settings-search" placeholder="Pesquisar" autocomplete="off" data-settings-search-input />
+                <input id="settings-sidebar-search" class="settings-sidebar-search__input doke-search-field__input doke-input" type="search" name="settings-search" placeholder="Pesquisar" autocomplete="off" data-settings-search-input />
               </form>
 
               <div class="settings-sidebar__section">
@@ -130,11 +134,11 @@
                       </div>
 
                       <div class="settings-form-grid">
-                        <label class="settings-field"><span>Nome completo</span><input type="text" name="fullName" value="Gabriel Oliveira" autocomplete="name" /></label>
-                        <label class="settings-field"><span>Nome de exibição</span><input type="text" name="displayName" value="Gabriel" autocomplete="nickname" /></label>
-                        <label class="settings-field"><span>CPF/CNPJ</span><input type="text" name="document" value="123.456.789-00" inputmode="numeric" /></label>
-                        <label class="settings-field"><span>Telefone</span><input type="tel" name="phone" value="(11) 99999-9999" autocomplete="tel" /></label>
-                        <label class="settings-field settings-field--full"><span>Email</span><input type="email" name="email" value="gabriel@example.com" autocomplete="email" /></label>
+                        <label class="settings-field"><span>Nome completo</span><input type="text" name="fullName" value="Gabriel Oliveira" autocomplete="name" / class="doke-input"></label>
+                        <label class="settings-field"><span>Nome de exibição</span><input type="text" name="displayName" value="Gabriel" autocomplete="nickname" / class="doke-input"></label>
+                        <label class="settings-field"><span>CPF/CNPJ</span><input type="text" name="document" value="123.456.789-00" inputmode="numeric" / class="doke-input"></label>
+                        <label class="settings-field"><span>Telefone</span><input type="tel" name="phone" value="(11) 99999-9999" autocomplete="tel" / class="doke-input"></label>
+                        <label class="settings-field settings-field--full"><span>Email</span><input type="email" name="email" value="gabriel@example.com" autocomplete="email" / class="doke-input"></label>
                       </div>
                     </form>
 
@@ -171,7 +175,7 @@
                       </div>
                       <div class="settings-list-item">
                         <div><h2>Autenticação em duas etapas</h2><p>Adicione confirmação extra no login da sua conta.</p></div>
-                        <label class="toggle-switch"><input type="checkbox" /><span></span></label>
+                        <label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" /><span></span></label>
                       </div>
                       <div class="settings-list-item">
                         <div><h2>Sessões ativas</h2><p>2 dispositivos conectados atualmente.</p></div>
@@ -236,9 +240,9 @@
                         </div>
                       </div>
                       <div class="settings-form-grid">
-                        <label class="settings-field"><span>Nome profissional</span><input type="text" name="professionalName" value="Gabriel Oliveira" placeholder="Ex: Gabriel Oliveira" /></label>
-                        <label class="settings-field"><span>Tipo de profissional</span><select name="professionalType"><option>Autônomo</option><option>Empresa</option><option>Equipe</option></select></label>
-                        <label class="settings-field settings-field--full"><span>Descrição curta</span><textarea name="professionalDescription" rows="4" placeholder="Conte brevemente o que você faz, sua experiência e diferencial.">Atendimento residencial com foco em qualidade, prazo e comunicação clara.</textarea></label>
+                        <label class="settings-field"><span>Nome profissional</span><input type="text" name="professionalName" value="Gabriel Oliveira" placeholder="Ex: Gabriel Oliveira" / class="doke-input"></label>
+                        <label class="settings-field"><span>Tipo de profissional</span><select class="doke-select" data-ui-select name="professionalType"><option>Autônomo</option><option>Empresa</option><option>Equipe</option></select></label>
+                        <label class="settings-field settings-field--full"><span>Descrição curta</span><textarea name="professionalDescription" rows="4" placeholder="Conte brevemente o que você faz, sua experiência e diferencial." class="doke-textarea">Atendimento residencial com foco em qualidade, prazo e comunicação clara.</textarea></label>
                       </div>
                     </section>
 
@@ -251,8 +255,8 @@
                         </div>
                       </div>
                       <div class="settings-form-grid">
-                        <label class="settings-field"><span>Categoria principal</span><select name="mainCategory"><option>Pintura</option><option>Elétrica</option><option>Encanamento</option><option>Limpeza</option><option>Design de interfaces</option></select></label>
-                        <label class="settings-field"><span>Experiência</span><select name="experience"><option>Menos de 1 ano</option><option>1 a 3 anos</option><option>3 a 5 anos</option><option>Mais de 5 anos</option></select></label>
+                        <label class="settings-field"><span>Categoria principal</span><select class="doke-select" data-ui-select name="mainCategory"><option>Pintura</option><option>Elétrica</option><option>Encanamento</option><option>Limpeza</option><option>Design de interfaces</option></select></label>
+                        <label class="settings-field"><span>Experiência</span><select class="doke-select" data-ui-select name="experience"><option>Menos de 1 ano</option><option>1 a 3 anos</option><option>3 a 5 anos</option><option>Mais de 5 anos</option></select></label>
                         <div class="settings-field settings-field--full">
                           <span>Especialidades</span>
                           <div class="settings-chip-list" aria-label="Especialidades profissionais">
@@ -274,9 +278,9 @@
                         </div>
                       </div>
                       <div class="settings-form-grid">
-                        <label class="settings-field"><span>Cidade base</span><input type="text" name="baseCity" value="Salvador, BA" /></label>
-                        <label class="settings-field"><span>Raio de atendimento</span><select name="serviceRadius"><option>Até 5 km</option><option>Até 10 km</option><option>Até 20 km</option><option>Toda a cidade</option></select></label>
-                        <label class="settings-field settings-field--full"><span>Bairros atendidos</span><input type="text" name="neighborhoods" placeholder="Ex: Pituba, Barra, Rio Vermelho, Centro" /></label>
+                        <label class="settings-field"><span>Cidade base</span><input type="text" name="baseCity" value="Salvador, BA" / class="doke-input"></label>
+                        <label class="settings-field"><span>Raio de atendimento</span><select class="doke-select" data-ui-select name="serviceRadius"><option>Até 5 km</option><option>Até 10 km</option><option>Até 20 km</option><option>Toda a cidade</option></select></label>
+                        <label class="settings-field settings-field--full"><span>Bairros atendidos</span><input type="text" name="neighborhoods" placeholder="Ex: Pituba, Barra, Rio Vermelho, Centro" / class="doke-input"></label>
                       </div>
                     </section>
 
@@ -311,11 +315,11 @@
                       <div class="settings-rows settings-rows--compact">
                         <label class="settings-list-item settings-list-item--clickable">
                           <div><h2>Receber novos pedidos</h2><p>Permitir solicitações de orçamento pelo Doke.</p></div>
-                          <span class="toggle-switch"><input type="checkbox" checked /><span></span></span>
+                          <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked /><span></span></span>
                         </label>
                         <label class="settings-list-item settings-list-item--clickable">
                           <div><h2>Atendimento urgente</h2><p>Mostrar disponibilidade para pedidos com prazo curto.</p></div>
-                          <span class="toggle-switch"><input type="checkbox" /><span></span></span>
+                          <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" /><span></span></span>
                         </label>
                       </div>
                     </section>
@@ -340,7 +344,7 @@
                     <div class="settings-rows">
                       <div class="settings-list-item">
                         <div><h2>Receber novos pedidos</h2><p>Seu perfil aparece como disponível para orçamentos.</p></div>
-                        <label class="toggle-switch"><input type="checkbox" checked /><span></span></label>
+                        <label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked /><span></span></label>
                       </div>
                       <div class="settings-list-item">
                         <div><h2>Tempo médio de resposta</h2><p>Até 2 horas úteis · exibido no seu perfil público.</p></div>
@@ -369,11 +373,11 @@
                   </header>
                   <div class="settings-card__body settings-card__body--compact">
                     <div class="settings-rows settings-rows--compact">
-                      <div class="settings-list-item"><div><h2>Novas mensagens</h2><p>Clientes, conversas e respostas diretas.</p></div><label class="toggle-switch"><input type="checkbox" checked /><span></span></label></div>
-                      <div class="settings-list-item"><div><h2>Atualizações de pedidos</h2><p>Status, prazos, aceite e conclusão.</p></div><label class="toggle-switch"><input type="checkbox" checked /><span></span></label></div>
-                      <div class="settings-list-item"><div><h2>Orçamentos</h2><p>Novas solicitações, negociações e aprovações.</p></div><label class="toggle-switch"><input type="checkbox" checked /><span></span></label></div>
-                      <div class="settings-list-item"><div><h2>Pagamentos e repasses</h2><p>Comprovantes, saques, taxas e repasses automáticos.</p></div><label class="toggle-switch"><input type="checkbox" checked /><span></span></label></div>
-                      <div class="settings-list-item"><div><h2>Comunidade</h2><p>Menções, respostas e novidades de grupos.</p></div><label class="toggle-switch"><input type="checkbox" /><span></span></label></div>
+                      <div class="settings-list-item"><div><h2>Novas mensagens</h2><p>Clientes, conversas e respostas diretas.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked /><span></span></label></div>
+                      <div class="settings-list-item"><div><h2>Atualizações de pedidos</h2><p>Status, prazos, aceite e conclusão.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked /><span></span></label></div>
+                      <div class="settings-list-item"><div><h2>Orçamentos</h2><p>Novas solicitações, negociações e aprovações.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked /><span></span></label></div>
+                      <div class="settings-list-item"><div><h2>Pagamentos e repasses</h2><p>Comprovantes, saques, taxas e repasses automáticos.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked /><span></span></label></div>
+                      <div class="settings-list-item"><div><h2>Comunidade</h2><p>Menções, respostas e novidades de grupos.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" /><span></span></label></div>
                     </div>
                   </div>
                 </article>
@@ -389,9 +393,9 @@
                   </header>
                   <div class="settings-card__body settings-card__body--compact">
                     <div class="settings-rows">
-                      <div class="settings-list-item"><div><h2>Perfil público</h2><p>Permitir que usuários encontrem seu perfil no Doke.</p></div><label class="toggle-switch"><input type="checkbox" checked /><span></span></label></div>
-                      <div class="settings-list-item"><div><h2>Mostrar telefone</h2><p>Exibir telefone somente após pedido aprovado.</p></div><label class="toggle-switch"><input type="checkbox" /><span></span></label></div>
-                      <div class="settings-list-item"><div><h2>Aparecer na busca</h2><p>Permitir descoberta em resultados e recomendações.</p></div><label class="toggle-switch"><input type="checkbox" checked /><span></span></label></div>
+                      <div class="settings-list-item"><div><h2>Perfil público</h2><p>Permitir que usuários encontrem seu perfil no Doke.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked /><span></span></label></div>
+                      <div class="settings-list-item"><div><h2>Mostrar telefone</h2><p>Exibir telefone somente após pedido aprovado.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" /><span></span></label></div>
+                      <div class="settings-list-item"><div><h2>Aparecer na busca</h2><p>Permitir descoberta em resultados e recomendações.</p></div><label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked /><span></span></label></div>
                     </div>
                     <section class="settings-danger-zone" aria-labelledby="settings-danger-title">
                       <div><h2 id="settings-danger-title">Zona de risco</h2><p>Excluir a conta remove dados, histórico e acesso ao perfil. Essa ação exige confirmação.</p></div>

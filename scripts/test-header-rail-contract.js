@@ -42,6 +42,15 @@ const pages = [
   'pagamento-profissional.html',
 ];
 
+const contentRailRuntimeExemptPages = new Set([
+  // mensagens.html reveals its rail after the messages controller hydrates
+  // [data-messages-hydration-ready] regions. This deterministic CSS-only
+  // contract must not treat the pre-hydration zero-height workspace as a
+  // header/content rail mismatch. Message-specific shell contracts remain
+  // responsible for the chat workspace.
+  'mensagens.html',
+]);
+
 const headerExemptPages = new Set([
   'comunidade-interna.html',
   'auth/login.html',
@@ -77,7 +86,7 @@ function loadHtml(pageFile) {
     if (/^(https?:)?\/\//i.test(href)) return `<!-- external stylesheet skipped: ${hrefMatch[1]} -->`;
     const cssPath = path.join(rootDir, href);
     if (!fs.existsSync(cssPath)) return `<!-- missing stylesheet skipped: ${hrefMatch[1]} -->`;
-    return `<style data-source-css="${href}">\n${fs.readFileSync(cssPath, 'utf8')}\n</style>`;
+    return tag;
   });
   html = html.replace(/<script\b[^>]*\bsrc=["'][^"']+["'][^>]*><\/script>/gi, '<!-- script disabled for deterministic header rail test -->');
   const base = `file://${rootDir.replace(/\\/g, '/')}/`;
@@ -151,6 +160,7 @@ function compare(pageFile, viewport, measurement) {
   const failures = [];
   if (!measurement.headerVisible) return failures;
   if (!measurement.contentVisible) {
+    if (contentRailRuntimeExemptPages.has(pageFile)) return failures;
     failures.push({ page: pageFile, viewport: viewport.name, property: 'content', expected: 'visible content rail', actual: 'not found', difference: null });
     return failures;
   }

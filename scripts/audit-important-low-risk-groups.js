@@ -3,10 +3,17 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = process.cwd();
-const BASELINE_PATH = path.join(ROOT, 'reports', 'generated', 'css-important', 'global-cycle-121-important-baseline-by-group-report.json');
-const REPORT_PATH = path.join(ROOT, 'reports', 'generated', 'css-important', 'global-cycle-122-important-low-risk-groups-report.json');
+const BASELINE_PATHS = [
+  path.join(ROOT, 'docs', 'validation', 'global-cycle-121-important-baseline-by-group-report.json'),
+  path.join(ROOT, 'reports', 'generated', 'css-important', 'global-cycle-121-important-baseline-by-group-report.json'),
+];
+const REPORT_PATHS = [
+  path.join(ROOT, 'docs', 'validation', 'global-cycle-122-important-low-risk-groups-report.json'),
+  path.join(ROOT, 'reports', 'generated', 'css-important', 'global-cycle-122-important-low-risk-groups-report.json'),
+];
+const BASELINE_PATH = BASELINE_PATHS.find((candidate) => fs.existsSync(candidate));
 
-if (!fs.existsSync(BASELINE_PATH)) {
+if (!BASELINE_PATH) {
   console.error('Missing cycle 121 baseline report. Run npm run audit:important-baseline-by-group first.');
   process.exit(1);
 }
@@ -54,6 +61,8 @@ const report = {
   blockedGroups,
 };
 
-fs.mkdirSync(path.dirname(REPORT_PATH), { recursive: true });
-fs.writeFileSync(REPORT_PATH, `${JSON.stringify(report, null, 2)}\n`);
+for (const reportPath of REPORT_PATHS) {
+  fs.mkdirSync(path.dirname(reportPath), { recursive: true });
+  fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
+}
 console.log(`[global-cycle-122] low-risk groups identified: ${lowRiskReviewGroups.length}; removals allowed now: 0.`);

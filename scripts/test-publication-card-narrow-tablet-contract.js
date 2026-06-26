@@ -9,7 +9,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const failures = [];
 
 const publication = read('assets/css/components/cards/publication-card.css');
-const home = read('assets/css/pages/home.css');
+const homeTablet = read('assets/css/pages/home/tablet-responsive-layout.css');
 const marketplace = read('assets/css/patterns/marketplace-responsive-stack.css');
 const mobileDistribution = read('assets/css/components/cards/mobile-card-distribution-contract.css');
 
@@ -27,9 +27,9 @@ expect(
   'publication-card.css must own the 561px-760px publication anatomy contract.'
 );
 expect(
-  home.includes('--doke-home-publication-card-width-narrow-tablet') &&
-    home.includes('grid-auto-columns: var(--doke-home-publication-card-width-narrow-tablet)'),
-  'home.css must use a dedicated narrow-tablet publication rail width token.'
+  homeTablet.includes('--doke-home-publication-card-width-narrow-tablet') &&
+    homeTablet.includes('grid-auto-columns: var(--doke-home-publication-card-width-narrow-tablet)'),
+  'home tablet publication rail must use a dedicated narrow-tablet publication rail width token in its page composition owner.'
 );
 expect(
   !/\.publication-card\s*\{[^}]*min-block-size:\s*330px\s*!important/s.test(marketplace),

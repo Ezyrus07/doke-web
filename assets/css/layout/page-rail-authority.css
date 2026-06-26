@@ -619,6 +619,27 @@ body:is(
   }
 }
 
+/* P8 profile compact rail closure.
+   Root cause: the global marketplace rail promoted perfil.html to 1360px,
+   while the approved clean profile composition remains a compact 1180px rail.
+   Keep header and first profile workspace on the same profile rail without
+   changing card, hero or tab anatomy. */
+@media (min-width: 761px) {
+  body[data-page="perfil"].has-global-header {
+    --doke-visual-rail-max: 1180px;
+    --doke-rail-max: var(--doke-visual-rail-max);
+    --doke-page-max: var(--doke-visual-rail-max);
+    --doke-desktop-page-max: var(--doke-visual-rail-max);
+    --doke-app-shell-max: var(--doke-visual-rail-max);
+    --doke-shell-max-default: var(--doke-visual-rail-max);
+    --doke-shell-max-wide: var(--doke-visual-rail-max);
+    --doke-shared-page-width: min(var(--doke-rail-available), var(--doke-rail-max));
+    --doke-page-rail: var(--doke-shared-page-width);
+    --doke-header-rail: var(--doke-page-rail);
+    --doke-current-page-rail: var(--doke-page-rail);
+  }
+}
+
 @media (min-width: 761px) and (max-width: 1024px) {
   body[data-page].has-global-header > .app-shell {
     display: block;

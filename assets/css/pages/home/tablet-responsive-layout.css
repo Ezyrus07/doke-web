@@ -903,14 +903,16 @@ body.home-index-shell .home-side-meta__tablet-menu {
   html.home-index-root body.home-index-shell section.home-publications > .content-rail > #home-publications-track.publication-grid {
     --home-publication-tablet-gap: clamp(14px, 2.2vw, 18px);
     --home-publication-tablet-preview: clamp(32px, 7vw, 56px);
-    display: grid !important;
-    grid-auto-flow: column !important;
-    grid-template-columns: none !important;
-    grid-auto-columns: clamp(
+    --doke-home-publication-card-width-tablet: clamp(
       248px,
       calc((100% - var(--home-publication-tablet-gap) - var(--home-publication-tablet-preview)) / 2),
       352px
-    ) !important;
+    );
+    --doke-home-publication-card-width-narrow-tablet: var(--doke-home-publication-card-width-tablet);
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    grid-auto-columns: var(--doke-home-publication-card-width-narrow-tablet) !important;
     gap: var(--home-publication-tablet-gap);
     align-items: stretch;
     overflow-x: auto !important;
