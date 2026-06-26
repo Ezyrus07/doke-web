@@ -1,7 +1,7 @@
 /* Doke Web - orçamento page
    Responsibility: local mapping for the budget request flow.
    Visual anatomy is inherited from tornar-profissional.html through the shared form/page contracts. */
-@import url("./tornar-profissional-foundation.css?v=20260625-submission-feedback-v2");
+@import url("./tornar-profissional-foundation.css?v=20260625-operational-toast-v1");
 
 body[data-page="orcamento"] {
   --budget-blue: var(--pro-blue, var(--color-primary, #2a5f90));
@@ -527,5 +527,96 @@ body.budget-modal-open {
   body[data-page="orcamento"] .address-modal__dialog {
     max-height: calc(100dvh - 24px);
     overflow-y: auto;
+  }
+}
+
+
+/* Orçamento loading parity v3.
+   Aligns the submission loading overlay with the compact symbol-cycle language
+   adopted in mensagens.html, without changing the shared form/page anatomy. */
+body[data-page="orcamento"] .doke-submission-feedback__surface {
+  gap: 12px;
+}
+
+body[data-page="orcamento"] .doke-submission-feedback__mark--symbol-cycle {
+  inline-size: 30px;
+  block-size: 30px;
+  background: transparent;
+  filter: none;
+}
+
+body[data-page="orcamento"] .doke-submission-feedback__mark--symbol-cycle::before,
+body[data-page="orcamento"] .doke-submission-feedback__mark--symbol-cycle::after {
+  display: none;
+}
+
+body[data-page="orcamento"] .doke-submission-feedback__symbols {
+  position: relative;
+  inline-size: 30px;
+  block-size: 30px;
+}
+
+body[data-page="orcamento"] .doke-submission-feedback__symbol {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: translateY(3px) scale(0.92);
+  animation: dokeBudgetLoadingSymbolCycle 4.8s ease-in-out infinite;
+}
+
+body[data-page="orcamento"] .doke-submission-feedback__symbol--wrench {
+  animation-delay: 1.6s;
+}
+
+body[data-page="orcamento"] .doke-submission-feedback__symbol--bolt {
+  animation-delay: 3.2s;
+}
+
+body[data-page="orcamento"] .doke-submission-feedback__symbol svg {
+  inline-size: 28px;
+  block-size: 28px;
+  fill: none;
+  stroke: var(--budget-blue, #2a5f90);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body[data-page="orcamento"] .doke-submission-feedback__title {
+  max-width: 12ch;
+}
+
+body[data-page="orcamento"] .doke-submission-feedback__message {
+  max-width: 30ch;
+}
+
+@keyframes dokeBudgetLoadingSymbolCycle {
+  0%, 18% {
+    opacity: 0;
+    transform: translateY(3px) scale(0.92);
+  }
+
+  22%, 46% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  54%, 100% {
+    opacity: 0;
+    transform: translateY(-3px) scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-page="orcamento"] .doke-submission-feedback__symbol {
+    animation: none;
+    opacity: 0;
+    transform: none;
+  }
+
+  body[data-page="orcamento"] .doke-submission-feedback__symbol--paint {
+    opacity: 1;
   }
 }

@@ -136,6 +136,13 @@
     var recipientId = explicitRecipient || participants.find(function (id) { return String(id) !== String(message.senderId || actor.id || ''); }) || '';
     if (!recipientId) return Promise.resolve(null);
 
+    var messageText = normalizeText(message.text || message.body || '');
+    if (!messageText && message.type === 'image') messageText = 'Enviou uma imagem.';
+    if (!messageText && message.type === 'audio') messageText = 'Enviou um áudio.';
+    if (!messageText && message.type === 'charge') messageText = 'Enviou uma cobrança.';
+    var compactMessage = messageText.length > 96 ? messageText.slice(0, 93) + '...' : messageText;
+    var serviceTitle = conversation.order && (conversation.order.serviceTitle || conversation.order.title) || 'um pedido';
+
     return create({
       type: 'message_received',
       category: 'messages',
@@ -148,7 +155,7 @@
       messageId: message.id || '',
       eventKey: ['message_received', message.id || '', recipientId].filter(Boolean).join(':'),
       title: 'Nova mensagem',
-      body: (actor.name || message.author || 'Contato') + ' enviou uma mensagem sobre ' + (conversation.order && (conversation.order.serviceTitle || conversation.order.title) || 'um pedido') + '.',
+      body: (actor.name || message.author || 'Contato') + ' sobre ' + serviceTitle + ': "' + (compactMessage || 'Nova atualização na conversa.') + '"',
       targetUrl: 'mensagens.html?order=' + encodeURIComponent(conversation.orderId || '') + (conversation.id ? '&conversation=' + encodeURIComponent(conversation.id) : ''),
       actionLabel: 'Abrir conversa',
       read: false

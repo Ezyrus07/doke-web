@@ -1,0 +1,68 @@
+/* Notificações page hydration states
+   Responsibility: first-load skeleton and ready visibility for the data-driven
+   notifications list. Skeleton cards do not use .notification-card so they are
+   never counted as real notifications. */
+
+body.notifications-page-shell [data-notifications-hydration-skeleton][hidden],
+body.notifications-page-shell [data-notifications-hydration-ready][hidden],
+body.notifications-page-shell [data-page-hydration="ready"] [data-notifications-hydration-skeleton],
+body.notifications-page-shell [data-page-hydration="empty"] [data-notifications-hydration-skeleton] {
+  display: none;
+}
+
+body.notifications-page-shell [data-page-hydration="hydrating"][data-page-hydration-skeleton="on"] [data-notifications-hydration-ready] {
+  display: none;
+}
+
+body.notifications-page-shell [data-notifications-hydration-skeleton] :where(.doke-skeleton-line, [data-skeleton-line]) {
+  --doke-skeleton-bg: rgba(226, 239, 249, 0.86);
+  --doke-skeleton-shine: rgba(255, 255, 255, 0.64);
+  display: block;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--doke-skeleton-bg) 0%, var(--doke-skeleton-shine) 48%, var(--doke-skeleton-bg) 100%);
+  background-size: 220% 100%;
+  animation: dokeNotificationsHydrationShimmer 1.55s ease-in-out infinite;
+}
+
+body.notifications-page-shell .notifications-hydration-skeleton {
+  display: grid;
+  gap: 12px;
+  inline-size: 100%;
+}
+
+body.notifications-page-shell .notifications-hydration-skeleton__card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 40px;
+  gap: 18px;
+  align-items: start;
+  min-block-size: 116px;
+  padding: 20px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 16px 34px rgba(18, 55, 95, 0.045);
+}
+
+body.notifications-page-shell .notifications-hydration-skeleton__icon { inline-size: 42px; block-size: 42px; border-radius: 16px; }
+body.notifications-page-shell .notifications-hydration-skeleton__content { display: grid; gap: 10px; min-inline-size: 0; }
+body.notifications-page-shell .notifications-hydration-skeleton__meta { display: flex; gap: 8px; align-items: center; }
+body.notifications-page-shell .notifications-hydration-skeleton__tag { inline-size: 78px; block-size: 24px; }
+body.notifications-page-shell .notifications-hydration-skeleton__time { inline-size: 68px; block-size: 12px; }
+body.notifications-page-shell .notifications-hydration-skeleton__title { inline-size: min(240px, 70%); block-size: 18px; }
+body.notifications-page-shell .notifications-hydration-skeleton__text { inline-size: min(620px, 92%); block-size: 14px; }
+body.notifications-page-shell .notifications-hydration-skeleton__actions { display: flex; gap: 12px; align-items: center; }
+body.notifications-page-shell .notifications-hydration-skeleton__action { inline-size: 104px; block-size: 14px; }
+body.notifications-page-shell .notifications-hydration-skeleton__check { inline-size: 28px; block-size: 28px; border-radius: 999px; }
+
+@keyframes dokeNotificationsHydrationShimmer {
+  0% { background-position: 120% 0; }
+  100% { background-position: -120% 0; }
+}
+
+@media (max-width: 760px) {
+  body.notifications-page-shell .notifications-hydration-skeleton__card {
+    grid-template-columns: 40px minmax(0, 1fr);
+    padding: 16px;
+  }
+
+  body.notifications-page-shell .notifications-hydration-skeleton__check { display: none; }
+}

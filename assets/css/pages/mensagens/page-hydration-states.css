@@ -1,0 +1,515 @@
+/* Mensagens page hydration states
+   Responsibility: first-load skeleton and ready visibility for the data-driven
+   messaging workspace. Skeleton nodes never use .message-item or operational
+   list classes, so controllers cannot count them as real conversations. */
+
+body.messages-page-shell [data-messages-hydration-skeleton][hidden],
+body.messages-page-shell [data-messages-hydration-ready][hidden],
+body.messages-page-shell [data-page-hydration="ready"] [data-messages-hydration-skeleton],
+body.messages-page-shell [data-page-hydration="empty"] [data-messages-hydration-skeleton] {
+  display: none;
+}
+
+body.messages-page-shell [data-page-hydration="hydrating"][data-page-hydration-skeleton="on"] [data-messages-hydration-ready] {
+  display: none;
+}
+
+body.messages-page-shell[data-page-hydration="empty"] .messages-empty:not([hidden]) {
+  display: block;
+}
+
+body.messages-page-shell .messages-hydration-skeleton {
+  --messages-hydration-sidebar-bg: #f8fcff;
+  --messages-hydration-sidebar-line: #d7e7f6;
+  --messages-hydration-sidebar-shine: #ffffff;
+  --messages-hydration-sidebar-card: #edf7ff;
+  --messages-hydration-sidebar-card-active: #eef7ff;
+  --messages-hydration-sidebar-border: #acd0f4;
+  --messages-hydration-panel-line: rgba(220, 232, 243, 0.96);
+  --messages-hydration-panel-shine: rgba(255, 255, 255, 0.92);
+  grid-column: 1 / -1;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: 390px minmax(0, 1fr);
+  inline-size: 100%;
+  min-block-size: 100dvh;
+  overflow: hidden;
+  background: #edf4fa;
+}
+
+body.messages-page-shell [data-messages-hydration-skeleton] .doke-skeleton-line {
+  display: block;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, var(--messages-hydration-line) 0%, var(--messages-hydration-shine) 48%, var(--messages-hydration-line) 100%);
+  background-size: 220% 100%;
+  animation: dokeMessagesHydrationShimmer 1.55s ease-in-out infinite;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__sidebar {
+  --messages-hydration-line: var(--messages-hydration-sidebar-line);
+  --messages-hydration-shine: var(--messages-hydration-sidebar-shine);
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  gap: 14px;
+  min-inline-size: 0;
+  min-block-size: 0;
+  padding: 22px 20px;
+  overflow: hidden;
+  border-inline-end: 1px solid #d5e4f2;
+  background: var(--messages-hydration-sidebar-bg);
+  color: #0b4f95;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-inline-size: 0;
+  padding-inline: 2px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__menu {
+  inline-size: 42px;
+  block-size: 42px;
+  border-radius: 14px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__title {
+  inline-size: 154px;
+  block-size: 26px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px;
+  gap: 10px;
+  align-items: center;
+  min-inline-size: 0;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__search {
+  inline-size: 100%;
+  block-size: 46px;
+  border-radius: 16px;
+  border: 1px solid #d6e5f4;
+  background:
+    linear-gradient(90deg, #eef6fd 0%, #ffffff 48%, #eef6fd 100%);
+  background-size: 220% 100%;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__filter {
+  inline-size: 46px;
+  block-size: 46px;
+  border-radius: 16px;
+  border: 1px solid #d6e5f4;
+  background:
+    linear-gradient(90deg, #eef6fd 0%, #ffffff 48%, #eef6fd 100%);
+  background-size: 220% 100%;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__filter-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-inline-size: 0;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__chip {
+  inline-size: 92px;
+  block-size: 32px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__chip--short {
+  inline-size: 68px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__list {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-block-size: 0;
+  padding-block: 2px 16px;
+  padding-inline-end: 6px;
+  overflow: hidden;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-inline-size: 0;
+  padding-block-end: 2px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__group-title {
+  inline-size: 92px;
+  block-size: 13px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__group-count {
+  inline-size: 30px;
+  block-size: 30px;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, #d9ecff 0%, #f6fbff 48%, #d9ecff 100%);
+  background-size: 220% 100%;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__item {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 30px;
+  gap: 12px;
+  align-items: center;
+  min-inline-size: 0;
+  min-block-size: 78px;
+  padding: 12px 13px;
+  border: 1px solid rgba(176, 207, 239, 0.58);
+  border-radius: 18px;
+  background: var(--messages-hydration-sidebar-card);
+}
+
+body.messages-page-shell .messages-hydration-skeleton__item--active {
+  border-color: var(--messages-hydration-sidebar-border);
+  background: var(--messages-hydration-sidebar-card-active);
+}
+
+body.messages-page-shell .messages-hydration-skeleton__item--compact {
+  min-block-size: 70px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__avatar {
+  inline-size: 52px;
+  block-size: 52px;
+  border-radius: 16px;
+  background:
+    linear-gradient(90deg, #d7e8f7 0%, #ffffff 48%, #d7e8f7 100%);
+  background-size: 220% 100%;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__item-lines,
+body.messages-page-shell .messages-hydration-skeleton__profile-lines {
+  display: grid;
+  gap: 7px;
+  min-inline-size: 0;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__line-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px;
+  gap: 10px;
+  align-items: center;
+  min-inline-size: 0;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__line--name {
+  inline-size: 76%;
+  block-size: 15px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__time {
+  inline-size: 42px;
+  block-size: 11px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__line--preview {
+  inline-size: 92%;
+  block-size: 12px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__line--status {
+  inline-size: 58%;
+  block-size: 11px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__counter {
+  inline-size: 30px;
+  block-size: 30px;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, #0c5fa8 0%, #4e93cf 48%, #0c5fa8 100%);
+  background-size: 220% 100%;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__counter--muted {
+  background:
+    linear-gradient(90deg, rgba(235, 244, 251, 0.74) 0%, rgba(255, 255, 255, 0.92) 48%, rgba(235, 244, 251, 0.74) 100%);
+  background-size: 220% 100%;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__thread {
+  --messages-hydration-line: var(--messages-hydration-panel-line);
+  --messages-hydration-shine: var(--messages-hydration-panel-shine);
+  display: grid;
+  grid-template-rows: 90px minmax(0, 1fr) 66px;
+  min-inline-size: 0;
+  min-block-size: 0;
+  overflow: hidden;
+  border-inline-start: 1px solid rgba(207, 220, 233, 0.86);
+  background: #ffffff;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__thread-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  min-inline-size: 0;
+  min-block-size: 90px;
+  padding: 18px 24px;
+  border-block-end: 1px solid rgba(211, 224, 236, 0.86);
+  background: #ffffff;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__profile {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 210px);
+  align-items: center;
+  gap: 14px;
+  min-inline-size: 0;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__avatar--thread {
+  border-radius: 16px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__line--thread-name {
+  inline-size: 178px;
+  max-inline-size: 100%;
+  block-size: 18px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__line--thread-status {
+  inline-size: 128px;
+  max-inline-size: 82%;
+  block-size: 12px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__action-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__action {
+  block-size: 42px;
+  border-radius: 999px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__action--pill {
+  inline-size: 112px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__action--charge {
+  inline-size: 104px;
+  background:
+    linear-gradient(90deg, rgba(209, 245, 239, 0.9) 0%, rgba(238, 255, 252, 0.98) 48%, rgba(209, 245, 239, 0.9) 100%);
+  background-size: 220% 100%;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__action--icon {
+  inline-size: 46px;
+  border-radius: 16px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__thread-body {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  min-block-size: 0;
+  padding: 18px 24px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 20% 8%, rgba(33, 103, 174, 0.06), transparent 26%),
+    linear-gradient(180deg, #f8fbff 0%, #edf7fd 100%);
+}
+
+body.messages-page-shell .messages-hydration-skeleton__order-card {
+  display: grid;
+  gap: 10px;
+  inline-size: min(100%, 760px);
+  margin-inline: auto;
+  padding: 16px;
+  border: 1px solid rgba(205, 220, 235, 0.78);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 24px rgba(31, 68, 110, 0.055);
+}
+
+body.messages-page-shell .messages-hydration-skeleton__order-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-inline-size: 0;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__order-tag {
+  inline-size: 90px;
+  block-size: 22px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__order-id {
+  inline-size: 74px;
+  block-size: 12px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__order-title {
+  inline-size: min(58%, 360px);
+  block-size: 18px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__order-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__order-facts .doke-skeleton-line {
+  block-size: 34px;
+  border-radius: 14px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__order-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__order-actions .doke-skeleton-line {
+  block-size: 34px;
+  border-radius: 999px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__message-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 9px;
+  max-inline-size: min(700px, 80%);
+}
+
+body.messages-page-shell .messages-hydration-skeleton__message-row--incoming {
+  justify-self: start;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__message-row--outgoing {
+  justify-self: end;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__mini-avatar {
+  flex: 0 0 38px;
+  inline-size: 38px;
+  block-size: 38px;
+  border-radius: 12px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__bubble {
+  display: grid;
+  gap: 9px;
+  padding: 13px;
+  border: 1px solid rgba(205, 220, 235, 0.78);
+  box-shadow: 0 10px 22px rgba(31, 68, 110, 0.055);
+}
+
+body.messages-page-shell .messages-hydration-skeleton__bubble .doke-skeleton-line:first-child {
+  inline-size: min(340px, 100%);
+  block-size: 13px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__bubble .doke-skeleton-line:last-child {
+  inline-size: min(240px, 74%);
+  block-size: 13px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__bubble--incoming {
+  inline-size: min(380px, 100%);
+  border-radius: 18px 18px 18px 7px;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+body.messages-page-shell .messages-hydration-skeleton__bubble--outgoing {
+  inline-size: min(330px, 100%);
+  border-color: transparent;
+  border-radius: 18px 18px 7px 18px;
+  background: linear-gradient(135deg, rgba(44, 174, 158, 0.78) 0%, rgba(50, 156, 163, 0.78) 100%);
+}
+
+body.messages-page-shell .messages-hydration-skeleton__composer {
+  display: grid;
+  grid-template-columns: 44px 44px minmax(0, 1fr) 46px;
+  align-items: center;
+  gap: 10px;
+  min-inline-size: 0;
+  min-block-size: 66px;
+  padding: 10px 24px;
+  border-block-start: 1px solid rgba(211, 224, 236, 0.86);
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 -8px 20px rgba(31, 68, 110, 0.035);
+}
+
+body.messages-page-shell .messages-hydration-skeleton__composer-button {
+  inline-size: 44px;
+  block-size: 44px;
+  border-radius: 16px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__composer-input {
+  inline-size: 100%;
+  block-size: 44px;
+  border-radius: 16px;
+}
+
+body.messages-page-shell .messages-hydration-skeleton__composer-send {
+  inline-size: 46px;
+  background:
+    linear-gradient(90deg, rgba(44, 174, 158, 0.74) 0%, rgba(111, 225, 209, 0.88) 48%, rgba(44, 174, 158, 0.74) 100%);
+  background-size: 220% 100%;
+}
+
+@keyframes dokeMessagesHydrationShimmer {
+  0% { background-position: 120% 0; }
+  100% { background-position: -120% 0; }
+}
+
+@media (min-width: 1024px) {
+  body.messages-page-shell .messages-hydration-skeleton {
+    --chat-desktop-height: 100%;
+    grid-template-columns: var(--chat-sidebar-desktop-width, clamp(360px, 29vw, 430px)) minmax(0, 1fr);
+    min-block-size: var(--chat-desktop-height, 100dvh);
+    block-size: var(--chat-desktop-height, 100dvh);
+    max-block-size: var(--chat-desktop-height, 100dvh);
+  }
+}
+
+@media (max-width: 1023px) {
+  body.messages-page-shell .messages-hydration-skeleton {
+    grid-template-columns: 1fr;
+    min-block-size: 100dvh;
+  }
+
+  body.messages-page-shell .messages-hydration-skeleton__thread {
+    display: none;
+  }
+
+  body.messages-page-shell .messages-hydration-skeleton__sidebar {
+    min-block-size: 100dvh;
+  }
+}
+
+@media (max-width: 420px) {
+  body.messages-page-shell .messages-hydration-skeleton__sidebar {
+    padding: 18px 16px;
+  }
+
+  body.messages-page-shell .messages-hydration-skeleton__item {
+    grid-template-columns: 48px minmax(0, 1fr) 28px;
+    min-block-size: 74px;
+    padding: 11px;
+  }
+
+  body.messages-page-shell .messages-hydration-skeleton__avatar {
+    inline-size: 48px;
+    block-size: 48px;
+  }
+}

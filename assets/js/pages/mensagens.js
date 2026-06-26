@@ -45,6 +45,121 @@
     return isDemoProfessionalUser(user) && Boolean(conversation?.orderId || conversation?.order?.id);
   };
   const canUseChargeAction = (conversation) => Boolean(isProfessionalConversationView(conversation));
+
+  const getChargeCardPresentation = (conversation, message) => {
+    const professionalView = isProfessionalConversationView(conversation);
+    const ownerView = professionalView && message?.mine === true;
+
+    if (ownerView) {
+      if (message.reviewed) {
+        return {
+          label: 'Cobrança concluída',
+          status: 'Avaliação recebida',
+          state: 'reviewed',
+          kicker: 'Atendimento avaliado',
+          text: message.text || 'O cliente concluiu o fluxo e registrou a avaliação do atendimento.',
+          details: ['Recebimento pela Doke', message.installments || 'À vista'],
+          note: 'Fluxo encerrado com avaliação registrada.',
+          actionHtml: '<span class="message-bubble__charge-meta">Concluído</span>',
+          passive: true
+        };
+      }
+
+      if (message.completed) {
+        return {
+          label: 'Cobrança concluída',
+          status: 'Aguardando avaliação',
+          state: 'completed',
+          kicker: 'Atendimento finalizado',
+          text: message.text || 'O pedido foi finalizado e o cliente ainda pode avaliar o atendimento.',
+          details: ['Recebimento pela Doke', message.installments || 'À vista'],
+          note: 'Pedido encerrado. A avaliação do cliente pode chegar a qualquer momento.',
+          actionHtml: '<span class="message-bubble__charge-meta">Pedido finalizado</span>',
+          passive: true
+        };
+      }
+
+      if (message.paid) {
+        return {
+          label: 'Cobrança aprovada',
+          status: 'Pagamento confirmado',
+          state: 'paid',
+          kicker: 'Atendimento liberado',
+          text: message.text || 'O cliente confirmou o pagamento. Agora combine a execução e os próximos passos pelo chat.',
+          details: ['Recebimento pela Doke', message.installments || 'À vista'],
+          note: 'Pagamento confirmado. Siga com o atendimento.',
+          actionHtml: '<span class="message-bubble__charge-meta">Siga com o atendimento</span>',
+          passive: true
+        };
+      }
+
+      return {
+        label: 'Cobrança enviada ao cliente',
+        status: 'Aguardando cliente',
+        state: 'pending',
+        kicker: 'Proposta enviada',
+        text: message.text || 'Sua proposta foi enviada. O cliente precisa aprovar e pagar para liberar o atendimento.',
+        details: ['Recebimento pela Doke', message.installments || 'À vista'],
+        note: 'Aguardando aprovação e pagamento do cliente.',
+        actionHtml: '<span class="message-bubble__charge-meta">Cliente ainda não pagou</span>',
+        passive: true
+      };
+    }
+
+    if (message.reviewed) {
+      return {
+        label: 'Cobrança enviada',
+        status: 'Atendimento avaliado',
+        state: 'reviewed',
+        kicker: 'Proposta aprovada',
+        text: message.text || 'O atendimento foi concluído e avaliado.',
+        details: ['Pagamento seguro pela Doke', message.installments || 'À vista'],
+        note: 'Fluxo encerrado com avaliação registrada.',
+        actionHtml: '',
+        passive: true
+      };
+    }
+
+    if (message.completed) {
+      return {
+        label: 'Cobrança enviada',
+        status: 'Aguardando avaliação',
+        state: 'completed',
+        kicker: 'Proposta para aprovação',
+        text: message.text || 'O atendimento foi concluído. Você ainda pode avaliar por aqui.',
+        details: ['Pagamento seguro pela Doke', message.installments || 'À vista'],
+        note: 'Avalie para concluir o atendimento.',
+        actionHtml: '<button class="message-bubble__charge-pay is-done" type="button" data-message-review>Avaliar</button>',
+        passive: false
+      };
+    }
+
+    if (message.paid) {
+      return {
+        label: 'Cobrança enviada',
+        status: 'Pagamento confirmado',
+        state: 'paid',
+        kicker: 'Proposta para aprovação',
+        text: message.text || 'Pagamento confirmado. Agora você pode finalizar o pedido por aqui.',
+        details: ['Pagamento seguro pela Doke', message.installments || 'À vista'],
+        note: 'Confirme para encerrar o atendimento.',
+        actionHtml: '<button class="message-bubble__charge-pay is-complete" type="button" data-message-complete>Finalizar pedido</button>',
+        passive: false
+      };
+    }
+
+    return {
+      label: 'Cobrança enviada',
+      status: 'Aguardando pagamento',
+      state: 'pending',
+      kicker: 'Proposta para aprovação',
+      text: message.text || 'Proposta pronta para aprovação. Você pode pagar por aqui para confirmar o atendimento.',
+      details: ['Pagamento seguro pela Doke', message.installments || 'À vista'],
+      note: 'Confirme para liberar o atendimento.',
+      actionHtml: '<button class="message-bubble__charge-pay" type="button" data-message-pay>Pagar agora</button>',
+      passive: false
+    };
+  };
   const syncChargeActionVisibility = (conversation) => {
     const allowed = canUseChargeAction(conversation);
     const button = document.querySelector("[data-messages-charge]");
@@ -307,6 +422,27 @@
     const searchInputs = Array.from(root.querySelectorAll("[data-messages-search-input]"));
     const resetSearchButton = root.querySelector("[data-messages-reset-search]");
     const emptyState = root.querySelector("[data-messages-empty]");
+    let messagesHydrationLocalReady = false;
+    const hydration = window.DokePageHydration?.create({
+      page: 'mensagens',
+      root,
+      emptySelectors: ['[data-messages-empty]'],
+      skeletonSelectors: ['[data-messages-hydration-skeleton]'],
+      readySelectors: ['[data-messages-hydration-ready]'],
+      splashSelectors: ['[data-messages-document-preloader]'],
+      bootMode: 'hard-load',
+      skeletonMode: 'hard-load',
+      readyPolicy: 'internal-immediate',
+      splashDuration: 520,
+      waitFor: ['dom', 'auth'],
+      minDuration: 520,
+      maxDuration: 1500,
+      hasItems: () => !messagesHydrationLocalReady || Array.from(root.querySelectorAll('.message-item[data-message-id]'))
+        .some((item) => !item.hidden && item.dataset.deleted !== 'true')
+    }) || null;
+    hydration?.start();
+    hydration?.mark('dom');
+    window.setTimeout(() => hydration?.mark('auth'), 360);
     const ordersCount = root.querySelector("[data-messages-orders-count]");
     const contactsCount = root.querySelector("[data-messages-contacts-count]");
     const mobileCount = root.querySelector("[data-messages-mobile-count]");
@@ -1179,49 +1315,31 @@
         if (paragraph) paragraph.remove();
         const chargeCard = document.createElement("div");
         chargeCard.className = "message-bubble__charge";
-        const chargeStatus = message.reviewed
-          ? "Atendimento avaliado"
-          : message.completed
-            ? "Aguardando avaliação"
-            : message.paid
-              ? "Pagamento confirmado"
-              : "Aguardando pagamento";
-        const chargeState = message.reviewed
-          ? "reviewed"
-          : message.completed
-            ? "completed"
-            : message.paid
-              ? "paid"
-              : "pending";
-        const chargeAction = message.reviewed
-          ? ""
-          : message.completed
-            ? `<button class="message-bubble__charge-pay is-done" type="button" data-message-review>Avaliar</button>`
-            : message.paid
-              ? `<button class="message-bubble__charge-pay is-complete" type="button" data-message-complete>Finalizar pedido</button>`
-              : `<button class="message-bubble__charge-pay" type="button" data-message-pay>Pagar agora</button>`;
+        const chargePresentation = getChargeCardPresentation(conversation, message);
+        const chargeActionClass = chargePresentation.passive
+          ? 'message-bubble__charge-actions message-bubble__charge-actions--passive'
+          : 'message-bubble__charge-actions';
         chargeCard.innerHTML = `
           <div class="message-bubble__charge-topline">
-            <span class="message-bubble__charge-label">Cobrança enviada</span>
-            <span class="message-bubble__charge-status message-bubble__charge-status--${chargeState}">${chargeStatus}</span>
+            <span class="message-bubble__charge-label">${chargePresentation.label}</span>
+            <span class="message-bubble__charge-status message-bubble__charge-status--${chargePresentation.state}">${chargePresentation.status}</span>
           </div>
           <div class="message-bubble__charge-main">
             <span class="message-bubble__charge-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M7 3.75h10a2 2 0 0 1 2 2v14.5l-2.4-1.25-2.3 1.25L12 19l-2.3 1.25L7.4 19 5 20.25V5.75a2 2 0 0 1 2-2Z"></path><path d="M8.5 8.25h7"></path><path d="M8.5 11.75h5"></path><path d="M8.5 15.25h7"></path></svg>
             </span>
             <div class="message-bubble__charge-content">
-              <span class="message-bubble__charge-kicker">Proposta para aprovação</span>
+              <span class="message-bubble__charge-kicker">${chargePresentation.kicker}</span>
               <strong class="message-bubble__charge-value">${message.amount}</strong>
-              <p class="message-bubble__charge-text">${message.text}</p>
+              <p class="message-bubble__charge-text">${chargePresentation.text}</p>
             </div>
           </div>
           <div class="message-bubble__charge-details" aria-label="Detalhes da cobrança">
-            <span>Pagamento seguro pela Doke</span>
-            <span>${message.installments || "À vista"}</span>
+            ${chargePresentation.details.map((detail) => `<span>${detail}</span>`).join('')}
           </div>
-          <div class="message-bubble__charge-actions">
-            <span class="message-bubble__charge-note">Confirme para liberar o atendimento.</span>
-            ${chargeAction}
+          <div class="${chargeActionClass}">
+            <span class="message-bubble__charge-note">${chargePresentation.note}</span>
+            ${chargePresentation.actionHtml}
           </div>
         `;
         bubble.appendChild(chargeCard);
@@ -1413,7 +1531,17 @@
         }
         if (visible) visibleCount += 1;
       });
-      if (emptyState) emptyState.hidden = visibleCount !== 0;
+      if (emptyState) {
+        const hasVisibleConversation = visibleCount !== 0;
+        if (hydration && !hydration.canShowEmpty()) {
+          hydration.syncEmpty({ hasItems: true });
+        } else if (hydration) {
+          hydration.syncEmpty({ hasItems: hasVisibleConversation });
+        } else {
+          emptyState.hidden = hasVisibleConversation;
+          emptyState.setAttribute('aria-hidden', hasVisibleConversation ? 'true' : 'false');
+        }
+      }
       syncCounts();
       updateConversationSelectionUI();
       syncHeaderControls();
@@ -1690,6 +1818,8 @@
       prepareConversationItems();
       refreshConversationCards();
       syncVisibility();
+      messagesHydrationLocalReady = true;
+      hydration?.mark('local-conversations');
       const nextConversationFromOrder = requestedOrderId
         ? Object.keys(conversations).find((id) => String(conversations[id]?.orderId || conversations[id]?.order?.id || "") === String(requestedOrderId))
         : "";
@@ -1708,12 +1838,25 @@
       }
     };
 
-    document.addEventListener("doke:auth-session-change", () => refreshLocalConversationSurface({ preferRequested: true }));
-    document.addEventListener("doke:auth-surface-ready", () => refreshLocalConversationSurface({ preferRequested: true }));
+    const markMessagesHydrationAuth = () => {
+      hydration?.mark('auth');
+      refreshLocalConversationSurface({ preferRequested: true });
+    };
+    document.addEventListener("doke:auth-session-change", markMessagesHydrationAuth);
+    document.addEventListener("doke:auth-surface-ready", markMessagesHydrationAuth);
     document.addEventListener("doke:order-created", () => refreshLocalConversationSurface({ preferRequested: true }));
     document.addEventListener("doke:order-status-changed", () => refreshLocalConversationSurface({ preferRequested: true }));
     document.addEventListener("doke:message-sent", () => refreshLocalConversationSurface({ preferRequested: true }));
+    document.addEventListener('doke:page-hydration-ready', (event) => {
+      if (event.detail?.page !== 'mensagens') return;
+      syncVisibility();
+    });
     window.setTimeout(() => refreshLocalConversationSurface({ preferRequested: true }), 120);
+    window.setTimeout(() => {
+      messagesHydrationLocalReady = true;
+      hydration?.mark('local-conversations');
+      syncVisibility();
+    }, 560);
 
     threadBody?.addEventListener("click", (event) => {
       const bubble = event.target.closest("[data-message-bubble]");

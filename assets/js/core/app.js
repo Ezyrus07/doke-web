@@ -206,19 +206,21 @@ const SHARED_SIDEBAR_MARKUP = `
         <span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg></span>
         <span>Pedidos</span>
       </span>
+      <span class="nav-link__count" data-sidebar-orders-count hidden>0</span>
     </a>
     <a class="nav-link nav-link--messages" href="mensagens.html">
       <span class="nav-link__start">
         <span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg></span>
         <span>Mensagens</span>
       </span>
+      <span class="nav-link__count" data-sidebar-messages-count hidden>0</span>
     </a>
     <a class="nav-link nav-link--notifications" href="notificacoes.html">
       <span class="nav-link__start">
         <span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4.5a4.8 4.8 0 0 0-4.8 4.8v2.6c0 1.4-.4 2.7-1.2 3.8h12c-.8-1.1-1.2-2.4-1.2-3.8V9.3A4.8 4.8 0 0 0 12 4.5z"></path><path d="M9.5 18a2.5 2.5 0 0 0 5 0"></path></svg></span>
         <span>Notificações</span>
       </span>
-      <span class="nav-link__count">3</span>
+      <span class="nav-link__count" data-sidebar-notifications-count hidden>0</span>
     </a>
     <a class="nav-link nav-link--communities" href="comunidade.html">
       <span class="nav-link__start">
@@ -250,6 +252,110 @@ const renderSharedSidebar = () => {
   sidebar.innerHTML = SHARED_SIDEBAR_MARKUP;
   sidebar.dataset.shellRendered = 'true';
   sidebar.setAttribute('data-internal-sidebar', 'true');
+};
+
+const safeReadLocalCollection = (key) => {
+  try {
+    const raw = window.localStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+};
+
+const getCurrentSessionUser = () => {
+  try {
+    return window.Doke?.session?.getCurrentUser?.() || window.DokeAuth?.service?.getCurrentUser?.() || null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const isCurrentDemoProfessional = (user) => Boolean(user?.role === 'professional' && String(user?.id) === 'user_profissional_demo');
+
+const syncSidebarBadgeNode = (selector, count) => {
+  const node = document.querySelector(selector);
+  if (!node) return;
+  const value = Math.max(0, Number(count) || 0);
+  node.textContent = String(value);
+  node.hidden = value === 0;
+};
+
+const getLocalUnreadMessageCount = () => {
+  const user = getCurrentSessionUser();
+  const notifications = safeReadLocalCollection('doke.notifications.local.v1');
+  return notifications.filter((notification) => {
+    if (notification?.read === true || notification?.dismissed === true) return false;
+    if (String(notification?.category || notification?.type || '').toLowerCase().indexOf('message') === -1) return false;
+    if (!user?.id || !notification?.userId) return true;
+    return String(notification.userId) === String(user.id);
+  }).length;
+};
+
+const getLocalOpenOrdersCount = () => {
+  const user = getCurrentSessionUser();
+  const orders = safeReadLocalCollection('doke.orders.local.v1');
+  return orders.filter((order) => {
+    const status = String(order?.status || 'pending');
+    const isOpen = !['completed', 'cancelled'].includes(status);
+    if (!isOpen) return false;
+    if (!user?.id) return true;
+    if (String(order?.clientId || '') === String(user.id)) return true;
+    if (String(order?.professionalId || order?.providerId || '') === String(user.id)) return true;
+    return isCurrentDemoProfessional(user) && Boolean(order?.id);
+  }).length;
+};
+
+const getLocalUnreadNotificationsCount = () => {
+  const user = getCurrentSessionUser();
+  const notifications = safeReadLocalCollection('doke.notifications.local.v1');
+  return notifications.filter((notification) => {
+    if (notification?.read === true || notification?.dismissed === true) return false;
+    if (!user?.id || !notification?.userId) return true;
+    return String(notification.userId) === String(user.id);
+  }).length;
+};
+
+const syncSidebarOperationalBadges = () => {
+  syncSidebarBadgeNode('[data-sidebar-orders-count]', getLocalOpenOrdersCount());
+  syncSidebarBadgeNode('[data-sidebar-messages-count]', getLocalUnreadMessageCount());
+  syncSidebarBadgeNode('[data-sidebar-notifications-count]', getLocalUnreadNotificationsCount());
+};
+
+const getToastIcon = (category) => category === 'messages'
+  ? '<svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6z"></path><path d="M8 10h8"></path></svg>'
+  : '<svg viewBox="0 0 24 24"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg>';
+
+const showOperationalToast = (detail = {}) => {
+  const notification = detail.notification || detail;
+  if (!notification || notification.read === true) return;
+  const user = getCurrentSessionUser();
+  if (notification.userId && user?.id && String(notification.userId) !== String(user.id)) return;
+  const category = String(notification.category || notification.type || '').toLowerCase().includes('message') ? 'messages' : 'orders';
+  let region = document.querySelector('[data-doke-event-toast-region]');
+  if (!region) {
+    region = document.createElement('div');
+    region.className = 'doke-event-toast-region';
+    region.setAttribute('data-doke-event-toast-region', 'true');
+    region.setAttribute('aria-live', 'polite');
+    region.setAttribute('aria-atomic', 'false');
+    document.body.appendChild(region);
+  }
+  const toast = document.createElement('div');
+  toast.className = 'doke-event-toast';
+  toast.innerHTML = `
+    <span class="doke-event-toast__icon" aria-hidden="true">${getToastIcon(category)}</span>
+    <span class="doke-event-toast__copy">
+      <strong>${String(notification.title || 'Nova atualização')}</strong>
+      <span>${String(notification.body || 'Há uma nova atualização no Doke.')}</span>
+    </span>
+  `;
+  region.prepend(toast);
+  window.setTimeout(() => {
+    toast.classList.add('is-leaving');
+    window.setTimeout(() => toast.remove(), 220);
+  }, 4200);
 };
 
 const updateSidebarActiveState = (pathOverride = null) => {
@@ -1706,3 +1812,11 @@ document.addEventListener("keydown", (event) => {
 });
 
 initializeCurrentView();
+
+['doke:notification-created', 'doke:message-sent', 'doke:order-created', 'doke:order-status-changed', 'doke:auth-session-change', 'doke:auth-surface-ready'].forEach((eventName) => {
+  document.addEventListener(eventName, (event) => {
+    syncSidebarOperationalBadges();
+    if (eventName === 'doke:notification-created') showOperationalToast(event.detail || {});
+  });
+});
+window.addEventListener('storage', syncSidebarOperationalBadges);

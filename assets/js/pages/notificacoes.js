@@ -17,6 +17,27 @@
       return cards;
     };
     const empty = root.querySelector('[data-notifications-empty]');
+    let notificationsHydrationLocalReady = false;
+    const hydration = window.DokePageHydration?.create({
+      page: 'notificacoes',
+      root,
+      emptySelectors: ['[data-notifications-empty]'],
+      skeletonSelectors: ['[data-notifications-hydration-skeleton]'],
+      readySelectors: ['[data-notifications-hydration-ready]'],
+      splashSelectors: ['[data-notifications-document-preloader]'],
+      bootMode: 'hard-load',
+      skeletonMode: 'hard-load',
+      readyPolicy: 'internal-immediate',
+      splashDuration: 520,
+      waitFor: ['dom', 'auth'],
+      minDuration: 520,
+      maxDuration: 1500,
+      hasItems: () => !notificationsHydrationLocalReady || [...root.querySelectorAll('.notification-card')]
+        .some((card) => !card.hidden && card.dataset.dismissed !== 'true')
+    }) || null;
+    hydration?.start();
+    hydration?.mark('dom');
+    window.setTimeout(() => hydration?.mark('auth'), 360);
     const countNodes = [...document.querySelectorAll('[data-notifications-unread-count], [data-notifications-hero-count]')];
     const pageTitle = root.querySelector('.notifications-page-header__heading h2');
     const searchInputs = [...root.querySelectorAll('[data-notifications-search]')];
@@ -244,6 +265,8 @@
       updatéStats();
       applyFilter(currentFilter, currentTimeFilter);
       syncSelectedActions();
+      notificationsHydrationLocalReady = true;
+      hydration?.mark('local-notifications');
       return true;
     };
 
@@ -253,6 +276,25 @@
       window.setTimeout(hydrateLocalNotifications, 420);
     };
 
+
+    const markNotificationsHydrationAuth = () => {
+      hydration?.mark('auth');
+      refreshLocalNotifications();
+    };
+    document.addEventListener('doke:auth-surface-ready', markNotificationsHydrationAuth);
+    document.addEventListener('doke:auth-session-change', markNotificationsHydrationAuth);
+    document.addEventListener('doke:notification-created', () => refreshLocalNotifications());
+    document.addEventListener('doke:message-sent', () => refreshLocalNotifications());
+    document.addEventListener('doke:order-created', () => refreshLocalNotifications());
+    document.addEventListener('doke:page-hydration-ready', (event) => {
+      if (event.detail?.page !== 'notificacoes') return;
+      applyFilter(currentFilter, currentTimeFilter);
+    });
+    window.setTimeout(() => {
+      notificationsHydrationLocalReady = true;
+      hydration?.mark('local-notifications');
+      applyFilter(currentFilter, currentTimeFilter);
+    }, 650);
 
     const syncContextPanelHost = () => {
       if (!headerControls) return;
@@ -522,7 +564,17 @@
         group.hidden = !hasVisibleCard;
       });
 
-      if (empty) empty.hidden = visible > 0;
+      if (empty) {
+        const hasVisibleNotification = visible > 0;
+        if (hydration && !hydration.canShowEmpty()) {
+          hydration.syncEmpty({ hasItems: true });
+        } else if (hydration) {
+          hydration.syncEmpty({ hasItems: hasVisibleNotification });
+        } else {
+          empty.hidden = hasVisibleNotification;
+          empty.setAttribute('aria-hidden', hasVisibleNotification ? 'true' : 'false');
+        }
+      }
       updatéActiveChip();
     };
 

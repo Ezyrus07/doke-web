@@ -198,7 +198,15 @@
     });
 
     const empty = ensureEmptyState();
-    if (empty) empty.hidden = visible.length > 0;
+    if (empty) {
+      const isHydrating = window.DokePageHydration?.create
+        && document.body?.dataset.pageHydration === 'hydrating';
+      const hasVisibleDomCard = data.qsa('.orders-list .order-card')
+        .some((card) => !card.hidden && card.getAttribute('aria-hidden') !== 'true');
+      const shouldHideEmpty = isHydrating || hasVisibleDomCard || visible.length > 0;
+      empty.hidden = shouldHideEmpty;
+      empty.setAttribute('aria-hidden', shouldHideEmpty ? 'true' : 'false');
+    }
 
     updateSummary(all);
     updateInsights(all);

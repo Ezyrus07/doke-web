@@ -36,6 +36,33 @@
     const emptyStaté = root.querySelector('[data-orders-empty]');
     const emptyText = root.querySelector('[data-orders-empty-text]');
     const resetEmptyButton = root.querySelector('[data-orders-reset-empty]');
+    let ordersHydrationLocalReady = false;
+    const hydration = window.DokePageHydration?.create({
+      page: 'pedidos',
+      root,
+      emptySelectors: ['[data-orders-empty]'],
+      skeletonSelectors: [
+        '[data-orders-hydration-skeleton]',
+        '[data-orders-hydration-count-skeleton]'
+      ],
+      readySelectors: [
+        '[data-orders-hydration-ready]',
+        '[data-orders-hydration-count-ready]'
+      ],
+      splashSelectors: ['[data-orders-document-preloader]'],
+      splashDuration: 520,
+      bootMode: 'hard-load',
+      skeletonMode: 'hard-load',
+      readyPolicy: 'internal-immediate',
+      waitFor: ['dom', 'auth'],
+      minDuration: 520,
+      maxDuration: 1500,
+      hasItems: () => !ordersHydrationLocalReady || Array.from(root.querySelectorAll('.orders-list .order-card[data-status]'))
+        .some((card) => !card.hidden && card.getAttribute('aria-hidden') !== 'true')
+    }) || null;
+    hydration?.start();
+    hydration?.mark('dom');
+    window.setTimeout(() => hydration?.mark('auth'), 360);
     const statNodes = {
       all: root.querySelector('[data-orders-stat="all"]'),
       pending: root.querySelector('[data-orders-stat="pending"]'),
@@ -168,6 +195,25 @@
       headerControls.hidden = !showControls;
     };
 
+    const syncOrdersEmptyState = (visibleCount = 0, hasQuery = false) => {
+      if (!emptyStaté) return;
+      const hasAnyVisibleCard = Array.from(root.querySelectorAll('.orders-list .order-card[data-status]'))
+        .some((card) => !card.hidden && card.getAttribute('aria-hidden') !== 'true');
+      const hasVisibleOrder = visibleCount > 0 || hasAnyVisibleCard;
+      if (hydration && !hydration.canShowEmpty()) {
+        hydration.syncEmpty({ hasItems: true });
+      } else if (hydration) {
+        hydration.syncEmpty({ hasItems: hasVisibleOrder });
+      } else {
+        emptyStaté.hidden = hasVisibleOrder;
+        emptyStaté.setAttribute('aria-hidden', hasVisibleOrder ? 'true' : 'false');
+      }
+      if (!emptyText) return;
+      emptyText.textContent = hasQuery
+        ? 'Nenhum pedido combinou com essa busca. Tente outro termo ou limpe os filtros para voltar a ver tudo.'
+        : 'Você pode limpar o filtro atual ou voltar para a base para solicitar um novo orçamento.';
+    };
+
     const applyFilters = () => {
       const active = root.dataset.activeFilter || 'all';
       const query = normalize(searchInput?.value || '');
@@ -179,17 +225,7 @@
         card.hidden = !visible;
         if (visible) visibleCount += 1;
       });
-      if (emptyStaté) {
-        const hasQuery = Boolean(query);
-        const hasVisibleOrder = visibleCount > 0 || refreshCards().some((card) => !card.hidden && card.offsetParent !== null);
-        emptyStaté.hidden = hasVisibleOrder;
-        emptyStaté.setAttribute('aria-hidden', hasVisibleOrder ? 'true' : 'false');
-        if (emptyText) {
-          emptyText.textContent = hasQuery
-            ? 'Nenhum pedido combinou com essa busca. Tente outro termo ou limpe os filtros para voltar a ver tudo.'
-            : 'Você pode limpar o filtro atual ou voltar para a base para solicitar um novo orçamento.';
-        }
-      }
+      syncOrdersEmptyState(visibleCount, Boolean(query));
       syncActiveChip();
     };
 
@@ -894,11 +930,42 @@
     setAgendaExpanded(true);
     refreshOrdersSurface();
     syncHeaderControls();
-    scheduleRequestedOrderFocus();
-    document.addEventListener('doke:orders-list-hydrated', () => {
+    const markOrdersHydrationAuth = () => {
+      hydration?.mark('auth');
       refreshOrdersSurface();
-      scheduleRequestedOrderFocus();
+    };
+    const markOrdersHydrationLocal = () => {
+      ordersHydrationLocalReady = true;
+      hydration?.mark('local-orders');
+      refreshOrdersSurface();
+    };
+    const markOrdersHydrationCommand = () => {
+      hydration?.mark('command-center');
+      refreshOrdersSurface();
+    };
+    document.addEventListener('doke:auth-surface-ready', markOrdersHydrationAuth);
+    document.addEventListener('doke:auth-session-change', markOrdersHydrationAuth);
+    document.addEventListener('doke:orders-command-center-ready', markOrdersHydrationCommand);
+    document.addEventListener('doke:page-hydration-ready', (event) => {
+      if (event.detail?.page !== 'pedidos') return;
+      refreshOrdersSurface();
     });
+    document.addEventListener('doke:orders-list-hydrated', markOrdersHydrationLocal);
+    window.setTimeout(markOrdersHydrationLocal, 520);
+    window.setTimeout(() => hydration?.mark('command-center'), 700);
+    window.setTimeout(() => {
+      if (!hydration || hydration.canShowEmpty()) return;
+      hydration.ready();
+      refreshOrdersSurface();
+    }, 1050);
+    document.addEventListener('doke:orders-command-center-ready', () => {
+      refreshOrdersSurface();
+    });
+    document.addEventListener('doke:auth-surface-ready', () => {
+      refreshOrdersSurface();
+    });
+    window.setTimeout(refreshOrdersSurface, 220);
+    window.setTimeout(refreshOrdersSurface, 560);
     if (planner) {
       syncPlannerFirstPaintState();
       renderPlannerCalendar();

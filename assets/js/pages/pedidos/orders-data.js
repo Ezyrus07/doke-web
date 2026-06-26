@@ -120,7 +120,7 @@
     };
   };
 
-  const readOrders = (root = document) => qsa('.orders-list .order-card', root).map(readOrderCard);
+  const readOrders = (root = document) => qsa('.orders-list .order-card[data-status]', root).map(readOrderCard);
 
   const readTodayEvents = (root = document) => {
     const direct = qsa('[data-orders-event]', root).filter((event) => !event.hidden);

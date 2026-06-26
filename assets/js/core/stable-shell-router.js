@@ -2,7 +2,7 @@
   'use strict';
 
   var Doke = window.Doke || (window.Doke = {});
-  var ROUTER_VERSION = '20260602-stable-shell-router-paint-before-scripts-v1';
+  var ROUTER_VERSION = '20260626-stable-shell-router-hydration-surfaces-v2';
 
   var SAFE_ROUTES = new Set([
     '/ajuda.html',
@@ -513,11 +513,45 @@
     document.documentElement.classList.toggle('home-index-root', isHome);
   }
 
+  function isDocumentPreloaderNode(node) {
+    if (!node || node.nodeType !== 1 || typeof node.matches !== 'function') return false;
+    return node.matches('[data-orders-document-preloader], [data-messages-document-preloader], [data-notifications-document-preloader], .orders-document-preloader, .doke-document-preloader');
+  }
+
   function isRouteStandaloneNode(node) {
     if (!node || node.nodeType !== 1) return false;
     if (node.matches('.app-shell, script')) return false;
+    if (isDocumentPreloaderNode(node)) return false;
     if (node.matches('[data-mobile-drawer-authority="canonical"], .doke-global-mobile-drawer')) return false;
     return true;
+  }
+
+  function prepareInternalHydrationSurface(scope) {
+    if (!scope || typeof scope.querySelectorAll !== 'function') return;
+    scope.querySelectorAll('[data-orders-document-preloader], [data-messages-document-preloader], [data-notifications-document-preloader], .orders-document-preloader, .doke-document-preloader').forEach(function (node) {
+      try {
+        node.hidden = true;
+        node.setAttribute('aria-hidden', 'true');
+      } catch (error) {}
+    });
+    scope.querySelectorAll('[data-orders-hydration-skeleton], [data-messages-hydration-skeleton], [data-notifications-hydration-skeleton]').forEach(function (node) {
+      try {
+        node.hidden = true;
+        node.setAttribute('aria-hidden', 'true');
+      } catch (error) {}
+    });
+    scope.querySelectorAll('[data-orders-hydration-ready], [data-messages-hydration-ready], [data-notifications-hydration-ready]').forEach(function (node) {
+      try {
+        node.hidden = false;
+        node.setAttribute('aria-hidden', 'false');
+      } catch (error) {}
+    });
+    scope.querySelectorAll('[data-orders-empty], [data-messages-empty], [data-notifications-empty]').forEach(function (node) {
+      try {
+        node.hidden = true;
+        node.setAttribute('aria-hidden', 'true');
+      } catch (error) {}
+    });
   }
 
   function syncStandaloneUi(nextDoc) {
@@ -531,6 +565,7 @@
     Array.prototype.slice.call(nextDoc.body.children).forEach(function (node) {
       if (!isRouteStandaloneNode(node)) return;
       var clone = node.cloneNode(true);
+      prepareInternalHydrationSurface(clone);
       if (anchor && anchor.parentNode === document.body) document.body.insertBefore(clone, anchor);
       else document.body.appendChild(clone);
     });
@@ -544,6 +579,7 @@
     }
 
     var nextShellNode = nextShell.cloneNode(true);
+    prepareInternalHydrationSurface(nextShellNode);
     var currentSidebar = currentShell.querySelector(':scope > .sidebar');
     var nextSidebar = nextShellNode.querySelector(':scope > .sidebar');
     if (currentSidebar && nextSidebar) {
@@ -552,6 +588,8 @@
 
     syncHtmlContract(nextDoc.documentElement);
     syncBodyContract(nextDoc.body);
+    document.documentElement.dataset.dokeNavigationMode = 'stable-shell';
+    if (document.body) document.body.dataset.dokeNavigationMode = 'stable-shell';
     applyRouteRuntimeClasses(path);
     currentShell.replaceWith(nextShellNode);
     syncStandaloneUi(nextDoc);
@@ -647,6 +685,12 @@
     var committed = false;
     var fromPath = currentPath();
     navigating = true;
+    try {
+      window.sessionStorage.setItem('doke.internalRouteNavigation', String(Date.now()));
+      document.documentElement.dataset.dokeNavigationMode = 'stable-shell';
+      if (document.body) document.body.dataset.dokeNavigationMode = 'stable-shell';
+      document.dispatchEvent(new CustomEvent('doke:stable-route-start', { detail: { from: fromPath, to: path, router: ROUTER_VERSION } }));
+    } catch (error) {}
     runRouteLeavingCleanup(fromPath, path);
     setBusy(true);
     updateSidebar(path);
@@ -691,6 +735,10 @@
         clearTransientRouteState();
         setBusy(false);
         navigating = false;
+        try {
+          document.documentElement.removeAttribute('data-doke-navigation-mode');
+          if (document.body) document.body.removeAttribute('data-doke-navigation-mode');
+        } catch (error) {}
       });
     }
   }

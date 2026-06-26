@@ -178,15 +178,39 @@
     }).join('');
   };
 
+  const getFallbackTimeline = (order) => {
+    const status = order.status || 'pending';
+    const accepted = ['conversation', 'responded', 'quoted', 'in_progress', 'completed'].includes(status);
+    const quoted = ['responded', 'quoted', 'in_progress', 'completed'].includes(status);
+    const completed = status === 'completed';
+    const cancelled = status === 'cancelled';
+
+    if (cancelled) {
+      return [
+        { label: 'Pedido recebido', date: order.updatedLabel || 'Registrado na Doke', done: true, current: false },
+        { label: 'Pedido recusado', date: 'Fluxo encerrado', done: false, current: true },
+        { label: 'Conversa bloqueada', date: 'Chat indisponível', done: false, current: false }
+      ];
+    }
+
+    return [
+      { label: 'Pedido recebido', date: order.updatedLabel || 'Registrado na Doke', done: true, current: false },
+      { label: 'Aceite do profissional', date: accepted ? 'Pedido aceito' : 'Aguardando resposta', done: accepted, current: !accepted },
+      { label: 'Proposta e pagamento', date: quoted ? 'Proposta enviada' : 'Próxima etapa', done: quoted, current: accepted && !quoted },
+      { label: 'Atendimento', date: completed ? 'Concluído' : 'Após confirmação', done: completed, current: quoted && !completed }
+    ];
+  };
+
   const renderTimeline = (layer, order) => {
     const target = layer.querySelector('[data-detail-timeline]');
     if (!target) return;
-    const steps = Array.from(order.card.querySelectorAll('.order-card__progress-step')).map((step) => ({
+    let steps = Array.from(order.card.querySelectorAll('.order-card__progress-step')).map((step) => ({
       label: clean(step.querySelector('.order-card__progress-label')?.textContent) || 'Etapa',
       date: clean(step.querySelector('.order-card__progress-date')?.textContent),
       done: step.classList.contains('is-done'),
       current: step.classList.contains('is-current')
     }));
+    if (!steps.length) steps = getFallbackTimeline(order);
     target.innerHTML = steps.map((step) => `
       <article class="orders-detail-timeline__item ${step.done ? 'is-done' : ''} ${step.current ? 'is-current' : ''}">
         <span class="orders-detail-timeline__bullet">${step.done ? ICONS.check : ''}</span>

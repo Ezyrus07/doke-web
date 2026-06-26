@@ -3622,3 +3622,555 @@ body.orders-page-shell .orders-page [data-orders-select-panel] .doke-mobile-acti
     color: #b7c3d2;
   }
 }
+
+/* Pedidos hydration loading contract
+   Responsibility: first-paint placeholders for pedidos.html data regions.
+   Skeletons stay outside operational selectors (.orders-list/.order-card), use
+   one synchronized shimmer phase, and never decide real order counts. */
+
+body.orders-page-shell [data-orders-hydration-skeleton],
+body.orders-page-shell [data-orders-hydration-count-skeleton] {
+  --doke-loading-duration: 1.35s;
+}
+
+body.orders-page-shell [data-orders-hydration-skeleton] :where(.doke-skeleton-line, [data-skeleton-line]),
+body.orders-page-shell [data-orders-hydration-count-skeleton] :where(.doke-skeleton-line, [data-skeleton-line]),
+body.orders-page-shell .orders-card-skeleton__ai-icon,
+body.orders-page-shell .orders-card-skeleton__status-dot {
+  animation-delay: 0s;
+  animation-duration: var(--doke-loading-duration);
+  animation-timing-function: ease-in-out;
+}
+
+body.orders-page-shell [data-orders-hydration-skeleton][hidden],
+body.orders-page-shell [data-orders-hydration-ready][hidden],
+body.orders-page-shell [data-orders-hydration-count-skeleton][hidden],
+body.orders-page-shell [data-orders-hydration-count-ready][hidden],
+body.orders-page-shell [data-page-hydration="ready"] [data-orders-hydration-skeleton],
+body.orders-page-shell [data-page-hydration="empty"] [data-orders-hydration-skeleton],
+body.orders-page-shell [data-page-hydration="ready"] [data-orders-hydration-count-skeleton],
+body.orders-page-shell [data-page-hydration="empty"] [data-orders-hydration-count-skeleton] {
+  display: none;
+}
+
+body.orders-page-shell [data-page-hydration="hydrating"][data-page-hydration-skeleton="on"] [data-orders-hydration-ready],
+body.orders-page-shell [data-page-hydration="hydrating"][data-page-hydration-skeleton="on"] [data-orders-hydration-count-ready] {
+  display: none;
+}
+
+body.orders-page-shell .orders-document-preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, #eaf3fa 0%, #e3eff8 100%);
+  color: var(--color-primary, #2a5f90);
+  pointer-events: auto;
+  isolation: isolate;
+  animation: dokeOrdersDocumentPreloaderAutoHide 760ms ease forwards;
+}
+
+body.orders-page-shell .orders-document-preloader[hidden] {
+  display: none;
+}
+
+body.orders-page-shell .orders-document-preloader__mark {
+  display: grid;
+  place-items: center;
+  inline-size: clamp(132px, 12vw, 178px);
+  min-block-size: 82px;
+  padding: 18px 22px;
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow: 0 24px 58px rgba(18, 55, 95, 0.13);
+}
+
+body.orders-page-shell .orders-document-preloader__logo {
+  display: block;
+  inline-size: min(132px, 32vw);
+  block-size: auto;
+}
+
+@keyframes dokeOrdersDocumentPreloaderAutoHide {
+  0%,
+  78% {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  100% {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.orders-page-shell .orders-document-preloader {
+    animation-duration: 1ms;
+    animation-delay: 640ms;
+  }
+}
+
+body.orders-page-shell .orders-page-header__count--skeleton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 46px;
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 24px rgba(18, 55, 95, 0.05);
+}
+
+body.orders-page-shell .orders-skeleton-line {
+  --doke-skeleton-line-height: 11px;
+}
+
+body.orders-page-shell .orders-skeleton-line--count {
+  --doke-skeleton-line-width: 24px;
+  --doke-skeleton-line-height: 12px;
+}
+
+body.orders-page-shell .orders-skeleton-line--value {
+  --doke-skeleton-line-width: 34px;
+  --doke-skeleton-line-height: 28px;
+}
+
+
+body.orders-page-shell .orders-command-summary__value--skeleton {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 34px;
+  inline-size: 44px;
+  line-height: 1;
+}
+
+body.orders-page-shell .orders-command-summary__value--skeleton .orders-skeleton-line--value {
+  --doke-skeleton-line-width: 34px;
+  --doke-skeleton-line-height: 28px;
+}
+
+body.orders-page-shell .orders-skeleton-line--label {
+  --doke-skeleton-line-width: 54%;
+  --doke-skeleton-line-height: 12px;
+}
+
+body.orders-page-shell .orders-skeleton-line--hint {
+  --doke-skeleton-line-width: 76%;
+  --doke-skeleton-line-height: 10px;
+}
+
+body.orders-page-shell .orders-skeleton-line--eyebrow {
+  --doke-skeleton-line-width: 82px;
+  --doke-skeleton-line-height: 11px;
+}
+
+body.orders-page-shell .orders-skeleton-line--month {
+  --doke-skeleton-line-width: 132px;
+  --doke-skeleton-line-height: 18px;
+}
+
+body.orders-page-shell .orders-skeleton-line--title {
+  --doke-skeleton-line-width: 118px;
+  --doke-skeleton-line-height: 22px;
+}
+
+body.orders-page-shell .orders-skeleton-line--meta {
+  --doke-skeleton-line-width: 184px;
+  --doke-skeleton-line-height: 14px;
+}
+
+body.orders-page-shell .orders-skeleton-line--time {
+  --doke-skeleton-line-width: 66px;
+  --doke-skeleton-line-height: 16px;
+}
+
+body.orders-page-shell .orders-skeleton-line--event-title {
+  --doke-skeleton-line-width: 148px;
+  --doke-skeleton-line-height: 14px;
+  margin-bottom: 8px;
+}
+
+body.orders-page-shell .orders-skeleton-line--event-copy {
+  --doke-skeleton-line-width: 220px;
+  --doke-skeleton-line-height: 11px;
+}
+
+body.orders-page-shell .orders-skeleton-line--insight-title {
+  --doke-skeleton-line-width: 44%;
+  --doke-skeleton-line-height: 13px;
+}
+
+body.orders-page-shell .orders-skeleton-line--insight-copy {
+  --doke-skeleton-line-width: 82%;
+  --doke-skeleton-line-height: 11px;
+}
+
+body.orders-page-shell .orders-skeleton-line--insight-link {
+  --doke-skeleton-line-width: 62px;
+  --doke-skeleton-line-height: 10px;
+}
+
+body.orders-page-shell .orders-skeleton-block {
+  display: block;
+  border-radius: 18px;
+}
+
+body.orders-page-shell .orders-skeleton-block--icon,
+body.orders-page-shell .orders-skeleton-block--insight-icon {
+  inline-size: 100%;
+  block-size: 100%;
+  --doke-skeleton-line-width: 100%;
+  --doke-skeleton-line-height: 100%;
+  border-radius: inherit;
+}
+
+body.orders-page-shell .orders-skeleton-block--nav {
+  inline-size: 32px;
+  block-size: 32px;
+  --doke-skeleton-line-width: 32px;
+  --doke-skeleton-line-height: 32px;
+  border-radius: 12px;
+}
+
+body.orders-page-shell .orders-skeleton-block--day {
+  inline-size: 100%;
+  min-height: 42px;
+  --doke-skeleton-line-width: 100%;
+  --doke-skeleton-line-height: 42px;
+  border-radius: 14px;
+}
+
+body.orders-page-shell .orders-command-summary--skeleton .orders-command-summary__card,
+body.orders-page-shell .orders-planner--skeleton .orders-planner__card,
+body.orders-page-shell .orders-command-insights--skeleton .orders-command-insight,
+body.orders-page-shell .orders-card-skeleton {
+  pointer-events: none;
+}
+
+body.orders-page-shell .orders-command-summary__card--skeleton .orders-command-summary__icon,
+body.orders-page-shell .orders-command-insight--skeleton .orders-command-insight__icon {
+  background: rgba(235, 243, 251, 0.96);
+  color: transparent;
+}
+
+body.orders-page-shell .orders-command-summary__card--skeleton .orders-command-summary__content,
+body.orders-page-shell .orders-command-insight--skeleton > span:last-child {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+}
+
+body.orders-page-shell .orders-planner__month-controls--skeleton {
+  gap: 12px;
+}
+
+body.orders-page-shell .orders-planner__weekdays--skeleton span {
+  display: block;
+  --doke-skeleton-line-width: 100%;
+  --doke-skeleton-line-height: 12px;
+}
+
+body.orders-page-shell .orders-planner__skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+body.orders-page-shell .orders-planner__skeleton-events {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+body.orders-page-shell .orders-planner__skeleton-event {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding: 14px 0;
+  border-top: 1px solid rgba(225, 234, 243, 0.78);
+}
+
+body.orders-page-shell .orders-planner__skeleton-event:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+body.orders-page-shell .orders-planner__skeleton-event > span:last-child {
+  display: block;
+}
+
+body.orders-page-shell .orders-card-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  align-items: stretch;
+}
+
+body.orders-page-shell .orders-card-skeleton {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-content: start;
+  gap: 0;
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 360px;
+  margin: 0;
+  padding: 22px;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-surface);
+  background: rgba(255, 255, 255, 0.99);
+  box-shadow: 0 14px 30px rgba(18, 55, 95, 0.045);
+  box-sizing: border-box;
+}
+
+body.orders-page-shell .orders-card-skeleton__top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "status badge"
+    "date badge"
+    "statusBadge statusBadge";
+  align-items: center;
+  gap: 8px 10px;
+  min-inline-size: 0;
+  padding: 0 0 14px;
+}
+
+body.orders-page-shell .orders-card-skeleton__statusline {
+  grid-area: status;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-inline-size: 0;
+}
+
+body.orders-page-shell .orders-card-skeleton__status-dot {
+  flex: 0 0 auto;
+  inline-size: 13px;
+  block-size: 13px;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(228, 238, 246, 0.88) 0%, var(--doke-loading-sheen) 48%, rgba(228, 238, 246, 0.88) 100%),
+    var(--doke-loading-surface);
+  background-size: 220% 100%;
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.94);
+  animation-name: doke-component-loading-sheen;
+  animation-iteration-count: infinite;
+}
+
+body.orders-page-shell .orders-card-skeleton .orders-skeleton-line--status {
+  --doke-skeleton-line-width: 116px;
+  --doke-skeleton-line-height: 14px;
+}
+
+body.orders-page-shell .orders-card-skeleton .orders-skeleton-line--date {
+  grid-area: date;
+  --doke-skeleton-line-width: 126px;
+  --doke-skeleton-line-height: 13px;
+}
+
+body.orders-page-shell .orders-card-skeleton .orders-skeleton-line--badge {
+  grid-area: statusBadge;
+  justify-self: start;
+  --doke-skeleton-line-width: 92px;
+  --doke-skeleton-line-height: 26px;
+  border-radius: var(--radius-pill);
+}
+
+body.orders-page-shell .orders-card-skeleton__body {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-inline-size: 0;
+  padding-top: 2px;
+}
+
+body.orders-page-shell .orders-card-skeleton .orders-skeleton-line--order-title {
+  --doke-skeleton-line-width: 76%;
+  --doke-skeleton-line-height: 24px;
+}
+
+body.orders-page-shell .orders-card-skeleton .orders-skeleton-line--subtitle {
+  --doke-skeleton-line-width: 88%;
+  --doke-skeleton-line-height: 14px;
+}
+
+body.orders-page-shell .orders-card-skeleton__identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-inline-size: 0;
+  margin-top: 2px;
+}
+
+body.orders-page-shell .orders-card-skeleton .orders-skeleton-block--avatar {
+  flex: 0 0 42px;
+  inline-size: 42px;
+  block-size: 42px;
+  min-inline-size: 42px;
+  min-block-size: 42px;
+  --doke-skeleton-line-width: 42px;
+  --doke-skeleton-line-height: 42px;
+  border-radius: var(--radius-pill);
+}
+
+body.orders-page-shell .orders-card-skeleton .orders-skeleton-line--location {
+  --doke-skeleton-line-width: 78%;
+  --doke-skeleton-line-height: 14px;
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+body.orders-page-shell .orders-card-skeleton__ai-pill {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-inline-size: 100%;
+  min-block-size: 28px;
+  margin-top: 10px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: rgba(41, 143, 127, 0.08);
+}
+
+body.orders-page-shell .orders-card-skeleton__ai-icon {
+  flex: 0 0 auto;
+  inline-size: 14px;
+  block-size: 14px;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(228, 238, 246, 0.88) 0%, var(--doke-loading-sheen) 48%, rgba(228, 238, 246, 0.88) 100%),
+    var(--doke-loading-surface);
+  background-size: 220% 100%;
+  animation-name: doke-component-loading-sheen;
+  animation-iteration-count: infinite;
+}
+
+body.orders-page-shell .orders-card-skeleton .orders-skeleton-line--ai {
+  --doke-skeleton-line-width: 112px;
+  --doke-skeleton-line-height: 11px;
+}
+
+body.orders-page-shell .orders-card-skeleton__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-inline-size: 0;
+  padding: 16px 0 0;
+  margin: 0;
+}
+
+body.orders-page-shell .orders-card-skeleton .orders-skeleton-block--button,
+body.orders-page-shell .orders-card-skeleton .orders-skeleton-block--button-secondary {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  inline-size: auto;
+  min-block-size: var(--control-height-md);
+  --doke-skeleton-line-width: 100%;
+  --doke-skeleton-line-height: var(--control-height-md);
+  border-radius: var(--radius-pill);
+}
+
+@media (max-width: 1180px) and (min-width: 921px) {
+  body.orders-page-shell .orders-card-skeleton-grid {
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+  }
+}
+
+@media (min-width: 761px) and (max-width: 920px) {
+  body.orders-page-shell .orders-card-skeleton-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell .orders-page:not(.is-calendar-expanded) .orders-planner--skeleton .orders-planner__weekdays--skeleton,
+  body.orders-page-shell .orders-page:not(.is-calendar-expanded) .orders-planner--skeleton .orders-planner__skeleton-grid {
+    display: none;
+  }
+
+  body.orders-page-shell .orders-card-skeleton-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  body.orders-page-shell .orders-card-skeleton {
+    min-block-size: 0;
+    padding: 20px;
+  }
+
+  body.orders-page-shell .orders-card-skeleton__top {
+    padding-bottom: 10px;
+  }
+
+  body.orders-page-shell .orders-card-skeleton__body {
+    gap: 8px;
+  }
+
+  body.orders-page-shell .orders-card-skeleton .orders-skeleton-block--avatar {
+    flex-basis: 38px;
+    inline-size: 38px;
+    block-size: 38px;
+    min-inline-size: 38px;
+    min-block-size: 38px;
+    --doke-skeleton-line-width: 38px;
+    --doke-skeleton-line-height: 38px;
+  }
+
+  body.orders-page-shell .orders-card-skeleton__ai-pill {
+    min-block-size: 26px;
+    margin-top: 8px;
+  }
+
+  body.orders-page-shell .orders-card-skeleton__actions {
+    padding-top: 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  body.orders-page-shell .orders-card-skeleton__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+}
+
+@media (max-width: 390px) {
+  body.orders-page-shell .orders-card-skeleton {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  body.orders-page-shell .orders-card-skeleton__actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell .orders-document-preloader__mark {
+    inline-size: 138px;
+    min-block-size: 74px;
+    padding: 16px 20px;
+    border-radius: 24px;
+  }
+
+  body.orders-page-shell .orders-document-preloader__logo {
+    inline-size: 112px;
+  }
+}
