@@ -76,7 +76,7 @@
   function statusClass(status) {
     if (status === 'completed') return 'completed';
     if (status === 'cancelled') return 'cancelled';
-    if (status === 'conversation' || status === 'accepted') return 'conversation';
+    if (status === 'conversation' || status === 'accepted' || status === 'in_progress') return 'conversation';
     if (status === 'responded' || status === 'quoted') return 'responded';
     return 'pending';
   }
@@ -104,6 +104,27 @@
     }
   }
 
+  function getPrimaryActionLabel(order, professionalView) {
+    var status = order.status || 'pending';
+    if (status === 'pending' && professionalView) return 'Aceitar pedido';
+    if (status === 'accepted' || status === 'conversation' || status === 'responded') return professionalView ? 'Enviar proposta' : 'Abrir conversa';
+    if (status === 'quoted') return professionalView ? 'Acompanhar proposta' : 'Ver proposta';
+    if (status === 'in_progress') return 'Abrir conversa';
+    if (status === 'completed') return professionalView ? 'Ver resumo' : 'Avaliar';
+    if (status === 'cancelled') return 'Ver detalhes';
+    return professionalView ? 'Responder cliente' : 'Abrir conversa';
+  }
+
+  function getDetailFlow(order, professionalView) {
+    var status = order.status || 'pending';
+    if (status === 'accepted' || status === 'conversation' || status === 'responded') return 'Pedido aceito. A conversa está liberada para alinhar proposta e próximos passos.';
+    if (status === 'quoted') return 'Proposta enviada pelo profissional. O cliente precisa aprovar para liberar o atendimento.';
+    if (status === 'in_progress') return 'Proposta aprovada. O atendimento está em andamento.';
+    if (status === 'completed') return 'Pedido concluído. O fluxo fica disponível para avaliação e histórico.';
+    if (status === 'cancelled') return 'Pedido recusado pelo profissional. A justificativa fica registrada no histórico do pedido.';
+    return professionalView ? 'Pedido recebido pelo fluxo de orçamento. Responda o cliente para avançar a negociação.' : 'Pedido criado pelo fluxo de orçamento. Aguarde o retorno do profissional.';
+  }
+
   function createOrderCard(order) {
     var id = escapeHtml(order.id);
     var status = escapeHtml(order.status || 'pending');
@@ -124,7 +145,7 @@
     var budget = escapeHtml(order.budget || order.detailBudget || 'A definir após resposta do profissional');
     var payment = escapeHtml(order.payment || 'Pagamento a combinar');
     var requestType = escapeHtml(order.requestType || 'Orçamento para execução');
-    var detailFlow = escapeHtml(order.detailFlow || 'Pedido criado pelo fluxo de orçamento. Aguarde o retorno do profissional.');
+    var detailFlow = escapeHtml(order.detailFlow || getDetailFlow(order, professionalView));
     var attachments = serializeAttachments(order.attachments || []);
     var createdLabel = escapeHtml(formatCreatedAt(order.createdAt || order.creatédAt));
     var progressDate = escapeHtml(getProgressDate(order.createdAt || order.creatédAt));
@@ -142,7 +163,7 @@
     article.dataset.detailMatérials = order.materials || 'Materiais a alinhar com o profissional';
     article.dataset.detailBudget = order.budget || order.detailBudget || 'A definir após resposta do profissional';
     article.dataset.detailPayment = order.payment || 'Pagamento a combinar';
-    article.dataset.detailFlow = order.detailFlow || (professionalView ? 'Pedido recebido pelo fluxo de orçamento. Responda o cliente para avançar a negociação.' : 'Pedido criado pelo fluxo de orçamento. Aguarde o retorno do profissional.');
+    article.dataset.detailFlow = order.detailFlow || getDetailFlow(order, professionalView);
     article.dataset.viewerRole = professionalView ? 'professional' : 'client';
     article.dataset.peerRole = peerRole;
     article.dataset.peerRoleLabel = peerRoleLabel;
@@ -173,7 +194,7 @@
         <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-decline="${id}">Recusar</button>
         ` : `
         <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-open="details">Ver detalhes</button>
-        <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-open="chat">${professionalView ? 'Responder cliente' : 'Abrir conversa'}</button>
+        <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-open="chat">${escapeHtml(getPrimaryActionLabel(order, professionalView))}</button>
         `}
       </div>
 `;

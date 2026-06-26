@@ -95,11 +95,33 @@
     var actionLabel = 'Ver pedido';
     var targetUrl = 'pedidos.html?order=' + encodeURIComponent(order.id || '');
 
-    if (normalizedStatus === 'conversation') {
+    if (normalizedStatus === 'accepted' || normalizedStatus === 'conversation') {
       title = 'Pedido aceito';
       body = (actor.name || 'Profissional') + ' aceitou o pedido "' + (order.serviceTitle || order.title || 'Pedido') + '". A conversa foi liberada.';
       actionLabel = 'Abrir conversa';
       targetUrl = 'mensagens.html?order=' + encodeURIComponent(order.id || '') + (options.conversationId ? '&conversation=' + encodeURIComponent(options.conversationId) : '');
+    }
+
+    if (normalizedStatus === 'quoted') {
+      title = 'Proposta enviada';
+      body = (actor.name || 'Profissional') + ' enviou uma proposta para "' + (order.serviceTitle || order.title || 'Pedido') + '".';
+      if (options.amount || order.proposalAmount || order.budget) body += ' Valor: ' + (options.amount || order.proposalAmount || order.budget) + '.';
+      actionLabel = 'Abrir conversa';
+      targetUrl = 'mensagens.html?order=' + encodeURIComponent(order.id || '') + (options.conversationId ? '&conversation=' + encodeURIComponent(options.conversationId) : '');
+    }
+
+    if (normalizedStatus === 'in_progress') {
+      title = 'Atendimento em andamento';
+      body = (actor.name || 'Cliente') + ' confirmou a proposta do pedido "' + (order.serviceTitle || order.title || 'Pedido') + '". O atendimento foi liberado.';
+      actionLabel = 'Abrir conversa';
+      targetUrl = 'mensagens.html?order=' + encodeURIComponent(order.id || '') + (options.conversationId ? '&conversation=' + encodeURIComponent(options.conversationId) : '');
+    }
+
+    if (normalizedStatus === 'completed') {
+      title = 'Pedido concluído';
+      body = (actor.name || 'Cliente') + ' concluiu o pedido "' + (order.serviceTitle || order.title || 'Pedido') + '".';
+      actionLabel = 'Ver pedido';
+      targetUrl = 'pedidos.html?order=' + encodeURIComponent(order.id || '');
     }
 
     if (normalizedStatus === 'cancelled') {

@@ -135,12 +135,12 @@
       pending: 'Aguardando resposta',
       quoted: 'Orçamento enviado',
       budget_sent: 'Orçamento enviado',
-      accepted: 'Aprovado',
+      accepted: 'Pedido aceito',
       in_progress: 'Em andamento',
       completed: 'Concluído',
       cancelled: 'Cancelado',
       disputed: 'Em disputa',
-      conversation: 'Em conversa',
+      conversation: 'Pedido aceito',
       responded: 'Respondido'
     };
     return labels[status] || 'Aguardando resposta';

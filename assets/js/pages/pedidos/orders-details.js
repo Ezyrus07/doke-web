@@ -180,7 +180,7 @@
 
   const getFallbackTimeline = (order) => {
     const status = order.status || 'pending';
-    const accepted = ['conversation', 'responded', 'quoted', 'in_progress', 'completed'].includes(status);
+    const accepted = ['accepted', 'conversation', 'responded', 'quoted', 'in_progress', 'completed'].includes(status);
     const quoted = ['responded', 'quoted', 'in_progress', 'completed'].includes(status);
     const completed = status === 'completed';
     const cancelled = status === 'cancelled';

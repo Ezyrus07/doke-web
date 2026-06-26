@@ -45,6 +45,48 @@
     return 'order_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
   }
 
+  var STATUS_META = {
+    pending: {
+      label: 'Aguardando resposta',
+      nextAction: 'Acompanhar pedido',
+      flow: 'Pedido criado pelo fluxo de orçamento. Aguarde o retorno do profissional.'
+    },
+    accepted: {
+      label: 'Pedido aceito',
+      nextAction: 'Abrir conversa',
+      flow: 'Pedido aceito pelo profissional. A conversa foi liberada para alinhar proposta e próximos passos.'
+    },
+    conversation: {
+      label: 'Pedido aceito',
+      nextAction: 'Abrir conversa',
+      flow: 'Pedido aceito pelo profissional. A conversa foi liberada para alinhar proposta e próximos passos.'
+    },
+    quoted: {
+      label: 'Proposta enviada',
+      nextAction: 'Aprovar proposta',
+      flow: 'O profissional enviou uma proposta. Revise os valores e confirme para liberar o atendimento.'
+    },
+    in_progress: {
+      label: 'Em andamento',
+      nextAction: 'Acompanhar atendimento',
+      flow: 'A proposta foi aprovada e o atendimento está em andamento.'
+    },
+    completed: {
+      label: 'Concluído',
+      nextAction: 'Avaliar atendimento',
+      flow: 'Pedido concluído. O cliente pode avaliar o atendimento.'
+    },
+    cancelled: {
+      label: 'Pedido recusado',
+      nextAction: 'Pedido encerrado',
+      flow: 'Pedido recusado pelo profissional. A justificativa fica registrada no histórico do pedido.'
+    }
+  };
+
+  function getStatusMeta(status) {
+    return STATUS_META[status] || STATUS_META.pending;
+  }
+
   var DEMO_PROFESSIONAL_ID = 'user_profissional_demo';
 
   function routeProfessionalForMock(payload) {
@@ -186,6 +228,23 @@
     return isDemoProfessionalActor(actor) && Boolean(order && order.id && (order.clientId || order.serviceId));
   }
 
+  function isOrderClient(actor, order) {
+    return Boolean(actor && actor.id && String(order.clientId) === String(actor.id));
+  }
+
+  function canActorTransition(actor, order, nextStatus) {
+    if (!actor || !actor.id) return false;
+    if (actor.role === 'professional') {
+      if (!canProfessionalActOnOrder(actor, order)) return false;
+      return ['accepted', 'conversation', 'quoted', 'in_progress', 'completed', 'cancelled'].indexOf(nextStatus) !== -1;
+    }
+    if (actor.role === 'client') {
+      if (!isOrderClient(actor, order)) return false;
+      return ['in_progress', 'completed', 'cancelled'].indexOf(nextStatus) !== -1;
+    }
+    return false;
+  }
+
   function notifyStatus(order, status, options) {
     var notificationsService = services.notifications;
     if (!notificationsService || typeof notificationsService.createOrderStatusChanged !== 'function') return Promise.resolve(null);
@@ -201,27 +260,30 @@
     var actor = getCurrentUser() || {};
     return repository.getById(orderId).then(function (order) {
       if (!order) throw new Error('Pedido não encontrado.');
-      if (!canProfessionalActOnOrder(actor, order)) {
-        throw new Error('Este pedido pertence a outro profissional.');
+      var normalizedStatus = nextStatus || order.status || 'pending';
+      if (!canActorTransition(actor, order, normalizedStatus)) {
+        throw new Error('Você não tem permissão para alterar este pedido.');
       }
 
+      var meta = getStatusMeta(normalizedStatus);
+      var updatedAt = nowIso();
       var updated = Object.assign({}, order, {
-        status: nextStatus || order.status,
-        statusLabel: statusLabel || order.statusLabel,
+        status: normalizedStatus,
+        statusLabel: statusLabel || options.statusLabel || meta.label || order.statusLabel,
         refusalReason: normalizeText(options.reason || order.refusalReason || ''),
-        acceptedAt: nextStatus === 'conversation' ? nowIso() : order.acceptedAt || '',
-        declinedAt: nextStatus === 'cancelled' ? nowIso() : order.declinedAt || '',
-        detailFlow: nextStatus === 'conversation'
-          ? 'Pedido aceito pelo profissional. A conversa foi liberada para alinhar proposta e próximos passos.'
-          : nextStatus === 'cancelled'
-            ? 'Pedido recusado pelo profissional. A justificativa fica registrada no histórico do pedido.'
-            : order.detailFlow,
-        nextAction: nextStatus === 'conversation'
-          ? 'Conversar com o cliente'
-          : nextStatus === 'cancelled'
-            ? 'Pedido encerrado'
-            : order.nextAction,
-        updatedAt: nowIso()
+        budget: options.budget || order.budget,
+        detailBudget: options.budget || order.detailBudget || order.budget,
+        payment: options.payment || order.payment,
+        proposalAmount: options.amount || order.proposalAmount || '',
+        proposalInstallments: options.installments || order.proposalInstallments || '',
+        acceptedAt: normalizedStatus === 'accepted' || normalizedStatus === 'conversation' ? order.acceptedAt || updatedAt : order.acceptedAt || '',
+        quotedAt: normalizedStatus === 'quoted' ? order.quotedAt || updatedAt : order.quotedAt || '',
+        startedAt: normalizedStatus === 'in_progress' ? order.startedAt || updatedAt : order.startedAt || '',
+        completedAt: normalizedStatus === 'completed' ? order.completedAt || updatedAt : order.completedAt || '',
+        declinedAt: normalizedStatus === 'cancelled' ? order.declinedAt || updatedAt : order.declinedAt || '',
+        detailFlow: options.detailFlow || meta.flow || order.detailFlow,
+        nextAction: options.nextAction || meta.nextAction || order.nextAction,
+        updatedAt: updatedAt
       });
 
       return repository.save(updated).then(function (saved) {
@@ -246,7 +308,7 @@
   }
 
   function accept(orderId) {
-    return saveStatus(orderId, 'conversation', 'Pedido aceito', {});
+    return saveStatus(orderId, 'accepted', 'Pedido aceito', {});
   }
 
   function decline(orderId, reason) {
@@ -255,8 +317,34 @@
     return saveStatus(orderId, 'cancelled', 'Pedido recusado', { reason: normalizedReason });
   }
 
-  function updateStatus(orderId, status) {
-    return saveStatus(orderId, status || 'pending', null, {});
+  function quote(orderId, payload) {
+    payload = payload || {};
+    return saveStatus(orderId, 'quoted', 'Proposta enviada', {
+      amount: normalizeText(payload.amount || payload.budget || ''),
+      budget: normalizeText(payload.amount || payload.budget || ''),
+      payment: payload.installments || 'Pagamento seguro pela Doke',
+      installments: payload.installments || '',
+      detailFlow: 'O profissional enviou uma proposta. Revise os valores e confirme para liberar o atendimento.',
+      nextAction: 'Aprovar proposta'
+    });
+  }
+
+  function start(orderId) {
+    return saveStatus(orderId, 'in_progress', 'Em andamento', {
+      detailFlow: 'A proposta foi aprovada e o atendimento está em andamento.',
+      nextAction: 'Acompanhar atendimento'
+    });
+  }
+
+  function complete(orderId) {
+    return saveStatus(orderId, 'completed', 'Concluído', {
+      detailFlow: 'Pedido concluído. O cliente pode avaliar o atendimento.',
+      nextAction: 'Avaliar atendimento'
+    });
+  }
+
+  function updateStatus(orderId, status, options) {
+    return saveStatus(orderId, status || 'pending', null, options || {});
   }
 
   services.orders = Object.freeze({
@@ -268,6 +356,9 @@
     getById: getById,
     accept: accept,
     decline: decline,
+    quote: quote,
+    start: start,
+    complete: complete,
     updateStatus: updateStatus
   });
 })();

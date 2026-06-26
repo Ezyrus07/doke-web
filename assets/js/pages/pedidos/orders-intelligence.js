@@ -57,12 +57,30 @@
       };
     }
 
-    if (order.status === 'conversation' || risk.level === 'high') {
+    if ((order.status === 'accepted' || order.status === 'conversation') || risk.level === 'high') {
       return {
         type: 'priority',
         title: 'Enviar proposta revisada',
         note: 'Próxima etapa sensível. Priorize este pedido para não perder ritmo.',
         cta: 'Ver próxima ação'
+      };
+    }
+
+    if (order.status === 'quoted') {
+      return {
+        type: 'follow-up',
+        title: 'Aguardar aprovação da proposta',
+        note: 'Proposta enviada. Acompanhe a confirmação do cliente.',
+        cta: 'Acompanhar proposta'
+      };
+    }
+
+    if (order.status === 'in_progress') {
+      return {
+        type: 'follow-up',
+        title: 'Acompanhar atendimento',
+        note: 'Pedido em execução. Mantenha o cliente atualizado.',
+        cta: 'Abrir conversa'
       };
     }
 
@@ -90,7 +108,7 @@
 
     if (risk.level === 'high') score += 80;
     if (risk.level === 'medium') score += 45;
-    if (['pending', 'conversation', 'responded'].includes(order.status)) score += 20;
+    if (['pending', 'accepted', 'conversation', 'responded', 'quoted', 'in_progress'].includes(order.status)) score += 20;
     if (action.type === 'priority') score += 15;
     if (order.budgetRange.average > 0) score += Math.min(15, Math.round(order.budgetRange.average / 1000));
 
@@ -109,7 +127,7 @@
       nextAction,
       priorityScore,
       statusConfig,
-      requiresAction: ['pending', 'conversation', 'responded'].includes(order.status),
+      requiresAction: ['pending', 'accepted', 'conversation', 'responded', 'quoted', 'in_progress'].includes(order.status),
       openBudget: !['completed', 'cancelled'].includes(order.status),
       atRisk: risk.level === 'high',
       smartStatus: statusConfig.summary,

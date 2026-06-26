@@ -365,26 +365,35 @@
 
     var conversation = conversations[index];
     var status = order.status || options.status || conversation.status || conversation.order && conversation.order.status || 'pending';
-    var statusLabel = order.statusLabel || (status === 'conversation' ? 'Pedido aceito' : status === 'cancelled' ? 'Pedido recusado' : 'Aguardando resposta');
+    var statusLabels = {
+      accepted: 'Pedido aceito',
+      conversation: 'Pedido aceito',
+      quoted: 'Proposta enviada',
+      in_progress: 'Em andamento',
+      completed: 'Concluído',
+      cancelled: 'Pedido recusado',
+      pending: 'Aguardando resposta'
+    };
+    var statusLabel = order.statusLabel || statusLabels[status] || 'Aguardando resposta';
     var updatedAt = nowIso();
     conversation.status = status;
     conversation.statusLabel = statusLabel;
-    conversation.locked = !(status === 'conversation' || status === 'responded' || status === 'quoted' || status === 'in_progress' || status === 'completed');
+    conversation.locked = !(status === 'accepted' || status === 'conversation' || status === 'responded' || status === 'quoted' || status === 'in_progress' || status === 'completed');
     conversation.order = Object.assign({}, conversation.order || {}, order, {
       status: status,
       statusLabel: statusLabel,
       refusalReason: options.reason || order.refusalReason || ''
     });
-    conversation.lastSeen = status === 'conversation'
-      ? 'Conversa liberada'
-      : status === 'cancelled'
-        ? 'Pedido recusado'
-        : 'Aguardando aceite do profissional';
-    conversation.lastMessage = status === 'conversation'
-      ? 'Conversa liberada'
-      : status === 'cancelled'
-        ? 'Pedido recusado'
-        : conversation.lastMessage || 'Aguardando aceite do profissional';
+    var flowCopy = {
+      accepted: 'Conversa liberada',
+      conversation: 'Conversa liberada',
+      quoted: 'Proposta enviada',
+      in_progress: 'Atendimento em andamento',
+      completed: 'Pedido concluído',
+      cancelled: 'Pedido recusado'
+    };
+    conversation.lastSeen = flowCopy[status] || 'Aguardando aceite do profissional';
+    conversation.lastMessage = flowCopy[status] || conversation.lastMessage || 'Aguardando aceite do profissional';
     conversation.updatedAt = updatedAt;
 
     conversations.splice(index, 1);

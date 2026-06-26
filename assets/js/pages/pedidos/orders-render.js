@@ -163,8 +163,8 @@
     const labels = {
       all: 'Todos',
       pending: 'Aguardando',
-      conversation: 'Em conversa',
-      responded: 'Respondidos',
+      conversation: 'Pedido aceito',
+      responded: 'Propostas',
       completed: 'Concluídos',
       cancelled: 'Cancelados',
       action: 'Aguardando você',

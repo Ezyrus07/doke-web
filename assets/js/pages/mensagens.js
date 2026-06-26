@@ -324,7 +324,7 @@
   };
 
   const persistConversationMessage = (conversationId, message) => {
-    window.Doke?.services?.messages?.sendMessage?.(conversationId, {
+    return window.Doke?.services?.messages?.sendMessage?.(conversationId, {
       body: message.text || message.body || "",
       text: message.text || message.body || "",
       type: message.type || "text",
@@ -338,6 +338,24 @@
       author: message.author || "Você",
       replyTo: message.replyTo || null
     }).catch((error) => console.warn("[DokeMessages:sendMessage]", error));
+  };
+
+  const persistConversationState = (conversationId) => {
+    const conversation = conversations[conversationId];
+    const repository = window.Doke?.repositories?.messages;
+    if (!conversation || !repository || typeof repository.save !== "function") return Promise.resolve(null);
+    return repository.save(conversation).catch((error) => {
+      console.warn("[DokeMessages:saveConversationState]", error);
+      return null;
+    });
+  };
+
+  const syncConversationOrderStatus = (conversation, order) => {
+    if (!conversation || !order) return;
+    conversation.order = Object.assign({}, conversation.order || {}, order);
+    conversation.status = order.status || conversation.status;
+    conversation.statusLabel = order.statusLabel || conversation.statusLabel;
+    conversation.lastSeen = order.statusLabel || conversation.lastSeen;
   };
 
   let activeMessagesCleanup = null;
@@ -422,7 +440,6 @@
     const searchInputs = Array.from(root.querySelectorAll("[data-messages-search-input]"));
     const resetSearchButton = root.querySelector("[data-messages-reset-search]");
     const emptyState = root.querySelector("[data-messages-empty]");
-    let messagesHydrationLocalReady = false;
     const hydration = window.DokePageHydration?.create({
       page: 'mensagens',
       root,
@@ -430,19 +447,15 @@
       skeletonSelectors: ['[data-messages-hydration-skeleton]'],
       readySelectors: ['[data-messages-hydration-ready]'],
       splashSelectors: ['[data-messages-document-preloader]'],
-      bootMode: 'hard-load',
-      skeletonMode: 'hard-load',
-      readyPolicy: 'internal-immediate',
+      skeletonMode: 'document-load',
       splashDuration: 520,
-      waitFor: ['dom', 'auth'],
-      minDuration: 520,
+      waitFor: ['dom', 'auth', 'local-conversations'],
+      minDuration: 220,
       maxDuration: 1500,
-      hasItems: () => !messagesHydrationLocalReady || Array.from(root.querySelectorAll('.message-item[data-message-id]'))
+      hasItems: () => Array.from(root.querySelectorAll('.message-item[data-message-id]'))
         .some((item) => !item.hidden && item.dataset.deleted !== 'true')
     }) || null;
     hydration?.start();
-    hydration?.mark('dom');
-    window.setTimeout(() => hydration?.mark('auth'), 360);
     const ordersCount = root.querySelector("[data-messages-orders-count]");
     const contactsCount = root.querySelector("[data-messages-contacts-count]");
     const mobileCount = root.querySelector("[data-messages-mobile-count]");
@@ -840,21 +853,30 @@
       const isPending = isOrderPendingAcceptance(conversation);
       const isDeclined = isOrderDeclined(conversation);
       const unlocked = isOrderConversationUnlocked(conversation);
-      const primaryLabel = isPending
-        ? professionalView ? 'Aceitar pedido' : 'Aguardando aceite'
-        : isDeclined
-          ? 'Pedido recusado'
-          : professionalView ? 'Enviar proposta' : 'Aguardando proposta';
-      const primaryClass = isPending && professionalView
-        ? 'doke-btn--primary'
-        : unlocked && professionalView
-          ? 'doke-btn--primary'
-          : 'doke-btn--soft';
-      const primaryAttrs = isPending && professionalView
-        ? 'data-messages-accept-order'
-        : unlocked && professionalView
-          ? 'data-messages-proposal-action'
-          : 'aria-disabled="true" disabled';
+      let primaryLabel = 'Aguardando aceite';
+      let primaryClass = 'doke-btn--soft';
+      let primaryAttrs = 'aria-disabled="true" disabled';
+      if (isPending && professionalView) {
+        primaryLabel = 'Aceitar pedido';
+        primaryClass = 'doke-btn--primary';
+        primaryAttrs = 'data-messages-accept-order';
+      } else if (isDeclined) {
+        primaryLabel = 'Pedido recusado';
+      } else if (orderStatus === 'accepted' || orderStatus === 'conversation' || orderStatus === 'responded') {
+        primaryLabel = professionalView ? 'Enviar proposta' : 'Aguardando proposta';
+        primaryClass = professionalView ? 'doke-btn--primary' : 'doke-btn--soft';
+        primaryAttrs = professionalView ? 'data-messages-proposal-action' : 'aria-disabled="true" disabled';
+      } else if (orderStatus === 'quoted') {
+        primaryLabel = professionalView ? 'Proposta enviada' : 'Ver proposta';
+      } else if (orderStatus === 'in_progress') {
+        primaryLabel = 'Em atendimento';
+      } else if (orderStatus === 'completed') {
+        primaryLabel = 'Pedido concluído';
+      } else if (unlocked && professionalView) {
+        primaryLabel = 'Enviar proposta';
+        primaryClass = 'doke-btn--primary';
+        primaryAttrs = 'data-messages-proposal-action';
+      }
       return `
       <section class="messages-order-card messages-order-card--inline" data-messages-order-context aria-label="Pedido vinculado à conversa">
         <div class="messages-order-card__head">
@@ -901,18 +923,45 @@
         charge.reviewed = true;
       }
     };
-    const openPaymentPage = (message) => {
-      const query = new URLSearchParams({
-        amount: message.amount || "R$ 0,00",
-        installments: message.installments || "À vista",
-        professional: conversations[activeId]?.name || "Profissional",
-        description: message.text || "Cobrança enviada na conversa.",
-        avatar: "",
-        title: `Cobrança de ${conversations[activeId]?.name || "profissional"}`,
-        conversation: activeId
+    const updateOrderFromConversation = (status, options = {}) => {
+      const conversation = conversations[activeId];
+      const orderId = conversation?.order?.id || conversation?.orderId;
+      const service = window.Doke?.services?.orders;
+      if (!orderId || !service) return Promise.resolve(null);
+      const action = status === 'quoted' && typeof service.quote === 'function'
+        ? service.quote(orderId, options)
+        : status === 'in_progress' && typeof service.start === 'function'
+          ? service.start(orderId)
+          : status === 'completed' && typeof service.complete === 'function'
+            ? service.complete(orderId)
+            : typeof service.updateStatus === 'function'
+              ? service.updateStatus(orderId, status, options)
+              : Promise.resolve(null);
+      return action.then((order) => {
+        syncConversationOrderStatus(conversation, order);
+        return persistConversationState(activeId).then(() => order);
       });
+    };
 
-      console.warn("Pagamento removido: fluxo de pagamento desativado temporariamente.", Object.fromEntries(query));
+    const openPaymentPageForCharge = (message) => {
+      if (!message) return;
+      const conversation = conversations[activeId];
+      const orderId = conversation?.order?.id || conversation?.orderId || pageParams.get('order') || '';
+      const params = new URLSearchParams();
+      if (orderId) params.set('order', orderId);
+      if (activeId) params.set('conversation', activeId);
+      if (message.id) params.set('message', message.id);
+      params.set('source', 'chat');
+      const target = `pagamento-profissional.html?${params.toString()}`;
+      if (window.DokeNavigate && typeof window.DokeNavigate === 'function') {
+        window.DokeNavigate(target);
+        return;
+      }
+      window.location.href = target;
+    };
+
+    const confirmChargePayment = (message) => {
+      openPaymentPageForCharge(message);
     };
 
     const syncCounts = () => {
@@ -1707,6 +1756,14 @@
     root.addEventListener("click", (event) => {
       const acceptOrderButton = event.target.closest("[data-messages-accept-order]");
       const declineOrderButton = event.target.closest("[data-messages-decline-order]");
+      const proposalButton = event.target.closest("[data-messages-proposal-action]");
+      if (proposalButton && root.contains(proposalButton)) {
+        event.preventDefault();
+        event.stopPropagation();
+        chargeButton?.click();
+        return;
+      }
+
       if ((acceptOrderButton || declineOrderButton) && root.contains(acceptOrderButton || declineOrderButton)) {
         event.preventDefault();
         event.stopPropagation();
@@ -1719,7 +1776,7 @@
           acceptOrderButton.textContent = "Aceitando...";
           window.Doke.services.orders.accept(orderId).then((order) => {
             if (conversation) {
-              conversation.order = Object.assign({}, conversation.order || {}, order || {}, { status: "conversation", statusLabel: "Pedido aceito" });
+              conversation.order = Object.assign({}, conversation.order || {}, order || {}, { status: "accepted", statusLabel: "Pedido aceito" });
               conversation.lastSeen = "Conversa liberada";
               conversation.lastMessage = "Conversa liberada";
             }
@@ -1818,7 +1875,6 @@
       prepareConversationItems();
       refreshConversationCards();
       syncVisibility();
-      messagesHydrationLocalReady = true;
       hydration?.mark('local-conversations');
       const nextConversationFromOrder = requestedOrderId
         ? Object.keys(conversations).find((id) => String(conversations[id]?.orderId || conversations[id]?.order?.id || "") === String(requestedOrderId))
@@ -1838,6 +1894,7 @@
       }
     };
 
+    hydration?.mark('dom');
     const markMessagesHydrationAuth = () => {
       hydration?.mark('auth');
       refreshLocalConversationSurface({ preferRequested: true });
@@ -1852,11 +1909,8 @@
       syncVisibility();
     });
     window.setTimeout(() => refreshLocalConversationSurface({ preferRequested: true }), 120);
-    window.setTimeout(() => {
-      messagesHydrationLocalReady = true;
-      hydration?.mark('local-conversations');
-      syncVisibility();
-    }, 560);
+    window.setTimeout(() => hydration?.mark('auth'), 360);
+    window.setTimeout(() => hydration?.mark('local-conversations'), 560);
 
     threadBody?.addEventListener("click", (event) => {
       const bubble = event.target.closest("[data-message-bubble]");
@@ -1877,7 +1931,7 @@
         const index = Number(bubble?.dataset.messageIndex || -1);
         const currentMessage = conversations[activeId]?.messages?.[index];
         if (!currentMessage || currentMessage.type !== "charge") return;
-        openPaymentPage(currentMessage);
+        confirmChargePayment(currentMessage);
         return;
       }
 
@@ -1887,21 +1941,14 @@
         const index = Number(bubble?.dataset.messageIndex || -1);
         const currentMessage = conversations[activeId]?.messages?.[index];
         if (!currentMessage || currentMessage.type !== "charge") return;
-        const query = new URLSearchParams({
-          conversation: activeId,
-          professional: conversations[activeId]?.name || "Profissional",
-          amount: currentMessage.amount || "R$ 0,00",
-          installments: currentMessage.installments || "À vista",
-          description: currentMessage.text || "Finalize o pedido para liberar o atendimento.",
-          avatar: "",
-          title: `Finalizar pedido com ${conversations[activeId]?.name || "profissional"}`
-        });
-        const nextUrl = `pagamento-profissional.html?${query.toString()}`;
-        if (window.DokeNavigate) {
-          window.DokeNavigate(nextUrl);
-        } else {
-          window.location.href = nextUrl;
-        }
+        currentMessage.paid = true;
+        currentMessage.completed = true;
+        updateOrderFromConversation('completed')
+          .then(() => {
+            renderThread(activeId, { scrollTo: 'end' });
+            showCopyToast('Pedido concluído. Avaliação liberada.');
+          })
+          .catch((error) => showCopyToast(error?.message || 'Não foi possível concluir o pedido.'));
         return;
       }
 
@@ -1911,19 +1958,11 @@
         const index = Number(bubble?.dataset.messageIndex || -1);
         const currentMessage = conversations[activeId]?.messages?.[index];
         if (!currentMessage || currentMessage.type !== "charge") return;
-        const query = new URLSearchParams({
-          conversation: activeId,
-          professional: conversations[activeId]?.name || "Profissional",
-          amount: currentMessage.amount || "R$ 0,00",
-          avatar: "",
-          title: `Avaliar ${conversations[activeId]?.name || "profissional"}`
+        currentMessage.reviewed = true;
+        persistConversationState(activeId).then(() => {
+          renderThread(activeId, { scrollTo: 'end' });
+          showCopyToast('Avaliação registrada no fluxo mockado.');
         });
-        const nextUrl = `pedidos.html?${query.toString()}`;
-        if (window.DokeNavigate) {
-          window.DokeNavigate(nextUrl);
-        } else {
-          window.location.href = nextUrl;
-        }
         return;
       }
 
@@ -2127,9 +2166,18 @@
         paid: false
       };
       conversations[activeId].messages.push(chargeMessage);
-      persistConversationMessage(activeId, chargeMessage);
-      closeChargeModal();
-      renderThread(activeId, { scrollTo: "end" });
+      persistConversationMessage(activeId, chargeMessage)
+        .then(() => updateOrderFromConversation('quoted', {
+          amount: chargeMessage.amount,
+          budget: chargeMessage.amount,
+          installments: chargeMessage.installments
+        }))
+        .then(() => {
+          closeChargeModal();
+          renderThread(activeId, { scrollTo: "end" });
+          showCopyToast('Proposta enviada ao cliente.');
+        })
+        .catch((error) => showCopyToast(error?.message || 'Não foi possível enviar a proposta.'));
     });
 
     chargeCancelButtons.forEach((button) => {

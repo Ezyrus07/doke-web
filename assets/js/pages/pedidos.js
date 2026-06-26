@@ -36,7 +36,6 @@
     const emptyStaté = root.querySelector('[data-orders-empty]');
     const emptyText = root.querySelector('[data-orders-empty-text]');
     const resetEmptyButton = root.querySelector('[data-orders-reset-empty]');
-    let ordersHydrationLocalReady = false;
     const hydration = window.DokePageHydration?.create({
       page: 'pedidos',
       root,
@@ -51,18 +50,14 @@
       ],
       splashSelectors: ['[data-orders-document-preloader]'],
       splashDuration: 520,
-      bootMode: 'hard-load',
-      skeletonMode: 'hard-load',
-      readyPolicy: 'internal-immediate',
-      waitFor: ['dom', 'auth'],
-      minDuration: 520,
-      maxDuration: 1500,
-      hasItems: () => !ordersHydrationLocalReady || Array.from(root.querySelectorAll('.orders-list .order-card[data-status]'))
+      skeletonMode: 'document-load',
+      waitFor: ['dom', 'auth', 'local-orders'],
+      minDuration: 220,
+      maxDuration: 1000,
+      hasItems: () => Array.from(root.querySelectorAll('.orders-list .order-card[data-status]'))
         .some((card) => !card.hidden && card.getAttribute('aria-hidden') !== 'true')
     }) || null;
     hydration?.start();
-    hydration?.mark('dom');
-    window.setTimeout(() => hydration?.mark('auth'), 360);
     const statNodes = {
       all: root.querySelector('[data-orders-stat="all"]'),
       pending: root.querySelector('[data-orders-stat="pending"]'),
@@ -130,8 +125,8 @@
     const labels = {
       all: 'Todos',
       pending: 'Aguardando resposta',
-      conversation: 'Em conversa',
-      responded: 'Respondidos',
+      conversation: 'Pedido aceito',
+      responded: 'Propostas',
       completed: 'Concluídos',
       cancelled: 'Cancelados',
     };
@@ -142,8 +137,8 @@
     const recountCards = () => {
       counts.all = root.querySelectorAll('.order-card').length;
       counts.pending = root.querySelectorAll('.order-card[data-status="pending"]').length;
-      counts.conversation = root.querySelectorAll('.order-card[data-status="conversation"]').length;
-      counts.responded = root.querySelectorAll('.order-card[data-status="responded"]').length;
+      counts.conversation = root.querySelectorAll('.order-card[data-status="accepted"], .order-card[data-status="conversation"]').length;
+      counts.responded = root.querySelectorAll('.order-card[data-status="responded"], .order-card[data-status="quoted"], .order-card[data-status="in_progress"]').length;
       counts.completed = root.querySelectorAll('.order-card[data-status="completed"]').length;
       counts.cancelled = root.querySelectorAll('.order-card[data-status="cancelled"]').length;
     };
@@ -218,8 +213,14 @@
       const active = root.dataset.activeFilter || 'all';
       const query = normalize(searchInput?.value || '');
       let visibleCount = 0;
+      const groupedStatuses = {
+        conversation: ['accepted', 'conversation'],
+        responded: ['responded', 'quoted', 'in_progress']
+      };
       refreshCards().forEach((card) => {
-        const matchesFilter = active === 'all' || card.dataset.status === active;
+        const cardStatus = card.dataset.status || '';
+        const filterStatuses = groupedStatuses[active] || [active];
+        const matchesFilter = active === 'all' || filterStatuses.includes(cardStatus);
         const matchesSearch = !query || normalize(card.textContent || '').includes(query);
         const visible = matchesFilter && matchesSearch;
         card.hidden = !visible;
@@ -930,14 +931,16 @@
     setAgendaExpanded(true);
     refreshOrdersSurface();
     syncHeaderControls();
+    scheduleRequestedOrderFocus();
+    hydration?.mark('dom');
     const markOrdersHydrationAuth = () => {
       hydration?.mark('auth');
       refreshOrdersSurface();
     };
     const markOrdersHydrationLocal = () => {
-      ordersHydrationLocalReady = true;
       hydration?.mark('local-orders');
       refreshOrdersSurface();
+      scheduleRequestedOrderFocus();
     };
     const markOrdersHydrationCommand = () => {
       hydration?.mark('command-center');
@@ -951,7 +954,8 @@
       refreshOrdersSurface();
     });
     document.addEventListener('doke:orders-list-hydrated', markOrdersHydrationLocal);
-    window.setTimeout(markOrdersHydrationLocal, 520);
+    window.setTimeout(() => hydration?.mark('auth'), 360);
+    window.setTimeout(() => hydration?.mark('local-orders'), 520);
     window.setTimeout(() => hydration?.mark('command-center'), 700);
     window.setTimeout(() => {
       if (!hydration || hydration.canShowEmpty()) return;

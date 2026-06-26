@@ -4,7 +4,7 @@
   const root = document.querySelector('[data-payment-page]');
   if (!root) return;
 
-  const BASE_TOTAL = 280;
+  let baseTotal = 280;
   const POINTS_DISCOUNT = 23;
 
   const methodButtons = Array.from(root.querySelectorAll('[data-payment-method]'));
@@ -33,6 +33,213 @@
   let cardFormOpen = false;
   let processingTimer = null;
 
+  const pageParams = new URLSearchParams(window.location.search || '');
+  const paymentContext = {
+    orderId: pageParams.get('order') || pageParams.get('orderId') || '',
+    conversationId: pageParams.get('conversation') || pageParams.get('conversationId') || '',
+    messageId: pageParams.get('message') || pageParams.get('messageId') || ''
+  };
+  let currentOrder = null;
+  let currentConversation = null;
+  let currentCharge = null;
+  let paymentRegistered = false;
+  let completionRegistered = false;
+
+  function normalizeText(value) {
+    return String(value || '').trim();
+  }
+
+  function getOrderCode(order) {
+    const raw = normalizeText(order && order.id || paymentContext.orderId || 'DK-2048');
+    if (!raw) return '#DK-2048';
+    if (raw.charAt(0) === '#') return raw;
+    return raw.indexOf('order_') === 0 ? `#${raw.replace(/^order_/, 'DK-')}` : `#${raw}`;
+  }
+
+  function currencyToNumber(value) {
+    const normalized = normalizeText(value).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 280;
+  }
+
+  function getOrderRepository() {
+    return window.Doke?.repositories?.orders || null;
+  }
+
+  function getMessagesRepository() {
+    return window.Doke?.repositories?.messages || null;
+  }
+
+  function getOrdersService() {
+    return window.Doke?.services?.orders || null;
+  }
+
+  function setTextAll(selector, value) {
+    const text = normalizeText(value);
+    if (!text) return;
+    document.querySelectorAll(selector).forEach((node) => {
+      node.textContent = text;
+    });
+  }
+
+  function setHrefAll(selector, value) {
+    if (!value) return;
+    document.querySelectorAll(selector).forEach((node) => {
+      node.setAttribute('href', value);
+    });
+  }
+
+  function resolveCharge(conversation) {
+    const messages = Array.isArray(conversation?.messages) ? conversation.messages : [];
+    if (paymentContext.messageId) {
+      const byId = messages.find((message) => String(message.id || '') === String(paymentContext.messageId));
+      if (byId && byId.type === 'charge') return byId;
+    }
+    return messages.slice().reverse().find((message) => message && message.type === 'charge') || null;
+  }
+
+  function buildConversationUrl(extraParams) {
+    const params = new URLSearchParams();
+    if (paymentContext.orderId) params.set('order', paymentContext.orderId);
+    if (paymentContext.conversationId) params.set('conversation', paymentContext.conversationId);
+    Object.entries(extraParams || {}).forEach(([key, value]) => {
+      if (value != null && value !== '') params.set(key, value);
+    });
+    const query = params.toString();
+    return query ? `mensagens.html?${query}` : 'mensagens.html';
+  }
+
+  function buildOrderUrl() {
+    return paymentContext.orderId ? `pedidos.html?order=${encodeURIComponent(paymentContext.orderId)}` : 'pedidos.html';
+  }
+
+  function applyPaymentContext() {
+    const order = currentOrder || {};
+    const conversation = currentConversation || {};
+    const charge = currentCharge || {};
+    const providerName = order.providerName || order.professionalName || conversation.peerName || conversation.name || 'Profissional Doke';
+    const serviceTitle = order.serviceTitle || order.title || conversation.order?.title || 'Pedido de serviço';
+    const amount = charge.amount || order.proposalAmount || order.budget || 'R$ 280,00';
+    const installments = charge.installments || order.proposalInstallments || order.payment || 'À vista';
+    const orderCode = getOrderCode(order);
+
+    baseTotal = currencyToNumber(amount);
+    setTextAll('[data-payment-provider-name]', providerName);
+    setTextAll('[data-payment-service-title]', serviceTitle);
+    setTextAll('[data-payment-order-code]', orderCode);
+    setTextAll('[data-payment-amount]', amount);
+    setTextAll('[data-payment-installments]', installments);
+    setTextAll('[data-payment-status-text]', charge.paid ? 'Pagamento confirmado' : 'Aguardando pagamento');
+    setTextAll('[data-payment-date]', charge.time || 'Hoje');
+    setTextAll('[data-modal-total], [data-receipt-total], [data-summary-total], [data-summary-subtotal]', amount);
+    setTextAll('[data-payment-modal-description]', `Estamos registrando o pagamento no pedido ${orderCode}.`);
+    setTextAll('[data-payment-success-copy]', `Seu pagamento de ${amount} para ${providerName} foi registrado no pedido.`);
+    setTextAll('[data-finish-provider-name]', providerName);
+    setTextAll('[data-finish-service-title]', serviceTitle);
+    setTextAll('[data-finish-amount]', amount);
+    setTextAll('[data-finish-order-code]', orderCode);
+    setHrefAll('[data-payment-order-link]', buildOrderUrl());
+    setHrefAll('[data-payment-conversation-link]', buildConversationUrl());
+    setHrefAll('[data-payment-issue-link]', buildConversationUrl({ issue: '1' }));
+    setHrefAll('[data-payment-success-conversation-link]', buildConversationUrl({ payment: 'success' }));
+    updateTotals();
+  }
+
+  function loadPaymentContext() {
+    const orderRepository = getOrderRepository();
+    const messagesRepository = getMessagesRepository();
+    const orderTask = paymentContext.orderId && orderRepository?.getById
+      ? orderRepository.getById(paymentContext.orderId)
+      : Promise.resolve(null);
+    const conversationTask = paymentContext.conversationId && messagesRepository?.getById
+      ? messagesRepository.getById(paymentContext.conversationId)
+      : Promise.resolve(null);
+
+    return Promise.all([orderTask, conversationTask]).then(([order, conversation]) => {
+      currentOrder = order || null;
+      currentConversation = conversation || null;
+      currentCharge = resolveCharge(conversation);
+      if (!paymentContext.orderId && currentConversation?.orderId) paymentContext.orderId = currentConversation.orderId;
+      if (!currentOrder && currentConversation?.order) currentOrder = currentConversation.order;
+      applyPaymentContext();
+    }).catch(() => {
+      applyPaymentContext();
+    });
+  }
+
+  function persistChargeState(flags) {
+    const messagesRepository = getMessagesRepository();
+    if (!messagesRepository?.getById || !messagesRepository?.save || !paymentContext.conversationId) return Promise.resolve(null);
+    return messagesRepository.getById(paymentContext.conversationId).then((conversation) => {
+      if (!conversation) return null;
+      const messages = Array.isArray(conversation.messages) ? conversation.messages : [];
+      const charge = paymentContext.messageId
+        ? messages.find((message) => String(message.id || '') === String(paymentContext.messageId))
+        : messages.slice().reverse().find((message) => message && message.type === 'charge');
+      if (!charge) return conversation;
+      Object.assign(charge, flags || {});
+      if (flags?.paid) charge.text = charge.text || 'Pagamento confirmado. Atendimento liberado.';
+      currentConversation = conversation;
+      currentCharge = charge;
+      return messagesRepository.save(conversation);
+    });
+  }
+
+  function registerPayment() {
+    if (paymentRegistered) return Promise.resolve(currentOrder);
+    paymentRegistered = true;
+    const ordersService = getOrdersService();
+    const orderId = paymentContext.orderId || currentOrder?.id || currentConversation?.orderId;
+    const startTask = orderId && ordersService?.start
+      ? ordersService.start(orderId)
+      : Promise.resolve(currentOrder);
+
+    return startTask.then((order) => {
+      currentOrder = order || currentOrder;
+      return persistChargeState({ paid: true });
+    }).then(() => {
+      document.dispatchEvent(new CustomEvent('doke:payment-confirmed', {
+        detail: {
+          order: currentOrder,
+          conversation: currentConversation,
+          charge: currentCharge
+        }
+      }));
+      applyPaymentContext();
+      return currentOrder;
+    }).catch((error) => {
+      paymentRegistered = false;
+      throw error;
+    });
+  }
+
+  function registerCompletion() {
+    if (completionRegistered) return Promise.resolve(currentOrder);
+    completionRegistered = true;
+    const ordersService = getOrdersService();
+    const orderId = paymentContext.orderId || currentOrder?.id || currentConversation?.orderId;
+    const completeTask = orderId && ordersService?.complete
+      ? ordersService.complete(orderId)
+      : Promise.resolve(currentOrder);
+
+    return completeTask.then((order) => {
+      currentOrder = order || currentOrder;
+      return persistChargeState({ paid: true, completed: true });
+    }).then(() => {
+      document.dispatchEvent(new CustomEvent('doke:order-completed', {
+        detail: {
+          order: currentOrder,
+          conversation: currentConversation,
+          charge: currentCharge
+        }
+      }));
+      return currentOrder;
+    }).catch((error) => {
+      completionRegistered = false;
+      throw error;
+    });
+  }
+
   function formatCurrency(value) {
     return value.toLocaleString('pt-BR', {
       style: 'currency',
@@ -42,7 +249,7 @@
 
   function getCurrentTotal() {
     const usesPoints = Boolean(pointsInput && pointsInput.checked);
-    return Math.max(BASE_TOTAL - (usesPoints ? POINTS_DISCOUNT : 0), 0);
+    return Math.max(baseTotal - (usesPoints ? POINTS_DISCOUNT : 0), 0);
   }
 
   function updateTotals() {
@@ -83,6 +290,9 @@
   }
 
   function showPanel(name) {
+    if (name === 'success') {
+      registerPayment().catch((error) => showError(error?.message || 'Não foi possível registrar o pagamento no pedido.'));
+    }
     panels.forEach((panel) => {
       const isActive = panel.dataset.modalPanel === name;
       panel.hidden = !isActive;
@@ -218,6 +428,7 @@
 
   setSelectedMethod(selectedMethod);
   updateTotals();
+  loadPaymentContext();
 
   const finishOrderModal = document.querySelector('[data-finish-order-modal]');
   const finishOrderOpenButtons = Array.from(document.querySelectorAll('[data-finish-order-open]'));
@@ -268,7 +479,14 @@
         return;
       }
       if (finishOrderError) finishOrderError.hidden = true;
-      setFinishOrderPanel('success');
+      registerCompletion()
+        .then(() => setFinishOrderPanel('success'))
+        .catch((error) => {
+          if (finishOrderError) {
+            finishOrderError.textContent = error?.message || 'Não foi possível finalizar o pedido.';
+            finishOrderError.hidden = false;
+          }
+        });
     });
   }
 

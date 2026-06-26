@@ -11,11 +11,29 @@
       badge: 'Ação pendente',
       icon: 'chat'
     },
-    conversation: {
-      label: 'Em conversa',
+    accepted: {
+      label: 'Pedido aceito',
       summary: 'Em negociação',
-      badge: 'Prazo próximo',
+      badge: 'Conversa liberada',
       icon: 'alert'
+    },
+    conversation: {
+      label: 'Pedido aceito',
+      summary: 'Em negociação',
+      badge: 'Conversa liberada',
+      icon: 'alert'
+    },
+    quoted: {
+      label: 'Proposta enviada',
+      summary: 'Aguardando cliente',
+      badge: 'Proposta enviada',
+      icon: 'document'
+    },
+    in_progress: {
+      label: 'Em andamento',
+      summary: 'Atendimento ativo',
+      badge: 'Em andamento',
+      icon: 'calendar'
     },
     responded: {
       label: 'Respondido',
