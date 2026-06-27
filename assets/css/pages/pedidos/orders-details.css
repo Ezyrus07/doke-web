@@ -763,3 +763,71 @@ body:is(.orders-page-shell, .messages-page-shell) .orders-detail-actions__button
     min-height: 44px;
   }
 }
+
+/* Order detail icon alignment contract.
+   Authority: pedidos/messages share the same detail drawer anatomy. */
+body:is(.orders-page-shell, .messages-page-shell) .orders-detail-drawer__close {
+  display: inline-grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  border: 1px solid rgba(24, 75, 118, 0.12);
+  border-radius: 999px;
+  background: #eef4fa;
+  color: #2a5f90;
+  box-shadow: none;
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+body:is(.orders-page-shell, .messages-page-shell) .orders-detail-drawer__close:is(:hover, :focus-visible) {
+  transform: translateY(-1px);
+  background: #f7fbff;
+  border-color: rgba(24, 75, 118, 0.18);
+}
+
+body:is(.orders-page-shell, .messages-page-shell) .orders-detail-drawer__close svg,
+body:is(.orders-page-shell, .messages-page-shell) .orders-detail-action__icon svg,
+body:is(.orders-page-shell, .messages-page-shell) .orders-detail-actions__button svg,
+body:is(.orders-page-shell, .messages-page-shell) .orders-detail-timeline__bullet svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.15;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body:is(.orders-page-shell, .messages-page-shell) .orders-detail-timeline__bullet {
+  position: relative;
+}
+
+body:is(.orders-page-shell, .messages-page-shell) .orders-detail-timeline__item.is-done .orders-detail-timeline__bullet {
+  color: #fff;
+}
+
+body:is(.orders-page-shell, .messages-page-shell) .orders-detail-timeline__item.is-current .orders-detail-timeline__bullet {
+  background: #edf5fd;
+  color: var(--border-color-selected);
+}
+
+body:is(.orders-page-shell, .messages-page-shell) .orders-detail-timeline__item.is-current .orders-detail-timeline__bullet::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+body:is(.orders-page-shell, .messages-page-shell) .orders-detail-actions__button svg {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 760px) {
+  body:is(.orders-page-shell, .messages-page-shell) .orders-detail-drawer__close {
+    width: 48px;
+    height: 48px;
+    flex-basis: 48px;
+  }
+}

@@ -132,9 +132,12 @@
     const target = layer.querySelector('[data-detail-statusbar]');
     if (!target) return;
     const tone = order.status === 'completed' ? 'success' : (order.risk.level === 'high' ? 'risk' : 'info');
+    const secondaryBadge = clean(order.smartBadge) && clean(order.smartBadge) !== clean(order.statusConfig.label)
+      ? order.smartBadge
+      : order.smartStatus || order.nextAction?.cta || 'Conversa ativa';
     target.innerHTML = `
       <span class="orders-detail-pill">${order.statusConfig.label}</span>
-      <span class="orders-detail-pill" data-tone="${tone}">${order.smartBadge}</span>
+      <span class="orders-detail-pill" data-tone="${tone}">${secondaryBadge}</span>
       <span class="orders-detail-pill" data-tone="${tone}">Risco ${order.risk.label}</span>
     `;
   };

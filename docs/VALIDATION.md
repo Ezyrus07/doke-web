@@ -8,6 +8,8 @@ git diff --check
 npm run audit:agent-governance
 ```
 
+`audit:agent-governance` também executa os contratos de topo e ações dos fluxos (`audit:form-page-top-contract` e `audit:form-button-contract`), o contrato do app header compartilhado (`audit:shared-app-header-contract`) e o contrato de referências de rótulo (`audit:page-label-references`). Esses gates impedem que `orcamento.html`, `tornar-profissional.html`, `anunciar-servico.html` e `pagamento-profissional.html` percam o contrato canônico de topo/rail dos fluxos, voltem a redesenhar anatomia de botões em CSS de página, percam classes canônicas de ação, usem header contextual sem container compartilhado quando houver pílulas de ação ou mantenham `aria-labelledby` apontando para IDs inexistentes.
+
 ## Quando rodar validação visual
 
 Obrigatória ao mexer em:
@@ -185,3 +187,199 @@ npm run audit:agent-governance
 
 Se browser automation não estiver disponível, validar visualmente no Live Server pelo menos em iPhone/Pixel, iPad mini vertical, iPad horizontal e desktop.
 
+
+## Contrato de ações de conteúdo — ajuda e novidades
+
+`npm run audit:content-action-contract` valida CTAs de páginas de conteúdo que não pertencem aos fluxos de formulário.
+
+O gate cobre inicialmente:
+
+```txt
+ajuda.html
+novidades.html
+assets/css/pages/ajuda.css
+assets/css/pages/novidades.css
+assets/css/pages/flow-foundation.css
+```
+
+Ele falha quando:
+
+- CTAs de suporte ou novidades perdem `doke-btn` e o modificador canônico adequado;
+- CTAs de largura total deixam de usar `doke-btn--block`;
+- CTAs em formato pílula deixam de usar `doke-btn--pill`;
+- CSS de página volta a controlar anatomia de ação, como altura, raio, borda, background, sombra, tipografia, padding ou cursor;
+- o manifesto compartilhado de fluxos deixa de carregar `assets/css/components/buttons.css`.
+
+Esse gate roda dentro de `npm run audit:agent-governance`.
+
+## Contrato de superfícies de conteúdo — ajuda e novidades
+
+`npm run audit:content-surface-contract` valida a anatomia raiz das superfícies de conteúdo que não pertencem aos fluxos de formulário.
+
+O gate cobre inicialmente:
+
+```txt
+ajuda.html
+novidades.html
+assets/js/pages/ajuda.js
+assets/css/pages/ajuda.css
+assets/css/pages/novidades.css
+assets/css/components/internal/surface-contract.css
+```
+
+Ele falha quando:
+
+- cards/painéis de `ajuda.html` ou `novidades.html` perdem `content-surface`;
+- superfícies clicáveis de novidades perdem `content-surface--interactive`;
+- o estado vazio dinâmico de ajuda deixa de consumir `content-surface`;
+- CSS de página volta a controlar `background`, `border`, `border-radius` ou `box-shadow` da superfície raiz;
+- o contrato compartilhado de superfícies deixa de definir `content-surface` ou `content-surface--interactive`.
+
+Esse gate roda dentro de `npm run audit:agent-governance`.
+
+## Contrato de tabs/filtros de conteúdo — ajuda e novidades
+
+`npm run audit:content-tab-contract` valida tabs e filtros compactos de páginas de conteúdo que não pertencem aos fluxos de formulário.
+
+O gate cobre inicialmente:
+
+```txt
+ajuda.html
+novidades.html
+assets/css/pages/ajuda.css
+assets/css/pages/novidades.css
+assets/css/pages/flow-foundation.css
+assets/css/components/tabs/tabs.css
+```
+
+Ele falha quando:
+
+- filtros de ajuda ou novidades perdem `doke-tab-pill`;
+- `flow-foundation.css` deixa de carregar `assets/css/components/tabs/tabs.css`;
+- `assets/css/components/tabs/tabs.css` deixa de definir `doke-tab-pill`, ícones e estados ativos;
+- CSS de página volta a controlar anatomia de tabs, como altura, padding, raio, borda, background, sombra, cor, fonte, cursor, ícone ou transição;
+- CSS de página usa `help-tab` ou `news-filter` para algo além de encaixe responsivo no trilho.
+
+Esse gate roda dentro de `npm run audit:agent-governance`.
+
+## Contrato de busca de conteúdo — ajuda
+
+`npm run audit:content-search-contract` valida o campo de busca principal de `ajuda.html`.
+
+O gate cobre inicialmente:
+
+```txt
+ajuda.html
+assets/css/pages/ajuda.css
+assets/css/components/search/search-field.css
+assets/css/core/components.css
+```
+
+Ele falha quando:
+
+- a busca de ajuda perde `doke-search-field` ou `doke-search-field--hero`;
+- o input perde `doke-search-field__input` ou `doke-input`;
+- `assets/css/pages/ajuda.css` volta a controlar a anatomia de `.help-center-search` ou descendentes;
+- `assets/css/components/search/search-field.css` deixa de definir a variante `doke-search-field--hero` e seus tokens;
+- o manifesto de componentes core deixa de carregar a autoridade de busca compartilhada.
+
+Esse gate roda dentro de `npm run audit:agent-governance`.
+
+## Contrato de disclosure/FAQ de conteúdo — ajuda
+
+`npm run audit:content-disclosure-contract` valida o FAQ em `ajuda.html` como disclosure de conteúdo compartilhado.
+
+O gate cobre inicialmente:
+
+```txt
+ajuda.html
+assets/css/pages/ajuda.css
+assets/css/components/internal/surface-contract.css
+assets/css/pages/internal-shell.css
+```
+
+Ele falha quando:
+
+- a lista do FAQ perde `content-disclosure`;
+- os itens `details` perdem `content-disclosure__item`;
+- os `summary` perdem `content-disclosure__summary`;
+- os chevrons perdem `content-disclosure__chevron`;
+- as respostas perdem `content-disclosure__body`;
+- `assets/css/pages/ajuda.css` volta a controlar anatomia de disclosure, como borda, raio, fundo, padding, tipografia, divisor, ícone, hover ou estado aberto;
+- `assets/css/components/internal/surface-contract.css` deixa de definir o contrato `content-disclosure`;
+- `assets/css/pages/internal-shell.css` deixa de carregar a autoridade de superfície/disclosure compartilhada.
+
+Esse gate roda dentro de `npm run audit:agent-governance`.
+
+## Gate — ícones de superfície de conteúdo
+
+Use:
+
+```bash
+npm run audit:content-icon-contract
+```
+
+Esse gate valida que `ajuda.html` e `novidades.html` consomem `content-surface-icon` nos ícones internos de cards/painéis, incluindo os ícones de capa `news-card__cover-icon`, e que a anatomia visual está centralizada em `assets/css/components/internal/surface-contract.css`.
+
+O audit falha quando CSS de página volta a controlar tamanho, raio, fundo, sombra, cor, blur/backdrop, SVG, stroke ou fill dos ícones de superfície. Posicionamento contextual, como `right`, `bottom`, `position` ou margem local, continua permitido no CSS de página.
+
+## Contrato de metadados de conteúdo — novidades
+
+`npm run audit:content-meta-contract` valida que os metadados compactos de `novidades.html` usam contratos compartilhados.
+
+Cobertura:
+
+```txt
+novidades.html
+assets/css/pages/novidades.css
+assets/css/components/status/chips-badges.css
+assets/css/components/buttons.css
+assets/css/core/components.css
+assets/css/pages/flow-foundation.css
+```
+
+O gate falha se:
+
+- `news-kicker` perder `doke-chip doke-chip--content`;
+- kickers sobre capa perderem `doke-chip--on-media`;
+- `news-feature__badge` perder `doke-badge doke-badge--success doke-badge--content`;
+- pins laterais perderem `doke-icon-btn doke-icon-btn--soft`;
+- `novidades.css` voltar a controlar anatomia de chip, badge ou pin;
+- os componentes compartilhados deixarem de declarar os modificadores necessários.
+
+## Contrato de listas laterais de conteúdo — novidades
+
+`npm run audit:content-side-list-contract` valida que a lista de cards importantes em `novidades.html` usa a anatomia compartilhada de side list.
+
+Cobertura:
+
+```txt
+novidades.html
+assets/css/pages/novidades.css
+assets/css/components/internal/surface-contract.css
+assets/css/pages/internal-shell.css
+```
+
+O gate falha se:
+
+- `news-important-list` perder `content-side-list`;
+- `news-important-card` perder `content-side-item`;
+- o corpo do card perder `content-side-item__body`;
+- título, texto ou data deixarem de usar os hooks canônicos de side item;
+- `news-sidebar__link` perder `content-side-link`;
+- `novidades.css` voltar a controlar grid, gap, padding, ritmo interno, tipografia de título ou anatomia do link;
+- `surface-contract.css` deixar de declarar o contrato de side list.
+
+Esse gate roda dentro de `npm run audit:agent-governance`.
+
+## Auditoria de botão de fechar
+
+Use:
+
+```bash
+npm run audit:close-button-contract
+```
+
+A auditoria varre todos os HTMLs ativos da raiz e falha quando um controle de fechar de superfície perde `doke-close-button`, quando um rótulo textual de fechamento não usa `doke-close-button__label`, ou quando `resultados.html` volta a redesenhar a anatomia de `results-filters__close` em CSS de página.
+
+Ela é parte de `npm run audit:agent-governance`.

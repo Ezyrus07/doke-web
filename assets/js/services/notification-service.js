@@ -26,6 +26,29 @@
     return String(value || '').trim();
   }
 
+  var DEMO_PROFESSIONAL_ID = 'user_profissional_demo';
+
+  function isProviderLikeId(value) {
+    var id = normalizeText(value);
+    if (!id) return false;
+    if (id === DEMO_PROFESSIONAL_ID) return false;
+    return /^(pro|provider|profissional|renato)[_-]/i.test(id) || id.indexOf('user_') !== 0;
+  }
+
+  function routeProfessionalRecipientForMock(recipientId, order, status, actor) {
+    var normalizedRecipient = normalizeText(recipientId);
+    var normalizedStatus = normalizeText(status || order && order.status || '');
+    var actorRole = normalizeText(actor && actor.role);
+    var actorIsClient = actorRole === 'client' || String(actor && actor.id || '') === String(order && order.clientId || '');
+    var professionalTarget = normalizeText(order && (order.professionalId || order.providerId || order.displayProfessionalId || order.sourceProfessionalId));
+
+    if ((normalizedStatus === 'in_progress' || normalizedStatus === 'completed') && actorIsClient && professionalTarget && isProviderLikeId(normalizedRecipient)) {
+      return DEMO_PROFESSIONAL_ID;
+    }
+
+    return normalizedRecipient;
+  }
+
   function fallbackList(filters) {
     filters = filters || {};
     if (!Doke.mockData || typeof Doke.mockData.load !== 'function') return Promise.resolve([]);
@@ -86,10 +109,11 @@
     order = order || {};
     options = options || {};
     var actor = options.actor || getCurrentUser() || {};
-    var recipientId = normalizeText(options.recipientId || (actor.id === order.clientId ? order.professionalId || order.providerId : order.clientId));
+    var normalizedStatus = normalizeText(status || order.status || '');
+    var rawRecipientId = normalizeText(options.recipientId || (actor.id === order.clientId ? order.professionalId || order.providerId : order.clientId));
+    var recipientId = routeProfessionalRecipientForMock(rawRecipientId, order, normalizedStatus, actor);
     if (!recipientId) return Promise.resolve(null);
 
-    var normalizedStatus = normalizeText(status || order.status || '');
     var title = 'Status do pedido atualizado';
     var body = 'O pedido "' + (order.serviceTitle || order.title || 'Pedido') + '" mudou para ' + (order.statusLabel || normalizedStatus || 'nova etapa') + '.';
     var actionLabel = 'Ver pedido';
@@ -111,8 +135,8 @@
     }
 
     if (normalizedStatus === 'in_progress') {
-      title = 'Atendimento em andamento';
-      body = (actor.name || 'Cliente') + ' confirmou a proposta do pedido "' + (order.serviceTitle || order.title || 'Pedido') + '". O atendimento foi liberado.';
+      title = 'Pagamento confirmado';
+      body = (actor.name || 'Cliente') + ' pagou a proposta do pedido "' + (order.serviceTitle || order.title || 'Pedido') + '". O atendimento foi liberado e está em andamento.';
       actionLabel = 'Abrir conversa';
       targetUrl = 'mensagens.html?order=' + encodeURIComponent(order.id || '') + (options.conversationId ? '&conversation=' + encodeURIComponent(options.conversationId) : '');
     }
@@ -130,6 +154,11 @@
       if (options.reason || order.refusalReason) body += ' Justificativa: ' + (options.reason || order.refusalReason);
     }
 
+    var paymentMessageId = normalizeText(options.paymentMessageId || options.messageId || options.chargeId || '');
+    var eventKeyParts = ['order_status_changed', order.id || '', normalizedStatus || ''];
+    if (normalizedStatus === 'in_progress' && paymentMessageId) eventKeyParts.push(paymentMessageId);
+    eventKeyParts.push(recipientId);
+
     return create({
       type: 'order_status_changed',
       category: 'orders',
@@ -138,8 +167,9 @@
       actorName: actor.name || '',
       orderId: order.id,
       conversationId: options.conversationId || '',
+      messageId: paymentMessageId,
       serviceId: order.serviceId,
-      eventKey: ['order_status_changed', order.id || '', normalizedStatus || '', recipientId].filter(Boolean).join(':'),
+      eventKey: eventKeyParts.filter(Boolean).join(':'),
       title: title,
       body: body,
       targetUrl: targetUrl,

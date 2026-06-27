@@ -11,6 +11,8 @@
   const cardFields = root.querySelector('[data-card-fields]');
   const cardEmpty = root.querySelector('[data-card-empty]');
   const addCardButton = root.querySelector('[data-add-card]');
+  const methodTitle = root.querySelector('[data-payment-method-title]');
+  const methodCopy = root.querySelector('[data-payment-method-copy]');
   const summaryMethod = root.querySelector('[data-summary-method]');
   const summaryTotal = root.querySelector('[data-summary-total]');
   const pointsInput = root.querySelector('[data-points-input]');
@@ -20,6 +22,7 @@
   const confirmInput = root.querySelector('[data-payment-confirm-input]');
   const errorMessage = root.querySelector('[data-payment-error]');
   const modal = document.querySelector('[data-payment-modal]');
+  const modalError = modal ? modal.querySelector('[data-payment-modal-error]') : null;
   const panels = modal ? Array.from(modal.querySelectorAll('[data-modal-panel]')) : [];
   const pixPaidButton = modal ? modal.querySelector('[data-pix-paid]') : null;
   const copyPixButton = modal ? modal.querySelector('[data-copy-pix]') : null;
@@ -133,7 +136,7 @@
     setTextAll('[data-payment-date]', charge.time || 'Hoje');
     setTextAll('[data-modal-total], [data-receipt-total], [data-summary-total], [data-summary-subtotal]', amount);
     setTextAll('[data-payment-modal-description]', `Estamos registrando o pagamento no pedido ${orderCode}.`);
-    setTextAll('[data-payment-success-copy]', `Seu pagamento de ${amount} para ${providerName} foi registrado no pedido.`);
+    setTextAll('[data-payment-success-copy]', `Seu pagamento de ${amount} para ${providerName} foi registrado. O pedido agora está em andamento.`);
     setTextAll('[data-finish-provider-name]', providerName);
     setTextAll('[data-finish-service-title]', serviceTitle);
     setTextAll('[data-finish-amount]', amount);
@@ -169,13 +172,17 @@
 
   function persistChargeState(flags) {
     const messagesRepository = getMessagesRepository();
-    if (!messagesRepository?.getById || !messagesRepository?.save || !paymentContext.conversationId) return Promise.resolve(null);
+    if (!paymentContext.conversationId) return Promise.resolve(null);
+    if (!messagesRepository?.getById || !messagesRepository?.save) {
+      return Promise.reject(new Error('Conversa de pagamento indisponível.'));
+    }
     return messagesRepository.getById(paymentContext.conversationId).then((conversation) => {
-      if (!conversation) return null;
+      if (!conversation) throw new Error('Conversa de pagamento não encontrada.');
       const messages = Array.isArray(conversation.messages) ? conversation.messages : [];
       const charge = paymentContext.messageId
         ? messages.find((message) => String(message.id || '') === String(paymentContext.messageId))
         : messages.slice().reverse().find((message) => message && message.type === 'charge');
+      if (!charge && paymentContext.messageId) throw new Error('Cobrança do pagamento não encontrada.');
       if (!charge) return conversation;
       Object.assign(charge, flags || {});
       if (flags?.paid) charge.text = charge.text || 'Pagamento confirmado. Atendimento liberado.';
@@ -190,9 +197,14 @@
     paymentRegistered = true;
     const ordersService = getOrdersService();
     const orderId = paymentContext.orderId || currentOrder?.id || currentConversation?.orderId;
-    const startTask = orderId && ordersService?.start
-      ? ordersService.start(orderId)
-      : Promise.resolve(currentOrder);
+    if (!orderId || !ordersService?.start) {
+      paymentRegistered = false;
+      return Promise.reject(new Error('Pedido de pagamento não encontrado.'));
+    }
+    const startTask = ordersService.start(orderId, {
+      conversationId: paymentContext.conversationId || currentConversation?.id || '',
+      paymentMessageId: paymentContext.messageId || currentCharge?.id || ''
+    });
 
     return startTask.then((order) => {
       currentOrder = order || currentOrder;
@@ -270,11 +282,33 @@
 
     methodButtons.forEach((button) => {
       const isSelected = button.dataset.paymentMethod === method;
+      const input = button.querySelector('input[type="radio"]');
       button.classList.toggle('is-selected', isSelected);
-      button.setAttribute('aria-checked', String(isSelected));
+      if (input) input.checked = isSelected;
     });
 
     if (summaryMethod) summaryMethod.textContent = method;
+    const methodDetails = {
+      Pix: {
+        title: 'Pagamento rápido e protegido',
+        copy: 'O QR Code e o código Pix serão gerados após a confirmação.'
+      },
+      'Cartão de crédito': {
+        title: 'Pagamento protegido no cartão',
+        copy: 'Adicione um cartão para concluir o pagamento com crédito.'
+      },
+      'Cartão de débito': {
+        title: 'Débito em uma única cobrança',
+        copy: 'Adicione um cartão para concluir o pagamento à vista.'
+      },
+      'Saldo Doke': {
+        title: 'Use o saldo da sua carteira',
+        copy: 'O valor será debitado do seu saldo Doke após a confirmação.'
+      }
+    };
+    const detail = methodDetails[method] || methodDetails.Pix;
+    if (methodTitle) methodTitle.textContent = detail.title;
+    if (methodCopy) methodCopy.textContent = detail.copy;
     updateCardPaymentState();
   }
 
@@ -290,14 +324,41 @@
   }
 
   function showPanel(name) {
-    if (name === 'success') {
-      registerPayment().catch((error) => showError(error?.message || 'Não foi possível registrar o pagamento no pedido.'));
-    }
+    if (modal) modal.dataset.paymentPanel = name;
     panels.forEach((panel) => {
       const isActive = panel.dataset.modalPanel === name;
       panel.hidden = !isActive;
       panel.classList.toggle('is-active', isActive);
     });
+  }
+
+  function showModalError(message) {
+    if (!modalError) {
+      showError(message);
+      return;
+    }
+    modalError.textContent = message;
+    modalError.hidden = false;
+  }
+
+  function clearModalError() {
+    if (modalError) modalError.hidden = true;
+  }
+
+  function confirmPaymentFlow(delay) {
+    if (!modal) return;
+    showPanel('processing');
+    clearModalError();
+    window.clearTimeout(processingTimer);
+    processingTimer = window.setTimeout(() => {
+      registerPayment()
+        .then(() => showPanel('success'))
+        .catch((error) => {
+          paymentRegistered = false;
+          showPanel('processing');
+          showModalError(error?.message || 'Não foi possível registrar o pagamento no pedido.');
+        });
+    }, Number.isFinite(delay) ? delay : 500);
   }
 
   function openModal() {
@@ -306,10 +367,15 @@
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('payment-modal-open');
     showPanel('processing');
+    clearModalError();
 
     window.clearTimeout(processingTimer);
     processingTimer = window.setTimeout(() => {
-      showPanel(selectedMethod === 'Pix' ? 'pix' : 'success');
+      if (selectedMethod === 'Pix') {
+        showPanel('pix');
+        return;
+      }
+      confirmPaymentFlow(120);
     }, 850);
   }
 
@@ -331,9 +397,19 @@
     if (errorMessage) errorMessage.hidden = true;
   }
 
+  function updateSubmitState() {
+    if (!submitButton) return;
+    const canSubmit = Boolean(confirmInput && confirmInput.checked);
+    submitButton.disabled = !canSubmit;
+    submitButton.setAttribute('aria-disabled', String(!canSubmit));
+  }
+
   methodButtons.forEach((button) => {
-    button.addEventListener('click', () => {
-      setSelectedMethod(button.dataset.paymentMethod || 'Pix');
+    const input = button.querySelector('input[type="radio"]');
+    if (!input) return;
+    input.addEventListener('change', () => {
+      if (!input.checked) return;
+      setSelectedMethod(button.dataset.paymentMethod || input.value || 'Pix');
       clearError();
     });
   });
@@ -358,7 +434,10 @@
   }
 
   if (confirmInput) {
-    confirmInput.addEventListener('change', clearError);
+    confirmInput.addEventListener('change', () => {
+      updateSubmitState();
+      clearError();
+    });
   }
 
   if (submitButton) {
@@ -376,20 +455,20 @@
       }
 
       clearError();
+      clearModalError();
       openModal();
     });
   }
 
   if (pixPaidButton) {
     pixPaidButton.addEventListener('click', () => {
-      showPanel('processing');
-      window.clearTimeout(processingTimer);
-      processingTimer = window.setTimeout(() => showPanel('success'), 650);
+      confirmPaymentFlow(650);
     });
   }
 
   if (copyPixButton) {
     copyPixButton.addEventListener('click', async () => {
+      clearModalError();
       const code = pixCode ? pixCode.textContent.trim() : '';
       try {
         if (navigator.clipboard && code) {
@@ -428,6 +507,7 @@
 
   setSelectedMethod(selectedMethod);
   updateTotals();
+  updateSubmitState();
   loadPaymentContext();
 
   const finishOrderModal = document.querySelector('[data-finish-order-modal]');

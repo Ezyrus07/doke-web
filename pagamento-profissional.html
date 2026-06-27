@@ -11,7 +11,7 @@
   <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
 
-  <link rel="stylesheet" href="assets/css/pages/pagamento-profissional-foundation.css?v=20260621-close-button-contract-v1">
+  <link rel="stylesheet" href="assets/css/pages/pagamento-profissional-foundation.css?v=20260627-flow-heading-v3">
 </head>
 <body data-page="pagamento-profissional" class="doke-app-shell-page app-shell-page internal-shell-page payment-page-shell doke-flow has-global-header">
   <div class="app-shell">
@@ -31,10 +31,6 @@
             <a class="home-side-meta__alert payment-topbar-back" href="mensagens.html" aria-label="Voltar para conversa">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
             </a>
-            <div class="payment-topbar-title" data-header-context aria-label="Contexto da página">
-              <strong>Pagamento</strong>
-              <span data-payment-order-code>Pedido #DK-2048</span>
-            </div>
           </div>
           <div class="home-side-meta__group home-side-meta__group--secondary app-header__group app-header__group--secondary" data-header-slot="actions">
             <button class="home-side-meta__alert" type="button" aria-label="Pedidos" data-header-nav="pedidos.html"><svg viewBox="0 0 24 24"><path d="M6 5.5h12v13H6z"></path><path d="M9 9h6"></path><path d="M9 12h6"></path><path d="M9 15h4"></path></svg></button>
@@ -51,136 +47,151 @@
       </header>
 
       <main class="page__content doke-page payment-screen" data-payment-page>
-        <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean doke-page-shell doke-page-stack payment-screen__rail">
-          <div class="payment-layout">
+        <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean doke-page-shell doke-page-stack doke-form-page-rail payment-screen__rail">
+          <header class="payment-hero doke-form-page-top" aria-labelledby="payment-title">
+            <h1 class="doke-form-page-title" id="payment-title">PAGAMENTO</h1>
+            <p class="doke-form-page-description">Revise o pedido, escolha como pagar e confirme com segurança.</p>
+          </header>
+
+          <div class="payment-layout doke-form-page-grid" data-payment-checkout>
             <div class="payment-main-column">
-              <section class="payment-card payment-charge-card" aria-labelledby="charge-title">
-                <div class="payment-card__header">
-                  <div>
-                    <span class="payment-eyebrow">Cobrança recebida</span>
-                    <h2 id="charge-title" data-payment-provider-name>Studio Aquarela</h2>
-                  </div>
-                  <span class="payment-badge payment-badge--warning">Aguardando pagamento</span>
-                </div>
-
-                <div class="payment-provider">
-                  <span class="payment-avatar" aria-hidden="true">SA</span>
-                  <div>
-                    <strong data-payment-provider-name>Studio Aquarela</strong>
-                    <span><i aria-hidden="true"></i> Online agora</span>
-                  </div>
-                </div>
-
-                <dl class="payment-facts payment-facts--charge">
-                  <div><dt>Pedido</dt><dd data-payment-service-title>Pintura residencial</dd></div>
-                  <div><dt>Código</dt><dd data-payment-order-code>#DK-2048</dd></div>
-                  <div><dt>Data da cobrança</dt><dd data-payment-date>Hoje, 09:27</dd></div>
-                  <div><dt>Valor</dt><dd data-payment-amount>R$ 280,00</dd></div>
-                  <div><dt>Condição</dt><dd data-payment-installments>À vista</dd></div>
-                  <div><dt>Status</dt><dd data-payment-status-text>Aguardando pagamento</dd></div>
-                </dl>
-
-                <div class="payment-secondary-actions" aria-label="Ações da cobrança">
-                  <a class="payment-button payment-button--soft doke-btn doke-btn--ghost" href="pedidos.html" data-payment-order-link>Ver pedido</a>
-                  <a class="payment-button payment-button--soft doke-btn doke-btn--ghost" href="mensagens.html" data-payment-conversation-link>Abrir conversa</a>
-                </div>
-              </section>
-
-              <section class="payment-card" aria-labelledby="method-title">
+              <section class="payment-card payment-method-card" aria-labelledby="method-title">
                 <div class="payment-card__header payment-card__header--compact">
                   <div>
-                    <span class="payment-eyebrow">Forma de pagamento</span>
-                    <h2 id="method-title">Escolha como pagar</h2>
-                  </div>
-                </div>
-                <div class="payment-methods" role="radiogroup" aria-label="Formas de pagamento">
-                  <button class="payment-method is-selected" type="button" role="radio" aria-checked="true" data-payment-method="Pix">
-                    <span class="payment-method__radio" aria-hidden="true"></span>
-                    <span class="payment-method__content"><strong>Pix <em>Recomendado</em></strong><small>Aprovação rápida</small></span>
-                  </button>
-                  <button class="payment-method" type="button" role="radio" aria-checked="false" data-payment-method="Cartão de crédito">
-                    <span class="payment-method__radio" aria-hidden="true"></span>
-                    <span class="payment-method__content"><strong>Cartão de crédito</strong><small>Usar cartão cadastrado</small></span>
-                  </button>
-                  <button class="payment-method" type="button" role="radio" aria-checked="false" data-payment-method="Cartão de débito">
-                    <span class="payment-method__radio" aria-hidden="true"></span>
-                    <span class="payment-method__content"><strong>Cartão de débito</strong><small>Usar cartão cadastrado</small></span>
-                  </button>
-                  <button class="payment-method" type="button" role="radio" aria-checked="false" data-payment-method="Saldo Doke">
-                    <span class="payment-method__radio" aria-hidden="true"></span>
-                    <span class="payment-method__content"><strong>Saldo Doke</strong><small>Usar carteira</small></span>
-                  </button>
-                </div>
-
-                <div class="payment-points" aria-label="Pontos acumulados da Doke">
-                  <div class="payment-points__content">
-                    <span class="payment-points__icon" aria-hidden="true">✦</span>
+                    <span class="payment-section-number" aria-hidden="true">1</span>
                     <div>
-                      <strong>Usar pontos Doke</strong>
-                      <small>Você tem 230 pontos disponíveis. Use agora para reduzir R$ 23,00 do pagamento.</small>
+                      <h2 id="method-title">Forma de pagamento</h2>
+                      <p>Escolha a opção que funciona melhor para você.</p>
                     </div>
                   </div>
-                  <label class="payment-points-toggle">
-                    <input class="doke-switch__input" type="checkbox" data-points-input>
-                    <span class="payment-points-toggle__track" aria-hidden="true"><span></span></span>
-                    <span class="sr-only">Usar pontos acumulados</span>
+                </div>
+
+                <div class="payment-methods" role="radiogroup" aria-labelledby="method-title">
+                  <label class="payment-method is-selected" data-payment-method="Pix">
+                    <input class="doke-radio" type="radio" name="payment-method" value="Pix" checked>
+                    <span class="payment-method__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7.5 4.5-3 3 3 3 3-3-3-3Z"></path><path d="m16.5 4.5-3 3 3 3 3-3-3-3Z"></path><path d="m7.5 13.5-3 3 3 3 3-3-3-3Z"></path><path d="m16.5 13.5-3 3 3 3 3-3-3-3Z"></path></svg></span>
+                    <span class="payment-method__content"><strong>Pix <em>Recomendado</em></strong><small>Aprovação rápida</small></span>
                   </label>
+                  <label class="payment-method" data-payment-method="Cartão de crédito">
+                    <input class="doke-radio" type="radio" name="payment-method" value="Cartão de crédito">
+                    <span class="payment-method__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="3"></rect><path d="M4 10h16"></path><path d="M8 14h3"></path></svg></span>
+                    <span class="payment-method__content"><strong>Crédito</strong><small>Use um cartão cadastrado</small></span>
+                  </label>
+                  <label class="payment-method" data-payment-method="Cartão de débito">
+                    <input class="doke-radio" type="radio" name="payment-method" value="Cartão de débito">
+                    <span class="payment-method__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="3"></rect><path d="M8 14h8"></path><path d="M8 10h.01"></path></svg></span>
+                    <span class="payment-method__content"><strong>Débito</strong><small>Pagamento em uma vez</small></span>
+                  </label>
+                  <label class="payment-method" data-payment-method="Saldo Doke">
+                    <input class="doke-radio" type="radio" name="payment-method" value="Saldo Doke">
+                    <span class="payment-method__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 8.5h14v9H5z"></path><path d="M7.5 8.5V6.8h9v1.7"></path><path d="M16 13h3"></path></svg></span>
+                    <span class="payment-method__content"><strong>Saldo Doke</strong><small>Use o saldo da sua carteira</small></span>
+                  </label>
+                </div>
+
+                <div class="payment-method-detail" aria-live="polite">
+                  <span class="payment-method-detail__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2.5"></rect><path d="M8 10V7.8a4 4 0 0 1 8 0V10"></path></svg></span>
+                  <div>
+                    <strong data-payment-method-title>Pagamento rápido e protegido</strong>
+                    <span data-payment-method-copy>O QR Code e o código Pix serão gerados após a confirmação.</span>
+                  </div>
                 </div>
 
                 <div class="payment-card-empty" data-card-empty hidden>
                   <div>
                     <strong>Nenhum cartão cadastrado</strong>
-                    <small>Adicione um cartão para pagar por crédito ou débito. O parcelamento, quando existir, já vem definido pelo profissional na cobrança.</small>
+                    <small>Adicione um cartão com segurança para continuar.</small>
                   </div>
-                  <button class="payment-button payment-button--soft doke-btn doke-btn--ghost" type="button" data-add-card>Adicionar cartão</button>
+                  <button class="doke-btn doke-btn--ghost" type="button" data-add-card>Adicionar cartão</button>
                 </div>
 
                 <div class="payment-card-fields" data-card-fields hidden>
-                  <div class="payment-field payment-field--full"><label for="card-number">Número do cartão</label><input id="card-number" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" class="doke-input"></div>
-                  <div class="payment-field payment-field--full"><label for="card-name">Nome impresso</label><input id="card-name" autocomplete="cc-name" placeholder="Nome como aparece no cartão" class="doke-input"></div>
-                  <div class="payment-field"><label for="card-expiry">Validade</label><input id="card-expiry" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" class="doke-input"></div>
-                  <div class="payment-field"><label for="card-cvv">CVV</label><input id="card-cvv" inputmode="numeric" autocomplete="cc-csc" placeholder="000" class="doke-input"></div>
+                  <div class="payment-field payment-field--full"><label for="card-number">Número do cartão</label><input class="doke-input" id="card-number" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000"></div>
+                  <div class="payment-field payment-field--full"><label for="card-name">Nome impresso</label><input class="doke-input" id="card-name" autocomplete="cc-name" placeholder="Nome como aparece no cartão"></div>
+                  <div class="payment-field"><label for="card-expiry">Validade</label><input class="doke-input" id="card-expiry" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA"></div>
+                  <div class="payment-field"><label for="card-cvv">CVV</label><input class="doke-input" id="card-cvv" inputmode="numeric" autocomplete="cc-csc" placeholder="000"></div>
+                </div>
+
+                <div class="payment-points">
+                  <div class="payment-points__content">
+                    <span class="payment-points__icon" aria-hidden="true">✦</span>
+                    <div>
+                      <strong>Usar pontos Doke</strong>
+                      <small>Economize R$ 23,00 neste pagamento.</small>
+                    </div>
+                  </div>
+                  <label class="doke-switch">
+                    <input type="checkbox" data-points-input>
+                    <span class="doke-switch__track" aria-hidden="true"></span>
+                    <span class="sr-only">Usar pontos Doke</span>
+                  </label>
                 </div>
               </section>
 
-              <section class="payment-card payment-security" aria-labelledby="security-title">
+              <section class="payment-card payment-review" aria-labelledby="review-title">
                 <div class="payment-card__header payment-card__header--compact">
                   <div>
-                    <span class="payment-eyebrow">Segurança</span>
-                    <h2 id="security-title">Pague com mais controle</h2>
+                    <span class="payment-section-number" aria-hidden="true">2</span>
+                    <div>
+                      <h2 id="review-title">Confirmação</h2>
+                      <p>Revise o resumo ao lado antes de pagar.</p>
+                    </div>
                   </div>
                 </div>
-                <ul class="payment-security-list">
-                  <li><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.8 19 7v5.2c0 4-2.7 7.2-7 8-4.3-.8-7-4-7-8V7l7-3.2Z"></path><path d="m8.5 12 2.2 2.2 4.8-5"></path></svg></span>O pagamento fica registrado no pedido.</li>
-                  <li><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6Z"></path><path d="M8 10h8"></path></svg></span>Você pode acompanhar mensagens e comprovantes pela conversa.</li>
-                  <li><span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 4.8 3.8 16a2 2 0 0 0 1.7 3h13a2 2 0 0 0 1.7-3L13.7 4.8a2 2 0 0 0-3.4 0Z"></path></svg></span>Evite pagar fora da plataforma.</li>
-                  <li><span aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2.5"></rect><path d="M8 10V7.8a4 4 0 0 1 8 0V10"></path></svg></span>A Doke nunca pede senha do banco ou código de cartão por chat.</li>
-                </ul>
+
+                <label class="payment-confirm-check" data-payment-confirm-check>
+                  <input class="doke-checkbox" type="checkbox" data-payment-confirm-input>
+                  <span><strong>Revisei a proposta e os dados do pedido.</strong><small>Ao confirmar, concordo com os termos de pagamento da Doke.</small></span>
+                </label>
+
+                <div class="payment-security-note">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.8 19 7v5.2c0 4-2.7 7.2-7 8-4.3-.8-7-4-7-8V7l7-3.2Z"></path><path d="m8.5 12 2.2 2.2 4.8-5"></path></svg>
+                  <span>O pagamento fica registrado no pedido. Nunca envie senha ou código do cartão pelo chat.</span>
+                </div>
+
+                <p class="payment-error" data-payment-error hidden>Não foi possível confirmar o pagamento. Verifique os dados e tente novamente.</p>
               </section>
             </div>
 
             <aside class="payment-summary" aria-labelledby="summary-title">
               <div class="payment-summary__card payment-card">
-                <h2 id="summary-title">Resumo do pagamento</h2>
+                <div class="payment-summary__heading">
+                  <div class="payment-summary__eyebrow-row">
+                    <span class="payment-eyebrow">Seu pedido</span>
+                    <span class="payment-badge payment-badge--warning" data-payment-status-text>Aguardando</span>
+                  </div>
+                  <h2 id="summary-title">Resumo do pagamento</h2>
+                </div>
+
+                <div class="payment-summary__provider">
+                  <span class="payment-avatar" aria-hidden="true">SA</span>
+                  <div>
+                    <strong data-payment-provider-name>Studio Aquarela</strong>
+                    <span data-payment-service-title>Pintura residencial</span>
+                  </div>
+                </div>
+
                 <dl class="payment-summary-list">
-                  <div><dt>Serviço</dt><dd data-payment-service-title>Pintura residencial</dd></div>
+                  <div><dt>Pedido</dt><dd data-payment-order-code>#DK-2048</dd></div>
+                  <div><dt>Método</dt><dd data-summary-method>Pix</dd></div>
                   <div><dt>Subtotal</dt><dd data-summary-subtotal data-payment-amount>R$ 280,00</dd></div>
-                  <div><dt>Taxa da plataforma</dt><dd>R$ 0,00</dd></div>
                   <div class="payment-summary-list__discount" data-summary-points-row hidden><dt>Pontos Doke</dt><dd data-summary-points-discount>-R$ 23,00</dd></div>
-                  <div class="payment-summary-list__total"><dt>Total</dt><dd data-summary-total>R$ 280,00</dd></div>
-                  <div><dt>Método selecionado</dt><dd data-summary-method>Pix</dd></div>
-                  <div><dt>Status</dt><dd><span class="payment-badge payment-badge--warning" data-payment-status-text>Aguardando pagamento</span></dd></div>
                 </dl>
 
-                <label class="payment-confirm-check" data-payment-confirm-check>
-                  <input class="doke-checkbox" type="checkbox" checked data-payment-confirm-input>
-                  <span class="payment-confirm-check__box" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6.5 12.5 3.4 3.3 7.6-8"></path></svg></span>
-                  <span>Confirmo que revisei a cobrança e reconheço o serviço combinado.</span>
-                </label>
+                <div class="payment-summary__amount">
+                  <div><small>Total</small><span data-payment-installments>À vista</span></div>
+                  <strong data-summary-total>R$ 280,00</strong>
+                </div>
 
-                <p class="payment-error" data-payment-error hidden>Não foi possível confirmar o pagamento. Verifique os dados e tente novamente.</p>
-                <button class="payment-button payment-button--primary payment-summary__submit doke-btn doke-btn--primary" type="button" data-payment-submit>Confirmar pagamento</button>
-                <p class="payment-summary__terms">Ao confirmar, você concorda com os termos de pagamento da Doke.</p>
+                <div class="doke-form-actions payment-summary__actions">
+                  <button class="doke-btn doke-btn--primary payment-summary__submit" type="button" data-payment-submit disabled>Confirmar pagamento</button>
+                </div>
+                <p class="payment-summary__microcopy"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2.5"></rect><path d="M8 10V7.8a4 4 0 0 1 8 0V10"></path></svg>Pagamento protegido pela Doke.</p>
+
+                <nav class="payment-summary__links" aria-label="Ações do pagamento">
+                  <a class="doke-btn doke-btn--ghost doke-btn--sm" href="pedidos.html" data-payment-order-link>Ver pedido</a>
+                  <a class="doke-btn doke-btn--ghost doke-btn--sm" href="mensagens.html" data-payment-conversation-link>Abrir conversa</a>
+                </nav>
               </div>
             </aside>
           </div>
@@ -192,7 +203,7 @@
   <div class="payment-submit-state" data-payment-modal hidden aria-hidden="true">
     <div class="payment-submit-state__backdrop" data-payment-close></div>
     <section class="payment-submit-state__card" role="dialog" aria-modal="true" aria-labelledby="payment-modal-title" aria-describedby="payment-modal-description">
-      <button class="payment-submit-state__close doke-icon-btn doke-icon-btn--flat" type="button" aria-label="Fechar" data-payment-close><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button>
+      <button class="payment-submit-state__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" aria-label="Fechar" data-payment-close><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button>
 
       <div class="payment-submit-state__panel is-active" data-modal-panel="processing">
         <span class="payment-submit-state__spinner" aria-hidden="true"></span>
@@ -235,7 +246,7 @@
   <div class="payment-finish-modal" data-finish-order-modal hidden aria-hidden="true">
     <div class="payment-finish-modal__backdrop" data-finish-order-close></div>
     <section class="payment-finish-modal__card" role="dialog" aria-modal="true" aria-labelledby="payment-finish-title">
-      <button class="payment-finish-modal__close doke-icon-btn doke-icon-btn--flat" type="button" aria-label="Fechar" data-finish-order-close>
+      <button class="payment-finish-modal__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" aria-label="Fechar" data-finish-order-close>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
       </button>
 
@@ -253,13 +264,12 @@
 
         <label class="payment-finish-check">
           <input class="doke-checkbox" type="checkbox" checked data-finish-order-confirm>
-          <span class="payment-finish-check__box" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6.5 12.5 3.4 3.3 7.6-8"></path></svg></span>
           <span>Confirmo que o serviço foi concluído.</span>
         </label>
 
         <label class="payment-finish-field">
           <span>Observação sobre a entrega <small>opcional</small></span>
-          <textarea rows="3" placeholder="Ex.: Serviço concluído no prazo e ambiente entregue organizado." class="doke-textarea"></textarea>
+          <textarea class="doke-textarea" rows="3" placeholder="Ex.: Serviço concluído no prazo e ambiente entregue organizado."></textarea>
         </label>
 
         <p class="payment-finish-error" data-finish-order-error hidden>Confirme que o serviço foi concluído para continuar.</p>
@@ -311,7 +321,7 @@
   <script src="assets/js/repositories/messages-repository.js?v=20260626-order-status-flow-v2" defer></script>
   <script src="assets/js/repositories/notifications-repository.js?v=20260626-order-status-flow-v2" defer></script>
   <script src="assets/js/services/orders-service.js?v=20260626-payment-redirect-v1" defer></script>
-  <script src="assets/js/pages/pagamento-profissional.js?v=20260626-payment-redirect-v1" defer></script>
+  <script src="assets/js/pages/pagamento-profissional.js?v=20260627-payment-alignment-v2" defer></script>
   <script src="assets/js/core/dom.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/core/events.js?v=20260501-stage31-domain-services" defer></script>
   <script src="assets/js/core/view-state.js?v=20260501-stage31-domain-services" defer></script>

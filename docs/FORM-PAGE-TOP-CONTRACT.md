@@ -11,6 +11,7 @@ Shared title/intro rail, screen width, form-grid rhythm and base form card surfa
 - `orcamento.html`
 - `anunciar-servico.html`
 - `tornar-profissional.html`
+- `pagamento-profissional.html`
 
 ## Required classes
 
@@ -75,5 +76,6 @@ The following page CSS files must not style the form-page title/description/top 
 - `assets/css/pages/orcamento.css`
 - `assets/css/pages/anunciar-servico.css`
 - `assets/css/pages/tornar-profissional.css`
+- `assets/css/pages/pagamento-profissional.css`
 
 Allowed page CSS responsibility: internal form layout, step content, modal content and page-specific field composition. Not allowed: `h1`, top description, eyebrow, chips/meta, page-specific title scale/color, base form card width, base card radius, base card padding or base card shadow.

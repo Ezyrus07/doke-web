@@ -329,18 +329,20 @@
     });
   }
 
-  function start(orderId) {
-    return saveStatus(orderId, 'in_progress', 'Em andamento', {
-      detailFlow: 'A proposta foi aprovada e o atendimento está em andamento.',
-      nextAction: 'Acompanhar atendimento'
-    });
+  function start(orderId, options) {
+    options = options || {};
+    return saveStatus(orderId, 'in_progress', 'Em andamento', Object.assign({}, options, {
+      detailFlow: options.detailFlow || 'A proposta foi aprovada e o atendimento está em andamento.',
+      nextAction: options.nextAction || 'Acompanhar atendimento'
+    }));
   }
 
-  function complete(orderId) {
-    return saveStatus(orderId, 'completed', 'Concluído', {
-      detailFlow: 'Pedido concluído. O cliente pode avaliar o atendimento.',
-      nextAction: 'Avaliar atendimento'
-    });
+  function complete(orderId, options) {
+    options = options || {};
+    return saveStatus(orderId, 'completed', 'Concluído', Object.assign({}, options, {
+      detailFlow: options.detailFlow || 'Pedido concluído. O cliente pode avaliar o atendimento.',
+      nextAction: options.nextAction || 'Avaliar atendimento'
+    }));
   }
 
   function updateStatus(orderId, status, options) {

@@ -60,60 +60,6 @@
       }
     };
 
-    const closeSelect = (select) => {
-      if (!select) return;
-      const button = select.querySelector('.become-pro-select__button');
-      const menu = select.querySelector('.become-pro-select__menu');
-      select.classList.remove('is-open');
-      button?.setAttribute('aria-expanded', 'false');
-      if (menu) menu.hidden = true;
-    };
-
-    const closeAllSelects = (except) => {
-      root.querySelectorAll('[data-pro-select]').forEach((select) => {
-        if (select !== except) closeSelect(select);
-      });
-    };
-
-    root.querySelectorAll('[data-pro-select]').forEach((select) => {
-      const input = select.querySelector('input[type="hidden"]');
-      const button = select.querySelector('.become-pro-select__button');
-      const valueLabel = select.querySelector('[data-pro-select-value]');
-      const menu = select.querySelector('.become-pro-select__menu');
-      const options = [...select.querySelectorAll('[data-value]')];
-
-      const toggleMenu = () => {
-        const willOpen = !select.classList.contains('is-open');
-        closeAllSelects(select);
-        select.classList.toggle('is-open', willOpen);
-        button?.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-        if (menu) menu.hidden = !willOpen;
-      };
-
-      button?.addEventListener('click', toggleMenu);
-
-      options.forEach((option) => {
-        option.addEventListener('click', () => {
-          const value = option.dataset.value || option.textContent.trim();
-          if (input) input.value = value;
-          if (valueLabel) valueLabel.textContent = value;
-          select.classList.toggle('has-value', Boolean(value));
-          options.forEach((item) => item.classList.toggle('is-selected', item === option));
-          closeSelect(select);
-          button?.focus({ preventScroll: true });
-        });
-      });
-    });
-
-    document.addEventListener('click', (event) => {
-      if (!root.contains(event.target)) return;
-      if (!event.target.closest('[data-pro-select]')) closeAllSelects();
-    });
-
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') closeAllSelects();
-    });
-
     nextButton?.addEventListener('click', () => {
       if (currentStep < totalSteps) {
         setStep(currentStep + 1);

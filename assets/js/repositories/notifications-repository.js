@@ -190,16 +190,34 @@
     return Boolean(user && user.role === 'professional' && String(user.id) === 'user_profissional_demo');
   }
 
+  function isDemoProfessionalFacingNotification(notification) {
+    var category = String(notification.category || '').toLowerCase();
+    var type = String(notification.type || '').toLowerCase();
+    var title = String(notification.title || '').toLowerCase();
+    var body = String(notification.body || '').toLowerCase();
+
+    if (category !== 'orders') return false;
+    if (type === 'order_created') return true;
+    if (type === 'order_reviewed') return true;
+
+    // Backward-compatible mock rule for older local notifications addressed to
+    // provider/card IDs instead of the demo professional login. Keep this narrow:
+    // accepted/refused/proposal events remain client-facing, while payment confirmation
+    // starts the professional's operational work queue.
+    return type === 'order_status_changed'
+      && (title.indexOf('pagamento confirmado') !== -1
+        || title.indexOf('atendimento em andamento') !== -1
+        || title.indexOf('pedido concluído') !== -1
+        || body.indexOf('atendimento foi liberado') !== -1
+        || body.indexOf('pagou a proposta') !== -1
+        || body.indexOf('confirmou a proposta') !== -1);
+  }
+
   function matchesCurrentUser(notification, user) {
     if (!user || !user.id) return true;
     if (!notification.userId) return true;
     if (String(notification.userId) === String(user.id)) return true;
-    // Backward-compatible mock rule: only new-order notifications may have been addressed
-    // to the service provider ID, not the demo professional login ID. Status changes
-    // such as accepted/refused are client-facing and must not leak into professional view.
-    return isDemoProfessional(user)
-      && String(notification.category || '').toLowerCase() === 'orders'
-      && String(notification.type || '').toLowerCase() === 'order_created';
+    return isDemoProfessional(user) && isDemoProfessionalFacingNotification(notification);
   }
 
   function list(filters) {

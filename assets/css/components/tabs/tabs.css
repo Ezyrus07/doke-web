@@ -54,6 +54,63 @@
   min-width: 0;
 }
 
+
+/* Shared compact pill/tab used by content filters and scope tabs.
+   Page CSS may own only track layout, wrapping and overflow. */
+.doke-tab-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--doke-tab-pill-gap, 9px);
+  min-height: var(--doke-tab-pill-height, var(--control-height-md, 44px));
+  padding: 0 var(--doke-tab-pill-padding-inline, 18px);
+  border: var(--doke-tab-pill-border, 1px solid var(--doke-card-border, rgba(24, 75, 118, 0.10)));
+  border-radius: var(--doke-tab-pill-radius, var(--radius-pill, 999px));
+  background: var(--doke-tab-pill-bg, rgba(255, 255, 255, 0.94));
+  color: var(--doke-tab-pill-text, var(--doke-primary, #1f5f99));
+  box-shadow: var(--doke-tab-pill-shadow, 0 8px 20px rgba(29, 56, 88, 0.045));
+  font: inherit;
+  font-size: var(--doke-tab-pill-font-size, 0.94rem);
+  font-weight: var(--doke-tab-pill-font-weight, 850);
+  line-height: 1;
+  letter-spacing: var(--doke-tab-pill-letter-spacing, -0.02em);
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.doke-tab-pill svg {
+  width: var(--doke-tab-pill-icon-size, 18px);
+  height: var(--doke-tab-pill-icon-size, 18px);
+  flex: 0 0 auto;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.doke-tab-pill:hover {
+  border-color: var(--doke-tab-pill-hover-border, rgba(42, 95, 144, 0.18));
+  box-shadow: var(--doke-tab-pill-hover-shadow, 0 10px 24px rgba(29, 56, 88, 0.065));
+}
+
+.doke-tab-pill:is(.is-active, [aria-pressed="true"], [aria-selected="true"]),
+:is(button, a).is-active > .doke-tab-pill,
+:is(button, a)[aria-pressed="true"] > .doke-tab-pill,
+:is(button, a)[aria-selected="true"] > .doke-tab-pill {
+  border-color: var(--doke-tab-pill-active-border, transparent);
+  background: var(--doke-tab-pill-active-bg, var(--doke-primary, #2a5f90));
+  color: var(--doke-tab-pill-active-text, #fff);
+  box-shadow: var(--doke-tab-pill-active-shadow, 0 10px 22px rgba(42, 95, 144, 0.18));
+}
+
+.doke-tab-pill:focus-visible {
+  outline: 0;
+  box-shadow: var(--doke-tab-pill-focus-shadow, 0 0 0 3px rgba(42, 95, 144, 0.16), 0 10px 22px rgba(42, 95, 144, 0.12));
+}
+
 :where(.doke-tabs__panel[hidden], [data-tab-panel][hidden]) {
   display: none;
 }

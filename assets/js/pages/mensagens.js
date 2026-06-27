@@ -49,9 +49,13 @@
   const getChargeCardPresentation = (conversation, message) => {
     const professionalView = isProfessionalConversationView(conversation);
     const ownerView = professionalView && message?.mine === true;
+    const orderStatus = getOrderStatus(conversation);
+    const reviewed = message?.reviewed === true;
+    const completed = reviewed || message?.completed === true || orderStatus === 'completed';
+    const paid = completed || message?.paid === true || orderStatus === 'in_progress';
 
     if (ownerView) {
-      if (message.reviewed) {
+      if (reviewed) {
         return {
           label: 'Cobrança concluída',
           status: 'Avaliação recebida',
@@ -65,7 +69,7 @@
         };
       }
 
-      if (message.completed) {
+      if (completed) {
         return {
           label: 'Cobrança concluída',
           status: 'Aguardando avaliação',
@@ -79,7 +83,7 @@
         };
       }
 
-      if (message.paid) {
+      if (paid) {
         return {
           label: 'Cobrança aprovada',
           status: 'Pagamento confirmado',
@@ -106,7 +110,7 @@
       };
     }
 
-    if (message.reviewed) {
+    if (reviewed) {
       return {
         label: 'Cobrança enviada',
         status: 'Atendimento avaliado',
@@ -120,7 +124,7 @@
       };
     }
 
-    if (message.completed) {
+    if (completed) {
       return {
         label: 'Cobrança enviada',
         status: 'Aguardando avaliação',
@@ -134,7 +138,7 @@
       };
     }
 
-    if (message.paid) {
+    if (paid) {
       return {
         label: 'Cobrança enviada',
         status: 'Pagamento confirmado',
@@ -174,6 +178,7 @@
     const currentUserId = getCurrentUserId();
     const mine = message?.mine === true || Boolean(currentUserId && message?.senderId && String(message.senderId) === String(currentUserId));
     return {
+      id: message?.id || "",
       author: mine ? "Você" : message?.author || conversation?.name || "Doke",
       time: message?.time || "agora",
       text: message?.text || message?.body || "",
@@ -718,6 +723,49 @@
       return layer;
     };
 
+    const getConversationChargeMessage = (conversation) => {
+      const messages = Array.isArray(conversation?.messages) ? conversation.messages : [];
+      for (let index = messages.length - 1; index >= 0; index -= 1) {
+        if (messages[index]?.type === "charge") return messages[index];
+      }
+      return null;
+    };
+
+    const getMessagesOrderTimeline = (status, order, charge) => {
+      const accepted = ["accepted", "conversation", "responded", "quoted", "in_progress", "completed"].includes(status);
+      const paymentConfirmed = Boolean(charge?.paid) || status === "in_progress" || status === "completed";
+      const completed = status === "completed";
+
+      if (status === "cancelled") {
+        return [
+          { label: "Pedido recebido", date: order.createdAt || "Registrado na Doke", done: true, current: false },
+          { label: "Pedido recusado", date: order.refusalReason || "Fluxo encerrado", done: false, current: true },
+          { label: "Conversa bloqueada", date: "Atendimento indisponível", done: false, current: false }
+        ];
+      }
+
+      return [
+        { label: "Pedido recebido", date: order.createdAt || "Registrado na Doke", done: true, current: false },
+        { label: "Aceite do profissional", date: accepted ? "Pedido aceito" : "Aguardando resposta", done: accepted, current: status === "pending" },
+        {
+          label: "Proposta e pagamento",
+          date: paymentConfirmed
+            ? "Pagamento confirmado"
+            : status === "quoted"
+              ? "Proposta enviada · aguardando pagamento"
+              : "Próxima etapa",
+          done: paymentConfirmed,
+          current: status === "quoted" && !paymentConfirmed
+        },
+        {
+          label: "Atendimento",
+          date: completed ? "Serviço concluído" : status === "in_progress" ? "Etapa atual" : "Após confirmação",
+          done: completed,
+          current: status === "in_progress"
+        }
+      ];
+    };
+
     const getMessagesOrderDetails = (conversation) => {
       const order = conversation?.order || {};
       const professionalView = isProfessionalConversationView(conversation);
@@ -725,32 +773,148 @@
       const peerName = professionalView
         ? order.clientName || conversation?.name || "Cliente Doke"
         : order.professionalName || conversation?.name || "Profissional Doke";
-      const statusLabel = order.statusLabel || "Em negociação";
       const title = order.title || "Pedido de serviço";
       const location = order.location || "A combinar";
       const budget = order.budget || "A definir";
       const category = order.category || "Serviço";
+      const charge = getConversationChargeMessage(conversation);
+      const status = getOrderStatus(conversation);
+
+      const statusMap = {
+        pending: {
+          statusLabel: order.statusLabel || "Aguardando resposta",
+          smartBadge: professionalView ? "Ação pendente" : "Aguardando retorno",
+          riskLabel: "Médio",
+          riskTone: "risk",
+          flow: order.flow || "O pedido foi criado e ainda depende do aceite do profissional para liberar a conversa e avançar no atendimento.",
+          actionTitle: professionalView ? "Responder pedido" : "Aguardando aceite",
+          actionNote: professionalView
+            ? "Revise o escopo e aceite ou recuse este pedido para liberar o próximo passo."
+            : "O profissional ainda precisa responder ao pedido antes de enviar proposta.",
+          aiTitle: "Etapa inicial do fluxo",
+          aiText: "Este pedido ainda está no começo. A decisão do profissional libera a negociação e evita atraso no atendimento."
+        },
+        accepted: {
+          statusLabel: order.statusLabel || "Pedido aceito",
+          smartBadge: "Conversa liberada",
+          riskLabel: "Baixo",
+          riskTone: "info",
+          flow: order.flow || "O pedido foi aceito e a conversa já pode ser usada para alinhar escopo, prazo e detalhes da proposta.",
+          actionTitle: professionalView ? "Enviar proposta" : "Acompanhar proposta",
+          actionNote: professionalView
+            ? "Use a conversa para enviar a proposta e formalizar o próximo passo do atendimento."
+            : "A proposta do profissional deve chegar por esta conversa antes do pagamento.",
+          aiTitle: "Negociação liberada",
+          aiText: "A conversa já está destravada. O foco agora é transformar o alinhamento em proposta objetiva."
+        },
+        conversation: {
+          statusLabel: order.statusLabel || "Pedido aceito",
+          smartBadge: "Conversa liberada",
+          riskLabel: "Baixo",
+          riskTone: "info",
+          flow: order.flow || "O pedido foi aceito e a conversa já pode ser usada para alinhar escopo, prazo e detalhes da proposta.",
+          actionTitle: professionalView ? "Enviar proposta" : "Acompanhar proposta",
+          actionNote: professionalView
+            ? "Use a conversa para enviar a proposta e formalizar o próximo passo do atendimento."
+            : "A proposta do profissional deve chegar por esta conversa antes do pagamento.",
+          aiTitle: "Negociação liberada",
+          aiText: "A conversa já está destravada. O foco agora é transformar o alinhamento em proposta objetiva."
+        },
+        responded: {
+          statusLabel: order.statusLabel || "Respondido",
+          smartBadge: "Negociação ativa",
+          riskLabel: "Baixo",
+          riskTone: "info",
+          flow: order.flow || "O pedido já teve retorno e está em negociação. Use a conversa para alinhar escopo e próximos passos.",
+          actionTitle: professionalView ? "Enviar proposta" : "Acompanhar resposta",
+          actionNote: professionalView
+            ? "Formalize a proposta para transformar a negociação em cobrança aprovada."
+            : "Acompanhe a negociação e confirme os detalhes antes do pagamento.",
+          aiTitle: "Fluxo em negociação",
+          aiText: "O histórico da conversa já existe; agora o importante é consolidar proposta, valor e prazo."
+        },
+        quoted: {
+          statusLabel: order.statusLabel || "Proposta enviada",
+          smartBadge: charge?.paid ? "Pagamento confirmado" : "Aguardando pagamento",
+          riskLabel: charge?.paid ? "Baixo" : "Médio",
+          riskTone: charge?.paid ? "info" : "risk",
+          flow: order.flow || (charge?.paid
+            ? "A proposta foi aprovada e o pagamento já foi registrado. O atendimento segue em andamento."
+            : "A proposta foi enviada e o próximo passo é a confirmação do pagamento para liberar o atendimento."),
+          actionTitle: professionalView ? "Acompanhar proposta" : "Concluir pagamento",
+          actionNote: professionalView
+            ? "Aguarde a confirmação do cliente e mantenha a conversa pronta para iniciar o atendimento."
+            : "O pagamento precisa ser confirmado na tela de checkout para iniciar o atendimento.",
+          aiTitle: "Proposta formalizada",
+          aiText: charge?.paid
+            ? "O pagamento já entrou no fluxo e o pedido está pronto para execução."
+            : "A negociação já virou cobrança. O próximo passo obrigatório é confirmar o pagamento."
+        },
+        in_progress: {
+          statusLabel: order.statusLabel || "Em andamento",
+          smartBadge: charge?.paid ? "Pagamento confirmado" : "Atendimento ativo",
+          riskLabel: "Baixo",
+          riskTone: "success",
+          flow: order.flow || "A proposta foi aprovada e o atendimento está em andamento.",
+          actionTitle: professionalView ? "Atualizar atendimento" : "Acompanhar atendimento",
+          actionNote: professionalView
+            ? "Mantenha o cliente atualizado na conversa enquanto executa o serviço."
+            : "Use a conversa para acompanhar o andamento e receber atualizações do profissional.",
+          aiTitle: "Atendimento iniciado",
+          aiText: "Pagamento confirmado e pedido em andamento. Agora a conversa deve servir para acompanhamento e execução."
+        },
+        completed: {
+          statusLabel: order.statusLabel || "Concluído",
+          smartBadge: "Serviço concluído",
+          riskLabel: "Baixo",
+          riskTone: "success",
+          flow: order.flow || "O atendimento foi concluído. O próximo passo será encerrar a experiência com avaliação e pós-serviço.",
+          actionTitle: professionalView ? "Solicitar avaliação" : "Avaliar profissional",
+          actionNote: professionalView
+            ? "Feche o ciclo pedindo avaliação e registrando a conclusão do atendimento."
+            : "Registre sua avaliação para concluir a experiência após o serviço.",
+          aiTitle: "Fluxo concluído",
+          aiText: "O pedido já foi executado. O próximo ganho de produto está em conclusão formal e avaliação."
+        },
+        cancelled: {
+          statusLabel: order.statusLabel || "Pedido recusado",
+          smartBadge: "Fluxo encerrado",
+          riskLabel: "Baixo",
+          riskTone: "info",
+          flow: order.flow || "Este pedido foi recusado e não seguirá para proposta ou atendimento.",
+          actionTitle: "Fluxo encerrado",
+          actionNote: professionalView
+            ? "Use o histórico para consultar o motivo da recusa."
+            : "O atendimento não foi aceito pelo profissional.",
+          aiTitle: "Pedido arquivado",
+          aiText: "Este fluxo foi encerrado e não exige novas ações operacionais dentro da conversa."
+        }
+      };
+
+      const config = statusMap[status] || statusMap.pending;
 
       return {
         title,
         subtitle: location ? `${peerName} • ${location}` : peerName,
         peerLabel,
         peerName,
-        statusLabel,
-        smartBadge: conversation?.messages?.length ? "Conversa ativa" : "Sem mensagens",
+        status,
+        statusLabel: config.statusLabel,
+        smartBadge: config.smartBadge,
+        riskLabel: config.riskLabel,
+        riskTone: config.riskTone,
         address: location,
         scope: order.scope || `Atendimento de ${category.toLowerCase()} acompanhado pela conversa.`,
         budget,
-        payment: order.payment || "A combinar na proposta",
-        deadline: order.timeline || order.deadline || "Próxima atualização pela conversa",
+        payment: order.payment || (charge?.amount ? `${charge.amount}${charge.installments ? ` · ${charge.installments}` : ""}` : "A combinar na proposta"),
+        deadline: order.timeline || order.deadline || (status === "in_progress" ? "Atendimento em andamento" : "Próxima atualização pela conversa"),
         materials: order.materials || "A confirmar com o profissional",
-        flow: order.flow || "Este pedido está vinculado à conversa atual. Use este painel para revisar o contexto sem sair de mensagens.",
-        actionTitle: professionalView ? "Enviar proposta" : statusLabel,
-        actionNote: professionalView
-          ? "Revise o escopo e envie a proposta dentro desta conversa."
-          : "Acompanhe a resposta do profissional e combine os próximos passos pelo chat.",
-        aiTitle: "Fluxo centralizado em mensagens",
-        aiText: "Abrir os detalhes aqui preserva o histórico da conversa e evita perder o contexto do atendimento."
+        flow: config.flow,
+        actionTitle: config.actionTitle,
+        actionNote: config.actionNote,
+        aiTitle: config.aiTitle,
+        aiText: config.aiText,
+        timeline: getMessagesOrderTimeline(status, order, charge)
       };
     };
 
@@ -779,36 +943,36 @@
       const action = layer.querySelector("[data-detail-action]");
       const icon = layer.querySelector("[data-detail-action-icon]");
       if (action) {
-        action.dataset.risk = "low";
-        action.dataset.status = "conversation";
+        action.dataset.risk = details.riskTone === "risk" ? "high" : "low";
+        action.dataset.status = details.status;
       }
-      if (icon) icon.innerHTML = orderDetailIcons.action;
+      if (icon) icon.innerHTML = details.status === "completed" ? orderDetailIcons.check : orderDetailIcons.action;
 
       const statusbar = layer.querySelector("[data-detail-statusbar]");
       if (statusbar) {
+        const secondaryBadge = details.smartBadge && details.smartBadge !== details.statusLabel
+          ? details.smartBadge
+          : details.status === "in_progress"
+            ? "Pagamento confirmado"
+            : "Conversa ativa";
         statusbar.innerHTML = `
           <span class="orders-detail-pill">${escapeHtml(details.statusLabel)}</span>
-          <span class="orders-detail-pill" data-tone="info">${escapeHtml(details.smartBadge)}</span>
-          <span class="orders-detail-pill" data-tone="info">Risco baixo</span>
+          <span class="orders-detail-pill" data-tone="${escapeHtml(details.riskTone || "info")}">${escapeHtml(secondaryBadge)}</span>
+          <span class="orders-detail-pill" data-tone="${escapeHtml(details.riskTone || "info")}">Risco ${escapeHtml(details.riskLabel || "Baixo")}</span>
         `;
       }
 
       const timeline = layer.querySelector("[data-detail-timeline]");
       if (timeline) {
-        timeline.innerHTML = `
-          <article class="orders-detail-timeline__item is-done">
-            <span class="orders-detail-timeline__bullet">${orderDetailIcons.check}</span>
-            <div><div class="orders-detail-timeline__title">Pedido criado</div><div class="orders-detail-timeline__date">Registrado na Doke</div></div>
+        timeline.innerHTML = (details.timeline || []).map((step) => `
+          <article class="orders-detail-timeline__item ${step.done ? "is-done" : ""} ${step.current ? "is-current" : ""}">
+            <span class="orders-detail-timeline__bullet">${step.done ? orderDetailIcons.check : ""}</span>
+            <div>
+              <div class="orders-detail-timeline__title">${escapeHtml(step.label || "Etapa")}</div>
+              <div class="orders-detail-timeline__date">${escapeHtml(step.date || (step.current ? "Etapa atual" : "Próxima etapa"))}</div>
+            </div>
           </article>
-          <article class="orders-detail-timeline__item is-current">
-            <span class="orders-detail-timeline__bullet"></span>
-            <div><div class="orders-detail-timeline__title">Negociação</div><div class="orders-detail-timeline__date">Etapa atual</div></div>
-          </article>
-          <article class="orders-detail-timeline__item">
-            <span class="orders-detail-timeline__bullet"></span>
-            <div><div class="orders-detail-timeline__title">Proposta</div><div class="orders-detail-timeline__date">Próxima etapa</div></div>
-          </article>
-        `;
+        `).join("");
       }
     };
 
@@ -909,7 +1073,7 @@
       if (!charge) return;
 
       if (pageParams.get("payment") === "success") {
-        charge.paid = true;
+        return;
       }
 
       if (pageParams.get("completed") === "1") {
@@ -931,9 +1095,9 @@
       const action = status === 'quoted' && typeof service.quote === 'function'
         ? service.quote(orderId, options)
         : status === 'in_progress' && typeof service.start === 'function'
-          ? service.start(orderId)
+          ? service.start(orderId, options)
           : status === 'completed' && typeof service.complete === 'function'
-            ? service.complete(orderId)
+            ? service.complete(orderId, options)
             : typeof service.updateStatus === 'function'
               ? service.updateStatus(orderId, status, options)
               : Promise.resolve(null);
@@ -1939,16 +2103,34 @@
       if (completeButton) {
         event.preventDefault();
         const index = Number(bubble?.dataset.messageIndex || -1);
-        const currentMessage = conversations[activeId]?.messages?.[index];
+        const conversation = conversations[activeId];
+        const currentMessage = conversation?.messages?.[index];
         if (!currentMessage || currentMessage.type !== "charge") return;
+
+        completeButton.disabled = true;
+        completeButton.setAttribute('aria-busy', 'true');
+        completeButton.textContent = 'Finalizando...';
+
         currentMessage.paid = true;
         currentMessage.completed = true;
-        updateOrderFromConversation('completed')
+        currentMessage.text = currentMessage.text || 'Atendimento concluído. Avaliação liberada.';
+
+        const orderAlreadyCompleted = getOrderStatus(conversation) === 'completed';
+        const completionTask = orderAlreadyCompleted
+          ? Promise.resolve(conversation.order || null)
+          : updateOrderFromConversation('completed', { paymentMessageId: currentMessage.id || '', messageId: currentMessage.id || '' });
+
+        completionTask
+          .then(() => persistConversationState(activeId))
           .then(() => {
             renderThread(activeId, { scrollTo: 'end' });
             showCopyToast('Pedido concluído. Avaliação liberada.');
           })
-          .catch((error) => showCopyToast(error?.message || 'Não foi possível concluir o pedido.'));
+          .catch((error) => {
+            currentMessage.completed = false;
+            renderThread(activeId, { scrollTo: 'end' });
+            showCopyToast(error?.message || 'Não foi possível concluir o pedido.');
+          });
         return;
       }
 
@@ -1958,11 +2140,19 @@
         const index = Number(bubble?.dataset.messageIndex || -1);
         const currentMessage = conversations[activeId]?.messages?.[index];
         if (!currentMessage || currentMessage.type !== "charge") return;
-        currentMessage.reviewed = true;
-        persistConversationState(activeId).then(() => {
-          renderThread(activeId, { scrollTo: 'end' });
-          showCopyToast('Avaliação registrada no fluxo mockado.');
-        });
+        const conversation = conversations[activeId] || {};
+        const orderId = conversation?.order?.id || conversation?.orderId || pageParams.get('order') || '';
+        const params = new URLSearchParams();
+        if (orderId) params.set('order', orderId);
+        if (activeId) params.set('conversation', activeId);
+        if (currentMessage.id) params.set('message', currentMessage.id);
+        params.set('source', 'chat');
+        const target = `avaliacao-profissional.html?${params.toString()}`;
+        if (window.DokeNavigate && typeof window.DokeNavigate === 'function') {
+          window.DokeNavigate(target);
+          return;
+        }
+        window.location.href = target;
         return;
       }
 
@@ -2167,11 +2357,14 @@
       };
       conversations[activeId].messages.push(chargeMessage);
       persistConversationMessage(activeId, chargeMessage)
-        .then(() => updateOrderFromConversation('quoted', {
-          amount: chargeMessage.amount,
-          budget: chargeMessage.amount,
-          installments: chargeMessage.installments
-        }))
+        .then((savedMessage) => {
+          if (savedMessage) Object.assign(chargeMessage, savedMessage);
+          return updateOrderFromConversation('quoted', {
+            amount: chargeMessage.amount,
+            budget: chargeMessage.amount,
+            installments: chargeMessage.installments
+          });
+        })
         .then(() => {
           closeChargeModal();
           renderThread(activeId, { scrollTo: "end" });

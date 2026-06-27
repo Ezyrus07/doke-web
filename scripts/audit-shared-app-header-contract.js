@@ -22,7 +22,7 @@ const pageContracts = {
   'meu-perfil.html': { variant: 'standard', context: false },
   'novidades.html': { variant: 'standard', context: false },
   'orcamento.html': { variant: 'standard', context: false },
-  'pagamento-profissional.html': { variant: 'contextual', context: true },
+  'pagamento-profissional.html': { variant: 'contextual', context: false },
   'perfil.html': { variant: 'standard', context: false },
   'perfil-cliente.html': { variant: 'standard', context: false },
   'perfil-profissional.html': { variant: 'standard', context: false },
@@ -94,6 +94,13 @@ for (const [file, expected] of Object.entries(pageContracts)) {
   }
   if (expected.variant === 'standard' && (!/\bdata-topbar-location-value\b/i.test(html) || !/\bdata-location-fallback=["']Belo Horizonte, MG["']/i.test(html))) {
     fail(file, 'standard app-header location must use the shared Belo Horizonte fallback contract');
+  }
+
+  const contextTag = (html.match(/<[^>]+\bdata-header-context\b[^>]*>/i) || [])[0] || '';
+  const contextContainsSharedActions = contextTag
+    && /<[^>]+\bclass=["'][^"']*\bpage-header-context__action\b/i.test(html);
+  if (contextContainsSharedActions && !/\bclass=["'][^"']*\bpage-header-context\b/i.test(contextTag)) {
+    fail(file, 'header context with shared action pills must keep the page-header-context container class');
   }
 
   if (/<header\b[^>]*\b(?:internal-page-topbar|data-app-topbar)\b/i.test(html)) {

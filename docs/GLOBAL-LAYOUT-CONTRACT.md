@@ -62,6 +62,8 @@ Variantes permitidas:
 
 Classes `home-side-meta__*` e modificadores como `app-header--home`, `app-header--profile` e `app-header--orders` permanecem temporariamente como compatibilidade visual. Elas não são permissão para criar uma nova anatomia global por página.
 
+Quando um header `contextual` renderiza pílulas de ação compartilhadas (`.page-header-context__action`), o wrapper `[data-header-context]` deve manter também a classe `.page-header-context`. Isso garante que `assets/css/components/internal/page-header.css` continue sendo a autoridade da anatomia das ações, enquanto `assets/css/layout/header.css` controla o encaixe do slot no app header.
+
 A busca permanece disponível nos dois tipos de header. A localização pertence somente ao header `standard`, visualmente equivalente ao `index`; sem endereço salvo, ele exibe o fallback compartilhado `Belo Horizonte, MG`.
 
 Toda página ativa que renderiza `.app-header` deve participar da matriz verificada por `npm run audit:shared-app-header-contract`. Páginas sem header global, como autenticação ou workspaces especializados, não devem receber esse contrato artificialmente.

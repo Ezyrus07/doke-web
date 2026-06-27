@@ -60,62 +60,6 @@
       }
     };
 
-    const closeSelect = (select) => {
-      if (!select) return;
-      const button = select.querySelector('.post-service-select__button');
-      const menu = select.querySelector('.post-service-select__menu');
-      select.classList.remove('is-open');
-      button?.setAttribute('aria-expanded', 'false');
-      if (menu) menu.hidden = true;
-    };
-
-    const closeAllSelects = (except) => {
-      root.querySelectorAll('[data-post-select]').forEach((select) => {
-        if (select !== except) closeSelect(select);
-      });
-    };
-
-    root.querySelectorAll('[data-post-select]').forEach((select) => {
-      const input = select.querySelector('input[type="hidden"]');
-      const button = select.querySelector('.post-service-select__button');
-      const valueLabel = select.querySelector('[data-post-select-value]');
-      const menu = select.querySelector('.post-service-select__menu');
-      const options = [...select.querySelectorAll('[data-value]')];
-      if (valueLabel && !valueLabel.dataset.placeholder) valueLabel.dataset.placeholder = valueLabel.textContent.trim();
-
-      const toggleMenu = () => {
-        const willOpen = !select.classList.contains('is-open');
-        closeAllSelects(select);
-        select.classList.toggle('is-open', willOpen);
-        button?.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-        if (menu) menu.hidden = !willOpen;
-      };
-
-      button?.addEventListener('click', toggleMenu);
-
-      options.forEach((option) => {
-        option.addEventListener('click', () => {
-          const value = option.dataset.value || option.textContent.trim();
-          if (input) input.value = value;
-          if (valueLabel) valueLabel.textContent = value;
-          select.classList.toggle('has-value', Boolean(value));
-          options.forEach((item) => item.classList.toggle('is-selected', item === option));
-          closeSelect(select);
-          updateReview();
-          button?.focus({ preventScroll: true });
-        });
-      });
-    });
-
-    document.addEventListener('click', (event) => {
-      if (!root.contains(event.target)) return;
-      if (!event.target.closest('[data-post-select]')) closeAllSelects();
-    });
-
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') closeAllSelects();
-    });
-
     root.querySelectorAll('[data-segment]').forEach((button) => {
       if (!button.dataset.defaultActive) button.dataset.defaultActive = button.classList.contains('is-active') ? 'true' : 'false';
       button.addEventListener('click', () => {
@@ -174,7 +118,10 @@
       if (reviewRegion) reviewRegion.textContent = region || 'Belo Horizonte e região';
     }
 
-    sources.forEach((source) => source.addEventListener('input', updateReview));
+    sources.forEach((source) => {
+      source.addEventListener('input', updateReview);
+      source.addEventListener('change', updateReview);
+    });
 
     nextButton?.addEventListener('click', () => {
       if (currentStep < totalSteps) {

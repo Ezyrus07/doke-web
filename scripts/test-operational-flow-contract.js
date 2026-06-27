@@ -136,13 +136,36 @@ async function main() {
   assert(proConversation.peerRole === 'client', 'Profissional deveria ver cliente como contato.');
   assert(proConversation.peerName === 'Cliente Doke', 'Nome do cliente não foi resolvido para o profissional.');
 
-  const sent = await Doke.services.messages.sendMessage(proConversation.id, {
+  let lockedError = null;
+  try {
+    await Doke.services.messages.sendMessage(proConversation.id, {
+      body: 'Mensagem antes do aceite não deve ser enviada.'
+    });
+  } catch (error) {
+    lockedError = error;
+  }
+  assert(lockedError && /profissional aceitar o pedido/i.test(lockedError.message), 'Conversa pendente deveria bloquear mensagem antes do aceite.');
+
+  const acceptedOrder = await Doke.services.orders.accept(order.id);
+  assert(acceptedOrder.status === 'accepted', 'Aceite do profissional não atualizou o pedido para accepted.');
+  assert(acceptedOrder.statusLabel === 'Pedido aceito', 'Aceite do profissional não normalizou statusLabel.');
+
+  const acceptedConversation = Doke.repositories.messages.listLocal({ currentUser: true })[0];
+  assert(acceptedConversation.order.status === 'accepted', 'Conversa não herdou status accepted do pedido.');
+  assert(acceptedConversation.locked === false, 'Conversa aceita deveria estar desbloqueada.');
+  assert(acceptedConversation.lastSeen === 'Conversa liberada', 'Conversa aceita deveria exibir lastSeen de conversa liberada.');
+
+  const afterAcceptNotifications = Doke.repositories.notifications.readLocal();
+  assert(afterAcceptNotifications.length === 2, `Esperadas 2 notificações após aceite; recebido ${afterAcceptNotifications.length}.`);
+  assert(afterAcceptNotifications.some((item) => item.type === 'order_status_changed' && item.userId === 'user_cliente_demo'), 'Notificação de aceite deveria ir para o cliente.');
+
+  const sent = await Doke.services.messages.sendMessage(acceptedConversation.id, {
     body: 'Posso te enviar uma proposta ainda hoje.'
   });
   assert(sent && sent.id, 'Mensagem enviada não recebeu id.');
 
   const afterMessageNotifications = Doke.repositories.notifications.readLocal();
-  assert(afterMessageNotifications.length === 2, `Esperadas 2 notificações após mensagem; recebido ${afterMessageNotifications.length}.`);
+  assert(afterMessageNotifications.length === 3, `Esperadas 3 notificações após mensagem; recebido ${afterMessageNotifications.length}.`);
   assert(afterMessageNotifications.some((item) => item.type === 'message_received' && item.userId === 'user_cliente_demo'), 'Notificação de mensagem não foi para o cliente.');
 
   currentUser = {
@@ -154,8 +177,9 @@ async function main() {
   };
 
   const clientNotifications = Doke.repositories.notifications.listLocal({ dismissed: false });
-  assert(clientNotifications.length === 1, `Cliente deveria ver 1 notificação própria; recebeu ${clientNotifications.length}.`);
-  assert(clientNotifications[0].type === 'message_received', 'Cliente deveria ver notificação de mensagem.');
+  assert(clientNotifications.length === 2, `Cliente deveria ver 2 notificações próprias; recebeu ${clientNotifications.length}.`);
+  assert(clientNotifications.some((item) => item.type === 'order_status_changed'), 'Cliente deveria ver notificação de aceite do pedido.');
+  assert(clientNotifications.some((item) => item.type === 'message_received'), 'Cliente deveria ver notificação de mensagem.');
 
   const clientConversation = Doke.repositories.messages.listLocal({ currentUser: true })[0];
   assert(clientConversation.peerRole === 'professional', 'Cliente deveria ver profissional como contato.');

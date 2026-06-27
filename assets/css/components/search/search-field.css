@@ -1,5 +1,6 @@
 /* Doke search field contract
-   Owns reusable search wrappers and data hooks. It intentionally avoids page layout. */
+   Owns reusable search wrappers, input reset and shared search-field anatomy.
+   Page files may position search fields in their layout, but must not redraw reusable variants. */
 :where(.doke-searchbox, .doke-search-field) {
   box-sizing: border-box;
   display: flex;
@@ -11,6 +12,37 @@
   min-width: 0;
   width: 100%;
   font: inherit;
+}
+
+:where(.doke-search-field--hero) {
+  gap: var(--doke-search-field-hero-gap, 16px);
+  min-height: var(--doke-search-field-hero-height, 72px);
+  padding-inline: var(--doke-search-field-hero-padding-inline, 26px);
+  border: 1px solid var(--doke-search-field-hero-border, rgba(13, 47, 89, 0.07));
+  border-radius: var(--doke-search-field-hero-radius, 28px);
+  background: var(--doke-search-field-hero-background, rgba(255, 255, 255, 0.96));
+  box-shadow: var(--doke-search-field-hero-shadow, 0 16px 40px rgba(13, 47, 89, 0.055));
+}
+
+:where(.doke-search-field--hero) :where(.doke-search-field__icon) {
+  width: var(--doke-search-field-hero-icon-size, 23px);
+  height: var(--doke-search-field-hero-icon-size, 23px);
+  color: var(--doke-search-field-hero-icon-color, #6b82a0);
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+:where(.doke-search-field--hero) :where(.doke-search-field__input) {
+  color: var(--doke-search-field-hero-input-color, #0d2f59);
+  font-size: var(--doke-search-field-hero-font-size, 1.05rem);
+  font-weight: var(--doke-search-field-hero-font-weight, 600);
+}
+
+:where(.doke-search-field--hero) :where(.doke-search-field__input)::placeholder {
+  color: var(--doke-search-field-hero-placeholder-color, #8a99ab);
 }
 
 /* Canonical input reset for search controls that also opt into .doke-input.
@@ -186,4 +218,11 @@
   stroke-width: 2.25;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+@media (max-width: 760px) {
+  :where(.doke-search-field--hero) {
+    min-height: var(--doke-search-field-hero-mobile-height, 58px);
+    padding-inline: var(--doke-search-field-hero-mobile-padding-inline, 18px);
+    border-radius: var(--doke-search-field-hero-mobile-radius, 20px);
+  }
 }

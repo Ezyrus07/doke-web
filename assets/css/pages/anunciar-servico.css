@@ -12,6 +12,12 @@ body.post-service-page-shell {
   --post-service-green: #16b895;
   --post-service-green-dark: #0d8f77;
   --post-service-shadow: 0 18px 42px rgba(13, 47, 89, 0.06);
+  --doke-form-control-bg: #fbfdff;
+  --doke-form-control-color: var(--post-service-text);
+  --doke-form-control-font-weight: 600;
+  --doke-form-control-focus-border: rgba(38, 116, 217, 0.45);
+  --doke-form-control-focus-ring: 0 0 0 4px rgba(38, 116, 217, 0.08);
+  --input-placeholder: #8192aa;
   background: var(--post-service-bg);
 }
 
@@ -151,45 +157,8 @@ body.post-service-page-shell svg {
   font-weight: 700;
 }
 
-.post-service-field .doke-input,
-.post-service-field .doke-textarea {
-  width: 100%;
-  min-height: 52px;
-  border: 1px solid #d4e0ef;
-  border-radius: 14px;
-  background: #fbfdff;
-  color: var(--post-service-text);
-  font: inherit;
-  font-weight: 600;
-  outline: none;
-  box-sizing: border-box;
-  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
-}
-
-.post-service-field .doke-input {
-  padding: 0 16px;
-}
-
-.post-service-field .doke-textarea {
-  min-height: 108px;
-  padding: 14px 16px 28px;
-  resize: vertical;
-}
-
 .post-service-field .post-service-textarea--large {
   min-height: 150px;
-}
-
-.post-service-field .doke-input::placeholder,
-.post-service-field .doke-textarea::placeholder {
-  color: #8192aa;
-}
-
-.post-service-field .doke-input:focus,
-.post-service-field .doke-textarea:focus {
-  border-color: rgba(38, 116, 217, .45);
-  background: #fff;
-  box-shadow: 0 0 0 4px rgba(38, 116, 217, .08);
 }
 
 .post-service-field small {
@@ -219,98 +188,6 @@ body.post-service-page-shell svg {
   font-size: .84rem;
 }
 
-.post-service-select {
-  position: relative;
-  width: 100%;
-}
-
-.post-service-select__button {
-  width: 100%;
-  min-height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0 14px 0 16px;
-  border: 1px solid #d4e0ef;
-  border-radius: 14px;
-  background: #fbfdff;
-  color: #8192aa;
-  font: inherit;
-  font-weight: 700;
-  text-align: left;
-  cursor: pointer;
-  box-sizing: border-box;
-  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
-}
-
-.post-service-select__button svg {
-  width: 18px;
-  height: 18px;
-  color: var(--post-service-blue-strong);
-  transition: transform .18s ease;
-  flex: 0 0 auto;
-}
-
-.post-service-select.is-open .post-service-select__button,
-.post-service-select__button:focus-visible {
-  border-color: rgba(38, 116, 217, .45);
-  background: #fff;
-  box-shadow: 0 0 0 4px rgba(38, 116, 217, .08);
-}
-
-.post-service-select.is-open .post-service-select__button svg {
-  transform: rotate(180deg);
-}
-
-.post-service-select.has-value .post-service-select__button {
-  color: var(--post-service-text);
-}
-
-.post-service-select__menu {
-  position: absolute;
-  z-index: 30;
-  top: calc(100% + 8px);
-  left: 0;
-  right: 0;
-  display: grid;
-  gap: 4px;
-  max-height: 280px;
-  overflow: auto;
-  margin: 0;
-  padding: 8px;
-  list-style: none;
-  border: 1px solid rgba(13, 47, 89, .08);
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 18px 42px rgba(13, 47, 89, .12);
-}
-
-.post-service-select__menu[hidden] {
-  display: none;
-}
-
-.post-service-select__menu button {
-  width: 100%;
-  min-height: 42px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 12px;
-  background: transparent;
-  color: #526d8e;
-  font: inherit;
-  font-weight: 700;
-  text-align: left;
-  cursor: pointer;
-}
-
-.post-service-select__menu button:hover,
-.post-service-select__menu button:focus-visible,
-.post-service-select__menu button.is-selected {
-  outline: none;
-  background: #eef6ff;
-  color: var(--post-service-blue-strong);
-}
 
 .post-service-step-panel[hidden] {
   display: none;
@@ -517,35 +394,6 @@ body.post-service-page-shell svg {
 
 .post-service-actions.has-back-action {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-}
-
-.post-service-btn {
-  min-height: 58px;
-  border: 0;
-  border-radius: 999px;
-  font: inherit;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.post-service-btn--primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  color: #fff;
-  background: linear-gradient(135deg, #2674d9 0%, #0f4a86 100%);
-  box-shadow: 0 16px 30px rgba(38, 116, 217, .18);
-}
-
-.post-service-btn--primary svg {
-  width: 20px;
-  height: 20px;
-}
-
-.post-service-btn--soft {
-  color: var(--post-service-blue-strong);
-  background: #eef5fb;
 }
 
 .post-service-btn[hidden] {
@@ -784,17 +632,18 @@ body.post-service-page-shell svg {
   }
 
   body[data-page="anunciar-servico"].post-service-page-shell .post-service-field .doke-input,
+  body[data-page="anunciar-servico"].post-service-page-shell .post-service-field .doke-select,
   body[data-page="anunciar-servico"].post-service-page-shell .post-service-field .doke-textarea,
-  body[data-page="anunciar-servico"].post-service-page-shell .post-service-select,
-  body[data-page="anunciar-servico"].post-service-page-shell .post-service-select__button,
-  body[data-page="anunciar-servico"].post-service-page-shell .post-service-select__menu,
+  body[data-page="anunciar-servico"].post-service-page-shell .post-service-field .ui-select,
+  body[data-page="anunciar-servico"].post-service-page-shell .post-service-field .ui-select__trigger,
+  body[data-page="anunciar-servico"].post-service-page-shell .post-service-field .ui-select__menu,
   body[data-page="anunciar-servico"].post-service-page-shell .post-service-btn {
     max-width: 100%;
     min-width: 0;
     box-sizing: border-box;
   }
 
-  body[data-page="anunciar-servico"].post-service-page-shell .post-service-select__button > span,
+  body[data-page="anunciar-servico"].post-service-page-shell .post-service-field .ui-select__label,
   body[data-page="anunciar-servico"].post-service-page-shell .post-service-section-head,
   body[data-page="anunciar-servico"].post-service-page-shell .post-service-intro,
   body[data-page="anunciar-servico"].post-service-page-shell .post-service-tips-card li,
