@@ -285,3 +285,20 @@ Consumidores atuais: controles de fechar de modais, painéis, lightboxes, drawer
 Fronteira: CSS de página pode posicionar um botão de fechar dentro do painel ou modal. CSS de página não deve redefinir tamanho, raio, borda, background, sombra, padding ou SVG desses controles quando eles forem `doke-close-button`.
 
 Validação: `npm run audit:close-button-contract`.
+
+## Contrato sistêmico de modais, overlays e painéis
+
+Autoridade escolhida:
+
+- `assets/css/components/overlays/modal.css` para os hooks estruturais globais `doke-overlay`, `doke-native-overlay`, `doke-overlay__backdrop`, `doke-overlay__surface`, `doke-overlay__header`, `doke-overlay__body` e `doke-overlay__actions` em páginas que carregam apenas o core/components;
+- `assets/css/components/overlays/overlay-contract.css` para a camada de overlay/root/scrim/surface usada por páginas internas, home, resultados e comunidade.
+
+Consumidores atuais incluem modais de localização, endereço, orçamento, pagamento, carteira, cobrança, comunidade, novidades, avaliação, feedback de pedido, previews de mídia, filtros/seleção mobile e side panels.
+
+Fronteira:
+
+- CSS de página pode controlar conteúdo específico, grids internos, textos, ícones de domínio e posicionamento contextual aprovado.
+- CSS de página não deve criar uma nova raiz/scrim/surface/header/body/actions para modais equivalentes sem consumir os hooks compartilhados.
+- Painéis que não usam `hidden` como contrato de exibição não devem receber `doke-overlay` até serem migrados para uma família própria.
+
+Validação: `npm run audit:overlay-modal-contract`.

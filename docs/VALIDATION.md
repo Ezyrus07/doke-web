@@ -383,3 +383,24 @@ npm run audit:close-button-contract
 A auditoria varre todos os HTMLs ativos da raiz e falha quando um controle de fechar de superfície perde `doke-close-button`, quando um rótulo textual de fechamento não usa `doke-close-button__label`, ou quando `resultados.html` volta a redesenhar a anatomia de `results-filters__close` em CSS de página.
 
 Ela é parte de `npm run audit:agent-governance`.
+
+## Auditoria de contrato de modais, overlays e painéis
+
+Use:
+
+```bash
+npm run audit:overlay-modal-contract
+```
+
+A auditoria varre os HTMLs ativos da raiz que possuem modais, dialogs, overlays, lightboxes, feedback states, side panels e mobile action panels. Ela falha quando essas superfícies perdem os hooks estruturais compartilhados:
+
+- `doke-overlay` para raízes de overlay não nativas;
+- `doke-native-overlay` para `<dialog>` nativo;
+- `doke-overlay__backdrop` para scrim/backdrop;
+- `doke-overlay__surface` para painel/card/dialog real;
+- `doke-overlay__header`, `doke-overlay__body` e `doke-overlay__actions` para anatomia interna quando existente;
+- `doke-overlay-panel` para painéis móveis de ação que não devem virar modal fixo genérico.
+
+O gate também impede que `community-room-panel` consuma `doke-overlay` enquanto esse painel continuar sem contrato de `hidden/display`; nesse caso ele precisa de uma migração própria para evitar regressão visual.
+
+Esse gate roda dentro de `npm run audit:agent-governance`.

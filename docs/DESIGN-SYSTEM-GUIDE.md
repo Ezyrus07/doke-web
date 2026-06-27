@@ -147,3 +147,33 @@ Exemplo correto:
 Quando houver texto visível apenas para leitura/acessibilidade dentro do botão, use `doke-close-button__label`.
 
 Fechamentos inline dentro de campos de busca ou barras de seleção não usam `doke-close-button`; eles pertencem ao contrato do campo ou da barra em que estão embutidos.
+
+## Modais, overlays e painéis
+
+Modais e overlays devem expor uma anatomia estrutural compartilhada, mantendo as classes de domínio para JS e semântica local.
+
+Exemplo de overlay não nativo:
+
+```html
+<div class="news-detail-modal doke-overlay doke-overlay--modal" hidden>
+  <button class="news-detail-modal__backdrop doke-overlay__backdrop" type="button"></button>
+  <article class="news-detail-modal__panel doke-overlay__surface" role="dialog" aria-modal="true">
+    <header class="news-detail-modal__header doke-overlay__header"></header>
+    <div class="news-detail-modal__body doke-overlay__body"></div>
+    <div class="news-detail-modal__actions doke-overlay__actions"></div>
+  </article>
+</div>
+```
+
+Exemplo de `<dialog>` nativo:
+
+```html
+<dialog class="address-modal doke-native-overlay">
+  <form class="address-modal__dialog doke-overlay__surface" method="dialog">
+    <header class="address-modal__head doke-overlay__header"></header>
+    <div class="address-modal__actions doke-overlay__actions"></div>
+  </form>
+</dialog>
+```
+
+Use `doke-overlay-panel` para painéis de ação móveis que são superfícies contextuais, mas não devem receber comportamento de overlay fixo genérico.

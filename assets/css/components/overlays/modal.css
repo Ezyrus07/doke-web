@@ -1,7 +1,7 @@
 /* Global modal/dialog ownership contract.
    Low-specificity primitives for new Doke surfaces. Legacy page modals remain untouched until migrated. */
 
-:where(.doke-modal, [data-modal]) {
+:where(.doke-modal, .doke-overlay, [data-modal]) {
   position: fixed;
   inset: 0;
   z-index: var(--z-modal, 1200);
@@ -10,18 +10,18 @@
   padding: clamp(16px, 3vw, 32px);
 }
 
-:where(.doke-modal[hidden], [data-modal][hidden]) {
+:where(.doke-modal[hidden], .doke-overlay[hidden], [data-modal][hidden]) {
   display: none;
 }
 
-:where(.doke-modal__scrim, [data-modal-scrim]) {
+:where(.doke-modal__scrim, .doke-overlay__backdrop, [data-modal-scrim]) {
   position: absolute;
   inset: 0;
   background: rgba(7, 29, 58, 0.48);
   backdrop-filter: blur(5px);
 }
 
-:where(.doke-modal__surface, [data-modal-surface]) {
+:where(.doke-modal__surface, .doke-overlay__surface, [data-modal-surface]) {
   position: relative;
   width: min(var(--doke-modal-width, 640px), 100%);
   max-height: min(720px, calc(100dvh - 48px));
@@ -34,7 +34,7 @@
   scrollbar-gutter: stable;
 }
 
-:where(.doke-modal__header, [data-modal-header]) {
+:where(.doke-modal__header, .doke-overlay__header, [data-modal-header]) {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -42,11 +42,11 @@
   min-width: 0;
 }
 
-:where(.doke-modal__body, [data-modal-body]) {
+:where(.doke-modal__body, .doke-overlay__body, [data-modal-body]) {
   min-width: 0;
 }
 
-:where(.doke-modal__footer, [data-modal-footer]) {
+:where(.doke-modal__footer, .doke-overlay__actions, [data-modal-footer]) {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
@@ -97,12 +97,12 @@
 }
 
 @media (max-width: 640px) {
-  :where(.doke-modal, [data-modal]) {
+  :where(.doke-modal, .doke-overlay, [data-modal]) {
     align-items: end;
     padding: 12px;
   }
 
-  :where(.doke-modal__surface, [data-modal-surface]) {
+  :where(.doke-modal__surface, .doke-overlay__surface, [data-modal-surface]) {
     width: 100%;
     max-height: calc(100dvh - 24px);
     border-radius: var(--radius-lg);

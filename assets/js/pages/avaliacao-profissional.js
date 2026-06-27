@@ -70,6 +70,10 @@
     return window.Doke?.services?.notifications || null;
   }
 
+  function getWalletService() {
+    return window.Doke?.services?.wallet || null;
+  }
+
   function buildConversationUrl(extra) {
     const next = new URLSearchParams();
     if (reviewContext.orderId) next.set('order', reviewContext.orderId);
@@ -205,6 +209,24 @@
     });
   }
 
+  function registerWalletReceivable(conversation, review) {
+    const service = getWalletService();
+    if (!service?.registerReceivableFromOrder || !conversation) return Promise.resolve(null);
+
+    return service.registerReceivableFromOrder({
+      conversation,
+      order: conversation.order || {},
+      charge: currentCharge,
+      review,
+      orderId: reviewContext.orderId,
+      conversationId: reviewContext.conversationId,
+      messageId: reviewContext.messageId
+    }).catch((error) => {
+      console.warn('[DokeReview:walletReceivable]', error);
+      return null;
+    });
+  }
+
   function persistReview() {
     const repository = getMessagesRepository();
     if (!repository?.getById || !repository?.save || !reviewContext.conversationId) {
@@ -249,13 +271,23 @@
         currentCharge = charge;
         return repository.save(conversation);
       })
-      .then((conversation) => createReviewNotification(conversation || currentConversation, review).then(() => conversation))
       .then((conversation) => {
+        const activeConversation = conversation || currentConversation;
+        return Promise.all([
+          createReviewNotification(activeConversation, review),
+          registerWalletReceivable(activeConversation, review)
+        ]).then(([, walletResult]) => ({ conversation: activeConversation, walletResult }));
+      })
+      .then(({ conversation, walletResult }) => {
+        if (walletResult?.transaction && currentCharge) {
+          currentCharge.walletTransactionId = walletResult.transaction.id;
+        }
         document.dispatchEvent(new CustomEvent('doke:order-reviewed', {
           detail: {
             conversation: conversation || currentConversation,
             charge: currentCharge,
-            review
+            review,
+            walletTransaction: walletResult?.transaction || null
           }
         }));
         openModal();

@@ -200,30 +200,30 @@
     </div>
   </div>
 
-  <div class="payment-submit-state" data-payment-modal hidden aria-hidden="true">
-    <div class="payment-submit-state__backdrop" data-payment-close></div>
-    <section class="payment-submit-state__card" role="dialog" aria-modal="true" aria-labelledby="payment-modal-title" aria-describedby="payment-modal-description">
+  <div class="payment-submit-state doke-overlay doke-overlay--feedback" data-payment-modal hidden aria-hidden="true">
+    <div class="payment-submit-state__backdrop doke-overlay__backdrop" data-payment-close></div>
+    <section class="payment-submit-state__card doke-overlay__surface" role="dialog" aria-modal="true" aria-labelledby="payment-modal-title" aria-describedby="payment-modal-description">
       <button class="payment-submit-state__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" aria-label="Fechar" data-payment-close><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button>
 
-      <div class="payment-submit-state__panel is-active" data-modal-panel="processing">
+      <div class="payment-submit-state__panel is-active doke-overlay__body" data-modal-panel="processing">
         <span class="payment-submit-state__spinner" aria-hidden="true"></span>
         <h2 id="payment-modal-title">Processando pagamento...</h2>
         <p id="payment-modal-description" data-payment-modal-description>Estamos registrando o pagamento no pedido #DK-2048.</p>
       </div>
 
-      <div class="payment-submit-state__panel" data-modal-panel="pix" hidden>
+      <div class="payment-submit-state__panel doke-overlay__body" data-modal-panel="pix" hidden>
         <span class="payment-submit-state__icon payment-submit-state__icon--pix" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7.5 4.5 4.5 7.5l3 3 3-3-3-3Z"></path><path d="m16.5 4.5-3 3 3 3 3-3-3-3Z"></path><path d="m7.5 13.5-3 3 3 3 3-3-3-3Z"></path><path d="m16.5 13.5-3 3 3 3 3-3-3-3Z"></path></svg></span>
         <h2>Pagamento via Pix</h2>
         <p>Use o QR Code ou copie o código Pix para pagar com segurança.</p>
         <div class="payment-pix-box" aria-label="QR Code Pix ilustrativo"><span></span><span></span><span></span><span></span></div>
         <div class="payment-pix-code"><code data-pix-code>00020126580014BR.GOV.BCB.PIX0136DOKE-STUDIO-AQUARELA-2805204000053039865406280.005802BR5920STUDIO AQUARELA6009BELO HORIZONTE</code></div>
-        <div class="payment-submit-state__actions">
+        <div class="payment-submit-state__actions doke-overlay__actions">
           <button class="payment-button payment-button--soft doke-btn doke-btn--ghost" type="button" data-copy-pix>Copiar código Pix</button>
           <button class="payment-button payment-button--primary doke-btn doke-btn--primary" type="button" data-pix-paid>Já paguei</button>
         </div>
       </div>
 
-      <div class="payment-submit-state__panel" data-modal-panel="success" hidden>
+      <div class="payment-submit-state__panel doke-overlay__body" data-modal-panel="success" hidden>
         <span class="payment-submit-state__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"></path></svg></span>
         <h2>Pagamento confirmado</h2>
         <p data-payment-success-copy>Seu pagamento de <span data-modal-total>R$ 280,00</span> para Studio Aquarela foi registrado no pedido.</p>
@@ -233,7 +233,7 @@
           <span><span data-payment-order-code>Pedido #DK-2048</span> · <span data-payment-provider-name>Studio Aquarela</span> · <span data-receipt-total>R$ 280,00</span></span>
           <small>Registro visual para futura integração com backend.</small>
         </article>
-        <div class="payment-submit-state__actions">
+        <div class="payment-submit-state__actions doke-overlay__actions">
           <button class="payment-button payment-button--soft doke-btn doke-btn--ghost" type="button" data-show-receipt>Ver comprovante</button>
           <a class="payment-button payment-button--soft doke-btn doke-btn--ghost" href="mensagens.html" data-payment-success-conversation-link>Voltar para conversa</a>
           <button class="payment-button payment-button--primary doke-btn doke-btn--primary" type="button" data-finish-order-open>Finalizar pedido</button>
@@ -243,14 +243,14 @@
   </div>
 
 
-  <div class="payment-finish-modal" data-finish-order-modal hidden aria-hidden="true">
-    <div class="payment-finish-modal__backdrop" data-finish-order-close></div>
-    <section class="payment-finish-modal__card" role="dialog" aria-modal="true" aria-labelledby="payment-finish-title">
+  <div class="payment-finish-modal doke-overlay doke-overlay--feedback" data-finish-order-modal hidden aria-hidden="true">
+    <div class="payment-finish-modal__backdrop doke-overlay__backdrop" data-finish-order-close></div>
+    <section class="payment-finish-modal__card doke-overlay__surface" role="dialog" aria-modal="true" aria-labelledby="payment-finish-title">
       <button class="payment-finish-modal__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" aria-label="Fechar" data-finish-order-close>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
       </button>
 
-      <div class="payment-finish-panel is-active" data-finish-order-panel="confirm">
+      <div class="payment-finish-panel is-active doke-overlay__body" data-finish-order-panel="confirm">
         <span class="payment-finish-eyebrow">Finalizar pedido</span>
         <h2 id="payment-finish-title">O serviço foi concluído?</h2>
         <p>Confirme apenas se <span data-finish-provider-name>Studio Aquarela</span> entregou o serviço conforme combinado.</p>
@@ -274,13 +274,13 @@
 
         <p class="payment-finish-error" data-finish-order-error hidden>Confirme que o serviço foi concluído para continuar.</p>
 
-        <div class="payment-finish-actions">
+        <div class="payment-finish-actions doke-overlay__actions">
           <a class="payment-button payment-button--soft doke-btn doke-btn--ghost" href="mensagens.html" data-payment-issue-link>Tenho um problema</a>
           <button class="payment-button payment-button--primary doke-btn doke-btn--primary" type="button" data-finish-order-submit>Confirmar conclusão</button>
         </div>
       </div>
 
-      <div class="payment-finish-panel" data-finish-order-panel="success" hidden>
+      <div class="payment-finish-panel doke-overlay__body" data-finish-order-panel="success" hidden>
         <span class="payment-submit-state__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"></path></svg></span>
         <h2>Pedido finalizado</h2>
         <p>O atendimento foi marcado como concluído. Se quiser enviar mídias para o portfólio do profissional, faça isso pela conversa do pedido.</p>
@@ -288,7 +288,7 @@
           <span class="payment-badge payment-badge--success">Pedido concluído</span>
           <span class="payment-badge payment-badge--blue">Avaliação pendente</span>
         </div>
-        <div class="payment-finish-actions">
+        <div class="payment-finish-actions doke-overlay__actions">
           <button class="payment-button payment-button--soft doke-btn doke-btn--ghost" type="button" data-finish-order-close>Fechar</button>
           <a class="payment-button payment-button--primary doke-btn doke-btn--primary" href="mensagens.html" data-payment-success-conversation-link>Voltar para conversa</a>
         </div>

@@ -189,3 +189,22 @@ Exemplo canônico:
 A anatomia visual pertence a `assets/css/components/internal/surface-contract.css`. CSS de página pode controlar o painel pai, sticky, `justify-self` do link e layout externo, mas não deve redefinir grid interno, gap, padding, ritmo do corpo, tipografia do título ou anatomia do link.
 
 Validação: `npm run audit:content-side-list-contract`.
+
+## Overlays e superfícies modais
+
+Superfícies modais devem consumir os hooks estruturais compartilhados quando possuírem raiz, backdrop, painel, header, corpo e ações.
+
+Classes canônicas:
+
+- `doke-overlay` para overlay não nativo;
+- `doke-native-overlay` para `<dialog>`;
+- `doke-overlay__backdrop` para backdrop/scrim;
+- `doke-overlay__surface` para o painel/card/dialog;
+- `doke-overlay__header` para cabeçalho;
+- `doke-overlay__body` para corpo rolável/conteúdo principal;
+- `doke-overlay__actions` para rodapé/ações;
+- `doke-overlay-panel` para painéis móveis contextuais.
+
+A página pode manter classes locais como `news-detail-modal__panel` ou `payment-finish-modal__card`, mas essas classes não devem ser a única anatomia estrutural do modal.
+
+Validação: `npm run audit:overlay-modal-contract`.

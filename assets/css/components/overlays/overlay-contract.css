@@ -26,6 +26,7 @@
 }
 
 html:has(dialog[open]),
+body:has(.doke-overlay:not([hidden])),
 body:has(.ui-modal:not([hidden])),
 body:has(.wallet-modal:not([hidden])),
 body:has(.media-lightbox:not([hidden])),
@@ -37,11 +38,11 @@ body:has(.worker-preview:not([hidden])) {
 /* =============================
    Root overlays / scrims
    ============================= */
-:where(.ui-modal, .wallet-modal, .media-lightbox, .before-after-preview, .worker-preview) {
+:where(.doke-overlay, .doke-native-overlay, .ui-modal, .wallet-modal, .media-lightbox, .before-after-preview, .worker-preview) {
   box-sizing: border-box;
 }
 
-:where(.ui-modal:not([hidden]), .wallet-modal:not([hidden]), .media-lightbox:not([hidden]), .before-after-preview:not([hidden]), .worker-preview:not([hidden])) {
+:where(.doke-overlay:not([hidden]), .ui-modal:not([hidden]), .wallet-modal:not([hidden]), .media-lightbox:not([hidden]), .before-after-preview:not([hidden]), .worker-preview:not([hidden])) {
   position: fixed;
   inset: 0;
   z-index: var(--doke-overlay-z-base);
@@ -51,7 +52,7 @@ body:has(.worker-preview:not([hidden])) {
   overflow: hidden;
 }
 
-:where(.ui-modal__backdrop, .wallet-modal__scrim, .media-lightbox__backdrop, .before-after-preview__backdrop, .worker-preview__backdrop) {
+:where(.doke-overlay__backdrop, .ui-modal__backdrop, .wallet-modal__scrim, .media-lightbox__backdrop, .before-after-preview__backdrop, .worker-preview__backdrop) {
   position: fixed;
   inset: 0;
   background: var(--doke-overlay-scrim);
@@ -60,12 +61,12 @@ body:has(.worker-preview:not([hidden])) {
   z-index: 0;
 }
 
-:where(.media-lightbox__backdrop, .before-after-preview__backdrop, .worker-preview__backdrop) {
+:where(.doke-overlay--media .doke-overlay__backdrop, .media-lightbox__backdrop, .before-after-preview__backdrop, .worker-preview__backdrop) {
   background: var(--doke-overlay-scrim-strong);
 }
 
 /* Native dialog reset */
-:where(dialog.detail-budget-modal, dialog.address-modal, dialog[open].detail-budget-modal, dialog[open].address-modal) {
+:where(dialog.doke-native-overlay, dialog.detail-budget-modal, dialog.address-modal, dialog[open].detail-budget-modal, dialog[open].address-modal) {
   width: min(calc(100vw - (var(--doke-overlay-gutter) * 2)), var(--doke-overlay-max));
   max-width: none;
   max-height: calc(100dvh - (var(--doke-overlay-gutter) * 2));
@@ -78,7 +79,7 @@ body:has(.worker-preview:not([hidden])) {
   overflow: visible;
 }
 
-:where(dialog.detail-budget-modal::backdrop, dialog.address-modal::backdrop) {
+:where(dialog.doke-native-overlay::backdrop, dialog.detail-budget-modal::backdrop, dialog.address-modal::backdrop) {
   background: var(--doke-overlay-scrim);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
@@ -88,6 +89,7 @@ body:has(.worker-preview:not([hidden])) {
    Dialog cards
    ============================= */
 :where(
+  .doke-overlay__surface,
   .ui-modal__dialog,
   .wallet-modal__card,
   .profile-edit-modal__dialog,
@@ -122,6 +124,7 @@ body:has(.worker-preview:not([hidden])) {
 
 /* Overlay header / body / footer rhythm */
 :where(
+  .doke-overlay__header,
   .ui-modal__header,
   .profile-edit-modal__head,
   .profile-followers-modal__head,
@@ -136,6 +139,7 @@ body:has(.worker-preview:not([hidden])) {
 }
 
 :where(
+  .doke-overlay__title,
   .ui-modal__title,
   .profile-edit-modal__title,
   .profile-followers-modal__title,
@@ -152,6 +156,7 @@ body:has(.worker-preview:not([hidden])) {
 }
 
 :where(
+  .doke-overlay__eyebrow,
   .ui-modal__eyebrow,
   .profile-edit-modal__eyebrow,
   .address-modal__eyebrow,
@@ -171,6 +176,7 @@ body:has(.worker-preview:not([hidden])) {
 }
 
 :where(
+  .doke-overlay__text,
   .ui-modal__text,
   .profile-edit-modal__intro,
   .address-modal__intro,
@@ -185,6 +191,7 @@ body:has(.worker-preview:not([hidden])) {
 }
 
 :where(
+  .doke-overlay__body,
   .ui-modal__body,
   .profile-edit-modal__body,
   .profile-followers-modal__list,
@@ -200,6 +207,7 @@ body:has(.worker-preview:not([hidden])) {
 }
 
 :where(
+  .doke-overlay__surface > :not(.doke-overlay__header):not(.doke-overlay__actions),
   .ui-modal__dialog > :not(.ui-modal__header):not(.ui-modal__actions),
   .address-modal__body,
   .wallet-modal__body
@@ -208,6 +216,7 @@ body:has(.worker-preview:not([hidden])) {
 }
 
 :where(
+  .doke-overlay__actions,
   .ui-modal__actions,
   .address-modal__actions,
   .profile-edit-modal__actions,
@@ -224,6 +233,7 @@ body:has(.worker-preview:not([hidden])) {
 
 
 :where(
+  .doke-overlay__actions .doke-btn,
   .ui-modal__button,
   .profile-edit-modal__action,
   .address-modal__actions .budget-button,
@@ -239,6 +249,7 @@ body:has(.worker-preview:not([hidden])) {
    Form controls inside overlays
    ============================= */
 :where(
+  .doke-overlay__body :is(input, select, textarea),
   .ui-modal__input,
   .profile-edit-modal__input,
   .profile-edit-modal__textarea,
@@ -308,19 +319,20 @@ body:has(.worker-preview:not([hidden])) {
     --doke-overlay-gutter: 12px;
   }
 
-  :where(.ui-modal:not([hidden]), .wallet-modal:not([hidden]), .media-lightbox:not([hidden]), .before-after-preview:not([hidden]), .worker-preview:not([hidden])) {
+  :where(.doke-overlay:not([hidden]), .ui-modal:not([hidden]), .wallet-modal:not([hidden]), .media-lightbox:not([hidden]), .before-after-preview:not([hidden]), .worker-preview:not([hidden])) {
     align-items: end;
     padding: 10px 10px max(10px, env(safe-area-inset-bottom));
   }
 
-  :where(dialog.detail-budget-modal, dialog.address-modal, dialog[open].detail-budget-modal, dialog[open].address-modal) {
+  :where(dialog.doke-native-overlay, dialog.detail-budget-modal, dialog.address-modal, dialog[open].detail-budget-modal, dialog[open].address-modal) {
     width: calc(100vw - 20px);
     max-height: calc(100dvh - 20px);
     border-radius: var(--doke-overlay-radius-mobile);
   }
 
   :where(
-    .ui-modal__dialog,
+    .doke-overlay__surface,
+  .ui-modal__dialog,
     .wallet-modal__card,
     .profile-edit-modal__dialog,
     .profile-followers-modal__dialog,
@@ -336,19 +348,19 @@ body:has(.worker-preview:not([hidden])) {
     border-radius: var(--doke-overlay-radius-mobile);
   }
 
-  :where(.ui-modal__header, .profile-edit-modal__head, .profile-followers-modal__head, .address-modal__head, .detail-budget-modal__topbar, .wallet-modal__head) {
+  :where(.doke-overlay__header, .ui-modal__header, .profile-edit-modal__head, .profile-followers-modal__head, .address-modal__head, .detail-budget-modal__topbar, .wallet-modal__head) {
     padding: 18px 18px 14px;
   }
 
-  :where(.ui-modal__dialog > :not(.ui-modal__header):not(.ui-modal__actions), .address-modal__body, .wallet-modal__body) {
+  :where(.doke-overlay__surface > :not(.doke-overlay__header):not(.doke-overlay__actions), .ui-modal__dialog > :not(.ui-modal__header):not(.ui-modal__actions), .address-modal__body, .wallet-modal__body) {
     padding: 18px;
   }
 
-  :where(.ui-modal__body, .profile-edit-modal__body, .profile-followers-modal__list, .address-modal__body, .wallet-modal__body, .detail-budget-modal__flow) {
+  :where(.doke-overlay__body, .ui-modal__body, .profile-edit-modal__body, .profile-followers-modal__list, .address-modal__body, .wallet-modal__body, .detail-budget-modal__flow) {
     max-height: min(66dvh, 620px);
   }
 
-  :where(.ui-modal__actions, .address-modal__actions, .profile-edit-modal__actions, .wallet-modal__actions) {
+  :where(.doke-overlay__actions, .ui-modal__actions, .address-modal__actions, .profile-edit-modal__actions, .wallet-modal__actions) {
     position: sticky;
     bottom: 0;
     flex-direction: column-reverse;
