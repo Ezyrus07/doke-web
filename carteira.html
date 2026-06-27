@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/> <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
 <script defer="" src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
-<link href="assets/css/pages/carteira-foundation.css?v=20260623-visual-consistency-v1" rel="stylesheet"/>
+<link href="assets/css/pages/carteira-foundation.css?v=20260627-custom-select-v2" rel="stylesheet"/>
 <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
 <script defer="" src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
 </head>
@@ -201,14 +201,29 @@
 <section aria-labelledby="wallet-bank-title" class="wallet-panel wallet-bank-panel doke-card doke-page-section is-wallet-bank-empty" data-wallet-account-panel="">
 <div class="wallet-panel__header wallet-panel__header--overview wallet-bank-panel__header">
 <h2 id="wallet-bank-title">Conta de recebimento</h2>
+<button class="wallet-bank-manage doke-btn doke-btn--ghost" data-wallet-open-bank-account="" type="button" hidden="">Editar conta</button>
 </div>
-
 
 <article class="wallet-empty-state wallet-empty-state--bank" data-wallet-empty-state="bank-account">
 <strong>Nenhuma conta cadastrada</strong>
 <p>Adicione uma conta para receber seus repasses automaticamente.</p>
+<button class="wallet-bank-add-btn doke-btn doke-btn--primary" data-wallet-open-bank-account="" type="button">Adicionar conta bancária</button>
 </article>
 
+<article class="wallet-bank-card wallet-bank-card--account" data-wallet-bank-account-card="" hidden="">
+<span aria-hidden="true" class="wallet-bank-card__mark wallet-bank-card__mark--account" data-wallet-bank-initials="">BK</span>
+<div class="wallet-bank-card__content">
+<strong data-wallet-account-field="bankName">Banco cadastrado</strong>
+<p data-wallet-account-field="bankSummary">Conta cadastrada para repasses</p>
+<small data-wallet-account-field="pixKey">PIX verificado</small>
+</div>
+</article>
+
+<div class="wallet-bank-details" data-wallet-bank-details="" hidden="">
+<article class="wallet-bank-detail"><span>Tipo</span><strong data-wallet-account-field="accountType">Conta corrente</strong></article>
+<article class="wallet-bank-detail"><span>Titular</span><strong data-wallet-account-field="holderName">Titular verificado</strong></article>
+<article class="wallet-bank-detail"><span>Próximo envio</span><strong data-wallet-account-field="bankNextPayout">Após liberação</strong></article>
+</div>
 </section>
 </aside>
 </section>
@@ -231,15 +246,15 @@
 </main>
 </div>
 </div>
-<div class="wallet-modal" data-wallet-withdraw-modal="" hidden="">
-<div class="wallet-modal__scrim wallet-dialog__scrim" data-wallet-close-withdraw=""></div>
-<section aria-describedby="wallet-withdraw-description" aria-labelledby="wallet-withdraw-title" aria-modal="true" class="wallet-dialog wallet-dialog--withdraw doke-financial-modal__surface" role="dialog">
+<div class="wallet-modal doke-overlay" data-wallet-withdraw-modal="" hidden="">
+<div class="wallet-modal__scrim wallet-dialog__scrim doke-overlay__backdrop" data-wallet-close-withdraw=""></div>
+<section aria-describedby="wallet-withdraw-description" aria-labelledby="wallet-withdraw-title" aria-modal="true" class="wallet-dialog wallet-dialog--withdraw doke-financial-modal__surface doke-overlay__surface" role="dialog">
 <button aria-label="Fechar solicitação de transferência" class="wallet-dialog__close doke-close-button doke-icon-btn doke-icon-btn--flat" data-wallet-close-withdraw="" type="button">
 <svg aria-hidden="true" viewbox="0 0 24 24"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
 </button>
 <form class="wallet-dialog__form" data-wallet-withdraw-form="">
 <div class="wallet-dialog__scroll">
-<header class="wallet-dialog__header doke-financial-modal__header">
+<header class="wallet-dialog__header doke-financial-modal__header doke-overlay__header">
 <span class="wallet-dialog__badge wallet-dialog__badge--withdraw doke-financial-modal__eyebrow doke-financial-modal__eyebrow--withdraw">
 <svg aria-hidden="true" viewbox="0 0 24 24"><path d="M12 4v11"></path><path d="m8 11 4 4 4-4"></path><path d="M5 19h14"></path></svg>
         Saque
@@ -247,7 +262,7 @@
 <h2 class="doke-financial-modal__title" id="wallet-withdraw-title">Solicitar saque</h2>
 <p id="wallet-withdraw-description">Informe o valor que deseja transferir para a conta cadastrada.</p>
 </header>
-<div class="wallet-dialog__body">
+<div class="wallet-dialog__body doke-overlay__body">
 <label class="wallet-dialog-field wallet-dialog-field--wide doke-financial-modal__field">
 <span>Valor do saque</span>
 <div class="wallet-dialog-money-field doke-financial-modal__money-field">
@@ -267,9 +282,68 @@
 </div>
 </div>
 </div>
-<footer class="wallet-dialog__footer doke-financial-modal__footer">
+<footer class="wallet-dialog__footer doke-financial-modal__footer doke-overlay__actions">
 <button class="wallet-dialog-btn wallet-dialog-btn--secondary doke-btn doke-btn--ghost" data-wallet-close-withdraw="" type="button">Cancelar</button>
 <button class="wallet-dialog-btn wallet-dialog-btn--primary doke-btn doke-btn--primary" type="submit">Confirmar saque</button>
+</footer>
+</form>
+</section>
+</div>
+<div class="wallet-modal wallet-bank-modal doke-overlay" data-wallet-bank-modal="" hidden="">
+<div class="wallet-modal__scrim wallet-bank-modal__backdrop doke-overlay__backdrop" data-wallet-close-bank-account=""></div>
+<section aria-describedby="wallet-bank-description" aria-labelledby="wallet-bank-modal-title" aria-modal="true" class="wallet-bank-modal__surface doke-overlay__surface" role="dialog">
+<form class="wallet-bank-modal__form" data-wallet-bank-form="">
+<header class="wallet-bank-modal__header doke-overlay__header">
+<div class="wallet-bank-modal__copy">
+<span class="wallet-bank-modal__eyebrow doke-overlay__eyebrow">Recebimento</span>
+<h2 class="wallet-bank-modal__title doke-overlay__title" data-wallet-bank-modal-title="" id="wallet-bank-modal-title">Adicionar conta bancária</h2>
+<p class="wallet-bank-modal__description doke-overlay__text" data-wallet-bank-modal-copy="" id="wallet-bank-description">Cadastre a conta que receberá seus repasses e saques.</p>
+</div>
+<button aria-label="Fechar cadastro de conta" class="wallet-bank-modal__close doke-close-button doke-icon-btn doke-icon-btn--flat" data-wallet-close-bank-account="" type="button">
+<svg aria-hidden="true" viewbox="0 0 24 24"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
+</button>
+</header>
+<div class="wallet-bank-modal__body doke-overlay__body">
+<div class="wallet-bank-modal__grid">
+<label class="wallet-bank-modal__field">
+<span>Banco</span>
+<input class="wallet-bank-modal__control doke-input" data-wallet-bank-input="bankName" autocomplete="organization" placeholder="Ex.: Nubank" required="" type="text"/>
+</label>
+<label class="wallet-bank-modal__field">
+<span>Titular da conta</span>
+<input class="wallet-bank-modal__control doke-input" data-wallet-bank-input="holderName" autocomplete="name" placeholder="Nome completo" required="" type="text"/>
+</label>
+<label class="wallet-bank-modal__field">
+<span>Tipo de conta</span>
+<select class="wallet-bank-modal__control doke-select" data-doke-select="" data-wallet-bank-input="accountType" required="">
+<option disabled="" value="">Selecione o tipo</option>
+<option value="Conta corrente">Conta corrente</option>
+<option value="Conta poupança">Conta poupança</option>
+<option value="Conta de pagamento">Conta de pagamento</option>
+</select>
+</label>
+<label class="wallet-bank-modal__field">
+<span>Agência</span>
+<input class="wallet-bank-modal__control doke-input" data-wallet-bank-input="agency" inputmode="numeric" placeholder="0001" required="" type="text"/>
+</label>
+<label class="wallet-bank-modal__field">
+<span>Conta</span>
+<input class="wallet-bank-modal__control doke-input" data-wallet-bank-input="accountNumber" inputmode="numeric" placeholder="000000-0" required="" type="text"/>
+</label>
+<label class="wallet-bank-modal__field">
+<span>Chave Pix</span>
+<input class="wallet-bank-modal__control doke-input" data-wallet-bank-input="pixKey" placeholder="CPF, e-mail, telefone ou chave aleatória" required="" type="text"/>
+</label>
+</div>
+<p class="wallet-bank-modal__error" data-wallet-bank-error="" hidden="">Preencha todos os dados da conta para continuar.</p>
+<p class="wallet-bank-modal__note">
+<svg aria-hidden="true" viewbox="0 0 24 24"><path d="M12 3.8 19 7v5.2c0 4-2.7 7.2-7 8-4.3-.8-7-4-7-8V7l7-3.2Z"></path><path d="m8.5 12 2.2 2.2 4.8-5"></path></svg>
+Essa será a conta padrão para repasses e saques.
+</p>
+</div>
+<footer class="wallet-bank-modal__actions doke-overlay__actions">
+<button class="doke-btn doke-btn--ghost" data-wallet-close-bank-account="" type="button">Cancelar</button>
+<button class="doke-btn doke-btn--primary" data-wallet-bank-submit-label="" type="submit">Salvar conta</button>
 </footer>
 </form>
 </section>
@@ -280,9 +354,10 @@
 <script defer="" src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags"></script>
 <script defer="" src="assets/js/core/app.js?v=20260622-header-visitor-neutral-v1"></script>
 <script defer="" src="assets/js/core/stable-shell-router.js?v=20260626-hydration-surfaces-v1"></script>
-<script defer="" src="assets/js/repositories/wallet-repository.js?v=20260627-wallet-receivable-v1"></script>
-<script defer="" src="assets/js/services/wallet-service.js?v=20260627-wallet-receivable-v1"></script>
-<script defer="" src="assets/js/pages/carteira.js?v=20260627-wallet-receivable-v1"></script>
+<script defer="" src="assets/js/repositories/wallet-repository.js?v=20260627-wallet-bank-account-v1"></script>
+<script defer="" src="assets/js/services/wallet-service.js?v=20260627-wallet-bank-account-v1"></script>
+<script defer="" src="assets/js/components/doke-lite-select.js?v=20260627-form-select-v4"></script>
+<script defer="" src="assets/js/pages/carteira.js?v=20260627-bank-modal-contract-v1"></script>
 <script defer="" src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
 <script defer="" src="assets/js/ui/mobile-drawer-standard.js?v=20260622-header-neutral-account-v1"></script>
 <script defer="" src="assets/js/ui/mobile-interaction-standard.js?v=20260428-v1"></script>

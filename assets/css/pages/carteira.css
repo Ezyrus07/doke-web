@@ -1804,3 +1804,463 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Wallet bank account onboarding.
+   Authority: carteira page owns wallet-specific account panel and local modal composition. */
+.wallet-empty-state--bank {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.wallet-bank-add-btn {
+  margin-top: 4px;
+}
+
+.wallet-bank-card[hidden],
+.wallet-bank-details[hidden] {
+  display: none;
+}
+
+.wallet-bank-card--account {
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.wallet-bank-card__content {
+  display: grid;
+  gap: 3px;
+}
+
+.wallet-bank-card__content p,
+.wallet-bank-card__content small {
+  margin: 0;
+  color: var(--doke-text-secondary, #315d82);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.wallet-bank-card__content small {
+  color: var(--doke-accent-strong, #05756f);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.wallet-bank-card__mark--account {
+  background: linear-gradient(135deg, var(--doke-primary, #2a5f90), var(--doke-accent, #298f7f));
+  color: #fff;
+  font-weight: 850;
+}
+
+.wallet-bank-detail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid rgba(24, 75, 118, 0.08);
+  border-radius: 14px;
+  background: rgba(248, 252, 255, 0.82);
+}
+
+.wallet-bank-detail span {
+  color: var(--doke-text-muted, #64748b);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.wallet-bank-detail strong {
+  color: var(--doke-primary-strong, #164b7a);
+  font-size: 0.82rem;
+  text-align: right;
+}
+
+.wallet-dialog--bank .wallet-dialog__body.wallet-dialog-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.wallet-dialog--bank .wallet-dialog-field {
+  min-width: 0;
+}
+
+.wallet-dialog--bank .wallet-dialog-control {
+  width: 100%;
+}
+
+.wallet-dialog-summary--bank,
+.wallet-dialog-error {
+  grid-column: 1 / -1;
+}
+
+.wallet-dialog-error {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(200, 63, 75, 0.2);
+  border-radius: 14px;
+  background: rgba(200, 63, 75, 0.08);
+  color: #9f2f38;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.wallet-dialog-error[hidden] {
+  display: none;
+}
+
+.wallet-dialog__badge--bank {
+  color: var(--doke-primary, #2a5f90);
+}
+
+.wallet-dialog__badge--bank svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 680px) {
+  .wallet-dialog--bank .wallet-dialog__body.wallet-dialog-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wallet-bank-detail {
+    align-items: flex-start;
+    flex-direction: column;
+    padding-block: 10px;
+  }
+
+  .wallet-bank-detail strong {
+    text-align: left;
+  }
+}
+
+
+/* Bank-account modal composition.
+ * The shared overlay contract owns the backdrop, surface, header, body, footer
+ * and close button. This page layer only owns the banking form layout.
+ */
+.wallet-bank-modal__surface {
+  --doke-modal-width: 640px;
+  width: min(calc(100vw - (var(--doke-overlay-gutter) * 2)), 640px);
+}
+
+.wallet-bank-modal__form {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  max-height: min(720px, calc(100dvh - 48px));
+  padding: 0;
+}
+
+.wallet-bank-modal__copy {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.wallet-bank-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.wallet-bank-modal__close {
+  flex: 0 0 auto;
+}
+
+.wallet-bank-modal__eyebrow {
+  margin-bottom: 6px;
+}
+
+.wallet-bank-modal__description {
+  margin-top: 6px;
+}
+
+.wallet-bank-modal__body {
+  display: grid;
+  gap: 18px;
+  padding: 22px 24px;
+  overflow: auto;
+}
+
+.wallet-bank-modal__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.wallet-bank-modal__field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.wallet-bank-modal__field > span {
+  color: var(--doke-primary-strong, #164b7a);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.wallet-bank-modal__control {
+  width: 100%;
+  min-width: 0;
+}
+
+.wallet-bank-modal__error {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(200, 63, 75, 0.2);
+  border-radius: 12px;
+  background: rgba(200, 63, 75, 0.08);
+  color: #9f2f38;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.wallet-bank-modal__error[hidden] {
+  display: none;
+}
+
+.wallet-bank-modal__note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--doke-text-secondary, #5c7288);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.wallet-bank-modal__note svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--doke-success, #16806b);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wallet-bank-modal__actions {
+  padding: 16px 24px;
+}
+
+.wallet-bank-modal__actions .doke-btn {
+  min-width: 136px;
+}
+
+@media (max-width: 640px) {
+  .wallet-bank-modal__form {
+    max-height: calc(100dvh - 24px);
+  }
+
+  .wallet-bank-modal__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wallet-bank-modal__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: 14px 18px max(14px, env(safe-area-inset-bottom));
+  }
+
+  .wallet-bank-modal__actions .doke-btn {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+
+/* Wallet bank panel cleanup v2.
+ * Root cause: the empty state display rule overrode the hidden state, so the
+ * onboarding block stayed visible even after an account was loaded. The panel
+ * also lacked final toast styling and the account-summary rows were too dense
+ * for the narrow side column, creating visual noise.
+ */
+.wallet-empty-state--bank[hidden] {
+  display: none;
+}
+
+.wallet-bank-panel {
+  gap: 14px;
+}
+
+.wallet-bank-panel__header {
+  align-items: center;
+}
+
+.wallet-bank-panel__header h2 {
+  max-width: none;
+  font-size: clamp(1.5rem, 1.9vw, 1.9rem);
+  line-height: 1.02;
+}
+
+.wallet-empty-state--bank {
+  gap: 12px;
+  padding: 28px 22px;
+  border: 1px solid rgba(24, 75, 118, 0.08);
+  border-radius: 22px;
+  background: linear-gradient(180deg, #ffffff, rgba(248, 252, 255, 0.94));
+}
+
+.wallet-empty-state--bank strong {
+  color: var(--doke-primary-strong, #164b7a);
+  font-size: 1.08rem;
+  line-height: 1.15;
+}
+
+.wallet-empty-state--bank p {
+  max-width: 28ch;
+  margin: 0;
+  color: var(--doke-text-secondary, #5b7593);
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+.wallet-bank-add-btn {
+  min-width: 0;
+  padding-inline: 20px;
+}
+
+.wallet-bank-card--account {
+  gap: 14px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(24, 75, 118, 0.08);
+  background: linear-gradient(180deg, #ffffff, rgba(247, 251, 255, 0.96));
+}
+
+.wallet-bank-card__content {
+  gap: 4px;
+}
+
+.wallet-bank-card__content strong {
+  color: var(--doke-primary-strong, #164b7a);
+  font-size: 1rem;
+  line-height: 1.1;
+}
+
+.wallet-bank-card__content p {
+  font-size: 0.94rem;
+}
+
+.wallet-bank-card__content small {
+  font-size: 0.84rem;
+}
+
+.wallet-bank-details {
+  display: grid;
+  gap: 10px;
+}
+
+.wallet-bank-detail {
+  grid-template-columns: 1fr;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+}
+
+.wallet-bank-detail strong {
+  justify-self: start;
+  text-align: left;
+}
+
+.wallet-toast-region {
+  right: 20px;
+  bottom: 20px;
+  width: min(calc(100vw - 32px), 360px);
+  justify-items: end;
+  pointer-events: none;
+}
+
+.wallet-toast {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 14px 14px 16px;
+  border: 1px solid rgba(24, 75, 118, 0.10);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.14);
+  color: var(--doke-primary-strong, #164b7a);
+  pointer-events: auto;
+}
+
+.wallet-toast strong {
+  color: inherit;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.wallet-toast button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(24, 75, 118, 0.08);
+  color: var(--doke-primary, #2a5f90);
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.wallet-toast--success {
+  border-color: rgba(41, 143, 127, 0.16);
+}
+
+.wallet-toast--error {
+  border-color: rgba(200, 63, 75, 0.18);
+  color: #8d2d35;
+}
+
+.wallet-toast.is-leaving {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+@media (max-width: 900px) {
+  .wallet-bank-panel__header {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .wallet-toast-region {
+    right: 12px;
+    left: 12px;
+    bottom: 12px;
+    width: auto;
+    justify-items: stretch;
+  }
+
+  .wallet-empty-state--bank {
+    padding: 22px 18px;
+  }
+}
+
+/* Wallet account panel text-wrap guard.
+ * Responsibility: prevent short labels/actions from breaking in the narrow
+ * receiving-account card without changing the wallet panel structure.
+ */
+.wallet-bank-manage {
+  flex: 0 0 auto;
+  min-width: max-content;
+  white-space: nowrap;
+}
+
+.wallet-bank-detail span {
+  min-width: max-content;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+}

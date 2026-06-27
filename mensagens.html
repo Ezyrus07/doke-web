@@ -358,6 +358,59 @@
   </form>
  </dialog>
 
+ <div class="messages-completion-modal doke-overlay doke-overlay--feedback" data-message-completion-modal hidden aria-hidden="true">
+  <div class="messages-completion-modal__backdrop doke-overlay__backdrop" data-message-completion-close></div>
+  <section class="messages-completion-modal__card doke-overlay__surface" role="dialog" aria-modal="true" aria-labelledby="messages-completion-title" aria-describedby="messages-completion-description">
+   <button class="messages-completion-modal__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" aria-label="Fechar" data-message-completion-close>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
+   </button>
+
+   <div class="messages-completion-panel is-active doke-overlay__body" data-message-completion-panel="confirm">
+    <span class="messages-completion-eyebrow">Finalizar pedido</span>
+    <h2 id="messages-completion-title">O serviço foi concluído?</h2>
+    <p id="messages-completion-description">Confirme apenas se <span data-completion-provider-name>o profissional</span> entregou o serviço conforme combinado.</p>
+
+    <dl class="messages-completion-summary" aria-label="Resumo do pedido">
+     <div><dt>Serviço</dt><dd data-completion-service-title>Pedido de serviço</dd></div>
+     <div><dt>Profissional</dt><dd data-completion-provider-name>Profissional Doke</dd></div>
+     <div><dt>Valor pago</dt><dd data-completion-amount>R$ 0,00</dd></div>
+     <div><dt>Pedido</dt><dd data-completion-order-code>#DK</dd></div>
+    </dl>
+
+    <label class="messages-completion-check">
+     <input class="doke-checkbox" type="checkbox" checked data-message-completion-confirm>
+     <span>Confirmo que o serviço foi concluído.</span>
+    </label>
+
+    <label class="messages-completion-field">
+     <span>Observação sobre a entrega <small>opcional</small></span>
+     <textarea class="doke-textarea" rows="3" placeholder="Ex.: Serviço concluído no prazo e ambiente entregue organizado." data-message-completion-note></textarea>
+    </label>
+
+    <p class="messages-completion-error" data-message-completion-error hidden>Confirme que o serviço foi concluído para continuar.</p>
+
+    <div class="messages-completion-actions doke-overlay__actions">
+     <a class="messages-completion-button messages-completion-button--soft doke-btn doke-btn--ghost" href="mensagens.html" data-message-completion-issue>Tenho um problema</a>
+     <button class="messages-completion-button messages-completion-button--primary doke-btn doke-btn--primary" type="button" data-message-completion-submit>Confirmar conclusão</button>
+    </div>
+   </div>
+
+   <div class="messages-completion-panel doke-overlay__body" data-message-completion-panel="success" hidden>
+    <span class="messages-completion-success-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 12 4 4 8-9"></path></svg></span>
+    <h2>Pedido finalizado</h2>
+    <p>O atendimento foi marcado como concluído. A avaliação já está liberada na conversa do pedido.</p>
+    <div class="messages-completion-badges" aria-label="Status da finalização">
+     <span class="messages-completion-badge messages-completion-badge--success">Pedido concluído</span>
+     <span class="messages-completion-badge messages-completion-badge--blue">Avaliação pendente</span>
+    </div>
+    <div class="messages-completion-actions doke-overlay__actions">
+     <button class="messages-completion-button messages-completion-button--soft doke-btn doke-btn--ghost" type="button" data-message-completion-close>Fechar</button>
+     <button class="messages-completion-button messages-completion-button--primary doke-btn doke-btn--primary" type="button" data-message-completion-review>Avaliar profissional</button>
+    </div>
+   </div>
+  </section>
+ </div>
+
   <script>
    document.addEventListener("DOMContentLoaded", function () {
     const resetThreadTop = () => {

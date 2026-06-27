@@ -10,8 +10,10 @@ function read(file) {
 }
 
 function hasClassInElement(html, token, required) {
-  const re = new RegExp(`<[^>]+class="[^"]*\\b${token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b[^"]*"[^>]*>`, 'g');
-  const matches = html.match(re) || [];
+  const matches = (html.match(/<[^>]+class="[^"]+"[^>]*>/g) || []).filter((tag) => {
+    const classAttr = tag.match(/class="([^"]+)"/)?.[1] || '';
+    return classAttr.split(/\s+/).includes(token);
+  });
   if (!matches.length) {
     failures.push(`${token}: nenhum elemento encontrado`);
     return;

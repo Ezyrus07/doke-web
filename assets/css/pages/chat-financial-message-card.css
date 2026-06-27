@@ -241,3 +241,259 @@ body[data-page="mensagens"] .message-bubble__charge-pay.is-done {
     inline-size: 100%;
   }
 }
+
+/* Chat order completion modal.
+ * Authority: mensagens owns completion confirmation launched from a charge card.
+ * The payment page has the same flow, but this page cannot depend on payment CSS.
+ */
+body.messages-completion-modal-open {
+  overflow: hidden;
+}
+
+body[data-page="mensagens"] .messages-completion-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+body[data-page="mensagens"] .messages-completion-modal[hidden],
+body[data-page="mensagens"] .messages-completion-panel[hidden] {
+  display: none;
+}
+
+body[data-page="mensagens"] .messages-completion-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 35, 55, 0.58);
+  backdrop-filter: blur(8px);
+}
+
+body[data-page="mensagens"] .messages-completion-modal__card {
+  position: relative;
+  display: grid;
+  width: min(100%, 640px);
+  max-height: min(88vh, 760px);
+  overflow: auto;
+  border: 1px solid rgba(207, 222, 239, 0.94);
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 28px 84px rgba(12, 32, 54, 0.26);
+}
+
+body[data-page="mensagens"] .messages-completion-modal__close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+}
+
+body[data-page="mensagens"] .messages-completion-panel {
+  display: grid;
+  gap: 18px;
+  padding: clamp(24px, 4vw, 34px);
+}
+
+body[data-page="mensagens"] .messages-completion-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  color: var(--doke-primary, #2a5f90);
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+body[data-page="mensagens"] .messages-completion-panel h2 {
+  margin: 0;
+  max-width: 12ch;
+  color: var(--doke-primary-strong, #164b7a);
+  font-size: clamp(1.8rem, 4vw, 2.35rem);
+  line-height: 1.03;
+  letter-spacing: -0.04em;
+}
+
+body[data-page="mensagens"] .messages-completion-panel p {
+  margin: 0;
+  max-width: 48ch;
+  color: var(--doke-text-secondary, #5b7593);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+body[data-page="mensagens"] .messages-completion-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+body[data-page="mensagens"] .messages-completion-summary div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  min-height: 80px;
+  padding: 14px 16px;
+  border: 1px solid rgba(42, 95, 144, 0.14);
+  border-radius: 16px;
+  background: #f7fbff;
+}
+
+body[data-page="mensagens"] .messages-completion-summary dt {
+  color: var(--doke-text-muted, #64748b);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+body[data-page="mensagens"] .messages-completion-summary dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--doke-primary-strong, #164b7a);
+  font-size: 0.98rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+body[data-page="mensagens"] .messages-completion-check,
+body[data-page="mensagens"] .messages-completion-field {
+  display: grid;
+  gap: 8px;
+  color: var(--doke-primary-strong, #164b7a);
+  font-weight: 800;
+}
+
+body[data-page="mensagens"] .messages-completion-check {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  min-height: 54px;
+  padding: 0 14px;
+  border: 1px solid rgba(42, 95, 144, 0.14);
+  border-radius: 16px;
+  background: #f7fbff;
+}
+
+body[data-page="mensagens"] .messages-completion-field small {
+  color: var(--doke-text-muted, #64748b);
+  font-weight: 700;
+}
+
+body[data-page="mensagens"] .messages-completion-field textarea {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  border: 1px solid rgba(42, 95, 144, 0.18);
+  border-radius: 16px;
+  background: #fff;
+  padding: 14px 16px;
+  color: var(--doke-primary-strong, #164b7a);
+  font: inherit;
+  font-weight: 650;
+}
+
+body[data-page="mensagens"] .messages-completion-field textarea:focus {
+  outline: none;
+  border-color: rgba(42, 95, 144, 0.42);
+  box-shadow: 0 0 0 4px rgba(42, 95, 144, 0.10);
+}
+
+body[data-page="mensagens"] .messages-completion-error {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(200, 63, 75, 0.20);
+  border-radius: 14px;
+  background: rgba(200, 63, 75, 0.08);
+  color: #9f2f38;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+body[data-page="mensagens"] .messages-completion-error[hidden] {
+  display: none;
+}
+
+body[data-page="mensagens"] .messages-completion-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+body[data-page="mensagens"] .messages-completion-actions .doke-btn {
+  width: 100%;
+  min-height: 52px;
+  font-weight: 850;
+}
+
+body[data-page="mensagens"] .messages-completion-success-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  border-radius: 22px;
+  background: rgba(41, 143, 127, 0.12);
+  color: var(--doke-accent, #298f7f);
+}
+
+body[data-page="mensagens"] .messages-completion-success-icon svg {
+  width: 32px;
+  height: 32px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body[data-page="mensagens"] .messages-completion-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+body[data-page="mensagens"] .messages-completion-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+body[data-page="mensagens"] .messages-completion-badge--success {
+  border: 1px solid rgba(41, 143, 127, 0.18);
+  background: rgba(41, 143, 127, 0.10);
+  color: #0f756a;
+}
+
+body[data-page="mensagens"] .messages-completion-badge--blue {
+  border: 1px solid rgba(42, 95, 144, 0.14);
+  background: rgba(42, 95, 144, 0.08);
+  color: var(--doke-primary, #2a5f90);
+}
+
+@media (max-width: 680px) {
+  body[data-page="mensagens"] .messages-completion-modal {
+    align-items: end;
+    padding: 0;
+  }
+
+  body[data-page="mensagens"] .messages-completion-modal__card {
+    width: 100%;
+    max-height: 90vh;
+    border-radius: 24px 24px 0 0;
+  }
+
+  body[data-page="mensagens"] .messages-completion-panel {
+    padding: 24px 18px 18px;
+  }
+
+  body[data-page="mensagens"] .messages-completion-summary,
+  body[data-page="mensagens"] .messages-completion-actions {
+    grid-template-columns: 1fr;
+  }
+}

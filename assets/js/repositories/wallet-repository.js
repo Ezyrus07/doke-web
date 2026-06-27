@@ -28,15 +28,19 @@
     return 'wallet_tx_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
   }
 
+  function createBankAccountId() {
+    return 'wallet_bank_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+  }
+
   function safeRead() {
     try {
       var raw = root.localStorage.getItem(STORAGE_KEY);
       var parsed = raw ? JSON.parse(raw) : null;
-      if (Array.isArray(parsed)) return { transactions: parsed, updatedAt: nowIso() };
+      if (Array.isArray(parsed)) return { transactions: parsed, bankAccounts: [], updatedAt: nowIso() };
       if (parsed && Array.isArray(parsed.transactions)) return parsed;
-      return { transactions: [], updatedAt: nowIso() };
+      return { transactions: [], bankAccounts: [], updatedAt: nowIso() };
     } catch (error) {
-      return { transactions: [], updatedAt: nowIso() };
+      return { transactions: [], bankAccounts: [], updatedAt: nowIso() };
     }
   }
 
@@ -134,11 +138,41 @@
     });
   }
 
+  function normalizeBankAccount(raw) {
+    raw = raw || {};
+    var user = getCurrentUser() || {};
+    var ownerId = normalizeProfessionalId(raw.ownerId || raw.professionalId || raw.userId || user.id || '');
+    var createdAt = raw.createdAt || nowIso();
+    return {
+      id: normalizeText(raw.id) || createBankAccountId(),
+      ownerId: ownerId,
+      userId: ownerId,
+      bankName: normalizeText(raw.bankName || raw.bank || ''),
+      holderName: normalizeText(raw.holderName || raw.holder || raw.accountHolder || ''),
+      accountType: normalizeText(raw.accountType || 'Conta corrente'),
+      agency: normalizeText(raw.agency || ''),
+      accountNumber: normalizeText(raw.accountNumber || raw.number || ''),
+      pixKey: normalizeText(raw.pixKey || ''),
+      status: normalizeText(raw.status || 'verified'),
+      nextPayout: normalizeText(raw.nextPayout || 'Repasse automático após liberação'),
+      createdAt: createdAt,
+      updatedAt: raw.updatedAt || createdAt
+    };
+  }
+
   function normalizeWallet(wallet) {
     wallet = wallet || {};
     var transactions = Array.isArray(wallet.transactions) ? wallet.transactions.map(normalizeTransaction) : [];
-    var latestUpdate = transactions.reduce(function (latest, transaction) {
-      var value = transaction.updatedAt || transaction.createdAt || '';
+    var rawAccounts = Array.isArray(wallet.bankAccounts)
+      ? wallet.bankAccounts
+      : wallet.bankAccount
+        ? [wallet.bankAccount]
+        : [];
+    var bankAccounts = rawAccounts.map(normalizeBankAccount).filter(function (account) {
+      return account.bankName || account.accountNumber || account.pixKey;
+    });
+    var latestUpdate = transactions.concat(bankAccounts).reduce(function (latest, item) {
+      var value = item.updatedAt || item.createdAt || '';
       return value > latest ? value : latest;
     }, wallet.updatedAt || nowIso());
 
@@ -146,6 +180,7 @@
       version: 1,
       currency: normalizeText(wallet.currency || 'BRL'),
       transactions: transactions.sort(function (a, b) { return new Date(b.createdAt || 0) - new Date(a.createdAt || 0); }),
+      bankAccounts: bankAccounts,
       updatedAt: latestUpdate
     };
   }
@@ -194,6 +229,12 @@
     }, { available: 0, pending: 0, income: 0, withdrawals: 0, fees: 0, total: 0 });
   }
 
+  function getStatusRank(status) {
+    if (status === 'available') return 3;
+    if (status === 'held' || status === 'pending') return 2;
+    return 1;
+  }
+
   function registerReceivable(payload) {
     payload = payload || {};
     var wallet = readWallet();
@@ -201,12 +242,29 @@
       type: 'receivable',
       status: payload.status || 'available'
     }));
-    var existing = wallet.transactions.find(function (transaction) {
+    var existingIndex = wallet.transactions.findIndex(function (transaction) {
       return transaction.eventKey && String(transaction.eventKey) === String(normalized.eventKey);
     });
 
-    if (existing) {
-      return Promise.resolve({ transaction: clone(existing), created: false, wallet: clone(wallet) });
+    if (existingIndex >= 0) {
+      var existing = wallet.transactions[existingIndex];
+      var shouldUpgrade = getStatusRank(normalized.status) > getStatusRank(existing.status);
+      if (!shouldUpgrade) {
+        return Promise.resolve({ transaction: clone(existing), created: false, updated: false, wallet: clone(wallet) });
+      }
+
+      var upgraded = normalizeTransaction(Object.assign({}, existing, normalized, {
+        id: existing.id || normalized.id,
+        createdAt: existing.createdAt || normalized.createdAt,
+        updatedAt: nowIso()
+      }));
+      wallet.transactions.splice(existingIndex, 1, upgraded);
+      wallet.updatedAt = upgraded.updatedAt;
+      var updatedWallet = writeWallet(wallet);
+      document.dispatchEvent(new CustomEvent('doke:wallet-receivable-updated', {
+        detail: { transaction: clone(upgraded), previous: clone(existing), wallet: clone(updatedWallet) }
+      }));
+      return Promise.resolve({ transaction: clone(upgraded), previous: clone(existing), created: false, updated: true, wallet: clone(updatedWallet) });
     }
 
     wallet.transactions.unshift(normalized);
@@ -215,16 +273,57 @@
     document.dispatchEvent(new CustomEvent('doke:wallet-receivable-created', {
       detail: { transaction: clone(normalized), wallet: clone(saved) }
     }));
-    return Promise.resolve({ transaction: clone(normalized), created: true, wallet: clone(saved) });
+    return Promise.resolve({ transaction: clone(normalized), created: true, updated: false, wallet: clone(saved) });
+  }
+
+  function getBankAccount(filters) {
+    filters = filters || {};
+    var user = filters.currentUser === false ? null : getCurrentUser();
+    var wallet = readWallet();
+    var ownerId = normalizeProfessionalId(filters.ownerId || filters.professionalId || filters.userId || (user && user.id) || '');
+    var account = wallet.bankAccounts.find(function (item) {
+      if (!ownerId) return true;
+      return String(item.ownerId || item.userId) === String(ownerId);
+    });
+    return Promise.resolve(clone(account || null));
+  }
+
+  function saveBankAccount(payload) {
+    payload = payload || {};
+    var wallet = readWallet();
+    var normalized = normalizeBankAccount(Object.assign({}, payload, {
+      updatedAt: nowIso()
+    }));
+    var index = wallet.bankAccounts.findIndex(function (account) {
+      return String(account.ownerId || account.userId) === String(normalized.ownerId || normalized.userId);
+    });
+
+    if (index >= 0) {
+      normalized.id = wallet.bankAccounts[index].id || normalized.id;
+      normalized.createdAt = wallet.bankAccounts[index].createdAt || normalized.createdAt;
+      wallet.bankAccounts.splice(index, 1, normalized);
+    } else {
+      wallet.bankAccounts.unshift(normalized);
+    }
+
+    wallet.updatedAt = normalized.updatedAt;
+    var saved = writeWallet(wallet);
+    document.dispatchEvent(new CustomEvent('doke:wallet-bank-account-saved', {
+      detail: { account: clone(normalized), wallet: clone(saved) }
+    }));
+    return Promise.resolve({ account: clone(normalized), wallet: clone(saved) });
   }
 
   repositories.wallet = Object.freeze({
     storageKey: STORAGE_KEY,
     normalizeTransaction: normalizeTransaction,
+    normalizeBankAccount: normalizeBankAccount,
     readWallet: readWallet,
     writeWallet: writeWallet,
     listTransactions: listTransactions,
     getSummary: getSummary,
+    getBankAccount: getBankAccount,
+    saveBankAccount: saveBankAccount,
     registerReceivable: registerReceivable
   });
 })();

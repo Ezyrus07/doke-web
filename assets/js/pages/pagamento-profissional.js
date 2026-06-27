@@ -77,6 +77,10 @@
     return window.Doke?.services?.orders || null;
   }
 
+  function getWalletService() {
+    return window.Doke?.services?.wallet || null;
+  }
+
   function setTextAll(selector, value) {
     const text = normalizeText(value);
     if (!text) return;
@@ -192,6 +196,22 @@
     });
   }
 
+  function registerWalletHold() {
+    const walletService = getWalletService();
+    if (!walletService?.registerHeldReceivableFromPayment) return Promise.resolve(null);
+    return walletService.registerHeldReceivableFromPayment({
+      order: currentOrder || currentConversation?.order || {},
+      conversation: currentConversation,
+      charge: currentCharge,
+      orderId: paymentContext.orderId || currentOrder?.id || currentConversation?.orderId || '',
+      conversationId: paymentContext.conversationId || currentConversation?.id || '',
+      messageId: paymentContext.messageId || currentCharge?.id || ''
+    }).catch((error) => {
+      console.warn('[DokePayment:walletHold]', error);
+      return null;
+    });
+  }
+
   function registerPayment() {
     if (paymentRegistered) return Promise.resolve(currentOrder);
     paymentRegistered = true;
@@ -209,7 +229,8 @@
     return startTask.then((order) => {
       currentOrder = order || currentOrder;
       return persistChargeState({ paid: true });
-    }).then(() => {
+    }).then(() => registerWalletHold())
+      .then(() => {
       document.dispatchEvent(new CustomEvent('doke:payment-confirmed', {
         detail: {
           order: currentOrder,

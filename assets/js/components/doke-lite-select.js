@@ -23,18 +23,6 @@
       menu.className = "doke-select-menu";
       menu.hidden = true;
       menu.setAttribute("role", "listbox");
-
-      menu.addEventListener("click", (event) => {
-        const option = event.target.closest("[data-doke-select-value]");
-        if (!option || !activeSelect || option.getAttribute("aria-disabled") === "true") return;
-
-        activeSelect.value = option.dataset.dokeSelectValue || "";
-        activeSelect.dispatchEvent(new Event("input", { bubbles: true }));
-        activeSelect.dispatchEvent(new Event("change", { bubbles: true }));
-
-        syncTrigger(activeSelect);
-        closeMenu();
-      });
     }
 
     if (menu.parentElement !== host) {
@@ -50,7 +38,7 @@
   };
 
   const syncTrigger = (select) => {
-    const root = select.closest(".doke-select");
+    const root = select.closest("[data-doke-select-root]");
     const label = root?.querySelector("[data-doke-select-label]");
     if (!label) return;
 
@@ -111,7 +99,7 @@
   };
 
   const openMenu = (select, trigger) => {
-    const root = select.closest(".doke-select");
+    const root = select.closest("[data-doke-select-root]");
     const menuNode = createMenu(select);
 
     closeMenu();
@@ -145,6 +133,15 @@
       if (index === 0 && nativeOption.value === "") {
         item.classList.add("is-placeholder");
       }
+
+      item.addEventListener("click", () => {
+        if (nativeOption.disabled) return;
+        select.selectedIndex = index;
+        select.dispatchEvent(new Event("input", { bubbles: true }));
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        syncTrigger(select);
+        closeMenu();
+      });
 
       menuNode.appendChild(item);
     });

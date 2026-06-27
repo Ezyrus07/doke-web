@@ -47,6 +47,137 @@
   opacity: 0.62;
 }
 
+/* Custom single-select anatomy used by DokeLiteSelect. */
+[data-doke-select-root] {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-doke-select-root] .doke-select__native {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.doke-select__trigger {
+  display: flex;
+  width: 100%;
+  min-height: var(--doke-control-height, 48px);
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 14px;
+  border: 1px solid var(--doke-control-border, #cfe0ef);
+  border-radius: var(--doke-control-radius, 14px);
+  background: var(--doke-control-bg, #f7fbff);
+  color: var(--doke-control-text, #123454);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.doke-select__trigger:hover,
+.doke-select__trigger:focus-visible,
+[data-doke-select-root].is-open .doke-select__trigger {
+  border-color: var(--doke-control-focus, #6f9fc7);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(36, 100, 155, 0.1);
+  outline: none;
+}
+
+.doke-select__value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doke-select__chevron {
+  display: inline-grid;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--doke-control-muted, #60778d);
+  transition: transform 160ms ease;
+}
+
+.doke-select__chevron svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+[data-doke-select-root].is-open .doke-select__chevron {
+  transform: rotate(180deg);
+}
+
+.doke-select-menu {
+  position: fixed;
+  z-index: 1520;
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  overflow: auto;
+  border: 1px solid var(--doke-card-border, #dbe6f0);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 18px 44px rgba(15, 42, 68, 0.18);
+}
+
+.doke-select-menu[hidden] {
+  display: none;
+}
+
+.doke-select-menu__option {
+  display: flex;
+  width: 100%;
+  min-height: 42px;
+  align-items: center;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--doke-control-text, #123454);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+.doke-select-menu__option:hover,
+.doke-select-menu__option:focus-visible {
+  background: #eef5fb;
+  color: var(--color-primary, #24649b);
+  outline: none;
+}
+
+.doke-select-menu__option.is-selected {
+  background: #e5f2fb;
+  color: var(--color-primary-strong, #164b7a);
+  font-weight: 800;
+}
+
 :where(.doke-field) {
   display: grid;
   gap: var(--doke-space-2, 0.5rem);

@@ -66,10 +66,39 @@
       monthlyIncome: 0,
       withdrawals: 0,
       fees: 0,
+      bankAccount: null,
       localTransactions: [],
       transactions: [],
       updatedAt: new Date().toISOString()
     };
+  }
+
+  function getBankAccount(options) {
+    options = options || {};
+    var repository = getRepository();
+    if (!repository || typeof repository.getBankAccount !== 'function') return Promise.resolve(null);
+    return repository.getBankAccount({
+      currentUser: options.currentUser !== false,
+      ownerId: options.ownerId || options.professionalId || options.userId || ''
+    });
+  }
+
+  function saveBankAccount(payload) {
+    payload = payload || {};
+    var repository = getRepository();
+    var user = getCurrentUser() || {};
+    if (!repository || typeof repository.saveBankAccount !== 'function') return Promise.reject(new Error('Carteira indisponível.'));
+    return repository.saveBankAccount({
+      ownerId: normalizeProfessionalId(payload.ownerId || payload.professionalId || payload.userId || user.id || ''),
+      bankName: normalizeText(payload.bankName || ''),
+      holderName: normalizeText(payload.holderName || ''),
+      accountType: normalizeText(payload.accountType || 'Conta corrente'),
+      agency: normalizeText(payload.agency || ''),
+      accountNumber: normalizeText(payload.accountNumber || ''),
+      pixKey: normalizeText(payload.pixKey || ''),
+      status: 'verified',
+      nextPayout: 'Repasse automático após liberação'
+    });
   }
 
   function getWallet(options) {
@@ -90,7 +119,10 @@
     wallet.fees = roundCurrency(localSummary.fees || 0);
     wallet.localTransactions = localTransactions;
     wallet.transactions = localTransactions;
-    return Promise.resolve(wallet);
+    return getBankAccount({ currentUser: options.currentUser !== false }).then(function (account) {
+      wallet.bankAccount = account || null;
+      return wallet;
+    });
   }
 
   function listTransactions(options) {
@@ -125,11 +157,8 @@
     });
   }
 
-  function registerReceivableFromOrder(payload) {
+  function buildReceivablePayload(payload, status) {
     payload = payload || {};
-    var repository = getRepository();
-    if (!repository || typeof repository.registerReceivable !== 'function') return Promise.resolve(null);
-
     var conversation = payload.conversation || {};
     var order = payload.order || conversation.order || {};
     var charge = payload.charge || {};
@@ -141,8 +170,9 @@
     var conversationId = normalizeText(payload.conversationId || conversation.id || charge.conversationId || '');
     var clientId = normalizeText(order.clientId || conversation.clientId || payload.clientId || '');
     var eventKey = ['wallet_receivable', orderId, messageId, professionalId].filter(Boolean).join(':');
+    var available = status === 'available';
 
-    return repository.registerReceivable({
+    return {
       eventKey: eventKey,
       orderId: orderId,
       conversationId: conversationId,
@@ -150,20 +180,45 @@
       serviceId: order.serviceId || conversation.serviceId || '',
       professionalId: professionalId,
       clientId: clientId,
+      status: status,
       grossAmount: amount,
       feeAmount: 0,
       netAmount: amount,
       title: title,
-      description: 'Pedido concluído e avaliado',
+      description: available ? 'Pedido concluído e avaliado' : 'Pagamento confirmado em garantia',
       reference: order.code || order.number || (orderId ? 'PED-' + orderId.toUpperCase().replace(/[^A-Z0-9]+/g, '').slice(-6) : ''),
       method: 'Recebimento pela Doke',
-      note: 'Valor liberado após conclusão e avaliação do atendimento.',
+      note: available
+        ? 'Valor liberado após conclusão e avaliação do atendimento.'
+        : 'Valor em garantia até o atendimento ser concluído e avaliado.',
       targetUrl: conversationId ? 'mensagens.html?conversation=' + encodeURIComponent(conversationId) + (orderId ? '&order=' + encodeURIComponent(orderId) : '') : 'pedidos.html?order=' + encodeURIComponent(orderId),
-      actionLabel: 'Ver pedido'
-    }).then(function (result) {
-      if (!result || !result.created) return result;
+      actionLabel: 'Ver pedido',
+      context: { order: order, conversation: conversation, charge: charge, payload: payload }
+    };
+  }
+
+  function registerHeldReceivableFromPayment(payload) {
+    var repository = getRepository();
+    if (!repository || typeof repository.registerReceivable !== 'function') return Promise.resolve(null);
+    var receivable = buildReceivablePayload(payload || {}, 'held');
+    delete receivable.context;
+    return repository.registerReceivable(receivable);
+  }
+
+  function registerReceivableFromOrder(payload) {
+    var repository = getRepository();
+    if (!repository || typeof repository.registerReceivable !== 'function') return Promise.resolve(null);
+    var receivable = buildReceivablePayload(payload || {}, 'available');
+    var context = receivable.context || {};
+    delete receivable.context;
+
+    return repository.registerReceivable(receivable).then(function (result) {
+      if (!result || (!result.created && !result.updated)) return result;
+      var order = context.order || {};
+      var conversation = context.conversation || {};
+      var originalPayload = context.payload || {};
       return createWalletNotification(result.transaction, {
-        clientName: order.clientName || conversation.clientName || payload.clientName || 'Cliente Doke'
+        clientName: order.clientName || conversation.clientName || originalPayload.clientName || 'Cliente Doke'
       }).then(function () { return result; });
     });
   }
@@ -172,6 +227,9 @@
     provider: getRepository() ? 'local-mock' : 'empty-local-mock',
     getWallet: getWallet,
     listTransactions: listTransactions,
+    getBankAccount: getBankAccount,
+    saveBankAccount: saveBankAccount,
+    registerHeldReceivableFromPayment: registerHeldReceivableFromPayment,
     registerReceivableFromOrder: registerReceivableFromOrder
   });
 })();

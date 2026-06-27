@@ -23,6 +23,18 @@
     const transactionList = document.querySelector('[data-wallet-transaction-list]');
     const transactionEmptyState = document.querySelector('[data-wallet-empty-state="transactions"]');
     const bankEmptyState = document.querySelector('[data-wallet-empty-state="bank-account"]');
+    const bankPanel = document.querySelector('[data-wallet-account-panel]');
+    const bankAccountCard = document.querySelector('[data-wallet-bank-account-card]');
+    const bankAccountDetails = document.querySelector('[data-wallet-bank-details]');
+    const bankAccountButtons = Array.from(document.querySelectorAll('[data-wallet-open-bank-account]'));
+    const bankModal = document.querySelector('[data-wallet-bank-modal]');
+    const bankCloseButtons = Array.from(document.querySelectorAll('[data-wallet-close-bank-account]'));
+    const bankForm = document.querySelector('[data-wallet-bank-form]');
+    const bankInputs = Array.from(document.querySelectorAll('[data-wallet-bank-input]'));
+    const bankError = document.querySelector('[data-wallet-bank-error]');
+    const bankModalTitle = document.querySelector('[data-wallet-bank-modal-title]');
+    const bankModalCopy = document.querySelector('[data-wallet-bank-modal-copy]');
+    const bankSubmitLabel = document.querySelector('[data-wallet-bank-submit-label]');
     const toastRegion = document.querySelector('[data-wallet-toast-region]');
     const withdrawAmountInput = document.querySelector('[data-wallet-withdraw-amount]');
     const transactionDetailPanel = document.querySelector('[data-wallet-transaction-detail-panel]');
@@ -42,6 +54,8 @@
     };
     const transactionFilterControls = document.querySelector('.wallet-tabs');
 
+    let currentBankAccount = null;
+
     const walletFields = {
       available: document.querySelector('[data-wallet-balance-available]'),
       held: document.querySelector('[data-wallet-balance-held]'),
@@ -55,6 +69,10 @@
 
     const getWalletService = () => window.Doke?.services?.wallet || null;
 
+    const getAccountField = (name) => {
+      return accountFields.find((field) => field.dataset.walletAccountField === name);
+    };
+
     const escapeHtml = (value) => String(value || '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
@@ -65,6 +83,35 @@
     const formatCurrency = (value) => {
       const amount = Number(value || 0);
       return amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    };
+
+    const getBankInput = (name) => {
+      return bankInputs.find((input) => input.dataset.walletBankInput === name);
+    };
+
+    const maskAccountNumber = (value) => {
+      const text = String(value || '').replace(/\s+/g, '');
+      if (!text) return '';
+      const digits = text.replace(/\D/g, '');
+      const tail = digits.slice(-4) || text.slice(-4);
+      return `final ${tail}`;
+    };
+
+    const getBankInitials = (value) => {
+      return String(value || 'BK')
+        .replace(/[^a-zA-ZÀ-ÿ0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part.charAt(0).toUpperCase())
+        .join('') || 'BK';
+    };
+
+    const getBankDestination = (account) => {
+      if (!account) return 'Conta não cadastrada';
+      const bank = account.bankName || 'Banco cadastrado';
+      const accountTail = maskAccountNumber(account.accountNumber);
+      return [bank, accountTail].filter(Boolean).join(' · ');
     };
 
     const formatTransactionDate = (value) => {
@@ -132,6 +179,52 @@
       if (node) node.textContent = value;
     };
 
+    const setAccountText = (name, value) => {
+      setText(getAccountField(name), value);
+    };
+
+    const syncBankAccount = (account) => {
+      currentBankAccount = account || null;
+      const hasAccount = Boolean(account && (account.bankName || account.accountNumber || account.pixKey));
+      setBankAccountEmptyState(!hasAccount);
+
+      if (bankAccountCard) bankAccountCard.hidden = !hasAccount;
+      if (bankAccountDetails) bankAccountDetails.hidden = !hasAccount;
+
+      bankAccountButtons.forEach((button) => {
+        const isHeaderButton = button.closest('.wallet-panel__header');
+        if (isHeaderButton) button.hidden = !hasAccount;
+        button.textContent = hasAccount
+          ? (isHeaderButton ? 'Editar conta' : 'Editar conta bancária')
+          : 'Adicionar conta bancária';
+      });
+
+      if (!hasAccount) {
+        setAccountText('withdrawDestination', 'Conta não cadastrada');
+        setAccountText('nextPayout', 'Após saldo');
+        setAccountText('bankNextPayout', 'Após liberação');
+        const status = document.querySelector('[data-wallet-account-status]');
+        if (status) status.textContent = 'Sem conta cadastrada';
+        return;
+      }
+
+      const destination = getBankDestination(account);
+      const initials = getBankInitials(account.bankName);
+      const initialsNode = bankAccountCard?.querySelector('[data-wallet-bank-initials]');
+      if (initialsNode) initialsNode.textContent = initials;
+
+      setAccountText('bankName', account.bankName || 'Banco cadastrado');
+      setAccountText('bankSummary', `${account.accountType || 'Conta corrente'} · ${maskAccountNumber(account.accountNumber)}`);
+      setAccountText('pixKey', account.pixKey ? `PIX ${account.pixKey}` : 'PIX verificado');
+      setAccountText('accountType', account.accountType || 'Conta corrente');
+      setAccountText('holderName', account.holderName || 'Titular verificado');
+      setAccountText('bankNextPayout', account.nextPayout || 'Repasse automático após liberação');
+      setAccountText('withdrawDestination', destination);
+      setAccountText('nextPayout', 'Repasse automático');
+      const status = document.querySelector('[data-wallet-account-status]');
+      if (status) status.textContent = 'Conta cadastrada · Regular';
+    };
+
     const syncWalletSummary = (wallet) => {
       if (!wallet) return;
       setText(walletFields.available, formatCurrency(wallet.availableBalance || 0));
@@ -163,6 +256,7 @@
       return service.getWallet({ currentUser: true })
         .then((wallet) => {
           syncWalletSummary(wallet);
+          syncBankAccount(wallet.bankAccount || null);
           renderWalletTransactions(wallet);
           return wallet;
         })
@@ -273,7 +367,6 @@
     };
 
     const setBankAccountEmptyState = (isEmpty) => {
-      const bankPanel = document.querySelector('[data-wallet-account-panel]');
       if (!bankPanel || !bankEmptyState) return;
 
       bankPanel.classList.toggle('is-wallet-bank-empty', Boolean(isEmpty));
@@ -367,15 +460,108 @@
       closeWithdrawModal();
     });
 
-    const getAccountField = (name) => {
-      return accountFields.find((field) => field.dataset.walletAccountField === name);
+
+    const fillBankForm = (account) => {
+      const source = account || {};
+      bankInputs.forEach((input) => {
+        const key = input.dataset.walletBankInput;
+        input.value = source[key] || '';
+      });
+      if (bankError) bankError.hidden = true;
     };
+
+    const openBankModal = () => {
+      if (!bankModal) return;
+      const isEditing = Boolean(currentBankAccount && (currentBankAccount.bankName || currentBankAccount.accountNumber || currentBankAccount.pixKey));
+      fillBankForm(currentBankAccount);
+      if (bankModalTitle) bankModalTitle.textContent = isEditing ? 'Editar conta bancária' : 'Adicionar conta bancária';
+      if (bankModalCopy) bankModalCopy.textContent = isEditing
+        ? 'Atualize os dados da conta usada para receber seus repasses e saques.'
+        : 'Cadastre a conta que vai receber seus repasses e saques liberados.';
+      if (bankSubmitLabel) bankSubmitLabel.textContent = isEditing ? 'Salvar alterações' : 'Salvar conta';
+      bankModal.hidden = false;
+      bankModal.classList.add('is-active');
+      bankModal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('is-wallet-modal-open');
+      const firstField = bankModal.querySelector('[data-wallet-bank-input]') || bankModal.querySelector('input, select, textarea, button');
+      firstField?.focus({ preventScroll: true });
+    };
+
+    const closeBankModal = () => {
+      if (!bankModal) return;
+      bankModal.hidden = true;
+      bankModal.classList.remove('is-active');
+      bankModal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('is-wallet-modal-open');
+      bankAccountButtons.find((button) => !button.hidden)?.focus?.({ preventScroll: true });
+    };
+
+    const getBankFormPayload = () => bankInputs.reduce((payload, input) => {
+      payload[input.dataset.walletBankInput] = String(input.value || '').trim();
+      return payload;
+    }, {});
+
+    const isValidBankPayload = (payload) => {
+      return Boolean(payload.bankName && payload.holderName && payload.accountType && payload.agency && payload.accountNumber && payload.pixKey);
+    };
+
+    bankAccountButtons.forEach((button) => {
+      button.addEventListener('click', openBankModal);
+    });
+
+    bankCloseButtons.forEach((button) => {
+      button.addEventListener('click', closeBankModal);
+    });
+
+    bankForm?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const payload = getBankFormPayload();
+      if (!isValidBankPayload(payload)) {
+        if (bankError) bankError.hidden = false;
+        showWalletToast('Preencha os dados da conta.', 'error');
+        return;
+      }
+
+      const service = getWalletService();
+      if (!service?.saveBankAccount) {
+        showWalletToast('Não foi possível salvar a conta agora.', 'error');
+        return;
+      }
+
+      const submit = bankForm.querySelector('button[type="submit"]');
+      if (submit) {
+        submit.disabled = true;
+        submit.setAttribute('aria-busy', 'true');
+      }
+
+      service.saveBankAccount(payload)
+        .then((result) => {
+          syncBankAccount(result?.account || payload);
+          showWalletToast('Conta bancária cadastrada.');
+          closeBankModal();
+        })
+        .catch((error) => {
+          console.warn('[DokeWallet:bank-account]', error);
+          showWalletToast('Não foi possível salvar a conta.', 'error');
+        })
+        .finally(() => {
+          if (submit) {
+            submit.disabled = false;
+            submit.removeAttribute('aria-busy');
+          }
+        });
+    });
 
     document.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape') return;
 
       if (withdrawModal && !withdrawModal.hidden) {
         closeWithdrawModal();
+        return;
+      }
+
+      if (bankModal && !bankModal.hidden) {
+        closeBankModal();
       }
     });
 

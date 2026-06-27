@@ -521,6 +521,15 @@
     const chargeAmountInput = document.querySelector("[data-charge-amount]");
     const chargeInstallments = document.querySelector("[data-charge-installments]");
     const chargeCancelButtons = document.querySelectorAll("[data-charge-cancel]");
+    const completionModal = document.querySelector("[data-message-completion-modal]");
+    const completionCloseButtons = Array.from(document.querySelectorAll("[data-message-completion-close]"));
+    const completionPanels = Array.from(document.querySelectorAll("[data-message-completion-panel]"));
+    const completionConfirm = document.querySelector("[data-message-completion-confirm]");
+    const completionSubmit = document.querySelector("[data-message-completion-submit]");
+    const completionReview = document.querySelector("[data-message-completion-review]");
+    const completionError = document.querySelector("[data-message-completion-error]");
+    const completionNote = document.querySelector("[data-message-completion-note]");
+    const completionIssueLink = document.querySelector("[data-message-completion-issue]");
     const mobileControls = root.querySelector("[data-messages-mobile-controls]") || root.querySelector(".messages-header-controls:not(.messages-header-controls--desktop)");
     const desktopControls = root.querySelector("[data-messages-desktop-controls]");
     const mobileFiltersPanel = root.querySelector("[data-messages-filters-panel]");
@@ -538,6 +547,7 @@
     let selectedConversationIds = new Set();
     let selectedFilterKeys = new Set();
     let selectionMode = false;
+    let pendingCompletion = null;
 
     messagesList?.setAttribute("role", "listbox");
     messagesList?.setAttribute("aria-multiselectable", "false");
@@ -1682,6 +1692,127 @@
       }
     };
 
+
+    const setCompletionPanel = (panelName) => {
+      completionPanels.forEach((panel) => {
+        const active = panel.dataset.messageCompletionPanel === panelName;
+        panel.hidden = !active;
+        panel.classList.toggle('is-active', active);
+      });
+    };
+
+    const setCompletionText = (selector, value) => {
+      document.querySelectorAll(selector).forEach((node) => {
+        node.textContent = value || '';
+      });
+    };
+
+    const getCompletionOrderCode = (order = {}) => {
+      const code = order.code || order.orderCode || order.number;
+      if (code) return String(code).startsWith('#') ? String(code) : `#${code}`;
+      const id = String(order.id || order.orderId || '').trim();
+      return id ? `#${id}` : '#DK';
+    };
+
+    const buildCompletionReviewUrl = (conversation, message) => {
+      const orderId = conversation?.order?.id || conversation?.orderId || pageParams.get('order') || '';
+      const params = new URLSearchParams();
+      if (orderId) params.set('order', orderId);
+      if (activeId) params.set('conversation', activeId);
+      if (message?.id) params.set('message', message.id);
+      params.set('source', 'chat');
+      return `avaliacao-profissional.html?${params.toString()}`;
+    };
+
+    const openReviewPageForCharge = (message) => {
+      const conversation = conversations[activeId] || {};
+      const target = buildCompletionReviewUrl(conversation, message);
+      if (window.DokeNavigate && typeof window.DokeNavigate === 'function') {
+        window.DokeNavigate(target);
+        return;
+      }
+      window.location.href = target;
+    };
+
+    const populateCompletionModal = (conversation, message) => {
+      const order = conversation?.order || {};
+      const serviceTitle = order.serviceTitle || order.title || 'Pedido de serviço';
+      const providerName = order.professionalName || order.providerName || conversation?.name || 'Profissional Doke';
+      const amount = message?.amount || order.amount || order.budget || 'R$ 0,00';
+      const orderCode = getCompletionOrderCode(order);
+
+      setCompletionText('[data-completion-service-title]', serviceTitle);
+      setCompletionText('[data-completion-provider-name]', providerName);
+      setCompletionText('[data-completion-amount]', amount);
+      setCompletionText('[data-completion-order-code]', orderCode);
+      if (completionIssueLink) {
+        completionIssueLink.href = activeId ? `mensagens.html?conversation=${encodeURIComponent(activeId)}` : 'mensagens.html';
+      }
+      if (completionNote) completionNote.value = '';
+      if (completionConfirm) completionConfirm.checked = true;
+      if (completionError) {
+        completionError.textContent = 'Confirme que o serviço foi concluído para continuar.';
+        completionError.hidden = true;
+      }
+    };
+
+    const openCompletionModal = (index, message) => {
+      const conversation = conversations[activeId];
+      if (!completionModal || !conversation || !message) return false;
+      pendingCompletion = { conversationId: activeId, messageIndex: index };
+      populateCompletionModal(conversation, message);
+      setCompletionPanel('confirm');
+      completionModal.hidden = false;
+      completionModal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('messages-completion-modal-open');
+      completionConfirm?.focus?.({ preventScroll: true });
+      return true;
+    };
+
+    const closeCompletionModal = () => {
+      if (!completionModal) return;
+      completionModal.hidden = true;
+      completionModal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('messages-completion-modal-open');
+    };
+
+    const completeChargeMessage = (conversationId, messageIndex) => {
+      const conversation = conversations[conversationId];
+      const currentMessage = conversation?.messages?.[messageIndex];
+      if (!conversation || !currentMessage || currentMessage.type !== 'charge') return Promise.reject(new Error('Cobrança não encontrada.'));
+
+      const previous = {
+        paid: currentMessage.paid,
+        completed: currentMessage.completed,
+        text: currentMessage.text
+      };
+
+      currentMessage.paid = true;
+      currentMessage.completed = true;
+      currentMessage.text = completionNote?.value?.trim()
+        ? `Atendimento concluído. ${completionNote.value.trim()}`
+        : currentMessage.text || 'Atendimento concluído. Avaliação liberada.';
+
+      const orderAlreadyCompleted = getOrderStatus(conversation) === 'completed';
+      const completionTask = orderAlreadyCompleted
+        ? Promise.resolve(conversation.order || null)
+        : updateOrderFromConversation('completed', { paymentMessageId: currentMessage.id || '', messageId: currentMessage.id || '' });
+
+      return completionTask
+        .then(() => persistConversationState(conversationId))
+        .then(() => {
+          renderThread(conversationId, { scrollTo: 'end' });
+          return currentMessage;
+        })
+        .catch((error) => {
+          currentMessage.paid = previous.paid;
+          currentMessage.completed = previous.completed;
+          currentMessage.text = previous.text;
+          renderThread(conversationId, { scrollTo: 'end' });
+          throw error;
+        });
+    };
+
     const closeThreadCallMenu = () => {
       threadCallMenu?.setAttribute("hidden", "");
       threadCallToggle?.setAttribute("aria-expanded", "false");
@@ -2107,30 +2238,14 @@
         const currentMessage = conversation?.messages?.[index];
         if (!currentMessage || currentMessage.type !== "charge") return;
 
-        completeButton.disabled = true;
-        completeButton.setAttribute('aria-busy', 'true');
-        completeButton.textContent = 'Finalizando...';
-
-        currentMessage.paid = true;
-        currentMessage.completed = true;
-        currentMessage.text = currentMessage.text || 'Atendimento concluído. Avaliação liberada.';
-
-        const orderAlreadyCompleted = getOrderStatus(conversation) === 'completed';
-        const completionTask = orderAlreadyCompleted
-          ? Promise.resolve(conversation.order || null)
-          : updateOrderFromConversation('completed', { paymentMessageId: currentMessage.id || '', messageId: currentMessage.id || '' });
-
-        completionTask
-          .then(() => persistConversationState(activeId))
-          .then(() => {
-            renderThread(activeId, { scrollTo: 'end' });
-            showCopyToast('Pedido concluído. Avaliação liberada.');
-          })
-          .catch((error) => {
-            currentMessage.completed = false;
-            renderThread(activeId, { scrollTo: 'end' });
-            showCopyToast(error?.message || 'Não foi possível concluir o pedido.');
-          });
+        if (!openCompletionModal(index, currentMessage)) {
+          completeButton.disabled = true;
+          completeButton.setAttribute('aria-busy', 'true');
+          completeButton.textContent = 'Finalizando...';
+          completeChargeMessage(activeId, index)
+            .then(() => showCopyToast('Pedido concluído. Avaliação liberada.'))
+            .catch((error) => showCopyToast(error?.message || 'Não foi possível concluir o pedido.'));
+        }
         return;
       }
 
@@ -2140,19 +2255,7 @@
         const index = Number(bubble?.dataset.messageIndex || -1);
         const currentMessage = conversations[activeId]?.messages?.[index];
         if (!currentMessage || currentMessage.type !== "charge") return;
-        const conversation = conversations[activeId] || {};
-        const orderId = conversation?.order?.id || conversation?.orderId || pageParams.get('order') || '';
-        const params = new URLSearchParams();
-        if (orderId) params.set('order', orderId);
-        if (activeId) params.set('conversation', activeId);
-        if (currentMessage.id) params.set('message', currentMessage.id);
-        params.set('source', 'chat');
-        const target = `avaliacao-profissional.html?${params.toString()}`;
-        if (window.DokeNavigate && typeof window.DokeNavigate === 'function') {
-          window.DokeNavigate(target);
-          return;
-        }
-        window.location.href = target;
+        openReviewPageForCharge(currentMessage);
         return;
       }
 
@@ -2377,6 +2480,59 @@
       button.addEventListener("click", () => {
         closeChargeModal();
       });
+    });
+
+
+    completionCloseButtons.forEach((button) => {
+      button.addEventListener('click', closeCompletionModal);
+    });
+
+    completionConfirm?.addEventListener('change', () => {
+      if (completionError) completionError.hidden = true;
+    });
+
+    completionSubmit?.addEventListener('click', () => {
+      if (!pendingCompletion) return;
+      if (completionConfirm && !completionConfirm.checked) {
+        if (completionError) completionError.hidden = false;
+        completionConfirm.focus();
+        return;
+      }
+      if (completionError) completionError.hidden = true;
+      completionSubmit.disabled = true;
+      completionSubmit.setAttribute('aria-busy', 'true');
+      completionSubmit.textContent = 'Confirmando...';
+
+      completeChargeMessage(pendingCompletion.conversationId, pendingCompletion.messageIndex)
+        .then((message) => {
+          setCompletionPanel('success');
+          pendingCompletion.message = message;
+        })
+        .catch((error) => {
+          if (completionError) {
+            completionError.textContent = error?.message || 'Não foi possível finalizar o pedido.';
+            completionError.hidden = false;
+          }
+        })
+        .finally(() => {
+          completionSubmit.disabled = false;
+          completionSubmit.removeAttribute('aria-busy');
+          completionSubmit.textContent = 'Confirmar conclusão';
+        });
+    });
+
+    completionReview?.addEventListener('click', () => {
+      const currentMessage = pendingCompletion?.message
+        || conversations[pendingCompletion?.conversationId || activeId]?.messages?.[pendingCompletion?.messageIndex ?? -1];
+      if (currentMessage) openReviewPageForCharge(currentMessage);
+    });
+
+    completionModal?.addEventListener('click', (event) => {
+      if (event.target.closest('[data-message-completion-close]')) closeCompletionModal();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && completionModal && !completionModal.hidden) closeCompletionModal();
     });
 
     composer?.addEventListener("click", (event) => {
