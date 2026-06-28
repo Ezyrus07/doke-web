@@ -443,3 +443,42 @@ body.doke-action-modal-open {
     height: 50px;
   }
 }
+
+
+/* v2 — compact control contract
+   Root cause: controls were visually heavier than the modal chrome. The border,
+   fill and textarea height made small action flows look bulkier than needed. */
+:root {
+  --doke-action-modal-control-border: rgba(207, 224, 240, 0.82);
+  --doke-action-modal-control-border-strong: rgba(141, 181, 221, 0.72);
+  --doke-action-modal-control-fill: #fbfdff;
+}
+
+.doke-action-modal__body {
+  gap: 14px;
+}
+
+.doke-action-modal__field input,
+.doke-action-modal__field select,
+.doke-action-modal__field textarea,
+.doke-action-modal__money-field {
+  border-color: var(--doke-action-modal-control-border);
+  background: var(--doke-action-modal-control-fill);
+}
+
+.doke-action-modal__field textarea {
+  min-height: 76px;
+}
+
+.doke-action-modal__field input:focus,
+.doke-action-modal__field select:focus,
+.doke-action-modal__field textarea:focus,
+.doke-action-modal__money-field:focus-within {
+  border-color: var(--doke-action-modal-control-border-strong);
+  box-shadow: 0 0 0 3px rgba(31, 109, 182, 0.12);
+}
+
+.doke-action-modal__summary-card {
+  border-color: rgba(220, 232, 244, 0.9);
+  background: #fbfdff;
+}

@@ -177,3 +177,71 @@ Exemplo de `<dialog>` nativo:
 ```
 
 Use `doke-overlay-panel` para painéis de ação móveis que são superfícies contextuais, mas não devem receber comportamento de overlay fixo genérico.
+
+## Modal Visual Contract
+
+Use `doke-modal-surface` em toda superfície de modal equivalente. Adicione uma variante funcional:
+
+```html
+<section class="doke-overlay__surface doke-modal-surface doke-modal-surface--form">
+  <header class="doke-overlay__header doke-modal-header">
+    <span class="doke-modal-eyebrow">Nova ação</span>
+    <h2 class="doke-modal-title">Título do modal</h2>
+    <p class="doke-modal-description">Descrição curta.</p>
+  </header>
+  <div class="doke-overlay__body doke-modal-body">...</div>
+  <footer class="doke-overlay__actions doke-modal-actions">...</footer>
+</section>
+```
+
+Variantes atuais:
+
+- `doke-modal-surface--compact`: ações curtas, cobrança, CEP, código;
+- `doke-modal-surface--form`: formulários longos, endereço, comunidade e conta bancária;
+- `doke-modal-surface--financial`: modais financeiros;
+- `doke-modal-surface--detail`: detalhe de conteúdo ou pedido;
+- `doke-modal-surface--feedback`: sucesso, loading, confirmação;
+- `doke-modal-surface--media`: lightbox/worker/media preview.
+
+Não crie visual local para close, footer, título, radius, sombra ou ação primária/secundária em CSS de página.
+
+## Controles básicos de formulário
+
+Use sempre classes canônicas em controles visíveis:
+
+```html
+<label class="doke-field">
+  <span class="doke-label">Nome</span>
+  <input class="doke-input" type="text" placeholder="Ex.: Maria" />
+</label>
+
+<select class="doke-select"></select>
+<textarea class="doke-textarea"></textarea>
+<input class="doke-checkbox" type="checkbox" />
+<input class="doke-radio" type="radio" />
+<label class="doke-switch"><input class="doke-switch__input" type="checkbox" /><span></span></label>
+```
+
+A classe local pode continuar existindo para semântica de domínio, JS ou layout, mas não deve ser a autoridade visual do controle. Campos em modais devem combinar `doke-modal-field` com os mesmos controles canônicos.
+
+## Contrato de botões e ações
+
+Use `doke-btn` para ações textuais e escolha o modificador semântico mínimo:
+
+```html
+<button class="doke-btn doke-btn--primary">Salvar</button>
+<button class="doke-btn doke-btn--secondary">Cancelar</button>
+<button class="doke-btn doke-btn--ghost">Voltar</button>
+<button class="doke-btn doke-btn--danger">Excluir</button>
+```
+
+Use `doke-icon-btn` para ações icon-only que não são fechamento de superfície. Para fechamento de modal/painel/drawer/lightbox, use `doke-close-button` junto com a classe local necessária para JS.
+
+Use contracts especializados quando a ação não for um botão comum:
+
+- `doke-filter-pill` para filtros/tabs de escopo;
+- `doke-segment-button` para opções segmentadas;
+- `doke-choice-button` para choices visuais;
+- `doke-rating-star` para estrelas de avaliação.
+
+Não use CSS de página para redesenhar a anatomia do botão. A página pode apenas posicionar, agrupar ou controlar responsividade contextual.

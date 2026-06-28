@@ -1,0 +1,308 @@
+/* Modal Lab page — presentation only.
+   Owner: pages/lab. Does not define production modal anatomy. */
+
+:root {
+  --modal-lab-bg: #eef4fa;
+  --modal-lab-card: #ffffff;
+  --modal-lab-ink: #0b3c7c;
+  --modal-lab-text: #6f85a1;
+  --modal-lab-line: rgba(199, 218, 236, 0.88);
+  --modal-lab-soft: #f8fbff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: var(--modal-lab-bg);
+  color: var(--modal-lab-ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(36, 117, 189, 0.14), transparent 32%),
+    radial-gradient(circle at 90% 4%, rgba(8, 126, 114, 0.12), transparent 26%),
+    var(--modal-lab-bg);
+}
+
+.modal-lab-shell {
+  width: min(1440px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 38px 0 64px;
+}
+
+.modal-lab-hero {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 34px;
+  padding: 30px;
+  border: 1px solid var(--modal-lab-line);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 20px 48px rgba(18, 39, 62, 0.08);
+}
+
+.modal-lab-kicker,
+.modal-lab-tag {
+  width: fit-content;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 1px solid rgba(193, 215, 241, 0.96);
+  border-radius: 999px;
+  background: #eef6ff;
+  color: #0b5da8;
+  font-size: 0.76rem;
+  line-height: 1;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.modal-lab-hero h1 {
+  max-width: 900px;
+  margin: 0;
+  color: var(--modal-lab-ink);
+  font-size: clamp(2.35rem, 5vw, 4.25rem);
+  line-height: 0.98;
+  letter-spacing: -0.065em;
+}
+
+.modal-lab-hero p {
+  max-width: 840px;
+  margin: 0;
+  color: var(--modal-lab-text);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  font-weight: 620;
+}
+
+.modal-lab-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.modal-lab-section {
+  display: grid;
+  gap: 18px;
+  margin-top: 34px;
+}
+
+.modal-lab-section__header {
+  display: grid;
+  gap: 8px;
+}
+
+.modal-lab-section__header h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 2vw, 2rem);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.modal-lab-section__header p {
+  max-width: 860px;
+  margin: 0;
+  color: var(--modal-lab-text);
+  line-height: 1.55;
+  font-weight: 620;
+}
+
+.modal-lab-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.modal-lab-grid--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.modal-lab-frame {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--modal-lab-line);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 18px 38px rgba(18, 39, 62, 0.07);
+}
+
+.modal-lab-frame__label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  color: var(--modal-lab-text);
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.modal-lab-frame__label strong {
+  color: var(--modal-lab-ink);
+}
+
+.modal-lab-preview {
+  min-height: 560px;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  border-radius: 22px;
+  background:
+    linear-gradient(rgba(17, 36, 59, 0.58), rgba(17, 36, 59, 0.58)),
+    linear-gradient(135deg, rgba(36, 117, 189, 0.24), rgba(8, 126, 114, 0.2));
+  overflow: hidden;
+}
+
+.modal-lab-preview--short {
+  min-height: 440px;
+}
+
+.modal-lab-preview--media {
+  min-height: 520px;
+}
+
+.modal-lab-preview .doke-modal {
+  position: relative;
+  inset: auto;
+  z-index: 1;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  overflow: visible;
+}
+
+.modal-lab-preview .doke-modal__backdrop {
+  display: none;
+}
+
+.modal-lab-preview .doke-modal__surface {
+  max-height: none;
+}
+
+.modal-lab-preview .doke-modal__body {
+  max-height: 340px;
+}
+
+.modal-lab-preview .doke-modal__surface--sidepanel {
+  justify-self: center;
+  height: 480px;
+}
+
+.modal-lab-preview .doke-modal__surface--media {
+  max-width: 760px;
+}
+
+.modal-lab-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--modal-lab-line);
+  border-radius: 24px;
+  background: var(--modal-lab-card);
+  box-shadow: 0 18px 38px rgba(18, 39, 62, 0.06);
+}
+
+.modal-lab-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 920px;
+}
+
+.modal-lab-table th,
+.modal-lab-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--modal-lab-line);
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.9rem;
+  line-height: 1.42;
+}
+
+.modal-lab-table th {
+  background: var(--modal-lab-soft);
+  color: var(--modal-lab-ink);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.modal-lab-table td {
+  color: #365778;
+  font-weight: 620;
+}
+
+.modal-lab-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.modal-lab-code {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #eef6ff;
+  color: #0b5da8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.modal-lab-note {
+  padding: 18px;
+  border: 1px solid rgba(191, 230, 220, 0.92);
+  border-radius: 22px;
+  background: #eefaf6;
+  color: #0a6e63;
+  font-weight: 700;
+  line-height: 1.52;
+}
+
+@media (max-width: 1100px) {
+  .modal-lab-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .modal-lab-shell {
+    width: min(100% - 24px, 1440px);
+    padding-top: 20px;
+  }
+
+  .modal-lab-hero,
+  .modal-lab-frame {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .modal-lab-preview {
+    min-height: 520px;
+    padding: 12px;
+  }
+
+  .modal-lab-preview .doke-modal {
+    align-items: center;
+  }
+}
+
+
+.modal-lab-frame--actions {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.modal-lab-footer-demo {
+  border: 1px solid var(--modal-lab-line);
+  border-radius: 22px;
+}

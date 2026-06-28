@@ -12,13 +12,13 @@
 <script src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
 <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
 <script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
-<link href="assets/css/pages/orcamento.css?v=20260625-operational-events-v1" rel="stylesheet"/>
+<link href="assets/css/pages/orcamento-foundation.css?v=20260627-modal-visual-contract-v1" rel="stylesheet"/>
 </head>
 <body data-page="orcamento" data-auth-guard="enforce" class="doke-app-shell-page app-shell-page internal-shell-page become-pro-page-shell doke-flow has-global-header">
-<div class="app-shell">
-<aside class="sidebar" data-shell-sidebar=""></aside>
+<div class="app-shell" data-shell-contract="app-shell">
+<aside class="sidebar" data-shell-sidebar data-sidebar-contract="global-sidebar"=""></aside>
 <div class="page become-pro-page-frame">
-<header aria-label="Atalhos e contexto do orçamento" class="app-header app-header--become-pro home-side-meta" data-app-header="" data-header-contract="app-header" data-header-variant="standard">
+<header aria-label="Atalhos e contexto do orçamento" class="app-header app-header--become-pro home-side-meta" data-app-header="" data-header-contract="app-header" data-header-variant="standard" data-header-family="standard">
 <div class="app-header__inner" data-header-inner="">
 <div class="home-side-meta__group home-side-meta__group--primary app-header__group app-header__group--primary" data-header-slot="primary">
 <button aria-expanded="false" aria-haspopup="dialog" aria-label="Abrir menu lateral" class="home-side-meta__tablet-menu" data-mobile-home-menu-open="" type="button">
@@ -119,10 +119,10 @@
 <span>Escopo</span>
 <input data-choice-input="" name="escopo" type="hidden" value="Ambiente completo"/>
 <div aria-label="Escopo do serviço" class="budget-choices" data-choice-group="">
-<button class="budget-choice is-active" data-choice-value="Ambiente completo" type="button">Ambiente completo</button>
-<button class="budget-choice" data-choice-value="Parede específica" type="button">Parede específica</button>
-<button class="budget-choice" data-choice-value="Imóvel inteiro" type="button">Imóvel inteiro</button>
-<button class="budget-choice" data-choice-value="Retoque ou reparo" type="button">Retoque ou reparo</button>
+<button class="budget-choice is-active doke-choice-button" data-choice-value="Ambiente completo" type="button">Ambiente completo</button>
+<button class="budget-choice doke-choice-button" data-choice-value="Parede específica" type="button">Parede específica</button>
+<button class="budget-choice doke-choice-button" data-choice-value="Imóvel inteiro" type="button">Imóvel inteiro</button>
+<button class="budget-choice doke-choice-button" data-choice-value="Retoque ou reparo" type="button">Retoque ou reparo</button>
 </div>
 </div>
 <div class="budget-grid budget-grid--3 budget-grid--compact become-pro-grid">
@@ -149,9 +149,9 @@
 <span>Urgência</span>
 <input data-choice-input="" name="urgencia" type="hidden" value="Esta semana"/>
 <div aria-label="Urgência do orçamento" class="budget-choices" data-choice-group="">
-<button class="budget-choice" data-choice-value="Hoje ou amanhã" type="button">Hoje ou amanhã</button>
-<button class="budget-choice is-active" data-choice-value="Esta semana" type="button">Esta semana</button>
-<button class="budget-choice" data-choice-value="Sem pressa" type="button">Sem pressa</button>
+<button class="budget-choice doke-choice-button" data-choice-value="Hoje ou amanhã" type="button">Hoje ou amanhã</button>
+<button class="budget-choice is-active doke-choice-button" data-choice-value="Esta semana" type="button">Esta semana</button>
+<button class="budget-choice doke-choice-button" data-choice-value="Sem pressa" type="button">Sem pressa</button>
 </div>
 </div>
 <div class="budget-grid budget-grid--3 budget-grid--compact become-pro-grid">
@@ -259,7 +259,7 @@
 </div>
 </dialog>
 <dialog aria-labelledby="budget-success-title" class="budget-success-modal doke-native-overlay" data-budget-success="" hidden="">
-<div class="budget-success-modal__dialog doke-modal__surface doke-card become-pro-submit-state__card doke-overlay__surface">
+<div class="budget-success-modal__dialog doke-modal__surface doke-card become-pro-submit-state__card doke-overlay__surface doke-modal-surface doke-modal-surface--feedback">
 <button aria-label="Fechar confirmação" class="budget-success-modal__close doke-modal__close modal-close doke-close-button" data-budget-success-close="" data-modal-close="" type="button">
 <svg aria-hidden="true" viewBox="0 0 24 24">
 <path d="M6 6l12 12"></path>
@@ -272,16 +272,16 @@
 <path d="m7 12 3 3 7-7"></path>
 </svg>
 </div>
-<h2 id="budget-success-title">Tudo certo com seu pedido</h2>
+<h2 class="doke-modal-title" id="budget-success-title">Tudo certo com seu pedido</h2>
 <p>
                       Sua solicitação foi enviada para <strong data-budget-success-provider="">o profissional</strong>.
                       Agora você pode acompanhar o retorno, anexos e conversa na área de pedidos.
                     </p>
-<div class="budget-success__summary">
+<div class="budget-success__summary doke-modal-summary-card">
 <span>Pedido</span>
 <strong data-budget-success-service="">Serviço solicitado</strong>
 </div>
-<div class="budget-success__actions doke-form-actions become-pro-actions">
+<div class="budget-success__actions doke-form-actions become-pro-actions doke-modal-actions">
 <button class="budget-button budget-button--ghost doke-btn doke-btn--ghost become-pro-btn become-pro-btn--soft" data-budget-success-close="" type="button">Fechar</button>
 <a class="budget-button budget-button--primary doke-btn doke-btn--primary become-pro-btn become-pro-btn--primary" data-budget-success-order-link="" href="pedidos.html">Ver pedido</a>
 </div>
@@ -293,8 +293,8 @@
 </div>
 </div>
 <dialog aria-labelledby="budget-address-title" class="address-modal doke-native-overlay" data-address-modal="">
-<form class="address-modal__dialog doke-modal__surface doke-overlay__surface" data-address-form="" method="dialog">
-<header class="address-modal__head doke-overlay__header">
+<form class="address-modal__dialog doke-modal__surface doke-overlay__surface doke-modal-surface doke-modal-surface--form" data-address-form="" method="dialog">
+<header class="address-modal__head doke-overlay__header doke-modal-header">
 <div>
 <h2 id="budget-address-title">Endereço do atendimento</h2>
 <p>Use um endereço salvo ou ajuste os dados para este orçamento.</p>
@@ -312,7 +312,7 @@
 <label class="budget-field become-pro-field"><span>Referência</span><input name="referencia" type="text" value="Próximo ao Elevador Lacerda"/ class="doke-input"></label>
 </div>
 <label class="budget-check budget-check--boxed budget-grid--compact"><input class="doke-checkbox" checked="" name="padrao" type="checkbox"/><span class="budget-check__box" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"></path></svg></span><span class="budget-check__text">Salvar como endereço padrão</span></label>
-<div class="address-modal__actions doke-form-actions become-pro-actions doke-overlay__actions">
+<div class="address-modal__actions doke-form-actions become-pro-actions doke-overlay__actions doke-modal-actions">
 <button class="budget-button budget-button--ghost doke-btn doke-btn--ghost become-pro-btn become-pro-btn--soft" data-close-address-modal="" type="button">Cancelar</button>
 <button class="budget-button budget-button--primary doke-btn doke-btn--primary become-pro-btn become-pro-btn--primary" type="submit">Salvar endereço</button>
 </div>

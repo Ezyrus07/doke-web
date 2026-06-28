@@ -360,7 +360,7 @@ const showOperationalToast = (detail = {}) => {
 
 const updateSidebarActiveState = (pathOverride = null) => {
   const path = pathOverride || getCurrentPath();
-  const homeActive = path === "/index.html";
+  const homeActive = path === "/index.html" || path === "/resultados.html" || path === "/detalhe-anuncio.html";
   const ordersActive = path === "/pedidos.html" || path === "/orcamento.html";
   const messagesActive = path === "/mensagens.html" || path === "/pagamento-profissional.html";
   const notificationsActive = path === "/notificacoes.html";

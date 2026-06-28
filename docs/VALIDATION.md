@@ -404,3 +404,100 @@ A auditoria varre os HTMLs ativos da raiz que possuem modais, dialogs, overlays,
 O gate também impede que `community-room-panel` consuma `doke-overlay` enquanto esse painel continuar sem contrato de `hidden/display`; nesse caso ele precisa de uma migração própria para evitar regressão visual.
 
 Esse gate roda dentro de `npm run audit:agent-governance`.
+
+## Inventário global de contratos visuais
+
+`npm run audit:global-visual-contract-inventory` gera a matriz estática de todos os HTMLs ativos antes de lotes sistêmicos de padronização visual.
+
+Saídas:
+
+```txt
+reports/generated/global-visual-contract-inventory.json
+reports/generated/global-visual-contract-inventory.md
+```
+
+Use este inventário antes de alterar famílias globais como modais, botões, campos, header/sidebar, rails, cards, chips, badges, tabs e estados. O relatório identifica consumidores, CSS page-owned que ainda controla anatomia de componente e a fila recomendada de lotes. Ele não substitui validação visual/computada no navegador.
+
+## Modal Visual Contract
+
+Comando:
+
+```bash
+npm run audit:modal-visual-contract
+```
+
+O audit valida que os modais equivalentes carregam `doke-modal-surface`, uma variante visual (`compact`, `form`, `financial`, `detail`, `feedback` ou `media`) e os hooks de header/body/actions quando aplicável. Também verifica se o contrato compartilhado é importado depois do CSS de página nos manifests que possuem modais.
+
+Use junto com:
+
+```bash
+npm run audit:overlay-modal-contract
+npm run audit:close-button-contract
+```
+
+Validação visual obrigatória quando possível: abrir cada modal em `390x844`, `820x1180` e `1366x768`, conferindo largura, radius, footer, botão de fechar, foco de campo, scroll interno e ausência de overflow horizontal.
+
+## Lote P — contrato global de controles de formulário
+
+Comando:
+
+```bash
+npm run audit:form-control-contract
+```
+
+Valida os 21 HTMLs ativos da raiz e os 3 HTMLs de `auth/` para impedir controles visíveis sem classe canônica. O audit ignora apenas `input[type="hidden"]` e `input[type="file"]`, porque eles pertencem a contratos de estado/upload e não à anatomia visual de campo.
+
+Regras cobertas:
+
+- `input` textual/search/e-mail/password/numeric precisa expor `doke-input` ou hook equivalente compartilhado (`doke-search-field__input`, `doke-chat-composer__input`);
+- `select` precisa expor `doke-select`;
+- `textarea` precisa expor `doke-textarea` ou `doke-chat-composer__input` quando for composer de chat;
+- `checkbox` precisa expor `doke-checkbox` ou `doke-switch__input` quando estiver dentro do contrato de switch;
+- `radio` precisa expor `doke-radio`;
+- `assets/css/components/forms/form-controls.css` não pode usar `!important`.
+
+O comando também integra `npm run audit:agent-governance`.
+
+## Lote Q — contrato sistêmico de botões e ações
+
+Comando:
+
+```bash
+npm run audit:button-system-contract
+```
+
+Valida os 21 HTMLs ativos da raiz e os 3 HTMLs de `auth/` para impedir ações visíveis sem owner canônico. O gate aceita como owners de botão:
+
+- `doke-btn`, `doke-button`, `doke-icon-btn`, `doke-action-button` e `doke-close-button`;
+- contratos especializados que visualmente funcionam como ação, como `doke-tab-pill`, `doke-filter-pill`, `doke-chip`, `doke-segment-button`, `doke-choice-button`, `doke-rating-star`, `doke-search-field__button`, `doke-search-pill__button`, `doke-search-cta` e hooks do composer de chat;
+- owners explícitos de header/sidebar/chat/lista que serão tratados nos lotes próprios de header, sidebar, cards e chat.
+
+O audit também verifica que `assets/css/components/buttons.css` declara os modificadores base (`primary`, `secondary`, `ghost`, `soft`, `danger`, `success`, `block`, `icon`, `flat`, `segment` e `choice`), que o contrato não usa `!important` e que o CSS é carregado por `core/components.css` e `auth-foundation.css`.
+
+Use junto com:
+
+```bash
+npm run audit:global-visual-contract-inventory
+```
+
+O inventário deve continuar reportando `buttons without canonical class: 0` depois de alterações em HTML, renderers ou novos componentes de ação.
+
+## Lote R — Header Sidebar Parity Contract
+
+Comando:
+
+```bash
+npm run audit:header-sidebar-parity-contract
+```
+
+Valida os 21 HTMLs ativos da raiz para impedir que header, shell e sidebar voltem a divergir estruturalmente. O gate exige:
+
+- `body` com `doke-app-shell-page`, `app-shell-page`, `internal-shell-page` e `has-global-header`;
+- um único `.app-shell` com `data-shell-contract="app-shell"`;
+- uma única `.sidebar` com `data-shell-sidebar` e `data-sidebar-contract="global-sidebar"`;
+- um único `header[data-app-header]` com `data-header-contract="app-header"`, `data-header-variant` e `data-header-family` convergentes;
+- slots canônicos `primary` e `actions`;
+- controles básicos do header presentes: menu tablet, busca e perfil;
+- salvaguardas runtime em `assets/js/core/app.js` para reaplicar contratos após navegação interna e criar o scrim de sidebar quando o HTML da página não o trouxer estaticamente.
+
+O audit está incluído em `npm run audit:agent-governance`. Ele não substitui validação visual: ao alterar `layout/header.css`, sidebar, shell ou roteador, validar `index.html`, `perfil.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `comunidade.html`, `resultados.html`, `detalhe-anuncio.html` e `ajuda.html` em `390x844`, `820x1180` e `1366x768`.

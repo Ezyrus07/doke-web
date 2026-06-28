@@ -1369,3 +1369,90 @@ html body .charge-modal .doke-financial-modal__select-menu button {
 html body .charge-modal .doke-financial-modal__select-menu button[aria-selected="true"] {
   background: #eef5fc;
 }
+
+
+/* v7 — compact financial modal rhythm
+   Root cause: charge/withdraw fields were stacking page-level and component-level
+   chrome, producing a double-border feeling and extra vertical weight. This
+   final section tightens the shared financial surface and removes the inset
+   border illusion from inputs and summary cards. */
+:root {
+  --doke-financial-border: rgba(207, 222, 239, 0.84);
+  --doke-financial-border-soft: rgba(220, 231, 243, 0.92);
+  --doke-financial-surface-soft: #fbfdff;
+}
+
+:is(.charge-modal__surface.doke-financial-modal__surface, .wallet-dialog--withdraw.doke-financial-modal__surface) {
+  width: min(calc(100vw - 48px), 600px);
+  max-width: 600px;
+}
+
+:is(.charge-modal__header.doke-financial-modal__header, .wallet-dialog__header.doke-financial-modal__header),
+.charge-modal .charge-modal__header.surface-modal__hero.doke-financial-modal__header {
+  padding: 30px var(--doke-financial-padding-x, 36px) 16px;
+  padding-right: 84px;
+}
+
+:is(.charge-modal__header .doke-financial-modal__title, .wallet-dialog__header .doke-financial-modal__title) {
+  font-size: clamp(1.98rem, 3vw, 2.42rem);
+}
+
+:is(.charge-modal__header p, .wallet-dialog__header p) {
+  margin-top: 10px;
+}
+
+:is(.charge-modal__close, .wallet-dialog__close) {
+  top: 26px;
+  right: 26px;
+}
+
+:is(.charge-modal__body.doke-financial-modal__body, .wallet-dialog__body) {
+  gap: 14px;
+  padding: 0 var(--doke-financial-padding-x, 36px) 22px;
+}
+
+:is(.charge-modal__money-field.doke-financial-modal__money-field, .wallet-dialog-money-field.doke-financial-modal__money-field, .charge-modal__field select.doke-financial-modal__control, .wallet-dialog-field input, .wallet-dialog-field select, .wallet-dialog-control),
+html body :is(.charge-modal, .wallet-dialog) :is(.charge-modal__money-field.doke-financial-modal__money-field, .wallet-dialog-money-field.doke-financial-modal__money-field),
+html body .charge-modal .doke-financial-modal__select-button {
+  border-color: var(--doke-financial-border);
+  background: var(--doke-financial-surface-soft);
+  box-shadow: none;
+}
+
+.wallet-dialog-summary--withdraw article {
+  min-height: 80px;
+  padding: 14px 16px;
+  box-shadow: none;
+}
+
+:is(.charge-modal__actions.doke-financial-modal__footer, .wallet-dialog__footer.doke-financial-modal__footer) {
+  padding: 18px var(--doke-financial-padding-x, 36px) 24px;
+}
+
+@media (max-width: 760px) {
+  :is(.charge-modal__surface.doke-financial-modal__surface, .wallet-dialog--withdraw.doke-financial-modal__surface) {
+    width: min(calc(100vw - 24px), 520px);
+    max-width: 520px;
+  }
+
+  :is(.charge-modal__header.doke-financial-modal__header, .wallet-dialog__header.doke-financial-modal__header),
+  .charge-modal .charge-modal__header.surface-modal__hero.doke-financial-modal__header {
+    padding-top: 26px;
+    padding-bottom: 16px;
+    padding-right: 72px;
+  }
+
+  :is(.charge-modal__close, .wallet-dialog__close) {
+    top: 22px;
+    right: 22px;
+  }
+
+  :is(.charge-modal__body.doke-financial-modal__body, .wallet-dialog__body) {
+    padding-bottom: 20px;
+  }
+
+  :is(.charge-modal__actions.doke-financial-modal__footer, .wallet-dialog__footer.doke-financial-modal__footer) {
+    padding-top: 16px;
+    padding-bottom: 20px;
+  }
+}

@@ -143,3 +143,38 @@ body.community-modal-open {
     max-width: 100%;
   }
 }
+
+
+/* v2 — compact action-modal rhythm for community entry/create
+   Root cause: the create flow was inheriting a large form-width modal surface and
+   overly tall controls, which made the dialog feel oversized relative to the
+   code-entry modal. Keep the shared action modal system, but tighten the
+   create composition locally because this page only needs a compact single-column form. */
+.community-action-modal__dialog--create.doke-action-modal__surface {
+  width: min(calc(100vw - 48px), 720px);
+  max-width: 720px;
+}
+
+.community-action-modal__dialog--create .doke-action-modal__body {
+  gap: 14px;
+}
+
+.community-action-modal__dialog--create .doke-action-modal__field :is(input, select) {
+  min-height: 54px;
+  height: 54px;
+}
+
+.community-action-modal__dialog--create .doke-action-modal__field textarea {
+  min-height: 76px;
+}
+
+.community-action-modal__dialog--create .community-action-cover > div {
+  min-height: 54px;
+}
+
+@media (max-width: 720px) {
+  .community-action-modal__dialog--create.doke-action-modal__surface {
+    width: 100%;
+    max-width: 100%;
+  }
+}

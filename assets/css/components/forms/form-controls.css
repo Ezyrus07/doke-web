@@ -351,3 +351,67 @@
   opacity: 0.62;
   cursor: not-allowed;
 }
+
+/* Canonical field composition -------------------------------------------------
+   Responsibility: enforce the same visible form-control anatomy whenever a page
+   exposes the shared Doke classes. Page CSS may place fields in grids, but it
+   should not redefine the control shell for semantically equivalent controls.
+
+   Search inputs are intentionally excluded here: .doke-search-field owns its
+   wrapper anatomy and assets/css/components/search/search-field.css owns the
+   inner input reset. Mixing the form-control shell into nested search inputs
+   creates a visible double border. */
+.doke-field > :is(.doke-input, .doke-select, .doke-textarea),
+.doke-modal-field > :is(.doke-input, .doke-select, .doke-textarea) {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  border: 1px solid var(--doke-form-control-border, #d4e0ef);
+  border-radius: var(--doke-form-control-radius, 14px);
+  background: var(--doke-form-control-bg, #f8fbff);
+  color: var(--doke-form-control-color, #0b3c7c);
+  box-shadow: var(--doke-form-control-shadow, 0 1px 0 rgba(255, 255, 255, 0.72) inset);
+  font: inherit;
+  font-size: var(--doke-form-control-font-size, 1rem);
+  font-weight: var(--doke-form-control-font-weight, 700);
+}
+
+.doke-field > :is(.doke-input, .doke-select),
+.doke-modal-field > :is(.doke-input, .doke-select) {
+  min-height: var(--doke-form-control-min-height, 52px);
+  padding-inline: var(--doke-form-control-padding-inline, 16px);
+}
+
+.doke-field > .doke-textarea,
+.doke-modal-field > .doke-textarea {
+  min-height: var(--doke-textarea-min-height, 108px);
+  padding: var(--doke-textarea-padding, 14px 16px 28px);
+  line-height: 1.5;
+}
+
+.doke-select:not(.doke-financial-modal__native-select):not(.doke-select__native) {
+  appearance: none;
+  padding-inline-end: var(--doke-select-padding-end, 44px);
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 22px) 50%,
+    calc(100% - 16px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+.doke-field > :is(.doke-input, .doke-select, .doke-textarea):is(:focus, :focus-visible),
+.doke-modal-field > :is(.doke-input, .doke-select, .doke-textarea):is(:focus, :focus-visible) {
+  border-color: var(--doke-form-control-focus-border, rgba(38, 116, 217, 0.45));
+  background: var(--doke-form-control-focus-bg, #fff);
+  box-shadow: var(--doke-form-control-focus-ring, 0 0 0 4px rgba(38, 116, 217, 0.08));
+  outline: 0;
+}
+
+.doke-field > :is(.doke-checkbox, .doke-radio),
+.doke-modal-check :is(.doke-checkbox, .doke-radio),
+.doke-switch > .doke-switch__input {
+  flex: 0 0 auto;
+}

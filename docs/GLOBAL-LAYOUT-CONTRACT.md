@@ -250,3 +250,23 @@ Proibições específicas:
 - não usar CSS de página para alterar `.app-shell`, `.sidebar`, `.page`, `.page__content`, `.page__content-inner` ou anatomia global do `mobile-app-shell`;
 - não usar `!important`, inline style ou JS para corrigir problema de layout da carteira.
 
+
+## Header/sidebar parity contract
+
+A partir do Lote R, todo HTML ativo da raiz deve declarar explicitamente os contratos de shell, sidebar e header:
+
+- `.app-shell[data-shell-contract="app-shell"]`;
+- `.sidebar[data-shell-sidebar][data-sidebar-contract="global-sidebar"]`;
+- `header.app-header[data-header-contract="app-header"][data-header-variant][data-header-family]`.
+
+`data-header-family` deve ser igual a `data-header-variant`; a família existe para scripts/audits e para futuras medições de estilo computado sem depender de classes específicas de página.
+
+`assets/js/core/app.js` reaplica esses atributos após navegação interna e cria `data-sidebar-scrim` quando a página carregada não trouxer o scrim estaticamente, mantendo o drawer mobile/tablet funcional entre carregamento direto e `DokeNavigate(...)`.
+
+O comando de guarda é:
+
+```bash
+npm run audit:header-sidebar-parity-contract
+```
+
+Esse gate valida estrutura e ownership. Paridade visual final ainda exige inspeção no navegador, principalmente porque existem contratos históricos de tablet/mobile com `!important` anteriores a este lote.

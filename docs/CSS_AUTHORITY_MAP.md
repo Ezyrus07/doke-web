@@ -302,3 +302,80 @@ Fronteira:
 - Painéis que não usam `hidden` como contrato de exibição não devem receber `doke-overlay` até serem migrados para uma família própria.
 
 Validação: `npm run audit:overlay-modal-contract`.
+
+## Modal Visual Contract
+
+Autoridade: `assets/css/components/overlays/modal-visual-contract.css`.
+
+Responsabilidade: anatomia visual final de modais/overlays equivalentes: largura, raio, sombra, padding, close, eyebrow, título, descrição, corpo, campos, footer, botões, scroll e responsividade mobile.
+
+Consumidores atuais:
+
+- `mensagens.html`: cobrança (`charge-modal`);
+- `carteira.html`: saque e conta bancária;
+- `comunidade.html`: entrar por código e criar comunidade;
+- `orcamento.html`: endereço e sucesso;
+- `resultados.html`: modal de UI e media previews;
+- `novidades.html`: detalhe de novidade;
+- `pagamento-profissional.html`: estados de pagamento/finalização;
+- `avaliacao-profissional.html`: sucesso da avaliação;
+- `anunciar-servico.html` e `tornar-profissional.html`: estados de envio;
+- `pedidos.html`: painel de detalhe/chat.
+
+Fronteira: CSS de página pode controlar conteúdo específico do modal, grid semântico, mensagens e estado de abertura. CSS de página não deve reassumir largura, radius, sombra, título, footer, botão de fechar, altura de ações ou shell visual dos campos quando o modal consome `doke-modal-surface`.
+
+Validação: `npm run audit:modal-visual-contract`.
+
+## Lote P — controles básicos de formulário
+
+Autoridade escolhida: `assets/css/components/forms/form-controls.css`.
+
+A anatomia de `doke-input`, `doke-select`, `doke-textarea`, `doke-checkbox`, `doke-radio`, `doke-switch`, `doke-field` e campos visíveis dentro de `doke-modal-field` pertence ao contrato de formulário compartilhado. CSS de página pode controlar grade, coluna, largura contextual, margem e ordem local, mas não deve redesenhar altura, raio, borda, fundo, sombra, tipografia, placeholder, foco ou marcação interna desses controles.
+
+Consumidores cobertos neste lote: todos os 21 HTMLs ativos da raiz e os 3 HTMLs de `auth/`. `input[type="hidden"]` e `input[type="file"]` ficam fora deste gate porque não são controles visuais equivalentes; uploads devem entrar em contrato próprio posterior.
+
+Validação: `npm run audit:form-control-contract`.
+
+## Contrato sistêmico de botões e ações
+
+Autoridade principal: `assets/css/components/buttons.css`.
+
+Responsabilidade: anatomia dos botões e ações reutilizáveis do produto — `doke-btn`, `doke-button`, `doke-icon-btn`, `doke-action-button`, `doke-close-button`, além de owners especializados como `doke-segment-button`, `doke-choice-button` e `doke-rating-star`.
+
+Fronteira: CSS de página pode posicionar uma ação, controlar grid/gap contextual, largura de container ou estado `hidden`. CSS de página não deve reassumir altura, padding, raio, borda, background, sombra, cor, SVG, hover ou disabled de ações que já possuem owner canônico.
+
+Consumidores atuais: todos os 21 HTMLs ativos da raiz e os 3 HTMLs de `auth/`. `auth-foundation.css` importa `buttons.css` explicitamente porque as páginas de autenticação não passam pelo manifest global `core/index.css`.
+
+Validação: `npm run audit:button-system-contract`, incluído em `npm run audit:agent-governance`. O inventário global também deve reportar `buttons without canonical class: 0`.
+
+## Header/sidebar global — Lote R
+
+Autoridades escolhidas:
+
+- `assets/css/layout/header.css` para a anatomia visual e geometria do `app-header`;
+- `assets/css/pages/sidebar-unified.css` e `assets/css/pages/internal-shell.css` para a sidebar compartilhada e encaixe no shell atual;
+- `assets/js/core/app.js` para renderizar o markup único da sidebar, reaplicar atributos de contrato após navegação interna e garantir o scrim de drawer quando necessário.
+
+Consumidores: todos os 21 HTMLs ativos da raiz.
+
+Contrato estrutural obrigatório:
+
+```html
+<div class="app-shell" data-shell-contract="app-shell">
+  <aside class="sidebar" data-shell-sidebar data-sidebar-contract="global-sidebar"></aside>
+  <div class="page">
+    <header class="app-header home-side-meta" data-app-header data-header-contract="app-header" data-header-variant="standard|contextual" data-header-family="standard|contextual">
+      ...
+    </header>
+  </div>
+</div>
+```
+
+Fronteira:
+
+- páginas podem escolher a variante do header, texto, ações contextuais e conteúdo do slot;
+- páginas não devem criar outro shell, outra sidebar ou outro topbar concorrente para corrigir uma diferença local;
+- alterações visuais em controles do header devem ir para `layout/header.css` ou para o componente correto de botão/avatar/busca;
+- diferenças no menu lateral devem ser resolvidas no markup único de `assets/js/core/app.js` ou na autoridade compartilhada da sidebar, não no CSS de uma página.
+
+Validação: `npm run audit:header-sidebar-parity-contract`, incluído em `npm run audit:agent-governance`.
