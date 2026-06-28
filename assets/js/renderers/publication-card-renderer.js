@@ -74,7 +74,7 @@
     publication = publication || {};
 
     return dom.create('article', {
-      className: 'publication-card doke-publication-card ' + (publication.className || ''),
+      className: 'publication-card doke-card doke-publication-card ' + (publication.className || ''),
       attrs: {
         'data-publication-card': '',
         'data-card-kind': 'publication',

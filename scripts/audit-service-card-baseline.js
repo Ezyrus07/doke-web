@@ -73,21 +73,21 @@ for (const page of stablePages) {
       'home.css',
       'search-results.css',
       'perfil.css',
-      'results/index.css'
+      'search-results.css'
     ]),
     importsGridManifestOrDirect: hasAny(hrefs.join('\n'), [
       'service-card-grid.css',
       'home.css',
       'search-results.css',
       'perfil.css',
-      'results/index.css'
+      'search-results.css'
     ]),
     importsFavoriteManifestOrDirect: hasAny(hrefs.join('\n'), [
       'favorite-action.css',
       'home.css',
       'search-results.css',
       'perfil.css',
-      'results/index.css'
+      'search-results.css'
     ])
   };
 

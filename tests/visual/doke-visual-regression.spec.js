@@ -57,16 +57,19 @@ async function getLayoutHealth(page) {
   });
 }
 
-async function assertShellPresence(page, pagePath, viewport) {
-  if (viewport.kind === 'desktop') {
+async function assertShellPresence(page, pageEntry, viewport) {
+  const pagePath = pageEntry.path;
+  const shellContract = pageEntry.shell || {};
+
+  if (viewport.kind === 'desktop' && shellContract.desktop !== false) {
     const desktopShell = page.locator('.desktop-sidebar, .doke-desktop-sidebar, .sidebar, aside').first();
     await expect(desktopShell, `${pagePath} deve manter sidebar/shell desktop`).toBeVisible();
     return;
   }
 
-  if (viewport.kind === 'mobile') {
+  if (viewport.kind === 'mobile' && shellContract.mobile !== false) {
     const mobileShell = page
-      .locator('.doke-mobile-app-shell, .mobile-bottom-nav, .doke-bottom-nav, .doke-mobile-bottom-nav')
+      .locator('.doke-mobile-app-shell:visible, .mobile-bottom-nav:visible, .doke-bottom-nav:visible, .doke-mobile-bottom-nav:visible')
       .first();
     await expect(mobileShell, `${pagePath} deve manter navegação/shell mobile`).toBeVisible();
   }
@@ -109,6 +112,26 @@ for (const viewport of manifest.viewports) {
           }
         });
 
+        if (pageEntry.authenticated) {
+          await page.addInitScript(() => {
+            localStorage.setItem('doke.auth.session.v1', JSON.stringify({
+              provider: 'visual-test',
+              token: 'visual-test-session',
+              remember: false,
+              user: {
+                id: 'visual-test-user',
+                name: 'Usuário de validação',
+                email: 'visual@example.test',
+                role: 'client',
+                type: 'client',
+                initials: 'UV'
+              },
+              issuedAt: '2026-01-01T00:00:00.000Z',
+              updatedAt: '2026-01-01T00:00:00.000Z'
+            }));
+          });
+        }
+
         await page.goto(`/${pageEntry.path}`);
         await waitForStablePage(page);
 
@@ -122,7 +145,7 @@ for (const viewport of manifest.viewports) {
         expect(layoutHealth.horizontalOverflow, `${pageEntry.path} não pode ter overflow horizontal`).toBe(false);
         expect(layoutHealth.verticalOverflowLocked, `${pageEntry.path} não pode travar scroll vertical`).toBe(false);
 
-        await assertShellPresence(page, pageEntry.path, viewport);
+        await assertShellPresence(page, pageEntry, viewport);
 
         expect(consoleErrors, `${pageEntry.path} não pode emitir console.error`).toEqual([]);
         expect(failedRequests, `${pageEntry.path} não pode ter request failed`).toEqual([]);

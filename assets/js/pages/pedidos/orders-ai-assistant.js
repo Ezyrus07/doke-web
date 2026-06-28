@@ -67,7 +67,7 @@
         <header class="doke-ai-panel__header">
           <div class="doke-ai-panel__top">
             <span class="doke-ai-panel__eyebrow">Assistente operacional</span>
-            <button class="doke-ai-panel__close" type="button" data-doke-ai-close aria-label="Fechar Doke IA">${ICONS.close}</button>
+            <button class="doke-ai-panel__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-doke-ai-close aria-label="Fechar Doke IA">${ICONS.close}</button>
           </div>
           <div>
             <h2 class="doke-ai-panel__title" id="doke-ai-title">Doke IA para pedidos</h2>
@@ -82,7 +82,7 @@
               <span class="doke-ai-card__label">Prioridade agora</span>
               <strong class="doke-ai-card__title" data-ai-priority-title></strong>
               <p class="doke-ai-card__text" data-ai-priority-text></p>
-              <button class="doke-ai-card__action" type="button" data-ai-open-priority>Ver pedido</button>
+              <button class="doke-ai-card__action doke-btn doke-btn--soft" type="button" data-ai-open-priority>Ver pedido</button>
             </div>
           </article>
 
@@ -115,7 +115,7 @@
 
         <footer class="doke-ai-compose">
           <textarea class="doke-ai-compose__textarea" data-ai-draft readonly></textarea>
-          <button class="doke-ai-compose__copy" type="button" data-ai-copy>Copiar sugestão</button>
+          <button class="doke-ai-compose__copy doke-btn doke-btn--primary" type="button" data-ai-copy>Copiar sugestão</button>
         </footer>
       </section>
     `;

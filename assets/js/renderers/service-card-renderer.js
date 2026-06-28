@@ -51,7 +51,7 @@
               attrs: { 'data-service-badge': '' }
             }),
             dom.create('button', {
-              className: 'service-card__favorite',
+              className: 'service-card__favorite doke-icon-btn doke-icon-btn--soft',
               attrs: {
                 type: 'button',
                 'aria-label': 'Salvar anúncio',
@@ -120,7 +120,7 @@
                   attrs: { 'data-service-price': '' }
                 }),
                 dom.create('a', {
-                  className: 'service-card__cta doke-btn doke-btn--primary doke-btn--compact',
+                  className: 'service-card__cta doke-btn doke-btn--success doke-btn--compact',
                   text: 'Ver anúncio',
                   attrs: { href: detailHref, 'data-service-cta': '' }
                 })

@@ -37,10 +37,10 @@
       <aside class="doke-help-drawer__panel" role="dialog" aria-modal="true" aria-labelledby="doke-help-drawer-title">
         <header class="doke-help-drawer__header">
           <h2 class="doke-help-drawer__title" id="doke-help-drawer-title">Ajuda e suporte</h2>
-          <button class="doke-help-drawer__close" type="button" data-help-drawer-close aria-label="Fechar ajuda">${icon.close}</button>
+          <button class="doke-help-drawer__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-help-drawer-close aria-label="Fechar ajuda">${icon.close}</button>
         </header>
-        <label class="doke-help-drawer__search">
-          <input type="search" placeholder="Buscar ajuda" autocomplete="off" spellcheck="false">
+        <label class="doke-help-drawer__search doke-search-field">
+          <input class="doke-search-field__input doke-input" type="search" placeholder="Buscar ajuda" autocomplete="off" spellcheck="false">
           ${icon.search}
         </label>
         <p class="doke-help-drawer__text">Encontre respostas rápidas para as dúvidas mais comuns ou fale com nosso time.</p>
@@ -53,7 +53,7 @@
             </button>
           `).join('')}
         </div>
-        <button class="doke-help-drawer__cta" type="button" data-help-center-pending>${icon.book}<span>Ver central de ajuda</span></button>
+        <button class="doke-help-drawer__cta doke-btn doke-btn--primary" type="button" data-help-center-pending>${icon.book}<span>Ver central de ajuda</span></button>
         <footer class="doke-help-drawer__meta">
           <span>Atendimento de segunda a sexta, das 8h às 18h.</span>
           <span class="doke-help-drawer__status">Tempo médio de resposta: 2 min</span>

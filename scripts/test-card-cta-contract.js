@@ -19,7 +19,6 @@ const sources = [
   'perfil.html',
   'perfil-profissional.html',
   'assets/js/pages/search-results.js',
-  'assets/js/pages/results/index.js',
   'assets/js/controllers/perfil-controller.js',
 ];
 

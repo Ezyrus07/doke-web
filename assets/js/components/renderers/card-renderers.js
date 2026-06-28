@@ -35,6 +35,11 @@
   function renderServiceCard(service, templateSelector) {
     service = service || {};
     var node = createFromTemplate(templateSelector || '#service-card-template', 'article');
+    node.classList.add('service-card', 'doke-card', 'doke-service-card');
+    var serviceCta = node.querySelector('[data-service-cta], .service-card__cta');
+    if (serviceCta) serviceCta.classList.add('doke-btn', 'doke-btn--success');
+    var serviceFavorite = node.querySelector('[data-service-favorite], [data-favorite-action], .service-card__favorite');
+    if (serviceFavorite) serviceFavorite.classList.add('doke-icon-btn', 'doke-icon-btn--soft');
     node.dataset.serviceCard = 'true';
     if (service.id) node.dataset.serviceId = service.id;
 
@@ -53,6 +58,9 @@
   function renderWorkerCard(worker, templateSelector) {
     worker = worker || {};
     var node = createFromTemplate(templateSelector || '#worker-card-template', 'article');
+    node.classList.add('video-card', 'doke-card', 'doke-worker-card', 'doke-media-card');
+    var workerFavorite = node.querySelector('[data-worker-favorite], .video-card__save, .worker-card__save');
+    if (workerFavorite && workerFavorite.tagName === 'BUTTON') workerFavorite.classList.add('doke-icon-btn', 'doke-icon-btn--soft');
     node.dataset.workerCard = 'true';
     if (worker.id) node.dataset.workerId = worker.id;
 
@@ -69,6 +77,7 @@
   function renderPublicationCard(publication, templateSelector) {
     publication = publication || {};
     var node = createFromTemplate(templateSelector || '#publication-card-template', 'article');
+    node.classList.add('publication-card', 'doke-card', 'doke-publication-card');
     node.dataset.publicationCard = 'true';
     if (publication.id) node.dataset.publicationId = publication.id;
 

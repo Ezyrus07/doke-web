@@ -12,9 +12,12 @@
     const search = root.querySelector('[data-help-search]');
     const faqItems = [...root.querySelectorAll('[data-help-faq]')];
     const empty = document.createElement('div');
-    empty.className = 'help-empty-state content-surface';
+    empty.className = 'help-empty-state content-surface doke-empty-state doke-list-state';
     empty.textContent = 'Nenhum resultado encontrado. Tente buscar por outro termo ou abra um chamado com o suporte.';
     empty.hidden = true;
+    empty.dataset.listState = 'empty';
+    empty.setAttribute('role', 'status');
+    empty.setAttribute('aria-live', 'polite');
     cardsGrid?.appendChild(empty);
 
     let activeCategory = 'all';

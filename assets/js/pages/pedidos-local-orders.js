@@ -152,9 +152,10 @@
     var dotClass = 'order-card__status-dot--' + statusClass(order.status);
 
     var article = document.createElement('article');
-    article.className = 'order-card doke-card doke-order-card';
+    article.className = 'order-card doke-selectable-card doke-card doke-order-card';
     article.dataset.id = order.id;
     article.dataset.localOrder = 'true';
+    article.dataset.domainCard = 'order';
     article.dataset.status = order.status || 'pending';
     article.dataset.detailStatus = order.statusLabel || 'Aguardando resposta';
     article.dataset.detailAddress = order.location || order.locationTitle || 'Endereço a confirmar';
@@ -172,7 +173,7 @@
     article.dataset.attachments = attachments;
     article.tabIndex = 0;
     article.innerHTML = `
-      <button class="order-card__select" type="button" aria-label="Selecionar pedido"><span></span></button>
+      <button class="order-card__select doke-selection-check" type="button" aria-label="Selecionar pedido" aria-pressed="false"><span></span></button>
       <div class="order-card__top">
         <div class="order-card__statusline">
           <span class="order-card__status-dot ${dotClass}"></span>

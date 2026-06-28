@@ -45,7 +45,7 @@
     if (!target) return;
 
     const insight = document.createElement('button');
-    insight.className = 'order-card__ai-insight';
+    insight.className = 'order-card__ai-insight doke-btn doke-btn--soft';
     insight.type = 'button';
     insight.dataset.dokeAiOpen = 'true';
     insight.innerHTML = `
@@ -63,7 +63,7 @@
     const top = data.qs('.order-card__top', card);
     if (top && !data.qs('.order-card__smart-badge', top)) {
       const badge = document.createElement('span');
-      badge.className = 'order-card__smart-badge';
+      badge.className = 'order-card__smart-badge doke-badge';
       top.appendChild(badge);
     }
 
@@ -81,7 +81,7 @@
         <strong class="order-card__next-action-title"></strong>
         <span class="order-card__next-action-note"></span>
       </span>
-      <button class="order-card__next-action-button" type="button" data-order-open="details" aria-label="Ver próxima ação">›</button>
+      <button class="order-card__next-action-button doke-icon-btn doke-icon-btn--soft" type="button" data-order-open="details" aria-label="Ver próxima ação">›</button>
     `;
 
     if (actions) card.insertBefore(block, actions);

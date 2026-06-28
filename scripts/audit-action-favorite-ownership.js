@@ -44,7 +44,6 @@ const manifests = [
   'assets/css/pages/home/sections.css',
   'assets/css/pages/perfil.css',
   'assets/css/pages/search-results.css',
-  'assets/css/pages/results/index.css',
 ];
 
 for (const file of manifests) {

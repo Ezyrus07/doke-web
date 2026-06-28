@@ -2,7 +2,7 @@
   'use strict';
 
   var Doke = window.Doke || (window.Doke = {});
-  var ROUTER_VERSION = '20260626-stable-shell-router-hydration-surfaces-v2';
+  var ROUTER_VERSION = '20260628-stable-shell-router-hydration-barrier-v3';
 
   var SAFE_ROUTES = new Set([
     '/ajuda.html',
@@ -27,6 +27,11 @@
   ]);
 
   var NATIVE_ONLY_ROUTES = new Set([]);
+  var HYDRATION_BARRIER_ROUTES = new Set([
+    '/pedidos.html',
+    '/mensagens.html',
+    '/notificacoes.html'
+  ]);
 
   var ROUTE_INIT = {
     '/index.html': ['DokeInitHome'],
@@ -528,6 +533,14 @@
 
   function prepareInternalHydrationSurface(scope) {
     if (!scope || typeof scope.querySelectorAll !== 'function') return;
+    scope.querySelectorAll('[data-state-boundary="pedidos"], [data-state-boundary="mensagens"], [data-state-boundary="notificacoes"]').forEach(function (node) {
+      try {
+        node.setAttribute('data-view-state', 'loading');
+        node.setAttribute('aria-busy', 'true');
+        node.setAttribute('data-page-hydration', 'hydrating');
+        node.setAttribute('data-page-hydration-skeleton', 'on');
+      } catch (error) {}
+    });
     scope.querySelectorAll('[data-orders-document-preloader], [data-messages-document-preloader], [data-notifications-document-preloader], .orders-document-preloader, .doke-document-preloader').forEach(function (node) {
       try {
         node.hidden = true;
@@ -536,14 +549,14 @@
     });
     scope.querySelectorAll('[data-orders-hydration-skeleton], [data-messages-hydration-skeleton], [data-notifications-hydration-skeleton]').forEach(function (node) {
       try {
-        node.hidden = true;
-        node.setAttribute('aria-hidden', 'true');
+        node.hidden = false;
+        node.setAttribute('aria-hidden', 'false');
       } catch (error) {}
     });
     scope.querySelectorAll('[data-orders-hydration-ready], [data-messages-hydration-ready], [data-notifications-hydration-ready]').forEach(function (node) {
       try {
-        node.hidden = false;
-        node.setAttribute('aria-hidden', 'false');
+        node.hidden = true;
+        node.setAttribute('aria-hidden', 'true');
       } catch (error) {}
     });
     scope.querySelectorAll('[data-orders-empty], [data-messages-empty], [data-notifications-empty]').forEach(function (node) {
@@ -723,11 +736,13 @@
       try { window.lucide && window.lucide.createIcons && window.lucide.createIcons(); } catch (error) {}
       setBusy(false);
 
-      await new Promise(function (resolve) {
-        requestAnimationFrame(function () {
-          requestAnimationFrame(resolve);
+      if (!HYDRATION_BARRIER_ROUTES.has(path)) {
+        await new Promise(function (resolve) {
+          requestAnimationFrame(function () {
+            requestAnimationFrame(resolve);
+          });
         });
-      });
+      }
 
       await ensureScripts(nextDoc);
       if (id !== navigationId) return;

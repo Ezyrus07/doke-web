@@ -665,7 +665,7 @@ const initBudgetPage = () => {
             <div class="orders-card__top">
               <div class="orders-card__header">
                 <div class="orders-card__title-wrap">
-                  <input class="orders-card__check" type="checkbox" aria-label="Selecionar pedido ${serviceName}">
+                  <input class="orders-card__check doke-checkbox" type="checkbox" aria-label="Selecionar pedido ${serviceName}">
                   <div>
                     <h3>${serviceName}</h3>
                     <p class="orders-card__provider">Enviado para <strong>${providerName}</strong></p>
@@ -696,8 +696,8 @@ const initBudgetPage = () => {
             <div class="orders-card__footer">
               <p class="orders-card__next">Tudo fica centralizado aqui para acompanhar respostas e próximos passos.</p>
               <div class="orders-card__actions">
-                <a class="orders-button orders-button--ghost" href="pedidos.html">Ver detalhes</a>
-                <a class="orders-button orders-button--primary" href="#">${nextAction}</a>
+                <a class="orders-button orders-button--ghost doke-btn doke-btn--ghost" href="pedidos.html">Ver detalhes</a>
+                <a class="orders-button orders-button--primary doke-btn doke-btn--primary" href="#">${nextAction}</a>
               </div>
             </div>
           </article>
@@ -761,7 +761,7 @@ const initBudgetPage = () => {
             <div class="orders-card__top">
               <div class="orders-card__header">
                 <div class="orders-card__title-wrap">
-                  <input class="orders-card__check" type="checkbox" aria-label="Selecionar pedido ${serviceName}">
+                  <input class="orders-card__check doke-checkbox" type="checkbox" aria-label="Selecionar pedido ${serviceName}">
                   <div>
                     <h3>${serviceName}</h3>
                     <p class="orders-card__provider">Enviado para <strong>${providerName}</strong></p>
@@ -792,8 +792,8 @@ const initBudgetPage = () => {
             <div class="orders-card__footer">
               <p class="orders-card__next">Tudo fica centralizado aqui para acompanhar respostas e próximos passos.</p>
               <div class="orders-card__actions">
-                <a class="orders-button orders-button--ghost" href="pedidos.html">Ver detalhes</a>
-                <a class="orders-button orders-button--primary" href="#">${nextAction}</a>
+                <a class="orders-button orders-button--ghost doke-btn doke-btn--ghost" href="pedidos.html">Ver detalhes</a>
+                <a class="orders-button orders-button--primary doke-btn doke-btn--primary" href="#">${nextAction}</a>
               </div>
             </div>
           </article>

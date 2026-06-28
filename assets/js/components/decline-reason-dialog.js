@@ -22,32 +22,32 @@
 
     var layer = document.createElement('section');
     layer.id = DIALOG_ID;
-    layer.className = 'doke-action-modal';
+    layer.className = 'doke-action-modal doke-overlay doke-overlay--action';
     layer.dataset.declineReasonDialog = 'true';
     layer.hidden = true;
     layer.setAttribute('aria-hidden', 'true');
     layer.innerHTML = [
-      '<button class="doke-action-modal__scrim" type="button" data-decline-reason-cancel aria-label="Cancelar recusa"></button>',
-      '<section class="doke-action-modal__surface" role="dialog" aria-modal="true" aria-labelledby="decline-reason-title" aria-describedby="decline-reason-text">',
-      '  <header class="doke-action-modal__header">',
+      '<button class="doke-action-modal__scrim doke-overlay__backdrop" type="button" data-decline-reason-cancel aria-label="Cancelar recusa"></button>',
+      '<section class="doke-action-modal__surface doke-overlay__surface doke-modal-surface doke-modal-surface--compact" role="dialog" aria-modal="true" aria-labelledby="decline-reason-title" aria-describedby="decline-reason-text">',
+      '  <header class="doke-action-modal__header doke-overlay__header doke-modal-header">',
       '    <div class="doke-action-modal__intro">',
-      '      <span class="doke-action-modal__eyebrow doke-action-modal__eyebrow--blue">Pedido</span>',
-      '      <h2 class="doke-action-modal__title" id="decline-reason-title" data-decline-reason-title>Recusar pedido</h2>',
-      '      <p class="doke-action-modal__text" id="decline-reason-text" data-decline-reason-text>Informe uma justificativa clara para o cliente entender o motivo da recusa.</p>',
+      '      <span class="doke-action-modal__eyebrow doke-action-modal__eyebrow--blue doke-modal-eyebrow doke-modal-eyebrow--blue">Pedido</span>',
+      '      <h2 class="doke-action-modal__title doke-modal-title" id="decline-reason-title" data-decline-reason-title>Recusar pedido</h2>',
+      '      <p class="doke-action-modal__text doke-modal-description" id="decline-reason-text" data-decline-reason-text>Informe uma justificativa clara para o cliente entender o motivo da recusa.</p>',
       '    </div>',
-      '    <button class="doke-action-modal__close" type="button" data-decline-reason-cancel aria-label="Fechar">',
+      '    <button class="doke-action-modal__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-decline-reason-cancel aria-label="Fechar">',
       '      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>',
       '    </button>',
       '  </header>',
       '  <form class="doke-action-modal__form" data-decline-reason-form>',
-      '    <div class="doke-action-modal__body">',
-      '      <label class="doke-action-modal__field doke-action-modal__field--wide">',
+      '    <div class="doke-action-modal__body doke-overlay__body doke-modal-body">',
+      '      <label class="doke-action-modal__field doke-action-modal__field--wide doke-field doke-modal-field">',
       '        <span>Justificativa obrigatória</span>',
-      '        <textarea data-decline-reason-input rows="4" maxlength="280" required placeholder="Ex.: não consigo atender esse prazo, mas posso ajudar em outra data."></textarea>',
+      '        <textarea class="doke-textarea" data-decline-reason-input rows="4" maxlength="280" required placeholder="Ex.: não consigo atender esse prazo, mas posso ajudar em outra data."></textarea>',
       '      </label>',
-      '      <article class="doke-action-modal__summary-card doke-action-modal__summary-card--wide" data-decline-reason-summary hidden></article>',
+      '      <article class="doke-action-modal__summary-card doke-action-modal__summary-card--wide doke-modal-summary-card doke-modal-summary-card--wide" data-decline-reason-summary hidden></article>',
       '    </div>',
-      '    <footer class="doke-action-modal__footer">',
+      '    <footer class="doke-action-modal__footer doke-overlay__actions doke-modal-actions">',
       '      <button class="doke-action-modal__button doke-btn doke-btn--ghost" type="button" data-decline-reason-cancel>Cancelar</button>',
       '      <button class="doke-action-modal__button doke-action-modal__button--primary doke-btn doke-btn--primary" type="submit">Confirmar recusa</button>',
       '    </footer>',

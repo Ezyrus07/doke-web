@@ -58,9 +58,9 @@
         <main class="page__content settings-main doke-page" aria-label="Configurações da conta">
           <section class="settings-layout doke-page-shell doke-page-section" data-state-boundary="configuracoes" data-state-scope="configuracoes" data-view-state="ready" aria-busy="false">
             <div class="doke-state-region" data-state-region data-state-scope="configuracoes" aria-live="polite" hidden>
-              <p data-state-loading hidden>Carregando configurações...</p>
-              <p data-state-empty hidden>Nenhuma configuração disponível.</p>
-              <p data-state-error hidden>Não foi possível carregar as configurações.</p>
+              <p data-state-loading hidden class="doke-loading-state">Carregando configurações...</p>
+              <p data-state-empty hidden class="doke-empty-state">Nenhuma configuração disponível.</p>
+              <p data-state-error hidden class="doke-error-state">Não foi possível carregar as configurações.</p>
             </div>
 
             <nav class="settings-sidebar" aria-label="Menu de configurações">
@@ -96,7 +96,7 @@
 
             <div class="settings-content">
               <div class="settings-panel-topbar" aria-label="Navegação da seção de configurações">
-                <button class="home-side-meta__alert detail-standard-topbar__back settings-panel-back" type="button" data-settings-mobile-back data-settings-panel-back aria-label="Voltar para configurações">
+                <button class="home-side-meta__alert detail-standard-topbar__back settings-panel-back doke-icon-btn doke-icon-btn--soft" type="button" data-settings-mobile-back data-settings-panel-back aria-label="Voltar para configurações">
                   <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"></path></svg>
                 </button>
               </div>
@@ -134,11 +134,11 @@
                       </div>
 
                       <div class="settings-form-grid">
-                        <label class="settings-field"><span>Nome completo</span><input type="text" name="fullName" value="Gabriel Oliveira" autocomplete="name" / class="doke-input"></label>
-                        <label class="settings-field"><span>Nome de exibição</span><input type="text" name="displayName" value="Gabriel" autocomplete="nickname" / class="doke-input"></label>
-                        <label class="settings-field"><span>CPF/CNPJ</span><input type="text" name="document" value="123.456.789-00" inputmode="numeric" / class="doke-input"></label>
-                        <label class="settings-field"><span>Telefone</span><input type="tel" name="phone" value="(11) 99999-9999" autocomplete="tel" / class="doke-input"></label>
-                        <label class="settings-field settings-field--full"><span>Email</span><input type="email" name="email" value="gabriel@example.com" autocomplete="email" / class="doke-input"></label>
+                        <label class="settings-field doke-field"><span>Nome completo</span><input type="text" name="fullName" value="Gabriel Oliveira" autocomplete="name" / class="doke-input"></label>
+                        <label class="settings-field doke-field"><span>Nome de exibição</span><input type="text" name="displayName" value="Gabriel" autocomplete="nickname" / class="doke-input"></label>
+                        <label class="settings-field doke-field"><span>CPF/CNPJ</span><input type="text" name="document" value="123.456.789-00" inputmode="numeric" / class="doke-input"></label>
+                        <label class="settings-field doke-field"><span>Telefone</span><input type="tel" name="phone" value="(11) 99999-9999" autocomplete="tel" / class="doke-input"></label>
+                        <label class="settings-field settings-field--full doke-field"><span>Email</span><input type="email" name="email" value="gabriel@example.com" autocomplete="email" / class="doke-input"></label>
                       </div>
                     </form>
 
@@ -154,7 +154,7 @@
 
                   <footer class="settings-card__footer">
                     <button class="settings-action settings-action--secondary button--ghost doke-btn doke-btn--ghost" type="button">Cancelar</button>
-                    <button class="settings-action settings-action--primary doke-btn doke-btn--primary" type="submit">Salvar alterações</button>
+                    <button class="settings-action settings-action--primary doke-btn doke-btn--primary" type="submit" data-action-state="idle" data-action-loading-label="Salvando alterações" aria-busy="false">Salvar alterações</button>
                   </footer>
                 </article>
               </section>
@@ -240,9 +240,9 @@
                         </div>
                       </div>
                       <div class="settings-form-grid">
-                        <label class="settings-field"><span>Nome profissional</span><input type="text" name="professionalName" value="Gabriel Oliveira" placeholder="Ex: Gabriel Oliveira" / class="doke-input"></label>
-                        <label class="settings-field"><span>Tipo de profissional</span><select class="doke-select" data-ui-select name="professionalType"><option>Autônomo</option><option>Empresa</option><option>Equipe</option></select></label>
-                        <label class="settings-field settings-field--full"><span>Descrição curta</span><textarea name="professionalDescription" rows="4" placeholder="Conte brevemente o que você faz, sua experiência e diferencial." class="doke-textarea">Atendimento residencial com foco em qualidade, prazo e comunicação clara.</textarea></label>
+                        <label class="settings-field doke-field"><span>Nome profissional</span><input type="text" name="professionalName" value="Gabriel Oliveira" placeholder="Ex: Gabriel Oliveira" / class="doke-input"></label>
+                        <label class="settings-field doke-field"><span>Tipo de profissional</span><select class="doke-select" data-ui-select name="professionalType"><option>Autônomo</option><option>Empresa</option><option>Equipe</option></select></label>
+                        <label class="settings-field settings-field--full doke-field"><span>Descrição curta</span><textarea name="professionalDescription" rows="4" placeholder="Conte brevemente o que você faz, sua experiência e diferencial." class="doke-textarea">Atendimento residencial com foco em qualidade, prazo e comunicação clara.</textarea></label>
                       </div>
                     </section>
 
@@ -255,9 +255,9 @@
                         </div>
                       </div>
                       <div class="settings-form-grid">
-                        <label class="settings-field"><span>Categoria principal</span><select class="doke-select" data-ui-select name="mainCategory"><option>Pintura</option><option>Elétrica</option><option>Encanamento</option><option>Limpeza</option><option>Design de interfaces</option></select></label>
-                        <label class="settings-field"><span>Experiência</span><select class="doke-select" data-ui-select name="experience"><option>Menos de 1 ano</option><option>1 a 3 anos</option><option>3 a 5 anos</option><option>Mais de 5 anos</option></select></label>
-                        <div class="settings-field settings-field--full">
+                        <label class="settings-field doke-field"><span>Categoria principal</span><select class="doke-select" data-ui-select name="mainCategory"><option>Pintura</option><option>Elétrica</option><option>Encanamento</option><option>Limpeza</option><option>Design de interfaces</option></select></label>
+                        <label class="settings-field doke-field"><span>Experiência</span><select class="doke-select" data-ui-select name="experience"><option>Menos de 1 ano</option><option>1 a 3 anos</option><option>3 a 5 anos</option><option>Mais de 5 anos</option></select></label>
+                        <div class="settings-field settings-field--full doke-field">
                           <span>Especialidades</span>
                           <div class="settings-chip-list" aria-label="Especialidades profissionais">
                             <button type="button" class="settings-chip is-active">Residencial</button>
@@ -278,9 +278,9 @@
                         </div>
                       </div>
                       <div class="settings-form-grid">
-                        <label class="settings-field"><span>Cidade base</span><input type="text" name="baseCity" value="Salvador, BA" / class="doke-input"></label>
-                        <label class="settings-field"><span>Raio de atendimento</span><select class="doke-select" data-ui-select name="serviceRadius"><option>Até 5 km</option><option>Até 10 km</option><option>Até 20 km</option><option>Toda a cidade</option></select></label>
-                        <label class="settings-field settings-field--full"><span>Bairros atendidos</span><input type="text" name="neighborhoods" placeholder="Ex: Pituba, Barra, Rio Vermelho, Centro" / class="doke-input"></label>
+                        <label class="settings-field doke-field"><span>Cidade base</span><input type="text" name="baseCity" value="Salvador, BA" / class="doke-input"></label>
+                        <label class="settings-field doke-field"><span>Raio de atendimento</span><select class="doke-select" data-ui-select name="serviceRadius"><option>Até 5 km</option><option>Até 10 km</option><option>Até 20 km</option><option>Toda a cidade</option></select></label>
+                        <label class="settings-field settings-field--full doke-field"><span>Bairros atendidos</span><input type="text" name="neighborhoods" placeholder="Ex: Pituba, Barra, Rio Vermelho, Centro" / class="doke-input"></label>
                       </div>
                     </section>
 
@@ -415,7 +415,7 @@
     <script src="assets/js/core/feature-flags.js?v=20260501-stage32-runtime-flags" defer></script>
     <script src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags" defer></script>
     <script src="assets/js/core/app.js?v=20260622-header-visitor-neutral-v1" defer></script>
-    <script src="assets/js/core/stable-shell-router.js?v=20260626-hydration-surfaces-v1" defer></script>
+    <script src="assets/js/core/stable-shell-router.js?v=20260628-hydration-barrier-v3" defer></script>
 <script src="assets/js/pages/configuracoes.js?v=20260619-settings-entry-flow-v17" defer></script>
     <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture" defer></script>
     <script src="assets/js/ui/mobile-drawer.js" defer></script>

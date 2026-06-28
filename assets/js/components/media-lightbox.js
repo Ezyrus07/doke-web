@@ -34,11 +34,11 @@
     root.setAttribute('aria-hidden', 'true');
     root.innerHTML = `
       <div class="doke-media-lightbox__surface" data-media-lightbox-surface>
-        <button class="doke-media-lightbox__close" type="button" data-media-lightbox-close aria-label="Fechar imagem">${iconClose}</button>
+        <button class="doke-media-lightbox__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-media-lightbox-close aria-label="Fechar imagem">${iconClose}</button>
         <div class="doke-media-lightbox__stage">
-          <button class="doke-media-lightbox__nav doke-media-lightbox__nav--prev" type="button" data-media-lightbox-prev aria-label="Imagem anterior">${iconPrev}</button>
+          <button class="doke-media-lightbox__nav doke-media-lightbox__nav--prev doke-icon-btn doke-icon-btn--soft" type="button" data-media-lightbox-prev aria-label="Imagem anterior">${iconPrev}</button>
           <img class="doke-media-lightbox__image" data-media-lightbox-image src="" alt="Imagem ampliada">
-          <button class="doke-media-lightbox__nav doke-media-lightbox__nav--next" type="button" data-media-lightbox-next aria-label="Próxima imagem">${iconNext}</button>
+          <button class="doke-media-lightbox__nav doke-media-lightbox__nav--next doke-icon-btn doke-icon-btn--soft" type="button" data-media-lightbox-next aria-label="Próxima imagem">${iconNext}</button>
         </div>
         <div class="doke-media-lightbox__thumbs" data-media-lightbox-thumbs aria-label="Miniaturas da galeria"></div>
       </div>

@@ -151,7 +151,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     recommendations.forEach((item) => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'search-chip';
+      button.className = 'search-chip doke-chip';
       button.dataset.value = item;
       button.innerHTML = `${searchItemIcon()}<span>${item}</span>`;
       els.resultsRecommendationList.appendChild(button);
@@ -515,7 +515,7 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
     article.innerHTML = `
       <div class="doke-ad-card__media ${mediaClass}">
         <span class="doke-ad-card__badge ${item.badgeModifier || ''}">${item.badge || 'Em destaque'}</span>
-        <button class="doke-ad-card__favorite" type="button" aria-label="Salvar anúncio">
+        <button class="doke-ad-card__favorite doke-icon-btn doke-icon-btn--soft" type="button" aria-label="Salvar anúncio">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 5.9a5.1 5.1 0 0 0-7.2 0L12 7.5l-1.6-1.6a5.1 5.1 0 1 0-7.2 7.2L12 21l8.8-7.9a5.1 5.1 0 0 0 0-7.2Z"></path></svg>
         </button>
       </div>

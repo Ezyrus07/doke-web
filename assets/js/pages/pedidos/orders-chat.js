@@ -53,7 +53,7 @@
       <section class="orders-chat-panel" role="dialog" aria-modal="true" aria-labelledby="orders-chat-title" tabindex="-1">
         <header class="orders-chat-panel__header">
           <div class="orders-chat-panel__top">
-            <button class="orders-chat-panel__back" type="button" data-orders-chat-back aria-label="Voltar para os detalhes">${ICON_BACK}</button>
+            <button class="orders-chat-panel__back doke-icon-btn doke-icon-btn--soft" type="button" data-orders-chat-back aria-label="Voltar para os detalhes">${ICON_BACK}</button>
             <div class="orders-chat-panel__profile">
               <span class="orders-chat-panel__avatar doke-avatar" data-chat-avatar aria-hidden="true">DK</span>
               <span class="orders-chat-panel__identity">
@@ -63,7 +63,7 @@
             </div>
             <div class="orders-chat-panel__actions">
               <a class="orders-chat-panel__messages-link" href="mensagens.html" data-chat-messages-link>Abrir conversa</a>
-              <button class="orders-chat-panel__close" type="button" data-orders-chat-close aria-label="Fechar chat">${ICON_CLOSE}</button>
+              <button class="orders-chat-panel__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-orders-chat-close aria-label="Fechar chat">${ICON_CLOSE}</button>
             </div>
           </div>
         </header>
@@ -76,20 +76,20 @@
             <strong>Sugestão IA</strong>
             <p data-chat-ai-text></p>
           </div>
-          <button type="button" data-chat-use-ai>Usar resposta</button>
+          <button class="doke-btn doke-btn--soft" type="button" data-chat-use-ai>Usar resposta</button>
         </div>
 
         <form class="orders-chat-panel__composer" data-chat-form>
           <div class="orders-chat-panel__tools">
-            <button class="orders-chat-panel__tool" type="button" aria-label="Anexar arquivo">${ICON_CLIP}</button>
-            <button class="orders-chat-panel__tool" type="button" aria-label="Enviar áudio">${ICON_MIC}</button>
+            <button class="orders-chat-panel__tool doke-icon-btn doke-icon-btn--flat" type="button" aria-label="Anexar arquivo">${ICON_CLIP}</button>
+            <button class="orders-chat-panel__tool doke-icon-btn doke-icon-btn--flat" type="button" aria-label="Enviar áudio">${ICON_MIC}</button>
           </div>
           <label class="orders-chat-panel__input-wrap">
             <span class="sr-only">Mensagem do pedido</span>
             <textarea rows="1" placeholder="Digite sua mensagem..." aria-label="Mensagem do pedido"></textarea>
-            <button class="orders-chat-panel__emoji" type="button" aria-label="Adicionar emoji">${ICON_SMILE}</button>
+            <button class="orders-chat-panel__emoji doke-icon-btn doke-icon-btn--flat" type="button" aria-label="Adicionar emoji">${ICON_SMILE}</button>
           </label>
-          <button class="orders-chat-panel__send" type="submit" aria-label="Enviar mensagem">${ICON_SEND}</button>
+          <button class="orders-chat-panel__send doke-icon-btn" type="submit" aria-label="Enviar mensagem">${ICON_SEND}</button>
         </form>
       </section>
     `;
@@ -186,7 +186,7 @@
 
     if (!messages.length) {
       target.innerHTML = renderOrderContext(order) + `
-        <section class="orders-chat-empty" aria-label="Conversa sem mensagens">
+        <section class="orders-chat-empty doke-empty-state doke-card doke-message-card" aria-label="Conversa sem mensagens">
           <strong>Sem mensagens ainda</strong>
           <p>A conversa fica vazia até alguém enviar uma mensagem real.</p>
         </section>

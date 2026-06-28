@@ -133,7 +133,7 @@
         text: message.text || 'O atendimento foi concluído. Você ainda pode avaliar por aqui.',
         details: ['Pagamento seguro pela Doke', message.installments || 'À vista'],
         note: 'Avalie para concluir o atendimento.',
-        actionHtml: '<button class="message-bubble__charge-pay is-done" type="button" data-message-review>Avaliar</button>',
+        actionHtml: '<button class="message-bubble__charge-pay is-done doke-btn doke-btn--soft" type="button" data-message-review>Avaliar</button>',
         passive: false
       };
     }
@@ -147,7 +147,7 @@
         text: message.text || 'Pagamento confirmado. Agora você pode finalizar o pedido por aqui.',
         details: ['Pagamento seguro pela Doke', message.installments || 'À vista'],
         note: 'Confirme para encerrar o atendimento.',
-        actionHtml: '<button class="message-bubble__charge-pay is-complete" type="button" data-message-complete>Finalizar pedido</button>',
+        actionHtml: '<button class="message-bubble__charge-pay is-complete doke-btn doke-btn--success" type="button" data-message-complete>Finalizar pedido</button>',
         passive: false
       };
     }
@@ -160,7 +160,7 @@
       text: message.text || 'Proposta pronta para aprovação. Você pode pagar por aqui para confirmar o atendimento.',
       details: ['Pagamento seguro pela Doke', message.installments || 'À vista'],
       note: 'Confirme para liberar o atendimento.',
-      actionHtml: '<button class="message-bubble__charge-pay" type="button" data-message-pay>Pagar agora</button>',
+      actionHtml: '<button class="message-bubble__charge-pay doke-btn doke-btn--primary" type="button" data-message-pay>Pagar agora</button>',
       passive: false
     };
   };
@@ -258,15 +258,15 @@
     const lastMessage = conversation.messages[conversation.messages.length - 1];
     const statusLabel = conversation.order?.statusLabel || "Aguardando resposta";
     return `
-      <button class="message-item doke-message-card doke-card" type="button" data-message-id="${escapeHtml(id)}" data-local-conversation="true">
+      <button class="message-item doke-message-card doke-card doke-selectable-card" type="button" data-message-id="${escapeHtml(id)}" data-domain-card="message" data-local-conversation="true">
         <span class="message-item__avatar doke-avatar" aria-hidden="true">${escapeHtml(conversation.avatar || getConversationInitials(conversation.name))}</span>
         <span class="message-item__content">
           <span class="message-item__line"><strong>${escapeHtml(conversation.name)}</strong><span class="message-item__time">${escapeHtml(lastMessage?.time || "agora")}</span></span>
-          <span class="message-item__deal-status ${getStatusToneClass(statusLabel)}">${escapeHtml(statusLabel)}</span>
+          <span class="message-item__deal-status doke-badge ${getStatusToneClass(statusLabel)}">${escapeHtml(statusLabel)}</span>
           <span class="message-item__preview">${escapeHtml(getMessagePreview(lastMessage) || "Sem mensagens ainda.")}</span>
           <span class="message-item__status">${escapeHtml(conversation.lastSeen || "Conversa do pedido")}</span>
         </span>
-        <span class="message-item__badge" ${conversation.unread ? "" : "hidden"}>${escapeHtml(conversation.unread || "")}</span>
+        <span class="message-item__badge doke-badge" ${conversation.unread ? "" : "hidden"}>${escapeHtml(conversation.unread || "")}</span>
       </button>
     `;
   };
@@ -452,10 +452,11 @@
       skeletonSelectors: ['[data-messages-hydration-skeleton]'],
       readySelectors: ['[data-messages-hydration-ready]'],
       splashSelectors: ['[data-messages-document-preloader]'],
-      skeletonMode: 'document-load',
+      skeletonMode: 'route-and-document',
+      readyPolicy: 'after-skeleton',
       splashDuration: 520,
       waitFor: ['dom', 'auth', 'local-conversations'],
-      minDuration: 220,
+      minDuration: 0,
       maxDuration: 1500,
       hasItems: () => Array.from(root.querySelectorAll('.message-item[data-message-id]'))
         .some((item) => !item.hidden && item.dataset.deleted !== 'true')
@@ -664,7 +665,7 @@
           <header class="orders-detail-drawer__header">
             <div class="orders-detail-drawer__header-top">
               <span class="orders-detail-drawer__eyebrow">Detalhes do pedido</span>
-              <button class="orders-detail-drawer__close" type="button" data-messages-order-detail-close aria-label="Fechar">${orderDetailIcons.close}</button>
+              <button class="orders-detail-drawer__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-messages-order-detail-close aria-label="Fechar">${orderDetailIcons.close}</button>
             </div>
             <div>
               <h2 class="orders-detail-drawer__title" id="messages-order-detail-title" data-detail-title></h2>
@@ -1052,14 +1053,14 @@
         primaryAttrs = 'data-messages-proposal-action';
       }
       return `
-      <section class="messages-order-card messages-order-card--inline" data-messages-order-context aria-label="Pedido vinculado à conversa">
-        <div class="messages-order-card__head">
+      <section class="messages-order-card messages-order-card--inline doke-card doke-order-card" data-domain-card="order" data-messages-order-context aria-label="Pedido vinculado à conversa">
+        <div class="messages-order-card__head doke-order-card__meta">
           <span>Pedido vinculado</span>
-          <strong>${escapeHtml(order.statusLabel || 'Em negociação')}</strong>
+          <strong class="doke-badge doke-order-card__status">${escapeHtml(order.statusLabel || 'Em negociação')}</strong>
         </div>
-        <div class="messages-order-card__body">
+        <div class="messages-order-card__body doke-order-card__body">
           <div class="messages-order-card__copy">
-            <h2>${escapeHtml(order.title || 'Pedido de serviço')}</h2>
+            <h2 class="doke-order-card__title">${escapeHtml(order.title || 'Pedido de serviço')}</h2>
             <dl class="messages-order-card__facts">
               <div><dt>${escapeHtml(peerLabel)}</dt><dd>${escapeHtml(peerName)}</dd></div>
               <div><dt>Estimativa</dt><dd>${escapeHtml(order.budget || 'A definir')}</dd></div>
@@ -1067,7 +1068,7 @@
               <div><dt>Categoria</dt><dd>${escapeHtml(order.category || 'Serviço')}</dd></div>
             </dl>
           </div>
-          <div class="messages-order-card__actions">
+          <div class="messages-order-card__actions doke-order-card__actions">
             <button class="messages-order-card__button messages-order-card__button--ghost doke-btn doke-btn--ghost" type="button" data-messages-open-order-detail>Ver detalhes</button>
             ${isPending && professionalView ? `<button class="messages-order-card__button doke-btn doke-btn--ghost" type="button" data-messages-decline-order>Recusar</button>` : ""}
             <button class="messages-order-card__button doke-btn ${primaryClass}" type="button" ${primaryAttrs}>${primaryLabel}</button>
@@ -1522,7 +1523,7 @@
               <span class="message-bubble__audio-meta">
                 <span>${message.duration || "00:00"}</span>
               </span>
-              <button class="message-bubble__audio-speed" type="button" data-audio-speed>${message.speed || "1x"}</button>
+              <button class="message-bubble__audio-speed doke-btn doke-btn--ghost doke-btn--sm" type="button" data-audio-speed>${message.speed || "1x"}</button>
             </div>` : message.type === "image" ? `
             <div class="message-bubble__image">
               <img src="${message.src}" alt="Imagem enviada na conversa">
@@ -1537,15 +1538,16 @@
         const paragraph = bubble.querySelector("p");
         if (paragraph) paragraph.remove();
         const chargeCard = document.createElement("div");
-        chargeCard.className = "message-bubble__charge";
+        chargeCard.className = "message-bubble__charge doke-card doke-message-card";
+        chargeCard.dataset.domainCard = "message";
         const chargePresentation = getChargeCardPresentation(conversation, message);
         const chargeActionClass = chargePresentation.passive
           ? 'message-bubble__charge-actions message-bubble__charge-actions--passive'
           : 'message-bubble__charge-actions';
         chargeCard.innerHTML = `
           <div class="message-bubble__charge-topline">
-            <span class="message-bubble__charge-label">${chargePresentation.label}</span>
-            <span class="message-bubble__charge-status message-bubble__charge-status--${chargePresentation.state}">${chargePresentation.status}</span>
+            <span class="message-bubble__charge-label doke-badge">${chargePresentation.label}</span>
+            <span class="message-bubble__charge-status message-bubble__charge-status--${chargePresentation.state} doke-badge">${chargePresentation.status}</span>
           </div>
           <div class="message-bubble__charge-main">
             <span class="message-bubble__charge-icon" aria-hidden="true">
@@ -2203,9 +2205,10 @@
       if (event.detail?.page !== 'mensagens') return;
       syncVisibility();
     });
-    window.setTimeout(() => refreshLocalConversationSurface({ preferRequested: true }), 120);
-    window.setTimeout(() => hydration?.mark('auth'), 360);
-    window.setTimeout(() => hydration?.mark('local-conversations'), 560);
+    refreshLocalConversationSurface({ preferRequested: true });
+    if (document.documentElement.dataset.authSurfaceReady === 'true') {
+      hydration?.mark('auth');
+    }
 
     threadBody?.addEventListener("click", (event) => {
       const bubble = event.target.closest("[data-message-bubble]");

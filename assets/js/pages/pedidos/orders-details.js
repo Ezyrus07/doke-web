@@ -39,7 +39,7 @@
         <header class="orders-detail-drawer__header">
           <div class="orders-detail-drawer__header-top">
             <span class="orders-detail-drawer__eyebrow">Detalhes do pedido</span>
-            <button class="orders-detail-drawer__close" type="button" data-orders-detail-close aria-label="Fechar">${ICONS.close}</button>
+            <button class="orders-detail-drawer__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-orders-detail-close aria-label="Fechar">${ICONS.close}</button>
           </div>
           <div>
             <h2 class="orders-detail-drawer__title" id="orders-detail-title" data-detail-title></h2>

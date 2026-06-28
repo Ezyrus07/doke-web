@@ -37,16 +37,16 @@
 <label class="home-side-meta__search-label doke-label" for="wallet-search-input">Buscar</label>
 <input autocomplete="off" class="home-side-meta__search-input doke-input" id="wallet-search-input" placeholder="Buscar na carteira" type="search"/>
 </form>
-<div aria-label="Atalhos financeiros" class="page-header-context" data-header-context="">
+<div aria-label="Atalhos financeiros" class="page-header-context" data-header-context="" role="toolbar">
 <button class="page-header-context__action doke-context-pill doke-btn" data-wallet-open-withdraw="" type="button">
 <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24"><path d="M12 4v16"></path><path d="m6 10 6-6 6 6"></path></svg>
 <span>Sacar saldo</span>
 </button>
-<button class="page-header-context__action doke-context-pill is-view-active doke-btn" data-wallet-scroll-to="wallet-statement-title" data-wallet-view-toggle="overview" type="button">
+<button class="page-header-context__action doke-context-pill is-view-active doke-btn" data-wallet-scroll-to="wallet-statement-title" data-wallet-view-toggle="overview" type="button" aria-pressed="true">
 <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg>
 <span>Extrato</span>
 </button>
-<button class="page-header-context__action doke-context-pill doke-btn" data-wallet-view-toggle="statistics" type="button">
+<button class="page-header-context__action doke-context-pill doke-btn" data-wallet-view-toggle="statistics" type="button" aria-pressed="false">
 <svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24"><path d="M5 19V9"></path><path d="M12 19V5"></path><path d="M19 19v-7"></path></svg>
 <span>Estatísticas</span>
 </button>
@@ -104,9 +104,9 @@
 <section aria-busy="false" aria-labelledby="wallet-title" class="wallet-page doke-page-section" data-state-boundary="carteira" data-view-state="ready">
 <h1 class="sr-only" id="wallet-title">Carteira</h1>
 <div aria-atomic="true" aria-live="polite" data-state-region="" data-state-scope="carteira">
-<p data-state-loading="" hidden="">Carregando carteira...</p>
-<p data-state-empty="" hidden="">Nenhuma movimentação encontrada.</p>
-<p data-state-error="" hidden="">Não foi possível carregar a carteira.</p>
+<p data-state-loading="" hidden="" class="doke-loading-state">Carregando carteira...</p>
+<p data-state-empty="" hidden="" class="doke-empty-state">Nenhuma movimentação encontrada.</p>
+<p data-state-error="" hidden="" class="doke-error-state">Não foi possível carregar a carteira.</p>
 </div>
 <div class="wallet-overview" data-wallet-view-panel="overview">
 <section aria-label="Resumo financeiro principal" class="wallet-hero doke-card doke-page-section">
@@ -192,7 +192,7 @@
 </div>
 </div>
 <div class="wallet-list doke-list" data-wallet-transaction-list=""></div>
-<article class="wallet-empty-state" data-wallet-empty-state="transactions">
+<article class="wallet-empty-state doke-empty-state" data-wallet-empty-state="transactions">
 <strong>Nenhuma movimentação encontrada</strong>
 <p>Entradas, saques, taxas e valores em garantia aparecerão aqui.</p>
 </article>
@@ -204,7 +204,7 @@
 <button class="wallet-bank-manage doke-btn doke-btn--ghost" data-wallet-open-bank-account="" type="button" hidden="">Editar conta</button>
 </div>
 
-<article class="wallet-empty-state wallet-empty-state--bank" data-wallet-empty-state="bank-account">
+<article class="wallet-empty-state wallet-empty-state--bank doke-empty-state" data-wallet-empty-state="bank-account">
 <strong>Nenhuma conta cadastrada</strong>
 <p>Adicione uma conta para receber seus repasses automaticamente.</p>
 <button class="wallet-bank-add-btn doke-btn doke-btn--primary" data-wallet-open-bank-account="" type="button">Adicionar conta bancária</button>
@@ -239,7 +239,7 @@
           Voltar ao extrato
          </button>
 </div>
-<section aria-label="Gráficos principais da carteira" class="wallet-statistics-grid"><article class="wallet-empty-state wallet-empty-state--statistics doke-card"><strong>Sem dados financeiros ainda</strong><p>As estatísticas aparecerão quando pedidos concluídos e avaliados gerarem recebíveis reais.</p></article></section>
+<section aria-label="Gráficos principais da carteira" class="wallet-statistics-grid"><article class="wallet-empty-state wallet-empty-state--statistics doke-card doke-empty-state"><strong>Sem dados financeiros ainda</strong><p>As estatísticas aparecerão quando pedidos concluídos e avaliados gerarem recebíveis reais.</p></article></section>
 </section>
 </section>
 </div>
@@ -284,7 +284,7 @@
 </div>
 <footer class="wallet-dialog__footer doke-financial-modal__footer doke-overlay__actions doke-modal-actions">
 <button class="wallet-dialog-btn wallet-dialog-btn--secondary doke-btn doke-btn--ghost" data-wallet-close-withdraw="" type="button">Cancelar</button>
-<button class="wallet-dialog-btn wallet-dialog-btn--primary doke-btn doke-btn--primary" type="submit">Confirmar saque</button>
+<button class="wallet-dialog-btn wallet-dialog-btn--primary doke-btn doke-btn--primary" type="submit" data-action-state="idle" data-action-loading-label="Confirmando saque" aria-busy="false">Confirmar saque</button>
 </footer>
 </form>
 </section>
@@ -353,7 +353,7 @@ Essa será a conta padrão para repasses e saques.
 <script defer="" src="assets/js/core/feature-flags.js?v=20260501-stage32-runtime-flags"></script>
 <script defer="" src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags"></script>
 <script defer="" src="assets/js/core/app.js?v=20260622-header-visitor-neutral-v1"></script>
-<script defer="" src="assets/js/core/stable-shell-router.js?v=20260626-hydration-surfaces-v1"></script>
+<script defer="" src="assets/js/core/stable-shell-router.js?v=20260628-hydration-barrier-v3"></script>
 <script defer="" src="assets/js/repositories/wallet-repository.js?v=20260627-wallet-bank-account-v1"></script>
 <script defer="" src="assets/js/services/wallet-service.js?v=20260627-wallet-bank-account-v1"></script>
 <script defer="" src="assets/js/components/doke-lite-select.js?v=20260627-form-select-v4"></script>

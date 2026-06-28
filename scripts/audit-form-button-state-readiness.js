@@ -9,7 +9,7 @@ const OUT = path.join(ROOT, 'docs/validation/global-cycle-128-form-button-state-
 const PAGES = [
   'index.html', 'resultados.html', 'perfil.html', 'detalhe-anuncio.html', 'pedidos.html',
   'carteira.html', 'pagamento-profissional.html', 'configuracoes.html', 'notificacoes.html', 'mensagens.html',
-  'comunidade.html', 'comunidade.html'
+  'comunidade.html', 'comunidade-interna.html'
 ];
 
 function read(file) {
@@ -29,6 +29,19 @@ function hasStateSignal(attrs) {
   return /\b(disabled|aria-disabled|aria-busy|data-[\w-]*(loading|state|submit|action|disabled|feedback)|type=["']submit["'])/i.test(attrs);
 }
 
+function isCancelLike(attrs) {
+  return /data-[\w-]*(cancel|close|dismiss)|aria-label=["'][^"']*(fechar|cancelar|voltar)/i.test(attrs);
+}
+
+function isSubmitLike(attrs) {
+  if (isCancelLike(attrs)) return false;
+  return /type=["']submit["']|data-[\w-]*(submit|save|finish|send|create|confirm)/i.test(attrs);
+}
+
+function hasSubmitFeedback(attrs) {
+  return /aria-busy|data-[\w-]*(loading|feedback|state|submit)|disabled/i.test(attrs);
+}
+
 const pages = PAGES.map((page) => {
   const html = read(page);
   const buttons = matches(/<button\b[^>]*>/gi, html);
@@ -36,8 +49,8 @@ const pages = PAGES.map((page) => {
   const inputs = matches(/<(?:input|select|textarea)\b[^>]*>/gi, html);
   const buttonsWithStateSignals = buttons.filter((tag) => hasStateSignal(tagAttrs(tag))).length;
   const formsWithStateSignals = forms.filter((tag) => hasStateSignal(tagAttrs(tag)) || /data-[\w-]*(form|feedback|submit|state)/i.test(tagAttrs(tag))).length;
-  const submitButtons = buttons.filter((tag) => /type=["']submit["']|data-[\w-]*(submit|save|finish|send|create|confirm)/i.test(tagAttrs(tag))).length;
-  const riskySubmitButtons = buttons.filter((tag) => /type=["']submit["']|data-[\w-]*(submit|save|finish|send|create|confirm)/i.test(tagAttrs(tag)) && !/aria-busy|data-[\w-]*(loading|feedback|state|submit)|disabled/i.test(tagAttrs(tag))).length;
+  const submitButtons = buttons.filter((tag) => isSubmitLike(tagAttrs(tag))).length;
+  const riskySubmitButtons = buttons.filter((tag) => isSubmitLike(tagAttrs(tag)) && !hasSubmitFeedback(tagAttrs(tag))).length;
 
   const risks = [];
   if (forms.length && !formsWithStateSignals) risks.push('forms-without-state-hooks');

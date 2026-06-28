@@ -48,7 +48,7 @@
            <label class="home-side-meta__search-label doke-label" for="desktop-quick-search-orders">Buscar</label>
            <input id="desktop-quick-search-orders" class="home-side-meta__search-input doke-input" type="text" name="q" placeholder="Buscar serviço" autocomplete="off">
           </form>
-          <div class="page-header-context orders-page-actions" data-header-context aria-label="Ações rápidas de pedidos">
+          <div class="page-header-context orders-page-actions" data-header-context role="toolbar" aria-label="Ações rápidas de pedidos">
            <button class="page-header-context__action doke-context-pill doke-btn" type="button" data-orders-filter-toggle aria-expanded="false" aria-controls="orders-filters-panel">
             <svg viewBox="0 0 24 24" aria-hidden="true">
              <path d="M5 6.5h14"></path>
@@ -142,9 +142,9 @@
      >
       <section class="orders-page doke-page-section" data-state-boundary="pedidos" data-view-state="ready" aria-busy="false">
      <div data-state-region data-state-scope="pedidos" aria-live="polite" aria-atomic="true">
-      <p data-state-loading hidden>Carregando pedidos...</p>
-      <p data-state-empty hidden>Você ainda não tem pedidos.</p>
-      <p data-state-error hidden>Não foi possível carregar seus pedidos.</p>
+      <p data-state-loading hidden class="doke-loading-state">Carregando pedidos...</p>
+      <p data-state-empty hidden class="doke-empty-state">Você ainda não tem pedidos.</p>
+      <p data-state-error hidden class="doke-error-state">Não foi possível carregar seus pedidos.</p>
      </div>
        <section
         class="orders-page-header doke-page-section"
@@ -213,6 +213,9 @@
           <button
            class="orders-header-search__icon doke-search-field__icon doke-icon-btn doke-icon-btn--flat"
            type="submit"
+           data-action-state="idle"
+           data-action-loading-label="Pesquisando"
+           aria-busy="false"
            aria-label="Pesquisar em pedidos"
           >
            <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -289,13 +292,13 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
            </button>
           </div>
-          <div class="doke-mobile-selection-stack" aria-label="Ações de seleção de pedidos">
-           <button class="doke-mobile-selection-action doke-btn" type="button" data-orders-select-mode="manual"><span>Manual</span><strong>Selecionar tocando nos cards</strong></button>
-           <button class="doke-mobile-selection-action doke-btn" type="button" data-orders-select-mode="all"><span>Rápido</span><strong>Selecionar visíveis</strong></button>
+          <div class="doke-mobile-selection-stack" role="group" aria-label="Ações de seleção de pedidos">
+           <button class="doke-mobile-selection-action doke-btn" type="button" data-orders-select-mode="manual" aria-pressed="false"><span>Manual</span><strong>Selecionar tocando nos cards</strong></button>
+           <button class="doke-mobile-selection-action doke-btn" type="button" data-orders-select-mode="all" aria-pressed="false"><span>Rápido</span><strong>Selecionar visíveis</strong></button>
           </div>
           <div class="doke-mobile-action-panel__footer">
            <button class="doke-mobile-panel-button doke-mobile-panel-button--primary doke-btn doke-btn--primary" type="button" data-orders-open-selected disabled>Ver pedido</button>
-           <button class="doke-mobile-panel-button doke-btn" type="button" data-orders-open-chat-selected disabled>Abrir conversa</button>
+           <button class="doke-mobile-panel-button doke-btn doke-btn--soft" type="button" data-orders-open-chat-selected disabled>Abrir conversa</button>
            <button class="doke-mobile-panel-button doke-mobile-panel-button--ghost doke-btn doke-btn--ghost" type="button" data-orders-clear-selected disabled>Limpar</button>
           </div>
          </div>
@@ -679,7 +682,7 @@
           Você pode limpar a busca, trocar o filtro ou voltar para a
           base para solicitar um novo orçamento.
          </p>
-         <div class="orders-empty__actions doke-empty-state">
+         <div class="orders-empty__actions doke-list-state__actions">
           <button
            class="orders-empty__button orders-empty__button--ghost doke-btn doke-btn--ghost"
            type="button"
@@ -750,13 +753,13 @@
   <script src="assets/js/core/feature-flags.js?v=20260501-stage32-runtime-flags" defer></script>
   <script src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags" defer></script>
   <script src="assets/js/core/app.js?v=20260625-operational-events-v1" defer></script>
-  <script src="assets/js/core/page-hydration.js?v=20260626-operational-hydration-v2" defer></script>
-  <script src="assets/js/core/stable-shell-router.js?v=20260626-hydration-surfaces-v1" defer></script>
+  <script src="assets/js/core/page-hydration.js?v=20260628-route-skeleton-v3" defer></script>
+  <script src="assets/js/core/stable-shell-router.js?v=20260628-hydration-barrier-v3" defer></script>
 <script src="assets/js/repositories/orders-repository.js?v=20260626-order-status-flow-v1" defer></script>
 <script src="assets/js/services/orders-service.js?v=20260626-order-status-flow-v1" defer></script>
 <script src="assets/js/components/decline-reason-dialog.js?v=20260625-flow-contract-v1" defer></script>
 <script src="assets/js/pages/pedidos-local-orders.js?v=20260626-order-status-flow-v1" defer></script>
-<script src="assets/js/pages/pedidos.js?v=20260626-order-status-flow-v1" defer></script>
+<script src="assets/js/pages/pedidos.js?v=20260628-route-skeleton-v3" defer></script>
  <script src="assets/js/pages/pedidos/orders-data.js?v=20260626-order-status-flow-v1" defer></script>
 <script src="assets/js/pages/pedidos/orders-intelligence.js?v=20260626-order-status-flow-v1" defer></script>
 <script src="assets/js/pages/pedidos/orders-state.js?v=20260506-orders-state-v2" defer></script>

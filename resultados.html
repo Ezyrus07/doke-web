@@ -13,7 +13,7 @@
       <script src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
     <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
-  <link rel="stylesheet" href="assets/css/pages/resultados-foundation.css?v=20260621-close-button-contract-v1">
+  <link rel="stylesheet" href="assets/css/pages/resultados-foundation.css?v=20260628-single-scroll-v2">
 </head>
   <body data-page="resultados" class="doke-app-shell-page app-shell-page internal-shell-page search-results-body doke-flow doke-search-flow has-global-header has-public-footer">
     <div class="app-shell" data-shell-contract="app-shell">
@@ -102,9 +102,9 @@
             data-state-boundary="resultados" data-state-scope="resultados" data-view-state="ready" aria-busy="false"
           >
             <div class="doke-state-region" data-state-region data-state-scope="resultados" aria-live="polite" hidden>
-              <p data-state-loading hidden>Carregando resultados...</p>
-              <p data-state-empty hidden>Nenhum resultado encontrado.</p>
-              <p data-state-error hidden>Não foi possível carregar os resultados.</p>
+              <p data-state-loading hidden class="doke-loading-state">Carregando resultados...</p>
+              <p data-state-empty hidden class="doke-empty-state">Nenhum resultado encontrado.</p>
+              <p data-state-error hidden class="doke-error-state">Não foi possível carregar os resultados.</p>
             </div>
             <section class="results-searchbar doke-page-section" data-results-searchbox aria-label="Buscar resultados">
               <form class="results-searchbar__form doke-search-pill doke-search-pill--toolbar" action="resultados.html" role="search" data-results-search-form novalidate autocomplete="off" aria-label="Buscar resultados no Doke">
@@ -114,7 +114,7 @@
                   </span>
                   <input id="results-page-search" class="doke-search-pill__input doke-input" type="search" name="q" placeholder="Ex: Pintor, Encanador..." data-results-search-input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
                 </label>
-                <button class="results-searchbar__mobile-filter" type="button" data-results-filters-open aria-controls="results-filters-panel" aria-label="Abrir filtros">Filtros</button>
+                <button class="results-searchbar__mobile-filter doke-filter-pill doke-btn" type="button" data-results-filters-open aria-controls="results-filters-panel" aria-label="Abrir filtros">Filtros</button>
                 <button class="results-searchbar__button doke-search-pill__button" type="submit" aria-label="Buscar" data-action-state="idle" data-action-loading-label="Atualizando resultados...">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg>
                 </button>
@@ -183,7 +183,7 @@
                       <h2>Refinar busca</h2>
                     </div>
                     <button
-                      class="results-filters__close doke-close-button"
+                      class="results-filters__close doke-close-button doke-icon-btn doke-icon-btn--flat"
                       type="button"
                       data-results-filters-close
                       aria-label="Fechar filtros"
@@ -296,7 +296,7 @@
                       >
                     </div>
 
-                    <div class="results-filters__actions">
+                    <div class="results-filters__actions doke-form-actions">
                       <button
                         class="results-button results-button--ghost doke-btn doke-btn--ghost"
                         type="button"
@@ -304,7 +304,7 @@
                       >
                         Limpar
                       </button>
-                      <button class="results-button doke-btn" type="submit" data-action-state="idle" data-action-loading-label="Atualizando resultados...">
+                      <button class="results-button doke-btn doke-btn--primary" type="submit" data-action-state="idle" data-action-loading-label="Atualizando resultados...">
                         Aplicar
                       </button>
                     </div>
@@ -349,7 +349,7 @@
                     >Tente ampliar a catégoria ou remover um dos filtros
                     latérais.</span
                   >
-                  <div class="results-inline-empty__actions doke-empty-state">
+                  <div class="results-inline-empty__actions doke-list-state__actions">
                     <button
                       class="results-empty__button results-empty__button--ghost doke-btn doke-btn--ghost"
                       type="button"
@@ -554,7 +554,7 @@
         </label>
         <div class="ui-modal__actions doke-overlay__actions doke-modal-actions">
           <button class="ui-modal__button doke-btn" type="button" data-ui-modal-cancel>Cancelar</button>
-          <button class="ui-modal__button ui-modal__button--primary doke-btn doke-btn--primary" type="button" data-ui-modal-confirm>Confirmar</button>
+          <button class="ui-modal__button ui-modal__button--primary doke-btn doke-btn--primary" type="button" data-ui-modal-confirm data-action-state="idle" data-action-loading-label="Confirmando" aria-busy="false">Confirmar</button>
         </div>
       </div>
     </div>
@@ -565,12 +565,11 @@
   <script src="assets/js/core/feature-flags.js?v=20260501-stage32-runtime-flags" defer></script>
   <script src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags" defer></script>
     <script src="assets/js/core/app.js?v=20260621-header-nav-v4" defer></script>
-    <script src="assets/js/core/stable-shell-router.js?v=20260626-hydration-surfaces-v1" defer></script>
+    <script src="assets/js/core/stable-shell-router.js?v=20260628-hydration-barrier-v3" defer></script>
     <script src="assets/js/pages/search-data.js?v=20260505-publications-3up-v2"></script>
     <script src="assets/js/pages/home/before-after.js?v=20260505-comment-composer-v1"></script>
     <script src="assets/js/pages/home/workers.js?v=20260428-comments-sheet"></script>
     <script src="assets/js/pages/search-results.js?v=20260613-card-cta-shared-v1"></script>
-    <script src="assets/js/pages/results/open-filters-from-url.js?v=20260427-v26-open-filters"></script>
     <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
   <script src="assets/js/ui/mobile-drawer-standard.js?v=20260620-drawer-wallet-v45"></script>
   <script src="assets/js/core/app-state.js?v=20260501-auth-session-v1" defer></script>

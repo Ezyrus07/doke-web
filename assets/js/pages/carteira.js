@@ -308,7 +308,7 @@
       toast.setAttribute('role', 'status');
       toast.innerHTML = `
         <strong>${message}</strong>
-        <button type="button" aria-label="Fechar aviso">×</button>
+        <button class="wallet-toast__close doke-icon-btn doke-icon-btn--flat" type="button" aria-label="Fechar aviso">×</button>
       `;
 
       toast.querySelector('button')?.addEventListener('click', () => {

@@ -31,7 +31,6 @@ const manifestChecks = [
   'assets/css/pages/home.css',
   'assets/css/pages/search-results.css',
   'assets/css/pages/perfil.css',
-  'assets/css/pages/results/index.css',
 ];
 
 for (const relative of manifestChecks) {

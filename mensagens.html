@@ -34,7 +34,7 @@
        <label class="home-side-meta__search-label doke-label" for="desktop-quick-search-messages">Buscar</label>
        <input id="desktop-quick-search-messages" class="home-side-meta__search-input doke-input" type="text" name="q" placeholder="Buscar conversas" autocomplete="off">
       </form>
-      <div class="page-header-context" data-header-context aria-label="Ações rápidas de mensagens">
+      <div class="page-header-context" data-header-context role="toolbar" aria-label="Ações rápidas de mensagens">
        <button class="page-header-context__action doke-context-pill doke-btn" type="button" data-messages-filter-toggle aria-label="Filtrar conversas" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6.5h14"></path><path d="M5 12h14"></path><path d="M5 17.5h14"></path><circle cx="9" cy="6.5" r="1.75"></circle><circle cx="15" cy="12" r="1.75"></circle><circle cx="11" cy="17.5" r="1.75"></circle></svg><span>Filtros</span></button>
       </div>
      </div>
@@ -76,9 +76,9 @@
     <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean shell-home__workspace shell-home__workspace--clean messages-shell-content doke-page-shell doke-page-stack">
      <section class="messages-app" data-messages-page data-state-boundary="mensagens" data-view-state="ready" aria-busy="false">
        <div data-state-region data-state-scope="mensagens" aria-live="polite" aria-atomic="true">
-        <p data-state-loading hidden>Carregando conversas...</p>
-        <p data-state-empty hidden>Nenhuma conversa encontrada.</p>
-        <p data-state-error hidden>Não foi possível carregar as conversas.</p>
+        <p data-state-loading hidden class="doke-loading-state">Carregando conversas...</p>
+        <p data-state-empty hidden class="doke-empty-state">Nenhuma conversa encontrada.</p>
+        <p data-state-error hidden class="doke-error-state">Não foi possível carregar as conversas.</p>
        </div>
        <section class="messages-hydration-skeleton" data-messages-hydration-skeleton hidden aria-label="Carregando conversas">
         <div class="messages-hydration-skeleton__sidebar">
@@ -157,7 +157,7 @@
 
        <div class="messages-sidebar-tools" aria-label="Buscar e filtrar conversas">
         <form class="messages-sidebar-search messages-sidebar-search--modern doke-search-field" data-messages-search-form autocomplete="off" aria-label="Buscar conversa">
-         <button class="messages-sidebar-search__icon doke-search-field__icon" type="submit" aria-label="Pesquisar">
+         <button class="messages-sidebar-search__icon doke-search-field__icon doke-icon-btn doke-icon-btn--flat" type="submit" data-action-state="idle" data-action-loading-label="Pesquisando" aria-busy="false" aria-label="Pesquisar">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="5.75"></circle><path d="m16 16 4 4"></path></svg>
          </button>
          <input id="messages-conversation-search" class="doke-search-field__input doke-input" type="search" placeholder="Buscar conversas..." data-messages-search-input autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
@@ -207,7 +207,7 @@
       <section class="messages-thread doke-page-section" data-messages-thread data-messages-hydration-ready hidden>
        <header class="messages-thread__header">
         <button class="chat-shell-menu-button messages-thread__shell-menu doke-btn" type="button" data-mobile-home-menu-open aria-label="Abrir menu lateral" aria-expanded="false" aria-haspopup="dialog"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14"></path><path d="M5 12h14"></path><path d="M5 17h14"></path></svg></button>
-        <button class="messages-thread__back" type="button" data-messages-back aria-label="Voltar para lista"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6.5-5 5 5 5"></path></svg></button>
+        <button class="messages-thread__back doke-icon-btn doke-icon-btn--flat" type="button" data-messages-back aria-label="Voltar para lista"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 6.5-5 5 5 5"></path></svg></button>
         <div class="messages-thread__profile">
          <span class="messages-thread__avatar doke-avatar" data-thread-avatar aria-hidden="true">DK</span>
          <div>
@@ -215,7 +215,7 @@
           <p data-thread-last-seen>Pedidos e mensagens aparecem aqui</p>
          </div>
         </div>
-        <div class="messages-thread__actions">
+        <div class="messages-thread__actions" role="toolbar" aria-label="Ações da conversa">
          <button class="messages-thread__action messages-thread__action--order doke-btn" type="button" data-header-nav="pedidos.html" aria-label="Ver pedido">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="5.5" width="15" height="14" rx="3"></rect><path d="M8 3.75v3.5"></path><path d="M16 3.75v3.5"></path><path d="M5 10h14"></path></svg>
           <span>Ver pedido</span>
@@ -229,19 +229,19 @@
         </div>
        </header>
 
-       <div class="messages-selection-bar" data-messages-selection hidden>
-        <div class="messages-selection-bar__summary">
+       <div class="messages-selection-bar doke-toolbar" data-messages-selection role="toolbar" aria-label="Ações de seleção de mensagens" hidden>
+        <div class="messages-selection-bar__summary doke-toolbar__content">
          <strong data-messages-selection-count>0 selecionadas</strong>
         </div>
-        <div class="messages-selection-bar__actions">
-         <button class="messages-selection-bar__button doke-btn" type="button" data-messages-forward-selected>Encaminhar</button>
-         <button class="messages-selection-bar__button messages-selection-bar__button--danger doke-btn doke-btn--danger" type="button" data-messages-delete-selected>Excluir</button>
+        <div class="messages-selection-bar__actions doke-toolbar__actions">
+         <button class="messages-selection-bar__button doke-btn doke-btn--soft doke-toolbar__action" type="button" data-messages-forward-selected>Encaminhar</button>
+         <button class="messages-selection-bar__button messages-selection-bar__button--danger doke-btn doke-btn--danger doke-toolbar__action" type="button" data-messages-delete-selected>Excluir</button>
          <button class="messages-selection-bar__close doke-icon-btn doke-icon-btn--flat" type="button" data-messages-clear-selection aria-label="Cancelar selecao">×</button>
         </div>
        </div>
 
        <section class="messages-thread-empty doke-page-section doke-empty-state" data-messages-thread-empty hidden>
-        <div class="messages-thread-empty__badge doke-badge doke-empty-state">Sem mensagens</div>
+        <div class="messages-thread-empty__badge doke-badge">Sem mensagens</div>
         <h3>Nenhuma mensagem nesta conversa.</h3>
         <p>Envie uma nova mensagem para retomar o contato.</p>
        </section>
@@ -262,7 +262,7 @@
           <strong>Gravando áudio</strong>
           <span data-messages-audio-time>00:00</span>
          </div>
-         <button class="messages-audio-draft__cancel doke-composer-draft__cancel" type="button" data-messages-audio-cancel>Cancelar</button>
+         <button class="messages-audio-draft__cancel doke-composer-draft__cancel doke-btn doke-btn--ghost doke-btn--sm" type="button" data-messages-audio-cancel>Cancelar</button>
         </div>
         <div class="messages-image-draft doke-composer-draft doke-composer-draft--image" data-messages-image-draft hidden>
          <img class="messages-image-draft__preview doke-composer-draft__image" data-messages-image-preview src="" alt="Preview da imagem anexada">
@@ -270,20 +270,20 @@
           <strong>Imagem pronta para envio</strong>
           <span>Preview do anexo</span>
          </div>
-         <button class="messages-image-draft__cancel doke-composer-draft__cancel" type="button" data-messages-image-cancel>Cancelar</button>
+         <button class="messages-image-draft__cancel doke-composer-draft__cancel doke-btn doke-btn--ghost doke-btn--sm" type="button" data-messages-image-cancel>Cancelar</button>
         </div>
         <div class="messages-composer__tools doke-chat-composer__tools">
-         <label class="messages-composer__tool doke-chat-composer__tool" aria-label="Anexar imagem">
+         <label class="messages-composer__tool doke-chat-composer__tool doke-icon-btn doke-icon-btn--flat" aria-label="Anexar imagem">
           <input type="file" accept="image/*" data-messages-image-input hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 12 4-4a3 3 0 1 1 4.2 4.2l-6.4 6.4a4.5 4.5 0 1 1-6.4-6.4L12 5.8"></path></svg>
          </label>
-         <button class="messages-composer__tool doke-chat-composer__tool" type="button" data-messages-audio aria-label="Gravar áudio"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="4.5" width="6" height="10" rx="3"></rect><path d="M7 11.5a5 5 0 0 0 10 0"></path><path d="M12 16.5v3"></path><path d="M9 19.5h6"></path></svg></button>
+         <button class="messages-composer__tool doke-chat-composer__tool doke-icon-btn doke-icon-btn--flat" type="button" data-messages-audio aria-label="Gravar áudio"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="4.5" width="6" height="10" rx="3"></rect><path d="M7 11.5a5 5 0 0 0 10 0"></path><path d="M12 16.5v3"></path><path d="M9 19.5h6"></path></svg></button>
         </div>
         <label class="messages-composer__field doke-chat-composer__field doke-field" aria-label="Mensagem">
          <textarea rows="1" placeholder="Digite sua mensagem..." data-messages-composer-input class="doke-chat-composer__input doke-textarea"></textarea>
-         <button class="messages-composer__emoji-inside doke-chat-composer__emoji" type="button" data-messages-emoji aria-label="Adicionar emoji"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M8.5 14.2c1 1.2 2.3 1.8 3.5 1.8s2.5-.6 3.5-1.8"></path></svg></button>
+         <button class="messages-composer__emoji-inside doke-chat-composer__emoji doke-icon-btn doke-icon-btn--flat" type="button" data-messages-emoji aria-label="Adicionar emoji"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M8.5 14.2c1 1.2 2.3 1.8 3.5 1.8s2.5-.6 3.5-1.8"></path></svg></button>
         </label>
-        <button class="messages-composer__send doke-chat-composer__send" type="submit" aria-label="Enviar mensagem">
+        <button class="messages-composer__send doke-chat-composer__send doke-icon-btn doke-icon-btn--primary" type="submit" data-action-state="idle" data-action-loading-label="Enviando" aria-busy="false" aria-label="Enviar mensagem">
          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12 20 4 14 20 11 13 4 12z"></path></svg>
         </button>
        </form>
@@ -353,7 +353,7 @@
    </div>
    <div class="charge-modal__actions doke-financial-modal__footer doke-overlay__actions doke-modal-actions">
     <button class="charge-modal__button charge-modal__button--ghost doke-btn doke-btn--ghost" type="button" data-charge-cancel>Cancelar</button>
-    <button class="charge-modal__button doke-btn" type="submit">Enviar cobrança</button>
+    <button class="charge-modal__button doke-btn doke-btn--primary" type="submit" data-action-state="idle" data-action-loading-label="Enviando cobrança" aria-busy="false">Enviar cobrança</button>
    </div>
   </form>
  </dialog>
@@ -433,15 +433,15 @@
   <script src="assets/js/core/feature-flags.js?v=20260512-cycle77-script-load-v1" defer></script>
   <script src="assets/js/core/rollout-guard.js?v=20260512-cycle77-script-load-v1" defer></script>
   <script src="assets/js/core/app.js?v=20260625-operational-events-v1" defer></script>
-  <script src="assets/js/core/page-hydration.js?v=20260626-operational-hydration-v2" defer></script>
-  <script src="assets/js/core/stable-shell-router.js?v=20260626-hydration-surfaces-v1" defer></script>
+  <script src="assets/js/core/page-hydration.js?v=20260628-route-skeleton-v3" defer></script>
+  <script src="assets/js/core/stable-shell-router.js?v=20260628-hydration-barrier-v3" defer></script>
 <script src="assets/js/components/media-lightbox.js?v=20260425-shared-media-lightbox-v1" defer></script>
   <script src="assets/js/repositories/messages-repository.js?v=20260626-order-status-flow-v1" defer></script>
   <script src="assets/js/services/message-service.js?v=20260626-order-status-flow-v1" defer></script>
  <script src="assets/js/repositories/orders-repository.js?v=20260626-order-status-flow-v1" defer></script>
   <script src="assets/js/services/orders-service.js?v=20260626-order-status-flow-v1" defer></script>
  <script src="assets/js/components/decline-reason-dialog.js?v=20260625-flow-contract-v1" defer></script>
- <script src="assets/js/pages/mensagens.js?v=20260626-payment-redirect-v1" defer></script>
+ <script src="assets/js/pages/mensagens.js?v=20260628-route-skeleton-v3" defer></script>
   <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture" defer></script>
   <script src="assets/js/ui/mobile-drawer.js" defer></script>
   <script src="assets/js/ui/mobile-drawer-standard.js?v=20260622-header-neutral-account-v1" defer></script>

@@ -14,7 +14,7 @@
     var preview = worker.preview || worker.videoPreview || worker.previewUrl || '';
 
     return dom.create('button', {
-      className: 'video-card worker-card doke-worker-card ' + (worker.className || ''),
+      className: 'video-card worker-card doke-card doke-worker-card doke-media-card ' + (worker.className || ''),
       attrs: {
         type: 'button',
         'aria-label': worker.ariaLabel || ('Abrir worker: ' + title),

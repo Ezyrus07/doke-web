@@ -175,7 +175,11 @@ document.addEventListener('DOMContentLoaded', () => {
     filter.addEventListener('click', () => {
       currentFilter = filter.dataset.communityFilter || 'all';
       loadedExtraCount = 0;
-      filters.forEach((item) => item.classList.toggle('is-active', item === filter));
+      filters.forEach((item) => {
+        const isActive = item === filter;
+        item.classList.toggle('is-active', isActive);
+        item.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
       applyFilters();
     });
   });

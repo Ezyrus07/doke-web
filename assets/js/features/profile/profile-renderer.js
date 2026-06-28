@@ -23,7 +23,7 @@
   `;
 
   const serviceCard = (item) => `
-    <article class="service-card">
+    <article class="service-card doke-card doke-service-card">
       <div class="service-card__media ${escapeHtml(item.mediaClass || '')}">
         <span class="service-card__badge ${item.badgeTone === 'mint' ? 'service-card__badge--mint' : ''}">${escapeHtml(item.badge || 'Destaque')}</span>
       </div>
@@ -40,14 +40,14 @@
         </div>
         <div class="service-card__footer">
           <strong class="service-card__price">${escapeHtml(item.price || '')}</strong>
-          <a class="service-card__cta" href="${escapeHtml(item.ctaHref || 'detalhe-anuncio.html')}">Ver anúncio</a>
+          <a class="service-card__cta doke-btn doke-btn--success" href="${escapeHtml(item.ctaHref || 'detalhe-anuncio.html')}">Ver anúncio</a>
         </div>
       </div>
     </article>
   `;
 
   const feedCard = (item) => `
-    <article class="surface-card">
+    <article class="surface-card doke-card">
       ${item.eyebrow ? `<span class="surface-card__eyebrow">${escapeHtml(item.eyebrow)}</span>` : ''}
       <h3>${escapeHtml(item.title || '')}</h3>
       <p>${escapeHtml(item.text || '')}</p>
@@ -102,7 +102,7 @@
     </div>
     <div class="panel-grid panel-grid--three">
       ${(section.blocks || []).map((item) => `
-        <article class="surface-card">
+        <article class="surface-card doke-card">
           <h3>${escapeHtml(item.title || '')}</h3>
           <p>${escapeHtml(item.text || '')}</p>
         </article>
@@ -151,7 +151,7 @@
     </div>
     <div class="panel-grid panel-grid--three">
       ${(section.priorities || []).map((item, index) => `
-        <article class="surface-card owner-priority-card">
+        <article class="surface-card doke-card owner-priority-card">
           <span class="owner-priority-card__index">0${index + 1}</span>
           <h3>${escapeHtml(item.title || '')}</h3>
           <p>${escapeHtml(item.text || '')}</p>
@@ -188,7 +188,7 @@
     </div>
     <div class="panel-grid panel-grid--three">
       ${(section.items || []).map((item) => `
-        <article class="surface-card">
+        <article class="surface-card doke-card">
           <h3>${escapeHtml(item.title || '')}</h3>
           <p>${escapeHtml(item.text || '')}</p>
         </article>
@@ -200,7 +200,7 @@
     ${sectionHead(section)}
     <div class="panel-grid panel-grid--three">
       ${(section.items || []).map((item) => `
-        <article class="surface-card">
+        <article class="surface-card doke-card">
           <h3>${escapeHtml(item.title || '')}</h3>
           <p>${escapeHtml(item.text || '')}</p>
         </article>

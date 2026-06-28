@@ -8,7 +8,7 @@ export function renderLoadingState(root, { message = 'Carregando...', preserveLa
 
   if (shouldPreserveLayout && root.children.length > 0) {
     const status = root.querySelector('[data-loading-status]') || document.createElement('p');
-    status.className = 'u-data-state doke-loading-state';
+    status.className = 'u-data-state doke-loading-state doke-list-state';
     status.dataset.loadingStatus = 'true';
     status.setAttribute('role', 'status');
     status.setAttribute('aria-live', 'polite');
@@ -23,7 +23,7 @@ export function renderLoadingState(root, { message = 'Carregando...', preserveLa
   }
 
   const node = document.createElement('p');
-  node.className = 'u-data-state doke-loading-state';
+  node.className = 'u-data-state doke-loading-state doke-list-state';
   node.dataset.loadingStatus = 'true';
   node.setAttribute('role', 'status');
   node.setAttribute('aria-live', 'polite');

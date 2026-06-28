@@ -50,7 +50,8 @@
       ],
       splashSelectors: ['[data-orders-document-preloader]'],
       splashDuration: 520,
-      skeletonMode: 'document-load',
+      skeletonMode: 'route-and-document',
+      readyPolicy: 'after-skeleton',
       waitFor: ['dom', 'auth', 'local-orders'],
       minDuration: 220,
       maxDuration: 1000,
@@ -653,11 +654,11 @@
           const actions = document.createElement('div');
           actions.className = 'order-card__context-actions';
           actions.innerHTML = `
-            <button class="order-card__context-button" type="button" data-context-action="select">
+            <button class="order-card__context-button doke-btn doke-btn--ghost" type="button" data-context-action="select">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 12 3 3 7-7"></path><rect x="4" y="4" width="16" height="16" rx="3"></rect></svg>
               <span>Selecionar</span>
             </button>
-            <button class="order-card__context-button order-card__context-button--danger" type="button" data-context-action="delete"${card.dataset.status !== 'completed' ? ' disabled' : ''}>
+            <button class="order-card__context-button order-card__context-button--danger doke-btn doke-btn--danger" type="button" data-context-action="delete"${card.dataset.status !== 'completed' ? ' disabled' : ''}>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5h6"></path><path d="M5.5 7.5h13"></path><path d="M8 7.5v11"></path><path d="M16 7.5v11"></path><path d="M6.5 7.5 7 19a2 2 0 0 0 2 1.9h6a2 2 0 0 0 2-1.9l.5-11.5"></path></svg>
               <span>Apagar</span>
             </button>

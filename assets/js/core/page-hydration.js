@@ -43,9 +43,15 @@
 
     const shouldShowSkeleton = (() => {
       if (skeletonMode === 'never') return false;
-      if (internalNavigation) return false;
+      if (internalNavigation) {
+        return skeletonMode === 'route-and-document' || skeletonMode === 'always';
+      }
       if (skeletonMode === 'reload') return navigationType === 'reload';
-      if (skeletonMode === 'document-load' || skeletonMode === 'hard-load') return hardLoad;
+      if (
+        skeletonMode === 'document-load'
+        || skeletonMode === 'hard-load'
+        || skeletonMode === 'route-and-document'
+      ) return hardLoad;
       return true;
     })();
 

@@ -59,7 +59,6 @@ assert(serviceCss.includes('.service-card__media-image'), 'service-card.css must
 
 const dynamicFiles = [
   'assets/js/pages/search-results.js',
-  'assets/js/pages/results/index.js',
   'assets/js/renderers/service-card-renderer.js',
   'assets/js/pages/perfil.js',
   'assets/js/features/profile/profile-renderer.js'

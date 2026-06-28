@@ -697,7 +697,9 @@ const INTERNAL_VIEW_SCRIPT_HINTS = {
   ],
   "/resultados.html": [
     "assets/js/pages/search-data.js",
-    "assets/js/pages/results/index.js"
+    "assets/js/pages/home/before-after.js",
+    "assets/js/pages/home/workers.js",
+    "assets/js/pages/search-results.js"
   ],
   "/pedidos.html": ["assets/js/pages/pedidos.js"],
   "/mensagens.html": ["assets/js/pages/mensagens.js"],

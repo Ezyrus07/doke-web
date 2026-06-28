@@ -117,7 +117,7 @@
             '<span class="home-mobile-drawer__profile-copy"><strong>Entrar</strong><span>Conta Doke</span></span>',
             '<span class="home-mobile-drawer__profile-arrow" aria-hidden="true"></span>',
           '</a>',
-          '<button class="home-mobile-drawer__close" type="button" data-mobile-home-menu-close aria-label="Fechar menu lateral">' + ICONS.close + '</button>',
+          '<button class="home-mobile-drawer__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-mobile-home-menu-close aria-label="Fechar menu lateral">' + ICONS.close + '</button>',
         '</div>',
         '<div class="home-mobile-drawer__content">',
           '<nav class="home-mobile-drawer__nav" aria-label="Menu principal mobile">',

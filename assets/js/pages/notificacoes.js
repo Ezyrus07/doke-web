@@ -26,8 +26,8 @@
       readySelectors: ['[data-notifications-hydration-ready]'],
       splashSelectors: ['[data-notifications-document-preloader]'],
       bootMode: 'hard-load',
-      skeletonMode: 'hard-load',
-      readyPolicy: 'internal-immediate',
+      skeletonMode: 'route-and-document',
+      readyPolicy: 'after-skeleton',
       splashDuration: 520,
       waitFor: ['dom', 'auth'],
       minDuration: 520,
@@ -140,6 +140,7 @@
       card.dataset.catégory = `${category}${unreadToken}`;
       card.dataset.age = toAgeToken(notification.createdAt);
       card.dataset.notificationId = notification.id;
+      card.dataset.domainCard = 'notification';
       card.dataset.localNotification = 'true';
       card.innerHTML = `
         <button class="notification-card__read-toggle doke-icon-btn doke-icon-btn--flat" type="button" data-mark-read-icon aria-label="Marcar como lida">
@@ -154,9 +155,9 @@
           <h3>${escapeHtml(notification.title)}</h3>
           <p>${escapeHtml(notification.body)}</p>
           <div class="notification-card__inline-actions">
-            <a href="${escapeHtml(notification.targetUrl || 'notificacoes.html')}">${escapeHtml(notification.actionLabel || 'Abrir')}</a>
-            <button type="button" data-mark-read>Marcar lida</button>
-            <button type="button" data-dismiss-notification>Dispensar</button>
+            <a class="notification-card__inline-action doke-btn doke-btn--link" href="${escapeHtml(notification.targetUrl || 'notificacoes.html')}">${escapeHtml(notification.actionLabel || 'Abrir')}</a>
+            <button class="notification-card__inline-action doke-btn doke-btn--link" type="button" data-mark-read>Marcar lida</button>
+            <button class="notification-card__inline-action notification-card__inline-action--danger doke-btn doke-btn--link" type="button" data-dismiss-notification>Dispensar</button>
           </div>
         </div>
       `;
@@ -793,11 +794,11 @@
         const actions = document.createElement('div');
         actions.className = 'notification-card__context-actions';
         actions.innerHTML = `
-          <button class="notification-card__context-button" type="button" data-context-action="select">
+          <button class="notification-card__context-button doke-btn doke-btn--ghost" type="button" data-context-action="select">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 12 3 3 7-7"></path><rect x="4" y="4" width="16" height="16" rx="3"></rect></svg>
             <span>Selecionar</span>
           </button>
-          <button class="notification-card__context-button notification-card__context-button--danger" type="button" data-context-action="delete">
+          <button class="notification-card__context-button notification-card__context-button--danger doke-btn doke-btn--danger" type="button" data-context-action="delete">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5h6"></path><path d="M5.5 7.5h13"></path><path d="M8 7.5v11"></path><path d="M16 7.5v11"></path><path d="M6.5 7.5 7 19a2 2 0 0 0 2 1.9h6a2 2 0 0 0 2-1.9l.5-11.5"></path></svg>
             <span>Apagar</span>
           </button>
