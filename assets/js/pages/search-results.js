@@ -110,7 +110,8 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
 
   window.DokeSearchResultsCleanup = () => {
     routeController.abort();
-    document.body.classList.remove('results-filters-open');
+    document.body.classList.remove('results-filters-open', 'results-filters-open-from-home');
+    document.documentElement.classList.remove('results-filters-open', 'results-filters-open-from-home');
     if (resultsLoadTimer) window.clearTimeout(resultsLoadTimer);
     previewController?.abort();
     previewController = null;
@@ -430,7 +431,8 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       resultsLayout.classList.toggle('is-filters-collapsed', !isOpen && isDesktopFilters());
     }
     if (els.resultsFiltersBackdrop) els.resultsFiltersBackdrop.hidden = !(!isDesktopFilters() && isOpen);
-    document.body.classList.toggle('results-filters-open', isOpen);
+    document.body.classList.toggle('results-filters-open', !isDesktopFilters() && isOpen);
+    document.documentElement.classList.remove('results-filters-open');
     document.body.classList.toggle('results-filters-collapsed', !isOpen && isDesktopFilters());
   };
 
@@ -1212,6 +1214,11 @@ window.DokeInitSearchResults = function DokeInitSearchResults() {
       closeModal(null);
     }
   }, { signal });
+
+  const cleanupResultsRouteState = () => window.DokeSearchResultsCleanup?.();
+  document.addEventListener('doke:route-leaving', cleanupResultsRouteState, { signal });
+  window.addEventListener('pagehide', cleanupResultsRouteState, { signal });
+  window.addEventListener('beforeunload', cleanupResultsRouteState, { signal });
 };
 
 

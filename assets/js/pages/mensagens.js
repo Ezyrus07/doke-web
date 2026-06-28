@@ -382,6 +382,10 @@
     );
     document.documentElement?.style.removeProperty("--messages-shell-sidebar-width");
     document.documentElement?.style.removeProperty("--messages-app-inline-size");
+    ["overflow", "overflow-x", "overflow-y", "height", "position", "top", "width"].forEach((property) => {
+      document.documentElement?.style.removeProperty(property);
+      document.body?.style.removeProperty(property);
+    });
   };
 
   const registerMessagesCleanup = (cleanup) => {
@@ -399,6 +403,8 @@
       window.DokeCleanupMessages?.(event.detail);
     }
   });
+  window.addEventListener("pagehide", clearMessagesRouteState);
+  window.addEventListener("beforeunload", clearMessagesRouteState);
 
   const initMessagesPage = () => {
     const root = document.querySelector("[data-messages-page]");
