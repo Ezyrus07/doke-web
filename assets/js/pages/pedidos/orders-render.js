@@ -18,6 +18,54 @@
     if (target) target.textContent = String(value);
   };
 
+  const getAudience = (orders) => {
+    const sessionRole = window.Doke?.session?.getCurrentUser?.()?.role
+      || document.documentElement.dataset.authRole;
+    if (sessionRole === 'professional') return 'professional';
+    if (sessionRole === 'client') return 'client';
+    return orders.some((order) => order.viewerRole === 'professional') ? 'professional' : 'client';
+  };
+
+  const setMetricCopy = (name, label, hint) => {
+    const value = data.qs(`[data-orders-command-value="${name}"]`);
+    const content = value?.closest('.orders-command-summary__content');
+    const labelTarget = data.qs('.orders-command-summary__label', content);
+    const hintTarget = data.qs('.orders-command-summary__hint', content);
+    if (labelTarget) labelTarget.textContent = label;
+    if (hintTarget) hintTarget.textContent = hint;
+  };
+
+  const applyAudienceComposition = (audience) => {
+    const clientView = audience === 'client';
+    document.body.dataset.ordersAudience = audience;
+    data.qs('.orders-page')?.classList.toggle('orders-page--client', clientView);
+
+    data.qsa('[data-orders-agenda-toggle]').forEach((node) => {
+      node.hidden = clientView;
+      node.style.display = clientView ? 'none' : '';
+      node.setAttribute('aria-hidden', String(clientView));
+    });
+    data.qsa('[data-orders-hydration-ready="planner"], [data-orders-hydration-ready="insights"]').forEach((node) => {
+      if (clientView) node.hidden = true;
+    });
+    data.qsa('[data-orders-hydration-skeleton="planner"], [data-orders-hydration-skeleton="insights"]').forEach((node) => {
+      if (clientView) node.hidden = true;
+    });
+
+    if (clientView) {
+      setMetricCopy('action', 'Pedidos ativos', 'Solicitações em andamento');
+      setMetricCopy('today', 'Aguardando resposta', 'Pedidos enviados aos profissionais');
+      setMetricCopy('risk', 'Próximos compromissos', 'Visitas e serviços marcados');
+      setMetricCopy('budget', 'Concluídos', 'Serviços finalizados');
+      return;
+    }
+
+    setMetricCopy('action', 'Aguardando você', 'Pedidos precisam da sua ação');
+    setMetricCopy('today', 'Compromissos hoje', 'Próximos eventos da agenda');
+    setMetricCopy('risk', 'Em risco', 'Prazos exigem atenção');
+    setMetricCopy('budget', 'Orçamentos abertos', 'Pedidos ativos em negociação');
+  };
+
 
   const getAiInsight = (order) => {
     if (order.status === 'completed') {
@@ -128,11 +176,20 @@
   const updateSummary = (orders) => {
     const todayCount = data.readTodayEvents().length;
     const summary = ns.intelligence.summarize(orders, todayCount);
+    const audience = getAudience(orders);
 
-    setMetric('action', summary.action);
-    setMetric('today', summary.today);
-    setMetric('risk', summary.risk);
-    setMetric('budget', summary.budget);
+    applyAudienceComposition(audience);
+    if (audience === 'client') {
+      setMetric('action', orders.filter((order) => order.active).length);
+      setMetric('today', orders.filter((order) => order.awaitingProfessional).length);
+      setMetric('risk', summary.today);
+      setMetric('budget', orders.filter((order) => order.status === 'completed').length);
+    } else {
+      setMetric('action', summary.action);
+      setMetric('today', summary.today);
+      setMetric('risk', summary.risk);
+      setMetric('budget', summary.budget);
+    }
     updateFilterCounts(summary);
 
     return summary;

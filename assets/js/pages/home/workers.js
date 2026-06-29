@@ -303,6 +303,7 @@ window.DokeHomeWorkers = (() => {
       let activeIndex = 0;
       let lockedScrollY = 0;
       let lockedAnchor = null;
+      let viewportLocked = false;
 
       const parseCompactCount = (value) => {
         if (typeof value === 'number') return value;
@@ -335,6 +336,7 @@ window.DokeHomeWorkers = (() => {
       };
 
       const lockViewport = (anchor = null) => {
+        viewportLocked = true;
         lockedScrollY = window.scrollY || window.pageYOffset || 0;
         lockedAnchor = anchor ? {
           node: anchor,
@@ -345,6 +347,8 @@ window.DokeHomeWorkers = (() => {
       };
 
       const unlockViewport = () => {
+        if (!viewportLocked) return;
+        viewportLocked = false;
         const top = document.body.style.top;
         document.body.classList.remove('worker-preview-open');
         document.body.style.top = '';

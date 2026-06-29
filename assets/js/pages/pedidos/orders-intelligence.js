@@ -17,6 +17,7 @@
   ].join(' ').toLowerCase();
 
   const hasAny = (text, terms) => terms.some((term) => text.includes(term));
+  const audienceOf = (order) => order.viewerRole === 'professional' ? 'professional' : 'client';
 
   const getRisk = (order) => {
     if (['completed', 'cancelled'].includes(order.status)) {
@@ -38,6 +39,7 @@
 
   const getNextAction = (order) => {
     const risk = getRisk(order);
+    const audience = audienceOf(order);
 
     if (order.status === 'cancelled') {
       return {
@@ -51,9 +53,29 @@
     if (order.status === 'completed') {
       return {
         type: 'aftercare',
-        title: 'Solicitar avaliação do serviço',
-        note: 'Feche o ciclo com avaliação, garantia ou oportunidade de recompra.',
-        cta: 'Pedir avaliação'
+        title: audience === 'professional' ? 'Solicitar avaliação do serviço' : 'Avaliar serviço',
+        note: audience === 'professional'
+          ? 'Feche o ciclo com avaliação, garantia ou oportunidade de recompra.'
+          : 'Conte como foi a experiência e consulte o histórico do atendimento.',
+        cta: audience === 'professional' ? 'Pedir avaliação' : 'Avaliar'
+      };
+    }
+
+    if (audience === 'client' && order.status === 'pending') {
+      return {
+        type: 'waiting',
+        title: 'Aguardar resposta do profissional',
+        note: 'O pedido foi enviado e ainda não exige uma ação sua.',
+        cta: 'Ver pedido'
+      };
+    }
+
+    if (audience === 'client' && order.status === 'quoted') {
+      return {
+        type: 'priority',
+        title: 'Analisar proposta recebida',
+        note: 'Confira valores e condições antes de aprovar o atendimento.',
+        cta: 'Ver proposta'
       };
     }
 
@@ -120,6 +142,10 @@
     const nextAction = getNextAction(order);
     const priorityScore = getPriorityScore(order);
     const statusConfig = data.STATUS_CONFIG[order.status] || data.STATUS_CONFIG.pending;
+    const audience = audienceOf(order);
+    const requiresAction = audience === 'professional'
+      ? ['pending', 'accepted', 'conversation', 'responded', 'quoted', 'in_progress'].includes(order.status)
+      : ['quoted', 'responded'].includes(order.status);
 
     return {
       ...order,
@@ -127,7 +153,10 @@
       nextAction,
       priorityScore,
       statusConfig,
-      requiresAction: ['pending', 'accepted', 'conversation', 'responded', 'quoted', 'in_progress'].includes(order.status),
+      audience,
+      requiresAction,
+      awaitingProfessional: audience === 'client' && ['pending', 'accepted', 'conversation'].includes(order.status),
+      active: !['completed', 'cancelled'].includes(order.status),
       openBudget: !['completed', 'cancelled'].includes(order.status),
       atRisk: risk.level === 'high',
       smartStatus: statusConfig.summary,

@@ -1,6 +1,7 @@
-document.addEventListener('DOMContentLoaded', () => {
+window.DokeInitCommunity = function DokeInitCommunity() {
   const page = document.querySelector('[data-communities-page]');
-  if (!page) return;
+  if (!page || page.dataset.communityReady === 'true') return;
+  page.dataset.communityReady = 'true';
 
   const cards = [...page.querySelectorAll('[data-community-discover-card]')];
   const extraCards = cards.filter((card) => card.hasAttribute('data-community-extra'));
@@ -339,4 +340,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   applyFilters();
-});
+};
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', window.DokeInitCommunity, { once: true });
+} else {
+  window.DokeInitCommunity();
+}

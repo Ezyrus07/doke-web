@@ -7,7 +7,16 @@
     callback();
   };
 
-  ready(() => {
+  const initWalletPage = () => {
+    const pageRoot = document.querySelector('.wallet-page');
+    if (!pageRoot) return false;
+
+    if (pageRoot.dataset.walletPageInitialized === 'true') {
+      if (typeof window.DokeRefreshWalletState === 'function') window.DokeRefreshWalletState();
+      return true;
+    }
+
+    pageRoot.dataset.walletPageInitialized = 'true';
     const viewButtons = Array.from(document.querySelectorAll('[data-wallet-view-toggle]'));
     const viewPanels = Array.from(document.querySelectorAll('[data-wallet-view-panel]'));
     const filterButtons = Array.from(document.querySelectorAll('[data-wallet-filter]'));
@@ -37,8 +46,10 @@
     const bankSubmitLabel = document.querySelector('[data-wallet-bank-submit-label]');
     const toastRegion = document.querySelector('[data-wallet-toast-region]');
     const withdrawAmountInput = document.querySelector('[data-wallet-withdraw-amount]');
+    const withdrawAvailableNode = document.querySelector('[data-wallet-withdraw-available]');
+    const withdrawError = document.querySelector('[data-wallet-withdraw-error]');
     const transactionDetailPanel = document.querySelector('[data-wallet-transaction-detail-panel]');
-    const transactionDetailBackButton = document.querySelector('[data-wallet-transaction-detail-back]');
+    const transactionDetailCloseButtons = Array.from(document.querySelectorAll('[data-wallet-transaction-detail-close]'));
     const transactionDetailFields = {
       title: document.querySelector('[data-wallet-transaction-title]'),
       description: document.querySelector('[data-wallet-transaction-description]'),
@@ -50,11 +61,52 @@
       method: document.querySelector('[data-wallet-transaction-method]'),
       reference: document.querySelector('[data-wallet-transaction-reference]'),
       note: document.querySelector('[data-wallet-transaction-note]'),
-      relatedAction: document.querySelector('[data-wallet-transaction-related-action]')
+      date: document.querySelector('[data-wallet-transaction-date]'),
+      gross: document.querySelector('[data-wallet-transaction-gross]'),
+      fee: document.querySelector('[data-wallet-transaction-fee]'),
+      destination: document.querySelector('[data-wallet-transaction-destination]'),
+      relatedAction: document.querySelector('[data-wallet-transaction-related-action]'),
+      receiptAction: document.querySelector('[data-wallet-transaction-receipt-action]'),
+      trackAction: document.querySelector('[data-wallet-transaction-track-action]')
+    };
+    const withdrawTrackModal = document.querySelector('[data-wallet-withdraw-track-modal]');
+    const withdrawTrackCloseButtons = Array.from(document.querySelectorAll('[data-wallet-withdraw-track-close]'));
+    const withdrawTrackReturnButtons = Array.from(document.querySelectorAll('[data-wallet-withdraw-track-return]'));
+    const withdrawTrackFields = {
+      title: document.querySelector('[data-wallet-withdraw-track-title]'),
+      description: document.querySelector('[data-wallet-withdraw-track-description]'),
+      amount: document.querySelector('[data-wallet-withdraw-track-amount]'),
+      status: document.querySelector('[data-wallet-withdraw-track-status]'),
+      destination: document.querySelector('[data-wallet-withdraw-track-destination]'),
+      note: document.querySelector('[data-wallet-withdraw-track-note]'),
+      timeline: document.querySelector('[data-wallet-withdraw-timeline]'),
+      completeAction: document.querySelector('[data-wallet-withdraw-track-complete]')
+    };
+    const transactionReceiptModal = document.querySelector('[data-wallet-transaction-receipt-modal]');
+    const transactionReceiptCloseButtons = Array.from(document.querySelectorAll('[data-wallet-transaction-receipt-close]'));
+    const transactionReceiptReturnButtons = Array.from(document.querySelectorAll('[data-wallet-transaction-receipt-return]'));
+    const transactionReceiptFields = {
+      title: document.querySelector('[data-wallet-receipt-title]'),
+      description: document.querySelector('[data-wallet-receipt-description]'),
+      kind: document.querySelector('[data-wallet-receipt-kind]'),
+      amount: document.querySelector('[data-wallet-receipt-amount]'),
+      status: document.querySelector('[data-wallet-receipt-status]'),
+      code: document.querySelector('[data-wallet-receipt-code]'),
+      reference: document.querySelector('[data-wallet-receipt-reference]'),
+      gross: document.querySelector('[data-wallet-receipt-gross]'),
+      fee: document.querySelector('[data-wallet-receipt-fee]'),
+      net: document.querySelector('[data-wallet-receipt-net]'),
+      method: document.querySelector('[data-wallet-receipt-method]'),
+      date: document.querySelector('[data-wallet-receipt-date]'),
+      destination: document.querySelector('[data-wallet-receipt-destination]'),
+      note: document.querySelector('[data-wallet-receipt-note]')
     };
     const transactionFilterControls = document.querySelector('.wallet-tabs');
 
     let currentBankAccount = null;
+    let currentWallet = null;
+    let walletRefreshTimer = null;
+    let activeTransactionDetailId = '';
 
     const walletFields = {
       available: document.querySelector('[data-wallet-balance-available]'),
@@ -83,6 +135,12 @@
     const formatCurrency = (value) => {
       const amount = Number(value || 0);
       return amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    };
+
+    const parseCurrencyInput = (value) => {
+      const normalized = String(value || '').replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+      const amount = Number(normalized);
+      return Number.isFinite(amount) ? Math.round(amount * 100) / 100 : 0;
     };
 
     const getBankInput = (name) => {
@@ -138,39 +196,100 @@
       return '<svg viewBox="0 0 24 24"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>';
     };
 
+    const getWithdrawStatusLabel = (transaction) => {
+      if ((transaction?.status || '') === 'completed') return 'Saque concluído';
+      return 'Saque em processamento';
+    };
+
+    const getTransactionStatusLabel = (type, transaction) => {
+      if (type === 'held') return 'Em garantia';
+      if (type === 'withdraw') return getWithdrawStatusLabel(transaction);
+      if (type === 'fee') return 'Taxa aplicada';
+      return 'Liberado para saque';
+    };
+
+    const getTransactionTitle = (transaction, type) => {
+      if (type === 'withdraw' && (transaction?.status || '') === 'completed') return 'Saque concluído';
+      return transaction.title || 'Pedido concluído';
+    };
+
+    const getReceiptTitle = (type, transaction) => {
+      if (type === 'withdraw') return transaction?.status === 'completed' ? 'Comprovante de saque' : 'Comprovante de solicitação';
+      if (type === 'held') return 'Comprovante de pagamento';
+      if (type === 'fee') return 'Comprovante de taxa';
+      return 'Comprovante de recebimento';
+    };
+
+    const getReceiptDescription = (type, transaction) => {
+      if (type === 'withdraw') {
+        return transaction?.status === 'completed'
+          ? 'Registro mockado do saque enviado para a conta cadastrada.'
+          : 'Registro mockado da solicitação de saque em processamento.';
+      }
+      if (type === 'held') return 'Registro mockado do pagamento confirmado e mantido em garantia.';
+      if (type === 'fee') return 'Registro mockado da taxa aplicada à movimentação.';
+      return 'Registro mockado do valor liberado na carteira.';
+    };
+
+    const getReceiptCode = (transaction) => {
+      const base = transaction?.reference || transaction?.id || 'DOKE';
+      return String(base).toUpperCase().replace(/[^A-Z0-9-]+/g, '').slice(0, 24) || 'DOKE-RECIBO';
+    };
+
     const createWalletTransactionElement = (transaction) => {
       const type = getTransactionType(transaction);
       const amount = Number(transaction.netAmount || transaction.amount || 0);
+      const title = getTransactionTitle(transaction, type);
       const signedAmount = type === 'income' ? `+${formatCurrency(amount)}` : type === 'withdraw' || type === 'fee' ? `-${formatCurrency(Math.abs(amount))}` : formatCurrency(amount);
-      const description = `${transaction.title || 'Pedido concluído'} · ${formatTransactionDate(transaction.createdAt)}`;
-      const status = type === 'held' ? 'Em garantia' : type === 'withdraw' ? 'Saque em processamento' : type === 'fee' ? 'Taxa aplicada' : 'Liberado para saque';
+      const description = `${title} · ${formatTransactionDate(transaction.createdAt)}`;
+      const status = getTransactionStatusLabel(type, transaction);
+      const receiptAmount = formatCurrency(Math.abs(amount));
+      const receiptGross = formatCurrency(Number(transaction.grossAmount || transaction.netAmount || transaction.amount || 0));
+      const receiptFee = formatCurrency(Number(transaction.feeAmount || 0));
+      const receiptDate = formatTransactionDate(transaction.completedAt || transaction.availableAt || transaction.updatedAt || transaction.createdAt);
+      const canCompleteWithdraw = type === 'withdraw' && (transaction.status || '') === 'processing';
       const element = document.createElement('article');
       element.className = 'wallet-transaction';
       element.dataset.walletType = type;
       element.dataset.walletStatus = transaction.status || 'available';
       element.dataset.walletSource = transaction.source || 'order-flow';
+      element.dataset.transactionRawStatus = transaction.status || 'available';
+      element.dataset.transactionType = type;
       element.dataset.walletTransactionId = transaction.id || '';
-      element.dataset.transactionTitle = transaction.title || 'Pedido concluído';
+      element.dataset.transactionTitle = title;
       element.dataset.transactionDescription = description;
       element.dataset.transactionStatus = status;
       element.dataset.transactionAmount = signedAmount;
+      element.dataset.transactionGross = receiptGross;
+      element.dataset.transactionFee = receiptFee;
+      element.dataset.transactionDate = receiptDate;
+      element.dataset.transactionReceiptTitle = getReceiptTitle(type, transaction);
+      element.dataset.transactionReceiptDescription = getReceiptDescription(type, transaction);
+      element.dataset.transactionReceiptCode = getReceiptCode(transaction);
+      element.dataset.transactionReceiptAmount = receiptAmount;
+      element.dataset.transactionReceiptNet = receiptAmount;
       element.dataset.transactionKind = type === 'income' ? 'Entrada' : type === 'held' ? 'Saldo em garantia' : type === 'fee' ? 'Taxa' : 'Saque';
-      element.dataset.transactionMethod = transaction.method || 'Recebimento pela Doke';
-      element.dataset.transactionReference = transaction.reference || transaction.orderId || '';
-      element.dataset.transactionNote = transaction.note || 'Valor liberado após conclusão e avaliação do atendimento.';
-      element.dataset.transactionRelatedAction = transaction.actionLabel || 'Ver pedido';
-      element.dataset.walletTargetUrl = transaction.targetUrl || '';
+      element.dataset.transactionKindDetail = type === 'withdraw' ? 'Saque para conta bancária' : type === 'held' ? 'Recebível em garantia' : type === 'fee' ? 'Taxa de serviço' : 'Recebível liberado';
+      element.dataset.transactionMethod = transaction.method || (type === 'withdraw' ? 'Transferência bancária mockada' : 'Recebimento pela Doke');
+      element.dataset.transactionReference = transaction.reference || transaction.orderId || transaction.id || '';
+      element.dataset.transactionDestination = type === 'withdraw' ? (transaction.destination || transaction.method || getBankDestination(currentBankAccount)) : (transaction.orderId ? 'Pedido ' + transaction.orderId : 'Carteira Doke');
+      element.dataset.transactionNote = transaction.note || (type === 'withdraw' ? 'Transferência vinculada à conta de recebimento cadastrada.' : 'Valor vinculado a pedido, pagamento e avaliação do atendimento.');
+      element.dataset.transactionRelatedAction = transaction.actionLabel || (canCompleteWithdraw ? 'Concluir saque' : type === 'withdraw' ? 'Ver carteira' : 'Ver pedido');
+      element.dataset.walletTargetUrl = transaction.targetUrl || (type === 'withdraw' ? 'carteira.html' : 'pedidos.html');
       element.setAttribute('tabindex', '0');
       element.setAttribute('role', 'button');
       element.setAttribute('aria-label', `Ver detalhes de ${element.dataset.transactionTitle}`);
       element.innerHTML = `
         <span aria-hidden="true" class="wallet-transaction__icon wallet-transaction__icon--${escapeHtml(type)}">${getTransactionIcon(type)}</span>
         <div class="wallet-transaction__content">
-          <strong>${escapeHtml(transaction.title || 'Pedido concluído')}</strong>
+          <strong>${escapeHtml(title)}</strong>
           <p>${escapeHtml(description)}</p>
           <small class="wallet-transaction__status">${escapeHtml(status)}</small>
         </div>
-        <b class="wallet-transaction__amount">${escapeHtml(signedAmount)}</b>
+        <div class="wallet-transaction__meta">
+          <b class="wallet-transaction__amount">${escapeHtml(signedAmount)}</b>
+          ${canCompleteWithdraw ? '<button class="wallet-transaction__complete doke-btn doke-btn--ghost" type="button" data-wallet-complete-withdraw>Concluir saque</button>' : ''}
+        </div>
       `;
       return element;
     };
@@ -227,7 +346,10 @@
 
     const syncWalletSummary = (wallet) => {
       if (!wallet) return;
-      setText(walletFields.available, formatCurrency(wallet.availableBalance || 0));
+      currentWallet = wallet;
+      const available = Number(wallet.availableBalance || 0);
+      setText(walletFields.available, formatCurrency(available));
+      setText(withdrawAvailableNode, formatCurrency(available));
       setText(walletFields.held, formatCurrency(wallet.pendingBalance || 0));
       setText(walletFields.monthlyIncome, formatCurrency(wallet.monthlyIncome || 0));
       setText(walletFields.heldBalance, formatCurrency(wallet.pendingBalance || 0));
@@ -248,6 +370,7 @@
       bindTransactionItems();
       const activeFilter = filterButtons.find((button) => button.classList.contains('is-active'))?.dataset.walletFilter || 'all';
       setTransactionFilter(activeFilter);
+      openTransactionFromUrl();
     };
 
     const loadWalletState = () => {
@@ -265,6 +388,13 @@
           showWalletToast('Não foi possível atualizar a carteira.', 'error');
           return null;
         });
+    };
+
+    const scheduleWalletStateRefresh = (delay = 0) => {
+      window.clearTimeout(walletRefreshTimer);
+      walletRefreshTimer = window.setTimeout(() => {
+        loadWalletState();
+      }, delay);
     };
 
 
@@ -308,7 +438,9 @@
       toast.setAttribute('role', 'status');
       toast.innerHTML = `
         <strong>${message}</strong>
-        <button class="wallet-toast__close doke-icon-btn doke-icon-btn--flat" type="button" aria-label="Fechar aviso">×</button>
+        <button class="wallet-toast__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" aria-label="Fechar aviso">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
+        </button>
       `;
 
       toast.querySelector('button')?.addEventListener('click', () => {
@@ -330,41 +462,6 @@
       transactionEmptyState.hidden = visibleTransactions.length > 0;
     };
 
-    const createWithdrawTransaction = (amount, destination) => {
-      if (!transactionList) return;
-
-      const transaction = document.createElement('article');
-      transaction.className = 'wallet-transaction';
-      transaction.dataset.walletType = 'withdraw';
-      transaction.dataset.walletStatus = 'processing';
-      transaction.dataset.walletTransactionAction = '';
-      transaction.dataset.transactionTitle = 'Saque solicitado';
-      transaction.dataset.transactionDescription = `${destination} · agora`;
-      transaction.dataset.transactionStatus = 'Saque em processamento';
-      transaction.dataset.transactionAmount = `-${amount}`;
-      transaction.dataset.transactionKind = 'Saque';
-      transaction.dataset.transactionMethod = destination;
-      transaction.dataset.transactionReference = `SAQ-${Date.now().toString().slice(-6)}`;
-      transaction.dataset.transactionNote = 'Transferência solicitada para a conta de recebimento cadastrada.';
-      transaction.dataset.transactionRelatedAction = 'Acompanhar saque';
-      transaction.setAttribute('tabindex', '0');
-      transaction.setAttribute('role', 'button');
-      transaction.setAttribute('aria-label', 'Ver detalhes do saque solicitado');
-      transaction.innerHTML = `
-        <span class="wallet-transaction__icon wallet-transaction__icon--withdraw">↗</span>
-        <div class="wallet-transaction__content">
-          <strong>Saque solicitado</strong>
-          <p>${destination} · agora</p>
-          <small class="wallet-transaction__status">Saque em processamento</small>
-        </div>
-        <b>-${amount}</b>
-      `;
-
-      transactionList.prepend(transaction);
-      transactions.unshift(transaction);
-      bindTransactionItem(transaction);
-      updateTransactionEmptyState();
-    };
 
     const setBankAccountEmptyState = (isEmpty) => {
       if (!bankPanel || !bankEmptyState) return;
@@ -379,7 +476,259 @@
       updateTransactionEmptyState();
     };
 
-    const bindTransactionItem = () => {};
+    const setTransactionDetailText = (field, value) => {
+      const node = transactionDetailFields[field];
+      if (!node) return;
+      node.textContent = value || '—';
+    };
+
+    const findTransactionElementById = (transactionId) => {
+      if (!transactionId || !transactionList) return null;
+      const escapedId = window.CSS?.escape ? CSS.escape(transactionId) : String(transactionId).replace(/"/g, '\"');
+      return transactionList.querySelector(`[data-wallet-transaction-id="${escapedId}"]`);
+    };
+
+    const returnToTransactionDetail = (transactionId) => {
+      const target = findTransactionElementById(transactionId || activeTransactionDetailId);
+      if (target) openTransactionDetail(target);
+    };
+
+    const setTransactionReceiptText = (field, value) => {
+      const node = transactionReceiptFields[field];
+      if (!node) return;
+      node.textContent = value || '—';
+    };
+
+    const setWithdrawTrackText = (field, value) => {
+      const node = withdrawTrackFields[field];
+      if (!node) return;
+      node.textContent = value || '—';
+    };
+
+    const getWithdrawTimelineSteps = (transactionElement) => {
+      const isCompleted = (transactionElement?.dataset.transactionRawStatus || '') === 'completed';
+      return [
+        { label: 'Solicitação recebida', detail: 'O pedido de saque foi registrado na carteira.', state: 'done' },
+        { label: 'Conta validada', detail: transactionElement?.dataset.transactionDestination || 'Conta de recebimento validada.', state: 'done' },
+        { label: 'Transferência em processamento', detail: 'O repasse está sendo preparado para envio ao banco.', state: isCompleted ? 'done' : 'current' },
+        { label: 'Saque concluído', detail: 'Valor enviado para a conta cadastrada.', state: isCompleted ? 'done' : 'pending' }
+      ];
+    };
+
+    const renderWithdrawTimeline = (transactionElement) => {
+      if (!withdrawTrackFields.timeline) return;
+      withdrawTrackFields.timeline.innerHTML = getWithdrawTimelineSteps(transactionElement).map((step) => `
+        <li class="wallet-withdraw-timeline__item" data-state="${escapeHtml(step.state)}">
+          <span class="wallet-withdraw-timeline__marker" aria-hidden="true"></span>
+          <div>
+            <strong>${escapeHtml(step.label)}</strong>
+            <p>${escapeHtml(step.detail)}</p>
+          </div>
+        </li>
+      `).join('');
+    };
+
+    const closeWithdrawTrack = () => {
+      if (!withdrawTrackModal) return;
+      withdrawTrackModal.hidden = true;
+      withdrawTrackModal.classList.remove('is-active');
+      withdrawTrackModal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('is-wallet-modal-open');
+    };
+
+    const openWithdrawTrack = (transactionElement) => {
+      if (!withdrawTrackModal || !transactionElement || transactionElement.dataset.transactionType !== 'withdraw') return;
+      const isCompleted = (transactionElement.dataset.transactionRawStatus || '') === 'completed';
+      const transactionId = transactionElement.dataset.walletTransactionId || '';
+      activeTransactionDetailId = transactionId || activeTransactionDetailId;
+      withdrawTrackModal.dataset.walletTrackTransactionId = transactionId;
+
+      setWithdrawTrackText('title', isCompleted ? 'Saque concluído' : 'Saque em processamento');
+      setWithdrawTrackText('description', isCompleted
+        ? 'O repasse foi marcado como concluído no mock local.'
+        : 'Acompanhe as etapas do repasse até a conclusão.');
+      setWithdrawTrackText('amount', transactionElement.dataset.transactionReceiptAmount || transactionElement.dataset.transactionAmount || 'R$ 0,00');
+      setWithdrawTrackText('status', transactionElement.dataset.transactionStatus || 'Saque em processamento');
+      setWithdrawTrackText('destination', transactionElement.dataset.transactionDestination || 'Conta de recebimento');
+      setWithdrawTrackText('note', isCompleted
+        ? 'Comprovante disponível no detalhe da movimentação.'
+        : 'No mock local, use Concluir saque para simular o envio final ao banco.');
+      renderWithdrawTimeline(transactionElement);
+
+      if (withdrawTrackFields.completeAction) {
+        withdrawTrackFields.completeAction.hidden = isCompleted;
+        withdrawTrackFields.completeAction.dataset.walletTrackTransactionId = transactionId;
+        withdrawTrackFields.completeAction.setAttribute('aria-busy', 'false');
+        withdrawTrackFields.completeAction.disabled = false;
+      }
+
+      if (transactionDetailPanel && !transactionDetailPanel.hidden) {
+        transactionDetailPanel.hidden = true;
+        transactionDetailPanel.classList.remove('is-active');
+        transactionDetailPanel.setAttribute('aria-hidden', 'true');
+      }
+
+      withdrawTrackModal.hidden = false;
+      withdrawTrackModal.classList.add('is-active');
+      withdrawTrackModal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('is-wallet-modal-open');
+      withdrawTrackModal.querySelector('[data-wallet-withdraw-track-close]')?.focus?.({ preventScroll: true });
+    };
+
+    const closeTransactionReceipt = () => {
+      if (!transactionReceiptModal) return;
+      transactionReceiptModal.hidden = true;
+      transactionReceiptModal.classList.remove('is-active');
+      transactionReceiptModal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('is-wallet-modal-open');
+    };
+
+    const openTransactionReceipt = (transactionElement) => {
+      if (!transactionReceiptModal || !transactionElement) return;
+      const transactionId = transactionElement.dataset.walletTransactionId || '';
+      activeTransactionDetailId = transactionId || activeTransactionDetailId;
+      transactionReceiptModal.dataset.walletReceiptTransactionId = transactionId;
+      setTransactionReceiptText('title', transactionElement.dataset.transactionReceiptTitle || 'Comprovante da movimentação');
+      setTransactionReceiptText('description', transactionElement.dataset.transactionReceiptDescription || 'Registro mockado da movimentação financeira.');
+      setTransactionReceiptText('kind', transactionElement.dataset.transactionKind || 'Comprovante');
+      setTransactionReceiptText('amount', transactionElement.dataset.transactionReceiptAmount || transactionElement.dataset.transactionAmount || 'R$ 0,00');
+      setTransactionReceiptText('status', transactionElement.dataset.transactionStatus || 'Status');
+      setTransactionReceiptText('code', transactionElement.dataset.transactionReceiptCode || transactionElement.dataset.walletTransactionId || 'DOKE-RECIBO');
+      setTransactionReceiptText('reference', transactionElement.dataset.transactionReference || 'Movimentação');
+      setTransactionReceiptText('gross', transactionElement.dataset.transactionGross || 'R$ 0,00');
+      setTransactionReceiptText('fee', transactionElement.dataset.transactionFee || 'R$ 0,00');
+      setTransactionReceiptText('net', transactionElement.dataset.transactionReceiptNet || transactionElement.dataset.transactionReceiptAmount || 'R$ 0,00');
+      setTransactionReceiptText('method', transactionElement.dataset.transactionMethod || 'Carteira Doke');
+      setTransactionReceiptText('date', transactionElement.dataset.transactionDate || 'Agora');
+      setTransactionReceiptText('destination', transactionElement.dataset.transactionDestination || 'Carteira Doke');
+      setTransactionReceiptText('note', 'Comprovante mockado para conferência. A versão final poderá ser emitida pelo backend financeiro.');
+
+      if (transactionDetailPanel && !transactionDetailPanel.hidden) {
+        transactionDetailPanel.hidden = true;
+        transactionDetailPanel.classList.remove('is-active');
+        transactionDetailPanel.setAttribute('aria-hidden', 'true');
+      }
+
+      transactionReceiptModal.hidden = false;
+      transactionReceiptModal.classList.add('is-active');
+      transactionReceiptModal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('is-wallet-modal-open');
+      transactionReceiptModal.querySelector('[data-wallet-transaction-receipt-close]')?.focus?.({ preventScroll: true });
+    };
+
+    const closeTransactionDetail = () => {
+      if (!transactionDetailPanel) return;
+      transactionDetailPanel.hidden = true;
+      transactionDetailPanel.classList.remove('is-active');
+      transactionDetailPanel.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('is-wallet-modal-open');
+    };
+
+    const openTransactionDetail = (transactionElement) => {
+      if (!transactionDetailPanel || !transactionElement) return;
+      activeTransactionDetailId = transactionElement.dataset.walletTransactionId || activeTransactionDetailId;
+      setTransactionDetailText('title', transactionElement.dataset.transactionTitle || 'Detalhe da movimentação');
+      setTransactionDetailText('description', transactionElement.dataset.transactionDescription || 'Resumo financeiro da carteira.');
+      setTransactionDetailText('amount', transactionElement.dataset.transactionAmount || 'R$ 0,00');
+      setTransactionDetailText('status', transactionElement.dataset.transactionStatus || 'Status');
+      setTransactionDetailText('statusDetail', transactionElement.dataset.transactionStatus || 'Status atual');
+      setTransactionDetailText('kind', transactionElement.dataset.transactionKind || 'Movimentação');
+      setTransactionDetailText('kindDetail', transactionElement.dataset.transactionKindDetail || transactionElement.dataset.transactionKind || 'Movimentação');
+      setTransactionDetailText('method', transactionElement.dataset.transactionMethod || 'Carteira Doke');
+      setTransactionDetailText('reference', transactionElement.dataset.transactionReference || '—');
+      setTransactionDetailText('note', transactionElement.dataset.transactionNote || 'Detalhe da movimentação.');
+      setTransactionDetailText('date', transactionElement.dataset.transactionDate || 'Agora');
+      setTransactionDetailText('gross', transactionElement.dataset.transactionGross || transactionElement.dataset.transactionAmount || 'R$ 0,00');
+      setTransactionDetailText('fee', transactionElement.dataset.transactionFee || 'R$ 0,00');
+      setTransactionDetailText('destination', transactionElement.dataset.transactionDestination || 'Carteira Doke');
+
+      if (transactionDetailFields.relatedAction) {
+        const isWithdrawTransaction = transactionElement.dataset.transactionType === 'withdraw';
+        const actionLabel = transactionElement.dataset.transactionRelatedAction || 'Abrir referência';
+        const targetUrl = transactionElement.dataset.walletTargetUrl || 'carteira.html';
+        const duplicatesReceipt = actionLabel.trim().toLowerCase() === 'ver comprovante';
+        const shouldHideRelatedAction = isWithdrawTransaction || duplicatesReceipt || !targetUrl;
+        transactionDetailFields.relatedAction.textContent = actionLabel;
+        transactionDetailFields.relatedAction.setAttribute('href', targetUrl);
+        transactionDetailFields.relatedAction.hidden = shouldHideRelatedAction;
+        transactionDetailFields.relatedAction.style.display = shouldHideRelatedAction ? 'none' : '';
+      }
+
+      if (transactionDetailFields.receiptAction) {
+        transactionDetailFields.receiptAction.dataset.walletReceiptTransactionId = transactionElement.dataset.walletTransactionId || '';
+        transactionDetailFields.receiptAction.hidden = false;
+        transactionDetailFields.receiptAction.style.display = '';
+      }
+
+      if (transactionDetailFields.trackAction) {
+        const isWithdraw = transactionElement.dataset.transactionType === 'withdraw';
+        transactionDetailFields.trackAction.hidden = !isWithdraw;
+        transactionDetailFields.trackAction.style.display = isWithdraw ? '' : 'none';
+        transactionDetailFields.trackAction.dataset.walletTrackTransactionId = isWithdraw ? (transactionElement.dataset.walletTransactionId || '') : '';
+      }
+
+      transactionDetailPanel.hidden = false;
+      transactionDetailPanel.classList.add('is-active');
+      transactionDetailPanel.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('is-wallet-modal-open');
+      transactionDetailPanel.querySelector('[data-wallet-transaction-detail-close]')?.focus?.({ preventScroll: true });
+    };
+
+    const openTransactionFromUrl = () => {
+      const params = new URLSearchParams(window.location.search || '');
+      const transactionId = params.get('transaction');
+      if (!transactionId) return;
+      const escapedId = window.CSS?.escape ? CSS.escape(transactionId) : transactionId.replace(/"/g, '\\"');
+      const target = transactionList?.querySelector(`[data-wallet-transaction-id="${escapedId}"]`);
+      if (target) window.setTimeout(() => openTransactionDetail(target), 40);
+    };
+
+    const completeWithdrawTransaction = (transactionElement, actionButton) => {
+      const transactionId = transactionElement?.dataset.walletTransactionId || '';
+      const service = getWalletService();
+
+      if (!transactionId || !service?.completeWithdraw) {
+        showWalletToast('Não foi possível concluir o saque agora.', 'error');
+        return;
+      }
+
+      if (actionButton) {
+        actionButton.disabled = true;
+        actionButton.setAttribute('aria-busy', 'true');
+      }
+
+      service.completeWithdraw({ transactionId })
+        .then(() => loadWalletState())
+        .then(() => {
+          showWalletToast('Saque concluído.');
+        })
+        .catch((error) => {
+          showWalletToast(error?.message || 'Não foi possível concluir o saque.', 'error');
+        })
+        .finally(() => {
+          if (actionButton) {
+            actionButton.disabled = false;
+            actionButton.setAttribute('aria-busy', 'false');
+          }
+        });
+    };
+
+    const bindTransactionItem = (transaction) => {
+      if (!transaction || transaction.dataset.walletDetailBound === 'true') return;
+      transaction.dataset.walletDetailBound = 'true';
+      transaction.addEventListener('click', () => openTransactionDetail(transaction));
+      transaction.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        openTransactionDetail(transaction);
+      });
+      const completeButton = transaction.querySelector('[data-wallet-complete-withdraw]');
+      completeButton?.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        completeWithdrawTransaction(transaction, completeButton);
+      });
+    };
 
     const bindTransactionItems = () => {
       transactions.forEach(bindTransactionItem);
@@ -411,6 +760,19 @@
 
     const openWithdrawModal = () => {
       if (!withdrawModal) return;
+      if (!currentBankAccount) {
+        showWalletToast('Cadastre uma conta bancária antes de sacar.', 'error');
+        openBankModal();
+        return;
+      }
+      const available = Number(currentWallet?.availableBalance || 0);
+      if (available <= 0) {
+        showWalletToast('Você ainda não tem saldo disponível para saque.', 'error');
+        return;
+      }
+      if (withdrawAmountInput) withdrawAmountInput.value = '';
+      if (withdrawError) withdrawError.hidden = true;
+      setText(withdrawAvailableNode, formatCurrency(available));
       withdrawModal.hidden = false;
       withdrawModal.classList.add('is-active');
       withdrawModal.setAttribute('aria-hidden', 'false');
@@ -440,6 +802,56 @@
       button.addEventListener('click', closeWithdrawModal);
     });
 
+    transactionDetailCloseButtons.forEach((button) => {
+      button.addEventListener('click', closeTransactionDetail);
+    });
+
+    transactionReceiptCloseButtons.forEach((button) => {
+      button.addEventListener('click', closeTransactionReceipt);
+    });
+
+    withdrawTrackCloseButtons.forEach((button) => {
+      button.addEventListener('click', closeWithdrawTrack);
+    });
+
+    withdrawTrackReturnButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const transactionId = withdrawTrackModal?.dataset.walletTrackTransactionId || activeTransactionDetailId;
+        closeWithdrawTrack();
+        returnToTransactionDetail(transactionId);
+      });
+    });
+
+    transactionReceiptReturnButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const transactionId = transactionReceiptModal?.dataset.walletReceiptTransactionId || activeTransactionDetailId;
+        closeTransactionReceipt();
+        returnToTransactionDetail(transactionId);
+      });
+    });
+
+    transactionDetailFields.receiptAction?.addEventListener('click', () => {
+      const transactionId = transactionDetailFields.receiptAction?.dataset.walletReceiptTransactionId || '';
+      const escapedId = window.CSS?.escape ? CSS.escape(transactionId) : transactionId.replace(/"/g, '\"');
+      const target = transactionList?.querySelector(`[data-wallet-transaction-id="${escapedId}"]`);
+      openTransactionReceipt(target);
+    });
+
+    transactionDetailFields.trackAction?.addEventListener('click', () => {
+      const transactionId = transactionDetailFields.trackAction?.dataset.walletTrackTransactionId || '';
+      const escapedId = window.CSS?.escape ? CSS.escape(transactionId) : transactionId.replace(/"/g, '\"');
+      const target = transactionList?.querySelector(`[data-wallet-transaction-id="${escapedId}"]`);
+      openWithdrawTrack(target);
+    });
+
+    withdrawTrackFields.completeAction?.addEventListener('click', () => {
+      const transactionId = withdrawTrackFields.completeAction?.dataset.walletTrackTransactionId || '';
+      const escapedId = window.CSS?.escape ? CSS.escape(transactionId) : transactionId.replace(/"/g, '\"');
+      const target = transactionList?.querySelector(`[data-wallet-transaction-id="${escapedId}"]`);
+      completeWithdrawTransaction(target, withdrawTrackFields.completeAction);
+      closeWithdrawTrack();
+    });
+
     statsOpenButtons.forEach((button) => {
       button.addEventListener('click', openStatsModal);
     });
@@ -451,21 +863,127 @@
     withdrawForm?.addEventListener('submit', (event) => {
       event.preventDefault();
 
-      const rawAmount = withdrawAmountInput?.value || '1.200,00';
-      const amount = /^\s*R\$/.test(rawAmount) ? rawAmount : `R$ ${rawAmount}`;
-      const destination = getAccountField('withdrawDestination')?.textContent || 'Conta não cadastrada';
+      const amount = parseCurrencyInput(withdrawAmountInput?.value || '');
+      const available = Number(currentWallet?.availableBalance || 0);
+      const service = getWalletService();
+      const submit = withdrawForm.querySelector('button[type="submit"]');
 
-      createWithdrawTransaction(amount, destination);
-      showWalletToast('Saque solicitado com sucesso.');
-      closeWithdrawModal();
+      if (!currentBankAccount) {
+        if (withdrawError) {
+          withdrawError.textContent = 'Cadastre uma conta bancária antes de sacar.';
+          withdrawError.hidden = false;
+        }
+        showWalletToast('Cadastre uma conta bancária antes de sacar.', 'error');
+        return;
+      }
+
+      if (!amount || amount <= 0) {
+        if (withdrawError) {
+          withdrawError.textContent = 'Informe um valor válido para sacar.';
+          withdrawError.hidden = false;
+        }
+        return;
+      }
+
+      if (amount > available) {
+        if (withdrawError) {
+          withdrawError.textContent = 'O valor do saque não pode passar do saldo disponível.';
+          withdrawError.hidden = false;
+        }
+        showWalletToast('Valor acima do saldo disponível.', 'error');
+        return;
+      }
+
+      if (!service?.requestWithdraw) {
+        showWalletToast('Não foi possível solicitar o saque agora.', 'error');
+        return;
+      }
+
+      if (submit) {
+        submit.disabled = true;
+        submit.dataset.actionState = 'loading';
+        submit.setAttribute('aria-busy', 'true');
+      }
+
+      service.requestWithdraw({ amount, bankAccountId: currentBankAccount.id })
+        .then(() => loadWalletState())
+        .then(() => {
+          showWalletToast('Saque solicitado com sucesso.');
+          closeWithdrawModal();
+        })
+        .catch((error) => {
+          const message = error?.message || 'Não foi possível solicitar o saque.';
+          if (withdrawError) {
+            withdrawError.textContent = message;
+            withdrawError.hidden = false;
+          }
+          showWalletToast(message, 'error');
+        })
+        .finally(() => {
+          if (submit) {
+            submit.disabled = false;
+            submit.dataset.actionState = 'idle';
+            submit.setAttribute('aria-busy', 'false');
+          }
+        });
     });
 
+
+    const ensureDokeLiteSelectScript = () => {
+      if (window.DokeLiteSelect?.enhanceAll) return Promise.resolve(window.DokeLiteSelect);
+
+      const existingScript = document.querySelector('script[src*="doke-lite-select.js"]');
+      if (existingScript?.dataset.walletSelectRequested === 'true') {
+        return new Promise((resolve) => {
+          window.setTimeout(() => resolve(window.DokeLiteSelect || null), 80);
+        });
+      }
+
+      return new Promise((resolve) => {
+        const script = existingScript || document.createElement('script');
+        script.dataset.walletSelectRequested = 'true';
+        script.addEventListener('load', () => resolve(window.DokeLiteSelect || null), { once: true });
+        script.addEventListener('error', () => resolve(null), { once: true });
+
+        if (!existingScript) {
+          script.src = 'assets/js/components/doke-lite-select.js?v=20260628-wallet-bank-select-ready-v1';
+          script.defer = true;
+          document.body.appendChild(script);
+          return;
+        }
+
+        window.setTimeout(() => resolve(window.DokeLiteSelect || null), 80);
+      });
+    };
+
+    const enhanceBankSelects = () => {
+      if (!bankModal) return Promise.resolve(false);
+      const selectNodes = Array.from(bankModal.querySelectorAll('select[data-doke-select]'));
+      if (!selectNodes.length) return Promise.resolve(true);
+
+      const applyEnhancement = () => {
+        if (!window.DokeLiteSelect?.enhanceAll) return false;
+        window.DokeLiteSelect.enhanceAll(bankModal);
+        return selectNodes.every((select) => select.dataset.dokeLiteSelectReady === 'true');
+      };
+
+      if (applyEnhancement()) return Promise.resolve(true);
+
+      return ensureDokeLiteSelectScript().then(() => {
+        const ready = applyEnhancement();
+        if (!ready) window.setTimeout(applyEnhancement, 80);
+        return ready;
+      });
+    };
 
     const fillBankForm = (account) => {
       const source = account || {};
       bankInputs.forEach((input) => {
         const key = input.dataset.walletBankInput;
         input.value = source[key] || '';
+        if (input.tagName === 'SELECT') {
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
       });
       if (bankError) bankError.hidden = true;
     };
@@ -473,6 +991,9 @@
     const openBankModal = () => {
       if (!bankModal) return;
       const isEditing = Boolean(currentBankAccount && (currentBankAccount.bankName || currentBankAccount.accountNumber || currentBankAccount.pixKey));
+      enhanceBankSelects();
+      window.setTimeout(enhanceBankSelects, 80);
+      window.setTimeout(enhanceBankSelects, 220);
       fillBankForm(currentBankAccount);
       if (bankModalTitle) bankModalTitle.textContent = isEditing ? 'Editar conta bancária' : 'Adicionar conta bancária';
       if (bankModalCopy) bankModalCopy.textContent = isEditing
@@ -562,6 +1083,20 @@
 
       if (bankModal && !bankModal.hidden) {
         closeBankModal();
+        return;
+      }
+
+      if (transactionReceiptModal && !transactionReceiptModal.hidden) {
+        closeTransactionReceipt();
+        return;
+      }
+      if (withdrawTrackModal && !withdrawTrackModal.hidden) {
+        closeWithdrawTrack();
+        return;
+      }
+
+      if (transactionDetailPanel && !transactionDetailPanel.hidden) {
+        closeTransactionDetail();
       }
     });
 
@@ -632,11 +1167,45 @@
       mobileHeaderObserver.observe(mobileHeader, { childList: true, subtree: true });
     }
 
+    window.addEventListener('pageshow', () => {
+      scheduleWalletStateRefresh(0);
+    });
+
+    window.addEventListener('focus', () => {
+      scheduleWalletStateRefresh(80);
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) scheduleWalletStateRefresh(80);
+    });
+
+    window.addEventListener('storage', (event) => {
+      if (!event.key || event.key === 'doke.wallet.local.v1') {
+        scheduleWalletStateRefresh(0);
+      }
+    });
+
+    window.DokeRefreshWalletState = () => scheduleWalletStateRefresh(0);
+
     const initialActiveButton = viewButtons.find((button) => button.classList.contains('is-view-active'));
     setView(initialActiveButton?.dataset.walletViewToggle || 'overview');
     setTransactionFilter(filterButtons.find((button) => button.classList.contains('is-active'))?.dataset.walletFilter || 'all');
     updateTransactionEmptyState();
     setBankAccountEmptyState(true);
-    loadWalletState();
+    scheduleWalletStateRefresh(0);
+    return true;
+  };
+
+  window.DokeInitWalletPage = initWalletPage;
+
+  ready(() => {
+    initWalletPage();
+  });
+
+  document.addEventListener('doke:stable-route-ready', (event) => {
+    const path = event?.detail?.path || '';
+    if (path.endsWith('/carteira.html') || document.body?.dataset.page === 'carteira') {
+      initWalletPage();
+    }
   });
 })();

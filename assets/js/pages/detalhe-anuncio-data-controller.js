@@ -61,6 +61,21 @@
     };
   }
 
+  function publishPayload(root, serviceId, payload, source) {
+    var normalized = normalizePayload(payload);
+    var state = normalized.service ? 'ready' : 'empty';
+    var result = {
+      page: PAGE_NAME,
+      serviceId: serviceId,
+      data: normalized,
+      source: source || 'repository'
+    };
+    setDataState(root, state);
+    Doke.detailAdDataController.lastPayload = result;
+    dispatch(root, 'doke:detail-ad-data-ready', result);
+    return result;
+  }
+
   function load(root) {
     var serviceId = getServiceId(root);
 
@@ -74,18 +89,7 @@
     return Doke.pageDataOrchestrator
       .getPageData(PAGE_NAME, { serviceId: serviceId })
       .then(function (payload) {
-        var normalized = normalizePayload(payload);
-        var state = normalized.service ? 'ready' : 'empty';
-        var result = {
-          page: PAGE_NAME,
-          serviceId: serviceId,
-          data: normalized
-        };
-
-        setDataState(root, state);
-        Doke.detailAdDataController.lastPayload = result;
-        dispatch(root, 'doke:detail-ad-data-ready', result);
-        return result;
+        return publishPayload(root, serviceId, payload, 'repository-or-cache');
       })
       .catch(function (error) {
         var detail = {
@@ -114,6 +118,14 @@
     boot: boot,
     lastPayload: null
   };
+
+  document.addEventListener('doke:page-data-revalidated', function (event) {
+    if (event.detail && event.detail.page === PAGE_NAME) {
+      var root = getRoot();
+      if (!root) return;
+      publishPayload(root, getServiceId(root), event.detail.data, 'stale-while-revalidate');
+    }
+  });
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot, { once: true });

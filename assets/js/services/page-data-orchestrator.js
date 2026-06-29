@@ -2,6 +2,9 @@
   'use strict';
 
   var Doke = window.Doke || (window.Doke = {});
+  var PAGE_DATA_CACHE_MAX_AGE = 5 * 60 * 1000;
+  var pageDataCache = new Map();
+  var pageDataRequests = new Map();
 
   var PAGE_DATA_PLANS = Object.freeze({
     index: Object.freeze({
@@ -135,13 +138,90 @@
     return plan.resources || [];
   }
 
-  function getPageData(pageName, context) {
+  function stableSerialize(value) {
+    if (!value || typeof value !== 'object') return JSON.stringify(value);
+    if (Array.isArray(value)) return '[' + value.map(stableSerialize).join(',') + ']';
+    return '{' + Object.keys(value).sort().map(function (key) {
+      return JSON.stringify(key) + ':' + stableSerialize(value[key]);
+    }).join(',') + '}';
+  }
+
+  function getCacheKey(page, context) {
+    return page + ':' + stableSerialize(context || {});
+  }
+
+  function dispatchDataEvent(name, detail) {
+    document.dispatchEvent(new CustomEvent(name, { detail: detail }));
+  }
+
+  function requestPageData(page, context, key, source) {
+    if (pageDataRequests.has(key)) return pageDataRequests.get(key);
+    var request = Promise.resolve(Doke.repositoryBoundary.getPageData(page, context || {}))
+      .then(function (payload) {
+        var value = clone(payload || {});
+        pageDataCache.set(key, { value: value, storedAt: Date.now() });
+        dispatchDataEvent('doke:page-data-revalidated', {
+          page: page,
+          context: clone(context || {}),
+          data: clone(value),
+          source: source || 'repository'
+        });
+        return clone(value);
+      })
+      .catch(function (error) {
+        dispatchDataEvent('doke:page-data-revalidation-error', {
+          page: page,
+          context: clone(context || {}),
+          error: error
+        });
+        throw error;
+      })
+      .finally(function () {
+        pageDataRequests.delete(key);
+      });
+    pageDataRequests.set(key, request);
+    return request;
+  }
+
+  function getPageData(pageName, context, options) {
     var page = normalizePageName(pageName);
+    var normalizedContext = clone(context || {});
+    var policy = options || {};
     if (!Doke.repositoryBoundary || typeof Doke.repositoryBoundary.getPageData !== 'function') {
       return Promise.resolve({});
     }
 
-    return Doke.repositoryBoundary.getPageData(page, context || {});
+    var key = getCacheKey(page, normalizedContext);
+    var cached = pageDataCache.get(key);
+    var cacheIsValid = cached && Date.now() - cached.storedAt <= PAGE_DATA_CACHE_MAX_AGE;
+    if (cacheIsValid && policy.cache !== 'reload') {
+      dispatchDataEvent('doke:page-data-cache-hit', {
+        page: page,
+        context: clone(normalizedContext),
+        age: Date.now() - cached.storedAt
+      });
+      requestPageData(page, normalizedContext, key, 'stale-while-revalidate').catch(function () {});
+      return Promise.resolve(clone(cached.value));
+    }
+
+    if (cached) pageDataCache.delete(key);
+    return requestPageData(page, normalizedContext, key, 'repository');
+  }
+
+  function peekPageData(pageName, context) {
+    var page = normalizePageName(pageName);
+    var cached = pageDataCache.get(getCacheKey(page, context || {}));
+    if (!cached || Date.now() - cached.storedAt > PAGE_DATA_CACHE_MAX_AGE) return null;
+    return clone(cached.value);
+  }
+
+  function invalidatePageData(pageName, context) {
+    var page = normalizePageName(pageName);
+    if (context) return pageDataCache.delete(getCacheKey(page, context));
+    Array.from(pageDataCache.keys()).forEach(function (key) {
+      if (key.indexOf(page + ':') === 0) pageDataCache.delete(key);
+    });
+    return true;
   }
 
   Doke.pageDataOrchestrator = Object.freeze({
@@ -149,6 +229,8 @@
     normalizePageName: normalizePageName,
     getPagePlan: getPagePlan,
     getPageResources: getPageResources,
-    getPageData: getPageData
+    getPageData: getPageData,
+    peekPageData: peekPageData,
+    invalidatePageData: invalidatePageData
   });
 })();

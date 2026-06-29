@@ -350,6 +350,7 @@
       const isActive = panel.dataset.modalPanel === name;
       panel.hidden = !isActive;
       panel.classList.toggle('is-active', isActive);
+      panel.style.display = isActive ? '' : 'none';
     });
   }
 
@@ -387,15 +388,16 @@
     modal.hidden = false;
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('payment-modal-open');
-    showPanel('processing');
     clearModalError();
-
     window.clearTimeout(processingTimer);
+
+    if (selectedMethod === 'Pix') {
+      showPanel('pix');
+      return;
+    }
+
+    showPanel('processing');
     processingTimer = window.setTimeout(() => {
-      if (selectedMethod === 'Pix') {
-        showPanel('pix');
-        return;
-      }
       confirmPaymentFlow(120);
     }, 850);
   }

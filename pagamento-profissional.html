@@ -238,10 +238,8 @@
           <span><span data-payment-order-code>Pedido #DK-2048</span> · <span data-payment-provider-name>Studio Aquarela</span> · <span data-receipt-total>R$ 280,00</span></span>
           <small>Registro visual para futura integração com backend.</small>
         </article>
-        <div class="payment-submit-state__actions doke-overlay__actions doke-modal-actions">
-          <button class="payment-button payment-button--soft doke-btn doke-btn--ghost" type="button" data-show-receipt>Ver comprovante</button>
-          <a class="payment-button payment-button--soft doke-btn doke-btn--ghost" href="mensagens.html" data-payment-success-conversation-link>Voltar para conversa</a>
-          <button class="payment-button payment-button--primary doke-btn doke-btn--primary" type="button" data-finish-order-open data-action-state="idle" data-action-loading-label="Abrindo finalização" aria-busy="false">Finalizar pedido</button>
+        <div class="payment-submit-state__actions payment-submit-state__actions--success doke-overlay__actions doke-modal-actions">
+          <a class="payment-button payment-button--primary payment-button--success-main doke-btn doke-btn--primary" href="mensagens.html" data-payment-success-conversation-link>Voltar para conversa</a>
         </div>
       </div>
     </section>
@@ -255,12 +253,14 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
       </button>
 
-      <div class="payment-finish-panel is-active doke-overlay__body doke-modal-body" data-finish-order-panel="confirm">
-        <span class="payment-finish-eyebrow doke-modal-eyebrow">Finalizar pedido</span>
-        <h2 class="doke-modal-title" id="payment-finish-title">O serviço foi concluído?</h2>
-        <p class="doke-modal-description">Confirme apenas se <span data-finish-provider-name>Studio Aquarela</span> entregou o serviço conforme combinado.</p>
+      <div class="payment-finish-panel payment-finish-panel--confirm is-active doke-overlay__body doke-modal-body" data-finish-order-panel="confirm">
+        <header class="payment-finish-head">
+          <span class="payment-finish-eyebrow doke-modal-eyebrow">Finalizar pedido</span>
+          <h2 class="doke-modal-title" id="payment-finish-title">Confirmar conclusão</h2>
+          <p class="doke-modal-description">Confirme somente se o serviço foi entregue conforme combinado.</p>
+        </header>
 
-        <dl class="payment-finish-summary doke-modal-summary-card" aria-label="Resumo do pedido">
+        <dl class="payment-finish-summary payment-finish-summary--compact doke-modal-summary-card" aria-label="Resumo do pedido">
           <div><dt>Serviço</dt><dd data-finish-service-title>Pintura residencial</dd></div>
           <div><dt>Profissional</dt><dd data-finish-provider-name>Studio Aquarela</dd></div>
           <div><dt>Valor pago</dt><dd data-finish-amount>R$ 280,00</dd></div>
@@ -268,18 +268,13 @@
         </dl>
 
         <label class="payment-finish-check doke-modal-check">
-          <input class="doke-checkbox" type="checkbox" checked data-finish-order-confirm>
+          <input class="payment-finish-checkbox" type="checkbox" checked data-finish-order-confirm>
           <span>Confirmo que o serviço foi concluído.</span>
-        </label>
-
-        <label class="payment-finish-field doke-field doke-modal-field">
-          <span>Observação sobre a entrega <small class="doke-form-hint">opcional</small></span>
-          <textarea class="doke-textarea" rows="3" placeholder="Ex.: Serviço concluído no prazo e ambiente entregue organizado."></textarea>
         </label>
 
         <p class="payment-finish-error" data-finish-order-error hidden>Confirme que o serviço foi concluído para continuar.</p>
 
-        <div class="payment-finish-actions doke-overlay__actions doke-modal-actions">
+        <div class="payment-finish-actions payment-finish-actions--confirm doke-overlay__actions doke-modal-actions">
           <a class="payment-button payment-button--soft doke-btn doke-btn--ghost" href="mensagens.html" data-payment-issue-link>Tenho um problema</a>
           <button class="payment-button payment-button--primary doke-btn doke-btn--primary" type="button" data-finish-order-submit>Confirmar conclusão</button>
         </div>

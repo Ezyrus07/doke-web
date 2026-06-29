@@ -17,6 +17,14 @@ body[data-page="mensagens"] .message-bubble--charge {
   box-shadow: 0 18px 40px rgba(31, 68, 110, 0.12);
 }
 
+/* A financial message is one card, not a tinted message shell containing a
+   second white card. Keep the complete surface consistently white. */
+body[data-page="mensagens"] .message-bubble.message-bubble--charge,
+body[data-page="mensagens"] .message-bubble--charge .message-bubble__meta,
+body[data-page="mensagens"] .message-bubble--charge .message-bubble__charge {
+  background: #fff;
+}
+
 body[data-page="mensagens"] .message-bubble--charge .message-bubble__meta {
   padding: 14px 18px 0;
 }
@@ -494,6 +502,371 @@ body[data-page="mensagens"] .messages-completion-badge--blue {
 
   body[data-page="mensagens"] .messages-completion-summary,
   body[data-page="mensagens"] .messages-completion-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Chat completion modal alignment v2.
+ * The chat completion flow now mirrors the compact action modal rhythm used by
+ * community private-code dialogs: header, compact body, summary card and clear
+ * footer actions. This keeps the flow local to mensagens without depending on
+ * pagamento-profissional.css.
+ */
+body[data-page="mensagens"] .messages-completion-modal {
+  z-index: 1600;
+  padding: clamp(16px, 3vw, 32px);
+}
+
+body[data-page="mensagens"] .messages-completion-modal__backdrop {
+  border: 0;
+  padding: 0;
+  cursor: default;
+}
+
+body[data-page="mensagens"] .messages-completion-modal__card {
+  width: min(calc(100vw - 48px), 620px);
+  max-height: min(720px, calc(100dvh - 48px));
+  overflow: hidden;
+  border-radius: 28px;
+}
+
+body[data-page="mensagens"] .messages-completion-header {
+  align-items: flex-start;
+  padding: clamp(28px, 4vw, 38px) clamp(28px, 4vw, 42px) 16px;
+}
+
+body[data-page="mensagens"] .messages-completion-intro {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+body[data-page="mensagens"] .messages-completion-eyebrow {
+  width: fit-content;
+  min-height: 34px;
+  padding: 0 16px;
+  border: 1px solid rgba(41, 143, 127, 0.20);
+  border-radius: 999px;
+  background: rgba(41, 143, 127, 0.10);
+  color: #087d6d;
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+}
+
+body[data-page="mensagens"] .messages-completion-panel h2,
+body[data-page="mensagens"] .messages-completion-header h2 {
+  max-width: none;
+  margin: 0;
+  color: var(--doke-primary-strong, #164b7a);
+  font-size: clamp(2.35rem, 4.8vw, 3.35rem);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+
+body[data-page="mensagens"] .messages-completion-panel p,
+body[data-page="mensagens"] .messages-completion-header p {
+  max-width: 48ch;
+  margin: 0;
+  color: var(--doke-text-secondary, #6b819d);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+body[data-page="mensagens"] .messages-completion-modal__close {
+  position: static;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  border-radius: 18px;
+}
+
+body[data-page="mensagens"] .messages-completion-panel {
+  gap: 16px;
+  padding: 0 clamp(28px, 4vw, 42px) clamp(24px, 3.6vw, 30px);
+  max-height: none;
+  overflow: visible;
+}
+
+body[data-page="mensagens"] .messages-completion-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+body[data-page="mensagens"] .messages-completion-summary div {
+  min-height: 64px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #f7fbff;
+}
+
+body[data-page="mensagens"] .messages-completion-summary dt {
+  font-size: 0.74rem;
+}
+
+body[data-page="mensagens"] .messages-completion-summary dd {
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+body[data-page="mensagens"] .messages-completion-check {
+  --doke-choice-size: 22px;
+  grid-template-columns: auto 1fr;
+  min-height: 52px;
+  padding: 0 14px;
+  border-radius: 16px;
+  background: #f7fbff;
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+
+body[data-page="mensagens"] .messages-completion-error {
+  font-size: 0.82rem;
+}
+
+body[data-page="mensagens"] .messages-completion-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(207, 222, 239, 0.82);
+}
+
+body[data-page="mensagens"] .messages-completion-actions .doke-btn {
+  min-height: 56px;
+  border-radius: 18px;
+  font-size: 0.96rem;
+}
+
+body[data-page="mensagens"] .messages-completion-panel--success {
+  justify-items: center;
+  text-align: center;
+}
+
+body[data-page="mensagens"] .messages-completion-panel--success .messages-completion-actions {
+  width: 100%;
+}
+
+@media (max-width: 680px) {
+  body[data-page="mensagens"] .messages-completion-modal__card {
+    width: 100%;
+    max-height: 90dvh;
+    overflow: auto;
+    border-radius: 24px 24px 0 0;
+  }
+
+  body[data-page="mensagens"] .messages-completion-header {
+    padding: 24px 18px 14px;
+  }
+
+  body[data-page="mensagens"] .messages-completion-panel {
+    padding: 0 18px 18px;
+  }
+
+  body[data-page="mensagens"] .messages-completion-panel h2,
+  body[data-page="mensagens"] .messages-completion-header h2 {
+    font-size: clamp(2rem, 11vw, 2.65rem);
+  }
+
+  body[data-page="mensagens"] .messages-completion-summary,
+  body[data-page="mensagens"] .messages-completion-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Chat completion modal alignment v3.
+ * Root cause: inherited modal-header flex behavior and older local completion
+ * rules left the close button participating in the content flow, while the
+ * checkbox picked up oversized local choice sizing. Keep the surface on the
+ * same rhythm as the private-code modal: absolute close control, compact body,
+ * predictable summary grid and normal checkbox geometry.
+ */
+body[data-page="mensagens"] .messages-completion-modal__card {
+  width: min(calc(100vw - 48px), 680px);
+  max-height: min(680px, calc(100dvh - 48px));
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+body[data-page="mensagens"] .messages-completion-header {
+  display: block;
+  padding: clamp(30px, 4vw, 42px) clamp(30px, 4.6vw, 48px) 18px;
+}
+
+body[data-page="mensagens"] .messages-completion-intro {
+  max-width: 520px;
+}
+
+body[data-page="mensagens"] .messages-completion-modal__close {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 17px;
+}
+
+body[data-page="mensagens"] .messages-completion-panel h2,
+body[data-page="mensagens"] .messages-completion-header h2 {
+  max-width: 12ch;
+  font-size: clamp(2.45rem, 4.6vw, 3.1rem);
+}
+
+body[data-page="mensagens"] .messages-completion-panel p,
+body[data-page="mensagens"] .messages-completion-header p {
+  max-width: 42ch;
+  font-size: 1rem;
+  font-weight: 650;
+}
+
+body[data-page="mensagens"] .messages-completion-panel {
+  padding: 0 clamp(30px, 4.6vw, 48px) clamp(24px, 3.6vw, 32px);
+}
+
+body[data-page="mensagens"] .messages-completion-summary {
+  gap: 12px;
+}
+
+body[data-page="mensagens"] .messages-completion-summary div {
+  min-height: 70px;
+  padding: 13px 16px;
+}
+
+body[data-page="mensagens"] .messages-completion-check {
+  --doke-choice-size: 20px;
+  --doke-choice-radius: 7px;
+  align-items: center;
+  min-height: 54px;
+  padding: 0 16px;
+}
+
+body[data-page="mensagens"] .messages-completion-check .doke-checkbox {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+}
+
+body[data-page="mensagens"] .messages-completion-actions {
+  align-items: center;
+  padding-top: 14px;
+}
+
+@media (max-width: 680px) {
+  body[data-page="mensagens"] .messages-completion-modal__card {
+    width: 100%;
+    max-height: 90dvh;
+    border-radius: 24px 24px 0 0;
+  }
+
+  body[data-page="mensagens"] .messages-completion-header {
+    padding: 24px 18px 14px;
+  }
+
+  body[data-page="mensagens"] .messages-completion-intro {
+    padding-right: 58px;
+  }
+
+  body[data-page="mensagens"] .messages-completion-modal__close {
+    top: 18px;
+    right: 18px;
+    width: 46px;
+    height: 46px;
+  }
+
+  body[data-page="mensagens"] .messages-completion-panel {
+    padding: 0 18px 18px;
+  }
+}
+
+
+/* Chat completion success state alignment v4.
+ * Root cause: the confirmation header remained visible after completion,
+ * stacking two large headings in the same modal. Keep the close control, hide
+ * only the intro copy, and give the success panel a compact feedback rhythm.
+ */
+body[data-page="mensagens"] .messages-completion-modal[data-completion-state="success"] .messages-completion-modal__card {
+  width: min(calc(100vw - 48px), 560px);
+  max-height: min(620px, calc(100dvh - 48px));
+  overflow: hidden;
+}
+
+body[data-page="mensagens"] .messages-completion-modal[data-completion-state="success"] .messages-completion-header {
+  min-height: 0;
+  padding: 0;
+}
+
+body[data-page="mensagens"] .messages-completion-modal[data-completion-state="success"] .messages-completion-intro {
+  display: none;
+}
+
+body[data-page="mensagens"] .messages-completion-modal[data-completion-state="success"] .messages-completion-panel--success {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: clamp(44px, 6vw, 58px) clamp(28px, 5vw, 42px) clamp(28px, 4vw, 34px);
+  text-align: center;
+}
+
+body[data-page="mensagens"] .messages-completion-modal[data-completion-state="success"] .messages-completion-success-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+}
+
+body[data-page="mensagens"] .messages-completion-modal[data-completion-state="success"] .messages-completion-success-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+body[data-page="mensagens"] .messages-completion-modal[data-completion-state="success"] .messages-completion-panel--success h2 {
+  max-width: none;
+  margin: 4px 0 0;
+  font-size: clamp(1.7rem, 4vw, 2.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+}
+
+body[data-page="mensagens"] .messages-completion-modal[data-completion-state="success"] .messages-completion-panel--success p {
+  max-width: 34ch;
+  font-size: 0.96rem;
+  line-height: 1.48;
+}
+
+body[data-page="mensagens"] .messages-completion-modal[data-completion-state="success"] .messages-completion-badges {
+  display: none;
+}
+
+body[data-page="mensagens"] .messages-completion-modal[data-completion-state="success"] .messages-completion-panel--success .messages-completion-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 12px;
+  width: 100%;
+  margin-top: 8px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(207, 222, 239, 0.82);
+}
+
+body[data-page="mensagens"] .messages-completion-modal[data-completion-state="success"] .messages-completion-panel--success .doke-btn {
+  min-height: 54px;
+}
+
+@media (max-width: 680px) {
+  body[data-page="mensagens"] .messages-completion-modal[data-completion-state="success"] .messages-completion-modal__card {
+    width: 100%;
+    max-height: 90dvh;
+    overflow: auto;
+    border-radius: 24px 24px 0 0;
+  }
+
+  body[data-page="mensagens"] .messages-completion-modal[data-completion-state="success"] .messages-completion-panel--success {
+    padding: 54px 18px 18px;
+  }
+
+  body[data-page="mensagens"] .messages-completion-modal[data-completion-state="success"] .messages-completion-panel--success .messages-completion-actions {
     grid-template-columns: 1fr;
   }
 }

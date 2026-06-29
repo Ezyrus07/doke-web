@@ -1940,9 +1940,11 @@
  * The shared overlay contract owns the backdrop, surface, header, body, footer
  * and close button. This page layer only owns the banking form layout.
  */
-.wallet-bank-modal__surface {
-  --doke-modal-width: 640px;
-  width: min(calc(100vw - (var(--doke-overlay-gutter) * 2)), 640px);
+.wallet-bank-modal__surface.doke-modal-surface.doke-overlay__surface {
+  --doke-modal-width: 760px;
+  --doke-modal-visual-width: 760px;
+  width: min(calc(100vw - (var(--doke-overlay-gutter) * 2)), 760px);
+  max-width: 760px;
 }
 
 .wallet-bank-modal__form {
@@ -2005,6 +2007,27 @@
   width: 100%;
   min-width: 0;
 }
+
+.wallet-bank-modal__field [data-doke-select-root] {
+  width: 100%;
+  min-width: 0;
+}
+
+.wallet-bank-modal__field .doke-select__trigger {
+  min-height: 54px;
+  border-radius: 16px;
+  background: #f7fbff;
+  color: var(--doke-primary-strong, #164b7a);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.wallet-bank-modal__field .doke-select__trigger:hover,
+.wallet-bank-modal__field .doke-select__trigger:focus-visible,
+.wallet-bank-modal__field [data-doke-select-root].is-open .doke-select__trigger {
+  background: #fff;
+}
+
 
 .wallet-bank-modal__error {
   margin: 0;
@@ -2198,19 +2221,15 @@
   line-height: 1.4;
 }
 
-.wallet-toast button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: 0;
-  border-radius: 999px;
-  background: rgba(24, 75, 118, 0.08);
-  color: var(--doke-primary, #2a5f90);
-  font-size: 1rem;
-  font-weight: 800;
-  cursor: pointer;
+.wallet-toast .wallet-toast__close {
+  flex: 0 0 var(--doke-close-button-size, 42px);
+  width: var(--doke-close-button-size, 42px);
+  height: var(--doke-close-button-size, 42px);
+}
+
+.wallet-toast .wallet-toast__close svg {
+  width: 18px;
+  height: 18px;
 }
 
 .wallet-toast--success {
@@ -2294,5 +2313,785 @@
   .wallet-dialog--withdraw .wallet-dialog__body,
   .wallet-dialog--withdraw .wallet-dialog__footer.doke-financial-modal__footer {
     padding-inline: 22px;
+  }
+}
+
+
+/* Wallet bank select: keep DokeLiteSelect wrapper visual-neutral.
+ * The wrapper uses the .doke-select class for component state, but the global
+ * native select contract also styles .doke-select as a form control. Without
+ * this scoped reset, the custom trigger appears inside a second input shell.
+ */
+.wallet-bank-modal__field [data-doke-select-root].doke-select {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  background-image: none;
+  box-shadow: none;
+  color: inherit;
+}
+
+.wallet-bank-modal__field [data-doke-select-root] > select.doke-select__native {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Withdraw modal border simplification.
+ * Responsibility: keep one visible border layer per control/group. The withdraw
+ * modal uses shared financial primitives, but the page layer had both wrappers
+ * and inner controls styled as cards, creating nested borders.
+ */
+.wallet-dialog--withdraw .wallet-dialog-money-field {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0;
+  min-height: 56px;
+  overflow: hidden;
+  border: 1px solid rgba(24, 75, 118, 0.12);
+  border-radius: 18px;
+  background: #f7fbff;
+  box-shadow: none;
+}
+
+.wallet-dialog--withdraw .wallet-dialog-money-field > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 76px;
+  padding: 0 18px;
+  border-right: 1px solid rgba(24, 75, 118, 0.10);
+  color: var(--doke-primary-strong, #164b7a);
+  font-weight: 850;
+}
+
+.wallet-dialog--withdraw .wallet-dialog-money-field :is(input, .doke-input) {
+  min-height: 56px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0 18px;
+}
+
+.wallet-dialog--withdraw .wallet-dialog-summary--withdraw {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.wallet-dialog--withdraw .wallet-dialog-summary--withdraw > article {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(24, 75, 118, 0.09);
+  border-radius: 18px;
+  background: #f7fbff;
+  box-shadow: none;
+}
+
+.wallet-dialog--withdraw .wallet-dialog-summary--withdraw > article span {
+  color: var(--doke-text-secondary, #64748b);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.wallet-dialog--withdraw .wallet-dialog-summary--withdraw > article strong {
+  color: var(--doke-primary-strong, #164b7a);
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+@media (max-width: 640px) {
+  .wallet-dialog--withdraw .wallet-dialog-summary--withdraw {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Wallet withdraw completion action.
+ * Mock-only action for the processing -> completed financial state without
+ * changing card anatomy outside carteira.html.
+ */
+.wallet-transaction__meta {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  min-width: 0;
+}
+
+.wallet-transaction__complete {
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.wallet-transaction__complete[aria-busy="true"] {
+  opacity: 0.72;
+  cursor: progress;
+}
+
+@media (min-width: 901px) {
+  body[data-page="carteira"] .wallet-transaction {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+  }
+
+  body[data-page="carteira"] .wallet-transaction__meta {
+    min-width: 116px;
+  }
+}
+
+@media (max-width: 760px) {
+  .wallet-transaction__meta {
+    justify-items: start;
+  }
+}
+
+/* Wallet transaction detail modal.
+ * Responsibility: provide an auditable movement detail surface without changing
+ * the wallet page grid, shell, router, or global modal contracts.
+ */
+.wallet-transaction-detail-modal.is-active {
+  display: flex;
+}
+
+.wallet-transaction-detail-modal__surface {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: min(calc(100vw - 32px), 640px);
+  max-height: min(86vh, 720px);
+  overflow: hidden;
+}
+
+.wallet-transaction-detail-modal__header {
+  align-items: flex-start;
+  padding: 26px 28px 18px;
+}
+
+.wallet-transaction-detail-modal__copy {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.wallet-transaction-detail-modal__title {
+  margin: 0;
+  color: var(--doke-primary-strong, #164b7a);
+  font-size: clamp(1.75rem, 3vw, 2.3rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.wallet-transaction-detail-modal__description {
+  margin: 0;
+  max-width: 52ch;
+  color: var(--doke-text-secondary, #607894);
+  font-size: 0.98rem;
+  font-weight: 650;
+  line-height: 1.55;
+}
+
+.wallet-transaction-detail-modal__body {
+  display: grid;
+  gap: 16px;
+  min-height: 0;
+  padding: 0 28px 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.wallet-transaction-detail-modal__body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.wallet-transaction-detail-modal__body::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(24, 75, 118, 0.18);
+}
+
+.wallet-transaction-detail-modal__amount-card {
+  display: grid;
+  gap: 4px;
+  padding: 18px;
+  border: 1px solid rgba(24, 75, 118, 0.10);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.96), rgba(242, 248, 253, 0.9));
+}
+
+.wallet-transaction-detail-modal__amount-card span,
+.wallet-transaction-detail-modal__amount-card small,
+.wallet-transaction-detail-grid span {
+  color: var(--doke-text-muted, #64748b);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.wallet-transaction-detail-modal__amount-card strong {
+  color: var(--doke-primary-strong, #164b7a);
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.wallet-transaction-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.wallet-transaction-detail-grid article {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1px solid rgba(24, 75, 118, 0.08);
+  border-radius: 16px;
+  background: #f8fbfe;
+}
+
+.wallet-transaction-detail-grid strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--doke-primary-strong, #164b7a);
+  font-size: 0.96rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.wallet-transaction-detail-note {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(41, 143, 127, 0.08);
+  color: var(--doke-text-secondary, #607894);
+  font-size: 0.92rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.wallet-transaction-detail-modal__footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 12px;
+  padding: 18px 28px 28px;
+  border-top: 1px solid rgba(24, 75, 118, 0.10);
+  background: linear-gradient(180deg, rgba(248, 251, 255, 0), rgba(248, 251, 255, 0.92));
+}
+
+.wallet-transaction-detail-modal__footer .doke-btn {
+  width: 100%;
+  min-width: 0;
+}
+
+.wallet-transaction {
+  cursor: pointer;
+}
+
+.wallet-transaction:focus-visible {
+  outline: 3px solid rgba(42, 95, 144, 0.22);
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .wallet-transaction-detail-modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .wallet-transaction-detail-modal__surface {
+    width: 100%;
+    max-height: 90vh;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .wallet-transaction-detail-modal__header {
+    padding: 22px 18px 16px;
+  }
+
+  .wallet-transaction-detail-modal__body {
+    padding: 0 18px 16px;
+  }
+
+  .wallet-transaction-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wallet-transaction-detail-modal__footer {
+    grid-template-columns: 1fr;
+    padding: 16px 18px max(18px, env(safe-area-inset-bottom));
+  }
+}
+
+
+/* Transaction detail modal scroll authority v2.
+ * Root cause: the shared modal visual contract has a higher-specificity
+ * surface rule that resets doke-modal-surface instances to display:block.
+ * This local detail modal needs the three-row modal rhythm so only the body
+ * scrolls while header/footer remain visible.
+ */
+.wallet-transaction-detail-modal__surface.doke-modal-surface.doke-overlay__surface {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: min(calc(100vw - 32px), 640px);
+  height: min(86dvh, 720px);
+  max-height: calc(100dvh - 32px);
+  overflow: hidden;
+}
+
+.wallet-transaction-detail-modal__surface.doke-modal-surface.doke-overlay__surface > .wallet-transaction-detail-modal__header,
+.wallet-transaction-detail-modal__surface.doke-modal-surface.doke-overlay__surface > .wallet-transaction-detail-modal__footer {
+  flex: 0 0 auto;
+}
+
+.wallet-transaction-detail-modal__surface.doke-modal-surface.doke-overlay__surface > .wallet-transaction-detail-modal__body.doke-modal-body.doke-overlay__body {
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+@media (max-width: 640px) {
+  .wallet-transaction-detail-modal__surface.doke-modal-surface.doke-overlay__surface {
+    width: 100%;
+    height: min(90dvh, 760px);
+    max-height: 90dvh;
+  }
+}
+
+/* Transaction receipt modal.
+ * Responsibility: provide a mock financial receipt from the existing
+ * transaction detail data without changing the global overlay contract.
+ */
+.wallet-transaction-receipt-modal.is-active {
+  display: flex;
+}
+
+.wallet-transaction-receipt-modal__surface.doke-modal-surface.doke-overlay__surface {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: min(calc(100vw - 32px), 620px);
+  height: min(84dvh, 680px);
+  max-height: calc(100dvh - 32px);
+  overflow: hidden;
+}
+
+.wallet-transaction-receipt-modal__header {
+  align-items: flex-start;
+  padding: 26px 28px 18px;
+}
+
+.wallet-transaction-receipt-modal__copy {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.wallet-transaction-receipt-modal__title {
+  margin: 0;
+  color: var(--doke-primary-strong, #164b7a);
+  font-size: clamp(1.65rem, 2.8vw, 2.2rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.wallet-transaction-receipt-modal__description {
+  margin: 0;
+  max-width: 52ch;
+  color: var(--doke-text-secondary, #607894);
+  font-size: 0.96rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.wallet-transaction-receipt-modal__body.doke-modal-body.doke-overlay__body {
+  display: grid;
+  gap: 16px;
+  min-height: 0;
+  padding: 0 28px 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.wallet-transaction-receipt-card {
+  display: grid;
+  gap: 5px;
+  padding: 18px;
+  border: 1px solid rgba(41, 143, 127, 0.14);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(240, 252, 249, 0.96), rgba(247, 251, 255, 0.92));
+}
+
+.wallet-transaction-receipt-card span,
+.wallet-transaction-receipt-card small,
+.wallet-transaction-receipt-grid span {
+  color: var(--doke-text-muted, #64748b);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.wallet-transaction-receipt-card strong {
+  color: var(--doke-primary-strong, #164b7a);
+  font-size: clamp(1.8rem, 4vw, 2.45rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.wallet-transaction-receipt-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.wallet-transaction-receipt-grid article {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1px solid rgba(24, 75, 118, 0.08);
+  border-radius: 16px;
+  background: #f8fbfe;
+}
+
+.wallet-transaction-receipt-grid strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--doke-primary-strong, #164b7a);
+  font-size: 0.95rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.wallet-transaction-receipt-note {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(42, 95, 144, 0.07);
+  color: var(--doke-text-secondary, #607894);
+  font-size: 0.92rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.wallet-transaction-receipt-modal__footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  padding: 18px 28px 28px;
+  border-top: 1px solid rgba(24, 75, 118, 0.10);
+  background: linear-gradient(180deg, rgba(248, 251, 255, 0), rgba(248, 251, 255, 0.92));
+}
+
+.wallet-transaction-receipt-modal__footer .doke-btn {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .wallet-transaction-receipt-modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .wallet-transaction-receipt-modal__surface.doke-modal-surface.doke-overlay__surface {
+    width: 100%;
+    height: min(90dvh, 760px);
+    max-height: 90dvh;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .wallet-transaction-receipt-modal__header {
+    padding: 22px 18px 16px;
+  }
+
+  .wallet-transaction-receipt-modal__body.doke-modal-body.doke-overlay__body {
+    padding: 0 18px 16px;
+  }
+
+  .wallet-transaction-receipt-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wallet-transaction-receipt-modal__footer {
+    padding: 16px 18px max(18px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Withdraw tracking modal.
+ * Responsibility: expose a lightweight timeline for withdraw movements using
+ * existing wallet transaction state without changing repository data shape.
+ */
+.wallet-withdraw-track-modal.is-active {
+  display: flex;
+}
+
+.wallet-withdraw-track-modal__surface.doke-modal-surface.doke-overlay__surface {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: min(calc(100vw - 32px), 600px);
+  height: min(84dvh, 660px);
+  max-height: calc(100dvh - 32px);
+  overflow: hidden;
+}
+
+.wallet-withdraw-track-modal__header {
+  align-items: flex-start;
+  padding: 26px 28px 18px;
+}
+
+.wallet-withdraw-track-modal__copy {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.wallet-withdraw-track-modal__title {
+  margin: 0;
+  color: var(--doke-primary-strong, #164b7a);
+  font-size: clamp(1.7rem, 2.8vw, 2.2rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.wallet-withdraw-track-modal__description {
+  margin: 0;
+  max-width: 50ch;
+  color: var(--doke-text-secondary, #607894);
+  font-size: 0.96rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.wallet-withdraw-track-modal__body.doke-modal-body.doke-overlay__body {
+  display: grid;
+  gap: 16px;
+  min-height: 0;
+  padding: 0 28px 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.wallet-withdraw-track-card {
+  display: grid;
+  gap: 5px;
+  padding: 18px;
+  border: 1px solid rgba(24, 75, 118, 0.10);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.98), rgba(241, 248, 253, 0.92));
+}
+
+.wallet-withdraw-track-card span,
+.wallet-withdraw-track-card small {
+  color: var(--doke-text-muted, #64748b);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.wallet-withdraw-track-card strong {
+  color: var(--doke-primary-strong, #164b7a);
+  font-size: clamp(1.8rem, 4vw, 2.45rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.wallet-withdraw-timeline {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 4px 0 0;
+  list-style: none;
+}
+
+.wallet-withdraw-timeline__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+  padding: 0 0 20px;
+}
+
+.wallet-withdraw-timeline__item::before {
+  content: "";
+  position: absolute;
+  top: 26px;
+  bottom: 0;
+  left: 13px;
+  width: 2px;
+  border-radius: 999px;
+  background: rgba(24, 75, 118, 0.10);
+}
+
+.wallet-withdraw-timeline__item:last-child {
+  padding-bottom: 0;
+}
+
+.wallet-withdraw-timeline__item:last-child::before {
+  display: none;
+}
+
+.wallet-withdraw-timeline__marker {
+  position: relative;
+  z-index: 1;
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 2px solid rgba(24, 75, 118, 0.14);
+  border-radius: 999px;
+  background: #fff;
+}
+
+.wallet-withdraw-timeline__item[data-state="done"] .wallet-withdraw-timeline__marker {
+  border-color: rgba(41, 143, 127, 0.22);
+  background: var(--doke-success, #298f7f);
+}
+
+.wallet-withdraw-timeline__item[data-state="done"] .wallet-withdraw-timeline__marker::after {
+  content: "";
+  width: 8px;
+  height: 5px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg) translateY(-1px);
+}
+
+.wallet-withdraw-timeline__item[data-state="current"] .wallet-withdraw-timeline__marker {
+  border-color: rgba(42, 95, 144, 0.22);
+  background: rgba(42, 95, 144, 0.10);
+}
+
+.wallet-withdraw-timeline__item[data-state="current"] .wallet-withdraw-timeline__marker::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--doke-primary, #2a5f90);
+}
+
+.wallet-withdraw-timeline__item strong {
+  color: var(--doke-primary-strong, #164b7a);
+  font-size: 0.98rem;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.wallet-withdraw-timeline__item p {
+  margin: 5px 0 0;
+  color: var(--doke-text-secondary, #607894);
+  font-size: 0.9rem;
+  font-weight: 620;
+  line-height: 1.45;
+}
+
+.wallet-withdraw-timeline__item[data-state="pending"] {
+  opacity: 0.66;
+}
+
+.wallet-withdraw-track-note {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(42, 95, 144, 0.07);
+  color: var(--doke-text-secondary, #607894);
+  font-size: 0.92rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.wallet-withdraw-track-modal__footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: 12px;
+  padding: 18px 28px 28px;
+  border-top: 1px solid rgba(24, 75, 118, 0.10);
+  background: linear-gradient(180deg, rgba(248, 251, 255, 0), rgba(248, 251, 255, 0.92));
+}
+
+.wallet-withdraw-track-modal__footer .doke-btn {
+  width: 100%;
+  min-width: 0;
+}
+
+.wallet-withdraw-track-modal__footer .doke-btn[hidden] {
+  display: none;
+}
+
+.wallet-withdraw-track-modal__footer:has(.wallet-withdraw-track-modal__primary[hidden]) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 640px) {
+  .wallet-withdraw-track-modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .wallet-withdraw-track-modal__surface.doke-modal-surface.doke-overlay__surface {
+    width: 100%;
+    height: min(90dvh, 760px);
+    max-height: 90dvh;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .wallet-withdraw-track-modal__header {
+    padding: 22px 18px 16px;
+  }
+
+  .wallet-withdraw-track-modal__body.doke-modal-body.doke-overlay__body {
+    padding: 0 18px 16px;
+  }
+
+  .wallet-withdraw-track-modal__footer {
+    grid-template-columns: 1fr;
+    padding: 16px 18px max(18px, env(safe-area-inset-bottom));
+  }
+}
+
+
+/* Wallet financial child modals return action.
+ * Responsibility: keep receipt/withdraw tracking navigable back to the
+ * transaction-detail context without introducing a new modal contract.
+ */
+.wallet-withdraw-track-modal__footer,
+.wallet-transaction-receipt-modal__footer {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.wallet-withdraw-track-modal__footer .wallet-withdraw-track-modal__primary:not([hidden]) {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+  .wallet-withdraw-track-modal__footer,
+  .wallet-transaction-receipt-modal__footer {
+    grid-template-columns: 1fr;
   }
 }

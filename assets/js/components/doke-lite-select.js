@@ -12,6 +12,8 @@
 
   const getMenuHost = (select) =>
     select?.closest("dialog") ||
+    select?.closest(".wallet-modal") ||
+    select?.closest(".doke-overlay") ||
     select?.closest(".profile-budget-modal") ||
     document.body;
 

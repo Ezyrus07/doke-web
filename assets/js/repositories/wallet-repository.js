@@ -314,6 +314,130 @@
     return Promise.resolve({ account: clone(normalized), wallet: clone(saved) });
   }
 
+
+  function getBankDestination(account) {
+    if (!account) return 'Conta não cadastrada';
+    var bank = normalizeText(account.bankName || 'Banco cadastrado');
+    var digits = normalizeText(account.accountNumber).replace(/\D/g, '');
+    var tail = digits.slice(-4);
+    return bank + (tail ? ' · final ' + tail : '');
+  }
+
+  function createWithdrawReference() {
+    return 'SAQ-' + Date.now().toString().slice(-6);
+  }
+
+  function requestWithdraw(payload) {
+    payload = payload || {};
+    var wallet = readWallet();
+    var user = getCurrentUser() || {};
+    var ownerId = normalizeProfessionalId(payload.ownerId || payload.professionalId || payload.userId || user.id || '');
+    var amount = roundCurrency(parseAmount(payload.amount));
+
+    if (!amount || amount <= 0) {
+      return Promise.reject(new Error('Informe um valor válido para saque.'));
+    }
+
+    var account = wallet.bankAccounts.find(function (item) {
+      return String(item.ownerId || item.userId) === String(ownerId);
+    });
+
+    if (!account) {
+      return Promise.reject(new Error('Cadastre uma conta bancária antes de sacar.'));
+    }
+
+    var summary = getSummary({ currentUser: false, professionalId: ownerId });
+    var available = roundCurrency(summary.available || 0);
+    if (amount > available) {
+      return Promise.reject(new Error('Valor acima do saldo disponível.'));
+    }
+
+    var createdAt = nowIso();
+    var destination = getBankDestination(account);
+    var normalized = normalizeTransaction({
+      id: createTransactionId(),
+      type: 'withdraw',
+      source: 'wallet-withdraw',
+      status: 'processing',
+      userId: ownerId,
+      professionalId: ownerId,
+      eventKey: ['wallet_withdraw', ownerId, Date.now().toString(36)].join(':'),
+      grossAmount: amount,
+      feeAmount: 0,
+      netAmount: amount,
+      amount: amount,
+      title: 'Saque solicitado',
+      description: destination + ' · agora',
+      reference: createWithdrawReference(),
+      method: destination,
+      note: 'Transferência solicitada para a conta de recebimento cadastrada.',
+      actionLabel: 'Acompanhar saque',
+      targetUrl: 'carteira.html',
+      createdAt: createdAt,
+      availableAt: createdAt,
+      updatedAt: createdAt
+    });
+
+    wallet.transactions.unshift(normalized);
+    wallet.updatedAt = normalized.updatedAt;
+    var saved = writeWallet(wallet);
+    document.dispatchEvent(new CustomEvent('doke:wallet-withdraw-requested', {
+      detail: { transaction: clone(normalized), account: clone(account), wallet: clone(saved) }
+    }));
+    return Promise.resolve({ transaction: clone(normalized), account: clone(account), created: true, wallet: clone(saved) });
+  }
+
+
+  function completeWithdraw(payload) {
+    payload = payload || {};
+    var transactionId = normalizeText(payload.transactionId || payload.id || '');
+    var wallet = readWallet();
+    var user = getCurrentUser() || {};
+    var ownerId = normalizeProfessionalId(payload.ownerId || payload.professionalId || payload.userId || user.id || '');
+
+    if (!transactionId) {
+      return Promise.reject(new Error('Saque não identificado.'));
+    }
+
+    var transactionIndex = wallet.transactions.findIndex(function (transaction) {
+      return String(transaction.id || '') === String(transactionId)
+        && transaction.type === 'withdraw'
+        && String(transaction.professionalId || transaction.userId || '') === String(ownerId);
+    });
+
+    if (transactionIndex < 0) {
+      return Promise.reject(new Error('Saque não encontrado.'));
+    }
+
+    var transaction = wallet.transactions[transactionIndex];
+    if (transaction.status === 'completed') {
+      return Promise.resolve({ transaction: clone(transaction), updated: false, wallet: clone(wallet) });
+    }
+
+    if (transaction.status !== 'processing') {
+      return Promise.reject(new Error('Este saque não está em processamento.'));
+    }
+
+    var completedAt = nowIso();
+    var updated = normalizeTransaction(Object.assign({}, transaction, {
+      status: 'completed',
+      title: 'Saque concluído',
+      description: transaction.method ? transaction.method + ' · concluído' : 'Saque concluído',
+      note: 'Transferência concluída para a conta de recebimento cadastrada.',
+      actionLabel: 'Ver comprovante',
+      completedAt: completedAt,
+      updatedAt: completedAt
+    }));
+
+    wallet.transactions[transactionIndex] = updated;
+    wallet.updatedAt = completedAt;
+    var saved = writeWallet(wallet);
+    document.dispatchEvent(new CustomEvent('doke:wallet-withdraw-completed', {
+      detail: { transaction: clone(updated), wallet: clone(saved) }
+    }));
+    return Promise.resolve({ transaction: clone(updated), updated: true, wallet: clone(saved) });
+  }
+
   repositories.wallet = Object.freeze({
     storageKey: STORAGE_KEY,
     normalizeTransaction: normalizeTransaction,
@@ -324,6 +448,8 @@
     getSummary: getSummary,
     getBankAccount: getBankAccount,
     saveBankAccount: saveBankAccount,
+    requestWithdraw: requestWithdraw,
+    completeWithdraw: completeWithdraw,
     registerReceivable: registerReceivable
   });
 })();

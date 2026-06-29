@@ -5,8 +5,30 @@
 (function () {
   'use strict';
 
-  const DEFAULT_MIN_DURATION = 180;
+  const DEFAULT_MIN_DURATION = 0;
+  const DEFAULT_MAX_DURATION = 8000;
   const INTERNAL_NAVIGATION_TTL = 1800;
+  const activeHydrations = new Map();
+  const ROUTE_SKELETON_CONTRACTS = Object.freeze({
+    '/pedidos.html': Object.freeze({
+      boundary: '[data-state-boundary="pedidos"]',
+      skeleton: '[data-orders-hydration-skeleton], [data-orders-hydration-count-skeleton]',
+      ready: '[data-orders-hydration-ready], [data-orders-hydration-count-ready]',
+      splash: '[data-orders-document-preloader]'
+    }),
+    '/mensagens.html': Object.freeze({
+      boundary: '[data-state-boundary="mensagens"], .messages-app',
+      skeleton: '[data-messages-hydration-skeleton]',
+      ready: '[data-messages-hydration-ready]',
+      splash: '[data-messages-document-preloader]'
+    }),
+    '/notificacoes.html': Object.freeze({
+      boundary: '[data-state-boundary="notificacoes"]',
+      skeleton: '[data-notifications-hydration-skeleton]',
+      ready: '[data-notifications-hydration-ready]',
+      splash: '[data-notifications-document-preloader]'
+    })
+  });
 
   const getNavigationType = () => {
     try {
@@ -33,6 +55,12 @@
     return hasRecentInternalNavigation();
   };
 
+  const getRouteVisualMode = () => (
+    document.documentElement?.dataset.dokeRouteVisualMode
+    || document.body?.dataset.dokeRouteVisualMode
+    || ''
+  );
+
   const getPolicy = (options = {}) => {
     const navigationType = getNavigationType();
     const internalNavigation = isStableShellNavigation();
@@ -41,8 +69,11 @@
     const bootMode = String(options.bootMode || options.bootPolicy || 'hard-load');
     const readyPolicy = String(options.readyPolicy || 'internal-immediate');
 
+    const routeVisualMode = getRouteVisualMode();
     const shouldShowSkeleton = (() => {
       if (skeletonMode === 'never') return false;
+      if (internalNavigation && routeVisualMode === 'direct') return false;
+      if (internalNavigation && routeVisualMode === 'skeleton') return true;
       if (internalNavigation) {
         return skeletonMode === 'route-and-document' || skeletonMode === 'always';
       }
@@ -68,6 +99,7 @@
       navigationType,
       hardLoad,
       internalNavigation,
+      routeVisualMode,
       shouldShowBootLogo,
       shouldShowSkeleton,
       shouldRevealReadyImmediately
@@ -77,7 +109,7 @@
   const shouldUseSkeletonForMode = (mode) => {
     const normalized = String(mode || 'always');
     if (normalized === 'never') return false;
-    if (isStableShellNavigation()) return false;
+    if (isStableShellNavigation()) return getRouteVisualMode() === 'skeleton';
     if (normalized === 'document-load') return document.readyState !== 'complete';
     if (normalized === 'reload') return getNavigationType() === 'reload';
     return true;
@@ -119,23 +151,24 @@
     const loadingSelectors = toArray(options.loadingSelectors || options.loadingSelector || []);
     const skeletonSelectors = toArray(options.skeletonSelectors || options.skeletonSelector || []);
     const readySelectors = toArray(options.readySelectors || options.readySelector || []);
+    const errorSelectors = toArray(options.errorSelectors || options.errorSelector || ['[data-state-error]']);
     const splashSelectors = toArray(options.splashSelectors || options.splashSelector || []);
     const policy = getPolicy(options);
     const useSkeleton = typeof options.skeletonMode === 'undefined' && typeof options.skeletonPolicy === 'undefined'
       ? shouldUseSkeletonForMode('hard-load')
       : policy.shouldShowSkeleton;
-    const revealReadyImmediately = policy.shouldRevealReadyImmediately || !useSkeleton;
+    const revealReadyImmediately = policy.shouldRevealReadyImmediately && !options.waitFor;
     const waitFor = new Set(toArray(options.waitFor || ['dom']));
     const readySources = new Set();
     const startedAt = Date.now();
-    const minDuration = policy.shouldRevealReadyImmediately
+    const minDuration = policy.routeVisualMode === 'direct'
       ? 0
       : Number.isFinite(Number(options.minDuration))
       ? Math.max(0, Number(options.minDuration))
       : DEFAULT_MIN_DURATION;
     const maxDuration = Number.isFinite(Number(options.maxDuration))
       ? Math.max(minDuration, Number(options.maxDuration))
-      : 1400;
+      : DEFAULT_MAX_DURATION;
     const splashDuration = policy.shouldShowBootLogo && useSkeleton && Number.isFinite(Number(options.splashDuration))
       ? Math.max(0, Number(options.splashDuration))
       : 0;
@@ -147,6 +180,7 @@
     let state = 'idle';
     let finalizing = false;
     let lastHasItems = false;
+    let lastError = null;
 
     const readHasItems = (fallback = false) => {
       if (typeof options.hasItems === 'function') {
@@ -182,6 +216,27 @@
       }));
     };
 
+    const ensureRetryAction = (node) => {
+      if (!node || node.querySelector('[data-page-hydration-retry]')) return;
+      const retry = document.createElement('button');
+      retry.type = 'button';
+      retry.className = 'doke-btn doke-btn--secondary';
+      retry.dataset.pageHydrationRetry = 'true';
+      retry.textContent = 'Tentar novamente';
+      retry.addEventListener('click', () => {
+        if (typeof options.onRetry === 'function') {
+          options.onRetry(lastError);
+          return;
+        }
+        if (typeof window.DokeNavigate === 'function') {
+          window.DokeNavigate(window.location.href, { replace: true, force: true });
+          return;
+        }
+        window.location.reload();
+      });
+      node.append(document.createTextNode(' '), retry);
+    };
+
     const hideEmpties = () => {
       resolveNodes(root, emptySelectors).forEach((node) => setHidden(node, true));
     };
@@ -196,6 +251,15 @@
 
     const syncReady = (visible) => {
       resolveNodes(root, readySelectors).forEach((node) => setHidden(node, !visible));
+    };
+
+    const syncError = (visible) => {
+      resolveNodes(root, errorSelectors).forEach((node) => {
+        setHidden(node, !visible);
+        const region = node.closest('[data-state-region]');
+        if (region) setHidden(region, !visible);
+        if (visible) ensureRetryAction(node);
+      });
     };
 
     const syncSplash = (visible) => {
@@ -269,19 +333,22 @@
       const elapsed = Date.now() - startedAt;
       const skeletonElapsed = skeletonShownAt ? Date.now() - skeletonShownAt : elapsed;
       const delay = Math.max(0, minDuration - (useSkeleton ? skeletonElapsed : elapsed));
-      window.setTimeout(() => {
+      const complete = () => {
         lastHasItems = readHasItems(lastHasItems);
         finalizing = false;
         setState(lastHasItems ? 'ready' : 'empty', { hasItems: lastHasItems });
         syncLoading(false);
         syncSkeleton(false);
         syncSplash(false);
+        syncError(false);
         syncReady(true);
         syncEmpty({ hasItems: lastHasItems });
         document.dispatchEvent(new CustomEvent('doke:page-hydration-ready', {
           detail: { page, hasItems: lastHasItems }
         }));
-      }, delay);
+      };
+      if (delay > 0) window.setTimeout(complete, delay);
+      else complete();
     };
 
     const canFinalize = () => Array.from(waitFor).every((source) => readySources.has(source));
@@ -289,6 +356,7 @@
     const mark = (source = 'dom') => {
       if (state === 'ready' || state === 'empty') return true;
       readySources.add(source);
+      if (root) root.dataset.pageHydrationSources = Array.from(readySources).sort().join(',');
       if (canFinalize()) {
         finalize();
         return true;
@@ -300,6 +368,7 @@
       if (state !== 'idle') return api;
       setState(splashDuration > 0 ? 'document-boot' : 'hydrating');
       hideEmpties();
+      syncError(false);
       syncLoading(false);
       syncSkeleton(false);
       syncReady(revealReadyImmediately);
@@ -317,7 +386,7 @@
       if (watchdogTimer) window.clearTimeout(watchdogTimer);
       watchdogTimer = window.setTimeout(() => {
         if (state !== 'hydrating' && state !== 'document-boot') return;
-        ready({ hasItems: readHasItems(lastHasItems) });
+        error(new Error(`Tempo limite de hidratação excedido para ${page}.`), { source: 'watchdog' });
       }, maxDuration);
       return api;
     };
@@ -329,13 +398,41 @@
       return api;
     };
 
+    const error = (reason, detail = {}) => {
+      if (state === 'ready' || state === 'empty' || state === 'error') return api;
+      lastError = reason instanceof Error ? reason : new Error(String(reason || 'Falha ao carregar a página.'));
+      [watchdogTimer, splashTimer, pendingFinalizeTimer].forEach((timer) => {
+        if (timer) window.clearTimeout(timer);
+      });
+      watchdogTimer = 0;
+      splashTimer = 0;
+      pendingFinalizeTimer = 0;
+      finalizing = false;
+      setState('error', Object.assign({
+        error: lastError.message,
+        source: 'controller'
+      }, detail));
+      syncLoading(false);
+      syncSkeleton(false);
+      syncSplash(false);
+      syncReady(false);
+      hideEmpties();
+      syncError(true);
+      document.dispatchEvent(new CustomEvent('doke:page-hydration-error', {
+        detail: Object.assign({ page, error: lastError.message }, detail)
+      }));
+      return api;
+    };
+
     const api = Object.freeze({
       start,
       mark,
       ready,
+      error,
       syncEmpty,
       syncSkeleton,
       syncReady,
+      syncError,
       syncSplash,
       hideEmpties,
       getState: () => state,
@@ -345,8 +442,102 @@
       usesSkeleton: () => useSkeleton
     });
 
+    activeHydrations.set(page, api);
     return api;
   };
 
-  window.DokePageHydration = Object.freeze({ create, getPolicy });
+  const normalizeRoutePath = (value) => {
+    try {
+      const pathname = new URL(value || window.location.href, window.location.href).pathname;
+      if (pathname === '/') return '/index.html';
+      return `/${pathname.split('/').filter(Boolean).pop() || 'index.html'}`;
+    } catch (error) {
+      return '/index.html';
+    }
+  };
+
+  const getRouteSkeletonContract = (path) => ROUTE_SKELETON_CONTRACTS[normalizeRoutePath(path)] || null;
+
+  const routeHasSkeleton = (doc, path) => {
+    const contract = getRouteSkeletonContract(path);
+    return Boolean(contract && doc?.querySelector?.(contract.skeleton));
+  };
+
+  const prepareRouteDocument = (doc, path, mode = 'direct') => {
+    const contract = getRouteSkeletonContract(path);
+    if (!doc || !contract) return false;
+    const showSkeleton = mode === 'skeleton';
+    doc.querySelectorAll(contract.boundary).forEach((node) => {
+      node.dataset.viewState = 'loading';
+      node.dataset.pageHydration = 'hydrating';
+      node.dataset.pageHydrationSkeleton = showSkeleton ? 'on' : 'off';
+      node.setAttribute('aria-busy', 'true');
+    });
+    doc.querySelectorAll(contract.splash).forEach((node) => setHidden(node, true));
+    doc.querySelectorAll(contract.skeleton).forEach((node) => setHidden(node, !showSkeleton));
+    doc.querySelectorAll(contract.ready).forEach((node) => setHidden(node, true));
+    doc.querySelectorAll('[data-state-error], [data-state-empty]').forEach((node) => setHidden(node, true));
+    return true;
+  };
+
+  const setRouteVisualMode = (mode) => {
+    const normalized = mode === 'skeleton' ? 'skeleton' : 'direct';
+    if (document.documentElement) document.documentElement.dataset.dokeRouteVisualMode = normalized;
+    if (document.body) document.body.dataset.dokeRouteVisualMode = normalized;
+    return normalized;
+  };
+
+  const clearRouteVisualMode = () => {
+    document.documentElement?.removeAttribute('data-doke-route-visual-mode');
+    document.body?.removeAttribute('data-doke-route-visual-mode');
+  };
+
+  const showRouteError = (path, reason) => {
+    const page = normalizeRoutePath(path).slice(1).replace(/\.html$/i, '');
+    const active = activeHydrations.get(page);
+    if (active && typeof active.error === 'function') {
+      active.error(reason, { source: 'route-resource' });
+      return true;
+    }
+    const contract = getRouteSkeletonContract(path);
+    if (contract) {
+      document.querySelectorAll(contract.skeleton).forEach((node) => setHidden(node, true));
+      document.querySelectorAll(contract.ready).forEach((node) => setHidden(node, true));
+    }
+    const errorNode = document.querySelector('[data-state-error]');
+    if (errorNode) {
+      setHidden(errorNode, false);
+      const region = errorNode.closest('[data-state-region]');
+      if (region) setHidden(region, false);
+      if (!errorNode.querySelector('[data-page-hydration-retry]')) {
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.className = 'doke-btn doke-btn--secondary';
+        retry.dataset.pageHydrationRetry = 'true';
+        retry.textContent = 'Tentar novamente';
+        retry.addEventListener('click', () => {
+          if (typeof window.DokeNavigate === 'function') {
+            window.DokeNavigate(window.location.href, { replace: true, force: true });
+          } else {
+            window.location.reload();
+          }
+        });
+        errorNode.append(document.createTextNode(' '), retry);
+      }
+    }
+    if (document.body) document.body.dataset.pageHydration = 'error';
+    if (document.documentElement) document.documentElement.dataset.pageHydration = 'error';
+    return Boolean(errorNode);
+  };
+
+  window.DokePageHydration = Object.freeze({
+    create,
+    getPolicy,
+    getRouteSkeletonContract,
+    routeHasSkeleton,
+    prepareRouteDocument,
+    setRouteVisualMode,
+    clearRouteVisualMode,
+    showRouteError
+  });
 }());

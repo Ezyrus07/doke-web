@@ -469,6 +469,7 @@ window.DokeHomeBeforeAfter = (() => {
       let replyTargetId = null;
       let lockedScrollY = 0;
       let lockedAnchor = null;
+      let viewportLocked = false;
       let lastTrigger = null;
 
       const isMobileCommentsSheet = () => window.matchMedia('(max-width: 760px)').matches;
@@ -483,6 +484,7 @@ window.DokeHomeBeforeAfter = (() => {
       };
 
       const lockViewport = (anchor = null) => {
+        viewportLocked = true;
         lockedScrollY = window.scrollY || window.pageYOffset || 0;
         lockedAnchor = anchor ? {
           node: anchor,
@@ -493,6 +495,8 @@ window.DokeHomeBeforeAfter = (() => {
       };
 
       const unlockViewport = () => {
+        if (!viewportLocked) return;
+        viewportLocked = false;
         const top = document.body.style.top;
         document.body.classList.remove('before-after-preview-open');
         document.body.style.top = '';

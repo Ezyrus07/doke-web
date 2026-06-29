@@ -236,3 +236,21 @@ Validation:
 ```bash
 npm run test:first-paint-loading-contract
 ```
+
+## Internal route hydration contract
+
+- `assets/js/core/stable-shell-router.js` owns route preparation, the 150 ms visual threshold, stable sidebar/header nodes, history and route commit.
+- `assets/js/core/page-hydration.js` owns destination loading, skeleton, ready, empty, error, retry and the documented hydration watchdog.
+- The current page remains mounted while destination HTML, CSS and essential scripts are prepared.
+- `pedidos.html`, `mensagens.html` and `notificacoes.html` use their page-specific skeletons only when preparation exceeds 150 ms.
+- Static or already-renderable pages commit directly without a generic loading overlay.
+- Controllers may complete hydration only from declared DOM, authentication and essential-data signals. Timers cannot stand in for those signals.
+- A watchdog must end in `error` and expose retry; it must never force `ready`.
+- `page-data-orchestrator.js` provides in-memory stale-while-revalidate behavior: valid cached data is returned immediately and `doke:page-data-revalidated` carries the background refresh.
+
+Runtime validation:
+
+```bash
+npx playwright test tests/e2e/stable-shell-transition-contract.spec.js --workers=1
+npx playwright test tests/e2e/stable-shell-transition-matrix.spec.js --workers=1
+```

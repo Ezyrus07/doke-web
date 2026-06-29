@@ -7,6 +7,9 @@
   var resources = Object.freeze({
     users: 'mock-users.json',
     services: 'mock-services.json',
+    workers: 'mocks/marketplace/workers.json',
+    publications: 'mocks/marketplace/publications.json',
+    reviews: 'mocks/marketplace/reviews.json',
     orders: 'mock-orders.json',
     messages: 'mock-messages.json',
     communities: 'mock-communities.json',

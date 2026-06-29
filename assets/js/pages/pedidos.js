@@ -53,8 +53,8 @@
       skeletonMode: 'route-and-document',
       readyPolicy: 'after-skeleton',
       waitFor: ['dom', 'auth', 'local-orders'],
-      minDuration: 220,
-      maxDuration: 1000,
+      minDuration: 0,
+      maxDuration: 8000,
       hasItems: () => Array.from(root.querySelectorAll('.orders-list .order-card[data-status]'))
         .some((card) => !card.hidden && card.getAttribute('aria-hidden') !== 'true')
     }) || null;
@@ -932,7 +932,6 @@
     setAgendaExpanded(true);
     refreshOrdersSurface();
     syncHeaderControls();
-    scheduleRequestedOrderFocus();
     hydration?.mark('dom');
     const markOrdersHydrationAuth = () => {
       hydration?.mark('auth');
@@ -941,7 +940,6 @@
     const markOrdersHydrationLocal = () => {
       hydration?.mark('local-orders');
       refreshOrdersSurface();
-      scheduleRequestedOrderFocus();
     };
     const markOrdersHydrationCommand = () => {
       hydration?.mark('command-center');
@@ -955,22 +953,15 @@
       refreshOrdersSurface();
     });
     document.addEventListener('doke:orders-list-hydrated', markOrdersHydrationLocal);
-    window.setTimeout(() => hydration?.mark('auth'), 360);
-    window.setTimeout(() => hydration?.mark('local-orders'), 520);
-    window.setTimeout(() => hydration?.mark('command-center'), 700);
-    window.setTimeout(() => {
-      if (!hydration || hydration.canShowEmpty()) return;
-      hydration.ready();
-      refreshOrdersSurface();
-    }, 1050);
+    if (document.documentElement.dataset.authSurfaceReady === 'true') {
+      markOrdersHydrationAuth();
+    }
     document.addEventListener('doke:orders-command-center-ready', () => {
       refreshOrdersSurface();
     });
     document.addEventListener('doke:auth-surface-ready', () => {
       refreshOrdersSurface();
     });
-    window.setTimeout(refreshOrdersSurface, 220);
-    window.setTimeout(refreshOrdersSurface, 560);
     if (planner) {
       syncPlannerFirstPaintState();
       renderPlannerCalendar();

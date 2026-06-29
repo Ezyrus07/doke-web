@@ -463,7 +463,7 @@
       splashDuration: 520,
       waitFor: ['dom', 'auth', 'local-conversations'],
       minDuration: 0,
-      maxDuration: 1500,
+      maxDuration: 8000,
       hasItems: () => Array.from(root.querySelectorAll('.message-item[data-message-id]'))
         .some((item) => !item.hidden && item.dataset.deleted !== 'true')
     }) || null;
@@ -728,10 +728,10 @@
           </div>
 
           <footer class="orders-detail-actions">
+            <button class="orders-detail-actions__button orders-detail-actions__button--secondary doke-btn doke-btn--ghost" type="button" data-messages-order-detail-close>Fechar</button>
             <button class="orders-detail-actions__button orders-detail-actions__button--primary doke-btn doke-btn--primary" type="button" data-messages-order-detail-close>
               ${orderDetailIcons.chat}<span>Voltar para conversa</span>
             </button>
-            <button class="orders-detail-actions__button orders-detail-actions__button--secondary doke-btn doke-btn--ghost" type="button" data-messages-order-detail-close>Fechar</button>
           </footer>
         </section>
       `;
@@ -1702,6 +1702,7 @@
 
 
     const setCompletionPanel = (panelName) => {
+      if (completionModal) completionModal.dataset.completionState = panelName;
       completionPanels.forEach((panel) => {
         const active = panel.dataset.messageCompletionPanel === panelName;
         panel.hidden = !active;

@@ -888,6 +888,29 @@ body.payment-finish-modal-open {
   margin-top: 2px;
 }
 
+.payment-submit-state__actions--success {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: center;
+  justify-items: center;
+  width: min(100%, 280px);
+  margin: 8px auto 0;
+  padding-top: 14px;
+}
+
+.payment-submit-state__actions--success .payment-button {
+  width: 100%;
+  max-width: 280px;
+  min-height: 56px;
+  height: 56px;
+  padding: 0 22px;
+  border-radius: 18px;
+  font-size: 1rem;
+  font-weight: 850;
+  line-height: 1.08;
+  text-align: center;
+}
+
 .payment-submit-state__panel--pix .payment-submit-state__actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -1080,7 +1103,14 @@ body.payment-finish-modal-open {
     grid-template-columns: 1fr;
   }
 
+  .payment-submit-state__actions--success {
+    width: 100%;
+    max-width: none;
+    padding-top: 16px;
+  }
+
   .payment-submit-state__actions .doke-btn,
+  .payment-submit-state__actions a.doke-btn,
   .payment-finish-actions .doke-btn {
     width: 100%;
   }
@@ -1107,6 +1137,140 @@ body.payment-finish-modal-open {
   }
 
   .payment-summary__links {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Payment finish confirmation refinement.
+ * This modal is a confirmation step, not a form page. Keep it compact,
+ * avoid internal scroll in normal desktop/tablet viewports, and make the
+ * summary/checkbox/action hierarchy match the payment feedback rhythm.
+ */
+.payment-finish-modal .payment-finish-modal__card {
+  width: min(100%, 560px);
+  padding: 28px;
+  overflow: visible;
+  border-radius: 28px;
+}
+
+.payment-finish-panel--confirm {
+  gap: 18px;
+}
+
+.payment-finish-head {
+  display: grid;
+  gap: 10px;
+  max-width: 430px;
+}
+
+.payment-finish-panel--confirm h2 {
+  max-width: 12ch;
+  font-size: clamp(1.8rem, 3.4vw, 2.35rem);
+  line-height: 1.02;
+}
+
+.payment-finish-panel--confirm p {
+  max-width: 46ch;
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+.payment-finish-summary--compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.payment-finish-summary--compact div {
+  min-height: 72px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(248, 252, 255, 0.84);
+}
+
+.payment-finish-summary--compact dt {
+  font-size: 0.72rem;
+  line-height: 1.1;
+}
+
+.payment-finish-summary--compact dd {
+  margin-top: 7px;
+  overflow-wrap: anywhere;
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+
+.payment-finish-check {
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(248, 252, 255, 0.88);
+  font-size: 0.9rem;
+}
+
+.payment-finish-checkbox {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  border: 2px solid rgba(36, 100, 155, 0.28);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.payment-finish-checkbox:checked {
+  border-color: var(--payment-blue);
+  background: var(--payment-blue);
+}
+
+.payment-finish-checkbox:checked::after {
+  content: '';
+  width: 6px;
+  height: 11px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translateY(-1px);
+}
+
+.payment-finish-actions--confirm {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin-top: 0;
+}
+
+.payment-finish-actions--confirm .doke-btn {
+  width: 100%;
+  min-height: 54px;
+  border-radius: 17px;
+}
+
+@media (max-width: 760px) {
+  .payment-finish-modal .payment-finish-modal__card {
+    padding: 22px;
+    overflow: auto;
+  }
+
+  .payment-finish-panel--confirm h2 {
+    max-width: none;
+    font-size: clamp(1.55rem, 8vw, 2rem);
+  }
+
+  .payment-finish-summary--compact {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-finish-summary--compact div {
+    min-height: 0;
+  }
+
+  .payment-finish-actions--confirm {
     grid-template-columns: 1fr;
   }
 }

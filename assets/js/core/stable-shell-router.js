@@ -2,7 +2,9 @@
   'use strict';
 
   var Doke = window.Doke || (window.Doke = {});
-  var ROUTER_VERSION = '20260628-stable-shell-router-hydration-barrier-v3';
+  var ROUTER_VERSION = '20260628-stable-shell-transition-v7';
+  var ROUTE_VISUAL_THRESHOLD_MS = 150;
+  var ROUTE_SETTLEMENT_TIMEOUT_MS = 9000;
 
   var SAFE_ROUTES = new Set([
     '/ajuda.html',
@@ -38,11 +40,11 @@
     '/resultados.html': ['DokeInitSearchResults'],
     '/detalhe-anuncio.html': ['DokeInitDetailAd'],
     '/ajuda.html': ['DokeInitHelpCenter'],
-    '/pedidos.html': ['DokeInitOrders'],
+    '/pedidos.html': ['DokeInitOrders', 'DokeHydrateLocalOrders'],
     '/mensagens.html': ['DokeInitMessages'],
     '/notificacoes.html': ['DokeInitNotifications'],
     '/carteira.html': ['DokeInitWallet'],
-    '/comunidade.html': [],
+    '/comunidade.html': ['DokeInitCommunity'],
     '/comunidade-interna.html': [],
     '/perfil.html': ['DokeInitProfile'],
     '/configuracoes.html': [],
@@ -120,11 +122,23 @@
 
   var CORE_SCRIPT_RE = /assets\/js\/core\/(?:runtime-config|feature-flags|rollout-guard|app|stable-shell-router|social-page-router)\.js(?:\?.*)?$/i;
   var routeCache = new Map();
+  var routeWarmCache = new Map();
   var loadedScripts = new Set(Array.prototype.map.call(document.querySelectorAll('script[src]'), function (script) {
     return canonicalAssetUrl(script.getAttribute('src'));
   }).filter(Boolean));
   var navigating = false;
   var navigationId = 0;
+  var transitionLog = window.__dokeRouteTransitions || (window.__dokeRouteTransitions = []);
+  var PRIORITY_WARM_ROUTES = [
+    '/index.html',
+    '/perfil.html',
+    '/pedidos.html',
+    '/mensagens.html',
+    '/notificacoes.html',
+    '/comunidade.html',
+    '/resultados.html',
+    '/ajuda.html'
+  ];
 
   function isEnabled() {
     try {
@@ -238,17 +252,20 @@
 
     Array.prototype.forEach.call(document.querySelectorAll('link[rel="stylesheet"][href]'), function (link) {
       var key = canonicalAssetUrl(link.getAttribute('href') || link.href);
-      if (!key || nextStyles.has(key)) return;
       if (!isRouteManagedStylesheet(link)) return;
-      link.remove();
-    });
-
-    document.querySelectorAll('link[rel="preload"][as="style"][data-doke-style-hint]').forEach(function (link) {
-      try {
-        var href = link.getAttribute('href');
-        if (!href || nextStyles.has(canonicalAssetUrl(href))) return;
-        link.remove();
-      } catch (error) {}
+      if (key && nextStyles.has(key)) {
+        if (link.getAttribute('data-doke-route-style-inactive') === 'true') {
+          link.media = link.getAttribute('data-doke-route-style-media') || 'all';
+          link.removeAttribute('data-doke-route-style-inactive');
+        }
+        return;
+      }
+      if (link.getAttribute('data-doke-route-style-inactive') !== 'true'
+        && !link.hasAttribute('data-doke-route-style-media')) {
+        link.setAttribute('data-doke-route-style-media', link.media || 'all');
+      }
+      link.media = 'not all';
+      link.setAttribute('data-doke-route-style-inactive', 'true');
     });
   }
 
@@ -286,13 +303,14 @@
     if (document.getElementById('doke-stable-shell-router-style')) return;
     var style = document.createElement('style');
     style.id = 'doke-stable-shell-router-style';
-    style.textContent = '\n      html.is-stable-shell-routing, body.is-stable-shell-routing { cursor: progress; }\n      body.is-stable-shell-routing .app-shell { pointer-events: none; }\n      body.is-stable-shell-routing :is(.app-shell, .app-shell *) { animation-duration: 0ms !important; transition-duration: 0ms !important; }\n    ';
+    style.textContent = '\n      html.is-stable-shell-routing, body.is-stable-shell-routing { cursor: inherit; }\n    ';
     document.head.appendChild(style);
   }
 
-  function fetchDocument(href) {
+  function fetchDocument(href, options) {
     var url = new URL(href, window.location.href);
     var key = url.pathname + url.search;
+    if (options && options.force) routeCache.delete(key);
     if (!routeCache.has(key)) {
       routeCache.set(key, fetch(key, {
         headers: { 'X-Requested-With': 'doke-stable-shell-router' },
@@ -313,8 +331,10 @@
     return routeCache.get(key);
   }
 
-  function activatePendingRouteStyles() {
+  function activatePendingRouteStyles(nextDoc) {
+    var nextStyles = collectStylesheetKeys(nextDoc);
     Array.prototype.forEach.call(document.querySelectorAll('link[data-doke-route-style-pending="true"]'), function (link) {
+      if (!nextStyles.has(canonicalAssetUrl(link.getAttribute('href') || link.href))) return;
       link.media = link.getAttribute('data-doke-route-style-media') || 'all';
       link.removeAttribute('data-doke-route-style-media');
       link.removeAttribute('data-doke-route-style-pending');
@@ -343,14 +363,26 @@
         clone.setAttribute('data-doke-route-style-pending', 'true');
       }
 
-      pending.push(new Promise(function (resolve) {
+      pending.push(new Promise(function (resolve, reject) {
+        var settled = false;
         var done = function () {
+          if (settled) return;
+          settled = true;
           window.clearTimeout(timer);
           resolve();
         };
-        var timer = window.setTimeout(done, 1800);
+        var fail = function () {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(timer);
+          clone.remove();
+          reject(new Error('Falha ao carregar CSS essencial: ' + href));
+        };
+        var timer = window.setTimeout(function () {
+          fail();
+        }, 5000);
         clone.addEventListener('load', done, { once: true });
-        clone.addEventListener('error', done, { once: true });
+        clone.addEventListener('error', fail, { once: true });
       }));
 
       document.head.appendChild(clone);
@@ -371,7 +403,7 @@
       var key = canonicalAssetUrl(src);
       if (!key || loadedScripts.has(key)) return;
 
-      pending.push(new Promise(function (resolve) {
+      pending.push(new Promise(function (resolve, reject) {
         var script = document.createElement('script');
         script.src = src;
         script.async = false;
@@ -379,7 +411,11 @@
         script.setAttribute('data-doke-stable-route-script', 'true');
         script.setAttribute('data-doke-route-script-src', src);
         script.addEventListener('load', resolve, { once: true });
-        script.addEventListener('error', resolve, { once: true });
+        script.addEventListener('error', function () {
+          loadedScripts.delete(key);
+          script.remove();
+          reject(new Error('Falha ao carregar script essencial: ' + src));
+        }, { once: true });
         document.body.appendChild(script);
         loadedScripts.add(key);
       }));
@@ -398,6 +434,18 @@
 
     current.className = nextHtml.className || '';
     preserved.forEach(function (className) { current.classList.add(className); });
+  }
+
+  function syncElementContract(current, next) {
+    if (!current || !next) return;
+    Array.prototype.slice.call(current.attributes).forEach(function (attr) {
+      if (attr.name === 'style') return;
+      current.removeAttribute(attr.name);
+    });
+    Array.prototype.slice.call(next.attributes).forEach(function (attr) {
+      if (attr.name === 'style') return;
+      current.setAttribute(attr.name, attr.value);
+    });
   }
 
   function clearInlineScrollLocks(node) {
@@ -531,42 +579,6 @@
     return true;
   }
 
-  function prepareInternalHydrationSurface(scope) {
-    if (!scope || typeof scope.querySelectorAll !== 'function') return;
-    scope.querySelectorAll('[data-state-boundary="pedidos"], [data-state-boundary="mensagens"], [data-state-boundary="notificacoes"]').forEach(function (node) {
-      try {
-        node.setAttribute('data-view-state', 'loading');
-        node.setAttribute('aria-busy', 'true');
-        node.setAttribute('data-page-hydration', 'hydrating');
-        node.setAttribute('data-page-hydration-skeleton', 'on');
-      } catch (error) {}
-    });
-    scope.querySelectorAll('[data-orders-document-preloader], [data-messages-document-preloader], [data-notifications-document-preloader], .orders-document-preloader, .doke-document-preloader').forEach(function (node) {
-      try {
-        node.hidden = true;
-        node.setAttribute('aria-hidden', 'true');
-      } catch (error) {}
-    });
-    scope.querySelectorAll('[data-orders-hydration-skeleton], [data-messages-hydration-skeleton], [data-notifications-hydration-skeleton]').forEach(function (node) {
-      try {
-        node.hidden = false;
-        node.setAttribute('aria-hidden', 'false');
-      } catch (error) {}
-    });
-    scope.querySelectorAll('[data-orders-hydration-ready], [data-messages-hydration-ready], [data-notifications-hydration-ready]').forEach(function (node) {
-      try {
-        node.hidden = true;
-        node.setAttribute('aria-hidden', 'true');
-      } catch (error) {}
-    });
-    scope.querySelectorAll('[data-orders-empty], [data-messages-empty], [data-notifications-empty]').forEach(function (node) {
-      try {
-        node.hidden = true;
-        node.setAttribute('aria-hidden', 'true');
-      } catch (error) {}
-    });
-  }
-
   function syncStandaloneUi(nextDoc) {
     if (!nextDoc || !nextDoc.body || !document.body) return;
 
@@ -578,7 +590,6 @@
     Array.prototype.slice.call(nextDoc.body.children).forEach(function (node) {
       if (!isRouteStandaloneNode(node)) return;
       var clone = node.cloneNode(true);
-      prepareInternalHydrationSurface(clone);
       if (anchor && anchor.parentNode === document.body) document.body.insertBefore(clone, anchor);
       else document.body.appendChild(clone);
     });
@@ -592,19 +603,38 @@
     }
 
     var nextShellNode = nextShell.cloneNode(true);
-    prepareInternalHydrationSurface(nextShellNode);
     var currentSidebar = currentShell.querySelector(':scope > .sidebar');
-    var nextSidebar = nextShellNode.querySelector(':scope > .sidebar');
-    if (currentSidebar && nextSidebar) {
-      nextSidebar.replaceWith(currentSidebar);
-    }
+    var currentPage = currentShell.querySelector(':scope > .page');
+    var nextPage = nextShellNode.querySelector(':scope > .page');
+    var currentHeader = currentPage && currentPage.querySelector(':scope > [data-app-header], :scope > .app-header');
+    var nextHeader = nextPage && nextPage.querySelector(':scope > [data-app-header], :scope > .app-header');
+    var currentContent = currentPage && currentPage.querySelector(':scope > .page__content');
+    var nextContent = nextPage && nextPage.querySelector(':scope > .page__content');
 
     syncHtmlContract(nextDoc.documentElement);
     syncBodyContract(nextDoc.body);
     document.documentElement.dataset.dokeNavigationMode = 'stable-shell';
     if (document.body) document.body.dataset.dokeNavigationMode = 'stable-shell';
     applyRouteRuntimeClasses(path);
-    currentShell.replaceWith(nextShellNode);
+    if (currentPage && nextPage && currentHeader && nextHeader && currentContent && nextContent) {
+      syncElementContract(currentShell, nextShellNode);
+      syncElementContract(currentPage, nextPage);
+      syncElementContract(currentHeader, nextHeader);
+      currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
+        return node.cloneNode(true);
+      }));
+      currentContent.replaceWith(nextContent.cloneNode(true));
+      Array.prototype.slice.call(currentShell.children).forEach(function (node) {
+        if (node === currentSidebar || node === currentPage) return;
+        node.remove();
+      });
+    } else {
+      if (currentSidebar) {
+        var nextSidebar = nextShellNode.querySelector(':scope > .sidebar');
+        if (nextSidebar) nextSidebar.replaceWith(currentSidebar);
+      }
+      currentShell.replaceWith(nextShellNode);
+    }
     syncStandaloneUi(nextDoc);
     document.title = nextDoc.title || document.title;
   }
@@ -627,11 +657,14 @@
         try { node.scrollTop = 0; node.scrollLeft = 0; } catch (error) {}
       });
     });
-    requestAnimationFrame(function () {
-      clearTransientRouteState();
-      try { window.scrollTo(0, 0); } catch (error) {}
-      if (document.documentElement) document.documentElement.style.scrollBehavior = previousHtmlBehavior;
-      if (document.body) document.body.style.scrollBehavior = previousBodyBehavior;
+    return new Promise(function (resolve) {
+      requestAnimationFrame(function () {
+        clearTransientRouteState();
+        try { window.scrollTo(0, 0); } catch (error) {}
+        if (document.documentElement) document.documentElement.style.scrollBehavior = previousHtmlBehavior;
+        if (document.body) document.body.style.scrollBehavior = previousBodyBehavior;
+        resolve();
+      });
     });
   }
 
@@ -691,6 +724,101 @@
     document.dispatchEvent(new CustomEvent('doke:route-ready', { detail: { path: path, router: ROUTER_VERSION } }));
   }
 
+  function recordTransition(id, state, detail) {
+    var entry = Object.assign({
+      id: id,
+      state: state,
+      at: Math.round(performance.now())
+    }, detail || {});
+    transitionLog.push(entry);
+    if (transitionLog.length > 120) transitionLog.splice(0, transitionLog.length - 120);
+    document.dispatchEvent(new CustomEvent('doke:route-transition-state', { detail: entry }));
+    return entry;
+  }
+
+  function routeHasSkeleton(nextDoc, path) {
+    if (window.DokePageHydration && typeof window.DokePageHydration.routeHasSkeleton === 'function') {
+      return window.DokePageHydration.routeHasSkeleton(nextDoc, path);
+    }
+    return HYDRATION_BARRIER_ROUTES.has(path) && Boolean(nextDoc.querySelector(
+      '[data-orders-hydration-skeleton], [data-messages-hydration-skeleton], [data-notifications-hydration-skeleton]'
+    ));
+  }
+
+  function prepareRouteDocument(nextDoc, path, mode) {
+    if (window.DokePageHydration && typeof window.DokePageHydration.prepareRouteDocument === 'function') {
+      window.DokePageHydration.prepareRouteDocument(nextDoc, path, mode);
+    }
+  }
+
+  function setRouteVisualMode(mode) {
+    if (window.DokePageHydration && typeof window.DokePageHydration.setRouteVisualMode === 'function') {
+      return window.DokePageHydration.setRouteVisualMode(mode);
+    }
+    document.documentElement.dataset.dokeRouteVisualMode = mode;
+    if (document.body) document.body.dataset.dokeRouteVisualMode = mode;
+    return mode;
+  }
+
+  function waitForVisualThreshold(startedAt) {
+    var remaining = Math.max(0, ROUTE_VISUAL_THRESHOLD_MS - (performance.now() - startedAt));
+    return new Promise(function (resolve) {
+      window.setTimeout(function () { resolve('threshold'); }, remaining);
+    });
+  }
+
+  function prepareEssentialData(path, url) {
+    if (path !== '/detalhe-anuncio.html') return Promise.resolve(null);
+    var orchestrator = Doke.pageDataOrchestrator;
+    if (!orchestrator || typeof orchestrator.getPageData !== 'function') return Promise.resolve(null);
+    var serviceId = url.searchParams.get('id') || url.searchParams.get('serviceId') || url.searchParams.get('servico')
+      || 'service-reforma-banheiro-premium';
+    return orchestrator.getPageData('detalhe-anuncio', { serviceId: serviceId }, { strategy: 'stale-while-revalidate' });
+  }
+
+  function bootRouteDataController(path) {
+    var controllers = {
+      '/index.html': Doke.indexDataController,
+      '/resultados.html': Doke.resultadosDataController,
+      '/detalhe-anuncio.html': Doke.detailAdDataController,
+      '/comunidade.html': Doke.communitiesDataController
+    };
+    var controller = controllers[path];
+    if (!controller) return Promise.resolve(null);
+    var method = typeof controller.boot === 'function' ? controller.boot : controller.init;
+    if (typeof method !== 'function') return Promise.resolve(null);
+    try {
+      return Promise.resolve(method.call(controller));
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }
+
+  function waitForRouteSettlement(path) {
+    if (!HYDRATION_BARRIER_ROUTES.has(path)) return Promise.resolve('ready');
+    var currentState = document.body && document.body.dataset.pageHydration;
+    if (currentState === 'ready' || currentState === 'empty' || currentState === 'error') {
+      return Promise.resolve(currentState);
+    }
+    return new Promise(function (resolve) {
+      var timer = window.setTimeout(function () {
+        cleanup();
+        resolve('timeout');
+      }, ROUTE_SETTLEMENT_TIMEOUT_MS);
+      var onState = function (event) {
+        var state = event.detail && event.detail.state;
+        if (state !== 'ready' && state !== 'empty' && state !== 'error') return;
+        cleanup();
+        resolve(state);
+      };
+      var cleanup = function () {
+        window.clearTimeout(timer);
+        document.removeEventListener('doke:page-hydration-state', onState);
+      };
+      document.addEventListener('doke:page-hydration-state', onState);
+    });
+  }
+
   async function navigate(href, options) {
     options = options || {};
     var url = new URL(href, window.location.href);
@@ -706,6 +834,11 @@
     var id = ++navigationId;
     var committed = false;
     var fromPath = currentPath();
+    var startedAt = performance.now();
+    var visualMode = 'direct';
+    var assetsPromise = null;
+    var nextDoc = null;
+    var stylesPrepared = false;
     navigating = true;
     try {
       window.sessionStorage.setItem('doke.internalRouteNavigation', String(Date.now()));
@@ -713,63 +846,149 @@
       if (document.body) document.body.dataset.dokeNavigationMode = 'stable-shell';
       document.dispatchEvent(new CustomEvent('doke:stable-route-start', { detail: { from: fromPath, to: path, router: ROUTER_VERSION } }));
     } catch (error) {}
+    recordTransition(id, 'route-start', { from: fromPath, to: path });
     runRouteLeavingCleanup(fromPath, path);
-    setBusy(true);
-    updateSidebar(path);
-
     try {
-      var nextDoc = await fetchDocument(url.href);
+      nextDoc = await fetchDocument(url.href, { force: options.force === true });
       if (id !== navigationId) return;
-      await ensureStyles(nextDoc, { deferApply: true });
+      recordTransition(id, 'html-ready', { to: path });
+      var routeKey = url.pathname + url.search;
+      var warmPromise = options.force === true ? null : routeWarmCache.get(routeKey);
+      if (warmPromise) await warmPromise;
+      else await ensureStyles(nextDoc, { deferApply: true });
+      stylesPrepared = true;
       if (id !== navigationId) return;
+      recordTransition(id, 'styles-ready', { to: path });
+      var hasSkeleton = routeHasSkeleton(nextDoc, path);
+      assetsPromise = ensureScripts(nextDoc)
+        .then(function () { return prepareEssentialData(path, url); })
+        .then(function () { return 'assets-ready'; });
+
+      var preparationState = await Promise.race([
+        assetsPromise,
+        waitForVisualThreshold(startedAt)
+      ]);
+      if (id !== navigationId) return;
+
+      if (preparationState === 'threshold' && hasSkeleton) {
+        visualMode = 'skeleton';
+      } else {
+        await assetsPromise;
+        visualMode = 'direct';
+      }
+      prepareRouteDocument(nextDoc, path, visualMode);
+      setRouteVisualMode(visualMode);
       replaceShell(nextDoc, path);
-      activatePendingRouteStyles();
+      setBusy(true);
+      setRouteVisualMode(visualMode);
+      activatePendingRouteStyles(nextDoc);
       removeObsoleteRouteStyles(nextDoc);
       assertDocumentReadyForRoute();
       if (id !== navigationId) return;
       if (options.replace) window.history.replaceState({ dokeStableShell: true, href: url.href }, '', url.href);
       else window.history.pushState({ dokeStableShell: true, href: url.href }, '', url.href);
       committed = true;
+      recordTransition(id, visualMode === 'skeleton' ? 'skeleton-commit' : 'direct-commit', {
+        to: path,
+        elapsed: Math.round(performance.now() - startedAt)
+      });
 
-      resetScroll();
+      await resetScroll();
       updateSidebar(path);
       try { window.lucide && window.lucide.createIcons && window.lucide.createIcons(); } catch (error) {}
       setBusy(false);
 
-      if (!HYDRATION_BARRIER_ROUTES.has(path)) {
-        await new Promise(function (resolve) {
-          requestAnimationFrame(function () {
-            requestAnimationFrame(resolve);
-          });
-        });
-      }
-
-      await ensureScripts(nextDoc);
+      await assetsPromise;
       if (id !== navigationId) return;
 
       runInitializers(path);
+      var dataBoot = bootRouteDataController(path);
+      if (path === '/detalhe-anuncio.html') {
+        await dataBoot;
+      } else {
+        dataBoot.catch(function (dataError) {
+          console.error('[DokeStableShell:secondary-data]', dataError);
+        });
+      }
+      var settlement = await waitForRouteSettlement(path);
+      if (settlement === 'timeout' && window.DokePageHydration && typeof window.DokePageHydration.showRouteError === 'function') {
+        window.DokePageHydration.showRouteError(path, new Error('Tempo limite da rota excedido.'));
+        settlement = 'error';
+      }
+      recordTransition(id, settlement, {
+        to: path,
+        elapsed: Math.round(performance.now() - startedAt)
+      });
     } catch (error) {
       console.error('[DokeStableShell:navigate]', error);
+      recordTransition(id, 'error', { to: path, error: error && error.message ? error.message : String(error) });
       if (!committed) {
-        if (options.replace) window.location.replace(url.href);
-        else window.location.href = url.href;
+        if (nextDoc && stylesPrepared) {
+          prepareRouteDocument(nextDoc, path, 'direct');
+          setRouteVisualMode('direct');
+          replaceShell(nextDoc, path);
+          setRouteVisualMode('direct');
+          activatePendingRouteStyles(nextDoc);
+          removeObsoleteRouteStyles(nextDoc);
+          if (options.replace) window.history.replaceState({ dokeStableShell: true, href: url.href }, '', url.href);
+          else window.history.pushState({ dokeStableShell: true, href: url.href }, '', url.href);
+          committed = true;
+          updateSidebar(path);
+          if (window.DokePageHydration && typeof window.DokePageHydration.showRouteError === 'function') {
+            window.DokePageHydration.showRouteError(path, error);
+          }
+        } else {
+          setBusy(false);
+          navigating = false;
+          throw error;
+        }
+      } else if (window.DokePageHydration && typeof window.DokePageHydration.showRouteError === 'function') {
+        window.DokePageHydration.showRouteError(path, error);
       }
     } finally {
+      setBusy(false);
+      navigating = false;
+      try {
+        document.documentElement.removeAttribute('data-doke-navigation-mode');
+        if (document.body) document.body.removeAttribute('data-doke-navigation-mode');
+        if (window.DokePageHydration && typeof window.DokePageHydration.clearRouteVisualMode === 'function') {
+          window.DokePageHydration.clearRouteVisualMode();
+        }
+      } catch (error) {}
       requestAnimationFrame(function () {
         clearTransientRouteState();
-        setBusy(false);
-        navigating = false;
-        try {
-          document.documentElement.removeAttribute('data-doke-navigation-mode');
-          if (document.body) document.body.removeAttribute('data-doke-navigation-mode');
-        } catch (error) {}
       });
     }
   }
 
   function warm(href) {
-    if (!isEnabled() || !isSafeUrl(href)) return;
-    fetchDocument(href).then(preloadRouteAssets).catch(function () {});
+    if (!isEnabled() || !isSafeUrl(href) || navigating) return;
+    var url = new URL(href, window.location.href);
+    var key = url.pathname + url.search;
+    if (routeWarmCache.has(key)) return routeWarmCache.get(key);
+    var preparation = fetchDocument(href).then(function (nextDoc) {
+      preloadRouteAssets(nextDoc);
+      return ensureStyles(nextDoc, { deferApply: true }).then(function () {
+        if (currentPath(url.href) === '/ajuda.html') return ensureScripts(nextDoc);
+        return null;
+      });
+    }).catch(function (error) {
+      routeWarmCache.delete(key);
+      throw error;
+    });
+    routeWarmCache.set(key, preparation);
+    preparation.catch(function () {});
+    return preparation;
+  }
+
+  function warmPriorityRoutes() {
+    var current = currentPath();
+    PRIORITY_WARM_ROUTES.forEach(function (route, index) {
+      if (route === current) return;
+      window.setTimeout(function () {
+        warm(projectRouteUrl(route));
+      }, index * 35);
+    });
   }
 
   function bind() {
@@ -816,10 +1035,14 @@
     applyRouteRuntimeClasses(currentPath());
     updateSidebar(currentPath());
 
-    if (currentPath() !== '/index.html') {
-      var warmHome = function () { warm(projectRouteUrl('/index.html')); };
-      if ('requestIdleCallback' in window) window.requestIdleCallback(warmHome, { timeout: 1200 });
-      else window.setTimeout(warmHome, 600);
+    if (window.__DOKE_DISABLE_ROUTE_WARMUP__ !== true) {
+      window.setTimeout(function () {
+        if ('requestIdleCallback' in window) {
+          window.requestIdleCallback(warmPriorityRoutes, { timeout: 500 });
+        } else {
+          warmPriorityRoutes();
+        }
+      }, 350);
     }
   }
 

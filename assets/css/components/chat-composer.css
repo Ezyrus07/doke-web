@@ -163,6 +163,19 @@ body.community-room-shell .doke-chat-composer__send:disabled {
   }
 }
 
+/* The field is the single visual focus owner. Global textarea controls must
+   not draw a second rounded surface inside the chat composer. */
+body:is(.messages-page-shell, .community-room-shell) .doke-chat-composer__field
+  > .doke-chat-composer__input.doke-textarea,
+body:is(.messages-page-shell, .community-room-shell) .doke-chat-composer__field
+  > .doke-chat-composer__input.doke-textarea:is(:focus, :focus-visible, :active) {
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
 /* 2026-04-24 - composer compacto compartilhado: mensagens.html + comunidade.html */
 body.messages-page-shell .doke-chat-composer,
 body.community-room-shell .doke-chat-composer {

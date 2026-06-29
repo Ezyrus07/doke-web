@@ -363,19 +363,6 @@ body:is(.orders-page-shell, .messages-page-shell) .orders-detail-actions {
     linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.98));
 }
 
-body:is(.orders-page-shell, .messages-page-shell) .orders-detail-actions__button {
-  border-radius: var(--radius-base);
-  font-size: 0.96rem;
-  font-weight: 850;
-  text-decoration: none;
-  transition:
-    transform 160ms ease,
-    box-shadow 160ms ease,
-    background 160ms ease,
-    border-color 160ms ease;
-}
-
-
 /* Pedidos Panel Width Contract v5
    Details and chat use the same drawer width. */
 body:is(.orders-page-shell, .messages-page-shell) {
@@ -714,38 +701,39 @@ body:is(.orders-page-shell, .messages-page-shell) .orders-detail-actions {
 /* Order detail action footer contract.
    Authority: pedidos page owns pedido drawer composition; component tokens own button anatomy. */
 body:is(.orders-page-shell, .messages-page-shell) .orders-detail-actions {
-  grid-template-columns: minmax(0, 1fr) minmax(140px, 0.72fr);
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.15fr);
   align-items: center;
-  gap: 10px;
-  padding: 14px 20px calc(16px + env(safe-area-inset-bottom, 0px));
-  background: rgba(255, 255, 255, 0.98);
+  gap: 14px;
+  padding: 22px 32px calc(30px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(180deg, #fbfdff 0%, #f8fbff 100%);
 }
 
 body:is(.orders-page-shell, .messages-page-shell) .orders-detail-actions__button {
   width: 100%;
-  min-height: 46px;
-  border-radius: var(--radius-pill);
-  font-size: 0.9rem;
-  line-height: 1;
+  height: 52px;
+  min-height: 52px;
+  border-radius: 16px;
+  font-size: 0.98rem;
+  font-weight: 800;
 }
 
 body:is(.orders-page-shell, .messages-page-shell) .orders-detail-actions__button--primary {
-  border-color: transparent;
-  background: linear-gradient(135deg, #2d6eb0 0%, #1d5b91 100%);
+  border: 1px solid #2475bd;
+  background: linear-gradient(135deg, #2475bd 0%, #145fa7 100%);
   color: #fff;
-  box-shadow: 0 12px 28px rgba(29, 100, 177, 0.18);
+  box-shadow: 0 12px 24px rgba(20, 95, 167, 0.18);
+}
+
+body:is(.orders-page-shell, .messages-page-shell) .orders-detail-actions__button--secondary {
+  border: 1px solid rgba(42, 95, 144, 0.16);
+  background: #f8fbff;
+  color: #0b3c7c;
+  box-shadow: none;
 }
 
 body:is(.orders-page-shell, .messages-page-shell) .orders-detail-actions__button--primary svg {
   width: 18px;
   height: 18px;
-}
-
-body:is(.orders-page-shell, .messages-page-shell) .orders-detail-actions__button--secondary {
-  border-color: rgba(24, 75, 118, 0.12);
-  background: #f7fbff;
-  color: #1d5b91;
-  box-shadow: none;
 }
 
 body:is(.orders-page-shell, .messages-page-shell) .orders-detail-actions__button:is(:hover, :focus-visible) {
@@ -767,26 +755,18 @@ body:is(.orders-page-shell, .messages-page-shell) .orders-detail-actions__button
 /* Order detail icon alignment contract.
    Authority: pedidos/messages share the same detail drawer anatomy. */
 body:is(.orders-page-shell, .messages-page-shell) .orders-detail-drawer__close {
-  display: inline-grid;
-  place-items: center;
-  width: 56px;
-  height: 56px;
-  flex: 0 0 56px;
-  border: 1px solid rgba(24, 75, 118, 0.12);
-  border-radius: 999px;
-  background: #eef4fa;
-  color: #2a5f90;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  flex-basis: 44px;
+  border: 1px solid rgba(207, 224, 240, 0.95);
+  border-radius: 16px;
+  background: #f3f8fd;
+  color: #0b3c7c;
   box-shadow: none;
-  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
 }
 
-body:is(.orders-page-shell, .messages-page-shell) .orders-detail-drawer__close:is(:hover, :focus-visible) {
-  transform: translateY(-1px);
-  background: #f7fbff;
-  border-color: rgba(24, 75, 118, 0.18);
-}
-
-body:is(.orders-page-shell, .messages-page-shell) .orders-detail-drawer__close svg,
 body:is(.orders-page-shell, .messages-page-shell) .orders-detail-action__icon svg,
 body:is(.orders-page-shell, .messages-page-shell) .orders-detail-actions__button svg,
 body:is(.orders-page-shell, .messages-page-shell) .orders-detail-timeline__bullet svg {
@@ -822,12 +802,4 @@ body:is(.orders-page-shell, .messages-page-shell) .orders-detail-timeline__item.
 
 body:is(.orders-page-shell, .messages-page-shell) .orders-detail-actions__button svg {
   flex: 0 0 auto;
-}
-
-@media (max-width: 760px) {
-  body:is(.orders-page-shell, .messages-page-shell) .orders-detail-drawer__close {
-    width: 48px;
-    height: 48px;
-    flex-basis: 48px;
-  }
 }

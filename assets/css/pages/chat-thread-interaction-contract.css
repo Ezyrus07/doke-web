@@ -135,20 +135,20 @@ body[data-page="mensagens"] .messages-order-card--inline .messages-order-card__b
   justify-content: center;
   min-height: 36px;
   padding-inline: 13px;
-  border-radius: 999px;
+  border-radius: 16px;
   font-size: 0.8rem;
   font-weight: 900;
   box-shadow: none;
 }
 
 body[data-page="mensagens"] .messages-order-card--inline .messages-order-card__button--ghost {
-  border-color: rgba(194, 212, 230, 0.96);
+  border: 1px solid rgba(194, 212, 230, 0.96);
   background: #f5f9ff;
   color: #153b68;
 }
 
 body[data-page="mensagens"] .messages-order-card--inline .messages-order-card__button:not(.messages-order-card__button--ghost) {
-  border-color: transparent;
+  border: 1px solid #1f5f9f;
   background: #1f5f9f;
   color: #fff;
 }
@@ -174,6 +174,8 @@ body[data-page="mensagens"] .messages-order-card--inline .messages-order-card__b
    and message width contract. */
 body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-thread__body, .community-room-thread__body) {
   align-content: start;
+  grid-auto-flow: row;
+  grid-auto-rows: max-content;
   gap: 14px;
   scroll-padding-block: 96px 120px;
 }
@@ -217,6 +219,42 @@ body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.doke-cha
   min-block-size: 24px;
   min-height: 24px;
   line-height: 1.45;
+}
+
+/* Linked-order content owns its intrinsic height. Compact chat layout rules
+   may size the thread viewport, but must never crop facts inside this card. */
+body[data-page="mensagens"] .messages-thread__body > .messages-order-card--inline {
+  align-self: start;
+  block-size: auto;
+  height: auto;
+  min-block-size: 0;
+  min-height: 0;
+  max-block-size: none;
+  max-height: none;
+  overflow: hidden;
+}
+
+body[data-page="mensagens"] .messages-order-card--inline .messages-order-card__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+}
+
+body[data-page="mensagens"] .messages-order-card--inline .messages-order-card__facts {
+  block-size: auto;
+  height: auto;
+  min-block-size: 0;
+  min-height: 0;
+  max-block-size: none;
+  max-height: none;
+  overflow: hidden;
+}
+
+body[data-page="mensagens"] .messages-order-card--inline .messages-order-card__actions {
+  justify-content: flex-start;
+  min-inline-size: 0;
+  min-width: 0;
 }
 
 @media (max-width: 760px) {

@@ -5,6 +5,10 @@
   var PAGE_NAME = 'carteira';
 
   function init(context) {
+    if (typeof window.DokeInitWalletPage === 'function') {
+      window.DokeInitWalletPage(context || {});
+    }
+
     if (Doke.controllerData && typeof Doke.controllerData.loadForPage === 'function') {
       Doke.controllerData.loadForPage(PAGE_NAME);
       return;

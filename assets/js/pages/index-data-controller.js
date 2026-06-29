@@ -173,6 +173,22 @@
     lastPayload: null
   };
 
+  document.addEventListener('doke:page-data-revalidated', function (event) {
+    if (!event.detail || event.detail.page !== PAGE_NAME) return;
+    var root = getRoot();
+    if (!root) return;
+    var data = normalizePayload(event.detail.data);
+    setRootState(root, 'ready');
+    updateListHooks(root, data);
+    Doke.indexDataController.lastPayload = {
+      page: PAGE_NAME,
+      context: getHomeContext(),
+      data: data,
+      source: 'stale-while-revalidate'
+    };
+    dispatch(root, 'doke:index-data-ready', Doke.indexDataController.lastPayload);
+  });
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot, { once: true });
   } else {

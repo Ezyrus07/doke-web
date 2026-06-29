@@ -317,6 +317,10 @@
     window.requestAnimationFrame(function () { render(options); });
   }
 
+  window.DokeHydrateLocalOrders = function DokeHydrateLocalOrders(options) {
+    render(Object.assign({ force: true }, options || {}));
+  };
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () { render(); }, { once: true });
   } else {
@@ -329,6 +333,4 @@
   document.addEventListener('doke:auth-surface-ready', function () { scheduleRender({ force: true }); });
   document.addEventListener('doke:order-created', function () { scheduleRender({ force: true }); });
   document.addEventListener('doke:order-status-changed', function () { scheduleRender({ force: true }); });
-  window.setTimeout(function () { scheduleRender({ force: true }); }, 120);
-  window.setTimeout(function () { scheduleRender({ force: true }); }, 420);
 })();

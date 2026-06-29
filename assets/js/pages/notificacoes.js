@@ -29,15 +29,14 @@
       skeletonMode: 'route-and-document',
       readyPolicy: 'after-skeleton',
       splashDuration: 520,
-      waitFor: ['dom', 'auth'],
-      minDuration: 520,
-      maxDuration: 1500,
+      waitFor: ['dom', 'auth', 'local-notifications'],
+      minDuration: 0,
+      maxDuration: 8000,
       hasItems: () => !notificationsHydrationLocalReady || [...root.querySelectorAll('.notification-card')]
         .some((card) => !card.hidden && card.dataset.dismissed !== 'true')
     }) || null;
     hydration?.start();
     hydration?.mark('dom');
-    window.setTimeout(() => hydration?.mark('auth'), 360);
     const countNodes = [...document.querySelectorAll('[data-notifications-unread-count], [data-notifications-hero-count]')];
     const pageTitle = root.querySelector('.notifications-page-header__heading h2');
     const searchInputs = [...root.querySelectorAll('[data-notifications-search]')];
@@ -251,11 +250,10 @@
       items
         .filter((notification) => !notification.dismissed)
         .slice()
-        .reverse()
         .forEach((notification) => {
           const card = renderLocalNotificationCard(notification);
           group.insertBefore(card, insertionAnchor);
-          localCards.unshift(card);
+          localCards.push(card);
           bindNotificationCard(card);
         });
 
@@ -273,8 +271,7 @@
 
     const refreshLocalNotifications = () => {
       if (hydrateLocalNotifications()) return;
-      window.setTimeout(hydrateLocalNotifications, 120);
-      window.setTimeout(hydrateLocalNotifications, 420);
+      return false;
     };
 
 
@@ -291,11 +288,11 @@
       if (event.detail?.page !== 'notificacoes') return;
       applyFilter(currentFilter, currentTimeFilter);
     });
-    window.setTimeout(() => {
-      notificationsHydrationLocalReady = true;
-      hydration?.mark('local-notifications');
-      applyFilter(currentFilter, currentTimeFilter);
-    }, 650);
+    window.addEventListener('load', () => {
+      if (refreshLocalNotifications() === false) {
+        hydration?.error(new Error('Serviço de notificações indisponível.'), { source: 'notifications-service' });
+      }
+    }, { once: true });
 
     const syncContextPanelHost = () => {
       if (!headerControls) return;
@@ -898,6 +895,9 @@
 
     syncContextPanelHost();
     refreshCards().forEach(bindNotificationCard);
+    if (document.documentElement.dataset.authSurfaceReady === 'true') {
+      markNotificationsHydrationAuth();
+    }
     refreshLocalNotifications();
     document.addEventListener('doke:notification-created', refreshLocalNotifications);
     document.addEventListener('doke:order-created', refreshLocalNotifications);

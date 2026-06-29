@@ -26,6 +26,10 @@
     return Math.round(amount * 100) / 100;
   }
 
+  function formatCurrency(value) {
+    return roundCurrency(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
   function getRepository() {
     return Doke.repositories && Doke.repositories.wallet;
   }
@@ -157,6 +161,51 @@
     });
   }
 
+  function createWithdrawNotification(transaction) {
+    var notifications = getNotificationsService();
+    if (!notifications || typeof notifications.create !== 'function' || !transaction) return Promise.resolve(null);
+    var userId = transaction.professionalId || transaction.userId || DEMO_PROFESSIONAL_ID;
+    return notifications.create({
+      type: 'wallet_withdraw_requested',
+      category: 'wallet',
+      userId: userId,
+      actorId: userId,
+      actorName: 'Carteira Doke',
+      eventKey: ['wallet_withdraw_requested', transaction.id || '', userId].filter(Boolean).join(':'),
+      title: 'Saque solicitado',
+      body: 'Seu saque de ' + formatCurrency(transaction.netAmount || transaction.amount || 0) + ' foi solicitado para a conta cadastrada.',
+      targetUrl: 'carteira.html?transaction=' + encodeURIComponent(transaction.id || ''),
+      actionLabel: 'Abrir carteira',
+      read: false
+    }).catch(function (error) {
+      console.warn('[DokeWallet:createWithdrawNotification]', error);
+      return null;
+    });
+  }
+
+
+  function createWithdrawCompletedNotification(transaction) {
+    var notifications = getNotificationsService();
+    if (!notifications || typeof notifications.create !== 'function' || !transaction) return Promise.resolve(null);
+    var userId = transaction.professionalId || transaction.userId || DEMO_PROFESSIONAL_ID;
+    return notifications.create({
+      type: 'wallet_withdraw_completed',
+      category: 'wallet',
+      userId: userId,
+      actorId: userId,
+      actorName: 'Carteira Doke',
+      eventKey: ['wallet_withdraw_completed', transaction.id || '', userId].filter(Boolean).join(':'),
+      title: 'Saque concluído',
+      body: 'Seu saque de ' + formatCurrency(transaction.netAmount || transaction.amount || 0) + ' foi enviado para a conta cadastrada.',
+      targetUrl: 'carteira.html?transaction=' + encodeURIComponent(transaction.id || ''),
+      actionLabel: 'Abrir carteira',
+      read: false
+    }).catch(function (error) {
+      console.warn('[DokeWallet:createWithdrawCompletedNotification]', error);
+      return null;
+    });
+  }
+
   function buildReceivablePayload(payload, status) {
     payload = payload || {};
     var conversation = payload.conversation || {};
@@ -223,12 +272,42 @@
     });
   }
 
+  function requestWithdraw(payload) {
+    payload = payload || {};
+    var repository = getRepository();
+    if (!repository || typeof repository.requestWithdraw !== 'function') return Promise.reject(new Error('Carteira indisponível.'));
+    return repository.requestWithdraw({
+      amount: payload.amount,
+      ownerId: payload.ownerId || payload.professionalId || payload.userId || '',
+      bankAccountId: payload.bankAccountId || ''
+    }).then(function (result) {
+      if (!result || !result.transaction) return result;
+      return createWithdrawNotification(result.transaction).then(function () { return result; });
+    });
+  }
+
+
+  function completeWithdraw(payload) {
+    payload = payload || {};
+    var repository = getRepository();
+    if (!repository || typeof repository.completeWithdraw !== 'function') return Promise.reject(new Error('Carteira indisponível.'));
+    return repository.completeWithdraw({
+      transactionId: payload.transactionId || payload.id || '',
+      ownerId: payload.ownerId || payload.professionalId || payload.userId || ''
+    }).then(function (result) {
+      if (!result || !result.transaction || !result.updated) return result;
+      return createWithdrawCompletedNotification(result.transaction).then(function () { return result; });
+    });
+  }
+
   services.wallet = Object.freeze({
     provider: getRepository() ? 'local-mock' : 'empty-local-mock',
     getWallet: getWallet,
     listTransactions: listTransactions,
     getBankAccount: getBankAccount,
     saveBankAccount: saveBankAccount,
+    requestWithdraw: requestWithdraw,
+    completeWithdraw: completeWithdraw,
     registerHeldReceivableFromPayment: registerHeldReceivableFromPayment,
     registerReceivableFromOrder: registerReceivableFromOrder
   });
