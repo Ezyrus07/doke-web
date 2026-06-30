@@ -141,7 +141,9 @@
       processingWithdrawals: document.querySelector('[data-wallet-monthly-metric="processing-withdrawals"]'),
       distributionTotal: document.querySelector('[data-wallet-monthly-metric="distribution-total"]'),
       largestMovement: document.querySelector('[data-wallet-monthly-metric="largest-movement"]'),
-      largestMovementLabel: document.querySelector('[data-wallet-monthly-metric="largest-movement-label"]')
+      largestMovementLabel: document.querySelector('[data-wallet-monthly-metric="largest-movement-label"]'),
+      insightTitle: document.querySelector('[data-wallet-monthly-metric="insight-title"]'),
+      insightCopy: document.querySelector('[data-wallet-monthly-metric="insight-copy"]')
     };
 
     const analyticsPeriodButtons = Array.from(document.querySelectorAll('[data-wallet-analytics-period]'));
@@ -289,6 +291,21 @@
       return 'Liberado para saque';
     };
 
+    const getTransactionContextLabel = (type, transaction) => {
+      if (type === 'withdraw') return transaction.destination || transaction.method || 'Conta cadastrada';
+      if (type === 'fee') return 'Taxa do serviço';
+      if (type === 'held') return 'Pagamento em garantia';
+      if (transaction.orderId) return `Pedido ${String(transaction.orderId).replace(/^#?/, '#')}`;
+      return 'Pedido de serviço';
+    };
+
+    const getTransactionAmountCaption = (type, transaction) => {
+      if (type === 'withdraw') return transaction.status === 'completed' ? 'Concluído' : 'Saque';
+      if (type === 'fee') return 'Taxa';
+      if (type === 'held') return 'Em garantia';
+      return 'Líquido';
+    };
+
     const getTransactionTitle = (transaction, type) => {
       if (type === 'withdraw' && (transaction?.status || '') === 'completed') return 'Saque concluído';
       return transaction.title || 'Pedido concluído';
@@ -322,8 +339,11 @@
       const amount = Number(transaction.netAmount || transaction.amount || 0);
       const title = getTransactionTitle(transaction, type);
       const signedAmount = type === 'income' ? `+${formatCurrency(amount)}` : type === 'withdraw' || type === 'fee' ? `-${formatCurrency(Math.abs(amount))}` : formatCurrency(amount);
-      const description = `${title} · ${formatTransactionDate(transaction.createdAt)}`;
+      const transactionDateLabel = formatTransactionDate(transaction.createdAt);
+      const description = `${title} · ${transactionDateLabel}`;
       const status = getTransactionStatusLabel(type, transaction);
+      const amountCaption = getTransactionAmountCaption(type, transaction);
+      const contextLabel = getTransactionContextLabel(type, transaction);
       const receiptAmount = formatCurrency(Math.abs(amount));
       const grossAmount = Number(transaction.grossAmount || transaction.netAmount || transaction.amount || 0);
       const feeAmount = Number(transaction.feeAmount || 0);
@@ -366,13 +386,15 @@
         <span aria-hidden="true" class="wallet-transaction__icon wallet-transaction__icon--${escapeHtml(type)}">${getTransactionIcon(type)}</span>
         <div class="wallet-transaction__content">
           <strong>${escapeHtml(title)}</strong>
-          <p>${escapeHtml(description)}</p>
+          <p><span>${escapeHtml(contextLabel)}</span><span aria-hidden="true">•</span><span>${escapeHtml(transactionDateLabel)}</span></p>
           <small class="wallet-transaction__status">${escapeHtml(status)}</small>
         </div>
         <div class="wallet-transaction__meta">
           <b class="wallet-transaction__amount">${escapeHtml(signedAmount)}</b>
+          <span class="wallet-transaction__amount-caption">${escapeHtml(amountCaption)}</span>
           ${canCompleteWithdraw ? '<button class="wallet-transaction__complete doke-btn doke-btn--ghost" type="button" data-wallet-complete-withdraw>Concluir saque</button>' : ''}
         </div>
+        <span aria-hidden="true" class="wallet-transaction__chevron"><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"></path></svg></span>
       `;
       return element;
     };
@@ -396,8 +418,8 @@
 
     const formatCompactCurrency = (value) => {
       const amount = Number(value || 0);
-      if (Math.abs(amount) >= 1000) return 'R$ ' + Math.round(amount / 1000) + 'k';
-      return 'R$ ' + Math.round(amount);
+      if (Math.abs(amount) >= 1000) return 'R$ ' + Math.round(amount).toLocaleString('pt-BR');
+      return 'R$ ' + Math.round(amount).toLocaleString('pt-BR');
     };
 
     const getChartSeries = (dashboard) => {
@@ -406,6 +428,7 @@
       const normalizeSeries = (values) => labels.map((_, index) => Number(Array.isArray(values) ? values[index] || 0 : 0));
       return {
         labels,
+        grossIncome: normalizeSeries(series.grossIncome),
         netIncome: normalizeSeries(series.netIncome),
         withdrawals: normalizeSeries(series.withdrawals),
         fees: normalizeSeries(series.fees),
@@ -428,16 +451,23 @@
       const chart = getChartSeries(dashboard);
       const width = 700;
       const height = 240;
-      const padding = { top: 18, right: 18, bottom: 18, left: 10 };
+      const padding = { top: 22, right: 22, bottom: 26, left: 18 };
       const plotWidth = width - padding.left - padding.right;
       const plotHeight = height - padding.top - padding.bottom;
-      const allValues = chart.netIncome.concat(chart.withdrawals, chart.fees).map(Math.abs);
+      const allValues = chart.grossIncome.concat(chart.netIncome, chart.withdrawals, chart.fees).map(Math.abs);
       const maxValue = Math.max(1, ...allValues);
-      const safeStep = chart.labels.length > 1 ? plotWidth / (chart.labels.length - 1) : plotWidth;
-      const makePoints = (values) => values.map((value, index) => ({
-        x: padding.left + (chart.labels.length > 1 ? safeStep * index : plotWidth / 2),
-        y: padding.top + plotHeight - (Math.abs(value) / maxValue) * plotHeight
-      }));
+      const baseY = padding.top + plotHeight;
+      const bucketCount = Math.max(1, chart.labels.length);
+      const bucketWidth = plotWidth / bucketCount;
+      const series = [
+        { key: 'grossIncome', label: 'Bruto', className: 'wallet-flow-chart__bar wallet-flow-chart__bar--gross' },
+        { key: 'netIncome', label: 'Líquido', className: 'wallet-flow-chart__bar wallet-flow-chart__bar--net' },
+        { key: 'fees', label: 'Taxa', className: 'wallet-flow-chart__bar wallet-flow-chart__bar--fee' },
+        { key: 'withdrawals', label: 'Saques', className: 'wallet-flow-chart__bar wallet-flow-chart__bar--withdraw' }
+      ];
+      const barGap = 5;
+      const barWidth = Math.max(5, Math.min(22, (bucketWidth - 24 - (barGap * (series.length - 1))) / series.length));
+      const groupWidth = (barWidth * series.length) + (barGap * (series.length - 1));
 
       [0, 0.5, 1].forEach((ratio) => {
         const y = padding.top + plotHeight - (plotHeight * ratio);
@@ -450,37 +480,26 @@
         }));
       });
 
-      const incomePoints = makePoints(chart.netIncome);
-      const withdrawPoints = makePoints(chart.withdrawals);
-      const feePoints = makePoints(chart.fees);
-      if (incomePoints.length) {
-        const areaPath = pointsToPath(incomePoints)
-          + ' L ' + incomePoints[incomePoints.length - 1].x.toFixed(1) + ' ' + (height - padding.bottom).toFixed(1)
-          + ' L ' + incomePoints[0].x.toFixed(1) + ' ' + (height - padding.bottom).toFixed(1) + ' Z';
-        svg.appendChild(createSvgElement('path', { class: 'wallet-line-chart__area', d: areaPath }));
-      }
-
-      [
-        ['wallet-line-chart__line wallet-line-chart__line--income', incomePoints],
-        ['wallet-line-chart__line wallet-line-chart__line--withdraw', withdrawPoints],
-        ['wallet-line-chart__line wallet-line-chart__line--fee', feePoints]
-      ].forEach(([className, points]) => {
-        svg.appendChild(createSvgElement('path', { class: className, d: pointsToPath(points) }));
-      });
-
-      [
-        ['wallet-line-chart__points wallet-line-chart__points--income', incomePoints],
-        ['wallet-line-chart__points wallet-line-chart__points--withdraw', withdrawPoints],
-        ['wallet-line-chart__points wallet-line-chart__points--fee', feePoints]
-      ].forEach(([className, points]) => {
-        const group = createSvgElement('g', { class: className });
-        points.forEach((point, index) => {
-          const circle = createSvgElement('circle', { cx: point.x.toFixed(1), cy: point.y.toFixed(1), r: 4 });
-          circle.appendChild(createSvgElement('title'));
-          circle.firstChild.textContent = chart.labels[index];
-          group.appendChild(circle);
+      chart.labels.forEach((labelText, bucketIndex) => {
+        const groupX = padding.left + (bucketWidth * bucketIndex) + ((bucketWidth - groupWidth) / 2);
+        series.forEach((item, seriesIndex) => {
+          const rawValue = Number(chart[item.key]?.[bucketIndex] || 0);
+          const value = Math.abs(rawValue);
+          const barHeight = value > 0 ? Math.max(5, (value / maxValue) * plotHeight) : 0;
+          const x = groupX + seriesIndex * (barWidth + barGap);
+          const y = baseY - barHeight;
+          const rect = createSvgElement('rect', {
+            class: item.className,
+            x: x.toFixed(1),
+            y: y.toFixed(1),
+            width: barWidth.toFixed(1),
+            height: barHeight.toFixed(1),
+            rx: 6
+          });
+          rect.appendChild(createSvgElement('title'));
+          rect.firstChild.textContent = labelText + ' · ' + item.label + ': ' + formatCurrency(value);
+          svg.appendChild(rect);
         });
-        svg.appendChild(group);
       });
 
       [maxValue, maxValue / 2, 0].forEach((level) => {
@@ -488,6 +507,10 @@
         label.textContent = formatCompactCurrency(level);
         chartNodes.flowLevels?.appendChild(label);
       });
+
+      if (chartNodes.flowLabels) {
+        chartNodes.flowLabels.style.gridTemplateColumns = 'repeat(' + chart.labels.length + ', minmax(0, 1fr))';
+      }
 
       chart.labels.forEach((labelText) => {
         const label = document.createElement('span');
@@ -553,34 +576,52 @@
       const svg = chartNodes.activitySvg;
       if (!svg) return;
       clearNode(svg);
-      const values = [
-        { label: 'Pedidos', value: Number(dashboard?.paidOrders || 0), className: 'wallet-bar-chart__bar wallet-bar-chart__bar--orders' },
-        { label: 'Saques', value: Number(dashboard?.withdrawalsCount || 0), className: 'wallet-bar-chart__bar wallet-bar-chart__bar--withdrawals' },
-        { label: 'Mov.', value: Number(dashboard?.largestMovement?.amount || 0), className: 'wallet-bar-chart__bar wallet-bar-chart__bar--movement', compact: true }
+      const paidOrders = Number(dashboard?.paidOrders || 0);
+      const withdrawalsCount = Number(dashboard?.withdrawalsCount || 0);
+      const largestAmount = Number(dashboard?.largestMovement?.amount || 0);
+      const countMax = Math.max(1, paidOrders, withdrawalsCount);
+      const rows = [
+        { label: 'Pedidos pagos', valueText: String(paidOrders), ratio: paidOrders / countMax, className: 'wallet-activity-chart__fill wallet-activity-chart__fill--orders' },
+        { label: 'Saques solicitados', valueText: String(withdrawalsCount), ratio: withdrawalsCount / countMax, className: 'wallet-activity-chart__fill wallet-activity-chart__fill--withdrawals' },
+        { label: 'Maior valor', valueText: formatCurrency(largestAmount), ratio: largestAmount > 0 ? 1 : 0, className: 'wallet-activity-chart__fill wallet-activity-chart__fill--movement' }
       ];
       const width = 420;
-      const height = 220;
-      const maxValue = Math.max(1, ...values.map((item) => Math.abs(item.value)));
-      values.forEach((item, index) => {
-        const barWidth = 72;
-        const gap = 54;
-        const x = 52 + index * (barWidth + gap);
-        const barHeight = Math.max(6, Math.round((Math.abs(item.value) / maxValue) * 132));
-        const y = 156 - barHeight;
-        svg.appendChild(createSvgElement('rect', {
-          class: item.className,
-          x,
-          y,
-          width: barWidth,
-          height: barHeight,
-          rx: 14
-        }));
-        const valueText = createSvgElement('text', { class: 'wallet-bar-chart__value', x: x + barWidth / 2, y: y - 12, 'text-anchor': 'middle' });
-        valueText.textContent = item.compact ? formatCompactCurrency(item.value) : String(item.value || 0);
-        svg.appendChild(valueText);
-        const labelText = createSvgElement('text', { class: 'wallet-bar-chart__label', x: x + barWidth / 2, y: 192, 'text-anchor': 'middle' });
+      const rowGap = 60;
+      const barX = 28;
+      const barWidth = 350;
+      const barHeight = 14;
+
+      rows.forEach((item, index) => {
+        const y = 38 + index * rowGap;
+        const labelText = createSvgElement('text', { class: 'wallet-activity-chart__label', x: barX, y, 'text-anchor': 'start' });
         labelText.textContent = item.label;
         svg.appendChild(labelText);
+
+        const valueText = createSvgElement('text', { class: 'wallet-activity-chart__value', x: width - 26, y, 'text-anchor': 'end' });
+        valueText.textContent = item.valueText;
+        svg.appendChild(valueText);
+
+        svg.appendChild(createSvgElement('rect', {
+          class: 'wallet-activity-chart__track',
+          x: barX,
+          y: y + 16,
+          width: barWidth,
+          height: barHeight,
+          rx: 8
+        }));
+
+        const fillWidth = Math.max(0, Math.min(barWidth, barWidth * item.ratio));
+        const fill = createSvgElement('rect', {
+          class: item.className,
+          x: barX,
+          y: y + 16,
+          width: fillWidth.toFixed(1),
+          height: barHeight,
+          rx: 8
+        });
+        fill.appendChild(createSvgElement('title'));
+        fill.firstChild.textContent = item.label + ': ' + item.valueText;
+        svg.appendChild(fill);
       });
     };
 
@@ -653,6 +694,26 @@
       if (status) status.textContent = 'Conta cadastrada · Regular';
     };
 
+    const buildAnalyticsInsight = (dashboard) => {
+      const grossIncome = Number(dashboard?.grossIncome || 0);
+      const netIncome = Number(dashboard?.netIncome || 0);
+      const fees = Number(dashboard?.fees || 0);
+      const withdrawalsCount = Number(dashboard?.withdrawalsCount || 0);
+      const paidOrders = Number(dashboard?.paidOrders || 0);
+      const feeRate = grossIncome > 0 ? Math.round((fees / grossIncome) * 100) : 0;
+
+      if (!grossIncome && !withdrawalsCount) {
+        return 'Ainda não há movimentações nesse período. Quando um pedido for pago, os gráficos passam a mostrar entrada, taxa e saldo automaticamente.';
+      }
+
+      const paidText = paidOrders === 1 ? '1 pedido pago' : paidOrders + ' pedidos pagos';
+      const feeText = fees > 0 ? ' A taxa Doke representou ' + feeRate + '% do bruto.' : '';
+      const withdrawalText = withdrawalsCount > 0
+        ? ' Houve ' + (withdrawalsCount === 1 ? '1 saque solicitado.' : withdrawalsCount + ' saques solicitados.')
+        : ' Nenhum saque foi solicitado.';
+      return 'Você recebeu ' + formatCurrency(netIncome) + ' líquido em ' + paidText + '.' + feeText + withdrawalText;
+    };
+
     const syncMonthlyDashboard = (dashboard) => {
       const nextDashboard = dashboard || {};
       const largestMovement = nextDashboard.largestMovement || {};
@@ -668,6 +729,8 @@
       setText(monthlyMetricFields.processingWithdrawals, formatCurrency(nextDashboard.processingWithdrawals || 0));
       setText(monthlyMetricFields.largestMovement, formatCurrency(largestMovement.amount || 0));
       setText(monthlyMetricFields.largestMovementLabel, largestMovement.title || 'Sem movimentações');
+      setText(monthlyMetricFields.insightTitle, nextDashboard.periodLabel || getPeriodLabel(activeAnalyticsPeriod));
+      setText(monthlyMetricFields.insightCopy, buildAnalyticsInsight(nextDashboard));
       renderAnalyticsCharts(nextDashboard);
       syncAnalyticsPeriodButtons();
     };
@@ -759,7 +822,10 @@
       document.body.dataset.walletView = nextView;
 
       document.querySelectorAll('[data-wallet-mobile-view]').forEach((button) => {
-        button.classList.toggle('is-view-active', button.dataset.walletMobileView === nextView);
+        const isActiveMobileView = button.dataset.walletMobileView === nextView;
+        button.classList.toggle('is-view-active', isActiveMobileView);
+        button.classList.toggle('doke-mobile-shell__quick-action--active', isActiveMobileView);
+        button.setAttribute('aria-pressed', String(isActiveMobileView));
       });
     };
 
@@ -1048,6 +1114,13 @@
       service.completeWithdraw({ transactionId })
         .then(() => loadWalletState())
         .then(() => {
+          const refreshedTransaction = findTransactionElementById(transactionId);
+          if (refreshedTransaction && withdrawTrackModal && !withdrawTrackModal.hidden) {
+            openWithdrawTrack(refreshedTransaction);
+          }
+          if (refreshedTransaction && transactionDetailPanel && !transactionDetailPanel.hidden) {
+            openTransactionDetail(refreshedTransaction);
+          }
           showWalletToast('Saque concluído.');
         })
         .catch((error) => {

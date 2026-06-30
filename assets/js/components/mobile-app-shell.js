@@ -19,7 +19,7 @@
     'comunidade.html': { key: 'comunidade', active: 'communities', search: false, title: 'Comunidade' },
     'comunidade-interna.html': { key: 'comunidade-interna', active: 'communities', search: false, title: 'Comunidade' },
     'perfil.html': { key: 'perfil', active: 'profile', search: false, title: 'Perfil' },
-    'carteira.html': { key: 'carteira', active: 'profile', search: false, title: 'Carteira' },
+    'carteira.html': { key: 'carteira', active: 'profile', search: false, title: 'Carteira', hideSearchBar: true, hideLocation: true },
     'notificacoes.html': { key: 'notificacoes', active: '', search: false, title: 'Notificações', bottomNav: false },
     'novidades.html': { key: 'novidades', active: '', search: false, title: 'Novidades' },
     'ajuda.html': { key: 'ajuda', active: '', search: false, title: 'Ajuda' },
@@ -41,6 +41,8 @@
     communityCode: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect height="15" rx="2.2" width="9" x="8" y="4.5"></rect><path d="M11 8.5h3"></path><path d="M11 11.5h3"></path><circle cx="14" cy="16" r=".7" fill="currentColor" stroke="none"></circle><circle cx="5.4" cy="12" r="1.4"></circle><path d="M6.8 12H10"></path><path d="M8.8 12v1.6"></path></svg>',
     plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>',
     calendar: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="5.5" width="15" height="14" rx="3"></rect><path d="M8 3.75v3.5M16 3.75v3.5M5 10h14"></path></svg>',
+    withdraw: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12"></path><path d="m7 9 5-5 5 5"></path><path d="M5 19h14"></path></svg>',
+    chart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9"></path><path d="M12 19V5"></path><path d="M19 19v-7"></path></svg>',
     home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5.5 9.5V20h13V9.5"></path></svg>',
     orders: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg>',
     messages: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v10H8l-4 4V6z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg>',
@@ -280,6 +282,15 @@
         createShellSearchButton(),
         '<button class="doke-mobile-shell__quick-action" type="button" data-shell-select aria-label="Selecionar canais">' + ICONS.check + '</button>',
         '<button class="doke-mobile-shell__quick-action" type="button" data-shell-filter aria-label="Filtrar canais">' + ICONS.sliders + '</button>'
+      ].join('');
+    }
+
+    if (cfg.key === 'carteira') {
+      return [
+        '<button class="doke-mobile-shell__quick-action" type="button" data-wallet-shell-search aria-label="Buscar no extrato">' + ICONS.search + '</button>',
+        '<button class="doke-mobile-shell__quick-action" type="button" data-wallet-shell-withdraw aria-label="Sacar saldo">' + ICONS.withdraw + '</button>',
+        '<button class="doke-mobile-shell__quick-action doke-mobile-shell__quick-action--active" type="button" data-wallet-shell-view="overview" data-wallet-mobile-view="overview" aria-label="Ver extrato">' + ICONS.orders + '</button>',
+        '<button class="doke-mobile-shell__quick-action" type="button" data-wallet-shell-view="statistics" data-wallet-mobile-view="statistics" aria-label="Ver estatísticas">' + ICONS.chart + '</button>'
       ].join('');
     }
 
@@ -534,6 +545,40 @@
         dispatchShellAction('community-create');
       });
     }
+
+    var walletSearchButton = shell.querySelector('[data-wallet-shell-search]');
+    if (walletSearchButton) {
+      walletSearchButton.addEventListener('click', function (event) {
+        event.preventDefault();
+        if (clickFirst('[data-wallet-view-toggle="overview"]')) {
+          window.setTimeout(function () {
+            var input = document.querySelector('[data-wallet-statement-search]');
+            input && input.focus && input.focus({ preventScroll: true });
+            document.getElementById('wallet-statement-title')?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+          }, 0);
+          return;
+        }
+        dispatchShellAction('search');
+      });
+    }
+
+    var walletWithdrawButton = shell.querySelector('[data-wallet-shell-withdraw]');
+    if (walletWithdrawButton) {
+      walletWithdrawButton.addEventListener('click', function (event) {
+        event.preventDefault();
+        if (clickFirst('[data-wallet-open-withdraw]')) return;
+        dispatchShellAction('wallet-withdraw');
+      });
+    }
+
+    shell.querySelectorAll('[data-wallet-shell-view]').forEach(function (button) {
+      button.addEventListener('click', function (event) {
+        event.preventDefault();
+        var view = button.getAttribute('data-wallet-shell-view');
+        if (view && clickFirst('[data-wallet-view-toggle="' + view + '"]')) return;
+        dispatchShellAction('wallet-' + (view || 'view'));
+      });
+    });
 
     var agendaButton = shell.querySelector('[data-shell-agenda]');
     if (agendaButton) {

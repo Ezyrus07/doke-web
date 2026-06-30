@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/> <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
 <script defer="" src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
-<link href="assets/css/pages/carteira-foundation.css?v=20260630-wallet-dashboard-v3" rel="stylesheet"/>
+<link href="assets/css/pages/carteira-foundation.css?v=20260630-wallet-mobile-modal-hardening-v1" rel="stylesheet"/>
 <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
 <script defer="" src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
 </head>
@@ -280,16 +280,21 @@
 <button aria-pressed="true" class="wallet-analytics-period__button is-active" data-wallet-analytics-period="current-month" type="button">Mês atual</button>
 </div>
 </div>
+<article class="wallet-analytics-insight doke-card" aria-live="polite">
+<span class="wallet-eyebrow doke-badge">Insight</span>
+<strong data-wallet-monthly-metric="insight-title">Leitura do período</strong>
+<p data-wallet-monthly-metric="insight-copy">Carregando análise financeira da carteira.</p>
+</article>
 <section aria-label="Indicadores financeiros do período" class="wallet-analytics-kpis">
+<article class="wallet-monthly-card wallet-monthly-card--net wallet-monthly-card--primary">
+<span>Recebido líquido</span>
+<strong data-wallet-monthly-metric="net-income">R$ 0,00</strong>
+<small>Depois da taxa Doke</small>
+</article>
 <article class="wallet-monthly-card wallet-monthly-card--gross">
 <span>Recebido bruto</span>
 <strong data-wallet-monthly-metric="gross-income">R$ 0,00</strong>
 <small>Antes da taxa Doke</small>
-</article>
-<article class="wallet-monthly-card wallet-monthly-card--net">
-<span>Recebido líquido</span>
-<strong data-wallet-monthly-metric="net-income">R$ 0,00</strong>
-<small>Depois da taxa Doke</small>
 </article>
 <article class="wallet-monthly-card wallet-monthly-card--fee">
 <span>Taxa Doke</span>
@@ -308,12 +313,13 @@
 <div>
 <span class="wallet-eyebrow doke-badge">Evolução</span>
 <h2 id="wallet-flow-chart-title">Fluxo financeiro</h2>
-<p class="wallet-chart-copy">Recebido líquido, saques e taxas por período.</p>
+<p class="wallet-chart-copy">Bruto, líquido, taxa e saques por período.</p>
 </div>
 <div class="wallet-chart-legend" aria-label="Legenda do fluxo financeiro">
+<span><i class="wallet-chart-legend__dot wallet-chart-legend__dot--gross" aria-hidden="true"></i> Bruto</span>
 <span><i class="wallet-chart-legend__dot wallet-chart-legend__dot--income" aria-hidden="true"></i> Líquido</span>
+<span><i class="wallet-chart-legend__dot wallet-chart-legend__dot--fee" aria-hidden="true"></i> Taxa</span>
 <span><i class="wallet-chart-legend__dot wallet-chart-legend__dot--withdraw" aria-hidden="true"></i> Saques</span>
-<span><i class="wallet-chart-legend__dot wallet-chart-legend__dot--fee" aria-hidden="true"></i> Taxas</span>
 </div>
 </div>
 <div class="wallet-line-chart" data-wallet-chart="financial-flow">
@@ -337,7 +343,7 @@
 <svg aria-labelledby="wallet-distribution-chart-title" class="wallet-donut-chart__svg" data-wallet-chart-svg="balance-distribution" role="img" viewBox="0 0 220 220"></svg>
 <div class="wallet-donut-chart__center">
 <strong data-wallet-monthly-metric="distribution-total">R$ 0,00</strong>
-<span>Total mapeado</span>
+<span>Total em carteira</span>
 </div>
 </div>
 <div class="wallet-distribution__legend">
@@ -361,7 +367,7 @@
 <div>
 <span class="wallet-eyebrow doke-badge">Operação</span>
 <h2 id="wallet-activity-chart-title">Atividade do período</h2>
-<p class="wallet-chart-copy">Pedidos pagos, saques e maior movimentação.</p>
+<p class="wallet-chart-copy">Operação e maior valor com barras de leitura rápida.</p>
 </div>
 </div>
 <div class="wallet-activity-grid">
@@ -371,7 +377,7 @@
 <div class="wallet-monthly-list wallet-monthly-list--compact">
 <article class="wallet-monthly-row"><span>Pedidos pagos</span><strong data-wallet-monthly-metric="paid-orders">0</strong></article>
 <article class="wallet-monthly-row"><span>Saques solicitados</span><strong data-wallet-monthly-metric="withdrawals-count">0</strong></article>
-<article class="wallet-monthly-row wallet-monthly-row--highlight"><span>Maior movimentação</span><strong data-wallet-monthly-metric="largest-movement">R$ 0,00</strong><small data-wallet-monthly-metric="largest-movement-label">Sem movimentações</small></article>
+<article class="wallet-monthly-row wallet-monthly-row--highlight"><span>Maior valor</span><strong data-wallet-monthly-metric="largest-movement">R$ 0,00</strong><small data-wallet-monthly-metric="largest-movement-label">Sem movimentações</small></article>
 </div>
 </div>
 </section>
@@ -596,10 +602,10 @@ Essa será a conta padrão para repasses e saques.
 <script defer="" src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags"></script>
 <script defer="" src="assets/js/core/app.js?v=20260622-header-visitor-neutral-v1"></script>
 <script defer="" src="assets/js/core/stable-shell-router.js?v=20260628-hydration-barrier-v3"></script>
-<script defer="" src="assets/js/repositories/wallet-repository.js?v=20260630-wallet-dashboard-v3"></script>
-<script defer="" src="assets/js/services/wallet-service.js?v=20260630-wallet-dashboard-v3"></script>
+<script defer="" src="assets/js/repositories/wallet-repository.js?v=20260630-wallet-dashboard-v4"></script>
+<script defer="" src="assets/js/services/wallet-service.js?v=20260630-wallet-dashboard-v4"></script>
 <script defer="" src="assets/js/components/doke-lite-select.js?v=20260627-form-select-v4"></script>
-<script defer="" src="assets/js/pages/carteira.js?v=20260630-wallet-dashboard-v3"></script>
+<script defer="" src="assets/js/pages/carteira.js?v=20260630-wallet-mobile-modal-hardening-v1"></script>
 <script defer="" src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
 <script defer="" src="assets/js/ui/mobile-drawer-standard.js?v=20260622-header-neutral-account-v1"></script>
 <script defer="" src="assets/js/ui/mobile-interaction-standard.js?v=20260428-v1"></script>
@@ -650,7 +656,7 @@ Essa será a conta padrão para repasses e saques.
 <script defer="" src="assets/js/controllers/page-controller-registry.js?v=20260501-stage31-domain-services"></script>
 <script defer="" src="assets/js/controllers/wallet-controller.js?v=20260501-stage31-domain-services"></script>
 <script defer="" src="assets/js/controllers/controller-bootstrap.js?v=20260501-stage32-runtime-flags"></script>
-<script defer="" src="assets/js/components/mobile-app-shell.js?v=20260621-header-search-width-v2"></script>
+<script defer="" src="assets/js/components/mobile-app-shell.js?v=20260630-wallet-mobile-actions-v1"></script>
 <script defer="" src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1"></script>
 </body>
 </html>
