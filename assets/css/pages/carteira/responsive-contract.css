@@ -1325,6 +1325,28 @@
  * Responsibility: tighten the statement filter rhythm and make transaction rows
  * easier to scan on phones without changing the global tab, input or card contracts.
  */
+@media (max-width: 900px) {
+  body[data-page="carteira"] .wallet-panel--statement .wallet-tabs {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+    scroll-snap-type: x proximity;
+  }
+
+  body[data-page="carteira"] .wallet-panel--statement .wallet-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  body[data-page="carteira"] .wallet-panel--statement .wallet-tab {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+}
+
 @media (max-width: 760px) {
   body[data-page="carteira"] .wallet-panel--statement {
     gap: 12px;
@@ -1341,10 +1363,6 @@
     text-wrap: balance;
   }
 
-  body[data-page="carteira"] .wallet-panel--statement .wallet-tabs {
-    flex: 0 0 auto;
-  }
-
   body[data-page="carteira"] .wallet-tabs {
     align-content: start;
     align-items: flex-start;
@@ -1356,7 +1374,7 @@
     --doke-tab-pill-height: 34px;
     --doke-tab-pill-padding-inline: 12px;
     --doke-tab-pill-font-size: 0.76rem;
-    flex: 0 1 auto;
+    flex: 0 0 auto;
     min-width: 0;
   }
 
@@ -1569,5 +1587,110 @@
   body[data-page="carteira"] .wallet-transaction__amount-caption {
     justify-self: start;
     text-align: left;
+  }
+}
+
+/* Carteira mobile transaction card containment v16.
+ * Scope: carteira.html only.
+ * Responsibility: prevent long references, dates and amounts from colliding on
+ * narrow mobile cards while preserving the shared card/button contracts.
+ */
+@media (max-width: 760px) {
+  body[data-page="carteira"] .wallet-transaction {
+    grid-template-columns: 34px minmax(0, 1fr) 18px;
+    grid-template-areas: "icon content affordance";
+    align-items: start;
+    column-gap: 10px;
+    padding: 12px;
+  }
+
+  body[data-page="carteira"] .wallet-transaction__content {
+    min-width: 0;
+    gap: 5px;
+  }
+
+  body[data-page="carteira"] .wallet-transaction__head {
+    gap: 8px;
+  }
+
+  body[data-page="carteira"] .wallet-transaction__head strong {
+    display: block;
+    font-size: 0.86rem;
+    line-height: 1.14;
+    white-space: nowrap;
+  }
+
+  body[data-page="carteira"] .wallet-transaction__meta {
+    max-width: none;
+    min-width: max-content;
+    align-self: start;
+    justify-items: end;
+    gap: 1px;
+  }
+
+  body[data-page="carteira"] .wallet-transaction__amount {
+    min-width: max-content;
+    font-size: 0.82rem;
+    line-height: 1.08;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  body[data-page="carteira"] .wallet-transaction__amount-caption {
+    max-width: 84px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  body[data-page="carteira"] .wallet-transaction__context {
+    max-width: 100%;
+    gap: 5px;
+    font-size: 0.72rem;
+    line-height: 1.32;
+  }
+
+  body[data-page="carteira"] .wallet-transaction__footerline {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  body[data-page="carteira"] .wallet-transaction__status {
+    max-width: 100%;
+  }
+
+  body[data-page="carteira"] .wallet-transaction__complete {
+    flex: 0 0 auto;
+  }
+
+  body[data-page="carteira"] .wallet-transaction__chevron {
+    align-self: center;
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 380px) {
+  body[data-page="carteira"] .wallet-transaction {
+    grid-template-columns: 32px minmax(0, 1fr);
+    grid-template-areas: "icon content";
+  }
+
+  body[data-page="carteira"] .wallet-transaction__head {
+    display: grid;
+    gap: 4px;
+  }
+
+  body[data-page="carteira"] .wallet-transaction__meta,
+  body[data-page="carteira"] .wallet-transaction__amount,
+  body[data-page="carteira"] .wallet-transaction__amount-caption {
+    justify-items: start;
+    justify-self: start;
+    text-align: left;
+  }
+
+  body[data-page="carteira"] .wallet-transaction__chevron {
+    display: none;
   }
 }

@@ -179,10 +179,16 @@ body.auth-page--signup {
 }
 
 .auth-password button {
+  inline-size: 54px;
+  block-size: 100%;
+  min-block-size: 54px;
+  padding: 0;
   border: 0;
   border-left: 1px solid var(--auth-line);
+  border-radius: 0;
   background: transparent;
   color: #7a8697;
+  box-shadow: none;
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -194,6 +200,30 @@ body.auth-page--signup {
   stroke: currentColor;
   fill: none;
   stroke-width: 1.8;
+}
+
+.auth-password button:hover {
+  transform: none;
+  box-shadow: none;
+  background: rgba(15, 23, 42, 0.03);
+}
+
+.auth-password button:focus-visible {
+  outline: 0;
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--auth-accent) 16%, transparent);
+}
+
+.auth-input .doke-input:-webkit-autofill,
+.auth-password .doke-input:-webkit-autofill {
+  -webkit-text-fill-color: var(--auth-text-strong);
+  caret-color: var(--auth-text-strong);
+  box-shadow: 0 0 0 1000px var(--auth-input-bg) inset;
+  transition: background-color 9999s ease-out;
+}
+
+.auth-input:has(.doke-input:-webkit-autofill),
+.auth-password:has(.doke-input:-webkit-autofill) {
+  background: var(--auth-input-bg);
 }
 
 .auth-note {
@@ -303,7 +333,8 @@ body.auth-page--signup {
 .auth-divider {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  margin-block: 2px 0;
   color: #667085;
   font-size: 0.84rem;
   font-weight: 700;
@@ -314,28 +345,36 @@ body.auth-page--signup {
   content: "";
   flex: 1;
   height: 1px;
-  background: var(--auth-line);
+  background: rgba(15, 23, 42, 0.12);
 }
 
 .auth-social {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
 }
 
 .auth-social-btn {
-  min-height: var(--control-height-xl);
-  border-radius: var(--radius-sm);
+  inline-size: 54px;
+  block-size: 54px;
+  min-block-size: 54px;
+  min-height: 54px;
+  padding: 0;
+  border-radius: 16px;
   border: 1px solid var(--auth-line);
-  background: #fff;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.05);
   display: grid;
   place-items: center;
   cursor: pointer;
-  transition: border-color 0.16s ease, transform 0.16s ease;
+  transition: border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
 }
 
 .auth-social-btn:hover {
-  border-color: color-mix(in srgb, var(--auth-accent) 32%, white);
+  border-color: color-mix(in srgb, var(--auth-accent) 28%, white);
+  background: #fff;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
   transform: translateY(-1px);
 }
 
@@ -358,6 +397,14 @@ body.auth-page--signup {
 .auth-social-btn--facebook svg {
   width: 20px;
   height: 20px;
+}
+
+.auth-social-btn--facebook path {
+  fill: #1877f2;
+}
+
+.auth-social-btn--apple path {
+  fill: #111827;
 }
 
 .auth-footer {
@@ -482,7 +529,7 @@ body.auth-page--signup {
   }
 
   .auth-social {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
   }
 
   .auth-copy h1 {
@@ -497,7 +544,7 @@ body.auth-page--signup {
 
 @media (max-width: 390px) {
   .auth-social {
-    grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
 

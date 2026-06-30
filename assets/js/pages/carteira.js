@@ -299,6 +299,13 @@
       return 'Pedido de serviço';
     };
 
+    const getTransactionCardContext = (type, transaction) => {
+      if (type === 'withdraw') return transaction.status === 'completed' ? 'Saque concluído' : 'Saque solicitado';
+      if (type === 'fee') return 'Taxa Doke aplicada';
+      if (type === 'held') return 'Pagamento em garantia';
+      return 'Pedido concluído';
+    };
+
     const getTransactionAmountCaption = (type, transaction) => {
       if (type === 'withdraw') return transaction.status === 'completed' ? 'Concluído' : 'Saque';
       if (type === 'fee') return 'Taxa';
@@ -344,6 +351,7 @@
       const status = getTransactionStatusLabel(type, transaction);
       const amountCaption = getTransactionAmountCaption(type, transaction);
       const contextLabel = getTransactionContextLabel(type, transaction);
+      const cardContextLabel = getTransactionCardContext(type, transaction);
       const receiptAmount = formatCurrency(Math.abs(amount));
       const grossAmount = Number(transaction.grossAmount || transaction.netAmount || transaction.amount || 0);
       const feeAmount = Number(transaction.feeAmount || 0);
@@ -385,14 +393,18 @@
       element.innerHTML = `
         <span aria-hidden="true" class="wallet-transaction__icon wallet-transaction__icon--${escapeHtml(type)}">${getTransactionIcon(type)}</span>
         <div class="wallet-transaction__content">
-          <strong>${escapeHtml(title)}</strong>
-          <p><span>${escapeHtml(contextLabel)}</span><span aria-hidden="true">•</span><span>${escapeHtml(transactionDateLabel)}</span></p>
-          <small class="wallet-transaction__status">${escapeHtml(status)}</small>
-        </div>
-        <div class="wallet-transaction__meta">
-          <b class="wallet-transaction__amount">${escapeHtml(signedAmount)}</b>
-          <span class="wallet-transaction__amount-caption">${escapeHtml(amountCaption)}</span>
-          ${canCompleteWithdraw ? '<button class="wallet-transaction__complete doke-btn doke-btn--ghost" type="button" data-wallet-complete-withdraw>Concluir saque</button>' : ''}
+          <div class="wallet-transaction__head">
+            <strong>${escapeHtml(title)}</strong>
+            <div class="wallet-transaction__meta">
+              <b class="wallet-transaction__amount">${escapeHtml(signedAmount)}</b>
+              <span class="wallet-transaction__amount-caption">${escapeHtml(amountCaption)}</span>
+            </div>
+          </div>
+          <p class="wallet-transaction__context"><span>${escapeHtml(cardContextLabel)}</span><span aria-hidden="true">•</span><span class="wallet-transaction__date">${escapeHtml(transactionDateLabel)}</span></p>
+          <div class="wallet-transaction__footerline">
+            <small class="wallet-transaction__status">${escapeHtml(status)}</small>
+            ${canCompleteWithdraw ? '<button class="wallet-transaction__complete doke-btn doke-btn--ghost" type="button" data-wallet-complete-withdraw>Concluir saque</button>' : ''}
+          </div>
         </div>
         <span aria-hidden="true" class="wallet-transaction__chevron"><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"></path></svg></span>
       `;
