@@ -102,11 +102,20 @@
       note: document.querySelector('[data-wallet-receipt-note]')
     };
     const transactionFilterControls = document.querySelector('.wallet-tabs');
+    const statementPeriodSelect = document.querySelector('[data-wallet-statement-period]');
+    const statementSearchInput = document.querySelector('[data-wallet-statement-search]');
+    const statementExportButton = document.querySelector('[data-wallet-export-statement]');
+    const headerSearchInput = document.querySelector('#wallet-search-input');
 
     let currentBankAccount = null;
     let currentWallet = null;
     let walletRefreshTimer = null;
+    let statementSearchTimer = null;
     let activeTransactionDetailId = '';
+    let activeStatementFilter = filterButtons.find((button) => button.classList.contains('is-active'))?.dataset.walletFilter || 'all';
+    let activeStatementPeriod = statementPeriodSelect?.value || 'all';
+    let activeStatementQuery = '';
+    let activeAnalyticsPeriod = 'current-month';
 
     const walletFields = {
       available: document.querySelector('[data-wallet-balance-available]'),
@@ -117,6 +126,34 @@
       heldBalance: document.querySelector('[data-wallet-kpi="held-balance"]'),
       withdrawals: document.querySelector('[data-wallet-kpi="withdrawals"]'),
       fees: document.querySelector('[data-wallet-kpi="fees"]')
+    };
+
+    const monthlyMetricFields = {
+      periodLabel: document.querySelector('[data-wallet-monthly-metric="period-label"]'),
+      grossIncome: document.querySelector('[data-wallet-monthly-metric="gross-income"]'),
+      netIncome: document.querySelector('[data-wallet-monthly-metric="net-income"]'),
+      fees: document.querySelector('[data-wallet-monthly-metric="fees"]'),
+      ticketAverage: document.querySelector('[data-wallet-monthly-metric="ticket-average"]'),
+      paidOrders: document.querySelector('[data-wallet-monthly-metric="paid-orders"]'),
+      withdrawalsCount: document.querySelector('[data-wallet-monthly-metric="withdrawals-count"]'),
+      availableBalance: document.querySelector('[data-wallet-monthly-metric="available-balance"]'),
+      heldBalance: document.querySelector('[data-wallet-monthly-metric="held-balance"]'),
+      processingWithdrawals: document.querySelector('[data-wallet-monthly-metric="processing-withdrawals"]'),
+      distributionTotal: document.querySelector('[data-wallet-monthly-metric="distribution-total"]'),
+      largestMovement: document.querySelector('[data-wallet-monthly-metric="largest-movement"]'),
+      largestMovementLabel: document.querySelector('[data-wallet-monthly-metric="largest-movement-label"]')
+    };
+
+    const analyticsPeriodButtons = Array.from(document.querySelectorAll('[data-wallet-analytics-period]'));
+    const chartNodes = {
+      flowSvg: document.querySelector('[data-wallet-chart-svg="financial-flow"]'),
+      flowLabels: document.querySelector('[data-wallet-chart-labels="financial-flow"]'),
+      flowLevels: document.querySelector('[data-wallet-chart-levels="financial-flow"]'),
+      distributionSvg: document.querySelector('[data-wallet-chart-svg="balance-distribution"]'),
+      activitySvg: document.querySelector('[data-wallet-chart-svg="activity-bars"]'),
+      progressAvailable: document.querySelector('[data-wallet-progress="available"]'),
+      progressHeld: document.querySelector('[data-wallet-progress="held"]'),
+      progressProcessing: document.querySelector('[data-wallet-progress="processing"]')
     };
 
     const getWalletService = () => window.Doke?.services?.wallet || null;
@@ -135,6 +172,50 @@
     const formatCurrency = (value) => {
       const amount = Number(value || 0);
       return amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    };
+
+    const normalizeSearchValue = (value) => String(value || '')
+      .toLocaleLowerCase('pt-BR')
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const getFilterLabel = (filter) => {
+      const labels = {
+        all: 'Todos',
+        income: 'Entradas',
+        withdraw: 'Saques',
+        held: 'Em garantia',
+        available: 'Liberados',
+        processing: 'Em processamento',
+        completed: 'Concluídos'
+      };
+      return labels[filter] || labels.all;
+    };
+
+    const getPeriodLabel = (period) => {
+      const labels = {
+        all: 'Todo período',
+        today: 'Hoje',
+        '7-days': '7 dias',
+        '30-days': '30 dias',
+        'current-month': 'Mês atual'
+      };
+      return labels[period] || labels.all;
+    };
+
+    const getStatementFilters = () => ({
+      currentUser: true,
+      category: activeStatementFilter || 'all',
+      period: activeStatementPeriod || 'all',
+      query: activeStatementQuery || ''
+    });
+
+    const hasActiveStatementRefinement = () => {
+      return (activeStatementFilter && activeStatementFilter !== 'all')
+        || (activeStatementPeriod && activeStatementPeriod !== 'all')
+        || Boolean(activeStatementQuery);
     };
 
     const parseCurrencyInput = (value) => {
@@ -244,8 +325,10 @@
       const description = `${title} · ${formatTransactionDate(transaction.createdAt)}`;
       const status = getTransactionStatusLabel(type, transaction);
       const receiptAmount = formatCurrency(Math.abs(amount));
-      const receiptGross = formatCurrency(Number(transaction.grossAmount || transaction.netAmount || transaction.amount || 0));
-      const receiptFee = formatCurrency(Number(transaction.feeAmount || 0));
+      const grossAmount = Number(transaction.grossAmount || transaction.netAmount || transaction.amount || 0);
+      const feeAmount = Number(transaction.feeAmount || 0);
+      const receiptGross = formatCurrency(grossAmount);
+      const receiptFee = formatCurrency(feeAmount);
       const receiptDate = formatTransactionDate(transaction.completedAt || transaction.availableAt || transaction.updatedAt || transaction.createdAt);
       const canCompleteWithdraw = type === 'withdraw' && (transaction.status || '') === 'processing';
       const element = document.createElement('article');
@@ -298,6 +381,232 @@
       if (node) node.textContent = value;
     };
 
+    const createSvgElement = (tagName, attrs = {}) => {
+      const element = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+      Object.entries(attrs).forEach(([name, value]) => {
+        if (value !== undefined && value !== null) element.setAttribute(name, String(value));
+      });
+      return element;
+    };
+
+    const clearNode = (node) => {
+      if (!node) return;
+      while (node.firstChild) node.removeChild(node.firstChild);
+    };
+
+    const formatCompactCurrency = (value) => {
+      const amount = Number(value || 0);
+      if (Math.abs(amount) >= 1000) return 'R$ ' + Math.round(amount / 1000) + 'k';
+      return 'R$ ' + Math.round(amount);
+    };
+
+    const getChartSeries = (dashboard) => {
+      const series = dashboard?.chartSeries || {};
+      const labels = Array.isArray(series.labels) && series.labels.length ? series.labels : ['—'];
+      const normalizeSeries = (values) => labels.map((_, index) => Number(Array.isArray(values) ? values[index] || 0 : 0));
+      return {
+        labels,
+        netIncome: normalizeSeries(series.netIncome),
+        withdrawals: normalizeSeries(series.withdrawals),
+        fees: normalizeSeries(series.fees),
+        paidOrders: normalizeSeries(series.paidOrders)
+      };
+    };
+
+    const pointsToPath = (points) => points.map((point, index) => {
+      const command = index === 0 ? 'M' : 'L';
+      return command + point.x.toFixed(1) + ' ' + point.y.toFixed(1);
+    }).join(' ');
+
+    const renderFinancialFlowChart = (dashboard) => {
+      const svg = chartNodes.flowSvg;
+      if (!svg) return;
+      clearNode(svg);
+      clearNode(chartNodes.flowLabels);
+      clearNode(chartNodes.flowLevels);
+
+      const chart = getChartSeries(dashboard);
+      const width = 700;
+      const height = 240;
+      const padding = { top: 18, right: 18, bottom: 18, left: 10 };
+      const plotWidth = width - padding.left - padding.right;
+      const plotHeight = height - padding.top - padding.bottom;
+      const allValues = chart.netIncome.concat(chart.withdrawals, chart.fees).map(Math.abs);
+      const maxValue = Math.max(1, ...allValues);
+      const safeStep = chart.labels.length > 1 ? plotWidth / (chart.labels.length - 1) : plotWidth;
+      const makePoints = (values) => values.map((value, index) => ({
+        x: padding.left + (chart.labels.length > 1 ? safeStep * index : plotWidth / 2),
+        y: padding.top + plotHeight - (Math.abs(value) / maxValue) * plotHeight
+      }));
+
+      [0, 0.5, 1].forEach((ratio) => {
+        const y = padding.top + plotHeight - (plotHeight * ratio);
+        svg.appendChild(createSvgElement('line', {
+          class: 'wallet-line-chart__grid-line',
+          x1: padding.left,
+          x2: width - padding.right,
+          y1: y,
+          y2: y
+        }));
+      });
+
+      const incomePoints = makePoints(chart.netIncome);
+      const withdrawPoints = makePoints(chart.withdrawals);
+      const feePoints = makePoints(chart.fees);
+      if (incomePoints.length) {
+        const areaPath = pointsToPath(incomePoints)
+          + ' L ' + incomePoints[incomePoints.length - 1].x.toFixed(1) + ' ' + (height - padding.bottom).toFixed(1)
+          + ' L ' + incomePoints[0].x.toFixed(1) + ' ' + (height - padding.bottom).toFixed(1) + ' Z';
+        svg.appendChild(createSvgElement('path', { class: 'wallet-line-chart__area', d: areaPath }));
+      }
+
+      [
+        ['wallet-line-chart__line wallet-line-chart__line--income', incomePoints],
+        ['wallet-line-chart__line wallet-line-chart__line--withdraw', withdrawPoints],
+        ['wallet-line-chart__line wallet-line-chart__line--fee', feePoints]
+      ].forEach(([className, points]) => {
+        svg.appendChild(createSvgElement('path', { class: className, d: pointsToPath(points) }));
+      });
+
+      [
+        ['wallet-line-chart__points wallet-line-chart__points--income', incomePoints],
+        ['wallet-line-chart__points wallet-line-chart__points--withdraw', withdrawPoints],
+        ['wallet-line-chart__points wallet-line-chart__points--fee', feePoints]
+      ].forEach(([className, points]) => {
+        const group = createSvgElement('g', { class: className });
+        points.forEach((point, index) => {
+          const circle = createSvgElement('circle', { cx: point.x.toFixed(1), cy: point.y.toFixed(1), r: 4 });
+          circle.appendChild(createSvgElement('title'));
+          circle.firstChild.textContent = chart.labels[index];
+          group.appendChild(circle);
+        });
+        svg.appendChild(group);
+      });
+
+      [maxValue, maxValue / 2, 0].forEach((level) => {
+        const label = document.createElement('span');
+        label.textContent = formatCompactCurrency(level);
+        chartNodes.flowLevels?.appendChild(label);
+      });
+
+      chart.labels.forEach((labelText) => {
+        const label = document.createElement('span');
+        label.textContent = labelText;
+        chartNodes.flowLabels?.appendChild(label);
+      });
+    };
+
+    const renderDistributionChart = (dashboard) => {
+      const svg = chartNodes.distributionSvg;
+      if (!svg) return;
+      clearNode(svg);
+      const available = Math.max(0, Number(dashboard?.availableBalance || 0));
+      const held = Math.max(0, Number(dashboard?.heldBalance || 0));
+      const processing = Math.max(0, Number(dashboard?.processingWithdrawals || 0));
+      const total = Math.max(available + held + processing, 0);
+      const center = 110;
+      const radius = 76;
+      const circumference = 2 * Math.PI * radius;
+      let offset = 0;
+      const segments = [
+        ['wallet-donut-chart__segment wallet-donut-chart__segment--available', available],
+        ['wallet-donut-chart__segment wallet-donut-chart__segment--held', held],
+        ['wallet-donut-chart__segment wallet-donut-chart__segment--processing', processing]
+      ];
+
+      svg.appendChild(createSvgElement('circle', {
+        class: 'wallet-donut-chart__track', cx: center, cy: center, r: radius
+      }));
+
+      segments.forEach(([className, value]) => {
+        const ratio = total > 0 ? value / total : 0;
+        const dash = Math.max(0, ratio * circumference);
+        const circle = createSvgElement('circle', {
+          class: className,
+          cx: center,
+          cy: center,
+          r: radius,
+          'stroke-dasharray': dash.toFixed(2) + ' ' + Math.max(0, circumference - dash).toFixed(2),
+          'stroke-dashoffset': (-offset).toFixed(2),
+          transform: 'rotate(-90 110 110)'
+        });
+        circle.appendChild(createSvgElement('title'));
+        circle.firstChild.textContent = formatCurrency(value);
+        svg.appendChild(circle);
+        offset += dash;
+      });
+
+      setText(monthlyMetricFields.distributionTotal, formatCurrency(total));
+
+      const setMeter = (node, value) => {
+        if (!node) return;
+        const percent = total > 0 ? Math.round((value / total) * 100) : 0;
+        node.value = percent;
+        node.textContent = percent + '%';
+      };
+      setMeter(chartNodes.progressAvailable, available);
+      setMeter(chartNodes.progressHeld, held);
+      setMeter(chartNodes.progressProcessing, processing);
+    };
+
+    const renderActivityChart = (dashboard) => {
+      const svg = chartNodes.activitySvg;
+      if (!svg) return;
+      clearNode(svg);
+      const values = [
+        { label: 'Pedidos', value: Number(dashboard?.paidOrders || 0), className: 'wallet-bar-chart__bar wallet-bar-chart__bar--orders' },
+        { label: 'Saques', value: Number(dashboard?.withdrawalsCount || 0), className: 'wallet-bar-chart__bar wallet-bar-chart__bar--withdrawals' },
+        { label: 'Mov.', value: Number(dashboard?.largestMovement?.amount || 0), className: 'wallet-bar-chart__bar wallet-bar-chart__bar--movement', compact: true }
+      ];
+      const width = 420;
+      const height = 220;
+      const maxValue = Math.max(1, ...values.map((item) => Math.abs(item.value)));
+      values.forEach((item, index) => {
+        const barWidth = 72;
+        const gap = 54;
+        const x = 52 + index * (barWidth + gap);
+        const barHeight = Math.max(6, Math.round((Math.abs(item.value) / maxValue) * 132));
+        const y = 156 - barHeight;
+        svg.appendChild(createSvgElement('rect', {
+          class: item.className,
+          x,
+          y,
+          width: barWidth,
+          height: barHeight,
+          rx: 14
+        }));
+        const valueText = createSvgElement('text', { class: 'wallet-bar-chart__value', x: x + barWidth / 2, y: y - 12, 'text-anchor': 'middle' });
+        valueText.textContent = item.compact ? formatCompactCurrency(item.value) : String(item.value || 0);
+        svg.appendChild(valueText);
+        const labelText = createSvgElement('text', { class: 'wallet-bar-chart__label', x: x + barWidth / 2, y: 192, 'text-anchor': 'middle' });
+        labelText.textContent = item.label;
+        svg.appendChild(labelText);
+      });
+    };
+
+    const renderAnalyticsCharts = (dashboard) => {
+      renderFinancialFlowChart(dashboard || {});
+      renderDistributionChart(dashboard || {});
+      renderActivityChart(dashboard || {});
+    };
+
+    const syncAnalyticsPeriodButtons = () => {
+      analyticsPeriodButtons.forEach((button) => {
+        const isActive = button.dataset.walletAnalyticsPeriod === activeAnalyticsPeriod;
+        button.classList.toggle('is-active', isActive);
+        button.setAttribute('aria-pressed', String(isActive));
+      });
+    };
+
+    const refreshAnalyticsDashboard = () => {
+      const service = getWalletService();
+      if (!service || typeof service.getMonthlyDashboard !== 'function') return Promise.resolve(null);
+      return service.getMonthlyDashboard({ currentUser: true, period: activeAnalyticsPeriod }).then((dashboard) => {
+        syncMonthlyDashboard(dashboard || {});
+        return dashboard;
+      }).catch(() => null);
+    };
+
     const setAccountText = (name, value) => {
       setText(getAccountField(name), value);
     };
@@ -344,33 +653,64 @@
       if (status) status.textContent = 'Conta cadastrada · Regular';
     };
 
+    const syncMonthlyDashboard = (dashboard) => {
+      const nextDashboard = dashboard || {};
+      const largestMovement = nextDashboard.largestMovement || {};
+      setText(monthlyMetricFields.periodLabel, nextDashboard.periodLabel || getPeriodLabel(activeAnalyticsPeriod));
+      setText(monthlyMetricFields.grossIncome, formatCurrency(nextDashboard.grossIncome || 0));
+      setText(monthlyMetricFields.netIncome, formatCurrency(nextDashboard.netIncome || 0));
+      setText(monthlyMetricFields.fees, formatCurrency(nextDashboard.fees || 0));
+      setText(monthlyMetricFields.ticketAverage, formatCurrency(nextDashboard.ticketAverage || 0));
+      setText(monthlyMetricFields.paidOrders, String(nextDashboard.paidOrders || 0));
+      setText(monthlyMetricFields.withdrawalsCount, String(nextDashboard.withdrawalsCount || 0));
+      setText(monthlyMetricFields.availableBalance, formatCurrency(nextDashboard.availableBalance || 0));
+      setText(monthlyMetricFields.heldBalance, formatCurrency(nextDashboard.heldBalance || 0));
+      setText(monthlyMetricFields.processingWithdrawals, formatCurrency(nextDashboard.processingWithdrawals || 0));
+      setText(monthlyMetricFields.largestMovement, formatCurrency(largestMovement.amount || 0));
+      setText(monthlyMetricFields.largestMovementLabel, largestMovement.title || 'Sem movimentações');
+      renderAnalyticsCharts(nextDashboard);
+      syncAnalyticsPeriodButtons();
+    };
+
     const syncWalletSummary = (wallet) => {
       if (!wallet) return;
       currentWallet = wallet;
+      const dashboard = wallet.monthlyDashboard || {};
       const available = Number(wallet.availableBalance || 0);
       setText(walletFields.available, formatCurrency(available));
       setText(withdrawAvailableNode, formatCurrency(available));
       setText(walletFields.held, formatCurrency(wallet.pendingBalance || 0));
-      setText(walletFields.monthlyIncome, formatCurrency(wallet.monthlyIncome || 0));
+      setText(walletFields.monthlyIncome, formatCurrency(wallet.monthlyIncome || dashboard.netIncome || 0));
       setText(walletFields.heldBalance, formatCurrency(wallet.pendingBalance || 0));
-      setText(walletFields.withdrawals, formatCurrency(wallet.withdrawals || 0));
-      setText(walletFields.fees, formatCurrency(wallet.fees || 0));
+      setText(walletFields.withdrawals, formatCurrency(wallet.withdrawals || dashboard.withdrawals || 0));
+      setText(walletFields.fees, formatCurrency(wallet.fees || dashboard.fees || 0));
+      syncMonthlyDashboard(dashboard);
+      refreshAnalyticsDashboard();
       if (walletFields.balanceCopy) walletFields.balanceCopy.textContent = wallet.localTransactions?.length ? 'Saldo atualizado pelos pedidos concluídos' : 'Sem saldo liberado no momento';
       if (walletFields.heldCopy) walletFields.heldCopy.textContent = wallet.pendingBalance > 0 ? 'Liberado após confirmação' : 'Sem valores pendentes';
     };
 
     const renderWalletTransactions = (wallet) => {
-      if (!transactionList || !wallet) return;
-      transactionList.querySelectorAll('[data-wallet-type]').forEach((item) => item.remove());
-      const flowTransactions = Array.isArray(wallet.localTransactions) ? wallet.localTransactions : [];
-      flowTransactions.slice().reverse().forEach((transaction) => {
-        transactionList.prepend(createWalletTransactionElement(transaction));
+      if (!transactionList || !wallet) return Promise.resolve([]);
+      const service = getWalletService();
+      const filters = getStatementFilters();
+      const fallbackTransactions = Array.isArray(wallet.localTransactions) ? wallet.localTransactions : [];
+      const request = service?.listTransactions
+        ? service.listTransactions(filters)
+        : Promise.resolve(fallbackTransactions);
+
+      return request.then((statementTransactions) => {
+        const flowTransactions = Array.isArray(statementTransactions) ? statementTransactions : fallbackTransactions;
+        transactionList.querySelectorAll('[data-wallet-type]').forEach((item) => item.remove());
+        flowTransactions.slice().reverse().forEach((transaction) => {
+          transactionList.prepend(createWalletTransactionElement(transaction));
+        });
+        transactions = Array.from(transactionList.querySelectorAll('[data-wallet-type]'));
+        bindTransactionItems();
+        updateTransactionEmptyState();
+        openTransactionFromUrl();
+        return flowTransactions;
       });
-      transactions = Array.from(transactionList.querySelectorAll('[data-wallet-type]'));
-      bindTransactionItems();
-      const activeFilter = filterButtons.find((button) => button.classList.contains('is-active'))?.dataset.walletFilter || 'all';
-      setTransactionFilter(activeFilter);
-      openTransactionFromUrl();
     };
 
     const loadWalletState = () => {
@@ -380,8 +720,7 @@
         .then((wallet) => {
           syncWalletSummary(wallet);
           syncBankAccount(wallet.bankAccount || null);
-          renderWalletTransactions(wallet);
-          return wallet;
+          return renderWalletTransactions(wallet).then(() => wallet);
         })
         .catch((error) => {
           console.warn('[DokeWallet:load]', error);
@@ -459,7 +798,16 @@
       if (!transactionList || !transactionEmptyState) return;
 
       const visibleTransactions = Array.from(transactionList.querySelectorAll('[data-wallet-type]')).filter((transaction) => !transaction.hidden);
+      const title = transactionEmptyState.querySelector('strong');
+      const copy = transactionEmptyState.querySelector('p');
+      const hasRefinement = hasActiveStatementRefinement();
       transactionEmptyState.hidden = visibleTransactions.length > 0;
+      if (title) title.textContent = hasRefinement ? 'Nenhuma movimentação encontrada para este filtro' : 'Nenhuma movimentação encontrada';
+      if (copy) {
+        copy.textContent = hasRefinement
+          ? `Ajuste o filtro ${getFilterLabel(activeStatementFilter).toLowerCase()}, o período ${getPeriodLabel(activeStatementPeriod).toLowerCase()} ou a busca para ver outros resultados.`
+          : 'Entradas, saques, taxas e valores em garantia aparecerão aqui.';
+      }
     };
 
 
@@ -734,8 +1082,21 @@
       transactions.forEach(bindTransactionItem);
     };
 
-    const setTransactionFilter = (filter) => {
-      const nextFilter = filter || 'all';
+    const refreshStatementTransactions = () => {
+      if (!currentWallet) return Promise.resolve([]);
+      return renderWalletTransactions(currentWallet);
+    };
+
+    const syncStatementSearchInputs = (value, source) => {
+      const nextValue = value || '';
+      if (statementSearchInput && source !== statementSearchInput) statementSearchInput.value = nextValue;
+      if (headerSearchInput && source !== headerSearchInput) headerSearchInput.value = nextValue;
+    };
+
+    const setTransactionFilter = (filter, options = {}) => {
+      const validFilters = ['all', 'income', 'withdraw', 'held', 'available', 'processing', 'completed'];
+      const nextFilter = validFilters.includes(filter) ? filter : 'all';
+      activeStatementFilter = nextFilter;
 
       filterButtons.forEach((button) => {
         const isActiveButton = button.dataset.walletFilter === nextFilter;
@@ -743,13 +1104,31 @@
         button.setAttribute('aria-pressed', String(isActiveButton));
       });
 
-      transactions.forEach((transaction) => {
-        const type = transaction.dataset.walletType;
-        const isVisible = nextFilter === 'all' || type === nextFilter;
-        transaction.hidden = !isVisible;
-      });
-
       updateTransactionEmptyState();
+      if (!options.skipRender) refreshStatementTransactions();
+    };
+
+    const setStatementPeriod = (period, options = {}) => {
+      activeStatementPeriod = period || 'all';
+      if (statementPeriodSelect && statementPeriodSelect.value !== activeStatementPeriod) {
+        statementPeriodSelect.value = activeStatementPeriod;
+      }
+      updateTransactionEmptyState();
+      if (!options.skipRender) refreshStatementTransactions();
+    };
+
+    const setStatementQuery = (query, source, options = {}) => {
+      activeStatementQuery = normalizeSearchValue(query || '');
+      syncStatementSearchInputs(query || '', source);
+      updateTransactionEmptyState();
+      if (!options.skipRender) refreshStatementTransactions();
+    };
+
+    const scheduleStatementQueryUpdate = (value, source) => {
+      window.clearTimeout(statementSearchTimer);
+      statementSearchTimer = window.setTimeout(() => {
+        setStatementQuery(value, source);
+      }, 120);
     };
 
     filterButtons.forEach((button) => {
@@ -757,6 +1136,135 @@
         setTransactionFilter(button.dataset.walletFilter);
       });
     });
+
+    statementPeriodSelect?.addEventListener('change', () => {
+      setStatementPeriod(statementPeriodSelect.value);
+    });
+
+    statementSearchInput?.addEventListener('input', () => {
+      scheduleStatementQueryUpdate(statementSearchInput.value, statementSearchInput);
+    });
+
+    headerSearchInput?.addEventListener('input', () => {
+      scheduleStatementQueryUpdate(headerSearchInput.value, headerSearchInput);
+    });
+
+    const escapeCsvField = (value) => {
+      const text = String(value ?? '');
+      return /[";\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    };
+
+    const formatExportDate = (value) => {
+      const date = value ? new Date(value) : null;
+      if (!date || Number.isNaN(date.getTime())) return '';
+      return date.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+
+    const getExportTypeLabel = (transaction) => {
+      const type = getTransactionType(transaction);
+      if (type === 'withdraw') return 'Saque';
+      if (type === 'held') return 'Em garantia';
+      if (type === 'fee') return 'Taxa';
+      return 'Entrada';
+    };
+
+    const getExportStatusLabel = (transaction) => {
+      return getTransactionStatusLabel(getTransactionType(transaction), transaction);
+    };
+
+    const buildStatementCsv = (statementTransactions) => {
+      const rows = [];
+      const exportedTransactions = Array.isArray(statementTransactions) ? statementTransactions : [];
+      const totals = exportedTransactions.reduce((summary, transaction) => {
+        const type = getTransactionType(transaction);
+        const amount = Number(transaction.netAmount || transaction.amount || 0);
+        const feeAmount = Number(transaction.feeAmount || 0);
+        if (type === 'withdraw') summary.withdrawals += Math.abs(amount);
+        else if (type === 'fee') summary.fees += Math.abs(amount);
+        else {
+          summary.income += Math.abs(amount);
+          summary.fees += Math.abs(feeAmount);
+        }
+        summary.finalBalance += type === 'withdraw' || type === 'fee' ? -Math.abs(amount) : Math.abs(amount);
+        return summary;
+      }, { income: 0, withdrawals: 0, fees: 0, finalBalance: 0 });
+
+      rows.push(['Extrato Doke']);
+      rows.push(['Filtro', getFilterLabel(activeStatementFilter)]);
+      rows.push(['Período', getPeriodLabel(activeStatementPeriod)]);
+      rows.push(['Busca', activeStatementQuery || 'Sem busca']);
+      rows.push(['Gerado em', formatExportDate(new Date().toISOString())]);
+      rows.push(['Saldo inicial mockado', formatCurrency(0)]);
+      rows.push(['Entradas', formatCurrency(totals.income)]);
+      rows.push(['Saques', formatCurrency(totals.withdrawals)]);
+      rows.push(['Taxas', formatCurrency(totals.fees)]);
+      rows.push(['Saldo final do filtro', formatCurrency(totals.finalBalance)]);
+      rows.push([]);
+      rows.push(['Data', 'Tipo', 'Status', 'Serviço/descrição', 'Referência', 'Método/Destino', 'Valor bruto', 'Taxa Doke', 'Valor líquido']);
+
+      exportedTransactions.forEach((transaction) => {
+        rows.push([
+          formatExportDate(transaction.completedAt || transaction.availableAt || transaction.updatedAt || transaction.createdAt),
+          getExportTypeLabel(transaction),
+          getExportStatusLabel(transaction),
+          transaction.title || transaction.description || 'Movimentação',
+          transaction.reference || transaction.orderId || transaction.id || '',
+          transaction.destination || transaction.method || '',
+          formatCurrency(Number(transaction.grossAmount || transaction.netAmount || transaction.amount || 0)),
+          formatCurrency(Number(transaction.feeAmount || 0)),
+          formatCurrency(Number(transaction.netAmount || transaction.amount || 0))
+        ]);
+      });
+
+      return rows.map((row) => row.map(escapeCsvField).join(';')).join('\n');
+    };
+
+    const downloadStatementCsv = (csv) => {
+      const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const today = new Date().toISOString().slice(0, 10);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `doke-extrato-${today}.csv`;
+      link.rel = 'noopener';
+      link.hidden = true;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    };
+
+    const exportStatement = () => {
+      const service = getWalletService();
+      const request = service?.listTransactions
+        ? service.listTransactions(getStatementFilters())
+        : Promise.resolve(Array.isArray(currentWallet?.localTransactions) ? currentWallet.localTransactions : []);
+
+      statementExportButton?.setAttribute('aria-busy', 'true');
+      statementExportButton?.setAttribute('disabled', '');
+
+      request
+        .then((statementTransactions) => {
+          downloadStatementCsv(buildStatementCsv(statementTransactions));
+          showWalletToast('Extrato exportado em CSV.');
+        })
+        .catch((error) => {
+          console.warn('[DokeWallet:export]', error);
+          showWalletToast('Não foi possível exportar o extrato.', 'error');
+        })
+        .finally(() => {
+          statementExportButton?.removeAttribute('aria-busy');
+          statementExportButton?.removeAttribute('disabled');
+        });
+    };
+
+    statementExportButton?.addEventListener('click', exportStatement);
 
     const openWithdrawModal = () => {
       if (!withdrawModal) return;
@@ -850,6 +1358,16 @@
       const target = transactionList?.querySelector(`[data-wallet-transaction-id="${escapedId}"]`);
       completeWithdrawTransaction(target, withdrawTrackFields.completeAction);
       closeWithdrawTrack();
+    });
+
+    analyticsPeriodButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const nextPeriod = button.dataset.walletAnalyticsPeriod || 'current-month';
+        if (nextPeriod === activeAnalyticsPeriod) return;
+        activeAnalyticsPeriod = nextPeriod;
+        syncAnalyticsPeriodButtons();
+        refreshAnalyticsDashboard();
+      });
     });
 
     statsOpenButtons.forEach((button) => {

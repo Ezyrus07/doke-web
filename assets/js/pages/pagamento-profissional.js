@@ -35,6 +35,8 @@
   let selectedMethod = 'Pix';
   let cardFormOpen = false;
   let processingTimer = null;
+  let walletBalance = null;
+  let walletBalanceLoaded = false;
 
   const pageParams = new URLSearchParams(window.location.search || '');
   const paymentContext = {
@@ -105,6 +107,45 @@
     return messages.slice().reverse().find((message) => message && message.type === 'charge') || null;
   }
 
+  function getMessageTimeValue(message) {
+    const raw = message?.createdAt || message?.creatédAt || message?.updatedAt || '';
+    const date = raw ? new Date(raw) : null;
+    return date && !Number.isNaN(date.getTime()) ? date.getTime() : 0;
+  }
+
+  function findLatestChargeConversation(conversations) {
+    return (Array.isArray(conversations) ? conversations : []).reduce((best, conversation) => {
+      const charge = resolveCharge(conversation);
+      if (!charge) return best;
+      const orderId = normalizeText(conversation.orderId || conversation.order?.id || '');
+      if (paymentContext.orderId && orderId && String(orderId) !== String(paymentContext.orderId)) return best;
+      const score = getMessageTimeValue(charge) || getMessageTimeValue(conversation) || 0;
+      if (!best || score >= best.score) return { conversation, charge, score };
+      return best;
+    }, null);
+  }
+
+  function resolveFallbackPaymentContext() {
+    const messagesRepository = getMessagesRepository();
+    if (!messagesRepository?.list) return Promise.resolve(null);
+    return messagesRepository.list({
+      currentUser: false,
+      orderId: paymentContext.orderId || undefined
+    }).then((conversations) => {
+      const match = findLatestChargeConversation(conversations);
+      if (!match) return null;
+      currentConversation = match.conversation || currentConversation;
+      currentCharge = match.charge || currentCharge;
+      if (!paymentContext.conversationId && currentConversation?.id) paymentContext.conversationId = currentConversation.id;
+      if (!paymentContext.messageId && currentCharge?.id) paymentContext.messageId = currentCharge.id;
+      if (!paymentContext.orderId && (currentConversation?.orderId || currentConversation?.order?.id)) {
+        paymentContext.orderId = currentConversation.orderId || currentConversation.order.id;
+      }
+      if (!currentOrder && currentConversation?.order) currentOrder = currentConversation.order;
+      return match;
+    });
+  }
+
   function buildConversationUrl(extraParams) {
     const params = new URLSearchParams();
     if (paymentContext.orderId) params.set('order', paymentContext.orderId);
@@ -168,9 +209,21 @@
       currentCharge = resolveCharge(conversation);
       if (!paymentContext.orderId && currentConversation?.orderId) paymentContext.orderId = currentConversation.orderId;
       if (!currentOrder && currentConversation?.order) currentOrder = currentConversation.order;
+      if (currentCharge) return null;
+      return resolveFallbackPaymentContext();
+    }).then(() => {
+      if (paymentContext.orderId && !currentOrder && orderRepository?.getById) {
+        return orderRepository.getById(paymentContext.orderId).then((order) => {
+          currentOrder = order || currentOrder;
+        });
+      }
+      return null;
+    }).then(() => {
       applyPaymentContext();
+      return loadWalletBalance();
     }).catch(() => {
       applyPaymentContext();
+      return loadWalletBalance();
     });
   }
 
@@ -203,6 +256,7 @@
       order: currentOrder || currentConversation?.order || {},
       conversation: currentConversation,
       charge: currentCharge,
+      amount: formatCurrency(getCurrentTotal()),
       orderId: paymentContext.orderId || currentOrder?.id || currentConversation?.orderId || '',
       conversationId: paymentContext.conversationId || currentConversation?.id || '',
       messageId: paymentContext.messageId || currentCharge?.id || ''
@@ -228,7 +282,11 @@
 
     return startTask.then((order) => {
       currentOrder = order || currentOrder;
-      return persistChargeState({ paid: true });
+      return persistChargeState({
+        paid: true,
+        paymentMethod: selectedMethod,
+        paidAmount: formatCurrency(getCurrentTotal())
+      });
     }).then(() => registerWalletHold())
       .then(() => {
       document.dispatchEvent(new CustomEvent('doke:payment-confirmed', {
@@ -295,6 +353,11 @@
     if (summaryTotal) summaryTotal.textContent = formattedTotal;
     if (modalTotal) modalTotal.textContent = formattedTotal;
     if (receiptTotal) receiptTotal.textContent = formattedTotal;
+    if (pixCode) {
+      const orderCode = getOrderCode(currentOrder || {}).replace(/[^A-Z0-9]/gi, '').toUpperCase() || 'DOKE';
+      pixCode.textContent = `DOKE-PIX-${orderCode}-${total.toFixed(2)}`;
+    }
+    updateWalletMethodCopy();
 
   }
 
@@ -331,6 +394,7 @@
     if (methodTitle) methodTitle.textContent = detail.title;
     if (methodCopy) methodCopy.textContent = detail.copy;
     updateCardPaymentState();
+    updateWalletMethodCopy();
   }
 
   function isCardMethod(method) {
@@ -342,6 +406,67 @@
 
     if (cardEmpty) cardEmpty.hidden = !needsCard || cardFormOpen;
     if (cardFields) cardFields.hidden = !needsCard || !cardFormOpen;
+  }
+
+  function updateWalletMethodCopy() {
+    if (selectedMethod !== 'Saldo Doke' || !methodCopy) return;
+    const total = getCurrentTotal();
+    if (!walletBalanceLoaded) {
+      methodCopy.textContent = 'Validando saldo disponível na sua carteira.';
+      return;
+    }
+    if (walletBalance >= total) {
+      methodCopy.textContent = `Saldo disponível: ${formatCurrency(walletBalance)}. O valor será debitado após a confirmação.`;
+      return;
+    }
+    methodCopy.textContent = `Saldo disponível: ${formatCurrency(walletBalance || 0)}. Saldo insuficiente para este pagamento.`;
+  }
+
+  function loadWalletBalance() {
+    const walletService = getWalletService();
+    if (!walletService?.getWallet) {
+      walletBalance = 0;
+      walletBalanceLoaded = true;
+      updateWalletMethodCopy();
+      return Promise.resolve(0);
+    }
+    return walletService.getWallet({ currentUser: true }).then((wallet) => {
+      walletBalance = Number(wallet?.availableBalance || 0);
+      if (!Number.isFinite(walletBalance)) walletBalance = 0;
+      walletBalanceLoaded = true;
+      updateWalletMethodCopy();
+      return walletBalance;
+    }).catch(() => {
+      walletBalance = 0;
+      walletBalanceLoaded = true;
+      updateWalletMethodCopy();
+      return 0;
+    });
+  }
+
+  function validateSelectedMethod() {
+    if (!isCardMethod(selectedMethod) && selectedMethod !== 'Saldo Doke') return true;
+
+    if (isCardMethod(selectedMethod) && !cardFormOpen) {
+      showError('Adicione um cartão para continuar com essa forma de pagamento.');
+      if (addCardButton) addCardButton.focus();
+      return false;
+    }
+
+    if (selectedMethod === 'Saldo Doke') {
+      const total = getCurrentTotal();
+      if (!walletBalanceLoaded) {
+        showError('Ainda estamos validando seu saldo Doke. Tente novamente em alguns segundos.');
+        loadWalletBalance();
+        return false;
+      }
+      if (walletBalance < total) {
+        showError(`Saldo Doke insuficiente. Disponível: ${formatCurrency(walletBalance || 0)}. Total: ${formatCurrency(total)}.`);
+        return false;
+      }
+    }
+
+    return true;
   }
 
   function showPanel(name) {
@@ -465,11 +590,7 @@
 
   if (submitButton) {
     submitButton.addEventListener('click', () => {
-      if (isCardMethod(selectedMethod) && !cardFormOpen) {
-        showError('Adicione um cartão para continuar com essa forma de pagamento.');
-        if (addCardButton) addCardButton.focus();
-        return;
-      }
+      if (!validateSelectedMethod()) return;
 
       if (confirmInput && !confirmInput.checked) {
         showError('Confirme que revisou a cobrança antes de continuar.');

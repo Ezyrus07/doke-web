@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/> <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
 <script defer="" src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
-<link href="assets/css/pages/carteira-foundation.css?v=20260627-custom-select-v2" rel="stylesheet"/>
+<link href="assets/css/pages/carteira-foundation.css?v=20260630-wallet-dashboard-v3" rel="stylesheet"/>
 <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
 <script defer="" src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
 </head>
@@ -186,10 +186,38 @@
 <div class="wallet-panel__header wallet-panel__header--overview">
 <h2 id="wallet-statement-title">Movimentações recentes</h2>
 <div aria-label="Filtrar extrato" class="wallet-tabs" role="tablist">
-<button class="wallet-tab is-active doke-tab-pill" data-wallet-filter="all" type="button">Tudo</button>
-<button class="wallet-tab doke-tab-pill" data-wallet-filter="income" type="button">Entradas</button>
-<button class="wallet-tab doke-tab-pill" data-wallet-filter="withdraw" type="button">Saques</button>
+<button class="wallet-tab is-active doke-tab-pill" data-wallet-filter="all" type="button" aria-pressed="true">Todos</button>
+<button class="wallet-tab doke-tab-pill" data-wallet-filter="income" type="button" aria-pressed="false">Entradas</button>
+<button class="wallet-tab doke-tab-pill" data-wallet-filter="withdraw" type="button" aria-pressed="false">Saques</button>
+<button class="wallet-tab doke-tab-pill" data-wallet-filter="held" type="button" aria-pressed="false">Em garantia</button>
+<button class="wallet-tab doke-tab-pill" data-wallet-filter="available" type="button" aria-pressed="false">Liberados</button>
+<button class="wallet-tab doke-tab-pill" data-wallet-filter="processing" type="button" aria-pressed="false">Em processamento</button>
+<button class="wallet-tab doke-tab-pill" data-wallet-filter="completed" type="button" aria-pressed="false">Concluídos</button>
 </div>
+</div>
+<div class="wallet-statement-tools" aria-label="Refinar extrato">
+<label class="wallet-statement-field wallet-statement-field--period" for="wallet-statement-period">
+<span>Período</span>
+<select class="wallet-statement-select doke-select" id="wallet-statement-period" data-wallet-statement-period="" data-ui-select>
+<option value="all">Todo período</option>
+<option value="today">Hoje</option>
+<option value="7-days">7 dias</option>
+<option value="30-days">30 dias</option>
+<option value="current-month">Mês atual</option>
+</select>
+</label>
+<label class="wallet-statement-field wallet-statement-field--search" for="wallet-statement-search">
+<span>Buscar</span>
+<input autocomplete="off" class="wallet-statement-search doke-input" id="wallet-statement-search" data-wallet-statement-search="" placeholder="Serviço, código, banco ou tipo" type="search"/>
+</label>
+<button class="wallet-statement-export doke-btn doke-btn--ghost" data-wallet-export-statement="" type="button">
+<svg aria-hidden="true" viewBox="0 0 24 24">
+<path d="M12 4v10"></path>
+<path d="m8 10 4 4 4-4"></path>
+<path d="M5 18h14"></path>
+</svg>
+<span>Exportar extrato</span>
+</button>
 </div>
 <div class="wallet-list doke-list" data-wallet-transaction-list=""></div>
 <article class="wallet-empty-state doke-empty-state" data-wallet-empty-state="transactions">
@@ -239,7 +267,116 @@
           Voltar ao extrato
          </button>
 </div>
-<section aria-label="Gráficos principais da carteira" class="wallet-statistics-grid"><article class="wallet-empty-state wallet-empty-state--statistics doke-card doke-empty-state"><strong>Sem dados financeiros ainda</strong><p>As estatísticas aparecerão quando pedidos concluídos e avaliados gerarem recebíveis reais.</p></article></section>
+<section aria-label="Dashboard analítico da carteira" class="wallet-analytics-dashboard" data-wallet-monthly-dashboard>
+<div class="wallet-analytics-toolbar doke-card">
+<div>
+<span class="wallet-eyebrow doke-badge" data-wallet-monthly-metric="period-label">Mês atual</span>
+<strong>Dashboard financeiro</strong>
+<p>Gráficos gerados a partir das movimentações reais da carteira local.</p>
+</div>
+<div aria-label="Período das estatísticas" class="wallet-analytics-period" role="group">
+<button class="wallet-analytics-period__button" data-wallet-analytics-period="7-days" type="button">7 dias</button>
+<button class="wallet-analytics-period__button" data-wallet-analytics-period="30-days" type="button">30 dias</button>
+<button aria-pressed="true" class="wallet-analytics-period__button is-active" data-wallet-analytics-period="current-month" type="button">Mês atual</button>
+</div>
+</div>
+<section aria-label="Indicadores financeiros do período" class="wallet-analytics-kpis">
+<article class="wallet-monthly-card wallet-monthly-card--gross">
+<span>Recebido bruto</span>
+<strong data-wallet-monthly-metric="gross-income">R$ 0,00</strong>
+<small>Antes da taxa Doke</small>
+</article>
+<article class="wallet-monthly-card wallet-monthly-card--net">
+<span>Recebido líquido</span>
+<strong data-wallet-monthly-metric="net-income">R$ 0,00</strong>
+<small>Depois da taxa Doke</small>
+</article>
+<article class="wallet-monthly-card wallet-monthly-card--fee">
+<span>Taxa Doke</span>
+<strong data-wallet-monthly-metric="fees">R$ 0,00</strong>
+<small>Taxas do período</small>
+</article>
+<article class="wallet-monthly-card wallet-monthly-card--ticket">
+<span>Ticket médio</span>
+<strong data-wallet-monthly-metric="ticket-average">R$ 0,00</strong>
+<small>Por pedido pago</small>
+</article>
+</section>
+<section aria-label="Gráficos financeiros da carteira" class="wallet-statistics-grid wallet-statistics-grid--charts">
+<section aria-labelledby="wallet-flow-chart-title" class="wallet-panel wallet-panel--chart wallet-panel--flow doke-card">
+<div class="wallet-panel__header wallet-panel__header--chart">
+<div>
+<span class="wallet-eyebrow doke-badge">Evolução</span>
+<h2 id="wallet-flow-chart-title">Fluxo financeiro</h2>
+<p class="wallet-chart-copy">Recebido líquido, saques e taxas por período.</p>
+</div>
+<div class="wallet-chart-legend" aria-label="Legenda do fluxo financeiro">
+<span><i class="wallet-chart-legend__dot wallet-chart-legend__dot--income" aria-hidden="true"></i> Líquido</span>
+<span><i class="wallet-chart-legend__dot wallet-chart-legend__dot--withdraw" aria-hidden="true"></i> Saques</span>
+<span><i class="wallet-chart-legend__dot wallet-chart-legend__dot--fee" aria-hidden="true"></i> Taxas</span>
+</div>
+</div>
+<div class="wallet-line-chart" data-wallet-chart="financial-flow">
+<div class="wallet-line-chart__levels" data-wallet-chart-levels="financial-flow"></div>
+<div class="wallet-line-chart__plot">
+<svg aria-labelledby="wallet-flow-chart-title" data-wallet-chart-svg="financial-flow" preserveAspectRatio="none" role="img" viewBox="0 0 700 240"></svg>
+<div class="wallet-line-chart__labels" data-wallet-chart-labels="financial-flow"></div>
+</div>
+</div>
+</section>
+<section aria-labelledby="wallet-distribution-chart-title" class="wallet-panel wallet-panel--chart wallet-panel--distribution doke-card">
+<div class="wallet-panel__header wallet-panel__header--chart">
+<div>
+<span class="wallet-eyebrow doke-badge">Saldo</span>
+<h2 id="wallet-distribution-chart-title">Composição atual</h2>
+<p class="wallet-chart-copy">Distribuição entre disponível, garantia e saques em processamento.</p>
+</div>
+</div>
+<div class="wallet-distribution">
+<div class="wallet-donut-chart" data-wallet-chart="balance-distribution">
+<svg aria-labelledby="wallet-distribution-chart-title" class="wallet-donut-chart__svg" data-wallet-chart-svg="balance-distribution" role="img" viewBox="0 0 220 220"></svg>
+<div class="wallet-donut-chart__center">
+<strong data-wallet-monthly-metric="distribution-total">R$ 0,00</strong>
+<span>Total mapeado</span>
+</div>
+</div>
+<div class="wallet-distribution__legend">
+<article class="wallet-distribution__item">
+<div class="wallet-distribution__meta"><span><i class="wallet-chart-legend__dot wallet-chart-legend__dot--income" aria-hidden="true"></i> Disponível</span><strong data-wallet-monthly-metric="available-balance">R$ 0,00</strong></div>
+<meter aria-label="Percentual disponível" class="wallet-progress-meter" data-wallet-progress="available" max="100" min="0" value="0">0%</meter>
+</article>
+<article class="wallet-distribution__item">
+<div class="wallet-distribution__meta"><span><i class="wallet-chart-legend__dot wallet-chart-legend__dot--withdraw" aria-hidden="true"></i> Em garantia</span><strong data-wallet-monthly-metric="held-balance">R$ 0,00</strong></div>
+<meter aria-label="Percentual em garantia" class="wallet-progress-meter" data-wallet-progress="held" max="100" min="0" value="0">0%</meter>
+</article>
+<article class="wallet-distribution__item">
+<div class="wallet-distribution__meta"><span><i class="wallet-chart-legend__dot wallet-chart-legend__dot--fee" aria-hidden="true"></i> Em processamento</span><strong data-wallet-monthly-metric="processing-withdrawals">R$ 0,00</strong></div>
+<meter aria-label="Percentual em processamento" class="wallet-progress-meter" data-wallet-progress="processing" max="100" min="0" value="0">0%</meter>
+</article>
+</div>
+</div>
+</section>
+<section aria-labelledby="wallet-activity-chart-title" class="wallet-panel wallet-panel--chart wallet-panel--activity doke-card">
+<div class="wallet-panel__header wallet-panel__header--chart">
+<div>
+<span class="wallet-eyebrow doke-badge">Operação</span>
+<h2 id="wallet-activity-chart-title">Atividade do período</h2>
+<p class="wallet-chart-copy">Pedidos pagos, saques e maior movimentação.</p>
+</div>
+</div>
+<div class="wallet-activity-grid">
+<div class="wallet-bar-chart" data-wallet-chart="activity-bars">
+<svg aria-labelledby="wallet-activity-chart-title" data-wallet-chart-svg="activity-bars" role="img" viewBox="0 0 420 220"></svg>
+</div>
+<div class="wallet-monthly-list wallet-monthly-list--compact">
+<article class="wallet-monthly-row"><span>Pedidos pagos</span><strong data-wallet-monthly-metric="paid-orders">0</strong></article>
+<article class="wallet-monthly-row"><span>Saques solicitados</span><strong data-wallet-monthly-metric="withdrawals-count">0</strong></article>
+<article class="wallet-monthly-row wallet-monthly-row--highlight"><span>Maior movimentação</span><strong data-wallet-monthly-metric="largest-movement">R$ 0,00</strong><small data-wallet-monthly-metric="largest-movement-label">Sem movimentações</small></article>
+</div>
+</div>
+</section>
+</section>
+</section>
 </section>
 </section>
 </div>
@@ -459,10 +596,10 @@ Essa será a conta padrão para repasses e saques.
 <script defer="" src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags"></script>
 <script defer="" src="assets/js/core/app.js?v=20260622-header-visitor-neutral-v1"></script>
 <script defer="" src="assets/js/core/stable-shell-router.js?v=20260628-hydration-barrier-v3"></script>
-<script defer="" src="assets/js/repositories/wallet-repository.js?v=20260627-wallet-bank-account-v1"></script>
-<script defer="" src="assets/js/services/wallet-service.js?v=20260627-wallet-bank-account-v1"></script>
+<script defer="" src="assets/js/repositories/wallet-repository.js?v=20260630-wallet-dashboard-v3"></script>
+<script defer="" src="assets/js/services/wallet-service.js?v=20260630-wallet-dashboard-v3"></script>
 <script defer="" src="assets/js/components/doke-lite-select.js?v=20260627-form-select-v4"></script>
-<script defer="" src="assets/js/pages/carteira.js?v=20260628-wallet-receipt-v1"></script>
+<script defer="" src="assets/js/pages/carteira.js?v=20260630-wallet-dashboard-v3"></script>
 <script defer="" src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
 <script defer="" src="assets/js/ui/mobile-drawer-standard.js?v=20260622-header-neutral-account-v1"></script>
 <script defer="" src="assets/js/ui/mobile-interaction-standard.js?v=20260428-v1"></script>

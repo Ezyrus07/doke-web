@@ -10,6 +10,7 @@
 
   var STORAGE_KEY = 'doke.wallet.local.v1';
   var DEMO_PROFESSIONAL_ID = 'user_profissional_demo';
+  var DOKE_FEE_RATE = 0.05;
 
   function clone(value) {
     if (value == null) return value;
@@ -67,6 +68,110 @@
     return Math.round(amount * 100) / 100;
   }
 
+  function isReceivableType(type) {
+    return normalizeText(type || 'receivable') !== 'withdraw' && normalizeText(type || 'receivable') !== 'fee';
+  }
+
+  function calculateDokeFee(grossAmount) {
+    return roundCurrency(Math.max(0, parseAmount(grossAmount)) * DOKE_FEE_RATE);
+  }
+
+  function getReceivableFee(raw, type, grossAmount) {
+    if (!isReceivableType(type)) return roundCurrency(parseAmount(raw && raw.feeAmount));
+    var parsedFee = roundCurrency(parseAmount(raw && raw.feeAmount));
+    if (parsedFee > 0) return parsedFee;
+    return calculateDokeFee(grossAmount);
+  }
+
+
+  function normalizeSearchValue(value) {
+    return normalizeText(value)
+      .toLocaleLowerCase('pt-BR')
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '');
+  }
+
+  function getTransactionCategory(transaction) {
+    if (!transaction) return 'income';
+    if (transaction.type === 'withdraw') return 'withdraw';
+    if (transaction.status === 'held' || transaction.status === 'pending') return 'held';
+    if (transaction.type === 'fee') return 'fee';
+    return 'income';
+  }
+
+  function matchesCategory(transaction, category) {
+    var nextCategory = normalizeText(category || 'all');
+    if (!nextCategory || nextCategory === 'all') return true;
+    var transactionCategory = getTransactionCategory(transaction);
+    var status = normalizeText(transaction.status || 'available');
+
+    if (nextCategory === 'income') return transactionCategory === 'income' || transactionCategory === 'held';
+    if (nextCategory === 'withdraw') return transactionCategory === 'withdraw';
+    if (nextCategory === 'held') return transactionCategory === 'held';
+    if (nextCategory === 'available') return transactionCategory === 'income' && status === 'available';
+    if (nextCategory === 'processing') return status === 'processing';
+    if (nextCategory === 'completed') return status === 'completed';
+    return true;
+  }
+
+  function getTransactionDate(transaction) {
+    var value = transaction && (transaction.completedAt || transaction.availableAt || transaction.updatedAt || transaction.createdAt);
+    var date = value ? new Date(value) : null;
+    return date && !Number.isNaN(date.getTime()) ? date : null;
+  }
+
+  function isSameLocalDay(a, b) {
+    return a.getFullYear() === b.getFullYear()
+      && a.getMonth() === b.getMonth()
+      && a.getDate() === b.getDate();
+  }
+
+  function matchesPeriod(transaction, period) {
+    var nextPeriod = normalizeText(period || 'all');
+    if (!nextPeriod || nextPeriod === 'all') return true;
+    var date = getTransactionDate(transaction);
+    if (!date) return false;
+    var now = new Date();
+
+    if (nextPeriod === 'today') return isSameLocalDay(date, now);
+    if (nextPeriod === '7-days' || nextPeriod === '7d') return date.getTime() >= now.getTime() - (7 * 24 * 60 * 60 * 1000);
+    if (nextPeriod === '30-days' || nextPeriod === '30d') return date.getTime() >= now.getTime() - (30 * 24 * 60 * 60 * 1000);
+    if (nextPeriod === 'current-month' || nextPeriod === 'month') {
+      return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+    }
+
+    return true;
+  }
+
+  function matchesSearch(transaction, query) {
+    var normalizedQuery = normalizeSearchValue(query || '');
+    if (!normalizedQuery) return true;
+    var category = getTransactionCategory(transaction);
+    var status = normalizeText(transaction.status || '');
+    var haystack = [
+      transaction.title,
+      transaction.description,
+      transaction.reference,
+      transaction.orderId,
+      transaction.messageId,
+      transaction.conversationId,
+      transaction.serviceId,
+      transaction.method,
+      transaction.destination,
+      transaction.note,
+      transaction.type,
+      category,
+      status,
+      category === 'income' ? 'entrada recebimento liberado' : '',
+      category === 'held' ? 'garantia pendente pagamento' : '',
+      category === 'withdraw' ? 'saque retirada banco conta pix transferencia' : '',
+      status === 'processing' ? 'processamento processando' : '',
+      status === 'completed' ? 'concluido concluida comprovante' : '',
+      status === 'available' ? 'liberado disponivel' : ''
+    ].map(normalizeSearchValue).filter(Boolean).join(' ');
+    return haystack.indexOf(normalizedQuery) >= 0;
+  }
+
   function isProviderLikeId(value) {
     var id = normalizeText(value);
     if (!id) return false;
@@ -100,8 +205,10 @@
     var type = normalizeText(raw.type || 'receivable');
     var status = normalizeText(raw.status || 'available');
     var grossAmount = roundCurrency(parseAmount(raw.grossAmount != null ? raw.grossAmount : raw.amount));
-    var feeAmount = roundCurrency(parseAmount(raw.feeAmount));
-    var netAmount = roundCurrency(raw.netAmount != null ? parseAmount(raw.netAmount) : grossAmount - feeAmount);
+    var feeAmount = getReceivableFee(raw, type, grossAmount);
+    var netAmount = isReceivableType(type)
+      ? roundCurrency(Math.max(0, grossAmount - feeAmount))
+      : roundCurrency(raw.netAmount != null ? parseAmount(raw.netAmount) : grossAmount - feeAmount);
     var professionalId = normalizeProfessionalId(raw.professionalId || raw.providerId || raw.userId || '');
     var orderId = normalizeText(raw.orderId || '');
     var messageId = normalizeText(raw.messageId || raw.chargeId || '');
@@ -122,6 +229,7 @@
       serviceId: normalizeText(raw.serviceId || ''),
       eventKey: eventKey,
       grossAmount: grossAmount,
+      feeRate: isReceivableType(type) ? DOKE_FEE_RATE : roundCurrency(parseAmount(raw.feeRate)),
       feeAmount: feeAmount,
       netAmount: netAmount,
       amount: netAmount,
@@ -197,6 +305,10 @@
     filters = filters || {};
     var user = filters.currentUser === false ? null : getCurrentUser();
     var wallet = readWallet();
+    var category = filters.category || filters.group || filters.statementFilter || 'all';
+    var period = filters.period || filters.dateRange || 'all';
+    var query = filters.query || filters.search || '';
+
     return clone(wallet.transactions.filter(function (transaction) {
       if (filters.currentUser !== false && user && user.id && String(transaction.professionalId || transaction.userId) !== String(user.id)) return false;
       if (filters.professionalId && String(transaction.professionalId || transaction.userId) !== String(filters.professionalId)) return false;
@@ -204,6 +316,9 @@
       if (filters.messageId && String(transaction.messageId) !== String(filters.messageId)) return false;
       if (filters.status && transaction.status !== filters.status) return false;
       if (filters.type && transaction.type !== filters.type) return false;
+      if (!matchesCategory(transaction, category)) return false;
+      if (!matchesPeriod(transaction, period)) return false;
+      if (!matchesSearch(transaction, query)) return false;
       return true;
     }));
   }
@@ -212,8 +327,10 @@
     var transactions = listTransactions(filters || {});
     return transactions.reduce(function (summary, transaction) {
       var amount = Number(transaction.netAmount || transaction.amount || 0);
+      var feeAmount = Number(transaction.feeAmount || 0);
       if (transaction.status === 'pending' || transaction.status === 'held') {
         summary.pending += amount;
+        if (transaction.type !== 'withdraw' && transaction.type !== 'fee') summary.fees += Math.abs(feeAmount);
       } else if (transaction.type === 'withdraw') {
         summary.withdrawals += Math.abs(amount);
         summary.available -= Math.abs(amount);
@@ -223,10 +340,217 @@
       } else {
         summary.available += amount;
         summary.income += amount;
+        summary.fees += Math.abs(feeAmount);
       }
       summary.total += amount;
       return summary;
     }, { available: 0, pending: 0, income: 0, withdrawals: 0, fees: 0, total: 0 });
+  }
+
+  function getTransactionIdentityFilters(filters) {
+    filters = filters || {};
+    return {
+      currentUser: filters.currentUser,
+      professionalId: filters.professionalId,
+      orderId: filters.orderId,
+      messageId: filters.messageId,
+      status: filters.status,
+      type: filters.type
+    };
+  }
+
+  function getUniquePaymentKey(transaction) {
+    return normalizeText(transaction.orderId || transaction.messageId || transaction.eventKey || transaction.id || '');
+  }
+
+  function getDashboardPeriod(period) {
+    var normalized = normalizeText(period || 'current-month');
+    var now = new Date();
+    var end = new Date(now.getTime());
+    var start;
+    var bucketCount;
+    var label;
+
+    if (normalized === '7-days' || normalized === '7d') {
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+      bucketCount = 7;
+      label = 'Últimos 7 dias';
+      normalized = '7-days';
+    } else if (normalized === '30-days' || normalized === '30d') {
+      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
+      bucketCount = 6;
+      label = 'Últimos 30 dias';
+      normalized = '30-days';
+    } else {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      bucketCount = Math.min(6, Math.max(1, Math.ceil((now.getDate()) / 5)));
+      label = 'Mês atual';
+      normalized = 'current-month';
+    }
+
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+
+    return {
+      period: normalized,
+      periodLabel: label,
+      start: start,
+      end: end,
+      bucketCount: bucketCount
+    };
+  }
+
+  function formatShortDate(date) {
+    return String(date.getDate()).padStart(2, '0') + '/' + String(date.getMonth() + 1).padStart(2, '0');
+  }
+
+  function createDashboardBuckets(periodInfo) {
+    var startTime = periodInfo.start.getTime();
+    var endTime = periodInfo.end.getTime();
+    var bucketCount = Math.max(1, periodInfo.bucketCount || 1);
+    var bucketSize = Math.max(1, (endTime - startTime + 1) / bucketCount);
+    var buckets = [];
+
+    for (var index = 0; index < bucketCount; index += 1) {
+      var bucketStart = new Date(startTime + (bucketSize * index));
+      var bucketEnd = new Date(index === bucketCount - 1 ? endTime : startTime + (bucketSize * (index + 1)) - 1);
+      var isSingleDay = isSameLocalDay(bucketStart, bucketEnd);
+      buckets.push({
+        start: bucketStart,
+        end: bucketEnd,
+        label: isSingleDay ? formatShortDate(bucketStart) : formatShortDate(bucketStart) + '–' + formatShortDate(bucketEnd),
+        grossIncome: 0,
+        netIncome: 0,
+        withdrawals: 0,
+        fees: 0,
+        paidOrders: 0,
+        paymentKeys: {}
+      });
+    }
+
+    return buckets;
+  }
+
+  function findDashboardBucketIndex(buckets, date) {
+    if (!date) return -1;
+    var time = date.getTime();
+    for (var index = 0; index < buckets.length; index += 1) {
+      if (time >= buckets[index].start.getTime() && time <= buckets[index].end.getTime()) return index;
+    }
+    return -1;
+  }
+
+  function getMonthlyDashboard(filters) {
+    filters = filters || {};
+    var periodInfo = getDashboardPeriod(filters.period || filters.dateRange || 'current-month');
+    var identityFilters = getTransactionIdentityFilters(filters || {});
+    var balanceSummary = getSummary(identityFilters);
+    var periodTransactions = listTransactions(Object.assign({}, identityFilters, {
+      category: 'all',
+      period: periodInfo.period,
+      query: ''
+    }));
+    var allTransactions = listTransactions(Object.assign({}, identityFilters, {
+      category: 'all',
+      period: 'all',
+      query: ''
+    }));
+    var buckets = createDashboardBuckets(periodInfo);
+    var paidOrders = {};
+    var receivableCount = 0;
+
+    var dashboard = periodTransactions.reduce(function (summary, transaction) {
+      var type = normalizeText(transaction.type || 'receivable');
+      var status = normalizeText(transaction.status || 'available');
+      var grossAmount = roundCurrency(parseAmount(transaction.grossAmount != null ? transaction.grossAmount : transaction.amount));
+      var netAmount = roundCurrency(parseAmount(transaction.netAmount != null ? transaction.netAmount : transaction.amount));
+      var feeAmount = roundCurrency(parseAmount(transaction.feeAmount));
+      var movementAmount = Math.abs(type === 'withdraw' ? netAmount : grossAmount || netAmount);
+      var bucketIndex = findDashboardBucketIndex(buckets, getTransactionDate(transaction));
+      var bucket = bucketIndex >= 0 ? buckets[bucketIndex] : null;
+
+      if (type === 'withdraw') {
+        summary.withdrawals += Math.abs(netAmount);
+        summary.withdrawalsCount += 1;
+        if (bucket) bucket.withdrawals += Math.abs(netAmount);
+      } else if (type === 'fee') {
+        summary.fees += Math.abs(netAmount);
+        if (bucket) bucket.fees += Math.abs(netAmount);
+      } else {
+        receivableCount += 1;
+        summary.grossIncome += grossAmount;
+        summary.netIncome += netAmount;
+        summary.fees += Math.abs(feeAmount);
+        if (status === 'held' || status === 'pending') summary.heldIncome += netAmount;
+        else summary.availableIncome += netAmount;
+
+        if (bucket) {
+          bucket.grossIncome += grossAmount;
+          bucket.netIncome += netAmount;
+          bucket.fees += Math.abs(feeAmount);
+        }
+
+        var paymentKey = getUniquePaymentKey(transaction);
+        if (paymentKey) {
+          paidOrders[paymentKey] = true;
+          if (bucket) bucket.paymentKeys[paymentKey] = true;
+        }
+      }
+
+      if (movementAmount > summary.largestMovement.amount) {
+        summary.largestMovement = {
+          amount: roundCurrency(movementAmount),
+          title: normalizeText(transaction.title || (type === 'withdraw' ? 'Saque' : 'Recebimento')),
+          reference: normalizeText(transaction.reference || transaction.orderId || transaction.id || ''),
+          type: type,
+          status: status
+        };
+      }
+
+      return summary;
+    }, {
+      period: periodInfo.period,
+      periodLabel: periodInfo.periodLabel,
+      grossIncome: 0,
+      netIncome: 0,
+      availableIncome: 0,
+      heldIncome: 0,
+      withdrawals: 0,
+      fees: 0,
+      availableBalance: roundCurrency(balanceSummary.available || 0),
+      heldBalance: roundCurrency(balanceSummary.pending || 0),
+      processingWithdrawals: 0,
+      paidOrders: 0,
+      withdrawalsCount: 0,
+      ticketAverage: 0,
+      largestMovement: { amount: 0, title: 'Sem movimentações', reference: '', type: '', status: '' },
+      chartSeries: { labels: [], grossIncome: [], netIncome: [], withdrawals: [], fees: [], paidOrders: [] }
+    });
+
+    dashboard.processingWithdrawals = roundCurrency(allTransactions.reduce(function (total, transaction) {
+      return transaction.type === 'withdraw' && transaction.status === 'processing'
+        ? total + Math.abs(Number(transaction.netAmount || transaction.amount || 0))
+        : total;
+    }, 0));
+    dashboard.grossIncome = roundCurrency(dashboard.grossIncome);
+    dashboard.netIncome = roundCurrency(dashboard.netIncome);
+    dashboard.availableIncome = roundCurrency(dashboard.availableIncome);
+    dashboard.heldIncome = roundCurrency(dashboard.heldIncome);
+    dashboard.withdrawals = roundCurrency(dashboard.withdrawals);
+    dashboard.fees = roundCurrency(dashboard.fees);
+    dashboard.paidOrders = Object.keys(paidOrders).length || receivableCount;
+    dashboard.ticketAverage = dashboard.paidOrders ? roundCurrency(dashboard.grossIncome / dashboard.paidOrders) : 0;
+    dashboard.largestMovement.amount = roundCurrency(dashboard.largestMovement.amount || 0);
+    dashboard.chartSeries = {
+      labels: buckets.map(function (bucket) { return bucket.label; }),
+      grossIncome: buckets.map(function (bucket) { return roundCurrency(bucket.grossIncome); }),
+      netIncome: buckets.map(function (bucket) { return roundCurrency(bucket.netIncome); }),
+      withdrawals: buckets.map(function (bucket) { return roundCurrency(bucket.withdrawals); }),
+      fees: buckets.map(function (bucket) { return roundCurrency(bucket.fees); }),
+      paidOrders: buckets.map(function (bucket) { return Object.keys(bucket.paymentKeys).length; })
+    };
+
+    return dashboard;
   }
 
   function getStatusRank(status) {
@@ -446,6 +770,7 @@
     writeWallet: writeWallet,
     listTransactions: listTransactions,
     getSummary: getSummary,
+    getMonthlyDashboard: getMonthlyDashboard,
     getBankAccount: getBankAccount,
     saveBankAccount: saveBankAccount,
     requestWithdraw: requestWithdraw,

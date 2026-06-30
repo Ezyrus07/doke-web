@@ -8,6 +8,7 @@
   var services = Doke.services || (Doke.services = {});
 
   var DEMO_PROFESSIONAL_ID = 'user_profissional_demo';
+  var DOKE_FEE_RATE = 0.05;
 
   function normalizeText(value) {
     return String(value || '').replace(/\s+/g, ' ').trim();
@@ -24,6 +25,10 @@
     var amount = Number(value || 0);
     if (!Number.isFinite(amount)) return 0;
     return Math.round(amount * 100) / 100;
+  }
+
+  function calculateDokeFee(grossAmount) {
+    return roundCurrency(Math.max(0, parseAmount(grossAmount)) * DOKE_FEE_RATE);
   }
 
   function formatCurrency(value) {
@@ -108,19 +113,36 @@
   function getWallet(options) {
     options = options || {};
     var repository = getRepository();
+    var userScope = { currentUser: options.currentUser !== false };
     var localTransactions = repository && typeof repository.listTransactions === 'function'
-      ? repository.listTransactions({ currentUser: options.currentUser !== false })
+      ? repository.listTransactions(userScope)
       : [];
     var localSummary = repository && typeof repository.getSummary === 'function'
-      ? repository.getSummary({ currentUser: options.currentUser !== false })
+      ? repository.getSummary(userScope)
       : { available: 0, pending: 0, income: 0, withdrawals: 0, fees: 0 };
+    var monthlyDashboard = repository && typeof repository.getMonthlyDashboard === 'function'
+      ? repository.getMonthlyDashboard(userScope)
+      : {
+        netIncome: localSummary.income || 0,
+        withdrawals: localSummary.withdrawals || 0,
+        fees: localSummary.fees || 0,
+        availableBalance: localSummary.available || 0,
+        heldBalance: localSummary.pending || 0,
+        processingWithdrawals: 0,
+        paidOrders: 0,
+        withdrawalsCount: 0,
+        ticketAverage: 0,
+        largestMovement: { amount: 0, title: 'Sem movimentações' },
+        chartSeries: { labels: ['—'], grossIncome: [0], netIncome: [0], withdrawals: [0], fees: [0], paidOrders: [0] }
+      };
 
     var wallet = createEmptyWallet();
     wallet.availableBalance = roundCurrency(localSummary.available || 0);
     wallet.pendingBalance = roundCurrency(localSummary.pending || 0);
-    wallet.monthlyIncome = roundCurrency(localSummary.income || 0);
-    wallet.withdrawals = roundCurrency(localSummary.withdrawals || 0);
-    wallet.fees = roundCurrency(localSummary.fees || 0);
+    wallet.monthlyIncome = roundCurrency(monthlyDashboard.netIncome || 0);
+    wallet.withdrawals = roundCurrency(monthlyDashboard.withdrawals || 0);
+    wallet.fees = roundCurrency(monthlyDashboard.fees || 0);
+    wallet.monthlyDashboard = monthlyDashboard;
     wallet.localTransactions = localTransactions;
     wallet.transactions = localTransactions;
     return getBankAccount({ currentUser: options.currentUser !== false }).then(function (account) {
@@ -130,8 +152,35 @@
   }
 
   function listTransactions(options) {
-    return getWallet(options || {}).then(function (wallet) {
-      return Array.isArray(wallet.transactions) ? wallet.transactions : [];
+    options = options || {};
+    var repository = getRepository();
+    var transactions = repository && typeof repository.listTransactions === 'function'
+      ? repository.listTransactions(options)
+      : [];
+    return Promise.resolve(Array.isArray(transactions) ? transactions : []);
+  }
+
+  function getMonthlyDashboard(options) {
+    options = options || {};
+    var repository = getRepository();
+    var dashboard = repository && typeof repository.getMonthlyDashboard === 'function'
+      ? repository.getMonthlyDashboard(options)
+      : null;
+    return Promise.resolve(dashboard || {
+      period: 'current-month',
+      periodLabel: 'Mês atual',
+      grossIncome: 0,
+      netIncome: 0,
+      withdrawals: 0,
+      fees: 0,
+      availableBalance: 0,
+      heldBalance: 0,
+      processingWithdrawals: 0,
+      paidOrders: 0,
+      withdrawalsCount: 0,
+      ticketAverage: 0,
+      largestMovement: { amount: 0, title: 'Sem movimentações' },
+      chartSeries: { labels: ['—'], grossIncome: [0], netIncome: [0], withdrawals: [0], fees: [0], paidOrders: [0] }
     });
   }
 
@@ -151,7 +200,7 @@
       serviceId: transaction.serviceId || '',
       eventKey: ['wallet_receivable_available', transaction.orderId || '', transaction.messageId || '', transaction.professionalId || transaction.userId || ''].filter(Boolean).join(':'),
       title: 'Saldo disponível',
-      body: 'O pagamento do pedido "' + (transaction.title || 'Pedido') + '" foi liberado na sua carteira.',
+      body: 'O valor líquido de ' + formatCurrency(transaction.netAmount || transaction.amount || 0) + ' do pedido "' + (transaction.title || 'Pedido') + '" foi liberado na sua carteira.',
       targetUrl: 'carteira.html?transaction=' + encodeURIComponent(transaction.id || ''),
       actionLabel: 'Abrir carteira',
       read: false
@@ -214,7 +263,9 @@
     var professionalId = normalizeProfessionalId(order.professionalId || order.providerId || conversation.professionalId || conversation.providerId || '');
     var messageId = normalizeText(payload.messageId || charge.id || charge.messageId || '');
     var orderId = normalizeText(payload.orderId || order.id || conversation.orderId || '');
-    var amount = parseAmount(payload.amount || charge.amount || order.proposalAmount || order.budget || order.detailBudget || order.amount || 0);
+    var grossAmount = roundCurrency(parseAmount(payload.amount || charge.amount || order.proposalAmount || order.budget || order.detailBudget || order.amount || 0));
+    var feeAmount = calculateDokeFee(grossAmount);
+    var netAmount = roundCurrency(Math.max(0, grossAmount - feeAmount));
     var title = normalizeText(order.serviceTitle || order.title || payload.title || 'Pedido concluído');
     var conversationId = normalizeText(payload.conversationId || conversation.id || charge.conversationId || '');
     var clientId = normalizeText(order.clientId || conversation.clientId || payload.clientId || '');
@@ -230,16 +281,17 @@
       professionalId: professionalId,
       clientId: clientId,
       status: status,
-      grossAmount: amount,
-      feeAmount: 0,
-      netAmount: amount,
+      grossAmount: grossAmount,
+      feeRate: DOKE_FEE_RATE,
+      feeAmount: feeAmount,
+      netAmount: netAmount,
       title: title,
       description: available ? 'Pedido concluído e avaliado' : 'Pagamento confirmado em garantia',
       reference: order.code || order.number || (orderId ? 'PED-' + orderId.toUpperCase().replace(/[^A-Z0-9]+/g, '').slice(-6) : ''),
       method: 'Recebimento pela Doke',
       note: available
-        ? 'Valor liberado após conclusão e avaliação do atendimento.'
-        : 'Valor em garantia até o atendimento ser concluído e avaliado.',
+        ? 'Valor líquido liberado após taxa Doke mockada de 5%.'
+        : 'Valor bruto em garantia; o líquido será liberado após taxa Doke mockada de 5% e avaliação.',
       targetUrl: conversationId ? 'mensagens.html?conversation=' + encodeURIComponent(conversationId) + (orderId ? '&order=' + encodeURIComponent(orderId) : '') : 'pedidos.html?order=' + encodeURIComponent(orderId),
       actionLabel: 'Ver pedido',
       context: { order: order, conversation: conversation, charge: charge, payload: payload }
@@ -304,6 +356,7 @@
     provider: getRepository() ? 'local-mock' : 'empty-local-mock',
     getWallet: getWallet,
     listTransactions: listTransactions,
+    getMonthlyDashboard: getMonthlyDashboard,
     getBankAccount: getBankAccount,
     saveBankAccount: saveBankAccount,
     requestWithdraw: requestWithdraw,
