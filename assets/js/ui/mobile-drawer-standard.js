@@ -1,4 +1,4 @@
-/* Doke Web — canonical mobile/tablet drawer authority v4
+/* Doke Web — canonical mobile/tablet drawer authority v5
    Responsibility: inject and control one shared drawer in every HTML up to 1199px.
    Desktop sidebar is never a fallback for touch/tablet navigation. */
 (function () {
@@ -97,6 +97,121 @@
     return routeGroup(window.location.pathname);
   }
 
+  var SESSION_KEY = 'doke.auth.session.v1';
+  var ROLE_LABELS = {
+    client: 'Cliente',
+    professional: 'Profissional'
+  };
+
+  function safeReadJson(key, fallback) {
+    try {
+      var raw = window.localStorage.getItem(key);
+      var parsed = raw ? JSON.parse(raw) : fallback;
+      return parsed == null ? fallback : parsed;
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  function normalizeText(value) {
+    return String(value || '').trim().replace(/\s+/g, ' ');
+  }
+
+  function truncateText(value, maxLength) {
+    var text = normalizeText(value);
+    if (text.length <= maxLength) return text;
+    return text.slice(0, Math.max(1, maxLength - 1)).trimEnd() + '…';
+  }
+
+  function getInitials(value) {
+    var parts = normalizeText(value || 'Doke').split(/\s+/).filter(Boolean).slice(0, 2);
+    if (!parts.length) return 'DK';
+    return parts.map(function (part) { return part.charAt(0).toUpperCase(); }).join('');
+  }
+
+  function firstName(value) {
+    var parts = normalizeText(value || 'Entrar').split(/\s+/).filter(Boolean);
+    return truncateText(parts[0] || 'Entrar', 14);
+  }
+
+  function currentUser() {
+    try {
+      if (window.Doke && window.Doke.session && typeof window.Doke.session.getCurrentUser === 'function') {
+        var liveUser = window.Doke.session.getCurrentUser();
+        if (liveUser) return liveUser;
+      }
+      if (window.DokeAuth && window.DokeAuth.service && typeof window.DokeAuth.service.getCurrentUser === 'function') {
+        var authUser = window.DokeAuth.service.getCurrentUser();
+        if (authUser) return authUser;
+      }
+    } catch (error) {}
+
+    var session = safeReadJson(SESSION_KEY, null);
+    return session && session.user && typeof session.user === 'object' ? session.user : null;
+  }
+
+  function accountState() {
+    var user = currentUser();
+    var logged = Boolean(user && user.id);
+    var fullName = logged ? normalizeText(user.name || user.fullName || user.email || 'Usuário Doke') : 'Entrar na Doke';
+    return {
+      logged: logged,
+      fullName: fullName,
+      name: logged ? firstName(fullName) : 'Entrar',
+      role: logged ? (ROLE_LABELS[user.role] || user.roleLabel || 'Conta') : 'Conta Doke',
+      initials: logged ? truncateText(user.initials || user.avatarInitials || getInitials(fullName), 3) : 'DK',
+      profileHref: logged ? 'perfil.html?mode=owner&panel=posts' : 'auth/login.html',
+      actionHref: logged ? '' : 'auth/login.html',
+      actionLabel: logged ? 'Sair' : 'Entrar',
+      signature: [logged ? '1' : '0', fullName, user && user.role || '', user && (user.initials || user.avatarInitials) || ''].join('|')
+    };
+  }
+
+  function scopedItems(key) {
+    var user = currentUser();
+    var items = safeReadJson(key, []);
+    if (!Array.isArray(items)) return [];
+    return items.filter(function (item) {
+      if (!item || item.dismissed === true || item.deleted === true) return false;
+      if (!user || !user.id || !item.userId) return true;
+      return String(item.userId) === String(user.id);
+    });
+  }
+
+  function unreadNotificationsCount() {
+    return scopedItems('doke.notifications.local.v1').filter(function (notification) {
+      return notification.read !== true;
+    }).length;
+  }
+
+  function unreadMessagesCount() {
+    return scopedItems('doke.notifications.local.v1').filter(function (notification) {
+      if (notification.read === true) return false;
+      var type = String(notification.category || notification.type || '').toLowerCase();
+      return type.indexOf('message') !== -1;
+    }).length;
+  }
+
+  function openOrdersCount() {
+    var user = currentUser();
+    var orders = safeReadJson('doke.orders.local.v1', []);
+    if (!Array.isArray(orders)) return 0;
+    return orders.filter(function (order) {
+      if (!order || order.deleted === true) return false;
+      var status = String(order.status || 'pending').toLowerCase();
+      if (['completed', 'cancelled', 'canceled'].indexOf(status) !== -1) return false;
+      if (!user || !user.id) return true;
+      if (String(order.clientId || '') === String(user.id)) return true;
+      if (String(order.professionalId || order.providerId || '') === String(user.id)) return true;
+      return user.role === 'professional' && String(user.id) === 'user_profissional_demo' && Boolean(order.id);
+    }).length;
+  }
+
+  function countBadge(value) {
+    var number = Math.max(0, Number(value) || 0);
+    return number > 0 ? String(number) : '';
+  }
+
   function item(options) {
     var tag = options.button ? 'button' : 'a';
     var attrs = options.button ? 'type="button" data-profile-logout' : 'href="' + options.href + '"';
@@ -108,13 +223,21 @@
   }
 
   function markup() {
+    var account = accountState();
+    var ordersBadge = countBadge(openOrdersCount());
+    var messagesBadge = countBadge(unreadMessagesCount());
+    var notificationsBadge = countBadge(unreadNotificationsCount());
+    var accountAction = account.logged
+      ? item({ label: 'Sair', icon: 'logout', button: true })
+      : item({ href: 'auth/login.html', label: 'Entrar', icon: 'logout' });
+
     return [
       '<div class="home-mobile-drawer__backdrop" data-mobile-home-menu-close></div>',
       '<div class="home-mobile-drawer__panel" role="dialog" aria-modal="true" aria-label="Menu da conta">',
         '<div class="home-mobile-drawer__header">',
-          '<a class="home-mobile-drawer__profile" href="perfil.html?mode=owner&panel=posts">',
-            '<span class="home-mobile-drawer__avatar">DK</span>',
-            '<span class="home-mobile-drawer__profile-copy"><strong>Entrar</strong><span>Conta Doke</span></span>',
+          '<a class="home-mobile-drawer__profile" href="' + account.profileHref + '">',
+            '<span class="home-mobile-drawer__avatar">' + account.initials + '</span>',
+            '<span class="home-mobile-drawer__profile-copy"><strong>' + account.name + '</strong><span>' + account.role + '</span></span>',
             '<span class="home-mobile-drawer__profile-arrow" aria-hidden="true"></span>',
           '</a>',
           '<button class="home-mobile-drawer__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-mobile-home-menu-close aria-label="Fechar menu lateral">' + ICONS.close + '</button>',
@@ -122,17 +245,17 @@
         '<div class="home-mobile-drawer__content">',
           '<nav class="home-mobile-drawer__nav" aria-label="Menu principal mobile">',
             item({ href: 'index.html', label: 'Início', icon: 'home' }),
-            item({ href: 'pedidos.html', label: 'Pedidos', icon: 'orders' }),
-            item({ href: 'mensagens.html', label: 'Mensagens', icon: 'messages' }),
-            item({ href: 'notificacoes.html', label: 'Notificações', icon: 'notifications', badge: '3' }),
+            item({ href: 'pedidos.html', label: 'Pedidos', icon: 'orders', badge: ordersBadge }),
+            item({ href: 'mensagens.html', label: 'Mensagens', icon: 'messages', badge: messagesBadge }),
+            item({ href: 'notificacoes.html', label: 'Notificações', icon: 'notifications', badge: notificationsBadge }),
             item({ href: 'comunidade.html', label: 'Comunidade', icon: 'community' }),
           '</nav>',
           '<div class="home-mobile-drawer__divider" aria-hidden="true"></div>',
           '<nav class="home-mobile-drawer__nav" aria-label="Conta">',
-            item({ href: 'perfil.html?mode=owner&panel=posts', label: 'Meu perfil', icon: 'profile' }),
+            item({ href: account.profileHref, label: 'Meu perfil', icon: 'profile' }),
             item({ href: 'carteira.html', label: 'Carteira', icon: 'wallet' }),
             item({ href: 'configuracoes.html', label: 'Configurações', icon: 'settings' }),
-            item({ label: 'Sair', icon: 'logout', button: true }),
+            accountAction,
           '</nav>',
         '</div>',
       '</div>'
@@ -189,6 +312,21 @@
       if (matched) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
     });
+  }
+
+  function syncDrawerData() {
+    var drawer = document.querySelector('[data-mobile-drawer-authority="canonical"]');
+    if (!drawer) return null;
+    var wasOpen = drawer.classList.contains('is-open');
+    drawer.innerHTML = markup();
+    drawer.className = 'home-mobile-drawer doke-global-mobile-drawer' + (wasOpen ? ' is-open' : '');
+    drawer.hidden = !wasOpen;
+    if (wasOpen) drawer.removeAttribute('hidden');
+    else drawer.setAttribute('hidden', '');
+    drawer.setAttribute('aria-hidden', wasOpen ? 'false' : 'true');
+    drawer.setAttribute('data-mobile-drawer-state', wasOpen ? 'open' : 'closed');
+    syncActive(drawer);
+    return drawer;
   }
 
   var lastOpenAt = 0;
@@ -287,6 +425,12 @@
     }, true);
     document.addEventListener('doke:route-ready', function () { syncActive(); });
     document.addEventListener('doke:stable-route-ready', function () { syncActive(); });
+    ['doke:auth-session-change', 'doke:auth-surface-ready', 'doke:notification-created', 'doke:message-sent', 'doke:order-created', 'doke:order-status-changed'].forEach(function (eventName) {
+      document.addEventListener(eventName, syncDrawerData);
+    });
+    window.addEventListener('storage', function (event) {
+      if (!event || ['doke.auth.session.v1', 'doke.notifications.local.v1', 'doke.orders.local.v1'].indexOf(event.key) !== -1) syncDrawerData();
+    });
     window.addEventListener('popstate', function () {
       window.setTimeout(function () { syncActive(); }, 0);
     });
@@ -320,6 +464,7 @@
   window.DokeHomeDrawerHardClose = function () { return setOpen(false); };
   window.DokeCanonicalDrawerEnsure = ensureDrawer;
   window.DokeCanonicalDrawerSyncActive = function () { return syncActive(); };
+  window.DokeCanonicalDrawerSyncData = syncDrawerData;
 
   if (document.body) init();
   else document.addEventListener('DOMContentLoaded', init, { once: true });

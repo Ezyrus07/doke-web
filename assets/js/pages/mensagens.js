@@ -1884,9 +1884,11 @@
         }
         if (visible) visibleCount += 1;
       });
+      const hasVisibleConversation = visibleCount !== 0;
+      root.classList.toggle("messages-app--empty-results", !hasVisibleConversation);
       if (emptyState) {
-        const hasVisibleConversation = visibleCount !== 0;
         if (hydration && !hydration.canShowEmpty()) {
+          root.classList.remove("messages-app--empty-results");
           hydration.syncEmpty({ hasItems: true });
         } else if (hydration) {
           hydration.syncEmpty({ hasItems: hasVisibleConversation });

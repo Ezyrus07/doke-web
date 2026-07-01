@@ -300,6 +300,79 @@ body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .community-ro
   margin-top: 4px;
 }
 
+/* Messages empty state contract.
+ * Root cause addressed: the chat empty state used a custom card anatomy that drifted
+ * away from the site baseline. It now follows the same visual language used by the
+ * notifications empty state: restrained copy, centered layout, dashed outline, and
+ * no primary action competing with the search controls.
+ */
+body[data-page="mensagens"] .messages-empty {
+  min-block-size: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #6984a0;
+  text-align: center;
+}
+
+body[data-page="mensagens"] .messages-empty__card {
+  display: grid;
+  gap: 8px;
+  inline-size: 100%;
+  width: 100%;
+  min-block-size: 0;
+  min-height: 0;
+  padding: 24px;
+  border: 1px dashed var(--doke-card-border, rgba(24, 75, 118, 0.10));
+  border-radius: 20px;
+  background: #fff;
+  color: #6984a0;
+  text-align: center;
+  justify-items: center;
+  box-shadow: none;
+}
+
+body[data-page="mensagens"] .messages-empty__badge,
+body[data-page="mensagens"] .messages-empty__button {
+  display: none;
+}
+
+body[data-page="mensagens"] .messages-empty__title {
+  margin: 0;
+  color: #173b65;
+  font-size: 1.06rem;
+  line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+body[data-page="mensagens"] .messages-empty__text {
+  max-inline-size: none;
+  max-width: none;
+  margin: 0;
+  color: #6984a0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+@media (max-width: 760px) {
+  body[data-page="mensagens"] .messages-empty__card {
+    padding: 20px 18px;
+    border-radius: 18px;
+  }
+
+  body[data-page="mensagens"] .messages-empty__title {
+    font-size: 1rem;
+  }
+
+  body[data-page="mensagens"] .messages-empty__text {
+    font-size: 0.9rem;
+  }
+}
+
 body:is([data-page="mensagens"], [data-page="comunidade-interna"]) .community-room-online-list > span {
   grid-template-columns: var(--chat-avatar-size) minmax(0, 1fr);
   min-block-size: 60px;

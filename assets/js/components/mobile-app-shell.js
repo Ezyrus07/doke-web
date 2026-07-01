@@ -10,8 +10,8 @@
   }
 
   var PAGE_CONFIG = {
-    'index.html': { key: 'home', active: 'home', search: true, title: 'Olá Gabriel' },
-    '': { key: 'home', active: 'home', search: true, title: 'Olá Gabriel' },
+    'index.html': { key: 'home', active: 'home', search: true, title: 'Início' },
+    '': { key: 'home', active: 'home', search: true, title: 'Início' },
     'resultados.html': { key: 'resultados', active: 'home', search: true, title: 'Resultados' },
     'detalhe-anuncio.html': { key: 'detalhe-anuncio', active: 'home', search: false, title: 'Anúncio', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'pedidos.html': { key: 'pedidos', active: 'orders', search: false, title: 'Pedidos', hideSearchBar: true },
@@ -49,6 +49,72 @@
     communities: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="10" r="2.5"></circle><circle cx="16" cy="9" r="2.5"></circle><path d="M3.5 18c.8-2.4 2.8-3.8 5.5-3.8S13.7 15.6 14.5 18"></path><path d="M12.5 18c.6-1.9 2.1-3.1 4.3-3.1 2 0 3.6 1.1 4.2 3.1"></path></svg>',
     profile: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.2-3.2 3.7-4.8 7-4.8s5.8 1.6 7 4.8"></path></svg>'
   };
+
+  var SESSION_KEY = 'doke.auth.session.v1';
+
+  function safeReadJson(key, fallback) {
+    try {
+      var raw = window.localStorage.getItem(key);
+      var parsed = raw ? JSON.parse(raw) : fallback;
+      return parsed == null ? fallback : parsed;
+    } catch (error) {
+      return fallback;
+    }
+  }
+
+  function normalizeText(value) {
+    return String(value || '').trim().replace(/\s+/g, ' ');
+  }
+
+  function truncateText(value, maxLength) {
+    var text = normalizeText(value);
+    if (text.length <= maxLength) return text;
+    return text.slice(0, Math.max(1, maxLength - 1)).trimEnd() + '…';
+  }
+
+  function getInitials(value) {
+    var parts = normalizeText(value || 'Doke').split(/\s+/).filter(Boolean).slice(0, 2);
+    if (!parts.length) return 'DK';
+    return parts.map(function (part) { return part.charAt(0).toUpperCase(); }).join('');
+  }
+
+  function firstName(value) {
+    var parts = normalizeText(value || 'Entrar').split(/\s+/).filter(Boolean);
+    return truncateText(parts[0] || 'Entrar', 14);
+  }
+
+  function currentUser() {
+    try {
+      if (window.Doke && window.Doke.session && typeof window.Doke.session.getCurrentUser === 'function') {
+        var liveUser = window.Doke.session.getCurrentUser();
+        if (liveUser) return liveUser;
+      }
+      if (window.DokeAuth && window.DokeAuth.service && typeof window.DokeAuth.service.getCurrentUser === 'function') {
+        var authUser = window.DokeAuth.service.getCurrentUser();
+        if (authUser) return authUser;
+      }
+    } catch (error) {}
+
+    var session = safeReadJson(SESSION_KEY, null);
+    return session && session.user && typeof session.user === 'object' ? session.user : null;
+  }
+
+  function accountState() {
+    var user = currentUser();
+    var logged = Boolean(user && user.id);
+    var fullName = logged ? normalizeText(user.name || user.fullName || user.email || 'Usuário Doke') : 'Entrar na Doke';
+    return {
+      logged: logged,
+      firstName: logged ? firstName(fullName) : 'Entrar',
+      initials: logged ? truncateText(user.initials || user.avatarInitials || getInitials(fullName), 3) : 'DK'
+    };
+  }
+
+  function shellProfileTitle(cfg) {
+    var account = accountState();
+    if (cfg && cfg.key === 'home') return account.logged ? 'Olá ' + account.firstName : 'Entrar';
+    return cfg && cfg.title ? cfg.title : titleFromPageName(cfg && cfg.key || '');
+  }
 
   function pageName() {
     var name = window.location.pathname.split('/').pop() || 'index.html';
@@ -323,8 +389,8 @@
     shell.innerHTML = [
       '<header class="doke-mobile-shell__topbar" aria-label="Cabeçalho mobile global">',
       '  <button class="doke-mobile-shell__profile" type="button" data-shell-profile aria-label="Abrir menu da conta">',
-      '    <span class="doke-mobile-shell__avatar">DK</span>',
-      '    <span class="doke-mobile-shell__hello">' + (cfg.title || titleFromPageName(cfg.key || '')) + '</span>',
+      '    <span class="doke-mobile-shell__avatar">' + accountState().initials + '</span>',
+      '    <span class="doke-mobile-shell__hello">' + shellProfileTitle(cfg) + '</span>',
       '  </button>',
       '  <div class="' + actionsClass + '" data-shell-context-actions>',
       createQuickActions(cfg),
@@ -344,6 +410,22 @@
 
     var input = shell.querySelector('.doke-mobile-shell__input');
     if (input) input.value = queryValue();
+
+    function syncAccountSurface() {
+      var account = accountState();
+      var avatar = shell.querySelector('.doke-mobile-shell__avatar');
+      var hello = shell.querySelector('.doke-mobile-shell__hello');
+      if (avatar) avatar.textContent = account.initials;
+      if (hello) hello.textContent = shellProfileTitle(cfg);
+    }
+
+    syncAccountSurface();
+    ['doke:auth-session-change', 'doke:auth-surface-ready'].forEach(function (eventName) {
+      document.addEventListener(eventName, syncAccountSurface);
+    });
+    window.addEventListener('storage', function (event) {
+      if (!event || event.key === SESSION_KEY) syncAccountSurface();
+    });
 
     shell.querySelector('[data-shell-profile]').addEventListener('click', function (event) {
       if (openMobileDrawerDirect()) {
