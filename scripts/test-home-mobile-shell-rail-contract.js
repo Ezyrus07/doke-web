@@ -21,6 +21,12 @@ assert(
   'mobile-app-shell.css must own the canonical mobile shell edge token.'
 );
 
+assert(
+  /\.doke-mobile-shell__inline-search\s*\{[\s\S]*?position:\s*absolute;/.test(mobileShell) &&
+    /\.doke-mobile-shell__inline-search\.is-expanded\s*\{[\s\S]*?position:\s*static;/.test(mobileShell),
+  'Collapsed inline search must stay outside the action grid and re-enter flow only while expanded.'
+);
+
 const edgeConsumers = [
   ['home/mobile/base.css', mobileBase, '--home-mobile-edge'],
   ['home/mobile-alignment.css', mobileAlignment, '--index-stage20-axis'],

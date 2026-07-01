@@ -513,71 +513,104 @@ body.budget-modal-open {
 }
 
 
-/* Orçamento loading parity v3.
-   Aligns the submission loading overlay with the compact symbol-cycle language
-   adopted in mensagens.html, without changing the shared form/page anatomy. */
-body[data-page="orcamento"] .doke-submission-feedback__surface {
-  gap: 12px;
+/* Orçamento loading state.
+   It reuses the success modal shell and only owns the centered service-symbol
+   cycle for the transient processing state. */
+body[data-page="orcamento"] .budget-submission-modal__dialog {
+  min-block-size: min(536px, calc(100dvh - 48px));
 }
 
-body[data-page="orcamento"] .doke-submission-feedback__mark--symbol-cycle {
-  inline-size: 30px;
-  block-size: 30px;
-  background: transparent;
-  filter: none;
+body[data-page="orcamento"] .budget-submission-modal__body {
+  width: auto;
+  min-width: 0;
+  min-block-size: clamp(300px, 34vh, 390px);
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 14px;
+  padding-block: 6px 44px;
+  text-align: center;
 }
 
-body[data-page="orcamento"] .doke-submission-feedback__mark--symbol-cycle::before,
-body[data-page="orcamento"] .doke-submission-feedback__mark--symbol-cycle::after {
-  display: none;
-}
-
-body[data-page="orcamento"] .doke-submission-feedback__symbols {
+body[data-page="orcamento"] .budget-submission-modal__loader {
   position: relative;
-  inline-size: 30px;
-  block-size: 30px;
+  inline-size: 78px;
+  block-size: 78px;
+  display: grid;
+  place-items: center;
+  margin-block-end: 4px;
+  border: 1px solid rgba(207, 222, 239, 0.78);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(42, 95, 144, 0.08), transparent 62%),
+    #f8fbff;
+  box-shadow:
+    0 20px 42px rgba(18, 62, 103, 0.10),
+    0 1px 0 rgba(255, 255, 255, 0.92) inset;
 }
 
-body[data-page="orcamento"] .doke-submission-feedback__symbol {
+body[data-page="orcamento"] .budget-submission-modal__loader::before {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border: 1px solid rgba(42, 95, 144, 0.12);
+  border-radius: inherit;
+}
+
+body[data-page="orcamento"] .budget-submission-modal__title.doke-modal-title {
+  width: auto;
+  max-width: 12ch;
+  justify-self: center;
+  margin: 0;
+  text-align: center;
+}
+
+body[data-page="orcamento"] .budget-submission-modal__message.doke-modal-description {
+  width: auto;
+  max-width: 28ch;
+  justify-self: center;
+  margin: 0;
+  text-align: center;
+}
+
+body[data-page="orcamento"] .budget-submission-modal .doke-submission-feedback__symbols {
+  position: relative;
+  inline-size: 44px;
+  block-size: 44px;
+}
+
+body[data-page="orcamento"] .budget-submission-modal .doke-submission-feedback__symbol {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
   opacity: 0;
-  transform: translateY(3px) scale(0.92);
+  transform: translateY(4px) scale(0.9);
   animation: dokeBudgetLoadingSymbolCycle 4.8s ease-in-out infinite;
 }
 
-body[data-page="orcamento"] .doke-submission-feedback__symbol--wrench {
+body[data-page="orcamento"] .budget-submission-modal .doke-submission-feedback__symbol--wrench {
   animation-delay: 1.6s;
 }
 
-body[data-page="orcamento"] .doke-submission-feedback__symbol--bolt {
+body[data-page="orcamento"] .budget-submission-modal .doke-submission-feedback__symbol--bolt {
   animation-delay: 3.2s;
 }
 
-body[data-page="orcamento"] .doke-submission-feedback__symbol svg {
-  inline-size: 28px;
-  block-size: 28px;
+body[data-page="orcamento"] .budget-submission-modal .doke-submission-feedback__symbol svg {
+  inline-size: 40px;
+  block-size: 40px;
   fill: none;
   stroke: var(--budget-blue, #2a5f90);
-  stroke-width: 2;
+  stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-body[data-page="orcamento"] .doke-submission-feedback__title {
-  max-width: 12ch;
-}
-
-body[data-page="orcamento"] .doke-submission-feedback__message {
-  max-width: 30ch;
 }
 
 @keyframes dokeBudgetLoadingSymbolCycle {
   0%, 18% {
     opacity: 0;
-    transform: translateY(3px) scale(0.92);
+    transform: translateY(4px) scale(0.9);
   }
 
   22%, 46% {
@@ -587,18 +620,44 @@ body[data-page="orcamento"] .doke-submission-feedback__message {
 
   54%, 100% {
     opacity: 0;
-    transform: translateY(-3px) scale(0.96);
+    transform: translateY(-4px) scale(0.95);
+  }
+}
+
+@media (max-width: 760px) {
+  body[data-page="orcamento"] .budget-submission-modal__dialog {
+    min-block-size: min(500px, calc(100dvh - 48px));
+  }
+
+  body[data-page="orcamento"] .budget-submission-modal__body {
+    min-block-size: clamp(280px, 38vh, 350px);
+    padding-block: 2px 36px;
+  }
+
+  body[data-page="orcamento"] .budget-submission-modal__loader {
+    inline-size: 72px;
+    block-size: 72px;
+  }
+
+  body[data-page="orcamento"] .budget-submission-modal .doke-submission-feedback__symbols {
+    inline-size: 40px;
+    block-size: 40px;
+  }
+
+  body[data-page="orcamento"] .budget-submission-modal .doke-submission-feedback__symbol svg {
+    inline-size: 36px;
+    block-size: 36px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  body[data-page="orcamento"] .doke-submission-feedback__symbol {
+  body[data-page="orcamento"] .budget-submission-modal .doke-submission-feedback__symbol {
     animation: none;
     opacity: 0;
     transform: none;
   }
 
-  body[data-page="orcamento"] .doke-submission-feedback__symbol--paint {
+  body[data-page="orcamento"] .budget-submission-modal .doke-submission-feedback__symbol--paint {
     opacity: 1;
   }
 }

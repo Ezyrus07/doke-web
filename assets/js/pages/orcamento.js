@@ -515,8 +515,8 @@ const initBudgetPage = () => {
       const previousSubmitText = submitButton?.textContent || "Enviar solicitação";
       const loadingFeedback = window.DokeSubmissionFeedback?.show?.(loadingScreen, {
         title: "Enviando solicitação",
-        message: "Criando seu pedido e avisando o profissional.",
-        minDuration: 1100
+        message: "Está quase lá...",
+        minDuration: 2200
       });
       if (submitButton) {
         submitButton.disabled = true;
