@@ -28,12 +28,6 @@
 
   const getDrawer = () => document.querySelector(drawerSelector);
   const getDrawerPanel = () => getDrawer()?.querySelector('.home-mobile-drawer__panel');
-  const hasCanonicalDrawerAuthority = () => Boolean(
-    document.querySelector('[data-mobile-drawer-authority="canonical"]') ||
-    window.DokeCanonicalDrawerOpen ||
-    window.DokeStandardMobileDrawerOpen
-  );
-
   const getFilterPanel = () => document.querySelector('[data-more-filters-panel]');
   const getFilterHost = () => document.querySelector('[data-more-filters-tabs-host]');
 
@@ -68,57 +62,13 @@
   };
 
   const openDrawer = () => {
-    if (hasCanonicalDrawerAuthority()) {
-      const open = window.DokeCanonicalDrawerOpen || window.DokeStandardMobileDrawerOpen;
-      return typeof open === 'function' ? open() : false;
-    }
-
-    const drawer = getDrawer();
-    if (!drawer) return false;
-
-    clearBrokenOverlayState();
-
-    drawer.hidden = false;
-    drawer.removeAttribute('hidden');
-    drawer.classList.add('is-open');
-    drawer.setAttribute('aria-hidden', 'false');
-    drawer.setAttribute('data-mobile-drawer-state', 'open');
-
-    document.body.classList.add('mobile-home-drawer-open');
-    document.body.classList.remove('home-filter-sheet-open', 'home-inline-filters-open', 'home-mobile-filters-open');
-
-    document.querySelectorAll(drawerOpenSelector).forEach((trigger) => {
-      trigger.setAttribute('aria-expanded', 'true');
-    });
-
-    return true;
+    const open = window.DokeCanonicalDrawerOpen || window.DokeStandardMobileDrawerOpen;
+    return typeof open === 'function' ? open() : false;
   };
 
   const closeDrawer = () => {
-    if (hasCanonicalDrawerAuthority()) {
-      const close = window.DokeCanonicalDrawerClose || window.DokeStandardMobileDrawerClose;
-      if (typeof close === 'function') close();
-      return;
-    }
-
-    const drawer = getDrawer();
-    if (!drawer) return;
-
-    drawer.classList.remove('is-open');
-    drawer.setAttribute('aria-hidden', 'true');
-    drawer.setAttribute('data-mobile-drawer-state', 'closed');
-    document.body.classList.remove('mobile-home-drawer-open');
-
-    document.querySelectorAll(drawerOpenSelector).forEach((trigger) => {
-      trigger.setAttribute('aria-expanded', 'false');
-    });
-
-    window.setTimeout(() => {
-      if (!drawer.classList.contains('is-open')) {
-        drawer.hidden = true;
-        drawer.setAttribute('hidden', '');
-      }
-    }, 180);
+    const close = window.DokeCanonicalDrawerClose || window.DokeStandardMobileDrawerClose;
+    if (typeof close === 'function') close();
   };
 
   const showDefaultFilterSection = () => {
@@ -258,7 +208,6 @@
     markControls();
     clearBrokenOverlayState();
 
-    document.addEventListener('pointerdown', captureOpeners, true);
     document.addEventListener('click', captureOpeners, true);
     document.addEventListener('click', captureClosers, true);
 

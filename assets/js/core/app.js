@@ -70,7 +70,9 @@ const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", 
 const ROUTE_SWAP_STATE_CLASSES = ["is-shell-swapping", "is-route-instant-swap"];
 const PRESERVED_BODY_STATE_CLASSES = [...SHELL_STATE_CLASSES, ...ROUTE_SWAP_STATE_CLASSES];
 const INTERNAL_PROFILE_PATH = "/perfil.html";
-const INTERNAL_VIEW_PATHS = new Set(["/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/novidades.html", "/ajuda.html", "/carteira.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento-profissional.html", "/orcamento.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/"]);
+const NAVIGATION_REGISTRY = window.DokeNavigationRegistry || null;
+const REGISTERED_INTERNAL_VIEW_PATHS = Array.isArray(NAVIGATION_REGISTRY?.getInternalPaths?.()) ? NAVIGATION_REGISTRY.getInternalPaths() : [];
+const INTERNAL_VIEW_PATHS = new Set([...REGISTERED_INTERNAL_VIEW_PATHS, "/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/novidades.html", "/ajuda.html", "/carteira.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento-profissional.html", "/orcamento.html", "/avaliacao-profissional.html", "/anunciar-servico.html", "/meu-perfil.html", "/perfil-cliente.html", "/perfil-profissional.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/"]);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
@@ -360,24 +362,28 @@ const showOperationalToast = (detail = {}) => {
 
 const updateSidebarActiveState = (pathOverride = null) => {
   const path = pathOverride || getCurrentPath();
-  const homeActive = path === "/index.html" || path === "/resultados.html" || path === "/detalhe-anuncio.html";
-  const ordersActive = path === "/pedidos.html" || path === "/orcamento.html";
-  const messagesActive = path === "/mensagens.html" || path === "/pagamento-profissional.html";
-  const notificationsActive = path === "/notificacoes.html";
-  const communitiesActive = path === "/comunidade.html" || path === "/comunidade-interna.html";
-  const profileActive = path === INTERNAL_PROFILE_PATH || path === "/tornar-profissional.html" || path === "/anunciar-servico.html" || path === "/avaliacao-profissional.html";
-  const walletActive = path === "/carteira.html";
-  const settingsActive = path === "/configuracoes.html";
+  const registryActiveId = NAVIGATION_REGISTRY?.getActiveId?.(path) || "";
+  const fallbackState = {
+    home: path === "/index.html" || path === "/resultados.html" || path === "/detalhe-anuncio.html",
+    orders: path === "/pedidos.html" || path === "/orcamento.html" || path === "/pagamento-profissional.html" || path === "/avaliacao-profissional.html",
+    messages: path === "/mensagens.html",
+    notifications: path === "/notificacoes.html" || path === "/novidades.html",
+    communities: path === "/comunidade.html" || path === "/comunidade-interna.html",
+    profile: path === INTERNAL_PROFILE_PATH || path === "/meu-perfil.html" || path === "/perfil-cliente.html" || path === "/perfil-profissional.html" || path === "/tornar-profissional.html" || path === "/anunciar-servico.html",
+    wallet: path === "/carteira.html",
+    settings: path === "/configuracoes.html" || path === "/ajuda.html"
+  };
+  const isActive = (id) => registryActiveId ? registryActiveId === id : Boolean(fallbackState[id]);
 
   const stateMap = new Map([
-    [".nav-link--home", homeActive],
-    [".nav-link--orders", ordersActive],
-    [".nav-link--messages", messagesActive],
-    [".nav-link--notifications", notificationsActive],
-    [".nav-link--communities", communitiesActive],
-    [".nav-link--profile", profileActive],
-    [".nav-link--wallet", walletActive],
-    [".nav-link--settings", settingsActive]
+    [".nav-link--home", isActive("home")],
+    [".nav-link--orders", isActive("orders")],
+    [".nav-link--messages", isActive("messages")],
+    [".nav-link--notifications", isActive("notifications")],
+    [".nav-link--communities", isActive("communities")],
+    [".nav-link--profile", isActive("profile")],
+    [".nav-link--wallet", isActive("wallet")],
+    [".nav-link--settings", isActive("settings")]
   ]);
 
   document.querySelectorAll(".sidebar .nav-link").forEach((link) => {
@@ -385,11 +391,11 @@ const updateSidebarActiveState = (pathOverride = null) => {
     link.removeAttribute("aria-current");
   });
 
-  stateMap.forEach((isActive, selector) => {
+  stateMap.forEach((active, selector) => {
     const node = document.querySelector(selector);
     if (!node) return;
-    node.classList.toggle("is-active", isActive);
-    if (isActive) node.setAttribute("aria-current", "page");
+    node.classList.toggle("is-active", active);
+    if (active) node.setAttribute("aria-current", "page");
   });
 };
 

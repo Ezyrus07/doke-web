@@ -32,6 +32,20 @@ CSS de página não pode controlar: `height`/`min-height` de mídia interna, `pa
 4. Validar primeiro paint, `DOMContentLoaded` e `load`.
 5. Registrar riscos e arquivos alterados.
 
+
+## Mobile/tablet drawer authority
+
+O menu lateral usado em viewports touch/tablet tem autoridade visual única em `assets/css/components/navigation/mobile-drawer-standard.css`.
+
+Regras de fronteira:
+
+- CSS de página não pode estilizar `.home-mobile-drawer`, `.home-mobile-drawer__panel`, `.home-mobile-drawer__item`, `.home-mobile-drawer__header`, `.home-mobile-drawer__content` ou atributos `data-mobile-drawer*`.
+- Arquivos antigos relacionados ao drawer da home devem permanecer sem seletores de runtime quando existirem apenas como ponte histórica.
+- Largura, posição, raio, sombra, backdrop, scroll interno, ícones, item ativo e badges do drawer pertencem ao componente global.
+
+- Largura canônica atual: `clamp(236px, 66vw, 264px)`, mantendo o drawer estreito para preservar vista do site ao fundo.
+- O contrato é validado por `npm run audit:mobile-drawer-visual-authority`.
+
 ## Contratos visuais desktop em fechamento
 
 Esta seção registra a auditoria entre `index.html`, `resultados.html`, `detalhe-anuncio.html` e `perfil.html`. O relatório completo está em `reports/generated/desktop-visual-authority-audit.md`.

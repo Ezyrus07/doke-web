@@ -1,15 +1,16 @@
-/* Doke Web — canonical mobile/tablet drawer contract v4
+/* Doke Web — canonical mobile/tablet drawer contract v7
    Responsibility: one shared off-canvas menu for every touch viewport.
+   The accepted visual baseline is detalhe-anuncio.html mobile: narrow panel, visible site backdrop, and compact navigation.
    Pages must not restyle drawer anatomy. This file is loaded after page
-   foundations and uses a canonical data attribute to outrank legacy page skins
+   foundations and uses a canonical data attribute to own the full drawer visual contract
    without priority flags. */
 
 :root {
   --doke-drawer-breakpoint-max: 1199px;
-  --doke-drawer-width: clamp(238px, 64vw, 272px);
-  --doke-drawer-edge: max(10px, env(safe-area-inset-left, 0px));
-  --doke-drawer-top: max(10px, env(safe-area-inset-top, 0px));
-  --doke-drawer-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  --doke-drawer-width: clamp(236px, 66vw, 264px);
+  --doke-drawer-edge: max(14px, env(safe-area-inset-left, 0px));
+  --doke-drawer-top: max(12px, env(safe-area-inset-top, 0px));
+  --doke-drawer-bottom: max(12px, env(safe-area-inset-bottom, 0px));
   --doke-drawer-panel-max-height: calc(100dvh - var(--doke-drawer-top) - var(--doke-drawer-bottom));
 }
 
@@ -91,8 +92,7 @@ body.doke-mobile-drawer-open {
   opacity: 1;
 }
 
-/* Canonical skin. These selectors intentionally outrank old page-scoped drawer
-   skins such as body.orders-page-shell .home-mobile-drawer__panel. */
+/* Canonical skin. Page CSS must not restyle this drawer anatomy. */
 .home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__panel {
   top: var(--doke-drawer-top);
   bottom: var(--doke-drawer-bottom);
@@ -157,7 +157,7 @@ body.doke-mobile-drawer-open {
 }
 
 .home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__profile-copy strong {
-  max-width: 170px;
+  max-width: 132px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -169,7 +169,7 @@ body.doke-mobile-drawer-open {
 }
 
 .home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__profile-copy span {
-  max-width: 170px;
+  max-width: 132px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -333,12 +333,12 @@ body.doke-mobile-drawer-open {
 
 @media (max-width: 360px) {
   :root {
-    --doke-drawer-width: min(260px, calc(100vw - 28px));
+    --doke-drawer-width: clamp(232px, 68vw, 248px);
   }
 
   .home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__profile-copy strong,
   .home-mobile-drawer.doke-global-mobile-drawer[data-mobile-drawer-authority="canonical"] .home-mobile-drawer__profile-copy span {
-    max-width: 140px;
+    max-width: 118px;
   }
 }
 

@@ -19,16 +19,16 @@
     'comunidade.html': { key: 'comunidade', active: 'communities', search: false, title: 'Comunidade' },
     'comunidade-interna.html': { key: 'comunidade-interna', active: 'communities', search: false, title: 'Comunidade' },
     'perfil.html': { key: 'perfil', active: 'profile', search: false, title: 'Perfil' },
-    'carteira.html': { key: 'carteira', active: 'profile', search: false, title: 'Carteira', hideSearchBar: true, hideLocation: true },
+    'carteira.html': { key: 'carteira', active: 'wallet', search: false, title: 'Carteira', hideSearchBar: true, hideLocation: true },
     'notificacoes.html': { key: 'notificacoes', active: '', search: false, title: 'Notificações', bottomNav: false },
-    'novidades.html': { key: 'novidades', active: '', search: false, title: 'Novidades' },
-    'ajuda.html': { key: 'ajuda', active: '', search: false, title: 'Ajuda' },
+    'novidades.html': { key: 'novidades', active: 'notifications', search: false, title: 'Novidades', bottomNav: false },
+    'ajuda.html': { key: 'ajuda', active: 'settings', search: false, title: 'Ajuda', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'configuracoes.html': { key: 'configuracoes', active: 'profile', search: false, title: 'Configurações', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'tornar-profissional.html': { key: 'tornar-profissional', active: 'profile', search: false, title: 'Tornar-se profissional', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'orcamento.html': { key: 'orcamento', active: 'orders', search: false, title: 'Orçamento' },
     'anunciar-servico.html': { key: 'anunciar-servico', active: 'profile', search: false, title: 'Anunciar serviço', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
-    'pagamento-profissional.html': { key: 'pagamento-profissional', active: 'profile', search: false, title: 'Pagamento', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
-    'avaliacao-profissional.html': { key: 'avaliacao-profissional', active: 'profile', search: false, title: 'Avaliação', compactSearchButton: true, hideSearchBar: true, hideLocation: true }
+    'pagamento-profissional.html': { key: 'pagamento-profissional', active: 'orders', search: false, title: 'Pagamento', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
+    'avaliacao-profissional.html': { key: 'avaliacao-profissional', active: 'orders', search: false, title: 'Avaliação', compactSearchButton: true, hideSearchBar: true, hideLocation: true }
   };
 
   var ICONS = {
@@ -51,6 +51,7 @@
   };
 
   var SESSION_KEY = 'doke.auth.session.v1';
+  var NAVIGATION_REGISTRY = window.DokeNavigationRegistry || null;
 
   function safeReadJson(key, fallback) {
     try {
@@ -133,6 +134,10 @@
 
   function config() {
     var name = pageName();
+    if (NAVIGATION_REGISTRY && typeof NAVIGATION_REGISTRY.getPageConfig === 'function') {
+      var registryConfig = NAVIGATION_REGISTRY.getPageConfig(name);
+      if (registryConfig && registryConfig.key) return registryConfig;
+    }
     var fallbackKey = name.replace('.html', '');
     return PAGE_CONFIG[name] || { key: fallbackKey, active: '', search: false, title: titleFromPageName(fallbackKey) };
   }
@@ -689,14 +694,29 @@
     return !(cfg && cfg.bottomNav === false);
   }
 
-  function createNav(cfg) {
-    var items = [
+  function bottomNavItems() {
+    if (NAVIGATION_REGISTRY && typeof NAVIGATION_REGISTRY.getItemsForSurface === 'function') {
+      return NAVIGATION_REGISTRY.getItemsForSurface('mobile-bottom').map(function (entry) {
+        return [
+          entry.id,
+          entry.mobileBottomHref || entry.href,
+          entry.shortLabel || entry.label,
+          ICONS[entry.icon] || ICONS[entry.id] || ICONS.home
+        ];
+      });
+    }
+
+    return [
       ['home', 'index.html', 'Início', ICONS.home],
       ['orders', 'pedidos.html', 'Pedidos', ICONS.orders],
       ['messages', 'mensagens.html', 'Mensagens', ICONS.messages],
       ['communities', 'comunidade.html', 'Comun.', ICONS.communities],
       ['profile', 'perfil.html?mode=owner&panel=posts', 'Perfil', ICONS.profile]
     ];
+  }
+
+  function createNav(cfg) {
+    var items = bottomNavItems();
     var nav = document.createElement('nav');
     nav.className = 'doke-mobile-bottom-nav';
     nav.setAttribute('aria-label', 'Navegação principal mobile');

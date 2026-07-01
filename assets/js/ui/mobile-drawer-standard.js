@@ -40,6 +40,7 @@
   var CLOSE_SELECTOR = '[data-mobile-home-menu-close], [data-mobile-drawer-close], .home-mobile-drawer__close';
   var DRAWER_SELECTOR = '[data-mobile-home-drawer], .home-mobile-drawer, [data-mobile-drawer], .mobile-drawer, .app-mobile-drawer';
   var SHELL_SIDEBAR_SELECTOR = '.app-shell > .sidebar, .app-shell > [data-shell-sidebar], [data-shell-sidebar].sidebar';
+  var NAVIGATION_REGISTRY = window.DokeNavigationRegistry || null;
 
   function isDrawerViewport() {
     if (window.matchMedia) return window.matchMedia('(max-width: ' + BREAKPOINT + 'px)').matches;
@@ -50,50 +51,44 @@
     return String(value || '').split('?')[0].split('#')[0].split('/').pop().toLowerCase() || 'index.html';
   }
 
-  var DRAWER_ROUTE_GROUPS = {
-    '': 'index.html',
-    '/': 'index.html',
-    home: 'index.html',
-    index: 'index.html',
-    resultados: 'index.html',
-    'detalhe-anuncio': 'index.html',
-    pedidos: 'pedidos.html',
-    'pagamento-profissional': 'pedidos.html',
-    'avaliacao-profissional': 'pedidos.html',
-    mensagens: 'mensagens.html',
-    notificacoes: 'notificacoes.html',
-    novidades: 'notificacoes.html',
-    comunidade: 'comunidade.html',
-    'comunidade-interna': 'comunidade.html',
-    configuracoes: 'configuracoes.html',
-    ajuda: 'configuracoes.html',
-    perfil: 'perfil.html',
-    carteira: 'carteira.html',
-    'tornar-profissional': 'perfil.html',
-    'anunciar-servico': 'perfil.html'
-  };
-
-  var DRAWER_NAV_GROUPS = {
-    'index.html': true,
-    'pedidos.html': true,
-    'mensagens.html': true,
-    'notificacoes.html': true,
-    'comunidade.html': true,
-    'perfil.html': true,
-    'carteira.html': true,
-    'configuracoes.html': true
+  var FALLBACK_ROUTE_GROUPS = {
+    '': 'home',
+    '/': 'home',
+    home: 'home',
+    index: 'home',
+    resultados: 'home',
+    'detalhe-anuncio': 'home',
+    pedidos: 'orders',
+    orcamento: 'orders',
+    'pagamento-profissional': 'orders',
+    'avaliacao-profissional': 'orders',
+    mensagens: 'messages',
+    notificacoes: 'notifications',
+    novidades: 'notifications',
+    comunidade: 'communities',
+    'comunidade-interna': 'communities',
+    configuracoes: 'settings',
+    ajuda: 'settings',
+    perfil: 'profile',
+    'meu-perfil': 'profile',
+    'perfil-cliente': 'profile',
+    'perfil-profissional': 'profile',
+    carteira: 'wallet',
+    'tornar-profissional': 'profile',
+    'anunciar-servico': 'profile'
   };
 
   function routeGroup(path) {
+    if (NAVIGATION_REGISTRY && typeof NAVIGATION_REGISTRY.getActiveId === 'function') {
+      var registryActive = NAVIGATION_REGISTRY.getActiveId(path);
+      if (registryActive) return registryActive;
+    }
     var current = cleanPath(path);
     var key = current.replace(/\.html$/i, '');
-    return DRAWER_ROUTE_GROUPS[key] || current;
+    return FALLBACK_ROUTE_GROUPS[key] || key;
   }
 
   function currentRouteGroup() {
-    var bodyPage = document.body && document.body.getAttribute('data-page');
-    var bodyRoute = bodyPage ? routeGroup(bodyPage) : '';
-    if (DRAWER_NAV_GROUPS[bodyRoute]) return bodyRoute;
     return routeGroup(window.location.pathname);
   }
 
@@ -214,12 +209,60 @@
 
   function item(options) {
     var tag = options.button ? 'button' : 'a';
+    var navAttr = options.navId ? ' data-nav-id="' + options.navId + '"' : '';
     var attrs = options.button ? 'type="button" data-profile-logout' : 'href="' + options.href + '"';
-    return '<' + tag + ' class="home-mobile-drawer__item' + (options.button ? ' home-mobile-drawer__item--button' : '') + '" ' + attrs + '>' +
-      '<span class="home-mobile-drawer__item-icon" aria-hidden="true">' + ICONS[options.icon] + '</span>' +
+    return '<' + tag + ' class="home-mobile-drawer__item' + (options.button ? ' home-mobile-drawer__item--button' : '') + '" ' + attrs + navAttr + '>' +
+      '<span class="home-mobile-drawer__item-icon" aria-hidden="true">' + (ICONS[options.icon] || ICONS.home) + '</span>' +
       '<span class="home-mobile-drawer__item-label">' + options.label + '</span>' +
       (options.badge ? '<span class="home-mobile-drawer__item-badge">' + options.badge + '</span>' : '') +
       '</' + tag + '>';
+  }
+
+  function badgeForItem(entry, badges) {
+    if (!entry || !entry.badgeKey) return '';
+    return badges[entry.badgeKey] || '';
+  }
+
+  function drawerHrefForItem(entry, account) {
+    if (entry && entry.id === 'profile') return account.profileHref;
+    return entry && entry.href ? entry.href : 'index.html';
+  }
+
+  function registryDrawerItems(group) {
+    if (!NAVIGATION_REGISTRY || typeof NAVIGATION_REGISTRY.getItemsForSurface !== 'function') return [];
+    return NAVIGATION_REGISTRY.getItemsForSurface('mobile-drawer').filter(function (entry) {
+      return entry.group === group;
+    });
+  }
+
+  function renderDrawerItems(group, account, badges) {
+    var entries = registryDrawerItems(group);
+    if (!entries.length) {
+      if (group === 'principal') {
+        return [
+          item({ href: 'index.html', label: 'Início', icon: 'home', navId: 'home' }),
+          item({ href: 'pedidos.html', label: 'Pedidos', icon: 'orders', badge: badges.orders, navId: 'orders' }),
+          item({ href: 'mensagens.html', label: 'Mensagens', icon: 'messages', badge: badges.messages, navId: 'messages' }),
+          item({ href: 'notificacoes.html', label: 'Notificações', icon: 'notifications', badge: badges.notifications, navId: 'notifications' }),
+          item({ href: 'comunidade.html', label: 'Comunidade', icon: 'community', navId: 'communities' })
+        ].join('');
+      }
+      return [
+        item({ href: account.profileHref, label: 'Meu perfil', icon: 'profile', navId: 'profile' }),
+        item({ href: 'carteira.html', label: 'Carteira', icon: 'wallet', navId: 'wallet' }),
+        item({ href: 'configuracoes.html', label: 'Configurações', icon: 'settings', navId: 'settings' })
+      ].join('');
+    }
+
+    return entries.map(function (entry) {
+      return item({
+        href: drawerHrefForItem(entry, account),
+        label: entry.label,
+        icon: entry.drawerIcon || entry.icon || entry.id,
+        badge: badgeForItem(entry, badges),
+        navId: entry.id
+      });
+    }).join('');
   }
 
   function markup() {
@@ -227,6 +270,11 @@
     var ordersBadge = countBadge(openOrdersCount());
     var messagesBadge = countBadge(unreadMessagesCount());
     var notificationsBadge = countBadge(unreadNotificationsCount());
+    var badges = {
+      orders: ordersBadge,
+      messages: messagesBadge,
+      notifications: notificationsBadge
+    };
     var accountAction = account.logged
       ? item({ label: 'Sair', icon: 'logout', button: true })
       : item({ href: 'auth/login.html', label: 'Entrar', icon: 'logout' });
@@ -244,17 +292,11 @@
         '</div>',
         '<div class="home-mobile-drawer__content">',
           '<nav class="home-mobile-drawer__nav" aria-label="Menu principal mobile">',
-            item({ href: 'index.html', label: 'Início', icon: 'home' }),
-            item({ href: 'pedidos.html', label: 'Pedidos', icon: 'orders', badge: ordersBadge }),
-            item({ href: 'mensagens.html', label: 'Mensagens', icon: 'messages', badge: messagesBadge }),
-            item({ href: 'notificacoes.html', label: 'Notificações', icon: 'notifications', badge: notificationsBadge }),
-            item({ href: 'comunidade.html', label: 'Comunidade', icon: 'community' }),
+            renderDrawerItems('principal', account, badges),
           '</nav>',
           '<div class="home-mobile-drawer__divider" aria-hidden="true"></div>',
           '<nav class="home-mobile-drawer__nav" aria-label="Conta">',
-            item({ href: account.profileHref, label: 'Meu perfil', icon: 'profile' }),
-            item({ href: 'carteira.html', label: 'Carteira', icon: 'wallet' }),
-            item({ href: 'configuracoes.html', label: 'Configurações', icon: 'settings' }),
+            renderDrawerItems('account', account, badges),
             accountAction,
           '</nav>',
         '</div>',
@@ -306,7 +348,7 @@
     if (!root) return;
     var active = currentRouteGroup();
     Array.prototype.slice.call(root.querySelectorAll('.home-mobile-drawer__item[href]')).forEach(function (link) {
-      var target = routeGroup(link.getAttribute('href'));
+      var target = link.getAttribute('data-nav-id') || routeGroup(link.getAttribute('href'));
       var matched = target === active;
       link.classList.toggle('home-mobile-drawer__item--active', matched);
       if (matched) link.setAttribute('aria-current', 'page');
@@ -417,8 +459,6 @@
     ensureDrawer();
     neutralizeDesktopSidebar();
     bindTriggers();
-    document.addEventListener('pointerdown', handleOpen, true);
-    document.addEventListener('touchstart', handleOpen, { capture: true, passive: false });
     document.addEventListener('click', handleClick, true);
     document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape') setOpen(false);
