@@ -57,6 +57,11 @@ const ensureInstantRouteStyle = () => {
 };
 ensureInstantRouteStyle();
 const SIDEBAR_STORAGE_KEY = "doke.sidebar.collapsed";
+const SIDEBAR_QUICK_PANEL_STATE_KEY = "doke.sidebar.quick-panel.active-type.v1";
+const SIDEBAR_QUICK_ALERT_DURATION_MS = 1120;
+const SIDEBAR_QUICK_NOTICE_DURATION_MS = 2800;
+const SIDEBAR_QUICK_NOTICE_STAGGER_MS = 3040;
+const SIDEBAR_QUICK_ALERT_STAGGER_MS = 180;
 const SIDEBAR_COLLAPSED_HTML_CLASS = "doke-sidebar-collapsed";
 const SIDEBAR_EXPANDED_HTML_CLASS = "doke-sidebar-expanded";
 const SIDEBAR_STATE_READY_HTML_CLASS = "doke-shell-state-ready";
@@ -76,6 +81,9 @@ const INTERNAL_VIEW_PATHS = new Set([...REGISTERED_INTERNAL_VIEW_PATHS, "/index.
 const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
+let sidebarQuickCountsSnapshot = null;
+const sidebarQuickAlertTimers = new Map();
+const sidebarQuickNoticeTimers = new Map();
 const isTabletLandscapeSidebarViewport = () => false;
 const isMobileSidebarViewport = () => window.innerWidth < 1200;
 const isTabletSidebarViewport = () => false;
@@ -189,10 +197,56 @@ const SHARED_SIDEBAR_MARKUP = `
     </svg>
   </button>
 
-  <div class="sidebar__brand">
-    <div class="brand-logo" aria-label="Doke">
+  <div class="sidebar__brand" data-sidebar-brand>
+    <div class="brand-logo" aria-label="Doke" data-sidebar-brand-logo>
       <img src="assets/img/doke-logo-lockup.png" alt="Doke" />
     </div>
+    <div class="sidebar__quick-chip" data-sidebar-quick-chip hidden aria-label="Resumo rápido de pendências">
+      <div class="sidebar__quick-chip-stats" data-sidebar-quick-chip-stats>
+        <button class="sidebar__quick-chip-stat sidebar__quick-chip-stat--orders" type="button" aria-label="Abrir painel rápido de pedidos" data-sidebar-quick-open="orders" data-sidebar-quick-target="orders">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg>
+          <strong data-sidebar-quick-chip-orders>0</strong>
+        </button>
+        <button class="sidebar__quick-chip-stat sidebar__quick-chip-stat--messages" type="button" aria-label="Abrir painel rápido de mensagens" data-sidebar-quick-open="messages" data-sidebar-quick-target="messages">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v10H8l-4 4V6z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg>
+          <strong data-sidebar-quick-chip-messages>0</strong>
+        </button>
+        <button class="sidebar__quick-chip-stat sidebar__quick-chip-stat--notifications" type="button" aria-label="Abrir painel rápido de notificações" data-sidebar-quick-open="notifications" data-sidebar-quick-target="notifications">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5a4.8 4.8 0 0 0-4.8 4.8v2.6c0 1.4-.4 2.7-1.2 3.8h12c-.8-1.1-1.2-2.4-1.2-3.8V9.3A4.8 4.8 0 0 0 12 4.5z"></path><path d="M9.5 18a2.5 2.5 0 0 0 5 0"></path></svg>
+          <strong data-sidebar-quick-chip-notifications>0</strong>
+        </button>
+        <button class="sidebar__quick-expand" type="button" data-sidebar-quick-open="orders" aria-expanded="false" aria-controls="sidebar-quick-panel" aria-label="Abrir painel rápido de pedidos">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
+        </button>
+      </div>
+      <a class="sidebar__quick-notice" href="pedidos.html" data-sidebar-quick-notice hidden aria-live="polite">
+        <span class="sidebar__quick-notice-icon sidebar__quick-notice-icon--orders" data-sidebar-quick-notice-icon="orders" hidden aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg></span>
+        <span class="sidebar__quick-notice-icon sidebar__quick-notice-icon--messages" data-sidebar-quick-notice-icon="messages" hidden aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg></span>
+        <span class="sidebar__quick-notice-icon sidebar__quick-notice-icon--notifications" data-sidebar-quick-notice-icon="notifications" hidden aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4.5a4.8 4.8 0 0 0-4.8 4.8v2.6c0 1.4-.4 2.7-1.2 3.8h12c-.8-1.1-1.2-2.4-1.2-3.8V9.3A4.8 4.8 0 0 0 12 4.5z"></path><path d="M9.5 18a2.5 2.5 0 0 0 5 0"></path></svg></span>
+        <span class="sidebar__quick-notice-copy">
+          <strong data-sidebar-quick-notice-title>Novo pedido recebido</strong>
+          <span data-sidebar-quick-notice-action>Ver pedidos</span>
+        </span>
+      </a>
+    </div>
+    <section id="sidebar-quick-panel" class="sidebar__quick-panel" data-sidebar-quick-panel hidden aria-live="polite">
+      <button class="sidebar__quick-collapse" type="button" data-sidebar-quick-collapse aria-label="Recolher painel rápido">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg>
+      </button>
+      <div class="sidebar__quick-panel-head">
+        <span class="sidebar__quick-panel-kicker">Painel rápido</span>
+        <strong class="sidebar__quick-panel-title" data-sidebar-quick-title>Atualizações pendentes</strong>
+        <p class="sidebar__quick-panel-summary" data-sidebar-quick-summary>Sem atualizações no momento.</p>
+      </div>
+      <div class="sidebar__quick-detail" data-sidebar-quick-detail data-sidebar-quick-target="orders">
+        <span class="sidebar__quick-detail-icon sidebar__quick-detail-icon--orders" data-sidebar-quick-detail-icon="orders" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg></span>
+        <span class="sidebar__quick-detail-icon sidebar__quick-detail-icon--messages" data-sidebar-quick-detail-icon="messages" hidden aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg></span>
+        <span class="sidebar__quick-detail-icon sidebar__quick-detail-icon--notifications" data-sidebar-quick-detail-icon="notifications" hidden aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4.5a4.8 4.8 0 0 0-4.8 4.8v2.6c0 1.4-.4 2.7-1.2 3.8h12c-.8-1.1-1.2-2.4-1.2-3.8V9.3A4.8 4.8 0 0 0 12 4.5z"></path><path d="M9.5 18a2.5 2.5 0 0 0 5 0"></path></svg></span>
+        <span class="sidebar__quick-detail-label" data-sidebar-quick-detail-label>Pedidos</span>
+        <strong class="sidebar__quick-detail-value" data-sidebar-quick-detail-value>0</strong>
+      </div>
+      <a class="sidebar__quick-panel-action" href="pedidos.html" data-sidebar-quick-action>Ver pedidos <span aria-hidden="true">→</span></a>
+    </section>
   </div>
 
   <div class="sidebar__group">
@@ -319,46 +373,301 @@ const getLocalUnreadNotificationsCount = () => {
   }).length;
 };
 
+const isProfessionalSessionUser = (user) => Boolean(String(user?.role || user?.type || '').toLowerCase() === 'professional');
+
+const SIDEBAR_QUICK_UPDATE_TYPES = ['orders', 'messages', 'notifications'];
+
+const isSidebarQuickType = (value) => SIDEBAR_QUICK_UPDATE_TYPES.includes(value);
+
+const readSidebarQuickActiveType = () => {
+  try {
+    const stored = window.localStorage.getItem(SIDEBAR_QUICK_PANEL_STATE_KEY) || '';
+    return isSidebarQuickType(stored) ? stored : '';
+  } catch {
+    return '';
+  }
+};
+
+const writeSidebarQuickActiveType = (type) => {
+  try {
+    if (!isSidebarQuickType(type)) {
+      window.localStorage.removeItem(SIDEBAR_QUICK_PANEL_STATE_KEY);
+      return;
+    }
+    window.localStorage.setItem(SIDEBAR_QUICK_PANEL_STATE_KEY, type);
+  } catch {}
+};
+
+const joinSidebarQuickSegments = (segments) => {
+  if (!segments.length) return '';
+  if (segments.length === 1) return segments[0];
+  if (segments.length === 2) return segments[0] + ' e ' + segments[1];
+  return segments.slice(0, -1).join(', ') + ' e ' + segments[segments.length - 1];
+};
+
+const SIDEBAR_QUICK_CONFIG = {
+  orders: {
+    title: 'Pedidos',
+    label: 'Pendentes',
+    href: 'pedidos.html',
+    action: 'Ver pedidos',
+    unitSingular: 'pedido',
+    unitPlural: 'pedidos',
+    summary(count) {
+      return count === 1 ? '1 pedido aguardando.' : `${count} pedidos aguardando.`;
+    },
+  },
+  messages: {
+    title: 'Mensagens',
+    label: 'Não lidas',
+    href: 'mensagens.html',
+    action: 'Abrir mensagens',
+    unitSingular: 'conversa',
+    unitPlural: 'conversas',
+    summary(count) {
+      return count === 1 ? '1 conversa não lida.' : `${count} conversas não lidas.`;
+    },
+  },
+  notifications: {
+    title: 'Avisos',
+    label: 'Pendentes',
+    href: 'notificacoes.html',
+    action: 'Ver avisos',
+    unitSingular: 'aviso',
+    unitPlural: 'avisos',
+    summary(count) {
+      return count === 1 ? '1 aviso aguardando leitura.' : `${count} avisos aguardando leitura.`;
+    },
+  },
+};
+
+const resolveSidebarQuickDefaultType = (counts) => {
+  if ((counts?.orders || 0) > 0) return 'orders';
+  if ((counts?.messages || 0) > 0) return 'messages';
+  return 'notifications';
+};
+
+const getSidebarQuickCounts = () => ({
+  orders: getLocalOpenOrdersCount(),
+  messages: getLocalUnreadMessageCount(),
+  notifications: getLocalUnreadNotificationsCount(),
+});
+
+const cloneSidebarQuickCounts = (counts) => ({
+  orders: Math.max(0, Number(counts?.orders) || 0),
+  messages: Math.max(0, Number(counts?.messages) || 0),
+  notifications: Math.max(0, Number(counts?.notifications) || 0),
+});
+
+const getSidebarQuickNoticeCopy = (type, delta) => {
+  const value = Math.max(1, Number(delta) || 1);
+  const config = SIDEBAR_QUICK_CONFIG[type] || SIDEBAR_QUICK_CONFIG.orders;
+  if (type === 'orders') {
+    return {
+      title: value === 1 ? 'Novo pedido recebido' : `${value} pedidos recebidos`,
+      action: config.action,
+      href: config.href,
+    };
+  }
+  if (type === 'messages') {
+    return {
+      title: value === 1 ? 'Nova mensagem recebida' : `${value} mensagens recebidas`,
+      action: config.action,
+      href: config.href,
+    };
+  }
+  return {
+    title: value === 1 ? 'Nova notificação' : `${value} novas notificações`,
+    action: config.action,
+    href: config.href,
+  };
+};
+
+const resetSidebarQuickAttentionNode = (node) => {
+  if (!node) return;
+  const timer = sidebarQuickAlertTimers.get(node);
+  if (timer) window.clearTimeout(timer);
+  sidebarQuickAlertTimers.delete(node);
+  node.classList.remove('is-updating', 'is-reacting');
+};
+
+const resetSidebarQuickNotice = (chip) => {
+  if (!chip) return;
+  const timer = sidebarQuickNoticeTimers.get(chip);
+  if (timer) window.clearTimeout(timer);
+  sidebarQuickNoticeTimers.delete(chip);
+  const statsNode = chip.querySelector('[data-sidebar-quick-chip-stats]');
+  const noticeNode = chip.querySelector('[data-sidebar-quick-notice]');
+  if (statsNode) statsNode.hidden = false;
+  if (noticeNode) noticeNode.hidden = true;
+  chip.classList.remove('is-showing-notice', 'is-reacting');
+};
+
+const showSidebarQuickChipNotice = (type, delta, delay = 0) => {
+  window.setTimeout(() => {
+    const chip = document.querySelector('[data-sidebar-quick-chip]');
+    if (!chip || chip.hidden) return;
+    const noticeNode = chip.querySelector('[data-sidebar-quick-notice]');
+    const statsNode = chip.querySelector('[data-sidebar-quick-chip-stats]');
+    if (!noticeNode || !statsNode) return;
+
+    const copy = getSidebarQuickNoticeCopy(type, delta);
+    const titleNode = noticeNode.querySelector('[data-sidebar-quick-notice-title]');
+    const actionNode = noticeNode.querySelector('[data-sidebar-quick-notice-action]');
+    noticeNode.dataset.sidebarQuickNoticeType = type;
+    noticeNode.setAttribute('href', copy.href);
+    noticeNode.setAttribute('aria-label', `${copy.title}. ${copy.action}`);
+    if (titleNode) titleNode.textContent = copy.title;
+    if (actionNode) actionNode.textContent = copy.action;
+    noticeNode.querySelectorAll('[data-sidebar-quick-notice-icon]').forEach((icon) => {
+      icon.hidden = icon.getAttribute('data-sidebar-quick-notice-icon') !== type;
+    });
+
+    statsNode.hidden = true;
+    noticeNode.hidden = false;
+    chip.classList.add('is-showing-notice', 'is-reacting');
+    void chip.offsetWidth;
+
+    const currentNoticeTimer = sidebarQuickNoticeTimers.get(chip);
+    if (currentNoticeTimer) window.clearTimeout(currentNoticeTimer);
+    sidebarQuickNoticeTimers.set(chip, window.setTimeout(() => {
+      resetSidebarQuickNotice(chip);
+    }, SIDEBAR_QUICK_NOTICE_DURATION_MS));
+  }, delay);
+};
+
+const triggerSidebarQuickTargetAttention = (type, delay = 0) => {
+  window.setTimeout(() => {
+    document.querySelectorAll(`[data-sidebar-quick-target="${type}"]`).forEach((node) => {
+      resetSidebarQuickAttentionNode(node);
+      node.classList.add('is-updating');
+      void node.offsetWidth;
+      sidebarQuickAlertTimers.set(node, window.setTimeout(() => {
+        node.classList.remove('is-updating');
+        sidebarQuickAlertTimers.delete(node);
+      }, SIDEBAR_QUICK_ALERT_DURATION_MS));
+    });
+
+    document.querySelectorAll('[data-sidebar-quick-chip]:not([hidden]), [data-sidebar-quick-panel]:not([hidden])').forEach((surface) => {
+      resetSidebarQuickAttentionNode(surface);
+      surface.classList.add('is-reacting');
+      void surface.offsetWidth;
+      sidebarQuickAlertTimers.set(surface, window.setTimeout(() => {
+        surface.classList.remove('is-reacting');
+        sidebarQuickAlertTimers.delete(surface);
+      }, SIDEBAR_QUICK_ALERT_DURATION_MS));
+    });
+  }, delay);
+};
+
+const getSidebarQuickCountDeltas = (counts, shouldMount) => {
+  const nextCounts = cloneSidebarQuickCounts(counts);
+  if (!shouldMount) {
+    sidebarQuickCountsSnapshot = null;
+    return [];
+  }
+  if (!sidebarQuickCountsSnapshot) {
+    sidebarQuickCountsSnapshot = nextCounts;
+    return [];
+  }
+  const deltas = SIDEBAR_QUICK_UPDATE_TYPES.map((type) => ({
+    type,
+    delta: nextCounts[type] - (Number(sidebarQuickCountsSnapshot[type]) || 0),
+  })).filter((entry) => entry.delta > 0);
+  sidebarQuickCountsSnapshot = nextCounts;
+  return deltas;
+};
+
+const triggerSidebarQuickAttention = (deltas) => {
+  if (!Array.isArray(deltas) || !deltas.length) return;
+  deltas.forEach((entry, index) => {
+    triggerSidebarQuickTargetAttention(entry.type, index * SIDEBAR_QUICK_ALERT_STAGGER_MS);
+    showSidebarQuickChipNotice(entry.type, entry.delta, index * SIDEBAR_QUICK_NOTICE_STAGGER_MS);
+  });
+};
+
+const syncSidebarQuickPanel = () => {
+  const panel = document.querySelector('[data-sidebar-quick-panel]');
+  const chip = document.querySelector('[data-sidebar-quick-chip]');
+  const brandLogo = document.querySelector('[data-sidebar-brand-logo]');
+  const brand = document.querySelector('[data-sidebar-brand]');
+  if (!panel || !chip || !brandLogo || !brand) return;
+
+  const user = getCurrentSessionUser();
+  const counts = getSidebarQuickCounts();
+  const hasUpdates = counts.orders > 0 || counts.messages > 0 || counts.notifications > 0;
+  const shouldMount = isProfessionalSessionUser(user) && hasUpdates;
+  const deltas = getSidebarQuickCountDeltas(counts, shouldMount);
+  const activeType = shouldMount ? readSidebarQuickActiveType() : '';
+  const isExpanded = shouldMount && isSidebarQuickType(activeType);
+
+  brandLogo.hidden = false;
+  chip.hidden = !shouldMount || isExpanded;
+  panel.hidden = !shouldMount || !isExpanded;
+  brand.dataset.sidebarQuickState = isExpanded ? 'expanded' : shouldMount ? 'collapsed' : 'idle';
+  brand.dataset.sidebarQuickActiveType = isExpanded ? activeType : '';
+
+  const expandButton = chip.querySelector('.sidebar__quick-expand[data-sidebar-quick-open="orders"]');
+  if (expandButton) expandButton.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+
+  if (!shouldMount || isExpanded) resetSidebarQuickNotice(chip);
+  if (!shouldMount) return;
+
+  const chipOrdersNode = chip.querySelector('[data-sidebar-quick-chip-orders]');
+  const chipMessagesNode = chip.querySelector('[data-sidebar-quick-chip-messages]');
+  const chipNotificationsNode = chip.querySelector('[data-sidebar-quick-chip-notifications]');
+
+  if (chipOrdersNode) chipOrdersNode.textContent = String(Math.max(0, counts.orders || 0));
+  if (chipMessagesNode) chipMessagesNode.textContent = String(Math.max(0, counts.messages || 0));
+  if (chipNotificationsNode) chipNotificationsNode.textContent = String(Math.max(0, counts.notifications || 0));
+
+  if (isExpanded) {
+    const config = SIDEBAR_QUICK_CONFIG[activeType] || SIDEBAR_QUICK_CONFIG.orders;
+    const value = Math.max(0, Number(counts[activeType]) || 0);
+    const titleNode = panel.querySelector('[data-sidebar-quick-title]');
+    const summaryNode = panel.querySelector('[data-sidebar-quick-summary]');
+    const detailNode = panel.querySelector('[data-sidebar-quick-detail]');
+    const detailLabelNode = panel.querySelector('[data-sidebar-quick-detail-label]');
+    const detailValueNode = panel.querySelector('[data-sidebar-quick-detail-value]');
+    const actionNode = panel.querySelector('[data-sidebar-quick-action]');
+
+    if (titleNode) titleNode.textContent = config.title;
+    if (summaryNode) summaryNode.textContent = config.summary(value);
+    if (detailNode) {
+      detailNode.dataset.sidebarQuickTarget = activeType;
+      detailNode.dataset.sidebarQuickType = activeType;
+    }
+    panel.querySelectorAll('[data-sidebar-quick-detail-icon]').forEach((icon) => {
+      icon.hidden = icon.getAttribute('data-sidebar-quick-detail-icon') !== activeType;
+    });
+    if (detailLabelNode) detailLabelNode.textContent = config.label;
+    if (detailValueNode) {
+      const unit = value === 1 ? config.unitSingular : config.unitPlural;
+      detailValueNode.textContent = `${value} ${unit}`;
+    }
+    if (actionNode) {
+      actionNode.setAttribute('href', config.href);
+      actionNode.firstChild.textContent = config.action + ' ';
+    }
+  }
+
+  triggerSidebarQuickAttention(deltas);
+};
+
+const setSidebarQuickPanelActiveType = (type) => {
+  writeSidebarQuickActiveType(type);
+  syncSidebarQuickPanel();
+};
+
 const syncSidebarOperationalBadges = () => {
   syncSidebarBadgeNode('[data-sidebar-orders-count]', getLocalOpenOrdersCount());
   syncSidebarBadgeNode('[data-sidebar-messages-count]', getLocalUnreadMessageCount());
   syncSidebarBadgeNode('[data-sidebar-notifications-count]', getLocalUnreadNotificationsCount());
+  syncSidebarQuickPanel();
 };
 
-const getToastIcon = (category) => category === 'messages'
-  ? '<svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6z"></path><path d="M8 10h8"></path></svg>'
-  : '<svg viewBox="0 0 24 24"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg>';
-
-const showOperationalToast = (detail = {}) => {
-  const notification = detail.notification || detail;
-  if (!notification || notification.read === true) return;
-  const user = getCurrentSessionUser();
-  if (notification.userId && user?.id && String(notification.userId) !== String(user.id)) return;
-  const category = String(notification.category || notification.type || '').toLowerCase().includes('message') ? 'messages' : 'orders';
-  let region = document.querySelector('[data-doke-event-toast-region]');
-  if (!region) {
-    region = document.createElement('div');
-    region.className = 'doke-event-toast-region';
-    region.setAttribute('data-doke-event-toast-region', 'true');
-    region.setAttribute('aria-live', 'polite');
-    region.setAttribute('aria-atomic', 'false');
-    document.body.appendChild(region);
-  }
-  const toast = document.createElement('div');
-  toast.className = 'doke-event-toast';
-  toast.innerHTML = `
-    <span class="doke-event-toast__icon" aria-hidden="true">${getToastIcon(category)}</span>
-    <span class="doke-event-toast__copy">
-      <strong>${String(notification.title || 'Nova atualização')}</strong>
-      <span>${String(notification.body || 'Há uma nova atualização no Doke.')}</span>
-    </span>
-  `;
-  region.prepend(toast);
-  window.setTimeout(() => {
-    toast.classList.add('is-leaving');
-    window.setTimeout(() => toast.remove(), 220);
-  }, 4200);
-};
+window.Doke = window.Doke || {};
+window.Doke.syncOperationalBadges = syncSidebarOperationalBadges;
 
 const updateSidebarActiveState = (pathOverride = null) => {
   const path = pathOverride || getCurrentPath();
@@ -1308,6 +1617,7 @@ const initializeCurrentView = () => {
   syncAuthUi();
   syncTopbarScrollState();
   syncHeaderLocation();
+  syncSidebarOperationalBadges();
   if (usesPageSearchOnlyMobile()) {
     closeMobileSearch();
   }
@@ -1756,6 +2066,19 @@ document.addEventListener("click", (event) => {
     return;
   }
 
+  const sidebarQuickOpenButton = event.target.closest('[data-sidebar-quick-open]');
+  if (sidebarQuickOpenButton) {
+    const type = sidebarQuickOpenButton.getAttribute('data-sidebar-quick-open') || resolveSidebarQuickDefaultType(getSidebarQuickCounts());
+    setSidebarQuickPanelActiveType(type);
+    return;
+  }
+
+  const sidebarQuickCollapseButton = event.target.closest('[data-sidebar-quick-collapse]');
+  if (sidebarQuickCollapseButton) {
+    setSidebarQuickPanelActiveType('');
+    return;
+  }
+
   if (event.target.closest("[data-sidebar-scrim]")) {
     body.classList.remove("sidebar-open");
     return;
@@ -1853,9 +2176,8 @@ document.addEventListener("keydown", (event) => {
 initializeCurrentView();
 
 ['doke:notification-created', 'doke:message-sent', 'doke:order-created', 'doke:order-status-changed', 'doke:auth-session-change', 'doke:auth-surface-ready'].forEach((eventName) => {
-  document.addEventListener(eventName, (event) => {
+  document.addEventListener(eventName, () => {
     syncSidebarOperationalBadges();
-    if (eventName === 'doke:notification-created') showOperationalToast(event.detail || {});
   });
 });
 window.addEventListener('storage', syncSidebarOperationalBadges);

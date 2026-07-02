@@ -284,16 +284,37 @@ body[data-page="orcamento"] .address-modal {
   background: transparent;
 }
 
+body[data-page="orcamento"] .address-modal[open] {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: max(18px, env(safe-area-inset-top)) clamp(18px, 3vw, 32px) max(18px, env(safe-area-inset-bottom));
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
 body[data-page="orcamento"] .address-modal::backdrop,
-body[data-page="orcamento"] .budget-success-modal::backdrop {
+body[data-page="orcamento"] .budget-success-modal::backdrop,
+body[data-page="orcamento"] .budget-submission-overlay::backdrop {
   background: rgba(8, 42, 85, 0.24);
   backdrop-filter: blur(8px);
 }
 
 body[data-page="orcamento"] .address-modal__dialog {
+  width: min(760px, calc(100vw - 48px));
+  max-width: 100%;
+  max-height: calc(100dvh - 48px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   display: grid;
+  box-sizing: border-box;
   gap: 16px;
   padding: clamp(22px, 2.4vw, 32px);
+  overflow-y: auto;
   border: 1px solid var(--budget-border);
   border-radius: 28px;
   background: #fff;
@@ -331,13 +352,31 @@ body[data-page="orcamento"] .budget-success-modal {
   background: transparent;
 }
 
+body[data-page="orcamento"] .budget-success-modal[open] {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: max(18px, env(safe-area-inset-top)) clamp(18px, 3vw, 32px) max(18px, env(safe-area-inset-bottom));
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
 body[data-page="orcamento"] .budget-success-modal:not([open]) {
   display: none;
 }
 
 body[data-page="orcamento"] .budget-success-modal__dialog {
-  width: 100%;
+  width: min(calc(100vw - 48px), var(--doke-financial-modal-width, 620px));
+  max-width: 100%;
+  max-height: calc(100dvh - 48px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   overflow: hidden;
+  box-sizing: border-box;
   display: grid;
   justify-items: stretch;
   align-items: stretch;
@@ -506,158 +545,108 @@ body.budget-modal-open {
     width: calc(100vw - 24px);
   }
 
-  body[data-page="orcamento"] .address-modal__dialog {
-    max-height: calc(100dvh - 24px);
+  body[data-page="orcamento"] .address-modal[open],
+  body[data-page="orcamento"] .budget-success-modal[open] {
+    padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
+  }
+
+  body[data-page="orcamento"] .address-modal__dialog,
+  body[data-page="orcamento"] .budget-success-modal__dialog {
+    max-height: calc(100dvh - 28px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     overflow-y: auto;
   }
 }
 
 
-/* Orçamento loading state.
-   It reuses the success modal shell and only owns the centered service-symbol
-   cycle for the transient processing state. */
-body[data-page="orcamento"] .budget-submission-modal__dialog {
-  min-block-size: min(536px, calc(100dvh - 48px));
-}
-
-body[data-page="orcamento"] .budget-submission-modal__body {
-  width: auto;
-  min-width: 0;
-  min-block-size: clamp(300px, 34vh, 390px);
-  display: grid;
-  justify-items: center;
-  align-content: center;
-  gap: 14px;
-  padding-block: 6px 44px;
-  text-align: center;
-}
-
-body[data-page="orcamento"] .budget-submission-modal__loader {
-  position: relative;
-  inline-size: 78px;
-  block-size: 78px;
-  display: grid;
-  place-items: center;
-  margin-block-end: 4px;
-  border: 1px solid rgba(207, 222, 239, 0.78);
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 50% 45%, rgba(42, 95, 144, 0.08), transparent 62%),
-    #f8fbff;
-  box-shadow:
-    0 20px 42px rgba(18, 62, 103, 0.10),
-    0 1px 0 rgba(255, 255, 255, 0.92) inset;
-}
-
-body[data-page="orcamento"] .budget-submission-modal__loader::before {
-  content: "";
-  position: absolute;
-  inset: 9px;
-  border: 1px solid rgba(42, 95, 144, 0.12);
-  border-radius: inherit;
-}
-
-body[data-page="orcamento"] .budget-submission-modal__title.doke-modal-title {
-  width: auto;
-  max-width: 12ch;
-  justify-self: center;
+/* Orçamento processing overlay.
+   Root cause addressed: the page had a one-off loader shell with its own icon
+   cycle and white tile. This state now reuses the shared loading indicator
+   contract so the processing experience stays consistent with the rest of Doke. */
+body[data-page="orcamento"] .budget-submission-overlay {
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
   margin: 0;
-  text-align: center;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--doke-financial-title, #0b3778);
 }
 
-body[data-page="orcamento"] .budget-submission-modal__message.doke-modal-description {
-  width: auto;
-  max-width: 28ch;
-  justify-self: center;
-  margin: 0;
-  text-align: center;
+body[data-page="orcamento"] .budget-submission-overlay:not([open]) {
+  display: none;
 }
 
-body[data-page="orcamento"] .budget-submission-modal .doke-submission-feedback__symbols {
-  position: relative;
-  inline-size: 44px;
-  block-size: 44px;
+body[data-page="orcamento"] .budget-submission-overlay[open] {
+  display: block;
 }
 
-body[data-page="orcamento"] .budget-submission-modal .doke-submission-feedback__symbol {
-  position: absolute;
+body[data-page="orcamento"] .budget-submission-overlay__content {
+  position: fixed;
   inset: 0;
   display: grid;
-  place-items: center;
-  opacity: 0;
-  transform: translateY(4px) scale(0.9);
-  animation: dokeBudgetLoadingSymbolCycle 4.8s ease-in-out infinite;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  padding: clamp(24px, 5vw, 48px);
+  text-align: center;
+  pointer-events: none;
 }
 
-body[data-page="orcamento"] .budget-submission-modal .doke-submission-feedback__symbol--wrench {
-  animation-delay: 1.6s;
+body[data-page="orcamento"] .budget-submission-overlay__loader {
+  --doke-loading-size: clamp(84px, 12vw, 102px);
+  --doke-loading-thickness: clamp(6px, 0.7vw, 8px);
+  margin-block-end: 2px;
+  filter: drop-shadow(0 18px 34px rgba(16, 58, 100, 0.14));
 }
 
-body[data-page="orcamento"] .budget-submission-modal .doke-submission-feedback__symbol--bolt {
-  animation-delay: 3.2s;
+body[data-page="orcamento"] .budget-submission-overlay__loader svg {
+  inline-size: 40%;
+  block-size: 40%;
 }
 
-body[data-page="orcamento"] .budget-submission-modal .doke-submission-feedback__symbol svg {
-  inline-size: 40px;
-  block-size: 40px;
-  fill: none;
-  stroke: var(--budget-blue, #2a5f90);
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+body[data-page="orcamento"] .budget-submission-overlay__title {
+  max-width: 18ch;
+  margin: 0;
+  color: var(--doke-financial-title, #0b3778);
+  font-size: clamp(1.42rem, 3vw, 1.86rem);
+  line-height: 1.08;
+  letter-spacing: -0.052em;
+  font-weight: 850;
+  text-align: center;
+  text-shadow: 0 12px 44px rgba(255, 255, 255, 0.78);
 }
 
-@keyframes dokeBudgetLoadingSymbolCycle {
-  0%, 18% {
-    opacity: 0;
-    transform: translateY(4px) scale(0.9);
-  }
-
-  22%, 46% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-
-  54%, 100% {
-    opacity: 0;
-    transform: translateY(-4px) scale(0.95);
-  }
+body[data-page="orcamento"] .budget-submission-overlay__message {
+  max-width: 26ch;
+  margin: 0;
+  color: rgba(13, 47, 89, 0.68);
+  font-size: 0.96rem;
+  line-height: 1.42;
+  font-weight: 800;
+  text-align: center;
+  text-shadow: 0 10px 34px rgba(255, 255, 255, 0.9);
 }
 
 @media (max-width: 760px) {
-  body[data-page="orcamento"] .budget-submission-modal__dialog {
-    min-block-size: min(500px, calc(100dvh - 48px));
+  body[data-page="orcamento"] .budget-submission-overlay__loader {
+    --doke-loading-size: 82px;
+    --doke-loading-thickness: 6px;
   }
 
-  body[data-page="orcamento"] .budget-submission-modal__body {
-    min-block-size: clamp(280px, 38vh, 350px);
-    padding-block: 2px 36px;
+  body[data-page="orcamento"] .budget-submission-overlay__title {
+    font-size: clamp(1.32rem, 6vw, 1.66rem);
   }
 
-  body[data-page="orcamento"] .budget-submission-modal__loader {
-    inline-size: 72px;
-    block-size: 72px;
-  }
-
-  body[data-page="orcamento"] .budget-submission-modal .doke-submission-feedback__symbols {
-    inline-size: 40px;
-    block-size: 40px;
-  }
-
-  body[data-page="orcamento"] .budget-submission-modal .doke-submission-feedback__symbol svg {
-    inline-size: 36px;
-    block-size: 36px;
+  body[data-page="orcamento"] .budget-submission-overlay__message {
+    font-size: 0.9rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  body[data-page="orcamento"] .budget-submission-modal .doke-submission-feedback__symbol {
-    animation: none;
-    opacity: 0;
-    transform: none;
-  }
-
-  body[data-page="orcamento"] .budget-submission-modal .doke-submission-feedback__symbol--paint {
-    opacity: 1;
+  body[data-page="orcamento"] .budget-submission-overlay__title,
+  body[data-page="orcamento"] .budget-submission-overlay__message {
+    text-shadow: none;
   }
 }

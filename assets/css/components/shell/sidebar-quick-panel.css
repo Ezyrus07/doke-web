@@ -1,0 +1,533 @@
+/* Sidebar quick panel component.
+   Owner: components/shell. Keeps professional pending updates as a compact
+   logo-area chip that opens one small contextual card per update type. */
+body.app-shell-page .sidebar__brand[data-sidebar-quick-state="collapsed"],
+body.shell-home .sidebar__brand[data-sidebar-quick-state="collapsed"],
+body.app-shell-page .sidebar__brand[data-sidebar-quick-state="expanded"],
+body.shell-home .sidebar__brand[data-sidebar-quick-state="expanded"] {
+  display: grid;
+  gap: 10px;
+  padding: 0 0 8px;
+}
+
+body.app-shell-page .sidebar__brand[data-sidebar-quick-state="collapsed"] .brand-logo img,
+body.shell-home .sidebar__brand[data-sidebar-quick-state="collapsed"] .brand-logo img,
+body.app-shell-page .sidebar__brand[data-sidebar-quick-state="expanded"] .brand-logo img,
+body.shell-home .sidebar__brand[data-sidebar-quick-state="expanded"] .brand-logo img {
+  width: min(126px, 56%);
+}
+
+body.app-shell-page .sidebar__quick-chip,
+body.shell-home .sidebar__quick-chip {
+  position: relative;
+  display: grid;
+  width: min(172px, 100%);
+  min-height: 38px;
+  margin: 0 auto;
+  padding: 0 8px;
+  border: 1px solid rgba(42, 95, 144, 0.14);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #173b66;
+  box-shadow: 0 8px 18px rgba(16, 38, 60, 0.06);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+}
+
+body.app-shell-page .sidebar__quick-chip-stats,
+body.shell-home .sidebar__quick-chip-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, auto)) 24px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+body.app-shell-page .sidebar__quick-chip:hover,
+body.shell-home .sidebar__quick-chip:hover,
+body.app-shell-page .sidebar__quick-chip:focus-within,
+body.shell-home .sidebar__quick-chip:focus-within {
+  border-color: rgba(42, 95, 144, 0.24);
+  box-shadow: 0 10px 22px rgba(16, 38, 60, 0.08);
+  transform: translateY(-1px);
+}
+
+body.app-shell-page .sidebar__quick-chip-stat,
+body.shell-home .sidebar__quick-chip-stat {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 28px;
+  padding: 0 2px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.77rem;
+  font-weight: 850;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.18s ease, background-color 0.18s ease;
+}
+
+body.app-shell-page .sidebar__quick-chip-stat:hover,
+body.shell-home .sidebar__quick-chip-stat:hover,
+body.app-shell-page .sidebar__quick-chip-stat:focus-visible,
+body.shell-home .sidebar__quick-chip-stat:focus-visible {
+  background: rgba(42, 95, 144, 0.06);
+  transform: translateY(-1px);
+}
+
+body.app-shell-page .sidebar__quick-chip-stat svg,
+body.shell-home .sidebar__quick-chip-stat svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body.app-shell-page .sidebar__quick-chip-stat--orders,
+body.shell-home .sidebar__quick-chip-stat--orders {
+  color: #1b8b79;
+}
+
+body.app-shell-page .sidebar__quick-chip-stat--messages,
+body.shell-home .sidebar__quick-chip-stat--messages {
+  color: #2a5f90;
+}
+
+body.app-shell-page .sidebar__quick-chip-stat--notifications,
+body.shell-home .sidebar__quick-chip-stat--notifications {
+  color: #d6921c;
+}
+
+body.app-shell-page .sidebar__quick-expand,
+body.shell-home .sidebar__quick-expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #8da1b8;
+  cursor: pointer;
+  transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+body.app-shell-page .sidebar__quick-expand:hover,
+body.shell-home .sidebar__quick-expand:hover,
+body.app-shell-page .sidebar__quick-expand:focus-visible,
+body.shell-home .sidebar__quick-expand:focus-visible {
+  background: rgba(42, 95, 144, 0.08);
+  color: #2a5f90;
+}
+
+body.app-shell-page .sidebar__quick-expand svg,
+body.shell-home .sidebar__quick-expand svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body.app-shell-page .sidebar__quick-detail-icon[hidden],
+body.shell-home .sidebar__quick-detail-icon[hidden],
+body.app-shell-page .sidebar__quick-notice[hidden],
+body.shell-home .sidebar__quick-notice[hidden],
+body.app-shell-page .sidebar__quick-notice-icon[hidden],
+body.shell-home .sidebar__quick-notice-icon[hidden],
+body.app-shell-page .sidebar__quick-chip-stats[hidden],
+body.shell-home .sidebar__quick-chip-stats[hidden] {
+  display: none;
+}
+
+body.app-shell-page .sidebar__quick-notice,
+body.shell-home .sidebar__quick-notice {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 36px;
+  color: #173b66;
+  text-decoration: none;
+  animation: sidebarQuickNoticeIn 0.22s ease-out both;
+}
+
+body.app-shell-page .sidebar__quick-notice-icon,
+body.shell-home .sidebar__quick-notice-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 25px;
+  width: 25px;
+  height: 25px;
+  border-radius: 9px;
+  background: rgba(42, 95, 144, 0.08);
+  color: #2a5f90;
+}
+
+body.app-shell-page .sidebar__quick-notice-icon--orders,
+body.shell-home .sidebar__quick-notice-icon--orders {
+  background: rgba(41, 143, 127, 0.12);
+  color: #1b8b79;
+}
+
+body.app-shell-page .sidebar__quick-notice-icon--notifications,
+body.shell-home .sidebar__quick-notice-icon--notifications {
+  background: rgba(214, 146, 28, 0.12);
+  color: #d6921c;
+}
+
+body.app-shell-page .sidebar__quick-notice-icon svg,
+body.shell-home .sidebar__quick-notice-icon svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body.app-shell-page .sidebar__quick-notice-copy,
+body.shell-home .sidebar__quick-notice-copy {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+  text-align: left;
+}
+
+body.app-shell-page .sidebar__quick-notice-copy strong,
+body.shell-home .sidebar__quick-notice-copy strong {
+  overflow: hidden;
+  color: #143f73;
+  font-size: 0.74rem;
+  font-weight: 900;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.app-shell-page .sidebar__quick-notice-copy span,
+body.shell-home .sidebar__quick-notice-copy span {
+  overflow: hidden;
+  color: #6b7f98;
+  font-size: 0.66rem;
+  font-weight: 800;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.app-shell-page .sidebar__quick-chip.is-showing-notice,
+body.shell-home .sidebar__quick-chip.is-showing-notice {
+  border-color: rgba(41, 143, 127, 0.26);
+  box-shadow: 0 12px 26px rgba(41, 143, 127, 0.12);
+}
+
+@keyframes sidebarQuickNoticeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+body.app-shell-page .sidebar__quick-panel,
+body.shell-home .sidebar__quick-panel {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  width: min(168px, 100%);
+  margin: 0 auto;
+  padding: 10px;
+  border: 1px solid rgba(42, 95, 144, 0.12);
+  border-radius: 17px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 251, 254, 0.98) 100%);
+  box-shadow: 0 10px 24px rgba(16, 38, 60, 0.09);
+  transform-origin: top center;
+  animation: sidebarQuickPanelIn 0.22s ease-out both;
+}
+
+@keyframes sidebarQuickPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes sidebarQuickSurfaceGlow {
+  0% {
+    border-color: rgba(42, 95, 144, 0.14);
+    box-shadow: 0 10px 24px rgba(16, 38, 60, 0.07);
+  }
+
+  34% {
+    border-color: rgba(41, 143, 127, 0.34);
+    box-shadow: 0 18px 38px rgba(41, 143, 127, 0.18), 0 0 0 4px rgba(41, 143, 127, 0.08);
+  }
+
+  100% {
+    border-color: rgba(42, 95, 144, 0.14);
+    box-shadow: 0 10px 24px rgba(16, 38, 60, 0.07);
+  }
+}
+
+@keyframes sidebarQuickIconPulse {
+  0% { transform: scale(1); }
+  34% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+@keyframes sidebarQuickValueBump {
+  0% { transform: translateY(0) scale(1); }
+  38% { transform: translateY(-2px) scale(1.16); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+body.app-shell-page .sidebar__quick-collapse,
+body.shell-home .sidebar__quick-collapse {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(42, 95, 144, 0.12);
+  border-radius: 999px;
+  background: #f8fbfe;
+  color: #7b8ea7;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+body.app-shell-page .sidebar__quick-collapse svg,
+body.shell-home .sidebar__quick-collapse svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body.app-shell-page .sidebar__quick-panel-head,
+body.shell-home .sidebar__quick-panel-head {
+  display: grid;
+  gap: 3px;
+  padding-right: 28px;
+}
+
+body.app-shell-page .sidebar__quick-panel-kicker,
+body.shell-home .sidebar__quick-panel-kicker {
+  color: #687d96;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+body.app-shell-page .sidebar__quick-panel-title,
+body.shell-home .sidebar__quick-panel-title {
+  color: #143f73;
+  font-size: 1.02rem;
+  font-weight: 850;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+}
+
+body.app-shell-page .sidebar__quick-panel-summary,
+body.shell-home .sidebar__quick-panel-summary {
+  margin: 0;
+  color: #5d7696;
+  font-size: 0.74rem;
+  font-weight: 650;
+  line-height: 1.32;
+}
+
+body.app-shell-page .sidebar__quick-detail,
+body.shell-home .sidebar__quick-detail {
+  position: relative;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  grid-template-areas:
+    "icon value"
+    "icon label";
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 1px;
+  min-height: 42px;
+  padding: 7px 8px;
+  border: 1px solid rgba(42, 95, 144, 0.1);
+  border-radius: 14px;
+  background: rgba(248, 251, 254, 0.92);
+  color: #183b63;
+}
+
+body.app-shell-page .sidebar__quick-detail-icon,
+body.shell-home .sidebar__quick-detail-icon {
+  grid-area: icon;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 10px;
+  background: rgba(42, 95, 144, 0.08);
+  color: #2a5f90;
+}
+
+body.app-shell-page .sidebar__quick-detail-icon--orders,
+body.shell-home .sidebar__quick-detail-icon--orders {
+  background: rgba(41, 143, 127, 0.12);
+  color: #1b8b79;
+}
+
+body.app-shell-page .sidebar__quick-detail-icon--notifications,
+body.shell-home .sidebar__quick-detail-icon--notifications {
+  background: rgba(214, 146, 28, 0.12);
+  color: #d6921c;
+}
+
+body.app-shell-page .sidebar__quick-detail-icon svg,
+body.shell-home .sidebar__quick-detail-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body.app-shell-page .sidebar__quick-detail-label,
+body.shell-home .sidebar__quick-detail-label {
+  grid-area: label;
+  color: #6a7f98;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+body.app-shell-page .sidebar__quick-detail-value,
+body.shell-home .sidebar__quick-detail-value {
+  grid-area: value;
+  color: #102f54;
+  font-size: 0.84rem;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+body.app-shell-page .sidebar__quick-panel-action,
+body.shell-home .sidebar__quick-panel-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 31px;
+  margin-top: 0;
+  padding-top: 8px;
+  border-top: 1px solid rgba(42, 95, 144, 0.1);
+  color: #1d6fb3;
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+body.app-shell-page .sidebar__quick-collapse:hover,
+body.shell-home .sidebar__quick-collapse:hover,
+body.app-shell-page .sidebar__quick-collapse:focus-visible,
+body.shell-home .sidebar__quick-collapse:focus-visible {
+  transform: translateY(-1px);
+}
+
+body.app-shell-page .sidebar__quick-chip.is-reacting,
+body.shell-home .sidebar__quick-chip.is-reacting,
+body.app-shell-page .sidebar__quick-panel.is-reacting,
+body.shell-home .sidebar__quick-panel.is-reacting {
+  animation: sidebarQuickSurfaceGlow 1.25s ease-out both;
+}
+
+body.app-shell-page .sidebar__quick-chip.is-reacting .sidebar__quick-expand,
+body.shell-home .sidebar__quick-chip.is-reacting .sidebar__quick-expand {
+  animation: sidebarQuickArrowNudge 0.72s ease-out both;
+}
+
+body.app-shell-page .sidebar__quick-chip-stat.is-updating svg,
+body.shell-home .sidebar__quick-chip-stat.is-updating svg,
+body.app-shell-page .sidebar__quick-detail.is-updating .sidebar__quick-detail-icon:not([hidden]),
+body.shell-home .sidebar__quick-detail.is-updating .sidebar__quick-detail-icon:not([hidden]) {
+  animation: sidebarQuickIconPulse 0.78s cubic-bezier(0.18, 0.82, 0.22, 1) both;
+}
+
+body.app-shell-page .sidebar__quick-chip-stat.is-updating strong,
+body.shell-home .sidebar__quick-chip-stat.is-updating strong,
+body.app-shell-page .sidebar__quick-detail.is-updating .sidebar__quick-detail-value,
+body.shell-home .sidebar__quick-detail.is-updating .sidebar__quick-detail-value {
+  animation: sidebarQuickValueBump 0.72s cubic-bezier(0.18, 0.82, 0.22, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.app-shell-page .sidebar__quick-chip,
+  body.shell-home .sidebar__quick-chip,
+  body.app-shell-page .sidebar__quick-panel,
+  body.shell-home .sidebar__quick-panel,
+  body.app-shell-page .sidebar__quick-chip-stat svg,
+  body.shell-home .sidebar__quick-chip-stat svg,
+  body.app-shell-page .sidebar__quick-detail-icon,
+  body.shell-home .sidebar__quick-detail-icon,
+  body.app-shell-page .sidebar__quick-detail-value,
+  body.shell-home .sidebar__quick-detail-value,
+  body.app-shell-page .sidebar__quick-chip-stat strong,
+  body.shell-home .sidebar__quick-chip-stat strong,
+  body.app-shell-page .sidebar__quick-notice,
+  body.shell-home .sidebar__quick-notice {
+    animation: none;
+    transition-duration: 0ms;
+  }
+}
+
+body.sidebar-collapsed .sidebar__quick-chip,
+html.doke-sidebar-collapsed body .sidebar__quick-chip,
+body.sidebar-collapsed .sidebar__quick-panel,
+html.doke-sidebar-collapsed body .sidebar__quick-panel,
+body.app-shell-page .sidebar__quick-chip[hidden],
+body.shell-home .sidebar__quick-chip[hidden],
+body.app-shell-page .sidebar__quick-panel[hidden],
+body.shell-home .sidebar__quick-panel[hidden],
+body.app-shell-page .sidebar__quick-notice[hidden],
+body.shell-home .sidebar__quick-notice[hidden],
+body.app-shell-page .sidebar__quick-chip-stats[hidden],
+body.shell-home .sidebar__quick-chip-stats[hidden] {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  body.app-shell-page .sidebar__quick-chip,
+  body.shell-home .sidebar__quick-chip,
+  body.app-shell-page .sidebar__quick-panel,
+  body.shell-home .sidebar__quick-panel {
+    width: min(164px, 100%);
+  }
+}

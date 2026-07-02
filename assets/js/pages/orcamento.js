@@ -513,16 +513,36 @@ const initBudgetPage = () => {
       const serviceName = data.get("catégoria") || service;
       const ordersService = window.Doke?.services?.orders;
       const previousSubmitText = submitButton?.textContent || "Enviar solicitação";
+      const restoreSubmitButton = () => {
+        form.dataset.submitState = "idle";
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.removeAttribute("aria-busy");
+          submitButton.textContent = previousSubmitText;
+        }
+      };
       const loadingFeedback = window.DokeSubmissionFeedback?.show?.(loadingScreen, {
         title: "Enviando solicitação",
         message: "Está quase lá...",
-        minDuration: 2200
+        minDuration: 0
       });
+      const minimumLoadingTime = 2000;
+      const loadingDelay = new Promise((resolve) => {
+        window.setTimeout(resolve, minimumLoadingTime);
+      });
+      const preventLoadingDismiss = (cancelEvent) => {
+        cancelEvent.preventDefault();
+      };
+      loadingScreen?.addEventListener("cancel", preventLoadingDismiss);
       if (submitButton) {
         submitButton.disabled = true;
         submitButton.setAttribute("aria-busy", "true");
         submitButton.textContent = "Enviando...";
       }
+
+      const attachments = await readAttachments();
+      await loadingDelay;
+      loadingScreen?.removeEventListener("cancel", preventLoadingDismiss);
 
       const payload = {
         provider,
@@ -553,7 +573,7 @@ const initBudgetPage = () => {
           observacoes: data.get("triagem_observacoes") || ""
         },
         area: data.get("area") || "",
-        attachments: await readAttachments(),
+        attachments,
         status: "pending",
         statusLabel: "Aguardando resposta",
         nextAction: "Acompanhar pedido",
@@ -575,15 +595,11 @@ const initBudgetPage = () => {
         }
         showSuccessScreen(savedOrder);
       } catch (error) {
+        loadingScreen?.removeEventListener("cancel", preventLoadingDismiss);
         if (loadingFeedback?.close) {
           await loadingFeedback.close();
         }
-        form.dataset.submitState = "idle";
-        if (submitButton) {
-          submitButton.disabled = false;
-          submitButton.removeAttribute("aria-busy");
-          submitButton.textContent = previousSubmitText;
-        }
+        restoreSubmitButton();
         window.alert(error?.message || "Não foi possível enviar o orçamento agora.");
       }
     });

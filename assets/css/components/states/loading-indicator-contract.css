@@ -1,0 +1,175 @@
+/* Shared loading indicator contract.
+   Responsibility: unify the visual language for loading indicators,
+   transient busy states and lightweight processing feedback across the site.
+   This file must not own page layout, modal structure or card anatomy. */
+
+:root {
+  --doke-loading-primary: var(--color-primary, #2a5f90);
+  --doke-loading-accent: var(--color-secondary, #298f7f);
+  --doke-loading-track: rgba(42, 95, 144, 0.14);
+  --doke-loading-size: 52px;
+  --doke-loading-thickness: 5px;
+}
+
+@keyframes doke-loading-ring-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes doke-loading-icon-breathe {
+  0%, 100% { transform: scale(0.96); opacity: 0.92; }
+  50% { transform: scale(1); opacity: 1; }
+}
+
+:where(
+  .doke-loading-spinner,
+  .home-order-feedback__spinner,
+  .payment-submit-state__spinner,
+  .budget-submission-overlay__loader
+) {
+  position: relative;
+  inline-size: var(--doke-loading-size);
+  block-size: var(--doke-loading-size);
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  color: var(--doke-loading-primary);
+}
+
+:where(
+  .doke-loading-spinner,
+  .home-order-feedback__spinner,
+  .payment-submit-state__spinner,
+  .budget-submission-overlay__loader
+)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 220deg,
+    rgba(42, 95, 144, 0.12) 0deg,
+    rgba(42, 95, 144, 0.12) 42deg,
+    var(--doke-loading-primary) 118deg,
+    var(--doke-loading-accent) 236deg,
+    rgba(42, 95, 144, 0.16) 360deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--doke-loading-thickness)), #000 calc(100% - var(--doke-loading-thickness) + 1px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - var(--doke-loading-thickness)), #000 calc(100% - var(--doke-loading-thickness) + 1px));
+  animation: doke-loading-ring-spin 0.95s linear infinite;
+}
+
+:where(
+  .doke-loading-spinner,
+  .home-order-feedback__spinner,
+  .payment-submit-state__spinner,
+  .budget-submission-overlay__loader
+) > svg,
+:where(
+  .doke-loading-spinner,
+  .home-order-feedback__spinner,
+  .payment-submit-state__spinner,
+  .budget-submission-overlay__loader
+) > .doke-loading-spinner__icon {
+  position: relative;
+  z-index: 1;
+  inline-size: 40%;
+  block-size: 40%;
+  stroke: var(--doke-loading-primary);
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  animation: doke-loading-icon-breathe 1.18s ease-in-out infinite;
+}
+
+.doke-loading-spinner--sm {
+  --doke-loading-size: 40px;
+  --doke-loading-thickness: 4px;
+}
+
+.doke-loading-spinner--lg {
+  --doke-loading-size: 84px;
+  --doke-loading-thickness: 7px;
+}
+
+.doke-loading-state::before {
+  inline-size: 34px;
+  block-size: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 220deg,
+    rgba(42, 95, 144, 0.12) 0deg,
+    rgba(42, 95, 144, 0.12) 42deg,
+    var(--doke-loading-primary) 118deg,
+    var(--doke-loading-accent) 236deg,
+    rgba(42, 95, 144, 0.16) 360deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  animation: doke-loading-ring-spin 0.95s linear infinite;
+}
+
+:where(button, .doke-btn, .doke-icon-btn)[aria-busy="true"] {
+  position: relative;
+}
+
+:where(button, .doke-btn, .doke-icon-btn)[aria-busy="true"]::before {
+  content: "";
+  inline-size: 15px;
+  block-size: 15px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 220deg,
+    rgba(255, 255, 255, 0.24) 0deg,
+    rgba(255, 255, 255, 0.24) 42deg,
+    currentColor 118deg,
+    rgba(155, 227, 214, 0.98) 236deg,
+    rgba(255, 255, 255, 0.24) 360deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  animation: doke-loading-ring-spin 0.8s linear infinite;
+}
+
+:where(.doke-btn--ghost, .doke-btn--soft, .doke-btn--secondary, .doke-icon-btn--flat)[aria-busy="true"]::before,
+:where(button, .doke-btn, .doke-icon-btn)[aria-busy="true"][data-loading-tone="brand"]::before {
+  background: conic-gradient(
+    from 220deg,
+    rgba(42, 95, 144, 0.12) 0deg,
+    rgba(42, 95, 144, 0.12) 42deg,
+    var(--doke-loading-primary) 118deg,
+    var(--doke-loading-accent) 236deg,
+    rgba(42, 95, 144, 0.16) 360deg
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(
+    .doke-loading-spinner,
+    .home-order-feedback__spinner,
+    .payment-submit-state__spinner,
+    .budget-submission-overlay__loader
+  )::before,
+  .doke-loading-state::before,
+  :where(button, .doke-btn, .doke-icon-btn)[aria-busy="true"]::before {
+    animation: none;
+  }
+
+  :where(
+    .doke-loading-spinner,
+    .home-order-feedback__spinner,
+    .payment-submit-state__spinner,
+    .budget-submission-overlay__loader
+  ) > svg,
+  :where(
+    .doke-loading-spinner,
+    .home-order-feedback__spinner,
+    .payment-submit-state__spinner,
+    .budget-submission-overlay__loader
+  ) > .doke-loading-spinner__icon {
+    animation: none;
+  }
+}

@@ -2,7 +2,7 @@
   'use strict';
 
   var Doke = window.Doke || (window.Doke = {});
-  var ROUTER_VERSION = '20260628-stable-shell-transition-v7';
+  var ROUTER_VERSION = '20260702-payment-route-init-v1';
   var ROUTE_VISUAL_THRESHOLD_MS = 150;
   var ROUTE_SETTLEMENT_TIMEOUT_MS = 9000;
 
@@ -49,6 +49,7 @@
     '/perfil.html': ['DokeInitProfile'],
     '/configuracoes.html': [],
     '/orcamento.html': ['DokeInitBudget'],
+    '/pagamento-profissional.html': ['DokeInitPayment'],
     '/tornar-profissional.html': ['DokeInitBecomePro']
   };
 

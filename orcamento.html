@@ -12,7 +12,7 @@
 <script src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
 <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
 <script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
-<link href="assets/css/pages/orcamento-foundation.css?v=20260701-budget-loading-shell-v1" rel="stylesheet"/>
+<link href="assets/css/pages/orcamento-foundation.css?v=20260702-sidebar-quick-alert-flow-v1" rel="stylesheet"/>
 </head>
 <body data-page="orcamento" data-auth-guard="enforce" class="doke-app-shell-page app-shell-page internal-shell-page become-pro-page-shell doke-flow has-global-header">
 <div class="app-shell" data-shell-contract="app-shell">
@@ -238,26 +238,13 @@
 <aside aria-label="Orientações para um bom pedido" class="become-pro-benefits-card doke-form-page-side-card"><h2>Para receber uma boa resposta</h2><ul><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Escopo claro</strong><p>Explique o serviço, o ambiente e o tamanho aproximado.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Prazo definido</strong><p>Informe urgência, data desejada e melhor turno.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Endereço confirmado</strong><p>Mantenha o local do atendimento salvo antes do envio.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Referências úteis</strong><p>Anexe fotos, vídeos ou inspirações quando ajudarem.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Resumo privado</strong><p>Seu pedido vai direto para o profissional escolhido.</p></div></li><li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong data-budget-provider="">Studio Aquarela</strong><p>Pedido de <span data-budget-service="">Pintura residencial</span> em Salvador BA.</p></div></li></ul></aside>
 </div>
 
-<dialog aria-labelledby="budget-loading-title" class="budget-success-modal budget-submission-modal doke-submission-feedback doke-native-overlay" data-budget-loading data-submission-feedback data-submission-feedback-title="Enviando solicitação" data-submission-feedback-message="Está quase lá..." hidden>
-<div class="budget-success-modal__dialog budget-submission-modal__dialog doke-modal__surface doke-card become-pro-submit-state__card doke-overlay__surface doke-modal-surface doke-modal-surface--feedback">
-<span class="budget-success__eyebrow budget-submission-modal__eyebrow doke-modal-eyebrow">Orçamento</span>
-<div class="budget-submission-modal__body">
-<div class="budget-submission-modal__loader doke-submission-feedback__mark--symbol-cycle" aria-hidden="true">
-<div class="doke-submission-feedback__symbols">
-<span class="doke-submission-feedback__symbol doke-submission-feedback__symbol--paint">
+<dialog aria-describedby="budget-loading-description" aria-labelledby="budget-loading-title" class="budget-submission-overlay doke-submission-feedback doke-native-overlay" data-budget-loading data-submission-feedback data-submission-feedback-title="Enviando solicitação" data-submission-feedback-message="Está quase lá..." hidden>
+<div class="budget-submission-overlay__content" role="status" aria-live="polite">
+<div class="budget-submission-overlay__loader doke-loading-spinner doke-loading-spinner--lg" aria-hidden="true">
 <svg viewBox="0 0 24 24"><path d="M4 7.75h10.6a2.4 2.4 0 0 1 0 4.8H8.9l-1.8 3.1a1.9 1.9 0 0 1-1.65.95H4.9v-3.3H4a2 2 0 0 1-2-2v-1.55a2 2 0 0 1 2-2Z"></path><path d="M16.7 8.4 21.2 3.9"></path><path d="m18.1 7 2 2"></path></svg>
-</span>
-<span class="doke-submission-feedback__symbol doke-submission-feedback__symbol--wrench">
-<svg viewBox="0 0 24 24"><path d="M14.6 5.2a4.2 4.2 0 0 0 4.2 5.2l-7.95 7.95a2.1 2.1 0 1 1-2.97-2.97L15.85 7.4a4.2 4.2 0 0 1-1.25-2.2Z"></path><path d="M13.85 4.35A4.2 4.2 0 0 1 19.7 9.1"></path></svg>
-</span>
-<span class="doke-submission-feedback__symbol doke-submission-feedback__symbol--bolt">
-<svg viewBox="0 0 24 24"><path d="M13.2 2.75 5.9 13.2h4.55L9.95 21.25l8.15-11.3h-4.55l-.35-7.2Z"></path></svg>
-</span>
 </div>
-</div>
-<h2 class="budget-submission-modal__title doke-modal-title" id="budget-loading-title" data-submission-feedback-title>Enviando solicitação</h2>
-<p class="budget-submission-modal__message doke-modal-description" data-submission-feedback-message>Está quase lá...</p>
-</div>
+<h2 class="budget-submission-overlay__title" id="budget-loading-title" data-submission-feedback-title>Enviando solicitação</h2>
+<p class="budget-submission-overlay__message" id="budget-loading-description" data-submission-feedback-message>Está quase lá...</p>
 </div>
 </dialog>
 <dialog aria-labelledby="budget-success-title" class="budget-success-modal doke-native-overlay" data-budget-success="" hidden="">
@@ -325,8 +312,9 @@
 <script defer="" src="assets/js/core/rollout-guard.js?v=20260501-stage32-runtime-flags"></script>
 
 <script src="assets/js/core/navigation-registry.js?v=20260701-navigation-registry-v1"></script>
-<script defer="" src="assets/js/core/app.js?v=20260701-navigation-registry-v1"></script>
-<script defer="" src="assets/js/core/stable-shell-router.js?v=20260628-hydration-barrier-v3"></script>
+<script defer="" src="assets/js/core/app.js?v=20260702-sidebar-quick-alert-flow-v1"></script>
+<script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
+<script defer="" src="assets/js/core/stable-shell-router.js?v=20260702-payment-route-init-v1"></script>
 <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
 <script src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1"></script>
 <script defer="" src="assets/js/components/mobile-app-shell.js?v=20260701-navigation-registry-v1"></script>
@@ -349,7 +337,7 @@
 <script defer="" src="assets/js/services/community-service.js?v=20260501-stage31-domain-services"></script>
 <script defer="" src="assets/js/repositories/notifications-repository.js?v=20260622-notifications-events-v1"></script>
 <script defer="" src="assets/js/services/notification-service.js?v=20260626-order-status-flow-v1"></script>
-<script defer="" src="assets/js/services/wallet-service.js?v=20260501-auth-session-v1"></script>
+<script defer="" src="assets/js/services/wallet-service.js?v=20260702-wallet-release-on-completion-v1"></script>
 <script defer="" src="assets/js/services/domain-data-service.js?v=20260501-stage31-domain-services"></script>
 <script defer="" src="assets/js/controllers/controller-data.js?v=20260501-stage32-runtime-flags"></script>
 <script defer="" src="assets/js/core/dom.js?v=20260501-stage31-domain-services"></script>
@@ -359,8 +347,8 @@
 <script defer="" src="assets/js/controllers/page-controller-registry.js?v=20260501-stage31-domain-services"></script>
 <script defer="" src="assets/js/controllers/controller-bootstrap.js?v=20260501-stage32-runtime-flags"></script>
 <script defer="" src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1"></script>
-<script defer="" src="assets/js/components/submission-feedback.js?v=20260701-budget-loading-shell-v1"></script>
-<script defer="" src="assets/js/pages/orcamento.js?v=20260701-budget-loading-shell-v1"></script>
+<script defer="" src="assets/js/components/submission-feedback.js?v=20260701-budget-processing-overlay-v1"></script>
+<script defer="" src="assets/js/pages/orcamento.js?v=20260701-budget-processing-overlay-v1"></script>
 <script defer="" src="assets/js/dev/flow-state-tools.js?v=20260622-flow-contract-v1"></script>
 </body>
 </html>

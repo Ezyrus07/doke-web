@@ -1,8 +1,13 @@
 (function () {
   'use strict';
 
-  const root = document.querySelector('[data-payment-page]');
-  if (!root) return;
+  const PAYMENT_CONTROLLER_VERSION = '20260702-payment-route-init-v1';
+
+  function initPaymentProfessional() {
+    const root = document.querySelector('[data-payment-page]');
+    if (!root) return;
+    if (root.dataset.paymentControllerInitialized === PAYMENT_CONTROLLER_VERSION) return;
+    root.dataset.paymentControllerInitialized = PAYMENT_CONTROLLER_VERSION;
 
   let baseTotal = 280;
   const POINTS_DISCOUNT = 23;
@@ -180,7 +185,7 @@
     setTextAll('[data-payment-status-text]', charge.paid ? 'Pagamento confirmado' : 'Aguardando pagamento');
     setTextAll('[data-payment-date]', charge.time || 'Hoje');
     setTextAll('[data-modal-total], [data-receipt-total], [data-summary-total], [data-summary-subtotal]', amount);
-    setTextAll('[data-payment-modal-description]', `Estamos registrando o pagamento no pedido ${orderCode}.`);
+    setTextAll('[data-payment-modal-description]', 'Está quase lá...');
     setTextAll('[data-payment-success-copy]', `Seu pagamento de ${amount} para ${providerName} foi registrado. O pedido agora está em andamento.`);
     setTextAll('[data-finish-provider-name]', providerName);
     setTextAll('[data-finish-service-title]', serviceTitle);
@@ -304,6 +309,23 @@
     });
   }
 
+  function releaseWalletReceivableOnCompletion() {
+    const walletService = getWalletService();
+    if (!walletService?.registerReceivableFromOrder) return Promise.resolve(null);
+    return walletService.registerReceivableFromOrder({
+      order: currentOrder || currentConversation?.order || {},
+      conversation: currentConversation,
+      charge: currentCharge,
+      amount: formatCurrency(getCurrentTotal()),
+      orderId: paymentContext.orderId || currentOrder?.id || currentConversation?.orderId || '',
+      conversationId: paymentContext.conversationId || currentConversation?.id || '',
+      messageId: paymentContext.messageId || currentCharge?.id || ''
+    }).catch((error) => {
+      console.warn('[DokePayment:walletRelease]', error);
+      return null;
+    });
+  }
+
   function registerCompletion() {
     if (completionRegistered) return Promise.resolve(currentOrder);
     completionRegistered = true;
@@ -316,12 +338,18 @@
     return completeTask.then((order) => {
       currentOrder = order || currentOrder;
       return persistChargeState({ paid: true, completed: true });
-    }).then(() => {
+    }).then(() => releaseWalletReceivableOnCompletion())
+      .then((walletResult) => {
+      if (walletResult?.transaction && currentCharge) {
+        currentCharge.walletTransactionId = walletResult.transaction.id;
+        currentCharge.walletReleased = true;
+      }
       document.dispatchEvent(new CustomEvent('doke:order-completed', {
         detail: {
           order: currentOrder,
           conversation: currentConversation,
-          charge: currentCharge
+          charge: currentCharge,
+          walletTransaction: walletResult?.transaction || null
         }
       }));
       return currentOrder;
@@ -726,4 +754,13 @@
     }
   });
 
+  }
+
+  window.DokeInitPayment = initPaymentProfessional;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPaymentProfessional, { once: true });
+  } else {
+    initPaymentProfessional();
+  }
 })();

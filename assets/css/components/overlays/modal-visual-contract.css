@@ -31,16 +31,36 @@
 
 /* Root/backdrop --------------------------------------------------------- */
 :where(.doke-overlay:not([hidden]), .doke-action-modal:not([hidden]), .wallet-modal:not([hidden]), .news-detail-modal:not([hidden]), .payment-submit-state:not([hidden]), .payment-finish-modal:not([hidden]), .pro-review-success:not([hidden]), .post-service-submit-state:not([hidden]), .become-pro-submit-state:not([hidden])) {
-  padding: max(18px, env(safe-area-inset-top)) clamp(18px, 3vw, 32px) max(18px, env(safe-area-inset-bottom));
+  position: fixed;
+  inset: 0;
+  display: grid;
   place-items: center;
+  padding: max(18px, env(safe-area-inset-top)) clamp(18px, 3vw, 32px) max(18px, env(safe-area-inset-bottom));
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
-:where(dialog.doke-native-overlay, dialog.charge-modal, dialog.address-modal, dialog.budget-success-modal) {
+:where(dialog.doke-native-overlay, dialog.charge-modal, dialog.address-modal, dialog.home-address-modal, dialog.budget-success-modal) {
   max-width: none;
   padding: 0;
   border: 0;
   background: transparent;
   overflow: visible;
+}
+
+:where(dialog.doke-native-overlay[open], dialog.charge-modal[open], dialog.address-modal[open], dialog.home-address-modal[open], dialog.budget-success-modal[open]) {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: max(18px, env(safe-area-inset-top)) clamp(18px, 3vw, 32px) max(18px, env(safe-area-inset-bottom));
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 :where(.doke-overlay__backdrop, .doke-action-modal__scrim, .wallet-modal__scrim, .wallet-dialog__scrim, .wallet-bank-modal__backdrop, .news-detail-modal__backdrop, .payment-submit-state__backdrop, .payment-finish-modal__backdrop, .pro-review-success__backdrop, .post-service-submit-state__backdrop, .become-pro-submit-state__backdrop) {
@@ -449,7 +469,9 @@
   font-weight: 800;
 }
 
-.doke-modal-check :is(input[type="checkbox"], input[type="radio"]) {
+/* Native-only fallback. Canonical form controls such as .doke-checkbox and
+   .doke-radio must keep their anatomy from components/forms/form-controls.css. */
+.doke-modal-check :is(input[type="checkbox"], input[type="radio"]):not(.doke-checkbox):not(.doke-radio) {
   width: 18px;
   height: 18px;
   accent-color: var(--doke-modal-visual-primary);
@@ -769,6 +791,11 @@
     justify-items: center;
     padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
     overflow: hidden;
+  }
+
+
+  :where(dialog.doke-native-overlay[open], dialog.charge-modal[open], dialog.address-modal[open], dialog.home-address-modal[open], dialog.budget-success-modal[open]) {
+    padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
   }
 
   :where(

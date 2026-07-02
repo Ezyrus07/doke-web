@@ -33,6 +33,16 @@ CSS de página não pode controlar: `height`/`min-height` de mídia interna, `pa
 5. Registrar riscos e arquivos alterados.
 
 
+## Mobile app shell location authority
+
+O botão de localização do header mobile injetado por `assets/js/components/mobile-app-shell.js` tem autoridade visual única em `assets/css/components/shell/mobile-app-shell.css`.
+
+Regras de fronteira:
+
+- CSS de página não pode estilizar `.doke-mobile-shell__location`, `.doke-mobile-shell__location-dot` ou `.doke-mobile-shell__location-label`.
+- Altura do location pill deve consumir `--doke-mobile-shell-action-height`, ligado a `--doke-mobile-shell-topbar-height`, nunca o token genérico `--control-height-xs`.
+- O contrato é validado por `npm run audit:mobile-shell-location-contract`.
+
 ## Mobile/tablet drawer authority
 
 O menu lateral usado em viewports touch/tablet tem autoridade visual única em `assets/css/components/navigation/mobile-drawer-standard.css`.

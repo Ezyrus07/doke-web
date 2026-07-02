@@ -286,12 +286,12 @@
       feeAmount: feeAmount,
       netAmount: netAmount,
       title: title,
-      description: available ? 'Pedido concluído e avaliado' : 'Pagamento confirmado em garantia',
+      description: available ? 'Pedido concluído e saldo liberado' : 'Pagamento confirmado em garantia',
       reference: order.code || order.number || (orderId ? 'PED-' + orderId.toUpperCase().replace(/[^A-Z0-9]+/g, '').slice(-6) : ''),
       method: 'Recebimento pela Doke',
       note: available
         ? 'Valor líquido liberado após taxa Doke mockada de 5%.'
-        : 'Valor bruto em garantia; o líquido será liberado após taxa Doke mockada de 5% e avaliação.',
+        : 'Valor bruto em garantia; o líquido será liberado após conclusão do serviço e taxa Doke mockada de 5%.',
       targetUrl: conversationId ? 'mensagens.html?conversation=' + encodeURIComponent(conversationId) + (orderId ? '&order=' + encodeURIComponent(orderId) : '') : 'pedidos.html?order=' + encodeURIComponent(orderId),
       actionLabel: 'Ver pedido',
       context: { order: order, conversation: conversation, charge: charge, payload: payload }

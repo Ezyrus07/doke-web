@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
+const HEADER_IMPORT_VERSION = 'layout/header.css?v=20260701-index-profile-contract-v1';
 const pageContracts = {
   'ajuda.html': { variant: 'standard', context: false },
   'anunciar-servico.html': { variant: 'standard', context: false },
@@ -111,6 +112,23 @@ for (const [file, expected] of Object.entries(pageContracts)) {
 const headerCss = fs.readFileSync(path.join(ROOT, 'assets/css/layout/header.css'), 'utf8');
 for (const hook of ['[data-header-slot]', '[data-header-slot="primary"]', '[data-header-slot="actions"]', '[data-header-context]']) {
   if (!headerCss.includes(hook)) fail('assets/css/layout/header.css', `missing canonical selector ${hook}`);
+}
+
+const cssFiles = [];
+function collectCss(dir) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const file = path.join(dir, entry.name);
+    if (entry.isDirectory()) collectCss(file);
+    else if (entry.isFile() && entry.name.endsWith('.css')) cssFiles.push(file);
+  }
+}
+collectCss(path.join(ROOT, 'assets/css'));
+for (const file of cssFiles) {
+  const css = fs.readFileSync(file, 'utf8');
+  if (!/layout\/header\.css\?v=/.test(css)) continue;
+  if (!css.includes(HEADER_IMPORT_VERSION)) {
+    fail(path.relative(ROOT, file).replace(/\\/g, '/'), `must load the index profile contract through ${HEADER_IMPORT_VERSION}`);
+  }
 }
 
 for (const file of ['assets/css/pages/home-foundation.css', 'assets/css/pages/profile-foundation.css', 'assets/css/pages/pedidos-foundation.css']) {

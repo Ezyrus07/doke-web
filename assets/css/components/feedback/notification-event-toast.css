@@ -8,27 +8,46 @@
   inset-inline-end: max(20px, env(safe-area-inset-right));
   display: grid;
   gap: 10px;
-  inline-size: min(360px, calc(100vw - 32px));
+  inline-size: min(390px, calc(100vw - 32px));
   pointer-events: none;
 }
 
 .doke-event-toast {
+  appearance: none;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
-  padding: 14px 16px;
+  width: 100%;
+  padding: 14px 14px 14px 16px;
   border: 1px solid rgba(42, 95, 144, 0.14);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.94);
   color: var(--color-heading, #10233a);
+  text-align: left;
   box-shadow: 0 18px 44px rgba(18, 55, 95, 0.14), 0 6px 14px rgba(18, 55, 95, 0.08);
   backdrop-filter: blur(14px) saturate(1.08);
   -webkit-backdrop-filter: blur(14px) saturate(1.08);
+  cursor: default;
   pointer-events: auto;
   transform: translateY(-8px);
   opacity: 0;
   animation: dokeEventToastIn .22s ease forwards;
+}
+
+button.doke-event-toast {
+  cursor: pointer;
+}
+
+button.doke-event-toast:hover,
+button.doke-event-toast:focus-visible {
+  border-color: rgba(42, 95, 144, 0.24);
+  box-shadow: 0 20px 48px rgba(18, 55, 95, 0.16), 0 8px 18px rgba(18, 55, 95, 0.10);
+}
+
+button.doke-event-toast:focus-visible {
+  outline: 3px solid rgba(42, 95, 144, 0.18);
+  outline-offset: 3px;
 }
 
 .doke-event-toast.is-leaving {
@@ -41,6 +60,21 @@
   inline-size: 38px;
   block-size: 38px;
   border-radius: 14px;
+  background: rgba(42, 95, 144, 0.08);
+  color: var(--color-primary, #2a5f90);
+}
+
+.doke-event-toast--messages .doke-event-toast__icon {
+  background: rgba(35, 143, 127, 0.10);
+  color: var(--color-accent, #118878);
+}
+
+.doke-event-toast--orders .doke-event-toast__icon {
+  background: rgba(42, 95, 144, 0.08);
+  color: var(--color-primary, #2a5f90);
+}
+
+.doke-event-toast--notifications .doke-event-toast__icon {
   background: rgba(42, 95, 144, 0.08);
   color: var(--color-primary, #2a5f90);
 }
@@ -81,6 +115,26 @@
   white-space: nowrap;
 }
 
+.doke-event-toast__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: max-content;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(42, 95, 144, 0.08);
+  color: var(--color-primary-strong, #184a76);
+  font-size: .72rem;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.doke-event-toast--messages .doke-event-toast__action {
+  background: rgba(35, 143, 127, 0.10);
+  color: var(--color-accent-strong, #087466);
+}
+
 @keyframes dokeEventToastIn {
   to { opacity: 1; transform: translateY(0); }
 }
@@ -94,6 +148,17 @@
     inset-inline: 16px;
     inset-block-start: max(14px, env(safe-area-inset-top));
     inline-size: auto;
+  }
+
+  .doke-event-toast {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 13px 14px;
+  }
+
+  .doke-event-toast__action {
+    grid-column: 2;
+    justify-self: start;
+    margin-top: 3px;
   }
 }
 

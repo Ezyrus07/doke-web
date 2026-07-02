@@ -697,6 +697,86 @@ body.payment-finish-modal-open {
   width: min(100%, 500px);
 }
 
+/* Payment processing overlay.
+   Root cause addressed: payment used the feedback modal card as a loading
+   surface, while orçamento uses the lightweight full-screen processing state.
+   Only the transient processing panel adopts that contract; Pix and success
+   remain normal confirmation modals. */
+.payment-submit-state[data-payment-panel="processing"] {
+  padding: 0;
+}
+
+.payment-submit-state[data-payment-panel="processing"] .payment-submit-state__backdrop {
+  background: rgba(9, 33, 53, 0.34);
+  backdrop-filter: blur(8px) saturate(1.04);
+}
+
+.payment-submit-state[data-payment-panel="processing"] .payment-submit-state__card {
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.payment-submit-state[data-payment-panel="processing"] .payment-submit-state__close {
+  display: none;
+}
+
+.payment-submit-state[data-payment-panel="processing"] .payment-submit-state__panel[data-modal-panel="processing"] {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  padding: clamp(24px, 5vw, 48px);
+  text-align: center;
+  pointer-events: none;
+}
+
+.payment-submit-state[data-payment-panel="processing"] .payment-submit-state__spinner {
+  --doke-loading-size: clamp(84px, 12vw, 102px);
+  --doke-loading-thickness: clamp(6px, 0.7vw, 8px);
+  width: var(--doke-loading-size);
+  height: var(--doke-loading-size);
+  margin-block-end: 2px;
+  filter: drop-shadow(0 18px 34px rgba(16, 58, 100, 0.14));
+}
+
+.payment-submit-state[data-payment-panel="processing"] .payment-submit-state__spinner svg {
+  width: 40%;
+  height: 40%;
+}
+
+.payment-submit-state[data-payment-panel="processing"] .payment-submit-state__panel h2 {
+  max-width: 18ch;
+  margin: 0;
+  color: var(--doke-financial-title, #0b3778);
+  font-size: clamp(1.42rem, 3vw, 1.86rem);
+  line-height: 1.08;
+  letter-spacing: -0.052em;
+  font-weight: 850;
+  text-align: center;
+  text-shadow: 0 12px 44px rgba(255, 255, 255, 0.78);
+}
+
+.payment-submit-state[data-payment-panel="processing"] .payment-submit-state__panel p {
+  max-width: 26ch;
+  margin: 0;
+  color: rgba(13, 47, 89, 0.68);
+  font-size: 0.96rem;
+  line-height: 1.42;
+  font-weight: 800;
+  text-align: center;
+  text-shadow: 0 10px 34px rgba(255, 255, 255, 0.9);
+}
+
 .payment-submit-state__close,
 .payment-finish-modal__close {
   position: absolute;
@@ -792,10 +872,13 @@ body.payment-finish-modal-open {
 }
 
 .payment-submit-state__spinner {
-  border: 3px solid #e5eef6;
-  border-top-color: var(--payment-blue);
-  border-right-color: rgba(41, 143, 127, 0.72);
-  animation: payment-spin 0.85s linear infinite;
+  --doke-loading-size: 42px;
+  --doke-loading-thickness: 4px;
+}
+
+.payment-submit-state__spinner svg {
+  width: 18px;
+  height: 18px;
 }
 
 .payment-submit-state__icon,
@@ -1030,9 +1113,6 @@ body.payment-finish-modal-open {
   flex: 1 1 190px;
 }
 
-@keyframes payment-spin {
-  to { transform: rotate(360deg); }
-}
 
 @media (max-width: 1020px) {
   .payment-layout {
@@ -1090,11 +1170,35 @@ body.payment-finish-modal-open {
     padding: 10px;
   }
 
+  .payment-submit-state[data-payment-panel="processing"] {
+    align-items: center;
+    padding: 0;
+  }
+
+  .payment-submit-state[data-payment-panel="processing"] .payment-submit-state__spinner {
+    --doke-loading-size: 82px;
+    --doke-loading-thickness: 6px;
+  }
+
+  .payment-submit-state[data-payment-panel="processing"] .payment-submit-state__panel h2 {
+    font-size: clamp(1.32rem, 6vw, 1.66rem);
+  }
+
+  .payment-submit-state[data-payment-panel="processing"] .payment-submit-state__panel p {
+    font-size: 0.9rem;
+  }
+
   .payment-submit-state__card,
   .payment-finish-modal__card {
     width: 100%;
     max-height: calc(100vh - 20px);
     border-radius: 20px;
+  }
+
+  .payment-submit-state[data-payment-panel="processing"] .payment-submit-state__card {
+    width: 100vw;
+    max-height: none;
+    border-radius: 0;
   }
 
   .payment-submit-state__actions,
@@ -1113,6 +1217,14 @@ body.payment-finish-modal-open {
   .payment-submit-state__actions a.doke-btn,
   .payment-finish-actions .doke-btn {
     width: 100%;
+  }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .payment-submit-state[data-payment-panel="processing"] .payment-submit-state__panel h2,
+  .payment-submit-state[data-payment-panel="processing"] .payment-submit-state__panel p {
+    text-shadow: none;
   }
 }
 
@@ -1210,31 +1322,27 @@ body.payment-finish-modal-open {
   font-size: 0.9rem;
 }
 
-.payment-finish-checkbox {
-  appearance: none;
-  display: inline-grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  flex: 0 0 auto;
-  border: 2px solid rgba(36, 100, 155, 0.28);
-  border-radius: 8px;
-  background: #fff;
-  cursor: pointer;
+
+/* Payment finish success state alignment.
+   The success panel is feedback, not a form block; keep its icon, title,
+   description and actions visually centered like the shared modal contract. */
+.payment-finish-panel[data-finish-order-panel="success"] {
+  justify-items: center;
+  text-align: center;
 }
 
-.payment-finish-checkbox:checked {
-  border-color: var(--payment-blue);
-  background: var(--payment-blue);
+.payment-finish-panel[data-finish-order-panel="success"] .doke-modal-title,
+.payment-finish-panel[data-finish-order-panel="success"] .doke-modal-description {
+  margin-inline: auto;
+  text-align: center;
 }
 
-.payment-finish-checkbox:checked::after {
-  content: '';
-  width: 6px;
-  height: 11px;
-  border: solid #fff;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg) translateY(-1px);
+.payment-finish-panel[data-finish-order-panel="success"] .doke-modal-title {
+  max-width: 14ch;
+}
+
+.payment-finish-panel[data-finish-order-panel="success"] .doke-modal-description {
+  max-width: 42ch;
 }
 
 .payment-finish-actions--confirm {
