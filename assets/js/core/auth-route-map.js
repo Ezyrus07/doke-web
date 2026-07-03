@@ -32,6 +32,7 @@
     'mensagens.html',
     'notificacoes.html',
     'carteira.html',
+    'admin.html',
     'meu-perfil.html',
     'orcamento.html',
     'anunciar-servico.html',

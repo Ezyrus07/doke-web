@@ -97,6 +97,19 @@
       activePaths: ['/carteira.html']
     },
     {
+      id: 'admin',
+      label: 'Admin',
+      shortLabel: 'Admin',
+      href: 'admin.html',
+      icon: 'shield',
+      drawerIcon: 'shield',
+      sidebarClass: 'admin',
+      group: 'account',
+      surfaces: ['desktop-sidebar'],
+      activePaths: ['/admin.html'],
+      access: { roles: ['admin', 'support'], flags: ['isMockSupport', 'mockSupport'] }
+    },
+    {
       id: 'settings',
       label: 'Configurações',
       shortLabel: 'Config.',
@@ -129,6 +142,7 @@
     'perfil-cliente.html': { key: 'perfil-cliente', search: false, title: 'Perfil' },
     'perfil-profissional.html': { key: 'perfil-profissional', search: false, title: 'Perfil' },
     'carteira.html': { key: 'carteira', search: false, title: 'Carteira', hideSearchBar: true, hideLocation: true },
+    'admin.html': { key: 'admin', search: false, title: 'Admin', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
     'configuracoes.html': { key: 'configuracoes', search: false, title: 'Configurações', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'ajuda.html': { key: 'ajuda', search: false, title: 'Ajuda', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
     'tornar-profissional.html': { key: 'tornar-profissional', search: false, title: 'Tornar-se profissional', compactSearchButton: true, hideSearchBar: true, hideLocation: true },
@@ -178,9 +192,29 @@
     return getActiveId(value) === id;
   }
 
+  function currentUser() {
+    try {
+      return window.Doke?.session?.getCurrentUser?.() || window.DokeAuth?.service?.getCurrentUser?.() || null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function canAccessItem(item, user) {
+    if (!item || !item.access) return true;
+    var current = user || currentUser();
+    var role = String((current && (current.role || current.type)) || '').trim().toLowerCase();
+    if (Array.isArray(item.access.roles) && item.access.roles.indexOf(role) !== -1) return true;
+    if (Array.isArray(item.access.flags)) {
+      return item.access.flags.some(function (flag) { return current && current[flag] === true; });
+    }
+    return false;
+  }
+
   function getItemsForSurface(surface) {
+    var user = currentUser();
     return clone(NAV_ITEMS.filter(function (item) {
-      return item.surfaces.indexOf(surface) !== -1;
+      return item.surfaces.indexOf(surface) !== -1 && canAccessItem(item, user);
     }));
   }
 
@@ -214,6 +248,7 @@
     getActiveId: getActiveId,
     isActive: isActive,
     getItemsForSurface: getItemsForSurface,
+    canAccessItem: canAccessItem,
     getInternalPaths: getInternalPaths,
     getPageConfig: getPageConfig
   };

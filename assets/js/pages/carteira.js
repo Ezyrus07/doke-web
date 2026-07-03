@@ -67,7 +67,12 @@
       destination: document.querySelector('[data-wallet-transaction-destination]'),
       relatedAction: document.querySelector('[data-wallet-transaction-related-action]'),
       receiptAction: document.querySelector('[data-wallet-transaction-receipt-action]'),
-      trackAction: document.querySelector('[data-wallet-transaction-track-action]')
+      trackAction: document.querySelector('[data-wallet-transaction-track-action]'),
+      releaseTimeline: document.querySelector('[data-wallet-transaction-release-timeline]'),
+      disputeActions: document.querySelector('[data-wallet-transaction-dispute-actions]'),
+      disputeCopy: document.querySelector('[data-wallet-transaction-dispute-copy]'),
+      disputeOrderAction: document.querySelector('[data-wallet-transaction-dispute-order-action]'),
+      disputeConversationAction: document.querySelector('[data-wallet-transaction-dispute-conversation-action]')
     };
     const withdrawTrackModal = document.querySelector('[data-wallet-withdraw-track-modal]');
     const withdrawTrackCloseButtons = Array.from(document.querySelectorAll('[data-wallet-withdraw-track-close]'));
@@ -115,13 +120,16 @@
     let activeStatementFilter = filterButtons.find((button) => button.classList.contains('is-active'))?.dataset.walletFilter || 'all';
     let activeStatementPeriod = statementPeriodSelect?.value || 'all';
     let activeStatementQuery = '';
+    let activeStatementMonthKey = '';
     let activeAnalyticsPeriod = 'current-month';
+    let currentReceivablesSchedule = { next: null, items: [] };
 
     const walletFields = {
       available: document.querySelector('[data-wallet-balance-available]'),
       held: document.querySelector('[data-wallet-balance-held]'),
       balanceCopy: document.querySelector('[data-wallet-balance-copy]'),
       heldCopy: document.querySelector('[data-wallet-held-copy]'),
+      nextPayout: document.querySelector('[data-wallet-next-payout]'),
       monthlyIncome: document.querySelector('[data-wallet-kpi="monthly-income"]'),
       heldBalance: document.querySelector('[data-wallet-kpi="held-balance"]'),
       withdrawals: document.querySelector('[data-wallet-kpi="withdrawals"]'),
@@ -157,6 +165,26 @@
       progressHeld: document.querySelector('[data-wallet-progress="held"]'),
       progressProcessing: document.querySelector('[data-wallet-progress="processing"]')
     };
+    const monthlyHistoryList = document.querySelector('[data-wallet-monthly-history-list]');
+    const monthlyHistoryEmpty = document.querySelector('[data-wallet-monthly-history-empty]');
+    const monthlyComparisonPanel = document.querySelector('[data-wallet-monthly-comparison]');
+    const monthlyComparisonFields = {
+      title: document.querySelector('[data-wallet-comparison-title]'),
+      copy: document.querySelector('[data-wallet-comparison-copy]'),
+      insight: document.querySelector('[data-wallet-comparison-insight]'),
+      trend: document.querySelector('[data-wallet-comparison-trend]'),
+      metrics: document.querySelector('[data-wallet-comparison-metrics]')
+    };
+
+    const receivablesNodes = {
+      panel: document.querySelector('[data-wallet-receivables-panel]'),
+      status: document.querySelector('[data-wallet-receivables-status]'),
+      nextCard: document.querySelector('[data-wallet-receivable-next-card]'),
+      nextAmount: document.querySelector('[data-wallet-receivable-next-amount]'),
+      nextCopy: document.querySelector('[data-wallet-receivable-next-copy]'),
+      list: document.querySelector('[data-wallet-receivables-list]'),
+      empty: document.querySelector('[data-wallet-receivables-empty]')
+    };
 
     const getWalletService = () => window.Doke?.services?.wallet || null;
 
@@ -174,6 +202,20 @@
     const formatCurrency = (value) => {
       const amount = Number(value || 0);
       return amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    };
+
+    const formatPercentChange = (comparison) => {
+      const percent = Number(comparison?.percent || 0);
+      const trend = comparison?.trend || 'neutral';
+      if (trend === 'neutral' || trend === 'stable') return 'Estável';
+      return (percent > 0 ? '+' : '') + percent + '%';
+    };
+
+    const getTrendLabel = (trend) => {
+      if (trend === 'up') return 'Crescimento';
+      if (trend === 'down') return 'Queda';
+      if (trend === 'stable') return 'Estável';
+      return 'Sem comparação';
     };
 
     const normalizeSearchValue = (value) => String(value || '')
@@ -204,19 +246,33 @@
         '30-days': '30 dias',
         'current-month': 'Mês atual'
       };
+      if (String(period || '').indexOf('month:') === 0) return getMonthLabel(String(period).slice(6));
       return labels[period] || labels.all;
     };
+
+    const getMonthLabel = (monthKey) => {
+      const parts = String(monthKey || '').split('-');
+      const year = Number(parts[0]);
+      const month = Number(parts[1]) - 1;
+      if (!Number.isFinite(year) || !Number.isFinite(month) || month < 0 || month > 11) return 'Período mensal';
+      return new Date(year, month, 1, 12).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    };
+
+    const getStatementPeriodFilter = () => activeStatementMonthKey
+      ? 'month:' + activeStatementMonthKey
+      : (activeStatementPeriod || 'all');
 
     const getStatementFilters = () => ({
       currentUser: true,
       category: activeStatementFilter || 'all',
-      period: activeStatementPeriod || 'all',
+      period: getStatementPeriodFilter(),
       query: activeStatementQuery || ''
     });
 
     const hasActiveStatementRefinement = () => {
       return (activeStatementFilter && activeStatementFilter !== 'all')
         || (activeStatementPeriod && activeStatementPeriod !== 'all')
+        || Boolean(activeStatementMonthKey)
         || Boolean(activeStatementQuery);
     };
 
@@ -267,6 +323,7 @@
 
     const getTransactionType = (transaction) => {
       if (transaction.type === 'withdraw') return 'withdraw';
+      if (transaction.type === 'refund' || transaction.status === 'refunded' || transaction.releaseStatus === 'reembolsado') return 'refund';
       if (transaction.status === 'held' || transaction.status === 'pending') return 'held';
       if (transaction.type === 'fee') return 'fee';
       return 'income';
@@ -276,62 +333,97 @@
       if (type === 'withdraw') return '<svg viewBox="0 0 24 24"><path d="M12 5v14"></path><path d="m7 14 5 5 5-5"></path></svg>';
       if (type === 'held') return '<svg viewBox="0 0 24 24"><path d="M7 4h10"></path><path d="M7 20h10"></path><path d="M8 4c0 4 8 4 8 8s-8 4-8 8"></path><path d="M16 4c0 4-8 4-8 8s8 4 8 8"></path></svg>';
       if (type === 'fee') return '%';
+      if (type === 'refund') return '<svg viewBox="0 0 24 24"><path d="m9 7-4 4 4 4"></path><path d="M5 11h9a5 5 0 1 1 0 10h-1"></path></svg>';
       return '<svg viewBox="0 0 24 24"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>';
     };
 
     const getWithdrawStatusLabel = (transaction) => {
-      if ((transaction?.status || '') === 'completed') return 'Saque concluído';
+      const status = transaction?.status || '';
+      if (status === 'completed') return 'Saque concluído';
+      if (status === 'declined' || status === 'rejected') return 'Saque recusado';
       return 'Saque em processamento';
     };
 
     const getTransactionStatusLabel = (type, transaction) => {
       if (type === 'held') return 'Em garantia';
       if (type === 'withdraw') return getWithdrawStatusLabel(transaction);
+      if (type === 'refund') return 'Reembolsado';
       if (type === 'fee') return 'Taxa aplicada';
       return 'Liberado para saque';
+    };
+
+    const getRepasseStatusClass = (status) => String(status || 'em_garantia').replace(/[^a-z0-9_-]+/gi, '_');
+
+    const getReceivablePhaseLabel = (item) => {
+      const status = item?.status || item?.releaseState || 'em_garantia';
+      if (status === 'liberado' || status === 'sacado') return 'Liberado';
+      if (status === 'aguardando_avaliacao') return 'Cliente';
+      if (status === 'aguardando_conclusao') return 'Serviço';
+      if (status === 'bloqueado' || status === 'em_analise') return 'Análise';
+      if (status === 'atrasado') return 'Atraso';
+      if (status === 'contestacao') return 'Contestação';
+      if (status === 'reembolsado') return 'Reembolso';
+      return 'Garantia';
+    };
+
+    const parseReleaseTimeline = (value) => {
+      if (!value) return [];
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        return [];
+      }
     };
 
     const getTransactionContextLabel = (type, transaction) => {
       if (type === 'withdraw') return transaction.destination || transaction.method || 'Conta cadastrada';
       if (type === 'fee') return 'Taxa do serviço';
+      if (type === 'refund') return 'Devolução ao cliente';
       if (type === 'held') return 'Pagamento em garantia';
       if (transaction.orderId) return `Pedido ${String(transaction.orderId).replace(/^#?/, '#')}`;
       return 'Pedido de serviço';
     };
 
     const getTransactionCardContext = (type, transaction) => {
-      if (type === 'withdraw') return transaction.status === 'completed' ? 'Saque concluído' : 'Saque solicitado';
+      if (type === 'withdraw') return transaction.status === 'completed' ? 'Saque concluído' : transaction.status === 'declined' || transaction.status === 'rejected' ? 'Saque recusado' : 'Saque solicitado';
       if (type === 'fee') return 'Taxa Doke aplicada';
+      if (type === 'refund') return 'Reembolso registrado';
       if (type === 'held') return 'Pagamento em garantia';
       return 'Pedido concluído';
     };
 
     const getTransactionAmountCaption = (type, transaction) => {
-      if (type === 'withdraw') return transaction.status === 'completed' ? 'Concluído' : 'Saque';
+      if (type === 'withdraw') return transaction.status === 'completed' ? 'Concluído' : transaction.status === 'declined' || transaction.status === 'rejected' ? 'Recusado' : 'Saque';
       if (type === 'fee') return 'Taxa';
+      if (type === 'refund') return 'Reembolso';
       if (type === 'held') return 'Em garantia';
       return 'Líquido';
     };
 
     const getTransactionTitle = (transaction, type) => {
       if (type === 'withdraw' && (transaction?.status || '') === 'completed') return 'Saque concluído';
+      if (type === 'withdraw' && ((transaction?.status || '') === 'declined' || (transaction?.status || '') === 'rejected')) return 'Saque recusado';
+      if (type === 'refund') return transaction.title || 'Reembolso ao cliente';
       return transaction.title || 'Pedido concluído';
     };
 
     const getReceiptTitle = (type, transaction) => {
-      if (type === 'withdraw') return transaction?.status === 'completed' ? 'Comprovante de saque' : 'Comprovante de solicitação';
+      if (type === 'withdraw') return transaction?.status === 'completed' ? 'Comprovante de saque' : transaction?.status === 'declined' || transaction?.status === 'rejected' ? 'Comprovante de recusa' : 'Comprovante de solicitação';
       if (type === 'held') return 'Comprovante de pagamento';
+      if (type === 'refund') return 'Comprovante de reembolso';
       if (type === 'fee') return 'Comprovante de taxa';
       return 'Comprovante de recebimento';
     };
 
     const getReceiptDescription = (type, transaction) => {
       if (type === 'withdraw') {
-        return transaction?.status === 'completed'
-          ? 'Registro mockado do saque enviado para a conta cadastrada.'
-          : 'Registro mockado da solicitação de saque em processamento.';
+        if (transaction?.status === 'completed') return 'Registro mockado do saque enviado para a conta cadastrada.';
+        if (transaction?.status === 'declined' || transaction?.status === 'rejected') return 'Registro mockado da recusa do saque pelo suporte.';
+        return 'Registro mockado da solicitação de saque em processamento.';
       }
       if (type === 'held') return 'Registro mockado do pagamento confirmado e mantido em garantia.';
+      if (type === 'refund') return 'Registro mockado do valor devolvido ao cliente após disputa.';
       if (type === 'fee') return 'Registro mockado da taxa aplicada à movimentação.';
       return 'Registro mockado do valor liberado na carteira.';
     };
@@ -345,7 +437,8 @@
       const type = getTransactionType(transaction);
       const amount = Number(transaction.netAmount || transaction.amount || 0);
       const title = getTransactionTitle(transaction, type);
-      const signedAmount = type === 'income' ? `+${formatCurrency(amount)}` : type === 'withdraw' || type === 'fee' ? `-${formatCurrency(Math.abs(amount))}` : formatCurrency(amount);
+      const isDeclinedWithdraw = type === 'withdraw' && (transaction.status === 'declined' || transaction.status === 'rejected');
+      const signedAmount = isDeclinedWithdraw ? formatCurrency(Math.abs(amount)) : type === 'income' ? `+${formatCurrency(amount)}` : type === 'withdraw' || type === 'fee' || type === 'refund' ? `-${formatCurrency(Math.abs(amount))}` : formatCurrency(amount);
       const transactionDateLabel = formatTransactionDate(transaction.createdAt);
       const description = `${title} · ${transactionDateLabel}`;
       const status = getTransactionStatusLabel(type, transaction);
@@ -355,9 +448,12 @@
       const receiptAmount = formatCurrency(Math.abs(amount));
       const grossAmount = Number(transaction.grossAmount || transaction.netAmount || transaction.amount || 0);
       const feeAmount = Number(transaction.feeAmount || 0);
-      const receiptGross = formatCurrency(grossAmount);
-      const receiptFee = formatCurrency(feeAmount);
+      const receiptNetAmount = Math.abs(Number(transaction.netAmount != null ? transaction.netAmount : transaction.amount || 0));
+      const receiptGross = formatCurrency(Math.abs(grossAmount));
+      const receiptFee = formatCurrency(Math.abs(feeAmount));
+      const receiptNet = formatCurrency(receiptNetAmount);
       const receiptDate = formatTransactionDate(transaction.completedAt || transaction.availableAt || transaction.updatedAt || transaction.createdAt);
+      const receiptUrl = `carteira.html?transaction=${encodeURIComponent(transaction.id || '')}&receipt=1`;
       const canCompleteWithdraw = type === 'withdraw' && (transaction.status || '') === 'processing';
       const element = document.createElement('article');
       element.className = 'wallet-transaction';
@@ -378,15 +474,24 @@
       element.dataset.transactionReceiptDescription = getReceiptDescription(type, transaction);
       element.dataset.transactionReceiptCode = getReceiptCode(transaction);
       element.dataset.transactionReceiptAmount = receiptAmount;
-      element.dataset.transactionReceiptNet = receiptAmount;
-      element.dataset.transactionKind = type === 'income' ? 'Entrada' : type === 'held' ? 'Saldo em garantia' : type === 'fee' ? 'Taxa' : 'Saque';
-      element.dataset.transactionKindDetail = type === 'withdraw' ? 'Saque para conta bancária' : type === 'held' ? 'Recebível em garantia' : type === 'fee' ? 'Taxa de serviço' : 'Recebível liberado';
+      element.dataset.transactionReceiptNet = receiptNet;
+      element.dataset.transactionReceiptUrl = receiptUrl;
+      element.dataset.transactionKind = type === 'income' ? 'Entrada' : type === 'held' ? 'Saldo em garantia' : type === 'fee' ? 'Taxa' : type === 'refund' ? 'Reembolso' : 'Saque';
+      element.dataset.transactionKindDetail = type === 'withdraw' ? 'Saque para conta bancária' : type === 'held' ? 'Recebível em garantia' : type === 'fee' ? 'Taxa de serviço' : type === 'refund' ? 'Devolução ao cliente' : 'Recebível liberado';
       element.dataset.transactionMethod = transaction.method || (type === 'withdraw' ? 'Transferência bancária mockada' : 'Recebimento pela Doke');
       element.dataset.transactionReference = transaction.reference || transaction.orderId || transaction.id || '';
-      element.dataset.transactionDestination = type === 'withdraw' ? (transaction.destination || transaction.method || getBankDestination(currentBankAccount)) : (transaction.orderId ? 'Pedido ' + transaction.orderId : 'Carteira Doke');
-      element.dataset.transactionNote = transaction.note || (type === 'withdraw' ? 'Transferência vinculada à conta de recebimento cadastrada.' : 'Valor vinculado a pedido, pagamento e avaliação do atendimento.');
+      element.dataset.transactionDestination = type === 'withdraw' ? (transaction.destination || transaction.method || getBankDestination(currentBankAccount)) : type === 'refund' ? 'Cliente' : (transaction.orderId ? 'Pedido ' + transaction.orderId : 'Carteira Doke');
+      element.dataset.transactionNote = transaction.note || transaction.releaseReason || (type === 'withdraw' ? 'Transferência vinculada à conta de recebimento cadastrada.' : 'Valor vinculado a pedido, pagamento e avaliação do atendimento.');
+      element.dataset.transactionReleaseReason = transaction.releaseReason || transaction.statusReason || '';
+      element.dataset.transactionReleaseLabel = transaction.releaseLabel || transaction.statusLabel || '';
+      element.dataset.transactionReleaseTimeline = Array.isArray(transaction.releaseTimeline) ? JSON.stringify(transaction.releaseTimeline) : '';
+      element.dataset.transactionDisputeStatus = transaction.disputeStatus || '';
+      element.dataset.transactionDisputeReason = transaction.disputeReason || transaction.releaseReason || transaction.note || '';
+      element.dataset.transactionDisputeOrderUrl = transaction.targetUrl || (transaction.orderId ? 'pedidos.html?order=' + encodeURIComponent(transaction.orderId) : 'pedidos.html');
+      element.dataset.transactionDisputeConversationUrl = transaction.conversationId ? 'mensagens.html?conversation=' + encodeURIComponent(transaction.conversationId) : '';
       element.dataset.transactionRelatedAction = transaction.actionLabel || (canCompleteWithdraw ? 'Concluir saque' : type === 'withdraw' ? 'Ver carteira' : 'Ver pedido');
       element.dataset.walletTargetUrl = transaction.targetUrl || (type === 'withdraw' ? 'carteira.html' : 'pedidos.html');
+      element.dataset.walletReceiptUrl = receiptUrl;
       element.setAttribute('tabindex', '0');
       element.setAttribute('role', 'button');
       element.setAttribute('aria-label', `Ver detalhes de ${element.dataset.transactionTitle}`);
@@ -651,10 +756,227 @@
       });
     };
 
+    const getHistoryComparisonText = (item) => {
+      const comparison = item?.comparison || {};
+      const net = comparison.metrics?.netIncome || {};
+      if (!comparison.hasPrevious) return 'Sem mês anterior para comparar';
+      const label = formatPercentChange(net);
+      if (net.trend === 'up') return label + ' vs ' + (comparison.previousPeriodLabel || 'mês anterior');
+      if (net.trend === 'down') return label + ' vs ' + (comparison.previousPeriodLabel || 'mês anterior');
+      return 'Estável vs ' + (comparison.previousPeriodLabel || 'mês anterior');
+    };
+
+    const createHistoryBadge = (label, trend = 'neutral') => {
+      return `<span class="wallet-history-badge wallet-history-badge--${escapeHtml(trend)}">${escapeHtml(label)}</span>`;
+    };
+
+    const createMonthlyHistoryRow = (item) => {
+      const row = document.createElement('article');
+      const comparison = item?.comparison || {};
+      const netComparison = comparison.metrics?.netIncome || {};
+      const badgeItems = Array.isArray(comparison.badges) ? comparison.badges : [];
+      row.className = 'wallet-history-row';
+      row.dataset.walletMonthKey = item.monthKey || '';
+      row.dataset.walletHistoryTrend = comparison.trend || 'neutral';
+      row.innerHTML = `
+        <div class="wallet-history-row__summary">
+          <span>${escapeHtml(item.periodLabel || 'Mês')}</span>
+          <strong>${escapeHtml(formatCurrency(item.netIncome || 0))} líquido</strong>
+          <small>${escapeHtml(String(item.paidOrders || 0))} pedido${Number(item.paidOrders || 0) === 1 ? '' : 's'} pago${Number(item.paidOrders || 0) === 1 ? '' : 's'} · ${escapeHtml(formatCurrency(item.netFlow || 0))} de fluxo</small>
+          <div class="wallet-history-badges" aria-label="Tendências do mês">
+            ${createHistoryBadge(getHistoryComparisonText(item), netComparison.trend || comparison.trend || 'neutral')}
+            ${badgeItems.map((badge) => createHistoryBadge(badge, comparison.trend || 'neutral')).join('')}
+          </div>
+        </div>
+        <div class="wallet-history-row__metrics" aria-label="Resumo de ${escapeHtml(item.periodLabel || 'mês')}">
+          <span class="wallet-history-metric"><span>Bruto</span><strong>${escapeHtml(formatCurrency(item.grossIncome || 0))}</strong></span>
+          <span class="wallet-history-metric"><span>Taxa</span><strong>${escapeHtml(formatCurrency(item.fees || 0))}</strong></span>
+          <span class="wallet-history-metric"><span>Saques</span><strong>${escapeHtml(formatCurrency(item.withdrawals || 0))}</strong></span>
+          <span class="wallet-history-metric"><span>Ticket médio</span><strong>${escapeHtml(formatCurrency(item.ticketAverage || 0))}</strong></span>
+        </div>
+        <div class="wallet-history-row__actions">
+          <button class="wallet-history-action doke-btn doke-btn--ghost" type="button" data-wallet-history-view="${escapeHtml(item.monthKey || '')}">Ver no extrato</button>
+          <button class="wallet-history-action doke-btn doke-btn--ghost" type="button" data-wallet-history-export="${escapeHtml(item.monthKey || '')}">Exportar mês</button>
+        </div>
+      `;
+      return row;
+    };
+
+    const createComparisonMetric = (label, comparison, valueFormatter = formatCurrency) => {
+      const metric = document.createElement('article');
+      const trend = comparison?.trend || 'neutral';
+      const current = Number(comparison?.current || 0);
+      metric.className = 'wallet-comparison-metric';
+      metric.dataset.walletTrend = trend;
+      metric.innerHTML = `
+        <span>${escapeHtml(label)}</span>
+        <strong>${escapeHtml(valueFormatter(current))}</strong>
+        <small>${escapeHtml(formatPercentChange(comparison))} vs mês anterior</small>
+      `;
+      return metric;
+    };
+
+    const renderMonthlyComparison = (history) => {
+      if (!monthlyComparisonPanel || !monthlyComparisonFields.metrics) return;
+      const months = Array.isArray(history) ? history : [];
+      const current = months[0] || null;
+      clearNode(monthlyComparisonFields.metrics);
+      monthlyComparisonPanel.hidden = !current;
+      if (!current) return;
+
+      const comparison = current.comparison || {};
+      const metrics = comparison.metrics || {};
+      const trend = comparison.trend || 'neutral';
+      setText(monthlyComparisonFields.title, current.periodLabel || 'Comparativo mensal');
+      setText(monthlyComparisonFields.copy, comparison.hasPrevious
+        ? 'Comparação com ' + (comparison.previousPeriodLabel || 'mês anterior') + '.'
+        : 'Primeiro mês com movimentações no histórico recente.');
+      setText(monthlyComparisonFields.insight, current.insight || 'Resumo mensal calculado pelas movimentações da carteira.');
+      setText(monthlyComparisonFields.trend, getTrendLabel(trend));
+      monthlyComparisonFields.trend.dataset.walletTrend = trend;
+
+      monthlyComparisonFields.metrics.appendChild(createComparisonMetric('Líquido', metrics.netIncome));
+      monthlyComparisonFields.metrics.appendChild(createComparisonMetric('Bruto', metrics.grossIncome));
+      monthlyComparisonFields.metrics.appendChild(createComparisonMetric('Pedidos', metrics.paidOrders, (value) => String(Math.round(Number(value || 0)))));
+      monthlyComparisonFields.metrics.appendChild(createComparisonMetric('Fluxo líquido', metrics.netFlow));
+    };
+
+    const renderMonthlyHistory = (history) => {
+      if (!monthlyHistoryList) return;
+      clearNode(monthlyHistoryList);
+      const months = Array.isArray(history) ? history : [];
+      renderMonthlyComparison(months);
+      months.forEach((item) => monthlyHistoryList.appendChild(createMonthlyHistoryRow(item || {})));
+      if (monthlyHistoryEmpty) monthlyHistoryEmpty.hidden = months.length > 0;
+    };
+
+    const getReceivableStatusLabel = (item) => item?.statusLabel || 'Recebível';
+
+    const createReceivableDetailElement = (item) => {
+      const transaction = item?.transaction || {};
+      const fallback = Object.assign({}, transaction, {
+        id: item?.transactionId || item?.id || transaction.id || '',
+        title: item?.title || transaction.title || 'Pedido de serviço',
+        description: item?.description || transaction.description || getReceivableStatusLabel(item),
+        status: item?.sourceStatus || transaction.status || 'held',
+        type: transaction.type || 'receivable',
+        grossAmount: item?.grossAmount ?? transaction.grossAmount ?? item?.netAmount ?? 0,
+        feeAmount: item?.feeAmount ?? transaction.feeAmount ?? 0,
+        netAmount: item?.netAmount ?? transaction.netAmount ?? transaction.amount ?? 0,
+        amount: item?.netAmount ?? transaction.amount ?? 0,
+        orderId: item?.orderId || transaction.orderId || '',
+        reference: item?.reference || transaction.reference || '',
+        method: transaction.method || 'Recebimento pela Doke',
+        note: item?.statusDetail || item?.releaseReason || transaction.note || 'Recebível vinculado ao fluxo de repasse.',
+        releaseState: item?.releaseState || item?.status || transaction.releaseState || '',
+        releaseLabel: item?.releaseLabel || item?.statusLabel || transaction.releaseLabel || '',
+        releaseReason: item?.releaseReason || item?.statusReason || transaction.releaseReason || '',
+        releaseTimeline: Array.isArray(item?.releaseTimeline) ? item.releaseTimeline : transaction.releaseTimeline,
+        disputeStatus: item?.disputeStatus || transaction.disputeStatus || '',
+        disputeReason: item?.disputeReason || transaction.disputeReason || item?.statusDetail || '',
+        targetUrl: transaction.targetUrl || item?.targetUrl || 'pedidos.html',
+        actionLabel: transaction.actionLabel || 'Ver pedido',
+        createdAt: transaction.createdAt || item?.payoutAt || new Date().toISOString(),
+        availableAt: transaction.availableAt || item?.payoutAt || transaction.createdAt || new Date().toISOString()
+      });
+      return createWalletTransactionElement(fallback);
+    };
+
+    const openReceivableDetail = (transactionId) => {
+      if (!transactionId) return;
+      const items = Array.isArray(currentReceivablesSchedule.items) ? currentReceivablesSchedule.items : [];
+      const item = items.find((entry) => String(entry.transactionId || entry.id || '') === String(transactionId));
+      if (item) {
+        openTransactionDetail(createReceivableDetailElement(item));
+        return;
+      }
+      const existing = findTransactionElementById(transactionId);
+      if (existing) openTransactionDetail(existing);
+    };
+
+    const createReceivableRow = (item) => {
+      const row = document.createElement('article');
+      const status = item?.status || item?.releaseState || 'em_garantia';
+      const statusClass = getRepasseStatusClass(status);
+      row.className = 'wallet-receivable-row';
+      row.dataset.walletReceivableId = item?.transactionId || item?.id || '';
+      row.dataset.walletReceivableStatus = status;
+      row.setAttribute('tabindex', '0');
+      row.setAttribute('role', 'button');
+      row.setAttribute('aria-label', 'Ver detalhe do recebível ' + (item?.title || 'Pedido'));
+      row.innerHTML = `
+        <div class="wallet-receivable-row__date">
+          <strong>${escapeHtml(item?.payoutDateLabel || '—')}</strong>
+          <span>${escapeHtml(getReceivablePhaseLabel(item))}</span>
+        </div>
+        <div class="wallet-receivable-row__content">
+          <strong>${escapeHtml(item?.title || 'Pedido de serviço')}</strong>
+          <p>${escapeHtml(item?.statusReason || item?.statusDetail || 'Recebível vinculado ao pedido.')}</p>
+          <span class="wallet-receivable-status wallet-receivable-status--${escapeHtml(statusClass)}">${escapeHtml(getReceivableStatusLabel(item))}</span>
+        </div>
+        <div class="wallet-receivable-row__amount">
+          <strong>${escapeHtml(formatCurrency(item?.netAmount || 0))}</strong>
+          <span>Líquido</span>
+        </div>
+      `;
+      return row;
+    };
+
+    const syncReceivablesSchedule = (schedule) => {
+      const nextSchedule = schedule || { next: null, items: [] };
+      currentReceivablesSchedule = nextSchedule;
+      const items = Array.isArray(nextSchedule.items) ? nextSchedule.items : [];
+      const next = nextSchedule.next || null;
+      const hasItems = items.length > 0;
+
+      if (walletFields.nextPayout) {
+        walletFields.nextPayout.textContent = next
+          ? formatCurrency(next.netAmount || 0) + ' · ' + (next.releaseReason || next.statusReason || getReceivableStatusLabel(next))
+          : 'Após saldo';
+      }
+
+      if (receivablesNodes.panel) receivablesNodes.panel.dataset.walletReceivablesState = hasItems ? 'ready' : 'empty';
+      if (receivablesNodes.status) {
+        receivablesNodes.status.textContent = hasItems
+          ? String(items.length) + ' ' + (items.length === 1 ? 'repasse' : 'repasses')
+          : 'Sem repasses';
+        receivablesNodes.status.dataset.walletReceivablesStatus = hasItems ? 'ready' : 'empty';
+      }
+      setText(receivablesNodes.nextAmount, next ? formatCurrency(next.netAmount || 0) : 'R$ 0,00');
+      setText(receivablesNodes.nextCopy, next
+        ? (next.payoutFullDateLabel || next.payoutDateLabel || 'Data prevista') + ' · ' + (next.releaseReason || getReceivableStatusLabel(next))
+        : 'Sem valores em garantia no momento.');
+
+      clearNode(receivablesNodes.list);
+      items.slice(0, 3).forEach((item) => receivablesNodes.list?.appendChild(createReceivableRow(item || {})));
+      if (receivablesNodes.empty) receivablesNodes.empty.hidden = hasItems;
+      if (receivablesNodes.list) receivablesNodes.list.hidden = !hasItems;
+    };
+
+    const refreshMonthlyHistory = () => {
+      const service = getWalletService();
+      if (!service || typeof service.getMonthlyHistory !== 'function') {
+        renderMonthlyHistory([]);
+        return Promise.resolve([]);
+      }
+      return service.getMonthlyHistory({ currentUser: true, limit: 8 })
+        .then((history) => {
+          renderMonthlyHistory(history || []);
+          return history || [];
+        })
+        .catch(() => {
+          renderMonthlyHistory([]);
+          return [];
+        });
+    };
+
     const refreshAnalyticsDashboard = () => {
       const service = getWalletService();
       if (!service || typeof service.getMonthlyDashboard !== 'function') return Promise.resolve(null);
-      return service.getMonthlyDashboard({ currentUser: true, period: activeAnalyticsPeriod }).then((dashboard) => {
+      return Promise.all([
+        service.getMonthlyDashboard({ currentUser: true, period: activeAnalyticsPeriod }),
+        refreshMonthlyHistory()
+      ]).then(([dashboard]) => {
         syncMonthlyDashboard(dashboard || {});
         return dashboard;
       }).catch(() => null);
@@ -795,6 +1117,7 @@
         .then((wallet) => {
           syncWalletSummary(wallet);
           syncBankAccount(wallet.bankAccount || null);
+          syncReceivablesSchedule(wallet.receivablesSchedule || null);
           return renderWalletTransactions(wallet).then(() => wallet);
         })
         .catch((error) => {
@@ -882,8 +1205,9 @@
       transactionEmptyState.hidden = visibleTransactions.length > 0;
       if (title) title.textContent = hasRefinement ? 'Nenhuma movimentação encontrada para este filtro' : 'Nenhuma movimentação encontrada';
       if (copy) {
+        const periodLabel = activeStatementMonthKey ? getMonthLabel(activeStatementMonthKey) : getPeriodLabel(activeStatementPeriod);
         copy.textContent = hasRefinement
-          ? `Ajuste o filtro ${getFilterLabel(activeStatementFilter).toLowerCase()}, o período ${getPeriodLabel(activeStatementPeriod).toLowerCase()} ou a busca para ver outros resultados.`
+          ? `Ajuste o filtro ${getFilterLabel(activeStatementFilter).toLowerCase()}, o período ${periodLabel.toLowerCase()} ou a busca para ver outros resultados.`
           : 'Entradas, saques, taxas e valores em garantia aparecerão aqui.';
       }
     };
@@ -1027,7 +1351,7 @@
       setTransactionReceiptText('method', transactionElement.dataset.transactionMethod || 'Carteira Doke');
       setTransactionReceiptText('date', transactionElement.dataset.transactionDate || 'Agora');
       setTransactionReceiptText('destination', transactionElement.dataset.transactionDestination || 'Carteira Doke');
-      setTransactionReceiptText('note', 'Comprovante mockado para conferência. A versão final poderá ser emitida pelo backend financeiro.');
+      setTransactionReceiptText('note', transactionElement.dataset.transactionNote || 'Comprovante mockado para conferência. A versão final poderá ser emitida pelo backend financeiro.');
 
       if (transactionDetailPanel && !transactionDetailPanel.hidden) {
         transactionDetailPanel.hidden = true;
@@ -1042,12 +1366,55 @@
       transactionReceiptModal.querySelector('[data-wallet-transaction-receipt-close]')?.focus?.({ preventScroll: true });
     };
 
+    const renderTransactionReleaseTimeline = (transactionElement) => {
+      const timelineNode = transactionDetailFields.releaseTimeline;
+      if (!timelineNode) return;
+      const steps = parseReleaseTimeline(transactionElement?.dataset.transactionReleaseTimeline || '');
+      clearNode(timelineNode);
+      timelineNode.hidden = !steps.length;
+      if (!steps.length) return;
+      steps.forEach((step) => {
+        const item = document.createElement('li');
+        item.className = 'wallet-release-timeline__item';
+        item.dataset.state = step.state || 'pending';
+        item.innerHTML = `
+          <span class="wallet-release-timeline__marker" aria-hidden="true"></span>
+          <div>
+            <strong>${escapeHtml(step.label || 'Etapa do repasse')}</strong>
+            <p>${escapeHtml(step.detail || '')}</p>
+          </div>
+        `;
+        timelineNode.appendChild(item);
+      });
+    };
+
     const closeTransactionDetail = () => {
       if (!transactionDetailPanel) return;
       transactionDetailPanel.hidden = true;
       transactionDetailPanel.classList.remove('is-active');
       transactionDetailPanel.setAttribute('aria-hidden', 'true');
       document.body.classList.remove('is-wallet-modal-open');
+    };
+
+
+    const syncDisputeActions = (transactionElement) => {
+      const wrapper = transactionDetailFields.disputeActions;
+      if (!wrapper) return;
+      const status = transactionElement?.dataset.transactionDisputeStatus || transactionElement?.dataset.transactionReleaseLabel || '';
+      const normalized = String(status || '').toLowerCase();
+      const isDisputed = normalized.includes('contest') || normalized.includes('analise') || normalized.includes('análise') || normalized.includes('reembols') || normalized.includes('resolvida');
+      wrapper.hidden = !isDisputed;
+      if (!isDisputed) return;
+      setText(transactionDetailFields.disputeCopy, transactionElement.dataset.transactionDisputeReason || 'Este pedido tem uma contestação vinculada. Use o pedido ou a conversa para acompanhar a resolução.');
+      if (transactionDetailFields.disputeOrderAction) {
+        transactionDetailFields.disputeOrderAction.href = transactionElement.dataset.transactionDisputeOrderUrl || transactionElement.dataset.walletTargetUrl || 'pedidos.html';
+      }
+      if (transactionDetailFields.disputeConversationAction) {
+        const conversationUrl = transactionElement.dataset.transactionDisputeConversationUrl || '';
+        transactionDetailFields.disputeConversationAction.hidden = !conversationUrl;
+        transactionDetailFields.disputeConversationAction.style.display = conversationUrl ? '' : 'none';
+        if (conversationUrl) transactionDetailFields.disputeConversationAction.href = conversationUrl;
+      }
     };
 
     const openTransactionDetail = (transactionElement) => {
@@ -1067,6 +1434,8 @@
       setTransactionDetailText('gross', transactionElement.dataset.transactionGross || transactionElement.dataset.transactionAmount || 'R$ 0,00');
       setTransactionDetailText('fee', transactionElement.dataset.transactionFee || 'R$ 0,00');
       setTransactionDetailText('destination', transactionElement.dataset.transactionDestination || 'Carteira Doke');
+      renderTransactionReleaseTimeline(transactionElement);
+      syncDisputeActions(transactionElement);
 
       if (transactionDetailFields.relatedAction) {
         const isWithdrawTransaction = transactionElement.dataset.transactionType === 'withdraw';
@@ -1103,10 +1472,17 @@
     const openTransactionFromUrl = () => {
       const params = new URLSearchParams(window.location.search || '');
       const transactionId = params.get('transaction');
+      const shouldOpenReceipt = params.get('receipt') === '1' || params.get('comprovante') === '1';
       if (!transactionId) return;
       const escapedId = window.CSS?.escape ? CSS.escape(transactionId) : transactionId.replace(/"/g, '\\"');
       const target = transactionList?.querySelector(`[data-wallet-transaction-id="${escapedId}"]`);
-      if (target) window.setTimeout(() => openTransactionDetail(target), 40);
+      if (target) window.setTimeout(() => {
+        if (shouldOpenReceipt) {
+          openTransactionReceipt(target);
+          return;
+        }
+        openTransactionDetail(target);
+      }, 40);
     };
 
     const completeWithdrawTransaction = (transactionElement, actionButton) => {
@@ -1182,6 +1558,7 @@
       const validFilters = ['all', 'income', 'withdraw', 'held', 'available', 'processing', 'completed'];
       const nextFilter = validFilters.includes(filter) ? filter : 'all';
       activeStatementFilter = nextFilter;
+      activeStatementMonthKey = '';
 
       filterButtons.forEach((button) => {
         const isActiveButton = button.dataset.walletFilter === nextFilter;
@@ -1195,6 +1572,7 @@
 
     const setStatementPeriod = (period, options = {}) => {
       activeStatementPeriod = period || 'all';
+      activeStatementMonthKey = '';
       if (statementPeriodSelect && statementPeriodSelect.value !== activeStatementPeriod) {
         statementPeriodSelect.value = activeStatementPeriod;
       }
@@ -1204,6 +1582,7 @@
 
     const setStatementQuery = (query, source, options = {}) => {
       activeStatementQuery = normalizeSearchValue(query || '');
+      if (activeStatementQuery) activeStatementMonthKey = '';
       syncStatementSearchInputs(query || '', source);
       updateTransactionEmptyState();
       if (!options.skipRender) refreshStatementTransactions();
@@ -1263,7 +1642,7 @@
       return getTransactionStatusLabel(getTransactionType(transaction), transaction);
     };
 
-    const buildStatementCsv = (statementTransactions) => {
+    const buildStatementCsv = (statementTransactions, metadata = {}) => {
       const rows = [];
       const exportedTransactions = Array.isArray(statementTransactions) ? statementTransactions : [];
       const totals = exportedTransactions.reduce((summary, transaction) => {
@@ -1281,8 +1660,8 @@
       }, { income: 0, withdrawals: 0, fees: 0, finalBalance: 0 });
 
       rows.push(['Extrato Doke']);
-      rows.push(['Filtro', getFilterLabel(activeStatementFilter)]);
-      rows.push(['Período', getPeriodLabel(activeStatementPeriod)]);
+      rows.push(['Filtro', metadata.filterLabel || getFilterLabel(activeStatementFilter)]);
+      rows.push(['Período', metadata.periodLabel || getPeriodLabel(getStatementPeriodFilter())]);
       rows.push(['Busca', activeStatementQuery || 'Sem busca']);
       rows.push(['Gerado em', formatExportDate(new Date().toISOString())]);
       rows.push(['Saldo inicial mockado', formatCurrency(0)]);
@@ -1310,13 +1689,14 @@
       return rows.map((row) => row.map(escapeCsvField).join(';')).join('\n');
     };
 
-    const downloadStatementCsv = (csv) => {
+    const downloadStatementCsv = (csv, suffix = '') => {
       const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const today = new Date().toISOString().slice(0, 10);
+      const safeSuffix = String(suffix || '').replace(/[^a-z0-9-]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase();
       const link = document.createElement('a');
       link.href = url;
-      link.download = `doke-extrato-${today}.csv`;
+      link.download = `doke-extrato${safeSuffix ? '-' + safeSuffix : ''}-${today}.csv`;
       link.rel = 'noopener';
       link.hidden = true;
       document.body.append(link);
@@ -1336,7 +1716,7 @@
 
       request
         .then((statementTransactions) => {
-          downloadStatementCsv(buildStatementCsv(statementTransactions));
+          downloadStatementCsv(buildStatementCsv(statementTransactions, { periodLabel: activeStatementMonthKey ? getMonthLabel(activeStatementMonthKey) : getPeriodLabel(activeStatementPeriod) }), activeStatementMonthKey || '');
           showWalletToast('Extrato exportado em CSV.');
         })
         .catch((error) => {
@@ -1350,6 +1730,55 @@
     };
 
     statementExportButton?.addEventListener('click', exportStatement);
+
+    receivablesNodes.list?.addEventListener('click', (event) => {
+      const target = event.target.closest('[data-wallet-receivable-id]');
+      if (target) openReceivableDetail(target.dataset.walletReceivableId || '');
+    });
+
+    receivablesNodes.list?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const target = event.target.closest('[data-wallet-receivable-id]');
+      if (!target) return;
+      event.preventDefault();
+      openReceivableDetail(target.dataset.walletReceivableId || '');
+    });
+
+    monthlyHistoryList?.addEventListener('click', (event) => {
+      const viewButton = event.target.closest('[data-wallet-history-view]');
+      const exportButton = event.target.closest('[data-wallet-history-export]');
+      const monthKey = viewButton?.dataset.walletHistoryView || exportButton?.dataset.walletHistoryExport || '';
+      if (!monthKey) return;
+
+      if (viewButton) {
+        activeStatementMonthKey = monthKey;
+        activeStatementPeriod = 'all';
+        if (statementPeriodSelect) statementPeriodSelect.value = 'all';
+        setView('overview');
+        scheduleWalletStateRefresh(0);
+        document.getElementById('wallet-statement-title')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        showWalletToast('Extrato filtrado por ' + getMonthLabel(monthKey) + '.');
+        return;
+      }
+
+      const service = getWalletService();
+      if (!service || typeof service.listTransactions !== 'function') return;
+      exportButton?.setAttribute('aria-busy', 'true');
+      exportButton?.setAttribute('disabled', '');
+      service.listTransactions({ currentUser: true, category: 'all', period: 'month:' + monthKey, query: '' })
+        .then((items) => {
+          downloadStatementCsv(buildStatementCsv(items || [], { periodLabel: getMonthLabel(monthKey), filterLabel: 'Todos' }), monthKey);
+          showWalletToast('Histórico de ' + getMonthLabel(monthKey) + ' exportado.');
+        })
+        .catch((error) => {
+          console.warn('[DokeWallet:history-export]', error);
+          showWalletToast('Não foi possível exportar o mês.', 'error');
+        })
+        .finally(() => {
+          exportButton?.removeAttribute('aria-busy');
+          exportButton?.removeAttribute('disabled');
+        });
+    });
 
     const openWithdrawModal = () => {
       if (!withdrawModal) return;

@@ -59,7 +59,9 @@
       city: user.city || '',
       state: user.state || '',
       points: Number.isFinite(Number(user.points)) ? Number(user.points) : 0,
-      verified: Boolean(user.verified)
+      verified: Boolean(user.verified),
+      isMockSupport: user.isMockSupport === true,
+      mockSupport: user.mockSupport === true
     };
   };
 

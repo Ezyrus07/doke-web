@@ -970,3 +970,52 @@
     padding-inline: 14px;
   }
 }
+
+/* Custom select inside action modals
+   Responsibility: prevent native select shells from stacking under DokeLiteSelect. */
+.doke-action-modal__field select.doke-select__native,
+.doke-modal-field select.doke-select__native {
+  position: absolute;
+  inline-size: 1px;
+  width: 1px;
+  block-size: 1px;
+  height: 1px;
+  min-block-size: 0;
+  min-height: 0;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.doke-action-modal__field > [data-doke-select-root].doke-select,
+.doke-modal-field > [data-doke-select-root].doke-select {
+  min-block-size: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  background-image: none;
+  box-shadow: none;
+}
+
+.doke-action-modal__field > [data-doke-select-root].doke-select .doke-select__trigger,
+.doke-modal-field > [data-doke-select-root].doke-select .doke-select__trigger {
+  min-block-size: var(--doke-form-control-min-height, 52px);
+  min-height: var(--doke-form-control-min-height, 52px);
+  border-radius: var(--doke-form-control-radius, 14px);
+}
+
+.doke-overlay .doke-select-menu,
+.doke-action-modal .doke-select-menu {
+  z-index: 30;
+  background: #fff;
+}

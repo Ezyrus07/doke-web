@@ -87,6 +87,29 @@
     return callProvider('getById', resourceName, { id: normalizedId });
   }
 
+  function create(resourceName, payload) {
+    return callProvider('create', resourceName, payload || {});
+  }
+
+  function update(resourceName, payload) {
+    return callProvider('update', resourceName, payload || {});
+  }
+
+  function remove(resourceName, payload) {
+    return callProvider('remove', resourceName, payload || {});
+  }
+
+  function action(resourceName, actionName, payload) {
+    var normalizedAction = String(actionName || '').trim();
+    if (!normalizedAction) {
+      return Promise.reject(new Error('Repository action name is required.'));
+    }
+
+    var nextPayload = clone(payload || {});
+    nextPayload.action = normalizedAction;
+    return callProvider('action', resourceName, nextPayload);
+  }
+
   function getPageData(pageName, context) {
     var provider = getProvider();
     if (typeof provider.getPageData !== 'function') {
@@ -103,7 +126,11 @@
     return Object.freeze({
       resource: resource,
       list: function (query) { return list(resource, query); },
-      getById: function (id) { return getById(resource, id); }
+      getById: function (id) { return getById(resource, id); },
+      create: function (payload) { return create(resource, payload); },
+      update: function (payload) { return update(resource, payload); },
+      remove: function (payload) { return remove(resource, payload); },
+      action: function (actionName, payload) { return action(resource, actionName, payload); }
     });
   }
 
@@ -119,6 +146,10 @@
     getRegisteredProviders: getRegisteredProviders,
     list: list,
     getById: getById,
+    create: create,
+    update: update,
+    remove: remove,
+    action: action,
     getPageData: getPageData,
     createRepository: createRepository
   });

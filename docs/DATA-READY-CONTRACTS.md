@@ -254,3 +254,22 @@ Runtime validation:
 npx playwright test tests/e2e/stable-shell-transition-contract.spec.js --workers=1
 npx playwright test tests/e2e/stable-shell-transition-matrix.spec.js --workers=1
 ```
+
+## Sprint 11A — Backend readiness contracts
+
+A partir da Sprint 11A, a preparação para backend real passa a ter quatro contratos específicos e vivos:
+
+- `docs/DATA-MODEL.md`: modelo de entidades, status e permissões.
+- `docs/FINANCIAL-FLOW-CONTRACT.md`: eventos financeiros, side effects e invariantes.
+- `docs/API-ADAPTER-CONTRACT.md`: interface do provider mock/API.
+- `docs/BACKEND-INTEGRATION-PLAN.md`: fases de migração para API/Supabase.
+
+### Fronteira técnica adicionada
+
+- `assets/js/services/repository-boundary.js` continua sendo a fronteira ativa e agora expõe mutações futuras sem trocar o provider padrão.
+- `assets/js/services/api-repository-provider.js` registra um provider `api` inativo por padrão. Ele não liga rede e não substitui `mock` sem chamada explícita a `Doke.repositoryBoundary.setProvider('api')`.
+- `assets/js/contracts/backend-domain-contract.js` concentra roles, status financeiros e eventos para reduzir divergência de nomenclatura antes do backend.
+
+### Regra de transição
+
+Enquanto a API real não existir, pages/controllers devem continuar funcionando com mock/localStorage. Qualquer futura integração deve trocar provider/repository, não HTML, CSS ou renderer.

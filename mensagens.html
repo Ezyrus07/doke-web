@@ -9,7 +9,7 @@
  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
    <script src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
-  <link rel="stylesheet" href="assets/css/pages/messaging-foundation.css?v=20260702-sidebar-quick-alert-flow-v1">
+  <link rel="stylesheet" href="assets/css/pages/messaging-foundation.css?v=20260702-dispute-resolution-v1">
 
 
 <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
@@ -223,7 +223,7 @@
           <span>Cobrança</span>
          </button>
          <button class="messages-thread__action messages-thread__action--call doke-btn" type="button" data-thread-call-toggle aria-label="Ligar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v2.6a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 3.8 2 2 0 0 1 4.1 1.6h2.6a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L7.8 9.4a16 16 0 0 0 6.8 6.8l1.1-1.1a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.3 1.6z"></path></svg></button>
-         <button class="messages-thread__action messages-thread__action--more doke-btn" type="button" data-thread-more-toggle aria-label="Mais opções da conversa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 12h.01"></path><path d="M12 12h.01"></path><path d="M17.5 12h.01"></path></svg></button>
+         <button class="messages-thread__action messages-thread__action--more doke-btn doke-more-button" type="button" data-thread-more-toggle aria-label="Mais opções da conversa"><span aria-hidden="true">•••</span></button>
         </div>
        </header>
 
@@ -245,6 +245,14 @@
        </section>
 
        <div class="messages-thread__body" data-thread-body></div>
+
+       <section class="messages-dispute-composer-notice" data-messages-dispute-composer hidden aria-live="polite">
+        <div class="messages-dispute-composer-notice__copy">
+         <strong data-messages-dispute-composer-title>Contestação em andamento</strong>
+         <span data-messages-dispute-composer-text>Responda por esta conversa até a análise ser concluída.</span>
+        </div>
+        <button class="messages-dispute-composer-notice__action doke-btn doke-btn--ghost doke-btn--sm" type="button" data-messages-open-order-detail>Ver detalhes</button>
+       </section>
 
        <form class="messages-composer doke-chat-composer" data-messages-composer data-messages-hydration-ready hidden>
         <div class="messages-reply-preview doke-message-card doke-card" data-messages-reply-preview hidden>
@@ -357,7 +365,7 @@
  </dialog>
 
  <div class="messages-completion-modal doke-overlay doke-overlay--action" data-message-completion-modal hidden aria-hidden="true">
-  <button class="messages-completion-modal__backdrop doke-overlay__backdrop" data-message-completion-close type="button" aria-label="Fechar modal"></button>
+  <span class="messages-completion-modal__backdrop doke-overlay__backdrop" data-message-completion-close aria-hidden="true"></span>
   <section class="messages-completion-modal__card doke-overlay__surface doke-modal-surface doke-modal-surface--compact" role="dialog" aria-modal="true" aria-labelledby="messages-completion-title" aria-describedby="messages-completion-description" tabindex="-1">
    <div class="messages-completion-header doke-overlay__header doke-modal-header">
     <div class="messages-completion-intro">
@@ -437,10 +445,13 @@
 <script src="assets/js/components/media-lightbox.js?v=20260425-shared-media-lightbox-v1" defer></script>
   <script src="assets/js/repositories/messages-repository.js?v=20260626-order-status-flow-v1" defer></script>
   <script src="assets/js/services/message-service.js?v=20260626-order-status-flow-v1" defer></script>
- <script src="assets/js/repositories/orders-repository.js?v=20260626-order-status-flow-v1" defer></script>
+ <script src="assets/js/repositories/orders-repository.js?v=20260702-dispute-bridge-v1" defer></script>
+  <script src="assets/js/repositories/wallet-repository.js?v=20260702-dispute-bridge-v1" defer></script>
   <script src="assets/js/services/orders-service.js?v=20260626-order-status-flow-v1" defer></script>
  <script src="assets/js/components/decline-reason-dialog.js?v=20260625-flow-contract-v1" defer></script>
-  <script src="assets/js/pages/mensagens.js?v=20260628-modal-action-parity-v1" defer></script>
+ <script src="assets/js/components/doke-lite-select.js?v=20260702-issue-report-select-v2" defer></script>
+<script src="assets/js/components/issue-report-dialog.js?v=20260702-issue-report-select-v2" defer></script>
+  <script src="assets/js/pages/mensagens.js?v=20260702-dispute-chat-v1" defer></script>
   <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture" defer></script>
   <script src="assets/js/ui/mobile-drawer.js" defer></script>
   <script src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1" defer></script>
@@ -458,7 +469,7 @@
   <script src="assets/js/services/community-service.js?v=20260512-cycle77-script-load-v1" defer></script>
   <script src="assets/js/repositories/notifications-repository.js?v=20260622-notifications-events-v1" defer></script>
 <script src="assets/js/services/notification-service.js?v=20260626-order-status-flow-v1" defer></script>
-  <script src="assets/js/services/wallet-service.js?v=20260702-wallet-release-on-completion-v1" defer></script>
+  <script src="assets/js/services/wallet-service.js?v=20260702-dispute-bridge-v1" defer></script>
   <script src="assets/js/services/domain-data-service.js?v=20260512-cycle77-script-load-v1" defer></script>
   <script src="assets/js/state/state-contracts.js?v=20260512-cycle131-state-contracts" defer></script>
   <script src="assets/js/controllers/controller-data.js?v=20260512-cycle77-script-load-v1" defer></script>

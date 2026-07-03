@@ -3913,7 +3913,7 @@ body.orders-page-shell .orders-planner__skeleton-event > span:last-child {
 
 body.orders-page-shell .orders-card-skeleton-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
   gap: 18px;
   inline-size: 100%;
   max-inline-size: 100%;
@@ -4177,5 +4177,307 @@ body.orders-page-shell .orders-card-skeleton .orders-skeleton-block--button-seco
 
   body.orders-page-shell .orders-document-preloader__logo {
     inline-size: 112px;
+  }
+}
+
+/* Sprint 8B dispute bridge
+   Responsibility: show minimal order-level dispute context without turning pedidos into dispute center. */
+body.orders-page-shell .order-card--disputed {
+  border-color: rgba(173, 98, 24, 0.18);
+}
+
+body.orders-page-shell .order-card__status-dot--disputed {
+  background: #ad6218;
+  box-shadow: 0 0 0 4px rgba(173, 98, 24, 0.12);
+}
+
+body.orders-page-shell .order-card__dispute-note {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(173, 98, 24, 0.16);
+  border-radius: 16px;
+  background: #fff8ef;
+  color: #59350f;
+}
+
+body.orders-page-shell .order-card__dispute-note strong {
+  color: #6d3f12;
+  font-size: 0.84rem;
+  line-height: 1.2;
+}
+
+body.orders-page-shell .order-card__dispute-note span {
+  color: #7b552e;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+body.orders-page-shell .order-card__dispute-note[data-order-dispute-state="resolvida"] {
+  border-color: rgba(41, 143, 127, 0.16);
+  background: #f1fbf8;
+  color: #205f55;
+}
+
+body.orders-page-shell .order-card__dispute-note[data-order-dispute-state="resolvida"] strong,
+body.orders-page-shell .order-card__dispute-note[data-order-dispute-state="resolvida"] span {
+  color: #205f55;
+}
+
+body.orders-page-shell .order-card__dispute-note[data-order-dispute-state="reembolsado"] {
+  border-color: rgba(132, 74, 44, 0.16);
+  background: #fff4ef;
+  color: #6b3d27;
+}
+
+@media (max-width: 640px) {
+  body.orders-page-shell .order-card__dispute-note {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 14px;
+  }
+}
+
+
+
+/* Sprint 8C.1 order action overflow
+   Responsibility: keep order cards limited to primary/secondary actions; issue reports live under more options. */
+body.orders-page-shell .orders-list .order-card__actions--with-menu {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 10px;
+}
+
+body.orders-page-shell .orders-list .order-card__actions--with-menu .order-card__button {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+body.orders-page-shell .orders-list .order-card__more {
+  position: relative;
+  z-index: 4;
+  min-width: 44px;
+}
+
+body.orders-page-shell .orders-list .order-card__more-button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  min-width: 44px;
+  height: var(--control-height-lg);
+  min-height: var(--control-height-lg);
+  padding: 0;
+  border-color: rgba(188, 207, 226, 0.9);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--color-text-strong);
+  font-size: 1rem;
+  line-height: 1;
+  letter-spacing: 0.03em;
+}
+
+body.orders-page-shell .orders-list .order-card__more-button:is(:hover, :focus-visible),
+body.orders-page-shell .orders-list .order-card__more-button[aria-expanded="true"] {
+  border-color: rgba(42, 95, 144, 0.22);
+  background: rgba(42, 95, 144, 0.06);
+  color: var(--border-color-selected);
+}
+
+body.orders-page-shell .orders-list .order-card__more-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  display: grid;
+  min-width: 176px;
+  padding: 8px;
+  border: 1px solid rgba(188, 207, 226, 0.92);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 42px rgba(18, 55, 95, 0.14);
+}
+
+body.orders-page-shell .orders-list .order-card__more-menu[hidden] {
+  display: none;
+}
+
+body.orders-page-shell .orders-list .order-card__more-item {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #7b4a17;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+
+body.orders-page-shell .orders-list .order-card__more-item:is(:hover, :focus-visible) {
+  outline: 0;
+  background: #fff4e6;
+  color: #65380d;
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell .orders-list .order-card__actions--with-menu {
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__actions--with-menu .order-card__button--secondary {
+    display: none;
+  }
+
+  body.orders-page-shell .orders-list .order-card__more-button {
+    height: var(--control-height-md);
+    min-height: var(--control-height-md);
+  }
+
+  body.orders-page-shell .orders-list .order-card__more-menu {
+    right: 0;
+    bottom: calc(100% + 8px);
+    min-width: min(210px, calc(100vw - 64px));
+  }
+}
+
+body.orders-page-shell .orders-list .order-card:has(.order-card__actions--with-menu) {
+  overflow: visible;
+}
+
+/* Sprint 8C.2 preferred order action stack
+   Responsibility: keep primary actions readable and move issue reporting to a secondary row. */
+body.orders-page-shell .orders-list .order-card__actions--preferred {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(188, 207, 226, 0.54);
+}
+
+body.orders-page-shell .orders-list .order-card__actions--preferred .order-card__button {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+body.orders-page-shell .orders-list .order-card__support-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 52px;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(188, 207, 226, 0.48);
+}
+
+body.orders-page-shell .orders-list .order-card__support-action,
+body.orders-page-shell .orders-list .order-card__support-more {
+  min-height: var(--control-height-md);
+  border: 1px solid rgba(188, 207, 226, 0.78);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.96);
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+body.orders-page-shell .orders-list .order-card__support-action {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  justify-content: start;
+  gap: 10px;
+  padding: 0 14px;
+}
+
+body.orders-page-shell .orders-list .order-card__support-action--warning {
+  border-color: transparent;
+  background: transparent;
+  color: #8a4f13;
+}
+
+body.orders-page-shell .orders-list .order-card__support-action--warning:is(:hover, :focus-visible) {
+  outline: 0;
+  background: #fff4e6;
+  color: #6f3d0f;
+}
+
+body.orders-page-shell .orders-list .order-card__support-icon {
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+body.orders-page-shell .orders-list .order-card__support-more {
+  display: grid;
+  width: 52px;
+  min-width: 52px;
+  padding: 0;
+  place-items: center;
+  color: var(--color-text-strong);
+  font-size: 1rem;
+  line-height: 1;
+  letter-spacing: 0.08em;
+}
+
+body.orders-page-shell .orders-list .order-card__support-more:is(:hover, :focus-visible) {
+  outline: 0;
+  border-color: rgba(42, 95, 144, 0.24);
+  background: rgba(42, 95, 144, 0.06);
+  color: var(--border-color-selected);
+}
+
+@media (max-width: 760px) {
+  body.orders-page-shell .orders-list .order-card__actions--preferred {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__actions--preferred .order-card__button {
+    min-height: var(--control-height-md);
+    padding-inline: 12px;
+    font-size: 0.82rem;
+  }
+
+  body.orders-page-shell .orders-list .order-card__support-actions {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+  }
+
+  body.orders-page-shell .orders-list .order-card__support-action {
+    min-height: 40px;
+    padding-inline: 10px;
+    font-size: 0.82rem;
+  }
+
+  body.orders-page-shell .orders-list .order-card__support-icon {
+    width: 22px;
+    height: 22px;
+    font-size: 0.72rem;
+  }
+
+  body.orders-page-shell .orders-list .order-card__support-more {
+    width: 44px;
+    min-width: 44px;
+    min-height: 40px;
   }
 }

@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/> <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
 <script defer="" src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
-<link href="assets/css/pages/carteira-foundation.css?v=20260702-sidebar-quick-alert-flow-v1" rel="stylesheet"/>
+<link href="assets/css/pages/carteira-foundation.css?v=20260702-dispute-bridge-v32" rel="stylesheet"/>
 <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
 <script defer="" src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
 </head>
@@ -132,7 +132,7 @@
 </span>
 <div class="wallet-hero-stat__content">
 <span>Próximo repasse</span>
-<strong data-wallet-account-field="nextPayout">Após saldo</strong>
+<strong data-wallet-account-field="nextPayout" data-wallet-next-payout="">Após saldo</strong>
 </div>
 </article>
 <article aria-label="Status da conta" class="wallet-hero-stat wallet-hero-stat--status">
@@ -253,6 +253,26 @@
 <article class="wallet-bank-detail"><span>Próximo envio</span><strong data-wallet-account-field="bankNextPayout">Após liberação</strong></article>
 </div>
 </section>
+<section aria-labelledby="wallet-receivables-title" class="wallet-panel wallet-receivables-panel doke-card doke-page-section" data-wallet-receivables-panel="">
+<div class="wallet-panel__header wallet-panel__header--overview wallet-receivables-panel__header">
+<div>
+<span class="wallet-eyebrow doke-badge">Recebíveis</span>
+<h2 id="wallet-receivables-title">Próximos repasses</h2>
+<p>Liberações previstas dos pedidos.</p>
+</div>
+<span class="wallet-receivables-status" data-wallet-receivables-status="empty">Sem repasses</span>
+</div>
+<article class="wallet-receivable-next" data-wallet-receivable-next-card="" hidden="">
+<span>Próximo repasse</span>
+<strong data-wallet-receivable-next-amount="">R$ 0,00</strong>
+<p data-wallet-receivable-next-copy="">Sem valores em garantia no momento.</p>
+</article>
+<div class="wallet-receivables-list" data-wallet-receivables-list=""></div>
+<article class="wallet-empty-state wallet-empty-state--receivables doke-empty-state" data-wallet-receivables-empty="">
+<strong>Sem repasses previstos</strong>
+<p>Pagamentos em garantia aparecerão aqui automaticamente.</p>
+</article>
+</section>
 </aside>
 </section>
 </div>
@@ -275,9 +295,9 @@
 <p>Gráficos gerados a partir das movimentações reais da carteira local.</p>
 </div>
 <div aria-label="Período das estatísticas" class="wallet-analytics-period" role="group">
-<button class="wallet-analytics-period__button" data-wallet-analytics-period="7-days" type="button">7 dias</button>
-<button class="wallet-analytics-period__button" data-wallet-analytics-period="30-days" type="button">30 dias</button>
-<button aria-pressed="true" class="wallet-analytics-period__button is-active" data-wallet-analytics-period="current-month" type="button">Mês atual</button>
+<button class="wallet-analytics-period__button doke-btn doke-btn--ghost" data-wallet-analytics-period="7-days" type="button">7 dias</button>
+<button class="wallet-analytics-period__button doke-btn doke-btn--ghost" data-wallet-analytics-period="30-days" type="button">30 dias</button>
+<button aria-pressed="true" class="wallet-analytics-period__button doke-btn doke-btn--ghost is-active" data-wallet-analytics-period="current-month" type="button">Mês atual</button>
 </div>
 </div>
 <article class="wallet-analytics-insight doke-card" aria-live="polite">
@@ -381,6 +401,35 @@
 </div>
 </div>
 </section>
+</section>
+<section aria-labelledby="wallet-comparison-title" class="wallet-panel wallet-panel--monthly-comparison doke-card" data-wallet-monthly-comparison hidden>
+<div class="wallet-panel__header wallet-panel__header--history">
+<div>
+<span class="wallet-eyebrow doke-badge">Comparativo</span>
+<h2 id="wallet-comparison-title">Comparativo mensal</h2>
+<p class="wallet-chart-copy" data-wallet-comparison-copy>Compare o mês mais recente com o período anterior.</p>
+</div>
+<strong class="wallet-comparison-trend" data-wallet-comparison-trend>—</strong>
+</div>
+<div class="wallet-comparison-insight">
+<strong data-wallet-comparison-title>Leitura mensal</strong>
+<p data-wallet-comparison-insight>Carregando análise comparativa.</p>
+</div>
+<div class="wallet-comparison-grid" data-wallet-comparison-metrics></div>
+</section>
+<section aria-labelledby="wallet-history-title" class="wallet-panel wallet-panel--history doke-card" data-wallet-monthly-history>
+<div class="wallet-panel__header wallet-panel__header--history">
+<div>
+<span class="wallet-eyebrow doke-badge">Histórico</span>
+<h2 id="wallet-history-title">Histórico mensal</h2>
+<p class="wallet-chart-copy">Resumo por mês com bruto, taxa, líquido, saques, comparação e exportação do período.</p>
+</div>
+</div>
+<div class="wallet-history-list" data-wallet-monthly-history-list></div>
+<article class="wallet-empty-state wallet-empty-state--history doke-empty-state" data-wallet-monthly-history-empty hidden>
+<strong>Nenhum mês com movimentações</strong>
+<p>Quando houver pagamentos, saques ou taxas, o histórico mensal aparecerá aqui.</p>
+</article>
 </section>
 </section>
 </section>
@@ -522,6 +571,15 @@ Essa será a conta padrão para repasses e saques.
 <article><span>Destino</span><strong data-wallet-transaction-destination="">Conta de recebimento</strong></article>
 </div>
 <p class="wallet-transaction-detail-note" data-wallet-transaction-note="">Detalhe da movimentação.</p>
+<div class="wallet-dispute-actions" data-wallet-transaction-dispute-actions="" hidden="">
+<strong>Resolução do pedido</strong>
+<p data-wallet-transaction-dispute-copy="">Acompanhe a contestação pelo pedido ou pela conversa.</p>
+<div class="wallet-dispute-actions__controls">
+<a class="doke-btn doke-btn--ghost" data-wallet-transaction-dispute-order-action="" href="pedidos.html">Ver pedido</a>
+<a class="doke-btn doke-btn--ghost" data-wallet-transaction-dispute-conversation-action="" href="mensagens.html">Abrir conversa</a>
+</div>
+</div>
+<ol class="wallet-release-timeline" data-wallet-transaction-release-timeline="" aria-label="Linha do tempo do repasse" hidden=""></ol>
 </div>
 <footer class="wallet-transaction-detail-modal__footer doke-overlay__actions doke-modal-actions">
 <button class="wallet-transaction-detail-modal__secondary doke-btn doke-btn--ghost" data-wallet-transaction-track-action="" type="button" hidden="">Acompanhar saque</button>
@@ -605,10 +663,11 @@ Essa será a conta padrão para repasses e saques.
 <script defer="" src="assets/js/core/app.js?v=20260702-sidebar-quick-alert-flow-v1"></script>
 <script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
 <script defer="" src="assets/js/core/stable-shell-router.js?v=20260702-payment-route-init-v1"></script>
-<script defer="" src="assets/js/repositories/wallet-repository.js?v=20260630-wallet-dashboard-v4"></script>
-<script defer="" src="assets/js/services/wallet-service.js?v=20260702-wallet-release-on-completion-v1"></script>
+<script defer="" src="assets/js/repositories/orders-repository.js?v=20260702-dispute-bridge-v1"></script>
+<script defer="" src="assets/js/repositories/wallet-repository.js?v=20260702-dispute-bridge-v1"></script>
+<script defer="" src="assets/js/services/wallet-service.js?v=20260702-dispute-bridge-v1"></script>
 <script defer="" src="assets/js/components/doke-lite-select.js?v=20260627-form-select-v4"></script>
-<script defer="" src="assets/js/pages/carteira.js?v=20260630-wallet-mobile-modal-hardening-v1"></script>
+<script defer="" src="assets/js/pages/carteira.js?v=20260702-dispute-bridge-v1"></script>
 <script defer="" src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture"></script>
 <script defer="" src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1"></script>
 <script defer="" src="assets/js/ui/mobile-interaction-standard.js?v=20260428-v1"></script>

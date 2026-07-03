@@ -1,8 +1,13 @@
 (function () {
   'use strict';
 
-  const root = document.querySelector('[data-pro-review-page]');
-  if (!root) return;
+  const REVIEW_CONTROLLER_VERSION = '20260702-review-route-init-v1';
+
+  function initProfessionalReview() {
+    const root = document.querySelector('[data-pro-review-page]');
+    if (!root) return;
+    if (root.dataset.reviewControllerInitialized === REVIEW_CONTROLLER_VERSION) return;
+    root.dataset.reviewControllerInitialized = REVIEW_CONTROLLER_VERSION;
 
   const starGroup = root.querySelector('[data-star-group]');
   const ratingLabel = root.querySelector('[data-rating-label]');
@@ -366,4 +371,13 @@
 
   updateRating(selectedRating);
   loadReviewContext();
+  }
+
+  window.DokeInitReview = initProfessionalReview;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initProfessionalReview, { once: true });
+  } else {
+    initProfessionalReview();
+  }
 })();

@@ -46,6 +46,90 @@
   };
   const canUseChargeAction = (conversation) => Boolean(isProfessionalConversationView(conversation));
 
+  const normalizeStatusToken = (value) => String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9_]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  const getDisputeReasonLabel = (dispute) => {
+    const code = normalizeStatusToken(dispute?.reasonCode || "");
+    const labels = {
+      service_not_completed: "Serviço não foi concluído",
+      different_result: "Resultado diferente do combinado",
+      no_response: "Profissional não respondeu",
+      other: "Outro motivo"
+    };
+    if (labels[code]) return labels[code];
+    const reason = String(dispute?.reason || "").split(".")[0].trim();
+    return reason || "Relato enviado pelo cliente";
+  };
+
+  const getDisputeResponseText = (dispute) => String(dispute?.responseText || dispute?.professionalResponse || "").trim();
+
+  const isDisputePresentationActive = (presentation) => Boolean(presentation && ["contestacao", "analise"].includes(presentation.state));
+
+  const getWalletDisputeForConversation = (conversation) => {
+    const wallet = window.Doke?.repositories?.wallet;
+    const orderId = conversation?.orderId || conversation?.order?.id || "";
+    if (!wallet || typeof wallet.listDisputes !== "function" || !orderId) return null;
+    const disputes = wallet.listDisputes({ orderId, currentUser: false }) || [];
+    return disputes[0] || null;
+  };
+
+  const getWalletTransactionForCharge = (conversation, message) => {
+    const wallet = window.Doke?.repositories?.wallet;
+    if (!wallet || typeof wallet.readWallet !== "function") return null;
+    const data = wallet.readWallet() || {};
+    const transactions = Array.isArray(data.transactions) ? data.transactions : [];
+    const transactionId = String(message?.walletTransactionId || message?.transactionId || "");
+    const orderId = String(conversation?.orderId || conversation?.order?.id || message?.orderId || "");
+    const conversationId = String(conversation?.id || message?.conversationId || "");
+    const messageId = String(message?.id || message?.messageId || "");
+    return transactions.find((transaction) => {
+      if (!transaction || String(transaction.type || "").toLowerCase() === "withdraw") return false;
+      if (transactionId && String(transaction.id || "") === transactionId) return true;
+      if (messageId && String(transaction.messageId || "") === messageId) return true;
+      if (orderId && String(transaction.orderId || "") === orderId) return true;
+      if (conversationId && String(transaction.conversationId || "") === conversationId) return true;
+      return false;
+    }) || null;
+  };
+
+  const getWalletReceiptUrl = (transaction) => {
+    if (!transaction?.id) return "";
+    return `carteira.html?transaction=${encodeURIComponent(transaction.id)}&receipt=1`;
+  };
+
+  const getChargeReceiptActionHtml = (conversation, message) => {
+    const transaction = getWalletTransactionForCharge(conversation, message);
+    const receiptUrl = getWalletReceiptUrl(transaction);
+    if (!receiptUrl) return "";
+    return `<a class="message-bubble__charge-pay doke-btn doke-btn--ghost" href="${escapeHtml(receiptUrl)}" data-message-receipt>Ver comprovante</a>`;
+  };
+
+  const getConversationDisputePresentation = (conversation) => {
+    const dispute = getWalletDisputeForConversation(conversation);
+    const explicit = conversation?.order?.disputeStatus || conversation?.disputeStatus || "";
+    const status = normalizeStatusToken(dispute?.status || explicit);
+    if (!status) return null;
+
+    if (status === "resolvida_profissional") {
+      return { state: "resolvida", label: "Repasse liberado", title: "Contestação encerrada", text: "Contestação encerrada. Repasse liberado ao profissional.", dispute };
+    }
+
+    if (status === "resolvida_cliente" || status === "reembolsado") {
+      return { state: "reembolsado", label: "Reembolsado", title: "Contestação encerrada", text: "Contestação encerrada. Cliente reembolsado.", dispute };
+    }
+
+    if (status === "em_analise") {
+      return { state: "analise", label: "Em análise", title: "Pedido em análise", text: "Mantenha a conversa centralizada aqui até a análise ser concluída.", dispute };
+    }
+
+    return { state: "contestacao", label: "Em contestação", title: "Pedido em contestação", text: "Mantenha a conversa centralizada aqui até a análise ser concluída.", dispute };
+  };
+
   const getChargeCardPresentation = (conversation, message) => {
     const professionalView = isProfessionalConversationView(conversation);
     const ownerView = professionalView && message?.mine === true;
@@ -64,7 +148,7 @@
           text: message.text || 'O cliente concluiu o fluxo e registrou a avaliação do atendimento.',
           details: ['Recebimento pela Doke', message.installments || 'À vista'],
           note: 'Fluxo encerrado com avaliação registrada.',
-          actionHtml: '<span class="message-bubble__charge-meta">Concluído</span>',
+          actionHtml: '<span class="message-bubble__charge-meta">Concluído</span>' + getChargeReceiptActionHtml(conversation, message),
           passive: true
         };
       }
@@ -78,7 +162,7 @@
           text: message.text || 'O pedido foi finalizado e o cliente ainda pode avaliar o atendimento.',
           details: ['Recebimento pela Doke', message.installments || 'À vista'],
           note: 'Pedido encerrado. A avaliação do cliente pode chegar a qualquer momento.',
-          actionHtml: '<span class="message-bubble__charge-meta">Pedido finalizado</span>',
+          actionHtml: '<span class="message-bubble__charge-meta">Pedido finalizado</span>' + getChargeReceiptActionHtml(conversation, message),
           passive: true
         };
       }
@@ -92,7 +176,7 @@
           text: message.text || 'O cliente confirmou o pagamento. Agora combine a execução e os próximos passos pelo chat.',
           details: ['Recebimento pela Doke', message.installments || 'À vista'],
           note: 'Pagamento confirmado. Siga com o atendimento.',
-          actionHtml: '<span class="message-bubble__charge-meta">Siga com o atendimento</span>',
+          actionHtml: '<span class="message-bubble__charge-meta">Siga com o atendimento</span>' + getChargeReceiptActionHtml(conversation, message),
           passive: true
         };
       }
@@ -119,7 +203,7 @@
         text: message.text || 'O atendimento foi concluído e avaliado.',
         details: ['Pagamento seguro pela Doke', message.installments || 'À vista'],
         note: 'Fluxo encerrado com avaliação registrada.',
-        actionHtml: '',
+        actionHtml: getChargeReceiptActionHtml(conversation, message),
         passive: true
       };
     }
@@ -133,7 +217,7 @@
         text: message.text || 'O atendimento foi concluído. Você ainda pode avaliar por aqui.',
         details: ['Pagamento seguro pela Doke', message.installments || 'À vista'],
         note: 'Avalie para concluir o atendimento.',
-        actionHtml: '<button class="message-bubble__charge-pay is-done doke-btn doke-btn--soft" type="button" data-message-review>Avaliar</button>',
+        actionHtml: '<button class="message-bubble__charge-pay is-done doke-btn doke-btn--soft" type="button" data-message-review>Avaliar</button>' + getChargeReceiptActionHtml(conversation, message),
         passive: false
       };
     }
@@ -147,7 +231,7 @@
         text: message.text || 'Pagamento confirmado. Agora você pode finalizar o pedido por aqui.',
         details: ['Pagamento seguro pela Doke', message.installments || 'À vista'],
         note: 'Confirme para encerrar o atendimento.',
-        actionHtml: '<button class="message-bubble__charge-pay is-complete doke-btn doke-btn--success" type="button" data-message-complete>Finalizar pedido</button>',
+        actionHtml: '<button class="message-bubble__charge-pay is-complete doke-btn doke-btn--success" type="button" data-message-complete>Finalizar pedido</button>' + getChargeReceiptActionHtml(conversation, message),
         passive: false
       };
     }
@@ -256,9 +340,10 @@
 
   const renderLocalConversationItem = (id, conversation) => {
     const lastMessage = conversation.messages[conversation.messages.length - 1];
-    const statusLabel = conversation.order?.statusLabel || "Aguardando resposta";
+    const disputePresentation = getConversationDisputePresentation(conversation);
+    const statusLabel = disputePresentation ? disputePresentation.label : conversation.order?.statusLabel || "Aguardando resposta";
     return `
-      <button class="message-item doke-message-card doke-card doke-selectable-card" type="button" data-message-id="${escapeHtml(id)}" data-domain-card="message" data-local-conversation="true">
+      <button class="message-item doke-message-card doke-card doke-selectable-card" type="button" data-message-id="${escapeHtml(id)}" data-domain-card="message" data-local-conversation="true"${disputePresentation ? ` data-message-dispute-state="${escapeHtml(disputePresentation.state)}"` : ""}>
         <span class="message-item__avatar doke-avatar" aria-hidden="true">${escapeHtml(conversation.avatar || getConversationInitials(conversation.name))}</span>
         <span class="message-item__content">
           <span class="message-item__line"><strong>${escapeHtml(conversation.name)}</strong><span class="message-item__time">${escapeHtml(lastMessage?.time || "agora")}</span></span>
@@ -646,6 +731,39 @@
       return Promise.resolve(null);
     };
 
+    const requestIssueReport = (conversation, trigger) => {
+      const orderTitle = conversation?.order?.title || conversation?.order?.serviceTitle || conversation?.orderTitle || "";
+      if (window.DokeIssueReportDialog && typeof window.DokeIssueReportDialog.request === "function") {
+        return window.DokeIssueReportDialog.request({
+          trigger,
+          orderTitle,
+          title: "Relatar problema",
+          text: "Conte o que aconteceu. O repasse ficará pausado enquanto o pedido é analisado.",
+          submitLabel: "Enviar relato"
+        });
+      }
+      showCopyToast("Não foi possível abrir o relato. Recarregue a página e tente novamente.");
+      return Promise.resolve(null);
+    };
+
+    const submitIssueReport = (conversation, message, report) => {
+      const wallet = window.Doke?.services?.wallet || window.Doke?.repositories?.wallet;
+      if (!wallet || typeof wallet.openDispute !== "function") return Promise.reject(new Error("Contestação indisponível."));
+      const orderId = conversation?.order?.id || conversation?.orderId || pageParams.get("order") || "";
+      if (!orderId) return Promise.reject(new Error("Pedido não identificado."));
+      return wallet.openDispute({
+        orderId,
+        transactionId: message?.walletTransactionId || message?.transactionId || "",
+        messageId: message?.id || conversation?.messageId || "",
+        conversationId: conversation?.id || activeId || "",
+        professionalId: conversation?.professionalId || conversation?.order?.professionalId || "",
+        clientId: getCurrentUserId() || conversation?.clientId || conversation?.order?.clientId || "",
+        reason: report.reason,
+        reasonCode: report.reasonCode,
+        openedBy: "client"
+      });
+    };
+
     let activeOrderDetailTrigger = null;
 
     const orderDetailIcons = {
@@ -989,7 +1107,7 @@
               <div class="orders-detail-timeline__date">${escapeHtml(step.date || (step.current ? "Etapa atual" : "Próxima etapa"))}</div>
             </div>
           </article>
-        `).join("");
+        `).join("") + renderDisputeTimelineEvent(conversation);
       }
     };
 
@@ -1022,6 +1140,48 @@
       }, 220);
     };
 
+    const renderDisputeTimelineEvent = (conversation) => {
+      const presentation = getConversationDisputePresentation(conversation);
+      if (!presentation) return "";
+      const reasonLabel = getDisputeReasonLabel(presentation.dispute);
+      const responseText = getDisputeResponseText(presentation.dispute);
+      const statusCopy = isDisputePresentationActive(presentation)
+        ? "O repasse ficará pausado até a análise ser concluída."
+        : presentation.text;
+      return `
+        <section class="messages-dispute-timeline-event" data-messages-dispute-event data-messages-dispute-state="${escapeHtml(presentation.state)}" aria-label="Evento de contestação do pedido">
+          <div class="messages-dispute-timeline-event__icon" aria-hidden="true">!</div>
+          <div class="messages-dispute-timeline-event__content">
+            <strong>${escapeHtml(presentation.title || "Pedido contestado")}</strong>
+            <p>${escapeHtml(statusCopy)}</p>
+            <span>Motivo: ${escapeHtml(reasonLabel)}</span>
+          </div>
+        </section>
+        ${responseText ? `
+        <section class="messages-dispute-timeline-event messages-dispute-timeline-event--response" data-messages-dispute-response-event aria-label="Resposta do profissional à contestação">
+          <div class="messages-dispute-timeline-event__icon" aria-hidden="true">✓</div>
+          <div class="messages-dispute-timeline-event__content">
+            <strong>Resposta do profissional enviada</strong>
+            <p>${escapeHtml(responseText)}</p>
+            <span>Acompanhe a resolução por esta conversa.</span>
+          </div>
+        </section>` : ""}
+      `;
+    };
+
+    const syncDisputeComposerNotice = (conversation) => {
+      const notice = root.querySelector("[data-messages-dispute-composer]");
+      if (!notice) return;
+      const presentation = getConversationDisputePresentation(conversation);
+      const shouldShow = isDisputePresentationActive(presentation);
+      notice.hidden = !shouldShow;
+      if (!shouldShow) return;
+      const title = notice.querySelector("[data-messages-dispute-composer-title]");
+      const text = notice.querySelector("[data-messages-dispute-composer-text]");
+      if (title) title.textContent = presentation.state === "analise" ? "Pedido em análise" : "Contestação em andamento";
+      if (text) text.textContent = "Responda por esta conversa até a análise ser concluída.";
+    };
+
     const renderLinkedOrderContext = (conversation) => {
       const order = conversation?.order || {};
       const role = getCurrentUserRole();
@@ -1031,13 +1191,19 @@
         ? order.clientName || conversation.name || 'Cliente Doke'
         : order.professionalName || conversation.name || 'Profissional Doke';
       const orderStatus = getOrderStatus(conversation);
+      const disputePresentation = getConversationDisputePresentation(conversation);
+      const statusLabel = disputePresentation ? disputePresentation.label : order.statusLabel || 'Em negociação';
       const isPending = isOrderPendingAcceptance(conversation);
       const isDeclined = isOrderDeclined(conversation);
       const unlocked = isOrderConversationUnlocked(conversation);
       let primaryLabel = 'Aguardando aceite';
       let primaryClass = 'doke-btn--soft';
       let primaryAttrs = 'aria-disabled="true" disabled';
-      if (isPending && professionalView) {
+      if (disputePresentation && !isDisputePresentationActive(disputePresentation)) {
+        primaryLabel = disputePresentation.state === 'reembolsado' ? 'Cliente reembolsado' : 'Repasse liberado';
+        primaryClass = 'doke-btn--soft';
+        primaryAttrs = 'aria-disabled="true" disabled';
+      } else if (isPending && professionalView) {
         primaryLabel = 'Aceitar pedido';
         primaryClass = 'doke-btn--primary';
         primaryAttrs = 'data-messages-accept-order';
@@ -1062,8 +1228,13 @@
       <section class="messages-order-card messages-order-card--inline doke-card doke-order-card" data-domain-card="order" data-messages-order-context aria-label="Pedido vinculado à conversa">
         <div class="messages-order-card__head doke-order-card__meta">
           <span>Pedido vinculado</span>
-          <strong class="doke-badge doke-order-card__status">${escapeHtml(order.statusLabel || 'Em negociação')}</strong>
+          <strong class="doke-badge doke-order-card__status">${escapeHtml(statusLabel)}</strong>
         </div>
+        ${disputePresentation ? `
+        <div class="messages-dispute-notice" data-messages-dispute-state="${escapeHtml(disputePresentation.state)}">
+          <strong>${escapeHtml(disputePresentation.title)}</strong>
+          <span>${escapeHtml(disputePresentation.text)}</span>
+        </div>` : ``}
         <div class="messages-order-card__body doke-order-card__body">
           <div class="messages-order-card__copy">
             <h2 class="doke-order-card__title">${escapeHtml(order.title || 'Pedido de serviço')}</h2>
@@ -1431,6 +1602,7 @@
       const orderAction = root.querySelector(".messages-thread__action--order[data-messages-open-order-detail]");
       if (orderAction) orderAction.disabled = true;
       if (chargeButton) syncChargeActionVisibility(null);
+      syncDisputeComposerNotice(null);
       if (threadBody) {
         threadBody.innerHTML = "";
         threadBody.hidden = true;
@@ -1476,6 +1648,7 @@
       if (threadLastSeen) threadLastSeen.textContent = conversation.lastSeen;
       syncChargeActionVisibility(conversation);
       syncComposerLock(conversation);
+      syncDisputeComposerNotice(conversation);
       const hasOrderContext = conversation.group === "orders" || Boolean(conversation.orderId || conversation.order?.id);
       if (threadEmpty) threadEmpty.hidden = hasOrderContext || conversation.messages.length !== 0;
       if (threadBody) threadBody.hidden = !hasOrderContext && conversation.messages.length === 0;
@@ -1755,7 +1928,8 @@
       setCompletionText('[data-completion-amount]', amount);
       setCompletionText('[data-completion-order-code]', orderCode);
       if (completionIssueLink) {
-        completionIssueLink.href = activeId ? `mensagens.html?conversation=${encodeURIComponent(activeId)}` : 'mensagens.html';
+        const orderId = order.id || conversation?.orderId || '';
+        completionIssueLink.href = orderId ? `pedidos.html?order=${encodeURIComponent(orderId)}&action=report_problem` : activeId ? `mensagens.html?conversation=${encodeURIComponent(activeId)}` : 'mensagens.html';
       }
       if (completionNote) completionNote.value = '';
       if (completionConfirm) completionConfirm.checked = true;
@@ -2503,6 +2677,35 @@
       if (completionError) completionError.hidden = true;
     });
 
+    completionIssueLink?.addEventListener('click', (event) => {
+      event.preventDefault();
+      const contextId = pendingCompletion?.conversationId || activeId;
+      const conversation = conversations[contextId];
+      const message = pendingCompletion?.message || conversation?.messages?.[pendingCompletion?.messageIndex ?? -1] || getLatestChargeMessage(contextId);
+      if (!conversation) {
+        showCopyToast('Selecione uma conversa para relatar o problema.');
+        return;
+      }
+
+      requestIssueReport(conversation, completionIssueLink).then((report) => {
+        if (!report) return;
+        completionIssueLink.setAttribute('aria-busy', 'true');
+        completionIssueLink.textContent = 'Enviando...';
+        submitIssueReport(conversation, message, report)
+          .then(() => {
+            closeCompletionModal();
+            refreshLocalConversationSurface({ preferRequested: true });
+            if (contextId && conversations[contextId]) renderThread(contextId, { scrollTo: 'start', openOnMobile: true });
+            showCopyToast('Relato enviado. O pedido entrou em contestação.');
+          })
+          .catch((error) => showCopyToast(error?.message || 'Não foi possível enviar o relato.'))
+          .finally(() => {
+            completionIssueLink.removeAttribute('aria-busy');
+            completionIssueLink.textContent = 'Tenho um problema';
+          });
+      });
+    });
+
     completionSubmit?.addEventListener('click', () => {
       if (!pendingCompletion) return;
       if (completionConfirm && !completionConfirm.checked) {
@@ -2672,6 +2875,14 @@
     resetAudioDraft();
     resetImageDraft();
     syncComposerPlaceholder();
+    ["doke:wallet-dispute-opened", "doke:wallet-dispute-resolved", "doke:order-dispute-synced"].forEach((eventName) => {
+      document.addEventListener(eventName, () => {
+        hydrateLocalConversations(root);
+        syncVisibility();
+        if (activeId) renderThread(activeId);
+      });
+    });
+
     renderThread(activeId, { scrollTo: "start" });
     if (isCompactThreadViewport()) {
       setCompactThreadOpen(false);

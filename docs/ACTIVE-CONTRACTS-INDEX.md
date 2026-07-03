@@ -15,6 +15,10 @@ Este arquivo é o ponto de entrada para agentes humanos, ChatGPT, Codex e qualqu
 - `docs/SURFACE-CONTRACT.md`: contrato de superfícies visuais, cards, modais e estados.
 - `docs/BASELINE-VISUAL-APPROVED.md`: baseline visual que refatorações devem preservar.
 - `docs/DATA-READY-CONTRACTS.md`: preparação para dados reais, renderers e controllers.
+- `docs/DATA-MODEL.md`: entidades, status e permissões para backend futuro.
+- `docs/FINANCIAL-FLOW-CONTRACT.md`: eventos e efeitos colaterais do ciclo financeiro.
+- `docs/API-ADAPTER-CONTRACT.md`: interface de provider mock/API e endpoints-alvo.
+- `docs/BACKEND-INTEGRATION-PLAN.md`: plano seguro de migração para API/Supabase.
 - `docs/VALIDATION.md`: comandos e matriz mínima de validação.
 
 ## Regra de precedência

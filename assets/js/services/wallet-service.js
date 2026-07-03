@@ -78,6 +78,7 @@
       bankAccount: null,
       localTransactions: [],
       transactions: [],
+      receivablesSchedule: { next: null, items: [], scheduledNet: 0, releasedNet: 0, totalNet: 0, pendingCount: 0, releasedCount: 0, count: 0 },
       updatedAt: new Date().toISOString()
     };
   }
@@ -135,6 +136,9 @@
         largestMovement: { amount: 0, title: 'Sem movimentações' },
         chartSeries: { labels: ['—'], grossIncome: [0], netIncome: [0], withdrawals: [0], fees: [0], paidOrders: [0] }
       };
+    var receivablesSchedule = repository && typeof repository.getReceivablesSchedule === 'function'
+      ? repository.getReceivablesSchedule(userScope)
+      : { next: null, items: [], scheduledNet: 0, releasedNet: 0, totalNet: 0, pendingCount: 0, releasedCount: 0, count: 0 };
 
     var wallet = createEmptyWallet();
     wallet.availableBalance = roundCurrency(localSummary.available || 0);
@@ -145,6 +149,7 @@
     wallet.monthlyDashboard = monthlyDashboard;
     wallet.localTransactions = localTransactions;
     wallet.transactions = localTransactions;
+    wallet.receivablesSchedule = receivablesSchedule;
     return getBankAccount({ currentUser: options.currentUser !== false }).then(function (account) {
       wallet.bankAccount = account || null;
       return wallet;
@@ -160,6 +165,16 @@
     return Promise.resolve(Array.isArray(transactions) ? transactions : []);
   }
 
+
+
+  function listAuditEvents(options) {
+    options = options || {};
+    var repository = getRepository();
+    var events = repository && typeof repository.listAuditEvents === 'function'
+      ? repository.listAuditEvents(options)
+      : [];
+    return Promise.resolve(Array.isArray(events) ? events : []);
+  }
   function getMonthlyDashboard(options) {
     options = options || {};
     var repository = getRepository();
@@ -184,6 +199,24 @@
     });
   }
 
+  function getMonthlyHistory(options) {
+    options = options || {};
+    var repository = getRepository();
+    var history = repository && typeof repository.getMonthlyHistory === 'function'
+      ? repository.getMonthlyHistory(options)
+      : [];
+    return Promise.resolve(Array.isArray(history) ? history : []);
+  }
+
+  function getReceivablesSchedule(options) {
+    options = options || {};
+    var repository = getRepository();
+    var schedule = repository && typeof repository.getReceivablesSchedule === 'function'
+      ? repository.getReceivablesSchedule(options)
+      : null;
+    return Promise.resolve(schedule || { next: null, items: [], scheduledNet: 0, releasedNet: 0, totalNet: 0, pendingCount: 0, releasedCount: 0, count: 0 });
+  }
+
   function createWalletNotification(transaction, payload) {
     var notifications = getNotificationsService();
     if (!notifications || typeof notifications.create !== 'function' || !transaction) return Promise.resolve(null);
@@ -201,8 +234,8 @@
       eventKey: ['wallet_receivable_available', transaction.orderId || '', transaction.messageId || '', transaction.professionalId || transaction.userId || ''].filter(Boolean).join(':'),
       title: 'Saldo disponível',
       body: 'O valor líquido de ' + formatCurrency(transaction.netAmount || transaction.amount || 0) + ' do pedido "' + (transaction.title || 'Pedido') + '" foi liberado na sua carteira.',
-      targetUrl: 'carteira.html?transaction=' + encodeURIComponent(transaction.id || ''),
-      actionLabel: 'Abrir carteira',
+      targetUrl: 'carteira.html?transaction=' + encodeURIComponent(transaction.id || '') + '&receipt=1',
+      actionLabel: 'Ver comprovante',
       read: false
     }).catch(function (error) {
       console.warn('[DokeWallet:createNotification]', error);
@@ -223,8 +256,8 @@
       eventKey: ['wallet_withdraw_requested', transaction.id || '', userId].filter(Boolean).join(':'),
       title: 'Saque solicitado',
       body: 'Seu saque de ' + formatCurrency(transaction.netAmount || transaction.amount || 0) + ' foi solicitado para a conta cadastrada.',
-      targetUrl: 'carteira.html?transaction=' + encodeURIComponent(transaction.id || ''),
-      actionLabel: 'Abrir carteira',
+      targetUrl: 'carteira.html?transaction=' + encodeURIComponent(transaction.id || '') + '&receipt=1',
+      actionLabel: 'Ver comprovante',
       read: false
     }).catch(function (error) {
       console.warn('[DokeWallet:createWithdrawNotification]', error);
@@ -246,11 +279,34 @@
       eventKey: ['wallet_withdraw_completed', transaction.id || '', userId].filter(Boolean).join(':'),
       title: 'Saque concluído',
       body: 'Seu saque de ' + formatCurrency(transaction.netAmount || transaction.amount || 0) + ' foi enviado para a conta cadastrada.',
-      targetUrl: 'carteira.html?transaction=' + encodeURIComponent(transaction.id || ''),
-      actionLabel: 'Abrir carteira',
+      targetUrl: 'carteira.html?transaction=' + encodeURIComponent(transaction.id || '') + '&receipt=1',
+      actionLabel: 'Ver comprovante',
       read: false
     }).catch(function (error) {
       console.warn('[DokeWallet:createWithdrawCompletedNotification]', error);
+      return null;
+    });
+  }
+
+
+  function createWithdrawDeclinedNotification(transaction) {
+    var notifications = getNotificationsService();
+    if (!notifications || typeof notifications.create !== 'function' || !transaction) return Promise.resolve(null);
+    var userId = transaction.professionalId || transaction.userId || DEMO_PROFESSIONAL_ID;
+    return notifications.create({
+      type: 'wallet_withdraw_declined',
+      category: 'wallet',
+      userId: userId,
+      actorId: userId,
+      actorName: 'Suporte Doke',
+      eventKey: ['wallet_withdraw_declined', transaction.id || '', userId].filter(Boolean).join(':'),
+      title: 'Saque recusado',
+      body: 'Seu saque de ' + formatCurrency(transaction.netAmount || transaction.amount || 0) + ' foi recusado no mock de suporte. ' + (transaction.adminReason || 'Revise os dados bancários e solicite novamente.'),
+      targetUrl: 'carteira.html?transaction=' + encodeURIComponent(transaction.id || '') + '&receipt=1',
+      actionLabel: 'Ver comprovante',
+      read: false
+    }).catch(function (error) {
+      console.warn('[DokeWallet:createWithdrawDeclinedNotification]', error);
       return null;
     });
   }
@@ -324,6 +380,38 @@
     });
   }
 
+
+  function listDisputes(options) {
+    options = options || {};
+    var repository = getRepository();
+    var disputes = repository && typeof repository.listDisputes === 'function'
+      ? repository.listDisputes(options)
+      : [];
+    return Promise.resolve(Array.isArray(disputes) ? disputes : []);
+  }
+
+  function openDispute(payload) {
+    payload = payload || {};
+    var repository = getRepository();
+    if (!repository || typeof repository.openDispute !== 'function') return Promise.reject(new Error('Disputa indisponível.'));
+    return repository.openDispute(payload);
+  }
+
+
+  function respondDispute(payload) {
+    payload = payload || {};
+    var repository = getRepository();
+    if (!repository || typeof repository.respondDispute !== 'function') return Promise.reject(new Error('Disputa indisponível.'));
+    return repository.respondDispute(payload);
+  }
+
+  function resolveDispute(payload) {
+    payload = payload || {};
+    var repository = getRepository();
+    if (!repository || typeof repository.resolveDispute !== 'function') return Promise.reject(new Error('Disputa indisponível.'));
+    return repository.resolveDispute(payload);
+  }
+
   function requestWithdraw(payload) {
     payload = payload || {};
     var repository = getRepository();
@@ -352,15 +440,35 @@
     });
   }
 
+
+  function resolveWithdraw(payload) {
+    payload = payload || {};
+    var repository = getRepository();
+    if (!repository || typeof repository.resolveWithdraw !== 'function') return Promise.reject(new Error('Carteira indisponível.'));
+    return repository.resolveWithdraw(payload).then(function (result) {
+      if (!result || !result.transaction || !result.updated) return result;
+      var notifier = result.action === 'declined' ? createWithdrawDeclinedNotification : createWithdrawCompletedNotification;
+      return notifier(result.transaction).then(function () { return result; });
+    });
+  }
+
   services.wallet = Object.freeze({
     provider: getRepository() ? 'local-mock' : 'empty-local-mock',
     getWallet: getWallet,
     listTransactions: listTransactions,
+    listAuditEvents: listAuditEvents,
     getMonthlyDashboard: getMonthlyDashboard,
+    getMonthlyHistory: getMonthlyHistory,
+    getReceivablesSchedule: getReceivablesSchedule,
     getBankAccount: getBankAccount,
     saveBankAccount: saveBankAccount,
     requestWithdraw: requestWithdraw,
     completeWithdraw: completeWithdraw,
+    resolveWithdraw: resolveWithdraw,
+    listDisputes: listDisputes,
+    openDispute: openDispute,
+    respondDispute: respondDispute,
+    resolveDispute: resolveDispute,
     registerHeldReceivableFromPayment: registerHeldReceivableFromPayment,
     registerReceivableFromOrder: registerReceivableFromOrder
   });

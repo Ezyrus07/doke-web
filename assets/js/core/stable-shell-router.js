@@ -2,7 +2,7 @@
   'use strict';
 
   var Doke = window.Doke || (window.Doke = {});
-  var ROUTER_VERSION = '20260702-payment-route-init-v1';
+  var ROUTER_VERSION = '20260702-review-route-init-v1';
   var ROUTE_VISUAL_THRESHOLD_MS = 150;
   var ROUTE_SETTLEMENT_TIMEOUT_MS = 9000;
 
@@ -11,6 +11,7 @@
     '/anunciar-servico.html',
     '/avaliacao-profissional.html',
     '/carteira.html',
+    '/admin.html',
     '/comunidade-interna.html',
     '/comunidade.html',
     '/configuracoes.html',
@@ -39,11 +40,13 @@
     '/index.html': ['DokeInitHome'],
     '/resultados.html': ['DokeInitSearchResults'],
     '/detalhe-anuncio.html': ['DokeInitDetailAd'],
+    '/avaliacao-profissional.html': ['DokeInitReview'],
     '/ajuda.html': ['DokeInitHelpCenter'],
     '/pedidos.html': ['DokeInitOrders', 'DokeHydrateLocalOrders'],
     '/mensagens.html': ['DokeInitMessages'],
     '/notificacoes.html': ['DokeInitNotifications'],
     '/carteira.html': ['DokeInitWallet'],
+    '/admin.html': ['DokeInitAdmin'],
     '/comunidade.html': ['DokeInitCommunity'],
     '/comunidade-interna.html': [],
     '/perfil.html': ['DokeInitProfile'],
@@ -679,6 +682,7 @@
       '.nav-link--communities': normalized === '/comunidade.html' || normalized === '/comunidade-interna.html',
       '.nav-link--profile': normalized === '/perfil.html',
       '.nav-link--wallet': normalized === '/carteira.html',
+      '.nav-link--admin': normalized === '/admin.html',
       '.nav-link--settings': normalized === '/configuracoes.html'
     };
 

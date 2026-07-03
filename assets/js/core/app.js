@@ -77,7 +77,7 @@ const PRESERVED_BODY_STATE_CLASSES = [...SHELL_STATE_CLASSES, ...ROUTE_SWAP_STAT
 const INTERNAL_PROFILE_PATH = "/perfil.html";
 const NAVIGATION_REGISTRY = window.DokeNavigationRegistry || null;
 const REGISTERED_INTERNAL_VIEW_PATHS = Array.isArray(NAVIGATION_REGISTRY?.getInternalPaths?.()) ? NAVIGATION_REGISTRY.getInternalPaths() : [];
-const INTERNAL_VIEW_PATHS = new Set([...REGISTERED_INTERNAL_VIEW_PATHS, "/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/novidades.html", "/ajuda.html", "/carteira.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento-profissional.html", "/orcamento.html", "/avaliacao-profissional.html", "/anunciar-servico.html", "/meu-perfil.html", "/perfil-cliente.html", "/perfil-profissional.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/"]);
+const INTERNAL_VIEW_PATHS = new Set([...REGISTERED_INTERNAL_VIEW_PATHS, "/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/novidades.html", "/ajuda.html", "/carteira.html", "/admin.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento-profissional.html", "/orcamento.html", "/avaliacao-profissional.html", "/anunciar-servico.html", "/meu-perfil.html", "/perfil-cliente.html", "/perfil-profissional.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/"]);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
@@ -294,6 +294,9 @@ const SHARED_SIDEBAR_MARKUP = `
     <a class="nav-link nav-link--wallet" href="carteira.html">
       <span class="nav-link__start"><span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3.8" y="6.5" width="16.4" height="11" rx="2.4"></rect><path d="M6 9.5h12"></path><path d="M15.2 13.2h2"></path></svg></span><span>Carteira</span></span>
     </a>
+    <a class="nav-link nav-link--admin" href="admin.html" data-sidebar-admin-link hidden>
+      <span class="nav-link__start"><span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.5 18 6v5.2c0 4.4-2.6 7.3-6 9.3-3.4-2-6-4.9-6-9.3V6l6-2.5Z"></path><path d="M9 12h6"></path></svg></span><span>Admin</span></span>
+    </a>
     <a class="nav-link nav-link--settings" href="configuracoes.html">
       <span class="nav-link__start"><span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 3.8v2.1"></path><path d="M12 18.1v2.1"></path><path d="m18.2 5.8-1.5 1.5"></path><path d="m7.3 16.7-1.5 1.5"></path><path d="M20.2 12h-2.1"></path><path d="M5.9 12H3.8"></path><path d="m18.2 18.2-1.5-1.5"></path><path d="m7.3 7.3-1.5-1.5"></path></svg></span><span>Configurações</span></span>
     </a>
@@ -308,6 +311,7 @@ const renderSharedSidebar = () => {
   sidebar.innerHTML = SHARED_SIDEBAR_MARKUP;
   sidebar.dataset.shellRendered = 'true';
   sidebar.setAttribute('data-internal-sidebar', 'true');
+  syncSidebarAdminLink();
 };
 
 const safeReadLocalCollection = (key) => {
@@ -329,6 +333,29 @@ const getCurrentSessionUser = () => {
 };
 
 const isCurrentDemoProfessional = (user) => Boolean(user?.role === 'professional' && String(user?.id) === 'user_profissional_demo');
+
+const canUseAdminPanel = (user = getCurrentSessionUser()) => {
+  const role = String(user?.role || user?.type || '').trim().toLowerCase();
+  if (role === 'admin' || role === 'support') return true;
+  if (user?.isMockSupport === true || user?.mockSupport === true) return true;
+  return false;
+};
+
+const syncSidebarAdminLink = () => {
+  const nodes = Array.from(document.querySelectorAll('[data-sidebar-admin-link], .nav-link--admin[href="admin.html"]'));
+  if (!nodes.length) return;
+  const allowed = canUseAdminPanel();
+  nodes.forEach((node) => {
+    if (!allowed) {
+      node.remove();
+      return;
+    }
+
+    node.hidden = false;
+    node.removeAttribute('aria-hidden');
+    node.removeAttribute('tabindex');
+  });
+};
 
 const syncSidebarBadgeNode = (selector, count) => {
   const node = document.querySelector(selector);
@@ -680,6 +707,7 @@ const updateSidebarActiveState = (pathOverride = null) => {
     communities: path === "/comunidade.html" || path === "/comunidade-interna.html",
     profile: path === INTERNAL_PROFILE_PATH || path === "/meu-perfil.html" || path === "/perfil-cliente.html" || path === "/perfil-profissional.html" || path === "/tornar-profissional.html" || path === "/anunciar-servico.html",
     wallet: path === "/carteira.html",
+    admin: path === "/admin.html",
     settings: path === "/configuracoes.html" || path === "/ajuda.html"
   };
   const isActive = (id) => registryActiveId ? registryActiveId === id : Boolean(fallbackState[id]);
@@ -692,6 +720,7 @@ const updateSidebarActiveState = (pathOverride = null) => {
     [".nav-link--communities", isActive("communities")],
     [".nav-link--profile", isActive("profile")],
     [".nav-link--wallet", isActive("wallet")],
+    [".nav-link--admin", isActive("admin")],
     [".nav-link--settings", isActive("settings")]
   ]);
 
@@ -918,6 +947,7 @@ const HEADER_ACTION_ROUTES = new Map([
   ["comunidade", "comunidade.html"],
   ["mensagens", "mensagens.html"],
   ["carteira", "carteira.html"],
+  ["admin", "admin.html"],
   ["configuracoes", "configuracoes.html"],
   ["configurações", "configuracoes.html"],
 ]);
@@ -989,6 +1019,7 @@ const INTERNAL_VIEW_STYLE_HINTS = {
   "/novidades.html": ["assets/css/pages/novidades-foundation.css"],
   "/ajuda.html": ["assets/css/pages/ajuda-foundation.css"],
   "/carteira.html": ["assets/css/pages/carteira-foundation.css"],
+  "/admin.html": ["assets/css/pages/admin-foundation.css"],
   "/comunidade.html": [
     "assets/css/pages/comunidade-foundation.css",
     "assets/css/pages/comunidade-ui-foundation.css",
@@ -1022,6 +1053,7 @@ const INTERNAL_VIEW_SCRIPT_HINTS = {
   "/novidades.html": ["assets/js/pages/novidades.js"],
   "/ajuda.html": ["assets/js/pages/ajuda.js"],
   "/carteira.html": ["assets/js/pages/carteira.js"],
+  "/admin.html": ["assets/js/pages/admin.js"],
   "/comunidade.html": ["assets/js/pages/comunidade.js"],
   "/comunidade-interna.html": ["assets/js/pages/comunidade-interna.js"],
   "/perfil.html": ["assets/js/controllers/perfil-controller.js"],
@@ -2178,6 +2210,10 @@ initializeCurrentView();
 ['doke:notification-created', 'doke:message-sent', 'doke:order-created', 'doke:order-status-changed', 'doke:auth-session-change', 'doke:auth-surface-ready'].forEach((eventName) => {
   document.addEventListener(eventName, () => {
     syncSidebarOperationalBadges();
+    syncSidebarAdminLink();
   });
 });
-window.addEventListener('storage', syncSidebarOperationalBadges);
+window.addEventListener('storage', () => {
+  syncSidebarOperationalBadges();
+  syncSidebarAdminLink();
+});
