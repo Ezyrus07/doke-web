@@ -1,0 +1,101 @@
+{
+  "version": "sprint-15",
+  "defaultProvider": "mock",
+  "networkGate": {
+    "requiresApiBaseUrl": true,
+    "requiresEnableNetworkRequests": true
+  },
+  "roles": ["guest", "client", "professional", "moderator", "support", "admin"],
+  "serverActions": [
+    {
+      "name": "orders.accept",
+      "method": "POST",
+      "path": "/orders/:id/accept",
+      "allowedRoles": ["professional"],
+      "scope": "order_professional",
+      "idempotencyRequired": true,
+      "auditRequired": true
+    },
+    {
+      "name": "orders.decline",
+      "method": "POST",
+      "path": "/orders/:id/decline",
+      "allowedRoles": ["professional"],
+      "scope": "order_professional",
+      "idempotencyRequired": true,
+      "auditRequired": true
+    },
+    {
+      "name": "messages.send",
+      "method": "POST",
+      "path": "/conversations/:id/messages",
+      "allowedRoles": ["client", "professional", "support", "admin"],
+      "scope": "conversation_participant_or_support",
+      "idempotencyRequired": false,
+      "auditRequired": false
+    },
+    {
+      "name": "disputes.open",
+      "method": "POST",
+      "path": "/disputes",
+      "allowedRoles": ["client"],
+      "scope": "order_client",
+      "idempotencyRequired": true,
+      "auditRequired": true
+    },
+    {
+      "name": "disputes.respond",
+      "method": "POST",
+      "path": "/disputes/:id/respond",
+      "allowedRoles": ["professional"],
+      "scope": "dispute_professional",
+      "idempotencyRequired": true,
+      "auditRequired": true
+    },
+    {
+      "name": "disputes.release",
+      "method": "POST",
+      "path": "/admin/disputes/:id/release",
+      "allowedRoles": ["support", "admin"],
+      "scope": "internal_operator",
+      "idempotencyRequired": true,
+      "auditRequired": true
+    },
+    {
+      "name": "disputes.refund",
+      "method": "POST",
+      "path": "/admin/disputes/:id/refund",
+      "allowedRoles": ["support", "admin"],
+      "scope": "internal_operator",
+      "idempotencyRequired": true,
+      "auditRequired": true
+    },
+    {
+      "name": "withdrawals.request",
+      "method": "POST",
+      "path": "/withdrawals",
+      "allowedRoles": ["professional"],
+      "scope": "wallet_owner",
+      "idempotencyRequired": true,
+      "auditRequired": true
+    },
+    {
+      "name": "withdrawals.approve",
+      "method": "POST",
+      "path": "/withdrawals/:id/approve",
+      "allowedRoles": ["support", "admin"],
+      "scope": "internal_operator",
+      "idempotencyRequired": true,
+      "auditRequired": true
+    },
+    {
+      "name": "withdrawals.decline",
+      "method": "POST",
+      "path": "/withdrawals/:id/decline",
+      "allowedRoles": ["support", "admin"],
+      "scope": "internal_operator",
+      "idempotencyRequired": true,
+      "auditRequired": true
+    }
+  ]
+}

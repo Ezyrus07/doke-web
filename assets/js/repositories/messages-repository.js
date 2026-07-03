@@ -441,6 +441,7 @@
     storageKey: STORAGE_KEY,
     legacyStorageKey: LEGACY_STORAGE_KEY,
     normalize: normalizeConversation,
+    normalizeMessage: normalizeMessage,
     readLocal: readLocal,
     writeLocal: writeLocal,
     listLocal: listLocal,

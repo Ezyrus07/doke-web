@@ -5,13 +5,21 @@
 
   var RESOURCE_ENDPOINTS = Object.freeze({
     users: '/users',
+    currentUser: '/users/me',
+    profiles: '/profiles',
+    currentProfile: '/profiles/me',
     professionals: '/professionals',
     services: '/services',
     orders: '/orders',
     conversations: '/conversations',
     messages: '/messages',
     payments: '/payments',
+    walletSummary: '/wallet',
     walletTransactions: '/wallet/transactions',
+    walletMonthlyDashboard: '/wallet/dashboard',
+    walletMonthlyHistory: '/wallet/monthly-history',
+    walletReceivablesSchedule: '/wallet/receivables/schedule',
+    walletBankAccount: '/wallet/bank-account',
     receivables: '/wallet/receivables',
     withdrawals: '/withdrawals',
     disputes: '/disputes',
@@ -23,6 +31,12 @@
   var RESOURCE_ALIASES = Object.freeze({
     user: 'users',
     users: 'users',
+    currentUser: 'currentUser',
+    me: 'currentUser',
+    profile: 'profiles',
+    profiles: 'profiles',
+    currentProfile: 'currentProfile',
+    myProfile: 'currentProfile',
     professional: 'professionals',
     professionals: 'professionals',
     service: 'services',
@@ -35,7 +49,15 @@
     messages: 'messages',
     payment: 'payments',
     payments: 'payments',
-    wallet: 'walletTransactions',
+    wallet: 'walletSummary',
+    walletSummary: 'walletSummary',
+    walletDashboard: 'walletMonthlyDashboard',
+    walletMonthlyDashboard: 'walletMonthlyDashboard',
+    walletMonthlyHistory: 'walletMonthlyHistory',
+    walletReceivablesSchedule: 'walletReceivablesSchedule',
+    walletBankAccount: 'walletBankAccount',
+    bankAccount: 'walletBankAccount',
+    bankAccounts: 'walletBankAccount',
     walletTransaction: 'walletTransactions',
     walletTransactions: 'walletTransactions',
     transaction: 'walletTransactions',
@@ -55,10 +77,28 @@
   });
 
   var ACTION_ENDPOINTS = Object.freeze({
+    conversations: Object.freeze({
+      createForOrder: '/orders/:id/conversation',
+      updateOrder: '/conversations/:id/order',
+      sendMessage: '/conversations/:id/messages',
+      markRead: '/conversations/:id/read'
+    }),
+    messages: Object.freeze({
+      send: '/conversations/:id/messages',
+      markRead: '/messages/:id/read'
+    }),
     orders: Object.freeze({
       accept: '/orders/:id/accept',
+      decline: '/orders/:id/decline',
+      quote: '/orders/:id/quote',
       charge: '/orders/:id/charge',
-      complete: '/orders/:id/complete'
+      start: '/orders/:id/start',
+      complete: '/orders/:id/complete',
+      updateStatus: '/orders/:id/status',
+      transition: '/orders/:id/status'
+    }),
+    walletSummary: Object.freeze({
+      saveBankAccount: '/wallet/bank-account'
     }),
     disputes: Object.freeze({
       respond: '/disputes/:id/respond',
@@ -70,7 +110,16 @@
       decline: '/withdrawals/:id/decline'
     }),
     notifications: Object.freeze({
-      read: '/notifications/:id/read'
+      read: '/notifications/:id/read',
+      dismiss: '/notifications/:id/dismiss',
+      readAll: '/notifications/read-all'
+    }),
+    users: Object.freeze({
+      updateMe: '/users/me'
+    }),
+    profiles: Object.freeze({
+      updateMe: '/profiles/me',
+      publish: '/profiles/:id/publish'
     })
   });
 
@@ -113,6 +162,61 @@
     return path + (path.indexOf('?') >= 0 ? '&' : '?') + params;
   }
 
+
+  function normalizeBaseUrl(value) {
+    return String(value || '').trim().replace(/\/$/, '');
+  }
+
+  function getRuntimeConfig() {
+    return Doke.runtimeConfig && typeof Doke.runtimeConfig === 'object'
+      ? Doke.runtimeConfig
+      : {};
+  }
+
+  function isNetworkEnabled() {
+    var config = getRuntimeConfig();
+    var flags = config.flags && typeof config.flags === 'object' ? config.flags : {};
+    return flags.enableNetworkRequests === true;
+  }
+
+  function getApiBaseUrl() {
+    var config = getRuntimeConfig();
+    return normalizeBaseUrl(config.apiBaseUrl || '');
+  }
+
+  function createRuntimeApiClient() {
+    function request(method, path, body) {
+      var baseUrl = getApiBaseUrl();
+      if (!baseUrl) return Promise.reject(new Error('API provider blocked: apiBaseUrl is not configured.'));
+      if (!isNetworkEnabled()) return Promise.reject(new Error('API provider blocked: enableNetworkRequests is disabled.'));
+      if (typeof window.fetch !== 'function') return Promise.reject(new Error('API provider requires window.fetch.'));
+
+      var options = {
+        method: method,
+        credentials: 'same-origin',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        }
+      };
+
+      if (body !== undefined) options.body = JSON.stringify(body);
+
+      return window.fetch(baseUrl + path, options).then(function (response) {
+        if (!response.ok) throw new Error('API request failed: ' + response.status);
+        return response.status === 204 ? null : response.json();
+      });
+    }
+
+    return Object.freeze({
+      get: function (path) { return request('GET', path); },
+      post: function (path, body) { return request('POST', path, body); },
+      put: function (path, body) { return request('PUT', path, body); },
+      patch: function (path, body) { return request('PATCH', path, body); },
+      remove: function (path) { return request('DELETE', path); }
+    });
+  }
+
   function assertClient(client) {
     if (!client || typeof client.get !== 'function' || typeof client.post !== 'function') {
       throw new Error('API repository provider requires an injected client with get() and post().');
@@ -121,7 +225,7 @@
 
   function createApiRepositoryProvider(options) {
     options = options || {};
-    var client = options.client || Doke.apiClient || null;
+    var client = options.client || Doke.apiClient || createRuntimeApiClient();
 
     function list(resourceName, query) {
       assertClient(client);
@@ -184,11 +288,12 @@
 
       if (page === 'carteira') {
         return Promise.all([
+          list('walletSummary', context),
           list('walletTransactions', context),
-          list('receivables', context),
+          list('walletReceivablesSchedule', context),
           list('withdrawals', context)
         ]).then(function (values) {
-          return { transactions: values[0], receivables: values[1], withdrawals: values[2] };
+          return { wallet: values[0], transactions: values[1], receivablesSchedule: values[2], withdrawals: values[3] };
         });
       }
 

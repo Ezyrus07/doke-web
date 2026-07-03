@@ -9,6 +9,19 @@
   const Doke = root.Doke || (root.Doke = {});
 
   const RECOVERY_KEY = 'doke.auth.recovery.v1';
+  const AUTH_PROVIDER_VALUES = Object.freeze({ mock: 'mock', api: 'api' });
+  const AUTH_ENDPOINTS = Object.freeze({
+    login: '/auth/login',
+    register: '/auth/register',
+    logout: '/auth/logout',
+    session: '/auth/session',
+    recovery: '/auth/recovery',
+    resetPassword: '/auth/reset-password',
+    currentUser: '/users/me',
+    currentProfile: '/profiles/me',
+    updateCurrentUser: '/users/me',
+    updateCurrentProfile: '/profiles/me'
+  });
   const DEFAULT_LOGIN_URL = 'auth/login.html';
   const DEFAULT_APP_URL = 'index.html';
   const DELAY_MS = 120;
@@ -25,6 +38,88 @@
 
   const getUsersRepository = () => ns.repositories?.users || null;
   const getSessionStore = () => ns.session || Doke.session || null;
+
+  const readQueryParam = (key) => {
+    try {
+      return new URLSearchParams(root.location.search || '').get(key);
+    } catch {
+      return null;
+    }
+  };
+
+  const readStorage = (key) => {
+    try {
+      return root.localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  };
+
+  const normalizeBoolean = (value) => {
+    if (value === true || value === 'true' || value === '1' || value === 'on') return true;
+    if (value === false || value === 'false' || value === '0' || value === 'off') return false;
+    return undefined;
+  };
+
+  const normalizeBaseUrl = (value) => String(value || '').trim().replace(/\/$/, '');
+
+  const getRuntimeConfig = () => {
+    if (Doke.runtimeConfig && typeof Doke.runtimeConfig === 'object') return Doke.runtimeConfig;
+
+    const windowConfig = root.DOKE_RUNTIME_CONFIG && typeof root.DOKE_RUNTIME_CONFIG === 'object'
+      ? root.DOKE_RUNTIME_CONFIG
+      : {};
+    const authProvider = readQueryParam('dokeAuthProvider') || windowConfig.authProvider || readStorage('doke.authProvider') || AUTH_PROVIDER_VALUES.mock;
+    const apiBaseUrl = readQueryParam('dokeApiBaseUrl') || windowConfig.apiBaseUrl || readStorage('doke.apiBaseUrl') || '';
+    const networkValue = readQueryParam('dokeEnableNetwork') ?? windowConfig.enableNetworkRequests ?? windowConfig.flags?.enableNetworkRequests ?? readStorage('doke.flag.enableNetworkRequests');
+    const enableNetworkRequests = normalizeBoolean(networkValue) === true;
+
+    return {
+      authProvider,
+      apiBaseUrl: normalizeBaseUrl(apiBaseUrl),
+      flags: { enableNetworkRequests }
+    };
+  };
+
+  const getRuntimeFlags = () => {
+    const config = getRuntimeConfig();
+    return config.flags && typeof config.flags === 'object' ? config.flags : {};
+  };
+  const normalizeAuthProvider = (provider) => {
+    if (Doke.authDomainContract?.normalizeAuthProvider) return Doke.authDomainContract.normalizeAuthProvider(provider);
+    return String(provider || '').trim().toLowerCase() === AUTH_PROVIDER_VALUES.api ? AUTH_PROVIDER_VALUES.api : AUTH_PROVIDER_VALUES.mock;
+  };
+  const getRequestedAuthProvider = () => normalizeAuthProvider(getRuntimeConfig().authProvider || AUTH_PROVIDER_VALUES.mock);
+  const getApiBaseUrl = () => normalizeBaseUrl(getRuntimeConfig().apiBaseUrl || '');
+  const isNetworkEnabled = () => getRuntimeFlags().enableNetworkRequests === true;
+  const getAuthProviderBlockReason = (provider = getRequestedAuthProvider()) => {
+    const normalized = normalizeAuthProvider(provider);
+    if (normalized !== AUTH_PROVIDER_VALUES.api) return '';
+    if (!getApiBaseUrl()) return 'apiBaseUrl is not configured.';
+    if (!isNetworkEnabled()) return 'enableNetworkRequests flag is disabled.';
+    if (typeof root.fetch !== 'function') return 'window.fetch is not available.';
+    return '';
+  };
+  const canUseApiAuth = () => getRequestedAuthProvider() === AUTH_PROVIDER_VALUES.api && !getAuthProviderBlockReason(AUTH_PROVIDER_VALUES.api);
+  const getAuthProviderStatus = () => {
+    const requestedProvider = getRequestedAuthProvider();
+    const blockReason = getAuthProviderBlockReason(requestedProvider);
+    const apiReady = requestedProvider === AUTH_PROVIDER_VALUES.api && !blockReason;
+
+    return Object.freeze({
+      activeProvider: apiReady ? AUTH_PROVIDER_VALUES.api : AUTH_PROVIDER_VALUES.mock,
+      requestedProvider,
+      implementationStatus: apiReady ? 'api_active' : 'mock_active',
+      apiBaseUrlConfigured: Boolean(getApiBaseUrl()),
+      networkEnabled: isNetworkEnabled(),
+      apiReady,
+      blockReason,
+      endpoints: AUTH_ENDPOINTS,
+      note: apiReady
+        ? 'Sprint 12A auth API provider is active for login/register/session only.'
+        : 'Mock auth remains active until apiBaseUrl and enableNetworkRequests are configured.'
+    });
+  };
 
   const readJson = (key, fallback) => {
     try {
@@ -51,18 +146,307 @@
     return publicUser;
   };
 
+  const normalizeProfilePayload = (payload, user) => {
+    const source = payload?.profile || payload?.currentProfile || payload?.professionalProfile || payload?.clientProfile || payload;
+    if (!source || typeof source !== 'object') return null;
+    const role = Doke.authDomainContract?.normalizeRole
+      ? Doke.authDomainContract.normalizeRole(source.role || source.type || user?.role || user?.type)
+      : String(source.role || source.type || user?.role || 'client');
+    const name = normalizeText(source.name || source.displayName || user?.name || 'Perfil Doke');
+    return {
+      id: source.id || source.profileId || source.providerProfileId || user?.providerProfileId || user?.id || '',
+      userId: source.userId || source.ownerId || user?.id || '',
+      role,
+      type: source.type || role,
+      name,
+      handle: source.handle || user?.handle || '',
+      avatar: source.avatar || source.avatarUrl || user?.avatar || user?.avatarUrl || '',
+      avatarUrl: source.avatarUrl || source.avatar || user?.avatarUrl || user?.avatar || '',
+      avatarInitials: source.avatarInitials || source.initials || user?.avatarInitials || user?.initials || '',
+      initials: source.initials || source.avatarInitials || user?.initials || user?.avatarInitials || '',
+      coverUrl: source.coverUrl || source.cover || user?.coverUrl || '',
+      headline: source.headline || source.profession || user?.profession || '',
+      profession: source.profession || source.headline || user?.profession || '',
+      bio: source.bio || user?.bio || '',
+      city: source.city || user?.city || '',
+      state: source.state || user?.state || '',
+      location: source.location || [source.city || user?.city, source.state || user?.state].filter(Boolean).join(', '),
+      rating: Number.isFinite(Number(source.rating)) ? Number(source.rating) : Number.isFinite(Number(user?.rating)) ? Number(user.rating) : 0,
+      verified: source.verified === true || user?.verified === true,
+      metrics: source.metrics && typeof source.metrics === 'object' ? source.metrics : {},
+      publicUrl: source.publicUrl || source.publicProfileUrl || '',
+      ownerUrl: source.ownerUrl || source.ownerProfileUrl || '',
+      updatedAt: source.updatedAt || ''
+    };
+  };
+
+  const mergeUserWithProfile = (user, profile) => {
+    const publicUser = toPublicUser(user);
+    const normalizedProfile = normalizeProfilePayload(profile, publicUser);
+    if (!publicUser || !normalizedProfile) return publicUser;
+    return {
+      ...publicUser,
+      providerProfileId: publicUser.providerProfileId || normalizedProfile.id || '',
+      profileKind: normalizedProfile.type || publicUser.role || publicUser.type || 'client',
+      profile: normalizedProfile,
+      profiles: Array.isArray(publicUser.profiles) ? publicUser.profiles : [normalizedProfile],
+      handle: publicUser.handle || normalizedProfile.handle || '',
+      avatarUrl: publicUser.avatarUrl || normalizedProfile.avatarUrl || '',
+      avatar: publicUser.avatar || normalizedProfile.avatarUrl || '',
+      avatarInitials: publicUser.avatarInitials || normalizedProfile.avatarInitials || '',
+      initials: publicUser.initials || normalizedProfile.initials || '',
+      city: publicUser.city || normalizedProfile.city || '',
+      state: publicUser.state || normalizedProfile.state || '',
+      bio: publicUser.bio || normalizedProfile.bio || '',
+      coverUrl: publicUser.coverUrl || normalizedProfile.coverUrl || '',
+      profession: publicUser.profession || normalizedProfile.profession || normalizedProfile.headline || '',
+      publicProfileUrl: publicUser.publicProfileUrl || normalizedProfile.publicUrl || (publicUser.role === 'professional' ? 'perfil.html' : 'perfil-cliente.html'),
+      ownerProfileUrl: publicUser.ownerProfileUrl || normalizedProfile.ownerUrl || (publicUser.role === 'professional' ? 'perfil-profissional.html' : 'meu-perfil.html')
+    };
+  };
+
   const buildSession = (user, options = {}) => ({
-    provider: 'mock',
+    provider: options.provider || 'mock',
     token: `mock-${Date.now()}`,
     remember: options.remember !== false,
     user: toPublicUser(user),
+    sessionStatus: options.sessionStatus || 'active',
+    expiresAt: options.expiresAt || '',
     issuedAt: new Date().toISOString()
   });
+
+  const getSessionToken = () => {
+    const session = getSessionStore()?.getSession?.() || getSessionStore()?.read?.() || null;
+    return session?.token || '';
+  };
+
+  const normalizeApiErrorMessage = (payload, fallback) => {
+    const message = payload?.message || payload?.error?.message || payload?.error || fallback || 'Não foi possível concluir a autenticação.';
+    return String(message || '').trim();
+  };
+
+  const apiRequest = async (method, path, body) => {
+    const baseUrl = getApiBaseUrl();
+    if (!baseUrl) throw new Error('Auth API blocked: apiBaseUrl is not configured.');
+    if (!isNetworkEnabled()) throw new Error('Auth API blocked: enableNetworkRequests flag is disabled.');
+    if (typeof root.fetch !== 'function') throw new Error('Auth API requires window.fetch.');
+
+    const headers = {
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    };
+    const token = getSessionToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const options = {
+      method,
+      credentials: 'include',
+      headers
+    };
+
+    if (body !== undefined) options.body = JSON.stringify(body);
+
+    const response = await root.fetch(`${baseUrl}${path}`, options);
+    const contentType = response.headers?.get?.('content-type') || '';
+    const payload = contentType.includes('application/json') ? await response.json().catch(() => null) : null;
+
+    if (!response.ok) {
+      throw new Error(normalizeApiErrorMessage(payload, `Auth API request failed: ${response.status}`));
+    }
+
+    return payload;
+  };
+
+  const normalizeApiSessionPayload = (payload, options = {}) => {
+    const source = payload?.session || payload || {};
+    const user = source.user || payload?.user || payload?.currentUser || null;
+    if (!user) return null;
+
+    const profilePayload = source.profile || payload?.profile || payload?.currentProfile || user.profile || null;
+    const publicUser = profilePayload ? mergeUserWithProfile(user, profilePayload) : toPublicUser(user);
+
+    return {
+      provider: AUTH_PROVIDER_VALUES.api,
+      token: source.token || source.accessToken || source.access_token || payload?.token || '',
+      refreshToken: source.refreshToken || source.refresh_token || payload?.refreshToken || '',
+      remember: options.remember !== false,
+      user: publicUser,
+      accountStatus: source.accountStatus || user.accountStatus || user.status || 'active',
+      sessionStatus: source.sessionStatus || source.status || 'active',
+      expiresAt: source.expiresAt || source.expires_at || payload?.expiresAt || '',
+      issuedAt: source.issuedAt || source.createdAt || new Date().toISOString()
+    };
+  };
+
+  const setSessionFromApiPayload = (payload, options = {}) => {
+    const session = normalizeApiSessionPayload(payload, options);
+    if (!session) return null;
+    const store = getSessionStore();
+    if (!store?.write) throw new Error('Session Store não foi carregado.');
+    return store.write(session);
+  };
+
+
+  const applyCurrentIdentity = (userPayload, profilePayload) => {
+    const currentSession = getSession();
+    const currentUser = currentSession?.user || null;
+    const nextUser = mergeUserWithProfile(userPayload || currentUser, profilePayload || userPayload?.profile || currentUser?.profile);
+    if (!nextUser) return currentSession;
+
+    const store = getSessionStore();
+    if (!store?.write) throw new Error('Session Store não foi carregado.');
+    return store.write({
+      ...(currentSession || {}),
+      provider: currentSession?.provider || AUTH_PROVIDER_VALUES.api,
+      token: currentSession?.token || '',
+      refreshToken: currentSession?.refreshToken || '',
+      remember: currentSession?.remember !== false,
+      accountStatus: currentSession?.accountStatus || nextUser.accountStatus || 'active',
+      sessionStatus: currentSession?.sessionStatus || 'active',
+      expiresAt: currentSession?.expiresAt || '',
+      user: nextUser
+    });
+  };
+
+  const fetchApiCurrentIdentity = async ({ silent = false } = {}) => {
+    if (!canUseApiAuth()) return getSession();
+    try {
+      const [userPayload, profilePayload] = await Promise.all([
+        apiRequest('GET', AUTH_ENDPOINTS.currentUser),
+        apiRequest('GET', AUTH_ENDPOINTS.currentProfile).catch((error) => {
+          if (!silent) throw error;
+          return null;
+        })
+      ]);
+      return applyCurrentIdentity(userPayload?.user || userPayload?.currentUser || userPayload, profilePayload?.profile || profilePayload?.currentProfile || profilePayload);
+    } catch (error) {
+      if (!silent) throw error;
+      return getSession();
+    }
+  };
+
+  const apiLogin = async ({ login: loginValue, email, password, remember = true } = {}) => {
+    const access = normalizeText(email || loginValue);
+    const rawPassword = String(password || '');
+    const payload = await apiRequest('POST', AUTH_ENDPOINTS.login, {
+      login: access,
+      email: isEmail(access) ? normalizeEmail(access) : undefined,
+      phone: isPhone(access) ? normalizePhone(access) : undefined,
+      password: rawPassword,
+      remember
+    });
+    const session = setSessionFromApiPayload(payload, { remember });
+    if (!session?.user) throw new Error('Auth API não retornou usuário de sessão.');
+    const identitySession = await fetchApiCurrentIdentity({ silent: true });
+    return identitySession?.user || session.user;
+  };
+
+  const apiRegister = async (payload = {}) => {
+    const response = await apiRequest('POST', AUTH_ENDPOINTS.register, {
+      name: normalizeText(payload.name),
+      email: normalizeEmail(payload.email),
+      phone: normalizePhone(payload.phone),
+      password: String(payload.password || ''),
+      role: payload.role === 'professional' ? 'professional' : 'client'
+    });
+    const session = setSessionFromApiPayload(response, { remember: true });
+    const identitySession = await fetchApiCurrentIdentity({ silent: true });
+    const user = identitySession?.user || session?.user || toPublicUser(response?.user);
+    if (!user) throw new Error('Auth API não retornou usuário cadastrado.');
+    return {
+      ...user,
+      pendingConfirmation: response?.pendingConfirmation === true || response?.requiresEmailConfirmation === true
+    };
+  };
+
+  const refreshApiSession = async ({ silent = false } = {}) => {
+    if (!canUseApiAuth()) return getSession();
+    try {
+      const payload = await apiRequest('GET', AUTH_ENDPOINTS.session);
+      const session = setSessionFromApiPayload(payload, { remember: true });
+      return await fetchApiCurrentIdentity({ silent: true }) || session;
+    } catch (error) {
+      if (!silent) throw error;
+      return getSession();
+    }
+  };
+
+  const getCurrentIdentity = () => {
+    const session = getSession();
+    const user = session?.user || null;
+    return Object.freeze({
+      user,
+      profile: user?.profile || null,
+      profiles: user?.profiles || [],
+      publicProfileUrl: user?.publicProfileUrl || user?.profile?.publicUrl || '',
+      ownerProfileUrl: user?.ownerProfileUrl || user?.profile?.ownerUrl || '',
+      provider: session?.provider || 'mock'
+    });
+  };
+
+  const updateCurrentUser = async (patch = {}) => {
+    await delay(60);
+    if (canUseApiAuth()) {
+      const payload = await apiRequest('PATCH', AUTH_ENDPOINTS.updateCurrentUser, patch);
+      const session = applyCurrentIdentity(payload?.user || payload?.currentUser || payload, payload?.profile || payload?.currentProfile);
+      updateAccountSurfaces();
+      return session?.user || null;
+    }
+
+    const repo = getUsersRepository();
+    const currentUser = getCurrentUser();
+    if (repo?.updateCurrentUser && currentUser?.id) {
+      const user = await repo.updateCurrentUser(currentUser.id, patch);
+      const session = setSessionForUser(user, { provider: 'mock', remember: true });
+      updateAccountSurfaces();
+      return session.user;
+    }
+
+    const session = setSessionForUser({ ...(currentUser || {}), ...patch }, { provider: 'mock', remember: true });
+    updateAccountSurfaces();
+    return session.user;
+  };
+
+  const updateCurrentProfile = async (patch = {}) => {
+    await delay(60);
+    if (canUseApiAuth()) {
+      const payload = await apiRequest('PATCH', AUTH_ENDPOINTS.updateCurrentProfile, patch);
+      const session = applyCurrentIdentity(payload?.user || payload?.currentUser || getCurrentUser(), payload?.profile || payload?.currentProfile || payload);
+      updateAccountSurfaces();
+      return session?.user?.profile || null;
+    }
+
+    const repo = getUsersRepository();
+    const currentUser = getCurrentUser();
+    if (repo?.updateCurrentProfile && currentUser?.id) {
+      const user = await repo.updateCurrentProfile(currentUser.id, patch);
+      const session = setSessionForUser(user, { provider: 'mock', remember: true });
+      updateAccountSurfaces();
+      return session.user?.profile || null;
+    }
+
+    const nextProfile = normalizeProfilePayload({ ...(currentUser?.profile || {}), ...patch }, currentUser);
+    const session = setSessionForUser({ ...(currentUser || {}), profile: nextProfile }, { provider: 'mock', remember: true });
+    updateAccountSurfaces();
+    return session.user?.profile || null;
+  };
 
   const getSession = () => getSessionStore()?.getSession?.() || getSessionStore()?.read?.() || null;
   const getCurrentUser = () => getSessionStore()?.getCurrentUser?.() || getSessionStore()?.getUser?.() || null;
   const isAuthenticated = () => Boolean(getCurrentUser());
   const hasRole = (role) => getSessionStore()?.hasRole?.(role) || false;
+  const getAuthContext = () => getSessionStore()?.getAuthContext?.() || Object.freeze({
+    authenticated: isAuthenticated(),
+    user: getCurrentUser(),
+    role: getCurrentUser()?.role || 'guest',
+    permissions: [],
+    provider: 'mock',
+    accountStatus: getCurrentUser()?.accountStatus || 'active',
+    sessionStatus: getCurrentUser() ? 'active' : 'anonymous',
+    canAccessAdmin: false,
+    isInternal: false,
+    isSupport: false
+  });
   const onAuthChange = (listener) => getSessionStore()?.subscribe?.(listener) || (() => {});
 
   const setSessionForUser = (user, options = {}) => {
@@ -75,15 +459,21 @@
   const login = async ({ email, login: loginValue, password, remember = true } = {}) => {
     await delay();
 
-    const repo = getUsersRepository();
-    if (!repo) throw new Error('Users Repository não foi carregado.');
-
     const access = normalizeText(email || loginValue);
     const rawPassword = String(password || '');
 
     if (!access || !rawPassword) {
       throw new Error('Preencha o acesso e a senha para entrar.');
     }
+
+    if (canUseApiAuth()) {
+      const user = await apiLogin({ login: access, password: rawPassword, remember });
+      updateAccountSurfaces();
+      return user;
+    }
+
+    const repo = getUsersRepository();
+    if (!repo) throw new Error('Users Repository não foi carregado.');
 
     const user = await repo.findByLogin(access);
     const passwordHash = await repo.hashPassword(rawPassword);
@@ -100,10 +490,17 @@
   const register = async (payload = {}) => {
     await delay();
 
+    const role = payload.role === 'professional' ? 'professional' : 'client';
+
+    if (canUseApiAuth()) {
+      const user = await apiRegister({ ...payload, role });
+      updateAccountSurfaces();
+      return user;
+    }
+
     const repo = getUsersRepository();
     if (!repo) throw new Error('Users Repository não foi carregado.');
 
-    const role = payload.role === 'professional' ? 'professional' : 'client';
     const user = await repo.create({
       name: payload.name,
       email: payload.email,
@@ -122,6 +519,16 @@
 
   const logout = async ({ redirect = false, redirectTo } = {}) => {
     await delay(60);
+    const session = getSession();
+
+    if (session?.provider === AUTH_PROVIDER_VALUES.api && canUseApiAuth()) {
+      try {
+        await apiRequest('POST', AUTH_ENDPOINTS.logout, { refreshToken: session.refreshToken || '' });
+      } catch (error) {
+        console.warn?.('[DokeAuth] API logout failed; clearing local session.', error);
+      }
+    }
+
     getSessionStore()?.clear?.();
 
     if (redirect) {
@@ -151,9 +558,6 @@
   const requestRecovery = async ({ method = 'email', contact } = {}) => {
     await delay();
 
-    const repo = getUsersRepository();
-    if (!repo) throw new Error('Users Repository não foi carregado.');
-
     const recoveryMethod = method === 'phone' ? 'phone' : 'email';
     const access = normalizeText(contact);
 
@@ -164,6 +568,21 @@
     if (recoveryMethod === 'phone' && !isPhone(access)) {
       throw new Error('Digite um telefone válido com DDD.');
     }
+
+    if (canUseApiAuth()) {
+      const payload = await apiRequest('POST', AUTH_ENDPOINTS.recovery, {
+        method: recoveryMethod,
+        contact: recoveryMethod === 'email' ? normalizeEmail(access) : normalizePhone(access)
+      });
+      return {
+        method: payload?.method || recoveryMethod,
+        maskedContact: payload?.maskedContact || payload?.masked_contact || access,
+        debugCode: payload?.debugCode
+      };
+    }
+
+    const repo = getUsersRepository();
+    if (!repo) throw new Error('Users Repository não foi carregado.');
 
     const user = await repo.findByLogin(access);
     if (!user) throw new Error('Não encontramos uma conta com esse dado.');
@@ -189,16 +608,32 @@
   const resetPassword = async ({ method = 'email', contact, code, nextPassword } = {}) => {
     await delay();
 
+    const recoveryMethod = method === 'phone' ? 'phone' : 'email';
+    const normalizedContact = recoveryMethod === 'email' ? normalizeEmail(contact) : normalizePhone(contact);
+    const normalizedCode = normalizeText(code);
+    const nextPasswordValue = String(nextPassword || '');
+
+    if (nextPasswordValue.length < 8) {
+      throw new Error('A nova senha precisa ter pelo menos 8 caracteres.');
+    }
+
+    if (canUseApiAuth()) {
+      const payload = await apiRequest('POST', AUTH_ENDPOINTS.resetPassword, {
+        method: recoveryMethod,
+        contact: normalizedContact,
+        code: normalizedCode,
+        nextPassword: nextPasswordValue
+      });
+      return toPublicUser(payload?.user || payload?.currentUser || payload);
+    }
+
     const repo = getUsersRepository();
     if (!repo) throw new Error('Users Repository não foi carregado.');
 
     const recovery = readJson(RECOVERY_KEY, null);
     if (!recovery) throw new Error('Solicite um código antes de redefinir a senha.');
 
-    const recoveryMethod = method === 'phone' ? 'phone' : 'email';
-    const normalizedContact = recoveryMethod === 'email' ? normalizeEmail(contact) : normalizePhone(contact);
-
-    if (recovery.method !== recoveryMethod || recovery.contact !== normalizedContact || recovery.code !== normalizeText(code)) {
+    if (recovery.method !== recoveryMethod || recovery.contact !== normalizedContact || recovery.code !== normalizedCode) {
       throw new Error('Código ou contato inválidos.');
     }
 
@@ -207,11 +642,7 @@
       throw new Error('O código expirou. Solicite outro.');
     }
 
-    if (String(nextPassword || '').length < 8) {
-      throw new Error('A nova senha precisa ter pelo menos 8 caracteres.');
-    }
-
-    const user = await repo.updatePassword(recovery.userId, nextPassword);
+    const user = await repo.updatePassword(recovery.userId, nextPasswordValue);
     writeJson(RECOVERY_KEY, null);
     return toPublicUser(user);
   };
@@ -274,7 +705,14 @@
   };
 
   const getFirstName = (name) => normalizeText(name).split(/\s+/).filter(Boolean)[0] || name || 'Conta';
-  const getRoleLabel = (user) => user?.role === 'professional' ? 'Profissional' : user?.role === 'client' ? 'Cliente' : 'Conta';
+  const getRoleLabel = (user) => {
+    if (user?.role === 'professional') return 'Profissional';
+    if (user?.role === 'client') return 'Cliente';
+    if (user?.role === 'support') return 'Suporte';
+    if (user?.role === 'admin') return 'Admin';
+    if (user?.role === 'moderator') return 'Moderação';
+    return 'Conta';
+  };
 
   const updateAccountSurfaces = () => {
     const user = getCurrentUser();
@@ -355,6 +793,11 @@
       bindLogoutButtons();
       updateAccountSurfaces();
     });
+
+    if (canUseApiAuth()) {
+      refreshApiSession({ silent: true }).then(() => updateAccountSurfaces());
+    }
+
     root.setTimeout(updateAccountSurfaces, 0);
     root.setTimeout(updateAccountSurfaces, 120);
     root.setTimeout(updateAccountSurfaces, 420);
@@ -362,6 +805,16 @@
 
   const api = Object.freeze({
     provider: 'mock',
+    authProvider: 'mock',
+    getActiveAuthProvider: () => getAuthProviderStatus().activeProvider,
+    getAuthProviderStatus,
+    refreshSession: refreshApiSession,
+    refreshApiSession,
+    refreshCurrentIdentity: fetchApiCurrentIdentity,
+    getCurrentIdentity,
+    updateCurrentUser,
+    updateCurrentProfile,
+    getAuthContext,
     login,
     signIn,
     register,

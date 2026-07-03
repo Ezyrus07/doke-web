@@ -129,7 +129,31 @@
     }
   }
 
+  function normalizeStatus(value) {
+    var status = normalizeText(value || '').toLowerCase();
+    var aliases = {
+      requested: 'pending',
+      request_created: 'pending',
+      budget_requested: 'pending',
+      budget_sent: 'quoted',
+      proposal_sent: 'quoted',
+      charged: 'quoted',
+      charge_created: 'quoted',
+      paid: 'in_progress',
+      payment_confirmed: 'in_progress',
+      released: 'completed',
+      refunded: 'completed',
+      under_review: 'disputed',
+      dispute_opened: 'disputed',
+      dispute_under_review: 'disputed',
+      refused: 'cancelled',
+      declined: 'cancelled'
+    };
+    return aliases[status] || status || 'pending';
+  }
+
   function getStatusLabel(status) {
+    var normalizedStatus = normalizeStatus(status);
     var labels = {
       draft: 'Rascunho',
       pending: 'Aguardando resposta',
@@ -143,7 +167,7 @@
       conversation: 'Pedido aceito',
       responded: 'Respondido'
     };
-    return labels[status] || 'Aguardando resposta';
+    return labels[normalizedStatus] || 'Aguardando resposta';
   }
 
   function makeId() {
@@ -152,7 +176,8 @@
 
   function normalizeOrder(raw) {
     raw = raw || {};
-    var status = raw.status || 'pending';
+    var rawStatus = raw.status || 'pending';
+    var status = normalizeStatus(rawStatus);
     var createdAt = raw.createdAt || raw.creatédAt || nowIso();
     var updatedAt = raw.updatedAt || createdAt;
     var provider = raw.providerName || raw.provider || raw.professionalName || 'Profissional Doke';
@@ -178,6 +203,7 @@
       description: raw.description || raw.details || '',
       details: raw.details || raw.description || '',
       status: status,
+      backendStatus: raw.backendStatus || rawStatus,
       statusLabel: statusLabel,
       createdAt: createdAt,
       creatédAt: createdAt,
@@ -323,6 +349,7 @@
     storageKey: STORAGE_KEY,
     legacyStorageKey: LEGACY_STORAGE_KEY,
     normalize: normalizeOrder,
+    normalizeStatus: normalizeStatus,
     readLocal: readLocal,
     listLocal: listLocal,
     load: load,

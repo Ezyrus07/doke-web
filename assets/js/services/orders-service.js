@@ -17,10 +17,135 @@
     return repository;
   }
 
+  function clone(value) {
+    if (value == null) return value;
+    try {
+      return JSON.parse(JSON.stringify(value));
+    } catch (error) {
+      return value;
+    }
+  }
+
+  function getRepositoryBoundary() {
+    return Doke.repositoryBoundary && typeof Doke.repositoryBoundary === 'object'
+      ? Doke.repositoryBoundary
+      : null;
+  }
+
+  function getOrdersProviderStatus() {
+    var boundary = getRepositoryBoundary();
+    var status = boundary && typeof boundary.getDataProviderStatus === 'function'
+      ? boundary.getDataProviderStatus()
+      : null;
+    var activeProvider = status && status.activeProvider || 'mock';
+    var apiReady = status ? status.apiReady === true : false;
+
+    return Object.freeze({
+      domain: 'orders',
+      activeProvider: activeProvider,
+      requestedProvider: status && status.requestedProvider || activeProvider,
+      apiReady: apiReady,
+      ordersApiActive: activeProvider === 'api' && apiReady,
+      fallbackProvider: 'local-mock'
+    });
+  }
+
+  function shouldUseOrdersApi() {
+    var status = getOrdersProviderStatus();
+    return status.ordersApiActive === true;
+  }
+
+  function normalizeOrderFromProvider(order) {
+    if (!order) return order;
+    var repository = getRepository();
+    if (repository && typeof repository.normalize === 'function') return repository.normalize(order);
+    return clone(order);
+  }
+
+  function normalizeOrdersFromProvider(payload) {
+    var items = Array.isArray(payload)
+      ? payload
+      : payload && Array.isArray(payload.items)
+        ? payload.items
+        : [];
+    return items.map(normalizeOrderFromProvider);
+  }
+
+  function ordersBoundaryList(filters) {
+    var boundary = getRepositoryBoundary();
+    if (!boundary || typeof boundary.list !== 'function') return Promise.reject(new Error('Orders API boundary indisponível.'));
+    return boundary.list('orders', scopeApiFilters(filters || {})).then(normalizeOrdersFromProvider);
+  }
+
+  function ordersBoundaryGetById(orderId) {
+    var boundary = getRepositoryBoundary();
+    if (!boundary || typeof boundary.getById !== 'function') return Promise.reject(new Error('Orders API boundary indisponível.'));
+    return boundary.getById('orders', orderId).then(normalizeOrderFromProvider);
+  }
+
+  function ordersBoundaryCreate(payload) {
+    var boundary = getRepositoryBoundary();
+    if (!boundary || typeof boundary.create !== 'function') return Promise.reject(new Error('Orders API boundary indisponível.'));
+    return boundary.create('orders', payload || {}).then(function (response) {
+      return normalizeOrderFromProvider(response && response.order || response);
+    });
+  }
+
+  function ordersBoundaryAction(actionName, payload) {
+    var boundary = getRepositoryBoundary();
+    if (!boundary || typeof boundary.action !== 'function') return Promise.reject(new Error('Orders API boundary indisponível.'));
+    return boundary.action('orders', actionName, payload || {}).then(function (response) {
+      return normalizeOrderFromProvider(response && response.order || response);
+    });
+  }
+
   function getCurrentUser() {
     if (Doke.session && typeof Doke.session.getCurrentUser === 'function') return Doke.session.getCurrentUser();
     if (root.DokeAuth && root.DokeAuth.service && typeof root.DokeAuth.service.getCurrentUser === 'function') return root.DokeAuth.service.getCurrentUser();
     return null;
+  }
+
+  function getSecurity() {
+    return Doke.permissions && typeof Doke.permissions === 'object' ? Doke.permissions : null;
+  }
+
+  function auditSecurity(action, result, metadata) {
+    var security = getSecurity();
+    if (security && typeof security.auditSecurityEvent === 'function') {
+      security.auditSecurityEvent(Object.assign({
+        type: 'orders_security',
+        action: action,
+        result: result,
+        resource: 'order'
+      }, metadata || {}));
+    }
+  }
+
+  function assertOrderAccess(order, action, actor) {
+    var security = getSecurity();
+    if (security && typeof security.assertResourceAccess === 'function') {
+      return security.assertResourceAccess('order', order, action || 'read_order', actor || getCurrentUser() || {});
+    }
+    return true;
+  }
+
+  function assertOrderTransitionAccess(actor, order, nextStatus) {
+    var security = getSecurity();
+    if (security && typeof security.assertOrderTransition === 'function') {
+      return security.assertOrderTransition(actor || getCurrentUser() || {}, order || {}, nextStatus || 'pending');
+    }
+    return canActorTransition(actor, order, nextStatus);
+  }
+
+  function scopeApiFilters(filters) {
+    filters = filters || {};
+    var actor = getCurrentUser() || {};
+    var security = getSecurity();
+    if (filters.currentUser === false && !(security && typeof security.canAccessAdmin === 'function' && security.canAccessAdmin(actor))) {
+      auditSecurity('list_all_denied', 'denied', { actor: actor, reason: 'currentUser_false_requires_admin' });
+      return Object.assign({}, filters, { currentUser: true, actorId: actor.id || '', actorRole: actor.role || 'guest' });
+    }
+    return Object.assign({}, filters, { actorId: actor.id || '', actorRole: actor.role || 'guest' });
   }
 
   function normalizeText(value) {
@@ -87,6 +212,36 @@
     return STATUS_META[status] || STATUS_META.pending;
   }
 
+  function getApiActionForStatus(status) {
+    var normalizedStatus = normalizeText(status || '');
+    var actions = {
+      accepted: 'accept',
+      conversation: 'accept',
+      quoted: 'quote',
+      in_progress: 'start',
+      completed: 'complete',
+      cancelled: 'decline'
+    };
+    return actions[normalizedStatus] || 'updateStatus';
+  }
+
+  function getApiCreatePayload(payload, user) {
+    payload = payload || {};
+    var createdAt = nowIso();
+    return Object.assign({}, payload, {
+      clientId: user.id,
+      clientName: user.name || 'Cliente Doke',
+      clientInitials: user.initials || user.avatarInitials || getInitials(user.name || 'Cliente Doke'),
+      status: payload.status || 'pending',
+      statusLabel: payload.statusLabel || 'Aguardando resposta',
+      nextAction: payload.nextAction || 'Acompanhar pedido',
+      title: payload.title || buildTitle(payload),
+      source: payload.source || 'budget',
+      createdAt: payload.createdAt || createdAt,
+      updatedAt: payload.updatedAt || createdAt
+    });
+  }
+
   var DEMO_PROFESSIONAL_ID = 'user_profissional_demo';
 
   function routeProfessionalForMock(payload) {
@@ -133,6 +288,19 @@
     var repository = assertRepository();
     var user = getCurrentUser();
     validateCreatePayload(payload, user);
+
+    if (shouldUseOrdersApi()) {
+      return ordersBoundaryCreate(getApiCreatePayload(payload, user)).then(function (saved) {
+        document.dispatchEvent(new CustomEvent('doke:order-created', {
+          detail: {
+            order: saved,
+            user: user,
+            provider: 'api'
+          }
+        }));
+        return saved;
+      });
+    }
 
     var createdAt = nowIso();
     var routedPayload = routeProfessionalForMock(payload);
@@ -189,10 +357,29 @@
   }
 
   function list(filters) {
-    return assertRepository().list(filters || {});
+    filters = filters || {};
+    var actor = getCurrentUser() || {};
+    var security = getSecurity();
+    if (shouldUseOrdersApi()) return ordersBoundaryList(filters);
+    if (filters.currentUser === false && !(security && typeof security.canAccessAdmin === 'function' && security.canAccessAdmin(actor))) {
+      auditSecurity('list_all_denied', 'denied', { actor: actor, reason: 'currentUser_false_requires_admin' });
+      return Promise.resolve([]);
+    }
+    return assertRepository().list(filters).then(function (orders) {
+      if (filters.currentUser === false) return orders;
+      if (!security || typeof security.canAccessOrder !== 'function') return orders;
+      return (orders || []).filter(function (order) { return security.canAccessOrder(actor, order, 'read_order'); });
+    });
   }
 
   function listLocal(filters) {
+    filters = filters || {};
+    var actor = getCurrentUser() || {};
+    var security = getSecurity();
+    if (filters.currentUser === false && !(security && typeof security.canAccessAdmin === 'function' && security.canAccessAdmin(actor))) {
+      auditSecurity('list_local_all_denied', 'denied', { actor: actor, reason: 'currentUser_false_requires_admin' });
+      return [];
+    }
     return assertRepository().listLocal(filters || {});
   }
 
@@ -201,7 +388,17 @@
   }
 
   function getById(orderId) {
-    return assertRepository().getById(orderId);
+    var actor = getCurrentUser() || {};
+    if (shouldUseOrdersApi()) {
+      return ordersBoundaryGetById(orderId).then(function (order) {
+        if (order) assertOrderAccess(order, 'read_order', actor);
+        return order;
+      });
+    }
+    return assertRepository().getById(orderId).then(function (order) {
+      if (order) assertOrderAccess(order, 'read_order', actor);
+      return order;
+    });
   }
 
   function updateLinkedConversation(order, status, options) {
@@ -256,12 +453,49 @@
 
   function saveStatus(orderId, nextStatus, statusLabel, options) {
     options = options || {};
-    var repository = assertRepository();
     var actor = getCurrentUser() || {};
+
+    if (shouldUseOrdersApi()) {
+      var normalizedStatus = nextStatus || 'pending';
+      var meta = getStatusMeta(normalizedStatus);
+      var apiPayload = Object.assign({}, options, {
+        id: orderId,
+        orderId: orderId,
+        status: normalizedStatus,
+        statusLabel: statusLabel || options.statusLabel || meta.label,
+        actorId: actor.id || '',
+        actorRole: actor.role || 'guest'
+      });
+
+      if (!['admin', 'support'].includes(String(actor.role || '').toLowerCase())) {
+        var roleAllowedStatuses = actor.role === 'professional'
+          ? ['accepted', 'conversation', 'quoted', 'in_progress', 'completed', 'cancelled']
+          : actor.role === 'client'
+            ? ['in_progress', 'completed', 'cancelled']
+            : [];
+        if (roleAllowedStatuses.indexOf(normalizedStatus) === -1) {
+          auditSecurity('api_transition_denied', 'denied', { actor: actor, resourceId: orderId, reason: 'role_status_mismatch' });
+          throw new Error('Você não tem permissão para alterar este pedido.');
+        }
+      }
+
+      return ordersBoundaryAction(getApiActionForStatus(normalizedStatus), apiPayload).then(function (saved) {
+        document.dispatchEvent(new CustomEvent('doke:order-status-changed', {
+          detail: {
+            order: saved,
+            status: normalizedStatus,
+            provider: 'api'
+          }
+        }));
+        return saved;
+      });
+    }
+
+    var repository = assertRepository();
     return repository.getById(orderId).then(function (order) {
       if (!order) throw new Error('Pedido não encontrado.');
       var normalizedStatus = nextStatus || order.status || 'pending';
-      if (!canActorTransition(actor, order, normalizedStatus)) {
+      if (!assertOrderTransitionAccess(actor, order, normalizedStatus)) {
         throw new Error('Você não tem permissão para alterar este pedido.');
       }
 
@@ -351,6 +585,7 @@
 
   services.orders = Object.freeze({
     provider: 'local-mock',
+    getOrdersProviderStatus: getOrdersProviderStatus,
     create: create,
     list: list,
     listLocal: listLocal,

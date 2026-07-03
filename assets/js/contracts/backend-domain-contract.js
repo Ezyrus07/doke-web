@@ -7,13 +7,17 @@
     GUEST: 'guest',
     CLIENT: 'client',
     PROFESSIONAL: 'professional',
+    MODERATOR: 'moderator',
     SUPPORT: 'support',
     ADMIN: 'admin'
   });
 
   var ORDER_STATUS = Object.freeze({
+    PENDING: 'pending',
     REQUESTED: 'requested',
     ACCEPTED: 'accepted',
+    CONVERSATION: 'conversation',
+    QUOTED: 'quoted',
     CHARGED: 'charged',
     PAID: 'paid',
     IN_PROGRESS: 'in_progress',
@@ -23,6 +27,41 @@
     RELEASED: 'released',
     REFUNDED: 'refunded',
     CANCELLED: 'cancelled'
+  });
+
+  var CONVERSATION_STATUS = Object.freeze({
+    LOCKED: 'locked',
+    OPEN: 'open',
+    ARCHIVED: 'archived',
+    SUPPORT_REVIEW: 'support_review'
+  });
+
+  var MESSAGE_TYPE = Object.freeze({
+    TEXT: 'text',
+    IMAGE: 'image',
+    AUDIO: 'audio',
+    SYSTEM: 'system',
+    CHARGE: 'charge',
+    PAYMENT: 'payment',
+    DISPUTE: 'dispute',
+    RECEIPT: 'receipt'
+  });
+
+  var NOTIFICATION_STATUS = Object.freeze({
+    UNREAD: 'unread',
+    READ: 'read',
+    DISMISSED: 'dismissed'
+  });
+
+  var NOTIFICATION_TYPE = Object.freeze({
+    SYSTEM: 'system',
+    ORDER_CREATED: 'order_created',
+    ORDER_STATUS_CHANGED: 'order_status_changed',
+    MESSAGE_RECEIVED: 'message_received',
+    PAYMENT: 'payment',
+    DISPUTE: 'dispute',
+    WITHDRAWAL: 'withdrawal',
+    RECEIPT: 'receipt'
   });
 
   var PAYMENT_STATUS = Object.freeze({
@@ -63,6 +102,38 @@
     CANCELLED: 'cancelled'
   });
 
+  var WALLET_TRANSACTION_TYPE = Object.freeze({
+    PAYMENT: 'payment',
+    RECEIVABLE: 'receivable',
+    RELEASE: 'release',
+    REFUND: 'refund',
+    WITHDRAW: 'withdraw',
+    FEE: 'fee',
+    ADJUSTMENT: 'adjustment'
+  });
+
+  var RECEIPT_TYPE = Object.freeze({
+    PAYMENT: 'payment',
+    RELEASE: 'release',
+    REFUND: 'refund',
+    WITHDRAWAL: 'withdrawal'
+  });
+
+  var NOTIFICATION_EVENTS = Object.freeze({
+    NOTIFICATION_CREATED: 'notification_created',
+    NOTIFICATION_READ: 'notification_read',
+    NOTIFICATION_DISMISSED: 'notification_dismissed',
+    NOTIFICATIONS_READ_ALL: 'notifications_read_all'
+  });
+
+  var MESSAGE_EVENTS = Object.freeze({
+    CONVERSATION_CREATED: 'conversation_created',
+    MESSAGE_SENT: 'message_sent',
+    MESSAGE_READ: 'message_read',
+    ORDER_CONTEXT_SYNCED: 'order_context_synced',
+    SYSTEM_EVENT_CREATED: 'system_event_created'
+  });
+
   var FINANCIAL_EVENTS = Object.freeze({
     ORDER_REQUESTED: 'order_requested',
     ORDER_ACCEPTED: 'order_accepted',
@@ -88,20 +159,44 @@
     return Object.keys(collection).some(function (key) { return collection[key] === value; });
   }
 
+  function normalizeRole(role) {
+    var value = String(role || '').trim().toLowerCase();
+    if (value === 'pro' || value === 'worker') return ROLES.PROFESSIONAL;
+    if (value === 'user' || value === 'customer') return ROLES.CLIENT;
+    if (hasValue(ROLES, value)) return value;
+    return ROLES.GUEST;
+  }
+
+  function isInternalRole(role) {
+    var normalized = normalizeRole(role);
+    return normalized === ROLES.MODERATOR || normalized === ROLES.SUPPORT || normalized === ROLES.ADMIN;
+  }
+
   function isSupportRole(role) {
-    return role === ROLES.SUPPORT || role === ROLES.ADMIN;
+    var normalized = normalizeRole(role);
+    return normalized === ROLES.SUPPORT || normalized === ROLES.ADMIN;
   }
 
   Doke.backendDomainContract = Object.freeze({
     roles: ROLES,
     orderStatus: ORDER_STATUS,
+    conversationStatus: CONVERSATION_STATUS,
+    messageType: MESSAGE_TYPE,
+    notificationStatus: NOTIFICATION_STATUS,
+    notificationType: NOTIFICATION_TYPE,
+    notificationEvents: NOTIFICATION_EVENTS,
+    messageEvents: MESSAGE_EVENTS,
     paymentStatus: PAYMENT_STATUS,
     disputeStatus: DISPUTE_STATUS,
     walletStatus: WALLET_STATUS,
     withdrawalStatus: WITHDRAWAL_STATUS,
+    walletTransactionType: WALLET_TRANSACTION_TYPE,
+    receiptType: RECEIPT_TYPE,
     financialEvents: FINANCIAL_EVENTS,
     adminActions: ADMIN_ACTIONS,
     hasValue: hasValue,
+    normalizeRole: normalizeRole,
+    isInternalRole: isInternalRole,
     isSupportRole: isSupportRole
   });
 })();

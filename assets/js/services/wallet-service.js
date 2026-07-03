@@ -39,6 +39,43 @@
     return Doke.repositories && Doke.repositories.wallet;
   }
 
+  function getRepositoryBoundary() {
+    return Doke.repositoryBoundary && typeof Doke.repositoryBoundary === 'object'
+      ? Doke.repositoryBoundary
+      : null;
+  }
+
+  function clone(value) {
+    if (value == null) return value;
+    try {
+      return JSON.parse(JSON.stringify(value));
+    } catch (error) {
+      return value;
+    }
+  }
+
+  function getWalletProviderStatus() {
+    var boundary = getRepositoryBoundary();
+    var status = boundary && typeof boundary.getDataProviderStatus === 'function'
+      ? boundary.getDataProviderStatus()
+      : null;
+    var activeProvider = status && status.activeProvider || 'mock';
+    var apiReady = status ? status.apiReady === true : false;
+
+    return Object.freeze({
+      domain: 'wallet',
+      activeProvider: activeProvider,
+      requestedProvider: status && status.requestedProvider || activeProvider,
+      apiReady: apiReady,
+      walletApiActive: activeProvider === 'api' && apiReady,
+      fallbackProvider: getRepository() ? 'local-mock' : 'empty-local-mock'
+    });
+  }
+
+  function shouldUseWalletApi() {
+    return getWalletProviderStatus().walletApiActive === true;
+  }
+
   function getNotificationsService() {
     return Doke.services && Doke.services.notifications;
   }
@@ -52,6 +89,55 @@
     } catch (error) {
       return null;
     }
+  }
+
+  function getSecurity() {
+    return Doke.permissions && typeof Doke.permissions === 'object' ? Doke.permissions : null;
+  }
+
+  function auditSecurity(action, result, metadata) {
+    var security = getSecurity();
+    if (security && typeof security.auditSecurityEvent === 'function') {
+      security.auditSecurityEvent(Object.assign({
+        type: 'wallet_security',
+        action: action,
+        result: result,
+        resource: 'wallet'
+      }, metadata || {}));
+    }
+  }
+
+  function canAccessAdmin(actor) {
+    var security = getSecurity();
+    return Boolean(security && typeof security.canAccessAdmin === 'function' && security.canAccessAdmin(actor || getCurrentUser() || {}));
+  }
+
+  function assertWalletOwner(ownerId, action, actor) {
+    var security = getSecurity();
+    actor = actor || getCurrentUser() || {};
+    if (security && typeof security.canAccessWalletOwner === 'function' && !security.canAccessWalletOwner(actor, ownerId, action || 'read_wallet')) {
+      auditSecurity(action || 'read_wallet', 'denied', { actor: actor, resourceId: ownerId || '', reason: 'wallet_owner_mismatch' });
+      throw security.createPermissionError ? security.createPermissionError('wallet:' + (action || 'read'), { ownerId: ownerId || '' }) : new Error('Você não tem permissão para acessar esta carteira.');
+    }
+    return true;
+  }
+
+  function assertAdminAction(action, payload, actor) {
+    var security = getSecurity();
+    actor = actor || getCurrentUser() || {};
+    if (security && typeof security.assertAdminAction === 'function') return security.assertAdminAction(action, payload || {}, actor);
+    if (!canAccessAdmin(actor)) throw new Error('Ação restrita ao suporte Doke.');
+    return true;
+  }
+
+  function scopeWalletOptions(options) {
+    options = options || {};
+    var actor = getCurrentUser() || {};
+    if (options.currentUser === false && !canAccessAdmin(actor)) {
+      auditSecurity('list_all_denied', 'denied', { actor: actor, reason: 'currentUser_false_requires_admin' });
+      return Object.assign({}, options, { currentUser: true, ownerId: actor.id || actor.providerProfileId || '' });
+    }
+    return Object.assign({}, options, { actorId: actor.id || '', actorRole: actor.role || 'guest' });
   }
 
   function isProviderLikeId(value) {
@@ -83,8 +169,81 @@
     };
   }
 
+  function normalizeArrayPayload(payload, keys) {
+    if (Array.isArray(payload)) return payload.map(clone);
+    keys = Array.isArray(keys) ? keys : [];
+    for (var index = 0; index < keys.length; index += 1) {
+      var key = keys[index];
+      if (payload && Array.isArray(payload[key])) return payload[key].map(clone);
+    }
+    if (payload && Array.isArray(payload.items)) return payload.items.map(clone);
+    return [];
+  }
+
+  function normalizeTransactionFromProvider(transaction) {
+    var repository = getRepository();
+    if (repository && typeof repository.normalizeTransaction === 'function') return repository.normalizeTransaction(transaction || {});
+    return clone(transaction || {});
+  }
+
+  function normalizeTransactionsFromProvider(payload) {
+    return normalizeArrayPayload(payload, ['transactions', 'walletTransactions']).map(normalizeTransactionFromProvider);
+  }
+
+  function normalizeBankAccountFromProvider(payload) {
+    var account = payload && (payload.bankAccount || payload.account || payload.item) || payload || null;
+    if (Array.isArray(account)) account = account[0] || null;
+    if (!account) return null;
+    var repository = getRepository();
+    if (repository && typeof repository.normalizeBankAccount === 'function') return repository.normalizeBankAccount(account);
+    return clone(account);
+  }
+
+  function normalizeWalletFromProvider(payload) {
+    var source = payload && (payload.wallet || payload.summary) || payload || {};
+    var balances = source.balances || source.balance || {};
+    var dashboard = source.monthlyDashboard || source.dashboard || {};
+    var wallet = createEmptyWallet();
+    wallet.availableBalance = roundCurrency(source.availableBalance || source.available || balances.available || balances.availableBalance || 0);
+    wallet.pendingBalance = roundCurrency(source.pendingBalance || source.heldBalance || source.pending || balances.pending || balances.held || 0);
+    wallet.monthlyIncome = roundCurrency(source.monthlyIncome || dashboard.netIncome || source.netIncome || 0);
+    wallet.withdrawals = roundCurrency(source.withdrawals || dashboard.withdrawals || 0);
+    wallet.fees = roundCurrency(source.fees || dashboard.fees || 0);
+    wallet.monthlyDashboard = dashboard && Object.keys(dashboard).length ? dashboard : null;
+    wallet.localTransactions = normalizeTransactionsFromProvider(source.transactions || source.walletTransactions || payload);
+    wallet.transactions = wallet.localTransactions;
+    wallet.receivablesSchedule = source.receivablesSchedule || source.schedule || source.receivables || wallet.receivablesSchedule;
+    wallet.bankAccount = normalizeBankAccountFromProvider(source.bankAccount || source.account || null);
+    wallet.updatedAt = source.updatedAt || new Date().toISOString();
+    return wallet;
+  }
+
+  function walletBoundaryList(resourceName, filters, keys) {
+    var boundary = getRepositoryBoundary();
+    if (!boundary || typeof boundary.list !== 'function') return Promise.reject(new Error('Wallet API boundary indisponível.'));
+    return boundary.list(resourceName, filters || {}).then(function (payload) {
+      return keys ? normalizeArrayPayload(payload, keys) : payload;
+    });
+  }
+
+  function walletBoundaryCreate(resourceName, payload) {
+    var boundary = getRepositoryBoundary();
+    if (!boundary || typeof boundary.create !== 'function') return Promise.reject(new Error('Wallet API boundary indisponível.'));
+    return boundary.create(resourceName, payload || {});
+  }
+
+  function walletBoundaryAction(resourceName, actionName, payload) {
+    var boundary = getRepositoryBoundary();
+    if (!boundary || typeof boundary.action !== 'function') return Promise.reject(new Error('Wallet API boundary indisponível.'));
+    return boundary.action(resourceName, actionName, payload || {});
+  }
+
   function getBankAccount(options) {
     options = options || {};
+    if (shouldUseWalletApi()) {
+      return walletBoundaryList('walletBankAccount', scopeWalletOptions(options)).then(normalizeBankAccountFromProvider);
+    }
+
     var repository = getRepository();
     if (!repository || typeof repository.getBankAccount !== 'function') return Promise.resolve(null);
     return repository.getBankAccount({
@@ -95,10 +254,8 @@
 
   function saveBankAccount(payload) {
     payload = payload || {};
-    var repository = getRepository();
     var user = getCurrentUser() || {};
-    if (!repository || typeof repository.saveBankAccount !== 'function') return Promise.reject(new Error('Carteira indisponível.'));
-    return repository.saveBankAccount({
+    var accountPayload = {
       ownerId: normalizeProfessionalId(payload.ownerId || payload.professionalId || payload.userId || user.id || ''),
       bankName: normalizeText(payload.bankName || ''),
       holderName: normalizeText(payload.holderName || ''),
@@ -108,11 +265,25 @@
       pixKey: normalizeText(payload.pixKey || ''),
       status: 'verified',
       nextPayout: 'Repasse automático após liberação'
-    });
+    };
+
+    assertWalletOwner(accountPayload.ownerId, 'save_bank_account', user);
+
+    if (shouldUseWalletApi()) {
+      return walletBoundaryAction('walletSummary', 'saveBankAccount', Object.assign({}, accountPayload, { actorId: user.id || '', actorRole: user.role || 'guest' })).then(normalizeBankAccountFromProvider);
+    }
+
+    var repository = getRepository();
+    if (!repository || typeof repository.saveBankAccount !== 'function') return Promise.reject(new Error('Carteira indisponível.'));
+    return repository.saveBankAccount(accountPayload);
   }
 
   function getWallet(options) {
-    options = options || {};
+    options = scopeWalletOptions(options || {});
+    if (shouldUseWalletApi()) {
+      return walletBoundaryList('walletSummary', options).then(normalizeWalletFromProvider);
+    }
+
     var repository = getRepository();
     var userScope = { currentUser: options.currentUser !== false };
     var localTransactions = repository && typeof repository.listTransactions === 'function'
@@ -157,7 +328,11 @@
   }
 
   function listTransactions(options) {
-    options = options || {};
+    options = scopeWalletOptions(options || {});
+    if (shouldUseWalletApi()) {
+      return walletBoundaryList('walletTransactions', options).then(normalizeTransactionsFromProvider);
+    }
+
     var repository = getRepository();
     var transactions = repository && typeof repository.listTransactions === 'function'
       ? repository.listTransactions(options)
@@ -168,7 +343,13 @@
 
 
   function listAuditEvents(options) {
-    options = options || {};
+    options = scopeWalletOptions(options || {});
+    var actor = getCurrentUser() || {};
+    if (options.currentUser === false) assertAdminAction('view_audit_events', { resource: 'auditEvents' }, actor);
+    if (shouldUseWalletApi()) {
+      return walletBoundaryList('auditEvents', options, ['auditEvents', 'events']);
+    }
+
     var repository = getRepository();
     var events = repository && typeof repository.listAuditEvents === 'function'
       ? repository.listAuditEvents(options)
@@ -176,7 +357,13 @@
     return Promise.resolve(Array.isArray(events) ? events : []);
   }
   function getMonthlyDashboard(options) {
-    options = options || {};
+    options = scopeWalletOptions(options || {});
+    if (shouldUseWalletApi()) {
+      return walletBoundaryList('walletMonthlyDashboard', scopeWalletOptions(options)).then(function (payload) {
+        return payload && (payload.dashboard || payload.monthlyDashboard || payload) || null;
+      });
+    }
+
     var repository = getRepository();
     var dashboard = repository && typeof repository.getMonthlyDashboard === 'function'
       ? repository.getMonthlyDashboard(options)
@@ -200,7 +387,11 @@
   }
 
   function getMonthlyHistory(options) {
-    options = options || {};
+    options = scopeWalletOptions(options || {});
+    if (shouldUseWalletApi()) {
+      return walletBoundaryList('walletMonthlyHistory', scopeWalletOptions(options), ['history', 'items', 'months']);
+    }
+
     var repository = getRepository();
     var history = repository && typeof repository.getMonthlyHistory === 'function'
       ? repository.getMonthlyHistory(options)
@@ -209,7 +400,13 @@
   }
 
   function getReceivablesSchedule(options) {
-    options = options || {};
+    options = scopeWalletOptions(options || {});
+    if (shouldUseWalletApi()) {
+      return walletBoundaryList('walletReceivablesSchedule', scopeWalletOptions(options)).then(function (payload) {
+        return payload && (payload.receivablesSchedule || payload.schedule || payload) || null;
+      });
+    }
+
     var repository = getRepository();
     var schedule = repository && typeof repository.getReceivablesSchedule === 'function'
       ? repository.getReceivablesSchedule(options)
@@ -355,20 +552,29 @@
   }
 
   function registerHeldReceivableFromPayment(payload) {
-    var repository = getRepository();
-    if (!repository || typeof repository.registerReceivable !== 'function') return Promise.resolve(null);
     var receivable = buildReceivablePayload(payload || {}, 'held');
     delete receivable.context;
+
+    if (shouldUseWalletApi()) {
+      return walletBoundaryCreate('receivables', receivable);
+    }
+
+    var repository = getRepository();
+    if (!repository || typeof repository.registerReceivable !== 'function') return Promise.resolve(null);
     return repository.registerReceivable(receivable);
   }
 
   function registerReceivableFromOrder(payload) {
-    var repository = getRepository();
-    if (!repository || typeof repository.registerReceivable !== 'function') return Promise.resolve(null);
     var receivable = buildReceivablePayload(payload || {}, 'available');
     var context = receivable.context || {};
     delete receivable.context;
 
+    if (shouldUseWalletApi()) {
+      return walletBoundaryCreate('receivables', receivable);
+    }
+
+    var repository = getRepository();
+    if (!repository || typeof repository.registerReceivable !== 'function') return Promise.resolve(null);
     return repository.registerReceivable(receivable).then(function (result) {
       if (!result || (!result.created && !result.updated)) return result;
       var order = context.order || {};
@@ -382,7 +588,11 @@
 
 
   function listDisputes(options) {
-    options = options || {};
+    options = scopeWalletOptions(options || {});
+    if (shouldUseWalletApi()) {
+      return walletBoundaryList('disputes', scopeWalletOptions(options), ['disputes', 'items']);
+    }
+
     var repository = getRepository();
     var disputes = repository && typeof repository.listDisputes === 'function'
       ? repository.listDisputes(options)
@@ -392,6 +602,13 @@
 
   function openDispute(payload) {
     payload = payload || {};
+    var actor = getCurrentUser() || {};
+    if (actor.role && actor.role !== 'client' && !canAccessAdmin(actor)) {
+      auditSecurity('open_dispute_denied', 'denied', { actor: actor, resourceId: payload.orderId || payload.transactionId || '', reason: 'client_or_support_required' });
+      return Promise.reject(new Error('Use uma conta de cliente para abrir contestação.'));
+    }
+    if (shouldUseWalletApi()) return walletBoundaryCreate('disputes', Object.assign({}, payload, { actorId: actor.id || '', actorRole: actor.role || 'guest' }));
+
     var repository = getRepository();
     if (!repository || typeof repository.openDispute !== 'function') return Promise.reject(new Error('Disputa indisponível.'));
     return repository.openDispute(payload);
@@ -400,6 +617,19 @@
 
   function respondDispute(payload) {
     payload = payload || {};
+    var actor = getCurrentUser() || {};
+    if (actor.role && actor.role !== 'professional' && !canAccessAdmin(actor)) {
+      auditSecurity('respond_dispute_denied', 'denied', { actor: actor, resourceId: payload.disputeId || payload.transactionId || '', reason: 'professional_or_support_required' });
+      return Promise.reject(new Error('Use uma conta profissional para responder esta contestação.'));
+    }
+    if (shouldUseWalletApi()) {
+      return walletBoundaryAction('disputes', 'respond', Object.assign({}, payload, {
+        id: payload.disputeId || payload.id || '',
+        actorId: actor.id || '',
+        actorRole: actor.role || 'guest'
+      }));
+    }
+
     var repository = getRepository();
     if (!repository || typeof repository.respondDispute !== 'function') return Promise.reject(new Error('Disputa indisponível.'));
     return repository.respondDispute(payload);
@@ -407,6 +637,18 @@
 
   function resolveDispute(payload) {
     payload = payload || {};
+    var actor = getCurrentUser() || {};
+    assertAdminAction('resolve_dispute', Object.assign({ resource: 'disputes' }, payload), actor);
+    if (shouldUseWalletApi()) {
+      var resolution = normalizeText(payload.resolution || payload.action || '');
+      var actionName = resolution === 'client_refund' || resolution === 'refund' || resolution === 'refunded' ? 'refund' : 'release';
+      return walletBoundaryAction('disputes', actionName, Object.assign({}, payload, {
+        id: payload.disputeId || payload.id || '',
+        actorId: actor.id || '',
+        actorRole: actor.role || 'guest'
+      }));
+    }
+
     var repository = getRepository();
     if (!repository || typeof repository.resolveDispute !== 'function') return Promise.reject(new Error('Disputa indisponível.'));
     return repository.resolveDispute(payload);
@@ -414,13 +656,21 @@
 
   function requestWithdraw(payload) {
     payload = payload || {};
+    var actor = getCurrentUser() || {};
+    var withdrawPayload = {
+      amount: payload.amount,
+      ownerId: normalizeProfessionalId(payload.ownerId || payload.professionalId || payload.userId || actor.id || ''),
+      bankAccountId: payload.bankAccountId || '',
+      actorId: actor.id || '',
+      actorRole: actor.role || 'guest'
+    };
+    assertWalletOwner(withdrawPayload.ownerId, 'request_withdraw', actor);
+
+    if (shouldUseWalletApi()) return walletBoundaryCreate('withdrawals', withdrawPayload);
+
     var repository = getRepository();
     if (!repository || typeof repository.requestWithdraw !== 'function') return Promise.reject(new Error('Carteira indisponível.'));
-    return repository.requestWithdraw({
-      amount: payload.amount,
-      ownerId: payload.ownerId || payload.professionalId || payload.userId || '',
-      bankAccountId: payload.bankAccountId || ''
-    }).then(function (result) {
+    return repository.requestWithdraw(withdrawPayload).then(function (result) {
       if (!result || !result.transaction) return result;
       return createWithdrawNotification(result.transaction).then(function () { return result; });
     });
@@ -429,11 +679,23 @@
 
   function completeWithdraw(payload) {
     payload = payload || {};
+    var actor = getCurrentUser() || {};
+    assertAdminAction('resolve_withdrawal', Object.assign({ resource: 'withdrawals' }, payload), actor);
+    var withdrawPayload = {
+      id: payload.transactionId || payload.id || '',
+      transactionId: payload.transactionId || payload.id || '',
+      ownerId: payload.ownerId || payload.professionalId || payload.userId || '',
+      actorId: actor.id || '',
+      actorRole: actor.role || 'guest'
+    };
+
+    if (shouldUseWalletApi()) return walletBoundaryAction('withdrawals', 'approve', withdrawPayload);
+
     var repository = getRepository();
     if (!repository || typeof repository.completeWithdraw !== 'function') return Promise.reject(new Error('Carteira indisponível.'));
     return repository.completeWithdraw({
-      transactionId: payload.transactionId || payload.id || '',
-      ownerId: payload.ownerId || payload.professionalId || payload.userId || ''
+      transactionId: withdrawPayload.transactionId,
+      ownerId: withdrawPayload.ownerId
     }).then(function (result) {
       if (!result || !result.transaction || !result.updated) return result;
       return createWithdrawCompletedNotification(result.transaction).then(function () { return result; });
@@ -443,6 +705,17 @@
 
   function resolveWithdraw(payload) {
     payload = payload || {};
+    var actor = getCurrentUser() || {};
+    assertAdminAction('resolve_withdrawal', Object.assign({ resource: 'withdrawals' }, payload), actor);
+    if (shouldUseWalletApi()) {
+      var actionName = normalizeText(payload.action || payload.status) === 'declined' ? 'decline' : 'approve';
+      return walletBoundaryAction('withdrawals', actionName, Object.assign({}, payload, {
+        id: payload.transactionId || payload.id || '',
+        actorId: actor.id || '',
+        actorRole: actor.role || 'guest'
+      }));
+    }
+
     var repository = getRepository();
     if (!repository || typeof repository.resolveWithdraw !== 'function') return Promise.reject(new Error('Carteira indisponível.'));
     return repository.resolveWithdraw(payload).then(function (result) {
@@ -453,7 +726,9 @@
   }
 
   services.wallet = Object.freeze({
-    provider: getRepository() ? 'local-mock' : 'empty-local-mock',
+    provider: getWalletProviderStatus().activeProvider,
+    getWalletProviderStatus: getWalletProviderStatus,
+    shouldUseWalletApi: shouldUseWalletApi,
     getWallet: getWallet,
     listTransactions: listTransactions,
     listAuditEvents: listAuditEvents,

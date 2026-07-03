@@ -82,6 +82,15 @@ Status oficiais:
 - `refunded`: cliente reembolsado.
 - `cancelled`: pedido cancelado antes de pagamento final.
 
+Aliases frontend enquanto a migração é gradual:
+
+- `pending`: equivalente visual de `requested`.
+- `quoted`: equivalente visual de `charged`/proposta enviada.
+- `conversation`: variação visual de `accepted`.
+- `disputed`: também cobre `under_review` quando a tela ainda não separa análise.
+
+Esses aliases devem ser convertidos no repository/service, nunca no renderer.
+
 ### Conversation
 
 Representa o canal ligado ao pedido.
@@ -240,14 +249,28 @@ Campos mínimos:
 - `id`.
 - `userId`.
 - `type`.
+- `category`.
 - `title`.
 - `body`.
 - `targetUrl`.
+- `actionLabel`.
 - `eventKey`.
+- `orderId`.
+- `conversationId`.
+- `messageId`.
+- `read`.
+- `dismissed`.
 - `readAt`.
 - `createdAt`.
+- `updatedAt`.
 
-Regra: `eventKey` deve ser idempotente para impedir duplicação em reprocessamento.
+Status oficiais:
+
+- `unread`.
+- `read`.
+- `dismissed`.
+
+Regra: `eventKey` deve ser idempotente para impedir duplicação em reprocessamento. `targetUrl` e `actionLabel` são parte do contrato de navegação e não devem ser inferidos pelo renderer.
 
 ### Receipt
 
@@ -307,3 +330,21 @@ Campos mínimos:
 3. Converter status no repository, nunca no renderer.
 4. Garantir idempotência em notificações, recibos e auditoria.
 5. Validar permissões no backend mesmo quando a UI já esconde a ação.
+
+
+## Sprint 12D — Messages API provider contract
+
+- `messages` remains mock/localStorage by default and only uses API when `repositoryBoundary` reports active provider `api` with `apiBaseUrl` and `enableNetworkRequests`.
+- Conversations use `GET /conversations`, `GET /conversations/:id`, `POST /orders/:id/conversation`, `POST /conversations/:id/order`, `POST /conversations/:id/messages`, and `POST /conversations/:id/read`.
+- Pages must call `Doke.services.messages`; renderers must not call `fetch()` or backend endpoints directly.
+- System events, charge cards, payment events and dispute events remain messages with typed payloads so the chat history can be migrated without changing UI renderers.
+
+## Sprint 12F wallet API notes
+
+Wallet-related DTOs must support both mock and API payloads with stable frontend fields:
+
+- `WalletSummary`: `availableBalance`, `pendingBalance`, `monthlyIncome`, `withdrawals`, `fees`, `monthlyDashboard`, `receivablesSchedule`, `bankAccount`.
+- `WalletTransaction`: `id`, `type`, `status`, `grossAmount`, `netAmount`, `feeAmount`, `orderId`, `conversationId`, `receiptUrl`, `releaseStatus`.
+- `ReceivableSchedule`: `next`, `items`, `scheduledNet`, `releasedNet`, `pendingCount`, `releasedCount`.
+- `Withdrawal`: represented as `WalletTransaction` with `type=withdraw` and status `processing`, `completed` or `declined`.
+- `AuditEvent`: `id`, `type`, `action`, `actorId`, `actorRole`, `transactionId`, `disputeId`, `createdAt`.

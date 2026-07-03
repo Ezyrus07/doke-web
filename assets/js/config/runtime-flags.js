@@ -1,7 +1,9 @@
 export const runtimeFlags = Object.freeze({
   useMockData: true,
   enableNetworkRequests: false,
-  enableDataReadyControllers: false
+  enableDataReadyControllers: false,
+  dataProvider: 'mock',
+  authProvider: 'mock'
 });
 
 export function getRuntimeFlags(overrides = {}) {

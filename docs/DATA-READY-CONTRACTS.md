@@ -273,3 +273,223 @@ A partir da Sprint 11A, a preparação para backend real passa a ter quatro cont
 ### Regra de transição
 
 Enquanto a API real não existir, pages/controllers devem continuar funcionando com mock/localStorage. Qualquer futura integração deve trocar provider/repository, não HTML, CSS ou renderer.
+
+## Sprint 11B — contrato de origem de dados
+
+A origem de dados do frontend agora é tratada como contrato de runtime:
+
+- `mock`: padrão, usando dados locais/mock/localStorage.
+- `api`: futuro backend, permitido apenas com URL e rede habilitadas.
+
+O boundary técnico é `assets/js/services/repository-boundary.js`. A API futura é consumida por `assets/js/services/api-repository-provider.js`; o mock continua em `assets/js/services/mock-repository-provider.js`.
+
+Métodos mínimos expostos por repository criado via boundary:
+
+- `list(query)`
+- `getById(id)`
+- `create(payload)`
+- `update(payload)`
+- `remove(payload)`
+- `action(actionName, payload)`
+
+Controllers novos devem depender desse contrato, não de `localStorage` direto.
+
+## Auth readiness — Sprint 11C
+
+Autenticação passa a ter contrato explícito para backend futuro.
+
+- `assets/js/contracts/auth-domain-contract.js`: roles, permissões, status e eventos de auth.
+- `assets/js/core/session.js`: autoridade runtime de sessão e `getAuthContext()`.
+- `assets/js/services/auth-service.js`: serviço mock atual com `getAuthProviderStatus()`.
+- `docs/AUTH-INTEGRATION-CONTRACT.md`: DTOs e regras para Sprint 12A.
+
+Nenhuma página deve chamar API de auth diretamente. A migração real deve preservar `mock` como fallback local até o provider real estar validado.
+
+
+## Auth API readiness — Sprint 12A
+
+- Provider padrão: `mock`.
+- Provider real: `api`, controlado por `authProvider`, `apiBaseUrl` e `enableNetworkRequests`.
+- Serviço autorizado: `assets/js/services/auth-service.js`.
+- API pública: `DokeAuth.signIn`, `DokeAuth.register`, `DokeAuth.logout`, `DokeAuth.refreshSession`, `DokeAuth.getAuthProviderStatus`.
+- Escopo migrado: login, cadastro, sessão atual, logout e recuperação de senha.
+- Escopo não migrado: pedidos, mensagens, carteira, notificações, admin e financeiro.
+
+
+## Sprint 12C — Orders provider contract
+
+Pedidos passam a aceitar provider mock/API sem mudar HTML ou CSS.
+
+Contrato obrigatório:
+
+- Páginas chamam `Doke.services.orders`.
+- `Doke.services.orders` decide a origem com `Doke.repositoryBoundary.getDataProviderStatus()`.
+- Provider `mock` preserva localStorage e side effects locais.
+- Provider `api` usa `GET /orders`, `POST /orders`, `GET /orders/:id` e ações `accept`, `decline`, `quote`, `start`, `complete`, `updateStatus`.
+- Status de backend devem ser normalizados no repository antes de chegar ao renderer.
+- `mensagens`, `carteira` e `notificacoes` permanecem mock até suas sprints próprias.
+
+
+## Sprint 12D — Messages API provider contract
+
+- `messages` remains mock/localStorage by default and only uses API when `repositoryBoundary` reports active provider `api` with `apiBaseUrl` and `enableNetworkRequests`.
+- Conversations use `GET /conversations`, `GET /conversations/:id`, `POST /orders/:id/conversation`, `POST /conversations/:id/order`, `POST /conversations/:id/messages`, and `POST /conversations/:id/read`.
+- Pages must call `Doke.services.messages`; renderers must not call `fetch()` or backend endpoints directly.
+- System events, charge cards, payment events and dispute events remain messages with typed payloads so the chat history can be migrated without changing UI renderers.
+
+## Sprint 12E — Notifications provider contract
+
+- `notifications` remains mock/localStorage by default and only uses API when `repositoryBoundary` reports active provider `api` with `apiBaseUrl` and `enableNetworkRequests`.
+- Notifications use `GET /notifications`, `GET /notifications/:id`, `POST /notifications`, `PATCH /notifications/:id`, `POST /notifications/:id/read`, `POST /notifications/:id/dismiss` and `POST /notifications/read-all`.
+- Pages must call `Doke.services.notifications`; renderers must not call `fetch()` or backend endpoints directly.
+- Notification DTOs keep `eventKey`, `targetUrl`, `actionLabel`, `read` and `dismissed` so the same UI can render order, message, financial and support events.
+
+## Sprint 12F — Wallet data boundary
+
+`Doke.services.wallet` now exposes provider status and routes wallet reads/writes through the controlled repository boundary when `api` is active. The default remains `mock/localStorage`.
+
+Covered wallet capabilities:
+
+- wallet summary;
+- statement transactions;
+- monthly dashboard/history;
+- receivables schedule;
+- bank account save/read;
+- receivable registration;
+- dispute open/respond/resolve;
+- withdraw request/approve/decline;
+- audit event listing.
+
+Financial side effects stay domain-owned. Local mock keeps current side effects; API mode expects backend-generated notifications, receipts and audit events.
+
+## Sprint 13 — Security-ready data contracts
+
+Dynamic data regions now rely on a frontend permission boundary before executing mock/API operations. Services must attach `actorId` and `actorRole` to API-bound mutations when available and must not allow `currentUser:false` broad reads unless the current actor is support/admin.
+
+## Sprint 14 — MVP controlled readiness
+
+A preparação para dados reais agora exige o gate de fluxo controlado:
+
+```bash
+npm run audit:mvp-controlled-readiness
+```
+
+O contrato ativo está em `assets/js/contracts/mvp-controlled-flow-contract.js` e define:
+
+- ordem canônica do fluxo: sessão, perfil, pedido, conversa, cobrança, pagamento, carteira, contestação, decisão admin, recibo, saque e auditoria;
+- matriz mínima de roles `guest`, `client`, `professional`, `support` e `admin`;
+- cenários críticos de sucesso, contestação, saque e negação;
+- gates de provider, segurança, fluxo e release.
+
+A regra de arquitetura permanece: renderer não busca dados, página não chama backend direto, CSS não muda por causa de backend e toda ação sensível passa por service/repository/provider.
+
+## Sprint 15 — Supabase backend readiness
+
+A camada de dados agora possui artefatos de banco e backend para testar a transição do MVP controlado em Supabase local/staging sem trocar o provider padrão do frontend.
+
+Contratos adicionados:
+
+- `supabase/migrations/004_mvp_backend_security_foundation.sql` define RLS, idempotência, recibos, recebíveis, saques, disputas e auditoria admin.
+- `supabase/seed/002_mvp_controlled_seed.sql` cria um dataset local ponta a ponta para cliente, profissional, suporte e admin.
+- `backend/shared/contracts/api-actions.json` documenta actions server-side, roles autorizadas, escopo de recurso, idempotência e auditoria.
+- `docs/SUPABASE-BACKEND-READINESS.md` concentra as regras para validar Supabase antes de habilitar API real.
+
+Invariantes:
+
+- frontend nunca é autoridade final de permissão;
+- ações financeiras sensíveis exigem idempotência server-side;
+- decisões de suporte/admin geram `admin_audit_events`;
+- recibos autoritativos são gerados no backend;
+- provider padrão permanece `mock` até staging provar RLS e flows.
+
+Comando de gate:
+
+```bash
+npm run audit:supabase-backend-readiness
+```
+
+## Sprint 16 — API endpoint readiness
+
+A camada de dados agora possui um registro server-side framework-neutral para endpoints reais, sem ativar API no frontend.
+
+Contratos adicionados:
+
+- `backend/shared/http/route-registry.js` define nomes, métodos, paths, módulos, roles, escopos, idempotência e auditoria de cada endpoint.
+- `backend/shared/http/create-action-handler.js` padroniza autorização, `x-idempotency-key` e audit hooks para handlers futuros.
+- `backend/modules/*/route-handlers.js` expõe handlers registrados por domínio, ainda não implementados.
+- `supabase/tests/*.sql` documenta a validação local/staging de RLS, idempotência e negações.
+- `docs/API-ENDPOINT-READINESS.md` e `docs/SUPABASE-LOCAL-STAGING-VALIDATION.md` são os contratos vivos dessa etapa.
+
+Comando de gate:
+
+```bash
+npm run audit:api-endpoint-readiness
+```
+
+Invariantes adicionais:
+
+- endpoint registrado não significa endpoint habilitado;
+- ações sensíveis sem `x-idempotency-key` devem falhar no servidor;
+- suporte/admin não pode ser simulado por estado visual ou payload do browser;
+- RLS e server action continuam sendo autoridade final.
+
+## Sprint 17 — Staging auth/identity runtime boundary
+
+The first executable backend runtime is limited to auth/identity. It reads `users`, `user_profiles`, `client_profiles` and `professional_profiles`, normalizes the DTO expected by the frontend auth service, and preserves the mock provider as the frontend default.
+
+No page, renderer or browser controller may depend on Supabase table shape directly. Browser code continues to consume `DokeAuth` and the service/provider boundaries.
+
+## Sprint 18 — Orders staging runtime
+
+- `backend/modules/orders/orders-service.js`: leitura, criação e transições server-side de pedidos em staging.
+- `backend/modules/orders/route-handlers.js`: bindings executáveis para todas as rotas de pedidos registradas em `route-registry`.
+- `npm run audit:staging-orders-runtime`: gate estático para impedir regressão do runtime de pedidos.
+- O runtime de pedidos não altera o provider padrão do frontend; `mock` continua sendo o padrão até validação local/staging completa.
+
+## Sprint 19 — Staging messaging runtime gate
+
+Conversas e mensagens agora têm runtime staging inicial por trás do mesmo contrato mock/API. O frontend continua em mock por padrão, mas o backend staging já cobre `GET /conversations`, `GET /conversations/:id`, `POST /orders/:id/conversation`, `POST /conversations/:id/order`, `POST /conversations/:id/messages` e `POST /conversations/:id/read`.
+
+Gate obrigatório:
+
+```bash
+npm run audit:staging-messaging-runtime
+```
+
+## Sprint 20 — Staging notifications runtime gate
+
+Notificações agora têm runtime staging inicial por trás do mesmo contrato mock/API. O frontend continua em mock por padrão, mas o backend staging já cobre `GET /notifications`, `GET /notifications/:id`, `POST /notifications`, `PATCH /notifications/:id`, `POST /notifications/:id/read`, `POST /notifications/:id/dismiss` e `POST /notifications/read-all`.
+
+Gate obrigatório:
+
+```bash
+npm run audit:staging-notifications-runtime
+```
+
+A regra de dados continua: páginas chamam `Doke.services.notifications`; renderers não chamam `fetch()` nem tabelas Supabase diretamente.
+
+## Sprint 21 wallet runtime validation
+
+- Runtime: `backend/modules/wallet/wallet-service.js` and `backend/modules/wallet/route-handlers.js`.
+- Admin finance routes: `backend/modules/admin/route-handlers.js`.
+- Gate: `npm run audit:staging-wallet-runtime`.
+- Scope: wallet, transactions, dashboard, receivables, bank accounts, withdrawals, disputes, receipts and admin audit events.
+
+## Sprint 22 — Staging E2E validation contract
+
+The backend/provider transition now has an executable staging validation gate:
+
+- `backend/shared/testing/staging-e2e-scenarios.js` owns the canonical smoke scenario list.
+- `scripts/validate-staging-e2e.js` runs the real local/staging HTTP smoke.
+- `npm run audit:staging-e2e-validation` verifies the gate is present and documented.
+- `supabase/tests/004_runtime_e2e_postconditions.sql` verifies post-run database signals.
+
+No frontend page, controller or renderer may be switched to API mode until `audit:staging-e2e-validation`, `validate:staging-e2e` and the SQL postconditions have passed against a staging project.
+
+## Sprint 23 — runtime idempotency contract
+
+Data readiness now requires persistent idempotency at the runtime boundary. The canonical store is `api_idempotency_keys`; runtime handlers must never rely only on the browser or localStorage to deduplicate financial/support actions. The validation command is `npm run audit:runtime-idempotency-audit`.
+
+## Sprint 24 — execution proof before provider canary
+
+Data readiness now requires `audit:supabase-local-staging-execution` in addition to the domain/provider audits. This gate proves the same contracts against real SQL tests, runtime HTTP smoke, persistent idempotency and audit postconditions before any frontend provider is switched to API.

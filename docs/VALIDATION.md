@@ -501,3 +501,254 @@ Valida os 21 HTMLs ativos da raiz para impedir que header, shell e sidebar volte
 - salvaguardas runtime em `assets/js/core/app.js` para reaplicar contratos após navegação interna e criar o scrim de sidebar quando o HTML da página não o trouxer estaticamente.
 
 O audit está incluído em `npm run audit:agent-governance`. Ele não substitui validação visual: ao alterar `layout/header.css`, sidebar, shell ou roteador, validar `index.html`, `perfil.html`, `pedidos.html`, `mensagens.html`, `notificacoes.html`, `comunidade.html`, `resultados.html`, `detalhe-anuncio.html` e `ajuda.html` em `390x844`, `820x1180` e `1366x768`.
+
+## Sprint 14 — MVP controlado e hardening de fluxo
+
+Antes de considerar a base pronta para teste real controlado, executar:
+
+```bash
+npm run audit:mvp-controlled-readiness
+npm run audit:security-permission-contract
+npm run audit:wallet-api-contract
+npm run audit:orders-api-contract
+npm run audit:messages-api-contract
+npm run audit:notifications-api-contract
+npm run audit:data-provider-flags
+```
+
+Critérios manuais obrigatórios quando houver navegador disponível:
+
+```txt
+Cliente: criar pedido → receber aceite/proposta → pagar → abrir comprovante → contestar.
+Profissional: aceitar pedido → enviar cobrança → responder contestação → solicitar saque.
+Suporte/Admin: resolver contestação com repasse → resolver contestação com reembolso → aprovar saque → recusar saque com motivo.
+Negação: cliente/profissional não veem Admin e não executam ações de suporte.
+Auditoria: cada negação e cada ação admin gera evento auditável.
+```
+
+Viewports mínimos para a rodada visual do MVP controlado:
+
+```txt
+390x844
+820x1180
+1366x768
+```
+
+Páginas mínimas:
+
+```txt
+index.html
+orcamento.html
+pedidos.html
+mensagens.html
+carteira.html
+notificacoes.html
+admin.html
+```
+
+Se Playwright não estiver disponível, o handoff deve declarar que a Sprint 14 passou apenas por validação estática e que o roteiro acima precisa ser executado no Live Server.
+
+## Sprint 15 — Supabase/backend readiness
+
+Antes de habilitar qualquer tráfego real de API em staging, executar:
+
+```bash
+npm run audit:supabase-backend-readiness
+npm run audit:mvp-controlled-readiness
+npm run audit:security-permission-contract
+npm run audit:wallet-api-contract
+npm run audit:orders-api-contract
+npm run audit:messages-api-contract
+npm run audit:notifications-api-contract
+npm run audit:data-provider-flags
+```
+
+Validação manual de staging obrigatória:
+
+```txt
+1. Aplicar migrations em Supabase local/staging.
+2. Aplicar seed controlado.
+3. Entrar como cliente, profissional, suporte e admin.
+4. Verificar RLS: cliente não lê recursos de outro cliente; profissional não lê pedido/carteira fora de escopo.
+5. Repetir action financeira com mesmo idempotency key e confirmar que não duplica saldo/recibo/auditoria.
+6. Confirmar que suporte/admin resolvem contestação e saque com `admin_audit_events` persistente.
+7. Confirmar que recibos são lidos pelo dono ou suporte/admin, nunca por terceiro.
+```
+
+A Sprint 15 não altera visual e não ativa backend real no frontend; ela cria o contrato para validar Supabase/API com segurança.
+
+## Sprint 16 — API endpoint and Supabase local/staging validation
+
+Antes de implementar runtime real de backend, executar:
+
+```bash
+npm run audit:api-endpoint-readiness
+npm run audit:supabase-backend-readiness
+npm run audit:mvp-controlled-readiness
+npm run audit:security-permission-contract
+```
+
+Validação local/staging recomendada:
+
+```bash
+supabase start
+supabase db reset
+psql "$SUPABASE_DB_URL" -f supabase/tests/001_rls_matrix_validation.sql
+psql "$SUPABASE_DB_URL" -f supabase/tests/002_idempotency_and_audit_validation.sql
+psql "$SUPABASE_DB_URL" -f supabase/tests/003_policy_negative_cases.sql
+```
+
+Critérios de aprovação:
+
+- todos os endpoints críticos aparecem em `backend/shared/http/route-registry.js`;
+- actions de `backend/shared/contracts/api-actions.json` batem com método, path, role, escopo, idempotência e auditoria do registry;
+- handlers ainda não implementados retornam erro controlado, não executam mutação parcial;
+- browser não recebe service-role key;
+- SQL local/staging confirma RLS, idempotência e negações por role.
+
+## Sprint 17 validation
+
+Run the staging runtime static gate before any Supabase runtime deployment:
+
+```bash
+npm run audit:staging-runtime-readiness
+npm run audit:api-endpoint-readiness
+npm run audit:supabase-backend-readiness
+```
+
+Then validate `POST /auth/login`, `GET /auth/session`, `GET /users/me` and `GET /profiles/me` against Supabase local/staging with seeded users.
+
+## Sprint 18 validation
+
+Run the orders runtime static gate before enabling order API traffic in staging:
+
+```bash
+npm run audit:staging-orders-runtime
+npm run audit:staging-runtime-readiness
+npm run audit:api-endpoint-readiness
+npm run audit:supabase-backend-readiness
+```
+
+Manual staging validation after applying migrations/seeds:
+
+```txt
+1. Client token: GET /orders returns only client-owned orders.
+2. Professional token: GET /orders returns only professional-assigned orders.
+3. Professional token: POST /orders/:id/accept with x-idempotency-key succeeds for assigned order.
+4. Client token: POST /orders/:id/accept is denied.
+5. Support token: POST /orders/:id/status with x-idempotency-key succeeds.
+6. Mutating order route without x-idempotency-key returns DOKE_IDEMPOTENCY_REQUIRED.
+```
+
+## Sprint 19 — Staging messaging runtime validation
+
+Run after implementing or touching staging messaging runtime:
+
+```bash
+npm run audit:staging-messaging-runtime
+npm run audit:staging-orders-runtime
+npm run audit:staging-runtime-readiness
+npm run audit:api-endpoint-readiness
+```
+
+Supabase local/staging still needs real SQL execution before enabling frontend `dataProvider=api` for messaging.
+
+## Sprint 20 — Staging notifications runtime validation
+
+Run after implementing or touching staging notifications runtime:
+
+```bash
+npm run audit:staging-notifications-runtime
+npm run audit:staging-messaging-runtime
+npm run audit:staging-orders-runtime
+npm run audit:staging-runtime-readiness
+npm run audit:api-endpoint-readiness
+```
+
+Manual Supabase local/staging validation after applying migrations/seeds:
+
+```txt
+1. Professional token: GET /notifications returns only notifications where user_id is the professional.
+2. Professional token: POST /notifications/:id/read succeeds for own notification.
+3. Professional token: POST /notifications/:id/dismiss succeeds for own notification and stores dismissed metadata in data.
+4. Another client/professional token cannot read or dismiss that notification.
+5. Support token with service-role enabled can POST /notifications with x-idempotency-key.
+6. Support token with service-role enabled can PATCH /notifications/:id with x-idempotency-key.
+7. Create/update without x-idempotency-key returns DOKE_IDEMPOTENCY_REQUIRED.
+```
+
+Supabase local/staging still needs real SQL execution before enabling frontend `dataProvider=api` for notifications.
+
+## Sprint 21 wallet runtime validation
+
+- Runtime: `backend/modules/wallet/wallet-service.js` and `backend/modules/wallet/route-handlers.js`.
+- Admin finance routes: `backend/modules/admin/route-handlers.js`.
+- Gate: `npm run audit:staging-wallet-runtime`.
+- Scope: wallet, transactions, dashboard, receivables, bank accounts, withdrawals, disputes, receipts and admin audit events.
+
+## Validação Supabase staging E2E — Sprint 22
+
+Antes de ativar qualquer provider API no frontend, executar em ambiente local/staging:
+
+```bash
+npm run audit:staging-e2e-validation
+npm run validate:staging-e2e:dry-run
+DOKE_STAGING_API_URL="https://staging-api.example.local" \
+DOKE_STAGING_E2E_ALLOW_MUTATIONS=1 \
+npm run validate:staging-e2e
+psql "$SUPABASE_DB_URL" -f supabase/tests/004_runtime_e2e_postconditions.sql
+```
+
+Critérios de aceite:
+
+- client/professional/support/admin autenticam com tokens reais;
+- pedidos, conversas, notificações e carteira respondem pelo runtime staging;
+- ações sensíveis recusam chamada sem `x-idempotency-key`;
+- negações por role retornam erro controlado;
+- `api_idempotency_keys` e `admin_audit_events` têm sinais persistentes quando aplicável;
+- nenhum segredo service-role aparece em browser/frontend.
+
+## Sprint 23 validation — persistent idempotency and audit
+
+Run before any API canary:
+
+```bash
+npm run audit:runtime-idempotency-audit
+npm run audit:staging-e2e-validation
+npm run validate:staging-e2e:dry-run
+```
+
+Real local/staging validation also requires:
+
+```bash
+npm run validate:staging-e2e
+psql "$SUPABASE_DB_URL" -f supabase/tests/005_runtime_idempotency_audit_replay_validation.sql
+```
+
+Expected critical outcomes:
+
+- repeated same `x-idempotency-key` with identical payload replays the stored response;
+- same key with different payload returns `DOKE_IDEMPOTENCY_CONFLICT`;
+- `api_idempotency_keys.response_body` is stored for succeeded mutations;
+- `admin_audit_events` exists for audited support/admin and financial actions.
+
+## Supabase local/staging execution — Sprint 24
+
+Before any API canary, run:
+
+```bash
+npm run audit:supabase-local-staging-execution
+npm run validate:supabase-local-staging:dry-run
+```
+
+Then, only in local/staging with mutation consent:
+
+```bash
+SUPABASE_DB_URL="postgresql://..." \
+DOKE_STAGING_API_URL="https://staging-api.example.local" \
+DOKE_SUPABASE_VALIDATION_ALLOW_MUTATIONS=1 \
+DOKE_STAGING_E2E_ALLOW_MUTATIONS=1 \
+npm run validate:supabase-local-staging
+```
+
+This wraps SQL tests 001-005 and the HTTP E2E smoke. Do not treat the dry-run as proof of real Supabase validation.

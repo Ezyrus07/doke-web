@@ -8,6 +8,7 @@
   const repositories = ns.repositories || (ns.repositories = {});
 
   const STORAGE_KEY = 'doke.auth.users.v1';
+  const PROFILE_STORAGE_KEY = 'doke.auth.userProfiles.v1';
   const MOCK_USERS_URL = 'assets/data/mock-users.json';
   const MOCK_USERS_URL_FROM_AUTH = '../assets/data/mock-users.json';
 
@@ -44,6 +45,24 @@
       profession: 'Pintor residencial',
       passwordHash: DEMO_PASSWORD_HASH
     }
+    ,
+    {
+      id: 'user_suporte_demo',
+      name: 'Suporte Doke',
+      email: 'suporte@doke.local',
+      role: 'support',
+      type: 'support',
+      avatarInitials: 'SD',
+      initials: 'SD',
+      handle: 'suporte-demo',
+      city: 'Salvador',
+      state: 'BA',
+      points: 0,
+      verified: true,
+      isMockSupport: true,
+      mockSupport: true,
+      passwordHash: DEMO_PASSWORD_HASH
+    }
   ]);
 
   let seededUsersPromise = null;
@@ -57,9 +76,14 @@
   };
 
   const readLocalUsers = () => safeParse(window.localStorage.getItem(STORAGE_KEY), []);
+  const readLocalProfiles = () => safeParse(window.localStorage.getItem(PROFILE_STORAGE_KEY), {});
 
   const writeLocalUsers = (users) => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.isArray(users) ? users : []));
+  };
+
+  const writeLocalProfiles = (profiles) => {
+    window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles && typeof profiles === 'object' ? profiles : {}));
   };
 
   const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
@@ -82,7 +106,12 @@
     .replace(/^-+|-+$/g, '')
     .slice(0, 28);
 
-  const normalizeRole = (role) => role === 'professional' ? 'professional' : 'client';
+  const normalizeRole = (role) => {
+    const value = String(role || '').trim().toLowerCase();
+    if (value === 'professional' || value === 'pro' || value === 'worker') return 'professional';
+    if (value === 'support' || value === 'admin' || value === 'moderator') return value;
+    return 'client';
+  };
 
   const generateId = (prefix = 'user') => {
     if (window.crypto?.randomUUID) return `${prefix}_${window.crypto.randomUUID()}`;
@@ -103,11 +132,47 @@
     return `plain:${value}`;
   };
 
+  const normalizeProfile = (profile, user) => {
+    if (!profile || typeof profile !== 'object') return null;
+    const role = normalizeRole(profile.role || profile.type || user?.role || user?.type);
+    const name = normalizeText(profile.name || profile.displayName || user?.name || 'Perfil Doke');
+    const initials = profile.initials || profile.avatarInitials || user?.initials || user?.avatarInitials || getInitials(name);
+
+    return {
+      id: profile.id || profile.profileId || profile.providerProfileId || user?.providerProfileId || user?.id || generateId('profile'),
+      userId: profile.userId || profile.ownerId || user?.id || '',
+      role,
+      type: profile.type || role,
+      name,
+      handle: profile.handle || user?.handle || slugify(name) || 'perfil-doke',
+      initials,
+      avatarInitials: initials,
+      avatar: profile.avatar || profile.avatarUrl || user?.avatar || user?.avatarUrl || '',
+      avatarUrl: profile.avatarUrl || profile.avatar || user?.avatarUrl || user?.avatar || '',
+      coverUrl: profile.coverUrl || profile.cover || user?.coverUrl || '',
+      headline: profile.headline || profile.profession || user?.profession || '',
+      profession: profile.profession || profile.headline || user?.profession || '',
+      bio: profile.bio || user?.bio || '',
+      city: profile.city || user?.city || '',
+      state: profile.state || user?.state || '',
+      rating: Number.isFinite(Number(profile.rating)) ? Number(profile.rating) : Number.isFinite(Number(user?.rating)) ? Number(user.rating) : 0,
+      verified: profile.verified === true || user?.verified === true,
+      metrics: profile.metrics && typeof profile.metrics === 'object' ? profile.metrics : {},
+      publicUrl: profile.publicUrl || profile.publicProfileUrl || '',
+      ownerUrl: profile.ownerUrl || profile.ownerProfileUrl || '',
+      updatedAt: profile.updatedAt || ''
+    };
+  };
+
   const normalizeUser = (user) => {
     if (!user || typeof user !== 'object') return null;
     const role = normalizeRole(user.role || user.type);
     const name = normalizeText(user.name || user.displayName || user.email || 'Usuário Doke');
     const initials = user.initials || user.avatarInitials || getInitials(name);
+
+    const localProfiles = readLocalProfiles();
+    const savedProfile = user.id ? localProfiles[user.id] : null;
+    const profile = normalizeProfile(user.profile || user.activeProfile || savedProfile, { ...user, name, role, initials });
 
     return {
       ...user,
@@ -117,9 +182,21 @@
       phone: normalizePhone(user.phone),
       role,
       type: role,
-      handle: user.handle || slugify(name) || 'usuario-doke',
+      handle: user.handle || profile?.handle || slugify(name) || 'usuario-doke',
       initials,
       avatarInitials: initials,
+      avatar: user.avatar || user.avatarUrl || profile?.avatarUrl || '',
+      avatarUrl: user.avatarUrl || user.avatar || profile?.avatarUrl || '',
+      city: user.city || profile?.city || '',
+      state: user.state || profile?.state || '',
+      bio: user.bio || profile?.bio || '',
+      coverUrl: user.coverUrl || profile?.coverUrl || '',
+      profession: user.profession || profile?.profession || profile?.headline || '',
+      profile,
+      profiles: Array.isArray(user.profiles) ? user.profiles.map((item) => normalizeProfile(item, user)).filter(Boolean) : profile ? [profile] : [],
+      providerProfileId: user.providerProfileId || profile?.id || '',
+      publicProfileUrl: user.publicProfileUrl || profile?.publicUrl || (role === 'professional' ? 'perfil.html' : 'perfil-cliente.html'),
+      ownerProfileUrl: user.ownerProfileUrl || profile?.ownerUrl || (role === 'professional' ? 'perfil-profissional.html' : 'meu-perfil.html'),
       points: Number.isFinite(Number(user.points)) ? Number(user.points) : 0,
       createdAt: user.createdAt || user.creatédAt || new Date().toISOString()
     };
@@ -226,6 +303,48 @@
     return user;
   };
 
+
+  const updateCurrentUser = async (userId, patch) => {
+    const id = String(userId || '').trim();
+    if (!id) throw new Error('Usuário atual não encontrado para atualização.');
+    const current = await findById(id);
+    if (!current) throw new Error('Conta não encontrada para atualização.');
+
+    const localUsers = readLocalUsers().map(normalizeUser).filter(Boolean);
+    const index = localUsers.findIndex((user) => user.id === id);
+    const nextUser = normalizeUser({
+      ...current,
+      ...(patch || {}),
+      id,
+      updatedAt: new Date().toISOString()
+    });
+
+    if (index >= 0) localUsers[index] = nextUser;
+    else localUsers.push(nextUser);
+    writeLocalUsers(localUsers);
+    return nextUser;
+  };
+
+  const updateCurrentProfile = async (userId, patch) => {
+    const id = String(userId || '').trim();
+    if (!id) throw new Error('Usuário atual não encontrado para atualizar perfil.');
+    const current = await findById(id);
+    if (!current) throw new Error('Conta não encontrada para atualizar perfil.');
+
+    const profiles = readLocalProfiles();
+    const nextProfile = normalizeProfile({
+      ...(current.profile || {}),
+      ...(profiles[id] || {}),
+      ...(patch || {}),
+      userId: id,
+      updatedAt: new Date().toISOString()
+    }, current);
+    profiles[id] = nextProfile;
+    writeLocalProfiles(profiles);
+
+    return updateCurrentUser(id, { profile: nextProfile });
+  };
+
   const updatePassword = async (userId, password) => {
     const localUsers = readLocalUsers().map(normalizeUser).filter(Boolean);
     const index = localUsers.findIndex((user) => user.id === userId);
@@ -251,15 +370,19 @@
 
   repositories.users = Object.freeze({
     STORAGE_KEY,
+    PROFILE_STORAGE_KEY,
     list,
     findByLogin,
     findById,
     create,
+    updateCurrentUser,
+    updateCurrentProfile,
     updatePassword,
     hashPassword,
     isEmail,
     normalizeEmail,
     normalizePhone,
+    normalizeProfile,
     toPublicUser
   });
 })();

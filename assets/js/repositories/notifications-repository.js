@@ -263,6 +263,15 @@
     return Promise.resolve(clone(normalized));
   }
 
+
+  function getById(id) {
+    var notificationId = normalizeText(id);
+    if (!notificationId) return Promise.resolve(null);
+    return load({ fresh: true }).then(function (items) {
+      return clone((items || []).find(function (item) { return String(item.id) === String(notificationId); }) || null);
+    });
+  }
+
   function create(payload) {
     payload = payload || {};
     var normalized = normalizeNotification(payload);
@@ -332,6 +341,7 @@
     load: load,
     list: list,
     listLocal: listLocal,
+    getById: getById,
     save: save,
     create: create,
     update: update,

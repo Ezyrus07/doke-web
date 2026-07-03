@@ -23,9 +23,18 @@
   const nowIso = () => new Date().toISOString();
 
   const normalizeRole = (role) => {
-    if (role === 'professional') return 'professional';
-    if (role === 'client') return 'client';
-    return role || 'guest';
+    if (Doke.authDomainContract?.normalizeRole) return Doke.authDomainContract.normalizeRole(role);
+    const value = String(role || '').trim().toLowerCase();
+    if (value === 'pro' || value === 'worker') return 'professional';
+    if (value === 'user' || value === 'customer') return 'client';
+    if (['client', 'professional', 'moderator', 'support', 'admin'].includes(value)) return value;
+    return 'guest';
+  };
+
+  const normalizeAccountStatus = (status) => {
+    if (Doke.authDomainContract?.normalizeAccountStatus) return Doke.authDomainContract.normalizeAccountStatus(status);
+    const value = String(status || '').trim().toLowerCase();
+    return ['active', 'pending_review', 'pending_email', 'suspended', 'disabled'].includes(value) ? value : 'active';
   };
 
   const getInitials = (name) => {
@@ -39,10 +48,43 @@
     return parts.map((part) => part.charAt(0).toUpperCase()).join('');
   };
 
+  const normalizeProfile = (profile, user) => {
+    if (!profile || typeof profile !== 'object') return null;
+    const baseName = user?.name || profile.name || profile.displayName || 'Perfil Doke';
+    const role = normalizeRole(profile.role || profile.type || user?.role || user?.type);
+    return {
+      id: profile.id || profile.profileId || profile.providerProfileId || user?.providerProfileId || user?.id || '',
+      userId: profile.userId || profile.ownerId || user?.id || '',
+      role,
+      type: profile.type || role,
+      name: String(profile.name || profile.displayName || baseName).trim(),
+      handle: profile.handle || user?.handle || '',
+      avatar: profile.avatar || profile.avatarUrl || user?.avatar || user?.avatarUrl || '',
+      avatarUrl: profile.avatarUrl || profile.avatar || user?.avatarUrl || user?.avatar || '',
+      avatarInitials: profile.avatarInitials || profile.initials || user?.avatarInitials || user?.initials || getInitials(baseName),
+      initials: profile.initials || profile.avatarInitials || user?.initials || user?.avatarInitials || getInitials(baseName),
+      coverUrl: profile.coverUrl || profile.cover || user?.coverUrl || '',
+      headline: profile.headline || profile.profession || user?.profession || '',
+      bio: profile.bio || user?.bio || '',
+      city: profile.city || user?.city || '',
+      state: profile.state || user?.state || '',
+      location: profile.location || [profile.city || user?.city, profile.state || user?.state].filter(Boolean).join(', '),
+      rating: Number.isFinite(Number(profile.rating)) ? Number(profile.rating) : Number.isFinite(Number(user?.rating)) ? Number(user.rating) : 0,
+      verified: profile.verified === true || user?.verified === true,
+      metrics: profile.metrics && typeof profile.metrics === 'object' ? profile.metrics : {},
+      publicUrl: profile.publicUrl || profile.publicProfileUrl || '',
+      ownerUrl: profile.ownerUrl || profile.ownerProfileUrl || '',
+      updatedAt: profile.updatedAt || ''
+    };
+  };
+
   const normalizeUser = (user) => {
     if (!user || typeof user !== 'object') return null;
     const role = normalizeRole(user.role || user.type);
     const name = String(user.name || user.displayName || user.email || 'Usuário Doke').trim();
+
+    const sourceProfile = user.profile || user.activeProfile || user.publicProfile || user.professionalProfile || user.clientProfile || null;
+    const profile = normalizeProfile(sourceProfile, { ...user, name, role });
 
     return {
       id: user.id || `user_${Date.now()}`,
@@ -51,15 +93,28 @@
       phone: user.phone || '',
       role,
       type: user.type || role,
-      handle: user.handle || '',
-      avatar: user.avatar || user.avatarUrl || '',
-      avatarUrl: user.avatarUrl || user.avatar || '',
-      initials: user.initials || user.avatarInitials || getInitials(name),
-      avatarInitials: user.avatarInitials || user.initials || getInitials(name),
-      city: user.city || '',
-      state: user.state || '',
+      handle: user.handle || profile?.handle || '',
+      avatar: user.avatar || user.avatarUrl || profile?.avatarUrl || '',
+      avatarUrl: user.avatarUrl || user.avatar || profile?.avatarUrl || '',
+      initials: user.initials || user.avatarInitials || profile?.initials || getInitials(name),
+      avatarInitials: user.avatarInitials || user.initials || profile?.avatarInitials || getInitials(name),
+      city: user.city || profile?.city || '',
+      state: user.state || profile?.state || '',
       points: Number.isFinite(Number(user.points)) ? Number(user.points) : 0,
-      verified: Boolean(user.verified),
+      rating: Number.isFinite(Number(user.rating)) ? Number(user.rating) : profile?.rating || 0,
+      verified: Boolean(user.verified || profile?.verified),
+      accountStatus: normalizeAccountStatus(user.accountStatus || user.status),
+      providerProfileId: user.providerProfileId || user.professionalId || profile?.id || '',
+      profileKind: user.profileKind || profile?.type || role,
+      profile,
+      profiles: Array.isArray(user.profiles)
+        ? user.profiles.map((item) => normalizeProfile(item, { ...user, name, role })).filter(Boolean)
+        : profile ? [profile] : [],
+      publicProfileUrl: user.publicProfileUrl || profile?.publicUrl || (role === 'professional' ? 'perfil.html' : 'perfil-cliente.html'),
+      ownerProfileUrl: user.ownerProfileUrl || profile?.ownerUrl || (role === 'professional' ? 'perfil-profissional.html' : 'meu-perfil.html'),
+      bio: user.bio || profile?.bio || '',
+      coverUrl: user.coverUrl || profile?.coverUrl || '',
+      profession: user.profession || profile?.headline || '',
       isMockSupport: user.isMockSupport === true,
       mockSupport: user.mockSupport === true
     };
@@ -71,10 +126,16 @@
     if (!user) return null;
 
     return {
-      provider: session.provider || 'mock',
+      provider: Doke.authDomainContract?.normalizeAuthProvider
+        ? Doke.authDomainContract.normalizeAuthProvider(session.provider || session.authProvider || 'mock')
+        : session.provider || session.authProvider || 'mock',
       token: session.token || `mock-${Date.now()}`,
+      refreshToken: session.refreshToken || '',
       remember: session.remember !== false,
       user,
+      accountStatus: normalizeAccountStatus(session.accountStatus || user.accountStatus),
+      sessionStatus: session.sessionStatus || 'active',
+      expiresAt: session.expiresAt || '',
       issuedAt: session.issuedAt || session.createdAt || session.creatédAt || nowIso(),
       updatedAt: session.updatedAt || nowIso()
     };
@@ -100,19 +161,33 @@
     const permissions = Doke.permissions?.permissionsForRole
       ? Doke.permissions.permissionsForRole(role)
       : [];
+    const accountStatus = session?.accountStatus || user?.accountStatus || 'active';
+    const sessionStatus = user ? session?.sessionStatus || 'active' : 'anonymous';
+    const profile = user?.profile || null;
+    const canAccessAdmin = Doke.permissions?.canAccessAdmin
+      ? Doke.permissions.canAccessAdmin(user)
+      : Boolean(user && (role === 'admin' || role === 'support' || user.isMockSupport || user.mockSupport));
 
     if (Doke.state?.merge) {
       Doke.state.merge('auth', {
         status: user ? 'authenticated' : 'anonymous',
+        sessionStatus,
+        accountStatus,
+        provider: session?.provider || 'mock',
         user,
-        profile: user,
+        profile: profile || user,
+        profiles: user?.profiles || [],
         role,
-        permissions
+        permissions,
+        canAccessAdmin
       });
     }
 
     document.documentElement.dataset.authenticated = String(Boolean(user));
     document.documentElement.dataset.authRole = role;
+    document.documentElement.dataset.authAccountStatus = accountStatus;
+    document.documentElement.dataset.authSessionStatus = sessionStatus;
+    document.documentElement.dataset.authCanAccessAdmin = String(canAccessAdmin);
   };
 
   const notify = (session) => {
@@ -156,9 +231,12 @@
   };
 
   const setCurrentUser = (user, meta = {}) => write({
-    provider: meta.provider || 'mock',
+    provider: meta.provider || meta.authProvider || 'mock',
     token: meta.token || `mock-${Date.now()}`,
+    refreshToken: meta.refreshToken || '',
     remember: meta.remember !== false,
+    sessionStatus: meta.sessionStatus || 'active',
+    expiresAt: meta.expiresAt || '',
     user
   });
 
@@ -166,10 +244,47 @@
   const getSession = () => read();
   const getCurrentUser = () => read()?.user || null;
   const getUser = getCurrentUser;
+  const getCurrentProfile = () => {
+    const user = getCurrentUser();
+    return user?.profile || null;
+  };
   const isAuthenticated = () => Boolean(getCurrentUser());
   const hasRole = (role) => {
     const currentRole = getCurrentUser()?.role;
     return Array.isArray(role) ? role.includes(currentRole) : currentRole === role;
+  };
+  const hasPermission = (permission) => {
+    const user = getCurrentUser();
+    return Doke.permissions?.has ? Doke.permissions.has(permission, user?.role || 'guest') : false;
+  };
+  const canAccessAdmin = () => {
+    const user = getCurrentUser();
+    return Doke.permissions?.canAccessAdmin
+      ? Doke.permissions.canAccessAdmin(user)
+      : Boolean(user && (user.role === 'admin' || user.role === 'support' || user.isMockSupport || user.mockSupport));
+  };
+  const getAuthContext = () => {
+    const session = read();
+    const user = session?.user || null;
+    const role = user?.role || 'guest';
+    const permissions = Doke.permissions?.permissionsForRole ? Doke.permissions.permissionsForRole(role) : [];
+    const profile = user?.profile || null;
+    return Object.freeze({
+      authenticated: Boolean(user),
+      user,
+      profile,
+      profiles: user?.profiles || [],
+      role,
+      permissions,
+      provider: session?.provider || 'mock',
+      accountStatus: session?.accountStatus || user?.accountStatus || 'active',
+      sessionStatus: user ? session?.sessionStatus || 'active' : 'anonymous',
+      canAccessAdmin: canAccessAdmin(),
+      isInternal: Doke.permissions?.isInternalRole ? Doke.permissions.isInternalRole(role) : ['moderator', 'support', 'admin'].includes(role),
+      isSupport: Doke.permissions?.isSupportRole ? Doke.permissions.isSupportRole(role) : ['support', 'admin'].includes(role),
+      publicProfileUrl: user?.publicProfileUrl || profile?.publicUrl || '',
+      ownerProfileUrl: user?.ownerProfileUrl || profile?.ownerUrl || ''
+    });
   };
   const bootstrap = () => {
     const session = read();
@@ -197,12 +312,17 @@
     getSession,
     getCurrentUser,
     getUser,
+    getCurrentProfile,
     bootstrap,
     setCurrentUser,
     isAuthenticated,
     hasRole,
+    hasPermission,
+    canAccessAdmin,
+    getAuthContext,
     subscribe,
     normalizeUser,
+    normalizeProfile,
     normalizeSession
   });
 
