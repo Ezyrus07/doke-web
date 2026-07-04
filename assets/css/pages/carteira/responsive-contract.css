@@ -520,24 +520,24 @@
     align-items: center;
     min-height: 56px;
     padding: 10px 12px;
-    border: 1px solid rgba(24, 75, 118, 0.09);
+    border: 1px solid transparent;
     border-radius: 16px;
     background: rgba(248, 252, 255, 0.86);
     box-shadow: none;
   }
 
   body[data-page="carteira"] .wallet-hero-stat--escrow {
-    border-color: rgba(214, 158, 46, 0.22);
+    border-color: transparent;
     background: rgba(255, 248, 235, 0.92);
   }
 
   body[data-page="carteira"] .wallet-hero-stat--payout {
-    border-color: rgba(42, 95, 144, 0.14);
+    border-color: transparent;
     background: rgba(245, 250, 255, 0.94);
   }
 
   body[data-page="carteira"] .wallet-hero-stat--status {
-    border-color: rgba(41, 143, 127, 0.18);
+    border-color: transparent;
     background: rgba(239, 251, 248, 0.94);
   }
 
@@ -1395,6 +1395,7 @@
   body[data-page="carteira"] .wallet-statement-search,
   body[data-page="carteira"] .wallet-statement-export {
     min-height: 42px;
+    border-color: transparent;
     border-radius: 14px;
   }
 
@@ -1693,4 +1694,17 @@
   body[data-page="carteira"] .wallet-transaction__chevron {
     display: none;
   }
+}
+
+/* Wallet responsive filled pills/statuses/tabs: keep borders suppressed after responsive imports. */
+body[data-page="carteira"] :is(.wallet-eyebrow, .wallet-receivables-status, .wallet-receivable-status, .wallet-tab.doke-tab-pill, .wallet-analytics-period__button, .wallet-filter-chip, .wallet-panel__badge),
+body[data-page="carteira"] :is(.wallet-eyebrow, .wallet-receivables-status, .wallet-receivable-status, .wallet-tab.doke-tab-pill, .wallet-analytics-period__button, .wallet-filter-chip, .wallet-panel__badge):where(:hover, :focus-visible, .is-active, [aria-pressed="true"]) {
+  border-color: transparent;
+}
+
+
+/* Responsive wallet cascade must keep filled marks borderless. */
+body[data-page="carteira"] :is(.wallet-kpi__icon, .wallet-transaction__icon, .wallet-hero-stat__icon, .wallet-eyebrow, .wallet-receivables-status, .wallet-receivable-status, .wallet-tab, .wallet-analytics-period__button, .wallet-filter-chip, .wallet-panel__badge),
+body[data-page="carteira"] :is(.wallet-kpi__icon, .wallet-transaction__icon, .wallet-hero-stat__icon, .wallet-eyebrow, .wallet-receivables-status, .wallet-receivable-status, .wallet-tab, .wallet-analytics-period__button, .wallet-filter-chip, .wallet-panel__badge):where(:hover, :focus-visible, .is-active, [aria-pressed="true"]) {
+  border-color: transparent;
 }

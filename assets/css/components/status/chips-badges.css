@@ -107,3 +107,16 @@
   font-size: 0.82rem;
   font-weight: 700;
 }
+
+
+/* Border contrast policy: status badges are separated by fill, not stroke. */
+:where(.doke-badge, [data-badge]) {
+  border-color: transparent;
+}
+
+/* Contrast-first border policy for filled status chips. */
+:where(.doke-chip, [data-chip], .doke-badge, [data-badge]),
+:where(.doke-chip, [data-chip], .doke-badge, [data-badge]):where(:hover, :focus-visible, .is-active),
+:where(.doke-chip--success, [data-chip="success"], .doke-chip--warning, [data-chip="warning"], .doke-chip--muted, [data-chip="muted"], .doke-chip--primary, [data-chip="primary"], .doke-chip--content, [data-chip-size="content"], .doke-badge--success, [data-badge="success"], .doke-badge--verified, [data-badge="verified"], .doke-badge--danger, [data-badge="danger"], .doke-badge--content, [data-badge-size="content"]) {
+  border-color: transparent;
+}

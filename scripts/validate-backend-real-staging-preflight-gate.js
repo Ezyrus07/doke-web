@@ -56,17 +56,32 @@ function runLocalContracts() {
     return;
   }
   const commands = [
-    ['npm', ['run', 'audit:backend-domain-canary-runtime']],
-    ['npm', ['run', 'validate:backend-domain-canary:local-runtime']],
-    ['npm', ['run', 'audit:orders-write-frontend-rollback-gate']],
-    ['npm', ['run', 'validate:orders-write-frontend-rollback:gate']]
+    ['audit:backend-domain-canary-runtime', 'scripts/audit-backend-domain-canary-runtime.js'],
+    ['validate:backend-domain-canary:local-runtime', 'scripts/validate-backend-domain-canary-local-runtime.js'],
+    ['audit:orders-write-frontend-rollback-gate', 'scripts/audit-orders-write-frontend-rollback-gate.js'],
+    ['validate:orders-write-frontend-rollback:gate', 'scripts/validate-orders-write-frontend-rollback-gate.js']
   ];
-  commands.forEach(([command, commandArgs]) => {
-    const result = spawnSync(command, commandArgs, { cwd: root, stdio: 'pipe', encoding: 'utf8' });
-    const ok = result.status === 0;
-    record(`local_contract.${commandArgs.join(' ')}`, ok);
-    if (!ok) report.failures.push(`${command} ${commandArgs.join(' ')} failed: ${result.stderr || result.stdout}`);
+  commands.forEach(([scriptName, scriptPath]) => {
+    const result = runNodeScript(scriptPath);
+    const ok = result.status === 0 && !result.error;
+    record(`local_contract.run ${scriptName}`, ok);
+    if (!ok) report.failures.push(`node ${scriptPath} failed: ${formatCommandFailure(result)}`);
   });
+}
+
+function runNodeScript(scriptPath) {
+  return spawnSync(process.execPath, [scriptPath], { cwd: root, stdio: 'pipe', encoding: 'utf8', shell: false });
+}
+
+function formatCommandFailure(result) {
+  if (result.error) return result.error.message;
+  const stderr = String(result.stderr || '').trim();
+  if (stderr) return stderr;
+  const stdout = String(result.stdout || '').trim();
+  if (stdout) return stdout;
+  if (typeof result.status === 'number') return `exit code ${result.status}`;
+  if (result.signal) return `terminated by signal ${result.signal}`;
+  return 'unknown command failure';
 }
 
 function validateEnvironment() {
@@ -89,9 +104,13 @@ function isSafeNonProductionTarget(value, marker) {
   try {
     const parsed = new URL(value);
     const target = `${parsed.hostname} ${parsed.pathname}`.toLowerCase();
+    const normalizedMarker = String(marker || '').trim().toLowerCase();
+    const explicitStagingMarker = normalizedMarker === 'staging';
+
     if (/prod|production|api\.doke(\.|$)/.test(target)) return false;
     if (/localhost|127\.0\.0\.1|local|staging|stage|stg|preview|sandbox|canary/.test(target)) return true;
-    return marker && target.includes(String(marker).toLowerCase());
+    if (explicitStagingMarker) return true;
+    return Boolean(normalizedMarker) && target.includes(normalizedMarker);
   } catch (error) {
     return false;
   }
@@ -116,7 +135,8 @@ function validateRequiredReports() {
     }
     try {
       const payload = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-      const ready = payload.status === status || payload.activationStatus === status;
+      const payloadStatus = payload.status || payload.activationStatus || payload.promotionStatus || payload.rollbackStatus || payload.validationStatus || payload.executionStatus || '';
+      const ready = payloadStatus === status;
       record(`report.${file}.status`, ready);
       if (!ready) ok = false;
     } catch (error) {

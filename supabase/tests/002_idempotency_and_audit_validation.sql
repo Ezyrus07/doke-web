@@ -4,6 +4,14 @@
 
 begin;
 
+-- Execute the smoke claim as the controlled professional identity. The
+-- production function correctly rejects unauthenticated callers.
+select set_config(
+  'request.jwt.claim.sub',
+  '22222222-2222-4222-8222-222222222222',
+  true
+);
+
 -- claim_idempotency_key should create one canonical claim per key/action/hash.
 select public.claim_idempotency_key(
   'doke-sprint-16-smoke-key',

@@ -82,7 +82,7 @@
   gap: var(--doke-control-pill-gap, 9px);
   min-height: var(--doke-control-pill-height, var(--control-height-sm));
   padding: 0 18px;
-  border: var(--doke-control-pill-border, var(--border-muted));
+  border: 1px solid transparent;
   border-radius: var(--doke-control-pill-radius, var(--radius-pill));
   background: var(--doke-control-pill-bg, rgba(255, 255, 255, 0.94));
   color: var(--doke-control-pill-text, #15598f);
@@ -107,7 +107,7 @@
 }
 
 .doke-filter-pill[aria-expanded="true"] {
-  border-color: var(--doke-control-pill-filter-active-border, rgba(25, 200, 184, 0.34));
+  border-color: transparent;
   background: var(--doke-control-pill-filter-active-bg, #e8fbf5);
   color: var(--doke-control-pill-filter-active-text, #08796d);
 }
@@ -120,7 +120,7 @@
 @media (hover: hover) and (pointer: fine) {
   .doke-filter-pill:hover {
     transform: translateY(-1px);
-    border-color: var(--doke-control-pill-hover-border, rgba(31, 101, 173, 0.22));
+    border-color: transparent;
     box-shadow: var(--doke-control-pill-hover-shadow, 0 12px 24px rgba(29, 56, 88, 0.075));
   }
 }
@@ -157,4 +157,18 @@
     width: 16px;
     height: 16px;
   }
+}
+
+
+/* Filter trigger pills use fill contrast; keep them borderless by default. */
+.doke-filter-pill {
+  border-color: transparent;
+}
+
+
+/* Border contrast policy: filled filter pills should not regain outlines on hover/active. */
+.doke-filter-pill,
+.doke-filter-pill[aria-expanded="true"],
+.doke-filter-pill:is(:hover, :focus-visible) {
+  border-color: transparent;
 }

@@ -181,6 +181,7 @@ function record(name, status, details) {
 }
 
 function maybeWriteReport() {
+  report.status = report.promotionStatus;
   if (!writeReport) return;
   const outputPath = process.env[ENV.promotionReportPath] || DEFAULT_REPORT_PATH;
   fs.mkdirSync(path.dirname(path.join(root, outputPath)), { recursive: true });

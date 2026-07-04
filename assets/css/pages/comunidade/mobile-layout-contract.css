@@ -395,7 +395,7 @@
     padding-inline: 14px;
     border-radius: 999px;
     background: #fff;
-    border: 1px solid rgba(205, 220, 235, .85);
+    border: 1px solid transparent;
     color: #56708c;
     box-shadow: 0 8px 18px rgba(26, 64, 102, .05);
     font-size: .78rem;
@@ -2731,6 +2731,12 @@
 }
 
 
+/* Comunidade — ações contrastadas sem stroke redundante.
+   Botões/links brancos sobre fundo azulado/cinza já têm contraste e sombra. */
+body[data-page="comunidade"].communities-page-shell .communities-discovery-v2 :is(.communities-v2-section__heading a, .community-side-card-v2__footer-link, .community-open-button, .community-card-v2__button) {
+  border-color: transparent;
+}
+
 /* Comunidade v90 — responsive header contrast and title color parity.
    Responsibility: normalize section-title color and contextual header contrast
    across tablet/mobile without touching global header or sidebar contracts. */
@@ -2844,7 +2850,7 @@ body[data-page="comunidade"].communities-page-shell .communities-discovery-v2 .c
   min-height: 36px;
   margin: 0;
   padding: 0 14px;
-  border: 1px solid rgba(24, 75, 118, 0.10);
+  border: 1px solid transparent;
   border-radius: 999px;
   background: #fff;
   color: #174d82;
@@ -2890,7 +2896,7 @@ body[data-page="comunidade"].communities-page-shell .communities-discovery-v2 :i
   min-height: 36px;
   margin: 0;
   padding: 0 16px;
-  border: 1px solid rgba(24, 75, 118, 0.10);
+  border: 1px solid transparent;
   border-radius: 999px;
   background: #f7fbff;
   color: #1261a0;
@@ -3006,4 +3012,22 @@ body[data-page="comunidade"].communities-page-shell .app-header.app-header--comm
 body[data-page="comunidade"].communities-page-shell .app-header.app-header--communities .page-header-context__action:is(.is-view-active, [aria-expanded="true"]) svg [fill="currentColor"] {
   fill: currentColor;
   stroke: none;
+}
+
+/* Comunidade — regra final de stroke por contraste.
+   Superfícies/botões em cor própria sobre o fundo azulado da página não desenham borda.
+   Campos, headers e divisores não entram neste seletor. */
+body[data-page="comunidade"].communities-page-shell .communities-discovery-v2 :is(
+  .community-continue-card,
+  .community-card-v2,
+  .communities-empty-v2,
+  .community-side-card-v2,
+  .communities-filter,
+  .community-open-button,
+  .community-card-v2__button,
+  .communities-v2-section__heading a,
+  .community-side-card-v2__footer-link,
+  .communities-empty-v2__button
+) {
+  border-color: transparent;
 }

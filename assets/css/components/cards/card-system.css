@@ -45,11 +45,19 @@
 .wallet-bank-card,
 .notification-card {
   background: var(--doke-card-bg);
-  border: var(--card-border, 1px solid var(--doke-card-border));
+  border: var(--card-border, 1px solid transparent);
   border-radius: var(--doke-card-radius-lg);
   box-shadow: var(--doke-card-shadow);
   color: var(--doke-card-text);
   min-width: 0;
+}
+
+/* Cards de primeiro nível vivem sobre fundos azulados/cinzas e se separam por
+   contraste + sombra. Cards aninhados em superfícies brancas ainda mantêm stroke
+   para preservar hierarquia sem depender só de sombra. */
+:where(.doke-card, .service-card, .order-card, .profile-card, .pro-card, .recommendation-card, .community-member-card, .wallet-summary-card, .wallet-manage-card, .wallet-bank-card, .notification-card)
+  :where(.doke-card, .service-card, .order-card, .profile-card, .pro-card, .recommendation-card, .community-member-card, .wallet-summary-card, .wallet-manage-card, .wallet-bank-card, .notification-card) {
+  border-color: var(--doke-card-border);
 }
 
 .doke-card,
@@ -86,7 +94,7 @@
 .recommendation-card:hover,
 .community-member-card:hover,
 .notification-card:hover {
-  border-color: var(--doke-card-border);
+  border-color: transparent;
   box-shadow: var(--doke-card-shadow-hover);
   transform: translateY(-1px);
 }
@@ -563,7 +571,7 @@
 }
 
 :is(.service-card, .worker-card, .media-card, .profile-card, .result-card, .community-card, .recommendation-card, .comparison-card, .video-card) {
-  border: var(--card-border, 1px solid var(--doke-card-border, rgba(116, 145, 175, .14)));
+  border: var(--card-border, 1px solid transparent);
   border-radius: var(--doke-card-radius-lg, var(--card-radius-lg, 18px));
   background: var(--doke-card-bg, #fff);
   box-shadow: var(--doke-card-shadow, var(--card-shadow, 0 8px 24px rgba(15, 45, 75, .045)));

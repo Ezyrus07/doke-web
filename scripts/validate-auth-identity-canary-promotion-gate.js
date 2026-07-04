@@ -156,7 +156,7 @@ function spawnCommand(bin, parts) {
       cwd: root,
       env: process.env,
       stdio: ['ignore', 'pipe', 'pipe'],
-      shell: false
+      shell: process.platform === 'win32'
     });
     let stdout = '';
     let stderr = '';
@@ -260,6 +260,7 @@ function tail(value) {
 }
 
 function maybeWriteReport() {
+  report.status = report.promotionStatus;
   if (!writeReport) return;
   const target = path.join(root, process.env[ENV.reportPath] || DEFAULT_REPORT_PATH);
   fs.mkdirSync(path.dirname(target), { recursive: true });

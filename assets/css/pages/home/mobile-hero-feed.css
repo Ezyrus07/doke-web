@@ -216,7 +216,7 @@ html.home-index-root body.home-index-shell .home-search-hero__leading-filter{
     background: rgba(255, 255, 255, 0.96);
     border: var(--border-soft);
     color: var(--home-mobile-blue);
-    box-shadow: 0 8px 18px rgba(27, 61, 98, 0.07);
+    box-shadow: none;
   }
 
   html.home-index-root body.home-index-shell .home-catégory__label{
@@ -1899,4 +1899,10 @@ html.home-index-root body.home-index-shell .filter-chip{
     flex: 0 1 auto;
     scroll-snap-align: unset;
   }
+}
+
+/* Contrast-first section action: filled action pill stays borderless in this page cascade. */
+body :is(.section-heading__link, .detail-section__header > a, .detail-section__header--row > a, .results-related__header > a):where(:not(.doke-outline-action)),
+body :is(.section-heading__link, .detail-section__header > a, .detail-section__header--row > a, .results-related__header > a):where(:hover, :focus-visible, :active) {
+  border-color: transparent;
 }

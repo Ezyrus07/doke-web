@@ -151,7 +151,7 @@
 .community-open-button {
   min-height: var(--control-height-sm);
   padding-inline: 18px;
-  border: 0;
+  border: 1px solid var(--community-photo-soft-border);
   border-radius: 13px;
   background: #fff;
   box-shadow: 0 10px 20px rgba(28, 76, 126, .08);
@@ -412,7 +412,7 @@
 .communities-empty-v2__button {
   min-height: var(--control-height-sm);
   padding: 0 17px;
-  border: 0;
+  border: 1px solid var(--community-photo-soft-border);
   border-radius: var(--radius-sm);
   background: #fff;
   box-shadow: 0 10px 22px rgba(26, 62, 105, .06);
@@ -423,6 +423,7 @@
 }
 
 .communities-empty-v2__button--create {
+  border-color: transparent;
   background: #ecfbf6;
   color: #168267;
 }
@@ -965,4 +966,9 @@
 
   .communities-discovery-v2 .community-card-v2__stats { grid-row: 3; }
   .communities-discovery-v2 .community-card-v2__button { grid-row: 4; }
+}
+
+/* Border logic: keep contrast-only surfaces clean, but preserve linework for white controls sitting on white card bodies. */
+.communities-discovery-v2 :is(.communities-v2-section__heading a, .community-side-card-v2__footer-link, .community-card-v2__button) {
+  border-color: transparent;
 }

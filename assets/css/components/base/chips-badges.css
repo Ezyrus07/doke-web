@@ -104,3 +104,16 @@
   stroke-linejoin: round;
   fill: none;
 }
+
+
+/* Border contrast policy: badges/chips with their own fill do not need outlines. */
+:where(.doke-badge, .badge, .doke-chip, .chip),
+:where(.doke-badge--primary, .badge--primary, .doke-badge--success, .badge--success, .doke-badge--warning, .badge--warning, .doke-badge--danger, .badge--danger) {
+  border-color: transparent;
+}
+
+/* Contrast-first border policy for filled chips/badges. */
+:where(.doke-badge, .badge, .doke-chip, .chip):where(:hover, :focus-visible, .is-active),
+:where(.doke-badge--primary, .badge--primary, .doke-badge--success, .badge--success, .doke-badge--warning, .badge--warning, .doke-badge--danger, .badge--danger, .doke-chip--primary, .doke-chip--success, .doke-chip--muted) {
+  border-color: transparent;
+}

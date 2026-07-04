@@ -1,0 +1,59 @@
+{
+  "version": "20260704-sprint286-300",
+  "objective": "Smallest safe local flow for private beta evidence on Windows/VS Code.",
+  "phases": [
+    {
+      "id": "install_browser_once",
+      "title": "Install or resolve Playwright Chromium",
+      "command": "npm run resolve:playwright-browser-policy:report",
+      "env": { "DOKE_PLAYWRIGHT_MANAGED_CHROMIUM_INSTALL": "1" },
+      "expectedReport": "reports/generated/playwright-browser-policy-resolution-report.json"
+    },
+    {
+      "id": "capture_visual_evidence",
+      "title": "Capture visual screenshots and layout evidence",
+      "command": "npm run execute:playwright-visual-responsive-evidence:report",
+      "env": {
+        "DOKE_VISUAL_RESPONSIVE_EVIDENCE_EXECUTE": "1",
+        "DOKE_VISUAL_EVIDENCE_CAPTURE_ONLY": "1"
+      },
+      "expectedReport": "reports/generated/playwright-visual-responsive-evidence-report.json"
+    },
+    {
+      "id": "build_visual_matrix",
+      "title": "Build visual matrix and review package",
+      "command": "npm run execute:visual-correction-matrix:report",
+      "expectedReport": "reports/generated/visual-correction-matrix-report.json"
+    },
+    {
+      "id": "run_quality_evidence",
+      "title": "Run Lighthouse/accessibility evidence",
+      "command": "npm run execute:lighthouse-a11y-workstation:report",
+      "expectedReport": "reports/generated/lighthouse-a11y-workstation-report.json"
+    },
+    {
+      "id": "build_quality_matrix",
+      "title": "Build quality correction matrix",
+      "command": "npm run execute:quality-correction-matrix:report",
+      "expectedReport": "reports/generated/quality-correction-matrix-report.json"
+    },
+    {
+      "id": "verify_staging_secrets",
+      "title": "Verify staging secrets/env without printing secrets",
+      "command": "npm run execute:staging-external-secrets-checklist:report",
+      "expectedReport": "reports/generated/staging-external-secrets-checklist-report.json"
+    },
+    {
+      "id": "one_screen_summary",
+      "title": "Generate one-screen beta summary",
+      "command": "npm run execute:private-beta-one-screen-summary:report",
+      "expectedReport": "reports/generated/private-beta-one-screen-summary-report.json"
+    },
+    {
+      "id": "human_rc_package",
+      "title": "Generate human RC package",
+      "command": "npm run execute:human-release-candidate-package:report",
+      "expectedReport": "reports/generated/human-release-candidate-package-report.json"
+    }
+  ]
+}

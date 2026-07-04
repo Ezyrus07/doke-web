@@ -933,3 +933,114 @@ The backend-real track now has local evidence generation and release candidate a
 
 ## Sprint 136–150 private beta release closure
 The backend-real path now hands off to release evidence gates: Playwright visual evidence, browser quality evidence, safe staging binding, operator rehearsal and final go/no-go. These gates remain blocked until real browser/staging evidence exists.
+
+## Sprint 151-165 — private beta evidence closure
+
+The backend-real plan now has a final closure layer before private beta entry:
+
+1. Execute real Playwright visual/responsive evidence only with explicit browser flag.
+2. Execute browser quality evidence only with explicit quality/Lighthouse/manual-review flags.
+3. Bind staging/seeds only with safe local/staging URLs and manual confirmation.
+4. Rehearse the private beta operation with accepted evidence reports.
+5. Keep GO/NO-GO as `NO_GO` until all evidence and confirmations are present.
+
+This preserves mock as the default and prevents accidental production/staging mutation.
+
+## Sprint 166-180 Private Beta Real GO Attempt
+
+Sprint 166-180 expands the visual manifest to the full private-beta viewport matrix and adds the real GO attempt wrapper:
+
+```bash
+npm run audit:private-beta-real-go-attempt
+npm run execute:private-beta-real-go-attempt:dry-run
+npm run execute:private-beta-real-go-attempt:check-env
+npm run execute:private-beta-real-go-attempt:report
+```
+
+The expected safe default remains NO-GO until real browser evidence, staging seed binding, rehearsal and manual confirmations pass.
+
+
+## Sprint 181-195 Evidence Pursuit
+
+- Added Playwright Chromium preparation and system-browser fallback.
+- Added capture-only visual evidence spec for real screenshot evidence without rewriting approved baselines.
+- Added staging real seed operator and private beta GO pursuit orchestrator.
+- GO remains blocked unless real visual, browser quality, staging seeds, rehearsal, and manual confirmation pass.
+
+## Sprint 196-210 — Browser policy and evidence-loop closure
+
+The private beta release path now distinguishes three states that were previously conflated:
+
+1. Visual manifest coverage is complete.
+2. System Chromium may exist but still be unusable when managed policy blocks localhost.
+3. Playwright-managed Chromium is the preferred browser path for real evidence.
+
+The new evidence loop runs browser policy resolution, visual evidence, browser quality, staging command pack, staging seed operator and GO pursuit as one auditable NO-GO-by-default workflow.
+
+## Sprint 211-225 — workstation evidence and real-entry gate
+
+The private beta path now includes operator-ready commands for Gabriel's Windows/VS Code workstation. This matters because the container can diagnose browser policy, but real evidence should be generated in the same environment used for Doke QA.
+
+This block adds:
+
+1. Windows Playwright-managed Chromium preparation.
+2. Visual evidence review packaging.
+3. Lighthouse + manual accessibility evidence packaging.
+4. Staging seed operator environment validation.
+5. A private beta real-entry gate that remains `NO_GO` unless every real report and manual confirmation is present.
+
+No production URL, credential, or frontend visual surface is activated by default.
+
+
+## Sprint 226–240 — Real-entry execution bridge
+
+The backend-real track remains blocked from private beta GO until workstation visual evidence, Lighthouse/a11y evidence and real staging seed evidence are approved. Sprint 226–240 adds a Windows/VS Code execution bridge and a repeat gate that consumes those reports without hardcoding credentials or production URLs.
+
+## Sprint 241-255 — Evidence interpretation before real beta entry
+
+The beta track now includes a strict evidence interpretation and adjudication layer. This prevents a manual GO from being based only on raw scripts or partial reports.
+
+Added sequence:
+
+1. Interpret generated workstation/staging reports.
+2. Convert visual evidence into a triage queue.
+3. Convert Lighthouse/a11y evidence into a quality queue.
+4. Review staging env/seeds evidence.
+5. Adjudicate the private beta entry decision.
+
+No production endpoint, Supabase credential, or user cohort is activated by this block.
+
+## Sprint 256-270 — Evidence resolution before private beta entry
+
+The backend-real/private-beta line now has a resolution cycle after report generation. This avoids a false GO when evidence exists but still contains unresolved visual, quality, staging or entry blockers.
+
+Resolution order:
+
+1. Ingest workstation reports.
+2. Build visual resolution backlog.
+3. Build quality resolution backlog.
+4. Build staging resolution backlog.
+5. Run private beta entry resolution cycle.
+
+No production endpoint, credential or real user entry is activated by these scripts. Staging values remain local shell environment variables only.
+
+## Sprint 271–285 — Private beta entry evidence path
+
+The private beta entry path now includes a one-command Windows runner, visual correction matrix, quality correction matrix, external staging secrets checklist, and entry decision gate. The backend/staging path remains non-production and continues to require explicit staging environment variables and manual confirmation before any GO decision.
+
+## Sprint 286-300 — Human private beta release candidate package
+
+The backend-real and product-beta tracks now feed a human-readable RC package. The package does not approve release automatically. It requires real browser evidence, staging/secrets validation, manual reviewer approvals, and explicit beta entry confirmation before any private beta user entry.
+
+## Sprint 301–315 — End of Preparation-Only Backend Track
+
+The backend-real preparation track should not continue with additional gate-only expansions before real workstation/staging evidence is executed. The next meaningful backend step is to run the execution bridge on the operator workstation, bind staging/Supabase envs, and choose either:
+
+- `mock-first`: controlled UX/product beta with explicit prototype/data limitations; or
+- `real-backend-first`: private beta only after staging/Supabase, visual, quality, and entry evidence are accepted.
+
+Primary command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/private-beta-execution-bridge.windows.ps1
+```

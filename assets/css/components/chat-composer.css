@@ -32,7 +32,7 @@ body.community-room-shell .doke-chat-composer__send {
   height: 56px;
   min-width: 56px;
   min-height: 56px;
-  border: var(--border-muted);
+  border: 0;
   border-radius: var(--radius-md);
   background: #f6fafe;
   color: #205289;
@@ -303,4 +303,17 @@ body.community-room-shell .community-message-list {
     top: max(12px, env(safe-area-inset-top, 0px));
     right: 12px;
   }
+}
+
+
+/* Border-contrast rule: the chat composer field uses fill contrast only. */
+body:is(.messages-page-shell, .community-room-shell) .doke-chat-composer__field {
+  border-color: transparent;
+}
+
+
+/* Border contrast policy: chat composer controls are tinted surfaces, not outlined controls. */
+body:is(.messages-page-shell, .community-room-shell)
+  :is(.doke-chat-composer__field, .doke-chat-composer__tool, .doke-chat-composer__send) {
+  border-color: transparent;
 }

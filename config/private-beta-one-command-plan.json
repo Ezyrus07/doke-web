@@ -1,0 +1,63 @@
+{
+  "version": "20260704-sprint271-285",
+  "objective": "Run private beta evidence in Windows/VS Code with short phase logs and no production mutation.",
+  "phases": [
+    {
+      "id": "install_playwright_chromium",
+      "command": "npm run resolve:playwright-browser-policy:report",
+      "env": {
+        "DOKE_PLAYWRIGHT_MANAGED_CHROMIUM_INSTALL": "1"
+      },
+      "evidence": "reports/generated/playwright-browser-policy-resolution-report.json"
+    },
+    {
+      "id": "visual_evidence",
+      "command": "npm run execute:playwright-visual-responsive-evidence:report",
+      "env": {
+        "DOKE_VISUAL_RESPONSIVE_EVIDENCE_EXECUTE": "1",
+        "DOKE_VISUAL_EVIDENCE_CAPTURE_ONLY": "1"
+      },
+      "evidence": "reports/generated/playwright-visual-responsive-evidence-report.json"
+    },
+    {
+      "id": "visual_review_package",
+      "command": "npm run execute:visual-evidence-review-package:report",
+      "requiresManualEnv": ["DOKE_VISUAL_REVIEW_APPROVED", "DOKE_VISUAL_REVIEWER"],
+      "evidence": "reports/generated/visual-evidence-review-package-report.json"
+    },
+    {
+      "id": "screenshots_matrix",
+      "command": "npm run execute:visual-correction-matrix:report",
+      "evidence": "reports/generated/visual-correction-matrix-report.json"
+    },
+    {
+      "id": "lighthouse_a11y",
+      "command": "npm run execute:lighthouse-a11y-workstation:report",
+      "requiresManualEnv": ["DOKE_MANUAL_A11Y_REVIEW_COMPLETE", "DOKE_A11Y_REVIEWER"],
+      "evidence": "reports/generated/lighthouse-a11y-workstation-report.json"
+    },
+    {
+      "id": "quality_matrix",
+      "command": "npm run execute:quality-correction-matrix:report",
+      "evidence": "reports/generated/quality-correction-matrix-report.json"
+    },
+    {
+      "id": "staging_secrets_checklist",
+      "command": "npm run execute:staging-external-secrets-checklist:report",
+      "requiresManualEnv": ["DOKE_ENVIRONMENT", "DOKE_STAGING_API_URL", "DOKE_SUPABASE_DB_URL"],
+      "evidence": "reports/generated/staging-external-secrets-checklist-report.json"
+    },
+    {
+      "id": "staging_env_application",
+      "command": "npm run execute:staging-real-env-application:report",
+      "requiresManualEnv": ["DOKE_STAGING_SEED_BINDER_CONFIRM", "DOKE_STAGING_REAL_SEED_OPERATOR_EXECUTE"],
+      "evidence": "reports/generated/staging-real-env-application-report.json"
+    },
+    {
+      "id": "entry_decision",
+      "command": "npm run execute:private-beta-entry-decision-gate:report",
+      "requiresManualEnv": ["DOKE_PRIVATE_BETA_ENTRY_DECISION_CONFIRM"],
+      "evidence": "reports/generated/private-beta-entry-decision-gate-report.json"
+    }
+  ]
+}

@@ -6,9 +6,13 @@ const root = process.cwd();
 const manifestPath = path.join(root, 'tests', 'visual', 'visual-regression.manifest.json');
 
 const requiredViewports = new Map([
-  ['desktop-1366x768', { width: 1366, height: 768, kind: 'desktop' }],
-  ['tablet-820x1180', { width: 820, height: 1180, kind: 'tablet' }],
   ['mobile-390x844', { width: 390, height: 844, kind: 'mobile' }],
+  ['tablet-vertical-608x926', { width: 608, height: 926, kind: 'tablet' }],
+  ['tablet-horizontal-810x1080', { width: 810, height: 1080, kind: 'tablet' }],
+  ['tablet-horizontal-820x1180', { width: 820, height: 1180, kind: 'tablet' }],
+  ['tablet-horizontal-1024x768', { width: 1024, height: 768, kind: 'tablet' }],
+  ['desktop-1280x800', { width: 1280, height: 800, kind: 'desktop' }],
+  ['desktop-1366x768', { width: 1366, height: 768, kind: 'desktop' }],
 ]);
 
 const requiredPages = new Map([

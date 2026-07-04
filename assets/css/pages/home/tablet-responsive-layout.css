@@ -578,7 +578,7 @@ body.home-index-shell .home-side-meta__tablet-menu {
     margin: 0;
     border-radius: 22px;
     background: rgba(255, 255, 255, 0.96);
-    box-shadow: 0 12px 28px rgba(31, 68, 110, 0.08), inset 0 0 0 1px rgba(32, 86, 134, 0.06);
+    box-shadow: inset 0 0 0 1px rgba(32, 86, 134, 0.06);
   }
 
   body.home-index-shell .home-cat\00e9gory__icon svg,
@@ -2358,4 +2358,10 @@ html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.mor
     width: 100%;
     max-width: 100%;
   }
+}
+
+/* Contrast-first section action: filled action pill stays borderless in this page cascade. */
+body :is(.section-heading__link, .detail-section__header > a, .detail-section__header--row > a, .results-related__header > a):where(:not(.doke-outline-action)),
+body :is(.section-heading__link, .detail-section__header > a, .detail-section__header--row > a, .results-related__header > a):where(:hover, :focus-visible, :active) {
+  border-color: transparent;
 }

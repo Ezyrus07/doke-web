@@ -1,0 +1,111 @@
+{
+  "objective": "Close the preparation track and move private beta work from additional gates into real workstation/staging execution.",
+  "localWorkstationScript": "tools/private-beta-execution-bridge.windows.ps1",
+  "mainCommands": [
+    "npm run execute:private-beta-execution-bridge:report",
+    "npm run execute:private-beta-operating-dashboard:report",
+    "npm run execute:private-beta-short-task-list:report",
+    "npm run execute:mock-beta-option-package:report",
+    "npm run execute:private-beta-strategy-decision:report"
+  ],
+  "requiredRealBetaEnv": [
+    "DOKE_ENVIRONMENT=staging",
+    "DOKE_STAGING_API_URL",
+    "DOKE_SUPABASE_DB_URL",
+    "DOKE_STAGING_SEED_BINDER_CONFIRM=bind-staging-seeds",
+    "DOKE_STAGING_REAL_SEED_OPERATOR_EXECUTE=1",
+    "DOKE_VISUAL_REVIEW_APPROVED=1",
+    "DOKE_VISUAL_REVIEWER",
+    "DOKE_MANUAL_A11Y_REVIEW_COMPLETE=1",
+    "DOKE_A11Y_REVIEWER",
+    "DOKE_PRIVATE_BETA_ENTRY_DECISION_CONFIRM=enter-private-beta"
+  ],
+  "strategyConfirmationEnv": "DOKE_PRIVATE_BETA_STRATEGY",
+  "strategyValues": [
+    "mock-first",
+    "real-backend-first"
+  ],
+  "evidenceReports": [
+    {
+      "label": "Human RC package",
+      "file": "reports/generated/human-release-candidate-package-report.json",
+      "readyStatuses": [
+        "human_release_candidate_package_ready_for_private_beta_entry"
+      ]
+    },
+    {
+      "label": "One-screen summary",
+      "file": "reports/generated/private-beta-one-screen-summary-report.json",
+      "readyStatuses": [
+        "private_beta_one_screen_summary_go"
+      ]
+    },
+    {
+      "label": "Visual correction matrix",
+      "file": "reports/generated/visual-correction-matrix-report.json",
+      "readyStatuses": [
+        "visual_correction_matrix_clear"
+      ]
+    },
+    {
+      "label": "Quality correction matrix",
+      "file": "reports/generated/quality-correction-matrix-report.json",
+      "readyStatuses": [
+        "quality_correction_matrix_clear"
+      ]
+    },
+    {
+      "label": "Staging external secrets checklist",
+      "file": "reports/generated/staging-external-secrets-checklist-report.json",
+      "readyStatuses": [
+        "staging_external_secrets_checklist_ready"
+      ]
+    },
+    {
+      "label": "Private beta entry decision",
+      "file": "reports/generated/private-beta-entry-decision-gate-report.json",
+      "readyStatuses": [
+        "private_beta_entry_decision_go"
+      ]
+    },
+    {
+      "label": "Private beta evidence adjudicator",
+      "file": "reports/generated/private-beta-evidence-adjudicator-report.json",
+      "readyStatuses": [
+        "private_beta_evidence_adjudicator_go"
+      ]
+    }
+  ],
+  "shortTasks": [
+    {
+      "priority": "P0",
+      "track": "workstation",
+      "title": "Run the Windows execution bridge in VS Code",
+      "command": "powershell -ExecutionPolicy Bypass -File tools/private-beta-execution-bridge.windows.ps1"
+    },
+    {
+      "priority": "P0",
+      "track": "visual",
+      "title": "Generate 15 pages × 7 viewports screenshots and approve the visual review",
+      "command": "npm run execute:visual-screenshot-package:report"
+    },
+    {
+      "priority": "P0",
+      "track": "quality",
+      "title": "Run Lighthouse/Core Web Vitals and complete manual accessibility review",
+      "command": "npm run execute:lighthouse-a11y-workstation:report"
+    },
+    {
+      "priority": "P0",
+      "track": "staging",
+      "title": "Bind staging/Supabase envs and seed the staging database",
+      "command": "npm run execute:staging-real-env-application:report"
+    },
+    {
+      "priority": "P0",
+      "track": "decision",
+      "title": "Choose mock-first or real-backend-first before inviting users",
+      "command": "npm run execute:private-beta-strategy-decision:report"
+    }
+  ]
+}

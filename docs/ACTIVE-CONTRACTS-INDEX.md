@@ -421,3 +421,107 @@ The active provider default is still mock. Real staging is manual-only and repor
 - Staging environment binder: `docs/STAGING-ENV-BINDER-RUNBOOK.md`
 - Operator rehearsal: `docs/PRIVATE-BETA-OPERATOR-REHEARSAL-RUNBOOK.md`
 - Release go/no-go: `docs/RELEASE-GO-NO-GO-RUNBOOK.md`
+
+## Sprint 151-165 contracts
+
+- `docs/VISUAL-RESPONSIVE-EVIDENCE-EXECUTION-RUNBOOK.md` — executable Playwright/responsive evidence gate.
+- `docs/BROWSER-QUALITY-REAL-EVIDENCE-RUNBOOK.md` — accessibility/performance/SEO real-evidence gate.
+- `docs/STAGING-SEED-BINDER-RUNBOOK.md` — staging environment + seed checklist binder.
+- `docs/PRIVATE-BETA-REAL-REHEARSAL-RUNBOOK.md` — real-evidence operator rehearsal gate.
+- `docs/PRIVATE-BETA-GO-LIVE-RUNBOOK.md` — final private beta GO/NO-GO decision gate.
+
+## Sprint 166-180 Private Beta Real GO Attempt
+
+Sprint 166-180 expands the visual manifest to the full private-beta viewport matrix and adds the real GO attempt wrapper:
+
+```bash
+npm run audit:private-beta-real-go-attempt
+npm run execute:private-beta-real-go-attempt:dry-run
+npm run execute:private-beta-real-go-attempt:check-env
+npm run execute:private-beta-real-go-attempt:report
+```
+
+The expected safe default remains NO-GO until real browser evidence, staging seed binding, rehearsal and manual confirmations pass.
+
+
+## Sprint 181-195 Evidence Pursuit
+
+- Added Playwright Chromium preparation and system-browser fallback.
+- Added capture-only visual evidence spec for real screenshot evidence without rewriting approved baselines.
+- Added staging real seed operator and private beta GO pursuit orchestrator.
+- GO remains blocked unless real visual, browser quality, staging seeds, rehearsal, and manual confirmation pass.
+
+## Sprint 196-210 — Browser Policy Resolution and Evidence Loop
+
+- `docs/PLAYWRIGHT-BROWSER-POLICY-RESOLUTION-RUNBOOK.md` — resolves system Chromium policy blockers and prefers Playwright-managed Chromium.
+- `docs/STAGING-REAL-COMMAND-PACK-RUNBOOK.md` — copy-safe staging command pack with no committed credentials.
+- `docs/PRIVATE-BETA-EVIDENCE-LOOP-RUNBOOK.md` — full evidence loop that defaults to NO-GO until all real evidence statuses pass.
+
+## Sprint 211-225 — Real Workstation Evidence and Entry Gate
+
+- `docs/WINDOWS-PLAYWRIGHT-CHROMIUM-WORKSTATION-RUNBOOK.md` — Windows/VS Code commands for Playwright-managed Chromium evidence.
+- `docs/VISUAL-EVIDENCE-REVIEW-PACKAGE-RUNBOOK.md` — screenshot/layout evidence review package with manual approval flag.
+- `docs/LIGHTHOUSE-A11Y-EVIDENCE-PACKAGE-RUNBOOK.md` — Lighthouse/Core Web Vitals and manual accessibility evidence package.
+- `docs/STAGING-SEED-OPERATOR-ENV-RUNBOOK.md` — staging seed environment validator and safe wrapper.
+- `docs/PRIVATE-BETA-REAL-ENTRY-GATE-RUNBOOK.md` — final NO-GO-by-default private beta entry gate from real evidence.
+
+
+## Sprint 226–240 contracts
+
+- `docs/WINDOWS-PRIVATE-BETA-EVIDENCE-BATCH-RUNBOOK.md` — ordered Windows/VS Code execution batch.
+- `docs/VISUAL-SCREENSHOT-PACKAGE-RUNBOOK.md` — screenshot completeness and manual review gate.
+- `docs/LIGHTHOUSE-A11Y-WORKSTATION-RUNBOOK.md` — Lighthouse/Core Web Vitals and manual accessibility evidence.
+- `docs/STAGING-REAL-ENV-APPLICATION-RUNBOOK.md` — real staging env/seeds application gate.
+- `docs/PRIVATE-BETA-REAL-ENTRY-REPEAT-RUNBOOK.md` — repeated real-entry GO/NO-GO decision.
+
+## Sprint 241-255 — Private beta evidence interpretation contracts
+
+Active contracts added:
+
+- `docs/PRIVATE-BETA-REPORT-INTERPRETER-RUNBOOK.md`
+- `docs/VISUAL-FINDINGS-TRIAGE-RUNBOOK.md`
+- `docs/QUALITY-FINDINGS-TRIAGE-RUNBOOK.md`
+- `docs/STAGING-EVIDENCE-REVIEW-RUNBOOK.md`
+- `docs/PRIVATE-BETA-EVIDENCE-ADJUDICATOR-RUNBOOK.md`
+
+The private beta entry decision remains `NO_GO` unless workstation visual evidence, Lighthouse/a11y evidence, staging evidence, and manual approvals all reach accepted statuses.
+
+## Sprint 256-270 — Private beta evidence resolution contracts
+
+Active contracts added:
+
+- `docs/PRIVATE-BETA-WORKSTATION-REPORT-INGEST-RUNBOOK.md` — ingests Windows/VS Code evidence reports and identifies missing reports.
+- `docs/VISUAL-RESOLUTION-BACKLOG-RUNBOOK.md` — converts screenshot/visual triage reports into visual resolution actions without editing UI automatically.
+- `docs/QUALITY-RESOLUTION-BACKLOG-RUNBOOK.md` — converts Lighthouse/accessibility evidence into quality resolution actions.
+- `docs/STAGING-RESOLUTION-BACKLOG-RUNBOOK.md` — converts staging env/seed evidence into staging actions without storing credentials.
+- `docs/PRIVATE-BETA-ENTRY-RESOLUTION-CYCLE-RUNBOOK.md` — repeats entry adjudication after resolution backlogs and stays NO-GO unless all evidence is real and accepted.
+
+The release decision remains `NO_GO` by default. The only acceptable GO path is real workstation browser evidence, real Lighthouse/a11y evidence, real staging evidence, and explicit manual confirmation.
+
+## Sprint 271–285 — Private beta one-command and decision matrices
+
+Active contracts added:
+
+- `docs/WINDOWS-PRIVATE-BETA-ONE-COMMAND-RUNBOOK.md`
+- `docs/VISUAL-CORRECTION-MATRIX-RUNBOOK.md`
+- `docs/QUALITY-CORRECTION-MATRIX-RUNBOOK.md`
+- `docs/STAGING-EXTERNAL-SECRETS-CHECKLIST-RUNBOOK.md`
+- `docs/PRIVATE-BETA-ENTRY-DECISION-GATE-RUNBOOK.md`
+
+These contracts convert workstation evidence into explicit visual, quality, staging, and private beta entry decisions.
+
+## Sprint 286-300 — Private beta human RC contracts
+
+- `config/private-beta-simplified-flow.json` defines the shortest safe Windows/VS Code evidence flow.
+- `config/private-beta-human-rc-map.json` defines the human RC evidence map and manual approvals.
+- `tools/private-beta-simplified-flow.windows.ps1` runs the local evidence phases in order.
+- `reports/generated/private-beta-one-screen-summary.md` summarizes GO/NO-GO in one screen.
+- `reports/generated/human-release-candidate-package.md` states what still blocks private beta entry.
+
+## Sprint 301–315 — Private Beta Execution Bridge Contracts
+
+- `config/private-beta-execution-bridge-map.json` is the source of truth for the closing execution bridge, required real backend envs, and strategy values.
+- `tools/private-beta-execution-bridge.windows.ps1` is the operator path for Windows/VS Code evidence execution.
+- `reports/generated/private-beta-operating-dashboard.md` summarizes GO/NO-GO evidence areas.
+- `reports/generated/private-beta-short-task-list.md` collapses the current NO-GO into the shortest actionable task list.
+- `DOKE_PRIVATE_BETA_STRATEGY=mock-first|real-backend-first` is required before inviting users.

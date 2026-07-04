@@ -1,0 +1,12 @@
+'use strict';
+const { requireFile, requirePackageScript, pass, finish } = require('./lib/private-beta-evidence-utils');
+const report = { name: 'visual-findings-triage-audit', generatedAt: new Date().toISOString(), objective: 'Audit visual findings triage wiring.', changesVisualSurface: false, performsExternalNetworkRequest: false, performsExternalMutation: false, status: 'not_evaluated', results: [], blockers: [], failures: [] };
+requireFile('scripts/execute-visual-findings-triage.js', report);
+requireFile('docs/VISUAL-FINDINGS-TRIAGE-RUNBOOK.md', report);
+requirePackageScript('audit:visual-findings-triage', report);
+requirePackageScript('execute:visual-findings-triage:dry-run', report);
+requirePackageScript('execute:visual-findings-triage:check-env', report);
+requirePackageScript('execute:visual-findings-triage:report', report);
+pass(report, 'visual-findings-triage.audit.complete');
+report.status = report.failures.length ? 'failed' : 'visual_findings_triage_audit_passed';
+finish(report, 'reports/generated/visual-findings-triage-audit-report.json', true, report.failures.length ? 1 : 0);

@@ -63,13 +63,14 @@ on conflict (user_id) do update set
   completed_orders_count = excluded.completed_orders_count,
   updated_at = now();
 
-insert into public.service_categories (id, name, slug, description, sort_order) values
-  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'Pintura', 'pintura', 'Serviços de pintura residencial e comercial.', 10)
+insert into public.service_categories (name, slug, description, sort_order) values
+  ('Pintura', 'pintura', 'Serviços de pintura residencial e comercial.', 10)
 on conflict (slug) do update set name = excluded.name, description = excluded.description, sort_order = excluded.sort_order;
 
 insert into public.services (id, professional_id, category_id, title, slug, description, price_mode, price_cents, currency, status, city, state) values
-  ('55555555-5555-4555-8555-555555555555', '22222222-2222-4222-8222-222222222222', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'Pintura de apartamento', 'pintura-apartamento-demo', 'Serviço demo para fluxo completo de pedido e pagamento.', 'quote', null, 'BRL', 'published', 'Salvador', 'BA')
+  ('55555555-5555-4555-8555-555555555555', '22222222-2222-4222-8222-222222222222', (select id from public.service_categories where slug = 'pintura'), 'Pintura de apartamento', 'pintura-apartamento-demo', 'Serviço demo para fluxo completo de pedido e pagamento.', 'quote', null, 'BRL', 'published', 'Salvador', 'BA')
 on conflict (professional_id, slug) do update set
+  category_id = excluded.category_id,
   title = excluded.title,
   description = excluded.description,
   status = excluded.status,

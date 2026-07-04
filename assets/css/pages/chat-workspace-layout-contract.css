@@ -1374,7 +1374,7 @@ body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages
   position: relative;
   z-index: 1;
   overflow: hidden;
-  box-shadow: inset 0 0 0 1px rgba(199, 214, 232, 0.92);
+  box-shadow: none;
 }
 
 body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-composer__send, .community-room-composer__send) {
@@ -1529,4 +1529,12 @@ body[data-page="mensagens"] .messages-order-card__button--ghost {
     justify-items: start;
     text-align: left;
   }
+}
+
+
+/* Contrast-first composer: the input rail uses fill contrast, not inset stroke. */
+body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-composer__field, .community-room-composer__field),
+html.chat-room-mobile-open body:is([data-page="mensagens"], [data-page="comunidade-interna"]) :is(.messages-composer__field, .community-room-composer__field) {
+  border-color: transparent;
+  box-shadow: none;
 }

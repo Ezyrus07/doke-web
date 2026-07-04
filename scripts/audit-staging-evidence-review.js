@@ -1,0 +1,12 @@
+'use strict';
+const { requireFile, requirePackageScript, pass, finish } = require('./lib/private-beta-evidence-utils');
+const report = { name: 'staging-evidence-review-audit', generatedAt: new Date().toISOString(), objective: 'Audit staging evidence review wiring.', changesVisualSurface: false, performsExternalNetworkRequest: false, performsExternalMutation: false, status: 'not_evaluated', results: [], blockers: [], failures: [] };
+requireFile('scripts/execute-staging-evidence-review.js', report);
+requireFile('docs/STAGING-EVIDENCE-REVIEW-RUNBOOK.md', report);
+requirePackageScript('audit:staging-evidence-review', report);
+requirePackageScript('execute:staging-evidence-review:dry-run', report);
+requirePackageScript('execute:staging-evidence-review:check-env', report);
+requirePackageScript('execute:staging-evidence-review:report', report);
+pass(report, 'staging-evidence-review.audit.complete');
+report.status = report.failures.length ? 'failed' : 'staging_evidence_review_audit_passed';
+finish(report, 'reports/generated/staging-evidence-review-audit-report.json', true, report.failures.length ? 1 : 0);

@@ -110,8 +110,11 @@
   body.messages-page-shell .messages-sidebar-brand__compose:focus-visible,
   body.messages-page-shell .messages-sidebar-tools__filter:focus-visible {
     outline: 0;
-    border-color: var(--border-color-selected);
     box-shadow: 0 0 0 4px var(--border-color-soft);
+  }
+
+  body.messages-page-shell :is(.messages-sidebar-search--modern, .messages-sidebar-tools__filter) {
+    border-color: transparent;
   }
 }
 
@@ -174,5 +177,13 @@
   body.messages-page-shell:not(.is-shell-swapping) .messages-app {
     visibility: visible;
     opacity: 1;
+  }
+}
+
+
+@media (min-width: 761px) {
+  /* Search/filter chrome on the messages rail should not regain visible borders. */
+  body.messages-page-shell :is(.messages-sidebar-search--modern, .messages-sidebar-tools__filter) {
+    border-color: transparent;
   }
 }

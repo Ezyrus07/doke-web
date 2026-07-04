@@ -27,7 +27,7 @@
   min-height: var(--control-height-xs);
   padding: 0 12px;
   border-radius: var(--radius-pill);
-  border: var(--border-soft);
+  border: 0;
   color: #2e5b8c;
   background: #f7fbff;
   font-size: 0.82rem;
@@ -44,7 +44,7 @@
   padding: 14px;
   border-radius: 20px;
   background: #f8fbff;
-  border: var(--border-soft);
+  border: 0;
 }
 
 .results-location-group__cep-row {
@@ -54,7 +54,7 @@
 .results-location-group__cep {
   min-height: 40px;
   width: 100%;
-  border: var(--border-soft);
+  border: 0;
   border-radius: var(--radius-sm);
   background: #fff;
   color: #1f5d93;
@@ -72,7 +72,7 @@
   min-height: 44px;
   padding: 0 14px;
   border-radius: var(--radius-sm);
-  border: var(--border-soft);
+  border: 0;
   background: #fff;
 }
 
@@ -398,4 +398,19 @@
 
 .results-filters .results-check input[type="checkbox"]::after {
   display: block;
+}
+
+
+/* Border-contrast rule: location filter controls already sit on contrastive
+   surfaces, so they should not draw extra outlines. */
+.results-location-group,
+.results-location-group__cep,
+.results-field select,
+.results-field .ui-select__trigger,
+.results-location-group__cep-input,
+.results-filters .results-location-group__cep,
+.results-filters .results-location-group__cep-input,
+.results-filters .results-field .ui-select__trigger,
+.results-filters .results-field select {
+  border-color: transparent;
 }

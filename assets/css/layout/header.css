@@ -1041,6 +1041,26 @@ body[data-page].has-global-header {
   }
 }
 
+/* Header action surface contract.
+   Context controls stay flat across page-specific header variants. */
+body[data-page].has-global-header .app-header.home-side-meta
+:is(.home-side-meta__search, .page-header-context__action),
+body[data-page].has-global-header .app-header.home-side-meta
+:is(.home-side-meta__search, .page-header-context__action):is(:hover, :active),
+body[data-page].has-global-header .app-header.home-side-meta
+.page-header-context__action:is(.is-view-active, .is-active, [aria-expanded="true"], [aria-pressed="true"]) {
+  border: 0;
+  box-shadow: none;
+}
+
+body[data-page].has-global-header .app-header.home-side-meta
+:is(.home-side-meta__search, .page-header-context__action):focus-visible {
+  border: 0;
+  outline: 2px solid rgba(31, 103, 159, 0.34);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
 @media (min-width: 761px) and (max-width: 1024px) {
   body[data-page].has-global-header {
     --doke-header-profile-width: 128px;

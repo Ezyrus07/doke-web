@@ -1,0 +1,12 @@
+'use strict';
+const { requireFile, requirePackageScript, pass, finish } = require('./lib/private-beta-evidence-utils');
+const report = { name: 'private-beta-evidence-adjudicator-audit', generatedAt: new Date().toISOString(), objective: 'Audit private beta evidence adjudicator wiring.', changesVisualSurface: false, performsExternalNetworkRequest: false, performsExternalMutation: false, status: 'not_evaluated', results: [], blockers: [], failures: [] };
+requireFile('scripts/execute-private-beta-evidence-adjudicator.js', report);
+requireFile('docs/PRIVATE-BETA-EVIDENCE-ADJUDICATOR-RUNBOOK.md', report);
+requirePackageScript('audit:private-beta-evidence-adjudicator', report);
+requirePackageScript('execute:private-beta-evidence-adjudicator:dry-run', report);
+requirePackageScript('execute:private-beta-evidence-adjudicator:check-env', report);
+requirePackageScript('execute:private-beta-evidence-adjudicator:report', report);
+pass(report, 'private-beta-evidence-adjudicator.audit.complete');
+report.status = report.failures.length ? 'failed' : 'private_beta_evidence_adjudicator_audit_passed';
+finish(report, 'reports/generated/private-beta-evidence-adjudicator-audit-report.json', true, report.failures.length ? 1 : 0);

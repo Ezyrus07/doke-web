@@ -1242,3 +1242,359 @@ npm run validate:private-beta-operator-rehearsal:dry-run
 npm run audit:release-go-no-go-gate
 npm run validate:release-go-no-go:dry-run
 ```
+
+## Sprint 151-165 — Private beta real evidence and GO/NO-GO closure
+
+This sprint adds executable closure gates for the final private beta decision. These commands do not alter visual assets or activate production by default.
+
+### Visual/responsive evidence
+
+```bash
+npm run audit:playwright-visual-responsive-evidence
+npm run execute:playwright-visual-responsive-evidence:dry-run
+npm run execute:playwright-visual-responsive-evidence:check-env
+npm run execute:playwright-visual-responsive-evidence:report
+```
+
+Real browser execution requires `DOKE_VISUAL_RESPONSIVE_EVIDENCE_EXECUTE=1`.
+
+### Browser quality evidence
+
+```bash
+npm run audit:browser-quality-real-evidence
+npm run execute:browser-quality-real-evidence:dry-run
+npm run execute:browser-quality-real-evidence:check-env
+npm run execute:browser-quality-real-evidence:report
+```
+
+Real evidence requires explicit browser/Lighthouse/manual review flags.
+
+### Staging seed binder
+
+```bash
+npm run audit:staging-seed-binder
+npm run bind:staging-seeds:dry-run
+npm run bind:staging-seeds:check-env
+npm run bind:staging-seeds:report
+```
+
+Real mutation requires `DOKE_STAGING_SEED_BINDER_EXECUTE=1` plus SQL mutation flags.
+
+### Private beta rehearsal and GO/NO-GO
+
+```bash
+npm run audit:private-beta-real-rehearsal
+npm run validate:private-beta-real-rehearsal:dry-run
+npm run validate:private-beta-real-rehearsal:report
+npm run audit:private-beta-go-live-gate
+npm run validate:private-beta-go-live:dry-run
+npm run validate:private-beta-go-live:report
+```
+
+Default decision remains `NO_GO` until visual, quality, staging binding, rehearsal and manual confirmations are present.
+
+## Sprint 166-180 Private Beta Real GO Attempt
+
+Sprint 166-180 expands the visual manifest to the full private-beta viewport matrix and adds the real GO attempt wrapper:
+
+```bash
+npm run audit:private-beta-real-go-attempt
+npm run execute:private-beta-real-go-attempt:dry-run
+npm run execute:private-beta-real-go-attempt:check-env
+npm run execute:private-beta-real-go-attempt:report
+```
+
+The expected safe default remains NO-GO until real browser evidence, staging seed binding, rehearsal and manual confirmations pass.
+
+
+## Sprint 181-195 Evidence Pursuit
+
+- Added Playwright Chromium preparation and system-browser fallback.
+- Added capture-only visual evidence spec for real screenshot evidence without rewriting approved baselines.
+- Added staging real seed operator and private beta GO pursuit orchestrator.
+- GO remains blocked unless real visual, browser quality, staging seeds, rehearsal, and manual confirmation pass.
+
+## Sprint 196-210 Browser Policy and Evidence Loop
+
+Sprint 196-210 separates system-browser policy blockers from Playwright-managed Chromium and adds a private beta evidence loop that preserves NO-GO unless every real evidence phase passes.
+
+```bash
+npm run audit:playwright-browser-policy-resolution
+npm run resolve:playwright-browser-policy:dry-run
+npm run resolve:playwright-browser-policy:check-env
+npm run resolve:playwright-browser-policy:report
+npm run audit:staging-real-command-pack
+npm run prepare:staging-real-command-pack:dry-run
+npm run prepare:staging-real-command-pack:check-env
+npm run prepare:staging-real-command-pack:report
+npm run audit:private-beta-evidence-loop
+npm run execute:private-beta-evidence-loop:dry-run
+npm run execute:private-beta-evidence-loop:check-env
+npm run execute:private-beta-evidence-loop:report
+```
+
+Managed Chromium installation is guarded by `DOKE_PLAYWRIGHT_MANAGED_CHROMIUM_INSTALL=1`. Staging mutation remains guarded by the existing staging seed flags.
+
+## Sprint 211-225 Real Workstation Evidence
+
+### Windows Playwright-managed Chromium
+
+```bash
+npm run audit:windows-playwright-chromium-workstation
+npm run prepare:windows-playwright-chromium:dry-run
+npm run prepare:windows-playwright-chromium:check-env
+npm run prepare:windows-playwright-chromium:report
+```
+
+Real install attempt requires:
+
+```bash
+DOKE_PLAYWRIGHT_MANAGED_CHROMIUM_INSTALL=1 npm run prepare:windows-playwright-chromium:report
+```
+
+### Visual evidence review package
+
+```bash
+npm run audit:visual-evidence-review-package
+npm run execute:visual-evidence-review-package:dry-run
+npm run execute:visual-evidence-review-package:check-env
+npm run execute:visual-evidence-review-package:report
+```
+
+Manual approval requires `DOKE_VISUAL_REVIEW_APPROVED=1` and `DOKE_VISUAL_REVIEWER`.
+
+### Lighthouse + accessibility evidence
+
+```bash
+npm run audit:lighthouse-a11y-evidence-package
+npm run execute:lighthouse-a11y-evidence:dry-run
+npm run execute:lighthouse-a11y-evidence:check-env
+npm run execute:lighthouse-a11y-evidence:report
+```
+
+### Staging seed operator environment
+
+```bash
+npm run audit:staging-seed-operator-env
+npm run prepare:staging-seed-operator-env:dry-run
+npm run prepare:staging-seed-operator-env:check-env
+npm run prepare:staging-seed-operator-env:report
+```
+
+### Private beta real-entry gate
+
+```bash
+npm run audit:private-beta-real-entry-gate
+npm run execute:private-beta-real-entry-gate:dry-run
+npm run execute:private-beta-real-entry-gate:check-env
+npm run execute:private-beta-real-entry-gate:report
+```
+
+The gate only returns `GO` with all real evidence reports accepted and `DOKE_PRIVATE_BETA_REAL_ENTRY_CONFIRM=enter-private-beta`.
+
+
+## Sprint 226–240 — Private beta workstation evidence
+
+Commands added:
+
+```bash
+npm run audit:windows-private-beta-evidence-batch
+npm run execute:windows-private-beta-evidence-batch:dry-run
+npm run execute:windows-private-beta-evidence-batch:check-env
+npm run execute:windows-private-beta-evidence-batch:report
+npm run audit:visual-screenshot-package
+npm run execute:visual-screenshot-package:dry-run
+npm run execute:visual-screenshot-package:check-env
+npm run execute:visual-screenshot-package:report
+npm run audit:lighthouse-a11y-workstation
+npm run execute:lighthouse-a11y-workstation:dry-run
+npm run execute:lighthouse-a11y-workstation:check-env
+npm run execute:lighthouse-a11y-workstation:report
+npm run audit:staging-real-env-application
+npm run execute:staging-real-env-application:dry-run
+npm run execute:staging-real-env-application:check-env
+npm run execute:staging-real-env-application:report
+npm run audit:private-beta-real-entry-repeat
+npm run execute:private-beta-real-entry-repeat:dry-run
+npm run execute:private-beta-real-entry-repeat:check-env
+npm run execute:private-beta-real-entry-repeat:report
+```
+
+The expected default without real workstation screenshots, Lighthouse/a11y and staging credentials is `NO_GO`.
+
+## Sprint 241-255 — Private beta evidence interpretation and adjudication
+
+This block adds the report interpretation layer that sits after the Windows/VS Code evidence batch.
+
+Commands:
+
+```bash
+npm run audit:private-beta-report-interpreter
+npm run execute:private-beta-report-interpreter:dry-run
+npm run execute:private-beta-report-interpreter:check-env
+npm run execute:private-beta-report-interpreter:report
+npm run audit:visual-findings-triage
+npm run execute:visual-findings-triage:dry-run
+npm run execute:visual-findings-triage:check-env
+npm run execute:visual-findings-triage:report
+npm run audit:quality-findings-triage
+npm run execute:quality-findings-triage:dry-run
+npm run execute:quality-findings-triage:check-env
+npm run execute:quality-findings-triage:report
+npm run audit:staging-evidence-review
+npm run execute:staging-evidence-review:dry-run
+npm run execute:staging-evidence-review:check-env
+npm run execute:staging-evidence-review:report
+npm run audit:private-beta-evidence-adjudicator
+npm run execute:private-beta-evidence-adjudicator:dry-run
+npm run execute:private-beta-evidence-adjudicator:check-env
+npm run execute:private-beta-evidence-adjudicator:report
+```
+
+Expected status before real workstation/staging evidence:
+
+```txt
+private_beta_evidence_adjudicator_no_go
+```
+
+Accepted status:
+
+```txt
+private_beta_evidence_adjudicator_go
+```
+
+## Sprint 256-270 — Private beta evidence resolution cycle
+
+This block converts generated Windows/VS Code reports into actionable resolution backlogs and repeats GO/NO-GO adjudication without approving missing evidence.
+
+Commands:
+
+```bash
+npm run audit:private-beta-workstation-report-ingest
+npm run execute:private-beta-workstation-report-ingest:dry-run
+npm run execute:private-beta-workstation-report-ingest:check-env
+npm run execute:private-beta-workstation-report-ingest:report
+npm run audit:visual-resolution-backlog
+npm run execute:visual-resolution-backlog:dry-run
+npm run execute:visual-resolution-backlog:check-env
+npm run execute:visual-resolution-backlog:report
+npm run audit:quality-resolution-backlog
+npm run execute:quality-resolution-backlog:dry-run
+npm run execute:quality-resolution-backlog:check-env
+npm run execute:quality-resolution-backlog:report
+npm run audit:staging-resolution-backlog
+npm run execute:staging-resolution-backlog:dry-run
+npm run execute:staging-resolution-backlog:check-env
+npm run execute:staging-resolution-backlog:report
+npm run audit:private-beta-entry-resolution-cycle
+npm run execute:private-beta-entry-resolution-cycle:dry-run
+npm run execute:private-beta-entry-resolution-cycle:check-env
+npm run execute:private-beta-entry-resolution-cycle:report
+```
+
+Expected default without workstation/staging evidence:
+
+```txt
+private_beta_entry_resolution_cycle_no_go
+```
+
+GO requires real evidence reports, clear visual/quality/staging backlogs, full adjudication and explicit manual confirmation.
+
+## Sprint 271–285 — Private beta one-command evidence and decision matrices
+
+New validation commands:
+
+```bash
+npm run audit:windows-private-beta-one-command
+npm run execute:windows-private-beta-one-command:dry-run
+npm run execute:windows-private-beta-one-command:check-env
+npm run execute:windows-private-beta-one-command:report
+npm run audit:visual-correction-matrix
+npm run execute:visual-correction-matrix:dry-run
+npm run execute:visual-correction-matrix:check-env
+npm run execute:visual-correction-matrix:report
+npm run audit:quality-correction-matrix
+npm run execute:quality-correction-matrix:dry-run
+npm run execute:quality-correction-matrix:check-env
+npm run execute:quality-correction-matrix:report
+npm run audit:staging-external-secrets-checklist
+npm run execute:staging-external-secrets-checklist:dry-run
+npm run execute:staging-external-secrets-checklist:check-env
+npm run execute:staging-external-secrets-checklist:report
+npm run audit:private-beta-entry-decision-gate
+npm run execute:private-beta-entry-decision-gate:dry-run
+npm run execute:private-beta-entry-decision-gate:check-env
+npm run execute:private-beta-entry-decision-gate:report
+```
+
+The expected default decision remains `NO_GO` until real screenshots, Lighthouse/a11y, staging secrets, and manual confirmation are provided.
+
+## Sprint 286-300 — Private beta human RC package
+
+New validation commands:
+
+```bash
+npm run audit:private-beta-simplified-local-flow
+npm run execute:private-beta-simplified-local-flow:dry-run
+npm run execute:private-beta-simplified-local-flow:check-env
+npm run execute:private-beta-simplified-local-flow:report
+npm run audit:private-beta-one-screen-summary
+npm run execute:private-beta-one-screen-summary:dry-run
+npm run execute:private-beta-one-screen-summary:check-env
+npm run execute:private-beta-one-screen-summary:report
+npm run audit:visual-manual-priority-checklist
+npm run execute:visual-manual-priority-checklist:dry-run
+npm run execute:visual-manual-priority-checklist:check-env
+npm run execute:visual-manual-priority-checklist:report
+npm run audit:staging-security-manual-checklist
+npm run execute:staging-security-manual-checklist:dry-run
+npm run execute:staging-security-manual-checklist:check-env
+npm run execute:staging-security-manual-checklist:report
+npm run audit:human-release-candidate-package
+npm run execute:human-release-candidate-package:dry-run
+npm run execute:human-release-candidate-package:check-env
+npm run execute:human-release-candidate-package:report
+```
+
+Expected local status without real evidence: NO-GO with explicit visual, quality, staging, and manual approval blockers.
+
+## Sprint 301–315 — Private Beta Execution Bridge
+
+This block closes the preparation-only track and moves private beta work into real workstation/staging execution.
+
+Commands:
+
+```bash
+npm run audit:private-beta-execution-bridge
+npm run execute:private-beta-execution-bridge:dry-run
+npm run execute:private-beta-execution-bridge:check-env
+npm run execute:private-beta-execution-bridge:report
+
+npm run audit:private-beta-operating-dashboard
+npm run execute:private-beta-operating-dashboard:dry-run
+npm run execute:private-beta-operating-dashboard:check-env
+npm run execute:private-beta-operating-dashboard:report
+
+npm run audit:private-beta-short-task-list
+npm run execute:private-beta-short-task-list:dry-run
+npm run execute:private-beta-short-task-list:check-env
+npm run execute:private-beta-short-task-list:report
+
+npm run audit:mock-beta-option-package
+npm run execute:mock-beta-option-package:dry-run
+npm run execute:mock-beta-option-package:check-env
+npm run execute:mock-beta-option-package:report
+
+npm run audit:private-beta-strategy-decision
+npm run execute:private-beta-strategy-decision:dry-run
+npm run execute:private-beta-strategy-decision:check-env
+npm run execute:private-beta-strategy-decision:report
+```
+
+Windows operator command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/private-beta-execution-bridge.windows.ps1
+```
+
+Expected local status without real evidence: `private_beta_execution_bridge_ready_with_env_blockers`, `private_beta_operating_dashboard_no_go`, and `private_beta_strategy_decision_no_go`.
