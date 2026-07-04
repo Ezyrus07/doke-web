@@ -170,3 +170,37 @@ The execution gate runs SQL tests 001 through 005 around the HTTP smoke:
 A JSON report is written to `reports/generated/supabase-local-staging-execution-report.json` during execution, or to the path specified by `DOKE_SUPABASE_VALIDATION_REPORT`.
 
 Do not enable frontend API provider until `audit:supabase-local-staging-execution`, `validate:supabase-local-staging` and the generated execution report all pass.
+
+## Sprint 24 — Supabase staging runbook wrapper
+
+Sprint 24 keeps `validate:supabase-local-staging` for compatibility and adds the preferred operational runner:
+
+```bash
+npm run audit:supabase-staging-validation-runbook
+npm run validate:supabase-staging:dry-run
+npm run validate:supabase-staging:plan
+```
+
+Real execution is split into explicit modes:
+
+```bash
+npm run validate:supabase-staging:check-env
+npm run validate:supabase-staging:sql-tests
+npm run validate:supabase-staging:e2e
+npm run validate:supabase-staging
+```
+
+Preferred env names:
+
+```txt
+DOKE_ENVIRONMENT=local or staging
+DOKE_SUPABASE_DB_URL=postgresql://...
+DOKE_STAGING_API_URL=https://...
+DOKE_SUPABASE_VALIDATION_ALLOW_MUTATIONS=1
+DOKE_SUPABASE_SQL_TESTS_ALLOW_MUTATIONS=1
+DOKE_STAGING_E2E_ALLOW_MUTATIONS=1
+```
+
+`SUPABASE_DB_URL` is still accepted as a compatibility fallback. Use `DOKE_STAGING_VALIDATION_MARKER=staging` only when a legitimate staging URL does not contain a staging/local marker.
+
+Do not enable frontend API provider after a dry-run. Canary API can begin only after the real full gate writes a passing `reports/generated/staging-validation-report.json` and SQL tests 001–005 plus `validate:staging-e2e` have passed.

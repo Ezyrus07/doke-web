@@ -129,3 +129,17 @@ npm run validate:supabase-local-staging:dry-run
 ```
 
 The mutating execution still requires `DOKE_SUPABASE_VALIDATION_ALLOW_MUTATIONS=1` and `DOKE_STAGING_E2E_ALLOW_MUTATIONS=1`. The frontend provider must remain `mock` until the wrapper passes against local/staging.
+
+## Sprint 24 orchestration
+
+Sprint 24 keeps this E2E runner as the runtime smoke, but it is now called by the broader Supabase staging validation wrapper:
+
+```bash
+npm run audit:supabase-staging-validation-runbook
+npm run validate:supabase-staging:dry-run
+npm run validate:supabase-staging:plan
+```
+
+The full gate runs SQL tests 001–003 before `validate:staging-e2e` and SQL tests 004–005 after it. `validate:staging-e2e` remains mutating and still requires `DOKE_STAGING_E2E_ALLOW_MUTATIONS=1`.
+
+Do not enable frontend API provider from this E2E pass alone. Sprint 25 canary work starts only after the wrapper, SQL tests 001–005, idempotency replay/conflict checks and admin audit persistence all pass together.

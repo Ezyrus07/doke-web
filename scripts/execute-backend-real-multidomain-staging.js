@@ -1,0 +1,170 @@
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+
+const root = process.cwd();
+const args = new Set(process.argv.slice(2));
+const dryRun = args.has('--dry-run');
+const checkEnv = args.has('--check-env');
+const execute = args.has('--execute');
+const writeReport = args.has('--write-report');
+const reportPath = process.env.DOKE_BACKEND_REAL_MULTIDOMAIN_STAGING_REPORT_PATH || 'reports/generated/backend-real-multidomain-staging-execution-report.json';
+const apiUrl = String(process.env.DOKE_BACKEND_REAL_STAGING_API_URL || '').replace(/\/+$/, '');
+const environment = String(process.env.DOKE_ENVIRONMENT || '').toLowerCase();
+
+const requiredReports = [
+  ['reports/generated/auth-identity-canary-promotion-gate-report.json', 'auth_identity_canary_ready_for_manual_staging_rollout'],
+  ['reports/generated/orders-readonly-canary-promotion-gate-report.json', 'orders_readonly_canary_ready_for_manual_write_canary_planning'],
+  ['reports/generated/orders-write-canary-staging-execution-report.json', 'orders_write_canary_staging_execution_validated'],
+  ['reports/generated/backend-real-complete-readiness-gate-report.json', 'backend_real_complete_ready_for_manual_domain_expansion']
+];
+const plan = [
+  'POST /auth/login', 'GET /auth/session', 'GET /users/me', 'GET /profiles/me',
+  'GET /orders', 'POST /orders', 'POST /orders/:id/accept', 'POST /orders/:id/charge', 'POST /orders/:id/complete',
+  'GET /conversations', 'POST /orders/:id/conversation', 'POST /conversations/:id/messages', 'POST /conversations/:id/read',
+  'GET /notifications', 'POST /notifications', 'POST /notifications/:id/read', 'POST /notifications/read-all',
+  'GET /wallet', 'GET /wallet/transactions', 'POST /withdrawals', 'GET /receipts'
+];
+const report = {
+  name: 'backend-real-multidomain-staging-execution',
+  generatedAt: new Date().toISOString(),
+  objective: 'Execute a real multi-domain staging smoke only when all upstream reports, flags and safe target markers are present.',
+  mode: execute ? 'execute' : checkEnv ? 'check-env' : dryRun ? 'dry-run' : 'blocked-evaluation',
+  performsExternalNetworkRequest: execute,
+  performsExternalMutation: execute,
+  status: 'not_evaluated',
+  apiUrl: apiUrl ? redact(apiUrl) : '',
+  plan,
+  results: [],
+  failures: [],
+  warnings: []
+};
+
+main().catch((error) => {
+  report.failures.push(error.stack || error.message || String(error));
+  report.status = 'failed';
+  finish();
+  process.exit(1);
+});
+
+async function main() {
+  assertStaticAssets();
+  if (dryRun) {
+    report.status = 'backend_real_multidomain_staging_execution_dry_run_ready';
+    record('dry_run.plan_rendered');
+    return finish();
+  }
+
+  const envOk = evaluateEnvironment();
+  const reportsOk = evaluateReports();
+  if (checkEnv || !execute) {
+    report.status = envOk && reportsOk ? 'backend_real_multidomain_staging_ready_for_manual_execution' : 'blocked_until_backend_real_multidomain_staging_prerequisites';
+    return finish();
+  }
+
+  if (!envOk || !reportsOk) {
+    report.status = 'blocked_until_backend_real_multidomain_staging_prerequisites';
+    return finish();
+  }
+
+  await executePlan();
+  report.status = report.failures.length ? 'failed' : 'backend_real_multidomain_staging_execution_validated';
+  finish();
+}
+
+function assertStaticAssets() {
+  ['docs/BACKEND-REAL-MULTIDOMAIN-STAGING-RUNBOOK.md', 'docs/BACKEND-REAL-E2E-RUNBOOK.md', 'package.json'].forEach((file) => {
+    if (!fs.existsSync(path.join(root, file))) report.failures.push(`Missing required file: ${file}`);
+  });
+  record('static_assets.present');
+}
+
+function evaluateEnvironment() {
+  let ok = true;
+  if (!['local', 'staging'].includes(environment)) { ok = false; report.warnings.push('DOKE_ENVIRONMENT must be local or staging.'); }
+  if (!apiUrl) { ok = false; report.warnings.push('DOKE_BACKEND_REAL_STAGING_API_URL is required.'); }
+  if (apiUrl && unsafeTarget(apiUrl)) { ok = false; report.failures.push('Refusing unsafe backend real staging target. URL must contain local/staging marker and must not look like production.'); report.status = 'blocked_unsafe_backend_real_staging_target'; }
+  ['DOKE_BACKEND_REAL_STAGING_ALLOW_NETWORK', 'DOKE_BACKEND_REAL_STAGING_ALLOW_MUTATIONS', 'DOKE_BACKEND_REAL_STAGING_EXECUTE'].forEach((name) => {
+    if (process.env[name] !== '1') { ok = false; report.warnings.push(`${name}=1 is required for execution.`); }
+  });
+  if (process.env.DOKE_BACKEND_REAL_STAGING_CONFIRM !== 'execute-backend-real-multidomain') {
+    ok = false;
+    report.warnings.push('DOKE_BACKEND_REAL_STAGING_CONFIRM=execute-backend-real-multidomain is required.');
+  }
+  record(ok ? 'environment.ready' : 'environment.blocked');
+  return ok;
+}
+
+function evaluateReports() {
+  let ok = true;
+  requiredReports.forEach(([file, expectedStatus]) => {
+    const full = path.join(root, file);
+    if (!fs.existsSync(full)) { ok = false; report.warnings.push(`Missing upstream report: ${file}`); return; }
+    try {
+      const payload = JSON.parse(fs.readFileSync(full, 'utf8'));
+      if (payload.status !== expectedStatus) { ok = false; report.warnings.push(`${file} must have status ${expectedStatus}, got ${payload.status || 'missing'}.`); }
+    } catch (error) {
+      ok = false;
+      report.warnings.push(`Could not parse upstream report ${file}: ${error.message}`);
+    }
+  });
+  record(ok ? 'upstream_reports.ready' : 'upstream_reports.blocked');
+  return ok;
+}
+
+async function executePlan() {
+  const clientToken = await login('client');
+  const professionalToken = await login('professional');
+  const adminToken = await login('admin');
+  await get('/auth/session', clientToken);
+  await get('/users/me', clientToken);
+  await get('/profiles/me', clientToken);
+  await get('/orders', clientToken);
+  const order = await post('/orders', clientToken, { title: 'Backend real multidomain staging smoke', amountCents: 1000 }, 'staging-order-create-001', [200, 201]);
+  const orderId = readId(order, 'order') || 'unknown-order';
+  await post(`/orders/${orderId}/accept`, professionalToken, { note: 'accepted' }, 'staging-order-accept-001');
+  await post(`/orders/${orderId}/charge`, professionalToken, { amountCents: 1000 }, 'staging-order-charge-001');
+  await post(`/orders/${orderId}/complete`, professionalToken, { at: new Date().toISOString() }, 'staging-order-complete-001');
+  await get('/conversations', clientToken);
+  const conversation = await post(`/orders/${orderId}/conversation`, clientToken, { source: 'staging-smoke' }, 'staging-conversation-create-001', [200, 201]);
+  const conversationId = readId(conversation, 'conversation') || 'unknown-conversation';
+  await post(`/conversations/${conversationId}/messages`, clientToken, { body: 'Staging smoke message' }, 'staging-message-create-001', [200, 201]);
+  await post(`/conversations/${conversationId}/read`, professionalToken, { at: new Date().toISOString() }, 'staging-conversation-read-001');
+  await get('/notifications', clientToken);
+  const notification = await post('/notifications', adminToken, { userId: 'client', type: 'system', title: 'Staging smoke notification' }, 'staging-notification-create-001', [200, 201, 403]);
+  const notificationId = readId(notification, 'notification');
+  if (notificationId) await post(`/notifications/${notificationId}/read`, clientToken, { at: new Date().toISOString() }, 'staging-notification-read-001');
+  await post('/notifications/read-all', clientToken, { at: new Date().toISOString() }, 'staging-notification-read-all-001');
+  await get('/wallet', professionalToken);
+  await get('/wallet/transactions', professionalToken);
+  await post('/withdrawals', professionalToken, { amountCents: 1000 }, 'staging-withdrawal-create-001', [200, 201]);
+  await get('/receipts', professionalToken);
+  record('multidomain_staging_smoke.executed');
+}
+
+async function login(role) {
+  const payload = await request('POST', '/auth/login', '', { email: `${role}@doke.local`, password: process.env[`DOKE_${role.toUpperCase()}_PASSWORD`] || 'Doke1234!' }, null, [200]);
+  const token = payload.token || payload.accessToken || payload.access_token || payload.session && (payload.session.token || payload.session.accessToken || payload.session.access_token);
+  if (!token) throw new Error(`Login for ${role} did not return token.`);
+  return token;
+}
+async function get(endpoint, token) { return request('GET', endpoint, token, undefined, null, [200]); }
+async function post(endpoint, token, body, key, expected = [200]) { return request('POST', endpoint, token, body, key, expected); }
+async function request(method, endpoint, token, body, key, expectedStatuses) {
+  const headers = { Accept: 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (key) headers['x-idempotency-key'] = key;
+  report.results.push({ name: `${method} ${shape(endpoint)}`, ok: true, plannedExternalCall: true, hasIdempotencyKey: Boolean(key) });
+  const response = await fetch(`${apiUrl}${endpoint}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+  const payload = await response.json().catch(() => ({}));
+  if (!expectedStatuses.includes(response.status)) throw new Error(`${method} ${endpoint} returned ${response.status}: ${JSON.stringify(payload)}`);
+  return payload;
+}
+function readId(payload, key) { return payload && payload[key] && payload[key].id || payload && payload.id; }
+function unsafeTarget(url) { const lower = String(url).toLowerCase(); return /(^|\.)doke\.com|production|prod|api\.doke/.test(lower) || !/(localhost|127\.0\.0\.1|local|staging|stage|stg|preview|sandbox)/.test(lower); }
+function redact(url) { return String(url).replace(/:\/\/([^/@]+@)?/, '://').replace(/:[0-9]+$/, ':<port>'); }
+function shape(pathName) { return pathName.replace(/^\/orders\/[^/]+\/conversation$/, '/orders/:id/conversation').replace(/^\/orders\/[^/]+\/(accept|charge|complete)$/, '/orders/:id/$1').replace(/^\/conversations\/[^/]+\/(messages|read)$/, '/conversations/:id/$1').replace(/^\/notifications\/[^/]+\/read$/, '/notifications/:id/read'); }
+function record(name) { report.results.push({ name, ok: true }); }
+function finish() { if (writeReport) { const output = path.join(root, reportPath); fs.mkdirSync(path.dirname(output), { recursive: true }); fs.writeFileSync(output, JSON.stringify(report, null, 2) + '\n'); } if (report.failures.length && report.status === 'failed') { console.error(`[${report.name}] failed`); report.failures.forEach((failure) => console.error(`- ${failure}`)); process.exit(1); } console.log(`[${report.name}] ${report.status}`); }

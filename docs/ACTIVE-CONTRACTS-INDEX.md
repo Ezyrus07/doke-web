@@ -162,3 +162,262 @@ Não criar novo documento permanente para cada etapa. Primeiro atualizar um cont
 - `npm run audit:supabase-local-staging-execution`
 - `npm run validate:supabase-local-staging:dry-run`
 - `npm run validate:supabase-local-staging`
+
+## Sprint 24 — Supabase staging validation runbook
+
+- `docs/SUPABASE-STAGING-RUNBOOK.md`: operational source for the local/staging Supabase execution gate.
+- `scripts/run-supabase-staging-validation.js`: safe runner with `dry-run`, `check-env`, `print-plan`, `run-sql-tests`, `run-e2e` and `full` modes.
+- `scripts/audit-supabase-staging-validation-runbook.js`: static gate for the runbook, env contract, SQL test list and package scripts.
+- `npm run audit:supabase-staging-validation-runbook`: validates Sprint 24 orchestration without touching visual/frontend.
+- `npm run validate:supabase-staging:dry-run`, `npm run validate:supabase-staging:plan`, `npm run validate:supabase-staging`: preferred commands for the Sprint 24 gate.
+
+The existing mock frontend remains the active user-facing provider until a real local/staging pass is complete and Sprint 25 starts a scoped auth/identity canary.
+
+## Sprint 25 — auth/identity canary
+
+Contrato ativo: `docs/AUTH-IDENTITY-CANARY-RUNBOOK.md`.
+
+Arquivos de autoridade:
+
+- `assets/js/core/runtime-config.js` — reconhece `dokeAuthIdentityCanary`, força `dataProvider=mock` durante o canary e expõe metadados de provider solicitado.
+- `assets/js/services/auth-service.js` — expõe `DokeAuth.configureAuthIdentityCanary`, `DokeAuth.getAuthIdentityCanaryStatus` e `DokeAuth.rollbackAuthIdentityCanary`.
+- `scripts/validate-auth-identity-canary.js` — smoke real apenas de `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me`.
+- `scripts/audit-auth-identity-canary-contract.js` — gate estático do contrato.
+
+Comandos:
+
+```bash
+npm run audit:auth-identity-canary-contract
+npm run validate:auth-identity-canary:dry-run
+npm run validate:auth-identity-canary
+```
+
+## Sprint 26 active contract — Auth/identity canary browser runtime gate
+
+- `assets/js/services/auth-service.js` bloqueia ativação de canary Auth/Identity para alvo com aparência de produção e exige marcador local/staging ou `targetMarker` explícito.
+- `scripts/validate-auth-identity-canary-browser-runtime.js` valida o contrato de navegador sem rede real: default mock, bloqueio de alvo perigoso, ativação segura, chamadas restritas a auth/identity e rollback.
+- Gate obrigatório antes de teste manual no navegador: `npm run validate:auth-identity-canary:browser-runtime`.
+- O restante do produto permanece em `dataProvider=mock`; canary de outros domínios continua proibido até o canary Auth/Identity real passar em staging/local.
+
+## Sprint 27 active contract — Auth/identity local network canary
+
+- `backend/shared/testing/auth-identity-canary-local-server.js` fornece um servidor HTTP local e controlado para validar o canary sem depender de credenciais externas.
+- `scripts/validate-auth-identity-canary-local-runtime.js` executa o mesmo smoke real `scripts/validate-auth-identity-canary.js` contra `127.0.0.1`.
+- `scripts/audit-auth-identity-canary-local-runtime.js` garante que o gate local, os docs e os comandos do `package.json` continuam registrados.
+- Comando obrigatório antes do staging real: `npm run validate:auth-identity-canary:local-runtime`.
+- O contrato continua `authProvider=api`, `dataProvider=mock`, com chamadas restritas a `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me`.
+
+## Sprint 28 active contract — Auth/identity promotion gate
+
+- `scripts/validate-auth-identity-canary-promotion-gate.js` consolida os gates locais antes da promoção para staging/local real.
+- `scripts/audit-auth-identity-canary-promotion-gate.js` garante que comandos, docs e contrato de relatório real estão registrados.
+- Comandos: `npm run audit:auth-identity-canary-promotion-gate`, `npm run validate:auth-identity-canary:promotion-gate:dry-run`, `npm run validate:auth-identity-canary:promotion-gate`.
+- Flag estrita: `DOKE_AUTH_IDENTITY_CANARY_REQUIRE_REAL_REPORT=1`.
+- Relatório esperado: `DOKE_AUTH_IDENTITY_CANARY_REAL_REPORT_PATH` ou `reports/generated/auth-identity-canary-report.json`.
+- Sem relatório real válido, o status permanece `blocked_until_real_auth_identity_canary_report` e nenhum canary de pedidos/mensagens/notificações/carteira/admin está autorizado.
+
+## Sprint 29 — contrato ativo de Orders read-only canary
+
+- `docs/ORDERS-READONLY-CANARY-RUNBOOK.md`: runbook do canary de pedidos somente leitura.
+- `scripts/audit-orders-readonly-canary-contract.js`: audit estático do contrato.
+- `scripts/validate-orders-readonly-canary.js`: validador real/local-staging, bloqueado por Auth/Identity.
+- `scripts/validate-orders-readonly-canary-local-runtime.js`: harness local seguro.
+- `backend/shared/testing/orders-readonly-canary-local-server.js`: servidor local restrito.
+
+A execução real depende de `auth_identity_canary_ready_for_manual_staging_rollout`. O comando seguro local é `npm run validate:orders-readonly-canary:local-runtime`.
+
+## Sprint 30 — contrato ativo de Orders read-only promotion gate
+
+- `scripts/validate-orders-readonly-canary-promotion-gate.js`: gate que avalia se um relatório real de leitura de pedidos autoriza apenas planejamento manual de escrita.
+- `scripts/audit-orders-readonly-canary-promotion-gate.js`: audit estático do gate, comandos e documentação.
+- Comandos: `npm run audit:orders-readonly-canary-promotion-gate`, `npm run validate:orders-readonly-canary:promotion-gate:dry-run`, `npm run validate:orders-readonly-canary:promotion-gate`, `npm run validate:orders-readonly-canary:promotion-gate:report`.
+
+Sem relatório real, o status esperado é `blocked_until_real_orders_readonly_canary_report`. Com relatório real válido, o status é `orders_readonly_canary_ready_for_manual_write_canary_planning`. Esse status não ativa escrita; ele só libera planejamento manual do próximo gate.
+
+
+## Sprint 31 — Orders write canary planning gate
+
+Contrato ativo:
+
+- Script: `scripts/validate-orders-write-canary-planning-gate.js`
+- Audit: `scripts/audit-orders-write-canary-planning-gate.js`
+- Runbook: `docs/ORDERS-WRITE-CANARY-RUNBOOK.md`
+- Comando: `npm run validate:orders-write-canary:planning-gate`
+
+Status seguro sem relatório real:
+
+```txt
+blocked_until_real_orders_readonly_promotion_report
+```
+
+Status que permite apenas desenho manual:
+
+```txt
+orders_write_canary_ready_for_manual_contract_design
+```
+
+Salvaguarda obrigatória: `idempotency_key_required_for_every_mutation`.
+
+## Sprint 32 — Orders write local harness
+
+Contrato ativo local-only:
+
+- Server: `backend/shared/testing/orders-write-canary-local-server.js`
+- Validator: `scripts/validate-orders-write-canary-local-runtime.js`
+- Audit: `scripts/audit-orders-write-canary-local-runtime.js`
+- Runbook: `docs/ORDERS-WRITE-CANARY-RUNBOOK.md`
+- Command: `npm run validate:orders-write-canary:local-runtime`
+
+Status aprovado: `orders_write_canary_local_runtime_validated`.
+
+A salvaguarda central permanece `writeActivation=false` com `dataProvider=mock`. O harness local valida replay idempotente, `DOKE_IDEMPOTENCY_CONFLICT`, bloqueio de role e domínio restrito a pedidos.
+
+## Sprint 33 — Orders write staging preflight gate
+
+A Sprint 33 adiciona o gate de preflight para uma futura execução real de escrita de pedidos em local/staging. O escopo continua sem alteração visual e sem ativação de escrita no frontend.
+
+Contrato operacional:
+
+```txt
+writeActivation=false
+dataProvider=mock
+ordersProvider=api-write-canary-staging-preflight
+performsNetworkRequest=false
+performsMutation=false
+```
+
+Comandos:
+
+```bash
+npm run audit:orders-write-canary-staging-preflight-gate
+npm run validate:orders-write-canary:staging-preflight-gate:dry-run
+npm run validate:orders-write-canary:staging-preflight-gate:check-env
+npm run validate:orders-write-canary:staging-preflight-gate
+npm run validate:orders-write-canary:staging-preflight-gate:report
+```
+
+Status seguro sem pré-requisitos reais:
+
+```txt
+blocked_until_orders_write_staging_preflight_prerequisites
+```
+
+Status de alvo inseguro:
+
+```txt
+blocked_unsafe_orders_write_staging_target
+```
+
+Status aprovado apenas para execução manual futura:
+
+```txt
+orders_write_canary_ready_for_manual_staging_execution
+```
+
+Variáveis exigidas para aprovação do preflight real:
+
+```bash
+DOKE_ENVIRONMENT=staging
+DOKE_ORDERS_WRITE_CANARY_STAGING_API_URL=https://staging-api.example
+DOKE_ORDERS_WRITE_CANARY_STAGING_ALLOW_NETWORK=1
+DOKE_ORDERS_WRITE_CANARY_STAGING_ALLOW_MUTATIONS=1
+```
+
+Relatórios reais exigidos:
+
+```txt
+auth_identity_canary_ready_for_manual_staging_rollout
+orders_readonly_canary_ready_for_manual_write_canary_planning
+orders_write_canary_ready_for_manual_contract_design
+orders_write_canary_local_runtime_validated
+```
+
+A aprovação do preflight não executa mutação. Ela apenas confirma que a próxima sprint pode preparar um executor real de staging com confirmação manual, idempotência obrigatória, relatório e rollback para mock.
+
+## Orders write multi-step canary contracts — Sprint 34-36
+
+- `docs/ORDERS-WRITE-STAGING-EXECUTOR-RUNBOOK.md` — manual staging executor contract for orders write canary.
+- `docs/ORDERS-WRITE-EXECUTION-PROMOTION-RUNBOOK.md` — promotion gate after real staging execution.
+- `docs/ORDERS-WRITE-FRONTEND-ACTIVATION-RUNBOOK.md` — frontend activation planning gate with manual activation only.
+
+## Orders write frontend runtime contracts — Sprint 37-39
+
+- `docs/ORDERS-WRITE-FRONTEND-RUNTIME-RUNBOOK.md` — contrato de ativação manual no runtime do frontend.
+- `docs/ORDERS-WRITE-FRONTEND-ROLLBACK-RUNBOOK.md` — contrato de rollback e degradação segura.
+- `scripts/validate-orders-write-frontend-activation-runtime.js` — harness browser/local sem rede externa.
+- `scripts/validate-orders-write-frontend-rollback-gate.js` — gate de rollback e bloqueio seguro.
+
+Status:
+
+```txt
+orders_write_frontend_activation_runtime_validated
+orders_write_frontend_rollback_gate_validated
+```
+
+## Sprint 40–48 active contracts
+
+- Messaging canary local runtime: `docs/MESSAGING-CANARY-RUNBOOK.md`
+- Notifications canary local runtime: `docs/NOTIFICATIONS-CANARY-RUNBOOK.md`
+- Wallet canary local runtime: `docs/WALLET-CANARY-RUNBOOK.md`
+- Backend real staging preflight: `docs/BACKEND-REAL-STAGING-PREFLIGHT-RUNBOOK.md`
+- Backend real complete readiness: `docs/BACKEND-REAL-COMPLETE-READINESS-RUNBOOK.md`
+
+The active provider default is still mock. Real staging is manual-only and report-gated.
+
+## Sprint 49–60 active backend contracts
+
+- `docs/BACKEND-REAL-MULTIDOMAIN-STAGING-RUNBOOK.md`
+- `docs/BACKEND-REAL-E2E-RUNBOOK.md`
+- `docs/BACKEND-REAL-OBSERVABILITY-RUNBOOK.md`
+- `docs/DOMAIN-EXPANSION-RUNBOOK.md`
+
+## Sprint 61–75 — novos contratos ativos
+- `docs/SERVICE-LISTINGS-CANARY-RUNBOOK.md`
+- `docs/PUBLICATIONS-CANARY-RUNBOOK.md`
+- `docs/COMMUNITY-CANARY-RUNBOOK.md`
+- `docs/DOMAIN-EXPANSION-E2E-RUNBOOK.md`
+- `docs/DOMAIN-EXPANSION-STAGING-RUNBOOK.md`
+- `docs/BETA-CLOSED-BACKEND-REAL-READINESS-RUNBOOK.md`
+
+## Sprint 76–90 — Product beta backend-real domains
+
+- `docs/MEDIA-UPLOADS-CANARY-RUNBOOK.md` — media/uploads/attachments contract.
+- `docs/MODERATION-CANARY-RUNBOOK.md` — reports, blocks and moderation contract.
+- `docs/SEARCH-INDEXING-CANARY-RUNBOOK.md` — unified search and index rebuild contract.
+- `docs/PRICING-CANARY-RUNBOOK.md` — plans, subscriptions and boost contract.
+- `docs/PRODUCT-BETA-E2E-RUNBOOK.md` — local E2E runtime for product beta domains.
+- `docs/PRODUCT-BETA-STAGING-RUNBOOK.md` — guarded staging executor for product beta domains.
+- `docs/BETA-CLOSED-PRODUCT-READINESS-RUNBOOK.md` — beta closed product readiness gate.
+
+## Sprint 91–105 active contracts
+
+- `docs/PAYMENTS-ESCROW-CANARY-RUNBOOK.md`
+- `docs/KYC-CANARY-RUNBOOK.md`
+- `docs/SUPPORT-ADMIN-CANARY-RUNBOOK.md`
+- `docs/SECURITY-ABUSE-CANARY-RUNBOOK.md`
+- `docs/BETA-LAUNCH-E2E-RUNBOOK.md`
+- `docs/BETA-LAUNCH-STAGING-RUNBOOK.md`
+- `docs/BETA-CLOSED-LAUNCH-READINESS-RUNBOOK.md`
+
+## Sprint 106–120 — Private beta frontend integration and release candidate readiness
+
+- `docs/BETA-LAUNCH-FRONTEND-RUNTIME-RUNBOOK.md` — controlled frontend activation for beta launch domains with `dataProvider=mock`.
+- `docs/BETA-QA-MATRIX-RUNBOOK.md` — QA matrix by persona/domain/scenario for private beta.
+- `docs/BETA-QUALITY-GATES-RUNBOOK.md` — accessibility, performance and SEO evidence gate.
+- `docs/BETA-VISUAL-HARDENING-RUNBOOK.md` — final visual hardening evidence gate without changing visual in this sprint.
+- `docs/RELEASE-CANDIDATE-PACKAGE-RUNBOOK.md` — final release candidate package and rollback gate.
+
+## Sprint 121–135 — Private Beta RC Evidence and Launch Operations
+
+- `docs/LOCAL-EVIDENCE-REPORTS-RUNBOOK.md` — geração de evidências locais sem fingir staging real.
+- `docs/STAGING-REAL-PREPARATION-PACKAGE-RUNBOOK.md` — pacote de preparação de staging real com flags e URL segura.
+- `docs/PRIVATE-BETA-RELEASE-CHECKLIST.md` — checklist go/no-go sem liberar release com evidência parcial.
+- `docs/PRIVATE-BETA-USER-ENTRY-RUNBOOK.md` — entrada controlada de usuários reais por coortes.
+- `docs/RELEASE-CANDIDATE-ASSEMBLY-RUNBOOK.md` — montagem do pacote RC com bloqueadores explícitos.
+
+## Sprint 136–150 private beta release gates
+- Playwright visual evidence package: `docs/PLAYWRIGHT-VISUAL-EVIDENCE-PACKAGE-RUNBOOK.md`
+- Browser quality evidence package: `docs/BETA-BROWSER-QUALITY-EVIDENCE-RUNBOOK.md`
+- Staging environment binder: `docs/STAGING-ENV-BINDER-RUNBOOK.md`
+- Operator rehearsal: `docs/PRIVATE-BETA-OPERATOR-REHEARSAL-RUNBOOK.md`
+- Release go/no-go: `docs/RELEASE-GO-NO-GO-RUNBOOK.md`

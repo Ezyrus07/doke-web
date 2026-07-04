@@ -7,6 +7,362 @@
   var Doke = root.Doke || (root.Doke = {});
   var services = Doke.services || (Doke.services = {});
 
+  var ORDERS_WRITE_CANARY_KEYS = Object.freeze({
+    enabled: 'doke.canary.ordersWrite.enabled',
+    backup: 'doke.canary.ordersWrite.backup.v1',
+    ordersProvider: 'doke.ordersProvider',
+    orderWriteActivation: 'doke.orderWriteActivation',
+    apiBaseUrl: 'doke.apiBaseUrl',
+    ordersApiBaseUrl: 'doke.canary.ordersWrite.apiBaseUrl',
+    dataProvider: 'doke.dataProvider',
+    network: 'doke.flag.enableNetworkRequests',
+    marker: 'doke.canary.ordersWrite.targetMarker'
+  });
+  var ORDERS_WRITE_CANARY_PROVIDER = 'api-write-canary-frontend-activation';
+  var ORDERS_WRITE_ALLOWED_ACTIONS = Object.freeze({
+    accept: '/orders/:id/accept',
+    decline: '/orders/:id/decline',
+    quote: '/orders/:id/quote',
+    charge: '/orders/:id/charge',
+    start: '/orders/:id/start',
+    complete: '/orders/:id/complete',
+    updateStatus: '/orders/:id/status',
+    transition: '/orders/:id/status'
+  });
+
+  function readStorage(key) {
+    try { return root.localStorage.getItem(key); }
+    catch (error) { return null; }
+  }
+
+  function writeStorageValue(key, value) {
+    try {
+      if (value === null || value === undefined) root.localStorage.removeItem(key);
+      else root.localStorage.setItem(key, String(value));
+    } catch (error) {
+      // Storage can be unavailable in constrained browser modes. Status calls will remain blocked.
+    }
+  }
+
+  function readQueryParam(key) {
+    try { return new URLSearchParams(root.location.search || '').get(key); }
+    catch (error) { return null; }
+  }
+
+  function normalizeBoolean(value) {
+    if (value === true || value === 'true' || value === '1' || value === 'on') return true;
+    if (value === false || value === 'false' || value === '0' || value === 'off') return false;
+    return undefined;
+  }
+
+  function normalizeBaseUrl(value) {
+    return String(value || '').trim().replace(/\/$/, '');
+  }
+
+  function normalizeMarker(value) {
+    var marker = String(value || '').trim().toLowerCase();
+    return ['local', 'staging'].indexOf(marker) !== -1 ? marker : '';
+  }
+
+  function getRuntimeConfig() {
+    return Doke.runtimeConfig && typeof Doke.runtimeConfig === 'object' ? Doke.runtimeConfig : {};
+  }
+
+  function getRuntimeFlags() {
+    var config = getRuntimeConfig();
+    return config.flags && typeof config.flags === 'object' ? config.flags : {};
+  }
+
+  function readOrdersWriteCanaryFlag(config) {
+    var paramsValue = readQueryParam('dokeOrdersWriteCanary');
+    if (paramsValue !== null) return normalizeBoolean(paramsValue) === true;
+    if (config.ordersWriteCanary === true || (config.canary && config.canary.ordersWrite === true)) return true;
+    return normalizeBoolean(readStorage(ORDERS_WRITE_CANARY_KEYS.enabled)) === true;
+  }
+
+  function readOrderWriteActivation(config) {
+    var paramsValue = readQueryParam('dokeOrderWriteActivation');
+    if (paramsValue !== null) return normalizeBoolean(paramsValue) === true;
+    if (config.orderWriteActivation === true || (config.canary && config.canary.orderWriteActivation === true)) return true;
+    return normalizeBoolean(readStorage(ORDERS_WRITE_CANARY_KEYS.orderWriteActivation)) === true;
+  }
+
+  function readOrdersProvider(config) {
+    var paramsValue = readQueryParam('dokeOrdersProvider');
+    if (paramsValue !== null) return String(paramsValue || '').trim().toLowerCase();
+    return String(config.ordersProvider || (config.canary && config.canary.ordersProvider) || readStorage(ORDERS_WRITE_CANARY_KEYS.ordersProvider) || 'mock').trim().toLowerCase();
+  }
+
+  function readOrdersApiBaseUrl(config) {
+    return normalizeBaseUrl(
+      readQueryParam('dokeOrdersWriteApiBaseUrl') ||
+      readStorage(ORDERS_WRITE_CANARY_KEYS.ordersApiBaseUrl) ||
+      config.apiBaseUrl ||
+      readStorage(ORDERS_WRITE_CANARY_KEYS.apiBaseUrl) ||
+      ''
+    );
+  }
+
+  function readNetworkEnabled(config) {
+    var paramsValue = readQueryParam('dokeEnableNetwork');
+    if (paramsValue !== null) return normalizeBoolean(paramsValue) === true;
+    var flags = config.flags && typeof config.flags === 'object' ? config.flags : {};
+    if (flags.enableNetworkRequests === true) return true;
+    return normalizeBoolean(readStorage(ORDERS_WRITE_CANARY_KEYS.network)) === true;
+  }
+
+  function getStoredOrdersWriteMarker() {
+    return normalizeMarker(readQueryParam('dokeOrdersWriteCanaryMarker') || readStorage(ORDERS_WRITE_CANARY_KEYS.marker));
+  }
+
+  function describeOrdersCanaryTarget(value) {
+    try {
+      var url = new URL(value);
+      return {
+        protocol: url.protocol,
+        host: url.host,
+        pathname: url.pathname,
+        label: url.protocol + ' ' + url.host + url.pathname
+      };
+    } catch (error) {
+      return { protocol: '', host: '', pathname: '', label: '' };
+    }
+  }
+
+  function isSafeOrdersCanaryTarget(value, marker) {
+    var description = describeOrdersCanaryTarget(value);
+    var host = String(description.host || '').toLowerCase();
+    var path = String(description.pathname || '').toLowerCase();
+    var explicitMarker = normalizeMarker(marker);
+    var safeByHost = /localhost|127\.0\.0\.1|staging|stage|stg|preview|local/.test(host);
+    var safeByPath = /staging|stage|stg|preview|local/.test(path);
+    if (!description.host || description.protocol !== 'https:' && !/^localhost|127\.0\.0\.1/.test(host)) return false;
+    if (safeByHost || safeByPath) return true;
+    return explicitMarker === 'local' || explicitMarker === 'staging';
+  }
+
+  function createOrdersWriteCanaryBackup() {
+    return {
+      createdAt: new Date().toISOString(),
+      values: {
+        'doke.canary.ordersWrite.enabled': readStorage(ORDERS_WRITE_CANARY_KEYS.enabled),
+        'doke.ordersProvider': readStorage(ORDERS_WRITE_CANARY_KEYS.ordersProvider),
+        'doke.orderWriteActivation': readStorage(ORDERS_WRITE_CANARY_KEYS.orderWriteActivation),
+        'doke.apiBaseUrl': readStorage(ORDERS_WRITE_CANARY_KEYS.apiBaseUrl),
+        'doke.canary.ordersWrite.apiBaseUrl': readStorage(ORDERS_WRITE_CANARY_KEYS.ordersApiBaseUrl),
+        'doke.dataProvider': readStorage(ORDERS_WRITE_CANARY_KEYS.dataProvider),
+        'doke.flag.enableNetworkRequests': readStorage(ORDERS_WRITE_CANARY_KEYS.network),
+        'doke.canary.ordersWrite.targetMarker': readStorage(ORDERS_WRITE_CANARY_KEYS.marker)
+      }
+    };
+  }
+
+  function readOrdersWriteCanaryBackup() {
+    try {
+      var raw = readStorage(ORDERS_WRITE_CANARY_KEYS.backup);
+      return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function restoreOrdersWriteCanaryBackup(backup) {
+    var values = backup && backup.values || {};
+    Object.keys(values).forEach(function (key) { writeStorageValue(key, values[key]); });
+    writeStorageValue(ORDERS_WRITE_CANARY_KEYS.backup, null);
+    refreshRuntimeOrdersWriteCanaryConfig(false);
+  }
+
+  function refreshRuntimeOrdersWriteCanaryConfig(enabled) {
+    var config = getRuntimeConfig();
+    var flags = Object.assign({}, getRuntimeFlags(), {
+      enableNetworkRequests: readNetworkEnabled(config)
+    });
+    var ordersProvider = enabled ? ORDERS_WRITE_CANARY_PROVIDER : readOrdersProvider(config);
+    Doke.runtimeConfig = Object.freeze(Object.assign({}, config, {
+      flags: flags,
+      dataProvider: enabled ? 'mock' : (config.dataProvider || 'mock'),
+      ordersProvider: ordersProvider,
+      orderWriteActivation: enabled && readOrderWriteActivation(config),
+      ordersWriteCanary: enabled,
+      apiBaseUrl: readOrdersApiBaseUrl(config) || config.apiBaseUrl || '',
+      canary: Object.freeze(Object.assign({}, config.canary || {}, {
+        ordersWrite: enabled,
+        ordersProvider: ordersProvider,
+        forcedDataProvider: enabled ? 'mock' : (config.canary && config.canary.forcedDataProvider || ''),
+        orderWriteActivation: enabled && readOrderWriteActivation(config)
+      }))
+    }));
+  }
+
+  function getOrdersWriteCanaryStatus() {
+    var config = getRuntimeConfig();
+    var canaryRequested = readOrdersWriteCanaryFlag(config);
+    var orderWriteActivation = readOrderWriteActivation(config);
+    var ordersProvider = readOrdersProvider(config);
+    var apiBaseUrl = readOrdersApiBaseUrl(config);
+    var networkEnabled = readNetworkEnabled(config);
+    var dataProvider = String(config.dataProvider || readStorage(ORDERS_WRITE_CANARY_KEYS.dataProvider) || 'mock').trim().toLowerCase();
+    var targetSafe = Boolean(apiBaseUrl) && isSafeOrdersCanaryTarget(apiBaseUrl, getStoredOrdersWriteMarker());
+    var blockers = [];
+
+    if (!canaryRequested) blockers.push('ordersWriteCanary is not enabled.');
+    if (ordersProvider !== ORDERS_WRITE_CANARY_PROVIDER) blockers.push('ordersProvider is not api-write-canary-frontend-activation.');
+    if (dataProvider !== 'mock') blockers.push('dataProvider must remain mock during orders write canary.');
+    if (!orderWriteActivation) blockers.push('orderWriteActivation is not enabled.');
+    if (!apiBaseUrl) blockers.push('orders write apiBaseUrl is not configured.');
+    if (!networkEnabled) blockers.push('enableNetworkRequests flag is disabled.');
+    if (apiBaseUrl && !targetSafe) blockers.push('orders write target is not marked as local/staging.');
+    if (typeof root.fetch !== 'function') blockers.push('window.fetch is not available.');
+
+    return Object.freeze({
+      domain: 'orders',
+      active: blockers.length === 0,
+      canaryRequested: canaryRequested,
+      ordersProvider: ordersProvider,
+      dataProvider: dataProvider,
+      orderWriteActivation: orderWriteActivation,
+      apiBaseUrlConfigured: Boolean(apiBaseUrl),
+      networkEnabled: networkEnabled,
+      targetSafe: targetSafe,
+      blockers: blockers
+    });
+  }
+
+  function configureOrdersWriteCanary(options) {
+    options = options || {};
+    var apiBaseUrl = normalizeBaseUrl(options.apiBaseUrl || options.baseUrl || readOrdersApiBaseUrl(getRuntimeConfig()));
+    var marker = normalizeMarker(options.targetMarker || options.marker || getStoredOrdersWriteMarker());
+
+    if (!apiBaseUrl) throw new Error('Orders write canary requires apiBaseUrl.');
+    if (!isSafeOrdersCanaryTarget(apiBaseUrl, marker)) throw new Error('Orders write canary target is production-like or not marked as local/staging.');
+
+    if (!readOrdersWriteCanaryBackup()) {
+      writeStorageValue(ORDERS_WRITE_CANARY_KEYS.backup, JSON.stringify(createOrdersWriteCanaryBackup()));
+    }
+
+    writeStorageValue(ORDERS_WRITE_CANARY_KEYS.enabled, 'true');
+    writeStorageValue(ORDERS_WRITE_CANARY_KEYS.ordersProvider, ORDERS_WRITE_CANARY_PROVIDER);
+    writeStorageValue(ORDERS_WRITE_CANARY_KEYS.orderWriteActivation, 'true');
+    writeStorageValue(ORDERS_WRITE_CANARY_KEYS.dataProvider, 'mock');
+    writeStorageValue(ORDERS_WRITE_CANARY_KEYS.apiBaseUrl, apiBaseUrl);
+    writeStorageValue(ORDERS_WRITE_CANARY_KEYS.ordersApiBaseUrl, apiBaseUrl);
+    writeStorageValue(ORDERS_WRITE_CANARY_KEYS.network, 'true');
+    if (marker) writeStorageValue(ORDERS_WRITE_CANARY_KEYS.marker, marker);
+
+    refreshRuntimeOrdersWriteCanaryConfig(true);
+    var status = getOrdersWriteCanaryStatus();
+    if (!status.active) throw new Error('Orders write canary activation blocked: ' + status.blockers.join(' '));
+    return status;
+  }
+
+  function rollbackOrdersWriteCanary() {
+    var backup = readOrdersWriteCanaryBackup();
+    if (backup) restoreOrdersWriteCanaryBackup(backup);
+    else {
+      writeStorageValue(ORDERS_WRITE_CANARY_KEYS.enabled, null);
+      writeStorageValue(ORDERS_WRITE_CANARY_KEYS.ordersProvider, 'mock');
+      writeStorageValue(ORDERS_WRITE_CANARY_KEYS.orderWriteActivation, null);
+      writeStorageValue(ORDERS_WRITE_CANARY_KEYS.ordersApiBaseUrl, null);
+      writeStorageValue(ORDERS_WRITE_CANARY_KEYS.marker, null);
+      refreshRuntimeOrdersWriteCanaryConfig(false);
+    }
+    return getOrdersWriteCanaryStatus();
+  }
+
+  function shouldUseOrdersWriteCanary() {
+    return getOrdersWriteCanaryStatus().active === true;
+  }
+
+  function getSessionToken() {
+    if (Doke.session && typeof Doke.session.getSession === 'function') {
+      var session = Doke.session.getSession();
+      if (session && session.token) return session.token;
+    }
+    if (root.DokeAuth && typeof root.DokeAuth.getSession === 'function') {
+      var authSession = root.DokeAuth.getSession();
+      if (authSession && authSession.token) return authSession.token;
+    }
+    return '';
+  }
+
+  function extractIdempotencyKey(payload, options) {
+    payload = payload || {};
+    options = options || {};
+    return normalizeText(options.idempotencyKey || options.idempotency_key || payload.idempotencyKey || payload.idempotency_key || '');
+  }
+
+  function stripCanaryPayloadMetadata(payload) {
+    var body = Object.assign({}, payload || {});
+    delete body.idempotencyKey;
+    delete body.idempotency_key;
+    return body;
+  }
+
+  function assertOrdersWriteIdempotencyKey(idempotencyKey) {
+    if (!idempotencyKey) throw new Error('Orders write API canary requires idempotencyKey for every mutation.');
+  }
+
+  function getOrdersWriteCanaryActionPath(actionName, orderId) {
+    var action = String(actionName || '').trim();
+    var template = ORDERS_WRITE_ALLOWED_ACTIONS[action];
+    if (!template) throw new Error('Orders write API canary action is not allowed: ' + action);
+    var id = encodeURIComponent(String(orderId || '').trim());
+    if (!id) throw new Error('Orders write API canary action requires orderId.');
+    return template.replace(':id', id);
+  }
+
+  function ordersWriteCanaryRequest(path, payload, idempotencyKey) {
+    assertOrdersWriteIdempotencyKey(idempotencyKey);
+    if (!/^\/orders(\/|$)/.test(path)) return Promise.reject(new Error('Orders write API canary blocked non-orders endpoint: ' + path));
+
+    var status = getOrdersWriteCanaryStatus();
+    if (!status.active) return Promise.reject(new Error('Orders write API canary is not active: ' + status.blockers.join(' ')));
+
+    var baseUrl = readOrdersApiBaseUrl(getRuntimeConfig());
+    var headers = {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'x-idempotency-key': idempotencyKey
+    };
+    var token = getSessionToken();
+    if (token) headers.Authorization = 'Bearer ' + token;
+
+    return root.fetch(baseUrl + path, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: headers,
+      body: JSON.stringify(stripCanaryPayloadMetadata(payload || {}))
+    }).then(function (response) {
+      return response.json().catch(function () { return {}; }).then(function (body) {
+        if (!response.ok) {
+          var message = body && (body.error || body.message || body.code) || 'Orders write API canary request failed: ' + response.status;
+          var error = new Error(message);
+          error.code = body && body.code;
+          error.status = response.status;
+          throw error;
+        }
+        return normalizeOrderFromProvider(body && (body.order || body.item) || body);
+      });
+    });
+  }
+
+  function ordersWriteCanaryCreate(payload, user) {
+    var apiPayload = getApiCreatePayload(payload, user);
+    return ordersWriteCanaryRequest('/orders', apiPayload, extractIdempotencyKey(payload));
+  }
+
+  function ordersWriteCanaryAction(actionName, orderId, payload, options) {
+    payload = payload || {};
+    options = options || {};
+    var path = getOrdersWriteCanaryActionPath(actionName, orderId);
+    var body = Object.assign({}, payload, {
+      id: orderId,
+      orderId: orderId
+    });
+    return ordersWriteCanaryRequest(path, body, extractIdempotencyKey(body, options));
+  }
+
   function getRepository() {
     return Doke.repositories && Doke.repositories.orders;
   }
@@ -40,12 +396,16 @@
     var activeProvider = status && status.activeProvider || 'mock';
     var apiReady = status ? status.apiReady === true : false;
 
+    var writeCanaryStatus = getOrdersWriteCanaryStatus();
+
     return Object.freeze({
       domain: 'orders',
-      activeProvider: activeProvider,
-      requestedProvider: status && status.requestedProvider || activeProvider,
-      apiReady: apiReady,
+      activeProvider: writeCanaryStatus.active ? writeCanaryStatus.ordersProvider : activeProvider,
+      requestedProvider: writeCanaryStatus.canaryRequested ? writeCanaryStatus.ordersProvider : status && status.requestedProvider || activeProvider,
+      apiReady: apiReady || writeCanaryStatus.active,
       ordersApiActive: activeProvider === 'api' && apiReady,
+      ordersWriteCanaryActive: writeCanaryStatus.active,
+      ordersWriteCanary: writeCanaryStatus,
       fallbackProvider: 'local-mock'
     });
   }
@@ -285,9 +645,21 @@
 
   function create(payload) {
     payload = payload || {};
-    var repository = assertRepository();
     var user = getCurrentUser();
     validateCreatePayload(payload, user);
+
+    if (shouldUseOrdersWriteCanary()) {
+      return ordersWriteCanaryCreate(payload, user).then(function (saved) {
+        document.dispatchEvent(new CustomEvent('doke:order-created', {
+          detail: {
+            order: saved,
+            user: user,
+            provider: ORDERS_WRITE_CANARY_PROVIDER
+          }
+        }));
+        return saved;
+      });
+    }
 
     if (shouldUseOrdersApi()) {
       return ordersBoundaryCreate(getApiCreatePayload(payload, user)).then(function (saved) {
@@ -302,6 +674,7 @@
       });
     }
 
+    var repository = assertRepository();
     var createdAt = nowIso();
     var routedPayload = routeProfessionalForMock(payload);
     var order = repository.normalize(Object.assign({}, routedPayload, {
@@ -455,6 +828,27 @@
     options = options || {};
     var actor = getCurrentUser() || {};
 
+    if (shouldUseOrdersWriteCanary()) {
+      var canaryStatus = nextStatus || 'pending';
+      var canaryMeta = getStatusMeta(canaryStatus);
+      var canaryPayload = Object.assign({}, options, {
+        status: canaryStatus,
+        statusLabel: statusLabel || options.statusLabel || canaryMeta.label,
+        actorId: actor.id || '',
+        actorRole: actor.role || 'guest'
+      });
+      return ordersWriteCanaryAction(getApiActionForStatus(canaryStatus), orderId, canaryPayload, options).then(function (saved) {
+        document.dispatchEvent(new CustomEvent('doke:order-status-changed', {
+          detail: {
+            order: saved,
+            status: canaryStatus,
+            provider: ORDERS_WRITE_CANARY_PROVIDER
+          }
+        }));
+        return saved;
+      });
+    }
+
     if (shouldUseOrdersApi()) {
       var normalizedStatus = nextStatus || 'pending';
       var meta = getStatusMeta(normalizedStatus);
@@ -541,8 +935,8 @@
     });
   }
 
-  function accept(orderId) {
-    return saveStatus(orderId, 'accepted', 'Pedido aceito', {});
+  function accept(orderId, options) {
+    return saveStatus(orderId, 'accepted', 'Pedido aceito', options || {});
   }
 
   function decline(orderId, reason) {
@@ -586,6 +980,9 @@
   services.orders = Object.freeze({
     provider: 'local-mock',
     getOrdersProviderStatus: getOrdersProviderStatus,
+    getOrdersWriteCanaryStatus: getOrdersWriteCanaryStatus,
+    configureOrdersWriteCanary: configureOrdersWriteCanary,
+    rollbackOrdersWriteCanary: rollbackOrdersWriteCanary,
     create: create,
     list: list,
     listLocal: listLocal,

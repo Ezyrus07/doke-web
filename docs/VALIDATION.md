@@ -752,3 +752,493 @@ npm run validate:supabase-local-staging
 ```
 
 This wraps SQL tests 001-005 and the HTTP E2E smoke. Do not treat the dry-run as proof of real Supabase validation.
+
+## Supabase staging validation runbook — Sprint 24
+
+Use this gate before any frontend canary API activation:
+
+```bash
+npm run audit:supabase-staging-validation-runbook
+npm run validate:supabase-staging:dry-run
+npm run validate:supabase-staging:plan
+```
+
+Real local/staging execution requires explicit env and mutation flags:
+
+```bash
+DOKE_ENVIRONMENT=local \
+DOKE_SUPABASE_DB_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+DOKE_STAGING_API_URL="http://127.0.0.1:54321/functions/v1/doke-api" \
+DOKE_SUPABASE_VALIDATION_ALLOW_MUTATIONS=1 \
+DOKE_SUPABASE_SQL_TESTS_ALLOW_MUTATIONS=1 \
+DOKE_STAGING_E2E_ALLOW_MUTATIONS=1 \
+npm run validate:supabase-staging -- --local-reset --write-report
+```
+
+The wrapper executes SQL tests 001–005 around `npm run validate:staging-e2e`. Dry-run and plan commands do not prove real Supabase readiness. Keep frontend providers on mock until the real report passes.
+
+## Sprint 25 — validação de auth/identity canary
+
+A validação do auth/identity canary protege a primeira ativação real de API no frontend. O contrato aceito é `authProvider=api`, `dataProvider=mock` e `enableNetworkRequests=true`.
+
+Comandos obrigatórios sem rede:
+
+```bash
+npm run audit:auth-identity-canary-contract
+npm run validate:auth-identity-canary:dry-run
+npm run audit:auth-real-contract
+npm run audit:identity-profile-contract
+npm run audit:data-provider-flags
+```
+
+Smoke real, apenas em local/staging:
+
+```bash
+DOKE_ENVIRONMENT=staging \
+DOKE_AUTH_IDENTITY_CANARY_API_URL=https://staging-api.doke.example \
+DOKE_AUTH_IDENTITY_CANARY_ALLOW_NETWORK=1 \
+npm run validate:auth-identity-canary
+```
+
+Esse smoke chama somente `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me`. Qualquer validação de pedidos, mensagens, notificações ou carteira deve continuar usando os gates específicos de staging, sem trocar o frontend para `dataProvider=api`.
+
+## Sprint 26 — Gate de runtime do canary Auth/Identity
+
+Antes de testar o canary de autenticação/identidade em navegador real ou staging, execute:
+
+```bash
+npm run audit:auth-identity-canary-contract
+npm run validate:auth-identity-canary:browser-runtime
+npm run validate:auth-identity-canary:dry-run
+```
+
+Esse gate não faz chamadas reais de rede. Ele simula o navegador, valida `localStorage`, `runtime-config`, sessão, bloqueio de alvo com aparência de produção, ativação segura e rollback. O comando real `npm run validate:auth-identity-canary` continua exigindo staging/local com variáveis explícitas e consentimento de rede.
+
+## Sprint 27 — Gate local de rede para canary Auth/Identity
+
+Antes de usar credenciais reais ou URL externa, execute o canary Auth/Identity contra o servidor local controlado:
+
+```bash
+npm run audit:auth-identity-canary-local-runtime
+npm run validate:auth-identity-canary:local-runtime
+```
+
+Esse gate sobe um servidor HTTP em `127.0.0.1`, executa o mesmo `scripts/validate-auth-identity-canary.js` usado no staging real e valida somente a fronteira:
+
+- `POST /auth/login`
+- `GET /auth/session`
+- `GET /users/me`
+- `GET /profiles/me`
+
+O contrato permanece `authProvider=api`, `dataProvider=mock` e `enableNetworkRequests=true`. Qualquer chamada para pedidos, mensagens, notificações, carteira, disputas, recibos ou admin deve falhar o gate. O relatório opcional é gerado por:
+
+```bash
+npm run validate:auth-identity-canary:local-runtime:report
+```
+
+## Sprint 28 — Gate de promoção do canary Auth/Identity
+
+Antes de declarar o canary Auth/Identity pronto para uso manual em staging/local real, execute:
+
+```bash
+npm run audit:auth-identity-canary-promotion-gate
+npm run validate:auth-identity-canary:promotion-gate:dry-run
+npm run validate:auth-identity-canary:promotion-gate
+```
+
+Esse gate roda os contratos locais e não faz chamadas externas por conta própria. Sem relatório real, ele deve informar `blocked_until_real_auth_identity_canary_report`, mas não deve quebrar o desenvolvimento local.
+
+Para exigir relatório real:
+
+```bash
+DOKE_AUTH_IDENTITY_CANARY_REQUIRE_REAL_REPORT=1 \
+DOKE_AUTH_IDENTITY_CANARY_REAL_REPORT_PATH=reports/generated/auth-identity-canary-report.json \
+npm run validate:auth-identity-canary:promotion-gate
+```
+
+O relatório real deve ser gerado por:
+
+```bash
+DOKE_ENVIRONMENT=staging \
+DOKE_AUTH_IDENTITY_CANARY_API_URL="https://staging-api.doke.example" \
+DOKE_AUTH_IDENTITY_CANARY_ALLOW_NETWORK=1 \
+npm run validate:auth-identity-canary -- --write-report
+```
+
+Enquanto esse gate não estiver verde com `DOKE_AUTH_IDENTITY_CANARY_REQUIRE_REAL_REPORT=1`, o frontend continua em mock para pedidos, mensagens, notificações, carteira, disputas, recibos e admin.
+
+## Sprint 29 — Orders read-only canary
+
+A Sprint 29 adiciona o gate de leitura de pedidos, bloqueado pela promoção real de Auth/Identity.
+
+Comandos seguros sem staging externo:
+
+```bash
+npm run audit:orders-readonly-canary-contract
+npm run validate:orders-readonly-canary:dry-run
+npm run validate:orders-readonly-canary:local-runtime
+```
+
+Execução real local/staging exige que o relatório de Auth/Identity tenha status:
+
+```txt
+auth_identity_canary_ready_for_manual_staging_rollout
+```
+
+Depois disso, usar:
+
+```bash
+DOKE_ENVIRONMENT=staging \
+DOKE_ORDERS_READONLY_CANARY_API_URL=https://staging-api.exemplo \
+DOKE_ORDERS_READONLY_CANARY_ALLOW_NETWORK=1 \
+DOKE_ORDERS_READONLY_CANARY_MARKER=staging \
+npm run validate:orders-readonly-canary:report
+```
+
+O canary só pode chamar auth/identity e `GET /orders`/`GET /orders/:id`. Escrita em pedidos e domínios como mensagens, notificações, carteira, disputas, recibos e admin permanecem bloqueados.
+
+## Sprint 30 — Orders read-only promotion gate
+
+A Sprint 30 cria o gate de promoção para o canary read-only de pedidos. Ela mantém `dataProvider=mock`, não ativa escrita de pedidos e bloqueia avanço enquanto não houver relatório real de leitura.
+
+Comandos adicionados:
+
+```bash
+npm run audit:orders-readonly-canary-promotion-gate
+npm run validate:orders-readonly-canary:promotion-gate:dry-run
+npm run validate:orders-readonly-canary:promotion-gate
+npm run validate:orders-readonly-canary:promotion-gate:report
+```
+
+Sem relatório real, o resultado seguro é:
+
+```txt
+blocked_until_real_orders_readonly_canary_report
+```
+
+Com relatório real válido em `reports/generated/orders-readonly-canary-report.json`, o status aprovado deve ser:
+
+```txt
+orders_readonly_canary_ready_for_manual_write_canary_planning
+```
+
+Para tornar a ausência de relatório uma falha de CI:
+
+```bash
+DOKE_ORDERS_READONLY_CANARY_REQUIRE_REAL_REPORT=1 npm run validate:orders-readonly-canary:promotion-gate
+```
+
+O gate roda antes:
+
+```bash
+npm run audit:auth-identity-canary-promotion-gate
+npm run validate:auth-identity-canary:promotion-gate:dry-run
+npm run audit:orders-readonly-canary-contract
+npm run validate:orders-readonly-canary:dry-run
+npm run validate:orders-readonly-canary:local-runtime
+```
+
+Critério de aceite: nenhum endpoint de escrita de pedidos ou domínio fora de pedidos pode aparecer no relatório real.
+
+
+## Sprint 31 — Orders write canary planning gate
+
+Validação adicionada para impedir escrita de pedidos antes de read-only real aprovado.
+
+```bash
+npm run audit:orders-write-canary-planning-gate
+npm run validate:orders-write-canary:planning-gate:dry-run
+npm run validate:orders-write-canary:planning-gate
+npm run validate:orders-write-canary:planning-gate:report
+```
+
+Sem relatório real de read-only promotion, o status esperado é:
+
+```txt
+blocked_until_real_orders_readonly_promotion_report
+```
+
+Com relatório real válido, o status aprovado é:
+
+```txt
+orders_write_canary_ready_for_manual_contract_design
+```
+
+O gate valida que `dataProvider=mock`, `ordersProvider=api-write-canary-planning`, `writeActivation=false` e que o próximo contrato deve incluir `idempotency_key_required_for_every_mutation`.
+
+## Sprint 32 — Orders write local harness
+
+A Sprint 32 adiciona validação local para escrita de pedidos, sem ativar escrita real no frontend.
+
+```bash
+npm run audit:orders-write-canary-local-runtime
+npm run validate:orders-write-canary:local-runtime
+npm run validate:orders-write-canary:local-runtime:report
+```
+
+Status aprovado:
+
+```txt
+orders_write_canary_local_runtime_validated
+```
+
+O harness valida `writeActivation=false`, `dataProvider=mock`, idempotência obrigatória, replay de mesma chave/payload e `DOKE_IDEMPOTENCY_CONFLICT` para payload diferente. Ele também bloqueia domínios fora de `/orders`.
+
+## Sprint 33 — Orders write staging preflight gate
+
+A Sprint 33 adiciona o gate de preflight para uma futura execução real de escrita de pedidos em local/staging. O escopo continua sem alteração visual e sem ativação de escrita no frontend.
+
+Contrato operacional:
+
+```txt
+writeActivation=false
+dataProvider=mock
+ordersProvider=api-write-canary-staging-preflight
+performsNetworkRequest=false
+performsMutation=false
+```
+
+Comandos:
+
+```bash
+npm run audit:orders-write-canary-staging-preflight-gate
+npm run validate:orders-write-canary:staging-preflight-gate:dry-run
+npm run validate:orders-write-canary:staging-preflight-gate:check-env
+npm run validate:orders-write-canary:staging-preflight-gate
+npm run validate:orders-write-canary:staging-preflight-gate:report
+```
+
+Status seguro sem pré-requisitos reais:
+
+```txt
+blocked_until_orders_write_staging_preflight_prerequisites
+```
+
+Status de alvo inseguro:
+
+```txt
+blocked_unsafe_orders_write_staging_target
+```
+
+Status aprovado apenas para execução manual futura:
+
+```txt
+orders_write_canary_ready_for_manual_staging_execution
+```
+
+Variáveis exigidas para aprovação do preflight real:
+
+```bash
+DOKE_ENVIRONMENT=staging
+DOKE_ORDERS_WRITE_CANARY_STAGING_API_URL=https://staging-api.example
+DOKE_ORDERS_WRITE_CANARY_STAGING_ALLOW_NETWORK=1
+DOKE_ORDERS_WRITE_CANARY_STAGING_ALLOW_MUTATIONS=1
+```
+
+Relatórios reais exigidos:
+
+```txt
+auth_identity_canary_ready_for_manual_staging_rollout
+orders_readonly_canary_ready_for_manual_write_canary_planning
+orders_write_canary_ready_for_manual_contract_design
+orders_write_canary_local_runtime_validated
+```
+
+A aprovação do preflight não executa mutação. Ela apenas confirma que a próxima sprint pode preparar um executor real de staging com confirmação manual, idempotência obrigatória, relatório e rollback para mock.
+
+## Orders write multi-step gates — Sprint 34-36
+
+Use these commands to validate the bundled orders write progression without activating frontend write by default:
+
+```bash
+npm run audit:orders-write-canary-staging-executor
+npm run execute:orders-write-canary:staging:dry-run
+npm run execute:orders-write-canary:staging:check-env
+npm run audit:orders-write-canary-execution-promotion-gate
+npm run validate:orders-write-canary:execution-promotion-gate:dry-run
+npm run audit:orders-write-frontend-activation-planning-gate
+npm run validate:orders-write-frontend-activation:planning-gate:dry-run
+```
+
+Real staging mutation execution remains manual and requires `DOKE_ORDERS_WRITE_CANARY_STAGING_EXECUTE=1`, `DOKE_ORDERS_WRITE_CANARY_STAGING_ALLOW_NETWORK=1`, `DOKE_ORDERS_WRITE_CANARY_STAGING_ALLOW_MUTATIONS=1`, and a preflight report with `orders_write_canary_ready_for_manual_staging_execution`.
+
+## Orders write frontend runtime bundle — Sprint 37-39
+
+Este bloco valida a ativação manual de escrita de pedidos no frontend e seu rollback, sem alterar HTML/CSS e sem ligar produção.
+
+Comandos:
+
+```bash
+npm run audit:orders-write-frontend-activation-runtime
+npm run validate:orders-write-frontend-activation:runtime
+npm run audit:orders-write-frontend-rollback-gate
+npm run validate:orders-write-frontend-rollback:gate:dry-run
+npm run validate:orders-write-frontend-rollback:gate
+```
+
+Status aprovados:
+
+```txt
+orders_write_frontend_activation_runtime_validated
+orders_write_frontend_rollback_gate_validated
+```
+
+Contrato de segurança:
+
+```txt
+dataProvider=mock
+ordersProvider=api-write-canary-frontend-activation
+orderWriteActivation=true somente por ativação manual
+x-idempotency-key obrigatório
+rollback para ordersProvider=mock e orderWriteActivation=false
+```
+
+## Sprint 40–48 — Backend real domain canary closure
+
+Added grouped validation for backend real expansion beyond Orders:
+
+```bash
+npm run audit:backend-domain-canary-runtime
+npm run validate:backend-domain-canary:local-runtime
+npm run audit:backend-real-staging-preflight-gate
+npm run validate:backend-real:staging-preflight-gate:dry-run
+npm run validate:backend-real:staging-preflight-gate:check-env
+npm run validate:backend-real:staging-preflight-gate
+npm run audit:backend-real-complete-readiness-gate
+npm run validate:backend-real:complete-readiness-gate:dry-run
+npm run validate:backend-real:complete-readiness-gate
+```
+
+The expected status without real credentials/reports remains blocked, not falsely approved:
+
+```txt
+blocked_until_backend_real_staging_prerequisites
+blocked_until_backend_real_complete_real_reports
+```
+
+This block does not alter visual files and keeps `mock` as the default frontend provider.
+
+## Sprint 49–60 — Backend real multi-domain, E2E, observability and expansion gates
+
+New validation commands:
+
+```bash
+npm run audit:backend-real-multidomain-staging-executor
+npm run execute:backend-real:multidomain-staging:dry-run
+npm run execute:backend-real:multidomain-staging:check-env
+npm run audit:backend-real-e2e-local-runtime
+npm run validate:backend-real:e2e-local-runtime
+npm run audit:backend-real-observability-contract
+npm run validate:backend-real:observability-gate:dry-run
+npm run audit:domain-expansion-readiness-gate
+npm run validate:domain-expansion:readiness-gate:dry-run
+```
+
+The staging executor remains blocked unless real local/staging reports, safe URLs and explicit network/mutation flags are present. The local E2E harness performs no external network calls.
+
+## Sprint 61–75 — validação domain expansion + beta readiness
+
+```bash
+npm run audit:domain-expansion-local-runtime
+npm run validate:service-listings-canary:local-runtime
+npm run validate:publications-canary:local-runtime
+npm run validate:community-canary:local-runtime
+npm run validate:domain-expansion:local-runtime
+npm run audit:domain-expansion-staging-executor
+npm run execute:domain-expansion:staging:dry-run
+npm run execute:domain-expansion:staging:check-env
+npm run audit:beta-closed-backend-real-readiness-gate
+npm run validate:beta-closed-backend-real:readiness-gate:dry-run
+npm run validate:beta-closed-backend-real:readiness-gate
+```
+
+## Sprint 76–90 — Product beta validation commands
+
+```bash
+npm run audit:product-beta-local-runtime
+npm run validate:media-uploads-canary:local-runtime
+npm run validate:moderation-canary:local-runtime
+npm run validate:search-indexing-canary:local-runtime
+npm run validate:pricing-canary:local-runtime
+npm run validate:product-beta:local-runtime
+npm run audit:product-beta-staging-executor
+npm run execute:product-beta:staging:dry-run
+npm run execute:product-beta:staging:check-env
+npm run audit:beta-closed-product-readiness-gate
+npm run validate:beta-closed-product:readiness-gate:dry-run
+npm run validate:beta-closed-product:readiness-gate
+```
+
+## Sprint 91–105 validation commands
+
+```bash
+npm run audit:beta-launch-local-runtime
+npm run validate:payments-escrow-canary:local-runtime
+npm run validate:kyc-canary:local-runtime
+npm run validate:support-admin-canary:local-runtime
+npm run validate:security-abuse-canary:local-runtime
+npm run validate:beta-launch:local-runtime
+npm run audit:beta-launch-staging-executor
+npm run execute:beta-launch:staging:dry-run
+npm run execute:beta-launch:staging:check-env
+npm run audit:beta-closed-launch-readiness-gate
+npm run validate:beta-closed-launch:readiness-gate:dry-run
+npm run validate:beta-closed-launch:readiness-gate
+```
+
+## Sprint 106–120 validation commands
+
+```bash
+npm run audit:beta-launch-frontend-runtime
+npm run validate:beta-launch-frontend:runtime
+npm run audit:beta-qa-matrix
+npm run validate:beta-qa-matrix:dry-run
+npm run validate:beta-qa-matrix
+npm run audit:beta-quality-gates
+npm run validate:beta-quality-gates:dry-run
+npm run validate:beta-quality-gates
+npm run audit:beta-visual-hardening-gate
+npm run validate:beta-visual-hardening:dry-run
+npm run validate:beta-visual-hardening
+npm run audit:release-candidate-package-gate
+npm run validate:release-candidate-package:dry-run
+npm run validate:release-candidate-package
+```
+
+The quality, visual and release candidate gates are intentionally blocked until real evidence reports exist. Blocked status is safe; false approval is not accepted.
+
+## Sprint 121–135 — Private Beta RC Evidence Commands
+
+```bash
+npm run audit:private-beta-local-evidence
+npm run generate:private-beta-local-evidence:dry-run
+npm run generate:private-beta-local-evidence:reports
+npm run audit:staging-real-preparation-package
+npm run validate:staging-real-preparation:dry-run
+npm run validate:staging-real-preparation:report
+npm run audit:private-beta-release-checklist
+npm run validate:private-beta-release-checklist:dry-run
+npm run validate:private-beta-release-checklist:report
+npm run audit:private-beta-user-entry-plan
+npm run validate:private-beta-user-entry-plan:report
+npm run audit:release-candidate-assembly-gate
+npm run validate:release-candidate-assembly:report
+```
+
+These commands do not run production, do not create credentials, and do not claim browser visual or staging approval when those reports are absent.
+
+## Sprint 136–150 validation commands
+```bash
+npm run audit:playwright-visual-evidence-package
+npm run validate:playwright-visual-evidence:dry-run
+npm run validate:playwright-visual-evidence:check-env
+npm run audit:browser-quality-evidence-package
+npm run validate:browser-quality-evidence:dry-run
+npm run audit:staging-environment-binder
+npm run validate:staging-environment-binder:dry-run
+npm run validate:staging-environment-binder:check-env
+npm run audit:private-beta-operator-rehearsal
+npm run validate:private-beta-operator-rehearsal:dry-run
+npm run audit:release-go-no-go-gate
+npm run validate:release-go-no-go:dry-run
+```

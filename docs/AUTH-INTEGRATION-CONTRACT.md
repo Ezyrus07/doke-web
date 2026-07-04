@@ -223,3 +223,57 @@ A Sprint 12B conecta identidade e perfil ao contrato de auth real sem migrar ped
 - `Doke.session.getAuthContext()` inclui `profile`, `profiles`, `publicProfileUrl` e `ownerProfileUrl`.
 - API de perfil fica bloqueada sem configuração de rede.
 - Mock/localStorage continua funcionando sem backend.
+
+## Sprint 25 — auth/identity canary no frontend
+
+A Sprint 25 adiciona o auth/identity canary para validar API real de autenticação e identidade no frontend sem migrar dados operacionais.
+
+Contrato obrigatório do canary:
+
+```txt
+authProvider=api
+dataProvider=mock
+enableNetworkRequests=true
+```
+
+Superfícies autorizadas:
+
+- `DokeAuth.configureAuthIdentityCanary({ apiBaseUrl })` ativa o canary de forma persistida e salva backup dos providers anteriores.
+- `DokeAuth.getAuthIdentityCanaryStatus()` expõe bloqueios, provider ativo e endpoints exigidos.
+- `DokeAuth.rollbackAuthIdentityCanary()` restaura mock/valores anteriores rapidamente.
+- `npm run validate:auth-identity-canary:dry-run` valida contrato sem rede.
+- `npm run validate:auth-identity-canary` roda smoke real de `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me`.
+
+Durante o auth/identity canary, `dataProvider` deve permanecer `mock`; pedidos, mensagens, notificações, carteira, disputas, recibos e admin continuam fora da API do frontend.
+
+## Sprint 26 — Auth/identity canary browser runtime gate
+
+O contrato de autenticação real ganhou uma proteção adicional no frontend: `DokeAuth.configureAuthIdentityCanary()` só persiste o canary se o `apiBaseUrl` tiver marcador local/staging ou receber `targetMarker: 'local' | 'staging'`. Alvos com aparência de produção são bloqueados antes de alterar `localStorage`.
+
+O gate `npm run validate:auth-identity-canary:browser-runtime` executa `runtime-config.js`, `session.js` e `auth-service.js` em um runtime de navegador simulado. Ele valida estado padrão em mock, bloqueio de alvo perigoso, ativação segura, login com fetch fake restrito a auth/identity e rollback restaurando o estado anterior. Esse gate não substitui `validate:auth-identity-canary` real em staging; ele impede regressão local do contrato antes de usar rede.
+
+## Sprint 27 — Auth/identity local network canary
+
+A autenticação real agora possui um gate local de rede antes de staging externo:
+
+```bash
+npm run audit:auth-identity-canary-local-runtime
+npm run validate:auth-identity-canary:local-runtime
+```
+
+Esse gate sobe um servidor local em `127.0.0.1` e executa o mesmo smoke real `scripts/validate-auth-identity-canary.js`. O contrato permanece `authProvider=api`, `dataProvider=mock` e `enableNetworkRequests=true`, com chamadas limitadas a `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me`.
+
+O gate local não substitui staging real; ele bloqueia regressões de contrato antes do uso de credenciais e URL reais.
+
+## Sprint 28 — Auth/identity promotion gate
+
+A promoção do canary Auth/Identity agora possui um gate explícito:
+
+```bash
+npm run audit:auth-identity-canary-promotion-gate
+npm run validate:auth-identity-canary:promotion-gate
+```
+
+O gate mantém o contrato `authProvider='api'`, `dataProvider='mock'` e `enableNetworkRequests=true` somente para autenticação/identidade. Ele valida os gates locais de browser e rede local, lê opcionalmente o relatório real de `scripts/validate-auth-identity-canary.js` e bloqueia promoção estrita quando `DOKE_AUTH_IDENTITY_CANARY_REQUIRE_REAL_REPORT=1` está ativo.
+
+O único relatório aceito para liberar avanço manual deve conter resultados reais para client e professional em `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me`, sem endpoints de domínio operacional.

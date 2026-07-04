@@ -493,3 +493,267 @@ Data readiness now requires persistent idempotency at the runtime boundary. The 
 ## Sprint 24 — execution proof before provider canary
 
 Data readiness now requires `audit:supabase-local-staging-execution` in addition to the domain/provider audits. This gate proves the same contracts against real SQL tests, runtime HTTP smoke, persistent idempotency and audit postconditions before any frontend provider is switched to API.
+
+## Sprint 24 — real backend validation before provider canary
+
+Data-ready status still means the browser defaults to mock/localStorage. The real Supabase gate is now operationalized by:
+
+```bash
+npm run audit:supabase-staging-validation-runbook
+npm run validate:supabase-staging:dry-run
+npm run validate:supabase-staging
+```
+
+Do not switch frontend provider flags until SQL tests 001-005, `validate:staging-e2e`, idempotency replay/conflict validation and persisted `admin_audit_events` pass together in local/staging.
+
+## Sprint 25 — limite do auth/identity canary
+
+O auth/identity canary não autoriza `dataProvider=api`. Durante essa etapa, a única API real permitida no frontend é a fronteira de autenticação/identidade em `assets/js/services/auth-service.js`.
+
+Provider esperado:
+
+```txt
+authProvider=api
+dataProvider=mock
+```
+
+Isso preserva mock/localStorage para marketplace, pedidos, mensagens, notificações, carteira, disputas, recibos e admin até canaries separados por domínio.
+
+## Sprint 26 — Data provider lock during Auth/Identity canary
+
+Durante o canary Auth/Identity, `dataProvider` continua forçado para `mock` no runtime. O gate `validate:auth-identity-canary:browser-runtime` garante que a ativação do canary não chama endpoints de pedidos, mensagens, notificações, carteira, disputas, recibos ou admin. O único tráfego permitido no smoke de navegador simulado é `/auth/login`, `/users/me` e `/profiles/me`.
+
+## Sprint 27 — Local network boundary for Auth/Identity canary
+
+O gate `validate:auth-identity-canary:local-runtime` prova a fronteira de dados antes do staging real. Ele usa rede HTTP local para autenticação/identidade, mas mantém todos os dados operacionais fora da API do frontend.
+
+Durante esse gate:
+
+- `authProvider=api` é permitido apenas para autenticação/identidade;
+- `dataProvider=mock` continua obrigatório;
+- endpoints permitidos: `/auth/login`, `/auth/session`, `/users/me`, `/profiles/me`;
+- endpoints de pedidos, conversas, notificações, carteira, saques, disputas, recibos e admin continuam proibidos.
+
+Esse gate não autoriza canary de outro domínio. Ele apenas reduz risco antes do `validate:auth-identity-canary` real.
+
+## Sprint 28 — Promotion gate keeps domain data on mock
+
+O gate `validate:auth-identity-canary:promotion-gate` reforça que a transição de dados continua bloqueada para domínios operacionais. Mesmo com Auth/Identity em canary, `dataProvider=mock` permanece obrigatório até existir relatório real aprovado.
+
+A flag `DOKE_AUTH_IDENTITY_CANARY_REQUIRE_REAL_REPORT=1` transforma o preflight em gate estrito. O relatório aceito deve provar somente `/auth/login`, `/auth/session`, `/users/me` e `/profiles/me`; endpoints de pedidos, conversas, notificações, carteira, saques, disputas, recibos e admin continuam proibidos.
+
+## Sprint 29 — Orders read-only API canary
+
+A preparação de dados reais para pedidos agora possui um canary de leitura controlado. Ele valida apenas:
+
+```txt
+GET /orders
+GET /orders/:id
+```
+
+A dependência obrigatória é o gate de Auth/Identity com status `auth_identity_canary_ready_for_manual_staging_rollout`.
+
+Comandos:
+
+```bash
+npm run audit:orders-readonly-canary-contract
+npm run validate:orders-readonly-canary:dry-run
+npm run validate:orders-readonly-canary:local-runtime
+```
+
+Durante este canary, `dataProvider` permanece `mock`; `ordersProvider=api-readonly` é apenas o escopo operacional do teste. Nenhum fluxo de criação, aceite, recusa, proposta, cobrança, status, mensagem, notificação ou carteira pode ser chamado.
+
+## Sprint 30 — Orders read-only promotion keeps writes blocked
+
+O gate `validate:orders-readonly-canary:promotion-gate` protege a transição de dados de pedidos. Mesmo com `ordersProvider=api-readonly`, `dataProvider=mock` continua obrigatório.
+
+Status bloqueado seguro:
+
+```txt
+blocked_until_real_orders_readonly_canary_report
+```
+
+Status aprovado para o próximo planejamento:
+
+```txt
+orders_readonly_canary_ready_for_manual_write_canary_planning
+```
+
+O gate rejeita relatório real com `DOKE_ORDERS_READONLY_CANARY_BYPASS_AUTH_GATE`, endpoints de escrita de pedidos ou chamadas para mensagens, notificações, carteira, disputas, recibos e admin.
+
+
+## Sprint 31 — Orders write canary planning gate
+
+O contrato data-ready permanece conservador: `dataProvider=mock` continua obrigatório. A Sprint 31 introduz `ordersProvider=api-write-canary-planning` somente como marcador de planejamento, não como provider ativo.
+
+O gate retorna `blocked_until_real_orders_readonly_promotion_report` enquanto o relatório real de leitura não existir. Com relatório válido, retorna `orders_write_canary_ready_for_manual_contract_design`.
+
+A escrita futura deve comprovar `idempotency_key_required_for_every_mutation`, replay seguro, conflito por payload divergente e rollback para `dataProvider=mock`.
+
+Comando obrigatório da Sprint 31: `npm run validate:orders-write-canary:planning-gate`.
+
+## Sprint 32 — Orders write local harness
+
+O contrato data-ready de escrita de pedidos continua local-only. O frontend permanece em `dataProvider=mock` e `writeActivation=false`.
+
+Comando:
+
+```bash
+npm run validate:orders-write-canary:local-runtime
+```
+
+Aceite local: `orders_write_canary_local_runtime_validated`.
+
+Esse aceite exige `DOKE_IDEMPOTENCY_CONFLICT` para drift de payload, replay seguro para mesma chave/payload e domínio limitado a `/orders`.
+
+## Sprint 33 — Orders write staging preflight gate
+
+A Sprint 33 adiciona o gate de preflight para uma futura execução real de escrita de pedidos em local/staging. O escopo continua sem alteração visual e sem ativação de escrita no frontend.
+
+Contrato operacional:
+
+```txt
+writeActivation=false
+dataProvider=mock
+ordersProvider=api-write-canary-staging-preflight
+performsNetworkRequest=false
+performsMutation=false
+```
+
+Comandos:
+
+```bash
+npm run audit:orders-write-canary-staging-preflight-gate
+npm run validate:orders-write-canary:staging-preflight-gate:dry-run
+npm run validate:orders-write-canary:staging-preflight-gate:check-env
+npm run validate:orders-write-canary:staging-preflight-gate
+npm run validate:orders-write-canary:staging-preflight-gate:report
+```
+
+Status seguro sem pré-requisitos reais:
+
+```txt
+blocked_until_orders_write_staging_preflight_prerequisites
+```
+
+Status de alvo inseguro:
+
+```txt
+blocked_unsafe_orders_write_staging_target
+```
+
+Status aprovado apenas para execução manual futura:
+
+```txt
+orders_write_canary_ready_for_manual_staging_execution
+```
+
+Variáveis exigidas para aprovação do preflight real:
+
+```bash
+DOKE_ENVIRONMENT=staging
+DOKE_ORDERS_WRITE_CANARY_STAGING_API_URL=https://staging-api.example
+DOKE_ORDERS_WRITE_CANARY_STAGING_ALLOW_NETWORK=1
+DOKE_ORDERS_WRITE_CANARY_STAGING_ALLOW_MUTATIONS=1
+```
+
+Relatórios reais exigidos:
+
+```txt
+auth_identity_canary_ready_for_manual_staging_rollout
+orders_readonly_canary_ready_for_manual_write_canary_planning
+orders_write_canary_ready_for_manual_contract_design
+orders_write_canary_local_runtime_validated
+```
+
+A aprovação do preflight não executa mutação. Ela apenas confirma que a próxima sprint pode preparar um executor real de staging com confirmação manual, idempotência obrigatória, relatório e rollback para mock.
+
+## Orders write data-ready progression — Sprint 34-36
+
+The staged contracts remain conservative:
+
+```txt
+ordersProvider=api-write-canary-staging-execution
+dataProvider=mock
+writeActivation=false
+```
+
+```txt
+ordersProvider=api-write-canary-frontend-activation-planning
+dataProvider=mock
+orderWriteActivationDefault=false
+manualActivationOnly=true
+```
+
+Every future orders write mutation must include an idempotency key and must be rollback-safe.
+
+## Orders write frontend activation — Sprint 37-39
+
+Contrato de dados para a ativação manual:
+
+```txt
+dataProvider=mock
+ordersProvider=api-write-canary-frontend-activation
+ordersWriteCanary=true
+orderWriteActivation=true
+```
+
+Rollback obrigatório:
+
+```txt
+ordersProvider=mock
+orderWriteActivation=false
+ordersWriteCanary=false
+```
+
+Toda mutação precisa de `x-idempotency-key`; sem chave, a chamada falha antes de `fetch`.
+
+## Sprint 40–48 — Domain canary data readiness
+
+Messaging, Notifications and Wallet now have local backend canary validation covering read endpoints, mutation endpoints, idempotency, replay, conflict and role-scoped negative cases.
+
+The contract remains:
+
+```txt
+dataProvider=mock by default
+real API only via explicit staging/local flags
+mutations require idempotency key
+production target blocked
+rollback to mock required before expansion
+```
+
+## Sprint 49–60 data-readiness additions
+
+Backend-real readiness now includes multi-domain smoke coverage and future domain expansion planning:
+
+- Auth/Identity remains the first dependency.
+- Orders write remains idempotency-gated.
+- Messaging and Notifications must use idempotency for mutations.
+- Wallet/withdrawals/receipts require role scoped writes.
+- Anunciar/Publicar/Comunidade are blocked until backend real complete readiness and observability reports pass.
+
+## Sprint 61–75 — domain expansion data contracts
+Novos contratos preparados para dados reais:
+
+- Service listing: `id`, `ownerId`, `title`, `category`, `priceCents`, `status`.
+- Publication: `id`, `authorId`, `title`, `body`, `status`.
+- Community post: `id`, `authorId`, `title`, `body`, `comments`, `reactions`.
+
+Mutações exigem idempotência, replay seguro e conflito explícito para drift de payload.
+
+## Sprint 76–90 — Product beta data contracts
+
+New guarded data contracts:
+
+- Media uploads and attachments require completion before attachment.
+- Moderation reports and blocks are idempotent and role-scoped.
+- Search reads are safe; index rebuild is admin-only and idempotent.
+- Pricing exposes plans; subscriptions and boosts are idempotent and owner/role-scoped.
+
+## Sprint 91–105 — Beta launch operational contracts
+
+Prepared beta launch contracts for payments/checkout/escrow, KYC/professional verification, support/admin operations and security/abuse prevention. All mutations require idempotency and staging execution remains blocked behind explicit flags and safe URL checks.
+
+## Sprint 106–120 frontend beta canary data contract
+
+The beta launch frontend canary must force `dataProvider=mock` while allowing selected launch domains to call a local/staging API by explicit manual activation only. Mutations require `idempotencyKey`, unsafe production-like targets are blocked, and rollback must restore local storage state.
