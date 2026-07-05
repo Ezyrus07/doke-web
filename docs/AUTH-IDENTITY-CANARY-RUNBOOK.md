@@ -93,6 +93,27 @@ O rollback restaura os valores anteriores salvos em `doke.canary.authIdentity.ba
 
 ## Smoke automatizado
 
+Antes de aplicar `supabase/seed/002_mvp_controlled_seed.sql`, provisione os
+quatro usuários canary pelo Admin API, usando apenas variáveis locais:
+
+```bash
+DOKE_ENVIRONMENT=staging \
+SUPABASE_URL=https://project-ref.supabase.co \
+DOKE_SUPABASE_PROJECT_REF=project-ref \
+SUPABASE_SERVICE_ROLE_KEY=... \
+DOKE_STAGING_CLIENT_PASSWORD=... \
+DOKE_STAGING_PROFESSIONAL_PASSWORD=... \
+DOKE_STAGING_SUPPORT_PASSWORD=... \
+DOKE_STAGING_ADMIN_PASSWORD=... \
+DOKE_STAGING_AUTH_PROVISION_CONFIRM=provision-staging-auth-canaries \
+npm run provision:staging-auth-canaries
+```
+
+Para substituir os quatro usuários antigos criados diretamente por SQL,
+adicione `DOKE_STAGING_AUTH_REPLACE_LEGACY=1`. Essa operação pode acionar
+`on delete cascade` nas tabelas públicas; reaplique o seed 002 imediatamente
+depois. O script nunca imprime service role key, senhas, sessões ou tokens.
+
 Dry-run sem rede:
 
 ```bash

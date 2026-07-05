@@ -17,7 +17,11 @@ end
 $$;
 
 -- Client must not read the admin audit queue.
-select set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+select set_config(
+  'request.jwt.claim.sub',
+  (select id::text from public.users where email = 'cliente@doke.local'),
+  true
+);
 set local role authenticated;
 
 do $$
@@ -31,7 +35,11 @@ $$;
 reset role;
 
 -- Professional must not resolve a dispute through support/admin policies.
-select set_config('request.jwt.claim.sub', '22222222-2222-4222-8222-222222222222', true);
+select set_config(
+  'request.jwt.claim.sub',
+  (select id::text from public.users where email = 'profissional@doke.local'),
+  true
+);
 set local role authenticated;
 
 do $$
@@ -56,7 +64,11 @@ $$;
 reset role;
 
 -- Support must be able to read the seeded operational queues.
-select set_config('request.jwt.claim.sub', '33333333-3333-4333-8333-333333333333', true);
+select set_config(
+  'request.jwt.claim.sub',
+  (select id::text from public.users where email = 'suporte@doke.local'),
+  true
+);
 set local role authenticated;
 
 do $$

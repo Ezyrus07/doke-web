@@ -2,7 +2,6 @@
 'use strict';
 
 const http = require('http');
-const { createClient } = require('@supabase/supabase-js');
 const { createStagingApiRuntime } = require('./staging-api-runtime');
 
 const DEFAULT_PORT = 8787;
@@ -13,10 +12,17 @@ const ALLOWED_HEADERS = 'authorization,content-type,x-idempotency-key,x-request-
 
 function createNodeHttpServer(options) {
   const safeOptions = options && typeof options === 'object' ? options : {};
-  const runtime = safeOptions.runtime || createStagingApiRuntime({
-    env: safeOptions.env || process.env,
-    createClient
-  });
+  let runtime = safeOptions.runtime || null;
+
+  function getRuntime() {
+    if (runtime) return runtime;
+    const { createClient } = loadSupabaseClientFactory();
+    runtime = createStagingApiRuntime({
+      env: safeOptions.env || process.env,
+      createClient
+    });
+    return runtime;
+  }
 
   return http.createServer(async (request, response) => {
     const requestId = readHeader(request.headers, 'x-request-id') || `doke_http_${Date.now()}`;
@@ -41,7 +47,7 @@ function createNodeHttpServer(options) {
       }
 
       const body = await readRequestBody(request);
-      const runtimeResponse = await runtime.handle({
+      const runtimeResponse = await getRuntime().handle({
         method: request.method,
         path: parsedUrl.pathname,
         query: Object.fromEntries(parsedUrl.searchParams.entries()),
@@ -52,11 +58,12 @@ function createNodeHttpServer(options) {
 
       sendRuntimeResponse(response, runtimeResponse);
     } catch (error) {
-      sendJson(response, Number(error && error.status) || 500, {
+      const status = Number(error && error.status) || 500;
+      sendJson(response, status, {
         ok: false,
         error: {
           code: error && error.code || 'DOKE_NODE_HTTP_RUNTIME_ERROR',
-          message: Number(error && error.status) >= 400 && Number(error && error.status) < 500
+          message: status >= 400 && status < 500 || status === 503
             ? String(error && error.message || 'Solicitação inválida.')
             : 'Não foi possível concluir a solicitação.',
           requestId
@@ -64,6 +71,23 @@ function createNodeHttpServer(options) {
       });
     }
   });
+}
+
+function loadSupabaseClientFactory() {
+  try {
+    return require('@supabase/supabase-js');
+  } catch (error) {
+    if (error && error.code === 'MODULE_NOT_FOUND') {
+      const missingDependencyError = new Error(
+        'Missing @supabase/supabase-js. Run npm install with the public npm registry, then start the staging API again.'
+      );
+      missingDependencyError.code = 'DOKE_SUPABASE_JS_MISSING';
+      missingDependencyError.status = 503;
+      missingDependencyError.cause = error;
+      throw missingDependencyError;
+    }
+    throw error;
+  }
 }
 
 async function readRequestBody(request) {

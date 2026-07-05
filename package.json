@@ -671,12 +671,19 @@
     "execute:private-beta-strategy-decision:check-env": "node scripts/execute-private-beta-strategy-decision.js --check-env",
     "execute:private-beta-strategy-decision": "node scripts/execute-private-beta-strategy-decision.js",
     "execute:private-beta-strategy-decision:report": "node scripts/execute-private-beta-strategy-decision.js --write-report",
-    "serve:staging-api-runtime": "node backend/runtime/staging/node-http-server.js"
+    "provision:staging-auth-canaries:dry-run": "node --env-file-if-exists=.env.local scripts/provision-staging-auth-canaries.js --dry-run",
+    "provision:staging-auth-canaries:check-env": "node --env-file-if-exists=.env.local scripts/provision-staging-auth-canaries.js --check-env",
+    "provision:staging-auth-canaries": "node --env-file-if-exists=.env.local scripts/provision-staging-auth-canaries.js --execute",
+    "clean:staging-auth-canaries:check-env": "node --env-file-if-exists=.env.local scripts/clean-staging-auth-canaries.js --check-env",
+    "clean:staging-auth-canaries:dry-run": "node --env-file-if-exists=.env.local scripts/clean-staging-auth-canaries.js --dry-run",
+    "clean:staging-auth-canaries": "node --env-file-if-exists=.env.local scripts/clean-staging-auth-canaries.js --execute",
+    "serve:staging-api-runtime": "node --env-file-if-exists=.env.local backend/runtime/staging/node-http-server.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.53.0"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.110.0"
+    "@supabase/supabase-js": "^2.110.0",
+    "pg": "^8.16.3"
   }
 }

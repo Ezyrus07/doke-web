@@ -50,6 +50,8 @@ requireSnippets('supabase/migrations/004_mvp_backend_security_foundation.sql', [
 ]);
 
 requireSnippets('supabase/seed/002_mvp_controlled_seed.sql', [
+  'scripts/provision-staging-auth-canaries.js',
+  'doke_seed_auth_users',
   'cliente@doke.local',
   'profissional@doke.local',
   'suporte@doke.local',
@@ -59,6 +61,33 @@ requireSnippets('supabase/seed/002_mvp_controlled_seed.sql', [
   'public.withdrawals',
   'public.admin_audit_events',
   'DOKE-DEMO-RECEIPT-001'
+]);
+
+const controlledSeed = read('supabase/seed/002_mvp_controlled_seed.sql');
+if (/insert\s+into\s+auth\.(users|identities)/i.test(controlledSeed)) {
+  failures.push('supabase/seed/002_mvp_controlled_seed.sql must not insert directly into GoTrue-owned Auth tables.');
+}
+
+requireSnippets('scripts/provision-staging-auth-canaries.js', [
+  'auth.admin.createUser',
+  'auth.admin.updateUserById',
+  'auth.admin.deleteUser',
+  'signInWithPassword',
+  'DOKE_SUPABASE_PROJECT_REF',
+  'DOKE_STAGING_AUTH_PROVISION_CONFIRM'
+]);
+
+requireSnippets('scripts/clean-staging-auth-canaries.js', [
+  "DOKE_STAGING_AUTH_CLEAN_CONFIRM",
+  "DOKE_SUPABASE_DB_URL",
+  "DOKE_ENVIRONMENT",
+  "clean-staging-auth-canaries",
+  "begin",
+  "rollback",
+  "commit",
+  "delete from auth.users",
+  "lower(email) = any",
+  "DOKE_AUTH_CLEAN_FOREIGN_DOMAIN_BLOCKED"
 ]);
 
 requireJson('backend/shared/contracts/api-actions.json', (contract) => {
@@ -121,6 +150,17 @@ try {
   if (!parsed.scripts || parsed.scripts['audit:supabase-backend-readiness'] !== 'node scripts/audit-supabase-backend-readiness.js') {
     failures.push('package.json missing audit:supabase-backend-readiness script.');
   }
+  if (parsed.scripts?.['provision:staging-auth-canaries'] !== 'node --env-file-if-exists=.env.local scripts/provision-staging-auth-canaries.js --execute') {
+    failures.push('package.json missing provision:staging-auth-canaries script.');
+  }
+  const cleanupScripts = {
+    'clean:staging-auth-canaries:check-env': 'node --env-file-if-exists=.env.local scripts/clean-staging-auth-canaries.js --check-env',
+    'clean:staging-auth-canaries:dry-run': 'node --env-file-if-exists=.env.local scripts/clean-staging-auth-canaries.js --dry-run',
+    'clean:staging-auth-canaries': 'node --env-file-if-exists=.env.local scripts/clean-staging-auth-canaries.js --execute'
+  };
+  Object.entries(cleanupScripts).forEach(([name, command]) => {
+    if (parsed.scripts?.[name] !== command) failures.push(`package.json missing ${name}: ${command}`);
+  });
 } catch (error) {
   failures.push(`package.json is invalid JSON: ${error.message}`);
 }

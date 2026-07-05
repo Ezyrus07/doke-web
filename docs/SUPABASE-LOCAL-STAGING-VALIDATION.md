@@ -81,10 +81,10 @@ After local/staging migration and seed validation, bind the staging runtime with
 Minimum HTTP checks:
 
 ```bash
-# Login with seeded client user.
+# Login with a client provisioned through the Supabase Admin API.
 curl -X POST "$DOKE_STAGING_API_URL/auth/login" \
   -H 'content-type: application/json' \
-  -d '{"email":"cliente@doke.local","password":"Doke1234!"}'
+  -d "{\"email\":\"$DOKE_STAGING_CLIENT_EMAIL\",\"password\":\"$DOKE_STAGING_CLIENT_PASSWORD\"}"
 
 # Use the returned token.
 curl "$DOKE_STAGING_API_URL/auth/session" -H "authorization: Bearer $TOKEN"

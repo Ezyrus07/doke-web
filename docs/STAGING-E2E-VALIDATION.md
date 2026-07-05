@@ -38,16 +38,9 @@ psql "$SUPABASE_DB_URL" -f supabase/tests/004_runtime_e2e_postconditions.sql
 
 ## Environment
 
-Seed defaults are used when explicit credentials are not provided:
-
-```txt
-cliente@doke.local / Doke1234!
-profissional@doke.local / Doke1234!
-suporte@doke.local / Doke1234!
-admin@doke.local / Doke1234!
-```
-
-Override with:
+Canary emails have local defaults, but passwords must stay in the operator's
+server-only environment and must match the values used by
+`provision:staging-auth-canaries`:
 
 ```bash
 DOKE_STAGING_CLIENT_EMAIL=...
@@ -59,6 +52,9 @@ DOKE_STAGING_SUPPORT_PASSWORD=...
 DOKE_STAGING_ADMIN_EMAIL=...
 DOKE_STAGING_ADMIN_PASSWORD=...
 ```
+
+Do not insert canaries directly into `auth.users` or `auth.identities`.
+Provision them through the Supabase Admin API before applying seed 002.
 
 Optional seeded IDs:
 
