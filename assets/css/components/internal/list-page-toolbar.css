@@ -14,26 +14,26 @@
 
 .home-side-meta.is-search-open .home-side-meta__search-form,
 .home-side-meta__search-form.is-expanded {
-  width: min(320px, 42vw);
-  max-width: min(320px, 42vw);
+  width: var(--toolbar-search-width);
+  max-width: var(--toolbar-search-width);
   opacity: 1;
   pointer-events: auto;
 }
 
 .home-side-meta__search-input {
   width: 100%;
-  min-height: 58px;
-  padding: 0 18px;
-  border-radius: var(--radius-md);
-  border: var(--border-soft);
-  background: rgba(255,255,255,.96);
-  color: #173a67;
+  min-height: var(--toolbar-action-height);
+  padding: 0 var(--toolbar-search-padding-x);
+  border-radius: var(--toolbar-radius);
+  border: var(--toolbar-border);
+  background: var(--toolbar-bg);
+  color: var(--toolbar-text);
   font: inherit;
-  box-shadow: 0 10px 24px rgba(39,58,86,.08);
+  box-shadow: var(--toolbar-shadow);
 }
 
 .home-side-meta__search-input::placeholder {
-  color: #7a91ad;
+  color: var(--toolbar-text-muted);
 }
 
 body.orders-page-shell .page__content,
@@ -141,7 +141,7 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   body.orders-page-shell .home-side-meta__group--secondary,
   body.notifications-page-shell .home-side-meta__group--secondary,
   body.wallet-page-shell .home-side-meta__group--secondary {
-    gap: 10px;
+    gap: var(--toolbar-gap-compact);
     flex: 0 0 auto;
   }
 
@@ -157,9 +157,9 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   body.wallet-page-shell .home-side-meta__alert,
   body.wallet-page-shell .home-side-meta__profile,
   body.wallet-page-shell .home-side-meta__location {
-    border: var(--border-soft);
-    background: var(--internal-surface-bg);
-    box-shadow: var(--internal-surface-shadow);
+    border: var(--toolbar-border);
+    background: var(--toolbar-bg);
+    box-shadow: var(--toolbar-shadow);
     transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease, color 180ms ease;
   }
 
@@ -169,9 +169,9 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   body.notifications-page-shell .home-side-meta__alert,
   body.wallet-page-shell .home-side-meta__search,
   body.wallet-page-shell .home-side-meta__alert {
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-base);
+    width: var(--toolbar-icon-size);
+    height: var(--toolbar-icon-size);
+    border-radius: var(--toolbar-radius);
     display: inline-grid;
     place-items: center;
     color: #2b5f94;
@@ -207,9 +207,9 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   body.wallet-page-shell .home-side-meta__search:hover,
   body.wallet-page-shell .home-side-meta__alert:hover {
     transform: translateY(-2px);
-    border-color: var(--surface-outline-hover);
-    background: #ffffff;
-    box-shadow: var(--shadow-surface-strong);
+    border-color: var(--toolbar-border-color-hover);
+    background: var(--toolbar-bg-hover);
+    box-shadow: var(--toolbar-shadow-hover);
   }
 
   body.orders-page-shell .home-side-meta__search:hover svg,
@@ -254,9 +254,9 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   body.orders-page-shell .home-side-meta__search-input,
   body.notifications-page-shell .home-side-meta__search-input,
   body.wallet-page-shell .home-side-meta__search-input {
-    min-height: 44px;
-    padding: 0 16px;
-    border-radius: var(--radius-base);
+    min-height: var(--toolbar-action-height);
+    padding: 0 var(--toolbar-search-padding-x);
+    border-radius: var(--toolbar-radius);
     font-size: 0.94rem;
     font-weight: 600;
     transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
@@ -268,20 +268,20 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   body.notifications-page-shell .home-side-meta__search-input:focus-visible,
   body.wallet-page-shell .home-side-meta__search-input:hover,
   body.wallet-page-shell .home-side-meta__search-input:focus-visible {
-    border-color: var(--surface-outline-hover);
-    background: #ffffff;
-    box-shadow: var(--shadow-surface-strong);
+    border-color: var(--toolbar-border-color-hover);
+    background: var(--toolbar-bg-hover);
+    box-shadow: var(--toolbar-shadow-hover);
   }
 
   body.orders-page-shell .home-side-meta__location,
   body.notifications-page-shell .home-side-meta__location,
   body.wallet-page-shell .home-side-meta__location {
-    min-height: 44px;
-    padding: 0 16px;
-    border-radius: var(--radius-base);
+    min-height: var(--toolbar-action-height);
+    padding: 0 var(--toolbar-search-padding-x);
+    border-radius: var(--toolbar-radius);
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--toolbar-gap-compact);
     color: #1b3f67;
     font-size: 0.92rem;
     font-weight: 700;
@@ -293,9 +293,9 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   body.notifications-page-shell .home-side-meta__location:hover,
   body.wallet-page-shell .home-side-meta__location:hover {
     transform: translateY(-2px);
-    border-color: var(--surface-outline-hover);
-    background: #ffffff;
-    box-shadow: var(--shadow-surface-strong);
+    border-color: var(--toolbar-border-color-hover);
+    background: var(--toolbar-bg-hover);
+    box-shadow: var(--toolbar-shadow-hover);
   }
 
   body.orders-page-shell .home-side-meta__location-text,
@@ -337,7 +337,7 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
     border-radius: 20px 0 0 20px;
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--toolbar-gap-compact);
     color: #1b3f67;
     border-right: 0;
   }
@@ -347,11 +347,11 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   body.wallet-page-shell .home-side-meta__profile-caret-button {
     min-height: 52px;
     width: 38px;
-    border: var(--border-soft);
+    border: var(--toolbar-border);
     border-left: 0;
     border-radius: 0 20px 20px 0;
-    background: var(--internal-surface-bg);
-    box-shadow: var(--internal-surface-shadow);
+    background: var(--toolbar-bg);
+    box-shadow: var(--toolbar-shadow);
     display: inline-grid;
     place-items: center;
     transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease;
@@ -364,9 +364,9 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   body.wallet-page-shell .home-side-meta__profile-wrap:hover .home-side-meta__profile,
   body.wallet-page-shell .home-side-meta__profile-wrap:hover .home-side-meta__profile-caret-button {
     transform: translateY(-2px);
-    border-color: var(--surface-outline-hover);
-    background: #ffffff;
-    box-shadow: var(--shadow-surface-strong);
+    border-color: var(--toolbar-border-color-hover);
+    background: var(--toolbar-bg-hover);
+    box-shadow: var(--toolbar-shadow-hover);
   }
 
   body.orders-page-shell .home-side-meta__avatar,
@@ -428,7 +428,8 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
    O visual fica no contrato de action toolbar; localização fica isolada ao seu próprio trigger. */
 @media (min-width: 761px) {
   body.orders-page-shell .home-side-meta,
-  body.notifications-page-shell .home-side-meta {
+  body.notifications-page-shell .home-side-meta,
+  body.wallet-page-shell .home-side-meta {
     background: transparent;
     border: 0;
     box-shadow: none;
@@ -438,30 +439,36 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   }
 
   body.orders-page-shell .home-side-meta__group--primary,
-  body.notifications-page-shell .home-side-meta__group--primary {
-    gap: 12px;
+  body.notifications-page-shell .home-side-meta__group--primary,
+  body.wallet-page-shell .home-side-meta__group--primary {
+    gap: var(--toolbar-gap);
   }
 
   body.orders-page-shell .home-side-meta__group--secondary,
-  body.notifications-page-shell .home-side-meta__group--secondary {
-    gap: 10px;
+  body.notifications-page-shell .home-side-meta__group--secondary,
+  body.wallet-page-shell .home-side-meta__group--secondary {
+    gap: var(--toolbar-gap-compact);
   }
 
   body.orders-page-shell .page-header-context,
-  body.notifications-page-shell .page-header-context {
-    gap: 12px;
+  body.notifications-page-shell .page-header-context,
+  body.wallet-page-shell .page-header-context {
+    gap: var(--toolbar-gap);
   }
 
   body.orders-page-shell .page-header-context__action,
-  body.notifications-page-shell .page-header-context__action {
+  body.notifications-page-shell .page-header-context__action,
+  body.wallet-page-shell .page-header-context__action {
     position: relative;
     z-index: 1;
   }
 
   body.orders-page-shell .home-side-meta__search,
   body.notifications-page-shell .home-side-meta__search,
+  body.wallet-page-shell .home-side-meta__search,
   body.orders-page-shell .home-side-meta__alert,
-  body.notifications-page-shell .home-side-meta__alert {
+  body.notifications-page-shell .home-side-meta__alert,
+  body.wallet-page-shell .home-side-meta__alert {
     position: relative;
     z-index: 1;
   }
@@ -473,12 +480,14 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
    Mantém o contrato no componente compartilhado, sem alterar shell/sidebar/header global. */
 @media (min-width: 761px) {
   body.orders-page-shell,
-  body.notifications-page-shell {
+  body.notifications-page-shell,
+  body.wallet-page-shell {
     --doke-list-toolbar-width: min(100%, 1040px);
   }
 
   body.orders-page-shell .home-side-meta,
-  body.notifications-page-shell .home-side-meta {
+  body.notifications-page-shell .home-side-meta,
+  body.wallet-page-shell .home-side-meta {
     width: var(--doke-list-toolbar-width);
     max-width: var(--doke-list-toolbar-width);
     margin-inline: auto;
@@ -489,39 +498,45 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   }
 
   body.orders-page-shell .home-side-meta__group--primary,
-  body.notifications-page-shell .home-side-meta__group--primary {
+  body.notifications-page-shell .home-side-meta__group--primary,
+  body.wallet-page-shell .home-side-meta__group--primary {
     flex: 0 1 auto;
     min-width: 0;
-    gap: 10px;
+    gap: var(--toolbar-gap-compact);
   }
 
   body.orders-page-shell .home-side-meta__group--secondary,
-  body.notifications-page-shell .home-side-meta__group--secondary {
+  body.notifications-page-shell .home-side-meta__group--secondary,
+  body.wallet-page-shell .home-side-meta__group--secondary {
     flex: 0 0 auto;
     margin-left: auto;
-    gap: 8px;
+    gap: var(--toolbar-gap-compact);
   }
 
   body.orders-page-shell .page-header-context,
-  body.notifications-page-shell .page-header-context {
+  body.notifications-page-shell .page-header-context,
+  body.wallet-page-shell .page-header-context {
     flex: 0 0 auto;
-    gap: 10px;
+    gap: var(--toolbar-gap-compact);
   }
 
   body.orders-page-shell .home-side-meta__search,
   body.notifications-page-shell .home-side-meta__search,
+  body.wallet-page-shell .home-side-meta__search,
   body.orders-page-shell .home-side-meta__alert,
-  body.notifications-page-shell .home-side-meta__alert {
+  body.notifications-page-shell .home-side-meta__alert,
+  body.wallet-page-shell .home-side-meta__alert {
     width: 42px;
-    height: var(--control-height-md);
-    border-radius: 15px;
+    height: var(--toolbar-action-height-compact);
+    border-radius: var(--toolbar-radius-compact);
   }
 
   body.orders-page-shell .page-header-context__action,
-  body.notifications-page-shell .page-header-context__action {
+  body.notifications-page-shell .page-header-context__action,
+  body.wallet-page-shell .page-header-context__action {
     min-height: var(--doke-context-action-height-compact, var(--control-height-md));
     padding-inline: var(--doke-context-action-padding-x-compact, 15px);
-    gap: 8px;
+    gap: var(--toolbar-gap-compact);
     font-size: 0.92rem;
   }
 
@@ -558,24 +573,28 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
 
 @media (min-width: 1280px) {
   body.orders-page-shell,
-  body.notifications-page-shell {
+  body.notifications-page-shell,
+  body.wallet-page-shell {
     --doke-list-toolbar-width: min(100%, 1080px);
   }
 }
 
 @media (min-width: 761px) and (max-width: 1100px) {
   body.orders-page-shell,
-  body.notifications-page-shell {
+  body.notifications-page-shell,
+  body.wallet-page-shell {
     --doke-list-toolbar-width: min(100%, 920px);
   }
 
   body.orders-page-shell .home-side-meta,
-  body.notifications-page-shell .home-side-meta {
+  body.notifications-page-shell .home-side-meta,
+  body.wallet-page-shell .home-side-meta {
     gap: 14px;
   }
 
   body.orders-page-shell .home-side-meta__group--secondary,
-  body.notifications-page-shell .home-side-meta__group--secondary {
+  body.notifications-page-shell .home-side-meta__group--secondary,
+  body.wallet-page-shell .home-side-meta__group--secondary {
     gap: 6px;
   }
 }
@@ -583,12 +602,14 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
 /* Stage 12 - match internal list chrome to the home/index desktop header. */
 @media (min-width: 1025px) {
   body.orders-page-shell,
-  body.notifications-page-shell {
+  body.notifications-page-shell,
+  body.wallet-page-shell {
     --doke-list-toolbar-width: 100%;
   }
 
   body.orders-page-shell .home-side-meta,
-  body.notifications-page-shell .home-side-meta {
+  body.notifications-page-shell .home-side-meta,
+  body.wallet-page-shell .home-side-meta {
     width: 100%;
     max-width: none;
     margin-left: 0;
@@ -599,39 +620,45 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
   }
 
   body.orders-page-shell .home-side-meta__group--primary,
-  body.notifications-page-shell .home-side-meta__group--primary {
+  body.notifications-page-shell .home-side-meta__group--primary,
+  body.wallet-page-shell .home-side-meta__group--primary {
     flex: 0 1 auto;
-    gap: 12px;
+    gap: var(--toolbar-gap);
   }
 
   body.orders-page-shell .home-side-meta__group--secondary,
-  body.notifications-page-shell .home-side-meta__group--secondary {
+  body.notifications-page-shell .home-side-meta__group--secondary,
+  body.wallet-page-shell .home-side-meta__group--secondary {
     flex: 0 0 auto;
     margin-left: auto;
-    gap: 10px;
+    gap: var(--toolbar-gap-compact);
   }
 
   body.orders-page-shell .home-side-meta__search,
   body.notifications-page-shell .home-side-meta__search,
+  body.wallet-page-shell .home-side-meta__search,
   body.orders-page-shell .home-side-meta__alert,
-  body.notifications-page-shell .home-side-meta__alert {
+  body.notifications-page-shell .home-side-meta__alert,
+  body.wallet-page-shell .home-side-meta__alert {
     width: 48px;
-    height: 48px;
-    min-width: 48px;
-    min-height: 48px;
-    border-radius: var(--radius-base);
+    height: var(--toolbar-icon-size);
+    min-width: var(--toolbar-icon-size);
+    min-height: var(--toolbar-icon-size);
+    border-radius: var(--toolbar-radius);
   }
 
   body.orders-page-shell .page-header-context,
-  body.notifications-page-shell .page-header-context {
-    gap: 12px;
+  body.notifications-page-shell .page-header-context,
+  body.wallet-page-shell .page-header-context {
+    gap: var(--toolbar-gap);
   }
 
   body.orders-page-shell .page-header-context__action,
-  body.notifications-page-shell .page-header-context__action {
-    min-height: var(--doke-context-action-height, 48px);
+  body.notifications-page-shell .page-header-context__action,
+  body.wallet-page-shell .page-header-context__action {
+    min-height: var(--doke-context-action-height, var(--toolbar-action-height));
     padding-inline: var(--doke-context-action-padding-x, 18px);
-    border-radius: var(--doke-context-action-radius, var(--radius-base));
+    border-radius: var(--doke-context-action-radius, var(--toolbar-radius));
     font-size: 0.94rem;
   }
 
@@ -652,7 +679,7 @@ body.orders-page-shell .orders-page-header__controls[hidden] {
     padding: 8px 14px 8px 10px;
     border-radius: 18px 0 0 18px;
     border-right: 0;
-    gap: 10px;
+    gap: var(--toolbar-gap-compact);
   }
 
   body.orders-page-shell .home-side-meta__profile-caret-button,

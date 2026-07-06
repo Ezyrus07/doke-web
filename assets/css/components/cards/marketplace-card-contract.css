@@ -6,11 +6,12 @@
 
 :root {
   --doke-card-bg: var(--card-bg, #fff);
-  --doke-card-border: 1px solid transparent;
+  --doke-marketplace-card-border: var(--doke-card-border-line, var(--card-border-transparent));
+  --doke-marketplace-card-border-same-surface: var(--doke-card-border-line-same-surface, var(--card-border-same-surface));
   --doke-card-radius: 18px;
   --doke-card-radius-sm: 16px;
-  --doke-card-shadow: 0 10px 28px rgba(19, 48, 82, 0.075);
-  --doke-card-shadow-hover: 0 16px 34px rgba(19, 48, 82, 0.12);
+  --doke-card-shadow: var(--card-shadow, 0 10px 28px rgba(19, 48, 82, 0.075));
+  --doke-card-shadow-hover: var(--card-shadow-hover, 0 16px 34px rgba(19, 48, 82, 0.12));
   --doke-card-ink: #082747;
   --doke-card-muted: #667b95;
   --doke-card-soft: #edf8f6;
@@ -57,11 +58,16 @@
 
 :where(.doke-ad-card, .service-card, .publication-card, .doke-review-card, .review-card, .rating-card, .testimonial-card, .avaliacao-card) {
   overflow: hidden;
-  border: var(--doke-card-border);
+  border: var(--doke-marketplace-card-border);
   border-radius: var(--doke-card-radius);
   background: var(--doke-card-bg);
   box-shadow: var(--doke-card-shadow);
   color: var(--doke-card-ink);
+}
+
+:where(.doke-ad-card--same-surface, .service-card--same-surface, .publication-card--same-surface, .worker-card--same-surface) {
+  border: var(--doke-marketplace-card-border-same-surface);
+  box-shadow: var(--shadow-surface-xs);
 }
 
 :where(.doke-ad-card, .service-card, .publication-card):not([hidden]) {
@@ -78,8 +84,8 @@
 
   :where(.doke-ad-card, .service-card, .publication-card, .video-card[data-worker-trigger], .video-card.doke-worker-card, .doke-worker-card):where(:hover, :focus-within) {
     transform: translateY(-1px);
-    border-color: rgba(18, 159, 146, 0.16);
-    box-shadow: none;
+    border-color: transparent;
+    box-shadow: var(--doke-card-shadow-hover);
   }
 }
 
@@ -361,7 +367,7 @@
   aspect-ratio: var(--doke-worker-aspect);
   padding: 0;
   overflow: hidden;
-  border: var(--doke-card-border);
+  border: var(--doke-marketplace-card-border);
   border-radius: var(--doke-card-radius);
   background-color: #15314a;
   background-position: center;
@@ -491,7 +497,7 @@ html body :is(.doke-ad-card.doke-ad-card, .service-card.service-card):not([hidde
   min-height: var(--doke-ad-card-min-height, 0);
   max-height: var(--doke-ad-card-max-height, none);
   overflow: var(--doke-ad-card-overflow, hidden);
-  border: var(--doke-card-border);
+  border: var(--doke-marketplace-card-border);
   border-radius: var(--doke-card-radius);
   background: var(--doke-card-bg);
   box-shadow: var(--doke-card-shadow);
@@ -556,7 +562,7 @@ html body :is(.video-card[data-worker-trigger].video-card, .video-card.doke-work
   max-height: none;
   padding: 0;
   overflow: hidden;
-  border: var(--doke-card-border);
+  border: var(--doke-marketplace-card-border);
   border-radius: var(--doke-card-radius);
   background-position: center;
   background-size: cover;

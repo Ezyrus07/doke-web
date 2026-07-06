@@ -88,6 +88,39 @@ const isTabletLandscapeSidebarViewport = () => false;
 const isMobileSidebarViewport = () => window.innerWidth < 1200;
 const isTabletSidebarViewport = () => false;
 
+const ensureShellChromeContracts = (root = document) => {
+  const shell = root.querySelector?.(".app-shell");
+  if (shell && shell.getAttribute("data-shell-contract") !== "app-shell") {
+    shell.setAttribute('data-shell-contract', 'app-shell');
+  }
+
+  const sidebar = root.querySelector?.(".app-shell > .sidebar, [data-shell-sidebar]");
+  if (sidebar) {
+    if (!sidebar.hasAttribute("data-shell-sidebar")) {
+      sidebar.setAttribute("data-shell-sidebar", "");
+    }
+    if (sidebar.getAttribute("data-sidebar-contract") !== "global-sidebar") {
+      sidebar.setAttribute('data-sidebar-contract', 'global-sidebar');
+    }
+  }
+
+  const header = root.querySelector?.("[data-app-header]");
+  if (header) {
+    if (header.getAttribute("data-header-contract") !== "app-header") {
+      header.setAttribute("data-header-contract", "app-header");
+    }
+    const variant = header.getAttribute("data-header-variant") || "standard";
+    if (!header.getAttribute("data-header-family")) {
+      header.setAttribute("data-header-family", variant);
+    }
+  }
+
+  const scrim = root.querySelector?.("[data-sidebar-scrim]");
+  if (scrim && !scrim.hasAttribute("aria-hidden")) {
+    scrim.setAttribute("aria-hidden", "true");
+  }
+};
+ensureShellChromeContracts();
 
 if (window.localStorage.getItem(THEME_STORAGE_KEY) === "dark") {
   body.classList.add("theme-dark");
@@ -307,6 +340,7 @@ const SHARED_SIDEBAR_MARKUP = `
 const renderSharedSidebar = () => {
   const sidebar = document.querySelector('.app-shell > .sidebar');
   if (!sidebar) return;
+  ensureShellChromeContracts();
   if (sidebar.dataset.shellRendered === 'true') return;
   sidebar.innerHTML = SHARED_SIDEBAR_MARKUP;
   sidebar.dataset.shellRendered = 'true';

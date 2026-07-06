@@ -4,14 +4,14 @@
 :root {
   --doke-action-modal-width: 620px;
   --doke-action-modal-wide-width: 620px;
-  --doke-action-modal-radius: 28px;
+  --doke-action-modal-radius: var(--radius-modal);
   --doke-action-modal-padding-x: 36px;
-  --doke-action-modal-border: rgba(207, 224, 240, 0.95);
+  --doke-action-modal-border: var(--modal-surface-border-color);
   --doke-action-modal-ink: #0b3c7c;
   --doke-action-modal-text: #6f85a1;
   --doke-action-modal-muted: #6a819e;
-  --doke-action-modal-soft: #f8fbff;
-  --doke-action-modal-shadow: 0 30px 80px rgba(18, 39, 62, 0.24);
+  --doke-action-modal-soft: var(--modal-control-bg);
+  --doke-action-modal-shadow: var(--modal-surface-shadow);
 }
 
 .doke-action-modal {
@@ -38,9 +38,9 @@
   padding: 0;
   border: 0;
   border-radius: 0;
-  background: rgba(17, 36, 59, 0.58);
-  -webkit-backdrop-filter: blur(14px) saturate(115%);
-  backdrop-filter: blur(14px) saturate(115%);
+  background: var(--modal-backdrop-bg);
+  -webkit-backdrop-filter: var(--modal-backdrop-blur);
+  backdrop-filter: var(--modal-backdrop-blur);
   box-shadow: none;
   cursor: pointer;
 }
@@ -54,7 +54,7 @@
   grid-template-rows: auto minmax(0, 1fr);
   padding: 0;
   overflow: hidden;
-  border: 1px solid var(--doke-action-modal-border);
+  border: var(--modal-surface-border);
   border-radius: var(--doke-action-modal-radius);
   background: #fff;
   box-shadow: var(--doke-action-modal-shadow);
@@ -146,9 +146,9 @@
   min-height: 42px;
   display: inline-grid;
   place-items: center;
-  border: 1px solid var(--doke-action-modal-border);
-  border-radius: 999px;
-  background: #f3f8fd;
+  border: var(--modal-close-border);
+  border-radius: var(--radius-control);
+  background: var(--modal-close-bg);
   color: var(--doke-action-modal-ink);
   cursor: pointer;
 }
@@ -343,8 +343,8 @@
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.15fr);
   gap: 14px;
   padding: 22px var(--doke-action-modal-padding-x) 30px;
-  border-top: 1px solid #e0e9f4;
-  background: linear-gradient(180deg, #fbfdff 0%, #f8fbff 100%);
+  border-top: 1px solid var(--modal-surface-divider);
+  background: var(--modal-footer-bg);
 }
 
 .doke-action-modal__footer .doke-btn,
@@ -358,16 +358,16 @@
 
 .doke-action-modal__footer .doke-action-modal__button--primary,
 .doke-action-modal__button--primary {
-  border: 1px solid #2475bd;
-  border-radius: 16px;
+  border: 0;
+  border-radius: var(--radius-control);
   background: linear-gradient(135deg, #2475bd 0%, #145fa7 100%);
   color: #fff;
   box-shadow: 0 12px 24px rgba(20, 95, 167, 0.18);
 }
 
 .doke-action-modal__footer .community-action-modal__button--ghost {
-  border: 1px solid var(--doke-action-modal-border);
-  background: #f8fbff;
+  border: var(--modal-control-border);
+  background: var(--doke-action-modal-soft);
   color: var(--doke-action-modal-ink);
   box-shadow: none;
 }
@@ -449,9 +449,9 @@ body.doke-action-modal-open {
    Root cause: controls were visually heavier than the modal chrome. The border,
    fill and textarea height made small action flows look bulkier than needed. */
 :root {
-  --doke-action-modal-control-border: rgba(207, 224, 240, 0.82);
-  --doke-action-modal-control-border-strong: rgba(141, 181, 221, 0.72);
-  --doke-action-modal-control-fill: #fbfdff;
+  --doke-action-modal-control-border: var(--modal-control-border-color);
+  --doke-action-modal-control-border-strong: var(--modal-control-border-focus);
+  --doke-action-modal-control-fill: var(--modal-control-bg);
 }
 
 .doke-action-modal__body {
@@ -479,6 +479,6 @@ body.doke-action-modal-open {
 }
 
 .doke-action-modal__summary-card {
-  border-color: rgba(220, 232, 244, 0.9);
+  border-color: var(--doke-modal-visual-border-soft, var(--modal-surface-divider));
   background: #fbfdff;
 }

@@ -21,7 +21,9 @@
     --doke-color-ink: var(--color-heading-soft, #17395f);
     --doke-color-text: var(--color-text, #355270);
     --doke-color-muted: var(--color-text-muted, #7f93ac);
-    --doke-color-line: rgba(23, 57, 95, .11);
+    --doke-color-line: var(--control-outline-same-surface);
+    --doke-color-line-soft-primary: var(--control-outline-soft-primary);
+    --doke-color-line-soft-primary-hover: var(--control-outline-soft-primary-hover);
     --doke-color-surface: #ffffff;
     --doke-color-page: #eef5fb;
 
@@ -80,7 +82,7 @@
     gap: var(--doke-space-2);
     min-height: var(--doke-control-height-md);
     padding: 0 var(--doke-space-5);
-    border: 1px solid transparent;
+    border: var(--border-width, 1px) var(--border-style, solid) transparent;
     border-radius: var(--doke-radius-pill);
     background: var(--doke-color-primary);
     color: #fff;
@@ -109,12 +111,12 @@
     pointer-events: none;
   }
 
-  .doke-btn--primary { background: var(--doke-color-primary); color: #fff; }
-  .doke-btn--success { background: var(--color-secondary, #168f7d); color: #fff; }
-  .doke-btn--secondary { background: var(--doke-color-primary-soft); color: var(--doke-color-primary); box-shadow: none; }
-  .doke-btn--soft { background: var(--doke-color-primary-soft); color: var(--doke-color-primary); box-shadow: none; }
-  .doke-btn--ghost { background: transparent; color: var(--doke-color-primary); border-color: var(--doke-color-line); box-shadow: none; }
-  .doke-btn--danger { background: var(--doke-color-danger); color: #fff; }
+  .doke-btn--primary { background: var(--doke-color-primary); color: #fff; border-color: transparent; }
+  .doke-btn--success { background: var(--color-secondary, #168f7d); color: #fff; border-color: transparent; }
+  .doke-btn--secondary { border-color: var(--control-outline-soft-secondary); background: var(--control-bg-soft-secondary); color: var(--color-secondary-strong, #0f6f64); box-shadow: none; }
+  .doke-btn--soft { border-color: var(--doke-color-line-soft-primary); background: var(--control-bg-soft-primary); color: var(--doke-color-primary); box-shadow: none; }
+  .doke-btn--ghost { background: var(--control-bg-same-surface); color: var(--doke-color-primary); border-color: var(--doke-color-line); box-shadow: none; }
+  .doke-btn--danger { background: var(--color-danger-soft, #fef2f2); color: var(--color-danger-strong, #b42318); border-color: var(--control-outline-soft-danger); box-shadow: none; }
   .doke-btn--pill { border-radius: var(--doke-radius-pill); }
   .doke-btn--sm { min-height: var(--doke-control-height-sm); padding-inline: var(--doke-space-4); font-size: 12px; }
   .doke-btn--lg { min-height: var(--doke-control-height-lg); padding-inline: var(--doke-space-6); font-size: 15px; }
@@ -168,6 +170,8 @@
 
   .doke-icon-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
   .doke-icon-btn--primary { background: var(--doke-color-primary); color: #fff; border-color: transparent; }
+  .doke-icon-btn--soft { border-color: var(--doke-color-line-soft-primary); background: var(--control-bg-soft-primary); color: var(--doke-color-primary); box-shadow: none; }
+  .doke-icon-btn--soft:is(:hover, :focus-visible, [aria-expanded="true"]) { border-color: var(--doke-color-line-soft-primary-hover); background: var(--control-bg-soft-primary-hover); }
   .doke-icon-btn--flat { box-shadow: none; }
   .doke-icon-btn--sm { width: 34px; height: var(--control-height-xs); min-width: 34px; }
 
@@ -180,14 +184,22 @@
   .doke-textarea {
     width: 100%;
     min-height: var(--doke-control-height-lg);
-    border: 1px solid var(--doke-color-line);
-    border-radius: var(--doke-radius-md);
-    background: var(--doke-color-surface);
+    border: var(--input-border);
+    border-radius: var(--input-radius);
+    background: var(--input-bg);
     color: var(--doke-color-ink);
     font-size: 14px;
     font-weight: 650;
     line-height: 1.35;
-    box-shadow: var(--doke-shadow-xs);
+    box-shadow: none;
+  }
+
+  .doke-input:is(:focus, :focus-visible),
+  .doke-select:is(:focus, :focus-visible),
+  .doke-textarea:is(:focus, :focus-visible) {
+    border-color: var(--input-border-focus);
+    background: var(--input-bg-focus);
+    box-shadow: var(--input-focus-ring);
   }
 
   .doke-input,
@@ -606,7 +618,7 @@
 .doke-form-actions .budget-button--ghost,
 .doke-form-actions .become-pro-btn--soft,
 .doke-form-actions .post-service-btn--soft {
-  border-color: var(--doke-action-secondary-border);
+  border-color: rgba(42, 95, 144, 0.12);
   background: var(--doke-action-secondary-bg);
   color: var(--doke-action-secondary-ink);
   box-shadow: none;
@@ -680,21 +692,27 @@
   }
 }
 
-/* Contrast-first border policy for filled/soft Doke UI controls. */
+/* Filled controls stay borderless. Soft/tinted controls keep a subtle outline for low-contrast fills. */
 .doke-btn--primary,
+.doke-btn--success,
+.doke-btn--primary:hover,
+.doke-btn--success:hover,
+.doke-tab-pill:is(.is-active, [aria-pressed="true"], [aria-selected="true"]) {
+  border-color: transparent;
+}
+
 .doke-btn--secondary,
 .doke-btn--soft,
-.doke-btn--success,
-.doke-btn--danger,
-.doke-btn--primary:hover,
 .doke-btn--secondary:hover,
 .doke-btn--soft:hover,
-.doke-btn--success:hover,
-.doke-btn--danger:hover,
 .doke-badge,
 .doke-chip,
 .doke-tab-pill,
-.doke-tab-pill:hover,
-.doke-tab-pill:is(.is-active, [aria-pressed="true"], [aria-selected="true"]) {
-  border-color: transparent;
+.doke-tab-pill:hover {
+  border-color: rgba(42, 95, 144, 0.12);
+}
+
+.doke-btn--danger,
+.doke-btn--danger:hover {
+  border-color: rgba(220, 38, 38, 0.14);
 }

@@ -157,3 +157,109 @@
 :where(.section-heading__link, .home-section-header a):where(:hover, :focus-visible, :active) {
   border-color: transparent;
 }
+
+/* Section Header Contract — explicit override layer.
+   Root cause: several historical page selectors have higher specificity than the
+   low-specificity :where() contract above. This layer keeps anatomy in the
+   component owner without using !important or page-local remounts. */
+.section-heading,
+.home-section-header,
+.detail-section__header,
+.detail-section__header--row,
+.results-related__header,
+.communities-v2-section__heading,
+.settings-section-heading,
+.wallet-section-heading,
+.profile-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--doke-section-header-gap);
+  width: 100%;
+  min-width: 0;
+  margin: 0 0 var(--doke-section-header-margin-after);
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.section-heading > :first-child,
+.home-section-header > :first-child,
+.detail-section__header > :first-child,
+.detail-section__header--row > :first-child,
+.results-related__header > :first-child,
+.communities-v2-section__heading > :first-child,
+.settings-section-heading > :first-child,
+.wallet-section-heading > :first-child,
+.profile-section-heading > :first-child {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  max-width: min(100%, 42rem);
+}
+
+.section-heading__title,
+.home-section-title,
+.detail-section__header h2,
+.detail-section__header h3,
+.detail-section__header--row h2,
+.detail-section__header--row h3,
+.results-related__header h2,
+.results-related__header h3,
+.communities-v2-section__heading h2,
+.settings-section-heading h2,
+.wallet-section-heading h1,
+.wallet-section-heading h2,
+.profile-section-heading h2,
+.doke-reviews-title {
+  margin: 0;
+  color: var(--doke-text-primary, var(--color-heading, #18314f));
+  font-size: var(--doke-section-title-size);
+  line-height: var(--doke-section-title-line);
+  font-weight: var(--doke-section-title-weight);
+  letter-spacing: var(--doke-section-title-letter);
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.section-heading__eyebrow,
+.detail-eyebrow,
+.results-panel__eyebrow,
+.doke-section-header__eyebrow,
+.communities-v2-section__heading span,
+.settings-section-heading p {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0;
+  color: var(--doke-text-muted, #6d8097);
+  font-size: var(--doke-section-eyebrow-size);
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.section-heading__link,
+.detail-section__header > a,
+.detail-section__header--row > a,
+.results-related__header > a,
+.communities-v2-section__heading > a,
+.settings-section-heading > a,
+.wallet-section-heading > a,
+.profile-section-heading > a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: max-content;
+  min-height: var(--doke-section-action-height);
+  padding-inline: var(--doke-section-action-padding-inline);
+  border: 1px solid transparent;
+  border-radius: var(--doke-section-action-radius);
+  background: var(--doke-section-action-bg, var(--doke-surface, #fff));
+  color: var(--doke-accent, #2a5c92);
+  font-size: var(--doke-section-action-size);
+  line-height: 1;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}

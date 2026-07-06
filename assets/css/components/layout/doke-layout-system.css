@@ -72,8 +72,9 @@
 .doke-section-description {
   margin: 0;
   color: var(--color-muted, #667085);
-  font-size: 0.92rem;
-  line-height: 1.55;
+  color: var(--state-description-color, inherit);
+  font-size: var(--state-description-size, 0.92rem);
+  line-height: var(--state-description-line-height, 1.55);
 }
 
 .doke-grid {
@@ -136,36 +137,38 @@
 .doke-empty-state,
 .doke-loading-state,
 .doke-error-state {
-  min-height: var(--doke-state-min-height);
+  min-height: var(--doke-state-min-height, var(--state-surface-min-height, 180px));
   display: grid;
   place-items: center;
-  gap: 12px;
+  gap: var(--state-gap, 12px);
   text-align: center;
-  padding: clamp(22px, 6vw, 44px);
-  border: 1px solid var(--color-border, rgba(15, 45, 80, 0.10));
-  border-radius: var(--radius-card);
-  background: var(--color-surface, #fff);
-  color: var(--color-muted, #667085);
+  padding: var(--state-surface-padding, clamp(22px, 6vw, 44px));
+  border: var(--state-surface-border, 1px solid rgba(15, 45, 80, 0.10));
+  border-radius: var(--state-surface-radius, var(--radius-card));
+  background: var(--state-surface-bg, var(--color-surface, #fff));
+  box-shadow: var(--state-surface-shadow, none);
+  color: var(--state-description-color, var(--color-muted, #667085));
 }
 
 .doke-state__title {
   margin: 0;
-  color: var(--color-text, #152033);
-  font-size: 1rem;
-  font-weight: 800;
+  color: var(--state-title-color, var(--color-text, #152033));
+  font-size: var(--state-title-size-compact, 1rem);
+  font-weight: var(--font-weight-extrabold, 800);
 }
 
 .doke-state__description {
   margin: 0;
   max-width: 46ch;
-  font-size: 0.92rem;
-  line-height: 1.55;
+  color: var(--state-description-color, inherit);
+  font-size: var(--state-description-size, 0.92rem);
+  line-height: var(--state-description-line-height, 1.55);
 }
 
 .doke-loading-state::before {
   content: "";
-  width: 28px;
-  height: 28px;
+  width: calc(var(--state-loading-size, 52px) * 0.54);
+  height: calc(var(--state-loading-size, 52px) * 0.54);
   border-radius: var(--doke-radius-pill, var(--radius-pill));
   border: 3px solid currentColor;
   border-right-color: transparent;

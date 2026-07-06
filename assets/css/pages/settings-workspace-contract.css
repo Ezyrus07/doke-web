@@ -11,8 +11,8 @@ body[data-page="configuracoes"].doke-settings-redesign {
   --settings-row-radius: 20px;
   --settings-row-border: rgba(31, 95, 174, 0.12);
   --settings-row-shadow: 0 14px 30px rgba(31, 68, 110, 0.055);
-  --settings-search-height: 46px;
-  --settings-search-control-size: 36px;
+  --settings-search-height: var(--toolbar-action-height);
+  --settings-search-control-size: var(--toolbar-action-height-compact);
   --settings-search-icon-size: 18px;
   background: var(--settings-page-bg);
 }
@@ -57,18 +57,18 @@ body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search 
   min-height: var(--settings-search-height);
   margin: 0 0 18px;
   padding: 5px 8px;
-  border: 1px solid rgba(31, 95, 174, 0.14);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.94);
+  border: var(--toolbar-border);
+  border-radius: var(--toolbar-radius);
+  background: var(--toolbar-bg);
   box-shadow: none;
   box-sizing: border-box;
 }
 
 body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search:focus-within {
-  border-color: rgba(31, 95, 174, 0.18);
+  border-color: var(--toolbar-border-color-hover);
   outline: 0;
   box-shadow: none;
-  background: rgba(255, 255, 255, 0.98);
+  background: var(--toolbar-bg-hover);
 }
 
 body[data-page="configuracoes"].doke-settings-redesign :is(.settings-search-icon, .settings-sidebar-search__clear) {
@@ -87,7 +87,7 @@ body[data-page="configuracoes"].doke-settings-redesign :is(.settings-search-icon
   min-height: var(--settings-search-control-size);
   padding: 0;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--toolbar-radius-compact);
   background: transparent;
   color: var(--settings-primary, #1f5d91);
   box-shadow: none;
@@ -110,7 +110,7 @@ body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search.
 
 body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search__clear:hover,
 body[data-page="configuracoes"].doke-settings-redesign .settings-sidebar-search__clear:focus-visible {
-  background: rgba(33, 103, 174, 0.08);
+  background: var(--toolbar-bg-soft);
   outline: 0;
 }
 
@@ -925,9 +925,19 @@ body[data-page="configuracoes"].doke-settings-redesign .settings-panel-topbar {
 }
 
 /* Settings filled controls: keep the contrast policy after workspace imports. */
-body[data-page="configuracoes"].doke-settings-redesign :is(.settings-action--primary-soft, .settings-action--danger, .doke-btn--soft, .doke-btn--danger),
-body[data-page="configuracoes"].doke-settings-redesign :is(.settings-action--primary-soft, .settings-action--danger, .doke-btn--soft, .doke-btn--danger):where(:hover, :focus-visible, :active) {
-  border-color: transparent;
+body[data-page="configuracoes"].doke-settings-redesign .settings-action--primary-soft,
+body[data-page="configuracoes"].doke-settings-redesign .settings-action--primary-soft:where(:hover, :focus-visible, :active) {
+  border-color: rgba(41, 143, 127, 0.14);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign .doke-btn--soft,
+body[data-page="configuracoes"].doke-settings-redesign .doke-btn--soft:where(:hover, :focus-visible, :active) {
+  border-color: rgba(42, 95, 144, 0.12);
+}
+
+body[data-page="configuracoes"].doke-settings-redesign :is(.settings-action--danger, .doke-btn--danger),
+body[data-page="configuracoes"].doke-settings-redesign :is(.settings-action--danger, .doke-btn--danger):where(:hover, :focus-visible, :active) {
+  border-color: rgba(220, 38, 38, 0.14);
 }
 
 /* Contrast-first settings CTA must stay borderless after workspace imports. */

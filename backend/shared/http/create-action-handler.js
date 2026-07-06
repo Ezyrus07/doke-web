@@ -31,7 +31,7 @@ function createActionHandler(route, implementation) {
         route: route.name,
         replayed: true,
         idempotencyKey,
-        data: idempotencyClaim.responseBody || null
+        data: withReplayMetadata(idempotencyClaim.responseBody, idempotencyKey)
       });
     }
 
@@ -59,6 +59,14 @@ function createActionHandler(route, implementation) {
       throw error;
     }
   };
+}
+
+function withReplayMetadata(responseBody, idempotencyKey) {
+  const data = responseBody && typeof responseBody === 'object' && !Array.isArray(responseBody)
+    ? { ...responseBody }
+    : { data: responseBody === undefined ? null : responseBody };
+  data.idempotency = Object.freeze({ replay: true, key: idempotencyKey });
+  return Object.freeze(data);
 }
 
 async function recordAuditEvent(route, implementation, actor, requestContext, result, idempotencyKey) {

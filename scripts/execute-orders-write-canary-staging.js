@@ -3,6 +3,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { STAGING_E2E_DEFAULT_USERS } = require('../backend/shared/testing/staging-e2e-scenarios');
 
 const root = process.cwd();
 const args = new Set(process.argv.slice(2));
@@ -30,6 +31,7 @@ const REQUIRED_FILES = Object.freeze([
   'scripts/audit-orders-write-canary-staging-executor.js',
   'scripts/validate-orders-write-canary-staging-preflight-gate.js',
   'scripts/validate-orders-write-canary-local-runtime.js',
+  'backend/shared/testing/staging-e2e-scenarios.js',
   'docs/ORDERS-WRITE-STAGING-EXECUTOR-RUNBOOK.md',
   'docs/ORDERS-WRITE-STAGING-PREFLIGHT-RUNBOOK.md',
   'docs/ORDERS-WRITE-CANARY-RUNBOOK.md',
@@ -53,7 +55,7 @@ const MUTATION_STEPS = Object.freeze([
   { key: 'quote', method: 'POST', pathTemplate: '/orders/:id/quote', role: 'professional', body: { amountCents: 25900, currency: 'BRL', description: 'Orçamento controlado pelo canary de staging.' }, expectedStatuses: [200] },
   { key: 'charge', method: 'POST', pathTemplate: '/orders/:id/charge', role: 'professional', body: { amountCents: 25900, currency: 'BRL' }, expectedStatuses: [200] },
   { key: 'start', method: 'POST', pathTemplate: '/orders/:id/start', role: 'professional', body: { source: 'orders-write-staging-executor' }, expectedStatuses: [200] },
-  { key: 'status', method: 'POST', pathTemplate: '/orders/:id/status', role: 'professional', body: { status: 'reviewing' }, expectedStatuses: [200] },
+  { key: 'status', method: 'POST', pathTemplate: '/orders/:id/status', role: 'support', body: { status: 'disputed', note: 'Canary support status update.' }, expectedStatuses: [200] },
   { key: 'complete', method: 'POST', pathTemplate: '/orders/:id/complete', role: 'professional', body: { source: 'orders-write-staging-executor' }, expectedStatuses: [200] },
   { key: 'decline-negative-branch', method: 'POST', pathTemplate: '/orders/:id/decline', role: 'professional', body: { reason: 'negative branch validation only' }, expectedStatuses: [200, 409, 422] }
 ]);
@@ -90,6 +92,7 @@ const report = {
   },
   preflightReportPath: process.env[ENV.preflightReportPath] || DEFAULT_PREFLIGHT_REPORT_PATH,
   executionStatus: 'not_evaluated',
+  status: 'not_evaluated',
   endpointHits: [],
   idempotencyChecks: [],
   rollback: {
@@ -247,18 +250,41 @@ function evaluatePreflightReport() {
 async function executeSmoke(baseUrl) {
   const clientToken = await login(baseUrl, 'client');
   const professionalToken = await login(baseUrl, 'professional');
+  const supportToken = await login(baseUrl, 'support');
+  const tokenByRole = {
+    client: clientToken,
+    professional: professionalToken,
+    support: supportToken
+  };
   await request(baseUrl, 'GET', '/auth/session', { token: clientToken, role: 'client', expectedStatuses: [200] });
   await request(baseUrl, 'GET', '/users/me', { token: clientToken, role: 'client', expectedStatuses: [200] });
   await request(baseUrl, 'GET', '/profiles/me', { token: clientToken, role: 'client', expectedStatuses: [200] });
   await request(baseUrl, 'GET', '/orders', { token: clientToken, role: 'client', expectedStatuses: [200] });
 
-  const createStep = MUTATION_STEPS[0];
+  const professionalIdentity = await request(baseUrl, 'GET', '/users/me', {
+    token: professionalToken,
+    role: 'professional',
+    expectedStatuses: [200]
+  });
+  const professional = professionalIdentity.user || professionalIdentity.currentUser;
+  if (!professional || !professional.id) throw new Error('Professional canary /users/me did not return user.id.');
+
+  const createStep = {
+    ...MUTATION_STEPS[0],
+    body: { ...MUTATION_STEPS[0].body, professionalId: professional.id }
+  };
   const created = await runIdempotentMutation(baseUrl, createStep, clientToken, null);
   const orderId = created.order && created.order.id;
   if (!orderId) throw new Error('POST /orders did not return order.id.');
+  if (created.order.professionalId !== professional.id) {
+    throw new Error('POST /orders did not persist ownership for the authenticated professional canary.');
+  }
+  record('orders.create.professional_ownership', 'passed', professional.id);
 
   for (const step of MUTATION_STEPS.slice(1)) {
-    await runIdempotentMutation(baseUrl, step, professionalToken, orderId);
+    const token = tokenByRole[step.role];
+    if (!token) throw new Error(`No authenticated token available for role ${step.role}.`);
+    await runIdempotentMutation(baseUrl, step, token, orderId);
   }
 }
 
@@ -276,13 +302,27 @@ async function runIdempotentMutation(baseUrl, step, token, orderId) {
 }
 
 async function login(baseUrl, role) {
-  const email = role === 'professional' ? 'professional.canary@doke.local' : 'client.canary@doke.local';
-  const payload = await request(baseUrl, 'POST', '/auth/login', { role, body: { email, login: email, password: 'DokeCanary123!' }, expectedStatuses: [200] });
+  const credentials = credentialsForRole(role);
+  const payload = await request(baseUrl, 'POST', '/auth/login', {
+    role,
+    body: { email: credentials.email, login: credentials.email, password: credentials.password },
+    expectedStatuses: [200, 201]
+  });
   const session = payload.session || {};
   const token = session.token || session.accessToken || session.access_token || payload.token || payload.accessToken || payload.access_token;
   if (!token) throw new Error(`Login for ${role} did not return a token.`);
   record(`auth.login.${role}`, 'passed');
   return token;
+}
+
+function credentialsForRole(role) {
+  const fallback = STAGING_E2E_DEFAULT_USERS[role];
+  if (!fallback) throw new Error(`Unsupported staging canary role: ${role}`);
+  const upper = role.toUpperCase();
+  return {
+    email: process.env[`DOKE_STAGING_${upper}_EMAIL`] || fallback.email,
+    password: process.env[`DOKE_STAGING_${upper}_PASSWORD`] || fallback.password
+  };
 }
 
 async function request(baseUrl, method, endpoint, options = {}) {
@@ -337,6 +377,7 @@ function record(name, status, details) {
 }
 
 function maybeWriteReport() {
+  syncReportStatus();
   if (!writeReport) return;
   const outputPath = process.env[ENV.reportPath] || DEFAULT_REPORT_PATH;
   fs.mkdirSync(path.dirname(path.join(root, outputPath)), { recursive: true });
@@ -344,8 +385,10 @@ function maybeWriteReport() {
 }
 
 function printPlan() {
+  syncReportStatus();
   console.log(JSON.stringify({
     name: report.name,
+    status: report.status,
     executionStatus: report.executionStatus,
     performsNetworkRequest: false,
     performsMutation: false,
@@ -357,7 +400,12 @@ function printPlan() {
 }
 
 function printReport() {
+  syncReportStatus();
   console.log(JSON.stringify(report, null, 2));
+}
+
+function syncReportStatus() {
+  report.status = report.executionStatus;
 }
 
 function failIfNeeded() {

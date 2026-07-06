@@ -10,6 +10,18 @@ const args = new Set(process.argv.slice(2));
 const dryRun = args.has('--dry-run') || args.has('--print-plan');
 const writeReport = args.has('--write-report');
 const reportPath = process.env.DOKE_BACKEND_REAL_COMPLETE_READINESS_REPORT_PATH || 'reports/generated/backend-real-complete-readiness-gate-report.json';
+const READY_STATUS = 'backend_real_complete_ready_for_manual_domain_expansion';
+const BLOCKED_STATUS = 'blocked_until_backend_real_complete_real_reports';
+const DRY_RUN_STATUS = 'backend_real_complete_readiness_dry_run_ready';
+
+const COMMANDS = Object.freeze({
+  auditDomainCanary: command('audit:backend-domain-canary-runtime', 'scripts/audit-backend-domain-canary-runtime.js'),
+  validateDomainCanary: command('validate:backend-domain-canary:local-runtime', 'scripts/validate-backend-domain-canary-local-runtime.js'),
+  auditStagingPreflight: command('audit:backend-real-staging-preflight-gate', 'scripts/audit-backend-real-staging-preflight-gate.js'),
+  validateStagingPreflight: command('validate:backend-real:staging-preflight-gate', 'scripts/validate-backend-real-staging-preflight-gate.js'),
+  auditDataProviderFlags: command('audit:data-provider-flags', 'scripts/audit-data-provider-flag-contract.js'),
+  auditAgentGovernance: npmCommand('audit:agent-governance')
+});
 
 const report = {
   name: 'backend-real-complete-readiness-gate',
@@ -26,34 +38,62 @@ main();
 
 function main() {
   const requiredCommands = dryRun ? [
-    ['npm', ['run', 'audit:backend-domain-canary-runtime']],
-    ['npm', ['run', 'audit:backend-real-staging-preflight-gate']],
-    ['npm', ['run', 'audit:data-provider-flags']],
-    ['npm', ['run', 'audit:agent-governance']]
+    COMMANDS.auditDomainCanary,
+    COMMANDS.auditStagingPreflight,
+    COMMANDS.auditDataProviderFlags,
+    COMMANDS.auditAgentGovernance
   ] : [
-    ['npm', ['run', 'audit:backend-domain-canary-runtime']],
-    ['npm', ['run', 'validate:backend-domain-canary:local-runtime']],
-    ['npm', ['run', 'audit:backend-real-staging-preflight-gate']],
-    ['npm', ['run', 'validate:backend-real:staging-preflight-gate']],
-    ['npm', ['run', 'audit:data-provider-flags']],
-    ['npm', ['run', 'audit:agent-governance']]
+    COMMANDS.auditDomainCanary,
+    COMMANDS.validateDomainCanary,
+    COMMANDS.auditStagingPreflight,
+    COMMANDS.validateStagingPreflight,
+    COMMANDS.auditDataProviderFlags,
+    COMMANDS.auditAgentGovernance
   ];
 
   requiredCommands.forEach(runCommand);
   const realReportsReady = validateRealReportSet();
-  report.status = realReportsReady
-    ? 'backend_real_complete_ready_for_manual_domain_expansion'
-    : 'blocked_until_backend_real_complete_real_reports';
-  if (dryRun) report.status = 'backend_real_complete_readiness_dry_run_ready';
+  const allChecksOk = report.checks.length > 0 && report.checks.every((check) => check.ok === true);
+  const fullyReady = realReportsReady && allChecksOk && report.failures.length === 0;
+  report.status = fullyReady ? READY_STATUS : BLOCKED_STATUS;
+  if (dryRun && fullyReady) report.status = DRY_RUN_STATUS;
   finish();
 }
 
 function runCommand(entry) {
-  const [command, commandArgs] = entry;
-  const result = spawnSync(command, commandArgs, { cwd: root, stdio: 'pipe', encoding: 'utf8' });
-  const ok = result.status === 0;
-  record(`command.${commandArgs.join(' ')}`, ok);
-  if (!ok) report.failures.push(`${command} ${commandArgs.join(' ')} failed: ${result.stderr || result.stdout}`);
+  const result = spawnSync(process.execPath, entry.args, {
+    cwd: root,
+    stdio: 'pipe',
+    encoding: 'utf8',
+    env: process.env,
+    shell: false
+  });
+  const ok = result.status === 0 && !result.error;
+  record(`command.npm run ${entry.name}`, ok);
+  if (!ok) report.failures.push(`npm run ${entry.name} failed: ${formatCommandFailure(result)}`);
+}
+
+function command(name, scriptPath, scriptArgs = []) {
+  return Object.freeze({ name, args: [scriptPath, ...scriptArgs] });
+}
+
+function npmCommand(name) {
+  const npmExecPath = process.env.npm_execpath;
+  return Object.freeze({
+    name,
+    args: npmExecPath ? [npmExecPath, 'run', name] : [path.join(path.dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js'), 'run', name]
+  });
+}
+
+function formatCommandFailure(result) {
+  if (result.error) return result.error.message;
+  const stderr = String(result.stderr || '').trim();
+  if (stderr) return stderr;
+  const stdout = String(result.stdout || '').trim();
+  if (stdout) return stdout;
+  if (typeof result.status === 'number') return `exit code ${result.status}`;
+  if (result.signal) return `terminated by signal ${result.signal}`;
+  return 'unknown command failure';
 }
 
 function validateRealReportSet() {

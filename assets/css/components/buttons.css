@@ -11,6 +11,19 @@
   --doke-btn-radius-pill: var(--btn-radius-pill);
   --doke-btn-padding-x: var(--btn-padding-x-md);
   --doke-btn-gap: var(--btn-gap);
+  --doke-soft-button-border-primary: var(--control-outline-soft-primary);
+  --doke-soft-button-border-primary-hover: var(--control-outline-soft-primary-hover);
+  --doke-soft-button-border-secondary: var(--control-outline-soft-secondary);
+  --doke-soft-button-border-secondary-hover: var(--control-outline-soft-secondary-hover);
+  --doke-soft-button-border-warning: var(--control-outline-soft-warning);
+  --doke-soft-button-border-warning-hover: var(--control-outline-soft-warning-hover);
+  --doke-soft-button-border-danger: var(--control-outline-soft-danger);
+  --doke-soft-button-border-danger-hover: var(--control-outline-soft-danger-hover);
+  --doke-soft-button-border-neutral: var(--control-outline-soft-neutral);
+  --doke-soft-button-bg-primary: var(--control-bg-soft-primary);
+  --doke-soft-button-bg-primary-hover: var(--control-bg-soft-primary-hover);
+  --doke-soft-button-bg-secondary: var(--control-bg-soft-secondary);
+  --doke-soft-button-bg-secondary-hover: var(--control-bg-soft-secondary-hover);
 }
 
 :where(.doke-btn, .doke-button) {
@@ -67,28 +80,29 @@
 }
 
 :where(.doke-btn--secondary, .doke-button--secondary) {
-  background: var(--color-secondary-soft);
-  border-color: transparent;
+  background: var(--doke-soft-button-bg-secondary);
+  border-color: var(--doke-soft-button-border-secondary);
   color: var(--color-secondary-strong);
-  box-shadow: var(--shadow-action-secondary);
+  box-shadow: none;
 }
 
 :where(.doke-btn--ghost, .doke-button--ghost) {
-  background: rgba(255, 255, 255, 0.88);
-  border-color: var(--border-color-soft);
+  background: var(--control-bg-same-surface);
+  border-color: var(--control-outline-same-surface);
   color: var(--btn-text);
   box-shadow: none;
 }
 
 :where(.doke-btn--soft, .doke-button--soft) {
-  background: var(--btn-bg-soft);
-  border-color: transparent;
+  background: var(--doke-soft-button-bg-primary);
+  border-color: var(--doke-soft-button-border-primary);
   color: var(--color-primary-strong);
+  box-shadow: none;
 }
 
 :where(.doke-btn--danger, .doke-button--danger) {
   background: var(--color-danger-soft);
-  border-color: transparent;
+  border-color: var(--doke-soft-button-border-danger);
   color: var(--color-danger-strong);
 }
 
@@ -122,7 +136,7 @@
   height: var(--icon-button-size);
   border: var(--btn-border);
   border-radius: var(--btn-radius-sm);
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--control-bg-same-surface);
   color: var(--btn-text);
   cursor: pointer;
   transition:
@@ -156,10 +170,20 @@
 }
 
 :where(.doke-icon-btn--soft, .doke-action-button--soft) {
-  border-color: transparent;
-  background: rgba(248, 251, 255, 0.92);
-  color: #225f9f;
-  box-shadow: 0 8px 18px rgba(13, 47, 89, 0.045);
+  border-color: var(--doke-soft-button-border-primary);
+  background: var(--doke-soft-button-bg-primary);
+  color: var(--color-primary-strong);
+  box-shadow: none;
+}
+
+:where(.doke-btn--soft, .doke-button--soft, .doke-icon-btn--soft, .doke-action-button--soft):where(:hover, :focus-visible, [aria-expanded="true"]) {
+  border-color: var(--doke-soft-button-border-primary-hover);
+  background: var(--doke-soft-button-bg-primary-hover);
+}
+
+:where(.doke-btn--secondary, .doke-button--secondary):where(:hover, :focus-visible, [aria-expanded="true"]) {
+  border-color: var(--doke-soft-button-border-secondary-hover);
+  background: var(--doke-soft-button-bg-secondary-hover);
 }
 
 :where(.doke-btn--success, .doke-button--success) {
@@ -220,8 +244,8 @@
 
 :where(.doke-more-button):where(:hover, :focus-visible, [aria-expanded="true"]) {
   transform: translateY(-1px);
-  border-color: var(--surface-outline-color, var(--border-color));
-  background: rgba(42, 95, 144, 0.06);
+  border-color: var(--doke-soft-button-border-primary-hover);
+  background: var(--doke-soft-button-bg-primary);
   color: var(--border-color-selected);
   box-shadow: 0 12px 24px rgba(18, 55, 95, 0.08);
 }
@@ -244,15 +268,23 @@
 }
 
 
-/* Border contrast policy: soft/icon controls with their own fill stay borderless.
-   More-buttons are intentionally excluded because they can sit white-on-white. */
-:where(.doke-icon-btn--soft, .doke-action-button--soft, .doke-icon-btn--flat, .doke-action-button--flat),
-:where(.doke-icon-btn--soft, .doke-action-button--soft, .doke-icon-btn--flat, .doke-action-button--flat):where(:hover, :focus-visible, [aria-expanded="true"]) {
+/* Soft-control outline policy: tinted/low-contrast buttons keep a subtle outline.
+   Flat controls remain borderless because they intentionally have no filled surface. */
+:where(.doke-icon-btn--flat, .doke-action-button--flat),
+:where(.doke-icon-btn--flat, .doke-action-button--flat):where(:hover, :focus-visible, [aria-expanded="true"]) {
   border-color: transparent;
 }
 
-/* Contrast-first border policy for filled/soft buttons. Ghost buttons keep their own outline contract. */
-:where(.doke-btn--primary, .doke-button--primary, .doke-btn--secondary, .doke-button--secondary, .doke-btn--soft, .doke-button--soft, .doke-btn--danger, .doke-button--danger, .doke-btn--success, .doke-button--success),
-:where(.doke-btn--primary, .doke-button--primary, .doke-btn--secondary, .doke-button--secondary, .doke-btn--soft, .doke-button--soft, .doke-btn--danger, .doke-button--danger, .doke-btn--success, .doke-button--success):where(:hover, :focus-visible, :active) {
+:where(.doke-icon-btn--soft, .doke-action-button--soft) {
+  border-color: var(--doke-soft-button-border-primary);
+}
+
+:where(.doke-icon-btn--soft, .doke-action-button--soft):where(:hover, :focus-visible, [aria-expanded="true"]) {
+  border-color: var(--doke-soft-button-border-primary-hover);
+}
+
+/* Filled CTAs stay borderless; soft buttons use their own subtle outline above. */
+:where(.doke-btn--primary, .doke-button--primary, .doke-btn--success, .doke-button--success),
+:where(.doke-btn--primary, .doke-button--primary, .doke-btn--success, .doke-button--success):where(:hover, :focus-visible, :active) {
   border-color: transparent;
 }

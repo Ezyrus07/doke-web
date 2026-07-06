@@ -8,6 +8,9 @@
   --doke-card-bg: var(--color-surface);
   --doke-card-bg-soft: var(--color-surface-muted);
   --doke-card-border: var(--card-border-color);
+  --doke-card-border-line: var(--card-border-transparent);
+  --doke-card-border-line-subtle: var(--card-border-subtle);
+  --doke-card-border-line-same-surface: var(--card-border-same-surface);
   --doke-card-border-strong: var(--card-border-color);
   --doke-card-shadow: var(--card-shadow);
   --doke-card-shadow-hover: var(--card-shadow-hover);
@@ -32,6 +35,21 @@
   --doke-card-focus: var(--shadow-focus);
 }
 
+.doke-card--same-surface,
+.service-card--same-surface,
+.order-card--same-surface,
+.profile-card--same-surface,
+.pro-card--same-surface,
+.recommendation-card--same-surface,
+.community-member-card--same-surface,
+.wallet-summary-card--same-surface,
+.wallet-manage-card--same-surface,
+.wallet-bank-card--same-surface,
+.notification-card--same-surface {
+  border: var(--doke-card-border-line-same-surface);
+  box-shadow: var(--shadow-surface-xs);
+}
+
 .doke-card,
 .service-card,
 .order-card,
@@ -45,7 +63,7 @@
 .wallet-bank-card,
 .notification-card {
   background: var(--doke-card-bg);
-  border: var(--card-border, 1px solid transparent);
+  border: var(--doke-card-border-line);
   border-radius: var(--doke-card-radius-lg);
   box-shadow: var(--doke-card-shadow);
   color: var(--doke-card-text);
@@ -57,7 +75,7 @@
    para preservar hierarquia sem depender só de sombra. */
 :where(.doke-card, .service-card, .order-card, .profile-card, .pro-card, .recommendation-card, .community-member-card, .wallet-summary-card, .wallet-manage-card, .wallet-bank-card, .notification-card)
   :where(.doke-card, .service-card, .order-card, .profile-card, .pro-card, .recommendation-card, .community-member-card, .wallet-summary-card, .wallet-manage-card, .wallet-bank-card, .notification-card) {
-  border-color: var(--doke-card-border);
+  border: var(--doke-card-border-line-same-surface);
 }
 
 .doke-card,
@@ -571,7 +589,7 @@
 }
 
 :is(.service-card, .worker-card, .media-card, .profile-card, .result-card, .community-card, .recommendation-card, .comparison-card, .video-card) {
-  border: var(--card-border, 1px solid transparent);
+  border: var(--doke-card-border-line, var(--card-border-transparent));
   border-radius: var(--doke-card-radius-lg, var(--card-radius-lg, 18px));
   background: var(--doke-card-bg, #fff);
   box-shadow: var(--doke-card-shadow, var(--card-shadow, 0 8px 24px rgba(15, 45, 75, .045)));

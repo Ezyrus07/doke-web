@@ -45,7 +45,7 @@ async function main() {
     throw new Error('Refusing to mutate Auth without --execute.');
   }
 
-  const admin = createClient(config.supabaseUrl, config.serviceRoleKey, {
+  const admin = createClient(config.supabaseUrl, config.adminApiKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
@@ -85,7 +85,10 @@ function canary(role, defaultEmail, displayName) {
 function readConfig() {
   const environment = readEnv('DOKE_ENVIRONMENT');
   const supabaseUrl = readEnv('SUPABASE_URL') || readEnv('DOKE_SUPABASE_URL');
-  const serviceRoleKey = readEnv('SUPABASE_SERVICE_ROLE_KEY') || readEnv('DOKE_SUPABASE_SERVICE_ROLE_KEY');
+  const secretKey = readEnv('SUPABASE_SECRET_KEY') || readEnv('DOKE_SUPABASE_SECRET_KEY');
+  const legacyServiceRoleKey = readEnv('SUPABASE_SERVICE_ROLE_KEY') || readEnv('DOKE_SUPABASE_SERVICE_ROLE_KEY');
+  const adminApiKey = secretKey || legacyServiceRoleKey;
+  const adminApiKeyType = secretKey ? 'secret' : legacyServiceRoleKey ? 'legacy-service-role' : 'missing';
   const projectRef = readEnv('DOKE_SUPABASE_PROJECT_REF');
   const replaceLegacyUsers = readEnv('DOKE_STAGING_AUTH_REPLACE_LEGACY') === '1';
   const confirmation = readEnv('DOKE_STAGING_AUTH_PROVISION_CONFIRM');
@@ -102,7 +105,8 @@ function readConfig() {
   return Object.freeze({
     environment,
     supabaseUrl: normalizeBaseUrl(supabaseUrl),
-    serviceRoleKey,
+    adminApiKey,
+    adminApiKeyType,
     projectRef,
     replaceLegacyUsers,
     confirmation,
@@ -131,7 +135,12 @@ function validateConfig(config, requireSecrets) {
   }
 
   if (!requireSecrets) return;
-  if (!config.serviceRoleKey) throw new Error('A server-only Supabase service role key is required.');
+  if (!config.adminApiKey) {
+    throw new Error('SUPABASE_SECRET_KEY or a legacy SUPABASE_SERVICE_ROLE_KEY is required.');
+  }
+  if (config.adminApiKeyType === 'secret' && !config.adminApiKey.startsWith('sb_secret_')) {
+    throw new Error('SUPABASE_SECRET_KEY must use the sb_secret_ format.');
+  }
   if (config.confirmation !== 'provision-staging-auth-canaries') {
     throw new Error('DOKE_STAGING_AUTH_PROVISION_CONFIRM must equal provision-staging-auth-canaries.');
   }
@@ -218,7 +227,7 @@ function assertEmailIdentity(user, definition) {
 }
 
 async function verifyPasswordLogin(config, definition, expectedUserId) {
-  const client = createClient(config.supabaseUrl, config.serviceRoleKey, {
+  const client = createClient(config.supabaseUrl, config.adminApiKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
@@ -240,11 +249,12 @@ function printPlan(config) {
   console.log(`- environment: ${config.environment || 'missing'}`);
   console.log(`- target: ${config.supabaseUrl ? parseTarget(config.supabaseUrl).host : 'missing'}`);
   console.log(`- project ref supplied: ${Boolean(config.projectRef)}`);
+  console.log(`- admin API key type: ${config.adminApiKeyType}`);
   console.log(`- replace legacy SQL users: ${config.replaceLegacyUsers}`);
   console.log('- create/update users through Supabase Admin API');
   console.log('- require one email identity per user');
   console.log('- verify direct password login for client, professional, support and admin');
-  console.log('- never print passwords, service role keys, sessions or tokens');
+  console.log('- never print passwords, admin API keys, sessions or tokens');
 }
 
 function parseTarget(value) {

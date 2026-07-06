@@ -4,7 +4,7 @@
    Pages keep their own form field composition, but title/form/sidebar/card geometry must share the header rail. */
 
 :root {
-  --doke-form-page-gap: 28px;
+  --doke-form-page-gap: var(--form-page-gap, 28px);
   --doke-form-main-column: minmax(0, 1fr);
   --doke-form-side-column: minmax(280px, 360px);
   --doke-form-page-title-size: clamp(2.05rem, 2.45vw, 2.65rem);
@@ -39,10 +39,10 @@ body:is(
 
 .doke-form-page-card,
 .doke-form-page-side-card {
-  border: 1px solid var(--doke-form-card-border, var(--doke-card-border, rgba(24, 75, 118, 0.1)));
-  border-radius: var(--doke-form-card-radius, 28px);
-  background: var(--doke-form-card-bg, rgba(255, 255, 255, 0.96));
-  box-shadow: var(--doke-form-card-shadow, 0 18px 42px rgba(13, 47, 89, 0.06));
+  border: var(--doke-form-card-border, var(--form-page-card-border, var(--doke-card-border-line-subtle, 1px solid rgba(24, 75, 118, 0.1))));
+  border-radius: var(--doke-form-card-radius, var(--form-page-card-radius, 28px));
+  background: var(--doke-form-card-bg, var(--form-page-card-bg, rgba(255, 255, 255, 0.96)));
+  box-shadow: var(--doke-form-card-shadow, var(--form-page-card-shadow, 0 18px 42px rgba(13, 47, 89, 0.06)));
   min-width: 0;
   box-sizing: border-box;
 }
@@ -50,13 +50,13 @@ body:is(
 .doke-form-page-card {
   width: 100%;
   max-width: none;
-  padding: clamp(22px, 2.4vw, 32px);
+  padding: var(--form-page-card-padding, clamp(22px, 2.4vw, 32px));
 }
 
 .doke-form-page-side-card {
   position: sticky;
   top: 110px;
-  padding: 28px 26px;
+  padding: var(--form-page-side-card-padding, 28px 26px);
 }
 
 .doke-form-page-rail {
@@ -115,9 +115,9 @@ body:is(
   align-items: center;
   gap: 7px;
   padding: 0 12px;
-  border: 1px solid var(--doke-card-border, rgba(24, 75, 118, 0.1));
+  border: var(--form-choice-border, var(--doke-card-border-line-same-surface, 1px solid rgba(24, 75, 118, 0.1)));
   border-radius: var(--radius-pill, 999px);
-  background: rgba(248, 251, 255, 0.92);
+  background: var(--form-choice-bg, rgba(248, 251, 255, 0.92));
   color: var(--doke-form-page-muted);
   font-size: 0.84rem;
   font-weight: 800;
@@ -152,7 +152,7 @@ body:is(
   height: 8px;
   overflow: hidden;
   border-radius: var(--radius-pill, 999px);
-  background: rgba(42, 95, 144, 0.1);
+  background: var(--form-flow-track-bg, rgba(42, 95, 144, 0.1));
 }
 
 .doke-flow-progress__fill {
@@ -160,7 +160,7 @@ body:is(
   width: 25%;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--color-primary, #2a5f90), var(--color-primary-strong, #184a76));
+  background: var(--form-flow-fill-bg, linear-gradient(90deg, var(--color-primary, #2a5f90), var(--color-primary-strong, #184a76)));
   transition: width 180ms ease;
 }
 
@@ -177,9 +177,9 @@ body:is(
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  border: 1px solid var(--doke-card-border, rgba(24, 75, 118, 0.1));
-  border-radius: 18px;
-  background: #fff;
+  border: var(--form-flow-step-border, var(--doke-card-border-line-same-surface, 1px solid rgba(24, 75, 118, 0.1)));
+  border-radius: var(--form-helper-surface-radius, 18px);
+  background: var(--form-flow-step-bg, #fff);
   color: var(--color-text-muted, #627a99);
   text-align: left;
   cursor: pointer;
@@ -192,7 +192,7 @@ body:is(
   place-items: center;
   flex: 0 0 auto;
   border-radius: 12px;
-  background: rgba(42, 95, 144, 0.08);
+  background: var(--control-bg-soft-primary, rgba(42, 95, 144, 0.08));
   color: var(--color-primary-strong, #184a76);
   font-weight: 900;
 }
@@ -216,8 +216,8 @@ body:is(
 }
 
 .doke-flow-step:is(.is-active, .is-complete) {
-  border-color: rgba(42, 95, 144, 0.34);
-  box-shadow: 0 10px 22px rgba(24, 75, 118, 0.07);
+  border-color: var(--form-flow-step-active-border-color, rgba(42, 95, 144, 0.34));
+  box-shadow: var(--form-flow-step-active-shadow, 0 10px 22px rgba(24, 75, 118, 0.07));
 }
 
 .doke-flow-step:is(.is-active, .is-complete) > span {
@@ -254,12 +254,12 @@ body:is(
 
   .doke-form-page-card,
   .doke-form-page-side-card {
-    border-radius: 22px;
+    border-radius: var(--form-page-card-radius-mobile, 22px);
   }
 
   .doke-form-page-card,
   .doke-form-page-side-card {
-    padding: 18px;
+    padding: var(--form-page-card-padding-mobile, 18px);
   }
 
   .doke-form-page-side-card {

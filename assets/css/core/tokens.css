@@ -114,6 +114,27 @@
   --border-selected: var(--border-width) var(--border-style) var(--border-color-selected);
   --border-focus: var(--border-width) var(--border-style) var(--border-color-focus);
 
+  /* Soft/tinted control outlines ----------------------------------------- */
+  --control-outline-same-surface: rgba(24, 75, 118, 0.10);
+  --control-outline-soft-primary: rgba(var(--color-primary-rgb), 0.12);
+  --control-outline-soft-primary-hover: rgba(var(--color-primary-rgb), 0.18);
+  --control-outline-soft-primary-active: rgba(var(--color-primary-rgb), 0.24);
+  --control-outline-soft-secondary: rgba(22, 140, 125, 0.14);
+  --control-outline-soft-secondary-hover: rgba(22, 140, 125, 0.20);
+  --control-outline-soft-warning: rgba(245, 158, 11, 0.14);
+  --control-outline-soft-warning-hover: rgba(245, 158, 11, 0.22);
+  --control-outline-soft-danger: rgba(220, 38, 38, 0.14);
+  --control-outline-soft-danger-hover: rgba(220, 38, 38, 0.22);
+  --control-outline-soft-neutral: var(--control-outline-same-surface);
+
+  --control-bg-soft-primary: rgba(var(--color-primary-rgb), 0.08);
+  --control-bg-soft-primary-hover: rgba(var(--color-primary-rgb), 0.11);
+  --control-bg-soft-secondary: rgba(22, 140, 125, 0.09);
+  --control-bg-soft-secondary-hover: rgba(22, 140, 125, 0.12);
+  --control-bg-soft-warning: rgba(245, 158, 11, 0.10);
+  --control-bg-soft-danger: rgba(220, 38, 38, 0.09);
+  --control-bg-same-surface: rgba(255, 255, 255, 0.94);
+
   /* Legacy/color aliases kept mapped to the standard border system. */
   --color-border: var(--border-color);
   --color-border-soft: var(--border-color-soft);
@@ -153,6 +174,25 @@
   --shadow-action-primary: 0 18px 34px rgba(27, 75, 121, 0.22);
   --shadow-action-secondary: 0 8px 18px rgba(24, 168, 141, 0.16);
   --shadow-action-secondary-strong: 0 10px 20px rgba(27, 138, 120, 0.18);
+
+  /* Modal surface system ----------------------------------------------- */
+  --modal-backdrop-bg: rgba(17, 36, 59, 0.58);
+  --modal-backdrop-blur: blur(14px) saturate(115%);
+  --modal-surface-bg: var(--color-surface);
+  --modal-surface-bg-soft: #f8fbff;
+  --modal-surface-border-color: rgba(36, 88, 135, 0.115);
+  --modal-surface-border: var(--border-width) var(--border-style) var(--modal-surface-border-color);
+  --modal-surface-divider: rgba(36, 88, 135, 0.105);
+  --modal-surface-shadow: 0 24px 70px rgba(8, 27, 48, 0.18);
+  --modal-control-border-color: rgba(36, 88, 135, 0.12);
+  --modal-control-border: var(--border-width) var(--border-style) var(--modal-control-border-color);
+  --modal-control-border-focus: rgba(var(--color-primary-rgb), 0.34);
+  --modal-control-bg: #fbfdff;
+  --modal-close-bg: var(--control-bg-soft-primary);
+  --modal-close-bg-hover: var(--control-bg-soft-primary-hover);
+  --modal-close-border: var(--border-width) var(--border-style) var(--control-outline-soft-primary);
+  --modal-close-border-hover: var(--border-width) var(--border-style) var(--control-outline-soft-primary-hover);
+  --modal-footer-bg: linear-gradient(180deg, #fbfdff 0%, #f8fbff 100%);
 
   /* Radius -------------------------------------------------------------- */
   --radius-2xs: 8px;
@@ -242,7 +282,10 @@
   --card-bg: var(--color-surface);
   --card-border-color: var(--surface-border-subtle);
   --card-border-color-hover: var(--surface-border-subtle);
-  --card-border: var(--border-width) var(--border-style) var(--card-border-color);
+  --card-border-transparent: var(--border-width) var(--border-style) transparent;
+  --card-border-subtle: var(--border-width) var(--border-style) var(--card-border-color);
+  --card-border-same-surface: var(--border-width) var(--border-style) var(--control-outline-same-surface);
+  --card-border: var(--card-border-subtle);
   --card-radius-sm: var(--radius-xs);
   --card-radius: var(--radius-sm);
   --card-radius-lg: var(--radius-md);
@@ -288,6 +331,74 @@
   --input-placeholder: #68788d;
   --input-focus-ring: 0 0 0 4px rgba(var(--color-primary-rgb), 0.10);
 
+  /* Form flow/surface contract -------------------------------------------- */
+  --form-page-gap: var(--space-7);
+  --form-page-card-bg: var(--color-surface-raised);
+  --form-page-card-border-color: var(--surface-border-subtle);
+  --form-page-card-border: var(--border-width) var(--border-style) var(--form-page-card-border-color);
+  --form-page-card-radius: var(--radius-card-lg);
+  --form-page-card-radius-mobile: var(--radius-surface);
+  --form-page-card-shadow: var(--shadow-surface);
+  --form-page-card-padding: clamp(22px, 2.4vw, 32px);
+  --form-page-card-padding-mobile: var(--space-5);
+  --form-page-side-card-padding: 28px 26px;
+  --form-section-title-size: var(--font-size-xl);
+  --form-section-title-color: var(--color-primary-deep);
+  --form-section-description-color: var(--color-text-muted);
+  --form-field-gap: var(--space-2);
+  --form-field-label-color: var(--color-primary-deep);
+  --form-field-label-size: var(--font-size-sm);
+  --form-field-label-weight: var(--font-weight-extrabold);
+  --form-field-label-line-height: var(--line-height-snug);
+  --form-helper-surface-bg: var(--color-surface-muted);
+  --form-helper-surface-border: var(--border-soft);
+  --form-helper-surface-radius: var(--radius-card-sm);
+  --form-choice-height: 44px;
+  --form-choice-padding-x: var(--space-4);
+  --form-choice-radius: var(--radius-pill);
+  --form-choice-bg: var(--control-bg-same-surface);
+  --form-choice-border: var(--border-width) var(--border-style) var(--control-outline-same-surface);
+  --form-choice-text: var(--color-primary-strong);
+  --form-choice-active-bg: var(--control-bg-soft-primary);
+  --form-choice-active-border: var(--border-width) var(--border-style) var(--control-outline-soft-primary-active);
+  --form-choice-active-shadow: var(--shadow-control-soft);
+  --form-upload-bg: #fbfdff;
+  --form-upload-border: var(--border-width) dashed rgba(var(--color-primary-rgb), 0.32);
+  --form-upload-radius: var(--radius-base);
+  --form-flow-track-bg: rgba(var(--color-primary-rgb), 0.10);
+  --form-flow-fill-bg: linear-gradient(90deg, var(--color-primary), var(--color-primary-strong));
+  --form-flow-step-bg: var(--color-surface);
+  --form-flow-step-border: var(--border-soft);
+  --form-flow-step-active-border-color: rgba(var(--color-primary-rgb), 0.34);
+  --form-flow-step-active-border: var(--border-width) var(--border-style) var(--form-flow-step-active-border-color);
+  --form-flow-step-active-shadow: var(--shadow-control-soft);
+
+  /* Toolbar/search/filter action contract --------------------------------- */
+  --toolbar-gap: var(--space-3);
+  --toolbar-gap-compact: var(--space-2);
+  --toolbar-action-height: var(--control-height-lg);
+  --toolbar-action-height-compact: var(--control-height-md);
+  --toolbar-icon-size: var(--control-height-lg);
+  --toolbar-icon-size-compact: var(--control-height-md);
+  --toolbar-radius: var(--radius-base);
+  --toolbar-radius-compact: var(--radius-sm);
+  --toolbar-bg: var(--control-bg-same-surface);
+  --toolbar-bg-hover: var(--color-surface);
+  --toolbar-bg-soft: var(--control-bg-soft-primary);
+  --toolbar-border-color: var(--control-outline-same-surface);
+  --toolbar-border-color-hover: var(--control-outline-soft-primary-hover);
+  --toolbar-border: var(--border-width) var(--border-style) var(--toolbar-border-color);
+  --toolbar-border-hover: var(--border-width) var(--border-style) var(--toolbar-border-color-hover);
+  --toolbar-shadow: var(--shadow-control-soft);
+  --toolbar-shadow-hover: var(--shadow-control-hover);
+  --toolbar-text: var(--color-primary-strong);
+  --toolbar-text-muted: var(--color-text-muted);
+  --toolbar-search-width: min(320px, 42vw);
+  --toolbar-search-width-wide: min(360px, 42vw);
+  --toolbar-search-padding-x: var(--control-padding-x-md);
+  --toolbar-font-size: var(--control-font-size-md);
+  --toolbar-font-weight: var(--font-weight-bold);
+
   --select-height: var(--input-height-md);
   --select-radius: var(--input-radius);
   --select-border: var(--input-border);
@@ -304,21 +415,113 @@
   --dropdown-item-height: 40px;
   --dropdown-item-radius: var(--radius-compact);
 
+  /* Empty, loading and skeleton states ----------------------------------- */
+  --state-surface-bg: var(--color-surface);
+  --state-surface-bg-soft: linear-gradient(180deg, var(--color-surface), rgba(248, 252, 255, 0.94));
+  --state-surface-border-color: var(--surface-border-subtle);
+  --state-surface-border-color-dashed: rgba(var(--color-primary-rgb), 0.18);
+  --state-surface-border: var(--border-width) var(--border-style) var(--state-surface-border-color);
+  --state-surface-border-dashed: var(--border-width) dashed var(--state-surface-border-color-dashed);
+  --state-surface-radius: var(--radius-card);
+  --state-surface-radius-compact: var(--radius-md);
+  --state-surface-shadow: var(--shadow-surface-xs);
+  --state-surface-padding: clamp(22px, 4vw, 32px);
+  --state-surface-padding-compact: var(--space-5);
+  --state-surface-min-height: 180px;
+  --state-surface-min-height-compact: 128px;
+  --state-gap: var(--space-3);
+  --state-gap-compact: var(--space-2);
+  --state-icon-size: 44px;
+  --state-icon-size-lg: 56px;
+  --state-icon-bg: var(--control-bg-soft-primary);
+  --state-icon-border: var(--border-width) var(--border-style) var(--control-outline-soft-primary);
+  --state-icon-color: var(--color-primary-strong);
+  --state-title-color: var(--color-primary-deep);
+  --state-title-size: var(--font-size-lg);
+  --state-title-size-compact: var(--font-size-md);
+  --state-description-color: var(--color-text-muted);
+  --state-description-size: var(--font-size-sm);
+  --state-description-line-height: var(--line-height-relaxed);
+  --state-action-gap: var(--space-2);
+  --state-loading-surface: #e4eef6;
+  --state-loading-sheen: rgba(255, 255, 255, 0.72);
+  --state-loading-duration: 1.25s;
+  --state-loading-track: rgba(var(--color-primary-rgb), 0.14);
+  --state-loading-size: 52px;
+  --state-loading-thickness: 5px;
+  --state-skeleton-line-height: 0.75em;
+  --state-skeleton-radius: var(--radius-pill);
+
+  /* Chips, badges and tab pills ---------------------------------------- */
   --chip-height: var(--control-height-xs);
   --chip-height-sm: 30px;
   --chip-padding-x: 12px;
   --chip-gap: 8px;
   --chip-radius: var(--radius-pill);
-  --chip-border: var(--border-soft);
   --chip-bg: rgba(255, 255, 255, 0.92);
+  --chip-bg-hover: var(--color-surface);
+  --chip-bg-primary: var(--control-bg-soft-primary);
+  --chip-bg-success: var(--control-bg-soft-secondary);
+  --chip-bg-warning: var(--control-bg-soft-warning);
+  --chip-bg-danger: var(--control-bg-soft-danger);
+  --chip-bg-muted: var(--color-surface-muted);
   --chip-text: var(--color-text-soft);
+  --chip-text-primary: var(--color-primary-strong);
+  --chip-text-success: var(--color-secondary-strong);
+  --chip-text-warning: var(--color-warning-strong);
+  --chip-text-danger: var(--color-danger-strong);
+  --chip-text-muted: var(--color-text-muted);
+  --chip-border-color: var(--control-outline-same-surface);
+  --chip-border-color-hover: var(--control-outline-soft-primary-hover);
+  --chip-border-color-primary: var(--control-outline-soft-primary);
+  --chip-border-color-success: var(--control-outline-soft-secondary);
+  --chip-border-color-warning: var(--control-outline-soft-warning);
+  --chip-border-color-danger: var(--control-outline-soft-danger);
+  --chip-border-color-muted: var(--control-outline-soft-neutral);
+  --chip-border: var(--border-width) var(--border-style) var(--chip-border-color);
+  --chip-border-primary: var(--border-width) var(--border-style) var(--chip-border-color-primary);
+  --chip-border-success: var(--border-width) var(--border-style) var(--chip-border-color-success);
+  --chip-border-warning: var(--border-width) var(--border-style) var(--chip-border-color-warning);
+  --chip-border-danger: var(--border-width) var(--border-style) var(--chip-border-color-danger);
+  --chip-shadow: none;
+  --chip-shadow-hover: var(--shadow-control-soft);
 
   --badge-height: 30px;
   --badge-padding-x: 11px;
   --badge-radius: var(--radius-pill);
-  --badge-border: var(--border-soft);
   --badge-bg: var(--color-surface-muted);
+  --badge-bg-primary: var(--chip-bg-primary);
+  --badge-bg-success: var(--chip-bg-success);
+  --badge-bg-warning: var(--chip-bg-warning);
+  --badge-bg-danger: var(--chip-bg-danger);
   --badge-text: var(--color-text-muted);
+  --badge-text-primary: var(--chip-text-primary);
+  --badge-text-success: var(--chip-text-success);
+  --badge-text-warning: var(--chip-text-warning);
+  --badge-text-danger: var(--chip-text-danger);
+  --badge-border-color: var(--chip-border-color-muted);
+  --badge-border-color-primary: var(--chip-border-color-primary);
+  --badge-border-color-success: var(--chip-border-color-success);
+  --badge-border-color-warning: var(--chip-border-color-warning);
+  --badge-border-color-danger: var(--chip-border-color-danger);
+  --badge-border: var(--border-width) var(--border-style) var(--badge-border-color);
+
+  --tab-pill-height: var(--control-height-md);
+  --tab-pill-padding-inline: 18px;
+  --tab-pill-gap: 9px;
+  --tab-pill-radius: var(--radius-pill);
+  --tab-pill-bg: var(--control-bg-same-surface);
+  --tab-pill-bg-hover: var(--control-bg-soft-primary);
+  --tab-pill-bg-active: var(--color-primary);
+  --tab-pill-text: var(--color-primary-strong);
+  --tab-pill-text-muted: var(--color-text-muted);
+  --tab-pill-text-active: var(--color-white);
+  --tab-pill-border-color: var(--control-outline-same-surface);
+  --tab-pill-border-color-hover: var(--control-outline-soft-primary-hover);
+  --tab-pill-border: var(--border-width) var(--border-style) var(--tab-pill-border-color);
+  --tab-pill-shadow: var(--shadow-control-soft);
+  --tab-pill-shadow-hover: var(--shadow-control-hover);
+  --tab-pill-shadow-active: 0 10px 22px rgba(var(--color-primary-rgb), 0.18);
 
   /* Layout -------------------------------------------------------------- */
   --sidebar-width: 240px;
@@ -399,6 +602,9 @@
   --doke-card-bg: var(--color-surface);
   --doke-card-bg-soft: var(--color-surface-muted);
   --doke-card-border: var(--card-border-color);
+  --doke-card-border-line: var(--card-border-transparent);
+  --doke-card-border-line-subtle: var(--card-border-subtle);
+  --doke-card-border-line-same-surface: var(--card-border-same-surface);
   --doke-card-border-strong: var(--surface-border-strong);
   --doke-card-shadow: var(--card-shadow);
   --doke-card-shadow-hover: var(--card-shadow-hover);

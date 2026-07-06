@@ -13,10 +13,10 @@
   width: fit-content;
   max-width: 100%;
   padding: 6px;
-  border: 1px solid var(--doke-card-border, var(--border-color-interactive));
+  border: var(--border-soft);
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: var(--doke-subtle-shadow, 0 14px 28px rgba(25, 56, 92, 0.05));
+  background: var(--control-bg-same-surface);
+  box-shadow: var(--shadow-control-soft);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -28,26 +28,30 @@
 :where(.doke-tabs__tab, [data-tab]) {
   min-height: 40px;
   padding: 0 16px;
-  border: 0;
+  border: 1px solid transparent;
   border-radius: var(--radius-pill);
   background: transparent;
-  color: var(--doke-muted, #516783);
+  color: var(--tab-pill-text-muted);
   font: inherit;
   font-size: 0.94rem;
   font-weight: 800;
+  line-height: 1;
   white-space: nowrap;
   cursor: pointer;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 :where(.doke-tabs__tab:hover, [data-tab]:hover) {
-  background: var(--border-color-soft);
-  color: var(--doke-primary, #1f4d7a);
+  background: var(--tab-pill-bg-hover);
+  border-color: var(--tab-pill-border-color-hover);
+  color: var(--tab-pill-text);
 }
 
 :where(.doke-tabs__tab.is-active, .doke-tabs__tab[aria-selected="true"], [data-tab].is-active, [data-tab][aria-selected="true"]) {
-  background: var(--border-color-soft);
-  color: var(--doke-primary, #214a77);
-  box-shadow: inset 0 0 0 1px rgba(137, 177, 221, 0.52);
+  background: var(--tab-pill-bg-active);
+  border-color: transparent;
+  color: var(--tab-pill-text-active);
+  box-shadow: var(--tab-pill-shadow-active);
 }
 
 :where(.doke-tabs__panel, [data-tab-panel]) {
@@ -61,23 +65,23 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--doke-tab-pill-gap, 9px);
-  min-height: var(--doke-tab-pill-height, var(--control-height-md, 44px));
-  padding: 0 var(--doke-tab-pill-padding-inline, 18px);
-  border: var(--doke-tab-pill-border, 1px solid var(--doke-card-border, rgba(24, 75, 118, 0.10)));
-  border-radius: var(--doke-tab-pill-radius, var(--radius-pill, 999px));
-  background: var(--doke-tab-pill-bg, rgba(255, 255, 255, 0.94));
-  color: var(--doke-tab-pill-text, var(--doke-primary, #1f5f99));
-  box-shadow: var(--doke-tab-pill-shadow, 0 8px 20px rgba(29, 56, 88, 0.045));
+  gap: var(--doke-tab-pill-gap, var(--tab-pill-gap));
+  min-height: var(--doke-tab-pill-height, var(--tab-pill-height));
+  padding: 0 var(--doke-tab-pill-padding-inline, var(--tab-pill-padding-inline));
+  border: var(--doke-tab-pill-border, var(--tab-pill-border));
+  border-radius: var(--doke-tab-pill-radius, var(--tab-pill-radius));
+  background: var(--doke-tab-pill-bg, var(--tab-pill-bg));
+  color: var(--doke-tab-pill-text, var(--tab-pill-text));
+  box-shadow: var(--doke-tab-pill-shadow, var(--tab-pill-shadow));
   font: inherit;
-  font-size: var(--doke-tab-pill-font-size, 0.94rem);
-  font-weight: var(--doke-tab-pill-font-weight, 850);
+  font-size: var(--doke-tab-pill-font-size, var(--control-font-size-md));
+  font-weight: var(--doke-tab-pill-font-weight, var(--font-weight-extrabold));
   line-height: 1;
   letter-spacing: var(--doke-tab-pill-letter-spacing, -0.02em);
   white-space: nowrap;
   text-decoration: none;
   cursor: pointer;
-  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
 }
 
 .doke-tab-pill svg {
@@ -92,8 +96,10 @@
 }
 
 .doke-tab-pill:hover {
-  border-color: var(--doke-tab-pill-hover-border, rgba(42, 95, 144, 0.18));
-  box-shadow: var(--doke-tab-pill-hover-shadow, 0 10px 24px rgba(29, 56, 88, 0.065));
+  border-color: var(--doke-tab-pill-hover-border, var(--tab-pill-border-color-hover));
+  background: var(--doke-tab-pill-hover-bg, var(--tab-pill-bg-hover));
+  box-shadow: var(--doke-tab-pill-hover-shadow, var(--tab-pill-shadow-hover));
+  transform: translateY(-1px);
 }
 
 .doke-tab-pill:is(.is-active, [aria-pressed="true"], [aria-selected="true"]),
@@ -101,14 +107,15 @@
 :is(button, a)[aria-pressed="true"] > .doke-tab-pill,
 :is(button, a)[aria-selected="true"] > .doke-tab-pill {
   border-color: var(--doke-tab-pill-active-border, transparent);
-  background: var(--doke-tab-pill-active-bg, var(--doke-primary, #2a5f90));
-  color: var(--doke-tab-pill-active-text, #fff);
-  box-shadow: var(--doke-tab-pill-active-shadow, 0 10px 22px rgba(42, 95, 144, 0.18));
+  background: var(--doke-tab-pill-active-bg, var(--tab-pill-bg-active));
+  color: var(--doke-tab-pill-active-text, var(--tab-pill-text-active));
+  box-shadow: var(--doke-tab-pill-active-shadow, var(--tab-pill-shadow-active));
 }
 
 .doke-tab-pill:focus-visible {
   outline: 0;
-  box-shadow: var(--doke-tab-pill-focus-shadow, 0 0 0 3px rgba(42, 95, 144, 0.16), 0 10px 22px rgba(42, 95, 144, 0.12));
+  border-color: var(--border-color-focus);
+  box-shadow: var(--doke-tab-pill-focus-shadow, var(--shadow-focus), var(--tab-pill-shadow-hover));
 }
 
 :where(.doke-tabs__panel[hidden], [data-tab-panel][hidden]) {
@@ -126,25 +133,4 @@
     padding-inline: 14px;
     font-size: 0.9rem;
   }
-}
-
-/* Contrast-first border policy for filled pill tabs. */
-.doke-tab-pill,
-.doke-tab-pill:hover,
-.doke-tab-pill:focus-visible,
-.doke-tab-pill:is(.is-active, [aria-pressed="true"], [aria-selected="true"]),
-:is(button, a).is-active > .doke-tab-pill,
-:is(button, a)[aria-pressed="true"] > .doke-tab-pill,
-:is(button, a)[aria-selected="true"] > .doke-tab-pill {
-  border-color: transparent;
-}
-
-
-/* Filled tab pills separate by surface contrast, not stroke. */
-.doke-tab-pill,
-.doke-tab-pill:where(:hover, :focus-visible, .is-active, [aria-pressed="true"], [aria-selected="true"]),
-:is(button, a).is-active > .doke-tab-pill,
-:is(button, a)[aria-pressed="true"] > .doke-tab-pill,
-:is(button, a)[aria-selected="true"] > .doke-tab-pill {
-  border-color: transparent;
 }

@@ -40,13 +40,13 @@ const REQUIRED_FILES = Object.freeze([
 ]);
 
 const PRE_PLANNING_COMMANDS = Object.freeze([
-  { name: 'audit:orders-readonly-canary-promotion-gate', command: 'npm run audit:orders-readonly-canary-promotion-gate' },
-  { name: 'validate:orders-readonly-canary:promotion-gate:dry-run', command: 'npm run validate:orders-readonly-canary:promotion-gate:dry-run' },
-  { name: 'validate:orders-readonly-canary:promotion-gate', command: 'npm run validate:orders-readonly-canary:promotion-gate' },
-  { name: 'audit:orders-api-contract', command: 'npm run audit:orders-api-contract' },
-  { name: 'audit:runtime-idempotency-audit', command: 'npm run audit:runtime-idempotency-audit' },
-  { name: 'audit:staging-orders-runtime', command: 'npm run audit:staging-orders-runtime' },
-  { name: 'audit:data-provider-flags', command: 'npm run audit:data-provider-flags' }
+  { name: 'audit:orders-readonly-canary-promotion-gate', command: 'npm run audit:orders-readonly-canary-promotion-gate', scriptPath: 'scripts/audit-orders-readonly-canary-promotion-gate.js' },
+  { name: 'validate:orders-readonly-canary:promotion-gate:dry-run', command: 'npm run validate:orders-readonly-canary:promotion-gate:dry-run', scriptPath: 'scripts/validate-orders-readonly-canary-promotion-gate.js', args: ['--dry-run'] },
+  { name: 'validate:orders-readonly-canary:promotion-gate', command: 'npm run validate:orders-readonly-canary:promotion-gate', scriptPath: 'scripts/validate-orders-readonly-canary-promotion-gate.js' },
+  { name: 'audit:orders-api-contract', command: 'npm run audit:orders-api-contract', scriptPath: 'scripts/audit-orders-api-contract.js' },
+  { name: 'audit:runtime-idempotency-audit', command: 'npm run audit:runtime-idempotency-audit', scriptPath: 'scripts/audit-runtime-idempotency-audit.js' },
+  { name: 'audit:staging-orders-runtime', command: 'npm run audit:staging-orders-runtime', scriptPath: 'scripts/audit-staging-orders-runtime.js' },
+  { name: 'audit:data-provider-flags', command: 'npm run audit:data-provider-flags', scriptPath: 'scripts/audit-data-provider-flag-contract.js' }
 ]);
 
 const READONLY_PROMOTION_STATUS = 'orders_readonly_canary_ready_for_manual_write_canary_planning';
@@ -102,7 +102,7 @@ const report = {
   forbiddenPlanningDomains: FORBIDDEN_PLANNING_DOMAINS.slice(),
   requiredSafeguards: REQUIRED_SAFEGUARDS.slice(),
   requiredFiles: REQUIRED_FILES.slice(),
-  prePlanningCommands: PRE_PLANNING_COMMANDS.map((entry) => Object.assign({}, entry)),
+  prePlanningCommands: PRE_PLANNING_COMMANDS.map(({ name, command }) => ({ name, command })),
   readonlyPromotionReportPath: process.env[ENV.readonlyPromotionReportPath] || DEFAULT_READONLY_PROMOTION_REPORT_PATH,
   planningStatus: 'not_evaluated',
   nextAllowedStep: null,
@@ -193,8 +193,7 @@ function assertPlanningContract() {
 }
 
 async function runCommand(entry) {
-  const [bin, ...parts] = entry.command.split(' ');
-  const result = await spawnCommand(bin, parts);
+  const result = await spawnNodeScript(entry.scriptPath, entry.args || []);
   record(entry.name, result.status === 0 ? 'passed' : 'failed', `exit=${result.status}`);
   if (result.status !== 0) {
     report.failures.push(`${entry.command} failed with exit ${result.status}.`);
@@ -202,9 +201,9 @@ async function runCommand(entry) {
   }
 }
 
-function spawnCommand(bin, parts) {
+function spawnNodeScript(scriptPath, args) {
   return new Promise((resolve) => {
-    const child = spawn(resolveBinary(bin), parts, {
+    const child = spawn(process.execPath, [scriptPath, ...args], {
       cwd: root,
       env: process.env,
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -230,11 +229,6 @@ function spawnCommand(bin, parts) {
       resolve({ status, signal, stdoutTail: tail(stdout), stderrTail: tail(stderr) });
     });
   });
-}
-
-function resolveBinary(bin) {
-  if (process.platform === 'win32' && bin === 'npm') return 'npm.cmd';
-  return bin;
 }
 
 function evaluateReadonlyPromotionReport() {

@@ -2,12 +2,15 @@
   --doke-action-size: var(--icon-button-size);
   --doke-action-radius: var(--btn-radius-pill);
   --doke-action-bg: var(--color-surface);
-  --doke-action-border: var(--border-color-soft);
+  --doke-action-border: var(--control-outline-same-surface);
+  --doke-action-border-hover: var(--control-outline-soft-primary-hover);
   --doke-action-text: var(--color-text-strong);
   --doke-action-muted: var(--color-text-muted);
   --doke-action-active-bg: var(--color-primary-soft-strong);
-  --doke-action-active-border: var(--border-color-interactive);
+  --doke-action-active-border: var(--control-outline-soft-primary-active);
   --doke-action-active-text: var(--color-primary);
+  --doke-action-soft-border: var(--control-outline-soft-primary);
+  --doke-action-warning-border: var(--control-outline-soft-warning-hover);
 }
 
 .doke-action-button,
@@ -86,8 +89,8 @@
 .settings-mobile-header__action:hover,
 .community-chat-header__icon:hover,
 .messages-thread__action:hover {
-  border-color: var(--doke-action-border);
-  background: var(--doke-ui-bg-soft);
+  border-color: var(--doke-action-border-hover);
+  background: var(--control-bg-soft-primary);
   color: var(--doke-action-active-text);
 }
 
@@ -104,7 +107,7 @@
 .community-chat-header__icon:focus-visible,
 .messages-thread__action:focus-visible {
   outline: 0;
-  border-color: var(--doke-action-border);
+  border-color: var(--doke-action-border-hover);
   box-shadow: none;
 }
 
@@ -141,7 +144,7 @@
 .doke-action-button--alert {
   color: var(--color-warning-strong);
   background: var(--color-warning-soft);
-  border-color: rgba(245, 158, 11, 0.28);
+  border-color: var(--doke-action-warning-border);
 }
 
 /* Prompt 07 responsive QA: avoid squeezed action clusters on small screens. */
@@ -175,7 +178,7 @@
   --doke-action-pill-padding-x: 18px;
   --doke-action-primary-bg: linear-gradient(135deg, #18b391 0%, #0f8f76 100%);
   --doke-action-secondary-bg: rgba(255, 255, 255, 0.96);
-  --doke-action-secondary-border: rgba(34, 98, 154, 0.08);
+  --doke-action-secondary-border: var(--control-outline-soft-primary);
   --doke-action-shadow: 0 10px 24px rgba(24, 55, 90, 0.07);
 }
 
@@ -186,8 +189,12 @@
   box-sizing: border-box;
 }
 
-:is(.doke-btn, .doke-action-button, .page-header-context__action, .wallet-bank-manage):not(.is-active):not(.is-view-active) {
+:is(.doke-action-button, .page-header-context__action, .wallet-bank-manage):not(.is-active):not(.is-view-active) {
   border-color: var(--doke-action-secondary-border);
+}
+
+:is(.doke-btn--primary, .doke-button--primary, .doke-btn--success, .doke-button--success, .wallet-button--primary, .wallet-dialog-btn--primary) {
+  border-color: transparent;
 }
 
 :is(.doke-btn, .doke-action-button, .page-header-context__action, .wallet-button, .wallet-dialog-btn, .orders-filter-button, .orders-select-button, .orders-agenda-toggle):focus-visible {
@@ -208,7 +215,8 @@
   width: 24px;
   height: 24px;
   border-radius: 999px;
-  background: rgba(42, 95, 144, 0.1);
+  border: 1px solid var(--doke-action-soft-border);
+  background: var(--control-bg-soft-primary);
   color: currentColor;
 }
 

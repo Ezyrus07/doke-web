@@ -5,19 +5,19 @@
    Reusable context-label + action cluster for internal views. */
 
 .page-header-context {
-  --doke-context-action-height: var(--control-height-lg, 48px);
-  --doke-context-action-height-compact: var(--control-height-md, 42px);
+  --doke-context-action-height: var(--toolbar-action-height, var(--control-height-lg, 48px));
+  --doke-context-action-height-compact: var(--toolbar-action-height-compact, var(--control-height-md, 42px));
   --doke-context-action-padding-x: 18px;
   --doke-context-action-padding-x-compact: 15px;
-  --doke-context-action-gap: 10px;
-  --doke-context-action-radius: var(--radius-base, 16px);
-  --doke-context-action-bg: var(--internal-surface-bg, rgba(255, 255, 255, 0.92));
-  --doke-context-action-border: transparent;
-  --doke-context-action-text: #12355d;
-  --doke-context-action-shadow: 0 10px 24px rgba(39, 58, 86, 0.06);
-  --doke-context-action-hover-bg: #fff;
-  --doke-context-action-hover-border: transparent;
-  --doke-context-action-hover-shadow: 0 14px 28px rgba(39, 58, 86, 0.10);
+  --doke-context-action-gap: var(--toolbar-gap-compact, 10px);
+  --doke-context-action-radius: var(--toolbar-radius, var(--radius-base, 16px));
+  --doke-context-action-bg: var(--toolbar-bg, var(--internal-surface-bg, rgba(255, 255, 255, 0.92)));
+  --doke-context-action-border: var(--toolbar-border-color, var(--control-outline-same-surface, transparent));
+  --doke-context-action-text: var(--toolbar-text, #12355d);
+  --doke-context-action-shadow: var(--toolbar-shadow, 0 10px 24px rgba(39, 58, 86, 0.06));
+  --doke-context-action-hover-bg: var(--toolbar-bg-hover, #fff);
+  --doke-context-action-hover-border: var(--toolbar-border-color-hover, var(--doke-context-action-border));
+  --doke-context-action-hover-shadow: var(--toolbar-shadow-hover, 0 14px 28px rgba(39, 58, 86, 0.10));
   --doke-context-action-active-bg: linear-gradient(180deg, #1aa77a 0%, #148c69 100%);
   --doke-context-action-active-border: transparent;
   --doke-context-action-active-text: #fff;
@@ -126,8 +126,8 @@
 }
 
 
-/* Context actions use surface contrast, not outlined chrome. */
+/* Context actions are soft surface controls: light border only when the button background is close to the page surface. */
 .page-header-context__action,
 .doke-context-pill {
-  border-color: transparent;
+  border-color: var(--doke-context-action-border);
 }

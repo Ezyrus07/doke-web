@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { STAGING_E2E_DEFAULT_USERS } = require('../backend/shared/testing/staging-e2e-scenarios');
 
 const root = process.cwd();
 const args = new Set(process.argv.slice(2));
@@ -117,11 +118,21 @@ async function executePlan() {
   const clientToken = await login('client');
   const professionalToken = await login('professional');
   const adminToken = await login('admin');
+
   await get('/auth/session', clientToken);
-  await get('/users/me', clientToken);
+  const clientIdentity = await get('/users/me', clientToken);
   await get('/profiles/me', clientToken);
   await get('/orders', clientToken);
-  const order = await post('/orders', clientToken, { title: 'Backend real multidomain staging smoke', amountCents: 1000 }, 'staging-order-create-001', [200, 201]);
+
+  const professionalIdentity = await get('/users/me', professionalToken);
+  const professional = readUser(professionalIdentity, 'professional');
+  const client = readUser(clientIdentity, 'client');
+
+  const order = await post('/orders', clientToken, {
+    title: 'Backend real multidomain staging smoke',
+    amountCents: 1000,
+    professionalId: professional.id
+  }, 'staging-order-create-001', [200, 201]);
   const orderId = readId(order, 'order') || 'unknown-order';
   await post(`/orders/${orderId}/accept`, professionalToken, { note: 'accepted' }, 'staging-order-accept-001');
   await post(`/orders/${orderId}/charge`, professionalToken, { amountCents: 1000 }, 'staging-order-charge-001');
@@ -132,7 +143,7 @@ async function executePlan() {
   await post(`/conversations/${conversationId}/messages`, clientToken, { body: 'Staging smoke message' }, 'staging-message-create-001', [200, 201]);
   await post(`/conversations/${conversationId}/read`, professionalToken, { at: new Date().toISOString() }, 'staging-conversation-read-001');
   await get('/notifications', clientToken);
-  const notification = await post('/notifications', adminToken, { userId: 'client', type: 'system', title: 'Staging smoke notification' }, 'staging-notification-create-001', [200, 201, 403]);
+  const notification = await post('/notifications', adminToken, { userId: client.id, type: 'system', title: 'Staging smoke notification' }, 'staging-notification-create-001', [200, 201, 403]);
   const notificationId = readId(notification, 'notification');
   if (notificationId) await post(`/notifications/${notificationId}/read`, clientToken, { at: new Date().toISOString() }, 'staging-notification-read-001');
   await post('/notifications/read-all', clientToken, { at: new Date().toISOString() }, 'staging-notification-read-all-001');
@@ -144,10 +155,27 @@ async function executePlan() {
 }
 
 async function login(role) {
-  const payload = await request('POST', '/auth/login', '', { email: `${role}@doke.local`, password: process.env[`DOKE_${role.toUpperCase()}_PASSWORD`] || 'Doke1234!' }, null, [200]);
+  const credentials = credentialsForRole(role);
+  const payload = await request('POST', '/auth/login', '', { email: credentials.email, login: credentials.email, password: credentials.password }, null, [200, 201]);
   const token = payload.token || payload.accessToken || payload.access_token || payload.session && (payload.session.token || payload.session.accessToken || payload.session.access_token);
   if (!token) throw new Error(`Login for ${role} did not return token.`);
   return token;
+}
+
+function credentialsForRole(role) {
+  const fallback = STAGING_E2E_DEFAULT_USERS[role];
+  if (!fallback) throw new Error(`Unsupported staging canary role: ${role}`);
+  const upper = role.toUpperCase();
+  return {
+    email: process.env[`DOKE_STAGING_${upper}_EMAIL`] || fallback.email,
+    password: process.env[`DOKE_STAGING_${upper}_PASSWORD`] || process.env[`DOKE_${upper}_PASSWORD`] || fallback.password
+  };
+}
+
+function readUser(payload, role) {
+  const user = payload && (payload.user || payload.currentUser || payload.profile && payload.profile.user);
+  if (!user || !user.id) throw new Error(`/users/me for ${role} did not return user.id.`);
+  return user;
 }
 async function get(endpoint, token) { return request('GET', endpoint, token, undefined, null, [200]); }
 async function post(endpoint, token, body, key, expected = [200]) { return request('POST', endpoint, token, body, key, expected); }

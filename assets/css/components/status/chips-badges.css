@@ -1,45 +1,84 @@
 /* Doke status primitives: chips and badges.
    Low-specificity, data-ready contract for reusable status/category tokens.
    Do not put page layout rules here. */
-:where(.doke-chip, [data-chip]) {
-  --doke-chip-bg: rgba(42, 95, 144, 0.08);
-  --doke-chip-color: var(--color-primary, var(--border-color-selected));
-  --doke-chip-border: var(--border-color-soft);
+:is(.doke-chip, .chip, [data-chip]) {
+  --doke-chip-bg: var(--chip-bg-primary);
+  --doke-chip-color: var(--chip-text-primary);
+  --doke-chip-border: var(--chip-border-color-primary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  min-height: 28px;
-  padding: 0.35rem 0.7rem;
-  border: 1px solid var(--doke-chip-border);
-  border-radius: var(--radius-pill);
+  gap: var(--chip-gap);
+  min-height: var(--chip-height-sm);
+  padding: 0 var(--chip-padding-x);
+  border: var(--border-width) var(--border-style) var(--doke-chip-border);
+  border-radius: var(--chip-radius);
   background: var(--doke-chip-bg);
   color: var(--doke-chip-color);
-  font-size: 0.78rem;
-  font-weight: 700;
+  box-shadow: var(--chip-shadow);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
   line-height: 1;
+  text-decoration: none;
   white-space: nowrap;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
 }
 
-:where(.doke-chip--success, [data-chip="success"]) {
-  --doke-chip-bg: rgba(45, 196, 162, 0.12);
-  --doke-chip-color: var(--color-secondary, #25b99a);
-  --doke-chip-border: rgba(45, 196, 162, 0.22);
+:is(.doke-chip, .chip, [data-chip]):where(:hover, :focus-visible) {
+  border-color: var(--chip-border-color-hover);
+  box-shadow: var(--chip-shadow-hover);
 }
 
-:where(.doke-chip--warning, [data-chip="warning"]) {
-  --doke-chip-bg: rgba(245, 158, 11, 0.12);
-  --doke-chip-color: #b45309;
-  --doke-chip-border: rgba(245, 158, 11, 0.22);
+:is(.doke-chip--success, .chip--success, [data-chip="success"]) {
+  --doke-chip-bg: var(--chip-bg-success);
+  --doke-chip-color: var(--chip-text-success);
+  --doke-chip-border: var(--chip-border-color-success);
 }
 
-:where(.doke-chip--muted, [data-chip="muted"]) {
-  --doke-chip-bg: rgba(100, 116, 139, 0.08);
-  --doke-chip-color: var(--color-muted, #64748b);
-  --doke-chip-border: rgba(100, 116, 139, 0.16);
+:is(.doke-chip--warning, .chip--warning, [data-chip="warning"]) {
+  --doke-chip-bg: var(--chip-bg-warning);
+  --doke-chip-color: var(--chip-text-warning);
+  --doke-chip-border: var(--chip-border-color-warning);
 }
 
-:where(.doke-chip__dot, [data-chip-dot]) {
+:is(.doke-chip--danger, .chip--danger, [data-chip="danger"]) {
+  --doke-chip-bg: var(--chip-bg-danger);
+  --doke-chip-color: var(--chip-text-danger);
+  --doke-chip-border: var(--chip-border-color-danger);
+}
+
+:is(.doke-chip--muted, [data-chip="muted"]) {
+  --doke-chip-bg: var(--chip-bg-muted);
+  --doke-chip-color: var(--chip-text-muted);
+  --doke-chip-border: var(--chip-border-color-muted);
+}
+
+:is(.doke-chip--primary, [data-chip="primary"]) {
+  --doke-chip-bg: var(--chip-bg-primary);
+  --doke-chip-color: var(--chip-text-primary);
+  --doke-chip-border: var(--chip-border-color-primary);
+}
+
+:is(.doke-chip--content, [data-chip-size="content"]) {
+  width: fit-content;
+  min-height: var(--chip-height-sm);
+  padding-inline: var(--chip-padding-x);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+:is(.doke-chip--on-media, [data-chip-surface="media"]) {
+  --doke-chip-bg: rgba(255, 255, 255, 0.88);
+  --doke-chip-border: transparent;
+  backdrop-filter: blur(6px);
+}
+
+:is(.doke-chip__dot, [data-chip-dot]) {
   width: 0.45rem;
   height: 0.45rem;
   flex: 0 0 auto;
@@ -47,76 +86,72 @@
   background: currentColor;
 }
 
-:where(.doke-badge, [data-badge]) {
-  --doke-badge-bg: var(--border-color-soft);
-  --doke-badge-color: var(--color-primary, var(--border-color-selected));
+:is(.doke-badge, .badge, [data-badge]) {
+  --doke-badge-bg: var(--badge-bg);
+  --doke-badge-color: var(--badge-text);
+  --doke-badge-border: var(--badge-border-color);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  min-height: 22px;
-  padding: 0.2rem 0.5rem;
-  border-radius: var(--radius-pill);
+  min-height: var(--badge-height);
+  padding: 0 var(--badge-padding-x);
+  border: var(--border-width) var(--border-style) var(--doke-badge-border);
+  border-radius: var(--badge-radius);
   background: var(--doke-badge-bg);
   color: var(--doke-badge-color);
-  font-size: 0.72rem;
-  font-weight: 800;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-extrabold);
   line-height: 1;
+  letter-spacing: 0.01em;
+  text-decoration: none;
   white-space: nowrap;
 }
 
-:where(.doke-badge--verified, [data-badge="verified"]) {
-  --doke-badge-bg: rgba(45, 196, 162, 0.13);
-  --doke-badge-color: var(--color-secondary, #25b99a);
+:is(.doke-badge--primary, .badge--primary, [data-badge="primary"]) {
+  --doke-badge-bg: var(--badge-bg-primary);
+  --doke-badge-color: var(--badge-text-primary);
+  --doke-badge-border: var(--badge-border-color-primary);
 }
 
-:where(.doke-badge--danger, [data-badge="danger"]) {
-  --doke-badge-bg: rgba(239, 68, 68, 0.12);
-  --doke-badge-color: #dc2626;
+:is(.doke-badge--success, .badge--success, [data-badge="success"]) {
+  --doke-badge-bg: var(--badge-bg-success);
+  --doke-badge-color: var(--badge-text-success);
+  --doke-badge-border: var(--badge-border-color-success);
 }
 
-:where(.doke-chip--primary, [data-chip="primary"]) {
-  --doke-chip-bg: rgba(37, 109, 180, 0.08);
-  --doke-chip-color: #256db4;
-  --doke-chip-border: transparent;
+:is(.doke-badge--verified, [data-badge="verified"]) {
+  --doke-badge-bg: var(--badge-bg-success);
+  --doke-badge-color: var(--badge-text-success);
+  --doke-badge-border: var(--badge-border-color-success);
 }
 
-:where(.doke-chip--content, [data-chip-size="content"]) {
-  width: fit-content;
-  min-height: 30px;
-  padding: 0 12px;
-  border-color: var(--doke-chip-border, transparent);
-  font-size: 0.82rem;
-  font-weight: 700;
+:is(.doke-badge--warning, .badge--warning, [data-badge="warning"]) {
+  --doke-badge-bg: var(--badge-bg-warning);
+  --doke-badge-color: var(--badge-text-warning);
+  --doke-badge-border: var(--badge-border-color-warning);
 }
 
-:where(.doke-chip--on-media, [data-chip-surface="media"]) {
-  --doke-chip-bg: rgba(255, 255, 255, 0.88);
-  --doke-chip-border: transparent;
-  backdrop-filter: blur(6px);
+:is(.doke-badge--danger, .badge--danger, [data-badge="danger"]) {
+  --doke-badge-bg: var(--badge-bg-danger);
+  --doke-badge-color: var(--badge-text-danger);
+  --doke-badge-border: var(--badge-border-color-danger);
 }
 
-:where(.doke-badge--success, [data-badge="success"]) {
-  --doke-badge-bg: rgba(32, 199, 166, 0.18);
-  --doke-badge-color: #0d947f;
+:is(.doke-badge--content, [data-badge-size="content"]) {
+  min-height: var(--badge-height);
+  padding-inline: var(--badge-padding-x);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
 }
 
-:where(.doke-badge--content, [data-badge-size="content"]) {
-  min-height: 28px;
-  padding-inline: 12px;
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-
-/* Border contrast policy: status badges are separated by fill, not stroke. */
-:where(.doke-badge, [data-badge]) {
-  border-color: transparent;
-}
-
-/* Contrast-first border policy for filled status chips. */
-:where(.doke-chip, [data-chip], .doke-badge, [data-badge]),
-:where(.doke-chip, [data-chip], .doke-badge, [data-badge]):where(:hover, :focus-visible, .is-active),
-:where(.doke-chip--success, [data-chip="success"], .doke-chip--warning, [data-chip="warning"], .doke-chip--muted, [data-chip="muted"], .doke-chip--primary, [data-chip="primary"], .doke-chip--content, [data-chip-size="content"], .doke-badge--success, [data-badge="success"], .doke-badge--verified, [data-badge="verified"], .doke-badge--danger, [data-badge="danger"], .doke-badge--content, [data-badge-size="content"]) {
-  border-color: transparent;
+:is(.doke-badge, .badge, .doke-chip, .chip, [data-badge], [data-chip]) svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
 }

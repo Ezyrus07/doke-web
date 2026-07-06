@@ -53,6 +53,7 @@ const report = {
   expectedMutationEndpoints: EXPECTED_MUTATION_ENDPOINTS.slice(),
   requiredFiles: REQUIRED_FILES.slice(),
   endpointHits: [],
+  idempotencyConflictChecks: [],
   results: [],
   warnings: [],
   failures: [],
@@ -199,7 +200,8 @@ async function assertConflict(baseUrl, method, endpoint, options, name) {
   const payload = await request(baseUrl, method, endpoint, Object.assign({}, options, { expectedStatuses: [409] }));
   const code = payload.error && payload.error.code || payload.code;
   if (code !== 'DOKE_IDEMPOTENCY_CONFLICT') throw new Error(`${name} expected DOKE_IDEMPOTENCY_CONFLICT, got ${code || 'unknown'}.`);
-  record(name, 'passed');
+  report.idempotencyConflictChecks.push({ name, method, path: shapePath(endpoint), status: 409, code });
+  record(name, 'passed', `status=409 code=${code}`);
 }
 
 async function request(baseUrl, method, endpoint, options = {}) {

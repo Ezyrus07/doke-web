@@ -5,10 +5,10 @@
   box-sizing: border-box;
   inline-size: 100%;
   max-inline-size: 100%;
-  min-block-size: var(--doke-form-control-min-height, 52px);
-  border: 1px solid var(--doke-form-control-border, #d4e0ef);
-  border-radius: var(--doke-form-control-radius, 14px);
-  background: var(--doke-form-control-bg, var(--doke-surface, #fff));
+  min-block-size: var(--doke-form-control-min-height, var(--input-height-lg));
+  border: var(--doke-form-control-border, var(--input-border));
+  border-radius: var(--doke-form-control-radius, var(--input-radius));
+  background: var(--doke-form-control-bg, var(--input-bg));
   color: var(--doke-form-control-color, var(--doke-text-primary, var(--color-text, #14213d)));
   font: inherit;
   font-size: var(--doke-form-control-font-size, inherit);
@@ -35,10 +35,10 @@
 }
 
 :where(.doke-input, .doke-select, .doke-textarea):where(:focus, :focus-visible) {
-  border-color: var(--doke-form-control-focus-border, rgba(38, 116, 217, 0.45));
-  background: var(--doke-form-control-focus-bg, #fff);
+  border-color: var(--doke-form-control-focus-border, var(--input-border-focus));
+  background: var(--doke-form-control-focus-bg, var(--input-bg-focus));
   outline: 0;
-  box-shadow: var(--doke-form-control-focus-ring, 0 0 0 4px rgba(38, 116, 217, 0.08));
+  box-shadow: var(--doke-form-control-focus-ring, var(--input-focus-ring));
 }
 
 :where(.doke-input, .doke-select, .doke-textarea):disabled,
@@ -74,14 +74,14 @@
 .doke-select__trigger {
   display: flex;
   width: 100%;
-  min-height: var(--doke-control-height, 48px);
+  min-height: var(--doke-control-height, var(--input-height-md));
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 0 14px;
-  border: 1px solid var(--doke-control-border, #cfe0ef);
-  border-radius: var(--doke-control-radius, 14px);
-  background: var(--doke-control-bg, #f7fbff);
+  border: var(--doke-control-border, var(--input-border));
+  border-radius: var(--doke-control-radius, var(--input-radius));
+  background: var(--doke-control-bg, var(--input-bg));
   color: var(--doke-control-text, #123454);
   font: inherit;
   font-size: 0.92rem;
@@ -94,9 +94,9 @@
 .doke-select__trigger:hover,
 .doke-select__trigger:focus-visible,
 [data-doke-select-root].is-open .doke-select__trigger {
-  border-color: var(--doke-control-focus, #6f9fc7);
-  background: #fff;
-  box-shadow: inset 0 0 0 1px rgba(36, 100, 155, 0.14);
+  border-color: var(--doke-control-focus, var(--input-border-focus));
+  background: var(--input-bg-focus);
+  box-shadow: var(--input-focus-ring);
   outline: none;
 }
 
@@ -138,10 +138,10 @@
   gap: 4px;
   padding: 6px;
   overflow: auto;
-  border: 1px solid var(--doke-card-border, #dbe6f0);
+  border: var(--border-soft);
   border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 18px 44px rgba(15, 42, 68, 0.18);
+  background: var(--color-surface);
+  box-shadow: var(--dropdown-shadow);
 }
 
 .doke-select-menu[hidden] {
@@ -180,15 +180,17 @@
 
 :where(.doke-field) {
   display: grid;
-  gap: var(--doke-space-2, 0.5rem);
+  gap: var(--doke-form-field-gap, var(--form-field-gap, var(--doke-space-2, 0.5rem)));
 }
 
-:where(.doke-label) {
+:where(.doke-label, .doke-field > span:first-child, .doke-field > label:first-child) {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  font-weight: 700;
-  color: var(--doke-text-secondary, #41516a);
+  color: var(--doke-form-label-color, var(--form-field-label-color, var(--doke-text-secondary, #41516a)));
+  font-size: var(--doke-form-label-size, var(--form-field-label-size, inherit));
+  font-weight: var(--doke-form-label-weight, var(--form-field-label-weight, 700));
+  line-height: var(--doke-form-label-line-height, var(--form-field-label-line-height, inherit));
 }
 
 :where(.doke-field__hint, .doke-form-hint) {
@@ -229,7 +231,7 @@
   min-inline-size: var(--doke-choice-size);
   min-block-size: var(--doke-choice-size);
   margin: 0;
-  border: 1.6px solid var(--doke-choice-border);
+  border: var(--border-width) var(--border-style) var(--doke-choice-border);
   background: var(--doke-choice-bg);
   color: #fff;
   box-shadow: none;

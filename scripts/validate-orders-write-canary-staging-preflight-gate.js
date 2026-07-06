@@ -58,16 +58,16 @@ const REQUIRED_FILES = Object.freeze([
 ]);
 
 const PREFLIGHT_COMMANDS = Object.freeze([
-  { name: 'audit:orders-write-canary-local-runtime', command: 'npm run audit:orders-write-canary-local-runtime' },
-  { name: 'validate:orders-write-canary:local-runtime', command: 'npm run validate:orders-write-canary:local-runtime' },
-  { name: 'audit:orders-write-canary-planning-gate', command: 'npm run audit:orders-write-canary-planning-gate' },
-  { name: 'validate:orders-write-canary:planning-gate:dry-run', command: 'npm run validate:orders-write-canary:planning-gate:dry-run' },
-  { name: 'audit:orders-readonly-canary-promotion-gate', command: 'npm run audit:orders-readonly-canary-promotion-gate' },
-  { name: 'validate:orders-readonly-canary:promotion-gate:dry-run', command: 'npm run validate:orders-readonly-canary:promotion-gate:dry-run' },
-  { name: 'audit:auth-identity-canary-promotion-gate', command: 'npm run audit:auth-identity-canary-promotion-gate' },
-  { name: 'validate:auth-identity-canary:promotion-gate:dry-run', command: 'npm run validate:auth-identity-canary:promotion-gate:dry-run' },
-  { name: 'audit:data-provider-flags', command: 'npm run audit:data-provider-flags' },
-  { name: 'audit:runtime-idempotency-audit', command: 'npm run audit:runtime-idempotency-audit' }
+  { name: 'audit:orders-write-canary-local-runtime', command: 'npm run audit:orders-write-canary-local-runtime', scriptPath: 'scripts/audit-orders-write-canary-local-runtime.js' },
+  { name: 'validate:orders-write-canary:local-runtime', command: 'npm run validate:orders-write-canary:local-runtime', scriptPath: 'scripts/validate-orders-write-canary-local-runtime.js' },
+  { name: 'audit:orders-write-canary-planning-gate', command: 'npm run audit:orders-write-canary-planning-gate', scriptPath: 'scripts/audit-orders-write-canary-planning-gate.js' },
+  { name: 'validate:orders-write-canary:planning-gate:dry-run', command: 'npm run validate:orders-write-canary:planning-gate:dry-run', scriptPath: 'scripts/validate-orders-write-canary-planning-gate.js', args: ['--dry-run'] },
+  { name: 'audit:orders-readonly-canary-promotion-gate', command: 'npm run audit:orders-readonly-canary-promotion-gate', scriptPath: 'scripts/audit-orders-readonly-canary-promotion-gate.js' },
+  { name: 'validate:orders-readonly-canary:promotion-gate:dry-run', command: 'npm run validate:orders-readonly-canary:promotion-gate:dry-run', scriptPath: 'scripts/validate-orders-readonly-canary-promotion-gate.js', args: ['--dry-run'] },
+  { name: 'audit:auth-identity-canary-promotion-gate', command: 'npm run audit:auth-identity-canary-promotion-gate', scriptPath: 'scripts/audit-auth-identity-canary-promotion-gate.js' },
+  { name: 'validate:auth-identity-canary:promotion-gate:dry-run', command: 'npm run validate:auth-identity-canary:promotion-gate:dry-run', scriptPath: 'scripts/validate-auth-identity-canary-promotion-gate.js', args: ['--dry-run'] },
+  { name: 'audit:data-provider-flags', command: 'npm run audit:data-provider-flags', scriptPath: 'scripts/audit-data-provider-flag-contract.js' },
+  { name: 'audit:runtime-idempotency-audit', command: 'npm run audit:runtime-idempotency-audit', scriptPath: 'scripts/audit-runtime-idempotency-audit.js' }
 ]);
 
 const REPORT_SPECS = Object.freeze([
@@ -156,7 +156,7 @@ const report = {
   mutationEndpointsPreparedForManualStaging: MUTATION_ENDPOINTS.slice(),
   requiredSafeguards: REQUIRED_STAGING_SAFEGUARDS.slice(),
   requiredFiles: REQUIRED_FILES.slice(),
-  preflightCommands: PREFLIGHT_COMMANDS.map((entry) => Object.assign({}, entry)),
+  preflightCommands: PREFLIGHT_COMMANDS.map(({ name, command }) => ({ name, command })),
   reportPaths: Object.fromEntries(REPORT_SPECS.map((spec) => [spec.key, process.env[spec.env] || spec.defaultPath])),
   environment: {
     DOKE_ENVIRONMENT: process.env[ENV.environment] || '',
@@ -262,8 +262,7 @@ function assertPreflightContract() {
 }
 
 async function runCommand(entry) {
-  const [bin, ...parts] = entry.command.split(' ');
-  const result = await spawnCommand(bin, parts);
+  const result = await spawnNodeScript(entry.scriptPath, entry.args || []);
   record(entry.name, result.status === 0 ? 'passed' : 'failed', `exit=${result.status}`);
   if (result.status !== 0) {
     report.failures.push(`${entry.command} failed with exit ${result.status}.`);
@@ -271,9 +270,9 @@ async function runCommand(entry) {
   }
 }
 
-function spawnCommand(bin, parts) {
+function spawnNodeScript(scriptPath, args) {
   return new Promise((resolve) => {
-    const child = spawn(resolveBinary(bin), parts, {
+    const child = spawn(process.execPath, [scriptPath, ...args], {
       cwd: root,
       env: process.env,
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -299,11 +298,6 @@ function spawnCommand(bin, parts) {
       resolve({ status, signal, stdoutTail: tail(stdout), stderrTail: tail(stderr) });
     });
   });
-}
-
-function resolveBinary(bin) {
-  if (process.platform === 'win32' && bin === 'npm') return 'npm.cmd';
-  return bin;
 }
 
 function evaluateEnvironment() {
@@ -404,7 +398,10 @@ function validateReport(spec, candidate) {
     MUTATION_ENDPOINTS.forEach((endpoint) => {
       if (!hitSignatures.has(endpoint)) failures.push(`local runtime report did not exercise ${endpoint}.`);
     });
-    if (!JSON.stringify(candidate).includes('DOKE_IDEMPOTENCY_CONFLICT')) failures.push('local runtime report must include DOKE_IDEMPOTENCY_CONFLICT evidence.');
+    const conflictChecks = Array.isArray(candidate.idempotencyConflictChecks) ? candidate.idempotencyConflictChecks : [];
+    if (!conflictChecks.some((entry) => entry.status === 409 && entry.code === 'DOKE_IDEMPOTENCY_CONFLICT')) {
+      failures.push('local runtime report must include a validated HTTP 409 DOKE_IDEMPOTENCY_CONFLICT check.');
+    }
   }
   return failures;
 }

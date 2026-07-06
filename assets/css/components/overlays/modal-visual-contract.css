@@ -7,18 +7,18 @@
   --doke-modal-visual-ink: #0b3c7c;
   --doke-modal-visual-text: #6f85a1;
   --doke-modal-visual-muted: #6a819e;
-  --doke-modal-visual-border: rgba(207, 224, 240, 0.95);
-  --doke-modal-visual-border-soft: #dce8f4;
-  --doke-modal-visual-soft: #f8fbff;
-  --doke-modal-visual-surface: #ffffff;
+  --doke-modal-visual-border: var(--modal-surface-border-color);
+  --doke-modal-visual-border-soft: var(--modal-surface-divider);
+  --doke-modal-visual-soft: var(--modal-control-bg);
+  --doke-modal-visual-surface: var(--modal-surface-bg);
   --doke-modal-visual-primary: #2475bd;
   --doke-modal-visual-primary-strong: #145fa7;
   --doke-modal-visual-green: #087e72;
   --doke-modal-visual-purple: #6e4ad7;
-  --doke-modal-visual-radius: 30px;
-  --doke-modal-visual-radius-mobile: 24px;
-  --doke-modal-visual-control-radius: 16px;
-  --doke-modal-visual-shadow: 0 30px 80px rgba(18, 39, 62, 0.24);
+  --doke-modal-visual-radius: var(--radius-modal);
+  --doke-modal-visual-radius-mobile: var(--radius-lg);
+  --doke-modal-visual-control-radius: var(--radius-control);
+  --doke-modal-visual-shadow: var(--modal-surface-shadow);
   --doke-modal-visual-pad-x: clamp(28px, 4vw, 42px);
   --doke-modal-visual-pad-x-compact: clamp(24px, 3.5vw, 36px);
   --doke-modal-visual-compact: 620px;
@@ -64,9 +64,9 @@
 }
 
 :where(.doke-overlay__backdrop, .doke-action-modal__scrim, .wallet-modal__scrim, .wallet-dialog__scrim, .wallet-bank-modal__backdrop, .news-detail-modal__backdrop, .payment-submit-state__backdrop, .payment-finish-modal__backdrop, .pro-review-success__backdrop, .post-service-submit-state__backdrop, .become-pro-submit-state__backdrop) {
-  background: rgba(17, 36, 59, 0.58);
-  -webkit-backdrop-filter: blur(14px) saturate(115%);
-  backdrop-filter: blur(14px) saturate(115%);
+  background: var(--modal-backdrop-bg);
+  -webkit-backdrop-filter: var(--modal-backdrop-blur);
+  backdrop-filter: var(--modal-backdrop-blur);
 }
 
 /* Surface --------------------------------------------------------------- */
@@ -83,7 +83,7 @@
   grid-template-rows: auto minmax(0, 1fr) auto;
   padding: 0;
   overflow: hidden;
-  border: 1px solid var(--doke-modal-visual-border);
+  border: var(--modal-surface-border);
   border-radius: var(--doke-modal-visual-radius);
   background: var(--doke-modal-visual-surface);
   color: var(--doke-modal-visual-ink);
@@ -154,7 +154,7 @@
   gap: 8px;
   margin: 0 0 26px;
   padding: 0 16px;
-  border: 1px solid rgba(191, 230, 220, 0.92);
+  border: 1px solid var(--control-outline-soft-secondary);
   border-radius: 999px;
   background: #eefaf6;
   color: var(--doke-modal-visual-green);
@@ -178,14 +178,14 @@
 .doke-modal-eyebrow--blue,
 .doke-modal-eyebrow.doke-financial-modal__eyebrow--charge,
 .doke-modal-eyebrow.doke-action-modal__eyebrow--blue {
-  border-color: rgba(193, 215, 241, 0.96);
+  border-color: var(--control-outline-soft-primary);
   background: #eef6ff;
   color: #0b5da8;
 }
 
 .doke-modal-eyebrow--purple,
 .doke-modal-eyebrow.doke-action-modal__eyebrow--purple {
-  border-color: #d8c6ff;
+  border-color: rgba(124, 58, 237, 0.16);
   background: #f4efff;
   color: var(--doke-modal-visual-purple);
 }
@@ -260,9 +260,9 @@
   display: inline-grid;
   place-items: center;
   padding: 0;
-  border: 1px solid var(--doke-modal-visual-border);
-  border-radius: 16px;
-  background: #f3f8fd;
+  border: var(--modal-close-border);
+  border-radius: var(--radius-control);
+  background: var(--modal-close-bg);
   color: var(--doke-modal-visual-ink);
   box-shadow: none;
   cursor: pointer;
@@ -270,9 +270,9 @@
 
 .doke-modal-surface .doke-close-button:is(:hover, :focus-visible) {
   outline: 0;
-  background: #eaf3fb;
-  border-color: #bed2e8;
-  box-shadow: 0 0 0 4px rgba(31, 109, 182, 0.16);
+  background: var(--modal-close-bg-hover);
+  border-color: var(--control-outline-soft-primary-hover);
+  box-shadow: var(--shadow-focus);
 }
 
 .doke-modal-surface .doke-close-button :is(svg, img) {
@@ -366,7 +366,7 @@
   width: 100%;
   min-height: var(--doke-modal-visual-control-h);
   height: var(--doke-modal-visual-control-h);
-  border: 1px solid var(--doke-modal-visual-border);
+  border: var(--modal-control-border);
   border-radius: var(--doke-modal-visual-control-radius);
   background: var(--doke-modal-visual-soft);
   color: var(--doke-modal-visual-ink);
@@ -398,9 +398,9 @@
 .doke-modal-surface .doke-financial-modal__select.is-open .doke-financial-modal__select-button,
 .doke-modal-surface .ui-select.is-open .ui-select__trigger,
 .doke-modal-surface .ui-select__trigger:focus-visible {
-  border-color: #8db5dd;
+  border-color: var(--modal-control-border-focus);
   background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(31, 109, 182, 0.16);
+  box-shadow: var(--shadow-focus);
 }
 
 .doke-modal-money-field,
@@ -462,7 +462,7 @@
   align-items: center;
   gap: 12px;
   padding: 0 14px;
-  border: 1px solid var(--doke-modal-visual-border);
+  border: var(--modal-control-border);
   border-radius: var(--doke-modal-visual-control-radius);
   background: var(--doke-modal-visual-soft);
   color: #2f4d71;
@@ -498,7 +498,7 @@
   margin: 0;
   padding: 22px var(--doke-modal-visual-pad-x) 30px;
   border-top: 1px solid var(--doke-modal-visual-border-soft);
-  background: linear-gradient(180deg, #fbfdff 0%, #f8fbff 100%);
+  background: var(--modal-footer-bg);
   box-sizing: border-box;
 }
 
@@ -524,15 +524,15 @@
 }
 
 .doke-modal-actions > :is(.doke-btn--primary, .doke-action-modal__button--primary, .wallet-dialog-btn--primary, .charge-modal__button:not(.charge-modal__button--ghost), .budget-button--primary) {
-  border: 1px solid var(--doke-modal-visual-primary);
+  border: 0;
   background: linear-gradient(135deg, var(--doke-modal-visual-primary) 0%, var(--doke-modal-visual-primary-strong) 100%);
   color: #fff;
   box-shadow: 0 12px 24px rgba(20, 95, 167, 0.18);
 }
 
 .doke-modal-actions > :is(.doke-btn--ghost, .doke-btn--soft, .wallet-dialog-btn--secondary, .charge-modal__button--ghost, .budget-button--ghost, .community-action-modal__button--ghost) {
-  border: 1px solid var(--doke-modal-visual-border);
-  background: #f8fbff;
+  border: var(--modal-control-border);
+  background: var(--doke-modal-visual-soft);
   color: var(--doke-modal-visual-ink);
   box-shadow: none;
 }
@@ -712,7 +712,7 @@
   min-height: var(--doke-modal-visual-control-h);
   height: var(--doke-modal-visual-control-h);
   padding: 0 18px;
-  border: 1px solid var(--doke-modal-visual-border);
+  border: var(--modal-control-border);
   border-radius: var(--doke-modal-visual-control-radius);
   background: var(--doke-modal-visual-soft);
   color: var(--doke-modal-visual-ink);
@@ -894,7 +894,7 @@
     grid-template-columns: 1fr;
     gap: 8px;
     padding: 12px 18px max(14px, env(safe-area-inset-bottom));
-    border-top: 1px solid rgba(24, 75, 118, 0.10);
+    border-top: 1px solid var(--doke-modal-visual-border-soft);
     background: rgba(255, 255, 255, 0.98);
     box-shadow: 0 -12px 24px rgba(19, 48, 80, 0.06);
   }

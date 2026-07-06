@@ -6,7 +6,7 @@
   --doke-badge-padding-x: var(--badge-padding-x);
 }
 
-:where(.doke-chip, .chip) {
+:is(.doke-chip, .chip) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -17,6 +17,7 @@
   border-radius: var(--chip-radius);
   background: var(--chip-bg);
   color: var(--chip-text);
+  box-shadow: var(--chip-shadow);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
   line-height: 1;
@@ -26,40 +27,56 @@
     background-color var(--transition-fast),
     border-color var(--transition-fast),
     color var(--transition-fast),
+    box-shadow var(--transition-fast),
     transform var(--transition-fast);
 }
 
-:where(.doke-chip, .chip):where(:hover) {
+:is(.doke-chip, .chip):where(:hover, :focus-visible) {
+  background: var(--chip-bg-hover);
+  border-color: var(--chip-border-color-hover);
+  box-shadow: var(--chip-shadow-hover);
   transform: translateY(-1px);
-  border-color: var(--border-color-strong);
 }
 
-:where(.doke-chip.is-active, .chip.is-active, .doke-chip--primary) {
-  background: var(--color-primary-soft);
-  border-color: var(--color-primary-border);
-  color: var(--color-primary-strong);
+:is(.doke-chip.is-active, .chip.is-active, .doke-chip--primary) {
+  background: var(--chip-bg-primary);
+  border-color: var(--chip-border-color-primary);
+  color: var(--chip-text-primary);
 }
 
-:where(.doke-chip--success, .chip--success.is-active) {
-  background: var(--color-secondary-soft);
-  border-color: var(--color-secondary-border);
-  color: var(--color-secondary-strong);
+:is(.doke-chip--success, .chip--success.is-active) {
+  background: var(--chip-bg-success);
+  border-color: var(--chip-border-color-success);
+  color: var(--chip-text-success);
 }
 
-:where(.doke-chip--muted) {
-  background: var(--color-surface-muted);
-  color: var(--color-text-muted);
+:is(.doke-chip--warning, .chip--warning.is-active) {
+  background: var(--chip-bg-warning);
+  border-color: var(--chip-border-color-warning);
+  color: var(--chip-text-warning);
 }
 
-:where(.doke-badge, .badge) {
+:is(.doke-chip--danger, .chip--danger.is-active) {
+  background: var(--chip-bg-danger);
+  border-color: var(--chip-border-color-danger);
+  color: var(--chip-text-danger);
+}
+
+:is(.doke-chip--muted) {
+  background: var(--chip-bg-muted);
+  border-color: var(--chip-border-color-muted);
+  color: var(--chip-text-muted);
+}
+
+:is(.doke-badge, .badge) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
   min-height: var(--doke-badge-height);
   padding: 0 var(--doke-badge-padding-x);
-  border-radius: var(--badge-radius);
   border: var(--badge-border);
+  border-radius: var(--badge-radius);
   background: var(--badge-bg);
   color: var(--badge-text);
   font-size: var(--font-size-xs);
@@ -70,31 +87,31 @@
   white-space: nowrap;
 }
 
-:where(.doke-badge--primary, .badge--primary) {
-  background: var(--color-primary-soft);
-  border-color: var(--color-primary-border);
-  color: var(--color-primary-strong);
+:is(.doke-badge--primary, .badge--primary) {
+  background: var(--badge-bg-primary);
+  border-color: var(--badge-border-color-primary);
+  color: var(--badge-text-primary);
 }
 
-:where(.doke-badge--success, .badge--success) {
-  background: var(--color-secondary-soft);
-  border-color: var(--color-secondary-border);
-  color: var(--color-secondary-strong);
+:is(.doke-badge--success, .badge--success) {
+  background: var(--badge-bg-success);
+  border-color: var(--badge-border-color-success);
+  color: var(--badge-text-success);
 }
 
-:where(.doke-badge--warning, .badge--warning) {
-  background: var(--color-warning-soft);
-  border-color: rgba(245, 158, 11, 0.26);
-  color: var(--color-warning-strong);
+:is(.doke-badge--warning, .badge--warning) {
+  background: var(--badge-bg-warning);
+  border-color: var(--badge-border-color-warning);
+  color: var(--badge-text-warning);
 }
 
-:where(.doke-badge--danger, .badge--danger) {
-  background: var(--color-danger-soft);
-  border-color: rgba(239, 68, 68, 0.26);
-  color: var(--color-danger-strong);
+:is(.doke-badge--danger, .badge--danger) {
+  background: var(--badge-bg-danger);
+  border-color: var(--badge-border-color-danger);
+  color: var(--badge-text-danger);
 }
 
-:where(.doke-badge, .badge, .doke-chip, .chip) svg {
+:is(.doke-badge, .badge, .doke-chip, .chip) svg {
   width: 15px;
   height: 15px;
   flex: 0 0 auto;
@@ -105,15 +122,6 @@
   fill: none;
 }
 
-
-/* Border contrast policy: badges/chips with their own fill do not need outlines. */
-:where(.doke-badge, .badge, .doke-chip, .chip),
-:where(.doke-badge--primary, .badge--primary, .doke-badge--success, .badge--success, .doke-badge--warning, .badge--warning, .doke-badge--danger, .badge--danger) {
-  border-color: transparent;
-}
-
-/* Contrast-first border policy for filled chips/badges. */
-:where(.doke-badge, .badge, .doke-chip, .chip):where(:hover, :focus-visible, .is-active),
-:where(.doke-badge--primary, .badge--primary, .doke-badge--success, .badge--success, .doke-badge--warning, .badge--warning, .doke-badge--danger, .badge--danger, .doke-chip--primary, .doke-chip--success, .doke-chip--muted) {
+:is(.doke-chip--on-media, .doke-badge--on-media) {
   border-color: transparent;
 }

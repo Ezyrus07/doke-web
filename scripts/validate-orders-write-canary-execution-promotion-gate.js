@@ -51,6 +51,16 @@ const REQUIRED_MUTATIONS = Object.freeze([
   'POST /orders/:id/complete'
 ]);
 
+const REQUIRED_MUTATION_ROLES = Object.freeze({
+  'POST /orders': 'client',
+  'POST /orders/:id/accept': 'professional',
+  'POST /orders/:id/quote': 'professional',
+  'POST /orders/:id/charge': 'professional',
+  'POST /orders/:id/start': 'professional',
+  'POST /orders/:id/status': 'support',
+  'POST /orders/:id/complete': 'professional'
+});
+
 const report = {
   name: 'orders-write-canary-execution-promotion-gate',
   generatedAt: new Date().toISOString(),
@@ -64,6 +74,7 @@ const report = {
   nextAllowedStep: null,
   executionReportPath: process.env[ENV.executionReportPath] || DEFAULT_EXECUTION_REPORT_PATH,
   requiredMutations: REQUIRED_MUTATIONS.slice(),
+  requiredMutationRoles: { ...REQUIRED_MUTATION_ROLES },
   results: [],
   warnings: [],
   failures: []
@@ -149,9 +160,14 @@ function evaluateExecutionReport() {
   if (parsed.writeActivation !== false) report.failures.push('Execution report must keep writeActivation=false.');
   if (parsed.performsMutation !== true) report.failures.push('Execution report must prove staging mutations were executed intentionally.');
   if (parsed.expectedFrontendProviders && parsed.expectedFrontendProviders.dataProvider !== 'mock') report.failures.push('Execution report must preserve dataProvider=mock.');
-  const hitSignatures = new Set((parsed.endpointHits || []).map((hit) => `${hit.method} ${hit.path}`));
+  const hits = Array.isArray(parsed.endpointHits) ? parsed.endpointHits : [];
+  const hitSignatures = new Set(hits.map((hit) => `${hit.method} ${hit.path}`));
   REQUIRED_MUTATIONS.forEach((signature) => {
     if (!hitSignatures.has(signature)) report.failures.push(`Execution report missing mutation hit: ${signature}`);
+    const requiredRole = REQUIRED_MUTATION_ROLES[signature];
+    if (!hits.some((hit) => `${hit.method} ${hit.path}` === signature && hit.role === requiredRole)) {
+      report.failures.push(`Execution report missing ${requiredRole} role proof for mutation: ${signature}`);
+    }
   });
   if (!Array.isArray(parsed.idempotencyChecks) || !parsed.idempotencyChecks.some((entry) => entry.replay === true)) {
     report.failures.push('Execution report must include at least one idempotency replay proof.');

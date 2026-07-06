@@ -6,16 +6,16 @@ body.payment-page-shell {
   --payment-bg: #edf4fb;
   --payment-surface: #fff;
   --payment-surface-soft: #f5f9fd;
-  --payment-border: #dbe6f0;
-  --payment-border-strong: #9dbbd6;
+  --payment-border: var(--form-page-card-border-color, #dbe6f0);
+  --payment-border-strong: var(--form-flow-step-active-border-color, #9dbbd6);
   --payment-text: #123454;
   --payment-muted: #657b91;
   --payment-blue: #24649b;
   --payment-blue-dark: #0e3d66;
   --payment-green: #117c68;
   --payment-red: #c83f4b;
-  --payment-radius: 18px;
-  --payment-shadow: 0 18px 44px rgba(31, 72, 108, 0.08);
+  --payment-radius: var(--form-helper-surface-radius, 18px);
+  --payment-shadow: var(--form-page-card-shadow, 0 18px 44px rgba(31, 72, 108, 0.08));
   background: var(--payment-bg);
 }
 
@@ -92,7 +92,7 @@ body.payment-finish-modal-open {
 
 .payment-card {
   min-width: 0;
-  border: 1px solid rgba(42, 84, 122, 0.1);
+  border: var(--form-page-card-border, 1px solid rgba(42, 84, 122, 0.1));
   border-radius: var(--payment-radius);
   background: var(--payment-surface);
   box-shadow: var(--payment-shadow);
@@ -100,7 +100,7 @@ body.payment-finish-modal-open {
 
 .payment-main-column > .payment-card,
 .payment-summary__card {
-  padding: clamp(20px, 2.2vw, 28px);
+  padding: var(--form-page-card-padding, clamp(20px, 2.2vw, 28px));
 }
 
 .payment-card__header {
@@ -155,9 +155,9 @@ body.payment-finish-modal-open {
   min-width: 0;
   min-height: 78px;
   padding: 13px 14px;
-  border: 1px solid var(--payment-border);
-  border-radius: 14px;
-  background: #fbfdff;
+  border: var(--form-choice-border, 1px solid var(--payment-border));
+  border-radius: var(--form-control-surface-radius, 14px);
+  background: var(--form-choice-bg, #fbfdff);
   color: inherit;
   cursor: pointer;
   transition:
@@ -174,8 +174,8 @@ body.payment-finish-modal-open {
 
 .payment-method.is-selected {
   border-color: var(--payment-border-strong);
-  background: #f0f7fd;
-  box-shadow: 0 0 0 3px rgba(36, 100, 155, 0.07);
+  background: var(--form-choice-active-bg, #f0f7fd);
+  box-shadow: var(--form-choice-active-shadow, 0 0 0 3px rgba(36, 100, 155, 0.07));
 }
 
 .payment-method > .doke-radio {
@@ -191,8 +191,8 @@ body.payment-finish-modal-open {
   grid-row: 1;
   width: 36px;
   height: 36px;
-  border-radius: 11px;
-  background: #edf5fb;
+  border-radius: var(--radius-xs, 11px);
+  background: var(--control-bg-soft-primary, #edf5fb);
   color: var(--payment-blue);
 }
 
@@ -236,7 +236,7 @@ body.payment-finish-modal-open {
   min-height: 20px;
   padding: 0 7px;
   border-radius: 999px;
-  background: #e5f6f1;
+  background: var(--control-bg-soft-secondary, #e5f6f1);
   color: var(--payment-green);
   font-size: 0.58rem;
   font-style: normal;
@@ -251,8 +251,8 @@ body.payment-finish-modal-open {
   gap: 11px;
   margin-top: 14px;
   padding: 12px 14px;
-  border-radius: 13px;
-  background: #f3f8fc;
+  border-radius: var(--radius-compact, 13px);
+  background: var(--form-helper-surface-bg, #f3f8fc);
 }
 
 .payment-method-detail__icon {
@@ -297,9 +297,9 @@ body.payment-finish-modal-open {
   gap: 16px;
   margin-top: 14px;
   padding: 14px;
-  border: 1px solid var(--payment-border);
-  border-radius: 14px;
-  background: #fbfdff;
+  border: var(--form-choice-border, 1px solid var(--payment-border));
+  border-radius: var(--form-control-surface-radius, 14px);
+  background: var(--form-choice-bg, #fbfdff);
 }
 
 .payment-card-empty[hidden],
@@ -355,9 +355,9 @@ body.payment-finish-modal-open {
   gap: 12px;
   margin-top: 14px;
   padding: 16px;
-  border: 1px solid var(--payment-border);
-  border-radius: 14px;
-  background: #fbfdff;
+  border: var(--form-choice-border, 1px solid var(--payment-border));
+  border-radius: var(--form-control-surface-radius, 14px);
+  background: var(--form-choice-bg, #fbfdff);
 }
 
 .payment-field {
@@ -386,9 +386,9 @@ body.payment-finish-modal-open {
   gap: 11px;
   align-items: flex-start;
   padding: 14px;
-  border: 1px solid var(--payment-border);
-  border-radius: 14px;
-  background: #fbfdff;
+  border: var(--form-choice-border, 1px solid var(--payment-border));
+  border-radius: var(--form-control-surface-radius, 14px);
+  background: var(--form-choice-bg, #fbfdff);
   color: var(--payment-text);
   cursor: pointer;
 }
@@ -560,7 +560,7 @@ body.payment-finish-modal-open {
   display: grid;
   gap: 7px;
   padding: 16px;
-  border-radius: 14px;
+  border-radius: var(--form-control-surface-radius, 14px);
   background: #eef6fc;
 }
 
@@ -912,7 +912,7 @@ body.payment-finish-modal-open {
   width: 124px;
   height: 124px;
   padding: 11px;
-  border: 1px solid var(--payment-border);
+  border: var(--form-choice-border, 1px solid var(--payment-border));
   border-radius: 18px;
   background: #f8fbfe;
 }
@@ -930,7 +930,7 @@ body.payment-finish-modal-open {
   gap: 8px;
   min-width: 0;
   padding: 14px;
-  border: 1px solid var(--payment-border);
+  border: var(--form-choice-border, 1px solid var(--payment-border));
   border-radius: 18px;
   background: #f8fbfe;
 }
@@ -946,7 +946,7 @@ body.payment-finish-modal-open {
   min-width: 0;
   padding: 11px 12px;
   overflow: hidden;
-  border: 1px solid var(--payment-border);
+  border: var(--form-choice-border, 1px solid var(--payment-border));
   border-radius: 12px;
   background: #fff;
 }
@@ -1035,7 +1035,7 @@ body.payment-finish-modal-open {
   margin-top: 2px;
   padding: 13px;
   border: 1px solid #b8e0d6;
-  border-radius: 14px;
+  border-radius: var(--form-control-surface-radius, 14px);
   background: #f1fcf8;
   text-align: left;
 }
@@ -1069,8 +1069,8 @@ body.payment-finish-modal-open {
 
 .payment-finish-summary div {
   padding: 13px;
-  border: 1px solid var(--payment-border);
-  border-radius: 13px;
+  border: var(--form-choice-border, 1px solid var(--payment-border));
+  border-radius: var(--radius-compact, 13px);
   background: #f8fbfe;
 }
 
@@ -1090,8 +1090,8 @@ body.payment-finish-modal-open {
   align-items: flex-start;
   gap: 11px;
   padding: 14px;
-  border: 1px solid var(--payment-border);
-  border-radius: 14px;
+  border: var(--form-choice-border, 1px solid var(--payment-border));
+  border-radius: var(--form-control-surface-radius, 14px);
   background: #f8fbfe;
   color: var(--payment-text);
   font-size: 0.8rem;

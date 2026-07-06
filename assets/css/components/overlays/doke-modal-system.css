@@ -7,18 +7,18 @@
   --doke-modal-color-ink: #0b3c7c;
   --doke-modal-color-text: #6f85a1;
   --doke-modal-color-muted: #8aa0b8;
-  --doke-modal-color-line: rgba(204, 222, 239, 0.84);
-  --doke-modal-color-line-soft: rgba(220, 232, 244, 0.92);
-  --doke-modal-color-surface: #ffffff;
-  --doke-modal-color-soft: #fbfdff;
+  --doke-modal-color-line: var(--modal-surface-border-color);
+  --doke-modal-color-line-soft: var(--modal-surface-divider);
+  --doke-modal-color-surface: var(--modal-surface-bg);
+  --doke-modal-color-soft: var(--modal-control-bg);
   --doke-modal-color-primary: #2475bd;
   --doke-modal-color-primary-strong: #145fa7;
   --doke-modal-color-green: #087e72;
   --doke-modal-color-purple: #6e4ad7;
-  --doke-modal-radius: 30px;
-  --doke-modal-radius-mobile: 24px;
-  --doke-modal-control-radius: 16px;
-  --doke-modal-shadow: 0 30px 80px rgba(18, 39, 62, 0.24);
+  --doke-modal-radius: var(--radius-modal);
+  --doke-modal-radius-mobile: var(--radius-lg);
+  --doke-modal-control-radius: var(--radius-control);
+  --doke-modal-shadow: var(--modal-surface-shadow);
   --doke-modal-close-size: 44px;
   --doke-modal-control-height: 54px;
   --doke-modal-button-height: 52px;
@@ -51,9 +51,9 @@
   position: fixed;
   inset: 0;
   border: 0;
-  background: rgba(17, 36, 59, 0.58);
-  -webkit-backdrop-filter: blur(14px) saturate(115%);
-  backdrop-filter: blur(14px) saturate(115%);
+  background: var(--modal-backdrop-bg);
+  -webkit-backdrop-filter: var(--modal-backdrop-blur);
+  backdrop-filter: var(--modal-backdrop-blur);
 }
 
 .doke-modal__surface {
@@ -65,7 +65,7 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   overflow: hidden;
-  border: 1px solid var(--doke-modal-color-line);
+  border: var(--modal-surface-border);
   border-radius: var(--doke-modal-radius);
   background: var(--doke-modal-color-surface);
   color: var(--doke-modal-color-ink);
@@ -209,7 +209,7 @@
   display: inline-grid;
   place-items: center;
   padding: 0;
-  border: 1px solid var(--doke-modal-color-line);
+  border: var(--modal-surface-border);
   border-radius: 999px;
   background: #f3f8fd;
   color: var(--doke-modal-color-ink);
@@ -218,8 +218,8 @@
 }
 
 .doke-modal__close:is(:hover, :focus-visible) {
-  border-color: rgba(42, 95, 144, 0.24);
-  background: #eaf3fb;
+  border-color: var(--control-outline-soft-primary-hover);
+  background: var(--modal-close-bg-hover);
   outline: 0;
 }
 
@@ -289,7 +289,7 @@
 .doke-modal__money-field {
   width: 100%;
   min-height: var(--doke-modal-control-height);
-  border: 1px solid var(--doke-modal-color-line);
+  border: var(--modal-surface-border);
   border-radius: var(--doke-modal-control-radius);
   background: var(--doke-modal-color-soft);
   color: var(--doke-modal-color-ink);
@@ -318,7 +318,7 @@
 .doke-modal__select:focus,
 .doke-modal__textarea:focus,
 .doke-modal__money-field:focus-within {
-  border-color: rgba(141, 181, 221, 0.72);
+  border-color: var(--modal-control-border-focus);
   outline: 0;
   background: #ffffff;
   box-shadow: 0 0 0 3px rgba(31, 109, 182, 0.12);
@@ -452,7 +452,7 @@
   gap: 8px;
   padding: 0 22px;
   overflow: hidden;
-  border: 1px solid var(--doke-modal-color-line);
+  border: var(--modal-surface-border);
   border-radius: var(--doke-modal-control-radius);
   background: #f8fbff;
   color: var(--doke-modal-color-ink);

@@ -4,20 +4,20 @@
    Escopo atual: cobrança em mensagens e saque na carteira. */
 :root {
   --doke-financial-modal-width: 620px;
-  --doke-financial-modal-radius: 30px;
+  --doke-financial-modal-radius: var(--radius-modal);
   --doke-financial-card-radius: 18px;
-  --doke-financial-control-radius: 16px;
-  --doke-financial-border: #cfdeef;
-  --doke-financial-border-soft: #dce7f3;
-  --doke-financial-surface: #ffffff;
-  --doke-financial-surface-soft: #f8fbff;
+  --doke-financial-control-radius: var(--radius-control);
+  --doke-financial-border: var(--modal-control-border-color);
+  --doke-financial-border-soft: var(--modal-surface-divider);
+  --doke-financial-surface: var(--modal-surface-bg);
+  --doke-financial-surface-soft: var(--modal-control-bg);
   --doke-financial-title: #0b3778;
   --doke-financial-text: #15385f;
   --doke-financial-muted: #6f85a1;
   --doke-financial-primary: #1f6db6;
   --doke-financial-primary-strong: #145a9e;
-  --doke-financial-focus: rgba(31, 109, 182, .16);
-  --doke-financial-shadow: 0 28px 80px rgba(18, 39, 62, .24);
+  --doke-financial-focus: rgba(var(--color-primary-rgb), .16);
+  --doke-financial-shadow: var(--modal-surface-shadow);
 }
 
 :is(dialog.charge-modal, .wallet-modal:not([hidden])) {
@@ -25,19 +25,19 @@
 }
 
 :is(dialog.charge-modal)::backdrop {
-  background: rgba(17, 36, 59, .58);
-  backdrop-filter: blur(14px) saturate(115%);
+  background: var(--modal-backdrop-bg);
+  backdrop-filter: var(--modal-backdrop-blur);
 }
 
 .wallet-dialog__scrim {
-  background: rgba(17, 36, 59, .58);
-  backdrop-filter: blur(14px) saturate(115%);
+  background: var(--modal-backdrop-bg);
+  backdrop-filter: var(--modal-backdrop-blur);
 }
 
 :is(.charge-modal__surface, .wallet-dialog--withdraw) {
   width: min(92vw, var(--doke-financial-modal-width));
   overflow: hidden;
-  border: 1px solid rgba(207, 222, 239, .92);
+  border: var(--modal-surface-border);
   border-radius: var(--doke-financial-modal-radius);
   background: var(--doke-financial-surface);
   box-shadow: var(--doke-financial-shadow);
@@ -317,7 +317,7 @@
 }
 
 :is(.charge-modal__button:not(.charge-modal__button--ghost), .wallet-dialog-btn--primary) {
-  border: 1px solid var(--doke-financial-primary);
+  border: 0;
   background: linear-gradient(135deg, var(--doke-financial-primary) 0%, var(--doke-financial-primary-strong) 100%);
   color: #fff;
   box-shadow: 0 12px 22px rgba(31, 109, 182, .18);
@@ -382,12 +382,12 @@
    Este bloco deve vencer os estilos legados de mensagens/carteira sem alterar shell global. */
 :root {
   --doke-financial-modal-width: 560px;
-  --doke-financial-modal-radius: 28px;
+  --doke-financial-modal-radius: var(--radius-modal);
   --doke-financial-card-radius: 16px;
-  --doke-financial-control-radius: 16px;
-  --doke-financial-border: #cfe0f0;
-  --doke-financial-border-soft: #dbe8f4;
-  --doke-financial-surface-soft: #f8fbff;
+  --doke-financial-control-radius: var(--radius-control);
+  --doke-financial-border: var(--modal-control-border-color);
+  --doke-financial-border-soft: var(--modal-surface-divider);
+  --doke-financial-surface-soft: var(--modal-control-bg);
   --doke-financial-title: #0d3d7d;
   --doke-financial-muted: #6c819e;
   --doke-financial-primary: #1f6fb8;
@@ -796,13 +796,13 @@
    Esta camada remove diferenças visuais causadas por classes antigas de mensagens. */
 :root {
   --doke-financial-modal-width: 620px;
-  --doke-financial-modal-radius: 28px;
+  --doke-financial-modal-radius: var(--radius-modal);
   --doke-financial-card-radius: 16px;
-  --doke-financial-control-radius: 16px;
+  --doke-financial-control-radius: var(--radius-control);
   --doke-financial-padding-x: 36px;
-  --doke-financial-border: #cfe0f0;
+  --doke-financial-border: var(--modal-control-border-color);
   --doke-financial-border-soft: #dce8f4;
-  --doke-financial-surface-soft: #f8fbff;
+  --doke-financial-surface-soft: var(--modal-control-bg);
   --doke-financial-title: #0b3c7c;
   --doke-financial-muted: #6f85a1;
   --doke-financial-primary: #2475bd;
@@ -813,10 +813,10 @@
   width: min(calc(100vw - 48px), var(--doke-financial-modal-width));
   max-width: var(--doke-financial-modal-width);
   overflow: hidden;
-  border: 1px solid rgba(207, 224, 240, .95);
+  border: var(--modal-surface-border);
   border-radius: var(--doke-financial-modal-radius);
   background: #fff;
-  box-shadow: 0 30px 80px rgba(18, 39, 62, .24);
+  box-shadow: var(--modal-surface-shadow);
   text-align: left;
 }
 
@@ -898,9 +898,9 @@
   min-height: 42px;
   display: inline-grid;
   place-items: center;
-  border: 1px solid var(--doke-financial-border);
-  border-radius: 16px;
-  background: #f3f8fd;
+  border: var(--modal-close-border);
+  border-radius: var(--radius-control);
+  background: var(--modal-close-bg);
   color: var(--doke-financial-title);
   box-shadow: none;
 }
@@ -1068,7 +1068,7 @@
 }
 
 :is(.charge-modal__button:not(.charge-modal__button--ghost), .wallet-dialog-btn--primary) {
-  border: 1px solid var(--doke-financial-primary);
+  border: 0;
   background: linear-gradient(135deg, var(--doke-financial-primary) 0%, var(--doke-financial-primary-strong) 100%);
   color: #fff;
   box-shadow: 0 12px 24px rgba(20, 95, 167, .18);
