@@ -49,7 +49,13 @@ Open the target page with canary query params in an operator-only browser sessio
 pedidos.html?dokeOrdersWriteCanary=true&dokeOrdersProvider=api-write-canary-frontend-activation&dokeOrderWriteActivation=true&dokeOrdersWriteApiBaseUrl=http%3A%2F%2F127.0.0.1%3A8787&dokeOrdersWriteCanaryMarker=staging&dokeEnableNetwork=true
 ```
 
-Do not add `dokeDataProvider=api`.
+Do not add `dokeDataProvider=api`. If the browser has an old global API override in localStorage, remove it before continuing:
+
+```js
+if (localStorage.getItem('doke.dataProvider') === 'api') {
+  localStorage.removeItem('doke.dataProvider');
+}
+```
 
 ### LocalStorage activation
 Use only in the operator's canary browser session:
@@ -58,6 +64,7 @@ Use only in the operator's canary browser session:
 localStorage.setItem('doke.canary.ordersWrite.enabled', 'true');
 localStorage.setItem('doke.ordersProvider', 'api-write-canary-frontend-activation');
 localStorage.setItem('doke.orderWriteActivation', 'true');
+localStorage.setItem('doke.dataProvider', 'mock');
 localStorage.setItem('doke.canary.ordersWrite.apiBaseUrl', 'http://127.0.0.1:8787');
 localStorage.setItem('doke.apiBaseUrl', 'http://127.0.0.1:8787');
 localStorage.setItem('doke.canary.ordersWrite.targetMarker', 'staging');
@@ -65,7 +72,7 @@ localStorage.setItem('doke.flag.enableNetworkRequests', 'true');
 location.reload();
 ```
 
-Keep `doke.dataProvider` unset or `mock`.
+Keep `doke.dataProvider` unset or `mock`; never carry over `doke.dataProvider=api` from an older localStorage session.
 
 ## Pre-test checks
 Before any browser action that can write, inspect:
@@ -79,11 +86,12 @@ DokeAuth?.service?.getAuthIdentityCanaryStatus?.()
 Confirm:
 
 - `Doke.runtimeConfig.dataProvider === 'mock'`;
+- `Doke.services.orders.getOrdersWriteCanaryStatus().dataProvider === 'mock'`;
 - Orders provider is restricted to `api-write-canary-frontend-activation`;
 - `orderWriteActivation === true` only inside the canary session;
 - `enableNetworkRequests === true` only inside the canary session;
 - API target is staging/local-safe and not production-like;
-- Auth/Identity status is explicit if the page flow depends on authenticated users.
+- `DokeAuth.service.getAuthIdentityCanaryStatus()` is a useful auxiliary check when the test involves auth/session, but it is not a universal prerequisite for every Orders Write canary test.
 
 ## Test rules
 Use only canary accounts.
@@ -107,6 +115,7 @@ Remove query params and clear canary keys:
   'doke.canary.ordersWrite.backup.v1',
   'doke.ordersProvider',
   'doke.orderWriteActivation',
+  'doke.dataProvider',
   'doke.canary.ordersWrite.apiBaseUrl',
   'doke.apiBaseUrl',
   'doke.canary.ordersWrite.targetMarker',
