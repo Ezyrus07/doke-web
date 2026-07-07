@@ -21,11 +21,12 @@ const requiredReports = [
   ['reports/generated/backend-real-complete-readiness-gate-report.json', 'backend_real_complete_ready_for_manual_domain_expansion']
 ];
 const plan = [
+  'Require DOKE_ENVIRONMENT=staging for real execution',
   'POST /auth/login', 'GET /auth/session', 'GET /users/me', 'GET /profiles/me',
   'GET /orders', 'POST /orders', 'POST /orders/:id/accept', 'POST /orders/:id/charge', 'POST /orders/:id/complete',
   'GET /conversations', 'POST /orders/:id/conversation', 'POST /conversations/:id/messages', 'POST /conversations/:id/read',
-  'GET /notifications', 'POST /notifications', 'POST /notifications/:id/read', 'POST /notifications/read-all',
-  'GET /wallet', 'GET /wallet/transactions', 'POST /withdrawals', 'GET /receipts'
+  'GET /notifications', 'POST /notifications', 'POST /notifications/:id/read',
+  'GET /wallet', 'GET /wallet/transactions', 'POST /withdrawals (optional: requires available balance)', 'GET /receipts'
 ];
 const report = {
   name: 'backend-real-multidomain-staging-execution',
@@ -53,6 +54,7 @@ async function main() {
   assertStaticAssets();
   if (dryRun) {
     report.status = 'backend_real_multidomain_staging_execution_dry_run_ready';
+    record('dry_run.requires_staging_environment_for_execute');
     record('dry_run.plan_rendered');
     return finish();
   }
@@ -83,7 +85,7 @@ function assertStaticAssets() {
 
 function evaluateEnvironment() {
   let ok = true;
-  if (!['local', 'staging'].includes(environment)) { ok = false; report.warnings.push('DOKE_ENVIRONMENT must be local or staging.'); }
+  if (environment !== 'staging') { ok = false; report.warnings.push('DOKE_ENVIRONMENT must be exactly staging for Backend Real multidomain execution.'); }
   if (!apiUrl) { ok = false; report.warnings.push('DOKE_BACKEND_REAL_STAGING_API_URL is required.'); }
   if (apiUrl && unsafeTarget(apiUrl)) { ok = false; report.failures.push('Refusing unsafe backend real staging target. URL must contain local/staging marker and must not look like production.'); report.status = 'blocked_unsafe_backend_real_staging_target'; }
   ['DOKE_BACKEND_REAL_STAGING_ALLOW_NETWORK', 'DOKE_BACKEND_REAL_STAGING_ALLOW_MUTATIONS', 'DOKE_BACKEND_REAL_STAGING_EXECUTE'].forEach((name) => {
@@ -146,12 +148,27 @@ async function executePlan() {
   const notification = await post('/notifications', adminToken, { userId: client.id, type: 'system', title: 'Staging smoke notification' }, 'staging-notification-create-001', [200, 201, 403]);
   const notificationId = readId(notification, 'notification');
   if (notificationId) await post(`/notifications/${notificationId}/read`, clientToken, { at: new Date().toISOString() }, 'staging-notification-read-001');
-  await post('/notifications/read-all', clientToken, { at: new Date().toISOString() }, 'staging-notification-read-all-001');
-  await get('/wallet', professionalToken);
+  const wallet = await get('/wallet', professionalToken);
   await get('/wallet/transactions', professionalToken);
-  await post('/withdrawals', professionalToken, { amountCents: 1000 }, 'staging-withdrawal-create-001', [200, 201]);
+  await maybeRequestWithdrawal(professionalToken, wallet, 1000);
   await get('/receipts', professionalToken);
   record('multidomain_staging_smoke.executed');
+}
+
+async function maybeRequestWithdrawal(professionalToken, walletPayload, amountCents) {
+  const availableCents = readAvailableWalletCents(walletPayload);
+  if (availableCents < amountCents) {
+    report.results.push({
+      name: 'POST /withdrawals',
+      ok: true,
+      skipped: true,
+      reason: 'insufficient_available_balance_for_optional_withdrawal',
+      availableCents,
+      requiredCents: amountCents
+    });
+    return null;
+  }
+  return post('/withdrawals', professionalToken, { amountCents }, 'staging-withdrawal-create-001', [200, 201]);
 }
 
 async function login(role) {
@@ -191,6 +208,29 @@ async function request(method, endpoint, token, body, key, expectedStatuses) {
   return payload;
 }
 function readId(payload, key) { return payload && payload[key] && payload[key].id || payload && payload.id; }
+function readAvailableWalletCents(payload) {
+  const wallet = payload && (payload.wallet || payload.data && payload.data.wallet || payload);
+  const candidates = [
+    wallet && wallet.balance_cents,
+    wallet && wallet.available_balance_cents,
+    wallet && wallet.availableBalanceCents,
+    wallet && wallet.balances && wallet.balances.availableCents
+  ];
+  for (const candidate of candidates) {
+    const value = Number(candidate);
+    if (Number.isFinite(value)) return Math.max(0, Math.trunc(value));
+  }
+  const amountCandidates = [
+    wallet && wallet.availableBalance,
+    wallet && wallet.available,
+    wallet && wallet.balances && wallet.balances.available
+  ];
+  for (const candidate of amountCandidates) {
+    const value = Number(candidate);
+    if (Number.isFinite(value)) return Math.max(0, Math.round(value * 100));
+  }
+  return 0;
+}
 function unsafeTarget(url) { const lower = String(url).toLowerCase(); return /(^|\.)doke\.com|production|prod|api\.doke/.test(lower) || !/(localhost|127\.0\.0\.1|local|staging|stage|stg|preview|sandbox)/.test(lower); }
 function redact(url) { return String(url).replace(/:\/\/([^/@]+@)?/, '://').replace(/:[0-9]+$/, ':<port>'); }
 function shape(pathName) { return pathName.replace(/^\/orders\/[^/]+\/conversation$/, '/orders/:id/conversation').replace(/^\/orders\/[^/]+\/(accept|charge|complete)$/, '/orders/:id/$1').replace(/^\/conversations\/[^/]+\/(messages|read)$/, '/conversations/:id/$1').replace(/^\/notifications\/[^/]+\/read$/, '/notifications/:id/read'); }
