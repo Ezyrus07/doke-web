@@ -15,17 +15,23 @@ function createStagingRuntimeConfig(input) {
   const env = source.env || (typeof process !== 'undefined' ? process.env : {}) || {};
   const supabaseUrl = source.supabaseUrl || readEnv(env, 'SUPABASE_URL') || readEnv(env, 'DOKE_SUPABASE_URL');
   const anonKey = source.anonKey || readEnv(env, 'SUPABASE_ANON_KEY') || readEnv(env, 'DOKE_SUPABASE_ANON_KEY');
-  const serviceRoleKey = source.serviceRoleKey || readEnv(env, 'SUPABASE_SERVICE_ROLE_KEY') || readEnv(env, 'DOKE_SUPABASE_SERVICE_ROLE_KEY');
+  const serviceApiKey = source.serviceApiKey ||
+    source.serviceRoleKey ||
+    readEnv(env, 'SUPABASE_SECRET_KEY') ||
+    readEnv(env, 'DOKE_SUPABASE_SECRET_KEY') ||
+    readEnv(env, 'SUPABASE_SERVICE_ROLE_KEY') ||
+    readEnv(env, 'DOKE_SUPABASE_SERVICE_ROLE_KEY');
   const enableServiceRole = source.enableServiceRole === true || normalizeBoolean(readEnv(env, 'DOKE_ENABLE_SERVICE_ROLE'));
 
   return Object.freeze({
     runtime: 'staging',
     supabaseUrl: String(supabaseUrl || '').trim(),
     anonKey: String(anonKey || '').trim(),
-    serviceRoleKey: String(serviceRoleKey || '').trim(),
+    serviceApiKey: String(serviceApiKey || '').trim(),
+    serviceRoleKey: String(serviceApiKey || '').trim(),
     enableServiceRole,
     hasUserClientConfig: Boolean(supabaseUrl && anonKey),
-    hasServiceClientConfig: Boolean(supabaseUrl && serviceRoleKey && enableServiceRole),
+    hasServiceClientConfig: Boolean(supabaseUrl && serviceApiKey && enableServiceRole),
     allowNetwork: source.allowNetwork === true || normalizeBoolean(readEnv(env, 'DOKE_ENABLE_STAGING_API'))
   });
 }

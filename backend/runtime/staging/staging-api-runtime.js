@@ -25,7 +25,7 @@ function createStagingApiRuntime(options) {
 
   function createServiceSupabaseClient() {
     if (!config.hasServiceClientConfig) return null;
-    return createClient(config.supabaseUrl, config.serviceRoleKey, {
+    return createClient(config.supabaseUrl, config.serviceApiKey || config.serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false }
     });
   }
