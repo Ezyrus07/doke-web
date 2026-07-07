@@ -1,21 +1,21 @@
 # CSS active debt map
 
-Gerado em: 2026-07-07T14:58:41.105Z
+Gerado em: 2026-07-07T22:08:35.332Z
 
 ## Resumo
 
 - HTMLs raiz avaliados: 22
-- Arquivos CSS com dívida registrada: 42
-- Dívida ativa carregada por HTML raiz: 1102 uso(s) em 13 arquivo(s)
-- Dívida dormente no pacote: 11286 uso(s) em 29 arquivo(s)
+- Arquivos CSS com dívida registrada: 37
+- Dívida ativa carregada por HTML raiz: 1018 uso(s) em 9 arquivo(s)
+- Dívida dormente no pacote: 10747 uso(s) em 28 arquivo(s)
 
 ## Resumo por grupo
 
 | Grupo | Ativos | Uso ativo | Dormentes | Uso dormente |
 |---|---:|---:|---:|---:|
-| card-contract | 4 | 446 | 3 | 1000 |
-| page-responsive-contract | 6 | 590 | 5 | 1641 |
-| responsive-shell | 3 | 66 | 21 | 8645 |
+| card-contract | 3 | 431 | 3 | 1000 |
+| page-responsive-contract | 5 | 556 | 4 | 1102 |
+| responsive-shell | 1 | 31 | 21 | 8645 |
 
 ## Dívida ativa carregada
 
@@ -28,12 +28,8 @@ Gerado em: 2026-07-07T14:58:41.105Z
 | `assets/css/components/cards/service-card-home-hero-feed.css` | card-contract | 72 | index.html |
 | `assets/css/pages/home/mobile-layout.css` | page-responsive-contract | 67 | index.html |
 | `assets/css/pages/home/mobile-interactions.css` | page-responsive-contract | 50 | index.html |
-| `assets/css/pages/home/mobile-alignment.css` | page-responsive-contract | 47 | index.html |
-| `assets/css/components/shell/mobile-base-stability.css` | responsive-shell | 40 | admin.html, carteira.html, comunidade.html, configuracoes.html, index.html, mensagens.html, meu-perfil.html, notificacoes.html, pedidos.html, perfil-cliente.html, perfil-profissional.html, perfil.html |
-| `assets/css/layout/header.css` | page-responsive-contract | 16 | admin.html, ajuda.html, anunciar-servico.html, avaliacao-profissional.html, carteira.html, comunidade-interna.html, comunidade.html, configuracoes.html, detalhe-anuncio.html, index.html, mensagens.html, meu-perfil.html, notificacoes.html, novidades.html, orcamento.html, pagamento-profissional.html, pedidos.html, perfil-cliente.html, perfil-profissional.html, perfil.html, resultados.html, tornar-profissional.html |
-| `assets/css/components/cards/ad-card.css` | card-contract | 15 | admin.html, ajuda.html, anunciar-servico.html, avaliacao-profissional.html, carteira.html, comunidade-interna.html, comunidade.html, configuracoes.html, detalhe-anuncio.html, index.html, mensagens.html, meu-perfil.html, notificacoes.html, novidades.html, orcamento.html, pagamento-profissional.html, pedidos.html, perfil-cliente.html, perfil-profissional.html, perfil.html, resultados.html, tornar-profissional.html |
-| `assets/css/components/shell/responsive-boundary.css` | responsive-shell | 15 | admin.html, carteira.html, comunidade-interna.html, comunidade.html, configuracoes.html, index.html, mensagens.html, meu-perfil.html, notificacoes.html, pedidos.html, perfil-cliente.html, perfil-profissional.html, perfil.html |
-| `assets/css/components/shell/page-container-contract.css` | responsive-shell | 11 | index.html |
+| `assets/css/components/shell/mobile-base-stability.css` | responsive-shell | 31 | admin.html, carteira.html, comunidade.html, configuracoes.html, index.html, mensagens.html, meu-perfil.html, notificacoes.html, pedidos.html, perfil-cliente.html, perfil-profissional.html, perfil.html |
+| `assets/css/pages/home/mobile-alignment.css` | page-responsive-contract | 29 | index.html |
 
 ## Candidatos dormentes
 
@@ -45,7 +41,6 @@ Esses arquivos continuam no pacote e no orçamento técnico, mas não aparecem n
 | `assets/css/pages/home-tablet-v2.css` | responsive-shell | 1266 | high |
 | `assets/css/components/navigation/app-mobile-header-contract.css` | responsive-shell | 700 | high |
 | `assets/css/components/shell/app-header.css` | responsive-shell | 581 | high |
-| `assets/css/pages/home/tablet-responsive-layout.css` | page-responsive-contract | 539 | medium |
 | `assets/css/components/layout/responsive-priority-contract.css` | responsive-shell | 477 | high |
 | `assets/css/patterns/marketplace-responsive-stack.css` | card-contract | 468 | high |
 | `assets/css/components/cards/marketplace-responsive-card-stack.css` | card-contract | 436 | high |
