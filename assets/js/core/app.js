@@ -57,9 +57,7 @@ const ensureInstantRouteStyle = () => {
 };
 ensureInstantRouteStyle();
 const SIDEBAR_STORAGE_KEY = "doke.sidebar.collapsed";
-const SIDEBAR_QUICK_PANEL_STATE_KEY = "doke.sidebar.quick-panel.active-type.v1";
 const SIDEBAR_QUICK_ALERT_DURATION_MS = 1120;
-const SIDEBAR_QUICK_NOTICE_DURATION_MS = 2800;
 const SIDEBAR_QUICK_NOTICE_STAGGER_MS = 3040;
 const SIDEBAR_QUICK_ALERT_STAGGER_MS = 180;
 const SIDEBAR_COLLAPSED_HTML_CLASS = "doke-sidebar-collapsed";
@@ -82,8 +80,9 @@ const MESSAGES_VIEW_PATH = "/mensagens.html";
 const SIDEBAR_PRIMARY_VIEWS = ["/index.html", "/pedidos.html", "/notificacoes.html", "/comunidade.html", INTERNAL_PROFILE_PATH, "/configuracoes.html"];
 let sidebarViewsHinted = false;
 let sidebarQuickCountsSnapshot = null;
+let sidebarQuickPrioritySignature = null;
 const sidebarQuickAlertTimers = new Map();
-const sidebarQuickNoticeTimers = new Map();
+const sidebarQuickTransitionTimers = new Map();
 const isTabletLandscapeSidebarViewport = () => false;
 const isMobileSidebarViewport = () => window.innerWidth < 1200;
 const isTabletSidebarViewport = () => false;
@@ -234,52 +233,20 @@ const SHARED_SIDEBAR_MARKUP = `
     <div class="brand-logo" aria-label="Doke" data-sidebar-brand-logo>
       <img src="assets/img/doke-logo-lockup.png" alt="Doke" />
     </div>
-    <div class="sidebar__quick-chip" data-sidebar-quick-chip hidden aria-label="Resumo rápido de pendências">
-      <div class="sidebar__quick-chip-stats" data-sidebar-quick-chip-stats>
-        <button class="sidebar__quick-chip-stat sidebar__quick-chip-stat--orders" type="button" aria-label="Abrir painel rápido de pedidos" data-sidebar-quick-open="orders" data-sidebar-quick-target="orders">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg>
-          <strong data-sidebar-quick-chip-orders>0</strong>
-        </button>
-        <button class="sidebar__quick-chip-stat sidebar__quick-chip-stat--messages" type="button" aria-label="Abrir painel rápido de mensagens" data-sidebar-quick-open="messages" data-sidebar-quick-target="messages">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v10H8l-4 4V6z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg>
-          <strong data-sidebar-quick-chip-messages>0</strong>
-        </button>
-        <button class="sidebar__quick-chip-stat sidebar__quick-chip-stat--notifications" type="button" aria-label="Abrir painel rápido de notificações" data-sidebar-quick-open="notifications" data-sidebar-quick-target="notifications">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.5a4.8 4.8 0 0 0-4.8 4.8v2.6c0 1.4-.4 2.7-1.2 3.8h12c-.8-1.1-1.2-2.4-1.2-3.8V9.3A4.8 4.8 0 0 0 12 4.5z"></path><path d="M9.5 18a2.5 2.5 0 0 0 5 0"></path></svg>
-          <strong data-sidebar-quick-chip-notifications>0</strong>
-        </button>
-        <button class="sidebar__quick-expand" type="button" data-sidebar-quick-open="orders" aria-expanded="false" aria-controls="sidebar-quick-panel" aria-label="Abrir painel rápido de pedidos">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
-        </button>
-      </div>
-      <a class="sidebar__quick-notice" href="pedidos.html" data-sidebar-quick-notice hidden aria-live="polite">
-        <span class="sidebar__quick-notice-icon sidebar__quick-notice-icon--orders" data-sidebar-quick-notice-icon="orders" hidden aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg></span>
-        <span class="sidebar__quick-notice-icon sidebar__quick-notice-icon--messages" data-sidebar-quick-notice-icon="messages" hidden aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg></span>
-        <span class="sidebar__quick-notice-icon sidebar__quick-notice-icon--notifications" data-sidebar-quick-notice-icon="notifications" hidden aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4.5a4.8 4.8 0 0 0-4.8 4.8v2.6c0 1.4-.4 2.7-1.2 3.8h12c-.8-1.1-1.2-2.4-1.2-3.8V9.3A4.8 4.8 0 0 0 12 4.5z"></path><path d="M9.5 18a2.5 2.5 0 0 0 5 0"></path></svg></span>
-        <span class="sidebar__quick-notice-copy">
-          <strong data-sidebar-quick-notice-title>Novo pedido recebido</strong>
-          <span data-sidebar-quick-notice-action>Ver pedidos</span>
+    <div class="sidebar__quick-chip" data-sidebar-quick-chip hidden aria-label="Prioridade profissional">
+      <a class="sidebar__quick-priority" href="perfil-profissional.html" data-sidebar-quick-priority data-sidebar-quick-target="profile" aria-live="polite">
+        <span class="sidebar__quick-priority-icon sidebar__quick-priority-icon--orders" data-sidebar-quick-priority-icon="orders" hidden aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg></span>
+        <span class="sidebar__quick-priority-icon sidebar__quick-priority-icon--messages" data-sidebar-quick-priority-icon="messages" hidden aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg></span>
+        <span class="sidebar__quick-priority-icon sidebar__quick-priority-icon--notifications" data-sidebar-quick-priority-icon="notifications" hidden aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4.5a4.8 4.8 0 0 0-4.8 4.8v2.6c0 1.4-.4 2.7-1.2 3.8h12c-.8-1.1-1.2-2.4-1.2-3.8V9.3A4.8 4.8 0 0 0 12 4.5z"></path><path d="M9.5 18a2.5 2.5 0 0 0 5 0"></path></svg></span>
+        <span class="sidebar__quick-priority-icon sidebar__quick-priority-icon--profile" data-sidebar-quick-priority-icon="profile" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"></path><path d="M4.8 20c1.1-3.4 3.6-5.2 7.2-5.2s6.1 1.8 7.2 5.2"></path></svg></span>
+        <span class="sidebar__quick-priority-copy">
+          <span class="sidebar__quick-priority-kicker" data-sidebar-quick-priority-kicker>Ação recomendada</span>
+          <strong data-sidebar-quick-priority-title>Complete seu perfil</strong>
+          <span data-sidebar-quick-priority-summary>Receba mais pedidos</span>
         </span>
+        <span class="sidebar__quick-priority-action" data-sidebar-quick-priority-action aria-hidden="true">Completar</span>
       </a>
     </div>
-    <section id="sidebar-quick-panel" class="sidebar__quick-panel" data-sidebar-quick-panel hidden aria-live="polite">
-      <button class="sidebar__quick-collapse" type="button" data-sidebar-quick-collapse aria-label="Recolher painel rápido">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg>
-      </button>
-      <div class="sidebar__quick-panel-head">
-        <span class="sidebar__quick-panel-kicker">Painel rápido</span>
-        <strong class="sidebar__quick-panel-title" data-sidebar-quick-title>Atualizações pendentes</strong>
-        <p class="sidebar__quick-panel-summary" data-sidebar-quick-summary>Sem atualizações no momento.</p>
-      </div>
-      <div class="sidebar__quick-detail" data-sidebar-quick-detail data-sidebar-quick-target="orders">
-        <span class="sidebar__quick-detail-icon sidebar__quick-detail-icon--orders" data-sidebar-quick-detail-icon="orders" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 5.5h10"></path><path d="M7 9.5h10"></path><path d="M7 13.5h6"></path><path d="M5 4h14v16H5z"></path></svg></span>
-        <span class="sidebar__quick-detail-icon sidebar__quick-detail-icon--messages" data-sidebar-quick-detail-icon="messages" hidden aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg></span>
-        <span class="sidebar__quick-detail-icon sidebar__quick-detail-icon--notifications" data-sidebar-quick-detail-icon="notifications" hidden aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4.5a4.8 4.8 0 0 0-4.8 4.8v2.6c0 1.4-.4 2.7-1.2 3.8h12c-.8-1.1-1.2-2.4-1.2-3.8V9.3A4.8 4.8 0 0 0 12 4.5z"></path><path d="M9.5 18a2.5 2.5 0 0 0 5 0"></path></svg></span>
-        <span class="sidebar__quick-detail-label" data-sidebar-quick-detail-label>Pedidos</span>
-        <strong class="sidebar__quick-detail-value" data-sidebar-quick-detail-value>0</strong>
-      </div>
-      <a class="sidebar__quick-panel-action" href="pedidos.html" data-sidebar-quick-action>Ver pedidos <span aria-hidden="true">→</span></a>
-    </section>
   </div>
 
   <div class="sidebar__group">
@@ -440,72 +407,59 @@ const SIDEBAR_QUICK_UPDATE_TYPES = ['orders', 'messages', 'notifications'];
 
 const isSidebarQuickType = (value) => SIDEBAR_QUICK_UPDATE_TYPES.includes(value);
 
-const readSidebarQuickActiveType = () => {
-  try {
-    const stored = window.localStorage.getItem(SIDEBAR_QUICK_PANEL_STATE_KEY) || '';
-    return isSidebarQuickType(stored) ? stored : '';
-  } catch {
-    return '';
-  }
-};
-
-const writeSidebarQuickActiveType = (type) => {
-  try {
-    if (!isSidebarQuickType(type)) {
-      window.localStorage.removeItem(SIDEBAR_QUICK_PANEL_STATE_KEY);
-      return;
-    }
-    window.localStorage.setItem(SIDEBAR_QUICK_PANEL_STATE_KEY, type);
-  } catch {}
-};
-
-const joinSidebarQuickSegments = (segments) => {
-  if (!segments.length) return '';
-  if (segments.length === 1) return segments[0];
-  if (segments.length === 2) return segments[0] + ' e ' + segments[1];
-  return segments.slice(0, -1).join(', ') + ' e ' + segments[segments.length - 1];
-};
-
-const SIDEBAR_QUICK_CONFIG = {
+const SIDEBAR_QUICK_PRIORITY_CONFIG = {
   orders: {
-    title: 'Pedidos',
-    label: 'Pendentes',
     href: 'pedidos.html',
-    action: 'Ver pedidos',
-    unitSingular: 'pedido',
-    unitPlural: 'pedidos',
+    action: 'Ver pedido',
+    kicker: 'Prioridade agora',
+    title(count) {
+      return count === 1 ? 'Novo pedido recebido' : `${count} pedidos aguardando`;
+    },
     summary(count) {
-      return count === 1 ? '1 pedido aguardando.' : `${count} pedidos aguardando.`;
+      return count === 1 ? 'Responda rápido para aumentar sua chance.' : 'Responda os pedidos mais recentes primeiro.';
     },
   },
   messages: {
-    title: 'Mensagens',
-    label: 'Não lidas',
     href: 'mensagens.html',
-    action: 'Abrir mensagens',
-    unitSingular: 'conversa',
-    unitPlural: 'conversas',
+    action: 'Responder',
+    kicker: 'Cliente aguardando',
+    title(count) {
+      return count === 1 ? 'Mensagem não lida' : `${count} mensagens não lidas`;
+    },
     summary(count) {
-      return count === 1 ? '1 conversa não lida.' : `${count} conversas não lidas.`;
+      return count === 1 ? 'Uma conversa precisa da sua resposta.' : 'Priorize clientes que já chamaram você.';
     },
   },
   notifications: {
-    title: 'Avisos',
-    label: 'Pendentes',
     href: 'notificacoes.html',
-    action: 'Ver avisos',
-    unitSingular: 'aviso',
-    unitPlural: 'avisos',
-    summary(count) {
-      return count === 1 ? '1 aviso aguardando leitura.' : `${count} avisos aguardando leitura.`;
+    action: 'Ver agora',
+    kicker: 'Avisos pendentes',
+    title(count) {
+      return count === 1 ? 'Nova notificação' : `${count} notificações novas`;
+    },
+    summary() {
+      return 'Revise atualizações importantes da sua conta.';
+    },
+  },
+  profile: {
+    href: 'perfil-profissional.html',
+    action: 'Completar',
+    kicker: 'Ação recomendada',
+    title() {
+      return 'Complete seu perfil';
+    },
+    summary() {
+      return 'Perfis completos recebem mais pedidos.';
     },
   },
 };
 
-const resolveSidebarQuickDefaultType = (counts) => {
-  if ((counts?.orders || 0) > 0) return 'orders';
-  if ((counts?.messages || 0) > 0) return 'messages';
-  return 'notifications';
+const resolveSidebarQuickPriority = (counts) => {
+  const normalized = cloneSidebarQuickCounts(counts);
+  if (normalized.orders > 0) return { type: 'orders', count: normalized.orders, ...SIDEBAR_QUICK_PRIORITY_CONFIG.orders };
+  if (normalized.messages > 0) return { type: 'messages', count: normalized.messages, ...SIDEBAR_QUICK_PRIORITY_CONFIG.messages };
+  if (normalized.notifications > 0) return { type: 'notifications', count: normalized.notifications, ...SIDEBAR_QUICK_PRIORITY_CONFIG.notifications };
+  return { type: 'profile', count: 0, ...SIDEBAR_QUICK_PRIORITY_CONFIG.profile };
 };
 
 const getSidebarQuickCounts = () => ({
@@ -520,30 +474,6 @@ const cloneSidebarQuickCounts = (counts) => ({
   notifications: Math.max(0, Number(counts?.notifications) || 0),
 });
 
-const getSidebarQuickNoticeCopy = (type, delta) => {
-  const value = Math.max(1, Number(delta) || 1);
-  const config = SIDEBAR_QUICK_CONFIG[type] || SIDEBAR_QUICK_CONFIG.orders;
-  if (type === 'orders') {
-    return {
-      title: value === 1 ? 'Novo pedido recebido' : `${value} pedidos recebidos`,
-      action: config.action,
-      href: config.href,
-    };
-  }
-  if (type === 'messages') {
-    return {
-      title: value === 1 ? 'Nova mensagem recebida' : `${value} mensagens recebidas`,
-      action: config.action,
-      href: config.href,
-    };
-  }
-  return {
-    title: value === 1 ? 'Nova notificação' : `${value} novas notificações`,
-    action: config.action,
-    href: config.href,
-  };
-};
-
 const resetSidebarQuickAttentionNode = (node) => {
   if (!node) return;
   const timer = sidebarQuickAlertTimers.get(node);
@@ -552,49 +482,16 @@ const resetSidebarQuickAttentionNode = (node) => {
   node.classList.remove('is-updating', 'is-reacting');
 };
 
-const resetSidebarQuickNotice = (chip) => {
-  if (!chip) return;
-  const timer = sidebarQuickNoticeTimers.get(chip);
-  if (timer) window.clearTimeout(timer);
-  sidebarQuickNoticeTimers.delete(chip);
-  const statsNode = chip.querySelector('[data-sidebar-quick-chip-stats]');
-  const noticeNode = chip.querySelector('[data-sidebar-quick-notice]');
-  if (statsNode) statsNode.hidden = false;
-  if (noticeNode) noticeNode.hidden = true;
-  chip.classList.remove('is-showing-notice', 'is-reacting');
-};
-
-const showSidebarQuickChipNotice = (type, delta, delay = 0) => {
-  window.setTimeout(() => {
-    const chip = document.querySelector('[data-sidebar-quick-chip]');
-    if (!chip || chip.hidden) return;
-    const noticeNode = chip.querySelector('[data-sidebar-quick-notice]');
-    const statsNode = chip.querySelector('[data-sidebar-quick-chip-stats]');
-    if (!noticeNode || !statsNode) return;
-
-    const copy = getSidebarQuickNoticeCopy(type, delta);
-    const titleNode = noticeNode.querySelector('[data-sidebar-quick-notice-title]');
-    const actionNode = noticeNode.querySelector('[data-sidebar-quick-notice-action]');
-    noticeNode.dataset.sidebarQuickNoticeType = type;
-    noticeNode.setAttribute('href', copy.href);
-    noticeNode.setAttribute('aria-label', `${copy.title}. ${copy.action}`);
-    if (titleNode) titleNode.textContent = copy.title;
-    if (actionNode) actionNode.textContent = copy.action;
-    noticeNode.querySelectorAll('[data-sidebar-quick-notice-icon]').forEach((icon) => {
-      icon.hidden = icon.getAttribute('data-sidebar-quick-notice-icon') !== type;
-    });
-
-    statsNode.hidden = true;
-    noticeNode.hidden = false;
-    chip.classList.add('is-showing-notice', 'is-reacting');
-    void chip.offsetWidth;
-
-    const currentNoticeTimer = sidebarQuickNoticeTimers.get(chip);
-    if (currentNoticeTimer) window.clearTimeout(currentNoticeTimer);
-    sidebarQuickNoticeTimers.set(chip, window.setTimeout(() => {
-      resetSidebarQuickNotice(chip);
-    }, SIDEBAR_QUICK_NOTICE_DURATION_MS));
-  }, delay);
+const showSidebarQuickChipNotice = () => {
+  const chip = document.querySelector('[data-sidebar-quick-chip]');
+  if (!chip || chip.hidden) return;
+  resetSidebarQuickAttentionNode(chip);
+  chip.classList.add('is-reacting');
+  void chip.offsetWidth;
+  sidebarQuickAlertTimers.set(chip, window.setTimeout(() => {
+    chip.classList.remove('is-reacting');
+    sidebarQuickAlertTimers.delete(chip);
+  }, SIDEBAR_QUICK_ALERT_DURATION_MS));
 };
 
 const triggerSidebarQuickTargetAttention = (type, delay = 0) => {
@@ -609,7 +506,7 @@ const triggerSidebarQuickTargetAttention = (type, delay = 0) => {
       }, SIDEBAR_QUICK_ALERT_DURATION_MS));
     });
 
-    document.querySelectorAll('[data-sidebar-quick-chip]:not([hidden]), [data-sidebar-quick-panel]:not([hidden])').forEach((surface) => {
+    document.querySelectorAll('[data-sidebar-quick-chip]:not([hidden])').forEach((surface) => {
       resetSidebarQuickAttentionNode(surface);
       surface.classList.add('is-reacting');
       void surface.offsetWidth;
@@ -643,81 +540,75 @@ const triggerSidebarQuickAttention = (deltas) => {
   if (!Array.isArray(deltas) || !deltas.length) return;
   deltas.forEach((entry, index) => {
     triggerSidebarQuickTargetAttention(entry.type, index * SIDEBAR_QUICK_ALERT_STAGGER_MS);
-    showSidebarQuickChipNotice(entry.type, entry.delta, index * SIDEBAR_QUICK_NOTICE_STAGGER_MS);
+    window.setTimeout(showSidebarQuickChipNotice, index * SIDEBAR_QUICK_NOTICE_STAGGER_MS);
   });
 };
 
+const triggerSidebarQuickPriorityTransition = (priorityCard, signature) => {
+  if (!priorityCard || sidebarQuickPrioritySignature === signature) return;
+  sidebarQuickPrioritySignature = signature;
+
+  const previousTimer = sidebarQuickTransitionTimers.get(priorityCard);
+  if (previousTimer) window.clearTimeout(previousTimer);
+
+  priorityCard.classList.remove('is-transitioning');
+  void priorityCard.offsetWidth;
+  priorityCard.classList.add('is-transitioning');
+
+  sidebarQuickTransitionTimers.set(priorityCard, window.setTimeout(() => {
+    priorityCard.classList.remove('is-transitioning');
+    sidebarQuickTransitionTimers.delete(priorityCard);
+  }, 260));
+};
+
 const syncSidebarQuickPanel = () => {
-  const panel = document.querySelector('[data-sidebar-quick-panel]');
   const chip = document.querySelector('[data-sidebar-quick-chip]');
+  const priorityCard = document.querySelector('[data-sidebar-quick-priority]');
   const brandLogo = document.querySelector('[data-sidebar-brand-logo]');
   const brand = document.querySelector('[data-sidebar-brand]');
-  if (!panel || !chip || !brandLogo || !brand) return;
+  if (!chip || !priorityCard || !brandLogo || !brand) return;
 
   const user = getCurrentSessionUser();
   const counts = getSidebarQuickCounts();
-  const hasUpdates = counts.orders > 0 || counts.messages > 0 || counts.notifications > 0;
-  const shouldMount = isProfessionalSessionUser(user) && hasUpdates;
+  const shouldMount = isProfessionalSessionUser(user);
   const deltas = getSidebarQuickCountDeltas(counts, shouldMount);
-  const activeType = shouldMount ? readSidebarQuickActiveType() : '';
-  const isExpanded = shouldMount && isSidebarQuickType(activeType);
+  const priority = resolveSidebarQuickPriority(counts);
+  const title = priority.title(priority.count);
+  const summary = priority.summary(priority.count);
 
   brandLogo.hidden = false;
-  chip.hidden = !shouldMount || isExpanded;
-  panel.hidden = !shouldMount || !isExpanded;
-  brand.dataset.sidebarQuickState = isExpanded ? 'expanded' : shouldMount ? 'collapsed' : 'idle';
-  brand.dataset.sidebarQuickActiveType = isExpanded ? activeType : '';
-
-  const expandButton = chip.querySelector('.sidebar__quick-expand[data-sidebar-quick-open="orders"]');
-  if (expandButton) expandButton.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
-
-  if (!shouldMount || isExpanded) resetSidebarQuickNotice(chip);
+  chip.hidden = !shouldMount;
+  brand.dataset.sidebarQuickState = shouldMount ? 'priority' : 'idle';
+  brand.dataset.sidebarQuickActiveType = shouldMount ? priority.type : '';
   if (!shouldMount) return;
 
-  const chipOrdersNode = chip.querySelector('[data-sidebar-quick-chip-orders]');
-  const chipMessagesNode = chip.querySelector('[data-sidebar-quick-chip-messages]');
-  const chipNotificationsNode = chip.querySelector('[data-sidebar-quick-chip-notifications]');
+  priorityCard.dataset.sidebarQuickTarget = priority.type;
+  priorityCard.dataset.sidebarQuickPriorityType = priority.type;
+  priorityCard.setAttribute('href', priority.href);
+  priorityCard.setAttribute('aria-label', `${priority.kicker}. ${title}. ${summary} ${priority.action}.`);
 
-  if (chipOrdersNode) chipOrdersNode.textContent = String(Math.max(0, counts.orders || 0));
-  if (chipMessagesNode) chipMessagesNode.textContent = String(Math.max(0, counts.messages || 0));
-  if (chipNotificationsNode) chipNotificationsNode.textContent = String(Math.max(0, counts.notifications || 0));
+  const kickerNode = priorityCard.querySelector('[data-sidebar-quick-priority-kicker]');
+  const titleNode = priorityCard.querySelector('[data-sidebar-quick-priority-title]');
+  const summaryNode = priorityCard.querySelector('[data-sidebar-quick-priority-summary]');
+  const actionNode = priorityCard.querySelector('[data-sidebar-quick-priority-action]');
 
-  if (isExpanded) {
-    const config = SIDEBAR_QUICK_CONFIG[activeType] || SIDEBAR_QUICK_CONFIG.orders;
-    const value = Math.max(0, Number(counts[activeType]) || 0);
-    const titleNode = panel.querySelector('[data-sidebar-quick-title]');
-    const summaryNode = panel.querySelector('[data-sidebar-quick-summary]');
-    const detailNode = panel.querySelector('[data-sidebar-quick-detail]');
-    const detailLabelNode = panel.querySelector('[data-sidebar-quick-detail-label]');
-    const detailValueNode = panel.querySelector('[data-sidebar-quick-detail-value]');
-    const actionNode = panel.querySelector('[data-sidebar-quick-action]');
+  if (kickerNode) kickerNode.textContent = priority.kicker;
+  if (titleNode) titleNode.textContent = title;
+  if (summaryNode) summaryNode.textContent = summary;
+  if (actionNode) actionNode.textContent = priority.action;
 
-    if (titleNode) titleNode.textContent = config.title;
-    if (summaryNode) summaryNode.textContent = config.summary(value);
-    if (detailNode) {
-      detailNode.dataset.sidebarQuickTarget = activeType;
-      detailNode.dataset.sidebarQuickType = activeType;
-    }
-    panel.querySelectorAll('[data-sidebar-quick-detail-icon]').forEach((icon) => {
-      icon.hidden = icon.getAttribute('data-sidebar-quick-detail-icon') !== activeType;
-    });
-    if (detailLabelNode) detailLabelNode.textContent = config.label;
-    if (detailValueNode) {
-      const unit = value === 1 ? config.unitSingular : config.unitPlural;
-      detailValueNode.textContent = `${value} ${unit}`;
-    }
-    if (actionNode) {
-      actionNode.setAttribute('href', config.href);
-      actionNode.firstChild.textContent = config.action + ' ';
-    }
-  }
+  priorityCard.querySelectorAll('[data-sidebar-quick-priority-icon]').forEach((icon) => {
+    icon.hidden = icon.getAttribute('data-sidebar-quick-priority-icon') !== priority.type;
+  });
 
+  triggerSidebarQuickPriorityTransition(priorityCard, [
+    priority.type,
+    priority.href,
+    title,
+    summary,
+    priority.action,
+  ].join('|'));
   triggerSidebarQuickAttention(deltas);
-};
-
-const setSidebarQuickPanelActiveType = (type) => {
-  writeSidebarQuickActiveType(type);
-  syncSidebarQuickPanel();
 };
 
 const syncSidebarOperationalBadges = () => {
@@ -2129,19 +2020,6 @@ document.addEventListener("click", (event) => {
     const nextCollapsed = !body.classList.contains("sidebar-collapsed");
     window.localStorage.setItem(SIDEBAR_STORAGE_KEY, nextCollapsed ? "true" : "false");
     syncSidebarCollapsedState();
-    return;
-  }
-
-  const sidebarQuickOpenButton = event.target.closest('[data-sidebar-quick-open]');
-  if (sidebarQuickOpenButton) {
-    const type = sidebarQuickOpenButton.getAttribute('data-sidebar-quick-open') || resolveSidebarQuickDefaultType(getSidebarQuickCounts());
-    setSidebarQuickPanelActiveType(type);
-    return;
-  }
-
-  const sidebarQuickCollapseButton = event.target.closest('[data-sidebar-quick-collapse]');
-  if (sidebarQuickCollapseButton) {
-    setSidebarQuickPanelActiveType('');
     return;
   }
 

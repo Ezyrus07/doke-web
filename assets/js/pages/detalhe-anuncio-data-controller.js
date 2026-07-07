@@ -38,6 +38,13 @@
   function setDataState(root, state, message) {
     if (!root || !root.dataset) return;
     root.dataset.dataState = state;
+    if (state === 'loading') {
+      root.dataset.detailLayoutState = 'data-loading';
+    } else if (state === 'ready') {
+      root.dataset.detailLayoutState = 'service-view';
+    } else if (state === 'empty' || state === 'error') {
+      root.dataset.detailLayoutState = state;
+    }
     if (message) root.dataset.dataMessage = message;
     else delete root.dataset.dataMessage;
   }

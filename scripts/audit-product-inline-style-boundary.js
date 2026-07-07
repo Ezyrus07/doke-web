@@ -3,60 +3,148 @@ const path = require('path');
 
 const ROOT = process.cwd();
 const REPORT = path.join(ROOT, 'docs/validation/global-cycle-101-product-inline-style-boundary-report.json');
-const PAGES = ['perfil.html', 'pedidos.html', 'carteira.html'];
-const REQUIRED = {
-  'perfil.html': ['data-progress-value="20"'],
-  'pedidos.html': ['data-progress-value="52"', 'data-progress-value="100"'],
-  'carteira.html': ['data-progress-value="52"', 'data-progress-value="28"', 'data-progress-value="20"'],
-};
+const HTML_FILES = [
+  'perfil.html',
+  'pedidos.html',
+  'carteira.html',
+  'anunciar-servico.html',
+  'tornar-profissional.html',
+  'orcamento.html',
+];
+
+const FLOW_PAGES = [
+  'anunciar-servico.html',
+  'tornar-profissional.html',
+  'orcamento.html',
+];
+
+const FLOW_SCRIPTS = [
+  'assets/js/pages/anunciar-servico.js',
+  'assets/js/pages/tornar-profissional.js',
+  'assets/js/pages/orcamento.js',
+];
+
+const CSS_CONTRACTS = [
+  {
+    file: 'assets/css/components/forms/form-page-top-contract.css',
+    requiredTokens: [
+      'data-step-progress-value="25"',
+      'data-step-progress-value="50"',
+      'data-step-progress-value="75"',
+      'data-step-progress-value="100"',
+    ],
+  },
+  {
+    file: 'assets/css/components/cards/card-system.css',
+    requiredTokens: [
+      'data-progress-value="52"',
+      'data-progress-value="100"',
+    ],
+  },
+  {
+    file: 'assets/css/pages/carteira.css',
+    requiredTokens: [
+      'wallet-progress-meter',
+    ],
+  },
+];
+
+function read(file) {
+  return fs.readFileSync(path.join(ROOT, file), 'utf8');
+}
+
+function exists(file) {
+  return fs.existsSync(path.join(ROOT, file));
+}
 
 function lineOf(text, index) {
   return text.slice(0, index).split(/\r?\n/).length;
 }
 
-const pageReports = PAGES.map((file) => {
-  const filePath = path.join(ROOT, file);
-  const text = fs.readFileSync(filePath, 'utf8');
-  const inlineMatches = [...text.matchAll(/\sstyle\s*=\s*"[^"]*"/g)].map((match) => ({
+function findInlineStyles(text) {
+  return [...text.matchAll(/\sstyle\s*=\s*"[^"]*"/g)].map((match) => ({
     line: lineOf(text, match.index),
     value: match[0].trim(),
   }));
-  const missingRequiredHooks = REQUIRED[file].filter((token) => !text.includes(token));
+}
+
+const pageReports = HTML_FILES.map((file) => {
+  const text = read(file);
+  const inlineStyles = findInlineStyles(text);
+  const requiredProgressTokens = FLOW_PAGES.includes(file) ? ['data-step-progress-fill', 'data-step-progress-value="25"'] : [];
+  const missingRequiredHooks = requiredProgressTokens.filter((token) => !text.includes(token));
   return {
     file,
-    inlineStyleCount: inlineMatches.length,
-    inlineStyles: inlineMatches,
-    requiredProgressTokens: REQUIRED[file],
+    inlineStyleCount: inlineStyles.length,
+    inlineStyles,
+    requiredProgressTokens,
     missingRequiredHooks,
-    status: inlineMatches.length === 0 && missingRequiredHooks.length === 0 ? 'passed' : 'failed',
+    status: inlineStyles.length === 0 && missingRequiredHooks.length === 0 ? 'passed' : 'failed',
   };
 });
 
-const cssContracts = [
-  'assets/css/pages/perfil-budget-modal/quote-flow.css',
-  'assets/css/components/cards/card-system.css',
-  'assets/css/pages/carteira.css',
-].map((file) => {
-  const text = fs.readFileSync(path.join(ROOT, file), 'utf8');
-  const tokenCount = (text.match(/data-progress-value/g) || []).length;
-  return { file, tokenCount, status: tokenCount > 0 ? 'passed' : 'failed' };
+const scriptReports = FLOW_SCRIPTS.map((file) => {
+  const text = read(file);
+  const forbiddenPatterns = [
+    'progressFill.style.width',
+    '.style.width =',
+  ].filter((token) => text.includes(token));
+  const requiredTokens = ['dataset.stepProgressValue'];
+  const missingRequiredHooks = requiredTokens.filter((token) => !text.includes(token));
+  return {
+    file,
+    forbiddenPatterns,
+    requiredTokens,
+    missingRequiredHooks,
+    status: forbiddenPatterns.length === 0 && missingRequiredHooks.length === 0 ? 'passed' : 'failed',
+  };
+});
+
+const cssContracts = CSS_CONTRACTS.map((contract) => {
+  if (!exists(contract.file)) {
+    return {
+      file: contract.file,
+      exists: false,
+      requiredTokens: contract.requiredTokens,
+      missingTokens: contract.requiredTokens,
+      status: 'failed',
+    };
+  }
+  const text = read(contract.file);
+  const missingTokens = contract.requiredTokens.filter((token) => !text.includes(token));
+  return {
+    file: contract.file,
+    exists: true,
+    requiredTokens: contract.requiredTokens,
+    missingTokens,
+    status: missingTokens.length === 0 ? 'passed' : 'failed',
+  };
 });
 
 const report = {
   cycle: 101,
   title: 'Product inline style boundary',
-  goal: 'Remove inline width styles from selected product pages without changing layout intent.',
+  goal: 'Keep product pages free of HTML inline styles and keep flow progress controlled by data attributes instead of JS style.width writes.',
   visualContract: 'preserved-no-redesign',
   pages: pageReports,
+  scripts: scriptReports,
   cssContracts,
-  summary: {
-    pageCount: pageReports.length,
-    inlineStyleCount: pageReports.reduce((sum, page) => sum + page.inlineStyleCount, 0),
-    failedPages: pageReports.filter((page) => page.status !== 'passed').map((page) => page.file),
-    failedCssContracts: cssContracts.filter((item) => item.status !== 'passed').map((item) => item.file),
-  },
 };
-report.status = report.summary.failedPages.length === 0 && report.summary.failedCssContracts.length === 0 ? 'passed' : 'failed';
+
+report.summary = {
+  pageCount: pageReports.length,
+  inlineStyleCount: pageReports.reduce((sum, page) => sum + page.inlineStyleCount, 0),
+  failedPages: pageReports.filter((page) => page.status !== 'passed').map((page) => page.file),
+  failedScripts: scriptReports.filter((item) => item.status !== 'passed').map((item) => item.file),
+  failedCssContracts: cssContracts.filter((item) => item.status !== 'passed').map((item) => item.file),
+};
+
+report.status = report.summary.failedPages.length === 0
+  && report.summary.failedScripts.length === 0
+  && report.summary.failedCssContracts.length === 0
+  ? 'passed'
+  : 'failed';
+
 fs.mkdirSync(path.dirname(REPORT), { recursive: true });
 fs.writeFileSync(REPORT, JSON.stringify(report, null, 2) + '\n');
 console.log(`[global-cycle-101] inline style boundary: ${report.status}`);

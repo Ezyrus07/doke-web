@@ -142,6 +142,26 @@
   background-image: linear-gradient(145deg, rgba(8, 23, 38, 0.12), rgba(8, 23, 38, 0.03)), url("https://images.pexels.com/photos/7464230/pexels-photo-7464230.jpeg?auto=compress&cs=tinysrgb&w=900");
 }
 
+/* Static related-service media variants used by detail and marketplace rails.
+   Page CSS owns rail/grid placement; card media modifiers belong to this component. */
+.doke-ad-card__media--similar-bathroom-complete {
+  background-image: url("https://images.pexels.com/photos/6585750/pexels-photo-6585750.jpeg?auto=compress&cs=tinysrgb&w=1200");
+}
+
+.doke-ad-card__media--similar-living-finish {
+  background-image: url("https://images.pexels.com/photos/7031607/pexels-photo-7031607.jpeg?auto=compress&cs=tinysrgb&w=1200");
+}
+
+.doke-ad-card__media--similar-power-tools {
+  background-image: url("https://images.pexels.com/photos/5691633/pexels-photo-5691633.jpeg?auto=compress&cs=tinysrgb&w=1200");
+}
+
+.doke-ad-card__media--similar-painting-suite {
+  background-image: url("https://images.pexels.com/photos/6474343/pexels-photo-6474343.jpeg?auto=compress&cs=tinysrgb&w=1200");
+  background-position: center;
+  background-size: cover;
+}
+
 .doke-ad-card__badge,
 .doke-ad-card__favorite {
   position: absolute;
@@ -1236,4 +1256,60 @@
     margin: 0;
     overflow: hidden;
   }
+}
+
+/* Home mobile "Mais anúncios" doke-ad-card anatomy.
+   Page CSS controls the feed rail/grid; doke-ad-card internals remain owned here. */
+@media (max-width: 760px) {
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card > :is(.doke-ad-card__media, .doke-ad-card__body, .doke-ad-card__footer),
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card > :is(.doke-ad-card__media, .doke-ad-card__body, .doke-ad-card__footer) {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__media,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__media {
+    flex: 0 0 auto !important;
+    height: 118px !important;
+    min-height: 118px !important;
+    max-height: 118px !important;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__body,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__body {
+    display: grid !important;
+    grid-template-rows: auto auto auto auto auto !important;
+    align-content: start;
+    gap: 7px;
+    flex: none !important;
+    min-height: 0 !important;
+    padding: 12px 14px 14px;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__title,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__title {
+    display: block !important;
+    margin: 0;
+    overflow: hidden !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 1.08rem;
+    line-height: 1.08;
+  }
+
+  html.home-index-root body.home-index-shell section.more-services .doke-ad-card__footer,
+  html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__footer {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    align-items: center;
+    gap: 10px;
+    margin-top: 0;
+    padding-top: 10px;
+  }
+}
+
+body[data-profile-mode="owner-edit"] .doke-ad-card__cta {
+  background: #184a76;
 }

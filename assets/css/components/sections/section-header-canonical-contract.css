@@ -263,3 +263,29 @@
   text-decoration: none;
   white-space: nowrap;
 }
+
+/* Contrast-first section actions remain owned by the shared section header contract.
+   Historical page cascades used this higher-specificity selector; keep it here
+   so pages do not redefine section action anatomy locally. */
+body :is(
+  .section-heading__link,
+  .detail-section__header > a,
+  .detail-section__header--row > a,
+  .results-related__header > a,
+  .communities-v2-section__heading > a,
+  .settings-section-heading > a,
+  .wallet-section-heading > a,
+  .profile-section-heading > a
+):where(:not(.doke-outline-action)),
+body :is(
+  .section-heading__link,
+  .detail-section__header > a,
+  .detail-section__header--row > a,
+  .results-related__header > a,
+  .communities-v2-section__heading > a,
+  .settings-section-heading > a,
+  .wallet-section-heading > a,
+  .profile-section-heading > a
+):where(:hover, :focus-visible, :active) {
+  border-color: transparent;
+}

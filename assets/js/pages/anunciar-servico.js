@@ -31,7 +31,9 @@
 
       if (stepCurrent) stepCurrent.textContent = String(currentStep);
       if (progressLabel) progressLabel.textContent = `Etapa ${currentStep} de ${totalSteps}`;
-      if (progressFill) progressFill.style.width = `${(currentStep / totalSteps) * 100}%`;
+      if (progressFill) {
+        progressFill.dataset.stepProgressValue = String(Math.round((currentStep / totalSteps) * 100));
+      }
       progressSteps.forEach((item, index) => {
         item.classList.toggle('is-active', index < currentStep);
       });

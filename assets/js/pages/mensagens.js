@@ -3029,6 +3029,44 @@
   }
 })();
 
+
+/* Mensagens — mantém o topo da conversa estável durante a hidratação inicial. */
+(() => {
+  if (document.body?.dataset.page !== 'mensagens') return;
+
+  const resetThreadTop = () => {
+    document.querySelectorAll('[data-thread-body]').forEach((threadBody) => {
+      try {
+        threadBody.scrollTop = 0;
+      } catch (error) {
+        // Thread may be detached during route swaps.
+      }
+    });
+  };
+
+  const resetThreadTopOnNextFrames = () => {
+    requestAnimationFrame(() => requestAnimationFrame(resetThreadTop));
+  };
+
+  const observeInitialThreadHydration = () => {
+    resetThreadTopOnNextFrames();
+    window.addEventListener('load', resetThreadTopOnNextFrames, { once: true });
+
+    const body = document.querySelector('[data-thread-body]');
+    if (!body || typeof MutationObserver !== 'function') return;
+
+    const observer = new MutationObserver(resetThreadTopOnNextFrames);
+    observer.observe(body, { childList: true, subtree: true });
+    window.setTimeout(() => observer.disconnect(), 2500);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', observeInitialThreadHydration, { once: true });
+  } else {
+    observeInitialThreadHydration();
+  }
+})();
+
 /* Mensagens — rota tipo app: evita restauração de scroll entre reloads/zoom. */
 (() => {
   if (document.body?.dataset.page !== 'mensagens') return;

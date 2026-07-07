@@ -446,7 +446,9 @@ const initBudgetPage = () => {
         }
       });
       if (progressLabel) progressLabel.textContent = `Etapa ${currentStep + 1} de ${panels.length}`;
-      if (progressFill) progressFill.style.width = `${((currentStep + 1) / visualStepCount) * 100}%`;
+      if (progressFill) {
+        progressFill.dataset.stepProgressValue = String(Math.round(((currentStep + 1) / visualStepCount) * 100));
+      }
       if (prevButton) prevButton.hidden = currentStep === 0;
       if (exitButton) exitButton.hidden = currentStep !== 0;
       actions?.classList.toggle("has-back-action", currentStep > 0);
