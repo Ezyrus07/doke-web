@@ -11,6 +11,7 @@ const CREATE_PREFIX = 'orders-write-staging-create-frontend-decline-';
 const DECLINE_PREFIX = 'orders-write-staging-decline-frontend-manual-';
 const ORDER_TITLE = 'Canary staging order';
 const ORDER_DESCRIPTION = 'Pedido de validação controlada do canary de escrita.';
+const ORDER_DESCRIPTION_CORRUPTED_POWERSHELL_STDIN = 'Pedido de valida??o controlada do canary de escrita.';
 const EXPECTED_FINAL_STATUS = 'cancelled';
 const EXECUTE_CONFIRMATION = 'cleanup-orders-write-frontend-manual-decline-canary';
 const MULTIPLE_CONFIRMATION = 'cleanup-multiple-orders-write-frontend-manual-decline-canary';
@@ -351,10 +352,19 @@ function validateOrders(blockers, orderRows, serviceById) {
     if (row.professional_id !== PROFESSIONAL_ID) blockers.push(`order ${row.id} has unexpected professional_id.`);
     if (row.service_id !== SERVICE_ID) blockers.push(`order ${row.id} has unexpected service_id.`);
     if (row.title !== ORDER_TITLE) blockers.push(`order ${row.id} has unexpected title.`);
-    if (row.description !== ORDER_DESCRIPTION) blockers.push(`order ${row.id} has unexpected description.`);
+    const descriptionVariant = getDescriptionVariant(row.description);
+    if (!descriptionVariant) blockers.push(`order ${row.id} has unexpected description.`);
+    row.descriptionVariant = descriptionVariant;
     if (row.status !== EXPECTED_FINAL_STATUS) blockers.push(`order ${row.id} has unexpected final status ${row.status}.`);
     if (!serviceById.has(row.service_id)) blockers.push(`order ${row.id} service_id is not a published service owned by the professional canary.`);
   }
+}
+
+function getDescriptionVariant(description) {
+  if (description === ORDER_DESCRIPTION) return 'preferred';
+  // Compatibility for one manual browser canary run where PowerShell stdin replaced accented characters before submission.
+  if (description === ORDER_DESCRIPTION_CORRUPTED_POWERSHELL_STDIN) return 'corrupted-powershell-stdin';
+  return null;
 }
 
 function validateHistory(blockers, historyRows, orderIds) {
@@ -476,6 +486,7 @@ function printSafeSummary(config, mode, counts = [], plan = null) {
     console.log(`- admin_audit_events: ${plan.adminAuditRows.length} candidate row(s)`);
     for (const row of plan.orders) {
       console.log(`- safe candidate order: ${row.id} service_id=${row.service_id || 'null'} status=${row.status}`);
+      if (row.descriptionVariant) console.log(`- descriptionVariant: ${row.descriptionVariant}`);
     }
     for (const row of plan.evidenceRows) {
       console.log(`- safe idempotency key: ${row.idempotency_key} action=${row.action} actor_id=${row.actor_id}`);
