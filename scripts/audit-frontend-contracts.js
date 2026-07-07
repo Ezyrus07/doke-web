@@ -63,6 +63,25 @@ const report = [];
 let critical = 0;
 let warning = 0;
 
+function isDocumentedDeprecatedCss(file) {
+  const docPath = path.join(root, 'docs/DEPRECATED-CSS.md');
+  return fs.existsSync(docPath) && fs.readFileSync(docPath, 'utf8').includes(file);
+}
+
+function loadImportantDebtRegister() {
+  const registerPath = path.join(root, 'config/important-debt-register.json');
+  if (!fs.existsSync(registerPath)) return new Map();
+
+  try {
+    const register = JSON.parse(fs.readFileSync(registerPath, 'utf8'));
+    const entries = Array.isArray(register.items) ? register.items : [];
+    return new Map(entries.map((item) => [item.file, item]));
+  } catch (error) {
+    push('warning', 'config/important-debt-register.json', `Não foi possível ler o registro de dívida de !important: ${error.message}`);
+    return new Map();
+  }
+}
+
 function exists(file) {
   return fs.existsSync(path.join(root, file));
 }
@@ -82,6 +101,25 @@ function getDirectCssLinks(html) {
   }
 
   return links;
+}
+
+function getRootHtmlPages() {
+  return fs.readdirSync(root)
+    .filter((file) => file.endsWith('.html'))
+    .sort();
+}
+
+function collectLoadedCssForPages(pages) {
+  const loaded = new Set();
+
+  for (const page of pages) {
+    if (!exists(page)) continue;
+    for (const asset of getLoadedCssAssets(read(page), root)) {
+      loaded.add(asset);
+    }
+  }
+
+  return loaded;
 }
 
 function push(level, file, message) {
@@ -158,16 +196,44 @@ for (const page of migratedPages) {
   }
 }
 
+const projectHtmlPages = getRootHtmlPages();
+const loadedCssAssets = collectLoadedCssForPages(projectHtmlPages);
+const importantDebtRegister = loadImportantDebtRegister();
+let registeredImportantFiles = 0;
+let registeredImportantUses = 0;
+let activeRegisteredImportantFiles = 0;
+let activeRegisteredImportantUses = 0;
+let dormantRegisteredImportantFiles = 0;
+let dormantRegisteredImportantUses = 0;
+
 const cssFiles = listFiles('assets/css', ['.css']);
 for (const file of cssFiles) {
   const css = read(file);
 
   const importantCount = (css.match(/!important/g) || []).length;
   if (importantCount > 0 && !file.includes('mobile-app-shell.css')) {
-    push('warning', file, `Contém ${importantCount} uso(s) de !important. Auditar se ainda é necessário.`);
+    const registeredDebt = importantDebtRegister.get(file);
+    const maxAllowed = registeredDebt ? Number(registeredDebt.maxAllowed) : 0;
+
+    if (registeredDebt && importantCount <= maxAllowed) {
+      registeredImportantFiles += 1;
+      registeredImportantUses += importantCount;
+
+      if (loadedCssAssets.has(file)) {
+        activeRegisteredImportantFiles += 1;
+        activeRegisteredImportantUses += importantCount;
+      } else {
+        dormantRegisteredImportantFiles += 1;
+        dormantRegisteredImportantUses += importantCount;
+      }
+    } else if (registeredDebt && importantCount > maxAllowed) {
+      push('warning', file, `Contém ${importantCount} uso(s) de !important; orçamento registrado permite ${maxAllowed}. Auditar aumento antes de aceitar.`);
+    } else {
+      push('warning', file, `Contém ${importantCount} uso(s) de !important sem registro em config/important-debt-register.json.`);
+    }
   }
 
-  if (/stage-|hotfix-|lock/i.test(file)) {
+  if (/stage-|hotfix-|lock/i.test(file) && !isDocumentedDeprecatedCss(file)) {
     push('warning', file, 'Nome sugere CSS emergencial. Verificar se deve entrar em DEPRECATED-CSS.md.');
   }
 
@@ -183,6 +249,9 @@ lines.push(`Gerado em: ${new Date().toISOString()}`);
 lines.push('');
 lines.push(`Críticos: ${critical}`);
 lines.push(`Avisos: ${warning}`);
+lines.push(`Dívida !important registrada: ${registeredImportantUses} uso(s) em ${registeredImportantFiles} arquivo(s)`);
+lines.push(`Dívida !important ativa carregada por HTML raiz: ${activeRegisteredImportantUses} uso(s) em ${activeRegisteredImportantFiles} arquivo(s)`);
+lines.push(`Dívida !important dormente no pacote: ${dormantRegisteredImportantUses} uso(s) em ${dormantRegisteredImportantFiles} arquivo(s)`);
 lines.push('');
 if (!report.length) {
   lines.push('Nenhuma violação encontrada.');

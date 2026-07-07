@@ -20,8 +20,8 @@
   ].join(',');
 
   const filterOpenSelector = [
-    '.home-search-hero__form .home-search-hero__button',
-    '.home-search-hero__form .doke-search-pill__button',
+    '[data-searchbox] .home-search-hero__button',
+    '[data-searchbox] .doke-search-pill__button',
     '.home-search-hero [data-more-filters-toggle]',
     '[data-more-filters-toggle]'
   ].join(',');
@@ -51,7 +51,7 @@
       node.setAttribute('aria-haspopup', 'dialog');
     });
 
-    document.querySelectorAll('.home-search-hero__form .home-search-hero__button, .home-search-hero__form .doke-search-pill__button').forEach((node) => {
+    document.querySelectorAll('[data-searchbox] .home-search-hero__button, [data-searchbox] .doke-search-pill__button').forEach((node) => {
       node.setAttribute('type', 'button');
       node.setAttribute('data-more-filters-toggle', '');
       node.setAttribute('data-more-filters-source', node.getAttribute('data-more-filters-source') || 'hero-field');

@@ -15,6 +15,8 @@ function candidateType(script) {
   if (script.removalRisk === 'medium-component-review') return 'component-presence-review';
   if (script.src.includes('/pages/home/') && !script.pages.some((page) => page === 'index.html')) return 'cross-page-ownership-review';
   if (script.role === 'domain-service' && script.categoryGroup !== 'all-target-pages') return 'service-scope-review';
+  if (script.role === 'domain-repository' && script.categoryGroup !== 'all-target-pages') return 'repository-scope-review';
+  if (script.role === 'developer-tool') return 'developer-tool-review';
   return null;
 }
 
@@ -32,7 +34,9 @@ const candidates = (dependency.scripts || [])
     removalRisk: script.removalRisk,
     recommendation: script.candidateType === 'cross-page-ownership-review'
       ? 'Do not remove automatically; first verify whether the file contains shared drawer behavior that should be moved out of pages/home.'
-      : 'Do not remove automatically; validate runtime usage in a page-specific cycle.'
+      : script.candidateType === 'developer-tool-review'
+        ? 'Do not remove automatically; validate that dev-flow reset/seed commands are no longer needed on the supported page.'
+        : 'Do not remove automatically; validate runtime usage in a page-specific cycle.'
   }))
   .sort((a, b) => a.candidateType.localeCompare(b.candidateType) || a.src.localeCompare(b.src));
 

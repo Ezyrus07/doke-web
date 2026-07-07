@@ -57,6 +57,13 @@
       });
     });
 
+    const searchForm = root.querySelector('[data-help-search-form]');
+
+    searchForm?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      applyFilter();
+    });
+
     search?.addEventListener('input', applyFilter);
 
     faqItems.forEach((details) => {

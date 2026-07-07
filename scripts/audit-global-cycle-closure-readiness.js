@@ -8,7 +8,7 @@ const requiredReports = [
   'docs/validation/global-cycle-102-detail-anuncio-data-boundary-report.json',
   'docs/validation/global-cycle-103-css-legacy-reform-blockers-report.json',
   'docs/validation/global-cycle-104-desktop-phase-entry-gate-report.json',
-  'docs/validation/global-cycle-95-product-pages-suite-report.json',
+  'docs/validation/global-cycle-100-product-pages-suite-report.json',
   'docs/validation/global-cycle-100-product-reform-roadmap-report.json',
 ];
 const checks = requiredReports.map((file) => {

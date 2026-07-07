@@ -2,11 +2,45 @@
   'use strict';
 
   const PAYMENT_CONTROLLER_VERSION = '20260702-payment-route-init-v1';
+  const Doke = window.Doke || (window.Doke = {});
+
+  let latestPaymentState = {
+    page: 'pagamento',
+    route: 'pagamento-profissional',
+    initialized: false,
+    status: 'idle',
+    method: 'Pix',
+    total: null,
+    orderId: '',
+    conversationId: '',
+    messageId: '',
+    modalOpen: false,
+    error: '',
+    updatedAt: null
+  };
+
+  function getLatest() {
+    return Object.assign({}, latestPaymentState);
+  }
+
+  function publishLatestPaymentState(patch) {
+    latestPaymentState = Object.assign({}, latestPaymentState, patch || {}, {
+      updatedAt: new Date().toISOString()
+    });
+
+    if (Doke.state && typeof Doke.state.merge === 'function') {
+      Doke.state.merge('controllers.pagamento', getLatest());
+    }
+
+    return getLatest();
+  }
 
   function initPaymentProfessional() {
     const root = document.querySelector('[data-payment-page]');
     if (!root) return;
-    if (root.dataset.paymentControllerInitialized === PAYMENT_CONTROLLER_VERSION) return;
+    if (root.dataset.paymentControllerInitialized === PAYMENT_CONTROLLER_VERSION) {
+      return publishLatestPaymentState({ initialized: true, status: latestPaymentState.status || 'ready' });
+    }
     root.dataset.paymentControllerInitialized = PAYMENT_CONTROLLER_VERSION;
 
   let baseTotal = 280;
@@ -54,6 +88,15 @@
   let currentCharge = null;
   let paymentRegistered = false;
   let completionRegistered = false;
+
+  publishLatestPaymentState({
+    initialized: true,
+    status: 'initializing',
+    method: selectedMethod,
+    orderId: paymentContext.orderId,
+    conversationId: paymentContext.conversationId,
+    messageId: paymentContext.messageId
+  });
 
   function normalizeText(value) {
     return String(value || '').trim();
@@ -196,9 +239,20 @@
     setHrefAll('[data-payment-issue-link]', buildConversationUrl({ issue: '1' }));
     setHrefAll('[data-payment-success-conversation-link]', buildConversationUrl({ payment: 'success' }));
     updateTotals();
+    publishLatestPaymentState({
+      status: charge.paid ? 'paid' : 'ready',
+      method: selectedMethod,
+      total: formatCurrency(getCurrentTotal()),
+      orderId: paymentContext.orderId || order.id || '',
+      conversationId: paymentContext.conversationId || conversation.id || '',
+      messageId: paymentContext.messageId || charge.id || '',
+      providerName: providerName,
+      serviceTitle: serviceTitle
+    });
   }
 
   function loadPaymentContext() {
+    publishLatestPaymentState({ status: 'loading-context', error: '' });
     const orderRepository = getOrderRepository();
     const messagesRepository = getMessagesRepository();
     const orderTask = paymentContext.orderId && orderRepository?.getById
@@ -226,7 +280,11 @@
     }).then(() => {
       applyPaymentContext();
       return loadWalletBalance();
-    }).catch(() => {
+    }).catch((error) => {
+      publishLatestPaymentState({
+        status: 'context-fallback',
+        error: error && error.message ? error.message : ''
+      });
       applyPaymentContext();
       return loadWalletBalance();
     });
@@ -273,6 +331,7 @@
 
   function registerPayment() {
     if (paymentRegistered) return Promise.resolve(currentOrder);
+    publishLatestPaymentState({ status: 'registering-payment', error: '' });
     paymentRegistered = true;
     const ordersService = getOrdersService();
     const orderId = paymentContext.orderId || currentOrder?.id || currentConversation?.orderId;
@@ -302,9 +361,14 @@
         }
       }));
       applyPaymentContext();
+      publishLatestPaymentState({ status: 'paid', error: '' });
       return currentOrder;
     }).catch((error) => {
       paymentRegistered = false;
+      publishLatestPaymentState({
+        status: 'payment-error',
+        error: error && error.message ? error.message : 'Não foi possível registrar o pagamento.'
+      });
       throw error;
     });
   }
@@ -328,6 +392,7 @@
 
   function registerCompletion() {
     if (completionRegistered) return Promise.resolve(currentOrder);
+    publishLatestPaymentState({ status: 'registering-completion', error: '' });
     completionRegistered = true;
     const ordersService = getOrdersService();
     const orderId = paymentContext.orderId || currentOrder?.id || currentConversation?.orderId;
@@ -352,9 +417,14 @@
           walletTransaction: walletResult?.transaction || null
         }
       }));
+      publishLatestPaymentState({ status: 'completed', error: '' });
       return currentOrder;
     }).catch((error) => {
       completionRegistered = false;
+      publishLatestPaymentState({
+        status: 'completion-error',
+        error: error && error.message ? error.message : 'Não foi possível finalizar o pedido.'
+      });
       throw error;
     });
   }
@@ -386,6 +456,10 @@
       pixCode.textContent = `DOKE-PIX-${orderCode}-${total.toFixed(2)}`;
     }
     updateWalletMethodCopy();
+    publishLatestPaymentState({
+      method: selectedMethod,
+      total: formattedTotal
+    });
 
   }
 
@@ -423,6 +497,7 @@
     if (methodCopy) methodCopy.textContent = detail.copy;
     updateCardPaymentState();
     updateWalletMethodCopy();
+    publishLatestPaymentState({ method: selectedMethod });
   }
 
   function isCardMethod(method) {
@@ -538,6 +613,7 @@
 
   function openModal() {
     if (!modal) return;
+    publishLatestPaymentState({ modalOpen: true, status: 'modal-open', error: '' });
     modal.hidden = false;
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('payment-modal-open');
@@ -557,6 +633,7 @@
 
   function closeModal() {
     if (!modal) return;
+    publishLatestPaymentState({ modalOpen: false });
     modal.hidden = true;
     modal.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('payment-modal-open');
@@ -564,12 +641,14 @@
   }
 
   function showError(message) {
+    publishLatestPaymentState({ error: message || 'Erro de pagamento.' });
     if (!errorMessage) return;
     errorMessage.textContent = message;
     errorMessage.hidden = false;
   }
 
   function clearError() {
+    publishLatestPaymentState({ error: '' });
     if (errorMessage) errorMessage.hidden = true;
   }
 
@@ -757,6 +836,17 @@
   }
 
   window.DokeInitPayment = initPaymentProfessional;
+  Doke.paymentController = Object.freeze({
+    version: PAYMENT_CONTROLLER_VERSION,
+    page: 'pagamento',
+    route: 'pagamento-profissional',
+    init: initPaymentProfessional,
+    getLatest: getLatest
+  });
+
+  if (Doke.controllers) {
+    Doke.controllers.register('pagamento-profissional', { init: initPaymentProfessional });
+  }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initPaymentProfessional, { once: true });

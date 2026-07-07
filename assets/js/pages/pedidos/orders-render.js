@@ -85,7 +85,7 @@
 
   const ensureCardAiInsight = (order) => {
     const card = order.card;
-    if (!card || data.qs('.order-card__ai-insight', card)) return;
+    if (!card || card.closest('.orders-list') || data.qs('.order-card__ai-insight', card)) return;
 
     const actions = data.qs('.order-card__actions', card);
     const body = data.qs('.order-card__body', card);

@@ -64,9 +64,9 @@ A autoridade visual do contrato `doke-tab-pill` é `assets/css/components/tabs/t
 
 ## Busca de conteúdo
 
-Busca grande em página de conteúdo deve usar `doke-search-field doke-search-field--hero` e deixar a anatomia em `assets/css/components/search/search-field.css`.
+Busca grande em página de conteúdo que deve acompanhar home/resultados deve usar `doke-search-pill doke-search-pill--toolbar` e deixar a anatomia em `assets/css/components/search/search-bar.css`.
 
-Classes locais, como `help-center-search`, podem preservar semântica de domínio e hooks, mas não devem redefinir altura, padding, raio, borda, sombra, background, tipografia, placeholder ou ícone do campo.
+Classes locais, como `help-center-search`, podem preservar semântica de domínio e hooks, mas não devem redefinir altura, padding, raio, borda, sombra, background, tipografia, placeholder, botão interno ou ícone do campo.
 
 
 ## Disclosure e FAQ

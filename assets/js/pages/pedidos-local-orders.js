@@ -5,6 +5,14 @@
 
   var Doke = window.Doke || (window.Doke = {});
 
+  var CARD_ICONS = {
+    details: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.75 4.75h7.5l3 3V19.25h-10.5V4.75Z"></path><path d="M14.25 4.75v3h3"></path><path d="M9 11.25h6"></path><path d="M9 14.75h4.5"></path></svg>',
+    chat: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16v10H8.2L4 20V6.5Z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg>',
+    receipt: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h10v15H7z"></path><path d="M9.5 9.5h5"></path><path d="M9.5 13h5"></path></svg>',
+    clock: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5v4.5l3 1.8"></path></svg>',
+    check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7 9.5 17.5 4 12"></path></svg>'
+  };
+
   function escapeHtml(value) {
     return String(value || '')
       .replace(/&/g, '&amp;')
@@ -235,12 +243,8 @@
   function getPrimaryActionLabel(order, professionalView) {
     var status = order.status || 'pending';
     if (status === 'pending' && professionalView) return 'Aceitar pedido';
-    if (status === 'accepted' || status === 'conversation' || status === 'responded') return professionalView ? 'Enviar proposta' : 'Abrir conversa';
-    if (status === 'quoted') return professionalView ? 'Acompanhar proposta' : 'Ver proposta';
-    if (status === 'in_progress') return 'Abrir conversa';
-    if (status === 'completed') return professionalView ? 'Ver resumo' : 'Avaliar';
-    if (status === 'cancelled') return 'Ver detalhes';
-    return professionalView ? 'Responder cliente' : 'Abrir conversa';
+    if (status === 'cancelled') return 'Detalhes';
+    return 'Conversa';
   }
 
   function getDetailFlow(order, professionalView) {
@@ -338,14 +342,16 @@
           <span class="order-card__status-dot ${dotClass}"></span>
           <span class="order-card__status-text">${statusLabel}</span>
         </div>
-        <span class="order-card__time">${createdLabel}</span>
+        <span class="order-card__time"><span class="order-card__time-icon" aria-hidden="true">${CARD_ICONS.clock}</span><span>${createdLabel}</span></span>
       </div>
       <div class="order-card__body">
         <h2>${title}</h2>
-        <p class="order-card__subtitle">${professionalView ? 'Solicitação de' : 'Aguardando resposta de'} <strong>${provider}</strong></p>
         <div class="order-card__identity">
           <span class="order-card__avatar doke-avatar">${initials}</span>
-          <span class="order-card__location">${location}</span>
+          <span class="order-card__identity-copy">
+            <p class="order-card__subtitle"><strong>${provider}</strong></p>
+            <span class="order-card__location">${location}</span>
+          </span>
         </div>
         ${disputePresentation ? `
         <div class="order-card__dispute-note" data-order-dispute-state="${escapeHtml(disputePresentation.state)}">
@@ -355,14 +361,14 @@
       </div>
       <div class="order-card__actions${reportProblemAllowed ? ' order-card__actions--preferred' : ''}">
         ${disputePresentation ? `
-        <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-open="chat">Abrir conversa</button>
-        <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-open="details">Ver detalhes</button>
+        <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-open="details">${CARD_ICONS.details}<span>Ver detalhes</span></button>
+        <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-open="chat">${CARD_ICONS.chat}<span>Conversa</span></button>
         ` : professionalView && (order.status || 'pending') === 'pending' ? `
-        <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-accept="${id}">Aceitar pedido</button>
-        <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-decline="${id}">Recusar</button>
+        <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-accept="${id}">${CARD_ICONS.check}<span>Aceitar pedido</span></button>
+        <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-decline="${id}"><span>Recusar</span></button>
         ` : `
-        <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-open="details">Ver detalhes</button>
-        <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-open="chat">${escapeHtml(getPrimaryActionLabel(order, professionalView))}</button>
+        <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-open="details">${CARD_ICONS.details}<span>Ver detalhes</span></button>
+        <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-open="chat">${CARD_ICONS.chat}<span>${escapeHtml(getPrimaryActionLabel(order, professionalView))}</span></button>
         `}
       </div>
       ${walletTransaction && walletTransaction.id ? `
@@ -372,8 +378,8 @@
           <span>Relatar problema</span>
         </button>` : ``}
         <a class="order-card__support-action" href="${escapeHtml(getReceiptUrl(walletTransaction))}" data-order-receipt>
-          <span class="order-card__support-icon" aria-hidden="true">✓</span>
-          <span>Ver comprovante</span>
+          <span class="order-card__support-icon" aria-hidden="true">${CARD_ICONS.receipt}</span>
+          <span>Comprovante</span>
         </a>
         <button class="order-card__support-more doke-more-button" type="button" aria-label="Mais opções do pedido"><span aria-hidden="true">•••</span></button>
       </div>` : ``}

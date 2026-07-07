@@ -271,17 +271,19 @@ O gate cobre inicialmente:
 ```txt
 ajuda.html
 assets/css/pages/ajuda.css
-assets/css/components/search/search-field.css
+assets/css/pages/ajuda-foundation.css
+assets/css/components/search/search-bar.css
 assets/css/core/components.css
 ```
 
 Ele falha quando:
 
-- a busca de ajuda perde `doke-search-field` ou `doke-search-field--hero`;
-- o input perde `doke-search-field__input` ou `doke-input`;
+- a busca de ajuda perde `doke-search-pill` ou `doke-search-pill--toolbar`;
+- o input perde `doke-search-pill__input` ou `doke-input`;
 - `assets/css/pages/ajuda.css` volta a controlar a anatomia de `.help-center-search` ou descendentes;
-- `assets/css/components/search/search-field.css` deixa de definir a variante `doke-search-field--hero` e seus tokens;
-- o manifesto de componentes core deixa de carregar a autoridade de busca compartilhada.
+- `assets/css/components/search/search-bar.css` deixa de definir a variante `doke-search-pill` e seus tokens;
+- `assets/css/pages/ajuda-foundation.css` deixa de carregar a autoridade de busca pill;
+- o manifesto de componentes core deixa de carregar a autoridade base de busca compartilhada.
 
 Esse gate roda dentro de `npm run audit:agent-governance`.
 

@@ -10,10 +10,12 @@ const OWNER_BY_ROLE = {
   'core-runtime': 'core/js-foundation',
   'controller-stack': 'controllers/data-boundary',
   'domain-service': 'services/domain-data',
+  'domain-repository': 'repositories/domain-data',
   'state-contract': 'state/data-readiness',
   'ui-runtime': 'ui/mobile-runtime',
   'shared-component': 'components/shared-js',
   'page-behavior': 'pages/local-behavior',
+  'developer-tool': 'dev/flow-state-tooling',
   unknown: 'manual-review'
 };
 
@@ -21,10 +23,12 @@ const REQUIRED_ROLE_RULES = {
   'core-runtime': 'Never remove from a page without validating global Doke namespace/runtime boot.',
   'controller-stack': 'Keep ordered after domain services and before controller-bootstrap.',
   'domain-service': 'Remove only after confirming no controller/page reads the resource.',
+  'domain-repository': 'Remove only after confirming no service/controller consumes the repository boundary.',
   'state-contract': 'Keep before page controllers; removal requires backend-state regression review.',
   'ui-runtime': 'Remove only with mobile/desktop interaction regression pass.',
   'shared-component': 'Remove only if the matching component/pattern is absent from the page.',
   'page-behavior': 'Owned by page; consolidate or remove only in a page-specific cycle.',
+  'developer-tool': 'Keep opt-in and inert by default; removal requires dev-flow validation.',
   unknown: 'Classify manually before touching.'
 };
 

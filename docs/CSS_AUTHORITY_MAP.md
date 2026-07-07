@@ -204,15 +204,16 @@ Validação: `npm run audit:content-tab-contract`.
 
 ## Campo de busca de conteúdo — ajuda
 
-Autoridade escolhida: `assets/css/components/search/search-field.css` para a anatomia de `doke-search-field--hero`.
+Autoridade escolhida: `assets/css/components/search/search-bar.css` para a anatomia de `doke-search-pill` e `doke-search-pill--toolbar`.
 
-Consumidor inicial: `ajuda.html`, por meio de `help-center-search doke-search-field doke-search-field--hero`.
+Consumidor inicial: `ajuda.html`, por meio de `help-center-search doke-search-panel__form doke-search-pill doke-search-pill--toolbar`, alinhado ao contrato visual de home/resultados.
 
 Fronteira:
 
 - `assets/css/pages/ajuda.css` pode controlar apenas o posicionamento contextual da página.
-- O CSS de página não deve controlar altura, padding, raio, borda, fundo, sombra, cor, tipografia, placeholder ou ícone da busca.
-- `assets/css/core/components.css` deve manter o import da autoridade `assets/css/components/search/search-field.css`.
+- O CSS de página não deve controlar altura, padding, raio, borda, fundo, sombra, cor, tipografia, placeholder, botão interno ou ícone da busca.
+- `assets/css/pages/ajuda-foundation.css` deve carregar `assets/css/components/search/search-bar.css` antes do CSS de página que consome a busca.
+- `assets/css/core/components.css` preserva `assets/css/components/search/search-field.css` como contrato base para buscas inline antigas até migração controlada.
 
 Validação: `npm run audit:content-search-contract`.
 

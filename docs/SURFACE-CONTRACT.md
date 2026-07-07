@@ -95,18 +95,20 @@ Validação: `npm run audit:content-tab-contract`.
 
 ## Campo de busca de conteúdo — ajuda
 
-Campos de busca grandes usados como superfície de conteúdo devem consumir `doke-search-field` com um modificador compartilhado de densidade.
+Campos de busca grandes usados como superfície de conteúdo e alinhados à home/resultados devem consumir `doke-search-pill` com um modificador compartilhado de densidade.
 
 Exemplo canônico:
 
 ```html
-<form class="help-center-search doke-search-field doke-search-field--hero" role="search">
-  <svg class="doke-search-field__icon" aria-hidden="true"></svg>
-  <input class="doke-search-field__input doke-input" type="search">
+<form class="help-center-search doke-search-panel__form doke-search-pill doke-search-pill--toolbar" role="search">
+  <label class="doke-search-panel__field doke-search-pill__field">
+    <input class="doke-search-panel__input doke-search-pill__input doke-input" type="search">
+  </label>
+  <button class="doke-search-panel__button doke-search-pill__button" type="submit"></button>
 </form>
 ```
 
-A anatomia visual pertence a `assets/css/components/search/search-field.css`. A página pode posicionar o campo dentro do fluxo, mas não deve redesenhar altura, padding, raio, borda, fundo, sombra, cor, tipografia, ícone ou placeholder do campo.
+A anatomia visual pertence a `assets/css/components/search/search-bar.css`. A página pode posicionar o campo dentro do fluxo, mas não deve redesenhar altura, padding, raio, borda, fundo, sombra, cor, tipografia, botão interno, ícone ou placeholder do campo.
 
 Validação: `npm run audit:content-search-contract`.
 

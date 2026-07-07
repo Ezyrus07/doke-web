@@ -44,7 +44,7 @@ function assertHelpSearchMarkup() {
   }
 
   const classes = classListFromTag(formMatch[0]);
-  ['help-center-search', 'doke-search-field', 'doke-search-field--hero'].forEach((className) => {
+  ['help-center-search', 'doke-search-pill', 'doke-search-pill--toolbar'].forEach((className) => {
     if (!classes.includes(className)) {
       addFailure(file, `Campo de busca de ajuda perdeu ${className}.`);
     }
@@ -55,7 +55,7 @@ function assertHelpSearchMarkup() {
     addFailure(file, 'Input de busca de ajuda não foi encontrado.');
   } else {
     const inputClasses = classListFromTag(inputMatch[0]);
-    ['doke-search-field__input', 'doke-input'].forEach((className) => {
+    ['doke-search-pill__input', 'doke-input'].forEach((className) => {
       if (!inputClasses.includes(className)) {
         addFailure(file, `Input de busca de ajuda perdeu ${className}.`);
       }
@@ -63,7 +63,7 @@ function assertHelpSearchMarkup() {
   }
 
   if (!checks.some((check) => !check.ok && check.file === file)) {
-    addOk(file, 'Busca de ajuda consome doke-search-field e o modificador doke-search-field--hero.');
+    addOk(file, 'Busca de ajuda consome doke-search-pill e o modificador doke-search-pill--toolbar.');
   }
 }
 
@@ -127,15 +127,16 @@ function assertPageCssDoesNotOwnHelpSearch() {
 }
 
 function assertSearchAuthority() {
-  const file = 'assets/css/components/search/search-field.css';
+  const file = 'assets/css/components/search/search-bar.css';
   const css = read(file);
   const required = [
-    '.doke-search-field--hero',
-    '--doke-search-field-hero-height',
-    '--doke-search-field-hero-padding-inline',
-    '--doke-search-field-hero-radius',
-    '--doke-search-field-hero-shadow',
-    '--doke-search-field-hero-mobile-height',
+    '.doke-search-pill',
+    '.doke-search-pill--toolbar',
+    '--doke-search-pill-min-height',
+    '--doke-search-pill-padding-left',
+    '--doke-search-pill-padding-right',
+    '--doke-search-pill-radius',
+    '--doke-search-pill-button-size',
   ];
 
   required.forEach((token) => {
@@ -145,7 +146,7 @@ function assertSearchAuthority() {
   });
 
   if (!checks.some((check) => !check.ok && check.file === file)) {
-    addOk(file, 'Contrato doke-search-field--hero está centralizado em components/search/search-field.css.');
+    addOk(file, 'Contrato doke-search-pill está centralizado em components/search/search-bar.css.');
   }
 }
 
@@ -155,7 +156,14 @@ function assertCoreImportsSearchAuthority() {
   if (!css.includes('../components/search/search-field.css')) {
     addFailure(file, 'core/components.css não carrega components/search/search-field.css.');
   } else {
-    addOk(file, 'core/components.css carrega a autoridade de busca compartilhada.');
+    addOk(file, 'core/components.css preserva o contrato base de busca compartilhada.');
+  }
+
+  const helpFoundation = read('assets/css/pages/ajuda-foundation.css');
+  if (!helpFoundation.includes('../components/search/search-bar.css')) {
+    addFailure('assets/css/pages/ajuda-foundation.css', 'ajuda-foundation.css não carrega components/search/search-bar.css para a busca pill.');
+  } else {
+    addOk('assets/css/pages/ajuda-foundation.css', 'ajuda-foundation.css carrega a autoridade doke-search-pill.');
   }
 }
 
