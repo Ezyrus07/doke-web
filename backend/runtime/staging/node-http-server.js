@@ -147,11 +147,31 @@ function sendJson(response, status, payload) {
 }
 
 function applyCorsHeaders(response, origin) {
-  response.setHeader('access-control-allow-origin', origin || '*');
   response.setHeader('vary', 'Origin');
   response.setHeader('access-control-allow-methods', ALLOWED_METHODS);
   response.setHeader('access-control-allow-headers', ALLOWED_HEADERS);
   response.setHeader('access-control-max-age', '86400');
+
+  if (!origin) {
+    response.setHeader('access-control-allow-origin', '*');
+    return;
+  }
+
+  if (!isAllowedCredentialedOrigin(origin)) return;
+
+  response.setHeader('access-control-allow-origin', origin);
+  response.setHeader('access-control-allow-credentials', 'true');
+}
+
+function isAllowedCredentialedOrigin(origin) {
+  try {
+    const url = new URL(String(origin || ''));
+    return url.protocol === 'http:' &&
+      Boolean(url.port) &&
+      (url.hostname === '127.0.0.1' || url.hostname === 'localhost');
+  } catch {
+    return false;
+  }
 }
 
 function readHeader(headers, name) {
@@ -189,6 +209,7 @@ if (require.main === module) {
 
 module.exports = Object.freeze({
   createNodeHttpServer,
+  isAllowedCredentialedOrigin,
   readRequestBody,
   startServer
 });
