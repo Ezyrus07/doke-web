@@ -178,3 +178,30 @@ body.community-modal-open {
     max-width: 100%;
   }
 }
+
+/* Mobile community action modal scroll contract.
+   The create/join dialogs are taller than the visual viewport on phones; the
+   overlay itself must scroll instead of trapping scroll inside the body area. */
+@media (max-width: 720px) {
+  .community-action-modal.doke-action-modal:not([hidden]) {
+    align-items: start;
+    place-items: start center;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .community-action-modal__dialog.doke-action-modal__surface,
+  .community-action-modal__dialog--create.doke-action-modal__surface {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .community-action-modal__dialog .doke-action-modal__form {
+    display: block;
+  }
+
+  .community-action-modal__dialog .doke-action-modal__body {
+    overflow: visible;
+  }
+}

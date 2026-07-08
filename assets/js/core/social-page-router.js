@@ -18,6 +18,7 @@
   var NATIVE_ONLY_ROUTES = new Set([
     '/detalhe-anuncio.html',
     '/pagamento-profissional.html',
+    '/perfil.html',
   ]);
   var CORE_SCRIPT_RE = /\/assets\/js\/core\/(runtime-config|feature-flags|app|social-page-router)\.js(?:\?|$)/;
   var routeCache = new Map();

@@ -207,6 +207,7 @@ const shouldBypassShellSwap = (href) => {
     // app-shell router, which removes the heavy reload feeling in daily use.
     const nativeOnlyPaths = new Set([
       "/pagamento-profissional.html",
+      "/perfil.html",
     ]);
 
     return nativeOnlyPaths.has(path);

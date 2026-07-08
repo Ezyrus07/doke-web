@@ -1,0 +1,204 @@
+/* Doke empty-state system.
+   Responsibility: shared visual anatomy for empty/unfound states across pages.
+   Page CSS may position the state; this contract owns surface, type rhythm and actions. */
+:root {
+  --doke-empty-surface-bg: rgba(255, 255, 255, 0.96);
+  --doke-empty-surface-border: rgba(16, 67, 110, 0.08);
+  --doke-empty-surface-shadow: 0 18px 44px rgba(19, 58, 96, 0.07);
+  --doke-empty-title: var(--doke-primary-strong, #073b69);
+  --doke-empty-text: var(--doke-text-secondary, #5f7893);
+  --doke-empty-accent-bg: rgba(24, 154, 137, 0.10);
+  --doke-empty-accent-border: rgba(24, 154, 137, 0.16);
+  --doke-empty-accent: #08795f;
+}
+
+.doke-empty-state:not(.orders-planner__empty) {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--doke-empty-min-height, clamp(118px, 13vw, 172px));
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  gap: var(--doke-empty-gap, 12px);
+  padding: var(--doke-empty-padding, clamp(20px, 3vw, 34px));
+  border: 1px solid var(--doke-empty-surface-border);
+  border-radius: var(--doke-empty-radius, clamp(24px, 2.4vw, 32px));
+  background: var(--doke-empty-surface-bg);
+  box-shadow: var(--doke-empty-surface-shadow);
+  color: var(--doke-empty-text);
+  text-align: center;
+}
+
+.doke-empty-state:not(.orders-planner__empty) :is(h2, h3, h4, strong, .messages-empty__title, [data-results-empty-title]) {
+  margin: 0;
+  color: var(--doke-empty-title);
+  font-size: var(--doke-empty-title-size, clamp(1.08rem, 1.7vw, 1.55rem));
+  font-weight: 850;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+.doke-empty-state:not(.orders-planner__empty) :is(p, span, .messages-empty__text, [data-results-empty-text]) {
+  max-width: var(--doke-empty-copy-width, 48ch);
+  margin: 0;
+  color: var(--doke-empty-text);
+  font-size: var(--doke-empty-text-size, clamp(0.9rem, 1.08vw, 1.05rem));
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.doke-empty-state:not(.orders-planner__empty) :is(.doke-badge, .orders-empty__badge, .wallet-eyebrow) {
+  justify-self: center;
+  min-height: 28px;
+  padding-inline: 14px;
+  border: 1px solid var(--doke-empty-accent-border);
+  background: var(--doke-empty-accent-bg);
+  color: var(--doke-empty-accent);
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.doke-empty-state:not(.orders-planner__empty) :is(.doke-list-state__actions, .results-inline-empty__actions, .orders-empty__actions, .communities-empty-v2__actions) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.doke-empty-state:not(.orders-planner__empty) :is(.doke-btn, .orders-empty__button, .results-empty__button, .communities-empty-v2__button) {
+  min-height: 44px;
+  border-radius: var(--radius-pill, 999px);
+  font-weight: 850;
+}
+
+.orders-empty.doke-empty-state {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.orders-empty__card.doke-empty-state,
+.results-inline-empty.doke-empty-state {
+  --doke-empty-padding: clamp(22px, 3vw, 34px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: center;
+  justify-items: start;
+  column-gap: clamp(22px, 4vw, 58px);
+  row-gap: 10px;
+  text-align: left;
+}
+
+.orders-empty__card.doke-empty-state > :is(.orders-empty__badge, h3, p),
+.results-inline-empty.doke-empty-state > :is(strong, span) {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.orders-empty__card.doke-empty-state > .orders-empty__actions,
+.results-inline-empty.doke-empty-state > .results-inline-empty__actions {
+  grid-column: 2;
+  grid-row: 1 / 5;
+  align-self: center;
+  justify-self: end;
+  width: auto;
+  min-width: max-content;
+}
+
+.communities-empty-v2.doke-empty-state {
+  --doke-empty-min-height: 102px;
+  grid-template-columns: 52px minmax(0, 1fr) max-content;
+  justify-items: start;
+  gap: 18px;
+  text-align: left;
+}
+
+.communities-empty-v2__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  background: rgba(33, 103, 174, 0.10);
+  color: #2167ae;
+  font-weight: 900;
+}
+
+.communities-empty-v2__copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.communities-empty-v2.doke-empty-state > .communities-empty-v2__actions {
+  justify-self: end;
+  width: auto;
+}
+
+.wallet-empty-state.doke-empty-state,
+.messages-empty__card.doke-empty-state,
+.notifications-empty.doke-empty-state,
+.payment-card-empty.doke-empty-state,
+.help-empty-state {
+  --doke-empty-min-height: clamp(112px, 12vw, 154px);
+  --doke-empty-title-size: clamp(1rem, 1.25vw, 1.22rem);
+  --doke-empty-text-size: clamp(0.84rem, 0.98vw, 0.96rem);
+}
+
+.wallet-empty-state--receivables.doke-empty-state,
+.wallet-empty-state--bank.doke-empty-state {
+  --doke-empty-min-height: 118px;
+  --doke-empty-padding: 18px;
+  --doke-empty-title-size: 1rem;
+  --doke-empty-text-size: 0.86rem;
+  --doke-empty-copy-width: 28ch;
+}
+
+@media (max-width: 760px) {
+  .doke-empty-state:not(.orders-planner__empty) {
+    --doke-empty-min-height: 118px;
+    --doke-empty-padding: 20px 16px;
+    --doke-empty-radius: 24px;
+    --doke-empty-title-size: 1.05rem;
+    --doke-empty-text-size: 0.9rem;
+  }
+
+  .orders-empty__card.doke-empty-state,
+  .results-inline-empty.doke-empty-state,
+  .communities-empty-v2.doke-empty-state {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .orders-empty__card.doke-empty-state > :is(.orders-empty__badge, h3, p),
+  .results-inline-empty.doke-empty-state > :is(strong, span),
+  .communities-empty-v2.doke-empty-state > :is(.communities-empty-v2__copy, .communities-empty-v2__actions) {
+    grid-column: 1;
+    justify-self: center;
+  }
+
+  .orders-empty__card.doke-empty-state > .orders-empty__actions,
+  .results-inline-empty.doke-empty-state > .results-inline-empty__actions,
+  .communities-empty-v2.doke-empty-state > .communities-empty-v2__actions {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: stretch;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .doke-empty-state:not(.orders-planner__empty) :is(.doke-list-state__actions, .results-inline-empty__actions, .orders-empty__actions, .communities-empty-v2__actions) {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .doke-empty-state:not(.orders-planner__empty) :is(.doke-btn, .orders-empty__button, .results-empty__button, .communities-empty-v2__button) {
+    width: 100%;
+  }
+}

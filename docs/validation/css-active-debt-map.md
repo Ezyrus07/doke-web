@@ -1,20 +1,20 @@
 # CSS active debt map
 
-Gerado em: 2026-07-08T01:37:36.624Z
+Gerado em: 2026-07-08T15:17:33.449Z
 
 ## Resumo
 
 - HTMLs raiz avaliados: 22
 - Arquivos CSS com dívida registrada: 38
-- Dívida ativa carregada por HTML raiz: 1145 uso(s) em 10 arquivo(s)
+- Dívida ativa carregada por HTML raiz: 1129 uso(s) em 10 arquivo(s)
 - Dívida dormente no pacote: 10747 uso(s) em 28 arquivo(s)
 
 ## Resumo por grupo
 
 | Grupo | Ativos | Uso ativo | Dormentes | Uso dormente |
 |---|---:|---:|---:|---:|
-| card-contract | 3 | 375 | 3 | 1000 |
-| page-responsive-contract | 5 | 418 | 4 | 1102 |
+| card-contract | 3 | 365 | 3 | 1000 |
+| page-responsive-contract | 5 | 412 | 4 | 1102 |
 | responsive-shell | 2 | 352 | 21 | 8645 |
 
 ## Dívida ativa carregada
@@ -23,12 +23,12 @@ Gerado em: 2026-07-08T01:37:36.624Z
 |---|---|---:|---|
 | `assets/css/components/shell/mobile-app-shell.css` | responsive-shell | 321 | admin.html, ajuda.html, anunciar-servico.html, avaliacao-profissional.html, carteira.html, comunidade-interna.html, comunidade.html, configuracoes.html, detalhe-anuncio.html, index.html, mensagens.html, meu-perfil.html, notificacoes.html, novidades.html, orcamento.html, pagamento-profissional.html, pedidos.html, perfil-cliente.html, perfil-profissional.html, perfil.html, resultados.html, tornar-profissional.html |
 | `assets/css/pages/home/mobile-hero-feed.css` | page-responsive-contract | 269 | index.html |
-| `assets/css/components/domain/doke-domain-cards.css` | card-contract | 225 | index.html |
+| `assets/css/components/domain/doke-domain-cards.css` | card-contract | 215 | index.html |
 | `assets/css/components/cards/mobile-card-contract.css` | card-contract | 85 | index.html |
 | `assets/css/components/cards/service-card-home-hero-feed.css` | card-contract | 65 | index.html |
 | `assets/css/pages/home/mobile-layout.css` | page-responsive-contract | 42 | index.html |
-| `assets/css/pages/home/mobile-composition.css` | page-responsive-contract | 39 | index.html |
-| `assets/css/pages/home/mobile-interactions.css` | page-responsive-contract | 39 | index.html |
+| `assets/css/pages/home/mobile-composition.css` | page-responsive-contract | 36 | index.html |
+| `assets/css/pages/home/mobile-interactions.css` | page-responsive-contract | 36 | index.html |
 | `assets/css/components/shell/mobile-base-stability.css` | responsive-shell | 31 | admin.html, carteira.html, comunidade.html, configuracoes.html, index.html, mensagens.html, meu-perfil.html, notificacoes.html, pedidos.html, perfil-cliente.html, perfil-profissional.html, perfil.html |
 | `assets/css/pages/home/mobile-alignment.css` | page-responsive-contract | 29 | index.html |
 

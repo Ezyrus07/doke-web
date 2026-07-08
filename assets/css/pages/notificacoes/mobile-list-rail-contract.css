@@ -1,0 +1,57 @@
+/* Mobile notifications rail contract.
+ * Responsibility: keep notification controls, skeletons, groups and empty states on
+ * the same visual rail used by the compact app header. The outer page shell remains
+ * full-width; only the internal list surface owns this inset.
+ */
+@media (max-width: 760px) {
+  body.notifications-page-shell {
+    --notifications-mobile-rail-gutter: clamp(24px, 7vw, 32px);
+  }
+
+  body.notifications-page-shell .notifications-page {
+    padding-inline: 0;
+  }
+
+  body.notifications-page-shell .notifications-list,
+  body.notifications-page-shell .notifications-hydration-skeleton,
+  body.notifications-page-shell.has-notifications-action-panel-open .notifications-page-header--auxiliary {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+    padding-inline: var(--notifications-mobile-rail-gutter);
+    box-sizing: border-box;
+  }
+
+  body.notifications-page-shell .notifications-list {
+    gap: 12px;
+  }
+
+  body.notifications-page-shell .notifications-group,
+  body.notifications-page-shell .notifications-empty,
+  body.notifications-page-shell .notifications-hydration-skeleton__card {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  body.notifications-page-shell .notifications-group__title {
+    padding-inline: 2px;
+  }
+
+  body.notifications-page-shell .notification-card,
+  body.notifications-page-shell .doke-notification-card,
+  body.notifications-page-shell .notifications-empty {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  body.notifications-page-shell.has-notifications-action-panel-open .notifications-page-header__controls:not([hidden]) {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body.notifications-page-shell.has-notifications-action-panel-open .notifications-page-header__controls > .doke-mobile-action-panel:not([hidden]) {
+    max-width: 100%;
+  }
+}

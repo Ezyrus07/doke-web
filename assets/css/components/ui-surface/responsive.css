@@ -77,3 +77,65 @@
     padding-bottom: calc(72px + env(safe-area-inset-bottom));
   }
 }
+
+/* Mobile modal scroll contract.
+   Ownership: components/ui-surface controls overlay scroll behavior across
+   shared modals. On mobile, tall dialogs must scroll as one surface instead of
+   relying on a nested body scroller that is fragile in Safari/device previews. */
+@media (max-width: 760px) {
+  :is(
+    .wallet-modal:not([hidden]),
+    .ui-modal:not([hidden]),
+    .community-request-modal:not([hidden]),
+    .community-action-modal:not([hidden]),
+    .payment-overlay:not([hidden]),
+    .detail-modal:not([hidden])
+  ),
+  :is(
+    dialog.address-modal,
+    dialog.home-address-modal,
+    dialog.profile-followers-modal,
+    dialog.profile-edit-modal,
+    dialog.detail-budget-modal,
+    dialog.profile-budget-modal,
+    dialog.image-lightbox,
+    dialog.charge-modal
+  )[open] {
+    align-items: start;
+    place-items: start center;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  :is(
+    .community-action-modal__dialog,
+    .community-request-modal__dialog,
+    .wallet-modal__card,
+    .ui-modal__dialog,
+    .payment-overlay__dialog,
+    .detail-modal__card,
+    .home-address-modal__dialog,
+    .address-modal__dialog,
+    .profile-followers-modal__dialog,
+    .profile-edit-modal__dialog,
+    .detail-budget-modal__dialog,
+    .charge-modal__surface
+  ) {
+    max-height: none;
+  }
+
+  :is(.doke-action-modal__surface, .doke-modal-surface) {
+    overflow: visible;
+  }
+
+  :is(.doke-action-modal__form) {
+    min-height: 0;
+    display: block;
+  }
+
+  :is(.doke-action-modal__body, .doke-modal-body) {
+    overflow: visible;
+  }
+}

@@ -29,7 +29,9 @@
     '/'
   ]);
 
-  var NATIVE_ONLY_ROUTES = new Set([]);
+  var NATIVE_ONLY_ROUTES = new Set([
+    '/perfil.html'
+  ]);
   var HYDRATION_BARRIER_ROUTES = new Set([
     '/pedidos.html',
     '/mensagens.html',

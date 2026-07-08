@@ -76,7 +76,7 @@
       label: 'Meu perfil',
       shortLabel: 'Perfil',
       href: 'perfil.html',
-      mobileBottomHref: 'perfil.html?mode=owner&panel=posts',
+      mobileBottomHref: 'perfil.html',
       icon: 'profile',
       drawerIcon: 'profile',
       sidebarClass: 'profile',

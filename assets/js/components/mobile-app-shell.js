@@ -712,7 +712,7 @@
       ['orders', 'pedidos.html', 'Pedidos', ICONS.orders],
       ['messages', 'mensagens.html', 'Mensagens', ICONS.messages],
       ['communities', 'comunidade.html', 'Comun.', ICONS.communities],
-      ['profile', 'perfil.html?mode=owner&panel=posts', 'Perfil', ICONS.profile]
+      ['profile', 'perfil.html', 'Perfil', ICONS.profile]
     ];
   }
 
