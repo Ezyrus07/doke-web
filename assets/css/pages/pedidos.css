@@ -2514,3 +2514,208 @@ body[data-page="pedidos"][data-orders-audience="client"] [data-orders-hydration-
 body[data-page="pedidos"][data-orders-audience="client"] [data-orders-hydration-skeleton="insights"] {
   display: none;
 }
+
+/* Pedidos mobile empty states: keep one surface only and prevent nested card outlines. */
+@media (max-width: 760px) {
+  body.orders-page-shell .orders-planner__empty.doke-empty-state {
+    min-height: 164px;
+    padding: 10px 12px 12px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    text-align: center;
+  }
+
+  body.orders-page-shell .orders-planner__empty.doke-empty-state h4 {
+    font-size: 1.02rem;
+    line-height: 1.18;
+  }
+
+  body.orders-page-shell .orders-planner__empty.doke-empty-state p {
+    max-width: 28ch;
+    margin-inline: auto;
+    font-size: 0.92rem;
+    line-height: 1.38;
+  }
+
+  body.orders-page-shell .orders-empty.doke-empty-state {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  body.orders-page-shell .orders-empty__card.doke-empty-state {
+    gap: 13px;
+    padding: 20px 16px;
+    border: 0;
+    box-shadow: var(--card-shadow, 0 14px 30px rgba(22, 55, 91, 0.07));
+    text-align: center;
+  }
+
+  body.orders-page-shell .orders-empty__badge {
+    justify-self: center;
+  }
+
+  body.orders-page-shell .orders-empty__card h3 {
+    max-width: 12ch;
+    justify-self: center;
+    font-size: 1.34rem;
+    line-height: 1.04;
+  }
+
+  body.orders-page-shell .orders-empty__card p {
+    max-width: 28ch;
+    justify-self: center;
+    font-size: 0.94rem;
+    line-height: 1.42;
+  }
+
+  body.orders-page-shell .orders-empty__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+
+  body.orders-page-shell .orders-empty__button {
+    width: 100%;
+    min-height: var(--control-height-lg);
+    padding-inline: 16px;
+    white-space: nowrap;
+  }
+}
+
+
+
+/* Mobile orders header search overlay.
+   The header search is a temporary header state, not another compressed action. */
+@media (max-width: 560px) {
+  body.orders-page-shell .app-header--orders .home-side-meta__search-form,
+  body.orders-page-shell .app-header--orders .home-side-meta__search-close {
+    display: none;
+  }
+
+  body.orders-page-shell .app-header--orders .home-side-meta__search {
+    flex: 0 0 var(--doke-mobile-header-control, 42px);
+  }
+
+  body.orders-page-shell[data-orders-header-search-expanded="true"] .app-header--orders .app-header__inner {
+    position: relative;
+  }
+
+  body.orders-page-shell[data-orders-header-search-expanded="true"] .app-header--orders .home-side-meta__group--primary {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: grid;
+    grid-template-columns: var(--doke-mobile-header-control, 42px) minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    background: linear-gradient(180deg, #f7fbff 0%, #eef6fc 100%);
+    box-sizing: border-box;
+  }
+
+  body.orders-page-shell[data-orders-header-search-expanded="true"] .app-header--orders .orders-tablet-menu {
+    grid-column: 1;
+    position: static;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  body.orders-page-shell[data-orders-header-search-expanded="true"] .app-header--orders .home-side-meta__search {
+    display: none;
+  }
+
+  body.orders-page-shell[data-orders-header-search-expanded="true"] .app-header--orders .home-side-meta__search-form {
+    grid-column: 2;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 36px;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    height: 42px;
+    min-height: 42px;
+    padding: 0 4px 0 14px;
+    border: var(--border-soft);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: var(--shadow-control-soft);
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  body.orders-page-shell[data-orders-header-search-expanded="true"] .app-header--orders .home-side-meta__search-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  body.orders-page-shell[data-orders-header-search-expanded="true"] .app-header--orders .home-side-meta__search-input {
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #12375f;
+    font-size: 0.88rem;
+    font-weight: 750;
+    outline: 0;
+  }
+
+  body.orders-page-shell[data-orders-header-search-expanded="true"] .app-header--orders .home-side-meta__search-input::placeholder {
+    color: #8a9cb2;
+    opacity: 1;
+  }
+
+  body.orders-page-shell[data-orders-header-search-expanded="true"] .app-header--orders .home-side-meta__search-close {
+    display: inline-grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: #1767ad;
+    box-shadow: none;
+  }
+
+  body.orders-page-shell[data-orders-header-search-expanded="true"] .app-header--orders .home-side-meta__search-close svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  body.orders-page-shell[data-orders-header-search-expanded="true"] .app-header--orders .orders-page-actions,
+  body.orders-page-shell[data-orders-header-search-expanded="true"] .app-header--orders .app-header__group--secondary {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+@media (min-width: 561px) {
+  body.orders-page-shell .app-header--orders .home-side-meta__search-close {
+    display: none;
+  }
+}

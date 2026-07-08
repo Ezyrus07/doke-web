@@ -211,7 +211,7 @@ for (const file of cssFiles) {
   const css = read(file);
 
   const importantCount = (css.match(/!important/g) || []).length;
-  if (importantCount > 0 && !file.includes('mobile-app-shell.css')) {
+  if (importantCount > 0) {
     const registeredDebt = importantDebtRegister.get(file);
     const maxAllowed = registeredDebt ? Number(registeredDebt.maxAllowed) : 0;
 

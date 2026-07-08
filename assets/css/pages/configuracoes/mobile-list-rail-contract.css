@@ -1,0 +1,96 @@
+/* configuracoes.html mobile list rail contract.
+   Responsibility: keep the settings menu list aligned to the same compact
+   visual rail used by the mobile header controls without changing the panel
+   anatomy or desktop/tablet layout. */
+@media (max-width: 760px) {
+  body.settings-page-shell.has-global-header {
+    --settings-mobile-list-rail-padding: clamp(16px, 4.25vw, 20px);
+  }
+
+  body.settings-page-shell.has-global-header > .app-shell > .page > .page__content {
+    padding-inline: 0;
+  }
+
+  body.settings-page-shell.has-global-header .settings-layout {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: none;
+    max-width: none;
+    margin-inline: 0;
+    padding-inline: 0;
+    box-sizing: border-box;
+  }
+
+  body.settings-page-shell.has-global-header .settings-sidebar {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: none;
+    max-width: none;
+    padding-inline: var(--settings-mobile-list-rail-padding);
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    box-sizing: border-box;
+  }
+
+  body.settings-page-shell.has-global-header :is(
+    .settings-sidebar-search,
+    .settings-sidebar__section,
+    .settings-sidebar__label,
+    .settings-sidebar__item
+  ) {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 420px) {
+  body.settings-page-shell.has-global-header {
+    --settings-mobile-list-rail-padding: clamp(16px, 4vw, 18px);
+  }
+}
+
+/* Detail panels use a separate internal surface from the menu list. Keep the
+   card and back control on the same mobile visual rail as the list/header. */
+@media (max-width: 760px) {
+  body.settings-page-shell.has-global-header.settings-narrow-panel-mode .settings-layout {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: none;
+    max-width: none;
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
+  body.settings-page-shell.has-global-header.settings-narrow-panel-mode .settings-content {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: none;
+    max-width: none;
+    padding-inline: var(--settings-mobile-list-rail-padding);
+    box-sizing: border-box;
+  }
+
+  body.settings-page-shell.has-global-header.settings-narrow-panel-mode :is(
+    .settings-panel-topbar,
+    .settings-panel,
+    .settings-card
+  ) {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  body.settings-page-shell.has-global-header.settings-narrow-panel-mode .settings-panel-topbar {
+    padding-inline: 0;
+  }
+
+  body.settings-page-shell.has-global-header.settings-narrow-panel-mode .settings-card {
+    overflow: hidden;
+  }
+}

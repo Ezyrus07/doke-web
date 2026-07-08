@@ -39,8 +39,13 @@ assert(
 );
 
 assert(
-  /more-services(?:__cards-rail)?[\s\S]*?\.service-grid[\s\S]*?grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)[\s\S]*?\.more-services \.service-grid > \.doke-ad-card[\s\S]*?--doke-ad-card-mobile-width:\s*100%[\s\S]*?--doke-ad-media-height-mobile:\s*clamp\(82px,\s*23vw,\s*100px\)[\s\S]*?--doke-ad-padding-mobile:\s*8px 9px 9px[\s\S]*?--doke-ad-body-display:\s*grid[\s\S]*?--doke-ad-body-grid-template-rows:\s*auto auto auto auto auto[\s\S]*?--doke-ad-body-gap-mobile:\s*3px[\s\S]*?--doke-ad-footer-display:\s*grid/i.test(mobileHeroFeed),
-  'home/mobile-hero-feed.css must keep Mais anúncios in a compact 2-column mobile grid while passing density tokens to the card component.'
+  /section\.more-services \.service-grid\.service-grid--compact\[data-more-services-grid\][\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\)/i.test(mobileHeroFeed),
+  'home/mobile-hero-feed.css must keep Mais anúncios as a one-column mobile list.'
+);
+
+assert(
+  /section\.more-services \.doke-ad-card[\s\S]*?display:\s*grid !important[\s\S]*?grid-template-columns:\s*clamp\(118px,\s*33vw,\s*132px\)\s*minmax\(0,\s*1fr\)[\s\S]*?section\.more-services \.doke-ad-card__avatar[\s\S]*?display:\s*none !important[\s\S]*?section\.more-services \.doke-ad-card__cta[\s\S]*?min-width:\s*116px !important/i.test(adCard),
+  'components/cards/ad-card.css must own the horizontal mobile anatomy for Mais anúncios cards.'
 );
 
 assert(

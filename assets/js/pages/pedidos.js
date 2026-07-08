@@ -450,6 +450,29 @@
     };
 
     const mobileSearchQuery = window.matchMedia('(max-width: 640px)');
+    const mobileHeaderSearchQuery = window.matchMedia('(max-width: 560px)');
+    const ordersHeader = document.querySelector('.app-header--orders');
+    const headerSearchTrigger = ordersHeader?.querySelector('[data-orders-header-search-open]');
+    const headerSearchForm = ordersHeader?.querySelector('[data-orders-header-search]');
+    const headerSearchInput = headerSearchForm?.querySelector('.home-side-meta__search-input');
+    const headerSearchClose = headerSearchForm?.querySelector('[data-orders-header-search-close]');
+
+    const setHeaderSearchExpanded = (expanded) => {
+      const shouldExpand = Boolean(expanded && mobileHeaderSearchQuery.matches);
+      if (shouldExpand) document.body.setAttribute('data-orders-header-search-expanded', 'true');
+      else document.body.removeAttribute('data-orders-header-search-expanded');
+      if (headerSearchTrigger) headerSearchTrigger.setAttribute('aria-expanded', shouldExpand ? 'true' : 'false');
+      if (shouldExpand) {
+        window.setTimeout(() => headerSearchInput?.focus(), 0);
+      } else {
+        headerSearchInput?.blur();
+      }
+    };
+
+    const closeHeaderSearch = ({ clear = false } = {}) => {
+      if (clear && headerSearchInput) headerSearchInput.value = '';
+      setHeaderSearchExpanded(false);
+    };
 
     const setSearchExpanded = (expanded) => {
       root.classList.toggle('is-search-open', expanded);
@@ -506,6 +529,11 @@
       if (root.classList.contains('is-search-open')) {
         const clickedInsideSearch = target.closest('.orders-page-header__search');
         if (!clickedInsideSearch && !(searchInput?.value || '').trim()) setSearchExpanded(false);
+      }
+
+      if (document.body.getAttribute('data-orders-header-search-expanded') === 'true') {
+        const clickedInsideHeaderSearch = ordersHeader?.contains(target);
+        if (!clickedInsideHeaderSearch && !(headerSearchInput?.value || '').trim()) closeHeaderSearch();
       }
 
       if (popover && !popover.hidden) {
@@ -572,6 +600,37 @@
       setSearchExpanded(false);
       searchInput?.blur();
       applyFilters();
+    });
+
+    headerSearchTrigger?.addEventListener('click', (event) => {
+      if (!mobileHeaderSearchQuery.matches) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setHeaderSearchExpanded(true);
+    });
+
+    headerSearchClose?.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      closeHeaderSearch();
+    });
+
+    headerSearchForm?.addEventListener('submit', (event) => {
+      if (!mobileHeaderSearchQuery.matches) return;
+      if (!document.body.hasAttribute('data-orders-header-search-expanded')) {
+        event.preventDefault();
+        setHeaderSearchExpanded(true);
+      }
+    });
+
+    headerSearchForm?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      closeHeaderSearch();
+    });
+
+    mobileHeaderSearchQuery.addEventListener?.('change', (event) => {
+      if (!event.matches) closeHeaderSearch();
     });
 
     let selecting = false;

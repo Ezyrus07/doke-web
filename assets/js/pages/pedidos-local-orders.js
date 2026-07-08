@@ -6,11 +6,7 @@
   var Doke = window.Doke || (window.Doke = {});
 
   var CARD_ICONS = {
-    details: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.75 4.75h7.5l3 3V19.25h-10.5V4.75Z"></path><path d="M14.25 4.75v3h3"></path><path d="M9 11.25h6"></path><path d="M9 14.75h4.5"></path></svg>',
-    chat: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16v10H8.2L4 20V6.5Z"></path><path d="M8 10h8"></path><path d="M8 13h5"></path></svg>',
-    receipt: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h10v15H7z"></path><path d="M9.5 9.5h5"></path><path d="M9.5 13h5"></path></svg>',
-    clock: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5v4.5l3 1.8"></path></svg>',
-    check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7 9.5 17.5 4 12"></path></svg>'
+    receipt: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h10v15H7z"></path><path d="M9.5 9.5h5"></path><path d="M9.5 13h5"></path></svg>'
   };
 
   function escapeHtml(value) {
@@ -247,6 +243,45 @@
     return 'Conversa';
   }
 
+  function getCardBadgeLabel(order) {
+    var status = normalizeStatusToken(order && order.status || 'pending');
+    if (order && order.smartBadge) return order.smartBadge;
+    if (status === 'completed') return 'Pós-serviço';
+    if (status === 'accepted' || status === 'conversation') return 'Conversa';
+    if (status === 'quoted') return 'Proposta';
+    if (status === 'responded') return 'Acompanhar';
+    if (status === 'in_progress') return 'Em andamento';
+    if (status === 'cancelled') return 'Arquivado';
+    return 'Ação pendente';
+  }
+
+  function formatCardTitle(value) {
+    var title = String(value || '').replace(/\s+/g, ' ').trim();
+    var words = title.split(' ').filter(Boolean);
+    var titleCaseLike = words.length > 2 && words.every(function (word, index) {
+      if (/^(de|da|do|das|dos|e)$/i.test(word)) return true;
+      return index === 0 || /^[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ][a-záàâãéêíóôõúç-]+$/.test(word);
+    });
+
+    if (!titleCaseLike || /\b[A-Z]{2,}\b/.test(title)) return title;
+    return title.charAt(0).toUpperCase() + title.slice(1).toLocaleLowerCase('pt-BR');
+  }
+
+  function formatCardLocation(value) {
+    var location = String(value || '').replace(/\s+/g, ' ').trim();
+    if (!location) return 'Endereço a confirmar';
+
+    var parts = location.split(/[•·]/).map(function (part) { return part.trim(); }).filter(Boolean);
+    var state = parts.length ? parts[parts.length - 1] : '';
+    var city = parts.length > 1 ? parts[parts.length - 2] : '';
+
+    if (parts.length >= 3 && /^[A-Z]{2}$/.test(state) && city) {
+      return parts[0] + ' • ' + city + ' - ' + state;
+    }
+
+    return location.replace(/\s*[•·]\s*([A-Z]{2})$/, ' - $1');
+  }
+
   function getDetailFlow(order, professionalView) {
     var status = order.status || 'pending';
     if (status === 'accepted' || status === 'conversation' || status === 'responded') return 'Pedido aceito. A conversa está liberada para alinhar proposta e próximos passos.';
@@ -279,8 +314,9 @@
     var peerRoleLabel = professionalView ? 'Cliente' : 'Profissional';
     var provider = escapeHtml(peerNameRaw);
     var initials = escapeHtml(professionalView ? order.clientInitials || getInitials(peerNameRaw) : order.providerInitials || getInitials(peerNameRaw));
-    var title = escapeHtml(order.serviceTitle || order.service || order.title || 'Serviço solicitado');
-    var location = escapeHtml(order.location || order.locationTitle || 'Endereço a confirmar');
+    var title = escapeHtml(formatCardTitle(order.serviceTitle || order.service || order.title || 'Serviço solicitado'));
+    var location = escapeHtml(formatCardLocation(order.location || order.locationTitle || 'Endereço a confirmar'));
+    var cardBadge = escapeHtml(getCardBadgeLabel(order));
     var scope = escapeHtml(order.scope || order.details || order.description || 'Escopo enviado pelo orçamento');
     var timeline = escapeHtml(order.urgency || order.desiredDate || 'Aguardando retorno do profissional');
     var materials = escapeHtml(order.materials || 'Materiais a alinhar com o profissional');
@@ -342,7 +378,8 @@
           <span class="order-card__status-dot ${dotClass}"></span>
           <span class="order-card__status-text">${statusLabel}</span>
         </div>
-        <span class="order-card__time"><span class="order-card__time-icon" aria-hidden="true">${CARD_ICONS.clock}</span><span>${createdLabel}</span></span>
+        <span class="order-card__time">${createdLabel}</span>
+        <span class="order-card__smart-badge doke-badge">${cardBadge}</span>
       </div>
       <div class="order-card__body">
         <h2>${title}</h2>
@@ -361,14 +398,14 @@
       </div>
       <div class="order-card__actions${reportProblemAllowed ? ' order-card__actions--preferred' : ''}">
         ${disputePresentation ? `
-        <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-open="details">${CARD_ICONS.details}<span>Ver detalhes</span></button>
-        <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-open="chat">${CARD_ICONS.chat}<span>Conversa</span></button>
+        <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-open="details"><span>Ver detalhes</span></button>
+        <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-open="chat"><span>Conversa</span></button>
         ` : professionalView && (order.status || 'pending') === 'pending' ? `
-        <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-accept="${id}">${CARD_ICONS.check}<span>Aceitar pedido</span></button>
+        <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-accept="${id}"><span>Aceitar pedido</span></button>
         <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-decline="${id}"><span>Recusar</span></button>
         ` : `
-        <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-open="details">${CARD_ICONS.details}<span>Ver detalhes</span></button>
-        <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-open="chat">${CARD_ICONS.chat}<span>${escapeHtml(getPrimaryActionLabel(order, professionalView))}</span></button>
+        <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-open="details"><span>Ver detalhes</span></button>
+        <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-open="chat"><span>${escapeHtml(getPrimaryActionLabel(order, professionalView))}</span></button>
         `}
       </div>
       ${walletTransaction && walletTransaction.id ? `

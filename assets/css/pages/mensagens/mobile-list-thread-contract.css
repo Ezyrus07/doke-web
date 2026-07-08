@@ -1,0 +1,115 @@
+/* mensagens.html mobile list and thread contract.
+ * Responsibility: align the compact conversation list with the visual header rail
+ * and keep the professional charge action available in the mobile thread header.
+ */
+@media (max-width: 760px) {
+  body.messages-page-shell.has-global-header:not(.messages-thread-is-open) {
+    --messages-mobile-list-rail-padding: clamp(16px, 4.25vw, 20px);
+  }
+
+  body.messages-page-shell.has-global-header:not(.messages-thread-is-open)
+  > .app-shell > .page > .page__content {
+    padding-inline: 0;
+  }
+
+  body.messages-page-shell.has-global-header:not(.messages-thread-is-open) .messages-shell-content {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: none;
+    max-width: none;
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
+  body.messages-page-shell.has-global-header:not(.messages-thread-is-open) .messages-app:not(.messages-app--thread-open) {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: none;
+    max-width: none;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  body.messages-page-shell.has-global-header:not(.messages-thread-is-open) .messages-app:not(.messages-app--thread-open) > .messages-sidebar {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: none;
+    max-width: none;
+    padding-inline: var(--messages-mobile-list-rail-padding);
+    border: 0;
+    background: transparent;
+    box-sizing: border-box;
+  }
+
+  body.messages-page-shell.has-global-header:not(.messages-thread-is-open) .messages-app:not(.messages-app--thread-open) .messages-sidebar-tools,
+  body.messages-page-shell.has-global-header:not(.messages-thread-is-open) .messages-app:not(.messages-app--thread-open) .chat-sidebar-scroll-region,
+  body.messages-page-shell.has-global-header:not(.messages-thread-is-open) .messages-app:not(.messages-app--thread-open) :is(.messages-block, .messages-list, .messages-empty) {
+    inline-size: 100%;
+    width: 100%;
+    max-inline-size: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  body.messages-page-shell.has-global-header:not(.messages-thread-is-open) .messages-app:not(.messages-app--thread-open) .chat-sidebar-scroll-region {
+    margin-inline: auto;
+    padding-inline: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  body.messages-page-shell.has-global-header:not(.messages-thread-is-open) {
+    --messages-mobile-list-rail-padding: clamp(16px, 4vw, 18px);
+  }
+}
+
+
+
+@media (max-width: 560px) {
+  html.chat-room-mobile-open body[data-page="mensagens"] .messages-app.messages-app--thread-open > .messages-thread {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  html.chat-room-mobile-open body[data-page="mensagens"] .messages-thread__header {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    column-gap: 8px;
+  }
+
+  html.chat-room-mobile-open body[data-page="mensagens"] .messages-thread__actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    min-inline-size: max-content;
+    min-width: max-content;
+  }
+
+  html.chat-room-mobile-open body[data-page="mensagens"] .messages-thread__action--charge:not([hidden]) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 38px;
+    width: 38px;
+    min-inline-size: 38px;
+    min-width: 38px;
+    block-size: 38px;
+    height: 38px;
+    min-block-size: 38px;
+    min-height: 38px;
+    padding: 0;
+    border-radius: var(--radius-exact-15);
+  }
+
+  html.chat-room-mobile-open body[data-page="mensagens"] .messages-thread__action--charge span {
+    display: none;
+  }
+
+  html.chat-room-mobile-open body[data-page="mensagens"] .messages-thread__action--charge svg {
+    inline-size: 17px;
+    width: 17px;
+    block-size: 17px;
+    height: 17px;
+  }
+}

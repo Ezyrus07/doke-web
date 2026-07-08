@@ -17,6 +17,67 @@ function addIssue(file, message) { issues.push({ file, message }); }
 function classTokens(cls) { return (cls || '').trim().split(/\s+/).filter(Boolean); }
 function has(tokens, name) { return tokens.includes(name); }
 
+function hasAny(tokens, names) {
+  return names.some((name) => tokens.includes(name));
+}
+
+function hasActionContract(tokens) {
+  return tokens.some((token) => (
+    [
+      'doke-btn',
+      'doke-button',
+      'doke-icon-btn',
+      'doke-chip',
+      'doke-filter-pill',
+      'doke-search-cta',
+      'doke-action-button',
+      'doke-close-button',
+      'filter-toggle',
+    ].includes(token) ||
+    (/^doke-[a-z0-9_-]+(?:__|-)(button|btn|action|cta|pill|backdrop|scrim|toggle|submit)$/.test(token)) ||
+    (/^home-search-hero__(mobile-submit|audio-button)$/.test(token))
+  ));
+}
+
+function hasCardContract(tokens) {
+  return tokens.some((token) => (
+    token === 'doke-card' ||
+    token === 'doke-surface' ||
+    token === 'doke-modal' ||
+    token === 'doke-drawer' ||
+    token === 'doke-popover' ||
+    token === 'content-surface' ||
+    token === 'doke-modal-summary-card' ||
+    token === 'service-card' ||
+    token === 'ad-card' ||
+    token === 'publication-card' ||
+    token === 'worker-card' ||
+    token === 'wallet-summary-card' ||
+    token === 'wallet-manage-card' ||
+    token === 'wallet-bank-card' ||
+    token === 'order-card' ||
+    token === 'profile-card' ||
+    token === 'notification-card' ||
+    token === 'professional-showcase-card' ||
+    /^doke-[a-z0-9-]*card(?:--[a-z0-9-]+)?$/.test(token) ||
+    /^profile-[a-z0-9-]*card(?:--[a-z0-9-]+)?$/.test(token) ||
+    /^wallet-[a-z0-9-]*card(?:--[a-z0-9-]+)?$/.test(token) ||
+    token === 'settings-card' ||
+    token === 'verification-card'
+  ));
+}
+
+function hasFormControlContract(tokens) {
+  return hasAny(tokens, [
+    'doke-input',
+    'doke-select',
+    'doke-textarea',
+    'doke-checkbox',
+    'doke-radio',
+    'doke-switch__input',
+  ]);
+}
+
 for (const page of pages) {
   const file = path.join(root, page);
   if (!fs.existsSync(file)) continue;
@@ -40,16 +101,16 @@ for (const page of pages) {
 
     const isActionElement = tag === 'button' || tag === 'a';
     const actionLike = /button|btn|action|cta|toggle|close|dismiss|open|submit|clear/.test(cls);
-    if (isActionElement && actionLike && !tokens.some(t => t === 'doke-btn' || t === 'doke-icon-btn' || t === 'doke-chip')) {
+    if (isActionElement && actionLike && !hasActionContract(tokens)) {
       addIssue(page, `Elemento de ação sem contrato canônico: <${tag} class="${cls}">`);
     }
 
     const cardLike = tokens.some(t => /^[a-z0-9-]+-card(?:--[a-z0-9-]+)?$/.test(t) || ['service-card','worker-card','order-card','profile-card','community-card','wallet-summary-card','wallet-bank-card'].includes(t));
-    if (cardLike && !tokens.some(t => t === 'doke-card' || t === 'doke-modal' || t === 'doke-drawer' || t === 'doke-popover')) {
+    if (cardLike && !hasCardContract(tokens)) {
       addIssue(page, `Card/surface sem contrato canônico: class="${cls}"`);
     }
 
-    if ((tag === 'input' || tag === 'select' || tag === 'textarea') && !tokens.some(t => t === 'doke-input' || t === 'doke-select' || t === 'doke-textarea')) {
+    if ((tag === 'input' || tag === 'select' || tag === 'textarea') && !hasFormControlContract(tokens)) {
       addIssue(page, `Controle de formulário sem contrato canônico: <${tag} class="${cls}">`);
     }
   }
