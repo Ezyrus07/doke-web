@@ -43,6 +43,79 @@
   var audioDraftSeconds = 0;
   var audioDraftTimer = null;
 
+  var COMMUNITY_SELECTION_STORAGE_KEY = 'doke.community.selected.v1';
+
+  function safeJsonParse(value) {
+    if (!value) return null;
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function normalizeCommunityContext(raw) {
+    raw = raw || {};
+    var title = String(raw.title || raw.name || '').trim();
+    var id = String(raw.id || raw.community || raw.communityId || '').trim();
+    if (!title && id) title = id.replace(/[-_]+/g, ' ').replace(/\b\w/g, function (letter) { return letter.toUpperCase(); });
+    if (!title) title = 'Comunidade Doke';
+    return {
+      id: id || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'community',
+      title: title,
+      category: String(raw.category || '').trim()
+    };
+  }
+
+  function getCommunityContextFromLocation() {
+    var params = new URLSearchParams(window.location.search || '');
+    var urlContext = {
+      id: params.get('community') || params.get('communityId') || params.get('id') || '',
+      title: params.get('title') || params.get('name') || '',
+      category: params.get('category') || params.get('categoria') || ''
+    };
+
+    if (urlContext.id || urlContext.title) return normalizeCommunityContext(urlContext);
+
+    var stored = null;
+    try {
+      stored = safeJsonParse(window.localStorage && window.localStorage.getItem(COMMUNITY_SELECTION_STORAGE_KEY));
+    } catch (error) {
+      stored = null;
+    }
+    return normalizeCommunityContext(stored);
+  }
+
+  function applyCommunityContext() {
+    var context = getCommunityContextFromLocation();
+    root.dataset.communityId = context.id;
+    root.dataset.communityTitle = context.title;
+    root.setAttribute('aria-label', 'Sala interna da comunidade ' + context.title);
+
+    var eyebrow = root.querySelector('.community-room-sidebar__eyebrow');
+    if (eyebrow) eyebrow.textContent = context.title;
+
+    var returnLinks = Array.prototype.slice.call(document.querySelectorAll('.community-room-return'));
+    returnLinks.forEach(function (link) {
+      link.setAttribute('aria-label', 'Voltar para comunidades');
+    });
+
+    if (document.title) document.title = 'Doke | ' + context.title;
+
+    try {
+      window.localStorage && window.localStorage.setItem(COMMUNITY_SELECTION_STORAGE_KEY, JSON.stringify({
+        id: context.id,
+        title: context.title,
+        category: context.category,
+        selectedAt: new Date().toISOString()
+      }));
+    } catch (error) {
+      // Local storage can be unavailable in restricted browser contexts.
+    }
+  }
+
+  applyCommunityContext();
+
   function updateComposerDraftState() {
     if (!composer) return;
     var hasVisibleDraft = [audioDraft, attachmentDraft].some(function (item) {
