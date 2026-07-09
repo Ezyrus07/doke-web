@@ -131,8 +131,10 @@
 
     const renderLocalNotificationCard = (notification) => {
       const category = notification.category || 'social';
-      const unreadClass = notification.read ? '' : ' is-unread';
-      const unreadToken = notification.read ? '' : ' unread';
+      const isRead = Boolean(notification.read);
+      const unreadClass = isRead ? '' : ' is-unread';
+      const unreadToken = isRead ? '' : ' unread';
+      const markReadLabel = isRead ? 'Lida' : 'Marcar lida';
       const card = document.createElement('article');
       card.className = `notification-card${unreadClass} ${getCategoryClass(category)} doke-card doke-notification-card`;
       card.dataset.category = `${category}${unreadToken}`;
@@ -141,8 +143,9 @@
       card.dataset.notificationId = notification.id;
       card.dataset.domainCard = 'notification';
       card.dataset.localNotification = 'true';
+      card.dataset.read = isRead ? 'true' : 'false';
       card.innerHTML = `
-        <button class="notification-card__read-toggle doke-icon-btn doke-icon-btn--flat" type="button" data-mark-read-icon aria-label="Marcar como lida">
+        <button class="notification-card__read-toggle doke-icon-btn doke-icon-btn--flat" type="button" data-mark-read-icon aria-label="${isRead ? 'Notificação lida' : 'Marcar como lida'}"${isRead ? ' disabled aria-disabled="true"' : ''}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 12 3 3 7-7"></path><rect x="4" y="4" width="16" height="16" rx="3"></rect></svg>
         </button>
         <div class="notification-card__icon" aria-hidden="true">${getIconSvg(category)}</div>
@@ -155,12 +158,82 @@
           <p>${escapeHtml(notification.body)}</p>
           <div class="notification-card__inline-actions">
             <a class="notification-card__inline-action doke-btn doke-btn--link" href="${escapeHtml(notification.targetUrl || 'notificacoes.html')}">${escapeHtml(notification.actionLabel || 'Abrir')}</a>
-            <button class="notification-card__inline-action doke-btn doke-btn--link" type="button" data-mark-read>Marcar lida</button>
+            <button class="notification-card__inline-action doke-btn doke-btn--link" type="button" data-mark-read${isRead ? ' disabled aria-disabled="true"' : ''}>${markReadLabel}</button>
             <button class="notification-card__inline-action notification-card__inline-action--danger doke-btn doke-btn--link" type="button" data-dismiss-notification>Dispensar</button>
           </div>
         </div>
       `;
       return card;
+    };
+
+    const syncReadControls = (card) => {
+      if (!card) return;
+      const isRead = !card.classList.contains('is-unread');
+      card.dataset.read = isRead ? 'true' : 'false';
+
+      card.querySelectorAll('[data-mark-read-icon]').forEach((button) => {
+        button.setAttribute('aria-label', isRead ? 'Notificação lida' : 'Marcar como lida');
+        button.toggleAttribute('disabled', isRead);
+        button.setAttribute('aria-disabled', isRead ? 'true' : 'false');
+      });
+
+      card.querySelectorAll('[data-mark-read]').forEach((button) => {
+        button.textContent = isRead ? 'Lida' : 'Marcar lida';
+        button.toggleAttribute('disabled', isRead);
+        button.setAttribute('aria-disabled', isRead ? 'true' : 'false');
+      });
+    };
+
+    const setNotificationRead = (card) => {
+      if (!card || !card.classList.contains('is-unread')) {
+        syncReadControls(card);
+        return;
+      }
+
+      const id = card.dataset.notificationId || '';
+      if (id) getNotificationsService()?.markAsRead?.(id);
+      card.classList.remove('is-unread');
+      const tokens = (card.dataset.catégory || card.dataset.category || '').split(/\s+/).filter((token) => token !== 'unread');
+      card.dataset.catégory = tokens.join(' ');
+      card.dataset.category = tokens.join(' ');
+      syncReadControls(card);
+      updatéUnread();
+      updatéStats();
+      applyFilter(currentFilter, currentTimeFilter);
+    };
+
+    const finalizeDismissNotification = (card) => {
+      if (!card) return;
+      const group = card.closest('.notifications-group');
+      card.dataset.dismissed = 'true';
+      card.classList.remove('is-dismissing');
+      card.remove();
+
+      if (group && !group.querySelector('.notification-card')) {
+        group.remove();
+      }
+
+      refreshCards();
+      updatéUnread();
+      updatéStats();
+      applyFilter(currentFilter, currentTimeFilter);
+      syncEmptyState();
+      syncSelectedActions();
+    };
+
+    const dismissNotificationCard = (card) => {
+      if (!card || card.dataset.dismissed === 'true' || card.classList.contains('is-dismissing')) return;
+
+      const id = card.dataset.notificationId || '';
+      getNotificationsService()?.dismiss?.(id);
+      card.classList.add('is-dismissing');
+      card.setAttribute('aria-hidden', 'true');
+      card.querySelectorAll('a, button, input, select, textarea').forEach((control) => {
+        control.tabIndex = -1;
+        if (control instanceof HTMLButtonElement) control.disabled = true;
+      });
+
+      window.setTimeout(() => finalizeDismissNotification(card), 180);
     };
 
     const getCanonicalTodayGroup = () => {
@@ -187,19 +260,13 @@
       card.setAttribute('aria-selected', 'false');
       if (!card.hasAttribute('tabindex')) card.tabIndex = 0;
 
+      syncReadControls(card);
+
       card.querySelectorAll('[data-mark-read], [data-mark-read-icon]').forEach((button) => {
         button.addEventListener('click', (event) => {
           event.preventDefault();
           event.stopPropagation();
-          const id = card.dataset.notificationId || '';
-          getNotificationsService()?.markAsRead?.(id);
-          card.classList.remove('is-unread');
-          const tokens = (card.dataset.catégory || card.dataset.category || '').split(/\s+/).filter((token) => token !== 'unread');
-          card.dataset.catégory = tokens.join(' ');
-          card.dataset.category = tokens.join(' ');
-          updatéUnread();
-          updatéStats();
-          applyFilter(currentFilter, currentTimeFilter);
+          setNotificationRead(card);
         });
       });
 
@@ -207,13 +274,7 @@
         button.addEventListener('click', (event) => {
           event.preventDefault();
           event.stopPropagation();
-          const id = card.dataset.notificationId || '';
-          getNotificationsService()?.dismiss?.(id);
-          card.dataset.dismissed = 'true';
-          card.hidden = true;
-          updatéUnread();
-          updatéStats();
-          applyFilter(currentFilter, currentTimeFilter);
+          dismissNotificationCard(card);
         });
       });
 
@@ -335,6 +396,7 @@
       card.setAttribute('role', 'option');
       card.setAttribute('aria-selected', 'false');
       if (!card.hasAttribute('tabindex')) card.tabIndex = 0;
+      syncReadControls(card);
     });
 
     const setCardSelected = (card, selected) => {
@@ -528,6 +590,29 @@
       toggleSelect: toggleSelectPanel
     };
 
+    const hasVisibleNotificationCards = () => refreshCards().some((card) => {
+      if (!card || card.dataset.dismissed === 'true' || card.hidden) return false;
+      const group = card.closest('.notifications-group');
+      return !group || !group.hidden;
+    });
+
+    const syncEmptyState = (hasVisibleNotification = hasVisibleNotificationCards()) => {
+      if (!empty) return;
+      const hasVisible = Boolean(hasVisibleNotification || hasVisibleNotificationCards());
+
+      if (hydration && !hydration.canShowEmpty()) {
+        hydration.syncEmpty({ hasItems: true });
+      } else if (hydration) {
+        hydration.syncEmpty({ hasItems: hasVisible });
+      }
+
+      root.classList.toggle('has-visible-notifications', hasVisible);
+      root.classList.toggle('has-no-visible-notifications', !hasVisible);
+      empty.hidden = hasVisible;
+      empty.classList.toggle('is-hidden', hasVisible);
+      empty.setAttribute('aria-hidden', hasVisible ? 'true' : 'false');
+    };
+
     const applyFilter = (filter = currentFilter, timeFilter = currentTimeFilter) => {
       currentFilter = filter;
       currentTimeFilter = timeFilter;
@@ -562,17 +647,8 @@
         group.hidden = !hasVisibleCard;
       });
 
-      if (empty) {
-        const hasVisibleNotification = visible > 0;
-        if (hydration && !hydration.canShowEmpty()) {
-          hydration.syncEmpty({ hasItems: true });
-        } else if (hydration) {
-          hydration.syncEmpty({ hasItems: hasVisibleNotification });
-        } else {
-          empty.hidden = hasVisibleNotification;
-          empty.setAttribute('aria-hidden', hasVisibleNotification ? 'true' : 'false');
-        }
-      }
+      syncEmptyState(visible > 0);
+      window.requestAnimationFrame?.(() => syncEmptyState()) || syncEmptyState();
       updatéActiveChip();
     };
 
@@ -709,20 +785,16 @@
       applyFilter(currentFilter, currentTimeFilter);
     }));
 
-    root.querySelectorAll('[data-mark-read]').forEach((button) => button.addEventListener('click', () => {
-      button.closest('.notification-card')?.classList.remove('is-unread');
-      updatéUnread();
-      updatéStats();
-      applyFilter(currentFilter, currentTimeFilter);
+    root.querySelectorAll('[data-mark-read]').forEach((button) => button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setNotificationRead(button.closest('.notification-card'));
     }));
 
     root.querySelectorAll('[data-mark-read-icon]').forEach((button) => button.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      button.closest('.notification-card')?.classList.remove('is-unread');
-      updatéUnread();
-      updatéStats();
-      applyFilter(currentFilter, currentTimeFilter);
+      setNotificationRead(button.closest('.notification-card'));
     }));
 
     const getPrimaryHref = (card) => card?.querySelector('.notification-card__inline-actions a[href]')?.getAttribute('href') || '';
@@ -747,12 +819,7 @@
 
     root.querySelectorAll('[data-dismiss-notification]').forEach((button) => button.addEventListener('click', () => {
       const card = button.closest('.notification-card');
-      if (!card) return;
-      card.dataset.dismissed = 'true';
-      card.hidden = true;
-      updatéUnread();
-      updatéStats();
-      applyFilter(currentFilter, currentTimeFilter);
+      dismissNotificationCard(card);
     }));
 
     clearSelectedButton?.addEventListener('click', () => {
@@ -819,11 +886,7 @@
         actions.querySelector('[data-context-action="delete"]')?.addEventListener('click', (event) => {
           event.preventDefault();
           event.stopPropagation();
-          card.dataset.dismissed = 'true';
-          card.hidden = true;
-          updatéUnread();
-          updatéStats();
-          applyFilter(currentFilter, currentTimeFilter);
+          dismissNotificationCard(card);
           closeContextMenu();
         });
       }

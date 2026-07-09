@@ -348,7 +348,19 @@ body.notifications-page-shell .notifications-page-header__search--hero {
   box-shadow: var(--doke-elevation-control);
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.notification-card.is-dismissing {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.995);
+  pointer-events: none;
+}
+
+.notification-card.is-dismissing:hover {
+  transform: translateY(-6px) scale(0.995);
+  box-shadow: var(--doke-elevation-control);
 }
 
 .notification-card__read-toggle {
@@ -550,7 +562,8 @@ body.notifications-page-shell .notifications-page-header__search--hero {
   color: #6984a0;
 }
 
-.notifications-empty[hidden] {
+.notifications-empty[hidden],
+.notifications-empty.is-hidden {
   display: none;
 }
 
@@ -730,3 +743,7 @@ body.notifications-page-shell .notifications-page-header__search--hero {
 }
 
 
+
+.notifications-page.has-visible-notifications [data-notifications-empty] {
+  display: none;
+}

@@ -232,17 +232,32 @@
   }
 
   body.notifications-page-shell .notification-card__tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: max-content;
+    max-width: 100%;
+    min-height: 22px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--radius-pill);
+    background: rgba(232, 249, 241, 0.96);
     color: #158575;
-    font-size: 0.86rem;
+    box-shadow: none;
+    font-size: 0.82rem;
     line-height: 1;
     font-weight: 900;
+    letter-spacing: 0;
+    white-space: nowrap;
   }
 
   body.notifications-page-shell .notification-card--order .notification-card__tag {
+    background: rgba(237, 245, 255, 0.98);
     color: #126cc1;
   }
 
   body.notifications-page-shell .notification-card--message .notification-card__tag {
+    background: rgba(240, 236, 255, 0.98);
     color: #6557d2;
   }
 
@@ -281,22 +296,36 @@
 
   body.notifications-page-shell .notification-card__read-toggle {
     position: absolute;
-    top: 22px;
-    right: 18px;
-    width: 10px;
-    height: 10px;
-    min-width: 10px;
-    min-height: 10px;
+    top: 14px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
     padding: 0;
     border: 0;
     border-radius: var(--radius-pill);
-    background: #2f7fe8;
-    color: transparent;
+    background: transparent;
+    color: #2f7fe8;
+    box-shadow: none;
+  }
+
+  body.notifications-page-shell .notification-card__read-toggle::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-pill);
+    background: currentColor;
     box-shadow: 0 0 0 4px rgba(47, 127, 232, 0.10);
   }
 
   body.notifications-page-shell .notification-card:not(.is-unread) .notification-card__read-toggle {
-    background: #cfddeb;
+    color: #cfddeb;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  body.notifications-page-shell .notification-card:not(.is-unread) .notification-card__read-toggle::before {
     box-shadow: none;
   }
 
@@ -412,5 +441,14 @@
   body.notifications-page-shell.doke-mobile-shell-mounted:not(.has-notifications-action-panel-open) .notifications-page-header--auxiliary,
   body.notifications-page-shell.doke-mobile-shell-mounted:not(.has-notifications-action-panel-open) .notifications-page-header__controls {
     display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  body.notifications-page-shell .notification-card:not(.is-unread) [data-mark-read] {
+    color: #8aa1ba;
+    cursor: default;
+    opacity: 0.78;
+    pointer-events: none;
   }
 }
