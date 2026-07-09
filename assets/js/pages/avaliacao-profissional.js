@@ -19,6 +19,7 @@
   const modal = document.querySelector('[data-review-modal]');
   const generalComment = root.querySelector('.pro-review-field--full textarea');
   const returnLinks = Array.from(document.querySelectorAll('a[href="mensagens.html"], .pro-review-topbar-back'));
+  const profileLinks = Array.from(document.querySelectorAll('[data-review-profile-link], .pro-review-success__actions a[href^="perfil.html"]'));
   const profileTitle = root.querySelector('#pro-review-title');
   const profileAvatar = root.querySelector('.pro-review-profile-card__avatar');
   const topbarContext = document.querySelector('[data-header-context] span');
@@ -79,6 +80,23 @@
     return window.Doke?.services?.wallet || null;
   }
 
+  function getReviewsRepository() {
+    return window.Doke?.repositories?.reviews || null;
+  }
+
+  function getOrdersRepository() {
+    return window.Doke?.repositories?.orders || null;
+  }
+
+  function slugify(value) {
+    return normalizeText(value)
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
   function buildConversationUrl(extra) {
     const next = new URLSearchParams();
     if (reviewContext.orderId) next.set('order', reviewContext.orderId);
@@ -88,6 +106,30 @@
     });
     const query = next.toString();
     return query ? `mensagens.html?${query}` : 'mensagens.html';
+  }
+
+  function getProfileProfessionalId(conversation) {
+    const order = conversation?.order || {};
+    const professionalName = order.professionalName || order.providerName || conversation?.peerName || conversation?.name || '';
+    return order.displayProfessionalId
+      || order.sourceProfessionalId
+      || order.providerProfileId
+      || order.professionalProfileId
+      || order.providerId
+      || order.professionalId
+      || conversation?.professionalId
+      || (professionalName ? `provider-${slugify(professionalName)}` : '');
+  }
+
+  function buildProfileUrl(conversation) {
+    const order = conversation?.order || {};
+    const next = new URLSearchParams();
+    const professionalId = getProfileProfessionalId(conversation);
+    if (professionalId) next.set('professionalId', professionalId);
+    if (order.serviceId || conversation?.serviceId) next.set('serviceId', order.serviceId || conversation.serviceId);
+    next.set('review', '1');
+    const query = next.toString();
+    return query ? `perfil.html?${query}` : 'perfil.html';
   }
 
   function resolveCharge(conversation) {
@@ -114,6 +156,10 @@
 
     returnLinks.forEach((link) => {
       link.setAttribute('href', buildConversationUrl({ review: '1' }));
+    });
+
+    profileLinks.forEach((link) => {
+      link.setAttribute('href', buildProfileUrl(conversation));
     });
   }
 
@@ -214,6 +260,76 @@
     });
   }
 
+  function createProfileReview(conversation, review) {
+    const user = getCurrentUser() || {};
+    const order = conversation?.order || {};
+    const professionalName = order.professionalName || order.providerName || conversation?.peerName || conversation?.name || 'Profissional Doke';
+    const operationalProfessionalId = order.professionalId || order.providerId || conversation?.professionalId || 'user_profissional_demo';
+    const profileProfessionalId = getProfileProfessionalId(conversation);
+    const sourceProfessionalId = order.sourceProfessionalId || order.displayProfessionalId || order.providerProfileId || profileProfessionalId;
+    const serviceTitle = order.serviceTitle || order.title || 'Atendimento concluído';
+    const comment = normalizeText(review.comment || '') || (review.tags.length ? review.tags.join(', ') : 'Atendimento concluído pelo Doke.');
+
+    return {
+      eventKey: ['profile_review', order.id || reviewContext.orderId || '', reviewContext.messageId || '', profileProfessionalId || operationalProfessionalId].filter(Boolean).join(':'),
+      orderId: order.id || conversation?.orderId || reviewContext.orderId,
+      conversationId: conversation?.id || reviewContext.conversationId,
+      messageId: reviewContext.messageId,
+      serviceId: order.serviceId || conversation?.serviceId || '',
+      serviceTitle,
+      professionalId: operationalProfessionalId,
+      providerId: operationalProfessionalId,
+      displayProfessionalId: profileProfessionalId,
+      sourceProfessionalId,
+      profileIds: [operationalProfessionalId, profileProfessionalId, sourceProfessionalId].filter(Boolean),
+      professionalName,
+      providerName: professionalName,
+      clientId: user.id || order.clientId || '',
+      clientName: user.name || order.clientName || 'Cliente Doke',
+      avatarText: user.initials || user.avatarInitials || order.clientInitials || getInitials(user.name || order.clientName || 'Cliente Doke'),
+      rating: review.rating,
+      tags: review.tags,
+      criteria: review.criteria,
+      comment,
+      text: comment,
+      verified: true,
+      source: 'completed-order',
+      reviewedAt: review.reviewedAt
+    };
+  }
+
+  function persistProfileReview(conversation, review) {
+    const repository = getReviewsRepository();
+    if (!repository?.create || !conversation) return Promise.resolve(null);
+    return repository.create(createProfileReview(conversation, review)).catch((error) => {
+      console.warn('[DokeReview:profileReview]', error);
+      return null;
+    });
+  }
+
+  function markOrderReviewed(conversation, review) {
+    const repository = getOrdersRepository();
+    const order = conversation?.order || {};
+    const orderId = order.id || conversation?.orderId || reviewContext.orderId;
+    if (!repository?.getById || !repository?.save || !orderId) return Promise.resolve(null);
+
+    return repository.getById(orderId)
+      .then((storedOrder) => {
+        if (!storedOrder) return null;
+        return repository.save(Object.assign({}, storedOrder, {
+          reviewedAt: review.reviewedAt,
+          reviewRating: review.rating,
+          reviewTags: review.tags,
+          nextAction: 'Avaliação enviada',
+          updatedAt: review.reviewedAt
+        }));
+      })
+      .catch((error) => {
+        console.warn('[DokeReview:markOrderReviewed]', error);
+        return null;
+      });
+  }
+
   function registerWalletReceivable(conversation, review) {
     const service = getWalletService();
     if (!service?.registerReceivableFromOrder || !conversation) return Promise.resolve(null);
@@ -280,8 +396,10 @@
         const activeConversation = conversation || currentConversation;
         return Promise.all([
           createReviewNotification(activeConversation, review),
+          persistProfileReview(activeConversation, review),
+          markOrderReviewed(activeConversation, review),
           registerWalletReceivable(activeConversation, review)
-        ]).then(([, walletResult]) => ({ conversation: activeConversation, walletResult }));
+        ]).then(([, profileReview, reviewedOrder, walletResult]) => ({ conversation: activeConversation, profileReview, reviewedOrder, walletResult }));
       })
       .then(({ conversation, walletResult }) => {
         if (walletResult?.transaction && currentCharge) {
