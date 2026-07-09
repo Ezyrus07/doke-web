@@ -27,9 +27,15 @@ window.DokeInitCommunity = function DokeInitCommunity() {
   const requestSuccess = document.querySelector('[data-community-request-success]');
   const requestMessage = document.querySelector('[data-community-request-message]');
   const codeModal = document.querySelector('[data-community-code-modal]');
-  const createModal = document.querySelector('[data-community-create-modal]');
-  const createForm = createModal?.querySelector('[data-community-create-modal-form]');
+  const createView = page.querySelector('[data-community-create-view]');
+  const listView = page.querySelector('[data-community-list-view]');
+  const createForm = createView?.querySelector('[data-community-create-form]') || document.querySelector('[data-community-create-modal-form]');
   const createStepKeys = ['details', 'members', 'review'];
+  const createStepLabels = {
+    details: 'Dados',
+    members: 'Pessoas',
+    review: 'Revisão'
+  };
   let createStepIndex = 0;
   let selectedCreateMemberIds = new Set();
   let activeRequestButton = null;
@@ -143,14 +149,13 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       .filter((item) => !item.disabled && item.offsetParent !== null);
   };
 
-  const getOpenActionModal = () => [codeModal, createModal].find((modal) => modal && !modal.hidden);
+  const getOpenActionModal = () => [codeModal].find((modal) => modal && !modal.hidden);
 
   const openActionModal = (modal, trigger = null) => {
     if (!modal) return;
     closeActionModals({ restoreFocus: false });
     activeActionModalTrigger = trigger;
     resetActionModalFeedback(modal);
-    if (modal === createModal) resetCreateWizard();
     modal.hidden = false;
     modal.setAttribute('aria-hidden', 'false');
     setActionTriggersExpanded(modal, true);
@@ -163,17 +168,49 @@ window.DokeInitCommunity = function DokeInitCommunity() {
   };
 
   const closeActionModals = ({ restoreFocus = true } = {}) => {
-    [codeModal, createModal].forEach((modal) => {
+    [codeModal].forEach((modal) => {
       if (!modal) return;
       modal.hidden = true;
       modal.setAttribute('aria-hidden', 'true');
       setActionTriggersExpanded(modal, false);
       resetActionModalFeedback(modal);
-      if (modal === createModal) resetCreateWizard();
     });
     if (!requestModal || requestModal.hidden) {
       document.body.classList.remove('community-modal-open', 'doke-action-modal-open');
     }
+    if (restoreFocus) activeActionModalTrigger?.focus?.();
+    activeActionModalTrigger = null;
+  };
+
+
+  const setCreateTriggersExpanded = (expanded) => {
+    createTriggers.forEach((trigger) => {
+      trigger.setAttribute('aria-expanded', String(expanded));
+    });
+  };
+
+  const openCreateView = (trigger = null) => {
+    if (!createView) return;
+    activeActionModalTrigger = trigger;
+    closeActionModals({ restoreFocus: false });
+    resetCreateWizard();
+    createView.hidden = false;
+    createView.classList.add('is-active');
+    setCreateTriggersExpanded(true);
+    page.dataset.communityMode = 'create';
+    window.setTimeout(() => {
+      createView.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      createForm?.querySelector('input, select, textarea, button')?.focus?.();
+    }, 40);
+  };
+
+  const closeCreateView = ({ restoreFocus = true } = {}) => {
+    if (!createView || createView.hidden) return;
+    createView.hidden = true;
+    createView.classList.remove('is-active');
+    resetCreateWizard();
+    setCreateTriggersExpanded(false);
+    delete page.dataset.communityMode;
     if (restoreFocus) activeActionModalTrigger?.focus?.();
     activeActionModalTrigger = null;
   };
@@ -388,6 +425,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     if (event.key !== 'Escape') return;
     if (requestModal && !requestModal.hidden) closeRequestModal();
     closeActionModals();
+    closeCreateView();
   });
 
   if (requestForm && requestSuccess) {
@@ -410,7 +448,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
   });
 
   createTriggers.forEach((trigger) => {
-    trigger.addEventListener('click', () => openActionModal(createModal, trigger));
+    trigger.addEventListener('click', () => openCreateView(trigger));
   });
 
   focusSearchTriggers.forEach((trigger) => {
@@ -520,12 +558,16 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       prevButton: createForm.querySelector('[data-community-create-prev]'),
       nextButton: createForm.querySelector('[data-community-create-next]'),
       submitButton: createForm.querySelector('[data-community-create-submit]'),
+      cancelButtons: [...createForm.querySelectorAll('[data-community-create-cancel]')],
       memberSearch: createForm.querySelector('[data-community-member-search]'),
       memberList: createForm.querySelector('[data-community-member-list]'),
       memberEmpty: createForm.querySelector('[data-community-member-empty]'),
       reviewName: createForm.querySelector('[data-community-review-name]'),
       reviewType: createForm.querySelector('[data-community-review-type]'),
-      reviewMembers: createForm.querySelector('[data-community-review-members]')
+      reviewMembers: createForm.querySelector('[data-community-review-members]'),
+      stepLabel: createForm.querySelector('[data-community-create-step-label]'),
+      stepTitle: createForm.querySelector('[data-community-create-step-title]'),
+      progressFill: createForm.querySelector('[data-community-create-fill]')
     };
   };
 
@@ -544,7 +586,12 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     const nextIndex = Math.max(0, createStepKeys.indexOf(stepKey));
     createStepIndex = nextIndex >= 0 ? nextIndex : 0;
     const activeKey = createStepKeys[createStepIndex];
+    createForm.dataset.communityCreateCurrentStep = activeKey;
     const parts = getCreateFormParts();
+    const stepNumber = createStepIndex + 1;
+    if (parts.stepLabel) parts.stepLabel.textContent = `Etapa ${stepNumber} de ${createStepKeys.length}`;
+    if (parts.stepTitle) parts.stepTitle.textContent = createStepLabels[activeKey] || 'Nova comunidade';
+    if (parts.progressFill) parts.progressFill.dataset.communityCreateValue = String(Math.round((stepNumber / createStepKeys.length) * 100));
 
     parts.steps?.forEach((step) => {
       const isActive = step.dataset.communityCreateStep === activeKey;
@@ -558,9 +605,19 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       item.classList.toggle('is-complete', createStepKeys.indexOf(item.dataset.communityCreateProgress) < createStepIndex);
     });
 
-    if (parts.prevButton) parts.prevButton.hidden = createStepIndex === 0;
-    if (parts.nextButton) parts.nextButton.hidden = createStepIndex === createStepKeys.length - 1;
-    if (parts.submitButton) parts.submitButton.hidden = createStepIndex !== createStepKeys.length - 1;
+    const setActionVisibility = (button, visible) => {
+      if (!button) return;
+      button.hidden = !visible;
+      button.disabled = !visible;
+      button.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    };
+
+    const isFirstStep = createStepIndex === 0;
+    const isLastStep = createStepIndex === createStepKeys.length - 1;
+    parts.cancelButtons?.forEach((button) => setActionVisibility(button, isFirstStep));
+    setActionVisibility(parts.prevButton, !isFirstStep);
+    setActionVisibility(parts.nextButton, !isLastStep);
+    setActionVisibility(parts.submitButton, isLastStep);
     updateCreateReview();
 
     if (focus) {
@@ -623,18 +680,18 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     setCreateWizardStep(createStepKeys[Math.max(createStepIndex - 1, 0)]);
   };
 
-  document.querySelectorAll('[data-community-code-modal-form], [data-community-create-modal-form]').forEach((form) => {
+  document.querySelectorAll('[data-community-code-modal-form], [data-community-create-form]').forEach((form) => {
     form.addEventListener('input', (event) => {
       const field = event.target.closest('input, textarea');
       if (field) field.removeAttribute('aria-invalid');
-      if (form.matches('[data-community-create-modal-form]')) {
+      if (form.matches('[data-community-create-form]')) {
         if (event.target.matches('[data-community-member-search]')) renderCreateMemberCandidates();
         updateCreateReview();
       }
     });
 
     form.addEventListener('change', (event) => {
-      if (!form.matches('[data-community-create-modal-form]')) return;
+      if (!form.matches('[data-community-create-form]')) return;
       const option = event.target.closest('[data-community-member-option]');
       if (option) {
         if (option.checked) selectedCreateMemberIds.add(option.value);
@@ -690,6 +747,16 @@ window.DokeInitCommunity = function DokeInitCommunity() {
 
   createForm?.querySelector('[data-community-create-next]')?.addEventListener('click', goToNextCreateStep);
   createForm?.querySelector('[data-community-create-prev]')?.addEventListener('click', goToPreviousCreateStep);
+  createForm?.querySelectorAll('[data-community-create-cancel]')?.forEach((button) => {
+    button.addEventListener('click', () => closeCreateView());
+  });
+  createForm?.querySelectorAll('[data-community-create-progress]')?.forEach((button) => {
+    button.addEventListener('click', () => {
+      const targetIndex = createStepKeys.indexOf(button.dataset.communityCreateProgress);
+      if (targetIndex < 0 || targetIndex > createStepIndex) return;
+      setCreateWizardStep(createStepKeys[targetIndex]);
+    });
+  });
 
   if (mobileSearchToggle && mobileSearchPanel) {
     mobileSearchToggle.addEventListener('click', () => {

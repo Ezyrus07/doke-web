@@ -531,3 +531,872 @@ body.community-modal-open {
     min-height: 54px;
   }
 }
+
+/* Create-community wizard v2 — match the shared stepped form rhythm and keep actions visible. */
+.community-action-modal__dialog--create.doke-action-modal__surface {
+  max-height: min(820px, calc(100dvh - 48px));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.community-action-modal__dialog--create .doke-action-modal__header {
+  padding-bottom: 14px;
+}
+
+.community-action-modal__dialog--create .doke-action-modal__form {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+.community-create-flow {
+  display: grid;
+  gap: 8px;
+  padding: 0 42px 12px;
+}
+
+.community-create-flow__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #607895;
+  font-size: 0.82rem;
+  line-height: 1.2;
+  font-weight: 900;
+}
+
+.community-create-flow__track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e4edf6;
+}
+
+.community-create-flow__fill {
+  display: block;
+  width: 33.333%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2a6fb0, #174d7d);
+  transition: width 180ms ease;
+}
+
+.community-create-flow__fill[data-community-create-value="67"] {
+  width: 66.666%;
+}
+
+.community-create-flow__fill[data-community-create-value="100"] {
+  width: 100%;
+}
+
+.community-create-progress {
+  --community-create-step-count: 3;
+  display: grid;
+  grid-template-columns: repeat(var(--community-create-step-count), minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0 42px 16px;
+}
+
+.community-create-progress__item {
+  min-height: 74px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid rgba(190, 210, 232, 0.82);
+  border-radius: 20px;
+  background: #fff;
+  color: #123d68;
+  text-align: left;
+  font: inherit;
+  cursor: default;
+  box-shadow: none;
+}
+
+.community-create-progress__item.is-active,
+.community-create-progress__item.is-complete {
+  border-color: rgba(42, 95, 144, 0.32);
+  background: #f8fbff;
+}
+
+.community-create-progress__bullet {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #edf3f9;
+  color: #0f4f7d;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.community-create-progress__item.is-active .community-create-progress__bullet,
+.community-create-progress__item.is-complete .community-create-progress__bullet {
+  background: #21649d;
+  color: #fff;
+}
+
+.community-create-progress__item > span:last-child {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.community-create-progress__item strong,
+.community-create-progress__item small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.community-create-progress__item strong {
+  color: #07345f;
+  font-size: 0.92rem;
+  line-height: 1.1;
+  font-weight: 900;
+}
+
+.community-create-progress__item small {
+  color: #607895;
+  font-size: 0.76rem;
+  line-height: 1.25;
+  font-weight: 800;
+}
+
+.community-action-modal__dialog--create .doke-action-modal__body {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-top: 0;
+  padding-bottom: 16px;
+}
+
+.community-action-modal__dialog--create .doke-action-modal__footer {
+  flex: 0 0 auto;
+  padding-top: 14px;
+  padding-bottom: 18px;
+  background: #fff;
+  border-top: 1px solid rgba(190, 210, 232, 0.62);
+}
+
+@media (min-width: 721px) and (max-height: 840px) {
+  .community-action-modal__dialog--create.doke-action-modal__surface {
+    max-height: calc(100dvh - 32px);
+  }
+
+  .community-action-modal__dialog--create .doke-action-modal__header {
+    padding-top: 22px;
+    padding-bottom: 10px;
+  }
+
+  .community-action-modal__dialog--create .doke-action-modal__eyebrow {
+    margin-bottom: 12px;
+  }
+
+  .community-action-modal__dialog--create .doke-action-modal__title {
+    font-size: clamp(2rem, 4vw, 2.6rem);
+  }
+
+  .community-action-modal__dialog--create .doke-action-modal__text {
+    font-size: 0.92rem;
+    line-height: 1.36;
+  }
+
+  .community-create-flow {
+    padding-bottom: 10px;
+  }
+
+  .community-create-progress {
+    gap: 10px;
+    padding-bottom: 12px;
+  }
+
+  .community-create-progress__item {
+    min-height: 64px;
+    padding: 11px 12px;
+    border-radius: 18px;
+  }
+
+  .community-create-progress__bullet {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+  }
+
+  .community-action-modal__dialog--create .doke-action-modal__body {
+    gap: 10px;
+    padding-bottom: 12px;
+  }
+
+  .community-action-modal__dialog--create .doke-action-modal__field :is(input, select),
+  .community-action-modal__dialog--create .ui-select__trigger {
+    min-height: 50px;
+    height: 50px;
+  }
+
+  .community-action-modal__dialog--create .doke-action-modal__field textarea {
+    min-height: 64px;
+  }
+}
+
+@media (max-width: 720px) {
+  .community-action-modal.doke-action-modal:not([hidden]) {
+    align-items: stretch;
+    place-items: stretch;
+    padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+    overflow: hidden;
+  }
+
+  .community-action-modal__dialog--create.doke-action-modal__surface {
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100dvh - 20px);
+    border-radius: 24px;
+  }
+
+  .community-action-modal__dialog--create .doke-action-modal__header {
+    padding: 22px 24px 10px;
+  }
+
+  .community-action-modal__dialog--create .doke-action-modal__title {
+    font-size: clamp(2rem, 10vw, 2.8rem);
+  }
+
+  .community-create-flow {
+    padding: 0 24px 10px;
+  }
+
+  .community-create-progress {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 0 24px 12px;
+  }
+
+  .community-create-progress__item {
+    min-height: 54px;
+    padding: 9px 12px;
+    border-radius: 16px;
+  }
+
+  .community-create-progress__bullet {
+    width: 32px;
+    height: 32px;
+    border-radius: 11px;
+  }
+
+  .community-action-modal__dialog--create .doke-action-modal__body {
+    padding-inline: 24px;
+  }
+
+  .community-action-modal__dialog--create .doke-action-modal__footer {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 12px 24px max(14px, env(safe-area-inset-bottom));
+  }
+
+  .community-action-modal__dialog--create .doke-action-modal__footer .community-action-modal__button {
+    min-height: 48px;
+    height: 48px;
+  }
+}
+
+/* Create-community wizard v3 — compact viewport-safe desktop/tablet contract.
+   Root cause: the stepped modal could still exceed short desktop viewports, so
+   the footer actions were clipped by the viewport instead of staying available.
+   Keep the existing wizard anatomy and make the surface own a safer height while
+   the body scrolls internally only when necessary. */
+.community-action-modal.doke-action-modal:has(.community-action-modal__dialog--create):not([hidden]) {
+  align-items: center;
+  place-items: center;
+  padding: 24px;
+  overflow: hidden;
+}
+
+.community-action-modal__dialog--create.doke-action-modal__surface {
+  height: min(760px, calc(100dvh - 64px));
+  max-height: calc(100dvh - 64px);
+}
+
+.community-action-modal__dialog--create .doke-action-modal__header {
+  padding-top: 26px;
+  padding-bottom: 10px;
+}
+
+.community-action-modal__dialog--create .doke-action-modal__eyebrow {
+  min-height: 28px;
+  margin-bottom: 12px;
+}
+
+.community-action-modal__dialog--create .doke-action-modal__title {
+  font-size: clamp(2rem, 3.5vw, 2.8rem);
+}
+
+.community-action-modal__dialog--create .doke-action-modal__text {
+  max-width: 500px;
+  font-size: 0.94rem;
+  line-height: 1.36;
+}
+
+.community-create-flow {
+  padding-bottom: 8px;
+}
+
+.community-create-progress {
+  padding-bottom: 10px;
+}
+
+.community-create-progress__item {
+  min-height: 58px;
+  padding: 10px 12px;
+  border-radius: 18px;
+}
+
+.community-create-progress__bullet {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+}
+
+.community-action-modal__dialog--create .doke-action-modal__body {
+  gap: 10px;
+  padding-bottom: 12px;
+}
+
+.community-action-modal__dialog--create .doke-action-modal__field {
+  gap: 6px;
+}
+
+.community-action-modal__dialog--create .doke-action-modal__field :is(input, select),
+.community-action-modal__dialog--create .ui-select__trigger {
+  min-height: 48px;
+  height: 48px;
+}
+
+.community-action-modal__dialog--create .doke-action-modal__field textarea {
+  min-height: 58px;
+  height: 58px;
+}
+
+.community-action-modal__dialog--create .doke-action-modal__footer {
+  padding-top: 12px;
+  padding-bottom: 14px;
+}
+
+.community-action-modal__dialog--create .doke-action-modal__footer .community-action-modal__button {
+  min-height: 46px;
+  height: 46px;
+}
+
+@media (max-width: 720px) {
+  .community-action-modal.doke-action-modal:has(.community-action-modal__dialog--create):not([hidden]) {
+    align-items: stretch;
+    place-items: stretch;
+    padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+  }
+
+  .community-action-modal__dialog--create.doke-action-modal__surface {
+    height: calc(100dvh - 20px);
+    max-height: calc(100dvh - 20px);
+  }
+}
+
+/* Inline community creation flow: this replaces the large create modal with a page section. */
+.community-create-page[hidden] {
+  display: none;
+}
+
+.community-create-page {
+  display: grid;
+  gap: 24px;
+  width: min(100%, 980px);
+  margin-inline: 0 auto;
+  padding: clamp(22px, 3vw, 36px);
+  border: 1px solid rgba(24, 75, 118, 0.1);
+  border-radius: 32px;
+  background: #fff;
+  box-shadow: 0 20px 54px rgba(24, 75, 118, 0.1);
+}
+
+.community-create-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.community-create-page__intro {
+  display: grid;
+  gap: 12px;
+  max-width: 660px;
+}
+
+.community-create-page__title {
+  margin: 0;
+  color: #073e78;
+  font-size: clamp(2.2rem, 4vw, 3.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.06em;
+}
+
+.community-create-page__text {
+  max-width: 560px;
+  margin: 0;
+  color: #6f83a1;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.community-create-page__back {
+  flex: 0 0 auto;
+  min-height: 44px;
+  border-radius: 999px;
+}
+
+.community-create-wizard--page {
+  display: grid;
+  gap: 18px;
+  max-width: 920px;
+}
+
+.community-create-wizard--page .community-create-progress {
+  max-width: 780px;
+}
+
+.community-create-page__body {
+  display: grid;
+  gap: 16px;
+  max-width: 760px;
+}
+
+.community-create-page__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  max-width: 760px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(24, 75, 118, 0.1);
+}
+
+.community-create-page__actions .community-action-modal__button {
+  min-width: 160px;
+  min-height: 48px;
+}
+
+@media (max-width: 900px) {
+  .community-create-page {
+    gap: 20px;
+    padding: 22px;
+    border-radius: 26px;
+  }
+
+  .community-create-page__header {
+    display: grid;
+  }
+
+  .community-create-page__back {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 640px) {
+  .community-create-page {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .community-create-page__title {
+    font-size: clamp(2rem, 11vw, 2.8rem);
+  }
+
+  .community-create-page__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .community-create-page__actions .community-action-modal__button {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+
+/* Compact inline community creation flow. The creation flow is a focused card, not a full hero/page. */
+.community-create-page {
+  gap: 16px;
+  width: min(100%, 720px);
+  max-width: 720px;
+  padding: clamp(18px, 2vw, 24px);
+  border-radius: 26px;
+  box-shadow: 0 16px 42px rgba(24, 75, 118, 0.08);
+}
+
+.community-create-page__header {
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.community-create-page__intro {
+  gap: 8px;
+  max-width: 520px;
+}
+
+.community-create-page__title {
+  font-size: clamp(1.9rem, 3.2vw, 2.5rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
+}
+
+.community-create-page__text {
+  max-width: 520px;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.community-create-page__back {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 0.78rem;
+}
+
+.community-create-wizard--page {
+  gap: 12px;
+  max-width: 100%;
+}
+
+.community-create-flow {
+  gap: 6px;
+  padding-inline: 0;
+}
+
+.community-create-flow__top {
+  padding-inline: 0;
+  font-size: 0.78rem;
+}
+
+.community-create-progress {
+  gap: 8px;
+  padding: 0 0 6px;
+}
+
+.community-create-progress__item {
+  min-height: 48px;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 16px;
+}
+
+.community-create-progress__bullet {
+  width: 30px;
+  height: 30px;
+  border-radius: 11px;
+  font-size: 0.86rem;
+}
+
+.community-create-progress__item strong {
+  font-size: 0.82rem;
+}
+
+.community-create-progress__item small {
+  font-size: 0.68rem;
+}
+
+.community-create-page__body {
+  max-width: 100%;
+  gap: 12px;
+}
+
+.community-create-page__body .doke-modal-field,
+.community-create-page__body .doke-action-modal__field {
+  gap: 6px;
+}
+
+.community-create-page__body :is(.doke-input, .doke-select, .doke-textarea) {
+  min-height: 48px;
+  border-radius: 16px;
+  font-size: 0.9rem;
+}
+
+.community-create-page__body .doke-textarea {
+  min-height: 84px;
+}
+
+.community-create-step__intro {
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+.community-create-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.community-create-member {
+  flex: 0 1 auto;
+  min-width: min(100%, 210px);
+  min-height: 46px;
+  padding: 8px 10px;
+  border-radius: 16px;
+}
+
+.community-create-member__avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+}
+
+.community-create-review {
+  gap: 8px;
+}
+
+.community-create-review > div {
+  min-height: 54px;
+  padding: 10px 12px;
+  border-radius: 16px;
+}
+
+.community-create-page__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  max-width: 100%;
+  padding-top: 10px;
+}
+
+.community-create-page__actions [hidden],
+.community-create-page__actions [aria-hidden="true"] {
+  display: none;
+}
+
+.community-create-page__actions .community-action-modal__button {
+  flex: 0 0 auto;
+  min-width: 128px;
+  min-height: 44px;
+  padding: 0 18px;
+}
+
+.community-create-page__actions .community-action-modal__button--ghost {
+  min-width: 112px;
+}
+
+@media (max-width: 900px) {
+  .community-create-page {
+    width: min(100%, 680px);
+  }
+}
+
+@media (max-width: 640px) {
+  .community-create-page {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .community-create-page__header {
+    gap: 12px;
+  }
+
+  .community-create-page__title {
+    font-size: clamp(1.7rem, 9vw, 2.25rem);
+  }
+
+  .community-create-progress {
+    grid-template-columns: 1fr;
+  }
+
+  .community-create-progress__item {
+    min-height: 44px;
+  }
+
+  .community-create-page__actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: grid;
+  }
+
+  .community-create-page__actions .community-action-modal__button {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Inline create flow polish: it is part of the community page, not a modal/card. */
+.community-create-page {
+  width: min(100%, 720px);
+  max-width: 720px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.community-create-page__header {
+  align-items: flex-start;
+  padding: 0 0 4px;
+}
+
+.community-create-page__title {
+  font-size: clamp(1.8rem, 3vw, 2.35rem);
+}
+
+.community-create-page__text {
+  max-width: 460px;
+  font-size: 0.88rem;
+}
+
+.community-create-wizard--page {
+  padding: 0;
+}
+
+.community-create-wizard--page .community-create-progress {
+  max-width: 100%;
+}
+
+.community-create-wizard--page .community-create-page__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 12px;
+}
+
+.community-create-wizard--page .community-create-page__actions .community-action-modal__button {
+  width: 100%;
+  min-width: 0;
+}
+
+.community-create-wizard--page[data-community-create-current-step="details"] [data-community-create-prev],
+.community-create-wizard--page[data-community-create-current-step="details"] [data-community-create-submit],
+.community-create-wizard--page[data-community-create-current-step="members"] [data-community-create-cancel],
+.community-create-wizard--page[data-community-create-current-step="members"] [data-community-create-submit],
+.community-create-wizard--page[data-community-create-current-step="review"] [data-community-create-cancel],
+.community-create-wizard--page[data-community-create-current-step="review"] [data-community-create-next] {
+  display: none;
+}
+
+.community-create-wizard--page[data-community-create-current-step="details"] [data-community-create-cancel],
+.community-create-wizard--page[data-community-create-current-step="details"] [data-community-create-next],
+.community-create-wizard--page[data-community-create-current-step="members"] [data-community-create-prev],
+.community-create-wizard--page[data-community-create-current-step="members"] [data-community-create-next],
+.community-create-wizard--page[data-community-create-current-step="review"] [data-community-create-prev],
+.community-create-wizard--page[data-community-create-current-step="review"] [data-community-create-submit] {
+  display: inline-flex;
+}
+
+@media (max-width: 640px) {
+  .community-create-page {
+    width: 100%;
+  }
+
+  .community-create-page__header {
+    display: grid;
+    gap: 10px;
+  }
+
+  .community-create-page__back {
+    justify-self: start;
+  }
+}
+
+
+/* Final inline create flow: white section surface, no modal chrome, exactly two actions per step. */
+.community-create-page {
+  width: min(100%, 720px);
+  max-width: 720px;
+  margin: 0;
+  padding: clamp(18px, 2.2vw, 26px);
+  border: 1px solid rgba(24, 75, 118, 0.08);
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 18px 42px rgba(24, 75, 118, 0.08);
+}
+
+.community-create-page__header {
+  display: block;
+  padding: 0;
+}
+
+.community-create-page__intro {
+  display: grid;
+  gap: 6px;
+}
+
+.community-create-page__title {
+  margin: 0;
+  font-size: clamp(1.85rem, 3vw, 2.4rem);
+  line-height: 0.95;
+}
+
+.community-create-page__text {
+  max-width: 520px;
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.community-create-page__back,
+.community-create-page .community-action-modal__eyebrow {
+  display: none;
+}
+
+.community-create-wizard--page {
+  padding: 0;
+}
+
+.community-create-page__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(24, 75, 118, 0.1);
+}
+
+.community-create-page__actions .community-action-modal__button {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+}
+
+.community-create-page__actions > [hidden],
+.community-create-page__actions > [aria-hidden="true"],
+.community-create-wizard--page[data-community-create-current-step="details"] [data-community-create-prev],
+.community-create-wizard--page[data-community-create-current-step="details"] [data-community-create-submit],
+.community-create-wizard--page[data-community-create-current-step="members"] [data-community-create-cancel],
+.community-create-wizard--page[data-community-create-current-step="members"] [data-community-create-submit],
+.community-create-wizard--page[data-community-create-current-step="review"] [data-community-create-cancel],
+.community-create-wizard--page[data-community-create-current-step="review"] [data-community-create-next] {
+  display: none;
+}
+
+.community-create-wizard--page[data-community-create-current-step="details"] [data-community-create-cancel],
+.community-create-wizard--page[data-community-create-current-step="details"] [data-community-create-next],
+.community-create-wizard--page[data-community-create-current-step="members"] [data-community-create-prev],
+.community-create-wizard--page[data-community-create-current-step="members"] [data-community-create-next],
+.community-create-wizard--page[data-community-create-current-step="review"] [data-community-create-prev],
+.community-create-wizard--page[data-community-create-current-step="review"] [data-community-create-submit] {
+  display: inline-flex;
+}
+
+@media (max-width: 640px) {
+  .community-create-page {
+    width: 100%;
+    padding: 18px 16px;
+    border-radius: 20px;
+  }
+
+  .community-create-page__actions {
+    gap: 10px;
+  }
+}

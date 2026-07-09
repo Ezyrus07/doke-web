@@ -55,7 +55,7 @@
 </svg>
 <span>Entrar por código</span>
 </button>
-<button class="page-header-context__action doke-context-pill doke-btn" data-community-create="" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="community-create-modal" data-action-state="idle" data-action-loading-label="Processando ação da comunidade...">
+<button class="page-header-context__action doke-context-pill doke-btn" data-community-create="" type="button" aria-expanded="false" aria-controls="community-create-view" data-action-state="idle" data-action-loading-label="Processando ação da comunidade...">
 <svg aria-hidden="true" viewbox="0 0 24 24">
 <path d="M12 5v14"></path>
 <path d="M5 12h14"></path>
@@ -159,7 +159,7 @@
 </svg>
 <span>Código</span>
 </button>
-<button class="orders-page-header__hero-chip orders-page-header__hero-chip--ghost doke-action-button doke-chip doke-btn doke-btn--ghost" data-community-create="" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="community-create-modal" data-action-state="idle" data-action-loading-label="Processando ação da comunidade...">
+<button class="orders-page-header__hero-chip orders-page-header__hero-chip--ghost doke-action-button doke-chip doke-btn doke-btn--ghost" data-community-create="" type="button" aria-expanded="false" aria-controls="community-create-view" data-action-state="idle" data-action-loading-label="Processando ação da comunidade...">
 <svg aria-hidden="true" viewbox="0 0 24 24">
 <path d="M12 5v14"></path>
 <path d="M5 12h14"></path>
@@ -174,9 +174,95 @@
 </form>
 </div>
 </section>
-<section aria-label="Explorar comunidades" class="communities-discovery communities-discovery-v2 doke-page-section" data-community-discovery="" data-list-region="communities-discovery" data-list-kind="communities" data-state="idle">
+<section aria-label="Explorar comunidades" class="communities-discovery communities-discovery-v2 doke-page-section" data-community-discovery="" data-community-list-view="" data-list-region="communities-discovery" data-list-kind="communities" data-state="idle">
 <div class="communities-v2-shell">
 <div class="communities-v2-main">
+<section id="community-create-view" class="community-create-page doke-page-section" data-community-create-view="" hidden="">
+<div class="community-create-page__header">
+<div class="community-create-page__intro">
+<h2 class="community-create-page__title">Criar comunidade</h2>
+<p class="community-create-page__text">Configure os dados principais e convide contatos das mensagens.</p>
+</div>
+</div>
+<form class="community-action-form community-create-wizard community-create-wizard--page" data-community-create-form="" novalidate>
+<div class="community-create-flow" aria-label="Progresso da criação da comunidade">
+<div class="community-create-flow__top">
+<span data-community-create-step-label="">Etapa 1 de 3</span>
+<span data-community-create-step-title="">Dados</span>
+</div>
+<div aria-hidden="true" class="community-create-flow__track"><span class="community-create-flow__fill" data-community-create-fill="" data-community-create-value="33"></span></div>
+</div>
+<nav class="community-create-progress" aria-label="Etapas para criar comunidade">
+<button class="community-create-progress__item is-active" data-community-create-progress="details" type="button">
+<span class="community-create-progress__bullet">1</span>
+<span><strong>Dados</strong><small>Nome e objetivo</small></span>
+</button>
+<button class="community-create-progress__item" data-community-create-progress="members" type="button">
+<span class="community-create-progress__bullet">2</span>
+<span><strong>Pessoas</strong><small>Contatos recentes</small></span>
+</button>
+<button class="community-create-progress__item" data-community-create-progress="review" type="button">
+<span class="community-create-progress__bullet">3</span>
+<span><strong>Revisão</strong><small>Conferir e criar</small></span>
+</button>
+</nav>
+<div class="community-create-page__body">
+<section class="community-create-step is-active" data-community-create-step="details" aria-label="Dados da comunidade">
+<label class="doke-action-modal__field doke-modal-field" for="community-action-name-input">
+<span>Nome da comunidade</span>
+<input class="doke-input" id="community-action-name-input" name="communityName" placeholder="Ex.: Condomínio Jardim Azul" required type="text"/>
+</label>
+<label class="community-action-form__select-field doke-action-modal__field doke-modal-field" for="community-action-type-select">
+<span id="community-action-type-label">Tipo</span>
+<select class="doke-select" data-ui-select id="community-action-type-select" name="communityType">
+<option selected value="Condomínio">Condomínio</option>
+<option value="Grupo público">Grupo público</option>
+<option value="Profissionais">Profissionais</option>
+<option value="Comunidade privada">Comunidade privada</option>
+</select>
+</label>
+<label class="doke-action-modal__field doke-modal-field" for="community-action-description-input">
+<span>Descrição</span>
+<textarea class="doke-textarea" id="community-action-description-input" name="communityDescription" placeholder="Explique o objetivo da comunidade." rows="3"></textarea>
+</label>
+</section>
+<section class="community-create-step" data-community-create-step="members" aria-label="Adicionar pessoas das mensagens" hidden="">
+<div class="community-create-step__intro">
+<strong>Adicionar pessoas das mensagens</strong>
+<span>Escolha contatos recentes para já começar a comunidade com participantes.</span>
+</div>
+<label class="doke-action-modal__field doke-modal-field" for="community-action-member-search">
+<span>Buscar contato</span>
+<input class="doke-input" id="community-action-member-search" data-community-member-search="" autocomplete="off" placeholder="Buscar nas mensagens" type="search"/>
+</label>
+<div class="community-create-members" data-community-member-list="" aria-live="polite"></div>
+<p class="community-create-members__empty" data-community-member-empty="" hidden="">Nenhum contato encontrado nas mensagens.</p>
+</section>
+<section class="community-create-step" data-community-create-step="review" aria-label="Revisar comunidade" hidden="">
+<div class="community-create-step__intro">
+<strong>Revise antes de criar</strong>
+<span>Confira os dados e a lista inicial de participantes.</span>
+</div>
+<div class="community-create-review" data-community-create-review="">
+<div><span>Comunidade</span><strong data-community-review-name="">Comunidade Doke</strong></div>
+<div><span>Tipo</span><strong data-community-review-type="">Condomínio</strong></div>
+<div><span>Participantes</span><strong data-community-review-members="">Você</strong></div>
+</div>
+<div class="community-action-cover doke-action-modal__field doke-modal-field">
+<span>Capa da comunidade</span>
+<div>Prévia da capa</div>
+</div>
+</section>
+<p class="community-action-modal__feedback" data-community-action-feedback="" aria-live="polite" hidden=""></p>
+</div>
+<div class="community-create-page__actions doke-modal-actions">
+<button class="community-action-modal__button community-action-modal__button--ghost doke-btn doke-btn--ghost" data-community-create-cancel="" type="button">Cancelar</button>
+<button class="community-action-modal__button community-action-modal__button--ghost doke-btn doke-btn--ghost" data-community-create-prev="" type="button" hidden="">Voltar</button>
+<button class="community-action-modal__button doke-action-modal__button--primary doke-btn" data-community-create-next="" type="button">Continuar</button>
+<button class="community-action-modal__button doke-action-modal__button--primary doke-btn" data-community-create-submit="" type="submit" data-action-state="idle" data-action-loading-label="Processando ação da comunidade..." hidden="">Criar comunidade</button>
+</div>
+</form>
+</section>
 <section aria-label="Minhas comunidades" class="communities-v2-section communities-v2-section--continue doke-page-section">
 <div class="communities-v2-section__heading">
 <h2>Continue de onde parou</h2>
@@ -358,7 +444,7 @@
 <div class="communities-load-more" data-community-load-more-wrap="">
 <button class="communities-load-more__button doke-btn" data-community-load-more="" type="button">Ver mais</button>
 </div>
-<div class="communities-empty communities-empty-v2 doke-empty-state" data-community-empty=""><span class="communities-empty-v2__icon">⌕</span><div class="communities-empty-v2__copy"><strong>Não encontrou o que procurava?</strong><span>Tente ajustar os filtros ou buscar por outro termo. Também é possível criar sua própria comunidade.</span></div><div class="communities-empty-v2__actions"><button class="doke-btn communities-empty-v2__button" data-community-search-focus="" type="button" data-action-state="idle" data-action-loading-label="Processando ação da comunidade...">Buscar novamente</button><button class="doke-btn communities-empty-v2__button communities-empty-v2__button--create" data-community-create="" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="community-create-modal" data-action-state="idle" data-action-loading-label="Processando ação da comunidade...">Criar comunidade</button></div></div>
+<div class="communities-empty communities-empty-v2 doke-empty-state" data-community-empty=""><span class="communities-empty-v2__icon">⌕</span><div class="communities-empty-v2__copy"><strong>Não encontrou o que procurava?</strong><span>Tente ajustar os filtros ou buscar por outro termo. Também é possível criar sua própria comunidade.</span></div><div class="communities-empty-v2__actions"><button class="doke-btn communities-empty-v2__button" data-community-search-focus="" type="button" data-action-state="idle" data-action-loading-label="Processando ação da comunidade...">Buscar novamente</button><button class="doke-btn communities-empty-v2__button communities-empty-v2__button--create" data-community-create="" type="button" aria-expanded="false" aria-controls="community-create-view" data-action-state="idle" data-action-loading-label="Processando ação da comunidade...">Criar comunidade</button></div></div>
 </section>
 </div>
 <aside aria-label="Resumo das comunidades" class="communities-v2-sidebar">
@@ -461,83 +547,6 @@
 </form>
 </section>
 </div>
-<div id="community-create-modal" aria-hidden="true" class="community-action-modal doke-action-modal doke-overlay doke-overlay--action" data-community-create-modal="" data-community-action-modal="create" hidden="">
-<button class="community-action-modal__backdrop doke-action-modal__scrim doke-overlay__backdrop" data-community-action-close="" type="button" aria-label="Fechar modal"></button>
-<section aria-labelledby="community-create-modal-title" aria-describedby="community-create-modal-description" aria-modal="true" class="community-action-modal__dialog community-action-modal__dialog--create doke-action-modal__surface doke-overlay__surface doke-modal-surface doke-modal-surface--compact" role="dialog" tabindex="-1">
-<div class="community-action-modal__header doke-action-modal__header doke-overlay__header doke-modal-header">
-<div class="surface-modal__intro doke-action-modal__intro">
-<span class="community-action-modal__eyebrow doke-action-modal__eyebrow doke-modal-eyebrow">Nova comunidade</span>
-<h2 class="doke-action-modal__title doke-modal-title" id="community-create-modal-title">Criar comunidade</h2>
-<p class="doke-action-modal__text doke-modal-description" id="community-create-modal-description">Monte um espaço para moradores, profissionais ou pessoas com o mesmo interesse.</p>
-</div>
-<button aria-label="Fechar" class="community-action-modal__close doke-action-modal__close doke-close-button doke-icon-btn doke-icon-btn--flat" data-community-action-close="" type="button">
-<svg aria-hidden="true" viewbox="0 0 24 24"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
-</button>
-</div>
-<form class="community-action-form community-create-wizard doke-action-modal__form" data-community-create-modal-form="" novalidate>
-<div class="community-create-progress" aria-label="Etapas para criar comunidade">
-<span class="community-create-progress__item is-active" data-community-create-progress="details">1. Dados</span>
-<span class="community-create-progress__item" data-community-create-progress="members">2. Pessoas</span>
-<span class="community-create-progress__item" data-community-create-progress="review">3. Revisão</span>
-</div>
-<div class="community-action-modal__body doke-action-modal__body doke-overlay__body doke-modal-body">
-<section class="community-create-step is-active" data-community-create-step="details" aria-label="Dados da comunidade">
-<label class="doke-action-modal__field doke-modal-field" for="community-action-name-input">
-<span>Nome da comunidade</span>
-<input class="doke-input" id="community-action-name-input" name="communityName" placeholder="Ex.: Condomínio Jardim Azul" required type="text"/>
-</label>
-<label class="community-action-form__select-field doke-action-modal__field doke-modal-field" for="community-action-type-select">
-<span id="community-action-type-label">Tipo</span>
-<select class="doke-select" data-ui-select id="community-action-type-select" name="communityType">
-<option selected value="Condomínio">Condomínio</option>
-<option value="Grupo público">Grupo público</option>
-<option value="Profissionais">Profissionais</option>
-<option value="Comunidade privada">Comunidade privada</option>
-</select>
-</label>
-<label class="doke-action-modal__field doke-modal-field" for="community-action-description-input">
-<span>Descrição</span>
-<textarea class="doke-textarea" id="community-action-description-input" name="communityDescription" placeholder="Explique o objetivo da comunidade." rows="3"></textarea>
-</label>
-</section>
-<section class="community-create-step" data-community-create-step="members" aria-label="Adicionar pessoas das mensagens" hidden="">
-<div class="community-create-step__intro">
-<strong>Adicionar pessoas das mensagens</strong>
-<span>Escolha contatos recentes para já começar a comunidade com participantes.</span>
-</div>
-<label class="doke-action-modal__field doke-modal-field" for="community-action-member-search">
-<span>Buscar contato</span>
-<input class="doke-input" id="community-action-member-search" data-community-member-search="" autocomplete="off" placeholder="Buscar nas mensagens" type="search"/>
-</label>
-<div class="community-create-members" data-community-member-list="" aria-live="polite"></div>
-<p class="community-create-members__empty" data-community-member-empty="" hidden="">Nenhum contato encontrado nas mensagens.</p>
-</section>
-<section class="community-create-step" data-community-create-step="review" aria-label="Revisar comunidade" hidden="">
-<div class="community-create-step__intro">
-<strong>Revise antes de criar</strong>
-<span>Confira os dados e a lista inicial de participantes.</span>
-</div>
-<div class="community-create-review" data-community-create-review="">
-<div><span>Comunidade</span><strong data-community-review-name="">Comunidade Doke</strong></div>
-<div><span>Tipo</span><strong data-community-review-type="">Condomínio</strong></div>
-<div><span>Participantes</span><strong data-community-review-members="">Você</strong></div>
-</div>
-<div class="community-action-cover doke-action-modal__field doke-modal-field">
-<span>Capa da comunidade</span>
-<div>Prévia da capa</div>
-</div>
-</section>
-<p class="community-action-modal__feedback" data-community-action-feedback="" aria-live="polite" hidden=""></p>
-</div>
-<div class="community-action-modal__actions doke-action-modal__footer doke-overlay__actions doke-modal-actions">
-<button class="community-action-modal__button community-action-modal__button--ghost doke-btn doke-btn--ghost" data-community-action-close="" type="button">Cancelar</button>
-<button class="community-action-modal__button community-action-modal__button--ghost doke-btn doke-btn--ghost" data-community-create-prev="" type="button" hidden="">Voltar</button>
-<button class="community-action-modal__button doke-action-modal__button--primary doke-btn" data-community-create-next="" type="button">Continuar</button>
-<button class="community-action-modal__button doke-action-modal__button--primary doke-btn" data-community-create-submit="" type="submit" data-action-state="idle" data-action-loading-label="Processando ação da comunidade..." hidden="">Criar comunidade</button>
-</div>
-</form>
-</section>
-</div>
 <script defer src="assets/js/core/runtime-config.js?v=20260531-stable-smooth-v1"></script>
   <script defer src="assets/js/core/feature-flags.js?v=20260707"></script>
   <script defer src="assets/js/core/rollout-guard.js?v=20260707"></script>
@@ -547,7 +556,7 @@
   <script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
   <script src="assets/js/core/page-hydration.js?v=20260628-stable-transition-v5" defer></script>
   <script src="assets/js/core/stable-shell-router.js?v=20260702-review-route-init-v1" defer></script>
-<script src="assets/js/pages/comunidade.js?v=20260628-stable-transition-v4" defer></script>
+<script src="assets/js/pages/comunidade.js?v=20260709-create-inline-flow-v1" defer></script>
 <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture" defer></script>
 <script src="assets/js/ui/mobile-drawer.js" defer></script>
 <script src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1" defer></script>
