@@ -196,32 +196,54 @@
                   <header class="settings-card__header">
                     <div>
                       <h1 id="settings-payments-title">Pagamentos</h1>
-                      <p>Gerencie métodos usados para contratar serviços e receber comprovantes.</p>
+                      <p>Gerencie preferências de pagamento, PIX e comprovantes sem alterar o fluxo financeiro real.</p>
                     </div>
-                    <button class="settings-action settings-action--primary doke-btn doke-btn--primary" type="button">Adicionar cartão</button>
+                    <a class="settings-action settings-action--primary doke-btn doke-btn--primary" href="carteira.html">Abrir carteira</a>
                   </header>
                   <div class="settings-card__body settings-card__body--compact">
                     <section class="settings-section-heading">
-                      <h2>Métodos salvos</h2>
-                      <p>Defina o cartão principal e mantenha formas de pagamento atualizadas.</p>
+                      <h2>Métodos e recebimentos</h2>
+                      <p>Defina como o Doke deve priorizar pagamentos, comprovantes e repasses no modo local.</p>
                     </section>
                     <div class="settings-rows">
                       <div class="settings-list-item settings-list-item--method">
                         <div class="settings-method-icon" aria-hidden="true">MC</div>
-                        <div><h2>Mastercard final 4242</h2><p>Vencimento 08/2028 · Método principal</p></div>
-                        <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button">Editar</button>
+                        <div><h2>Método preferido</h2><p data-settings-payment-summary>Cartão principal · comprovantes automáticos</p></div>
+                        <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button" data-settings-focus-field="payments.preferredMethod">Editar</button>
                       </div>
                       <div class="settings-list-item settings-list-item--method">
                         <div class="settings-method-icon settings-method-icon--pix" aria-hidden="true">PIX</div>
-                        <div><h2>PIX para pagamentos rápidos</h2><p>Use chave cadastrada para pedidos e reembolsos.</p></div>
-                        <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button">Configurar</button>
+                        <div><h2>PIX para pagamentos rápidos</h2><p data-settings-pix-summary>Chave PIX não configurada.</p></div>
+                        <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button" data-settings-focus-field="payments.pixKey">Configurar</button>
                       </div>
                     </div>
+                    <form class="settings-form" aria-label="Preferências de pagamentos">
+                      <div class="settings-form-grid">
+                        <label class="settings-field doke-field"><span>Método preferido</span><select class="doke-select" data-ui-select name="preferredMethod" data-settings-field="payments.preferredMethod"><option>Cartão principal</option><option>PIX</option><option>Escolher em cada pedido</option></select></label>
+                        <label class="settings-field doke-field"><span>Chave PIX</span><input class="doke-input" type="text" name="pixKey" placeholder="CPF, e-mail, telefone ou chave aleatória" data-settings-field="payments.pixKey" /></label>
+                        <label class="settings-field doke-field"><span>Repasse profissional</span><select class="doke-select" data-ui-select name="payoutSchedule" data-settings-field="payments.payoutSchedule"><option>Após conclusão do pedido</option><option>Semanal</option><option>Mensal</option></select></label>
+                        <label class="settings-field doke-field"><span>Nome no comprovante</span><input class="doke-input" type="text" name="receiptDisplayName" placeholder="Ex: Gabriel Pinturas" data-settings-field="payments.receiptDisplayName" /></label>
+                      </div>
+                      <div class="settings-rows settings-rows--compact">
+                        <label class="settings-list-item settings-list-item--clickable">
+                          <div><h2>Salvar comprovantes automaticamente</h2><p>Guardar comprovantes no histórico do pedido e na área financeira.</p></div>
+                          <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-field="payments.autoReceipts" /><span></span></span>
+                        </label>
+                        <label class="settings-list-item settings-list-item--clickable">
+                          <div><h2>Preferir PIX quando disponível</h2><p>Mostrar PIX como opção principal em pagamentos rápidos.</p></div>
+                          <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" data-settings-field="payments.preferPix" /><span></span></span>
+                        </label>
+                      </div>
+                    </form>
                     <div class="settings-inline-note">
-                      <div><h2>Histórico financeiro</h2><p>Recibos e comprovantes ficam disponíveis na área de pedidos e carteira.</p></div>
-                      <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button">Ver histórico</button>
+                      <div><h2>Histórico financeiro</h2><p>Recibos, comprovantes e recebíveis continuam disponíveis na carteira.</p></div>
+                      <a class="settings-action settings-action--secondary doke-btn doke-btn--ghost" href="carteira.html">Ver carteira</a>
                     </div>
                   </div>
+                  <footer class="settings-card__footer">
+                    <button class="settings-action settings-action--secondary button--ghost doke-btn doke-btn--ghost" type="button" data-settings-reset-panel="payments">Cancelar</button>
+                    <button class="settings-action settings-action--primary doke-btn doke-btn--primary" type="button" data-settings-save-panel="payments" data-action-state="idle" aria-busy="false">Salvar pagamentos</button>
+                  </footer>
                 </article>
               </section>
 

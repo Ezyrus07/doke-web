@@ -19,6 +19,9 @@
   const securitySessionSummary = document.querySelector('[data-settings-session-summary]');
   const securitySessionMeta = document.querySelector('[data-settings-session-meta]');
   const securitySignOutButtons = Array.from(document.querySelectorAll('[data-settings-sign-out]'));
+  const paymentSummary = document.querySelector('[data-settings-payment-summary]');
+  const pixSummary = document.querySelector('[data-settings-pix-summary]');
+  const focusFieldButtons = Array.from(document.querySelectorAll('[data-settings-focus-field]'));
 
   const SETTINGS_STORAGE_KEY = 'doke.settings.local.v1';
   const DEFAULT_SETTINGS = Object.freeze({
@@ -40,6 +43,14 @@
       neighborhoods: '',
       receiveOrders: true,
       urgentAvailability: false
+    }),
+    payments: Object.freeze({
+      preferredMethod: 'Cartão principal',
+      pixKey: '',
+      payoutSchedule: 'Após conclusão do pedido',
+      receiptDisplayName: '',
+      autoReceipts: true,
+      preferPix: false
     }),
     notifications: Object.freeze({
       messages: true,
@@ -489,6 +500,33 @@
     });
   };
 
+  const maskPaymentKey = (value) => {
+    const raw = String(value || '').trim();
+    if (!raw) return 'Chave PIX não configurada.';
+    if (raw.length <= 6) return raw;
+    return `${raw.slice(0, 3)}•••${raw.slice(-3)}`;
+  };
+
+  const syncPaymentsSurface = () => {
+    const payments = settingsState.payments || {};
+    if (paymentSummary) {
+      const method = payments.preferredMethod || 'Cartão principal';
+      const receiptLabel = payments.autoReceipts ? 'comprovantes automáticos' : 'comprovantes manuais';
+      paymentSummary.textContent = `${method} · ${receiptLabel}`;
+    }
+    if (pixSummary) {
+      pixSummary.textContent = maskPaymentKey(payments.pixKey);
+    }
+  };
+
+  const focusSettingsField = (path) => {
+    const target = settingsFieldInputs.find((input) => input.dataset.settingsField === path);
+    if (!target) return;
+    const panel = target.closest('[data-settings-panel]');
+    if (panel?.dataset.settingsPanel) activateTab(panel.dataset.settingsPanel, { scroll: false });
+    target.focus({ preventScroll: false });
+  };
+
   const getPanelFields = (panelName) => {
     const panel = document.querySelector(`[data-settings-panel="${panelName}"]`);
     if (!panel) return [];
@@ -528,6 +566,7 @@
     const panel = document.querySelector(`[data-settings-panel="${panelName}"]`);
     panel?.setAttribute('data-settings-dirty', 'false');
     if (changed) saveSettings();
+    syncPaymentsSurface();
     setButtonSavedFeedback(button);
     document.dispatchEvent(new CustomEvent('doke:settings-updated', {
       detail: {
@@ -550,6 +589,7 @@
       if (value === undefined) return;
       setInputValue(input, value);
     });
+    syncPaymentsSurface();
     document.querySelector(`[data-settings-panel="${panelName}"]`)?.setAttribute('data-settings-dirty', 'false');
   };
 
@@ -594,6 +634,13 @@
     }, { signal });
   });
 
+  focusFieldButtons.forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      focusSettingsField(button.dataset.settingsFocusField);
+    }, { signal });
+  });
+
   securitySignOutButtons.forEach((button) => {
     button.addEventListener('click', (event) => {
       event.preventDefault();
@@ -617,6 +664,7 @@
     filterSettings('');
     syncPreferenceInputs();
     syncSettingsFieldInputs();
+    syncPaymentsSurface();
     syncSecuritySessionSurface();
     updateSearchClearState();
     setMobileSearchOpen(false);
