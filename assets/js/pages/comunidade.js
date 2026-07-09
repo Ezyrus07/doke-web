@@ -201,6 +201,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
   }
 
   const COMMUNITY_SELECTION_STORAGE_KEY = 'doke.community.selected.v1';
+  const COMMUNITY_LIST_STORAGE_KEY = 'doke.communities.local.v1';
 
   const slugifyCommunity = (value) => String(value || '')
     .normalize('NFD')
@@ -209,6 +210,54 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     .trim()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '') || 'community';
+
+  const readLocalCommunities = () => {
+    try {
+      const parsed = JSON.parse(window.localStorage?.getItem(COMMUNITY_LIST_STORAGE_KEY) || '[]');
+      return Array.isArray(parsed) ? parsed.filter((item) => item && item.id && item.title) : [];
+    } catch (error) {
+      return [];
+    }
+  };
+
+  const writeLocalCommunities = (communities) => {
+    try {
+      window.localStorage?.setItem(COMMUNITY_LIST_STORAGE_KEY, JSON.stringify(communities));
+    } catch (error) {
+      // Local storage can be unavailable in restricted browser contexts.
+    }
+  };
+
+  const normalizeCommunityRecord = (record) => {
+    const title = String(record?.title || record?.name || 'Comunidade Doke').trim() || 'Comunidade Doke';
+    const id = String(record?.id || record?.community || slugifyCommunity(title)).trim() || slugifyCommunity(title);
+    const category = String(record?.category || record?.type || '').trim();
+    const now = new Date().toISOString();
+    return {
+      id,
+      title,
+      category,
+      description: String(record?.description || '').trim(),
+      code: String(record?.code || '').trim(),
+      role: record?.role || 'member',
+      source: record?.source || 'local',
+      joinedAt: record?.joinedAt || now,
+      updatedAt: now
+    };
+  };
+
+  const upsertLocalCommunity = (record) => {
+    const nextRecord = normalizeCommunityRecord(record);
+    const communities = readLocalCommunities();
+    const index = communities.findIndex((item) => item.id === nextRecord.id);
+    if (index >= 0) {
+      communities[index] = { ...communities[index], ...nextRecord, joinedAt: communities[index].joinedAt || nextRecord.joinedAt };
+    } else {
+      communities.unshift(nextRecord);
+    }
+    writeLocalCommunities(communities);
+    return nextRecord;
+  };
 
   const getCommunityContextFromButton = (button) => {
     const card = button.closest('[data-community-card], [data-community-discover-card]');
@@ -241,16 +290,61 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     return `comunidade-interna.html?${params.toString()}`;
   };
 
+  const categoryLabelFromRecord = (record) => {
+    const value = String(record?.category || '').toLowerCase();
+    if (value.includes('condom')) return 'Condomínio';
+    if (value.includes('prof')) return 'Profissionais';
+    if (value.includes('priv')) return 'Privada';
+    if (value.includes('tecn')) return 'Tecnologia';
+    if (value.includes('reforma')) return 'Reformas';
+    return record?.source === 'code' ? 'Privada' : 'Comunidade';
+  };
+
+  const renderLocalCommunities = () => {
+    const continueList = page.querySelector('[data-community-continue-list]');
+    if (!continueList) return;
+    const existingIds = new Set([...continueList.querySelectorAll('[data-community-id]')]
+      .map((item) => item.dataset.communityId)
+      .filter(Boolean));
+
+    readLocalCommunities().forEach((record) => {
+      if (!record?.id || existingIds.has(record.id)) return;
+      existingIds.add(record.id);
+      const card = document.createElement('article');
+      card.className = 'community-continue-card doke-card doke-community-card';
+      card.dataset.category = record.category || 'local';
+      card.dataset.communityCard = '';
+      card.dataset.title = record.title;
+      card.dataset.communityId = record.id;
+      card.dataset.cardKind = 'community';
+      card.innerHTML = `
+        <div class="community-continue-card__content">
+          <span class="community-pill doke-chip">${categoryLabelFromRecord(record)}</span>
+          <h3>${record.title}</h3>
+          <span class="community-activity">${record.role === 'owner' ? 'Criada por você' : 'Acesso liberado'}</span>
+          <div class="community-continue-card__meta"><span>${record.source === 'code' ? 'Entrou por código' : 'Comunidade local'}</span><span class="community-online">online</span></div>
+        </div>
+        <button class="community-open-button doke-btn" data-community-enter type="button">Abrir</button>
+      `;
+      continueList.prepend(card);
+    });
+  };
+
+  const openCommunityRoom = (context) => {
+    saveSelectedCommunity(context);
+    const target = buildCommunityRoomUrl(context);
+    if (window.DokeNavigate) {
+      window.DokeNavigate(target);
+    } else {
+      window.location.href = target;
+    }
+  };
+
+  renderLocalCommunities();
+
   document.querySelectorAll('[data-community-enter]').forEach((button) => {
     button.addEventListener('click', () => {
-      const context = getCommunityContextFromButton(button);
-      saveSelectedCommunity(context);
-      const target = buildCommunityRoomUrl(context);
-      if (window.DokeNavigate) {
-        window.DokeNavigate(target);
-      } else {
-        window.location.href = target;
-      }
+      openCommunityRoom(getCommunityContextFromButton(button));
     });
   });
 
@@ -348,13 +442,34 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       if (form.matches('[data-community-code-modal-form]')) {
         const codeField = form.querySelector('input[name="communityCode"]');
         if (!validateRequiredField(codeField, 'Digite o código da comunidade para continuar.')) return;
-        setActionFormFeedback(form, `Código ${codeField.value.trim().toUpperCase()} pronto para validação.`, 'success');
+        const code = codeField.value.trim().toUpperCase();
+        const record = upsertLocalCommunity({
+          id: `codigo-${slugifyCommunity(code)}`,
+          title: `Comunidade ${code}`,
+          category: 'privada',
+          code,
+          source: 'code',
+          role: 'member'
+        });
+        setActionFormFeedback(form, `Código ${code} validado. Abrindo comunidade...`, 'success');
+        window.setTimeout(() => openCommunityRoom(record), 220);
         return;
       }
 
       const nameField = form.querySelector('input[name="communityName"]');
       if (!validateRequiredField(nameField, 'Informe o nome da comunidade para criar o espaço.')) return;
-      setActionFormFeedback(form, 'Comunidade criada como rascunho visual. A integração real entra na etapa de backend.', 'success');
+      const typeField = form.querySelector('select[name="communityType"]');
+      const descriptionField = form.querySelector('textarea[name="communityDescription"]');
+      const record = upsertLocalCommunity({
+        id: slugifyCommunity(nameField.value),
+        title: nameField.value.trim(),
+        category: typeField?.value || 'Comunidade',
+        description: descriptionField?.value || '',
+        source: 'created',
+        role: 'owner'
+      });
+      setActionFormFeedback(form, 'Comunidade criada. Abrindo sala...', 'success');
+      window.setTimeout(() => openCommunityRoom(record), 220);
     });
   });
 
@@ -378,8 +493,18 @@ window.DokeInitCommunity = function DokeInitCommunity() {
         return;
       }
 
-      codeFeedback.textContent = `Código ${value.toUpperCase()} pronto para validação.`;
+      const code = value.toUpperCase();
+      const record = upsertLocalCommunity({
+        id: `codigo-${slugifyCommunity(code)}`,
+        title: `Comunidade ${code}`,
+        category: 'privada',
+        code,
+        source: 'code',
+        role: 'member'
+      });
+      codeFeedback.textContent = `Código ${code} validado. Abrindo comunidade...`;
       codeFeedback.dataset.state = 'success';
+      window.setTimeout(() => openCommunityRoom(record), 220);
     });
   }
 
