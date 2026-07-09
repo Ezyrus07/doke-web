@@ -2,7 +2,7 @@
   'use strict';
 
   var Doke = window.Doke || (window.Doke = {});
-  var ROUTER_VERSION = '20260702-review-route-init-v1';
+  var ROUTER_VERSION = '20260709-public-footer-route-sync-v1';
   var ROUTE_VISUAL_THRESHOLD_MS = 150;
   var ROUTE_SETTLEMENT_TIMEOUT_MS = 9000;
 
@@ -629,7 +629,16 @@
       currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
         return node.cloneNode(true);
       }));
-      currentContent.replaceWith(nextContent.cloneNode(true));
+      var syncedContent = nextContent.cloneNode(true);
+      currentContent.replaceWith(syncedContent);
+      Array.prototype.slice.call(currentPage.children).forEach(function (node) {
+        if (node === currentHeader || node === syncedContent) return;
+        node.remove();
+      });
+      Array.prototype.slice.call(nextPage.children).forEach(function (node) {
+        if (node === nextHeader || node === nextContent) return;
+        currentPage.appendChild(node.cloneNode(true));
+      });
       Array.prototype.slice.call(currentShell.children).forEach(function (node) {
         if (node === currentSidebar || node === currentPage) return;
         node.remove();

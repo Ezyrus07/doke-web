@@ -104,9 +104,12 @@
 
   const getChargeReceiptActionHtml = (conversation, message) => {
     const transaction = getWalletTransactionForCharge(conversation, message);
-    const receiptUrl = getWalletReceiptUrl(transaction);
-    if (!receiptUrl) return "";
-    return `<a class="message-bubble__charge-pay doke-btn doke-btn--ghost" href="${escapeHtml(receiptUrl)}" data-message-receipt>Ver comprovante</a>`;
+    if (isProfessionalConversationView(conversation)) {
+      const receiptUrl = getWalletReceiptUrl(transaction);
+      if (!receiptUrl) return "";
+      return `<a class="message-bubble__charge-pay doke-btn doke-btn--ghost" href="${escapeHtml(receiptUrl)}" data-message-receivable>Ver recebível</a>`;
+    }
+    return '<button class="message-bubble__charge-pay doke-btn doke-btn--ghost" type="button" data-message-receipt>Ver comprovante</button>';
   };
 
   const getConversationDisputePresentation = (conversation) => {
@@ -276,6 +279,11 @@
       paid: message?.paid === true,
       completed: message?.completed === true,
       reviewed: message?.reviewed === true,
+      paymentMethod: message?.paymentMethod || "",
+      paidAmount: message?.paidAmount || "",
+      walletTransactionId: message?.walletTransactionId || "",
+      transactionId: message?.transactionId || "",
+      walletReleased: message?.walletReleased === true,
       replyTo: message?.replyTo || null
     };
   };
@@ -712,6 +720,135 @@
     let selectedConversationIds = new Set();
     let selectedFilterKeys = new Set();
     let selectionMode = false;
+    let receiptModal = null;
+    let receiptModalReturnFocus = null;
+
+    const formatReceiptCurrency = (value) => {
+      if (typeof value === "number" && Number.isFinite(value)) {
+        return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      }
+      const text = String(value || "").trim();
+      if (!text) return "R$ 0,00";
+      if (/^R\$/.test(text)) return text;
+      const numeric = Number(text.replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", "."));
+      if (Number.isFinite(numeric)) return numeric.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      return text;
+    };
+
+    const formatReceiptDate = (value) => {
+      const raw = String(value || "").trim();
+      if (!raw) return "Registrado no pedido";
+      const date = new Date(raw);
+      if (Number.isNaN(date.getTime())) return raw;
+      return date.toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    };
+
+    const getReceiptOrderCode = (order = {}) => {
+      const code = order.code || order.orderCode || order.number;
+      if (code) return String(code).startsWith("#") ? String(code) : `#${code}`;
+      const id = String(order.id || order.orderId || "").trim();
+      return id ? `#${id}` : "#DK";
+    };
+
+    const buildMessageReceipt = (conversation, message) => {
+      const order = conversation?.order || {};
+      const transaction = getWalletTransactionForCharge(conversation, message) || {};
+      const transactionId = transaction.id || message?.walletTransactionId || message?.transactionId || "";
+      return {
+        status: message?.completed || order.status === "completed" ? "Pedido concluído" : "Pagamento confirmado",
+        amount: formatReceiptCurrency(message?.paidAmount || message?.amount || transaction.grossAmount || transaction.amount || order.budget),
+        service: order.serviceTitle || order.title || conversation?.orderTitle || "Pedido de serviço",
+        professional: order.professionalName || order.providerName || order.provider || conversation?.professionalName || conversation?.name || "Profissional Doke",
+        orderCode: getReceiptOrderCode(order),
+        method: message?.paymentMethod || transaction.paymentMethod || "Pagamento pela Doke",
+        date: formatReceiptDate(transaction.updatedAt || transaction.createdAt || message?.paidAt || order.updatedAt || order.createdAt),
+        transactionId: transactionId || "Comprovante local",
+        source: transactionId ? "Transação Doke" : "Comprovante local do pedido"
+      };
+    };
+
+    const createReceiptModal = () => {
+      if (receiptModal?.isConnected) return receiptModal;
+      receiptModal = document.createElement("div");
+      receiptModal.className = "messages-receipt-modal doke-overlay doke-overlay--action";
+      receiptModal.dataset.messageReceiptModal = "true";
+      receiptModal.hidden = true;
+      receiptModal.setAttribute("aria-hidden", "true");
+      receiptModal.innerHTML = `
+        <span class="messages-receipt-modal__backdrop doke-overlay__backdrop" data-message-receipt-close aria-hidden="true"></span>
+        <section class="messages-receipt-modal__card doke-overlay__surface doke-modal-surface doke-modal-surface--compact" role="dialog" aria-modal="true" aria-labelledby="messages-receipt-title" aria-describedby="messages-receipt-description" tabindex="-1">
+          <div class="messages-receipt-header doke-overlay__header doke-modal-header">
+            <div>
+              <span class="messages-receipt-eyebrow doke-modal-eyebrow">Comprovante do pedido</span>
+              <h2 class="doke-modal-title" id="messages-receipt-title">Pagamento confirmado</h2>
+              <p class="doke-modal-description" id="messages-receipt-description">Resumo do pagamento registrado neste atendimento.</p>
+            </div>
+            <button class="messages-receipt-modal__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" aria-label="Fechar comprovante" data-message-receipt-close>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg>
+            </button>
+          </div>
+          <div class="messages-receipt-body doke-overlay__body doke-modal-body">
+            <dl class="messages-receipt-summary doke-modal-summary-card" aria-label="Dados do comprovante">
+              <div><dt>Status</dt><dd data-receipt-status>Pagamento confirmado</dd></div>
+              <div><dt>Valor pago</dt><dd data-receipt-amount>R$ 0,00</dd></div>
+              <div><dt>Profissional</dt><dd data-receipt-professional>Profissional Doke</dd></div>
+              <div><dt>Serviço</dt><dd data-receipt-service>Pedido de serviço</dd></div>
+              <div><dt>Pedido</dt><dd data-receipt-order>#DK</dd></div>
+              <div><dt>Forma de pagamento</dt><dd data-receipt-method>Pagamento pela Doke</dd></div>
+              <div><dt>Data</dt><dd data-receipt-date>Registrado no pedido</dd></div>
+              <div><dt>ID da transação</dt><dd data-receipt-transaction>Comprovante local</dd></div>
+            </dl>
+            <p class="doke-modal-description" data-receipt-source>Comprovante local do pedido.</p>
+          </div>
+          <div class="messages-receipt-actions doke-overlay__actions doke-modal-actions doke-modal-actions--single">
+            <button class="messages-receipt-button doke-btn doke-btn--primary" type="button" data-message-receipt-close>Fechar</button>
+          </div>
+        </section>
+      `;
+      document.body.appendChild(receiptModal);
+      return receiptModal;
+    };
+
+    const closeReceiptModal = () => {
+      if (!receiptModal) return;
+      receiptModal.hidden = true;
+      receiptModal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("messages-receipt-modal-open");
+      receiptModalReturnFocus?.focus?.({ preventScroll: true });
+      receiptModalReturnFocus = null;
+    };
+
+    const setReceiptText = (selector, value) => {
+      receiptModal?.querySelectorAll(selector).forEach((node) => {
+        node.textContent = value || "";
+      });
+    };
+
+    const openReceiptModal = (conversation, message, trigger) => {
+      createReceiptModal();
+      const receipt = buildMessageReceipt(conversation, message);
+      receiptModalReturnFocus = trigger || document.activeElement;
+      setReceiptText("[data-receipt-status]", receipt.status);
+      setReceiptText("[data-receipt-amount]", receipt.amount);
+      setReceiptText("[data-receipt-professional]", receipt.professional);
+      setReceiptText("[data-receipt-service]", receipt.service);
+      setReceiptText("[data-receipt-order]", receipt.orderCode);
+      setReceiptText("[data-receipt-method]", receipt.method);
+      setReceiptText("[data-receipt-date]", receipt.date);
+      setReceiptText("[data-receipt-transaction]", receipt.transactionId);
+      setReceiptText("[data-receipt-source]", receipt.source);
+      receiptModal.hidden = false;
+      receiptModal.setAttribute("aria-hidden", "false");
+      document.body.classList.add("messages-receipt-modal-open");
+      receiptModal.querySelector(".doke-modal-surface")?.focus?.({ preventScroll: true });
+    };
+
     let pendingCompletion = null;
 
     messagesList?.setAttribute("role", "listbox");
@@ -2490,6 +2627,17 @@
         return;
       }
 
+      const receiptButton = event.target.closest("[data-message-receipt]");
+      if (receiptButton) {
+        event.preventDefault();
+        const index = Number(bubble?.dataset.messageIndex || -1);
+        const conversation = conversations[activeId];
+        const currentMessage = conversation?.messages?.[index];
+        if (!currentMessage || currentMessage.type !== "charge") return;
+        openReceiptModal(conversation, currentMessage, receiptButton);
+        return;
+      }
+
       const completeButton = event.target.closest("[data-message-complete]");
       if (completeButton) {
         event.preventDefault();
@@ -2578,6 +2726,16 @@
       resetActionSurfaces();
       closeThreadCallMenu();
       closeThreadMoreMenu();
+      closeReceiptModal();
+    });
+
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (!target.closest("[data-message-receipt-close]")) return;
+      if (!target.closest("[data-message-receipt-modal]")) return;
+      event.preventDefault();
+      closeReceiptModal();
     });
 
 
