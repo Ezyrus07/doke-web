@@ -75,6 +75,118 @@ const PRESERVED_BODY_STATE_CLASSES = [...SHELL_STATE_CLASSES, ...ROUTE_SWAP_STAT
 const INTERNAL_PROFILE_PATH = "/perfil.html";
 const OWNER_PROFILE_PATH = "/meu-perfil.html";
 const NAVIGATION_REGISTRY = window.DokeNavigationRegistry || null;
+const ACCOUNT_SETTINGS_STORAGE_KEY = "doke.settings.local.v1";
+
+const readAccountSettingsSnapshot = () => {
+  try {
+    const raw = window.localStorage?.getItem(ACCOUNT_SETTINGS_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const normalizeIdentityText = (value) => String(value || "").replace(/\s+/g, " ").trim();
+
+const initialsFromIdentityName = (value, fallback = "DK") => {
+  const parts = normalizeIdentityText(value).split(" ").filter(Boolean);
+  if (!parts.length) return fallback;
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase() || fallback;
+};
+
+const handleFromIdentityName = (value, fallback = "dokepro") => {
+  const handle = normalizeIdentityText(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "")
+    .slice(0, 24);
+  return handle || fallback;
+};
+
+const getSavedProfessionalIdentity = () => {
+  const settings = readAccountSettingsSnapshot();
+  const professional = settings?.professional;
+  if (!professional || typeof professional !== "object") return null;
+
+  const name = normalizeIdentityText(professional.professionalName);
+  const baseCity = normalizeIdentityText(professional.baseCity);
+  if (!name && !baseCity) return null;
+
+  return {
+    name,
+    baseCity,
+    handle: handleFromIdentityName(name || "Doke Pro"),
+    initials: initialsFromIdentityName(name || "Doke Pro", "DP")
+  };
+};
+
+const shouldUseProfessionalIdentitySurface = () => {
+  const user = getCurrentSessionUser();
+  const role = String(user?.role || user?.type || "").trim().toLowerCase();
+  if (role === "professional") return true;
+
+  const page = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
+  return page === "perfil-profissional.html";
+};
+
+const syncProfessionalSettingsIdentity = () => {
+  const identity = getSavedProfessionalIdentity();
+  if (!identity || !shouldUseProfessionalIdentitySurface()) return;
+
+  const displayName = identity.name;
+  const baseCity = identity.baseCity;
+  const handle = identity.handle;
+  const initials = identity.initials;
+
+  if (displayName) {
+    document.querySelectorAll(".home-side-meta__identity strong, [data-user-name]").forEach((node) => {
+      node.textContent = displayName;
+      node.setAttribute("title", displayName);
+    });
+
+    document.querySelectorAll(".profile-dropdown__header").forEach((node) => {
+      node.textContent = `@${handle}`;
+    });
+  }
+
+  document.querySelectorAll(".home-side-meta__identity span, [data-user-role]").forEach((node) => {
+    node.textContent = baseCity || "Profissional";
+  });
+
+  if (initials) {
+    document.querySelectorAll(".home-side-meta__avatar.doke-avatar, .sidebar__avatar, [data-user-avatar]").forEach((node) => {
+      node.textContent = initials;
+    });
+  }
+
+  const page = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
+  if (page !== "perfil-profissional.html" && page !== "perfil.html") return;
+
+  const profileName = document.querySelector("#profile-title, [data-profile-name]");
+  if (profileName && displayName) profileName.textContent = displayName;
+
+  const profileMeta = document.querySelector(".profile-heading__meta, [data-profile-username]");
+  if (profileMeta && displayName) {
+    profileMeta.textContent = `@${handle}${baseCity ? ` · ${baseCity}` : ""}`;
+  }
+
+  const profileAvatar = document.querySelector(".profile-avatar span, [data-profile-avatar]");
+  if (profileAvatar && initials) profileAvatar.textContent = initials;
+
+  const profileAvatarWrap = document.querySelector(".profile-avatar");
+  if (profileAvatarWrap && displayName) profileAvatarWrap.setAttribute("aria-label", `Avatar de ${displayName}`);
+
+  document.querySelectorAll("[data-professional-name]").forEach((node) => {
+    if (displayName) node.setAttribute("data-professional-name", displayName);
+  });
+
+  if (displayName) document.title = document.title.replace(/^[^|]+/, displayName + " ");
+};
+
 const REGISTERED_INTERNAL_VIEW_PATHS = Array.isArray(NAVIGATION_REGISTRY?.getInternalPaths?.()) ? NAVIGATION_REGISTRY.getInternalPaths() : [];
 const INTERNAL_VIEW_PATHS = new Set([...REGISTERED_INTERNAL_VIEW_PATHS, "/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/novidades.html", "/ajuda.html", "/carteira.html", "/admin.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento-profissional.html", "/orcamento.html", "/avaliacao-profissional.html", "/anunciar-servico.html", "/meu-perfil.html", "/perfil-cliente.html", "/perfil-profissional.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/"]);
 const MESSAGES_VIEW_PATH = "/mensagens.html";
@@ -1665,6 +1777,7 @@ const initializeCurrentView = () => {
   renderSharedSidebar();
   updateSidebarActiveState();
   syncAuthUi();
+  syncProfessionalSettingsIdentity();
   updateSidebarActiveState();
   syncTopbarScrollState();
   syncHeaderLocation();
@@ -2227,18 +2340,27 @@ initializeCurrentView();
     syncSidebarOperationalBadges();
     syncSidebarAdminLink();
     syncOwnerProfileLinks();
+    syncProfessionalSettingsIdentity();
     updateSidebarActiveState();
     syncProfessionalOwnerProfileRoute();
   });
 });
 window.addEventListener('storage', () => {
+  syncProfessionalSettingsIdentity();
   syncSidebarOperationalBadges();
   syncSidebarAdminLink();
   syncOwnerProfileLinks();
   updateSidebarActiveState();
   syncProfessionalOwnerProfileRoute();
 });
+document.addEventListener('doke:settings-updated', () => {
+  syncProfessionalSettingsIdentity();
+});
+document.addEventListener('doke:settings-profile-updated', () => {
+  syncProfessionalSettingsIdentity();
+});
 window.setTimeout(() => {
+  syncProfessionalSettingsIdentity();
   syncOwnerProfileLinks();
   updateSidebarActiveState();
   warmPriorityInternalViews();
