@@ -73,6 +73,7 @@ const SHELL_STATE_CLASSES = ["sidebar-collapsed", "sidebar-open", "theme-dark", 
 const ROUTE_SWAP_STATE_CLASSES = ["is-shell-swapping", "is-route-instant-swap"];
 const PRESERVED_BODY_STATE_CLASSES = [...SHELL_STATE_CLASSES, ...ROUTE_SWAP_STATE_CLASSES];
 const INTERNAL_PROFILE_PATH = "/perfil.html";
+const OWNER_PROFILE_PATH = "/meu-perfil.html";
 const NAVIGATION_REGISTRY = window.DokeNavigationRegistry || null;
 const REGISTERED_INTERNAL_VIEW_PATHS = Array.isArray(NAVIGATION_REGISTRY?.getInternalPaths?.()) ? NAVIGATION_REGISTRY.getInternalPaths() : [];
 const INTERNAL_VIEW_PATHS = new Set([...REGISTERED_INTERNAL_VIEW_PATHS, "/index.html", "/resultados.html", "/detalhe-anuncio.html", "/pedidos.html", "/mensagens.html", "/notificacoes.html", "/novidades.html", "/ajuda.html", "/carteira.html", "/admin.html", "/comunidade.html", "/comunidade-interna.html", "/pagamento-profissional.html", "/orcamento.html", "/avaliacao-profissional.html", "/anunciar-servico.html", "/meu-perfil.html", "/perfil-cliente.html", "/perfil-profissional.html", INTERNAL_PROFILE_PATH, "/configuracoes.html", "/tornar-profissional.html", "/"]);
@@ -289,7 +290,7 @@ const SHARED_SIDEBAR_MARKUP = `
 
   <div class="sidebar__group sidebar__group--account">
     <div class="sidebar__label">Conta</div>
-    <a class="nav-link nav-link--profile" href="perfil.html">
+    <a class="nav-link nav-link--profile" href="meu-perfil.html">
       <span class="nav-link__start"><span class="nav-link__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.2-3.2 3.7-4.8 7-4.8s5.8 1.6 7 4.8"></path></svg></span><span>Meu perfil</span></span>
     </a>
     <a class="nav-link nav-link--wallet" href="carteira.html">
@@ -332,6 +333,44 @@ const getCurrentSessionUser = () => {
   } catch (error) {
     return null;
   }
+};
+
+const getOwnerProfileHref = (user = getCurrentSessionUser()) => {
+  try {
+    const registryHref = NAVIGATION_REGISTRY?.getOwnerProfileUrl?.(user);
+    if (registryHref) return String(registryHref).replace(/^\//, '');
+  } catch (error) {}
+
+  if (!user || !user.id) return OWNER_PROFILE_PATH.replace('/', '');
+  const role = String(user.role || user.type || '').trim().toLowerCase();
+  return String(user.ownerProfileUrl || user.ownerUrl || (role === 'professional' ? 'perfil-profissional.html' : 'meu-perfil.html')).replace(/^\//, '');
+};
+
+const syncOwnerProfileLinks = () => {
+  const href = getOwnerProfileHref();
+  document.querySelectorAll('.nav-link--profile, [data-nav-id="profile"], .doke-mobile-bottom-nav__item--profile, .profile-dropdown__item').forEach((link) => {
+    if (link.tagName !== 'A') return;
+    const text = (link.textContent || '').trim().toLowerCase();
+    if (link.classList.contains('nav-link--profile') || link.getAttribute('data-nav-id') === 'profile' || link.classList.contains('doke-mobile-bottom-nav__item--profile') || text.includes('meu perfil') || text === 'perfil') {
+      link.setAttribute('href', href);
+    }
+  });
+};
+
+const syncProfessionalOwnerProfileRoute = () => {
+  const page = (window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
+  if (page !== 'meu-perfil.html') return;
+  const user = getCurrentSessionUser();
+  const role = String(user?.role || user?.type || '').trim().toLowerCase();
+  if (role !== 'professional') return;
+  const target = getOwnerProfileHref(user);
+  if (!target || target === 'meu-perfil.html') return;
+
+  const params = new URLSearchParams(window.location.search || '');
+  if (params.get('view') === 'personal' || params.get('personal') === '1') return;
+
+  const hash = window.location.hash || '';
+  window.location.replace(target + hash);
 };
 
 const isCurrentDemoProfessional = (user) => Boolean(user?.role === 'professional' && String(user?.id) === 'user_profissional_demo');
@@ -672,7 +711,7 @@ const syncSettingsLinks = () => {
     }
 
     if (link.classList.contains('nav-link--profile') || text.includes('meu perfil') || text === 'perfil') {
-      if (link.tagName === 'A') link.setAttribute('href', INTERNAL_PROFILE_PATH.replace('/', ''));
+      if (link.tagName === 'A') link.setAttribute('href', getOwnerProfileHref());
     }
   });
 };
@@ -680,6 +719,8 @@ const syncSettingsLinks = () => {
 
 const syncAuthUi = () => {
   syncSettingsLinks();
+  syncOwnerProfileLinks();
+  syncProfessionalOwnerProfileRoute();
   if (!authService) return;
 
   const avatar = document.querySelector(".avatar");
@@ -2124,9 +2165,17 @@ initializeCurrentView();
   document.addEventListener(eventName, () => {
     syncSidebarOperationalBadges();
     syncSidebarAdminLink();
+    syncOwnerProfileLinks();
+    syncProfessionalOwnerProfileRoute();
   });
 });
 window.addEventListener('storage', () => {
   syncSidebarOperationalBadges();
   syncSidebarAdminLink();
+  syncOwnerProfileLinks();
+  syncProfessionalOwnerProfileRoute();
 });
+window.setTimeout(() => {
+  syncOwnerProfileLinks();
+  syncProfessionalOwnerProfileRoute();
+}, 0);

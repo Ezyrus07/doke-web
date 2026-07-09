@@ -75,8 +75,8 @@
       id: 'profile',
       label: 'Meu perfil',
       shortLabel: 'Perfil',
-      href: 'perfil.html',
-      mobileBottomHref: 'perfil.html',
+      href: 'meu-perfil.html',
+      mobileBottomHref: 'meu-perfil.html',
       icon: 'profile',
       drawerIcon: 'profile',
       sidebarClass: 'profile',
@@ -211,11 +211,33 @@
     return false;
   }
 
+  function isProfessionalUser(user) {
+    return String((user && (user.role || user.type)) || '').trim().toLowerCase() === 'professional';
+  }
+
+  function getOwnerProfileUrl(user) {
+    var current = user || currentUser();
+    if (!current || !current.id) return 'meu-perfil.html';
+    return current.ownerProfileUrl || current.ownerUrl || (isProfessionalUser(current) ? 'perfil-profissional.html' : 'meu-perfil.html');
+  }
+
+  function resolveItemForUser(item, user) {
+    var next = clone(item);
+    if (next && next.id === 'profile') {
+      var href = getOwnerProfileUrl(user);
+      next.href = href;
+      next.mobileBottomHref = href;
+    }
+    return next;
+  }
+
   function getItemsForSurface(surface) {
     var user = currentUser();
-    return clone(NAV_ITEMS.filter(function (item) {
+    return NAV_ITEMS.filter(function (item) {
       return item.surfaces.indexOf(surface) !== -1 && canAccessItem(item, user);
-    }));
+    }).map(function (item) {
+      return resolveItemForUser(item, user);
+    });
   }
 
   function getInternalPaths() {
@@ -248,6 +270,7 @@
     getActiveId: getActiveId,
     isActive: isActive,
     getItemsForSurface: getItemsForSurface,
+    getOwnerProfileUrl: getOwnerProfileUrl,
     canAccessItem: canAccessItem,
     getInternalPaths: getInternalPaths,
     getPageConfig: getPageConfig

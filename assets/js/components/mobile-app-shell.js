@@ -19,6 +19,7 @@
     'comunidade.html': { key: 'comunidade', active: 'communities', search: false, title: 'Comunidade' },
     'comunidade-interna.html': { key: 'comunidade-interna', active: 'communities', search: false, title: 'Comunidade' },
     'perfil.html': { key: 'perfil', active: 'profile', search: false, title: 'Perfil' },
+    'meu-perfil.html': { key: 'meu-perfil', active: 'profile', search: false, title: 'Meu perfil' },
     'carteira.html': { key: 'carteira', active: 'wallet', search: false, title: 'Carteira', hideSearchBar: true, hideLocation: true },
     'admin.html': { key: 'admin', active: '', search: false, title: 'Admin', compactSearchButton: true, hideSearchBar: true, hideLocation: true, bottomNav: false },
     'notificacoes.html': { key: 'notificacoes', active: '', search: false, title: 'Notificações', bottomNav: false },
@@ -99,6 +100,12 @@
 
     var session = safeReadJson(SESSION_KEY, null);
     return session && session.user && typeof session.user === 'object' ? session.user : null;
+  }
+
+  function ownerProfileHref() {
+    var user = currentUser();
+    if (!user || !user.id) return 'meu-perfil.html';
+    return user.ownerProfileUrl || user.ownerUrl || (user.role === 'professional' ? 'perfil-profissional.html' : 'meu-perfil.html');
   }
 
   function accountState() {
@@ -700,7 +707,7 @@
       return NAVIGATION_REGISTRY.getItemsForSurface('mobile-bottom').map(function (entry) {
         return [
           entry.id,
-          entry.mobileBottomHref || entry.href,
+          entry.id === 'profile' ? ownerProfileHref() : (entry.mobileBottomHref || entry.href),
           entry.shortLabel || entry.label,
           ICONS[entry.icon] || ICONS[entry.id] || ICONS.home
         ];
@@ -712,7 +719,7 @@
       ['orders', 'pedidos.html', 'Pedidos', ICONS.orders],
       ['messages', 'mensagens.html', 'Mensagens', ICONS.messages],
       ['communities', 'comunidade.html', 'Comun.', ICONS.communities],
-      ['profile', 'perfil.html', 'Perfil', ICONS.profile]
+      ['profile', ownerProfileHref(), 'Perfil', ICONS.profile]
     ];
   }
 

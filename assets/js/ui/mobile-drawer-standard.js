@@ -155,7 +155,7 @@
       name: logged ? firstName(fullName) : 'Entrar',
       role: logged ? (ROLE_LABELS[user.role] || user.roleLabel || 'Conta') : 'Conta Doke',
       initials: logged ? truncateText(user.initials || user.avatarInitials || getInitials(fullName), 3) : 'DK',
-      profileHref: logged ? 'perfil.html' : 'auth/login.html',
+      profileHref: logged ? (user.ownerProfileUrl || user.ownerUrl || (user.role === 'professional' ? 'perfil-profissional.html' : 'meu-perfil.html')) : 'auth/login.html',
       actionHref: logged ? '' : 'auth/login.html',
       actionLabel: logged ? 'Sair' : 'Entrar',
       signature: [logged ? '1' : '0', fullName, user && user.role || '', user && (user.initials || user.avatarInitials) || ''].join('|')
