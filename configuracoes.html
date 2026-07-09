@@ -85,13 +85,14 @@
                 <p class="settings-sidebar__label">Profissional</p>
                 <a class="settings-sidebar__item" href="tornar-profissional.html"><svg viewBox="0 0 24 24"><path d="M9 7V5.7A1.7 1.7 0 0 1 10.7 4h2.6A1.7 1.7 0 0 1 15 5.7V7"></path><rect x="4" y="7" width="16" height="12" rx="2"></rect><path d="M4 12h16"></path></svg><span>Tornar-se profissional</span></a>
                 <button class="settings-sidebar__item" type="button" data-settings-tab="professional" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M9 7V5.7A1.7 1.7 0 0 1 10.7 4h2.6A1.7 1.7 0 0 1 15 5.7V7"></path><rect x="4" y="7" width="16" height="12" rx="2"></rect><path d="M8 15h8"></path></svg><span>Perfil profissional</span></button>
-                <button class="settings-sidebar__item" type="button" data-settings-tab="support" aria-selected="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l2.6 2"></path></svg><span>Disponibilidade</span></button>
+                <button class="settings-sidebar__item" type="button" data-settings-tab="availability" aria-selected="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v4l2.6 2"></path></svg><span>Disponibilidade</span></button>
               </div>
 
               <div class="settings-sidebar__section">
                 <p class="settings-sidebar__label">Preferências</p>
                 <button class="settings-sidebar__item" type="button" data-settings-tab="notifications" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M12 4.75a4 4 0 0 0-4 4v2.1c0 .7-.24 1.38-.68 1.92L5.9 14.5h12.2l-1.42-1.73a3 3 0 0 1-.68-1.92v-2.1a4 4 0 0 0-4-4Z"></path><path d="M10 17.2a2.3 2.3 0 0 0 4 0"></path></svg><span>Notificações</span></button>
                 <button class="settings-sidebar__item" type="button" data-settings-tab="privacy" aria-selected="false"><svg viewBox="0 0 24 24"><rect x="6" y="10" width="12" height="9" rx="2"></rect><path d="M9 10V7a3 3 0 0 1 6 0v3"></path></svg><span>Privacidade</span></button>
+                <button class="settings-sidebar__item" type="button" data-settings-tab="support" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M6 18.5v-11A2.5 2.5 0 0 1 8.5 5h7A2.5 2.5 0 0 1 18 7.5v4.8a2.5 2.5 0 0 1-2.5 2.5H11l-5 3.7Z"></path><path d="M9 9h6"></path><path d="M9 12h4"></path></svg><span>Suporte</span></button>
               </div>
             </nav>
 
@@ -359,11 +360,11 @@
                 </article>
               </section>
 
-              <section class="settings-panel" data-settings-panel="support" aria-labelledby="settings-support-title" hidden>
+              <section class="settings-panel" data-settings-panel="availability" aria-labelledby="settings-availability-title" hidden>
                 <article class="settings-card">
                   <header class="settings-card__header">
                     <div>
-                      <h1 id="settings-support-title">Disponibilidade</h1>
+                      <h1 id="settings-availability-title">Disponibilidade</h1>
                       <p>Controle quando clientes podem solicitar orçamento e como você responde.</p>
                     </div>
                   </header>
@@ -403,8 +404,50 @@
                     </div>
                   </div>
                   <footer class="settings-card__footer">
-                    <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button" data-settings-reset-panel="support">Cancelar</button>
-                    <button class="settings-action settings-action--primary doke-btn doke-btn--primary" type="button" data-settings-save-panel="support">Salvar disponibilidade</button>
+                    <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button" data-settings-reset-panel="availability">Cancelar</button>
+                    <button class="settings-action settings-action--primary doke-btn doke-btn--primary" type="button" data-settings-save-panel="availability">Salvar disponibilidade</button>
+                  </footer>
+                </article>
+              </section>
+
+              <section class="settings-panel" data-settings-panel="support" aria-labelledby="settings-support-title" hidden>
+                <article class="settings-card">
+                  <header class="settings-card__header">
+                    <div>
+                      <h1 id="settings-support-title">Suporte</h1>
+                      <p>Organize como você quer acionar ajuda e salve um rascunho de atendimento local.</p>
+                    </div>
+                    <a class="settings-action settings-action--primary doke-btn doke-btn--primary" href="ajuda.html">Abrir central de ajuda</a>
+                  </header>
+                  <div class="settings-card__body settings-card__body--compact">
+                    <section class="settings-section-heading">
+                      <h2>Atendimento e contato</h2>
+                      <p data-settings-support-summary>Preferência local para suporte e acompanhamento de dúvidas.</p>
+                    </section>
+                    <div class="settings-form-grid" aria-label="Preferências de suporte">
+                      <label class="settings-field doke-field"><span>Canal preferido</span><select class="doke-select" data-ui-select name="supportChannel" data-settings-field="support.preferredChannel"><option>Chat Doke</option><option>Email</option><option>WhatsApp</option><option>Central de ajuda</option></select></label>
+                      <label class="settings-field doke-field"><span>Assunto principal</span><select class="doke-select" data-ui-select name="supportTopic" data-settings-field="support.topic"><option>Pedido ou orçamento</option><option>Pagamento ou carteira</option><option>Perfil profissional</option><option>Conta e segurança</option><option>Comunidade</option><option>Outro assunto</option></select></label>
+                      <label class="settings-field doke-field"><span>Email de retorno</span><input class="doke-input" type="email" name="supportEmail" placeholder="voce@email.com" data-settings-field="support.contactEmail" /></label>
+                      <label class="settings-field settings-field--full doke-field"><span>Resumo do pedido</span><textarea class="doke-textarea" name="supportMessage" rows="4" placeholder="Descreva rapidamente o que aconteceu para facilitar o atendimento." data-settings-field="support.message"></textarea></label>
+                    </div>
+                    <div class="settings-rows settings-rows--compact" aria-label="Preferências de atendimento do suporte">
+                      <label class="settings-list-item settings-list-item--clickable">
+                        <div><h2>Anexar diagnóstico local</h2><p>Permitir incluir informações técnicas básicas do navegador quando você pedir ajuda.</p></div>
+                        <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-field="support.attachDiagnostics" /><span></span></span>
+                      </label>
+                      <label class="settings-list-item settings-list-item--clickable">
+                        <div><h2>Permitir retorno por WhatsApp</h2><p>Autorizar contato pelo telefone salvo nas configurações da conta.</p></div>
+                        <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" data-settings-field="support.allowWhatsApp" /><span></span></span>
+                      </label>
+                    </div>
+                    <div class="settings-inline-note">
+                      <div><h2>Rascunho local</h2><p data-settings-support-draft-summary>Nenhum pedido de suporte salvo neste dispositivo.</p></div>
+                      <a class="settings-action settings-action--secondary doke-btn doke-btn--ghost" href="ajuda.html">Ver ajuda</a>
+                    </div>
+                  </div>
+                  <footer class="settings-card__footer">
+                    <button class="settings-action settings-action--secondary button--ghost doke-btn doke-btn--ghost" type="button" data-settings-reset-panel="support">Cancelar</button>
+                    <button class="settings-action settings-action--primary doke-btn doke-btn--primary" type="button" data-settings-save-panel="support" data-action-state="idle" aria-busy="false">Salvar suporte</button>
                   </footer>
                 </article>
               </section>
@@ -465,7 +508,7 @@
     <script src="assets/js/core/app.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
     <script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
     <script src="assets/js/core/stable-shell-router.js?v=20260702-review-route-init-v1" defer></script>
-<script src="assets/js/pages/configuracoes.js?v=20260619-settings-entry-flow-v17" defer></script>
+<script src="assets/js/pages/configuracoes.js?v=20260709-settings-support-flow-v1" defer></script>
     <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture" defer></script>
     <script src="assets/js/ui/mobile-drawer.js" defer></script>
     <script src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1" defer></script>

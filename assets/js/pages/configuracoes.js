@@ -23,6 +23,8 @@
   const pixSummary = document.querySelector('[data-settings-pix-summary]');
   const focusFieldButtons = Array.from(document.querySelectorAll('[data-settings-focus-field]'));
   const availabilitySummaries = Array.from(document.querySelectorAll('[data-settings-availability-summary]'));
+  const supportSummary = document.querySelector('[data-settings-support-summary]');
+  const supportDraftSummary = document.querySelector('[data-settings-support-draft-summary]');
 
   const SETTINGS_STORAGE_KEY = 'doke.settings.local.v1';
   const DEFAULT_SETTINGS = Object.freeze({
@@ -62,6 +64,14 @@
       channelChat: true,
       channelOrders: true,
       channelUpdates: true
+    }),
+    support: Object.freeze({
+      preferredChannel: 'Chat Doke',
+      topic: 'Pedido ou orçamento',
+      contactEmail: '',
+      message: '',
+      attachDiagnostics: true,
+      allowWhatsApp: false
     }),
     notifications: Object.freeze({
       messages: true,
@@ -547,6 +557,23 @@
     });
   };
 
+  const syncSupportSurface = () => {
+    const support = settingsState.support || {};
+    const channel = support.preferredChannel || 'Chat Doke';
+    const topic = support.topic || 'Pedido ou orçamento';
+    const hasMessage = Boolean(String(support.message || '').trim());
+
+    if (supportSummary) {
+      supportSummary.textContent = `${channel} · ${topic}`;
+    }
+
+    if (supportDraftSummary) {
+      supportDraftSummary.textContent = hasMessage
+        ? `Rascunho salvo para ${topic.toLowerCase()}.`
+        : 'Nenhum pedido de suporte salvo neste dispositivo.';
+    }
+  };
+
   const focusSettingsField = (path) => {
     const target = settingsFieldInputs.find((input) => input.dataset.settingsField === path);
     if (!target) return;
@@ -596,6 +623,7 @@
     if (changed) saveSettings();
     syncPaymentsSurface();
     syncAvailabilitySurface();
+    syncSupportSurface();
     setButtonSavedFeedback(button);
     document.dispatchEvent(new CustomEvent('doke:settings-updated', {
       detail: {
@@ -620,6 +648,7 @@
     });
     syncPaymentsSurface();
     syncAvailabilitySurface();
+    syncSupportSurface();
     document.querySelector(`[data-settings-panel="${panelName}"]`)?.setAttribute('data-settings-dirty', 'false');
   };
 
@@ -696,6 +725,7 @@
     syncSettingsFieldInputs();
     syncPaymentsSurface();
     syncAvailabilitySurface();
+    syncSupportSurface();
     syncSecuritySessionSurface();
     updateSearchClearState();
     setMobileSearchOpen(false);
