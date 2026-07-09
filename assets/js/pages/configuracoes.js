@@ -21,6 +21,31 @@
   const isMobileSettings = () => window.innerWidth <= 760;
   const isNarrowSettings = () => window.innerWidth <= narrowBreakpoint;
 
+  const getAvailablePanelNames = () => new Set(panels.map((panel) => panel.dataset.settingsPanel).filter(Boolean));
+
+  const normalizePanelName = (panelName) => {
+    const normalized = String(panelName || '').trim().replace(/^#/, '');
+    if (!normalized) return '';
+    return getAvailablePanelNames().has(normalized) ? normalized : '';
+  };
+
+  const getPanelFromLocation = () => {
+    const params = new URLSearchParams(window.location.search);
+    return normalizePanelName(params.get('tab') || params.get('settings') || window.location.hash);
+  };
+
+  const syncLocationPanel = (panelName) => {
+    const normalized = normalizePanelName(panelName);
+    if (!normalized || !window.history?.replaceState) return;
+
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('tab') === normalized && !url.hash) return;
+
+    url.searchParams.set('tab', normalized);
+    url.hash = '';
+    window.history.replaceState({ settingsPanel: normalized }, '', `${url.pathname}${url.search}`);
+  };
+
   const setNarrowMenuMode = (isMenuMode) => {
     if (!isNarrowSettings()) {
       pageBody.classList.remove('settings-mobile-menu-mode', 'settings-narrow-menu-mode', 'settings-narrow-panel-mode');
@@ -32,20 +57,26 @@
     pageBody.classList.toggle('settings-mobile-menu-mode', isMenuMode && isMobileSettings());
   };
 
-  const activateTab = (panelName, { scroll = true } = {}) => {
-    if (!panelName) return;
+  const activateTab = (panelName, { scroll = true, updateLocation = true } = {}) => {
+    const normalizedPanelName = normalizePanelName(panelName);
+    if (!normalizedPanelName) return;
 
     sidebarItems.forEach((button) => {
-      const isActive = button.dataset.settingsTab === panelName;
+      const isActive = button.dataset.settingsTab === normalizedPanelName;
       button.classList.toggle('is-active', isActive);
-      button.setAttribute('aria-selected', String(isActive));
+      if (button.dataset.settingsTab) {
+        button.setAttribute('aria-selected', String(isActive));
+        button.setAttribute('aria-current', isActive ? 'page' : 'false');
+      }
     });
 
     panels.forEach((panel) => {
-      const isActive = panel.dataset.settingsPanel === panelName;
+      const isActive = panel.dataset.settingsPanel === normalizedPanelName;
       panel.classList.toggle('is-active', isActive);
       panel.hidden = !isActive;
     });
+
+    if (updateLocation) syncLocationPanel(normalizedPanelName);
 
     if (isNarrowSettings()) {
       setNarrowMenuMode(false);
@@ -124,7 +155,10 @@
   };
 
   sidebarItems.forEach((button) => {
-    button.addEventListener('click', () => activateTab(button.dataset.settingsTab), { signal });
+    button.addEventListener('click', () => {
+      if (!button.dataset.settingsTab) return;
+      activateTab(button.dataset.settingsTab);
+    }, { signal });
   });
 
   searchInputs.forEach((input) => {
@@ -182,13 +216,9 @@
   }
 
   const initState = () => {
-    const initialPanel = document.querySelector('.settings-sidebar__item.is-active')?.dataset.settingsTab || sidebarItems[0]?.dataset.settingsTab;
+    const initialPanel = getPanelFromLocation() || document.querySelector('.settings-sidebar__item.is-active')?.dataset.settingsTab || sidebarItems.find((item) => item.dataset.settingsTab)?.dataset.settingsTab;
     if (initialPanel) {
-      panels.forEach((panel) => {
-        const isActive = panel.dataset.settingsPanel === initialPanel;
-        panel.classList.toggle('is-active', isActive);
-        panel.hidden = !isActive;
-      });
+      activateTab(initialPanel, { scroll: false, updateLocation: Boolean(getPanelFromLocation()) });
     }
 
     filterSettings('');
@@ -202,6 +232,11 @@
 
   let wasNarrow = isNarrowSettings();
   let resizeRaf = null;
+  window.addEventListener('popstate', () => {
+    const panelFromLocation = getPanelFromLocation();
+    if (panelFromLocation) activateTab(panelFromLocation, { scroll: false, updateLocation: false });
+  }, { signal });
+
   window.addEventListener('resize', () => {
     if (resizeRaf) cancelAnimationFrame(resizeRaf);
     resizeRaf = requestAnimationFrame(() => {
