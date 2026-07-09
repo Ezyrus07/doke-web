@@ -754,6 +754,7 @@
     const pageParams = new URLSearchParams(window.location.search);
     const requestedConversationId = pageParams.get("conversation");
     const requestedOrderId = pageParams.get("order") || pageParams.get("orderId") || pageParams.get("pedido");
+    const hasDirectThreadRequest = Boolean(requestedConversationId || requestedOrderId);
     const conversationFromOrder = requestedOrderId
       ? Object.keys(conversations).find((id) => String(conversations[id]?.orderId || conversations[id]?.order?.id || "") === String(requestedOrderId))
       : "";
@@ -2956,9 +2957,9 @@
       });
     });
 
-    renderThread(activeId, { scrollTo: "start" });
+    renderThread(activeId, { scrollTo: "start", openOnMobile: hasDirectThreadRequest });
     if (isCompactThreadViewport()) {
-      setCompactThreadOpen(false);
+      setCompactThreadOpen(hasDirectThreadRequest);
     }
   };
 
