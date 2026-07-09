@@ -19,6 +19,25 @@
 
   const SETTINGS_STORAGE_KEY = 'doke.settings.local.v1';
   const DEFAULT_SETTINGS = Object.freeze({
+    account: Object.freeze({
+      fullName: 'Gabriel Oliveira',
+      displayName: 'Gabriel',
+      document: '123.456.789-00',
+      phone: '(11) 99999-9999',
+      email: 'gabriel@example.com'
+    }),
+    professional: Object.freeze({
+      professionalName: 'Gabriel Oliveira',
+      professionalType: 'Autônomo',
+      professionalDescription: 'Atendimento residencial com foco em qualidade, prazo e comunicação clara.',
+      mainCategory: 'Pintura',
+      experience: 'Menos de 1 ano',
+      baseCity: 'Salvador, BA',
+      serviceRadius: 'Até 5 km',
+      neighborhoods: '',
+      receiveOrders: true,
+      urgentAvailability: false
+    }),
     notifications: Object.freeze({
       messages: true,
       orders: true,
@@ -37,6 +56,12 @@
 
   const isPlainObject = (value) => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
+  const isSupportedSettingValue = (value) => {
+    if (['boolean', 'string', 'number'].includes(typeof value)) return true;
+    if (value === null) return true;
+    return false;
+  };
+
   const mergeSettings = (base, override) => {
     const next = cloneSettings(base || {});
     if (!isPlainObject(override)) return next;
@@ -46,7 +71,7 @@
         next[key] = mergeSettings(next[key], override[key]);
         return;
       }
-      if (typeof override[key] === 'boolean') next[key] = override[key];
+      if (isSupportedSettingValue(override[key])) next[key] = override[key];
     });
 
     return next;
@@ -94,7 +119,25 @@
     return true;
   };
 
+  const getInputValue = (input) => {
+    if (!input) return '';
+    if (input.type === 'checkbox') return Boolean(input.checked);
+    return String(input.value || '').trim();
+  };
+
+  const setInputValue = (input, value) => {
+    if (!input) return;
+    if (input.type === 'checkbox') {
+      input.checked = Boolean(value);
+      return;
+    }
+    input.value = value == null ? '' : String(value);
+  };
+
   const preferenceInputs = Array.from(document.querySelectorAll('[data-settings-preference]'));
+  const settingsFieldInputs = Array.from(document.querySelectorAll('[data-settings-field]'));
+  const settingsSaveButtons = Array.from(document.querySelectorAll('[data-settings-save-panel]'));
+  const settingsResetButtons = Array.from(document.querySelectorAll('[data-settings-reset-panel]'));
   const narrowBreakpoint = 1024;
 
   const isMobileSettings = () => window.innerWidth <= 760;
@@ -289,6 +332,78 @@
     });
   };
 
+  const syncSettingsFieldInputs = () => {
+    settingsFieldInputs.forEach((input) => {
+      const value = getSettingValue(input.dataset.settingsField);
+      if (value === undefined) return;
+      setInputValue(input, value);
+    });
+  };
+
+  const getPanelFields = (panelName) => {
+    const panel = document.querySelector(`[data-settings-panel="${panelName}"]`);
+    if (!panel) return [];
+    return settingsFieldInputs.filter((input) => panel.contains(input));
+  };
+
+  const collectPanelFields = (panelName) => {
+    let changed = false;
+    getPanelFields(panelName).forEach((input) => {
+      const fieldPath = input.dataset.settingsField;
+      if (!fieldPath) return;
+      changed = setSettingValue(fieldPath, getInputValue(input)) || changed;
+    });
+    return changed;
+  };
+
+  const markPanelDirty = (input) => {
+    const panel = input.closest('[data-settings-panel]');
+    panel?.setAttribute('data-settings-dirty', 'true');
+  };
+
+  const setButtonSavedFeedback = (button) => {
+    if (!button) return;
+    const originalLabel = button.dataset.settingsOriginalLabel || button.textContent.trim();
+    button.dataset.settingsOriginalLabel = originalLabel;
+    button.textContent = 'Salvo';
+    button.setAttribute('data-action-state', 'success');
+    button.setAttribute('aria-busy', 'false');
+    window.setTimeout(() => {
+      button.textContent = originalLabel;
+      button.setAttribute('data-action-state', 'idle');
+    }, 1200);
+  };
+
+  const savePanelSettings = (panelName, button) => {
+    const changed = collectPanelFields(panelName);
+    const panel = document.querySelector(`[data-settings-panel="${panelName}"]`);
+    panel?.setAttribute('data-settings-dirty', 'false');
+    if (changed) saveSettings();
+    setButtonSavedFeedback(button);
+    document.dispatchEvent(new CustomEvent('doke:settings-updated', {
+      detail: {
+        section: panelName,
+        settings: cloneSettings(settingsState)
+      }
+    }));
+    document.dispatchEvent(new CustomEvent('doke:settings-profile-updated', {
+      detail: {
+        section: panelName,
+        account: cloneSettings(settingsState.account || {}),
+        professional: cloneSettings(settingsState.professional || {})
+      }
+    }));
+  };
+
+  const resetPanelFields = (panelName) => {
+    getPanelFields(panelName).forEach((input) => {
+      const value = getSettingValue(input.dataset.settingsField);
+      if (value === undefined) return;
+      setInputValue(input, value);
+    });
+    document.querySelector(`[data-settings-panel="${panelName}"]`)?.setAttribute('data-settings-dirty', 'false');
+  };
+
   preferenceInputs.forEach((input) => {
     input.addEventListener('change', () => {
       const preferencePath = input.dataset.settingsPreference;
@@ -307,13 +422,26 @@
     }, { signal });
   });
 
-  document.querySelectorAll('.settings-card__footer .button--ghost').forEach((button) => {
+  settingsFieldInputs.forEach((input) => {
+    input.addEventListener('input', () => markPanelDirty(input), { signal });
+    input.addEventListener('change', () => markPanelDirty(input), { signal });
+  });
+
+  settingsSaveButtons.forEach((button) => {
     button.addEventListener('click', (event) => {
       event.preventDefault();
-      const card = button.closest('.settings-card');
-      card?.querySelectorAll('input').forEach((input) => {
-        if ('defaultValue' in input) input.value = input.defaultValue;
-      });
+      const panelName = normalizePanelName(button.dataset.settingsSavePanel);
+      if (!panelName) return;
+      savePanelSettings(panelName, button);
+    }, { signal });
+  });
+
+  settingsResetButtons.forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      const panelName = normalizePanelName(button.dataset.settingsResetPanel);
+      if (!panelName) return;
+      resetPanelFields(panelName);
     }, { signal });
   });
 
@@ -330,6 +458,7 @@
 
     filterSettings('');
     syncPreferenceInputs();
+    syncSettingsFieldInputs();
     updateSearchClearState();
     setMobileSearchOpen(false);
 
