@@ -44,6 +44,9 @@
   var audioDraftTimer = null;
 
   var COMMUNITY_SELECTION_STORAGE_KEY = 'doke.community.selected.v1';
+  var COMMUNITY_MESSAGES_STORAGE_KEY = 'doke.community.messages.local.v1';
+  var currentCommunityContext = null;
+  var currentChannelId = 'geral';
 
   function safeJsonParse(value) {
     if (!value) return null;
@@ -88,6 +91,7 @@
 
   function applyCommunityContext() {
     var context = getCommunityContextFromLocation();
+    currentCommunityContext = context;
     root.dataset.communityId = context.id;
     root.dataset.communityTitle = context.title;
     root.setAttribute('aria-label', 'Sala interna da comunidade ' + context.title);
@@ -112,6 +116,7 @@
     } catch (error) {
       // Local storage can be unavailable in restricted browser contexts.
     }
+    return context;
   }
 
   applyCommunityContext();
@@ -172,6 +177,96 @@
   function scrollToStart() {
     if (!messageList) return;
     messageList.scrollTop = 0;
+  }
+
+  function getCurrentCommunityId() {
+    if (currentCommunityContext && currentCommunityContext.id) return currentCommunityContext.id;
+    return root.dataset.communityId || 'community';
+  }
+
+  function readCommunityMessageStore() {
+    try {
+      var parsed = safeJsonParse(window.localStorage && window.localStorage.getItem(COMMUNITY_MESSAGES_STORAGE_KEY));
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function writeCommunityMessageStore(store) {
+    try {
+      window.localStorage && window.localStorage.setItem(COMMUNITY_MESSAGES_STORAGE_KEY, JSON.stringify(store));
+    } catch (error) {
+      // Local storage can be unavailable in restricted browser contexts.
+    }
+  }
+
+  function getStoredChannelMessages(channelId) {
+    var store = readCommunityMessageStore();
+    var communityBucket = store[getCurrentCommunityId()] || {};
+    var channelBucket = communityBucket[channelId || currentChannelId] || [];
+    return Array.isArray(channelBucket) ? channelBucket.filter(function (message) { return message && message.id; }) : [];
+  }
+
+  function createCommunityMessageRecord(payload) {
+    var now = new Date();
+    var type = payload && payload.type ? payload.type : 'text';
+    return {
+      id: 'community_msg_' + now.getTime() + '_' + Math.random().toString(36).slice(2, 8),
+      communityId: getCurrentCommunityId(),
+      communityTitle: root.dataset.communityTitle || (currentCommunityContext && currentCommunityContext.title) || 'Comunidade Doke',
+      channelId: currentChannelId || 'geral',
+      channelName: currentChannelName || '# Geral',
+      type: type,
+      text: String(payload && payload.text || '').trim(),
+      attachmentName: String(payload && payload.attachmentName || '').trim(),
+      audioDuration: String(payload && payload.audioDuration || '').trim(),
+      mine: true,
+      author: 'Você',
+      createdAt: now.toISOString()
+    };
+  }
+
+  function persistCommunityMessage(record) {
+    if (!record || !record.id) return;
+    var communityId = record.communityId || getCurrentCommunityId();
+    var channelId = record.channelId || currentChannelId || 'geral';
+    var store = readCommunityMessageStore();
+    if (!store[communityId] || typeof store[communityId] !== 'object' || Array.isArray(store[communityId])) {
+      store[communityId] = {};
+    }
+    var messages = Array.isArray(store[communityId][channelId]) ? store[communityId][channelId] : [];
+    if (!messages.some(function (item) { return item && item.id === record.id; })) {
+      messages.push(record);
+    }
+    store[communityId][channelId] = messages.slice(-80);
+    writeCommunityMessageStore(store);
+  }
+
+  function clearRenderedLocalMessages() {
+    if (!messageList) return;
+    Array.prototype.slice.call(messageList.querySelectorAll('[data-community-local-message]')).forEach(function (message) {
+      message.remove();
+    });
+  }
+
+  function renderPersistedMessagesForChannel(channelId) {
+    if (!messageList) return;
+    clearRenderedLocalMessages();
+    getStoredChannelMessages(channelId || currentChannelId).forEach(function (record) {
+      var element = createMessageFromRecord(record);
+      if (element) {
+        element.dataset.communityLocalMessage = 'true';
+        element.dataset.communityMessageId = record.id;
+        messageList.appendChild(element);
+      }
+    });
+  }
+
+  function formatMessageTime(createdAt) {
+    var date = createdAt ? new Date(createdAt) : new Date();
+    if (Number.isNaN(date.getTime())) date = new Date();
+    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   }
 
   function formatAudioTime(totalSeconds) {
@@ -248,6 +343,7 @@
       }
     });
 
+    currentChannelId = channel.dataset.channelId || 'geral';
     currentChannelName = channel.dataset.channelName || '# Geral';
     if (channelTitle) channelTitle.textContent = currentChannelName;
     if (channelStatus) channelStatus.textContent = channel.dataset.channelStatus || '128 membros • 12 online';
@@ -255,6 +351,7 @@
     if (badge) badge.remove();
     closeFloatingMenus();
     setMobileView('thread');
+    renderPersistedMessagesForChannel(currentChannelId);
     window.requestAnimationFrame(scrollToStart);
   }
 
@@ -286,19 +383,20 @@
     if (channelCount) channelCount.textContent = String(visible);
   }
 
-  function createMessageHeader() {
+  function createMessageHeader(authorName, createdAt) {
     var header = document.createElement('header');
     header.className = 'message-bubble__meta';
     var author = document.createElement('strong');
     var time = document.createElement('time');
-    var now = new Date();
-    author.textContent = 'Você';
-    time.textContent = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    author.textContent = authorName || 'Você';
+    time.textContent = formatMessageTime(createdAt);
+    if (createdAt) time.dateTime = createdAt;
     header.append(author, time);
     return header;
   }
 
-  function createMessage(text) {
+  function createMessage(text, options) {
+    options = options || {};
     var article = document.createElement('article');
     article.className = 'community-room-message community-room-message--self message-row message-row--me';
 
@@ -308,13 +406,14 @@
     var paragraph = document.createElement('p');
     paragraph.textContent = text;
 
-    bubble.append(createMessageHeader(), paragraph);
+    bubble.append(createMessageHeader(options.author || 'Você', options.createdAt), paragraph);
 
-    if (selectedAttachment) {
+    var attachmentName = options.attachmentName || selectedAttachment;
+    if (attachmentName) {
       var media = document.createElement('div');
       media.className = 'community-room-media-card';
       var label = document.createElement('span');
-      label.textContent = selectedAttachment;
+      label.textContent = attachmentName;
       media.appendChild(label);
       bubble.appendChild(media);
     }
@@ -323,7 +422,8 @@
     return article;
   }
 
-  function createAudioMessage(duration) {
+  function createAudioMessage(duration, options) {
+    options = options || {};
     var article = document.createElement('article');
     article.className = 'community-room-message community-room-message--self message-row message-row--me';
 
@@ -345,9 +445,24 @@
     meta.textContent = duration;
 
     audio.append(play, track, meta);
-    bubble.append(createMessageHeader(), audio);
+    bubble.append(createMessageHeader(options.author || 'Você', options.createdAt), audio);
     article.appendChild(bubble);
     return article;
+  }
+
+  function createMessageFromRecord(record) {
+    if (!record) return null;
+    if (record.type === 'audio') {
+      return createAudioMessage(record.audioDuration || '00:01', {
+        author: record.author || 'Você',
+        createdAt: record.createdAt
+      });
+    }
+    return createMessage(record.text || 'Mensagem enviada.', {
+      author: record.author || 'Você',
+      createdAt: record.createdAt,
+      attachmentName: record.attachmentName || ''
+    });
   }
 
   function updateSendState() {
@@ -531,11 +646,22 @@
       if (!text && !selectedAttachment && !hasActiveAudioDraft()) return;
 
       if (hasActiveAudioDraft()) {
-        messageList.appendChild(createAudioMessage(formatAudioTime(Math.max(audioDraftSeconds, 1))));
+        var audioRecord = createCommunityMessageRecord({
+          type: 'audio',
+          audioDuration: formatAudioTime(Math.max(audioDraftSeconds, 1))
+        });
+        messageList.appendChild(createMessageFromRecord(audioRecord));
+        persistCommunityMessage(audioRecord);
         resetAudioDraft();
       } else {
         var messageText = text || 'Anexo enviado no canal ' + currentChannelName + '.';
-        messageList.appendChild(createMessage(messageText));
+        var messageRecord = createCommunityMessageRecord({
+          type: selectedAttachment ? 'attachment' : 'text',
+          text: messageText,
+          attachmentName: selectedAttachment
+        });
+        messageList.appendChild(createMessageFromRecord(messageRecord));
+        persistCommunityMessage(messageRecord);
       }
 
       if (composerInput) {
@@ -570,7 +696,14 @@
     setChannelSelectionMode(!isSelectingChannels);
   });
 
+  var initiallyActiveChannel = channels.find(function (channel) { return channel.classList.contains('is-active'); }) || channels[0];
+  if (initiallyActiveChannel) {
+    currentChannelId = initiallyActiveChannel.dataset.channelId || currentChannelId;
+    currentChannelName = initiallyActiveChannel.dataset.channelName || currentChannelName;
+  }
+
   filterChannels();
+  renderPersistedMessagesForChannel(currentChannelId);
   updateSendState();
   updateComposerDraftState();
   scrollToStart();
