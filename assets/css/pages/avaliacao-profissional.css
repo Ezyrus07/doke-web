@@ -531,6 +531,24 @@ body.pro-review-modal-open {
 }
 
 
+
+/* Mobile bottom safe-area for the marketplace review step.
+ * Keeps the final form actions clear of the fixed bottom navigation without
+ * changing desktop/tablet composition.
+ */
+@media (max-width: 640px) {
+  .pro-review-screen__rail {
+    padding-bottom: calc(var(--mobile-bottom-nav-height, 78px) + env(safe-area-inset-bottom, 0px) + 38px);
+  }
+
+  .pro-review-stars button,
+  .pro-review-aspect__stars button {
+    min-width: 40px;
+    min-height: 40px;
+    line-height: 1;
+  }
+}
+
 @media (max-width: 1080px) {
   .pro-review-layout {
     grid-template-columns: minmax(0, 1fr);
