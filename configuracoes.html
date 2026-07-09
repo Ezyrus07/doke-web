@@ -368,25 +368,44 @@
                     </div>
                   </header>
                   <div class="settings-card__body settings-card__body--compact">
-                    <div class="settings-rows">
-                      <div class="settings-list-item">
-                        <div><h2>Receber novos pedidos</h2><p>Seu perfil aparece como disponível para orçamentos.</p></div>
-                        <label class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked /><span></span></label>
-                      </div>
-                      <div class="settings-list-item">
-                        <div><h2>Tempo médio de resposta</h2><p>Até 2 horas úteis · exibido no seu perfil público.</p></div>
-                        <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button">Editar</button>
-                      </div>
-                      <div class="settings-list-item">
-                        <div><h2>Horário de atendimento</h2><p>Segunda a sexta · 08:00 às 18:00</p></div>
-                        <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button">Ajustar</button>
-                      </div>
-                      <div class="settings-list-item">
-                        <div><h2>Canais aceitos</h2><p>Chat Doke, orçamento por pedido e atualização pós-serviço.</p></div>
-                        <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button">Gerenciar</button>
-                      </div>
+                    <div class="settings-rows settings-rows--compact">
+                      <label class="settings-list-item settings-list-item--clickable">
+                        <div><h2>Receber novos pedidos</h2><p data-settings-availability-summary="receiveOrders">Seu perfil aparece como disponível para orçamentos.</p></div>
+                        <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-field="professional.receiveOrders" /><span></span></span>
+                      </label>
+                      <label class="settings-list-item settings-list-item--clickable">
+                        <div><h2>Atendimento urgente</h2><p data-settings-availability-summary="urgentAvailability">Mostrar disponibilidade para pedidos com prazo curto.</p></div>
+                        <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" data-settings-field="professional.urgentAvailability" /><span></span></span>
+                      </label>
+                    </div>
+
+                    <div class="settings-form-grid" aria-label="Preferências de disponibilidade">
+                      <label class="settings-field doke-field"><span>Tempo médio de resposta</span><select class="doke-select" data-ui-select name="responseTime" data-settings-field="availability.responseTime"><option>Até 30 minutos</option><option>Até 1 hora</option><option>Até 2 horas úteis</option><option>No mesmo dia</option><option>Em até 24 horas</option></select></label>
+                      <label class="settings-field doke-field"><span>Dias de atendimento</span><select class="doke-select" data-ui-select name="serviceDays" data-settings-field="availability.serviceDays"><option>Segunda a sexta</option><option>Segunda a sábado</option><option>Todos os dias</option><option>Somente dias úteis</option><option>Personalizado</option></select></label>
+                      <label class="settings-field doke-field"><span>Início do atendimento</span><input class="doke-input" type="time" name="serviceStart" value="08:00" data-settings-field="availability.serviceStart" /></label>
+                      <label class="settings-field doke-field"><span>Fim do atendimento</span><input class="doke-input" type="time" name="serviceEnd" value="18:00" data-settings-field="availability.serviceEnd" /></label>
+                      <label class="settings-field settings-field--full doke-field"><span>Mensagem automática de disponibilidade</span><textarea class="doke-textarea" name="availabilityNote" rows="3" placeholder="Ex: Respondo em horário comercial e priorizo urgências em Salvador." data-settings-field="availability.availabilityNote"></textarea></label>
+                    </div>
+
+                    <div class="settings-rows settings-rows--compact" aria-label="Canais aceitos">
+                      <label class="settings-list-item settings-list-item--clickable">
+                        <div><h2>Chat Doke</h2><p>Permitir atendimento pelo chat interno.</p></div>
+                        <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-field="availability.channelChat" /><span></span></span>
+                      </label>
+                      <label class="settings-list-item settings-list-item--clickable">
+                        <div><h2>Orçamento por pedido</h2><p>Receber solicitações formais com serviço, endereço e detalhes.</p></div>
+                        <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-field="availability.channelOrders" /><span></span></span>
+                      </label>
+                      <label class="settings-list-item settings-list-item--clickable">
+                        <div><h2>Atualização pós-serviço</h2><p>Permitir avisos de conclusão, comprovante e avaliação.</p></div>
+                        <span class="toggle-switch doke-switch"><input class="doke-switch__input" type="checkbox" checked data-settings-field="availability.channelUpdates" /><span></span></span>
+                      </label>
                     </div>
                   </div>
+                  <footer class="settings-card__footer">
+                    <button class="settings-action settings-action--secondary doke-btn doke-btn--ghost" type="button" data-settings-reset-panel="support">Cancelar</button>
+                    <button class="settings-action settings-action--primary doke-btn doke-btn--primary" type="button" data-settings-save-panel="support">Salvar disponibilidade</button>
+                  </footer>
                 </article>
               </section>
 

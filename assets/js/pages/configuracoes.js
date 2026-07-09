@@ -22,6 +22,7 @@
   const paymentSummary = document.querySelector('[data-settings-payment-summary]');
   const pixSummary = document.querySelector('[data-settings-pix-summary]');
   const focusFieldButtons = Array.from(document.querySelectorAll('[data-settings-focus-field]'));
+  const availabilitySummaries = Array.from(document.querySelectorAll('[data-settings-availability-summary]'));
 
   const SETTINGS_STORAGE_KEY = 'doke.settings.local.v1';
   const DEFAULT_SETTINGS = Object.freeze({
@@ -51,6 +52,16 @@
       receiptDisplayName: '',
       autoReceipts: true,
       preferPix: false
+    }),
+    availability: Object.freeze({
+      responseTime: 'Até 2 horas úteis',
+      serviceDays: 'Segunda a sexta',
+      serviceStart: '08:00',
+      serviceEnd: '18:00',
+      availabilityNote: '',
+      channelChat: true,
+      channelOrders: true,
+      channelUpdates: true
     }),
     notifications: Object.freeze({
       messages: true,
@@ -519,6 +530,23 @@
     }
   };
 
+  const syncAvailabilitySurface = () => {
+    const professional = settingsState.professional || {};
+    availabilitySummaries.forEach((summary) => {
+      const type = summary.dataset.settingsAvailabilitySummary;
+      if (type === 'receiveOrders') {
+        summary.textContent = professional.receiveOrders
+          ? 'Seu perfil aparece como disponível para orçamentos.'
+          : 'Seu perfil fica pausado para novas solicitações.';
+      }
+      if (type === 'urgentAvailability') {
+        summary.textContent = professional.urgentAvailability
+          ? 'Você aparece disponível para pedidos com prazo curto.'
+          : 'Pedidos urgentes ficam ocultos do seu perfil.';
+      }
+    });
+  };
+
   const focusSettingsField = (path) => {
     const target = settingsFieldInputs.find((input) => input.dataset.settingsField === path);
     if (!target) return;
@@ -567,6 +595,7 @@
     panel?.setAttribute('data-settings-dirty', 'false');
     if (changed) saveSettings();
     syncPaymentsSurface();
+    syncAvailabilitySurface();
     setButtonSavedFeedback(button);
     document.dispatchEvent(new CustomEvent('doke:settings-updated', {
       detail: {
@@ -590,6 +619,7 @@
       setInputValue(input, value);
     });
     syncPaymentsSurface();
+    syncAvailabilitySurface();
     document.querySelector(`[data-settings-panel="${panelName}"]`)?.setAttribute('data-settings-dirty', 'false');
   };
 
@@ -665,6 +695,7 @@
     syncPreferenceInputs();
     syncSettingsFieldInputs();
     syncPaymentsSurface();
+    syncAvailabilitySurface();
     syncSecuritySessionSurface();
     updateSearchClearState();
     setMobileSearchOpen(false);
