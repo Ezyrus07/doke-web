@@ -346,14 +346,42 @@ const getOwnerProfileHref = (user = getCurrentSessionUser()) => {
   return String(user.ownerProfileUrl || user.ownerUrl || (role === 'professional' ? 'perfil-profissional.html' : 'meu-perfil.html')).replace(/^\//, '');
 };
 
+const isAccountProfileNavigationLink = (link) => {
+  if (!link || link.tagName !== 'A') return false;
+  const text = (link.textContent || '').trim().toLowerCase();
+  return (
+    link.classList.contains('nav-link--profile') ||
+    link.getAttribute('data-nav-id') === 'profile' ||
+    link.classList.contains('doke-mobile-bottom-nav__item--profile') ||
+    link.getAttribute('data-owner-profile-link') === 'true' ||
+    text.includes('meu perfil') ||
+    text === 'perfil'
+  );
+};
+
+const ensureOwnerProfileLinkLabel = (link) => {
+  if (!link || !link.classList?.contains('nav-link--profile')) return;
+  const start = link.querySelector('.nav-link__start');
+  if (!start) return;
+  const icon = start.querySelector('.nav-link__icon');
+  let label = Array.from(start.children).find((child) => child !== icon && (child.textContent || '').trim());
+  if (!label) {
+    label = document.createElement('span');
+    label.textContent = 'Meu perfil';
+    start.appendChild(label);
+  } else if (!(label.textContent || '').trim()) {
+    label.textContent = 'Meu perfil';
+  }
+};
+
 const syncOwnerProfileLinks = () => {
   const href = getOwnerProfileHref();
-  document.querySelectorAll('.nav-link--profile, [data-nav-id="profile"], .doke-mobile-bottom-nav__item--profile, .profile-dropdown__item').forEach((link) => {
-    if (link.tagName !== 'A') return;
-    const text = (link.textContent || '').trim().toLowerCase();
-    if (link.classList.contains('nav-link--profile') || link.getAttribute('data-nav-id') === 'profile' || link.classList.contains('doke-mobile-bottom-nav__item--profile') || text.includes('meu perfil') || text === 'perfil') {
-      link.setAttribute('href', href);
-    }
+  document.querySelectorAll('.nav-link--profile, [data-nav-id="profile"], .doke-mobile-bottom-nav__item--profile, .profile-dropdown__item, [data-owner-profile-link="true"]').forEach((link) => {
+    if (!isAccountProfileNavigationLink(link)) return;
+    link.setAttribute('href', href);
+    link.setAttribute('data-owner-profile-link', 'true');
+    ensureOwnerProfileLinkLabel(link);
+    warmInternalViewLink(link);
   });
 };
 
@@ -695,11 +723,16 @@ const updateSidebarActiveState = (pathOverride = null) => {
   });
 
   stateMap.forEach((active, selector) => {
-    const node = document.querySelector(selector);
-    if (!node) return;
-    node.classList.toggle("is-active", active);
-    if (active) node.setAttribute("aria-current", "page");
+    document.querySelectorAll(selector).forEach((node) => {
+      node.classList.toggle("is-active", active);
+      if (active) node.setAttribute("aria-current", "page");
+    });
   });
+};
+
+window.Doke.syncAccountNavigationState = (pathOverride = null) => {
+  syncOwnerProfileLinks();
+  updateSidebarActiveState(pathOverride);
 };
 
 const syncSettingsLinks = () => {
@@ -1107,13 +1140,31 @@ const warmInternalViewLink = (link) => {
 const getPrimaryNavigationLinks = () =>
   document.querySelectorAll('.sidebar a[href], .bottom-nav a[href], .doke-bottom-nav a[href], [data-header-nav][href]');
 
+const warmPriorityInternalViews = () => {
+  [
+    'perfil-profissional.html',
+    'meu-perfil.html',
+    'comunidade.html',
+    'comunidade-interna.html'
+  ].forEach((href) => {
+    try {
+      hintInternalViewStyles(href);
+      hintInternalViewScripts(href);
+      prefetchInternalViewDocument(href);
+    } catch (error) {}
+  });
+};
+
 const scheduleSidebarViewHints = () => {
   if (sidebarViewsHinted) return;
   sidebarViewsHinted = true;
 
   // Navegação de menu precisa parecer instantânea. Pré-aquecemos as telas
   // principais cedo, não apenas em hover, para evitar o clique frio.
-  const warm = () => getPrimaryNavigationLinks().forEach(warmInternalViewLink);
+  const warm = () => {
+    getPrimaryNavigationLinks().forEach(warmInternalViewLink);
+    warmPriorityInternalViews();
+  };
   warm();
   window.setTimeout(warm, 350);
 };
@@ -1614,6 +1665,7 @@ const initializeCurrentView = () => {
   renderSharedSidebar();
   updateSidebarActiveState();
   syncAuthUi();
+  updateSidebarActiveState();
   syncTopbarScrollState();
   syncHeaderLocation();
   syncSidebarOperationalBadges();
@@ -2042,6 +2094,15 @@ window.addEventListener("popstate", () => {
 
 document.addEventListener("click", (event) => {
   if (!(event.target instanceof Element)) return;
+  const link = event.target.closest('a[href]');
+  if (!isAccountProfileNavigationLink(link)) return;
+  const href = getOwnerProfileHref();
+  if (!href || link.getAttribute('href') === href) return;
+  link.setAttribute('href', href);
+}, { capture: true });
+
+document.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) return;
   const toggleButton = event.target.closest("[data-sidebar-toggle]");
   if (toggleButton) {
     if (isMobileSidebarViewport()) {
@@ -2166,6 +2227,7 @@ initializeCurrentView();
     syncSidebarOperationalBadges();
     syncSidebarAdminLink();
     syncOwnerProfileLinks();
+    updateSidebarActiveState();
     syncProfessionalOwnerProfileRoute();
   });
 });
@@ -2173,9 +2235,12 @@ window.addEventListener('storage', () => {
   syncSidebarOperationalBadges();
   syncSidebarAdminLink();
   syncOwnerProfileLinks();
+  updateSidebarActiveState();
   syncProfessionalOwnerProfileRoute();
 });
 window.setTimeout(() => {
   syncOwnerProfileLinks();
+  updateSidebarActiveState();
+  warmPriorityInternalViews();
   syncProfessionalOwnerProfileRoute();
 }, 0);

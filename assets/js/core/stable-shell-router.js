@@ -2,7 +2,7 @@
   'use strict';
 
   var Doke = window.Doke || (window.Doke = {});
-  var ROUTER_VERSION = '20260709-public-footer-route-sync-v1';
+  var ROUTER_VERSION = '20260709-sidebar-profile-sync-v1';
   var ROUTE_VISUAL_THRESHOLD_MS = 150;
   var ROUTE_SETTLEMENT_TIMEOUT_MS = 9000;
 
@@ -24,6 +24,9 @@
     '/pagamento-profissional.html',
     '/pedidos.html',
     '/perfil.html',
+    '/meu-perfil.html',
+    '/perfil-cliente.html',
+    '/perfil-profissional.html',
     '/resultados.html',
     '/tornar-profissional.html',
     '/'
@@ -36,6 +39,15 @@
     '/pedidos.html',
     '/mensagens.html',
     '/notificacoes.html'
+  ]);
+
+  var PROFILE_ACTIVE_PATHS = new Set([
+    '/perfil.html',
+    '/meu-perfil.html',
+    '/perfil-cliente.html',
+    '/perfil-profissional.html',
+    '/tornar-profissional.html',
+    '/anunciar-servico.html'
   ]);
 
   var ROUTE_INIT = {
@@ -52,6 +64,9 @@
     '/comunidade.html': ['DokeInitCommunity'],
     '/comunidade-interna.html': [],
     '/perfil.html': ['DokeInitProfile'],
+    '/meu-perfil.html': ['DokeInitProfile'],
+    '/perfil-cliente.html': ['DokeInitProfile'],
+    '/perfil-profissional.html': ['DokeInitProfile'],
     '/configuracoes.html': [],
     '/orcamento.html': ['DokeInitBudget'],
     '/pagamento-profissional.html': ['DokeInitPayment'],
@@ -629,16 +644,7 @@
       currentHeader.replaceChildren.apply(currentHeader, Array.prototype.map.call(nextHeader.childNodes, function (node) {
         return node.cloneNode(true);
       }));
-      var syncedContent = nextContent.cloneNode(true);
-      currentContent.replaceWith(syncedContent);
-      Array.prototype.slice.call(currentPage.children).forEach(function (node) {
-        if (node === currentHeader || node === syncedContent) return;
-        node.remove();
-      });
-      Array.prototype.slice.call(nextPage.children).forEach(function (node) {
-        if (node === nextHeader || node === nextContent) return;
-        currentPage.appendChild(node.cloneNode(true));
-      });
+      currentContent.replaceWith(nextContent.cloneNode(true));
       Array.prototype.slice.call(currentShell.children).forEach(function (node) {
         if (node === currentSidebar || node === currentPage) return;
         node.remove();
@@ -683,6 +689,16 @@
     });
   }
 
+  function syncDokeAccountNavigation(path) {
+    try {
+      if (window.Doke && typeof window.Doke.syncAccountNavigationState === 'function') {
+        window.Doke.syncAccountNavigationState(path || currentPath());
+      }
+    } catch (error) {
+      console.warn('[DokeStableShell:account-navigation]', error);
+    }
+  }
+
   function updateSidebar(path) {
     var normalized = path || currentPath();
     var active = {
@@ -691,7 +707,7 @@
       '.nav-link--messages': normalized === '/mensagens.html',
       '.nav-link--notifications': normalized === '/notificacoes.html',
       '.nav-link--communities': normalized === '/comunidade.html' || normalized === '/comunidade-interna.html',
-      '.nav-link--profile': normalized === '/perfil.html',
+      '.nav-link--profile': PROFILE_ACTIVE_PATHS.has(normalized),
       '.nav-link--wallet': normalized === '/carteira.html',
       '.nav-link--admin': normalized === '/admin.html',
       '.nav-link--settings': normalized === '/configuracoes.html'
@@ -708,6 +724,7 @@
       node.classList.toggle('is-active', active[selector]);
       if (active[selector]) node.setAttribute('aria-current', 'page');
     });
+    syncDokeAccountNavigation(normalized);
   }
 
   function runInitializers(path) {
