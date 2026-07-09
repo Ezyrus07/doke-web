@@ -10,6 +10,7 @@
   var channelTitle = root.querySelector('[data-community-thread-title]');
   var channelStatus = root.querySelector('[data-community-thread-status]');
   var messageList = root.querySelector('[data-community-message-list]');
+  var pinnedList = root.querySelector('.community-room-pinned-list');
   var composer = root.querySelector('[data-community-composer]');
   var composerInput = root.querySelector('[data-community-composer-input]');
   var sendButton = root.querySelector('[data-community-send]');
@@ -47,6 +48,12 @@
   var COMMUNITY_MESSAGES_STORAGE_KEY = 'doke.community.messages.local.v1';
   var currentCommunityContext = null;
   var currentChannelId = 'geral';
+
+  if (pinnedList) {
+    Array.prototype.slice.call(pinnedList.children).forEach(function (item) {
+      item.dataset.communityPinnedBaseline = 'true';
+    });
+  }
 
   function safeJsonParse(value) {
     if (!value) return null;
@@ -243,6 +250,67 @@
     writeCommunityMessageStore(store);
   }
 
+  function updateCommunityMessageRecord(messageId, updater) {
+    if (!messageId || typeof updater !== 'function') return null;
+    var communityId = getCurrentCommunityId();
+    var channelId = currentChannelId || 'geral';
+    var store = readCommunityMessageStore();
+    var communityBucket = store[communityId];
+    if (!communityBucket || typeof communityBucket !== 'object' || Array.isArray(communityBucket)) return null;
+    var messages = Array.isArray(communityBucket[channelId]) ? communityBucket[channelId] : [];
+    var updated = null;
+    communityBucket[channelId] = messages.map(function (message) {
+      if (!message || message.id !== messageId) return message;
+      updated = updater(Object.assign({}, message));
+      return updated || message;
+    });
+    writeCommunityMessageStore(store);
+    return updated;
+  }
+
+  function getPinnedMessagesForCurrentChannel() {
+    return getStoredChannelMessages(currentChannelId).filter(function (message) {
+      return message && message.pinned;
+    }).sort(function (a, b) {
+      return String(b.pinnedAt || b.createdAt || '').localeCompare(String(a.pinnedAt || a.createdAt || ''));
+    });
+  }
+
+  function getMessagePreview(record) {
+    if (!record) return 'Mensagem fixada na comunidade.';
+    if (record.type === 'audio') return 'Áudio enviado no canal.';
+    if (record.attachmentName && !record.text) return 'Anexo: ' + record.attachmentName;
+    return String(record.text || record.attachmentName || 'Mensagem enviada.').trim();
+  }
+
+  function createPinnedPanelItem(record) {
+    var item = document.createElement('article');
+    item.dataset.communityLocalPinned = 'true';
+    item.dataset.communityMessageId = record.id;
+
+    var label = document.createElement('span');
+    label.textContent = record.channelName || currentChannelName || 'Canal';
+
+    var title = document.createElement('strong');
+    title.textContent = record.author || 'Você';
+
+    var paragraph = document.createElement('p');
+    paragraph.textContent = getMessagePreview(record);
+
+    item.append(label, title, paragraph);
+    return item;
+  }
+
+  function renderPinnedPanel() {
+    if (!pinnedList) return;
+    Array.prototype.slice.call(pinnedList.querySelectorAll('[data-community-local-pinned]')).forEach(function (item) {
+      item.remove();
+    });
+    getPinnedMessagesForCurrentChannel().forEach(function (record) {
+      pinnedList.appendChild(createPinnedPanelItem(record));
+    });
+  }
+
   function clearRenderedLocalMessages() {
     if (!messageList) return;
     Array.prototype.slice.call(messageList.querySelectorAll('[data-community-local-message]')).forEach(function (message) {
@@ -261,6 +329,7 @@
         messageList.appendChild(element);
       }
     });
+    renderPinnedPanel();
   }
 
   function formatMessageTime(createdAt) {
@@ -395,6 +464,47 @@
     return header;
   }
 
+  function appendCommunityMessageActions(bubble, record) {
+    if (!bubble || !record || !record.id) return;
+    var actions = document.createElement('div');
+    actions.className = 'community-room-message__actions';
+    actions.dataset.communityMessageActions = 'true';
+
+    var usefulCount = Number(record.usefulCount || 0);
+    var useful = document.createElement('button');
+    useful.className = 'doke-btn doke-btn--ghost doke-btn--sm';
+    useful.type = 'button';
+    useful.dataset.communityMessageAction = 'useful';
+    useful.textContent = usefulCount ? 'Útil (' + usefulCount + ')' : 'Útil';
+    useful.setAttribute('aria-pressed', String(Boolean(record.usefulByMe)));
+
+    var pin = document.createElement('button');
+    pin.className = 'doke-btn doke-btn--ghost doke-btn--sm';
+    pin.type = 'button';
+    pin.dataset.communityMessageAction = 'pin';
+    pin.textContent = record.pinned ? 'Desfixar' : 'Fixar';
+    pin.setAttribute('aria-pressed', String(Boolean(record.pinned)));
+
+    actions.append(useful, pin);
+    bubble.appendChild(actions);
+  }
+
+  function syncMessageActionState(article, record) {
+    if (!article || !record) return;
+    article.classList.toggle('is-community-message-pinned', Boolean(record.pinned));
+    var pin = article.querySelector('[data-community-message-action="pin"]');
+    if (pin) {
+      pin.textContent = record.pinned ? 'Desfixar' : 'Fixar';
+      pin.setAttribute('aria-pressed', String(Boolean(record.pinned)));
+    }
+    var useful = article.querySelector('[data-community-message-action="useful"]');
+    if (useful) {
+      var usefulCount = Number(record.usefulCount || 0);
+      useful.textContent = usefulCount ? 'Útil (' + usefulCount + ')' : 'Útil';
+      useful.setAttribute('aria-pressed', String(Boolean(record.usefulByMe)));
+    }
+  }
+
   function createMessage(text, options) {
     options = options || {};
     var article = document.createElement('article');
@@ -416,6 +526,17 @@
       label.textContent = attachmentName;
       media.appendChild(label);
       bubble.appendChild(media);
+    }
+
+    if (options.recordId) {
+      article.dataset.communityMessageId = options.recordId;
+      article.classList.toggle('is-community-message-pinned', Boolean(options.pinned));
+      appendCommunityMessageActions(bubble, {
+        id: options.recordId,
+        pinned: options.pinned,
+        usefulCount: options.usefulCount,
+        usefulByMe: options.usefulByMe
+      });
     }
 
     article.appendChild(bubble);
@@ -446,23 +567,35 @@
 
     audio.append(play, track, meta);
     bubble.append(createMessageHeader(options.author || 'Você', options.createdAt), audio);
+    if (options.recordId) {
+      article.dataset.communityMessageId = options.recordId;
+      article.classList.toggle('is-community-message-pinned', Boolean(options.pinned));
+      appendCommunityMessageActions(bubble, {
+        id: options.recordId,
+        pinned: options.pinned,
+        usefulCount: options.usefulCount,
+        usefulByMe: options.usefulByMe
+      });
+    }
     article.appendChild(bubble);
     return article;
   }
 
   function createMessageFromRecord(record) {
     if (!record) return null;
-    if (record.type === 'audio') {
-      return createAudioMessage(record.audioDuration || '00:01', {
-        author: record.author || 'Você',
-        createdAt: record.createdAt
-      });
-    }
-    return createMessage(record.text || 'Mensagem enviada.', {
+    var options = {
       author: record.author || 'Você',
       createdAt: record.createdAt,
-      attachmentName: record.attachmentName || ''
-    });
+      attachmentName: record.attachmentName || '',
+      recordId: record.id,
+      pinned: Boolean(record.pinned),
+      usefulCount: Number(record.usefulCount || 0),
+      usefulByMe: Boolean(record.usefulByMe)
+    };
+    if (record.type === 'audio') {
+      return createAudioMessage(record.audioDuration || '00:01', options);
+    }
+    return createMessage(record.text || 'Mensagem enviada.', options);
   }
 
   function updateSendState() {
@@ -671,6 +804,35 @@
       clearAttachment();
       updateSendState();
       scrollToBottom();
+    });
+  }
+
+  if (messageList) {
+    messageList.addEventListener('click', function (event) {
+      var action = event.target.closest('[data-community-message-action]');
+      if (!action || !messageList.contains(action)) return;
+      var article = action.closest('[data-community-message-id]');
+      var messageId = article && article.dataset.communityMessageId;
+      if (!messageId) return;
+
+      var updated = updateCommunityMessageRecord(messageId, function (message) {
+        if (action.dataset.communityMessageAction === 'pin') {
+          message.pinned = !message.pinned;
+          message.pinnedAt = message.pinned ? new Date().toISOString() : '';
+        }
+        if (action.dataset.communityMessageAction === 'useful') {
+          var currentCount = Number(message.usefulCount || 0);
+          var nextUseful = !message.usefulByMe;
+          message.usefulByMe = nextUseful;
+          message.usefulCount = Math.max(0, currentCount + (nextUseful ? 1 : -1));
+        }
+        return message;
+      });
+
+      if (updated) {
+        syncMessageActionState(article, updated);
+        renderPinnedPanel();
+      }
     });
   }
 
