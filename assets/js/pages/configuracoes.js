@@ -16,6 +16,85 @@
   const mobileSearchForm = document.querySelector('.settings-mobile-header__search');
   const mobileSearchInput = document.querySelector('.settings-mobile-header__search-input');
   const mobileBackButton = document.querySelector('[data-settings-mobile-back]');
+
+  const SETTINGS_STORAGE_KEY = 'doke.settings.local.v1';
+  const DEFAULT_SETTINGS = Object.freeze({
+    notifications: Object.freeze({
+      messages: true,
+      orders: true,
+      budgets: true,
+      payments: true,
+      community: false
+    }),
+    privacy: Object.freeze({
+      publicProfile: true,
+      showPhone: false,
+      searchable: true
+    })
+  });
+
+  const cloneSettings = (value) => JSON.parse(JSON.stringify(value));
+
+  const isPlainObject = (value) => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+
+  const mergeSettings = (base, override) => {
+    const next = cloneSettings(base || {});
+    if (!isPlainObject(override)) return next;
+
+    Object.keys(override).forEach((key) => {
+      if (isPlainObject(next[key]) && isPlainObject(override[key])) {
+        next[key] = mergeSettings(next[key], override[key]);
+        return;
+      }
+      if (typeof override[key] === 'boolean') next[key] = override[key];
+    });
+
+    return next;
+  };
+
+  const readStoredSettings = () => {
+    try {
+      const raw = window.localStorage?.getItem(SETTINGS_STORAGE_KEY);
+      if (!raw) return cloneSettings(DEFAULT_SETTINGS);
+      return mergeSettings(DEFAULT_SETTINGS, JSON.parse(raw));
+    } catch (error) {
+      console.warn('[Doke] Não foi possível ler as preferências de configurações.', error);
+      return cloneSettings(DEFAULT_SETTINGS);
+    }
+  };
+
+  let settingsState = readStoredSettings();
+
+  const saveSettings = () => {
+    try {
+      window.localStorage?.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settingsState));
+    } catch (error) {
+      console.warn('[Doke] Não foi possível salvar as preferências de configurações.', error);
+    }
+  };
+
+  const getSettingValue = (path) => {
+    if (!path) return undefined;
+    return String(path).split('.').reduce((acc, key) => (isPlainObject(acc) ? acc[key] : undefined), settingsState);
+  };
+
+  const setSettingValue = (path, value) => {
+    const keys = String(path || '').split('.').filter(Boolean);
+    if (!keys.length) return false;
+
+    let cursor = settingsState;
+    keys.slice(0, -1).forEach((key) => {
+      if (!isPlainObject(cursor[key])) cursor[key] = {};
+      cursor = cursor[key];
+    });
+
+    const lastKey = keys[keys.length - 1];
+    if (cursor[lastKey] === value) return false;
+    cursor[lastKey] = value;
+    return true;
+  };
+
+  const preferenceInputs = Array.from(document.querySelectorAll('[data-settings-preference]'));
   const narrowBreakpoint = 1024;
 
   const isMobileSettings = () => window.innerWidth <= 760;
@@ -200,6 +279,34 @@
     setNarrowMenuMode(true);
   }, { signal });
 
+
+  const syncPreferenceInputs = () => {
+    preferenceInputs.forEach((input) => {
+      const value = getSettingValue(input.dataset.settingsPreference);
+      if (typeof value !== 'boolean') return;
+      input.checked = value;
+      input.closest('.settings-list-item')?.classList.toggle('is-disabled', !value);
+    });
+  };
+
+  preferenceInputs.forEach((input) => {
+    input.addEventListener('change', () => {
+      const preferencePath = input.dataset.settingsPreference;
+      if (!preferencePath) return;
+      const changed = setSettingValue(preferencePath, Boolean(input.checked));
+      input.closest('.settings-list-item')?.classList.toggle('is-disabled', !input.checked);
+      if (!changed) return;
+      saveSettings();
+      document.dispatchEvent(new CustomEvent('doke:settings-updated', {
+        detail: {
+          path: preferencePath,
+          value: Boolean(input.checked),
+          settings: cloneSettings(settingsState)
+        }
+      }));
+    }, { signal });
+  });
+
   document.querySelectorAll('.settings-card__footer .button--ghost').forEach((button) => {
     button.addEventListener('click', (event) => {
       event.preventDefault();
@@ -222,6 +329,7 @@
     }
 
     filterSettings('');
+    syncPreferenceInputs();
     updateSearchClearState();
     setMobileSearchOpen(false);
 
