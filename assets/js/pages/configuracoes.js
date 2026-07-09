@@ -16,6 +16,9 @@
   const mobileSearchForm = document.querySelector('.settings-mobile-header__search');
   const mobileSearchInput = document.querySelector('.settings-mobile-header__search-input');
   const mobileBackButton = document.querySelector('[data-settings-mobile-back]');
+  const securitySessionSummary = document.querySelector('[data-settings-session-summary]');
+  const securitySessionMeta = document.querySelector('[data-settings-session-meta]');
+  const securitySignOutButtons = Array.from(document.querySelectorAll('[data-settings-sign-out]'));
 
   const SETTINGS_STORAGE_KEY = 'doke.settings.local.v1';
   const DEFAULT_SETTINGS = Object.freeze({
@@ -44,6 +47,10 @@
       budgets: true,
       payments: true,
       community: false
+    }),
+    security: Object.freeze({
+      twoFactor: false,
+      loginAlerts: true
     }),
     privacy: Object.freeze({
       publicProfile: true,
@@ -183,7 +190,78 @@
     const normalizedPanelName = normalizePanelName(panelName);
     if (!normalizedPanelName) return;
 
-    sidebarItems.forEach((button) => {
+    const getCurrentSession = () => {
+    try {
+      return window.DokeAuth?.service?.getSession?.() || window.Doke?.session?.getSession?.() || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const syncSecuritySessionSurface = () => {
+    if (!securitySessionSummary && !securitySessionMeta) return;
+
+    const session = getCurrentSession();
+    const user = session?.user || null;
+    const provider = session?.provider || 'mock';
+    const issuedAt = formatDateTime(session?.issuedAt || session?.updatedAt);
+    const userLabel = user?.email || user?.name || 'Usuário local';
+
+    if (securitySessionSummary) {
+      securitySessionSummary.textContent = user
+        ? `Sessão ativa para ${userLabel}.`
+        : 'Nenhuma sessão autenticada neste dispositivo.';
+    }
+
+    if (securitySessionMeta) {
+      securitySessionMeta.textContent = user
+        ? `Provedor ${provider}${issuedAt ? ` · iniciada em ${issuedAt}` : ''}.`
+        : 'Entre novamente para acessar pedidos, mensagens e carteira.';
+    }
+
+    securitySignOutButtons.forEach((button) => {
+      button.disabled = !user;
+      button.setAttribute('aria-disabled', String(!user));
+    });
+  };
+
+  const signOutFromSettings = async (button) => {
+    if (!button || button.disabled) return;
+    const originalLabel = button.dataset.settingsOriginalLabel || button.textContent.trim();
+    button.dataset.settingsOriginalLabel = originalLabel;
+    button.textContent = 'Saindo...';
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+
+    try {
+      if (window.DokeAuth?.service?.logout) {
+        await window.DokeAuth.service.logout({ redirect: true, redirectTo: 'auth/login.html' });
+        return;
+      }
+      window.Doke?.session?.clear?.();
+      window.location.assign('auth/login.html');
+    } catch (error) {
+      console.warn('[Doke] Não foi possível encerrar a sessão pelas configurações.', error);
+      button.textContent = originalLabel;
+      button.disabled = false;
+      button.setAttribute('aria-busy', 'false');
+    }
+  };
+
+  sidebarItems.forEach((button) => {
       const isActive = button.dataset.settingsTab === normalizedPanelName;
       button.classList.toggle('is-active', isActive);
       if (button.dataset.settingsTab) {
@@ -274,6 +352,77 @@
       return;
     }
     mobileSearchInput?.blur();
+  };
+
+  const getCurrentSession = () => {
+    try {
+      return window.DokeAuth?.service?.getSession?.() || window.Doke?.session?.getSession?.() || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const syncSecuritySessionSurface = () => {
+    if (!securitySessionSummary && !securitySessionMeta) return;
+
+    const session = getCurrentSession();
+    const user = session?.user || null;
+    const provider = session?.provider || 'mock';
+    const issuedAt = formatDateTime(session?.issuedAt || session?.updatedAt);
+    const userLabel = user?.email || user?.name || 'Usuário local';
+
+    if (securitySessionSummary) {
+      securitySessionSummary.textContent = user
+        ? `Sessão ativa para ${userLabel}.`
+        : 'Nenhuma sessão autenticada neste dispositivo.';
+    }
+
+    if (securitySessionMeta) {
+      securitySessionMeta.textContent = user
+        ? `Provedor ${provider}${issuedAt ? ` · iniciada em ${issuedAt}` : ''}.`
+        : 'Entre novamente para acessar pedidos, mensagens e carteira.';
+    }
+
+    securitySignOutButtons.forEach((button) => {
+      button.disabled = !user;
+      button.setAttribute('aria-disabled', String(!user));
+    });
+  };
+
+  const signOutFromSettings = async (button) => {
+    if (!button || button.disabled) return;
+    const originalLabel = button.dataset.settingsOriginalLabel || button.textContent.trim();
+    button.dataset.settingsOriginalLabel = originalLabel;
+    button.textContent = 'Saindo...';
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+
+    try {
+      if (window.DokeAuth?.service?.logout) {
+        await window.DokeAuth.service.logout({ redirect: true, redirectTo: 'auth/login.html' });
+        return;
+      }
+      window.Doke?.session?.clear?.();
+      window.location.assign('auth/login.html');
+    } catch (error) {
+      console.warn('[Doke] Não foi possível encerrar a sessão pelas configurações.', error);
+      button.textContent = originalLabel;
+      button.disabled = false;
+      button.setAttribute('aria-busy', 'false');
+    }
   };
 
   sidebarItems.forEach((button) => {
@@ -445,6 +594,15 @@
     }, { signal });
   });
 
+  securitySignOutButtons.forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      signOutFromSettings(button);
+    }, { signal });
+  });
+
+  document.addEventListener('doke:auth-session-change', syncSecuritySessionSurface, { signal });
+
   if (window.DokeHomeDrawer?.create) {
     const initDrawer = window.DokeHomeDrawer.create({ signal });
     if (typeof initDrawer === 'function') initDrawer();
@@ -459,6 +617,7 @@
     filterSettings('');
     syncPreferenceInputs();
     syncSettingsFieldInputs();
+    syncSecuritySessionSurface();
     updateSearchClearState();
     setMobileSearchOpen(false);
 
