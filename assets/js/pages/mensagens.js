@@ -309,6 +309,73 @@
     };
   };
 
+  const ORDER_STATUS_PRESENTATION = {
+    accepted: { label: "Pedido aceito", lastSeen: "Conversa liberada", unlocked: true },
+    conversation: { label: "Pedido aceito", lastSeen: "Conversa liberada", unlocked: true },
+    quoted: { label: "Proposta enviada", lastSeen: "Proposta enviada", unlocked: true },
+    in_progress: { label: "Em andamento", lastSeen: "Atendimento em andamento", unlocked: true },
+    completed: { label: "Concluído", lastSeen: "Pedido concluído", unlocked: true },
+    cancelled: { label: "Pedido recusado", lastSeen: "Pedido recusado", unlocked: false }
+  };
+
+  const isWaitingForAcceptanceCopy = (value) => /aguardando\s+(aceite|resposta)/i.test(String(value || ""));
+
+  const getLocalOrderById = (orderId) => {
+    const id = String(orderId || "").trim();
+    if (!id) return null;
+    const service = window.Doke?.services?.orders;
+    if (!service || typeof service.listLocal !== "function") return null;
+    try {
+      return (service.listLocal({ currentUser: true }) || []).find((order) => String(order?.id || "") === id) || null;
+    } catch (error) {
+      console.warn("[DokeMessages:reconcileLocalOrderStatus]", error);
+      return null;
+    }
+  };
+
+  const reconcileLocalConversationOrder = (conversation) => {
+    const orderId = String(conversation?.orderId || conversation?.order?.id || "").trim();
+    const authoritativeOrder = getLocalOrderById(orderId);
+    const authoritativeStatus = String(authoritativeOrder?.status || "").trim();
+    const presentation = ORDER_STATUS_PRESENTATION[authoritativeStatus];
+    if (!authoritativeOrder || !presentation) return { conversation, changed: false };
+
+    const nextOrder = Object.assign({}, conversation.order || {}, authoritativeOrder, {
+      status: authoritativeStatus,
+      statusLabel: authoritativeOrder.statusLabel || presentation.label
+    });
+    const nextLocked = !presentation.unlocked;
+    const nextLastSeen = authoritativeOrder.statusLabel || presentation.lastSeen;
+    const nextLastMessage = isWaitingForAcceptanceCopy(conversation.lastMessage)
+      ? presentation.lastSeen
+      : conversation.lastMessage;
+    const changed = String(conversation.status || conversation.order?.status || "") !== authoritativeStatus
+      || String(conversation.statusLabel || conversation.order?.statusLabel || "") !== String(nextOrder.statusLabel || "")
+      || conversation.locked !== nextLocked
+      || String(conversation.lastSeen || "") !== String(nextLastSeen || "")
+      || String(conversation.order?.status || "") !== authoritativeStatus
+      || String(conversation.order?.statusLabel || "") !== String(nextOrder.statusLabel || "")
+      || String(conversation.lastMessage || "") !== String(nextLastMessage || "");
+
+    if (!changed) return { conversation, changed: false };
+
+    return {
+      changed: true,
+      conversation: Object.assign({}, conversation, {
+        orderId: orderId || authoritativeOrder.id || "",
+        serviceId: conversation.serviceId || authoritativeOrder.serviceId || "",
+        clientId: conversation.clientId || authoritativeOrder.clientId || "",
+        professionalId: conversation.professionalId || authoritativeOrder.professionalId || authoritativeOrder.providerId || "",
+        status: authoritativeStatus,
+        statusLabel: nextOrder.statusLabel,
+        locked: nextLocked,
+        lastSeen: nextLastSeen,
+        lastMessage: nextLastMessage,
+        order: nextOrder
+      })
+    };
+  };
+
   const getStatusToneClass = (label) => {
     const normalized = String(label || "").toLowerCase();
     if (normalized.includes("conclu") || normalized.includes("final")) return "message-item__deal-status--done";
@@ -404,7 +471,13 @@
     localConversations.slice().reverse().forEach((conversation) => {
       if (!conversation?.id) return;
       const conversationId = String(conversation.id);
-      const mapped = mapLocalConversation(conversation);
+      const reconciliation = reconcileLocalConversationOrder(conversation);
+      const sourceConversation = reconciliation.conversation || conversation;
+      if (reconciliation.changed) {
+        const repository = window.Doke?.repositories?.messages;
+        repository?.save?.(sourceConversation)?.catch?.((error) => console.warn("[DokeMessages:saveReconciledConversation]", error));
+      }
+      const mapped = mapLocalConversation(sourceConversation);
       const isOrderConversation = Boolean(mapped.orderId || mapped.order?.id || mapped.group === "orders");
       mapped.group = isOrderConversation ? "orders" : "contacts";
       conversations[conversationId] = Object.assign({}, conversations[conversationId] || {}, mapped);
