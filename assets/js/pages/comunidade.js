@@ -28,6 +28,10 @@ window.DokeInitCommunity = function DokeInitCommunity() {
   const requestMessage = document.querySelector('[data-community-request-message]');
   const codeModal = document.querySelector('[data-community-code-modal]');
   const createModal = document.querySelector('[data-community-create-modal]');
+  const createForm = createModal?.querySelector('[data-community-create-modal-form]');
+  const createStepKeys = ['details', 'members', 'review'];
+  let createStepIndex = 0;
+  let selectedCreateMemberIds = new Set();
   let activeRequestButton = null;
   let activeActionModalTrigger = null;
   let currentFilter = 'all';
@@ -146,6 +150,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     closeActionModals({ restoreFocus: false });
     activeActionModalTrigger = trigger;
     resetActionModalFeedback(modal);
+    if (modal === createModal) resetCreateWizard();
     modal.hidden = false;
     modal.setAttribute('aria-hidden', 'false');
     setActionTriggersExpanded(modal, true);
@@ -164,6 +169,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       modal.setAttribute('aria-hidden', 'true');
       setActionTriggersExpanded(modal, false);
       resetActionModalFeedback(modal);
+      if (modal === createModal) resetCreateWizard();
     });
     if (!requestModal || requestModal.hidden) {
       document.body.classList.remove('community-modal-open', 'doke-action-modal-open');
@@ -241,6 +247,12 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       code: String(record?.code || '').trim(),
       role: record?.role || 'member',
       source: record?.source || 'local',
+      members: Array.isArray(record?.members) ? record.members.filter((member) => member && member.name).map((member) => ({
+        id: String(member.id || slugifyCommunity(member.name)).trim(),
+        name: String(member.name || '').trim(),
+        role: member.role || 'member',
+        source: member.source || 'messages'
+      })) : [],
       joinedAt: record?.joinedAt || now,
       updatedAt: now
     };
@@ -431,10 +443,206 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     return false;
   };
 
+  const escapeCommunityHtml = (value) => String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+
+  const getCurrentUserProfile = () => {
+    const service = window.DokeAuth && window.DokeAuth.service;
+    const user = typeof service?.getCurrentUser === 'function' ? service.getCurrentUser() : null;
+    const name = user?.displayName || user?.name || user?.fullName || 'Você';
+    return {
+      id: String(user?.id || 'current-user'),
+      name,
+      role: 'owner',
+      source: 'account'
+    };
+  };
+
+  const readLocalConversations = () => {
+    const keys = ['doke.conversations.local.v1', 'doke.messages.local.v1'];
+    for (const key of keys) {
+      try {
+        const parsed = JSON.parse(window.localStorage?.getItem(key) || '[]');
+        if (Array.isArray(parsed) && parsed.length) return parsed;
+      } catch (error) {
+        // Ignore malformed local mock data and fall back to static suggestions.
+      }
+    }
+    return [];
+  };
+
+  const getMessageContactCandidates = () => {
+    const currentUser = getCurrentUserProfile();
+    const map = new Map();
+    const addCandidate = (candidate) => {
+      const name = String(candidate?.name || '').trim();
+      if (!name || name.toLowerCase() === currentUser.name.toLowerCase()) return;
+      const id = String(candidate?.id || slugifyCommunity(name)).trim() || slugifyCommunity(name);
+      if (map.has(id)) return;
+      map.set(id, {
+        id,
+        name,
+        role: candidate?.role || 'member',
+        subtitle: candidate?.subtitle || candidate?.source || 'Conversa recente',
+        source: candidate?.source || 'messages'
+      });
+    };
+
+    readLocalConversations().forEach((conversation) => {
+      const peerName = conversation.peerName || conversation.name || conversation.clientName || conversation.professionalName || conversation.providerName;
+      const peerId = conversation.peerId || conversation.clientId || conversation.professionalId || conversation.providerId;
+      addCandidate({
+        id: peerId || slugifyCommunity(peerName),
+        name: peerName,
+        role: conversation.peerRole || 'member',
+        subtitle: conversation.order?.title || conversation.serviceTitle || conversation.lastMessage || 'Conversa recente'
+      });
+    });
+
+    [
+      { id: 'cliente-doke', name: 'Cliente Doke', subtitle: 'Conversa recente' },
+      { id: 'profissional-doke', name: 'Profissional Doke', subtitle: 'Contato salvo nas mensagens' },
+      { id: 'renato-acabamentos', name: 'Renato Acabamentos', subtitle: 'Profissional recente' }
+    ].forEach(addCandidate);
+
+    return [...map.values()].slice(0, 8);
+  };
+
+  const getCreateFormParts = () => {
+    if (!createForm) return {};
+    return {
+      steps: [...createForm.querySelectorAll('[data-community-create-step]')],
+      progress: [...createForm.querySelectorAll('[data-community-create-progress]')],
+      prevButton: createForm.querySelector('[data-community-create-prev]'),
+      nextButton: createForm.querySelector('[data-community-create-next]'),
+      submitButton: createForm.querySelector('[data-community-create-submit]'),
+      memberSearch: createForm.querySelector('[data-community-member-search]'),
+      memberList: createForm.querySelector('[data-community-member-list]'),
+      memberEmpty: createForm.querySelector('[data-community-member-empty]'),
+      reviewName: createForm.querySelector('[data-community-review-name]'),
+      reviewType: createForm.querySelector('[data-community-review-type]'),
+      reviewMembers: createForm.querySelector('[data-community-review-members]')
+    };
+  };
+
+  const updateCreateReview = () => {
+    const parts = getCreateFormParts();
+    const name = createForm?.querySelector('input[name="communityName"]')?.value.trim() || 'Comunidade Doke';
+    const type = createForm?.querySelector('select[name="communityType"]')?.value || 'Condomínio';
+    const selectedCount = selectedCreateMemberIds.size;
+    if (parts.reviewName) parts.reviewName.textContent = name;
+    if (parts.reviewType) parts.reviewType.textContent = type;
+    if (parts.reviewMembers) parts.reviewMembers.textContent = selectedCount ? `Você + ${selectedCount}` : 'Você';
+  };
+
+  const setCreateWizardStep = (stepKey, { focus = true } = {}) => {
+    if (!createForm) return;
+    const nextIndex = Math.max(0, createStepKeys.indexOf(stepKey));
+    createStepIndex = nextIndex >= 0 ? nextIndex : 0;
+    const activeKey = createStepKeys[createStepIndex];
+    const parts = getCreateFormParts();
+
+    parts.steps?.forEach((step) => {
+      const isActive = step.dataset.communityCreateStep === activeKey;
+      step.hidden = !isActive;
+      step.classList.toggle('is-active', isActive);
+    });
+
+    parts.progress?.forEach((item) => {
+      const isActive = item.dataset.communityCreateProgress === activeKey;
+      item.classList.toggle('is-active', isActive);
+      item.classList.toggle('is-complete', createStepKeys.indexOf(item.dataset.communityCreateProgress) < createStepIndex);
+    });
+
+    if (parts.prevButton) parts.prevButton.hidden = createStepIndex === 0;
+    if (parts.nextButton) parts.nextButton.hidden = createStepIndex === createStepKeys.length - 1;
+    if (parts.submitButton) parts.submitButton.hidden = createStepIndex !== createStepKeys.length - 1;
+    updateCreateReview();
+
+    if (focus) {
+      window.setTimeout(() => {
+        const activeStep = parts.steps?.find((step) => step.dataset.communityCreateStep === activeKey);
+        activeStep?.querySelector('input, select, textarea, button')?.focus?.();
+      }, 40);
+    }
+  };
+
+  const renderCreateMemberCandidates = () => {
+    const parts = getCreateFormParts();
+    if (!parts.memberList) return;
+    const query = String(parts.memberSearch?.value || '').trim().toLowerCase();
+    const candidates = getMessageContactCandidates().filter((candidate) => {
+      const label = `${candidate.name} ${candidate.subtitle || ''}`.toLowerCase();
+      return !query || label.includes(query);
+    });
+
+    parts.memberList.innerHTML = candidates.map((candidate) => {
+      const checked = selectedCreateMemberIds.has(candidate.id) ? ' checked' : '';
+      return `
+        <label class="community-create-member">
+          <input type="checkbox" name="communityMembers" value="${escapeCommunityHtml(candidate.id)}" data-community-member-option${checked} />
+          <span class="community-create-member__avatar">${escapeCommunityHtml(candidate.name.slice(0, 2).toUpperCase())}</span>
+          <span class="community-create-member__copy"><strong>${escapeCommunityHtml(candidate.name)}</strong><small>${escapeCommunityHtml(candidate.subtitle)}</small></span>
+        </label>
+      `;
+    }).join('');
+
+    if (parts.memberEmpty) parts.memberEmpty.hidden = candidates.length > 0;
+    updateCreateReview();
+  };
+
+  const getSelectedCreateMembers = () => {
+    const candidates = getMessageContactCandidates();
+    return candidates
+      .filter((candidate) => selectedCreateMemberIds.has(candidate.id))
+      .map((candidate) => ({ id: candidate.id, name: candidate.name, role: 'member', source: candidate.source || 'messages' }));
+  };
+
+  const resetCreateWizard = () => {
+    if (!createForm) return;
+    createForm.reset();
+    selectedCreateMemberIds = new Set();
+    renderCreateMemberCandidates();
+    setCreateWizardStep('details', { focus: false });
+  };
+
+  const goToNextCreateStep = () => {
+    if (!createForm) return;
+    if (createStepKeys[createStepIndex] === 'details') {
+      const nameField = createForm.querySelector('input[name="communityName"]');
+      if (!validateRequiredField(nameField, 'Informe o nome da comunidade para continuar.')) return;
+    }
+    setCreateWizardStep(createStepKeys[Math.min(createStepIndex + 1, createStepKeys.length - 1)]);
+  };
+
+  const goToPreviousCreateStep = () => {
+    setCreateWizardStep(createStepKeys[Math.max(createStepIndex - 1, 0)]);
+  };
+
   document.querySelectorAll('[data-community-code-modal-form], [data-community-create-modal-form]').forEach((form) => {
     form.addEventListener('input', (event) => {
       const field = event.target.closest('input, textarea');
       if (field) field.removeAttribute('aria-invalid');
+      if (form.matches('[data-community-create-modal-form]')) {
+        if (event.target.matches('[data-community-member-search]')) renderCreateMemberCandidates();
+        updateCreateReview();
+      }
+    });
+
+    form.addEventListener('change', (event) => {
+      if (!form.matches('[data-community-create-modal-form]')) return;
+      const option = event.target.closest('[data-community-member-option]');
+      if (option) {
+        if (option.checked) selectedCreateMemberIds.add(option.value);
+        else selectedCreateMemberIds.delete(option.value);
+        updateCreateReview();
+        return;
+      }
+      updateCreateReview();
     });
 
     form.addEventListener('submit', (event) => {
@@ -456,15 +664,22 @@ window.DokeInitCommunity = function DokeInitCommunity() {
         return;
       }
 
+      if (createStepKeys[createStepIndex] !== 'review') {
+        goToNextCreateStep();
+        return;
+      }
+
       const nameField = form.querySelector('input[name="communityName"]');
       if (!validateRequiredField(nameField, 'Informe o nome da comunidade para criar o espaço.')) return;
       const typeField = form.querySelector('select[name="communityType"]');
       const descriptionField = form.querySelector('textarea[name="communityDescription"]');
+      const members = [getCurrentUserProfile(), ...getSelectedCreateMembers()];
       const record = upsertLocalCommunity({
         id: slugifyCommunity(nameField.value),
         title: nameField.value.trim(),
         category: typeField?.value || 'Comunidade',
         description: descriptionField?.value || '',
+        members,
         source: 'created',
         role: 'owner'
       });
@@ -472,6 +687,9 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       window.setTimeout(() => openCommunityRoom(record), 220);
     });
   });
+
+  createForm?.querySelector('[data-community-create-next]')?.addEventListener('click', goToNextCreateStep);
+  createForm?.querySelector('[data-community-create-prev]')?.addEventListener('click', goToPreviousCreateStep);
 
   if (mobileSearchToggle && mobileSearchPanel) {
     mobileSearchToggle.addEventListener('click', () => {

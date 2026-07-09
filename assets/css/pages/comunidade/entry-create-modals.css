@@ -326,3 +326,208 @@ body.community-modal-open {
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* Create-community wizard contract.
+   Keep the create flow in compact steps so the modal does not trap the user in
+   a tall single-page form. */
+.community-create-wizard .doke-action-modal__body {
+  overflow: hidden;
+}
+
+.community-create-progress {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 18px;
+}
+
+.community-create-progress__item {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 10px;
+  border: 1px solid rgba(181, 207, 232, 0.72);
+  border-radius: 999px;
+  background: #f7fbff;
+  color: #6380a0;
+  font-size: 0.76rem;
+  line-height: 1.1;
+  font-weight: 900;
+  text-align: center;
+}
+
+.community-create-progress__item.is-active {
+  border-color: rgba(39, 143, 127, 0.3);
+  background: rgba(39, 143, 127, 0.1);
+  color: #08796d;
+}
+
+.community-create-progress__item.is-complete {
+  border-color: rgba(42, 95, 144, 0.2);
+  background: rgba(42, 95, 144, 0.08);
+  color: #174d7d;
+}
+
+.community-create-step {
+  display: grid;
+  gap: 14px;
+  min-height: 0;
+}
+
+.community-create-step[hidden] {
+  display: none;
+}
+
+.community-create-step__intro {
+  display: grid;
+  gap: 4px;
+  color: #607895;
+  font-size: 0.88rem;
+  line-height: 1.38;
+  font-weight: 800;
+}
+
+.community-create-step__intro strong {
+  color: #07345f;
+  font-size: 1rem;
+}
+
+.community-create-members {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.community-create-member {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+  min-height: 58px;
+  padding: 10px 12px;
+  border: 1px solid rgba(181, 207, 232, 0.72);
+  border-radius: 18px;
+  background: #f8fbff;
+  color: #143c68;
+  cursor: pointer;
+}
+
+.community-create-member input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.community-create-member:has(input:checked) {
+  border-color: rgba(39, 143, 127, 0.42);
+  background: rgba(39, 143, 127, 0.1);
+}
+
+.community-create-member__avatar {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #eaf3fb;
+  color: #0f4f7d;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.community-create-member__copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.community-create-member__copy strong,
+.community-create-member__copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.community-create-member__copy strong {
+  font-size: 0.88rem;
+  line-height: 1.1;
+  font-weight: 900;
+}
+
+.community-create-member__copy small {
+  color: #6b82a0;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.community-create-members__empty {
+  margin: 0;
+  padding: 14px;
+  border: 1px dashed rgba(181, 207, 232, 0.82);
+  border-radius: 18px;
+  color: #6b82a0;
+  font-size: 0.84rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.community-create-review {
+  display: grid;
+  gap: 10px;
+}
+
+.community-create-review > div {
+  display: grid;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 1px solid rgba(181, 207, 232, 0.72);
+  border-radius: 18px;
+  background: #f8fbff;
+}
+
+.community-create-review span {
+  color: #6b82a0;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.community-create-review strong {
+  color: #07345f;
+  font-size: 0.96rem;
+  font-weight: 900;
+}
+
+@media (max-width: 720px) {
+  .community-action-modal__dialog--create.doke-action-modal__surface {
+    max-height: min(92dvh, 760px);
+  }
+
+  .community-create-wizard .doke-action-modal__body {
+    padding-bottom: 14px;
+  }
+
+  .community-create-progress {
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .community-create-progress__item {
+    min-height: 30px;
+    padding-inline: 6px;
+    font-size: 0.68rem;
+  }
+
+  .community-create-members {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .community-create-member {
+    min-height: 54px;
+  }
+}
