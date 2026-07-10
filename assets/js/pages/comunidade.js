@@ -38,6 +38,9 @@ window.DokeInitCommunity = function DokeInitCommunity() {
   };
   let createStepIndex = 0;
   let selectedCreateMemberIds = new Set();
+  let createCoverState = { name: '', type: '', dataUrl: '' };
+  let cachedCreateMemberCandidates = null;
+  let memberSearchRenderTimer = 0;
   let activeRequestButton = null;
   let activeActionModalTrigger = null;
   let currentFilter = 'all';
@@ -290,6 +293,9 @@ window.DokeInitCommunity = function DokeInitCommunity() {
         role: member.role || 'member',
         source: member.source || 'messages'
       })) : [],
+      coverName: String(record?.coverName || record?.cover?.name || '').trim(),
+      coverType: String(record?.coverType || record?.cover?.type || '').trim(),
+      coverDataUrl: String(record?.coverDataUrl || record?.cover?.dataUrl || '').trim(),
       joinedAt: record?.joinedAt || now,
       updatedAt: now
     };
@@ -366,10 +372,14 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       card.dataset.title = record.title;
       card.dataset.communityId = record.id;
       card.dataset.cardKind = 'community';
+      const coverMarkup = record.coverDataUrl
+        ? `<img alt="" loading="lazy" src="${escapeCommunityHtml(record.coverDataUrl)}"/>`
+        : '';
       card.innerHTML = `
+        ${coverMarkup}
         <div class="community-continue-card__content">
           <span class="community-pill doke-chip">${categoryLabelFromRecord(record)}</span>
-          <h3>${record.title}</h3>
+          <h3>${escapeCommunityHtml(record.title)}</h3>
           <span class="community-activity">${record.role === 'owner' ? 'Criada por você' : 'Acesso liberado'}</span>
           <div class="community-continue-card__meta"><span>${record.source === 'code' ? 'Entrou por código' : 'Comunidade local'}</span><span class="community-online">online</span></div>
         </div>
@@ -514,6 +524,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
   };
 
   const getMessageContactCandidates = () => {
+    if (Array.isArray(cachedCreateMemberCandidates)) return cachedCreateMemberCandidates;
     const currentUser = getCurrentUserProfile();
     const map = new Map();
     const addCandidate = (candidate) => {
@@ -547,7 +558,8 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       { id: 'renato-acabamentos', name: 'Renato Acabamentos', subtitle: 'Profissional recente' }
     ].forEach(addCandidate);
 
-    return [...map.values()].slice(0, 8);
+    cachedCreateMemberCandidates = [...map.values()].slice(0, 8);
+    return cachedCreateMemberCandidates;
   };
 
   const getCreateFormParts = () => {
@@ -567,8 +579,93 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       reviewMembers: createForm.querySelector('[data-community-review-members]'),
       stepLabel: createForm.querySelector('[data-community-create-step-label]'),
       stepTitle: createForm.querySelector('[data-community-create-step-title]'),
-      progressFill: createForm.querySelector('[data-community-create-fill]')
+      progressFill: createForm.querySelector('[data-community-create-fill]'),
+      coverInput: createForm.querySelector('[data-community-cover-input]'),
+      coverPreview: createForm.querySelector('[data-community-cover-preview]'),
+      coverRemove: createForm.querySelector('[data-community-cover-remove]'),
+      reviewCover: createForm.querySelector('[data-community-review-cover]')
     };
+  };
+
+  const renderCreateCoverPreview = () => {
+    const parts = getCreateFormParts();
+    const hasCover = Boolean(createCoverState.dataUrl);
+    const previewMarkup = hasCover
+      ? `<img alt="" src="${escapeCommunityHtml(createCoverState.dataUrl)}"/><span>${escapeCommunityHtml(createCoverState.name || 'Capa anexada')}</span>`
+      : '<span>Sem capa anexada</span>';
+
+    [parts.coverPreview, parts.reviewCover].forEach((preview) => {
+      if (!preview) return;
+      preview.classList.toggle('has-cover', hasCover);
+      preview.innerHTML = previewMarkup;
+    });
+
+    if (parts.coverRemove) parts.coverRemove.hidden = !hasCover;
+  };
+
+  const ensureCreateCoverControls = () => {
+    if (!createForm || createForm.querySelector('[data-community-cover-field]')) return;
+    const detailsStep = createForm.querySelector('[data-community-create-step="details"]');
+    const descriptionField = detailsStep?.querySelector('#community-action-description-input')?.closest('.doke-modal-field, .doke-action-modal__field');
+    if (!detailsStep || !descriptionField) return;
+
+    const field = document.createElement('div');
+    field.className = 'community-create-cover-upload doke-action-modal__field doke-modal-field';
+    field.dataset.communityCoverField = '';
+    field.innerHTML = `
+      <span>Capa da comunidade</span>
+      <div class="community-create-cover-upload__controls">
+        <input class="sr-only" id="community-action-cover-input" data-community-cover-input type="file" accept="image/*" />
+        <label class="community-create-cover-upload__button doke-btn doke-btn--ghost" for="community-action-cover-input">Anexar capa</label>
+        <button class="community-create-cover-upload__remove doke-btn doke-btn--ghost" data-community-cover-remove type="button" hidden>Remover</button>
+      </div>
+      <div class="community-create-cover-preview" data-community-cover-preview><span>Sem capa anexada</span></div>
+    `;
+    descriptionField.insertAdjacentElement('afterend', field);
+
+    const reviewCover = createForm.querySelector('.community-action-cover > div');
+    if (reviewCover) reviewCover.dataset.communityReviewCover = '';
+
+    const parts = getCreateFormParts();
+    parts.coverInput?.addEventListener('change', () => {
+      const file = parts.coverInput?.files?.[0];
+      if (!file) return;
+      if (!file.type || !file.type.startsWith('image/')) {
+        createCoverState = { name: '', type: '', dataUrl: '' };
+        if (parts.coverInput) parts.coverInput.value = '';
+        renderCreateCoverPreview();
+        setActionFormFeedback(createForm, 'Escolha uma imagem para usar como capa.', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        createCoverState = {
+          name: file.name || 'capa-da-comunidade',
+          type: file.type || 'image/*',
+          dataUrl: String(reader.result || '')
+        };
+        renderCreateCoverPreview();
+        setActionFormFeedback(createForm, 'Capa anexada. A prévia foi atualizada.', 'success');
+      });
+      reader.addEventListener('error', () => {
+        setActionFormFeedback(createForm, 'Não foi possível carregar a capa. Tente outra imagem.', 'error');
+      });
+      reader.readAsDataURL(file);
+    });
+
+    parts.coverRemove?.addEventListener('click', () => {
+      createCoverState = { name: '', type: '', dataUrl: '' };
+      if (parts.coverInput) parts.coverInput.value = '';
+      renderCreateCoverPreview();
+    });
+
+    renderCreateCoverPreview();
+  };
+
+  const scheduleCreateMemberRender = () => {
+    window.clearTimeout(memberSearchRenderTimer);
+    memberSearchRenderTimer = window.setTimeout(renderCreateMemberCandidates, 120);
   };
 
   const updateCreateReview = () => {
@@ -579,6 +676,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     if (parts.reviewName) parts.reviewName.textContent = name;
     if (parts.reviewType) parts.reviewType.textContent = type;
     if (parts.reviewMembers) parts.reviewMembers.textContent = selectedCount ? `Você + ${selectedCount}` : 'Você';
+    renderCreateCoverPreview();
   };
 
   const setCreateWizardStep = (stepKey, { focus = true } = {}) => {
@@ -663,6 +761,9 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     if (!createForm) return;
     createForm.reset();
     selectedCreateMemberIds = new Set();
+    createCoverState = { name: '', type: '', dataUrl: '' };
+    cachedCreateMemberCandidates = null;
+    renderCreateCoverPreview();
     renderCreateMemberCandidates();
     setCreateWizardStep('details', { focus: false });
   };
@@ -680,13 +781,14 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     setCreateWizardStep(createStepKeys[Math.max(createStepIndex - 1, 0)]);
   };
 
+  ensureCreateCoverControls();
+
   document.querySelectorAll('[data-community-code-modal-form], [data-community-create-form]').forEach((form) => {
     form.addEventListener('input', (event) => {
       const field = event.target.closest('input, textarea');
       if (field) field.removeAttribute('aria-invalid');
-      if (form.matches('[data-community-create-form]')) {
-        if (event.target.matches('[data-community-member-search]')) renderCreateMemberCandidates();
-        updateCreateReview();
+      if (form.matches('[data-community-create-form]') && event.target.matches('[data-community-member-search]')) {
+        scheduleCreateMemberRender();
       }
     });
 
@@ -736,6 +838,9 @@ window.DokeInitCommunity = function DokeInitCommunity() {
         title: nameField.value.trim(),
         category: typeField?.value || 'Comunidade',
         description: descriptionField?.value || '',
+        coverName: createCoverState.name,
+        coverType: createCoverState.type,
+        coverDataUrl: createCoverState.dataUrl,
         members,
         source: 'created',
         role: 'owner'
