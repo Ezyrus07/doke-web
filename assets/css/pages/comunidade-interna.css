@@ -62,15 +62,15 @@ body[data-page="comunidade-interna"] .community-room-return--thread {
 }
 
 body[data-page="comunidade-interna"] .community-room-layout .community-room-sidebar {
-  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr);
 }
 
 body[data-page="comunidade-interna"] .community-room-layout .community-room-filter-menu {
-  grid-row: 4;
+  grid-row: 3;
 }
 
 body[data-page="comunidade-interna"] .community-room-layout .chat-sidebar-scroll-region {
-  grid-row: 5;
+  grid-row: 4;
 }
 
 @media (min-width: 1024px) {
@@ -732,5 +732,152 @@ body[data-page="comunidade-interna"] .community-room-layout > .community-room-pa
   body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel .community-room-pinned-list article {
     padding: 14px;
     border-radius: var(--radius-base);
+  }
+}
+
+body[data-page="comunidade-interna"] .community-room-thread-empty {
+  align-self: center;
+  justify-self: center;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  width: min(100%, 420px);
+  margin: auto;
+  padding: 28px;
+  border: 1px solid rgba(198, 214, 232, 0.9);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--doke-elevation-surface);
+  text-align: center;
+}
+
+body[data-page="comunidade-interna"] .community-room-thread-empty h3,
+body[data-page="comunidade-interna"] .community-room-panel-empty strong {
+  margin: 0;
+  color: #123b68;
+  font-weight: 850;
+  letter-spacing: -0.015em;
+}
+
+body[data-page="comunidade-interna"] .community-room-thread-empty p,
+body[data-page="comunidade-interna"] .community-room-panel-empty p {
+  margin: 0;
+  color: #6c86a6;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+body[data-page="comunidade-interna"] .community-room-panel-empty {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid rgba(198, 214, 232, 0.92);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+  box-shadow: var(--doke-elevation-surface);
+}
+
+
+/* Community room message card polish.
+ * Responsibility: keep local community messages readable after removing fake content,
+ * with compact actions that match Doke card/button language.
+ */
+body[data-page="comunidade-interna"] .community-room-message {
+  width: min(100%, 620px);
+  max-width: 100%;
+}
+
+body[data-page="comunidade-interna"] .community-room-message--self {
+  justify-self: end;
+  margin-left: auto;
+}
+
+body[data-page="comunidade-interna"] .community-room-message__bubble {
+  display: grid;
+  gap: 10px;
+  width: fit-content;
+  max-width: min(100%, 520px);
+  min-width: min(220px, 100%);
+  padding: 14px 16px 12px;
+  border: 1px solid rgba(31, 103, 174, 0.18);
+  border-radius: 20px 20px 8px 20px;
+  background: linear-gradient(180deg, #eef7ff 0%, #e7f2ff 100%);
+  color: #073264;
+  box-shadow: 0 16px 34px rgba(31, 95, 174, 0.10);
+}
+
+body[data-page="comunidade-interna"] .community-room-message__bubble p {
+  margin: 0;
+  color: #062f5f;
+  font-size: 0.96rem;
+  line-height: 1.45;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+
+body[data-page="comunidade-interna"] .community-room-message__bubble .message-bubble__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  color: #6b84a4;
+  font-size: 0.76rem;
+  line-height: 1.2;
+  font-weight: 850;
+}
+
+body[data-page="comunidade-interna"] .community-room-message__bubble .message-bubble__meta strong,
+body[data-page="comunidade-interna"] .community-room-message__bubble .message-bubble__meta time {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+body[data-page="comunidade-interna"] .community-room-message__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(31, 103, 174, 0.12);
+}
+
+body[data-page="comunidade-interna"] .community-room-message__actions .doke-btn {
+  min-height: 30px;
+  padding: 0 11px;
+  border: 1px solid rgba(31, 103, 174, 0.14);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.82);
+  color: #2167ae;
+  box-shadow: none;
+  font-size: 0.74rem;
+  font-weight: 850;
+  line-height: 1;
+}
+
+body[data-page="comunidade-interna"] .community-room-message__actions .doke-btn:is(:hover, :focus-visible) {
+  border-color: rgba(31, 103, 174, 0.26);
+  background: #fff;
+  color: #073264;
+}
+
+body[data-page="comunidade-interna"] .community-room-message__actions .doke-btn[aria-pressed="true"] {
+  border-color: rgba(20, 127, 112, 0.22);
+  background: #e8f8f3;
+  color: #147f70;
+}
+
+@media (max-width: 560px) {
+  body[data-page="comunidade-interna"] .community-room-message {
+    width: min(100%, 92vw);
+  }
+
+  body[data-page="comunidade-interna"] .community-room-message__bubble {
+    max-width: 100%;
+    padding: 13px 14px 11px;
+    border-radius: 18px 18px 8px 18px;
   }
 }

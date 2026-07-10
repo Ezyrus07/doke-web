@@ -38,13 +38,15 @@
   var attachmentTitle = root.querySelector('[data-community-attachment-title]');
   var attachmentCancel = root.querySelector('[data-community-attachment-cancel]');
   var memberSearch = root.querySelector('[data-community-member-search]');
+  var memberList = root.querySelector('[data-community-member-list]');
   var members = Array.prototype.slice.call(root.querySelectorAll('[data-member-search]'));
-  var currentChannelName = '# Geral';
+  var currentChannelName = 'Comunidade';
   var selectedAttachment = '';
   var audioDraftSeconds = 0;
   var audioDraftTimer = null;
 
   var COMMUNITY_SELECTION_STORAGE_KEY = 'doke.community.selected.v1';
+  var COMMUNITY_LIST_STORAGE_KEY = 'doke.communities.local.v1';
   var COMMUNITY_MESSAGES_STORAGE_KEY = 'doke.community.messages.local.v1';
   var currentCommunityContext = null;
   var currentChannelId = 'geral';
@@ -64,6 +66,48 @@
     }
   }
 
+  function slugifyCommunity(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'community';
+  }
+
+  function formatCountLabel(count, singular, plural) {
+    return String(count) + ' ' + (count === 1 ? singular : plural);
+  }
+
+  function getMemberInitials(name) {
+    var words = String(name || 'Você').trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return 'VC';
+    if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+    return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
+  }
+
+  function readLocalCommunities() {
+    try {
+      var parsed = safeJsonParse(window.localStorage && window.localStorage.getItem(COMMUNITY_LIST_STORAGE_KEY));
+      return Array.isArray(parsed) ? parsed.filter(function (item) { return item && (item.id || item.title || item.name); }) : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function getCurrentUserProfile() {
+    var service = window.DokeAuth && window.DokeAuth.service;
+    var user = service && typeof service.getCurrentUser === 'function' ? service.getCurrentUser() : null;
+    var name = user && (user.displayName || user.name || user.fullName || user.email);
+    return {
+      id: String(user && user.id || 'current-user'),
+      name: String(name || 'Você'),
+      role: 'owner',
+      source: 'account'
+    };
+  }
+
   function normalizeCommunityContext(raw) {
     raw = raw || {};
     var title = String(raw.title || raw.name || '').trim();
@@ -71,7 +115,7 @@
     if (!title && id) title = id.replace(/[-_]+/g, ' ').replace(/\b\w/g, function (letter) { return letter.toUpperCase(); });
     if (!title) title = 'Comunidade Doke';
     return {
-      id: id || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'community',
+      id: id || slugifyCommunity(title),
       title: title,
       category: String(raw.category || '').trim()
     };
@@ -105,6 +149,8 @@
 
     var eyebrow = root.querySelector('.community-room-sidebar__eyebrow');
     if (eyebrow) eyebrow.textContent = context.title;
+    currentChannelName = context.title || 'Comunidade';
+    if (channelTitle) channelTitle.textContent = currentChannelName;
 
     var returnLinks = Array.prototype.slice.call(document.querySelectorAll('.community-room-return'));
     returnLinks.forEach(function (link) {
@@ -127,6 +173,124 @@
   }
 
   applyCommunityContext();
+
+  function normalizeCommunityMember(member) {
+    var name = String(member && member.name || '').trim();
+    if (!name) return null;
+    return {
+      id: String(member.id || slugifyCommunity(name)).trim() || slugifyCommunity(name),
+      name: name,
+      role: String(member.role || '').trim() || 'member',
+      source: String(member.source || '').trim() || 'messages'
+    };
+  }
+
+  function getCurrentCommunityRecord() {
+    var context = currentCommunityContext || getCommunityContextFromLocation();
+    var id = String(context && context.id || '').trim();
+    var title = String(context && context.title || '').trim();
+    var communities = readLocalCommunities();
+    return communities.find(function (item) {
+      var itemId = String(item.id || item.community || '').trim();
+      var itemTitle = String(item.title || item.name || '').trim();
+      return (id && itemId === id) || (title && itemTitle === title) || (id && slugifyCommunity(itemTitle) === id);
+    }) || null;
+  }
+
+  function getCommunityMembers() {
+    var record = getCurrentCommunityRecord();
+    var rawMembers = record && Array.isArray(record.members) ? record.members : [];
+    var unique = new Map();
+    rawMembers.forEach(function (member) {
+      var normalized = normalizeCommunityMember(member);
+      if (!normalized || unique.has(normalized.id)) return;
+      unique.set(normalized.id, normalized);
+    });
+    return Array.prototype.slice.call(unique.values());
+  }
+
+  function createPanelEmptyState(title, copy) {
+    var empty = document.createElement('article');
+    empty.className = 'community-room-panel-empty doke-empty-state';
+    empty.dataset.communityPanelEmpty = 'true';
+    var strong = document.createElement('strong');
+    strong.textContent = title;
+    var paragraph = document.createElement('p');
+    paragraph.textContent = copy;
+    empty.append(strong, paragraph);
+    return empty;
+  }
+
+  function createThreadEmptyState() {
+    var empty = document.createElement('article');
+    empty.className = 'community-room-thread-empty doke-empty-state';
+    empty.dataset.communityThreadEmpty = 'true';
+    var badge = document.createElement('span');
+    badge.className = 'messages-thread-empty__badge';
+    badge.textContent = currentChannelName || 'Comunidade';
+    var title = document.createElement('h3');
+    title.textContent = 'Nenhuma mensagem ainda';
+    var copy = document.createElement('p');
+    copy.textContent = 'Comece a conversa desta comunidade.';
+    empty.append(badge, title, copy);
+    return empty;
+  }
+
+  function createMemberItem(member) {
+    var item = document.createElement('article');
+    item.className = 'community-room-member';
+    item.dataset.memberSearch = [member.name, member.role, member.source].join(' ');
+    var avatar = document.createElement('b');
+    avatar.className = 'doke-avatar';
+    avatar.textContent = getMemberInitials(member.name);
+    var identity = document.createElement('div');
+    var name = document.createElement('strong');
+    name.textContent = member.name;
+    var source = document.createElement('span');
+    source.textContent = member.source === 'account' ? 'Conta principal' : 'Adicionado pelas mensagens';
+    identity.append(name, source);
+    var role = document.createElement('em');
+    role.textContent = member.role === 'owner' ? 'Administrador' : 'Membro';
+    item.append(avatar, identity, role);
+    return item;
+  }
+
+  function renderCommunityMembers() {
+    if (!memberList) return;
+    memberList.innerHTML = '';
+    var list = getCommunityMembers();
+    list.forEach(function (member) {
+      memberList.appendChild(createMemberItem(member));
+    });
+    if (!list.length) {
+      memberList.appendChild(createPanelEmptyState('Nenhum membro adicionado', 'Convide pessoas pelas mensagens ao criar ou editar a comunidade.'));
+    }
+    members = Array.prototype.slice.call(memberList.querySelectorAll('[data-member-search]'));
+  }
+
+  function getChannelMessageCount(channelId) {
+    return getStoredChannelMessages(channelId || currentChannelId).length;
+  }
+
+  function updateRoomStats() {
+    var memberCount = getCommunityMembers().length;
+    var messageCount = getChannelMessageCount(currentChannelId);
+    var status = [
+      formatCountLabel(memberCount, 'membro', 'membros'),
+      formatCountLabel(messageCount, 'mensagem', 'mensagens')
+    ].join(' • ');
+    if (channelStatus) channelStatus.textContent = status;
+    if (channelCount) channelCount.textContent = String(channels.length);
+    channels.forEach(function (channel) {
+      var channelId = channel.dataset.channelId || 'geral';
+      var preview = channel.querySelector('.community-room-channel__preview');
+      var count = getChannelMessageCount(channelId);
+      if (preview && count > 0) preview.textContent = formatCountLabel(count, 'mensagem enviada', 'mensagens enviadas');
+      if (channel === channels.find(function (item) { return item.dataset.channelId === currentChannelId; })) {
+        channel.dataset.channelStatus = status;
+      }
+    });
+  }
 
   function updateComposerDraftState() {
     if (!composer) return;
@@ -223,7 +387,7 @@
       communityId: getCurrentCommunityId(),
       communityTitle: root.dataset.communityTitle || (currentCommunityContext && currentCommunityContext.title) || 'Comunidade Doke',
       channelId: currentChannelId || 'geral',
-      channelName: currentChannelName || '# Geral',
+      channelName: currentChannelName || 'Comunidade',
       type: type,
       text: String(payload && payload.text || '').trim(),
       attachmentName: String(payload && payload.attachmentName || '').trim(),
@@ -303,25 +467,36 @@
 
   function renderPinnedPanel() {
     if (!pinnedList) return;
-    Array.prototype.slice.call(pinnedList.querySelectorAll('[data-community-local-pinned]')).forEach(function (item) {
-      item.remove();
-    });
-    getPinnedMessagesForCurrentChannel().forEach(function (record) {
+    pinnedList.innerHTML = '';
+    var pinned = getPinnedMessagesForCurrentChannel();
+    if (!pinned.length) {
+      pinnedList.appendChild(createPanelEmptyState('Nenhum item fixado', 'Fixe mensagens importantes para aparecerem aqui.'));
+      return;
+    }
+    pinned.forEach(function (record) {
       pinnedList.appendChild(createPinnedPanelItem(record));
     });
   }
 
   function clearRenderedLocalMessages() {
     if (!messageList) return;
-    Array.prototype.slice.call(messageList.querySelectorAll('[data-community-local-message]')).forEach(function (message) {
+    Array.prototype.slice.call(messageList.querySelectorAll('[data-community-local-message], [data-community-thread-empty]')).forEach(function (message) {
       message.remove();
+    });
+  }
+
+  function clearThreadEmptyState() {
+    if (!messageList) return;
+    Array.prototype.slice.call(messageList.querySelectorAll('[data-community-thread-empty]')).forEach(function (empty) {
+      empty.remove();
     });
   }
 
   function renderPersistedMessagesForChannel(channelId) {
     if (!messageList) return;
     clearRenderedLocalMessages();
-    getStoredChannelMessages(channelId || currentChannelId).forEach(function (record) {
+    var records = getStoredChannelMessages(channelId || currentChannelId);
+    records.forEach(function (record) {
       var element = createMessageFromRecord(record);
       if (element) {
         element.dataset.communityLocalMessage = 'true';
@@ -329,7 +504,11 @@
         messageList.appendChild(element);
       }
     });
+    if (!records.length) {
+      messageList.appendChild(createThreadEmptyState());
+    }
     renderPinnedPanel();
+    updateRoomStats();
   }
 
   function formatMessageTime(createdAt) {
@@ -413,9 +592,9 @@
     });
 
     currentChannelId = channel.dataset.channelId || 'geral';
-    currentChannelName = channel.dataset.channelName || '# Geral';
+    currentChannelName = channel.dataset.channelName || currentChannelName || 'Comunidade';
     if (channelTitle) channelTitle.textContent = currentChannelName;
-    if (channelStatus) channelStatus.textContent = channel.dataset.channelStatus || '128 membros • 12 online';
+    updateRoomStats();
     var badge = channel.querySelector('.community-room-channel__badge');
     if (badge) badge.remove();
     closeFloatingMenus();
@@ -783,6 +962,7 @@
           type: 'audio',
           audioDuration: formatAudioTime(Math.max(audioDraftSeconds, 1))
         });
+        clearThreadEmptyState();
         messageList.appendChild(createMessageFromRecord(audioRecord));
         persistCommunityMessage(audioRecord);
         resetAudioDraft();
@@ -793,6 +973,7 @@
           text: messageText,
           attachmentName: selectedAttachment
         });
+        clearThreadEmptyState();
         messageList.appendChild(createMessageFromRecord(messageRecord));
         persistCommunityMessage(messageRecord);
       }
@@ -803,6 +984,7 @@
       }
       clearAttachment();
       updateSendState();
+      updateRoomStats();
       scrollToBottom();
     });
   }
@@ -832,6 +1014,7 @@
       if (updated) {
         syncMessageActionState(article, updated);
         renderPinnedPanel();
+        updateRoomStats();
       }
     });
   }
@@ -864,6 +1047,7 @@
     currentChannelName = initiallyActiveChannel.dataset.channelName || currentChannelName;
   }
 
+  renderCommunityMembers();
   filterChannels();
   renderPersistedMessagesForChannel(currentChannelId);
   updateSendState();
