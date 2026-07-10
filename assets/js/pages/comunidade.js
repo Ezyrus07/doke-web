@@ -357,12 +357,15 @@ window.DokeInitCommunity = function DokeInitCommunity() {
 
   const renderLocalCommunities = () => {
     const continueList = page.querySelector('[data-community-continue-list]');
+    const localSection = page.querySelector('[data-community-local-section]');
     if (!continueList) return;
+    const localCommunities = readLocalCommunities();
+    if (localSection) localSection.hidden = localCommunities.length === 0;
     const existingIds = new Set([...continueList.querySelectorAll('[data-community-id]')]
       .map((item) => item.dataset.communityId)
       .filter(Boolean));
 
-    readLocalCommunities().forEach((record) => {
+    localCommunities.forEach((record) => {
       if (!record?.id || existingIds.has(record.id)) return;
       existingIds.add(record.id);
       const card = document.createElement('article');
@@ -491,12 +494,14 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     return false;
   };
 
-  const escapeCommunityHtml = (value) => String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  function escapeCommunityHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
 
   const getCurrentUserProfile = () => {
     const service = window.DokeAuth && window.DokeAuth.service;
@@ -551,12 +556,6 @@ window.DokeInitCommunity = function DokeInitCommunity() {
         subtitle: conversation.order?.title || conversation.serviceTitle || conversation.lastMessage || 'Conversa recente'
       });
     });
-
-    [
-      { id: 'cliente-doke', name: 'Cliente Doke', subtitle: 'Conversa recente' },
-      { id: 'profissional-doke', name: 'Profissional Doke', subtitle: 'Contato salvo nas mensagens' },
-      { id: 'renato-acabamentos', name: 'Renato Acabamentos', subtitle: 'Profissional recente' }
-    ].forEach(addCandidate);
 
     cachedCreateMemberCandidates = [...map.values()].slice(0, 8);
     return cachedCreateMemberCandidates;
