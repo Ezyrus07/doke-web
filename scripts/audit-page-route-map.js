@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { getLoadedCssAssets } = require('./lib/css-assets');
 
 const ROOT = path.resolve(__dirname, '..');
 const pages = [
@@ -33,8 +34,11 @@ for (const { file, flow } of pages) {
     continue;
   }
   const html = fs.readFileSync(full, 'utf8');
+  const loadedCssAssets = new Set(getLoadedCssAssets(html, ROOT));
   for (const asset of requiredAssets) {
-    if (!html.includes(asset)) issues.push(`${file}: não carrega ${asset}`);
+    const isCss = asset.endsWith('.css');
+    const isLoaded = isCss ? loadedCssAssets.has(asset) : html.includes(asset);
+    if (!isLoaded) issues.push(`${file}: não carrega ${asset}`);
   }
   if (!html.includes(flow)) issues.push(`${file}: não declara fluxo ${flow}`);
 }

@@ -25,6 +25,30 @@ const legacyGroups = [
 const ignoreTokens = ['grid','panels','sidepanel','doke-btn','doke-icon-btn','doke-input','doke-select','doke-textarea','doke-label','doke-chip','doke-badge','doke-avatar','doke-menu','doke-popover','doke-modal','doke-drawer','doke-overlay'];
 const surfaceTokens = ['card','panel','surface','tile','summary','preview','result','entry'];
 
+function stripQuery(value) { return value.split('?')[0].split('#')[0]; }
+function cssGraphLoads(html, targetPath) {
+  if (html.includes(targetPath)) return true;
+  const links = [...html.matchAll(/<link[^>]+rel=["']stylesheet["'][^>]+href=["']([^"']+)["'][^>]*>/g)]
+    .map(match => stripQuery(match[1]));
+  const visited = new Set();
+  function loads(cssRel) {
+    const normalized = stripQuery(cssRel).replace(/^\.\//, '');
+    if (visited.has(normalized)) return false;
+    visited.add(normalized);
+    const abs = path.join(root, normalized);
+    if (!fs.existsSync(abs)) return false;
+    const css = fs.readFileSync(abs, 'utf8');
+    if (css.includes(targetPath)) return true;
+    const imports = [...css.matchAll(/@import\s+(?:url\()?\s*["']([^"']+)["']\s*\)?/g)]
+      .map(match => stripQuery(match[1]));
+    return imports.some(imported => {
+      const resolved = path.normalize(path.join(path.dirname(normalized), imported)).replace(/\\/g, '/');
+      return resolved === targetPath || loads(resolved);
+    });
+  }
+  return links.some(loads);
+}
+
 function hasAny(str, arr) { const s = str.toLowerCase(); return arr.some(x => s.includes(x.toLowerCase())); }
 function countClass(html, cls) { return html.split(cls).length - 1; }
 
@@ -36,7 +60,7 @@ for (const page of pages) {
   const file = path.join(root, page);
   if (!fs.existsSync(file)) continue;
   const html = fs.readFileSync(file, 'utf8');
-  if (!html.includes(requiredLink)) violations.push(`${page}: não carrega ${cssPath}.`);
+  if (!cssGraphLoads(html, requiredLink)) violations.push(`${page}: não carrega ${cssPath}.`);
   for (const cls of domainClasses) coverage[cls] += countClass(html, cls);
   const lines = html.split(/\r?\n/);
   lines.forEach((line, index) => {

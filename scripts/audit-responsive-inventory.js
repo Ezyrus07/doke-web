@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const fs = require('fs');
 const path = require('path');
+const { getLoadedCssAssets } = require('./lib/css-assets');
 
 const root = path.resolve(__dirname, '..');
 const pages = [
@@ -60,13 +61,14 @@ for (const page of pages) {
   }
   const html = fs.readFileSync(filePath, 'utf8');
   const bodyTag = (html.match(/<body[\s\S]*?>/i) || [''])[0];
-  const cssLinks = [...html.matchAll(/<link[^>]+href=["']([^"']+\.css[^"']*)["'][^>]*>/gi)].map((m) => m[1]);
+  const cssLinks = getLoadedCssAssets(html, root);
   const scripts = [...html.matchAll(/<script[^>]+src=["']([^"']+\.js[^"']*)["'][^>]*>/gi)].map((m) => m[1]);
-  const missingSharedCss = requiredSharedCss.filter((href) => !html.includes(href));
-  const missingDesktopCss = page.desktop.filter((name) => !html.includes(name));
-  const missingMobileCss = page.mobile.filter((name) => !html.includes(name));
+  const loadedCssSet = new Set(cssLinks);
+  const missingSharedCss = requiredSharedCss.filter((href) => !loadedCssSet.has(href));
+  const missingDesktopCss = page.desktop.filter((name) => !cssLinks.some((href) => href.endsWith('/' + name)));
+  const missingMobileCss = page.mobile.filter((name) => !cssLinks.some((href) => href.endsWith('/' + name)));
   const missingSharedJs = requiredSharedJs.filter((src) => !html.includes(src));
-  const forbiddenLoaded = containsAny(html, forbiddenLegacyCss);
+  const forbiddenLoaded = forbiddenLegacyCss.filter((name) => cssLinks.some((href) => href.endsWith('/' + name)));
 
   if (!bodyTag.includes(`data-page="${page.page}"`)) {
     failures.push(`${page.file}: data-page esperado "${page.page}" não encontrado no body.`);

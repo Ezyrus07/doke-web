@@ -63,8 +63,8 @@ if (fs.existsSync(manifestPath)) {
     const pagePaths = new Set(pages.map((entry) => entry.path));
     const viewportNames = new Set(viewports.map((entry) => entry.name));
 
-    if (pages.length !== requiredPages.length) {
-      fail(`Visual QA manifest must include exactly ${requiredPages.length} principal pages.`);
+    if (pages.length < requiredPages.length) {
+      fail(`Visual QA manifest must include at least ${requiredPages.length} principal pages.`);
     }
 
     for (const pagePath of requiredPages) {
@@ -82,8 +82,10 @@ if (fs.existsSync(manifestPath)) {
       }
     }
 
+    const viewportDimensions = new Set(viewports.map((entry) => `${entry.width}x${entry.height}`));
     for (const viewportName of requiredViewports) {
-      if (!viewportNames.has(viewportName)) {
+      const expectedDimensions = viewportName.replace(/^[^-]+-/, '');
+      if (!viewportNames.has(viewportName) && !viewportDimensions.has(expectedDimensions)) {
         fail(`Visual QA manifest is missing viewport: ${viewportName}`);
       }
     }

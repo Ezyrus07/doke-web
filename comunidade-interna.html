@@ -209,11 +209,14 @@
          <p class="community-settings-nav__label">Comunidade</p>
          <button class="community-settings-nav__item is-active" type="button" data-community-settings-tab="manage" data-community-settings-label="Editar comunidade" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10.5-10.5-4-4L4 16v4Z"></path><path d="m12.8 7.2 4 4"></path></svg><span>Editar comunidade</span></button>
          <button class="community-settings-nav__item" type="button" data-community-settings-tab="members" data-community-settings-label="Membros" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8.5" cy="9" r="3"></circle><circle cx="16.5" cy="8.5" r="2.5"></circle><path d="M3.5 18c.9-2.6 2.7-4 5-4s4.1 1.4 5 4"></path><path d="M13 17.5c.7-1.9 2-2.9 3.8-2.9 1.7 0 3 .9 3.7 2.9"></path></svg><span>Membros</span></button>
+         <button class="community-settings-nav__item" type="button" data-community-settings-tab="requests" data-community-settings-label="Solicitações de entrada" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"></path><path d="M8 8h8"></path><path d="M8 12h5"></path><path d="m15 16 1.5 1.5L19 15"></path></svg><span>Solicitações</span></button>
          <button class="community-settings-nav__item" type="button" data-community-settings-tab="roles" data-community-settings-label="Cargos e permissões" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.8 18 6v5.2c0 3.7-2.4 6.9-6 8.1-3.6-1.2-6-4.4-6-8.1V6l6-2.2Z"></path><path d="m9.7 11.9 1.6 1.6 3.4-3.8"></path></svg><span>Cargos e permissões</span></button>
          <button class="community-settings-nav__item" type="button" data-community-settings-tab="invite" data-community-settings-label="Convites" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l1.4-1.4a5 5 0 0 0-7.1-7.1L10.6 5.4"></path><path d="M14 11a5 5 0 0 0-7.1-.1l-1.4 1.4a5 5 0 0 0 7.1 7.1l.8-.8"></path></svg><span>Convites</span></button>
         </div>
         <div class="community-settings-nav__section">
          <p class="community-settings-nav__label">Administração</p>
+         <button class="community-settings-nav__item" type="button" data-community-settings-tab="transfer" data-community-settings-label="Transferir propriedade" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10"></path><path d="m14 4 3 3-3 3"></path><path d="M17 17H7"></path><path d="m10 14-3 3 3 3"></path></svg><span>Transferir propriedade</span></button>
+         <button class="community-settings-nav__item community-settings-nav__item--danger" type="button" data-community-settings-tab="leave" data-community-settings-label="Sair da comunidade" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 5H5v14h5"></path><path d="M13 8l4 4-4 4"></path><path d="M8 12h9"></path></svg><span>Sair da comunidade</span></button>
          <button class="community-settings-nav__item community-settings-nav__item--danger" type="button" data-community-settings-tab="danger" data-community-settings-label="Excluir comunidade" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"></path><path d="M9 7V4h6v3"></path><path d="m7 7 1 13h8l1-13"></path></svg><span>Excluir comunidade</span></button>
         </div>
        </nav>
@@ -232,6 +235,16 @@
         <div class="community-room-member-list" data-community-member-list>
 
         </div>
+       </section>
+      </aside>
+
+      <aside class="community-room-panel community-settings-panel" data-community-panel="requests" aria-hidden="true">
+       <div class="community-room-panel__backdrop" data-community-panel-close></div>
+       <section class="community-room-panel__surface" role="dialog" aria-modal="true" aria-label="Solicitações de entrada">
+        <header class="community-room-panel__header"><div><h2>Solicitações de entrada</h2><p>Aprove ou recuse pedidos para participar desta comunidade.</p></div><button class="community-room-panel__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-community-panel-close aria-label="Fechar painel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></header>
+        <label class="community-room-panel__search"><span>Filtrar solicitações</span><select class="doke-input community-room-select" data-community-request-filter><option value="pending">Pendentes</option><option value="accepted">Aprovadas</option><option value="rejected">Recusadas</option><option value="all">Todas</option></select></label>
+        <p class="community-room-panel__feedback" data-community-request-feedback role="status" aria-live="polite" hidden></p>
+        <div class="community-room-member-list community-room-request-list" data-community-request-list></div>
        </section>
       </aside>
 
@@ -277,7 +290,6 @@
          <span>Código da comunidade</span>
          <strong data-community-invite-code>DOKE-0000</strong>
          <p>Compartilhe este código para outras pessoas entrarem pela tela Comunidade.</p>
-         <small data-community-invite-meta></small>
          <div class="community-room-panel-actions"><button class="doke-btn doke-btn--ghost" type="button" data-community-invite-regenerate>Gerar novo</button><button class="doke-btn doke-btn--primary" type="button" data-community-invite-copy>Copiar código</button></div>
         </div>
        </section>
@@ -308,11 +320,37 @@
         </form>
        </section>
       </aside>
+
+      <aside class="community-room-panel community-settings-panel" data-community-panel="transfer" aria-hidden="true">
+       <section class="community-room-panel__surface" aria-label="Transferir propriedade">
+        <header class="community-room-panel__header"><div><h2>Transferir propriedade</h2><p>Escolha um membro para assumir integralmente a administração da comunidade.</p></div></header>
+        <form class="community-room-manage-form" data-community-transfer-form>
+         <label><span>Novo proprietário</span><select class="doke-input community-room-select" data-community-transfer-member><option value="">Selecione um membro</option></select></label>
+         <label><span>Confirmação</span><input class="doke-input" type="text" data-community-transfer-confirm autocomplete="off" placeholder="Digite TRANSFERIR"></label>
+         <p>Após a transferência, sua conta permanecerá como membro comum e poderá sair da comunidade.</p>
+         <p class="community-room-panel-feedback" data-community-transfer-feedback hidden></p>
+         <div class="community-room-panel-actions"><button class="doke-btn doke-btn--ghost" type="button" data-community-panel-close>Cancelar</button><button class="doke-btn doke-btn--primary" type="submit">Transferir propriedade</button></div>
+        </form>
+       </section>
+      </aside>
+
+      <aside class="community-room-panel community-room-panel--danger community-settings-panel" data-community-panel="leave" aria-hidden="true">
+       <section class="community-room-panel__surface" aria-label="Sair da comunidade">
+        <header class="community-room-panel__header"><div><h2>Sair da comunidade</h2><p>Você perderá o acesso às mensagens e configurações até entrar novamente.</p></div></header>
+        <div class="community-settings-danger-card">
+         <div><strong>Encerrar participação</strong><p>As mensagens já enviadas serão preservadas no histórico da comunidade.</p></div>
+         <button class="doke-btn doke-btn--danger" type="button" data-community-exit>Sair da comunidade</button>
+        </div>
+       </section>
+      </aside>
+
       <aside class="community-room-panel community-room-panel--danger community-settings-panel" data-community-panel="danger" aria-hidden="true">
        <section class="community-room-panel__surface" aria-label="Excluir comunidade">
         <header class="community-room-panel__header"><div><h2>Excluir comunidade</h2><p>Esta ação remove a comunidade e as mensagens salvas neste dispositivo.</p></div></header>
         <div class="community-settings-danger-card">
-         <div><strong>Excluir permanentemente</strong><p>Esta ação não pode ser desfeita.</p></div>
+         <div><strong>Excluir permanentemente</strong><p>Digite exatamente o nome da comunidade para confirmar. Convites serão invalidados e solicitações pendentes serão canceladas.</p></div>
+         <label><span>Nome da comunidade</span><input class="doke-input" type="text" data-community-delete-confirm autocomplete="off"></label>
+         <p class="community-room-panel-feedback" data-community-delete-feedback hidden></p>
          <button class="doke-btn doke-btn--danger" type="button" data-community-leave>Excluir comunidade</button>
         </div>
        </section>
@@ -351,7 +389,8 @@
 <script src="assets/js/services/community-service.js?v=20260512-cycle77-script-load-v1" defer></script>
  <script src="assets/js/state/state-contracts.js?v=20260512-cycle131-state-contracts" defer></script>
  <script src="assets/js/components/media-lightbox.js?v=20260425-shared-media-lightbox-v1" defer></script>
- <script src="assets/js/pages/comunidade-interna.js?v=20260710-community-invites-mvp-v1" defer></script>
+ <script src="assets/js/features/community/community-domain.js?v=20260710-community-domain-v1" defer></script>
+ <script src="assets/js/pages/comunidade-interna.js?v=20260710-community-deletion-lifecycle-mvp-v1" defer></script>
   <script src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1" defer></script>
 </body>
 </html>

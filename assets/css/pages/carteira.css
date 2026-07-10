@@ -47,10 +47,10 @@
 .wallet-dialog-preview,
 .wallet-dialog-summary,
 .wallet-dialog-preview__card {
-  border: 1px solid var(--doke-card-border, rgba(24, 75, 118, 0.10));
-  border-radius: var(--doke-radius-xl, var(--radius-lg));
-  background: var(--doke-surface, #fff);
-  box-shadow: var(--doke-shadow-soft, 0 18px 45px rgba(15, 23, 42, 0.08));
+  border: 1px solid var(--doke-visual-border);
+  border-radius: var(--doke-visual-radius-lg);
+  background: var(--doke-visual-surface);
+  box-shadow: var(--doke-visual-shadow);
 }
 
 .wallet-hero {
@@ -83,7 +83,7 @@
   gap: 6px;
   font-size: 0.75rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--doke-type-tracking-label);
   text-transform: uppercase;
   color: inherit;
   opacity: 0.78;
@@ -94,8 +94,8 @@
   margin: 8px 0 0;
   font-size: clamp(2rem, 7vw, 4rem);
   line-height: 0.95;
-  font-weight: 850;
-  letter-spacing: -0.06em;
+  font-weight: var(--doke-type-weight-display);
+  letter-spacing: var(--doke-type-tracking-display);
 }
 
 .wallet-hero__meta,
@@ -151,8 +151,8 @@
 .wallet-bank-card__mark {
   display: inline-grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
+  width: var(--doke-icon-surface-size);
+  height: var(--doke-icon-surface-size);
   flex: 0 0 auto;
   border-radius: var(--radius-sm);
   background: rgba(42, 95, 144, 0.10);
@@ -200,18 +200,8 @@
 .wallet-statistics-return__button,
 .wallet-transaction-detail-panel__back,
 .wallet-transaction-detail-panel__actions button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 42px;
-  border: 1px solid var(--doke-card-border, rgba(24, 75, 118, 0.10));
-  border-radius: var(--radius-pill);
-  background: #fff;
-  color: var(--doke-primary, #2a5f90);
-  font-weight: 800;
-  text-decoration: none;
-  cursor: pointer;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .wallet-list,
@@ -230,7 +220,7 @@
 
 .wallet-transaction__amount {
   flex: 0 0 auto;
-  font-weight: 850;
+  font-weight: var(--doke-type-weight-display);
   color: var(--doke-text, #0f172a);
 }
 
@@ -379,7 +369,8 @@
 .wallet-dialog__scrim {
   position: absolute;
   inset: 0;
-  background: rgba(17, 36, 59, 0.58);
+  background: var(--doke-overlay-bg);
+  backdrop-filter: blur(var(--doke-overlay-blur));
 }
 
 .wallet-dialog__scroll,
@@ -408,18 +399,10 @@
   min-width: 0;
 }
 
-.wallet-dialog input,
-.wallet-dialog select,
-.wallet-dialog textarea,
-.doke-financial-modal__field input,
-.doke-financial-modal__money-field input {
+.wallet-dialog :is(.doke-input, .doke-select, .doke-textarea),
+.doke-financial-modal__field :is(.doke-input, .doke-select, .doke-textarea),
+.doke-financial-modal__money-field :is(.doke-input, .doke-select, .doke-textarea) {
   width: 100%;
-  min-height: 46px;
-  border: 1px solid var(--doke-card-border, rgba(24, 75, 118, 0.10));
-  border-radius: var(--radius-sm);
-  background: #f8fafc;
-  padding: 0 14px;
-  color: var(--doke-text, #0f172a);
 }
 
 .wallet-dialog:not(.wallet-dialog--withdraw) .wallet-dialog__footer {
@@ -484,7 +467,7 @@
     margin-block-start: 0;
     color: var(--doke-primary-strong, #164b7a);
     font-size: clamp(2.4rem, 3.4vw, 3.35rem);
-    letter-spacing: -0.075em;
+    letter-spacing: var(--doke-type-tracking-display);
   }
 
   body[data-page="carteira"] .wallet-hero__copy {
@@ -626,7 +609,7 @@
     background: rgba(245, 158, 11, 0.16);
     color: #b7791f;
     font-size: 0.92rem;
-    font-weight: 850;
+    font-weight: var(--doke-type-weight-display);
   }
 
   body[data-page="carteira"] .wallet-kpi__content {
@@ -644,7 +627,7 @@
     color: var(--doke-primary-strong, #164b7a);
     font-size: clamp(0.94rem, 1vw, 1.08rem);
     line-height: 1.05;
-    letter-spacing: -0.045em;
+    letter-spacing: var(--doke-type-tracking-display);
   }
 
   body[data-page="carteira"] .wallet-layout {
@@ -664,7 +647,7 @@
     color: var(--doke-primary-strong, #164b7a);
     font-size: clamp(1.35rem, 1.7vw, 1.75rem);
     line-height: 1.04;
-    letter-spacing: -0.06em;
+    letter-spacing: var(--doke-type-tracking-display);
   }
 
   body[data-page="carteira"] .wallet-tabs {
@@ -708,7 +691,7 @@
   body[data-page="carteira"] .wallet-bank-card__mark--nubank {
     background: linear-gradient(135deg, #8a05be, #6d28d9);
     color: #fff;
-    font-weight: 850;
+    font-weight: var(--doke-type-weight-display);
   }
 
   body[data-page="carteira"] .wallet-bank-detail strong,
@@ -824,11 +807,7 @@
 }
 
 .wallet-bank-manage {
-  min-height: 38px;
-  padding-inline: 14px;
-  border-color: rgba(24, 75, 118, 0.10);
-  background: linear-gradient(180deg, #ffffff, rgba(245, 250, 255, 0.92));
-  box-shadow: var(--doke-elevation-control);
+  white-space: nowrap;
 }
 
 .wallet-bank-card.wallet-bank-card--featured {
@@ -836,9 +815,9 @@
   gap: 14px;
   min-height: 0;
   padding: var(--space-4, 14px);
-  border-color: rgba(24, 75, 118, 0.10);
-  border-radius: var(--radius-md);
-  background: linear-gradient(180deg, #ffffff, rgba(248, 252, 255, 0.92));
+  border-color: var(--doke-visual-border);
+  border-radius: var(--doke-visual-radius);
+  background: var(--doke-visual-surface-raised);
 }
 
 .wallet-bank-card__mark {
@@ -846,7 +825,7 @@
   height: 44px;
   border-radius: var(--radius-sm);
   font-size: 0.86rem;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--doke-type-tracking-status);
   text-transform: uppercase;
 }
 
@@ -914,7 +893,7 @@
   background: rgba(239, 251, 248, 0.84);
   color: var(--doke-accent-strong, #05756f);
   font-size: 0.76rem;
-  font-weight: 850;
+  font-weight: var(--doke-type-weight-display);
   text-align: center;
 }
 
@@ -930,7 +909,7 @@
 
   body[data-page="carteira"] .wallet-bank-panel__header h2 {
     font-size: clamp(1.18rem, 1.4vw, 1.45rem);
-    letter-spacing: -0.055em;
+    letter-spacing: var(--doke-type-tracking-display);
   }
 }
 
@@ -1000,7 +979,7 @@
   background: rgba(245, 158, 11, 0.15);
   color: #b7791f;
   font-size: 0.82rem;
-  font-weight: 850;
+  font-weight: var(--doke-type-weight-display);
 }
 
 .wallet-transaction[data-wallet-type="income"] .wallet-transaction__amount {
@@ -1028,7 +1007,7 @@
 
   body[data-page="carteira"] .wallet-panel--statement .wallet-panel__header h2 {
     font-size: clamp(1.18rem, 1.45vw, 1.48rem);
-    letter-spacing: -0.055em;
+    letter-spacing: var(--doke-type-tracking-display);
   }
 
   body[data-page="carteira"] .wallet-panel--statement .wallet-tabs {
@@ -1102,7 +1081,7 @@
     min-width: 96px;
     text-align: right;
     font-size: 0.95rem;
-    letter-spacing: -0.03em;
+    letter-spacing: var(--doke-type-tracking-title);
   }
 }
 
@@ -1219,7 +1198,7 @@
   color: var(--doke-primary-strong, #164b7a);
   font-size: clamp(1.4rem, 2.2vw, 2rem);
   line-height: 1.04;
-  letter-spacing: -0.055em;
+  letter-spacing: var(--doke-type-tracking-display);
 }
 
 .wallet-stats-dialog__header p {
@@ -1256,7 +1235,7 @@
   color: var(--doke-primary-strong, #164b7a);
   font-size: clamp(1.2rem, 2vw, 1.55rem);
   line-height: 1;
-  letter-spacing: -0.055em;
+  letter-spacing: var(--doke-type-tracking-display);
 }
 
 .wallet-stats-dialog__item--income {
@@ -1337,8 +1316,6 @@
 }
 
 .wallet-statistics-return__button {
-  min-height: 40px;
-  padding-inline: 16px;
   white-space: nowrap;
 }
 
@@ -1434,7 +1411,7 @@
 
   body[data-page="carteira"] .wallet-statistics-return__copy strong {
     font-size: clamp(1.08rem, 1.35vw, 1.28rem);
-    letter-spacing: -0.04em;
+    letter-spacing: var(--doke-type-tracking-display);
   }
 
   body[data-page="carteira"] .wallet-statistics-grid {
@@ -1466,7 +1443,7 @@
     color: var(--doke-primary-strong, #164b7a);
     font-size: clamp(1.45rem, 1.85vw, 2rem);
     line-height: 0.98;
-    letter-spacing: -0.065em;
+    letter-spacing: var(--doke-type-tracking-display);
   }
 
   body[data-page="carteira"] .wallet-chart-copy {
@@ -1644,7 +1621,7 @@
 
   body[data-page="carteira"] .wallet-donut-chart__center strong {
     font-size: 1rem;
-    letter-spacing: -0.04em;
+    letter-spacing: var(--doke-type-tracking-display);
   }
 
   body[data-page="carteira"] .wallet-donut-chart__center span {
@@ -1821,7 +1798,7 @@
 .wallet-bank-card__mark--account {
   background: linear-gradient(135deg, var(--doke-primary, #2a5f90), var(--doke-accent, #298f7f));
   color: #fff;
-  font-weight: 850;
+  font-weight: var(--doke-type-weight-display);
 }
 
 .wallet-bank-detail {
@@ -2179,10 +2156,10 @@
   gap: 10px;
   width: 100%;
   padding: 14px 14px 14px 16px;
-  border: 1px solid rgba(24, 75, 118, 0.10);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.98);
-  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.14);
+  border: 1px solid var(--doke-visual-border);
+  border-radius: var(--doke-visual-radius);
+  background: var(--doke-visual-surface-raised);
+  box-shadow: var(--doke-overlay-popover-shadow);
   color: var(--doke-primary-strong, #164b7a);
   pointer-events: auto;
 }
@@ -2352,7 +2329,7 @@
   padding: 0 18px;
   border-right: 1px solid rgba(24, 75, 118, 0.10);
   color: var(--doke-primary-strong, #164b7a);
-  font-weight: 850;
+  font-weight: var(--doke-type-weight-display);
 }
 
 .wallet-dialog--withdraw .wallet-dialog-money-field :is(input, .doke-input) {
@@ -2416,14 +2393,10 @@
 }
 
 .wallet-transaction__complete {
-  min-height: 30px;
-  padding: 0 12px;
-  border: 1px solid rgba(24, 75, 118, 0.16);
-  border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: var(--doke-elevation-control);
-  font-size: 0.72rem;
-  font-weight: 850;
+  min-height: var(--doke-btn-height-sm);
+  padding-inline: var(--btn-padding-x-sm);
+  border-radius: var(--doke-btn-radius-pill);
+  font-size: var(--control-font-size-sm);
   white-space: nowrap;
 }
 
@@ -2480,7 +2453,7 @@
   color: var(--doke-primary-strong, #164b7a);
   font-size: clamp(1.75rem, 3vw, 2.3rem);
   line-height: 1;
-  letter-spacing: -0.055em;
+  letter-spacing: var(--doke-type-tracking-display);
 }
 
 .wallet-transaction-detail-modal__description {
@@ -2488,7 +2461,7 @@
   max-width: 52ch;
   color: var(--doke-text-secondary, #607894);
   font-size: 0.98rem;
-  font-weight: 650;
+  font-weight: var(--doke-type-weight-emphasis);
   line-height: 1.55;
 }
 
@@ -2514,9 +2487,9 @@
   display: grid;
   gap: 4px;
   padding: 18px;
-  border: 1px solid rgba(24, 75, 118, 0.10);
-  border-radius: var(--radius-exact-20);
-  background: linear-gradient(180deg, rgba(247, 251, 255, 0.96), rgba(242, 248, 253, 0.9));
+  border: 1px solid var(--doke-visual-border);
+  border-radius: var(--doke-visual-radius-lg);
+  background: var(--doke-visual-surface-muted);
 }
 
 .wallet-transaction-detail-modal__amount-card span,
@@ -2531,7 +2504,7 @@
   color: var(--doke-primary-strong, #164b7a);
   font-size: clamp(1.8rem, 4vw, 2.5rem);
   line-height: 1;
-  letter-spacing: -0.055em;
+  letter-spacing: var(--doke-type-tracking-display);
 }
 
 .wallet-transaction-detail-grid {
@@ -2545,9 +2518,9 @@
   gap: 5px;
   min-width: 0;
   padding: 13px 14px;
-  border: 1px solid rgba(24, 75, 118, 0.08);
-  border-radius: var(--radius-base);
-  background: #f8fbfe;
+  border: 1px solid var(--doke-visual-border-muted);
+  border-radius: var(--doke-visual-radius-sm);
+  background: var(--doke-visual-surface-muted);
 }
 
 .wallet-transaction-detail-grid strong {
@@ -2555,7 +2528,7 @@
   overflow-wrap: anywhere;
   color: var(--doke-primary-strong, #164b7a);
   font-size: 0.96rem;
-  font-weight: 850;
+  font-weight: var(--doke-type-weight-display);
   line-height: 1.25;
 }
 
@@ -2566,7 +2539,7 @@
   background: rgba(41, 143, 127, 0.08);
   color: var(--doke-text-secondary, #607894);
   font-size: 0.92rem;
-  font-weight: 650;
+  font-weight: var(--doke-type-weight-emphasis);
   line-height: 1.5;
 }
 
@@ -2575,7 +2548,7 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
   gap: 12px;
   padding: 18px 28px 28px;
-  border-top: 1px solid rgba(24, 75, 118, 0.10);
+  border-top: 1px solid var(--doke-visual-border);
   background: linear-gradient(180deg, rgba(248, 251, 255, 0), rgba(248, 251, 255, 0.92));
 }
 
@@ -2589,8 +2562,8 @@
 }
 
 .wallet-transaction:focus-visible {
-  outline: 3px solid rgba(42, 95, 144, 0.22);
-  outline-offset: 3px;
+  outline: 0;
+  box-shadow: var(--doke-visual-focus-ring);
 }
 
 @media (max-width: 640px) {
@@ -2695,7 +2668,7 @@
   color: var(--doke-primary-strong, #164b7a);
   font-size: clamp(1.65rem, 2.8vw, 2.2rem);
   line-height: 1;
-  letter-spacing: -0.055em;
+  letter-spacing: var(--doke-type-tracking-display);
 }
 
 .wallet-transaction-receipt-modal__description {
@@ -2703,7 +2676,7 @@
   max-width: 52ch;
   color: var(--doke-text-secondary, #607894);
   font-size: 0.96rem;
-  font-weight: 650;
+  font-weight: var(--doke-type-weight-emphasis);
   line-height: 1.5;
 }
 
@@ -2740,7 +2713,7 @@
   color: var(--doke-primary-strong, #164b7a);
   font-size: clamp(1.8rem, 4vw, 2.45rem);
   line-height: 1;
-  letter-spacing: -0.055em;
+  letter-spacing: var(--doke-type-tracking-display);
 }
 
 .wallet-transaction-receipt-grid {
@@ -2764,7 +2737,7 @@
   overflow-wrap: anywhere;
   color: var(--doke-primary-strong, #164b7a);
   font-size: 0.95rem;
-  font-weight: 850;
+  font-weight: var(--doke-type-weight-display);
   line-height: 1.25;
 }
 
@@ -2775,7 +2748,7 @@
   background: rgba(42, 95, 144, 0.07);
   color: var(--doke-text-secondary, #607894);
   font-size: 0.92rem;
-  font-weight: 650;
+  font-weight: var(--doke-type-weight-emphasis);
   line-height: 1.5;
 }
 
@@ -2856,7 +2829,7 @@
   color: var(--doke-primary-strong, #164b7a);
   font-size: clamp(1.7rem, 2.8vw, 2.2rem);
   line-height: 1;
-  letter-spacing: -0.055em;
+  letter-spacing: var(--doke-type-tracking-display);
 }
 
 .wallet-withdraw-track-modal__description {
@@ -2864,7 +2837,7 @@
   max-width: 50ch;
   color: var(--doke-text-secondary, #607894);
   font-size: 0.96rem;
-  font-weight: 650;
+  font-weight: var(--doke-type-weight-emphasis);
   line-height: 1.5;
 }
 
@@ -2900,7 +2873,7 @@
   color: var(--doke-primary-strong, #164b7a);
   font-size: clamp(1.8rem, 4vw, 2.45rem);
   line-height: 1;
-  letter-spacing: -0.055em;
+  letter-spacing: var(--doke-type-tracking-display);
 }
 
 .wallet-withdraw-timeline {
@@ -2981,7 +2954,7 @@
 .wallet-withdraw-timeline__item strong {
   color: var(--doke-primary-strong, #164b7a);
   font-size: 0.98rem;
-  font-weight: 850;
+  font-weight: var(--doke-type-weight-display);
   line-height: 1.2;
 }
 
@@ -3004,7 +2977,7 @@
   background: rgba(42, 95, 144, 0.07);
   color: var(--doke-text-secondary, #607894);
   font-size: 0.92rem;
-  font-weight: 650;
+  font-weight: var(--doke-type-weight-emphasis);
   line-height: 1.5;
 }
 
@@ -3108,7 +3081,7 @@
   color: var(--doke-text-secondary, #45657f);
   font-size: 0.74rem;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--doke-type-tracking-title);
 }
 
 .wallet-statement-search {
@@ -3290,9 +3263,9 @@ body[data-page="carteira"] .wallet-monthly-row strong {
   min-width: 0;
   color: var(--doke-primary-strong, #164b7a);
   font-size: clamp(1.15rem, 1.6vw, 1.55rem);
-  font-weight: 850;
+  font-weight: var(--doke-type-weight-display);
   line-height: 1.05;
-  letter-spacing: -0.055em;
+  letter-spacing: var(--doke-type-tracking-display);
 }
 
 body[data-page="carteira"] .wallet-monthly-list {
@@ -3356,15 +3329,15 @@ body[data-page="carteira"] .wallet-analytics-toolbar strong {
   margin-top: 8px;
   color: var(--doke-primary-strong, #164b7a);
   font-size: clamp(1.1rem, 1.35vw, 1.32rem);
-  font-weight: 850;
-  letter-spacing: -0.045em;
+  font-weight: var(--doke-type-weight-display);
+  letter-spacing: var(--doke-type-tracking-display);
 }
 
 body[data-page="carteira"] .wallet-analytics-toolbar p {
   margin: 4px 0 0;
   color: var(--doke-text-secondary, #315d82);
   font-size: var(--state-title-size-compact, 0.88rem);
-  font-weight: 650;
+  font-weight: var(--doke-type-weight-emphasis);
   line-height: 1.35;
 }
 
@@ -3384,7 +3357,7 @@ body[data-page="carteira"] .wallet-analytics-period__button {
   color: var(--doke-primary-strong, #164b7a);
   font: inherit;
   font-size: 0.8rem;
-  font-weight: 850;
+  font-weight: var(--doke-type-weight-display);
   cursor: pointer;
   transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
 }
@@ -3544,13 +3517,13 @@ body[data-page="carteira"] .wallet-bar-chart__bar--movement {
 body[data-page="carteira"] .wallet-bar-chart__value {
   fill: var(--doke-primary-strong, #164b7a);
   font-size: 18px;
-  font-weight: 850;
+  font-weight: var(--doke-type-weight-display);
 }
 
 body[data-page="carteira"] .wallet-bar-chart__label {
   fill: var(--doke-text-secondary, #45657f);
   font-size: 15px;
-  font-weight: 850;
+  font-weight: var(--doke-type-weight-display);
 }
 
 body[data-page="carteira"] .wallet-monthly-list--compact {
@@ -3603,8 +3576,8 @@ body[data-page="carteira"] .wallet-analytics-insight {
 body[data-page="carteira"] .wallet-analytics-insight strong {
   color: var(--doke-primary-strong, #164b7a);
   font-size: clamp(1.06rem, 1.25vw, 1.22rem);
-  font-weight: 850;
-  letter-spacing: -0.04em;
+  font-weight: var(--doke-type-weight-display);
+  letter-spacing: var(--doke-type-tracking-display);
 }
 
 body[data-page="carteira"] .wallet-analytics-insight p {
@@ -3612,7 +3585,7 @@ body[data-page="carteira"] .wallet-analytics-insight p {
   margin: 0;
   color: var(--doke-text-secondary, #315d82);
   font-size: 0.92rem;
-  font-weight: 650;
+  font-weight: var(--doke-type-weight-emphasis);
   line-height: 1.45;
 }
 
@@ -3718,13 +3691,13 @@ body[data-page="carteira"] .wallet-activity-chart__fill--movement {
 body[data-page="carteira"] .wallet-activity-chart__label {
   fill: var(--doke-text-secondary, #45657f);
   font-size: 14px;
-  font-weight: 850;
+  font-weight: var(--doke-type-weight-display);
 }
 
 body[data-page="carteira"] .wallet-activity-chart__value {
   fill: var(--doke-primary-strong, #164b7a);
   font-size: 16px;
-  font-weight: 850;
+  font-weight: var(--doke-type-weight-display);
 }
 
 body[data-page="carteira"] .wallet-monthly-row--highlight strong {
@@ -4008,7 +3981,7 @@ body[data-page="carteira"] .wallet-modal.is-active {
   ) {
     font-size: clamp(1.45rem, 7vw, 1.9rem);
     line-height: 1.02;
-    letter-spacing: -0.052em;
+    letter-spacing: var(--doke-type-tracking-display);
   }
 
   body[data-page="carteira"] :is(
@@ -4282,15 +4255,15 @@ body[data-page="carteira"] .wallet-history-metric span {
   color: var(--doke-text-secondary, #45657f);
   font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--doke-type-tracking-title);
 }
 
 body[data-page="carteira"] .wallet-history-row__summary strong {
   color: var(--doke-primary-strong, #073b69);
   font-size: clamp(1.05rem, 1.2vw, 1.25rem);
-  font-weight: 900;
+  font-weight: var(--doke-type-weight-display);
   line-height: 1.05;
-  letter-spacing: -0.04em;
+  letter-spacing: var(--doke-type-tracking-display);
 }
 
 body[data-page="carteira"] .wallet-history-row__summary small {
@@ -4319,7 +4292,7 @@ body[data-page="carteira"] .wallet-history-metric strong {
   overflow: hidden;
   color: var(--doke-primary-strong, #073b69);
   font-size: 0.86rem;
-  font-weight: 900;
+  font-weight: var(--doke-type-weight-display);
   line-height: 1.1;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4341,7 +4314,7 @@ body[data-page="carteira"] .wallet-history-action {
   box-shadow: var(--doke-elevation-control);
   color: var(--doke-primary-strong, #073b69);
   font-size: 0.76rem;
-  font-weight: 850;
+  font-weight: var(--doke-type-weight-display);
   white-space: nowrap;
 }
 
@@ -4404,7 +4377,7 @@ body[data-page="carteira"] .wallet-comparison-trend {
   background: rgba(255, 255, 255, 0.9);
   color: var(--doke-primary-strong, #073b69);
   font-size: 0.78rem;
-  font-weight: 900;
+  font-weight: var(--doke-type-weight-display);
   white-space: nowrap;
 }
 
@@ -4432,8 +4405,8 @@ body[data-page="carteira"] .wallet-comparison-insight {
 body[data-page="carteira"] .wallet-comparison-insight strong {
   color: var(--doke-primary-strong, #073b69);
   font-size: 0.98rem;
-  font-weight: 900;
-  letter-spacing: -0.03em;
+  font-weight: var(--doke-type-weight-display);
+  letter-spacing: var(--doke-type-tracking-title);
 }
 
 body[data-page="carteira"] .wallet-comparison-insight p {
@@ -4475,16 +4448,16 @@ body[data-page="carteira"] .wallet-comparison-metric span,
 body[data-page="carteira"] .wallet-history-badge {
   color: var(--doke-text-secondary, #45657f);
   font-size: 0.72rem;
-  font-weight: 850;
-  letter-spacing: -0.02em;
+  font-weight: var(--doke-type-weight-display);
+  letter-spacing: var(--doke-type-tracking-title);
 }
 
 body[data-page="carteira"] .wallet-comparison-metric strong {
   overflow: hidden;
   color: var(--doke-primary-strong, #073b69);
   font-size: 1.05rem;
-  font-weight: 950;
-  letter-spacing: -0.045em;
+  font-weight: var(--doke-type-weight-display);
+  letter-spacing: var(--doke-type-tracking-display);
   line-height: 1.08;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4630,7 +4603,7 @@ body[data-page="carteira"] .wallet-release-timeline__item strong {
   display: block;
   color: var(--doke-primary-strong, #073b69);
   font-size: 0.78rem;
-  font-weight: 900;
+  font-weight: var(--doke-type-weight-display);
   line-height: 1.15;
 }
 
@@ -4638,7 +4611,7 @@ body[data-page="carteira"] .wallet-release-timeline__item p {
   margin: 3px 0 0;
   color: var(--doke-text-secondary, #45657f);
   font-size: 0.72rem;
-  font-weight: 650;
+  font-weight: var(--doke-type-weight-emphasis);
   line-height: 1.3;
 }
 
@@ -4663,7 +4636,7 @@ body[data-page="carteira"] .wallet-receivables-panel__header p {
   margin: 4px 0 0;
   color: var(--doke-text-secondary, #45657f);
   font-size: 0.82rem;
-  font-weight: 650;
+  font-weight: var(--doke-type-weight-emphasis);
   line-height: 1.35;
 }
 
@@ -4671,25 +4644,27 @@ body[data-page="carteira"] .wallet-receivables-status,
 body[data-page="carteira"] .wallet-receivable-status {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   width: fit-content;
-  min-height: 26px;
-  padding: 0 10px;
-  border: 1px solid rgba(24, 75, 118, 0.10);
-  border-radius: var(--radius-pill);
-  background: #edf5ff;
-  color: var(--doke-primary-strong, #073b69);
-  font-size: 0.7rem;
-  font-weight: 850;
-  letter-spacing: -0.02em;
+  min-height: var(--badge-height);
+  padding-inline: var(--badge-padding-x);
+  border: var(--border-width) var(--border-style) var(--badge-border-color-primary);
+  border-radius: var(--badge-radius);
+  background: var(--badge-bg-primary);
+  color: var(--badge-text-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-extrabold);
+  line-height: 1;
+  letter-spacing: var(--doke-type-tracking-status);
   white-space: nowrap;
 }
 
 body[data-page="carteira"] .wallet-receivables-status[data-wallet-receivables-status="held"],
 body[data-page="carteira"] .wallet-receivable-status--held,
 body[data-page="carteira"] .wallet-receivable-status--em_garantia {
-  border-color: rgba(225, 160, 40, 0.24);
-  background: #fff7e7;
-  color: #8b5a00;
+  border-color: var(--badge-border-color-warning);
+  background: var(--badge-bg-warning);
+  color: var(--badge-text-warning);
 }
 
 body[data-page="carteira"] .wallet-receivables-status[data-wallet-receivables-status="pending"],
@@ -4698,25 +4673,25 @@ body[data-page="carteira"] .wallet-receivables-status[data-wallet-receivables-st
 body[data-page="carteira"] .wallet-receivable-status--review,
 body[data-page="carteira"] .wallet-receivable-status--aguardando_conclusao,
 body[data-page="carteira"] .wallet-receivable-status--aguardando_avaliacao {
-  border-color: rgba(42, 95, 144, 0.16);
-  background: #eef6ff;
-  color: #174c82;
+  border-color: var(--badge-border-color-primary);
+  background: var(--badge-bg-primary);
+  color: var(--badge-text-primary);
 }
 
 body[data-page="carteira"] .wallet-receivables-status[data-wallet-receivables-status="released"],
 body[data-page="carteira"] .wallet-receivable-status--released,
 body[data-page="carteira"] .wallet-receivable-status--liberado,
 body[data-page="carteira"] .wallet-receivable-status--sacado {
-  border-color: rgba(23, 137, 121, 0.18);
-  background: #eaf8f5;
-  color: #0f7668;
+  border-color: var(--badge-border-color-success);
+  background: var(--badge-bg-success);
+  color: var(--badge-text-success);
 }
 
 body[data-page="carteira"] .wallet-receivable-status--bloqueado,
 body[data-page="carteira"] .wallet-receivable-status--em_analise {
-  border-color: rgba(200, 63, 75, 0.16);
-  background: #fff1f3;
-  color: #9a3540;
+  border-color: var(--badge-border-color-danger);
+  background: var(--badge-bg-danger);
+  color: var(--badge-text-danger);
 }
 
 body[data-page="carteira"] .wallet-receivable-status--atrasado,
@@ -4739,17 +4714,17 @@ body[data-page="carteira"] .wallet-receivable-next {
 body[data-page="carteira"] .wallet-receivable-next span {
   color: var(--doke-text-secondary, #45657f);
   font-size: 0.7rem;
-  font-weight: 850;
-  letter-spacing: 0.04em;
+  font-weight: var(--doke-type-weight-display);
+  letter-spacing: var(--doke-type-tracking-label);
   text-transform: uppercase;
 }
 
 body[data-page="carteira"] .wallet-receivable-next strong {
   color: var(--doke-primary-strong, #073b69);
   font-size: clamp(1.35rem, 2.2vw, 1.9rem);
-  font-weight: 950;
+  font-weight: var(--doke-type-weight-display);
   line-height: 1;
-  letter-spacing: -0.06em;
+  letter-spacing: var(--doke-type-tracking-display);
 }
 
 body[data-page="carteira"] .wallet-receivable-next p {
@@ -4803,7 +4778,7 @@ body[data-page="carteira"] .wallet-receivable-row__date strong,
 body[data-page="carteira"] .wallet-receivable-row__amount strong {
   color: var(--doke-primary-strong, #073b69);
   font-size: 0.86rem;
-  font-weight: 900;
+  font-weight: var(--doke-type-weight-display);
   line-height: 1.05;
   white-space: nowrap;
 }
@@ -4824,7 +4799,7 @@ body[data-page="carteira"] .wallet-receivable-row__content strong {
   overflow: hidden;
   color: var(--doke-primary-strong, #073b69);
   font-size: 0.84rem;
-  font-weight: 900;
+  font-weight: var(--doke-type-weight-display);
   line-height: 1.12;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4835,7 +4810,7 @@ body[data-page="carteira"] .wallet-receivable-row__content p {
   margin: 0;
   color: var(--doke-text-secondary, #45657f);
   font-size: 0.72rem;
-  font-weight: 650;
+  font-weight: var(--doke-type-weight-emphasis);
   line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4904,7 +4879,7 @@ body[data-page="carteira"] .wallet-receivables-panel__header h2 {
   margin: 6px 0 0;
   font-size: clamp(1.08rem, 1.15vw, 1.24rem);
   line-height: 0.98;
-  letter-spacing: -0.045em;
+  letter-spacing: var(--doke-type-tracking-display);
 }
 
 body[data-page="carteira"] .wallet-receivables-panel__header p {
@@ -4943,7 +4918,7 @@ body[data-page="carteira"] .wallet-receivable-row__date {
 body[data-page="carteira"] .wallet-receivable-row__date strong {
   white-space: nowrap;
   font-size: 0.72rem;
-  letter-spacing: -0.02em;
+  letter-spacing: var(--doke-type-tracking-title);
 }
 
 body[data-page="carteira"] .wallet-receivable-row__date span,
@@ -5042,7 +5017,7 @@ body[data-page="carteira"] .wallet-dispute-actions strong {
   color: #7a3f10;
   font-size: 0.9rem;
   font-weight: 800;
-  letter-spacing: -0.01em;
+  letter-spacing: var(--doke-type-tracking-meta);
 }
 
 body[data-page="carteira"] .wallet-dispute-actions p {

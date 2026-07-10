@@ -78,15 +78,20 @@ for (const page of pages) {
     'assets/js/services/domain-data-service.js',
     'assets/js/controllers/controller-data.js',
   ];
-  let previous = -1;
+  const positions = new Map();
   for (const needle of order) {
-    const index = source.indexOf(needle);
-    if (index === -1) {
-      errors.push(`${page} does not load ${needle}`);
-      continue;
-    }
-    if (index <= previous) errors.push(`${page} loads ${needle} in the wrong order.`);
-    previous = index;
+    const index = source.lastIndexOf(needle);
+    positions.set(needle, index);
+    if (index === -1) errors.push(`${page} does not load ${needle}`);
+  }
+  const domainDataIndex = positions.get('assets/js/services/domain-data-service.js');
+  const controllerDataIndex = positions.get('assets/js/controllers/controller-data.js');
+  const dependencyIndexes = order.slice(0, -2).map((needle) => positions.get(needle)).filter((index) => index >= 0);
+  if (domainDataIndex >= 0 && dependencyIndexes.some((index) => index > domainDataIndex)) {
+    errors.push(`${page} loads domain-data-service.js before one of its domain dependencies.`);
+  }
+  if (controllerDataIndex >= 0 && domainDataIndex >= 0 && controllerDataIndex <= domainDataIndex) {
+    errors.push(`${page} loads controller-data.js before domain-data-service.js.`);
   }
 }
 

@@ -1,0 +1,264 @@
+/* Doke notification card component contract.
+   Responsibility: visual anatomy of notification cards, categories, inline actions and context actions.
+   notificacoes/base-layout.css and mobile compact files may compose list layout and breakpoint density. */
+
+.notification-card {
+  --card-border: 1px solid var(--notifications-card-border);
+  --doke-card-border: var(--notifications-card-border);
+  --doke-card-border-strong: var(--notifications-card-border);
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: #fff;
+  border: var(--card-border, 1px solid var(--notifications-card-border));
+  box-shadow: var(--doke-elevation-control);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.notification-card.is-dismissing {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.995);
+  pointer-events: none;
+}
+
+.notification-card.is-dismissing:hover {
+  transform: translateY(-6px) scale(0.995);
+  box-shadow: var(--doke-elevation-control);
+}
+
+.notification-card__read-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: rgba(244, 248, 252, 0.9);
+  color: #8aa0bb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.notification-card__read-toggle svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.notification-card.is-unread .notification-card__read-toggle {
+  color: #5e7ea3;
+}
+
+.notification-card:not(.is-unread) .notification-card__read-toggle {
+  background: transparent;
+  color: #c0ccda;
+}
+
+.notification-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--doke-elevation-surface);
+  border-color: var(--notifications-card-border-hover);
+}
+
+.notification-card__icon {
+  width: 34px;
+  height: var(--control-height-xs);
+  border-radius: var(--radius-compact);
+  display: grid;
+  place-items: center;
+  background: #eef5ff;
+  color: #3976d6;
+}
+
+.notification-card__icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.notification-card__body {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.notification-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.notification-card__tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 9px;
+  border-radius: var(--radius-pill);
+  background: #eef5ff;
+  color: #346fc7;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.notification-card__time {
+  font-size: 0.78rem;
+  color: #7a91aa;
+  font-weight: 600;
+}
+
+.notification-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.24;
+  color: #163b65;
+}
+
+.notification-card p {
+  margin: 0;
+  color: #67839f;
+  line-height: 1.42;
+  font-size: 0.92rem;
+}
+
+.notification-card__inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.notification-card__inline-actions a,
+.notification-card__inline-actions button {
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: var(--radius-pill);
+  border: 0;
+  background: transparent;
+  color: #6d86a3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.notification-card__inline-actions a {
+  color: #1f5ea8;
+}
+
+.notification-card__inline-actions button:hover,
+.notification-card__inline-actions a:hover {
+  background: #f4f8fc;
+}
+
+.notification-card.is-unread {
+  --doke-card-border: var(--notifications-card-border);
+  border-color: var(--notifications-card-border);
+  box-shadow: var(--doke-elevation-surface);
+}
+
+.notification-card--order .notification-card__icon,
+.notification-card--order .notification-card__tag {
+  background: #eef5ff;
+  color: #2f6ec9;
+}
+
+.notification-card--message .notification-card__icon,
+.notification-card--message .notification-card__tag {
+  background: #f1f1ff;
+  color: #5967d8;
+}
+
+.notification-card--social .notification-card__icon,
+.notification-card--social .notification-card__tag {
+  background: #eefaf1;
+  color: #2a9c54;
+}
+
+.notification-card--social-info .notification-card__icon,
+.notification-card--social-info .notification-card__tag {
+  background: #ebfbf7;
+  color: #1d8f79;
+}
+
+.notification-card--social-request .notification-card__icon,
+.notification-card--social-request .notification-card__tag {
+  background: #fff5ea;
+  color: #dc7f17;
+}
+
+.notification-card--warning .notification-card__icon,
+.notification-card--warning .notification-card__tag {
+  background: #fff6e8;
+  color: #cf8a12;
+}
+
+.notification-card--info .notification-card__icon,
+.notification-card--info .notification-card__tag {
+  background: #edf7ff;
+  color: #2c7dc6;
+}
+
+.notification-card__context-actions {
+  position: absolute;
+  top: 12px;
+  right: 48px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.notification-card.is-context-open .notification-card__context-actions {
+  display: inline-flex;
+}
+
+.notification-card__context-button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: var(--border-soft);
+  border-radius: var(--radius-pill);
+  background: var(--internal-surface-bg);
+  color: #214566;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.notification-card__context-button svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.notification-card__context-button--danger {
+  color: #8a3144;
+}

@@ -31,6 +31,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
   const requestForm = document.querySelector('[data-community-request-form]');
   const requestSuccess = document.querySelector('[data-community-request-success]');
   const requestMessage = document.querySelector('[data-community-request-message]');
+  const requestRole = document.querySelector('[data-community-request-role]');
   const codeModal = document.querySelector('[data-community-code-modal]');
   const createView = page.querySelector('[data-community-create-view]');
   const listView = page.querySelector('[data-community-list-view]');
@@ -47,6 +48,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
   let cachedCreateMemberCandidates = null;
   let memberSearchRenderTimer = 0;
   let activeRequestButton = null;
+  let activeRequestCommunityId = '';
   let activeActionModalTrigger = null;
   let currentFilter = 'all';
 
@@ -113,6 +115,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     const card = button.closest('[data-community-card]');
     const communityName = card?.dataset.title || 'esta comunidade';
     activeRequestButton = button;
+    activeRequestCommunityId = String(card?.dataset.communityId || '').trim();
 
     if (requestTitle) requestTitle.textContent = `Solicitar entrada em ${communityName}`;
     if (requestCopy) {
@@ -121,6 +124,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     if (requestForm) requestForm.hidden = false;
     if (requestSuccess) requestSuccess.hidden = true;
     if (requestMessage) requestMessage.value = '';
+    if (requestRole) requestRole.value = 'morador';
 
     requestModal.hidden = false;
     requestModal.setAttribute('aria-hidden', 'false');
@@ -253,6 +257,8 @@ window.DokeInitCommunity = function DokeInitCommunity() {
 
   const COMMUNITY_SELECTION_STORAGE_KEY = 'doke.community.selected.v1';
   const COMMUNITY_LIST_STORAGE_KEY = 'doke.communities.local.v1';
+  const COMMUNITY_DELETED_STORAGE_KEY = 'doke.communities.deleted.local.v1';
+  const COMMUNITY_LIFECYCLE_STORAGE_KEY = 'doke.community.lifecycle.local.v1';
 
   const slugifyCommunity = (value) => String(value || '')
     .normalize('NFD')
@@ -271,20 +277,49 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     return `${base}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   };
 
+  const readDeletedCommunityTombstones = () => {
+    const repository = window.Doke?.communityDomain?.repository;
+    if (repository?.readTombstones) return repository.readTombstones();
+    try {
+      const parsed = JSON.parse(window.localStorage?.getItem(COMMUNITY_DELETED_STORAGE_KEY) || '[]');
+      return Array.isArray(parsed) ? parsed.filter((item) => item && item.id) : [];
+    } catch (error) {
+      return [];
+    }
+  };
+
+  const isCommunityTombstoned = (communityId) => {
+    const id = String(communityId || '').trim();
+    if (!id) return false;
+    return readDeletedCommunityTombstones().some((item) => String(item?.id || '').trim() === id);
+  };
+
   const readLocalCommunities = () => {
+    const repository = window.Doke?.communityDomain?.repository;
+    if (repository?.list) return repository.list();
     try {
       const parsed = JSON.parse(window.localStorage?.getItem(COMMUNITY_LIST_STORAGE_KEY) || '[]');
-      return Array.isArray(parsed) ? parsed.filter((item) => item && item.id && item.title) : [];
+      const tombstonedIds = new Set(readDeletedCommunityTombstones().map((item) => String(item?.id || '').trim()));
+      return Array.isArray(parsed) ? parsed.filter((item) => (
+        item
+        && item.id
+        && item.title
+        && String(item.status || '').toLowerCase() !== 'deleted'
+        && !tombstonedIds.has(String(item.id || '').trim())
+      )) : [];
     } catch (error) {
       return [];
     }
   };
 
   const writeLocalCommunities = (communities) => {
+    const repository = window.Doke?.communityDomain?.repository;
+    if (repository?.saveAll) return repository.saveAll(communities);
     try {
       window.localStorage?.setItem(COMMUNITY_LIST_STORAGE_KEY, JSON.stringify(communities));
+      return true;
     } catch (error) {
-      // Local storage can be unavailable in restricted browser contexts.
+      return false;
     }
   };
 
@@ -294,19 +329,55 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     .replace(/\s+/g, '')
     .replace(/[^A-Z0-9-]/g, '');
 
-  const getMemberId = (member) => String(member?.id || member?.userId || member?.profileId || '').trim();
+  const normalizeIdentityKey = (value) => String(value || '').trim().toLowerCase();
+
+  const getIdentityKeysFromUser = (user) => {
+    const profile = user?.profile || {};
+    const rawKeys = [
+      user?.id,
+      user?.userId,
+      user?.email,
+      user?.providerProfileId,
+      user?.professionalId,
+      user?.clientId,
+      profile?.id,
+      profile?.userId,
+      profile?.email,
+      ...(Array.isArray(user?.profiles) ? user.profiles.flatMap((item) => [item?.id, item?.userId, item?.email]) : [])
+    ];
+    return [...new Set(rawKeys.map(normalizeIdentityKey).filter(Boolean))];
+  };
+
+  const getMemberIdentityKeys = (member) => [...new Set([
+    member?.id,
+    member?.userId,
+    member?.profileId,
+    member?.email,
+    ...(Array.isArray(member?.identityKeys) ? member.identityKeys : [])
+  ].map(normalizeIdentityKey).filter(Boolean))];
+
+  const getMemberId = (member) => String(member?.id || member?.userId || member?.profileId || member?.email || '').trim();
 
   const getCurrentUserProfile = () => {
-    const service = window.DokeAuth && window.DokeAuth.service;
-    const user = typeof service?.getCurrentUser === 'function' ? service.getCurrentUser() : null;
+    const sessionUser = window.Doke?.session?.getCurrentUser?.();
+    const authUser = window.DokeAuth?.service?.getCurrentUser?.();
+    const user = sessionUser || authUser || null;
     const name = user?.displayName || user?.name || user?.fullName || user?.email || 'Você';
-    const id = user?.id || user?.userId || user?.profile?.userId || user?.profile?.id || user?.email || '';
+    const identityKeys = getIdentityKeysFromUser(user);
+    const id = identityKeys[0] || `anonymous-${slugifyCommunity(name)}`;
     return {
-      id: String(id || `anonymous-${slugifyCommunity(name)}`),
+      id,
       name,
+      email: String(user?.email || '').trim(),
+      identityKeys,
       role: 'member',
       source: 'account'
     };
+  };
+
+  const identitiesIntersect = (left, right) => {
+    const leftKeys = new Set((left || []).map(normalizeIdentityKey).filter(Boolean));
+    return (right || []).some((key) => leftKeys.has(normalizeIdentityKey(key)));
   };
 
   const deriveCommunityOwnerId = (record) => {
@@ -318,11 +389,35 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     return getMemberId(ownerMember);
   };
 
+  const getCommunityOwnerIdentityKeys = (record) => {
+    const ownerMember = Array.isArray(record?.members)
+      ? record.members.find((member) => String(member?.role || '').toLowerCase() === 'owner')
+      : null;
+    return [...new Set([
+      record?.ownerId,
+      record?.createdById,
+      record?.creatorId,
+      ...(Array.isArray(record?.ownerIdentityKeys) ? record.ownerIdentityKeys : []),
+      ...getMemberIdentityKeys(ownerMember)
+    ].map(normalizeIdentityKey).filter(Boolean))];
+  };
+
+  const isCurrentUserCommunityOwner = (record, profile = getCurrentUserProfile()) => (
+    identitiesIntersect(profile?.identityKeys || [profile?.id], getCommunityOwnerIdentityKeys(record))
+  );
+
   const isCurrentUserCommunityMember = (record, profile = getCurrentUserProfile()) => {
-    const profileId = String(profile?.id || '').trim();
-    if (!profileId) return false;
-    if (deriveCommunityOwnerId(record) === profileId) return true;
-    return Array.isArray(record?.members) && record.members.some((member) => getMemberId(member) === profileId);
+    const profileKeys = profile?.identityKeys || [profile?.id];
+    if (!profileKeys.some(Boolean)) return false;
+    if (isCurrentUserCommunityOwner(record, profile)) return true;
+    return Array.isArray(record?.members)
+      && record.members.some((member) => identitiesIntersect(profileKeys, getMemberIdentityKeys(member)));
+  };
+
+  const getCommunityRelationship = (record, profile = getCurrentUserProfile()) => {
+    if (isCurrentUserCommunityOwner(record, profile)) return 'owner';
+    if (isCurrentUserCommunityMember(record, profile)) return 'member';
+    return 'visitor';
   };
 
   const normalizeCommunityRecord = (record) => {
@@ -348,16 +443,34 @@ window.DokeInitCommunity = function DokeInitCommunity() {
         generation: Number(record?.invite?.generation || 1)
       } : null,
       ownerId: deriveCommunityOwnerId(record),
+      ownerIdentityKeys: [...new Set((Array.isArray(record?.ownerIdentityKeys) ? record.ownerIdentityKeys : getCommunityOwnerIdentityKeys(record)).map(normalizeIdentityKey).filter(Boolean))],
+      createdById: String(record?.createdById || record?.ownerId || '').trim(),
       roles: Array.isArray(record?.roles) ? record.roles : [],
       role: record?.role || 'member',
       source: record?.source || 'local',
       members: Array.isArray(record?.members) ? record.members.filter((member) => member && member.name).map((member) => ({
-        id: String(member.id || slugifyCommunity(member.name)).trim(),
+        id: String(member.id || member.userId || member.profileId || member.email || slugifyCommunity(member.name)).trim(),
         name: String(member.name || '').trim(),
+        email: String(member.email || '').trim(),
+        identityKeys: getMemberIdentityKeys(member),
         role: member.role || 'member',
         source: member.source || 'messages',
         joinedAt: String(member.joinedAt || '').trim(),
         addedBy: String(member.addedBy || '').trim()
+      })) : [],
+      joinRequests: Array.isArray(record?.joinRequests) ? record.joinRequests.filter((request) => request && request.id).map((request) => ({
+        id: String(request.id || '').trim(),
+        userId: String(request.userId || '').trim(),
+        userName: String(request.userName || '').trim(),
+        userEmail: String(request.userEmail || '').trim(),
+        identityKeys: Array.isArray(request.identityKeys) ? [...new Set(request.identityKeys.map(normalizeIdentityKey).filter(Boolean))] : [],
+        relation: String(request.relation || '').trim(),
+        message: String(request.message || '').trim(),
+        status: ['pending', 'accepted', 'rejected'].includes(request.status) ? request.status : 'pending',
+        requestedAt: String(request.requestedAt || now),
+        resolvedAt: String(request.resolvedAt || '').trim(),
+        resolvedBy: String(request.resolvedBy || '').trim(),
+        attempt: Math.max(1, Number(request.attempt || 1))
       })) : [],
       coverName: String(record?.coverName || record?.cover?.name || '').trim(),
       coverType: String(record?.coverType || record?.cover?.type || '').trim(),
@@ -367,8 +480,17 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     };
   };
 
+  const getCommunityDomainOperations = () => window.Doke?.communityDomain?.operations || null;
+  const createCommunityOperationId = (type, communityId, actorId) => {
+    const suffix = window.crypto && typeof window.crypto.randomUUID === 'function'
+      ? window.crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    return `${String(type || 'community-operation').toLowerCase()}-${String(communityId || 'new')}-${String(actorId || 'anonymous')}-${suffix}`;
+  };
+
   const upsertLocalCommunity = (record) => {
     const nextRecord = normalizeCommunityRecord(record);
+    if (isCommunityTombstoned(nextRecord.id)) return null;
     const communities = readLocalCommunities();
     const index = communities.findIndex((item) => item.id === nextRecord.id);
     if (index >= 0) {
@@ -447,44 +569,86 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       || visibility.includes('dica');
   };
 
-  const joinPublicCommunity = (record) => {
-    if (!record || !isPublicCommunity(record)) {
-      return { ok: false, message: 'Esta comunidade não aceita entrada pública.' };
-    }
+  const isInviteOnlyCommunity = (record) => {
+    const visibility = String(record?.visibility || record?.type || '').trim().toLowerCase();
+    return visibility === 'invite' || visibility.includes('convite');
+  };
 
+  const isRequestablePrivateCommunity = (record) => {
+    const visibility = String(record?.visibility || record?.type || '').trim().toLowerCase();
+    return !isInviteOnlyCommunity(record) && (visibility === 'private' || visibility.includes('privad'));
+  };
+
+  const getCurrentUserJoinRequest = (record, profile = getCurrentUserProfile()) => {
+    const profileKeys = profile?.identityKeys || [profile?.id];
+    const requests = Array.isArray(record?.joinRequests) ? record.joinRequests : [];
+    return requests.find((request) => identitiesIntersect(profileKeys, request?.identityKeys || [request?.userId, request?.userEmail])) || null;
+  };
+
+  const createJoinRequestId = (communityId, profileId) => {
+    const suffix = window.crypto && typeof window.crypto.randomUUID === 'function'
+      ? window.crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    return `request-${slugifyCommunity(communityId)}-${slugifyCommunity(profileId)}-${suffix}`;
+  };
+
+  const submitPrivateCommunityRequest = (communityId, payload = {}) => {
     const profile = getCurrentUserProfile();
-    if (isCurrentUserCommunityMember(record, profile)) {
-      return { ok: true, record, alreadyMember: true };
-    }
-
-    const members = Array.isArray(record.members) ? record.members.slice() : [];
-    const profileName = String(profile.name || '').trim().toLowerCase();
-    const exists = members.some((member) => getMemberId(member) === String(profile.id)
-      || String(member?.name || '').trim().toLowerCase() === profileName);
-
-    if (!exists) {
-      members.push({
-        id: profile.id,
-        name: profile.name,
-        role: 'member',
-        source: 'public-discovery',
-        joinedAt: new Date().toISOString(),
-        addedBy: 'self'
+    const operations = getCommunityDomainOperations();
+    if (operations?.transact) {
+      const operation = operations.transact(communityId, {
+        type: 'JOIN_REQUEST_CREATED',
+        actorId: profile.id,
+        targetId: communityId,
+        operationId: createCommunityOperationId('join-request', communityId, profile.id)
+      }, (storedRecord) => {
+        const record = normalizeCommunityRecord(storedRecord);
+        if (!isRequestablePrivateCommunity(record)) return { ok: false, message: 'Esta comunidade não aceita solicitações de entrada.' };
+        if (getCommunityRelationship(record, profile) !== 'visitor') return { ok: false, message: 'Você já participa desta comunidade.' };
+        const requests = Array.isArray(record.joinRequests) ? record.joinRequests.slice() : [];
+        const existingIndex = requests.findIndex((request) => identitiesIntersect(profile.identityKeys || [profile.id], request.identityKeys || [request.userId, request.userEmail]));
+        const existing = existingIndex >= 0 ? requests[existingIndex] : null;
+        if (existing?.status === 'pending') return { ok: false, reason: 'request-already-pending', message: 'Sua solicitação já está aguardando análise.' };
+        const now = new Date().toISOString();
+        const request = {
+          id: existing?.id || createJoinRequestId(record.id, profile.id),
+          userId: profile.id, userName: profile.name, userEmail: profile.email,
+          identityKeys: profile.identityKeys || [profile.id],
+          relation: String(payload.relation || '').trim(), message: String(payload.message || '').trim(),
+          status: 'pending', requestedAt: now, resolvedAt: '', resolvedBy: '', attempt: Number(existing?.attempt || 0) + 1
+        };
+        if (existingIndex >= 0) requests[existingIndex] = request; else requests.push(request);
+        return { record: { ...record, joinRequests: requests, updatedAt: now }, result: request, payload: { requestId: request.id, attempt: request.attempt } };
       });
+      if (operation.ok) return { ok: true, request: operation.result, record: operation.record, message: 'Solicitação enviada para análise.' };
+      if (operation.reason === 'request-already-pending') return { ok: true, pending: true, message: operation.message };
+      return { ok: false, message: operation.message || 'Não foi possível enviar a solicitação.' };
     }
 
-    const communities = readLocalCommunities();
-    const index = communities.findIndex((item) => String(item?.id || '') === String(record.id));
-    if (index < 0) return { ok: false, message: 'Comunidade não encontrada.' };
+    return { ok: false, message: 'Serviço de comunidade indisponível.' };
+  };
 
-    const saved = {
-      ...communities[index],
-      members,
-      updatedAt: new Date().toISOString()
-    };
-    communities[index] = saved;
-    writeLocalCommunities(communities);
-    return { ok: true, record: saved, alreadyMember: exists };
+  const joinPublicCommunity = (record) => {
+    if (!record || !isPublicCommunity(record)) return { ok: false, message: 'Esta comunidade não aceita entrada pública.' };
+    const profile = getCurrentUserProfile();
+    const operations = getCommunityDomainOperations();
+    if (!operations?.transact) return { ok: false, message: 'Serviço de comunidade indisponível.' };
+    const operation = operations.transact(record.id, {
+      type: 'MEMBER_JOINED', actorId: profile.id, targetId: profile.id,
+      operationId: createCommunityOperationId('public-join', record.id, profile.id),
+      payload: { source: 'public-discovery' }
+    }, (storedRecord) => {
+      const current = normalizeCommunityRecord(storedRecord);
+      if (!isPublicCommunity(current)) return { ok: false, message: 'Esta comunidade não aceita entrada pública.' };
+      const relationship = getCommunityRelationship(current, profile);
+      if (relationship === 'owner' || relationship === 'member') return { ok: false, reason: 'already-member', message: 'Você já participa desta comunidade.' };
+      const members = Array.isArray(current.members) ? current.members.slice() : [];
+      members.push({ id: profile.id, name: profile.name, email: profile.email, identityKeys: profile.identityKeys, role: 'member', source: 'public-discovery', joinedAt: new Date().toISOString(), addedBy: 'self' });
+      return { record: { ...current, members, updatedAt: new Date().toISOString() }, payload: { memberId: profile.id } };
+    });
+    if (operation.ok) return { ok: true, record: operation.record, alreadyMember: false };
+    if (operation.reason === 'already-member') return { ok: true, record: normalizeCommunityRecord(record), alreadyMember: true };
+    return { ok: false, message: operation.message || 'Não foi possível entrar na comunidade.' };
   };
 
   const renderDiscoverCommunities = () => {
@@ -492,15 +656,23 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     if (!grid) return;
 
     const profile = getCurrentUserProfile();
-    const discoverable = readLocalCommunities().filter((record) => (
-      isPublicCommunity(record) && !isCurrentUserCommunityMember(record, profile)
+    const discoverable = readLocalCommunities().map(normalizeCommunityRecord).filter((record) => (
+      (isPublicCommunity(record) || isRequestablePrivateCommunity(record))
+      && getCommunityRelationship(record, profile) === 'visitor'
     ));
 
     grid.innerHTML = discoverable.map((record) => {
-      const description = String(record.description || '').trim() || 'Comunidade pública aberta para novos participantes.';
+      const isPublic = isPublicCommunity(record);
+      const currentRequest = getCurrentUserJoinRequest(record, profile);
+      const isPending = currentRequest?.status === 'pending';
+      const description = String(record.description || '').trim()
+        || (isPublic ? 'Comunidade pública aberta para novos participantes.' : 'Comunidade privada com entrada sujeita à aprovação.');
       const coverMarkup = record.coverDataUrl
         ? `<img alt="" loading="lazy" src="${escapeCommunityHtml(record.coverDataUrl)}"/>`
         : '';
+      const actionMarkup = isPublic
+        ? '<button class="community-card__action doke-btn doke-btn--primary" data-community-public-join type="button">Participar</button>'
+        : `<button class="community-card__action doke-btn${isPending ? ' community-card__action--pending' : ''}" data-community-request type="button"${isPending ? ' disabled' : ''}>${isPending ? 'Solicitação pendente' : 'Solicitar entrada'}</button>`;
       return `
         <article class="community-card community-discover-card doke-card doke-community-card" data-community-discover-card data-community-card data-community-id="${escapeCommunityHtml(record.id)}" data-title="${escapeCommunityHtml(record.title)}" data-category="${categoryFilterFromRecord(record)}">
           <div class="community-card__cover">
@@ -512,8 +684,8 @@ window.DokeInitCommunity = function DokeInitCommunity() {
               <h2>${escapeCommunityHtml(record.title)}</h2>
             </div>
             <p>${escapeCommunityHtml(description)}</p>
-            <div class="community-card__meta"><span>Comunidade pública</span></div>
-            <button class="community-card__action doke-btn doke-btn--primary" data-community-public-join type="button">Participar</button>
+            <div class="community-card__meta"><span>${isPublic ? 'Comunidade pública' : 'Comunidade privada'}</span></div>
+            ${actionMarkup}
           </div>
         </article>
       `;
@@ -527,11 +699,10 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     const localSection = page.querySelector('[data-community-local-section]');
     if (!continueList) return;
     const currentProfile = getCurrentUserProfile();
-    const localCommunities = readLocalCommunities().filter((record) => isCurrentUserCommunityMember(record, currentProfile));
+    const localCommunities = readLocalCommunities().filter((record) => getCommunityRelationship(record, currentProfile) !== 'visitor');
     if (localSection) localSection.hidden = localCommunities.length === 0;
-    const existingIds = new Set([...continueList.querySelectorAll('[data-community-id]')]
-      .map((item) => item.dataset.communityId)
-      .filter(Boolean));
+    continueList.querySelectorAll('[data-community-local-card]').forEach((item) => item.remove());
+    const existingIds = new Set();
 
     localCommunities.forEach((record) => {
       if (!record?.id || existingIds.has(record.id)) return;
@@ -543,6 +714,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       card.dataset.title = record.title;
       card.dataset.communityId = record.id;
       card.dataset.cardKind = 'community';
+      card.dataset.communityLocalCard = '';
       const coverMarkup = record.coverDataUrl
         ? `<img alt="" loading="lazy" src="${escapeCommunityHtml(record.coverDataUrl)}"/>`
         : '';
@@ -551,7 +723,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
         <div class="community-continue-card__content">
           <span class="community-pill doke-chip">${categoryLabelFromRecord(record)}</span>
           <h3>${escapeCommunityHtml(record.title)}</h3>
-          <span class="community-activity">${deriveCommunityOwnerId(record) === String(currentProfile.id) ? 'Criada por você' : 'Acesso liberado'}</span>
+          <span class="community-activity">${getCommunityRelationship(record, currentProfile) === 'owner' ? 'Criada por você' : 'Acesso liberado'}</span>
           <div class="community-continue-card__meta"><span>${record.source === 'code' ? 'Entrou por código' : 'Comunidade local'}</span><span class="community-online">online</span></div>
         </div>
         <button class="community-open-button doke-btn" data-community-enter type="button">Abrir</button>
@@ -570,29 +742,36 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     }
   };
 
-  renderLocalCommunities();
-  renderDiscoverCommunities();
+  const renderCommunityCollections = () => {
+    renderLocalCommunities();
+    renderDiscoverCommunities();
+    applyFilters();
+  };
 
-  document.querySelectorAll('[data-community-enter]').forEach((button) => {
-    button.addEventListener('click', () => {
-      openCommunityRoom(getCommunityContextFromButton(button));
-    });
+  renderCommunityCollections();
+
+  page.addEventListener('click', (event) => {
+    const enterButton = event.target.closest('[data-community-enter]');
+    if (enterButton && page.contains(enterButton)) {
+      openCommunityRoom(getCommunityContextFromButton(enterButton));
+      return;
+    }
+
+    const requestButton = event.target.closest('[data-community-request]');
+    if (requestButton && page.contains(requestButton)) {
+      openRequestModal(requestButton);
+      return;
+    }
+
+    const joinButton = event.target.closest('[data-community-public-join]');
+    if (!joinButton || !page.contains(joinButton)) return;
+    const context = getCommunityContextFromButton(joinButton);
+    const record = readLocalCommunities().find((item) => String(item?.id || '') === String(context.id));
+    const result = joinPublicCommunity(record);
+    if (!result.ok) return;
+    openCommunityRoom(result.record);
   });
 
-  document.querySelectorAll('[data-community-request]').forEach((button) => {
-    button.addEventListener('click', () => openRequestModal(button));
-  });
-
-
-  document.querySelectorAll('[data-community-public-join]').forEach((button) => {
-    button.addEventListener('click', () => {
-      const context = getCommunityContextFromButton(button);
-      const record = readLocalCommunities().find((item) => String(item?.id || '') === String(context.id));
-      const result = joinPublicCommunity(record);
-      if (!result.ok) return;
-      openCommunityRoom(result.record);
-    });
-  });
 
   document.querySelectorAll('[data-community-request-close]').forEach((button) => {
     button.addEventListener('click', closeRequestModal);
@@ -624,15 +803,26 @@ window.DokeInitCommunity = function DokeInitCommunity() {
   if (requestForm && requestSuccess) {
     requestForm.addEventListener('submit', (event) => {
       event.preventDefault();
+      const result = submitPrivateCommunityRequest(activeRequestCommunityId, {
+        relation: requestRole?.value || '',
+        message: requestMessage?.value || ''
+      });
+      if (!result.ok) {
+        setActionFormFeedback(requestForm, result.message || 'Não foi possível enviar a solicitação.', 'error');
+        return;
+      }
       requestForm.hidden = true;
       requestSuccess.hidden = false;
       if (activeRequestButton) {
-        activeRequestButton.textContent = 'Solicitação enviada';
+        activeRequestButton.textContent = 'Solicitação pendente';
         activeRequestButton.classList.remove('community-card__action--request');
         activeRequestButton.classList.add('community-card__action--pending');
         activeRequestButton.disabled = true;
       }
-      window.setTimeout(closeRequestModal, 1800);
+      window.setTimeout(() => {
+        closeRequestModal();
+        renderCommunityCollections();
+      }, 1800);
     });
   }
 
@@ -663,6 +853,99 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     feedback.textContent = message;
     feedback.dataset.state = state;
     feedback.hidden = false;
+  };
+
+  const clearCommunityAccessRoute = () => {
+    const url = new URL(window.location.href);
+    ['communityAccess', 'community', 'title', 'reason'].forEach((key) => url.searchParams.delete(key));
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  };
+
+  const setCommunityAccessFeedback = (message, state = 'error') => {
+    if (!codeFeedback) return;
+    codeFeedback.textContent = message;
+    codeFeedback.dataset.state = state;
+  };
+
+  const findRenderedCommunityCard = (communityId) => [...page.querySelectorAll('[data-community-card]')]
+    .find((card) => String(card.dataset.communityId || '') === String(communityId || '')) || null;
+
+  const handleCommunityAccessRoute = () => {
+    const params = new URLSearchParams(window.location.search || '');
+    const action = String(params.get('communityAccess') || '').trim();
+    if (!action) return;
+
+    const communityId = String(params.get('community') || '').trim();
+    const record = readLocalCommunities().map(normalizeCommunityRecord)
+      .find((item) => String(item.id || '') === communityId) || null;
+    const card = findRenderedCommunityCard(communityId);
+
+    if (action === 'deleted' || isCommunityTombstoned(communityId)) {
+      setCommunityAccessFeedback('Esta comunidade foi excluída e não está mais disponível.', 'error');
+      codeInput?.focus?.();
+      clearCommunityAccessRoute();
+      return;
+    }
+
+    if (action === 'missing' || !record) {
+      setCommunityAccessFeedback('Esta comunidade não existe ou não está mais disponível.', 'error');
+      codeInput?.focus?.();
+      clearCommunityAccessRoute();
+      return;
+    }
+
+    const relationship = getCommunityRelationship(record);
+    if (relationship === 'owner' || relationship === 'member') {
+      clearCommunityAccessRoute();
+      openCommunityRoom(record);
+      return;
+    }
+
+    if (action === 'join') {
+      const button = card?.querySelector('[data-community-public-join]');
+      setCommunityAccessFeedback('Participe da comunidade pública para acessar a sala.', 'error');
+      card?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+      button?.focus?.();
+      clearCommunityAccessRoute();
+      return;
+    }
+
+    if (action === 'request') {
+      const button = card?.querySelector('[data-community-request]');
+      if (button && !button.disabled) openRequestModal(button);
+      else setCommunityAccessFeedback('Envie uma solicitação de entrada para acessar esta comunidade.', 'error');
+      clearCommunityAccessRoute();
+      return;
+    }
+
+    if (action === 'pending') {
+      setCommunityAccessFeedback('Sua solicitação ainda está aguardando análise. O acesso será liberado após a aprovação.', 'error');
+      card?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+      clearCommunityAccessRoute();
+      return;
+    }
+
+    if (action === 'left') {
+      setCommunityAccessFeedback('Você saiu da comunidade. As mensagens anteriores foram preservadas e o acesso pode ser solicitado novamente conforme a privacidade.', 'success');
+      card?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+      clearCommunityAccessRoute();
+      return;
+    }
+
+    if (action === 'invite') {
+      openActionModal(codeModal, codeTriggers[0] || null);
+      const modalFeedback = codeModal?.querySelector('[data-community-action-feedback]');
+      if (modalFeedback) {
+        modalFeedback.textContent = 'Esta comunidade só pode ser acessada com um código de convite válido.';
+        modalFeedback.dataset.state = 'error';
+        modalFeedback.hidden = false;
+      }
+      clearCommunityAccessRoute();
+      return;
+    }
+
+    setCommunityAccessFeedback('Você ainda não tem acesso a esta comunidade.', 'error');
+    clearCommunityAccessRoute();
   };
 
   const validateRequiredField = (field, message) => {
@@ -1072,19 +1355,30 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       const descriptionField = form.querySelector('textarea[name="communityDescription"]');
       const creator = getCurrentUserProfile();
       const members = [{ ...creator, role: 'owner' }, ...getSelectedCreateMembers()];
-      const record = upsertLocalCommunity({
+      const communityDraft = {
         id: createCommunityId(nameField.value),
         title: nameField.value.trim(),
         category: typeField?.value || 'Comunidade',
         description: descriptionField?.value || '',
         ownerId: creator.id,
+        ownerIdentityKeys: creator.identityKeys,
         createdById: creator.id,
         coverName: createCoverState.name,
         coverType: createCoverState.type,
         coverDataUrl: createCoverState.dataUrl,
         members,
         source: 'created'
+      };
+      const createOperation = getCommunityDomainOperations()?.create?.(communityDraft, {
+        type: 'COMMUNITY_CREATED', actorId: creator.id, targetId: communityDraft.id,
+        operationId: createCommunityOperationId('create', communityDraft.id, creator.id),
+        payload: { visibility: communityDraft.category }
       });
+      const record = createOperation?.ok ? createOperation.record : null;
+      if (!record) {
+        setActionFormFeedback(form, 'Não foi possível criar a comunidade. Tente novamente.', 'error');
+        return;
+      }
       setActionFormFeedback(form, 'Comunidade criada. Abrindo sala...', 'success');
       window.setTimeout(() => openCommunityRoom(record), 220);
     });
@@ -1145,7 +1439,17 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     });
   }
 
+  handleCommunityAccessRoute();
   applyFilters();
+  window.addEventListener('storage', (event) => {
+    if ([COMMUNITY_LIST_STORAGE_KEY, COMMUNITY_DELETED_STORAGE_KEY, COMMUNITY_LIFECYCLE_STORAGE_KEY].includes(event.key)) {
+      renderCommunityCollections();
+    }
+  });
+
+  document.addEventListener('doke:auth-session-change', renderCommunityCollections);
+  document.addEventListener('doke:auth-surface-ready', renderCommunityCollections);
+
 };
 
 if (document.readyState === 'loading') {

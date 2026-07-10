@@ -21,6 +21,25 @@
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
   --font-weight-extrabold: 800;
+
+  /* Canonical typography weights. Poppins is loaded only through 800, so
+     shared components must not request synthetic 850/900 weights. */
+  --doke-type-weight-regular: var(--font-weight-medium);
+  --doke-type-weight-emphasis: var(--font-weight-semibold);
+  --doke-type-weight-strong: var(--font-weight-bold);
+  --doke-type-weight-display: var(--font-weight-extrabold);
+  --doke-type-size-page-title: clamp(1.85rem, 2.4vw, 2.4rem);
+  --doke-type-size-section-title: clamp(1.05rem, 1.45vw, 1.35rem);
+  --doke-type-size-component-title: 1rem;
+  --doke-type-size-body: 0.95rem;
+  --doke-type-size-label: 0.78rem;
+  --doke-type-line-display: 1.08;
+  --doke-type-line-title: 1.16;
+  --doke-type-line-body: 1.5;
+  --doke-type-tracking-tight: -0.02em;
+  --doke-type-tracking-display: -0.035em;
+  --doke-type-tracking-label: 0.08em;
+  --doke-type-tracking-eyebrow: 0.12em;
   --line-height-tight: 1.1;
   --line-height-snug: 1.28;
   --line-height-normal: 1.45;
@@ -148,6 +167,18 @@
   --gradient-button-primary-angle: linear-gradient(135deg, #2a6fa9 0%, var(--color-primary-deep) 100%);
   --gradient-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.88));
   --gradient-avatar: linear-gradient(135deg, #1767ad 0%, #209886 100%);
+
+  /* Identity and media primitives. Size remains component/context-owned. */
+  --doke-avatar-background: var(--gradient-avatar);
+  --doke-avatar-color: #ffffff;
+  --doke-avatar-border: 2px solid rgba(255, 255, 255, 0.92);
+  --doke-avatar-shadow: 0 10px 24px rgba(22, 67, 115, 0.14);
+  --doke-avatar-status-background: var(--color-secondary);
+  --doke-avatar-status-border: 2px solid var(--color-surface);
+  --doke-media-object-fit: cover;
+  --doke-media-object-position: center;
+  --doke-media-placeholder-bg: var(--color-surface-muted);
+  --doke-media-placeholder-color: var(--color-muted);
   --gradient-page: #f5f6f8;
 
   /* Shadows ------------------------------------------------------------- */
@@ -222,6 +253,33 @@
   --doke-visual-focus-ring: var(--doke-interaction-focus-ring);
   --doke-visual-muted-bg: rgba(var(--color-primary-rgb), 0.08);
   --doke-visual-muted-bg-hover: rgba(var(--color-primary-rgb), 0.11);
+
+  /* Mobile chrome contracts -------------------------------------------
+     Shared visual primitives for the canonical mobile app shell and the
+     Home mobile hero. Geometry remains owned by the shell/page contracts. */
+  --doke-mobile-chrome-surface: rgba(255, 255, 255, 0.98);
+  --doke-mobile-chrome-surface-solid: var(--color-surface);
+  --doke-mobile-chrome-backdrop-start: #eef6fb;
+  --doke-mobile-chrome-backdrop-mid: rgba(238, 246, 251, 0.96);
+  --doke-mobile-chrome-backdrop-end: rgba(238, 246, 251, 0.72);
+  --doke-mobile-chrome-border: rgba(var(--color-primary-rgb), 0.14);
+  --doke-mobile-chrome-shadow: 0 -8px 20px rgba(19, 48, 80, 0.08);
+  --doke-mobile-chrome-muted: #7d91aa;
+  --doke-mobile-chrome-success: #20d4a3;
+  --doke-mobile-chrome-success-ring: 0 0 0 4px rgba(32, 212, 163, 0.14);
+  --doke-mobile-chrome-secondary-bg: #dcfbf1;
+  --doke-mobile-chrome-secondary-text: #08796d;
+  --doke-mobile-chrome-avatar-gradient: linear-gradient(145deg, #13c3c4, #176b8a);
+  --doke-mobile-chrome-avatar-text: #ffffff;
+  --doke-mobile-chrome-font-weight-strong: 800;
+  --doke-mobile-chrome-letter-spacing: -0.02em;
+
+  /* Home mobile hero visual aliases. Layout remains page-owned. */
+  --doke-home-mobile-hero-shadow: 0 14px 30px rgba(35, 79, 120, 0.22);
+  --doke-home-mobile-search-border: rgba(226, 235, 245, 0.96);
+  --doke-home-mobile-search-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72), 0 8px 20px rgba(15, 35, 62, 0.10);
+  --doke-home-mobile-filter-bg: #d9faeb;
+  --doke-home-mobile-filter-text: #15936f;
 
   /* Modal surface system ----------------------------------------------- */
   --modal-backdrop-bg: rgba(17, 36, 59, 0.58);
@@ -533,10 +591,18 @@
   --state-title-color: var(--color-primary-deep);
   --state-title-size: var(--font-size-lg);
   --state-title-size-compact: var(--font-size-md);
+  --state-title-weight: var(--font-weight-extrabold);
+  --state-title-line-height: var(--line-height-snug);
+  --state-title-letter-spacing: -0.02em;
   --state-description-color: var(--color-text-muted);
   --state-description-size: var(--font-size-sm);
+  --state-description-weight: var(--font-weight-medium);
   --state-description-line-height: var(--line-height-relaxed);
   --state-action-gap: var(--space-2);
+  --state-accent-bg: var(--control-bg-soft-secondary);
+  --state-accent-border: var(--control-outline-soft-secondary);
+  --state-accent-color: var(--color-secondary-strong);
+  --state-focus-ring: var(--doke-visual-focus-ring);
   --state-loading-surface: #e4eef6;
   --state-loading-sheen: rgba(255, 255, 255, 0.72);
   --state-loading-duration: 1.25s;
@@ -753,6 +819,19 @@
   --doke-worker-card-width: 210px;
   --doke-worker-card-height: 292px;
   --doke-comparison-card-width: 286px;
+
+  /* Domain typography, metadata and icon rhythm ------------------------- */
+  --doke-type-tracking-display: -0.04em;
+  --doke-type-tracking-title: -0.025em;
+  --doke-type-tracking-meta: 0;
+  --doke-type-tracking-label: 0.08em;
+  --doke-type-tracking-status: 0.01em;
+  --doke-meta-text: var(--color-text-secondary);
+  --doke-meta-text-strong: var(--color-text);
+  --doke-icon-size-sm: 16px;
+  --doke-icon-size-md: 20px;
+  --doke-icon-size-lg: 24px;
+  --doke-icon-surface-size: 42px;
 
   /* Transitions --------------------------------------------------------- */
   --transition-fast: 180ms ease;

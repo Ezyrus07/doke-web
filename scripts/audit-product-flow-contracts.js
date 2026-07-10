@@ -28,6 +28,30 @@ const requiredCssTokens = [
   '.doke-settings-flow',
 ];
 
+function stripQuery(value) { return value.split('?')[0].split('#')[0]; }
+function cssGraphLoads(html, targetPath) {
+  if (html.includes(targetPath)) return true;
+  const links = [...html.matchAll(/<link[^>]+rel=["']stylesheet["'][^>]+href=["']([^"']+)["'][^>]*>/g)]
+    .map(match => stripQuery(match[1]));
+  const visited = new Set();
+  function loads(cssRel) {
+    const normalized = stripQuery(cssRel).replace(/^\.\//, '');
+    if (visited.has(normalized)) return false;
+    visited.add(normalized);
+    const abs = path.join(root, normalized);
+    if (!fs.existsSync(abs)) return false;
+    const css = fs.readFileSync(abs, 'utf8');
+    if (css.includes(targetPath)) return true;
+    const imports = [...css.matchAll(/@import\s+(?:url\()?\s*["']([^"']+)["']\s*\)?/g)]
+      .map(match => stripQuery(match[1]));
+    return imports.some(imported => {
+      const resolved = path.normalize(path.join(path.dirname(normalized), imported)).replace(/\\/g, '/');
+      return resolved === targetPath || loads(resolved);
+    });
+  }
+  return links.some(loads);
+}
+
 let errors = [];
 let counts = { linkedPages: 0, flowClasses: 0 };
 
@@ -48,7 +72,7 @@ for (const page of pages) {
     continue;
   }
   const html = fs.readFileSync(abs, 'utf8');
-  if (!html.includes(cssPath)) {
+  if (!cssGraphLoads(html, cssPath)) {
     errors.push(`${page} does not load ${cssPath}`);
   } else {
     counts.linkedPages += 1;

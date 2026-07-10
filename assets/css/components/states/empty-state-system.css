@@ -3,13 +3,13 @@
    Page CSS may position the state; this contract owns surface, type rhythm and actions. */
 :root {
   --doke-empty-surface-bg: var(--doke-visual-surface-raised);
-  --doke-empty-surface-border: var(--border-color-soft);
-  --doke-empty-surface-shadow: var(--doke-visual-shadow);
-  --doke-empty-title: var(--doke-primary-strong, #073b69);
-  --doke-empty-text: var(--doke-text-secondary, #5f7893);
-  --doke-empty-accent-bg: rgba(24, 154, 137, 0.10);
-  --doke-empty-accent-border: rgba(24, 154, 137, 0.16);
-  --doke-empty-accent: #08795f;
+  --doke-empty-surface-border: var(--state-surface-border-color);
+  --doke-empty-surface-shadow: var(--state-surface-shadow);
+  --doke-empty-title: var(--state-title-color);
+  --doke-empty-text: var(--state-description-color);
+  --doke-empty-accent-bg: var(--state-accent-bg);
+  --doke-empty-accent-border: var(--state-accent-border);
+  --doke-empty-accent: var(--state-accent-color);
 }
 
 .doke-empty-state:not(.orders-planner__empty) {
@@ -19,9 +19,9 @@
   display: grid;
   align-items: center;
   justify-items: center;
-  gap: var(--doke-empty-gap, 12px);
+  gap: var(--doke-empty-gap, var(--state-gap));
   padding: var(--doke-empty-padding, clamp(20px, 3vw, 34px));
-  border: 1px solid var(--doke-empty-surface-border);
+  border: var(--border-width) var(--border-style) var(--doke-empty-surface-border);
   border-radius: var(--doke-empty-radius, clamp(24px, 2.4vw, 32px));
   background: var(--doke-empty-surface-bg);
   box-shadow: var(--doke-empty-surface-shadow);
@@ -33,9 +33,9 @@
   margin: 0;
   color: var(--doke-empty-title);
   font-size: var(--doke-empty-title-size, clamp(1.08rem, 1.7vw, 1.55rem));
-  font-weight: 850;
-  line-height: 1.08;
-  letter-spacing: -0.035em;
+  font-weight: var(--state-title-weight);
+  line-height: var(--state-title-line-height);
+  letter-spacing: var(--state-title-letter-spacing);
 }
 
 .doke-empty-state:not(.orders-planner__empty) :is(p, span, .messages-empty__text, [data-results-empty-text]) {
@@ -43,19 +43,19 @@
   margin: 0;
   color: var(--doke-empty-text);
   font-size: var(--doke-empty-text-size, clamp(0.9rem, 1.08vw, 1.05rem));
-  font-weight: 600;
-  line-height: 1.45;
+  font-weight: var(--state-description-weight);
+  line-height: var(--state-description-line-height);
 }
 
 .doke-empty-state:not(.orders-planner__empty) :is(.doke-badge, .orders-empty__badge, .wallet-eyebrow) {
   justify-self: center;
-  min-height: 28px;
-  padding-inline: 14px;
+  min-height: var(--badge-height);
+  padding-inline: var(--badge-padding-x);
   border: 1px solid var(--doke-empty-accent-border);
   background: var(--doke-empty-accent-bg);
   color: var(--doke-empty-accent);
-  font-size: 0.72rem;
-  font-weight: 850;
+  font-size: var(--text-caption);
+  font-weight: var(--font-weight-bold);
 }
 
 .doke-empty-state:not(.orders-planner__empty) :is(.doke-list-state__actions, .results-inline-empty__actions, .orders-empty__actions, .communities-empty-v2__actions) {
@@ -63,14 +63,14 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: var(--state-action-gap);
   width: 100%;
 }
 
 .doke-empty-state:not(.orders-planner__empty) :is(.doke-btn, .orders-empty__button, .results-empty__button, .communities-empty-v2__button) {
-  min-height: 44px;
-  border-radius: var(--radius-pill, 999px);
-  font-weight: 850;
+  min-height: var(--control-height-md);
+  border-radius: var(--radius-pill);
+  font-weight: var(--control-font-weight);
 }
 
 .orders-empty.doke-empty-state {
@@ -124,9 +124,9 @@
   width: 52px;
   height: 52px;
   border-radius: 18px;
-  background: rgba(33, 103, 174, 0.10);
-  color: #2167ae;
-  font-weight: 900;
+  background: var(--state-icon-bg);
+  color: var(--state-icon-color);
+  font-weight: var(--font-weight-extrabold);
 }
 
 .communities-empty-v2__copy {
