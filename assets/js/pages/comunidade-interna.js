@@ -38,8 +38,11 @@
   var attachmentTitle = root.querySelector('[data-community-attachment-title]');
   var attachmentCancel = root.querySelector('[data-community-attachment-cancel]');
   var memberSearch = root.querySelector('[data-community-member-search]');
+  var memberAddToggle = root.querySelector('[data-community-member-add-toggle]');
+  var memberCandidates = root.querySelector('[data-community-member-candidates]');
   var memberList = root.querySelector('[data-community-member-list]');
   var members = Array.prototype.slice.call(root.querySelectorAll('[data-member-search]'));
+  var memberCandidateItems = [];
   var currentChannelName = 'Comunidade';
   var selectedAttachment = '';
   var audioDraftSeconds = 0;
@@ -48,6 +51,8 @@
   var COMMUNITY_SELECTION_STORAGE_KEY = 'doke.community.selected.v1';
   var COMMUNITY_LIST_STORAGE_KEY = 'doke.communities.local.v1';
   var COMMUNITY_MESSAGES_STORAGE_KEY = 'doke.community.messages.local.v1';
+  var CONVERSATIONS_STORAGE_KEY = 'doke.conversations.local.v1';
+  var LEGACY_CONVERSATIONS_STORAGE_KEY = 'doke.conversations';
   var currentCommunityContext = null;
   var currentChannelId = 'geral';
 
@@ -94,6 +99,46 @@
     } catch (error) {
       return [];
     }
+  }
+
+
+  function writeLocalCommunities(communities) {
+    try {
+      window.localStorage && window.localStorage.setItem(COMMUNITY_LIST_STORAGE_KEY, JSON.stringify(Array.isArray(communities) ? communities : []));
+    } catch (error) {
+      // Local storage can be unavailable in restricted browser contexts.
+    }
+  }
+
+  function readLocalConversations() {
+    var merged = [];
+    [CONVERSATIONS_STORAGE_KEY, LEGACY_CONVERSATIONS_STORAGE_KEY].forEach(function (key) {
+      try {
+        var parsed = safeJsonParse(window.localStorage && window.localStorage.getItem(key));
+        if (Array.isArray(parsed)) merged = merged.concat(parsed);
+      } catch (error) {
+        // Ignore unreadable local conversation payloads.
+      }
+    });
+    return merged.filter(function (conversation) { return conversation && (conversation.id || conversation.peerName || conversation.name); });
+  }
+
+  function getConversationMemberCandidates() {
+    var unique = new Map();
+    readLocalConversations().forEach(function (conversation) {
+      var name = String(conversation.peerName || conversation.name || conversation.clientName || conversation.professionalName || conversation.providerName || '').trim();
+      if (!name || name.toLowerCase() === 'você') return;
+      var id = String(conversation.peerId || conversation.clientId || conversation.professionalId || conversation.providerId || conversation.id || slugifyCommunity(name)).trim();
+      if (!id) id = slugifyCommunity(name);
+      if (unique.has(id)) return;
+      unique.set(id, {
+        id: id,
+        name: name,
+        role: 'member',
+        source: 'messages'
+      });
+    });
+    return Array.prototype.slice.call(unique.values());
   }
 
   function getCurrentUserProfile() {
@@ -197,6 +242,47 @@
     }) || null;
   }
 
+
+  function saveCurrentCommunityRecord(nextRecord) {
+    if (!nextRecord) return null;
+    var context = currentCommunityContext || getCommunityContextFromLocation();
+    var id = String(nextRecord.id || context.id || slugifyCommunity(nextRecord.title || context.title)).trim();
+    var title = String(nextRecord.title || nextRecord.name || context.title || 'Comunidade Doke').trim();
+    var communities = readLocalCommunities();
+    var index = communities.findIndex(function (item) {
+      var itemId = String(item.id || item.community || '').trim();
+      var itemTitle = String(item.title || item.name || '').trim();
+      return (id && itemId === id) || (title && itemTitle === title) || (id && slugifyCommunity(itemTitle) === id);
+    });
+    var saved = Object.assign({}, index >= 0 ? communities[index] : {}, nextRecord, {
+      id: id,
+      title: title,
+      name: title,
+      category: nextRecord.category || context.category || nextRecord.category || '',
+      updatedAt: new Date().toISOString()
+    });
+    if (index >= 0) {
+      communities[index] = saved;
+    } else {
+      communities.unshift(saved);
+    }
+    writeLocalCommunities(communities);
+    return saved;
+  }
+
+  function updateCurrentCommunityMembers(updater) {
+    var record = getCurrentCommunityRecord() || {
+      id: getCurrentCommunityId(),
+      title: root.dataset.communityTitle || currentChannelName || 'Comunidade Doke',
+      category: currentCommunityContext && currentCommunityContext.category || '',
+      members: []
+    };
+    var current = Array.isArray(record.members) ? record.members.slice() : [];
+    var nextMembers = typeof updater === 'function' ? updater(current) : current;
+    record.members = (Array.isArray(nextMembers) ? nextMembers : []).map(normalizeCommunityMember).filter(Boolean);
+    return saveCurrentCommunityRecord(record);
+  }
+
   function getCommunityMembers() {
     var record = getCurrentCommunityRecord();
     var rawMembers = record && Array.isArray(record.members) ? record.members : [];
@@ -240,6 +326,7 @@
     var item = document.createElement('article');
     item.className = 'community-room-member';
     item.dataset.memberSearch = [member.name, member.role, member.source].join(' ');
+    item.dataset.communityMemberId = member.id;
     var avatar = document.createElement('b');
     avatar.className = 'doke-avatar';
     avatar.textContent = getMemberInitials(member.name);
@@ -252,7 +339,52 @@
     var role = document.createElement('em');
     role.textContent = member.role === 'owner' ? 'Administrador' : 'Membro';
     item.append(avatar, identity, role);
+    if (member.role !== 'owner') {
+      var remove = document.createElement('button');
+      remove.className = 'community-room-member__remove doke-btn doke-btn--ghost doke-btn--sm';
+      remove.type = 'button';
+      remove.dataset.communityMemberRemove = member.id;
+      remove.textContent = 'Remover';
+      item.appendChild(remove);
+    }
     return item;
+  }
+
+  function createMemberCandidateItem(member) {
+    var item = document.createElement('article');
+    item.className = 'community-room-member-candidate';
+    item.dataset.memberCandidateSearch = [member.name, member.role, member.source].join(' ');
+    item.dataset.communityMemberCandidateId = member.id;
+    var avatar = document.createElement('b');
+    avatar.className = 'doke-avatar';
+    avatar.textContent = getMemberInitials(member.name);
+    var identity = document.createElement('div');
+    var name = document.createElement('strong');
+    name.textContent = member.name;
+    var source = document.createElement('span');
+    source.textContent = 'Contato das mensagens';
+    identity.append(name, source);
+    var add = document.createElement('button');
+    add.className = 'doke-btn doke-btn--secondary doke-btn--sm';
+    add.type = 'button';
+    add.dataset.communityMemberAdd = member.id;
+    add.textContent = 'Adicionar';
+    item.append(avatar, identity, add);
+    return item;
+  }
+
+  function renderMemberCandidates() {
+    if (!memberCandidates) return;
+    memberCandidates.innerHTML = '';
+    var existingIds = new Set(getCommunityMembers().map(function (member) { return String(member.id); }));
+    var candidates = getConversationMemberCandidates().filter(function (candidate) { return !existingIds.has(String(candidate.id)); });
+    candidates.forEach(function (candidate) {
+      memberCandidates.appendChild(createMemberCandidateItem(candidate));
+    });
+    if (!candidates.length) {
+      memberCandidates.appendChild(createPanelEmptyState('Nenhum contato disponível', 'Quando houver conversas recentes, você poderá adicionar pessoas por aqui.'));
+    }
+    memberCandidateItems = Array.prototype.slice.call(memberCandidates.querySelectorAll('[data-member-candidate-search]'));
   }
 
   function renderCommunityMembers() {
@@ -266,6 +398,7 @@
       memberList.appendChild(createPanelEmptyState('Nenhum membro adicionado', 'Convide pessoas pelas mensagens ao criar ou editar a comunidade.'));
     }
     members = Array.prototype.slice.call(memberList.querySelectorAll('[data-member-search]'));
+    if (memberCandidates && !memberCandidates.hidden) renderMemberCandidates();
   }
 
   function getChannelMessageCount(channelId) {
@@ -890,12 +1023,69 @@
     });
   });
 
+  function filterMemberPanelItems() {
+    var term = normalize(memberSearch && memberSearch.value);
+    members.forEach(function (member) {
+      member.hidden = Boolean(term) && normalize(member.dataset.memberSearch).indexOf(term) === -1;
+    });
+    memberCandidateItems.forEach(function (candidate) {
+      candidate.hidden = Boolean(term) && normalize(candidate.dataset.memberCandidateSearch).indexOf(term) === -1;
+    });
+  }
+
   if (memberSearch) {
-    memberSearch.addEventListener('input', function () {
-      var term = normalize(memberSearch.value);
-      members.forEach(function (member) {
-        member.hidden = term && normalize(member.dataset.memberSearch).indexOf(term) === -1;
+    memberSearch.addEventListener('input', filterMemberPanelItems);
+  }
+
+  if (memberAddToggle && memberCandidates) {
+    memberAddToggle.addEventListener('click', function () {
+      var shouldOpen = memberCandidates.hidden;
+      memberCandidates.hidden = !shouldOpen;
+      memberAddToggle.textContent = shouldOpen ? 'Ocultar contatos' : 'Adicionar das mensagens';
+      memberAddToggle.setAttribute('aria-expanded', String(shouldOpen));
+      if (shouldOpen) {
+        renderMemberCandidates();
+        filterMemberPanelItems();
+      }
+    });
+  }
+
+  if (memberCandidates) {
+    memberCandidates.addEventListener('click', function (event) {
+      var button = event.target.closest('[data-community-member-add]');
+      if (!button || !memberCandidates.contains(button)) return;
+      var id = String(button.dataset.communityMemberAdd || '').trim();
+      var candidate = getConversationMemberCandidates().find(function (item) { return String(item.id) === id; });
+      if (!candidate) return;
+      updateCurrentCommunityMembers(function (currentMembers) {
+        var normalized = currentMembers.map(normalizeCommunityMember).filter(Boolean);
+        if (!normalized.some(function (member) { return String(member.id) === String(candidate.id); })) {
+          normalized.push(candidate);
+        }
+        return normalized;
       });
+      renderCommunityMembers();
+      renderMemberCandidates();
+      updateRoomStats();
+      filterMemberPanelItems();
+    });
+  }
+
+  if (memberList) {
+    memberList.addEventListener('click', function (event) {
+      var button = event.target.closest('[data-community-member-remove]');
+      if (!button || !memberList.contains(button)) return;
+      var id = String(button.dataset.communityMemberRemove || '').trim();
+      if (!id) return;
+      updateCurrentCommunityMembers(function (currentMembers) {
+        return currentMembers.map(normalizeCommunityMember).filter(function (member) {
+          return member && String(member.id) !== id;
+        });
+      });
+      renderCommunityMembers();
+      renderMemberCandidates();
+      updateRoomStats();
+      filterMemberPanelItems();
     });
   }
 

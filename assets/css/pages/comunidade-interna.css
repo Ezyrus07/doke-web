@@ -881,3 +881,124 @@ body[data-page="comunidade-interna"] .community-room-message__actions .doke-btn[
     border-radius: 18px 18px 8px 18px;
   }
 }
+
+/* Community room member management and message alignment.
+ * Responsibility: keep self messages aligned to the thread edge and allow
+ * lightweight local member edits without reintroducing example content.
+ */
+body[data-page="comunidade-interna"] .community-room-thread__body .community-room-message {
+  width: 100%;
+  max-width: 100%;
+}
+
+body[data-page="comunidade-interna"] .community-room-thread__body .community-room-message--self {
+  justify-content: flex-end;
+  justify-self: stretch;
+  margin-left: 0;
+}
+
+body[data-page="comunidade-interna"] .community-room-thread__body .community-room-message--self .community-room-message__bubble {
+  justify-self: end;
+}
+
+body[data-page="comunidade-interna"] .community-room-member-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+body[data-page="comunidade-interna"] .community-room-member-tools .doke-btn {
+  min-height: 38px;
+  padding-inline: 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+body[data-page="comunidade-interna"] .community-room-member-candidates {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(198, 214, 232, 0.92);
+  border-radius: var(--radius-md);
+  background: rgba(245, 250, 255, 0.86);
+}
+
+body[data-page="comunidade-interna"] .community-room-member-candidates[hidden] {
+  display: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-member-candidate {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid rgba(198, 214, 232, 0.92);
+  border-radius: var(--radius-md);
+  background: #fff;
+  box-shadow: var(--doke-elevation-surface);
+}
+
+body[data-page="comunidade-interna"] .community-room-member-candidate b {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, #2fbda6 0%, #2f64b5 100%);
+  color: #fff;
+  font-size: 0.86rem;
+  font-weight: 850;
+}
+
+body[data-page="comunidade-interna"] .community-room-member-candidate > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+body[data-page="comunidade-interna"] .community-room-member-candidate strong {
+  color: #123b68;
+  font-size: 0.88rem;
+  line-height: 1.2;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+body[data-page="comunidade-interna"] .community-room-member-candidate span {
+  color: #6c86a6;
+  font-size: 0.74rem;
+  line-height: 1.2;
+  font-weight: 750;
+}
+
+body[data-page="comunidade-interna"] .community-room-member-candidate .doke-btn,
+body[data-page="comunidade-interna"] .community-room-member__remove {
+  min-height: 32px;
+  padding-inline: 11px;
+  border-radius: var(--radius-pill);
+  font-size: 0.74rem;
+  font-weight: 850;
+}
+
+body[data-page="comunidade-interna"] .community-room-member__remove {
+  grid-area: role;
+  justify-self: end;
+}
+
+@media (max-width: 560px) {
+  body[data-page="comunidade-interna"] .community-room-member-candidate {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  body[data-page="comunidade-interna"] .community-room-member-candidate .doke-btn {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-member__remove {
+    justify-self: start;
+  }
+}
