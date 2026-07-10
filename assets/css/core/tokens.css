@@ -181,6 +181,48 @@
   --doke-elevation-card: var(--shadow-card);
   --doke-elevation-card-hover: var(--shadow-card-hover);
 
+  /* Interaction states --------------------------------------------------
+     Use these semantic tokens before adding local hover/focus values.
+     Controls lift lightly, cards lift a little more, media zooms subtly. */
+  --doke-interaction-duration: var(--transition-fast);
+  --doke-interaction-easing: ease;
+  --doke-interaction-transition: transform var(--doke-interaction-duration), box-shadow var(--doke-interaction-duration), background-color var(--doke-interaction-duration), border-color var(--doke-interaction-duration), color var(--doke-interaction-duration), opacity var(--doke-interaction-duration), filter var(--doke-interaction-duration);
+  --doke-interaction-lift-control: translateY(-1px);
+  --doke-interaction-lift-card: translateY(-2px);
+  --doke-interaction-press: translateY(0);
+  --doke-interaction-shift-inline: translateX(2px);
+  --doke-interaction-border: var(--control-outline-soft-primary-hover);
+  --doke-interaction-bg: var(--control-bg-soft-primary-hover);
+  --doke-interaction-text: var(--color-primary-strong);
+  --doke-interaction-text-secondary: var(--color-secondary-strong);
+  --doke-interaction-shadow-control: var(--doke-elevation-control-hover);
+  --doke-interaction-shadow-surface: var(--doke-elevation-surface-hover);
+  --doke-interaction-shadow-card: var(--doke-elevation-card-hover);
+  --doke-interaction-media-scale: scale(1.018);
+  --doke-interaction-media-filter: saturate(1.04) contrast(1.02);
+  --doke-interaction-focus-ring: var(--shadow-focus);
+
+  /* Cross-family visual contracts ---------------------------------------
+     These aliases let buttons, forms, cards, modals, chips and page-owned
+     surfaces consume the same primitives without inventing page-specific
+     colors, shadows, radii or focus treatments. */
+  --doke-visual-surface: var(--color-surface);
+  --doke-visual-surface-raised: var(--color-surface-raised);
+  --doke-visual-surface-muted: var(--color-surface-muted);
+  --doke-visual-border: var(--border-soft);
+  --doke-visual-border-muted: var(--border-muted);
+  --doke-visual-border-strong: var(--border-strong);
+  --doke-visual-radius-sm: var(--radius-sm);
+  --doke-visual-radius: var(--radius-surface);
+  --doke-visual-radius-lg: var(--radius-lg);
+  --doke-visual-shadow: var(--doke-elevation-surface);
+  --doke-visual-shadow-hover: var(--doke-elevation-surface-hover);
+  --doke-visual-control-shadow: var(--doke-elevation-control);
+  --doke-visual-control-shadow-hover: var(--doke-elevation-control-hover);
+  --doke-visual-focus-ring: var(--doke-interaction-focus-ring);
+  --doke-visual-muted-bg: rgba(var(--color-primary-rgb), 0.08);
+  --doke-visual-muted-bg-hover: rgba(var(--color-primary-rgb), 0.11);
+
   /* Modal surface system ----------------------------------------------- */
   --modal-backdrop-bg: rgba(17, 36, 59, 0.58);
   --modal-backdrop-blur: blur(14px) saturate(115%);
@@ -199,6 +241,34 @@
   --modal-close-border: var(--border-width) var(--border-style) var(--control-outline-soft-primary);
   --modal-close-border-hover: var(--border-width) var(--border-style) var(--control-outline-soft-primary-hover);
   --modal-footer-bg: linear-gradient(180deg, #fbfdff 0%, #f8fbff 100%);
+
+  /* Cross-overlay aliases ----------------------------------------------
+     Use these for modal, drawer, lightbox and popover elevation. They keep
+     overlays visually aligned without forcing every surface into the same
+     component class. */
+  --doke-overlay-bg: var(--modal-backdrop-bg);
+  --doke-overlay-blur: 14px;
+  --doke-overlay-border-color: var(--modal-surface-border-color);
+  --doke-overlay-border: var(--modal-surface-border);
+  --doke-overlay-surface: var(--modal-surface-bg);
+  --doke-overlay-surface-muted: var(--modal-surface-bg-soft);
+  --doke-overlay-shadow: var(--modal-surface-shadow);
+  --doke-overlay-radius: var(--radius-modal);
+  --doke-overlay-radius-mobile: var(--radius-lg);
+  --doke-overlay-control-shadow: var(--shadow-control-soft);
+  --doke-overlay-control-shadow-hover: var(--shadow-control-hover);
+  --doke-overlay-action-shadow: 0 12px 24px rgba(var(--color-primary-rgb), 0.18);
+  --doke-overlay-media-shadow: 0 24px 70px rgba(8, 27, 48, 0.30);
+  --doke-overlay-popover-shadow: var(--shadow-surface-popover);
+  --doke-overlay-inset-highlight: 0 1px 0 rgba(255, 255, 255, 0.72) inset;
+
+  /* Close-button aliases consumed by modal, drawer, lightbox and help/AI panels. */
+  --doke-close-button-size: var(--close-button-size);
+  --doke-close-button-radius: var(--radius-pill);
+  --doke-close-button-bg: var(--modal-close-bg);
+  --doke-close-button-hover-bg: var(--modal-close-bg-hover);
+  --doke-close-button-color: var(--color-primary-strong);
+  --doke-close-button-border: var(--control-outline-soft-primary);
 
   /* Radius -------------------------------------------------------------- */
   --radius-2xs: 8px;

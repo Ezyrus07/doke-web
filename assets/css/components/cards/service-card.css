@@ -8,14 +8,14 @@
   border: var(--border-width) var(--border-style) transparent;
   background: var(--card-bg);
   box-shadow: var(--card-shadow);
-  transition: var(--card-transition);
+  transition: var(--doke-interaction-transition);
 }
 
 .service-card:hover,
 .service-card:focus-within {
-  box-shadow: var(--card-shadow-hover);
+  box-shadow: var(--doke-interaction-shadow-card);
   border-color: transparent;
-  transform: translateY(-1px);
+  transform: var(--doke-interaction-lift-control);
 }
 
 .service-card__media {
@@ -246,14 +246,14 @@
   font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
-  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  transition: var(--doke-interaction-transition);
 }
 
 .service-card__tags span:hover,
 .service-card__tags span:focus-visible {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 16px rgba(44, 91, 143, 0.14);
-  background: #e3eefb;
+  transform: var(--doke-interaction-lift-control);
+  box-shadow: var(--doke-interaction-shadow-control);
+  background: var(--doke-interaction-bg);
 }
 
 .service-card__footer,
@@ -326,28 +326,17 @@
 }
 
 
-/* commit33: stronger desktop hover language for home cards/buttons without breaking layout */
+/* commit33: stronger desktop hover language for service cards/buttons without breaking layout */
 .service-card,
 .service-card__media,
-.service-card__cta,
-.home-catégory__icon,
-.home-catégory__label,
-.mini-tab,
-.filter-toggle,
-.content-rail__arrow {
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease,
-    border-color 180ms ease,
-    background-color 180ms ease,
-    color 180ms ease,
-    opacity 180ms ease;
+.service-card__cta {
+  transition: var(--doke-interaction-transition);
 }
 
 @media (min-width: 1025px) {
   body.home-index-shell .service-card:hover,
   body.home-index-shell .service-card:focus-within {
-    transform: translateY(-4px);
+    transform: var(--doke-interaction-lift-card);
     box-shadow: none;
     border-color: rgba(82, 137, 198, 0.22);
   }
@@ -359,32 +348,8 @@
 
   body.home-index-shell .service-card__cta:hover,
   body.home-index-shell .service-card__cta:focus-visible {
-    transform: translateY(-1px);
-    box-shadow: 0 14px 24px rgba(27, 138, 120, 0.22);
-  }
-
-  body.home-index-shell .home-catégory:hover .home-catégory__icon,
-  body.home-index-shell .home-catégory:focus-visible .home-catégory__icon {
-    transform: none;
-    box-shadow: none;
-    border-color: transparent;
-    background: #fbfdff;
-  }
-
-  body.home-index-shell .home-catégory:focus-visible .home-catégory__icon {
-    outline: 2px solid rgba(42, 95, 144, 0.24);
-    outline-offset: 3px;
-  }
-
-  body.home-index-shell .home-catégory:hover .home-catégory__label,
-  body.home-index-shell .home-catégory:focus-visible .home-catégory__label {
-    color: #294e7a;
-  }
-
-  body.home-index-shell .mini-tab:hover,
-  body.home-index-shell .filter-toggle:hover,
-  body.home-index-shell .content-rail__arrow:hover {
-    transform: translateY(-1px);
+    transform: var(--doke-interaction-lift-control);
+    box-shadow: var(--shadow-action-secondary-strong);
   }
 }
 
@@ -394,11 +359,7 @@
   body.home-index-shell .service-card,
   body.home-index-shell .comparison-card,
   body.home-index-shell .video-card,
-  body.home-index-shell .pro-card,
-  body.home-index-shell .home-catégory__icon,
-  body.home-index-shell .mini-tab,
-  body.home-index-shell .filter-toggle,
-  body.home-index-shell .content-rail__arrow {
+  body.home-index-shell .pro-card {
     transition:
       transform 180ms ease,
       box-shadow 180ms ease,
@@ -411,9 +372,9 @@
 
   body.home-index-shell .service-card:hover,
   body.home-index-shell .service-card:focus-within {
-    transform: translateY(-5px);
-    box-shadow: 0 22px 38px rgba(21, 45, 73, 0.16);
-    border-color: rgba(76, 133, 198, 0.24);
+    transform: var(--doke-interaction-lift-card);
+    box-shadow: var(--doke-interaction-shadow-card);
+    border-color: var(--doke-interaction-border);
   }
 
   body.home-index-shell .service-card:hover .service-card__media,
@@ -423,29 +384,29 @@
 
   body.home-index-shell .service-card:hover .service-card__media-content,
   body.home-index-shell .service-card:focus-within .service-card__media-content {
-    transform: translateY(-3px);
+    transform: var(--doke-interaction-lift-control);
   }
 
   body.home-index-shell .service-card:hover .service-card__price,
   body.home-index-shell .service-card:focus-within .service-card__price {
-    color: #0d365d;
-    transform: translateX(2px);
+    color: var(--color-heading);
+    transform: var(--doke-interaction-shift-inline);
   }
 
   body.home-index-shell .comparison-card:hover,
   body.home-index-shell .comparison-card:focus-within,
   body.home-index-shell .pro-card:hover,
   body.home-index-shell .pro-card:focus-within {
-    transform: translateY(-4px);
+    transform: var(--doke-interaction-lift-card);
     box-shadow: none;
-    border-color: rgba(76, 133, 198, 0.22);
+    border-color: var(--doke-interaction-border);
   }
 
   body.home-index-shell .video-card:hover,
   body.home-index-shell .video-card:focus-within {
-    transform: translateY(-4px);
+    transform: var(--doke-interaction-lift-card);
     box-shadow: inset 0 -110px 90px rgba(6, 12, 22, 0.62);
-    border-color: rgba(132, 176, 224, 0.22);
+    border-color: var(--doke-interaction-border);
   }
 
   body.home-index-shell .service-card:hover .service-card__media,
@@ -453,31 +414,6 @@
     opacity: 0.99;
   }
 
-
-  body.home-index-shell .mini-tab:hover,
-  body.home-index-shell .filter-toggle:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 22px rgba(42, 95, 144, 0.14);
-  }
-
-  body.home-index-shell .content-rail__arrow:hover {
-    transform: translateY(-50%) scale(1.04);
-    box-shadow: none;
-    color: #29588b;
-    border-color: rgba(100, 145, 194, 0.28);
-  }
-
-  body.home-index-shell .home-catégory:hover .home-catégory__icon,
-  body.home-index-shell .home-catégory:focus-visible .home-catégory__icon {
-    transform: none;
-    box-shadow: none;
-    border-color: transparent;
-  }
-
-  body.home-index-shell .home-catégory:focus-visible .home-catégory__icon {
-    outline: 2px solid rgba(42, 95, 144, 0.24);
-    outline-offset: 3px;
-  }
 }
 
 

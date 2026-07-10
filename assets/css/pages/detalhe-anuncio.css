@@ -9,7 +9,7 @@ body.detalhe-shell-page {
   --detail-surface-bg: rgba(255, 255, 255, 0.96);
   --detail-surface-border: var(--card-border, 1px solid rgba(15, 45, 75, 0.06));
   --detail-surface-shadow: var(--card-shadow, 0 10px 30px rgba(15, 45, 75, 0.055));
-  --detail-surface-shadow-hover: var(--card-shadow-hover, 0 14px 36px rgba(15, 45, 75, 0.075));
+  --detail-surface-shadow-hover: var(--doke-interaction-shadow-surface);
   --detail-radius: var(--card-radius-lg, 24px);
   background: var(--shell-content-bg, var(--color-background, #eef7fb));
 }
@@ -56,7 +56,7 @@ body.detalhe-shell-page {
   border: 1px solid rgba(15, 45, 75, 0.055);
   background: rgba(255, 255, 255, 0.96);
   color: var(--color-primary-strong, #0b4f86);
-  box-shadow: var(--doke-elevation-surface);
+  box-shadow: var(--doke-interaction-shadow-surface);
   text-decoration: none;
 }
 
@@ -233,7 +233,7 @@ body.detalhe-shell-page {
 .ad-gallery__more,
 .detail-btn {
   border: 1px solid rgba(15, 45, 75, 0.06);
-  box-shadow: var(--doke-elevation-surface);
+  box-shadow: var(--doke-interaction-shadow-surface);
 }
 
 .ad-gallery__badge {
@@ -588,11 +588,11 @@ body.detalhe-shell-page {
   padding: 0 18px;
   font-weight: 900;
   text-decoration: none;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transition: var(--doke-interaction-transition);
 }
 
 .detail-btn:hover {
-  transform: translateY(-1px);
+  transform: var(--doke-interaction-lift-control);
 }
 
 .detail-btn--primary {
@@ -884,7 +884,7 @@ body.detalhe-shell-page {
    Scope: detalhe-anuncio only. No shell/sidebar/router/global overrides. */
 .ad-detail-hero {
   border-color: rgba(15, 45, 75, 0.045);
-  box-shadow: var(--doke-elevation-surface-hover);
+  box-shadow: var(--doke-interaction-shadow-card);
 }
 
 .ad-gallery {
@@ -910,11 +910,11 @@ body.detalhe-shell-page {
 
 .ad-gallery__stage img {
   transform: scale(1.01);
-  transition: transform 0.32s ease, filter 0.32s ease;
+  transition: transform var(--transition-base), filter var(--transition-base);
 }
 
 .ad-gallery__stage:hover img {
-  transform: scale(1.025);
+  transform: var(--doke-interaction-media-scale);
 }
 
 .ad-gallery__badge,
@@ -934,20 +934,20 @@ body.detalhe-shell-page {
 .ad-gallery__nav {
   border-color: rgba(15, 45, 75, 0.045);
   background: rgba(255, 255, 255, 0.9);
-  box-shadow: var(--doke-elevation-surface);
+  box-shadow: var(--doke-interaction-shadow-surface);
   backdrop-filter: blur(10px);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  transition: var(--doke-interaction-transition);
 }
 
 .ad-gallery__favorite:hover,
 .ad-gallery__nav:hover {
   transform: translateY(-50%) scale(1.03);
   background: rgba(255, 255, 255, 0.96);
-  box-shadow: var(--doke-elevation-surface);
+  box-shadow: var(--doke-interaction-shadow-surface);
 }
 
 .ad-gallery__favorite:hover {
-  transform: scale(1.03);
+  transform: scale(1.018);
 }
 
 .ad-gallery__thumbs {
@@ -967,18 +967,18 @@ body.detalhe-shell-page {
 
 .ad-gallery__thumb {
   opacity: 0.76;
-  transition: opacity 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+  transition: var(--doke-interaction-transition);
 }
 
 .ad-gallery__thumb:hover,
 .ad-gallery__thumb.is-active {
   opacity: 1;
-  transform: translateY(-1px);
+  transform: var(--doke-interaction-lift-control);
 }
 
 .ad-gallery__thumb.is-active {
   border-color: rgba(29, 100, 177, 0.42);
-  box-shadow: 0 0 0 3px rgba(29, 100, 177, 0.08), 0 10px 20px rgba(15, 45, 75, 0.07);
+  box-shadow: var(--doke-interaction-focus-ring), var(--doke-interaction-shadow-control);
 }
 
 .ad-gallery__more {
@@ -994,7 +994,7 @@ body.detalhe-shell-page {
   position: relative;
   overflow: hidden;
   border-color: rgba(15, 45, 75, 0.045);
-  box-shadow: var(--doke-elevation-surface-hover);
+  box-shadow: var(--doke-interaction-shadow-card);
 }
 
 .ad-action-card::before {
@@ -1030,11 +1030,11 @@ body.detalhe-shell-page {
 }
 
 .detail-btn--primary:hover {
-  box-shadow: 0 18px 34px rgba(8, 125, 113, 0.18);
+  box-shadow: var(--shadow-action-secondary-strong);
 }
 
 .detail-btn--outline:hover {
-  box-shadow: var(--doke-elevation-surface);
+  box-shadow: var(--doke-interaction-shadow-surface);
 }
 
 .ad-action-card__meta {
@@ -1079,7 +1079,7 @@ body.detalhe-shell-page {
 .detail-section,
 .detail-related-card {
   border-color: rgba(15, 45, 75, 0.045);
-  box-shadow: var(--doke-elevation-surface-hover);
+  box-shadow: var(--doke-interaction-shadow-card);
 }
 
 @media (max-width: 760px) {
@@ -1115,8 +1115,8 @@ body.detalhe-shell-page {
 .detail-index-header__location:hover,
 .detail-index-header__profile:hover {
   border-color: rgba(15, 45, 75, 0.045);
-  box-shadow: var(--doke-elevation-surface);
-  transform: translateY(-1px);
+  box-shadow: var(--doke-interaction-shadow-surface);
+  transform: var(--doke-interaction-lift-control);
 }
 
 .ad-action-card {
@@ -1366,7 +1366,7 @@ body[data-page="detalhe-anuncio"] .ad-gallery__favorite.doke-favorite-button {
 }
 
 body[data-page="detalhe-anuncio"] .ad-gallery__favorite.doke-favorite-button:hover {
-  transform: translateY(-1px) scale(1.04);
+  transform: var(--doke-interaction-lift-control) var(--doke-interaction-media-scale);
   background: var(--doke-favorite-bg-hover, #fff);
   color: var(--doke-favorite-color-hover, #0f4f86);
   box-shadow: var(--doke-favorite-shadow-hover, 0 18px 38px rgba(13, 36, 63, 0.28), 0 0 0 3px rgba(36, 109, 177, 0.12));
@@ -1521,7 +1521,7 @@ body[data-page="detalhe-anuncio"] .provider-card__facts strong {
   body[data-page="detalhe-anuncio"] .detail-index-header__icon:hover,
   body[data-page="detalhe-anuncio"] .detail-index-header__location:hover,
   body[data-page="detalhe-anuncio"] .detail-index-header__profile:hover {
-    transform: translateY(-1px);
+    transform: var(--doke-interaction-lift-control);
     border-color: var(--surface-border-subtle, rgba(15, 45, 75, 0.045));
     box-shadow: var(--internal-surface-shadow-hover, 0 12px 28px rgba(22, 52, 86, 0.07));
   }
@@ -2054,7 +2054,7 @@ body[data-page="detalhe-anuncio"] .provider-card__cta {
 
   body[data-page="detalhe-anuncio"] .detail-section:hover {
     border-color: rgba(31, 95, 159, 0.10);
-    box-shadow: var(--doke-elevation-surface);
+    box-shadow: var(--doke-interaction-shadow-surface);
   }
 
   body[data-page="detalhe-anuncio"] .ad-detail-breadcrumb a,
@@ -2072,94 +2072,94 @@ body[data-page="detalhe-anuncio"] .provider-card__cta {
   body[data-page="detalhe-anuncio"] .ad-gallery__favorite,
   body[data-page="detalhe-anuncio"] .ad-gallery__nav {
     transition:
-      transform 160ms ease,
-      color 160ms ease,
-      background-color 160ms ease,
-      border-color 160ms ease,
-      box-shadow 160ms ease,
-      opacity 160ms ease,
-      filter 160ms ease;
+      transform var(--doke-interaction-duration),
+      color var(--doke-interaction-duration),
+      background-color var(--doke-interaction-duration),
+      border-color var(--doke-interaction-duration),
+      box-shadow var(--doke-interaction-duration),
+      opacity var(--doke-interaction-duration),
+      filter var(--doke-interaction-duration);
   }
 
   body[data-page="detalhe-anuncio"] .ad-detail-breadcrumb a:hover,
   body[data-page="detalhe-anuncio"] .ad-detail-provider-line a:hover {
-    color: #0b8277;
+    color: var(--doke-interaction-text-secondary);
     text-decoration-color: rgba(11, 130, 119, 0.36);
   }
 
   body[data-page="detalhe-anuncio"] .ad-gallery__stage:hover {
-    box-shadow: 0 22px 54px rgba(15, 45, 75, 0.16);
+    box-shadow: var(--doke-interaction-shadow-card);
   }
 
   body[data-page="detalhe-anuncio"] .ad-gallery__stage:hover .ad-gallery__badge {
-    transform: translateY(-1px);
-    box-shadow: 0 12px 26px rgba(8, 22, 38, 0.22);
+    transform: var(--doke-interaction-lift-control);
+    box-shadow: var(--doke-interaction-shadow-surface);
   }
 
   body[data-page="detalhe-anuncio"] .ad-gallery__thumb:hover,
   body[data-page="detalhe-anuncio"] .ad-gallery__more:hover {
-    transform: translateY(-2px);
-    border-color: rgba(31, 95, 159, 0.20);
-    box-shadow: var(--doke-elevation-surface);
+    transform: var(--doke-interaction-lift-card);
+    border-color: var(--doke-interaction-border);
+    box-shadow: var(--doke-interaction-shadow-surface);
     opacity: 1;
   }
 
   body[data-page="detalhe-anuncio"] .ad-gallery__thumb:hover img {
-    filter: saturate(1.05) contrast(1.02);
+    filter: var(--doke-interaction-media-filter);
   }
 
   body[data-page="detalhe-anuncio"] .ad-gallery__favorite:hover,
   body[data-page="detalhe-anuncio"] .ad-gallery__nav:hover {
-    transform: translateY(-50%) scale(1.04);
-    border-color: rgba(31, 95, 159, 0.18);
-    box-shadow: 0 16px 32px rgba(15, 45, 75, 0.18);
+    transform: translateY(-50%) scale(1.018);
+    border-color: var(--doke-interaction-border);
+    box-shadow: var(--doke-interaction-shadow-control);
   }
 
   body[data-page="detalhe-anuncio"] .ad-gallery__favorite:hover {
-    transform: scale(1.04);
+    transform: scale(1.018);
   }
 
   body[data-page="detalhe-anuncio"] .ad-detail-stats li:hover {
-    color: #0b8277;
-    transform: translateY(-1px);
+    color: var(--doke-interaction-text-secondary);
+    transform: var(--doke-interaction-lift-control);
   }
 
   body[data-page="detalhe-anuncio"] .ad-detail-stats li:hover svg {
-    stroke: #0b8277;
+    stroke: var(--doke-interaction-text-secondary);
   }
 
   body[data-page="detalhe-anuncio"] .detail-checklist li:hover,
   body[data-page="detalhe-anuncio"] .service-specs li:hover,
   body[data-page="detalhe-anuncio"] .trust-card li:hover {
-    transform: translateX(2px);
-    color: #12365e;
+    transform: var(--doke-interaction-shift-inline);
+    color: var(--color-heading);
   }
 
   body[data-page="detalhe-anuncio"] .provider-card__summary .provider-card__stat:hover {
-    transform: translateY(-1px);
-    background: rgba(230, 247, 244, 0.82);
-    border-color: rgba(10, 160, 145, 0.20);
+    transform: var(--doke-interaction-lift-control);
+    background: var(--control-bg-soft-secondary-hover);
+    border-color: var(--control-outline-soft-secondary-hover);
   }
 
   body[data-page="detalhe-anuncio"] .location-card__map:hover {
-    transform: translateY(-1px) scale(1.01);
-    filter: saturate(1.05);
-    box-shadow: inset 0 0 0 1px rgba(31, 95, 159, 0.12), 0 12px 26px rgba(15, 45, 75, 0.10);
+    transform: var(--doke-interaction-lift-control);
+    filter: var(--doke-interaction-media-filter);
+    box-shadow: var(--doke-interaction-shadow-surface);
   }
 
   body[data-page="detalhe-anuncio"] .detail-btn:hover {
-    transform: translateY(-2px);
+    transform: var(--doke-interaction-lift-card);
   }
 
   body[data-page="detalhe-anuncio"] .detail-btn--primary:hover {
-    filter: saturate(1.04) brightness(1.02);
-    box-shadow: 0 16px 34px rgba(10, 130, 118, 0.20);
+    filter: saturate(1.02);
+    box-shadow: var(--shadow-action-secondary-strong);
   }
 
   body[data-page="detalhe-anuncio"] .detail-btn--outline:hover {
-    background: rgba(240, 247, 254, 0.96);
-    border-color: rgba(31, 95, 159, 0.16);
-    box-shadow: var(--doke-elevation-surface);
+    background: var(--doke-interaction-bg);
+    border-color: var(--doke-interaction-border);
+    box-shadow: var(--doke-interaction-shadow-surface);
   }
 }
 
@@ -2182,13 +2182,13 @@ body[data-page="detalhe-anuncio"] .provider-card__cta {
   body[data-page="detalhe-anuncio"] .doke-review-rating,
   body[data-page="detalhe-anuncio"] .doke-review-verified {
     transition:
-      transform 180ms ease,
-      color 180ms ease,
-      background-color 180ms ease,
-      border-color 180ms ease,
-      box-shadow 180ms ease,
-      filter 180ms ease,
-      opacity 180ms ease;
+      transform var(--doke-interaction-duration),
+      color var(--doke-interaction-duration),
+      background-color var(--doke-interaction-duration),
+      border-color var(--doke-interaction-duration),
+      box-shadow var(--doke-interaction-duration),
+      filter var(--doke-interaction-duration),
+      opacity var(--doke-interaction-duration);
   }
 
   body[data-page="detalhe-anuncio"] .detail-related-card {
@@ -2198,57 +2198,57 @@ body[data-page="detalhe-anuncio"] .provider-card__cta {
   }
 
   body[data-page="detalhe-anuncio"] .detail-related-card:hover {
-    transform: translateY(-3px);
-    border-color: rgba(31, 95, 159, 0.14);
-    box-shadow: var(--doke-elevation-surface-hover);
+    transform: var(--doke-interaction-lift-card);
+    border-color: var(--doke-interaction-border);
+    box-shadow: var(--doke-interaction-shadow-card);
   }
 
   body[data-page="detalhe-anuncio"] .detail-related-card:hover img {
-    filter: saturate(1.06) contrast(1.03);
-    transform: scale(1.025);
+    filter: var(--doke-interaction-media-filter);
+    transform: var(--doke-interaction-media-scale);
   }
 
   body[data-page="detalhe-anuncio"] .detail-related-card:hover strong {
-    color: #0b4f86;
+    color: var(--doke-interaction-text);
   }
 
   body[data-page="detalhe-anuncio"] .detail-related-card:hover span {
-    color: #087d71;
+    color: var(--doke-interaction-text-secondary);
   }
 
   body[data-page="detalhe-anuncio"] .detail-section__header a:hover {
-    color: #087d71;
-    transform: translateX(2px);
+    color: var(--doke-interaction-text-secondary);
+    transform: var(--doke-interaction-shift-inline);
   }
 
   body[data-page="detalhe-anuncio"] .doke-review-item:hover {
-    transform: translateY(-2px);
-    border-color: rgba(10, 160, 145, 0.18);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 253, 252, 0.96));
-    box-shadow: var(--doke-elevation-surface-hover);
+    transform: var(--doke-interaction-lift-card);
+    border-color: var(--control-outline-soft-secondary-hover);
+    background: var(--color-surface);
+    box-shadow: var(--doke-interaction-shadow-card);
   }
 
   body[data-page="detalhe-anuncio"] .doke-review-item:hover .doke-review-rating {
-    transform: translateY(-1px);
-    box-shadow: 0 10px 22px rgba(10, 160, 145, 0.12);
+    transform: var(--doke-interaction-lift-control);
+    box-shadow: var(--doke-interaction-shadow-control);
   }
 
   body[data-page="detalhe-anuncio"] .doke-review-item:hover .doke-review-verified {
-    border-color: rgba(10, 160, 145, 0.32);
-    background: rgba(230, 247, 244, 0.82);
+    border-color: var(--control-outline-soft-secondary-hover);
+    background: var(--control-bg-soft-secondary-hover);
   }
 
   body[data-page="detalhe-anuncio"] .doke-review-more:hover {
-    color: #0b4f86;
-    transform: translateX(2px);
+    color: var(--doke-interaction-text);
+    transform: var(--doke-interaction-shift-inline);
   }
 
   body[data-page="detalhe-anuncio"] .doke-reviews-all:hover {
-    color: #087d71;
-    border-color: rgba(10, 160, 145, 0.28);
-    background: rgba(230, 247, 244, 0.40);
-    box-shadow: var(--doke-elevation-surface);
-    transform: translateY(-1px);
+    color: var(--doke-interaction-text-secondary);
+    border-color: var(--control-outline-soft-secondary-hover);
+    background: var(--control-bg-soft-secondary-hover);
+    box-shadow: var(--doke-interaction-shadow-surface);
+    transform: var(--doke-interaction-lift-control);
   }
 }
 
@@ -2967,7 +2967,7 @@ body[data-page="detalhe-anuncio"] .ad-gallery__thumbs::-webkit-scrollbar-thumb {
     min-height: clamp(220px, 58vw, 260px);
     max-height: 260px;
     border-radius: var(--detail-compact-card-radius);
-    box-shadow: var(--doke-elevation-surface-hover);
+    box-shadow: var(--doke-interaction-shadow-card);
     background: #dcebf3;
   }
 
@@ -3132,7 +3132,7 @@ body[data-page="detalhe-anuncio"] .ad-gallery__thumbs::-webkit-scrollbar-thumb {
     border: 1px solid rgba(15,45,75,.055);
     border-radius: var(--radius-base);
     background: rgba(255,255,255,.92);
-    box-shadow: var(--doke-elevation-surface);
+    box-shadow: var(--doke-interaction-shadow-surface);
   }
 
   body[data-page="detalhe-anuncio"] .ad-detail-stats li {
@@ -3234,7 +3234,7 @@ body[data-page="detalhe-anuncio"] .ad-gallery__thumbs::-webkit-scrollbar-thumb {
     overflow: hidden;
     scroll-snap-align: start;
     background: rgba(255,255,255,.94);
-    box-shadow: var(--doke-elevation-surface);
+    box-shadow: var(--doke-interaction-shadow-surface);
   }
 
   body[data-page="detalhe-anuncio"] .detail-related-card img {
@@ -3471,7 +3471,7 @@ body[data-page="detalhe-anuncio"] .ad-gallery__thumbs::-webkit-scrollbar-thumb {
     padding: 11px 12px;
     border-radius: var(--radius-base);
     background: rgba(255,255,255,.94);
-    box-shadow: var(--doke-elevation-surface);
+    box-shadow: var(--doke-interaction-shadow-surface);
   }
 
   body[data-page="detalhe-anuncio"] .ad-detail-stats li {
@@ -3863,7 +3863,7 @@ body[data-page="detalhe-anuncio"] .detail-tablet-shell__menu {
     border-radius: var(--radius-md);
     border: 1px solid rgba(15, 45, 75, 0.06);
     background: rgba(255, 255, 255, 0.96);
-    box-shadow: var(--doke-elevation-surface);
+    box-shadow: var(--doke-interaction-shadow-surface);
     overflow: hidden;
   }
 
@@ -3884,7 +3884,7 @@ body[data-page="detalhe-anuncio"] .detail-tablet-shell__menu {
     border-radius: var(--radius-pill);
     border: 1px solid rgba(15, 45, 75, 0.06);
     background: rgba(255, 255, 255, 0.96);
-    box-shadow: var(--doke-elevation-surface);
+    box-shadow: var(--doke-interaction-shadow-surface);
   }
 
   body[data-page="detalhe-anuncio"] .app-header--detail .home-side-meta__avatar {

@@ -919,10 +919,10 @@ body[data-page="comunidade-interna"] .community-room-member-tools .doke-btn {
 body[data-page="comunidade-interna"] .community-room-member-candidates {
   display: grid;
   gap: 10px;
-  padding: 12px;
-  border: 1px solid rgba(198, 214, 232, 0.92);
-  border-radius: var(--radius-md);
-  background: rgba(245, 250, 255, 0.86);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 body[data-page="comunidade-interna"] .community-room-member-candidates[hidden] {
@@ -1000,5 +1000,1169 @@ body[data-page="comunidade-interna"] .community-room-member__remove {
 
   body[data-page="comunidade-interna"] .community-room-member__remove {
     justify-self: start;
+  }
+}
+
+
+/* Community room real-state refinements.
+ * Responsibility: keep empty states compact and ensure locally sent messages
+ * render on the correct edge after shell route swaps.
+ */
+body[data-page="comunidade-interna"] .community-room-panel-empty.doke-empty-state {
+  --doke-empty-min-height: auto;
+  --doke-empty-padding: 14px 0;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 0;
+  padding: var(--doke-empty-padding);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+}
+
+body[data-page="comunidade-interna"] .community-room-panel-empty__icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: rgba(33, 103, 174, 0.10);
+  color: #2167ae;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+body[data-page="comunidade-interna"] .community-room-panel-empty__content {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+body[data-page="comunidade-interna"] .community-room-panel-empty strong {
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+body[data-page="comunidade-interna"] .community-room-panel-empty p {
+  max-width: 30ch;
+  font-size: 0.74rem;
+  line-height: 1.42;
+}
+
+body[data-page="comunidade-interna"] .community-room-thread__body {
+  display: grid;
+  align-content: start;
+  justify-items: stretch;
+}
+
+body[data-page="comunidade-interna"] .community-room-thread__body .community-room-message {
+  display: flex;
+  align-items: flex-start;
+}
+
+body[data-page="comunidade-interna"] .community-room-thread__body .community-room-message--self {
+  justify-content: flex-end;
+}
+
+body[data-page="comunidade-interna"] .community-room-thread__body .community-room-message--self .community-room-message__bubble {
+  margin-left: auto;
+}
+
+/* Community management panels */
+body[data-page="comunidade-interna"] .community-room-actions-menu {
+  display: grid;
+  gap: 8px;
+  min-width: 230px;
+  padding: 10px;
+}
+
+body[data-page="comunidade-interna"] .community-room-actions-menu[hidden] {
+  display: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-actions-menu .doke-btn {
+  justify-content: flex-start;
+  width: 100%;
+}
+
+body[data-page="comunidade-interna"] .community-room-manage-form,
+body[data-page="comunidade-interna"] .community-room-role-form,
+body[data-page="comunidade-interna"] .community-room-invite-card {
+  display: grid;
+  gap: 14px;
+}
+
+body[data-page="comunidade-interna"] .community-room-manage-form label,
+body[data-page="comunidade-interna"] .community-room-manage-form .community-room-cover-field,
+body[data-page="comunidade-interna"] .community-room-role-form label {
+  display: grid;
+  gap: 7px;
+  color: var(--color-text-muted, #657895);
+  font-weight: 800;
+}
+
+body[data-page="comunidade-interna"] .community-room-panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+body[data-page="comunidade-interna"] .community-room-invite-card {
+  padding: 18px;
+  border: 1px solid rgba(24, 75, 118, 0.10);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
+}
+
+body[data-page="comunidade-interna"] .community-room-invite-card > span {
+  color: var(--color-text-muted, #657895);
+  font-weight: 800;
+}
+
+body[data-page="comunidade-interna"] .community-room-invite-card strong {
+  width: fit-content;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(33, 103, 174, 0.10);
+  color: var(--color-primary, #2167ae);
+  font-size: 1.15rem;
+  letter-spacing: .08em;
+}
+
+body[data-page="comunidade-interna"] .community-room-invite-card p {
+  margin: 0;
+  color: var(--color-text-muted, #657895);
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+
+body[data-page="comunidade-interna"] .community-room-roles-overview {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(24, 75, 118, 0.10);
+  border-radius: 22px;
+  background: rgba(248, 251, 255, 0.88);
+}
+
+body[data-page="comunidade-interna"] .community-room-panel-kicker {
+  color: var(--color-text-muted, #657895);
+  font-size: .78rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+body[data-page="comunidade-interna"] .community-room-role-empty {
+  padding: 12px;
+  border-radius: 16px;
+  background: #fff;
+  color: var(--color-text-muted, #657895);
+  font-weight: 800;
+  text-align: center;
+}
+
+body[data-page="comunidade-interna"] .community-room-role-list {
+  display: grid;
+  gap: 10px;
+}
+
+body[data-page="comunidade-interna"] .community-room-role-item {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(24, 75, 118, 0.10);
+  border-radius: 18px;
+  background: #fff;
+}
+
+body[data-page="comunidade-interna"] .community-room-role-item__swatch {
+  width: 14px;
+  height: 34px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.35);
+}
+
+body[data-page="comunidade-interna"] .community-room-role-item strong {
+  display: block;
+  color: var(--color-text-strong, #0b355d);
+  font-weight: 900;
+}
+
+body[data-page="comunidade-interna"] .community-room-role-item span:not(.community-room-role-item__swatch) {
+  color: var(--color-text-muted, #657895);
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+body[data-page="comunidade-interna"] .community-room-member__role-select {
+  width: min(170px, 100%);
+  min-height: 36px;
+  padding-inline: 10px;
+  border-radius: 999px;
+  font-size: .82rem;
+  font-weight: 800;
+}
+
+body[data-page="comunidade-interna"] .community-room-member em {
+  color: var(--community-member-role-color, var(--color-primary, #2167ae));
+  background: color-mix(in srgb, var(--community-member-role-color, #2167ae) 12%, #fff);
+  border-color: color-mix(in srgb, var(--community-member-role-color, #2167ae) 28%, transparent);
+}
+
+@media (max-width: 720px) {
+  body[data-page="comunidade-interna"] .community-room-panel-actions,
+  body[data-page="comunidade-interna"] .community-room-invite-card .community-room-panel-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-role-item {
+    grid-template-columns: 12px minmax(0, 1fr);
+  }
+
+  body[data-page="comunidade-interna"] .community-room-role-item .doke-btn {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+
+body[data-page="comunidade-interna"] .community-room-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 44px;
+  background-color: #fff;
+  background-image: linear-gradient(45deg, transparent 50%, #2167ae 50%), linear-gradient(135deg, #2167ae 50%, transparent 50%);
+  background-position: calc(100% - 22px) 50%, calc(100% - 16px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+body[data-page="comunidade-interna"] .community-room-panel-actions .community-room-panel-cancel,
+body[data-page="comunidade-interna"] .community-room-panel-actions .doke-btn--ghost {
+  border: 1px solid rgba(24, 75, 118, 0.14);
+  background: #fff;
+  color: var(--color-primary, #2167ae);
+}
+
+body[data-page="comunidade-interna"] .community-room-panel-feedback {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(22, 143, 125, 0.18);
+  border-radius: 16px;
+  background: rgba(22, 143, 125, 0.10);
+  color: #0f6f64;
+  font-size: .88rem;
+  font-weight: 800;
+}
+
+body[data-page="comunidade-interna"] .community-room-cover-upload {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  padding: 7px;
+  border: 1px solid rgba(24, 75, 118, 0.12);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+body[data-page="comunidade-interna"] .community-room-cover-upload__button {
+  min-height: 42px;
+  padding-inline: 16px;
+  border-color: rgba(33, 103, 174, 0.18);
+  background: rgba(33, 103, 174, 0.08);
+  color: var(--color-primary, #2167ae);
+  font-weight: 900;
+}
+
+body[data-page="comunidade-interna"] .community-room-cover-upload__name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-muted, #657895);
+  font-size: .9rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body[data-page="comunidade-interna"] .community-room-cover-upload__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-cover-preview {
+  display: grid;
+  place-items: center;
+  min-height: 104px;
+  overflow: hidden;
+  border: 1px dashed rgba(24, 75, 118, 0.18);
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(33, 103, 174, 0.08), rgba(22, 143, 125, 0.08));
+  color: var(--color-primary, #2167ae);
+  font-weight: 900;
+}
+
+body[data-page="comunidade-interna"] .community-room-cover-preview.has-cover {
+  position: relative;
+  place-items: end start;
+  min-height: 140px;
+}
+
+body[data-page="comunidade-interna"] .community-room-cover-preview img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+body[data-page="comunidade-interna"] .community-room-cover-preview span {
+  position: relative;
+  margin: 12px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+}
+
+body[data-page="comunidade-interna"] .community-room-theme-field {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+body[data-page="comunidade-interna"] .community-room-theme-field legend {
+  color: var(--color-text-muted, #657895);
+  font-weight: 800;
+}
+
+body[data-page="comunidade-interna"] .community-room-theme-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+body[data-page="comunidade-interna"] .community-room-theme-presets .doke-btn {
+  min-height: 34px;
+  padding-inline: 12px;
+  border: 1px solid rgba(24, 75, 118, 0.14);
+  background: #fff;
+}
+
+body[data-page="comunidade-interna"] .community-room-thread__avatar,
+body[data-page="comunidade-interna"] .community-room-message__avatar,
+body[data-page="comunidade-interna"] .community-room-channel__avatar {
+  background: linear-gradient(135deg, var(--community-room-accent, #168f7d), #2167ae);
+}
+
+
+body[data-page="comunidade-interna"] .community-room-role-form input[type="color"],
+body[data-page="comunidade-interna"] .community-room-theme-field input[type="color"] {
+  min-height: 48px;
+  padding: 6px;
+  border: 1px solid rgba(24, 75, 118, 0.12);
+  border-radius: 18px;
+  background: #fff;
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  body[data-page="comunidade-interna"] .community-room-cover-upload {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-cover-upload__button {
+    width: 100%;
+  }
+}
+
+/* Community attachment experience.
+ * Responsibility: render attached media as product-grade content instead of raw file names.
+ */
+body[data-page="comunidade-interna"] .community-room-attachment-draft {
+  align-items: center;
+  gap: 12px;
+}
+
+body[data-page="comunidade-interna"] .community-room-attachment-draft__preview {
+  width: 72px;
+  height: 54px;
+  border-radius: 16px;
+  object-fit: cover;
+  background: linear-gradient(135deg, rgba(33, 103, 174, 0.10), rgba(41, 143, 127, 0.12));
+}
+
+body[data-page="comunidade-interna"] .community-room-attachment-draft.has-file .community-room-attachment-draft__preview,
+body[data-page="comunidade-interna"] .community-room-attachment-draft__preview[hidden] {
+  display: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-message .message-bubble__image {
+  width: min(320px, 62vw);
+  max-width: 100%;
+}
+
+body[data-page="comunidade-interna"] .community-room-message .message-bubble__image img {
+  width: 100%;
+  max-width: 100%;
+  max-height: min(280px, 42vh);
+  object-fit: cover;
+}
+
+body[data-page="comunidade-interna"] .community-room-file-card {
+  width: min(320px, 62vw);
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+}
+
+body[data-page="comunidade-interna"] .community-room-file-card__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-base);
+  background: rgba(33, 103, 174, 0.10);
+  color: var(--chat-primary, #2167ae);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+body[data-page="comunidade-interna"] .community-room-file-card__copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+body[data-page="comunidade-interna"] .community-room-file-card__copy strong {
+  overflow: hidden;
+  color: var(--chat-ink, #073264);
+  font-size: 0.86rem;
+  font-weight: 850;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body[data-page="comunidade-interna"] .community-room-file-card__copy span {
+  color: #6b84a4;
+  font-size: 0.76rem;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+@media (max-width: 560px) {
+  body[data-page="comunidade-interna"] .community-room-message .message-bubble__image,
+  body[data-page="comunidade-interna"] .community-room-file-card {
+    width: min(260px, 74vw);
+  }
+
+  body[data-page="comunidade-interna"] .community-room-message .message-bubble__image img {
+    max-height: 240px;
+  }
+}
+
+
+/* Community message menu parity with mensagens.html.
+ * Message actions are contextual: visible only on right click/context menu,
+ * keeping the bubble focused on the actual content.
+ */
+body[data-page="comunidade-interna"] .community-room-message__actions {
+  display: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-message-menu {
+  position: fixed;
+  z-index: 2600;
+  display: grid;
+  gap: 6px;
+  min-width: 188px;
+  padding: 8px;
+  border: 1px solid rgba(24, 75, 118, 0.12);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 18px 44px rgba(15, 35, 60, 0.18);
+}
+
+body[data-page="comunidade-interna"] .community-room-message-menu .doke-btn {
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 38px;
+  padding-inline: 12px;
+  border-color: transparent;
+  background: transparent;
+  color: #073264;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-message-menu .doke-btn:is(:hover, :focus-visible) {
+  border-color: rgba(24, 75, 118, 0.10);
+  background: rgba(33, 103, 174, 0.08);
+}
+
+/* Community role permissions
+ * Authority: page-level composition around existing Doke inputs and buttons.
+ */
+body[data-page="comunidade-interna"] .community-room-permissions {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+body[data-page="comunidade-interna"] .community-room-permissions legend {
+  margin-bottom: 2px;
+  color: var(--color-text-muted, #657895);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+body[data-page="comunidade-interna"] .community-room-permission {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(24, 75, 118, 0.10);
+  border-radius: var(--radius-md, 16px);
+  background: #fff;
+  cursor: pointer;
+}
+
+body[data-page="comunidade-interna"] .community-room-permission input {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: var(--color-primary, #2167ae);
+}
+
+body[data-page="comunidade-interna"] .community-room-permission > span {
+  display: grid;
+  gap: 3px;
+}
+
+body[data-page="comunidade-interna"] .community-room-permission strong {
+  color: var(--color-text-strong, #0b355d);
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+body[data-page="comunidade-interna"] .community-room-permission small {
+  color: var(--color-text-muted, #657895);
+  font-size: 0.74rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+body[data-page="comunidade-interna"] [aria-disabled="true"][hidden] {
+  display: none;
+}
+
+/* Community settings hub */
+body[data-page="comunidade-interna"] .community-room-actions-menu .doke-btn svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body[data-page="comunidade-interna"] .community-room-settings__list {
+  display: grid;
+  gap: 10px;
+}
+
+body[data-page="comunidade-interna"] .community-room-settings__item.doke-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 76px;
+  padding: 14px 16px;
+  text-align: left;
+  border: 1px solid rgba(24, 75, 118, 0.10);
+  border-radius: 18px;
+  background: #fff;
+}
+
+body[data-page="comunidade-interna"] .community-room-settings__item > span {
+  display: grid;
+  gap: 4px;
+}
+
+body[data-page="comunidade-interna"] .community-room-settings__item strong {
+  color: var(--color-text, #123b63);
+  font-size: .96rem;
+}
+
+body[data-page="comunidade-interna"] .community-room-settings__item small {
+  color: var(--color-text-muted, #657895);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+body[data-page="comunidade-interna"] .community-room-settings__item > svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body[data-page="comunidade-interna"] .community-room-settings__danger {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+  padding: 16px;
+  border: 1px solid rgba(180, 35, 45, 0.18);
+  border-radius: 18px;
+  background: rgba(180, 35, 45, 0.04);
+}
+
+body[data-page="comunidade-interna"] .community-room-settings__danger[hidden] {
+  display: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-settings__danger strong {
+  color: var(--color-text, #123b63);
+}
+
+body[data-page="comunidade-interna"] .community-room-settings__danger p {
+  margin: 5px 0 0;
+  color: var(--color-text-muted, #657895);
+  font-size: .86rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+body[data-page="comunidade-interna"] .community-room-settings__danger .doke-btn {
+  justify-self: start;
+}
+
+/* Community settings workspace.
+ * Responsibility: make community administration consume the same sidebar/content
+ * composition, density, controls and responsive behavior as the account settings
+ * workspace, while remaining owned by comunidade-interna.html.
+ */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode {
+  --community-settings-bg: #eef7fd;
+  --community-settings-surface: #ffffff;
+  --community-settings-surface-muted: #f5f9fd;
+  --community-settings-border: #dbe8f3;
+  --community-settings-border-strong: #c9ddec;
+  --community-settings-text: #062045;
+  --community-settings-muted: #64799a;
+  --community-settings-primary: #1f5d91;
+  --community-settings-primary-soft: #eaf4fb;
+  --community-settings-danger: #c44545;
+  grid-template-columns: clamp(320px, 27vw, 390px) minmax(0, 1fr);
+  gap: 0;
+  background: var(--community-settings-bg);
+  overflow: hidden;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode > :is(.community-room-sidebar, .community-room-thread) {
+  display: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode > .community-settings-sidebar {
+  display: flex;
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  flex-direction: column;
+  padding: 30px 28px;
+  border-right: 1px solid var(--community-settings-border-strong);
+  background: rgba(246, 251, 255, 0.82);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(31, 93, 145, 0.22) transparent;
+}
+
+body[data-page="comunidade-interna"] .community-settings-sidebar__header {
+  flex: 0 0 auto;
+  margin-bottom: 18px;
+}
+
+body[data-page="comunidade-interna"] .community-room-return--settings {
+  justify-content: flex-start;
+  min-height: 40px;
+  padding: 0 14px 0 11px;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-settings-sidebar__header h2 {
+  margin: 20px 0 4px;
+  color: var(--community-settings-primary);
+  font-size: clamp(1.65rem, 2vw, 2rem);
+  line-height: 1.08;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+}
+
+body[data-page="comunidade-interna"] .community-settings-sidebar__header p {
+  margin: 0;
+  color: var(--community-settings-muted);
+  font-size: 0.94rem;
+  font-weight: 700;
+}
+
+body[data-page="comunidade-interna"] .community-settings-search {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  min-height: 58px;
+  margin: 0 0 20px;
+  padding: 5px 10px;
+  border: 1px solid var(--community-settings-border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-settings-search:focus-within {
+  border-color: rgba(31, 93, 145, 0.45);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(31, 93, 145, 0.07);
+}
+
+body[data-page="comunidade-interna"] .community-settings-search .doke-search-field__icon {
+  position: static;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: var(--community-settings-primary);
+}
+
+body[data-page="comunidade-interna"] .community-settings-search svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.2;
+}
+
+body[data-page="comunidade-interna"] .community-settings-search__input.doke-input {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: 46px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--community-settings-text);
+  font-size: 0.94rem;
+  font-weight: 700;
+}
+
+body[data-page="comunidade-interna"] .community-settings-search__input.doke-input:is(:hover, :focus, :focus-visible) {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body[data-page="comunidade-interna"] .community-settings-nav {
+  display: grid;
+  gap: 20px;
+}
+
+body[data-page="comunidade-interna"] .community-settings-nav__section {
+  display: grid;
+  gap: 6px;
+}
+
+body[data-page="comunidade-interna"] .community-settings-nav__section[hidden],
+body[data-page="comunidade-interna"] .community-settings-nav__item[hidden] {
+  display: none;
+}
+
+body[data-page="comunidade-interna"] .community-settings-nav__label {
+  margin: 0 0 4px;
+  padding-inline: 4px;
+  color: #557298;
+  font-size: 0.74rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+body[data-page="comunidade-interna"] .community-settings-nav__item {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm, 14px);
+  background: transparent;
+  color: #557298;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+body[data-page="comunidade-interna"] .community-settings-nav__item svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  stroke-width: 1.8;
+}
+
+body[data-page="comunidade-interna"] .community-settings-nav__item:is(:hover, :focus-visible) {
+  background: #f2f7fc;
+  color: var(--community-settings-primary);
+}
+
+body[data-page="comunidade-interna"] .community-settings-nav__item.is-active {
+  border-color: var(--community-settings-border);
+  background: var(--community-settings-primary-soft);
+  color: #174f7d;
+}
+
+body[data-page="comunidade-interna"] .community-settings-nav__item--danger {
+  color: var(--community-settings-danger);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode > .community-settings-panel {
+  position: static;
+  inset: auto;
+  grid-column: 2;
+  grid-row: 1;
+  display: none;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode > .community-settings-panel.is-open {
+  display: block;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode > .community-room-panel:not(.community-settings-panel) {
+  display: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel > .community-room-panel__backdrop,
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-panel__close {
+  display: none;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-panel__surface {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: none;
+  overflow: hidden;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-panel__header {
+  position: static;
+  flex: 0 0 auto;
+  min-height: 112px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 31px 40px 27px;
+  border-bottom: 1px solid var(--community-settings-border);
+  background: #fff;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-panel__header h2 {
+  margin: 0;
+  color: var(--community-settings-text);
+  font-size: clamp(1.25rem, 1.6vw, 1.55rem);
+  line-height: 1.15;
+  font-weight: 850;
+  letter-spacing: -0.025em;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-panel__header p {
+  margin: 8px 0 0;
+  color: var(--community-settings-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel :is(
+  .community-room-manage-form,
+  .community-room-invite-card,
+  .community-room-roles-overview,
+  .community-room-role-form,
+  .community-room-panel__search,
+  .community-room-member-tools,
+  .community-room-member-candidates,
+  .community-room-member-list,
+  .community-settings-danger-card
+) {
+  margin-left: 40px;
+  margin-right: 40px;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-panel__search {
+  flex: 0 0 auto;
+  width: auto;
+  max-width: none;
+  margin-top: 28px;
+  display: grid;
+  gap: 8px;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-panel__search span {
+  color: var(--community-settings-text);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-panel__search .doke-input {
+  width: 100%;
+  max-width: none;
+  min-height: 56px;
+  border-color: var(--community-settings-border);
+  background: var(--community-settings-surface-muted);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-member-tools {
+  margin-top: 16px;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-member-list,
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-member-candidates {
+  min-width: 0;
+  width: auto;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-member-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 22px;
+  padding-bottom: 32px;
+  overflow-y: auto;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .doke-empty-state {
+  width: 100%;
+  max-width: 620px;
+  margin: 34px auto 0;
+  padding: 34px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-manage-form,
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-role-form {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 0;
+  padding-top: 30px;
+  padding-bottom: 32px;
+  overflow-y: auto;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-manage-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 22px;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-manage-form > :is(label, .community-room-cover-field, .community-room-theme-field, .community-room-panel-feedback, .community-room-panel-actions) {
+  min-width: 0;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-manage-form > :nth-child(2),
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-cover-field,
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-theme-field,
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-panel-feedback,
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-panel-actions {
+  grid-column: 1 / -1;
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-panel-actions {
+  position: sticky;
+  bottom: -32px;
+  z-index: 2;
+  justify-content: flex-end;
+  margin: 10px -40px -32px;
+  padding: 18px 40px;
+  border-top: 1px solid var(--community-settings-border);
+  background: rgba(248, 251, 254, 0.96);
+}
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-invite-card,
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-settings-danger-card {
+  margin-top: 30px;
+}
+
+body[data-page="comunidade-interna"] .community-settings-danger-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px;
+  border: 1px solid rgba(196, 69, 69, 0.22);
+  border-radius: 18px;
+  background: rgba(196, 69, 69, 0.05);
+}
+
+body[data-page="comunidade-interna"] .community-settings-danger-card p {
+  margin: 4px 0 0;
+  color: var(--community-settings-muted);
+}
+
+@media (max-width: 900px) {
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode {
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode > .community-settings-sidebar {
+    padding: 26px 22px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-panel__header,
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel :is(
+    .community-room-manage-form,
+    .community-room-invite-card,
+    .community-room-roles-overview,
+    .community-room-role-form,
+    .community-room-panel__search,
+    .community-room-member-tools,
+    .community-room-member-candidates,
+    .community-room-member-list,
+    .community-settings-danger-card
+  ) {
+    margin-left: 28px;
+    margin-right: 28px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-panel__header {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-panel-actions {
+    margin-left: -28px;
+    margin-right: -28px;
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+}
+
+@media (max-width: 760px) {
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode > .community-settings-sidebar,
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode > .community-settings-panel {
+    grid-column: 1;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode.has-settings-panel > .community-settings-sidebar {
+    display: none;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode:not(.has-settings-panel) > .community-settings-panel {
+    display: none;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode > .community-settings-sidebar {
+    padding: 24px 20px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-panel__header {
+    min-height: 96px;
+    padding: 26px 20px 22px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel :is(
+    .community-room-manage-form,
+    .community-room-invite-card,
+    .community-room-roles-overview,
+    .community-room-role-form,
+    .community-room-panel__search,
+    .community-room-member-tools,
+    .community-room-member-candidates,
+    .community-room-member-list,
+    .community-settings-danger-card
+  ) {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-manage-form {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-manage-form > * {
+    grid-column: 1;
+  }
+
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-room-panel-actions {
+    margin-left: -20px;
+    margin-right: -20px;
+    padding: 16px 20px;
+  }
+
+  body[data-page="comunidade-interna"] .community-settings-danger-card {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

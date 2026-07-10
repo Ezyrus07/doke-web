@@ -34,7 +34,7 @@ body.search-results-body .doke-results-search__mobile-filter {
   font-weight: 700;
   line-height: 1;
   box-shadow: var(--btn-shadow);
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+  transition: var(--doke-interaction-transition);
   white-space: nowrap;
 }
 
@@ -56,9 +56,9 @@ body.notifications-page-shell :is(.page-header-context__action, .orders-page-hea
 body.messages-page-shell :is(.orders-page-header__hero-chip, .messages-thread__action[data-messages-filter-toggle], .messages-thread__action[data-messages-select-toggle], .orders-active-filter-clear, .orders-select-option):hover,
 body.home-index-shell :is(.home-search-hero__leading-filter, .home-search-hero__filter-button, .search-dropdown__filter-button, .filter-toggle, .filter-action):hover,
 body.search-results-body :is(.doke-results-search__mobile-filter, .results-filters__actions button):hover {
-  border-color: var(--color-primary-border);
-  box-shadow: var(--btn-shadow-hover);
-  transform: translateY(-1px);
+  border-color: var(--doke-interaction-border);
+  box-shadow: var(--doke-interaction-shadow-control);
+  transform: var(--doke-interaction-lift-control);
 }
 
 body.orders-page-shell :is(.page-header-context__action, .orders-page-header__hero-chip)[aria-expanded="true"],
@@ -621,5 +621,229 @@ body.messages-page-shell .orders-select-option:not(:disabled):hover {
   body.messages-page-shell .messages-header-controls:not([hidden]) {
     padding: 16px;
     border-radius: var(--radius-surface);
+  }
+}
+
+/* Home mini-tab shared state tokens migrated from pages/home-refresh/sections-and-cards.css. */
+.mini-tab,
+.filter-toggle,
+.filter-chip {
+  border-radius: var(--radius-pill);
+}
+
+.mini-tab.is-active,
+.filter-toggle:hover,
+.filter-toggle[aria-expanded="true"] {
+  box-shadow: var(--toolbar-shadow-hover);
+}
+
+
+/* Home filter/tabs visual contract.
+   Owner: components/internal/filter-select-standard.css.
+   Page CSS owns only placement/rail composition for more-services filters.
+   Chip, select, CEP, mini-tab and filter-toggle anatomy migrated from
+   pages/home-refresh/sections-and-cards.css to remove page-owned controls. */
+.more-filters--section .filter-chip {
+  border-color: transparent;
+  background: #f6f9fc;
+  box-shadow: none;
+}
+
+.more-filters--section .filter-chip:hover {
+  border-color: transparent;
+  background: #eef4f9;
+  color: #244d7b;
+  box-shadow: var(--doke-elevation-control);
+}
+
+.more-filters--section .filter-chip.is-active {
+  border-color: transparent;
+  background: #eaf2f9;
+  color: #244d7b;
+  box-shadow: none;
+}
+
+.more-filters--section .more-filters__grid--dense .filter-field,
+.more-filters--section .more-filters__grid--minimal .filter-field,
+.more-filters--section .more-filters__grid--minimal .filter-field--compact,
+.more-filters__location-card .filter-field,
+.more-filters__location-card .filter-field--compact {
+  gap: 5px;
+  padding: 0;
+  border-radius: 0;
+  border: 0;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.more-filters--section .filter-field__label {
+  color: #7b8ea8;
+  padding-inline: 6px;
+}
+
+.more-filters--section .filter-field__select,
+.more-filters--section .ui-select__trigger {
+  min-height: var(--control-height-xl);
+  padding: 0 18px;
+  border-radius: var(--radius-base);
+  border: 1px solid transparent;
+  background-color: #ffffff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    0 1px 2px rgba(34, 60, 92, 0.03);
+  color: #254f7f;
+}
+
+.more-filters__cep {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--control-height-sm);
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: #ecfff5;
+  color: #177553;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 800;
+  box-shadow: none;
+}
+
+.more-filters__cep::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: var(--radius-pill);
+  background: #1ca56e;
+  box-shadow: var(--doke-visual-focus-ring);
+}
+
+.mini-tabs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  width: 100%;
+  max-width: 100%;
+  justify-content: space-between;
+  padding: 6px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.72);
+  border: var(--border-soft);
+  box-shadow: var(--doke-elevation-surface);
+}
+
+.mini-tabs .mini-tab {
+  flex: 1 1 0;
+  justify-content: center;
+  text-align: center;
+}
+
+.mini-tabs .filter-toggle {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.mini-tab {
+  min-height: 44px;
+  padding: 0 20px;
+  border-color: transparent;
+  background: transparent;
+  color: #2a5788;
+  box-shadow: none;
+}
+
+.mini-tab:hover {
+  background: rgba(46, 101, 157, 0.08);
+  color: #1f4e7f;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.mini-tab.is-active {
+  background: var(--gradient-button-primary);
+  color: #fff;
+  box-shadow: var(--toolbar-shadow);
+}
+
+.filter-toggle {
+  min-height: var(--control-height-lg);
+  min-width: 0;
+  justify-content: flex-start;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  background: rgba(42, 92, 146, 0.08);
+  border: 1px solid transparent;
+  box-shadow: none;
+  color: #2a5788;
+}
+
+.filter-toggle:hover,
+.filter-toggle[aria-expanded="true"] {
+  background: rgba(46, 101, 157, 0.12);
+  color: #1f4e7f;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.filter-toggle__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+body.home-index-shell .more-services__tabs-track > .filter-toggle.filter-toggle--icon-only {
+  flex: 0 0 46px;
+  width: 46px;
+  min-width: 46px;
+  height: 46px;
+  min-height: 46px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(42, 95, 144, 0.14);
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, #ffffff 0%, #f6fbff 100%);
+  color: #235f93;
+  box-shadow: var(--doke-elevation-control);
+}
+
+body.home-index-shell .more-services__tabs-track > .filter-toggle.filter-toggle--icon-only:hover,
+body.home-index-shell .more-services__tabs-track > .filter-toggle.filter-toggle--icon-only[aria-expanded="true"] {
+  border-color: rgba(42, 95, 144, 0.24);
+  background: linear-gradient(180deg, #ffffff 0%, #eef7ff 100%);
+  color: #164f84;
+  box-shadow: var(--toolbar-shadow-hover);
+}
+
+body.home-index-shell .more-services__tabs-track > .filter-toggle.filter-toggle--icon-only .filter-toggle__icon {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  border-radius: var(--radius-pill);
+  background: rgba(42, 95, 144, 0.06);
+}
+
+body.home-index-shell .more-services__tabs-track > .filter-toggle.filter-toggle--icon-only svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  flex: 0 0 18px;
+  stroke-width: 2.2;
+}
+
+@media (min-width: 1025px) {
+  body.home-index-shell .mini-tab:hover,
+  body.home-index-shell .filter-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--toolbar-shadow-hover);
   }
 }

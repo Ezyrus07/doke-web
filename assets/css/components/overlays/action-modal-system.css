@@ -5,11 +5,11 @@
   --doke-action-modal-width: 620px;
   --doke-action-modal-wide-width: 620px;
   --doke-action-modal-radius: var(--radius-modal);
-  --doke-action-modal-padding-x: 36px;
+  --doke-action-modal-padding-x: var(--doke-modal-visual-pad-x-compact, 36px);
   --doke-action-modal-border: var(--modal-surface-border-color);
-  --doke-action-modal-ink: #0b3c7c;
-  --doke-action-modal-text: #6f85a1;
-  --doke-action-modal-muted: #6a819e;
+  --doke-action-modal-ink: var(--doke-modal-visual-ink);
+  --doke-action-modal-text: var(--doke-modal-visual-text);
+  --doke-action-modal-muted: var(--doke-modal-visual-muted);
   --doke-action-modal-soft: var(--modal-control-bg);
   --doke-action-modal-shadow: var(--modal-surface-shadow);
 }
@@ -56,7 +56,7 @@
   overflow: hidden;
   border: var(--modal-surface-border);
   border-radius: var(--doke-action-modal-radius);
-  background: #fff;
+  background: var(--modal-surface-bg);
   box-shadow: var(--doke-action-modal-shadow);
 }
 
@@ -85,10 +85,10 @@
   gap: 8px;
   margin: 0 0 26px;
   padding: 0 18px;
-  border: 1px solid rgba(191, 230, 220, 0.92);
+  border: 1px solid var(--control-outline-soft-secondary);
   border-radius: var(--radius-pill);
-  background: #eefaf6;
-  color: #087e72;
+  background: var(--color-secondary-soft);
+  color: var(--doke-modal-visual-green);
   font-size: 0.74rem;
   line-height: 1;
   font-weight: 800;
@@ -107,15 +107,15 @@
 }
 
 .doke-action-modal__eyebrow--blue {
-  border-color: rgba(193, 215, 241, 0.96);
-  background: #eef6ff;
-  color: #0b5da8;
+  border-color: var(--control-outline-soft-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
 }
 
 .doke-action-modal__eyebrow--purple {
-  border-color: #d8c6ff;
-  background: #f4efff;
-  color: #6e4ad7;
+  border-color: rgba(124, 58, 237, 0.16);
+  background: var(--color-accent-soft);
+  color: var(--doke-modal-visual-purple);
 }
 
 .doke-action-modal__title {
@@ -154,10 +154,10 @@
 }
 
 .doke-action-modal__close:is(:hover, :focus-visible) {
-  background: #eaf3fb;
-  border-color: #bed2e8;
+  background: var(--modal-close-bg-hover);
+  border-color: var(--control-outline-soft-primary-hover);
   outline: 0;
-  box-shadow: 0 0 0 4px rgba(31, 109, 182, 0.16);
+  box-shadow: var(--doke-visual-focus-ring);
 }
 
 .doke-action-modal__close svg {
@@ -267,8 +267,8 @@
 .doke-action-modal__field textarea:focus,
 .doke-action-modal__money-field:focus-within {
   border-color: #8db5dd;
-  background: #fff;
-  box-shadow: 0 0 0 4px rgba(31, 109, 182, 0.16);
+  background: var(--modal-surface-bg);
+  box-shadow: var(--doke-visual-focus-ring);
 }
 
 .doke-action-modal__money-field {
@@ -302,9 +302,9 @@
   display: grid;
   gap: 6px;
   padding: 16px 18px;
-  border: 1px solid #dce8f4;
+  border: 1px solid var(--modal-surface-divider);
   border-radius: var(--radius-base);
-  background: #f8fbff;
+  background: var(--modal-surface-bg-soft);
   color: var(--doke-action-modal-text);
   font-size: 0.94rem;
   line-height: 1.45;
@@ -325,17 +325,17 @@
   align-items: center;
   gap: 12px;
   padding: 0 14px;
-  border: 1px solid #cfdeef;
+  border: var(--modal-control-border);
   border-radius: var(--radius-exact-15);
   background: var(--doke-action-modal-soft);
-  color: #2f4d71;
+  color: var(--color-text-soft);
   font-weight: 800;
 }
 
 .doke-action-modal__check input {
   width: 18px;
   height: 18px;
-  accent-color: #1f6db6;
+  accent-color: var(--color-primary);
 }
 
 .doke-action-modal__footer {
@@ -360,9 +360,9 @@
 .doke-action-modal__button--primary {
   border: 0;
   border-radius: var(--radius-control);
-  background: linear-gradient(135deg, #2475bd 0%, #145fa7 100%);
+  background: linear-gradient(135deg, var(--doke-modal-visual-primary) 0%, var(--doke-modal-visual-primary-strong) 100%);
   color: #fff;
-  box-shadow: 0 12px 24px rgba(20, 95, 167, 0.18);
+  box-shadow: var(--doke-overlay-action-shadow);
 }
 
 .doke-action-modal__footer .community-action-modal__button--ghost {
@@ -373,8 +373,8 @@
 }
 
 .doke-action-modal__footer .community-action-modal__button--ghost:is(:hover, :focus-visible) {
-  border-color: #bed2e8;
-  background: #edf5fc;
+  border-color: var(--control-outline-soft-primary-hover);
+  background: var(--control-bg-soft-primary-hover);
 }
 
 body.doke-action-modal-open {

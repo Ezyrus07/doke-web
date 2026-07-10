@@ -1360,7 +1360,8 @@ const canonicalRouteScriptKey = (src) => {
 };
 
 const ensureScriptsFromDocument = async (nextDoc) => {
-  const existing = new Set([...document.querySelectorAll('script[src]')].map((node) => canonicalRouteScriptKey(node.src)));
+  const existingScripts = new Map([...document.querySelectorAll('script[src]')].map((node) => [canonicalRouteScriptKey(node.src), node]));
+  const existing = new Set(existingScripts.keys());
   const scripts = [...nextDoc.querySelectorAll('script[src]')]
     .map((node) => node.getAttribute('src'))
     .filter(Boolean)
@@ -1369,7 +1370,14 @@ const ensureScriptsFromDocument = async (nextDoc) => {
   for (const src of scripts) {
     const absolute = new URL(src, window.location.href).href;
     const key = canonicalRouteScriptKey(absolute);
-    if (existing.has(key)) continue;
+    const existingScript = existingScripts.get(key);
+    const shouldReloadCommunityRoomScript = /assets\/js\/pages\/comunidade-interna\.js$/i.test(key) && existingScript && existingScript.src !== absolute;
+    if (existing.has(key) && !shouldReloadCommunityRoomScript) continue;
+    if (shouldReloadCommunityRoomScript) {
+      existingScript.remove();
+      existing.delete(key);
+      existingScripts.delete(key);
+    }
     await new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = src;
@@ -1378,6 +1386,7 @@ const ensureScriptsFromDocument = async (nextDoc) => {
       script.onerror = () => reject(new Error(`Falha ao carregar script: ${src}`));
       document.body.appendChild(script);
       existing.add(key);
+      existingScripts.set(key, script);
     });
   }
 };
@@ -1795,6 +1804,8 @@ const initializeCurrentView = () => {
   runViewInitializer("order-finalize", window.DokeInitOrderFinalize);
   runViewInitializer("review", window.DokeInitReview);
   runViewInitializer("notifications", window.DokeInitNotifications);
+  runViewInitializer("community", window.DokeInitCommunity);
+  runViewInitializer("community-room", window.DokeInitCommunityRoom);
   runViewInitializer("wallet", window.DokeInitWallet);
   runViewInitializer("profile", window.DokeInitProfile);
   runViewInitializer("professional-profile", window.DokeInitProfessionalProfile);

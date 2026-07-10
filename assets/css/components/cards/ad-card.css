@@ -14,14 +14,14 @@
   box-shadow: var(--card-shadow);
   color: #082747;
   font-family: var(--doke-font-family, Poppins, Inter, system-ui, sans-serif);
-  transition: var(--card-transition);
+  transition: var(--doke-interaction-transition);
 }
 
 .doke-ad-card:hover,
 .doke-ad-card:focus-within {
   border-color: transparent;
-  box-shadow: var(--card-shadow-hover);
-  transform: translateY(-1px);
+  box-shadow: var(--doke-interaction-shadow-card);
+  transform: var(--doke-interaction-lift-control);
 }
 
 .doke-ad-card__media {
@@ -212,7 +212,7 @@
   border-radius: var(--radius-pill);
   background: #fff;
   color: #129f92;
-  box-shadow: var(--doke-elevation-control);
+  box-shadow: var(--doke-interaction-shadow-control);
   cursor: pointer;
 }
 
@@ -330,7 +330,7 @@
   border: 2px solid #fff;
   border-radius: var(--radius-pill);
   background: radial-gradient(circle at 70% 32%, #8be1c8 0 7px, transparent 8px), linear-gradient(135deg, #eff6ff, #d9edf8);
-  box-shadow: var(--doke-elevation-control);
+  box-shadow: var(--doke-interaction-shadow-control);
 }
 
 .doke-ad-card__avatar::before {
@@ -448,46 +448,40 @@
 /* Interactive polish for canonical announcement cards. */
 @media (hover: hover) and (pointer: fine) {
   .doke-ad-card:not([hidden]) {
-    transition:
-      transform 180ms ease,
-      box-shadow 180ms ease,
-      border-color 180ms ease;
+    transition: var(--doke-interaction-transition);
   }
 
   .doke-ad-card:hover,
   .doke-ad-card:focus-within {
-    transform: translateY(-4px);
-    border-color: rgba(18, 159, 146, 0.16);
-    box-shadow: var(--doke-elevation-surface);
+    transform: var(--doke-interaction-lift-card);
+    border-color: var(--doke-interaction-border);
+    box-shadow: var(--doke-interaction-shadow-surface);
   }
 
   .doke-ad-card__media {
-    transition: filter 180ms ease, transform 180ms ease;
+    transition: var(--doke-interaction-transition);
   }
 
   .doke-ad-card:hover .doke-ad-card__media,
   .doke-ad-card:focus-within .doke-ad-card__media {
-    filter: saturate(1.04);
+    filter: var(--doke-interaction-media-filter);
   }
 
   .doke-ad-card__favorite,
   .doke-ad-card__cta {
-    transition:
-      transform 160ms ease,
-      box-shadow 160ms ease,
-      background 160ms ease;
+    transition: var(--doke-interaction-transition);
   }
 
   .doke-ad-card__favorite:hover,
   .doke-ad-card__favorite:focus-visible {
-    transform: scale(1.04);
-    box-shadow: var(--doke-elevation-surface);
+    transform: scale(1.018);
+    box-shadow: var(--doke-interaction-shadow-surface);
   }
 
   .doke-ad-card__cta:hover,
   .doke-ad-card__cta:focus-visible {
-    transform: translateY(-1px);
-    box-shadow: 0 14px 24px rgba(7, 139, 127, 0.16);
+    transform: var(--doke-interaction-lift-control);
+    box-shadow: var(--shadow-action-secondary-strong);
   }
 }
 
@@ -512,12 +506,12 @@
 .doke-ad-card__rating:hover strong,
 .doke-ad-card__location:hover,
 .doke-ad-card__tags span:hover {
-  color: #0a7f73;
+  color: var(--doke-interaction-text-secondary);
 }
 
 .doke-ad-card__tags span:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--doke-elevation-control);
+  transform: var(--doke-interaction-lift-control);
+  box-shadow: var(--doke-interaction-shadow-control);
 }
 
 .doke-ad-card__favorite {
@@ -1264,9 +1258,16 @@
 @media (max-width: 760px) {
   html.home-index-root body.home-index-shell section.more-services .doke-ad-card,
   html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card {
-    display: grid;
+    --doke-ad-card-mobile-width: 100%;
+    --doke-ad-card-mobile-min-width: 0;
+    --doke-ad-card-mobile-max-width: 100%;
+    --doke-ad-card-mobile-flex: 0 1 auto;
+    display: grid !important;
     grid-template-columns: clamp(118px, 33vw, 132px) minmax(0, 1fr);
     align-items: stretch;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
     min-height: clamp(162px, 40vw, 178px);
   }
 
@@ -1353,7 +1354,7 @@
 
   html.home-index-root body.home-index-shell section.more-services .doke-ad-card__avatar,
   html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__avatar {
-    display: none;
+    display: none !important;
   }
 
   html.home-index-root body.home-index-shell section.more-services .doke-ad-card__location-text,
@@ -1386,7 +1387,7 @@
 
   html.home-index-root body.home-index-shell section.more-services .doke-ad-card__cta,
   html.home-index-root body.home-index-shell.doke-mobile-shell-mounted section.more-services .doke-ad-card__cta {
-    min-width: 116px;
+    min-width: 116px !important;
     max-width: none;
     min-height: 34px;
     padding-inline: 14px;

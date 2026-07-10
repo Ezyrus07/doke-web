@@ -9,7 +9,7 @@
  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
  <script src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
-  <link rel="stylesheet" href="assets/css/pages/comunidade-interna-foundation.css?v=20260702-sidebar-quick-alert-flow-v1">
+  <link rel="stylesheet" href="assets/css/pages/comunidade-interna-foundation.css?v=20260710-community-settings-return-v1">
 <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <script src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
 </head>
@@ -144,10 +144,8 @@
           <span aria-hidden="true">•••</span>
          </button>
         </div>
-        <div class="community-room-actions-menu doke-toolbar" data-community-actions-menu role="menu" aria-label="Mais ações do canal" hidden>
-         <button class="doke-btn doke-btn--ghost" type="button">Silenciar canal</button>
-         <button class="doke-btn doke-btn--ghost" type="button">Ver regras</button>
-         <button class="doke-btn doke-btn--danger" type="button">Denunciar conteúdo</button>
+        <div class="community-room-actions-menu doke-toolbar" data-community-actions-menu role="menu" aria-label="Mais ações da comunidade" hidden>
+         <button class="doke-btn doke-btn--ghost" type="button" data-community-settings-open>Configurações</button>
         </div>
        </header>
 
@@ -168,13 +166,13 @@
          <img class="community-room-attachment-draft__preview messages-image-draft__preview doke-composer-draft__image" data-community-attachment-preview-image src="" alt="Preview da imagem anexada">
          <div class="community-room-attachment-draft__meta messages-image-draft__meta doke-composer-draft__meta">
           <strong data-community-attachment-title>Imagem pronta para envio</strong>
-          <span>Preview do anexo</span>
+          <span data-community-attachment-meta>Preview do anexo</span>
          </div>
          <button class="community-room-attachment-draft__cancel messages-image-draft__cancel doke-composer-draft__cancel doke-btn doke-btn--ghost doke-btn--sm" type="button" data-community-attachment-cancel>Cancelar</button>
         </div>
         <div class="community-room-composer__tools messages-composer__tools doke-chat-composer__tools">
          <label class="community-room-composer__tool messages-composer__tool doke-chat-composer__tool doke-icon-btn doke-icon-btn--flat" data-community-attach aria-label="Anexar arquivo">
-          <input type="file" accept="image/*" data-community-attachment-input hidden>
+          <input type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" data-community-attachment-input hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 12 4-4a3 3 0 1 1 4.2 4.2l-6.4 6.4a4.5 4.5 0 1 1-6.4-6.4L12 5.8"></path></svg>
          </label>
          <button class="community-room-composer__tool messages-composer__tool doke-chat-composer__tool doke-icon-btn doke-icon-btn--flat" type="button" data-community-audio aria-label="Gravar áudio">
@@ -193,14 +191,43 @@
        </form>
       </section>
 
-      <aside class="community-room-panel" data-community-panel="members" aria-hidden="true">
+      <aside class="community-settings-sidebar" data-community-settings-sidebar aria-label="Configurações da comunidade" hidden>
+       <header class="community-settings-sidebar__header">
+        <button class="community-room-return community-room-return--settings doke-btn" type="button" data-community-settings-close aria-label="Voltar para a comunidade">
+         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg><span>Comunidade</span>
+        </button>
+        <h2>Configurações</h2>
+        <p data-community-settings-name>Comunidade</p>
+       </header>
+       <form class="community-settings-search doke-search-field" role="search" aria-label="Pesquisar nas configurações" data-community-settings-search-form>
+        <span class="doke-search-field__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4.2-4.2"></path></svg></span>
+        <label class="sr-only" for="community-settings-search">Pesquisar configurações</label>
+        <input id="community-settings-search" class="community-settings-search__input doke-search-field__input doke-input" type="search" placeholder="Pesquisar" autocomplete="off" data-community-settings-search>
+       </form>
+       <nav class="community-settings-nav" aria-label="Seções das configurações">
+        <div class="community-settings-nav__section">
+         <p class="community-settings-nav__label">Comunidade</p>
+         <button class="community-settings-nav__item is-active" type="button" data-community-settings-tab="manage" data-community-settings-label="Editar comunidade" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10.5-10.5-4-4L4 16v4Z"></path><path d="m12.8 7.2 4 4"></path></svg><span>Editar comunidade</span></button>
+         <button class="community-settings-nav__item" type="button" data-community-settings-tab="members" data-community-settings-label="Membros" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8.5" cy="9" r="3"></circle><circle cx="16.5" cy="8.5" r="2.5"></circle><path d="M3.5 18c.9-2.6 2.7-4 5-4s4.1 1.4 5 4"></path><path d="M13 17.5c.7-1.9 2-2.9 3.8-2.9 1.7 0 3 .9 3.7 2.9"></path></svg><span>Membros</span></button>
+         <button class="community-settings-nav__item" type="button" data-community-settings-tab="roles" data-community-settings-label="Cargos e permissões" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.8 18 6v5.2c0 3.7-2.4 6.9-6 8.1-3.6-1.2-6-4.4-6-8.1V6l6-2.2Z"></path><path d="m9.7 11.9 1.6 1.6 3.4-3.8"></path></svg><span>Cargos e permissões</span></button>
+         <button class="community-settings-nav__item" type="button" data-community-settings-tab="invite" data-community-settings-label="Convites" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l1.4-1.4a5 5 0 0 0-7.1-7.1L10.6 5.4"></path><path d="M14 11a5 5 0 0 0-7.1-.1l-1.4 1.4a5 5 0 0 0 7.1 7.1l.8-.8"></path></svg><span>Convites</span></button>
+        </div>
+        <div class="community-settings-nav__section">
+         <p class="community-settings-nav__label">Administração</p>
+         <button class="community-settings-nav__item community-settings-nav__item--danger" type="button" data-community-settings-tab="danger" data-community-settings-label="Excluir comunidade" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"></path><path d="M9 7V4h6v3"></path><path d="m7 7 1 13h8l1-13"></path></svg><span>Excluir comunidade</span></button>
+        </div>
+       </nav>
+      </aside>
+
+      <aside class="community-room-panel community-settings-panel" data-community-panel="members" aria-hidden="true">
        <div class="community-room-panel__backdrop" data-community-panel-close></div>
        <section class="community-room-panel__surface" role="dialog" aria-modal="true" aria-label="Membros da comunidade">
-        <header class="community-room-panel__header"><h2>Membros</h2><button class="community-room-panel__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-community-panel-close aria-label="Fechar painel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></header>
+        <header class="community-room-panel__header"><div><h2>Membros</h2><p>Gerencie participantes, cargos e acesso à comunidade.</p></div><button class="community-room-panel__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-community-panel-close aria-label="Fechar painel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></header>
         <label class="community-room-panel__search"><span>Buscar membro</span><input class="doke-input" type="search" placeholder="Buscar membro..." data-community-member-search></label>
         <div class="community-room-member-tools">
          <button class="doke-btn doke-btn--secondary" type="button" data-community-member-add-toggle>Adicionar das mensagens</button>
         </div>
+        <p class="community-room-panel__feedback" data-community-member-feedback role="status" aria-live="polite" hidden></p>
         <div class="community-room-member-candidates" data-community-member-candidates hidden></div>
         <div class="community-room-member-list" data-community-member-list>
 
@@ -217,6 +244,79 @@
         </div>
        </section>
       </aside>
+
+      <aside class="community-room-panel community-settings-panel" data-community-panel="manage" aria-hidden="true">
+       <div class="community-room-panel__backdrop" data-community-panel-close></div>
+       <section class="community-room-panel__surface" role="dialog" aria-modal="true" aria-label="Gerenciar comunidade">
+        <header class="community-room-panel__header"><div><h2>Editar comunidade</h2><p>Atualize identidade, privacidade, capa e aparência.</p></div><button class="community-room-panel__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-community-panel-close aria-label="Fechar painel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></header>
+        <form class="community-room-manage-form" data-community-manage-form>
+         <label><span>Nome da comunidade</span><input class="doke-input" type="text" data-community-manage-name maxlength="70" placeholder="Nome da comunidade"></label>
+         <label><span>Descrição</span><textarea class="doke-textarea" rows="3" data-community-manage-description placeholder="Descreva o objetivo da comunidade"></textarea></label>
+         <label><span>Tipo</span><select class="doke-input community-room-select" data-community-manage-type><option value="public">Pública</option><option value="private">Privada</option><option value="invite">Somente convite</option></select></label>
+         <div class="community-room-cover-field">
+          <span>Capa da comunidade</span>
+          <div class="community-room-cover-upload">
+           <button class="doke-btn doke-btn--ghost community-room-cover-upload__button" type="button" data-community-cover-pick>Escolher capa</button>
+           <span class="community-room-cover-upload__name" data-community-cover-name>Nenhuma imagem selecionada</span>
+           <input class="community-room-cover-upload__input" type="file" accept="image/*" data-community-manage-cover>
+          </div>
+          <strong class="community-room-cover-preview" data-community-cover-preview>Sem capa selecionada</strong>
+         </div>
+         <fieldset class="community-room-theme-field"><legend>Cor/tema</legend><input class="doke-input" type="color" data-community-manage-color value="#168f7d"><div class="community-room-theme-presets" aria-label="Temas rápidos"><button class="doke-btn doke-btn--ghost" type="button" data-community-theme-color="#168f7d">Verde</button><button class="doke-btn doke-btn--ghost" type="button" data-community-theme-color="#2167ae">Azul</button><button class="doke-btn doke-btn--ghost" type="button" data-community-theme-color="#7c3aed">Roxo</button><button class="doke-btn doke-btn--ghost" type="button" data-community-theme-color="#f97316">Laranja</button></div></fieldset>
+         <p class="community-room-panel-feedback" data-community-manage-feedback hidden>Alterações salvas com sucesso.</p>
+         <div class="community-room-panel-actions"><button class="doke-btn doke-btn--ghost community-room-panel-cancel" type="button" data-community-panel-close>Cancelar</button><button class="doke-btn doke-btn--primary" type="submit">Salvar alterações</button></div>
+        </form>
+       </section>
+      </aside>
+
+      <aside class="community-room-panel community-settings-panel" data-community-panel="invite" aria-hidden="true">
+       <div class="community-room-panel__backdrop" data-community-panel-close></div>
+       <section class="community-room-panel__surface" role="dialog" aria-modal="true" aria-label="Código de convite">
+        <header class="community-room-panel__header"><div><h2>Convites</h2><p>Compartilhe um código seguro para adicionar novos membros.</p></div><button class="community-room-panel__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-community-panel-close aria-label="Fechar painel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></header>
+        <div class="community-room-invite-card">
+         <span>Código da comunidade</span>
+         <strong data-community-invite-code>DOKE-0000</strong>
+         <p>Compartilhe este código para outras pessoas entrarem pela tela Comunidade.</p>
+         <small data-community-invite-meta></small>
+         <div class="community-room-panel-actions"><button class="doke-btn doke-btn--ghost" type="button" data-community-invite-regenerate>Gerar novo</button><button class="doke-btn doke-btn--primary" type="button" data-community-invite-copy>Copiar código</button></div>
+        </div>
+       </section>
+      </aside>
+
+      <aside class="community-room-panel community-settings-panel" data-community-panel="roles" aria-hidden="true">
+       <div class="community-room-panel__backdrop" data-community-panel-close></div>
+       <section class="community-room-panel__surface" role="dialog" aria-modal="true" aria-label="Cargos da comunidade">
+        <header class="community-room-panel__header"><div><h2>Cargos e permissões</h2><p>Defina responsabilidades e controle ações administrativas.</p></div><button class="community-room-panel__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-community-panel-close aria-label="Fechar painel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></header>
+        <div class="community-room-roles-overview" data-community-role-overview>
+         <span class="community-room-panel-kicker">Cargos existentes</span>
+         <div class="community-room-role-list" data-community-role-list></div>
+        </div>
+        <form class="community-room-role-form" data-community-role-form>
+         <label><span>Novo cargo</span><input class="doke-input" type="text" data-community-role-name placeholder="Ex.: Moderador, Síndico, Prestador"></label>
+         <label><span>Cor</span><input class="doke-input" type="color" data-community-role-color value="#2167ae"></label>
+         <fieldset class="community-room-permissions" data-community-role-permissions>
+          <legend>Permissões do cargo</legend>
+          <label class="community-room-permission"><input type="checkbox" value="pinMessages"><span><strong>Fixar mensagens</strong><small>Organizar informações importantes do canal.</small></span></label>
+          <label class="community-room-permission"><input type="checkbox" value="deleteMessages"><span><strong>Excluir mensagens</strong><small>Remover mensagens de outros membros.</small></span></label>
+          <label class="community-room-permission"><input type="checkbox" value="addMembers"><span><strong>Adicionar membros</strong><small>Adicionar contatos existentes à comunidade.</small></span></label>
+          <label class="community-room-permission"><input type="checkbox" value="removeMembers"><span><strong>Remover membros</strong><small>Retirar membros que não sejam administradores.</small></span></label>
+          <label class="community-room-permission"><input type="checkbox" value="editCommunity"><span><strong>Editar comunidade</strong><small>Alterar nome, descrição, capa e tema.</small></span></label>
+          <label class="community-room-permission"><input type="checkbox" value="manageRoles"><span><strong>Gerenciar cargos</strong><small>Criar cargos, permissões e atribuições.</small></span></label>
+         </fieldset>
+         <p class="community-room-panel-feedback" data-community-role-feedback hidden>Cargo criado com sucesso.</p>
+         <button class="doke-btn doke-btn--primary" type="submit">Criar cargo</button>
+        </form>
+       </section>
+      </aside>
+      <aside class="community-room-panel community-room-panel--danger community-settings-panel" data-community-panel="danger" aria-hidden="true">
+       <section class="community-room-panel__surface" aria-label="Excluir comunidade">
+        <header class="community-room-panel__header"><div><h2>Excluir comunidade</h2><p>Esta ação remove a comunidade e as mensagens salvas neste dispositivo.</p></div></header>
+        <div class="community-settings-danger-card">
+         <div><strong>Excluir permanentemente</strong><p>Esta ação não pode ser desfeita.</p></div>
+         <button class="doke-btn doke-btn--danger" type="button" data-community-leave>Excluir comunidade</button>
+        </div>
+       </section>
+      </aside>
      </section>
     </div>
    </main>
@@ -230,12 +330,14 @@
   </div>
  </div>
 
+
+
  <script src="assets/js/core/runtime-config.js?v=20260531-stable-smooth-v1" defer></script>
  <script src="assets/js/core/feature-flags.js?v=20260512-cycle77-script-load-v1" defer></script>
  <script src="assets/js/core/rollout-guard.js?v=20260512-cycle77-script-load-v1" defer></script>
 
  <script src="assets/js/core/navigation-registry.js?v=20260701-navigation-registry-v1" defer></script>
- <script src="assets/js/core/app.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
+ <script src="assets/js/core/app.js?v=20260710-community-room-route-ready-v2" defer></script>
  <script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
  <script src="assets/js/core/stable-shell-router.js?v=20260702-payment-route-init-v1" defer></script>
 <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture" defer></script>
@@ -248,7 +350,8 @@
  <script src="assets/js/services/auth-service.js?v=20260622-auth-surface-ready-v1" defer></script>
 <script src="assets/js/services/community-service.js?v=20260512-cycle77-script-load-v1" defer></script>
  <script src="assets/js/state/state-contracts.js?v=20260512-cycle131-state-contracts" defer></script>
- <script src="assets/js/pages/comunidade-interna.js?v=20260622-community-mobile-select-v2" defer></script>
+ <script src="assets/js/components/media-lightbox.js?v=20260425-shared-media-lightbox-v1" defer></script>
+ <script src="assets/js/pages/comunidade-interna.js?v=20260710-community-invites-mvp-v1" defer></script>
   <script src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1" defer></script>
 </body>
 </html>

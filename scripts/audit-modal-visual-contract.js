@@ -103,7 +103,6 @@ const expectations = {
   ],
   'comunidade.html': [
     ['community-action-modal__dialog--code', ['doke-modal-surface', 'doke-modal-surface--compact']],
-    ['community-action-modal__dialog--create', ['doke-modal-surface']],
     ['community-action-modal__header', ['doke-modal-header']],
     ['community-action-modal__actions', ['doke-modal-actions']]
   ],
@@ -145,11 +144,7 @@ const expectations = {
 
 for (const [file, rules] of Object.entries(expectations)) {
   for (const [token, req] of rules) {
-    if (file === 'comunidade.html' && token === 'community-action-modal__dialog--create') {
-      requireClassOneOf(file, token, req, ['doke-modal-surface--compact', 'doke-modal-surface--form']);
-    } else {
-      requireClass(file, token, req);
-    }
+    requireClass(file, token, req);
   }
 }
 

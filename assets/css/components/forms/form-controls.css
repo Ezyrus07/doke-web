@@ -14,10 +14,7 @@
   font-size: var(--doke-form-control-font-size, inherit);
   font-weight: var(--doke-form-control-font-weight, inherit);
   outline: 0;
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    background-color 160ms ease;
+  transition: var(--doke-interaction-transition);
 }
 
 :where(.doke-input, .doke-select) {
@@ -88,7 +85,7 @@
   font-weight: 650;
   text-align: left;
   cursor: pointer;
-  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  transition: var(--doke-interaction-transition);
 }
 
 .doke-select__trigger:hover,
@@ -96,7 +93,7 @@
 [data-doke-select-root].is-open .doke-select__trigger {
   border-color: var(--doke-control-focus, var(--input-border-focus));
   background: var(--input-bg-focus);
-  box-shadow: var(--input-focus-ring);
+  box-shadow: var(--doke-form-control-focus-ring, var(--input-focus-ring));
   outline: none;
 }
 
@@ -138,9 +135,9 @@
   gap: 4px;
   padding: 6px;
   overflow: auto;
-  border: var(--border-soft);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
+  border: var(--doke-visual-border);
+  border-radius: var(--doke-visual-radius-sm);
+  background: var(--doke-visual-surface);
   box-shadow: var(--dropdown-shadow);
 }
 
@@ -155,7 +152,7 @@
   align-items: center;
   padding: 0 12px;
   border: 0;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-compact);
   background: transparent;
   color: var(--doke-control-text, #123454);
   font: inherit;
@@ -167,8 +164,8 @@
 
 .doke-select-menu__option:hover,
 .doke-select-menu__option:focus-visible {
-  background: #eef5fb;
-  color: var(--color-primary, #24649b);
+  background: var(--doke-visual-muted-bg);
+  color: var(--doke-interaction-text);
   outline: none;
 }
 
@@ -332,7 +329,7 @@
   inset-inline-start: var(--doke-switch-padding);
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 4px 10px rgba(30, 65, 96, 0.18);
+  box-shadow: var(--shadow-control-soft);
   transition: transform 160ms ease;
 }
 
@@ -463,5 +460,5 @@
 .doke-modal-field > [data-doke-select-root].is-open > .doke-select__trigger,
 .doke-action-modal__field > [data-doke-select-root] > .doke-select__trigger:focus-visible,
 .doke-action-modal__field > [data-doke-select-root].is-open > .doke-select__trigger {
-  box-shadow: inset 0 0 0 1px rgba(36, 100, 155, 0.16);
+  box-shadow: inset 0 0 0 1px var(--control-outline-soft-primary-hover);
 }

@@ -10,14 +10,14 @@
   --doke-overlay-z-dialog: 920;
   --doke-overlay-z-menu: 760;
   --doke-overlay-z-drawer: 880;
-  --doke-overlay-scrim: rgba(15, 23, 42, .54);
+  --doke-overlay-scrim: var(--modal-backdrop-bg);
   --doke-overlay-scrim-strong: rgba(2, 6, 23, .72);
-  --doke-overlay-surface: #ffffff;
-  --doke-overlay-muted: #f8fafc;
-  --doke-overlay-border: rgba(148, 163, 184, .24);
-  --doke-overlay-shadow: 0 28px 80px rgba(15, 23, 42, .22);
-  --doke-overlay-radius: 28px;
-  --doke-overlay-radius-mobile: 24px;
+  --doke-overlay-surface: var(--modal-surface-bg);
+  --doke-overlay-muted: var(--modal-surface-bg-soft);
+  --doke-overlay-border: var(--modal-surface-border-color);
+  --doke-overlay-shadow: var(--modal-surface-shadow);
+  --doke-overlay-radius: var(--radius-modal);
+  --doke-overlay-radius-mobile: var(--radius-lg);
   --doke-overlay-gutter: clamp(16px, 3vw, 28px);
   --doke-overlay-max: 720px;
   --doke-overlay-wide: 1120px;
@@ -56,8 +56,8 @@ body:has(.worker-preview:not([hidden])) {
   position: fixed;
   inset: 0;
   background: var(--doke-overlay-scrim);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: var(--modal-backdrop-blur);
+  backdrop-filter: var(--modal-backdrop-blur);
   z-index: 0;
 }
 
@@ -81,8 +81,8 @@ body:has(.worker-preview:not([hidden])) {
 
 :where(dialog.doke-native-overlay::backdrop, dialog.detail-budget-modal::backdrop, dialog.address-modal::backdrop) {
   background: var(--doke-overlay-scrim);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: var(--modal-backdrop-blur);
+  backdrop-filter: var(--modal-backdrop-blur);
 }
 
 /* =============================
@@ -276,7 +276,7 @@ body:has(.worker-preview:not([hidden])) {
   border: 1px solid var(--doke-overlay-border);
   border-radius: var(--radius-surface);
   background: rgba(255, 255, 255, .98);
-  box-shadow: 0 18px 48px rgba(15, 23, 42, .16);
+  box-shadow: var(--doke-overlay-popover-shadow);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
   overflow: hidden;

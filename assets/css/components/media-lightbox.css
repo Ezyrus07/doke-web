@@ -2,16 +2,16 @@
 /* Doke shared media lightbox
    Used by messages, community chat and detail gallery. */
 .doke-media-lightbox {
-  --doke-lightbox-overlay-bg: var(--doke-overlay-bg, rgba(10, 28, 49, .48));
-  --doke-lightbox-overlay-blur: var(--doke-overlay-blur, 10px);
+  --doke-lightbox-overlay-bg: var(--doke-overlay-bg);
+  --doke-lightbox-overlay-blur: var(--doke-overlay-blur);
   --doke-lightbox-control-size: var(--doke-icon-button-size, var(--icon-button-size, 42px));
   --doke-lightbox-close-size: var(--doke-close-button-size, var(--close-button-size, 42px));
   --doke-lightbox-control-radius: var(--radius-pill, 999px);
-  --doke-lightbox-control-bg: var(--color-surface, #fff);
-  --doke-lightbox-control-hover-bg: var(--doke-ui-bg-soft, #f7fbff);
-  --doke-lightbox-control-border: var(--doke-card-border, rgba(24, 75, 118, .10));
-  --doke-lightbox-control-color: var(--color-primary, #2a5f90);
-  --doke-lightbox-control-shadow: var(--shadow-surface-sm, 0 10px 24px rgba(2, 20, 40, .12));
+  --doke-lightbox-control-bg: var(--color-surface);
+  --doke-lightbox-control-hover-bg: var(--modal-close-bg-hover);
+  --doke-lightbox-control-border: var(--control-outline-soft-primary);
+  --doke-lightbox-control-color: var(--color-primary);
+  --doke-lightbox-control-shadow: var(--doke-overlay-control-shadow);
 
   position: fixed;
   inset: 0;
@@ -61,7 +61,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform .16s ease, background-color .16s ease, box-shadow .16s ease, border-color .16s ease, color .16s ease;
+  transition: var(--doke-interaction-transition);
 }
 
 .doke-media-lightbox__close:hover,
@@ -106,7 +106,7 @@
   object-fit: contain;
   border-radius: var(--radius-lg);
   background: #fff;
-  box-shadow: 0 30px 90px rgba(2, 20, 40, .32);
+  box-shadow: var(--doke-overlay-media-shadow);
 }
 
 .doke-media-lightbox__nav {
@@ -172,13 +172,13 @@
   overflow: hidden;
   border-radius: var(--radius-base);
   opacity: .72;
-  box-shadow: 0 8px 18px rgba(2, 20, 40, .14);
+  box-shadow: var(--doke-overlay-control-shadow);
 }
 
 .doke-media-lightbox__thumb.is-active {
   opacity: 1;
   border-color: var(--doke-lightbox-control-color);
-  box-shadow: 0 0 0 3px rgba(42, 95, 144, .18), var(--doke-lightbox-control-shadow);
+  box-shadow: var(--doke-visual-focus-ring), var(--doke-lightbox-control-shadow);
 }
 
 .doke-media-lightbox__thumb img {
@@ -197,13 +197,13 @@
 
 .message-bubble__image img,
 .community-message__image img {
-  transition: transform .16s ease, filter .16s ease;
+  transition: transform var(--doke-interaction-duration), filter var(--doke-interaction-duration);
 }
 
 .message-bubble__image:hover img,
 .community-message__image:hover img {
-  transform: scale(1.01);
-  filter: saturate(1.04);
+  transform: var(--doke-interaction-media-scale);
+  filter: var(--doke-interaction-media-filter);
 }
 
 @media (max-width: 720px) {
@@ -335,7 +335,7 @@
     max-height: min(62dvh, 520px);
     object-fit: contain;
     border-radius: var(--radius-base);
-    box-shadow: 0 24px 70px rgba(2, 20, 40, .30);
+    box-shadow: var(--doke-overlay-media-shadow);
   }
 
   body[data-page="detalhe-anuncio"] .doke-media-lightbox__nav {
@@ -480,7 +480,7 @@
     max-height: 62dvh;
     object-fit: contain;
     border-radius: var(--radius-base);
-    box-shadow: 0 24px 70px rgba(2, 20, 40, .34);
+    box-shadow: var(--doke-overlay-media-shadow);
   }
 
   body[data-page="detalhe-anuncio"] .doke-media-lightbox__close {
@@ -584,8 +584,8 @@
 /* Detail anuncio lightbox control parity v28.
    Uses the shared overlay tone and Doke circular action controls instead of dark page-local controls. */
 body[data-page="detalhe-anuncio"] .doke-media-lightbox {
-  --doke-lightbox-overlay-bg: var(--doke-overlay-bg, rgba(10, 28, 49, .48));
-  --doke-lightbox-overlay-blur: var(--doke-overlay-blur, 10px);
+  --doke-lightbox-overlay-bg: var(--doke-overlay-bg);
+  --doke-lightbox-overlay-blur: var(--doke-overlay-blur);
 }
 
 body[data-page="detalhe-anuncio"] .doke-media-lightbox__close,

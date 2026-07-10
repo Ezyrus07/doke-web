@@ -3,8 +3,13 @@ window.DokeInitCommunity = function DokeInitCommunity() {
   if (!page || page.dataset.communityReady === 'true') return;
   page.dataset.communityReady = 'true';
 
-  const cards = [...page.querySelectorAll('[data-community-discover-card]')];
-  const extraCards = cards.filter((card) => card.hasAttribute('data-community-extra'));
+  let cards = [...page.querySelectorAll('[data-community-discover-card]')];
+  let extraCards = cards.filter((card) => card.hasAttribute('data-community-extra'));
+
+  const refreshDiscoveryCardCollections = () => {
+    cards = [...page.querySelectorAll('[data-community-discover-card]')];
+    extraCards = cards.filter((card) => card.hasAttribute('data-community-extra'));
+  };
   const loadMoreWrap = page.querySelector('[data-community-load-more-wrap]');
   const loadMoreButton = page.querySelector('[data-community-load-more]');
   let loadedExtraCount = 0;
@@ -257,6 +262,15 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '') || 'community';
 
+
+  const createCommunityId = (title) => {
+    const base = slugifyCommunity(title);
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      return `${base}-${window.crypto.randomUUID()}`;
+    }
+    return `${base}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  };
+
   const readLocalCommunities = () => {
     try {
       const parsed = JSON.parse(window.localStorage?.getItem(COMMUNITY_LIST_STORAGE_KEY) || '[]');
@@ -274,24 +288,76 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     }
   };
 
+  const normalizeInviteCode = (value) => String(value || '')
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, '')
+    .replace(/[^A-Z0-9-]/g, '');
+
+  const getMemberId = (member) => String(member?.id || member?.userId || member?.profileId || '').trim();
+
+  const getCurrentUserProfile = () => {
+    const service = window.DokeAuth && window.DokeAuth.service;
+    const user = typeof service?.getCurrentUser === 'function' ? service.getCurrentUser() : null;
+    const name = user?.displayName || user?.name || user?.fullName || user?.email || 'Você';
+    const id = user?.id || user?.userId || user?.profile?.userId || user?.profile?.id || user?.email || '';
+    return {
+      id: String(id || `anonymous-${slugifyCommunity(name)}`),
+      name,
+      role: 'member',
+      source: 'account'
+    };
+  };
+
+  const deriveCommunityOwnerId = (record) => {
+    const explicit = String(record?.ownerId || record?.createdById || record?.creatorId || '').trim();
+    if (explicit) return explicit;
+    const ownerMember = Array.isArray(record?.members)
+      ? record.members.find((member) => member && String(member.role || '').toLowerCase() === 'owner')
+      : null;
+    return getMemberId(ownerMember);
+  };
+
+  const isCurrentUserCommunityMember = (record, profile = getCurrentUserProfile()) => {
+    const profileId = String(profile?.id || '').trim();
+    if (!profileId) return false;
+    if (deriveCommunityOwnerId(record) === profileId) return true;
+    return Array.isArray(record?.members) && record.members.some((member) => getMemberId(member) === profileId);
+  };
+
   const normalizeCommunityRecord = (record) => {
     const title = String(record?.title || record?.name || 'Comunidade Doke').trim() || 'Comunidade Doke';
     const id = String(record?.id || record?.community || slugifyCommunity(title)).trim() || slugifyCommunity(title);
     const category = String(record?.category || record?.type || '').trim();
     const now = new Date().toISOString();
+    const inviteCode = normalizeInviteCode(record?.invite?.code || record?.inviteCode || record?.code);
     return {
       id,
       title,
       category,
+      type: String(record?.type || record?.visibility || category || 'public').trim() || 'public',
+      visibility: String(record?.visibility || record?.type || category || 'public').trim() || 'public',
       description: String(record?.description || '').trim(),
       code: String(record?.code || '').trim(),
+      inviteCode,
+      invite: inviteCode ? {
+        code: inviteCode,
+        active: record?.invite?.active !== false,
+        createdAt: String(record?.invite?.createdAt || record?.inviteCreatedAt || now),
+        expiresAt: String(record?.invite?.expiresAt || record?.inviteExpiresAt || ''),
+        generation: Number(record?.invite?.generation || 1)
+      } : null,
+      ownerId: deriveCommunityOwnerId(record),
+      roles: Array.isArray(record?.roles) ? record.roles : [],
       role: record?.role || 'member',
       source: record?.source || 'local',
       members: Array.isArray(record?.members) ? record.members.filter((member) => member && member.name).map((member) => ({
         id: String(member.id || slugifyCommunity(member.name)).trim(),
         name: String(member.name || '').trim(),
         role: member.role || 'member',
-        source: member.source || 'messages'
+        source: member.source || 'messages',
+        joinedAt: String(member.joinedAt || '').trim(),
+        addedBy: String(member.addedBy || '').trim()
       })) : [],
       coverName: String(record?.coverName || record?.cover?.name || '').trim(),
       coverType: String(record?.coverType || record?.cover?.type || '').trim(),
@@ -355,11 +421,113 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     return record?.source === 'code' ? 'Privada' : 'Comunidade';
   };
 
+
+  const categoryFilterFromRecord = (record) => {
+    const value = `${record?.category || ''} ${record?.type || ''} ${record?.visibility || ''}`.toLowerCase();
+    if (value.includes('condom')) return 'condominios';
+    if (value.includes('reforma')) return 'reforma';
+    if (value.includes('servi') || value.includes('prof')) return 'servicos';
+    if (value.includes('tecn')) return 'tecnologia';
+    if (value.includes('dica')) return 'dicas';
+    return 'all';
+  };
+
+  const isPublicCommunity = (record) => {
+    const visibility = String(record?.visibility || record?.type || record?.category || '').trim().toLowerCase();
+    if (!visibility) return true;
+    if (visibility.includes('privad') || visibility.includes('convite')) return false;
+    return visibility === 'public'
+      || visibility.includes('públic')
+      || visibility.includes('public')
+      || visibility.includes('condom')
+      || visibility.includes('prof')
+      || visibility.includes('servi')
+      || visibility.includes('tecn')
+      || visibility.includes('reforma')
+      || visibility.includes('dica');
+  };
+
+  const joinPublicCommunity = (record) => {
+    if (!record || !isPublicCommunity(record)) {
+      return { ok: false, message: 'Esta comunidade não aceita entrada pública.' };
+    }
+
+    const profile = getCurrentUserProfile();
+    if (isCurrentUserCommunityMember(record, profile)) {
+      return { ok: true, record, alreadyMember: true };
+    }
+
+    const members = Array.isArray(record.members) ? record.members.slice() : [];
+    const profileName = String(profile.name || '').trim().toLowerCase();
+    const exists = members.some((member) => getMemberId(member) === String(profile.id)
+      || String(member?.name || '').trim().toLowerCase() === profileName);
+
+    if (!exists) {
+      members.push({
+        id: profile.id,
+        name: profile.name,
+        role: 'member',
+        source: 'public-discovery',
+        joinedAt: new Date().toISOString(),
+        addedBy: 'self'
+      });
+    }
+
+    const communities = readLocalCommunities();
+    const index = communities.findIndex((item) => String(item?.id || '') === String(record.id));
+    if (index < 0) return { ok: false, message: 'Comunidade não encontrada.' };
+
+    const saved = {
+      ...communities[index],
+      members,
+      updatedAt: new Date().toISOString()
+    };
+    communities[index] = saved;
+    writeLocalCommunities(communities);
+    return { ok: true, record: saved, alreadyMember: exists };
+  };
+
+  const renderDiscoverCommunities = () => {
+    const grid = page.querySelector('[data-community-grid]');
+    if (!grid) return;
+
+    const profile = getCurrentUserProfile();
+    const discoverable = readLocalCommunities().filter((record) => (
+      isPublicCommunity(record) && !isCurrentUserCommunityMember(record, profile)
+    ));
+
+    grid.innerHTML = discoverable.map((record) => {
+      const description = String(record.description || '').trim() || 'Comunidade pública aberta para novos participantes.';
+      const coverMarkup = record.coverDataUrl
+        ? `<img alt="" loading="lazy" src="${escapeCommunityHtml(record.coverDataUrl)}"/>`
+        : '';
+      return `
+        <article class="community-card community-discover-card doke-card doke-community-card" data-community-discover-card data-community-card data-community-id="${escapeCommunityHtml(record.id)}" data-title="${escapeCommunityHtml(record.title)}" data-category="${categoryFilterFromRecord(record)}">
+          <div class="community-card__cover">
+            ${coverMarkup}
+            <span class="community-card__cover-badge">${escapeCommunityHtml(categoryLabelFromRecord(record))}</span>
+          </div>
+          <div class="community-card__body">
+            <div class="community-card__head">
+              <h2>${escapeCommunityHtml(record.title)}</h2>
+            </div>
+            <p>${escapeCommunityHtml(description)}</p>
+            <div class="community-card__meta"><span>Comunidade pública</span></div>
+            <button class="community-card__action doke-btn doke-btn--primary" data-community-public-join type="button">Participar</button>
+          </div>
+        </article>
+      `;
+    }).join('');
+
+    refreshDiscoveryCardCollections();
+  };
+
   const renderLocalCommunities = () => {
     const continueList = page.querySelector('[data-community-continue-list]');
     const localSection = page.querySelector('[data-community-local-section]');
     if (!continueList) return;
-    const localCommunities = readLocalCommunities();
+    const currentProfile = getCurrentUserProfile();
+    const localCommunities = readLocalCommunities().filter((record) => isCurrentUserCommunityMember(record, currentProfile));
     if (localSection) localSection.hidden = localCommunities.length === 0;
     const existingIds = new Set([...continueList.querySelectorAll('[data-community-id]')]
       .map((item) => item.dataset.communityId)
@@ -383,7 +551,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
         <div class="community-continue-card__content">
           <span class="community-pill doke-chip">${categoryLabelFromRecord(record)}</span>
           <h3>${escapeCommunityHtml(record.title)}</h3>
-          <span class="community-activity">${record.role === 'owner' ? 'Criada por você' : 'Acesso liberado'}</span>
+          <span class="community-activity">${deriveCommunityOwnerId(record) === String(currentProfile.id) ? 'Criada por você' : 'Acesso liberado'}</span>
           <div class="community-continue-card__meta"><span>${record.source === 'code' ? 'Entrou por código' : 'Comunidade local'}</span><span class="community-online">online</span></div>
         </div>
         <button class="community-open-button doke-btn" data-community-enter type="button">Abrir</button>
@@ -403,6 +571,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
   };
 
   renderLocalCommunities();
+  renderDiscoverCommunities();
 
   document.querySelectorAll('[data-community-enter]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -412,6 +581,17 @@ window.DokeInitCommunity = function DokeInitCommunity() {
 
   document.querySelectorAll('[data-community-request]').forEach((button) => {
     button.addEventListener('click', () => openRequestModal(button));
+  });
+
+
+  document.querySelectorAll('[data-community-public-join]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const context = getCommunityContextFromButton(button);
+      const record = readLocalCommunities().find((item) => String(item?.id || '') === String(context.id));
+      const result = joinPublicCommunity(record);
+      if (!result.ok) return;
+      openCommunityRoom(result.record);
+    });
   });
 
   document.querySelectorAll('[data-community-request-close]').forEach((button) => {
@@ -503,18 +683,6 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       .replace(/'/g, '&#039;');
   }
 
-  const getCurrentUserProfile = () => {
-    const service = window.DokeAuth && window.DokeAuth.service;
-    const user = typeof service?.getCurrentUser === 'function' ? service.getCurrentUser() : null;
-    const name = user?.displayName || user?.name || user?.fullName || 'Você';
-    return {
-      id: String(user?.id || 'current-user'),
-      name,
-      role: 'owner',
-      source: 'account'
-    };
-  };
-
   const readLocalConversations = () => {
     const keys = ['doke.conversations.local.v1', 'doke.messages.local.v1'];
     for (const key of keys) {
@@ -559,6 +727,81 @@ window.DokeInitCommunity = function DokeInitCommunity() {
 
     cachedCreateMemberCandidates = [...map.values()].slice(0, 8);
     return cachedCreateMemberCandidates;
+  };
+
+  const getCommunityInvite = (record) => {
+    const code = normalizeInviteCode(record?.invite?.code || record?.inviteCode || record?.code);
+    if (!code) return null;
+    return {
+      code,
+      active: record?.invite?.active !== false,
+      createdAt: String(record?.invite?.createdAt || record?.inviteCreatedAt || ''),
+      expiresAt: String(record?.invite?.expiresAt || record?.inviteExpiresAt || '')
+    };
+  };
+
+  const isInviteExpired = (invite) => {
+    if (!invite?.expiresAt) return false;
+    const expiresAt = Date.parse(invite.expiresAt);
+    return Number.isFinite(expiresAt) && expiresAt <= Date.now();
+  };
+
+  const joinCommunityByInvite = (record) => {
+    const profile = getCurrentUserProfile();
+    const members = Array.isArray(record.members) ? record.members.slice() : [];
+    const profileName = String(profile.name || '').trim().toLowerCase();
+    const exists = members.some((member) => String(member?.id || '') === String(profile.id)
+      || String(member?.name || '').trim().toLowerCase() === profileName);
+
+    if (!exists) {
+      members.push({
+        id: profile.id,
+        name: profile.name,
+        role: 'member',
+        source: 'invite',
+        joinedAt: new Date().toISOString(),
+        addedBy: 'invite'
+      });
+    }
+
+    const communities = readLocalCommunities();
+    const index = communities.findIndex((item) => String(item?.id || '') === String(record.id));
+    const saved = {
+      ...record,
+      members,
+      source: record.source || 'invite',
+      joinedAt: record.joinedAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    if (index >= 0) communities[index] = saved;
+    else communities.unshift(saved);
+    writeLocalCommunities(communities);
+    return { record: saved, alreadyMember: exists };
+  };
+
+  const resolveInviteEntry = (rawCode) => {
+    const code = normalizeInviteCode(rawCode);
+    if (!code) return { ok: false, code, message: 'Digite um código válido.' };
+
+    const record = readLocalCommunities().find((community) => {
+      const invite = getCommunityInvite(community);
+      return invite && invite.code === code;
+    });
+    if (!record) return { ok: false, code, message: 'Convite não encontrado ou substituído por um novo código.' };
+
+    const invite = getCommunityInvite(record);
+    if (!invite.active) return { ok: false, code, message: 'Este convite foi desativado.' };
+    if (isInviteExpired(invite)) return { ok: false, code, message: 'Este convite expirou. Solicite um novo código.' };
+
+    const result = joinCommunityByInvite(record);
+    return {
+      ok: true,
+      code,
+      record: result.record,
+      message: result.alreadyMember
+        ? 'Você já participa desta comunidade. Abrindo...'
+        : 'Entrada confirmada. Abrindo comunidade...'
+    };
   };
 
   const getCreateFormParts = () => {
@@ -807,18 +1050,14 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       event.preventDefault();
       if (form.matches('[data-community-code-modal-form]')) {
         const codeField = form.querySelector('input[name="communityCode"]');
-        if (!validateRequiredField(codeField, 'Digite o código da comunidade para continuar.')) return;
-        const code = codeField.value.trim().toUpperCase();
-        const record = upsertLocalCommunity({
-          id: `codigo-${slugifyCommunity(code)}`,
-          title: `Comunidade ${code}`,
-          category: 'privada',
-          code,
-          source: 'code',
-          role: 'member'
-        });
-        setActionFormFeedback(form, `Código ${code} validado. Abrindo comunidade...`, 'success');
-        window.setTimeout(() => openCommunityRoom(record), 220);
+        const result = resolveInviteEntry(codeField?.value);
+        if (!result.ok) {
+          codeField?.setAttribute('aria-invalid', 'true');
+          setActionFormFeedback(form, result.message, 'error');
+          return;
+        }
+        setActionFormFeedback(form, result.message, 'success');
+        window.setTimeout(() => openCommunityRoom(result.record), 220);
         return;
       }
 
@@ -831,18 +1070,20 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       if (!validateRequiredField(nameField, 'Informe o nome da comunidade para criar o espaço.')) return;
       const typeField = form.querySelector('select[name="communityType"]');
       const descriptionField = form.querySelector('textarea[name="communityDescription"]');
-      const members = [getCurrentUserProfile(), ...getSelectedCreateMembers()];
+      const creator = getCurrentUserProfile();
+      const members = [{ ...creator, role: 'owner' }, ...getSelectedCreateMembers()];
       const record = upsertLocalCommunity({
-        id: slugifyCommunity(nameField.value),
+        id: createCommunityId(nameField.value),
         title: nameField.value.trim(),
         category: typeField?.value || 'Comunidade',
         description: descriptionField?.value || '',
+        ownerId: creator.id,
+        createdById: creator.id,
         coverName: createCoverState.name,
         coverType: createCoverState.type,
         coverDataUrl: createCoverState.dataUrl,
         members,
-        source: 'created',
-        role: 'owner'
+        source: 'created'
       });
       setActionFormFeedback(form, 'Comunidade criada. Abrindo sala...', 'success');
       window.setTimeout(() => openCommunityRoom(record), 220);
@@ -872,28 +1113,35 @@ window.DokeInitCommunity = function DokeInitCommunity() {
   }
 
   if (codeForm && codeInput && codeFeedback) {
+    codeInput.addEventListener('input', () => {
+      codeInput.value = normalizeInviteCode(codeInput.value).slice(0, 18);
+      codeInput.removeAttribute('aria-invalid');
+      codeFeedback.textContent = '';
+      delete codeFeedback.dataset.state;
+    });
+
     codeForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      const value = codeInput.value.trim();
+      const code = normalizeInviteCode(codeInput.value);
 
-      if (!value) {
+      if (!code) {
+        codeInput.setAttribute('aria-invalid', 'true');
         codeFeedback.textContent = 'Digite um código válido.';
         codeFeedback.dataset.state = 'error';
         return;
       }
 
-      const code = value.toUpperCase();
-      const record = upsertLocalCommunity({
-        id: `codigo-${slugifyCommunity(code)}`,
-        title: `Comunidade ${code}`,
-        category: 'privada',
-        code,
-        source: 'code',
-        role: 'member'
-      });
-      codeFeedback.textContent = `Código ${code} validado. Abrindo comunidade...`;
+      const result = resolveInviteEntry(code);
+      if (!result.ok) {
+        codeInput.setAttribute('aria-invalid', 'true');
+        codeFeedback.textContent = result.message;
+        codeFeedback.dataset.state = 'error';
+        return;
+      }
+
+      codeFeedback.textContent = result.message;
       codeFeedback.dataset.state = 'success';
-      window.setTimeout(() => openCommunityRoom(record), 220);
+      window.setTimeout(() => openCommunityRoom(result.record), 220);
     });
   }
 
