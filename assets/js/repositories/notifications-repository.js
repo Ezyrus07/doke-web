@@ -63,6 +63,27 @@
     }
   }
 
+  function getIdentityKeysFromUser(user) {
+    var profile = user && user.profile || {};
+    var profiles = user && Array.isArray(user.profiles) ? user.profiles : [];
+    var values = [
+      user && user.id,
+      user && user.userId,
+      user && user.accountId,
+      user && user.email,
+      profile && profile.id,
+      profile && profile.userId,
+      profile && profile.accountId,
+      profile && profile.email
+    ];
+    profiles.forEach(function (item) {
+      values.push(item && item.id, item && item.userId, item && item.accountId, item && item.email);
+    });
+    return Array.from(new Set(values.map(function (value) {
+      return normalizeText(value).toLowerCase();
+    }).filter(Boolean)));
+  }
+
   function getCategory(type) {
     if (/message/i.test(type || '')) return 'messages';
     if (/order|budget|proposal|status/i.test(type || '')) return 'orders';
@@ -103,7 +124,7 @@
     var category = normalizeText(raw.category || getCategory(type));
     var createdAt = raw.createdAt || raw.creatédAt || nowIso();
     var title = normalizeText(raw.title || 'Nova notificação');
-    var body = normalizeText(raw.body || raw.description || '');
+    var body = normalizeText(raw.body || raw.message || raw.description || '');
     var read = raw.read === true;
     var dismissed = raw.dismissed === true;
 
@@ -112,6 +133,7 @@
       type: type,
       category: category,
       userId: normalizeText(raw.userId || raw.recipientId || ''),
+      recipientAccountKey: normalizeText(raw.recipientAccountKey || raw.accountKey || raw.userAccountKey || ''),
       eventKey: getEventKey(raw),
       messageId: normalizeText(raw.messageId || ''),
       actorId: normalizeText(raw.actorId || ''),
@@ -122,7 +144,7 @@
       title: title,
       body: body,
       targetUrl: getTargetUrl(raw),
-      actionLabel: normalizeText(raw.actionLabel || getActionLabel(type)),
+      actionLabel: normalizeText(raw.actionLabel || raw.action || getActionLabel(type)),
       read: read,
       dismissed: dismissed,
       createdAt: createdAt,
@@ -215,8 +237,15 @@
 
   function matchesCurrentUser(notification, user) {
     if (!user || !user.id) return true;
-    if (!notification.userId) return true;
+    var userKeys = getIdentityKeysFromUser(user);
+    var notificationKeys = [
+      notification.userId,
+      notification.recipientId,
+      notification.recipientAccountKey
+    ].map(function (value) { return normalizeText(value).toLowerCase(); }).filter(Boolean);
+    if (!notificationKeys.length) return true;
     if (String(notification.userId) === String(user.id)) return true;
+    if (notificationKeys.some(function (key) { return userKeys.indexOf(key) !== -1; })) return true;
     return isDemoProfessional(user) && isDemoProfessionalFacingNotification(notification);
   }
 
@@ -327,7 +356,7 @@
   function unreadCount(userId) {
     return list({ read: false, dismissed: false, currentUser: userId ? false : true }).then(function (items) {
       return (items || []).filter(function (item) {
-        return !userId || String(item.userId) === String(userId);
+        return !userId || String(item.userId) === String(userId) || String(item.recipientAccountKey || '') === String(userId);
       }).length;
     });
   }

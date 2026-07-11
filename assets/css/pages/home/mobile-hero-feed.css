@@ -160,12 +160,12 @@ html.home-index-root body.home-index-shell .home-search-hero__card{
   html.home-index-root body.home-index-shell .doke-search-panel__input{
     color: #294e73;
     font-size: 14px;
-    font-weight: 650;
+    font-weight: var(--doke-type-weight-emphasis, 700);
   }
 
   html.home-index-root body.home-index-shell .doke-search-panel__input::placeholder{
     color: #97a7ba;
-    font-weight: 650;
+    font-weight: var(--doke-type-weight-emphasis, 700);
   }
 
   html.home-index-root body.home-index-shell .home-search-hero__mobile-submit,
@@ -237,15 +237,6 @@ html.home-index-root body.home-index-shell .home-search-hero__leading-filter{
   html.home-index-root body.home-index-shell .featured-services .home-section-header{
     margin: 0 0 10px;
     padding-inline: var(--home-mobile-edge);
-  }
-
-  html.home-index-root body.home-index-shell .featured-services .home-section-title,
-html.home-index-root body.home-index-shell .home-recommendations .home-section-title{
-    font-size: 17px;
-    line-height: 1.15;
-    font-weight: 850;
-    letter-spacing: -0.03em;
-    color: #1d4167;
   }
 
   html.home-index-root body.home-index-shell .featured-services .content-rail{
@@ -456,8 +447,7 @@ html.home-index-root body.home-index-shell .featured-services .content-rail,
 html.home-index-root body.home-index-shell .home-recommendations,
 html.home-index-root body.home-index-shell .featured-pros .home-section-header,
 html.home-index-root body.home-index-shell .featured-pros .content-rail{
-    padding-left: var(--home-mobile-edge);
-    padding-right: var(--home-mobile-edge);
+    padding-inline: var(--home-mobile-edge);
     box-sizing: border-box;
   }
 
@@ -557,7 +547,7 @@ html.home-index-root body.home-index-shell .home-search-hero__card{
     white-space: nowrap;
     font-size: 16px;
     line-height: 1.05;
-    font-weight: 850;
+    font-weight: var(--doke-type-weight-display, 800);
     letter-spacing: -0.03em;
     color: #173d63;
   }
@@ -690,22 +680,32 @@ html.home-index-root body.home-index-shell .home-search-hero__field::after{
     box-shadow: none;
   }
 
-  /* Featured cards: same starting x-position as categories/recommended cards */
-  html.home-index-root body.home-index-shell .featured-services .home-section-header,
-html.home-index-root body.home-index-shell .featured-services .content-rail,
-html.home-index-root body.home-index-shell .home-recommendations,
+  /* Featured services rail: page owns composition; cards own anatomy. */
+  html.home-index-root body.home-index-shell .featured-services{
+    padding-left: var(--home-mobile-edge);
+    padding-right: var(--home-mobile-edge);
+    box-sizing: border-box;
+  }
+
+  html.home-index-root body.home-index-shell .home-recommendations,
 html.home-index-root body.home-index-shell .home-catégories__rail{
     padding-left: var(--home-mobile-edge);
     padding-right: var(--home-mobile-edge);
     box-sizing: border-box;
   }
 
+  html.home-index-root body.home-index-shell .featured-services .home-section-header,
+html.home-index-root body.home-index-shell .featured-services .content-rail{
+    padding-inline: 0;
+    box-sizing: border-box;
+  }
+
   html.home-index-root body.home-index-shell .featured-services .content-rail{
-    width: auto !important;
+    width: 100% !important;
     max-width: 100% !important;
     margin-left: 0;
     margin-right: 0;
-    overflow: hidden !important;
+    overflow: visible !important;
   }
 
   html.home-index-root body.home-index-shell .featured-services .service-grid,
@@ -716,7 +716,7 @@ html.home-index-root body.home-index-shell #featured-services-track{
     width: 100% !important;
     max-width: 100% !important;
     margin: 0;
-    padding: 0 0 12px 0;
+    padding: 0 0 12px;
     overflow-x: auto !important;
     overflow-y: hidden !important;
     scroll-padding-left: 0;
@@ -729,11 +729,64 @@ html.home-index-root body.home-index-shell #featured-services-track{
     display: none !important;
   }
 
+  /* Canonical mobile section heading rhythm. Page owns alignment; shared tokens own typography. */
+  html.home-index-root body.home-index-shell .featured-services .home-section-header,
+  html.home-index-root body.home-index-shell .home-recommendations .home-section-header,
+  html.home-index-root body.home-index-shell .short-videos .home-section-header,
+  html.home-index-root body.home-index-shell .home-publications .home-section-header,
+  html.home-index-root body.home-index-shell .before-after .home-section-header,
+  html.home-index-root body.home-index-shell .more-services .home-section-header,
+  html.home-index-root body.home-index-shell .featured-pros .home-section-header,
+  html.home-index-root body.home-index-shell .professional-showcase .home-section-header{
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 10px;
+  }
 
+  html.home-index-root body.home-index-shell .featured-services .home-section-header{
+    padding-left: 0;
+    padding-right: 0;
+  }
 
+  html.home-index-root body.home-index-shell .home-recommendations .home-section-header,
+  html.home-index-root body.home-index-shell .short-videos .home-section-header,
+  html.home-index-root body.home-index-shell .home-publications .home-section-header,
+  html.home-index-root body.home-index-shell .before-after .home-section-header,
+  html.home-index-root body.home-index-shell .more-services .home-section-header,
+  html.home-index-root body.home-index-shell .featured-pros .home-section-header,
+  html.home-index-root body.home-index-shell .professional-showcase .home-section-header{
+    padding-left: var(--home-mobile-edge);
+    padding-right: var(--home-mobile-edge);
+  }
 
+  html.home-index-root body.home-index-shell .featured-services .home-section-title,
+  html.home-index-root body.home-index-shell .home-recommendations .home-section-title,
+  html.home-index-root body.home-index-shell .short-videos .home-section-title,
+  html.home-index-root body.home-index-shell .home-publications .home-section-title,
+  html.home-index-root body.home-index-shell .before-after .home-section-title,
+  html.home-index-root body.home-index-shell .more-services .home-section-title,
+  html.home-index-root body.home-index-shell .featured-pros .home-section-title,
+  html.home-index-root body.home-index-shell .professional-showcase .home-section-title{
+    display: block !important;
+    color: var(--doke-text-secondary, #315a82);
+    font-size: 13px;
+    line-height: 1.15;
+    font-weight: var(--doke-type-weight-display, 800);
+    letter-spacing: 0.06em;
+  }
 
-
+  html.home-index-root body.home-index-shell .featured-services .section-heading__link,
+  html.home-index-root body.home-index-shell .home-recommendations .section-heading__link,
+  html.home-index-root body.home-index-shell .short-videos .section-heading__link,
+  html.home-index-root body.home-index-shell .home-publications .section-heading__link,
+  html.home-index-root body.home-index-shell .before-after .section-heading__link,
+  html.home-index-root body.home-index-shell .more-services .section-heading__link,
+  html.home-index-root body.home-index-shell .featured-pros .section-heading__link,
+  html.home-index-root body.home-index-shell .professional-showcase .section-heading__link{
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 390px) {
@@ -751,61 +804,6 @@ html.home-index-root body.home-index-shell #featured-services-track{
   }
 }
 
-
-/* Hotfix — mobile section-title contract + featured services title visibility */
-@media (max-width: 560px) {
-  html.home-index-root body.home-index-shell .featured-services .home-section-header,
-html.home-index-root body.home-index-shell .home-recommendations .home-section-header,
-html.home-index-root body.home-index-shell .short-videos .home-section-header,
-html.home-index-root body.home-index-shell .home-publications .home-section-header,
-html.home-index-root body.home-index-shell .before-after .home-section-header,
-html.home-index-root body.home-index-shell .more-services .home-section-header,
-html.home-index-root body.home-index-shell .featured-pros .home-section-header,
-html.home-index-root body.home-index-shell .professional-showcase .home-section-header{
-    display: flex !important;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin: 0 0 10px;
-    padding-left: var(--home-mobile-edge);
-    padding-right: var(--home-mobile-edge);
-    box-sizing: border-box;
-  }
-
-  html.home-index-root body.home-index-shell .featured-services .home-section-title,
-html.home-index-root body.home-index-shell .home-recommendations .home-section-title,
-html.home-index-root body.home-index-shell .short-videos .home-section-title,
-html.home-index-root body.home-index-shell .home-publications .home-section-title,
-html.home-index-root body.home-index-shell .before-after .home-section-title,
-html.home-index-root body.home-index-shell .more-services .home-section-title,
-html.home-index-root body.home-index-shell .featured-pros .home-section-title,
-html.home-index-root body.home-index-shell .professional-showcase .home-section-title{
-    display: block !important;
-    margin: 0;
-    font-size: 13px;
-    line-height: 1.15;
-    font-weight: 850;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    color: #315a82;
-  }
-
-  html.home-index-root body.home-index-shell .featured-services .section-heading__link,
-html.home-index-root body.home-index-shell .home-recommendations .section-heading__link,
-html.home-index-root body.home-index-shell .short-videos .section-heading__link,
-html.home-index-root body.home-index-shell .home-publications .section-heading__link,
-html.home-index-root body.home-index-shell .before-after .section-heading__link,
-html.home-index-root body.home-index-shell .more-services .section-heading__link,
-html.home-index-root body.home-index-shell .featured-pros .section-heading__link,
-html.home-index-root body.home-index-shell .professional-showcase .section-heading__link{
-    white-space: nowrap;
-
-}
-
-  html.home-index-root body.home-index-shell .featured-services{
-    margin-top: 10px;
-  }
-}
 
 /* Mobile list contract — "Mais anúncios" keeps one card per row on phones; card anatomy remains in components/cards/ad-card.css. */
 @media (max-width: 560px) {
@@ -937,42 +935,7 @@ html.home-index-root body.home-index-shell .more-services [data-more-services-gr
   }
 }
 
-/* Hotfix — featured ads rail starts on the same x-axis as the other mobile cards.
-   Reason: previous recovery layers added gutter to both the section and the rail. */
-@media (max-width: 560px) {
-  html.home-index-root body.home-index-shell .featured-services{
-    padding-left: var(--home-mobile-edge);
-    padding-right: var(--home-mobile-edge);
-    box-sizing: border-box;
-  }
-
-  html.home-index-root body.home-index-shell .featured-services .home-section-header{
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  html.home-index-root body.home-index-shell .featured-services .content-rail{
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-left: 0;
-    margin-right: 0;
-    padding-left: 0;
-    padding-right: 0;
-    box-sizing: border-box;
-    overflow: visible !important;
-  }
-
-  html.home-index-root body.home-index-shell .featured-services .service-grid,
-html.home-index-root body.home-index-shell #featured-services-track{
-    padding-left: 0;
-    padding-right: 0;
-    margin-left: 0;
-    margin-right: 0;
-    scroll-padding-left: 0;
-  }
-}
-
-/* Hotfix — filters must open inline inside index.html without hiding the header. */
+/* Mobile filter trigger state: keep the search hero visible while the sheet is mounted. */
 @media (max-width: 560px) {
   html.home-index-root body.home-index-shell.home-inline-filters-open .home-search-hero,
 html.home-index-root body.home-index-shell.home-inline-filters-open .home-mobile-hero,
@@ -984,84 +947,8 @@ html.home-index-root body.home-index-shell.home-inline-filters-open .home-search
     opacity: 1 !important;
   }
 
-  html.home-index-root body.home-index-shell .home-search-hero__filters-host{
-    display: block !important;
-    width: 100% !important;
-    margin-top: 10px;
-    position: relative !important;
-    z-index: 80 !important;
-  }
-
   html.home-index-root body.home-index-shell .home-search-hero__filters-host:empty{
     display: none !important;
-  }
-
-  html.home-index-root body.home-index-shell .home-search-hero__filters-host .more-filters.more-filters--section[data-more-filters-panel],
-html.home-index-root body.home-index-shell .more-services__filters-host .more-filters.more-filters--section[data-more-filters-panel]{
-    display: grid !important;
-    gap: 12px;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 10px 0 0;
-    padding: 14px;
-    border-radius: var(--radius-surface);
-    border: 1px solid rgba(213, 228, 241, 0.95);
-    background: rgba(255, 255, 255, 0.98);
-    box-shadow: 0 18px 38px rgba(18, 45, 75, 0.12);
-    box-sizing: border-box;
-    overflow: visible !important;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel][hidden],
-html.home-index-root body.home-index-shell .more-filters__pane[hidden]{
-    display: none !important;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters__split-body{
-    display: grid !important;
-    gap: 12px;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters__split-nav{
-    display: flex !important;
-    gap: 8px;
-    overflow-x: auto !important;
-    padding-bottom: 2px;
-    scrollbar-width: none;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters__split-nav::-webkit-scrollbar{
-    display: none !important;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters__nav-button{
-    flex: 0 0 auto !important;
-    min-height: var(--control-height-xs) !important;
-    padding: 0 12px;
-    border: 1px solid rgba(207, 224, 239, 0.95);
-    border-radius: var(--radius-pill);
-    background: #f5f9fd;
-    color: #315a82;
-    font-weight: 800;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters__nav-button.is-active{
-    background: #1f6aa5;
-    color: #fff;
-    border-color: transparent;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters__grid--dense,
-html.home-index-root body.home-index-shell .more-filters__location-grid{
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) !important;
-    gap: 10px;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters__actions{
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 10px;
   }
 }
 
@@ -1140,7 +1027,7 @@ html.home-index-root body.home-index-shell .more-services__filters-host .more-fi
     font-size: 17px;
     line-height: 1.12;
     color: #173d63;
-    font-weight: 850;
+    font-weight: var(--doke-type-weight-display, 800);
   }
 
   html.home-index-root body.home-index-shell .more-filters__header span{
@@ -1148,7 +1035,7 @@ html.home-index-root body.home-index-shell .more-services__filters-host .more-fi
     margin-top: 4px;
     font-size: 12px;
     color: #6f839a;
-    font-weight: 650;
+    font-weight: var(--doke-type-weight-emphasis, 700);
   }
 
   html.home-index-root body.home-index-shell .more-filters__dismiss{
@@ -1192,7 +1079,7 @@ html.home-index-root body.home-index-shell .more-services__filters-host .more-fi
     background: transparent;
     color: #315a82;
     font-size: 13px;
-    font-weight: 850;
+    font-weight: var(--doke-type-weight-display, 800);
   }
 
   html.home-index-root body.home-index-shell .more-filters__nav-button.is-active{
@@ -1237,7 +1124,7 @@ html.home-index-root body.home-index-shell .filter-chip{
     letter-spacing: .07em;
     text-transform: uppercase;
     color: #758ba4;
-    font-weight: 850;
+    font-weight: var(--doke-type-weight-display, 800);
   }
 
   html.home-index-root body.home-index-shell .filter-field__select,
@@ -1272,7 +1159,7 @@ html.home-index-root body.home-index-shell .filter-chip{
     min-height: 48px !important;
     border-radius: var(--radius-exact-15);
     font-size: 14px;
-    font-weight: 850;
+    font-weight: var(--doke-type-weight-display, 800);
   }
 
   html.home-index-root body.home-index-shell .filter-action--ghost{

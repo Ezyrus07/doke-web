@@ -96,6 +96,7 @@ const OWNER_CLASSES = new Set([
   'home-catégories__arrow',
   'home-search-hero__cta',
   'ad-gallery__thumb',
+  'doke-modal__backdrop',
 ]);
 
 function rel(file) { return path.relative(ROOT, file).replace(/\\/g, '/'); }

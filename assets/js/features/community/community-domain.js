@@ -4,7 +4,7 @@
   var Doke = window.Doke || (window.Doke = {});
   if (Doke.communityDomain) return;
 
-  var SCHEMA_VERSION = 3;
+  var SCHEMA_VERSION = 5;
   var KEYS = Object.freeze({
     communities: 'doke.communities.local.v1',
     deleted: 'doke.communities.deleted.local.v1',
@@ -49,8 +49,64 @@
     }
   }
 
+  var GENERIC_IDENTITY_KEYS = new Set([
+    'current-user', 'anonymous', 'guest', 'user', 'cliente', 'client',
+    'profissional', 'professional', 'member', 'membro'
+  ]);
+
   function normalizeIdentityKey(value) {
-    return String(value || '').trim().toLowerCase();
+    var key = String(value || '').trim().toLowerCase();
+    if (!key || GENERIC_IDENTITY_KEYS.has(key) || key.indexOf('anonymous-') === 0) return '';
+    return key;
+  }
+
+  function getIdentityKeysFromUser(user) {
+    var profile = user && user.profile || {};
+    var profiles = user && Array.isArray(user.profiles) ? user.profiles : [];
+    return uniqueIdentityKeys([
+      user && user.id, user && user.userId, user && user.accountId, user && user.email,
+      user && user.providerProfileId, user && user.professionalId, user && user.clientId,
+      profile && profile.id, profile && profile.userId, profile && profile.accountId, profile && profile.email
+    ].concat(profiles.reduce(function (keys, item) {
+      return keys.concat([item && item.id, item && item.userId, item && item.accountId, item && item.email]);
+    }, [])));
+  }
+
+  function getAccountKeyFromUser(user) {
+    var keys = getIdentityKeysFromUser(user);
+    return keys.find(function (key) { return key.indexOf('@') !== -1; }) || keys[0] || '';
+  }
+
+  function resolveCurrentUser() {
+    var sessionStoreAvailable = Boolean(Doke.session && typeof Doke.session.getCurrentUser === 'function');
+    var sessionUser = sessionStoreAvailable ? Doke.session.getCurrentUser() : null;
+    var authService = window.DokeAuth && window.DokeAuth.service;
+    var authUser = !sessionUser && authService && typeof authService.getCurrentUser === 'function'
+      ? authService.getCurrentUser()
+      : null;
+
+    // Doke.session is the canonical authenticated-account store used by the
+    // header, permissions and route state. The older auth service keeps a v2
+    // cache for compatibility and can temporarily point to another account
+    // during account switching. It must never override or merge with the
+    // canonical session, otherwise Participate and the room gate authorize
+    // different people.
+    var user = sessionUser || authUser || null;
+    var keys = getIdentityKeysFromUser(user);
+    var accountKey = getAccountKeyFromUser(user);
+    var email = String(user && user.email || '').trim();
+    var name = String(user && (user.displayName || user.name || user.fullName || user.email) || 'Você');
+    var id = accountKey || '';
+    return {
+      id: id,
+      accountKey: accountKey,
+      name: name,
+      email: email,
+      identityKeys: keys,
+      role: 'member',
+      source: sessionUser ? 'session' : (authUser ? 'auth-service-fallback' : 'anonymous'),
+      identityConflict: false
+    };
   }
 
   function uniqueIdentityKeys(values) {
@@ -59,6 +115,7 @@
 
   function getMemberIdentityKeys(member) {
     return uniqueIdentityKeys([
+      member && member.accountKey,
       member && member.id,
       member && member.userId,
       member && member.profileId,
@@ -93,11 +150,13 @@
   function normalizeMember(member) {
     if (!member || !String(member.name || '').trim()) return null;
     var identityKeys = getMemberIdentityKeys(member);
+    var accountKey = normalizeIdentityKey(member.accountKey || member.email || identityKeys[0] || '');
     return {
-      id: String(member.id || member.userId || member.profileId || member.email || identityKeys[0] || '').trim(),
+      id: String(member.id || member.userId || member.profileId || accountKey || '').trim(),
+      accountKey: accountKey,
       name: String(member.name || '').trim(),
       email: String(member.email || '').trim(),
-      identityKeys: identityKeys,
+      identityKeys: uniqueIdentityKeys([accountKey].concat(identityKeys)),
       role: String(member.role || 'member').trim() || 'member',
       source: String(member.source || 'local').trim() || 'local',
       joinedAt: String(member.joinedAt || '').trim(),
@@ -115,6 +174,20 @@
     ].concat(record && Array.isArray(record.ownerIdentityKeys) ? record.ownerIdentityKeys : [], getMemberIdentityKeys(ownerMember)));
   }
 
+
+  function normalizeRules(value) {
+    var source = Array.isArray(value) ? value : String(value || '').split(/\r?\n/);
+    var seen = new Set();
+    return source.map(function (rule) {
+      return String(rule || '').replace(/\s+/g, ' ').trim().slice(0, 160);
+    }).filter(function (rule) {
+      var key = rule.toLowerCase();
+      if (!rule || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).slice(0, 10);
+  }
+
   function migrateRecord(record) {
     if (!record || typeof record !== 'object') return null;
     var next = Object.assign({}, record);
@@ -122,8 +195,9 @@
     var seenMembers = [];
     members = members.filter(function (member) {
       var duplicate = seenMembers.some(function (seen) {
-        return identitiesIntersect(seen.identityKeys, member.identityKeys)
-          || (seen.id && member.id && seen.id === member.id);
+        var sharedCanonicalKey = identitiesIntersect(seen.identityKeys, member.identityKeys);
+        var sameStableAccount = seen.accountKey && member.accountKey && seen.accountKey === member.accountKey;
+        return sharedCanonicalKey || sameStableAccount;
       });
       if (!duplicate) seenMembers.push(member);
       return !duplicate;
@@ -155,6 +229,7 @@
     next.ownerIdentityKeys = ownerIdentityKeys;
     next.members = members;
     next.roles = roles;
+    next.rules = normalizeRules(next.rules);
     next.joinRequests = Array.isArray(next.joinRequests) ? next.joinRequests : [];
     next.membershipHistory = Array.isArray(next.membershipHistory) ? next.membershipHistory : [];
     next.ownershipHistory = Array.isArray(next.ownershipHistory) ? next.ownershipHistory : [];
@@ -336,6 +411,33 @@
     return member ? 'member' : 'visitor';
   }
 
+  function resolveCommunityRelation(options) {
+    options = options || {};
+    var community = migrateRecord(options.community);
+    var currentUser = options.currentUser || resolveCurrentUser();
+    var currentKeys = uniqueIdentityKeys([
+      currentUser && currentUser.accountKey
+    ].concat(currentUser && Array.isArray(currentUser.identityKeys) ? currentUser.identityKeys : getIdentityKeysFromUser(currentUser)));
+    var ownerKeys = deriveOwnerIdentityKeys(community, community && community.members);
+    var matchedOwnerKeys = currentKeys.filter(function (key) { return identitiesIntersect([key], ownerKeys); });
+    var matchedMember = community && Array.isArray(community.members) ? community.members.find(function (member) {
+      return identitiesIntersect(currentKeys, getMemberIdentityKeys(member));
+    }) : null;
+    var matchedMemberKeys = matchedMember ? currentKeys.filter(function (key) { return identitiesIntersect([key], getMemberIdentityKeys(matchedMember)); }) : [];
+    var relation = matchedOwnerKeys.length ? 'owner' : (matchedMember ? 'member' : 'visitor');
+
+    return {
+      relation: relation,
+      currentUser: currentUser,
+      currentUserKeys: currentKeys,
+      ownerIdentityKeys: ownerKeys,
+      matchedOwnerKeys: matchedOwnerKeys,
+      matchedMember: matchedMember || null,
+      matchedMemberKeys: matchedMemberKeys,
+      allowed: relation === 'owner' || relation === 'member'
+    };
+  }
+
   function can(permission, context) {
     context = context || {};
     if (context.relationship === 'owner' || String(context.member && context.member.role || '') === 'owner') return true;
@@ -413,7 +515,11 @@
       uniqueKeys: uniqueIdentityKeys,
       memberKeys: getMemberIdentityKeys,
       intersects: identitiesIntersect,
-      relationship: relationship
+      relationship: relationship,
+      resolveCommunityRelation: resolveCommunityRelation,
+      resolveCurrentUser: resolveCurrentUser,
+      userKeys: getIdentityKeysFromUser,
+      accountKey: getAccountKeyFromUser
     }),
     permissions: Object.freeze({ keys: PERMISSION_KEYS, normalize: normalizePermissions, can: can }),
     migrations: Object.freeze({ migrateRecord: migrateRecord, migrateAll: migrateAll }),

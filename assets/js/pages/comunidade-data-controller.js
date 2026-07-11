@@ -30,9 +30,10 @@
   }
 
   function setState(state) {
+    var normalizedState = state === 'ready' ? 'hydrated' : state;
     var root = getRoot();
-    if (root) root.setAttribute('data-state', state);
-    if (document.body) document.body.setAttribute('data-data-state', state);
+    if (root) root.setAttribute('data-state', normalizedState);
+    if (document.body) document.body.setAttribute('data-data-state', normalizedState);
   }
 
   function dispatch(name, detail) {

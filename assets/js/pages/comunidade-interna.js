@@ -1,16 +1,70 @@
 (function () {
   'use strict';
 
+  var communityRoomAuthWaitTimer = null;
+
+  function isCommunityAuthHydrated() {
+    var state = document.documentElement && document.documentElement.dataset
+      ? document.documentElement.dataset.authenticated
+      : '';
+    return state === 'true' || state === 'false';
+  }
+
+  function scheduleCommunityRoomAfterAuth() {
+    var root = document.querySelector('[data-community-room]');
+    if (!root || root.dataset.communityRoomReady === 'true' || root.dataset.communityAuthWaiting === 'true') return;
+    root.dataset.communityAuthWaiting = 'true';
+
+    var resume = function () {
+      if (communityRoomAuthWaitTimer) {
+        window.clearTimeout(communityRoomAuthWaitTimer);
+        communityRoomAuthWaitTimer = null;
+      }
+      root.dataset.communityAuthWaiting = 'false';
+      document.removeEventListener('doke:auth-session-change', resume);
+      document.removeEventListener('doke:auth-surface-ready', resume);
+      window.requestAnimationFrame(function () { window.DokeInitCommunityRoom(); });
+    };
+
+    document.addEventListener('doke:auth-session-change', resume, { once: true });
+    document.addEventListener('doke:auth-surface-ready', resume, { once: true });
+    communityRoomAuthWaitTimer = window.setTimeout(resume, 1800);
+  }
+
   window.DokeInitCommunityRoom = function DokeInitCommunityRoom() {
     var root = document.querySelector('[data-community-room]');
     if (!root || root.dataset.communityRoomReady === 'true') return;
+    if (!isCommunityAuthHydrated()) {
+      scheduleCommunityRoomAfterAuth();
+      return;
+    }
     root.dataset.communityRoomReady = 'true';
+
+   var incomingCommunityTransition = window.Doke && window.Doke.communityTransition && window.Doke.communityTransition.consume('room');
+   if (incomingCommunityTransition) root.dataset.communityTransition = 'from-listing';
 
   var channels = Array.prototype.slice.call(root.querySelectorAll('[data-channel-id]'));
   var selectedChannelIds = new Set();
   var isSelectingChannels = false;
   var channelTitle = root.querySelector('[data-community-thread-title]');
   var channelStatus = root.querySelector('[data-community-thread-status]');
+  var channelAvatar = root.querySelector('.community-room-thread__avatar');
+
+  function applyIncomingTransitionSnapshot() {
+    var snapshot = incomingCommunityTransition && incomingCommunityTransition.context;
+    if (!snapshot || !snapshot.id) return;
+    if (snapshot.title && channelTitle) channelTitle.textContent = snapshot.title;
+    if (snapshot.title && channelAvatar) channelAvatar.textContent = String(snapshot.avatar || snapshot.title.slice(0, 2) || '#').toUpperCase();
+    if (channelStatus) {
+      var parts = [];
+      if (Number(snapshot.memberCount || 0) > 0) parts.push(Number(snapshot.memberCount) + (Number(snapshot.memberCount) === 1 ? ' membro' : ' membros'));
+      if (Number(snapshot.messageCount || 0) > 0) parts.push(Number(snapshot.messageCount) + (Number(snapshot.messageCount) === 1 ? ' mensagem' : ' mensagens'));
+      channelStatus.textContent = parts.join(' • ') || 'Preparando comunidade...';
+    }
+    root.dataset.communitySnapshotReady = 'true';
+  }
+
+  applyIncomingTransitionSnapshot();
   var messageList = root.querySelector('[data-community-message-list]');
   var pinnedList = root.querySelector('.community-room-pinned-list');
   var composer = root.querySelector('[data-community-composer]');
@@ -58,6 +112,7 @@
   var manageForm = root.querySelector('[data-community-manage-form]');
   var manageName = root.querySelector('[data-community-manage-name]');
   var manageDescription = root.querySelector('[data-community-manage-description]');
+  var manageRules = root.querySelector('[data-community-manage-rules]');
   var manageType = root.querySelector('[data-community-manage-type]');
   var manageColor = root.querySelector('[data-community-manage-color]');
   var manageCover = root.querySelector('[data-community-manage-cover]');
@@ -402,11 +457,20 @@
       extractPeopleFromPayload(payload, addCandidate);
     });
 
-    return Array.prototype.slice.call(unique.values());
+    var membersList = Array.prototype.slice.call(unique.values());
+    if (!membersList.length && currentIsOwner) {
+      var ownerFallback = normalizeCommunityMember(Object.assign({}, currentProfile, {
+        role: 'owner',
+        source: 'account'
+      }));
+      if (ownerFallback) membersList.push(ownerFallback);
+    }
+    return membersList;
   }
 
   function normalizeIdentityKey(value) {
-    return String(value || '').trim().toLowerCase();
+    var normalizer = window.Doke && window.Doke.communityDomain && window.Doke.communityDomain.identity && window.Doke.communityDomain.identity.normalizeKey;
+    return typeof normalizer === 'function' ? normalizer(value) : String(value || '').trim().toLowerCase();
   }
 
   function uniqueIdentityKeys(values) {
@@ -433,6 +497,7 @@
 
   function getMemberIdentityKeys(member) {
     return uniqueIdentityKeys([
+      member && member.accountKey,
       member && member.id,
       member && member.userId,
       member && member.profileId,
@@ -446,21 +511,29 @@
   }
 
   function getCurrentUserProfile() {
+    var resolver = window.Doke && window.Doke.communityDomain && window.Doke.communityDomain.identity && window.Doke.communityDomain.identity.resolveCurrentUser;
+    if (typeof resolver === 'function') return resolver();
     var service = window.DokeAuth && window.DokeAuth.service;
     var sessionUser = window.Doke && window.Doke.session && typeof window.Doke.session.getCurrentUser === 'function' ? window.Doke.session.getCurrentUser() : null;
     var authUser = service && typeof service.getCurrentUser === 'function' ? service.getCurrentUser() : null;
     var user = sessionUser || authUser || null;
-    var name = user && (user.displayName || user.name || user.fullName || user.email);
-    var identityKeys = getIdentityKeysFromUser(user);
-    var id = identityKeys[0] || 'anonymous-' + slugifyCommunity(name || 'voce');
+    var identityKeys = uniqueIdentityKeys(getIdentityKeysFromUser(sessionUser).concat(getIdentityKeysFromUser(authUser)));
     return {
-      id: String(id),
-      name: String(name || 'Você'),
+      id: String(identityKeys[0] || ''),
+      name: String(user && (user.displayName || user.name || user.fullName || user.email) || 'Você'),
       email: String(user && user.email || ''),
       identityKeys: identityKeys,
       role: 'member',
       source: 'account'
     };
+  }
+
+  function isCommunityDebugMode() {
+    try {
+      return new URLSearchParams(window.location.search || '').get('communityDebug') === '1';
+    } catch (error) {
+      return false;
+    }
   }
 
   function deriveCommunityOwnerId(record) {
@@ -536,15 +609,64 @@
     return context;
   }
 
+  function markCommunityListingTransition(event) {
+    if (event && (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)) return;
+    var transition = window.Doke && window.Doke.communityTransition;
+    if (!transition || typeof transition.begin !== 'function') return;
+    transition.begin('listing', currentCommunityContext || getCommunityContextFromLocation());
+  }
+
   currentCommunityContext = getCommunityContextFromLocation();
   root.hidden = true;
   root.dataset.communityAccessState = 'checking';
+  root.dataset.communityHydrated = 'false';
+  document.body.dataset.dataState = 'loading';
+
+  var documentPreloader = document.documentElement.classList.contains('doke-community-document-reload')
+    ? document.querySelector('[data-community-room-document-preloader]')
+    : null;
+  var roomSkeleton = document.querySelector('[data-community-room-skeleton]');
+  var visualHydration = window.Doke && window.Doke.communityTransition && window.Doke.communityTransition.createVisualHydration
+    ? window.Doke.communityTransition.createVisualHydration({
+      body: document.body,
+      preloader: documentPreloader,
+      skeleton: roomSkeleton,
+      isTransition: Boolean(incomingCommunityTransition)
+    })
+    : null;
+  if (visualHydration) visualHydration.start();
+
+  function applyCommunityRoomPageState(nextState) {
+    document.body.dataset.dataState = nextState;
+    root.dataset.state = nextState;
+    root.setAttribute('aria-busy', String(nextState === 'loading'));
+  }
+
+  function setCommunityRoomPageState(state) {
+    var nextState = state === 'error' ? 'error' : state === 'hydrated' ? 'hydrated' : 'loading';
+    if (nextState === 'loading') {
+      applyCommunityRoomPageState(nextState);
+      return;
+    }
+    if (visualHydration) {
+      visualHydration.complete(function () {
+        applyCommunityRoomPageState(nextState);
+      });
+      return;
+    }
+    applyCommunityRoomPageState(nextState);
+  }
+
+  Array.prototype.slice.call(document.querySelectorAll('.community-room-return')).forEach(function (link) {
+    link.addEventListener('click', markCommunityListingTransition);
+  });
 
   function normalizeCommunityMember(member) {
     var name = String(member && member.name || '').trim();
     if (!name) return null;
     return {
       id: String(member.id || member.userId || member.profileId || member.email || slugifyCommunity(name)).trim() || slugifyCommunity(name),
+      accountKey: normalizeIdentityKey(member.accountKey || member.email || getMemberIdentityKeys(member)[0] || ''),
       name: name,
       email: String(member.email || '').trim(),
       identityKeys: getMemberIdentityKeys(member),
@@ -621,6 +743,13 @@
   function getCurrentCommunityMember() {
     var profile = getCurrentUserProfile();
     var record = getCurrentCommunityRecord() || {};
+    var relationResolver = window.Doke && window.Doke.communityDomain && window.Doke.communityDomain.identity && window.Doke.communityDomain.identity.resolveCommunityRelation;
+    if (typeof relationResolver === 'function') {
+      var report = relationResolver({ community: record, currentUser: profile });
+      if (report.relation === 'owner') return Object.assign({}, profile, { role: 'owner' });
+      if (report.matchedMember) return Object.assign({}, report.matchedMember, { role: report.matchedMember.role || 'member' });
+      return Object.assign({}, profile, { role: 'visitor' });
+    }
     var ownerKeys = uniqueIdentityKeys([
       record.ownerId,
       record.createdById,
@@ -727,36 +856,171 @@
     }) || null;
   }
 
+  function repairRecentCreatedCommunityOwnership(record) {
+    if (!record || !record.id) return record;
+    var marker = null;
+    try {
+      marker = JSON.parse(window.sessionStorage && window.sessionStorage.getItem('doke.community.recent-create.v1') || 'null');
+    } catch (error) {
+      marker = null;
+    }
+    if (!marker || String(marker.communityId || '') !== String(record.id || '')) return record;
+    if (!Number.isFinite(Number(marker.createdAt)) || Date.now() - Number(marker.createdAt) > 120000) {
+      try { window.sessionStorage && window.sessionStorage.removeItem('doke.community.recent-create.v1'); } catch (error) {}
+      return record;
+    }
+
+    var profile = getCurrentUserProfile();
+    var profileKeys = uniqueIdentityKeys([
+      profile && profile.accountKey,
+      profile && profile.id,
+      profile && profile.email
+    ].concat(profile && Array.isArray(profile.identityKeys) ? profile.identityKeys : [], marker.ownerIdentityKeys || []));
+    var markerKey = normalizeIdentityKey(marker.ownerAccountKey || '');
+    if (markerKey && profileKeys.length && !profileKeys.includes(markerKey)) return record;
+    if (!profileKeys.length) return record;
+
+    var ownerAccountKey = normalizeIdentityKey(profile && (profile.accountKey || profile.email) || markerKey || profileKeys[0]);
+    var ownerId = String(profile && profile.id || ownerAccountKey || '').trim();
+    var ownerMember = Object.assign({}, profile, {
+      id: ownerId,
+      accountKey: ownerAccountKey,
+      email: String(profile && profile.email || '').trim(),
+      identityKeys: profileKeys,
+      role: 'owner',
+      source: 'account',
+      joinedAt: String(profile && profile.joinedAt || new Date().toISOString()),
+      addedBy: 'community-create'
+    });
+    var members = Array.isArray(record.members) ? record.members : [];
+    var withoutOwners = members.filter(function (member) {
+      return String(member && member.role || '').toLowerCase() !== 'owner';
+    });
+    var repaired = Object.assign({}, record, {
+      ownerId: ownerId,
+      ownerIdentityKeys: profileKeys,
+      createdById: ownerId,
+      members: [ownerMember].concat(withoutOwners)
+    });
+    var repository = window.Doke && window.Doke.communityDomain && window.Doke.communityDomain.repository;
+    var saved = repository && typeof repository.upsert === 'function'
+      ? repository.upsert(repaired, {
+        type: 'COMMUNITY_OWNER_INVARIANT_REPAIRED',
+        actorId: ownerId,
+        targetId: repaired.id,
+        payload: { source: 'room-bootstrap' }
+      })
+      : saveCurrentCommunityRecord(repaired);
+    return saved || repaired;
+  }
+
   function getCommunityAccessDecision(record) {
     if (!record) return { allowed: false, action: 'missing', reason: 'community-not-found' };
-    var member = getCurrentCommunityMember();
-    var role = String(member && member.role || 'visitor');
-    if (role === 'owner' || role !== 'visitor') {
-      return { allowed: true, action: 'open', role: role };
+    var relationResolver = window.Doke && window.Doke.communityDomain && window.Doke.communityDomain.identity && window.Doke.communityDomain.identity.resolveCommunityRelation;
+    var relationReport = typeof relationResolver === 'function'
+      ? relationResolver({ community: record, currentUser: getCurrentUserProfile() })
+      : null;
+    var role = relationReport ? relationReport.relation : String(getCurrentCommunityMember().role || 'visitor');
+    if (role === 'owner' || role === 'member') {
+      return { allowed: true, action: 'open', role: role, relationReport: relationReport };
     }
 
     var visibility = normalizeCommunityVisibility(record);
-    if (visibility === 'public') return { allowed: false, action: 'join', reason: 'membership-required' };
-    if (visibility === 'invite') return { allowed: false, action: 'invite', reason: 'invite-required' };
+    if (visibility === 'public') return { allowed: false, action: 'join', reason: 'membership-required', relationReport: relationReport };
+    if (visibility === 'invite') return { allowed: false, action: 'invite', reason: 'invite-required', relationReport: relationReport };
 
     var request = getCurrentJoinRequest(record);
-    if (request && request.status === 'pending') return { allowed: false, action: 'pending', reason: 'request-pending' };
-    return { allowed: false, action: 'request', reason: request && request.status === 'rejected' ? 'request-rejected' : 'request-required' };
+    if (request && request.status === 'pending') return { allowed: false, action: 'pending', reason: 'request-pending', relationReport: relationReport };
+    return { allowed: false, action: 'request', reason: request && request.status === 'rejected' ? 'request-rejected' : 'request-required', relationReport: relationReport };
+  }
+
+  function writeCommunityAccessDebug(label, record, decision) {
+    if (!isCommunityDebugMode() || !window.console) return;
+    var relationReport = decision && decision.relationReport;
+    var sessionUser = window.Doke && window.Doke.session && typeof window.Doke.session.getCurrentUser === 'function' ? window.Doke.session.getCurrentUser() : null;
+    var authUser = window.DokeAuth && window.DokeAuth.service && typeof window.DokeAuth.service.getCurrentUser === 'function' ? window.DokeAuth.service.getCurrentUser() : null;
+    var accountResolver = window.Doke && window.Doke.communityDomain && window.Doke.communityDomain.identity && window.Doke.communityDomain.identity.accountKey;
+    var currentUser = relationReport && relationReport.currentUser || getCurrentUserProfile();
+    function safeUser(user) {
+      return user ? {
+        id: user.id || user.userId || '',
+        email: user.email || '',
+        accountKey: typeof accountResolver === 'function' ? accountResolver(user) : ''
+      } : null;
+    }
+    var table = {
+      communityId: String(record && record.id || getCurrentCommunityId() || ''),
+      currentUrl: String(window.location.href || ''),
+      canonicalSessionUser: safeUser(sessionUser),
+      legacyAuthUser: safeUser(authUser),
+      resolvedCurrentUser: { id: currentUser.id || '', accountKey: currentUser.accountKey || '', email: currentUser.email || '', source: currentUser.source || '' },
+      resolvedIdentityKeys: relationReport && relationReport.currentUserKeys || currentUser.identityKeys || [],
+      communityOwnerId: record && (record.ownerId || record.createdById || record.creatorId) || '',
+      communityOwnerIdentityKeys: relationReport && relationReport.ownerIdentityKeys || [],
+      persistedMembers: (Array.isArray(record && record.members) ? record.members : []).map(function (member) {
+        return { id: member.id || '', accountKey: member.accountKey || '', email: member.email || '', role: member.role || '', identityKeys: getMemberIdentityKeys(member) };
+      }),
+      matchedOwnerKeys: relationReport && relationReport.matchedOwnerKeys || [],
+      matchedMember: relationReport && relationReport.matchedMember ? { id: relationReport.matchedMember.id || '', accountKey: relationReport.matchedMember.accountKey || '', email: relationReport.matchedMember.email || '', role: relationReport.matchedMember.role || '' } : null,
+      matchedMemberKeys: relationReport && relationReport.matchedMemberKeys || [],
+      computedRelation: relationReport && relationReport.relation || decision && decision.role || 'visitor',
+      privacy: normalizeCommunityVisibility(record),
+      accessDecision: decision && decision.action || 'missing',
+      rejectionReason: decision && decision.reason || ''
+    };
+    console.groupCollapsed('[communityDebug] ' + label);
+    console.table(table);
+    console.groupEnd();
   }
 
   function redirectToCommunityAccess(decision, record) {
+    if (root.dataset.communityRedirecting === 'true') return;
+    root.dataset.communityRedirecting = 'true';
+    root.hidden = true;
+    setCommunityRoomPageState('loading');
+    writeCommunityAccessDebug('room-access-redirect', record, decision);
     var params = new URLSearchParams();
     params.set('communityAccess', decision.action || 'missing');
     if (record && record.id) params.set('community', record.id);
     if (record && (record.title || record.name)) params.set('title', record.title || record.name);
     if (decision.reason) params.set('reason', decision.reason);
     var target = 'comunidade.html?' + params.toString();
-    if (window.DokeNavigate) window.DokeNavigate(target);
-    else window.location.replace(target);
+
+    // Access denial must end the current document lifecycle. Using the SPA
+    // navigation helper here can leave both page controllers alive long enough
+    // for the listing to reopen the room and create a redirect loop.
+    window.location.replace(target);
   }
 
   function getCommunityDomainOperations() {
     return window.Doke && window.Doke.communityDomain && window.Doke.communityDomain.operations || null;
+  }
+
+  function getCommunityNotificationsService() {
+    return window.Doke && window.Doke.services && window.Doke.services.notifications || null;
+  }
+
+  function createCommunityNotification(payload) {
+    var service = getCommunityNotificationsService();
+    var recipientAccountKey = String(payload && (payload.recipientAccountKey || payload.userId) || '').trim();
+    if (!service || typeof service.create !== 'function' || !payload || !recipientAccountKey) return Promise.resolve(null);
+    return service.create({
+      type: payload.type || 'community_update',
+      category: 'social',
+      userId: String(payload.userId || recipientAccountKey).trim(),
+      recipientAccountKey: recipientAccountKey,
+      actorId: String(payload.actorId || '').trim(),
+      actorName: String(payload.actorName || '').trim(),
+      eventKey: String(payload.eventKey || '').trim(),
+      title: String(payload.title || 'Atualização da comunidade'),
+      body: String(payload.body || payload.message || ''),
+      targetUrl: String(payload.targetUrl || 'comunidade.html'),
+      actionLabel: String(payload.actionLabel || payload.action || 'Abrir'),
+      read: false
+    }).catch(function (error) {
+      console.warn('[DokeCommunity:createNotification]', error);
+      return null;
+    });
   }
 
   function createCommunityOperationId(type, communityId, actorId) {
@@ -954,10 +1218,19 @@
   function getCommunityMembers() {
     var record = getCurrentCommunityRecord();
     var rawMembers = record && Array.isArray(record.members) ? record.members.slice() : [];
-    var owner = getCurrentUserProfile();
+    var currentProfile = getCurrentUserProfile();
     var ownerId = deriveCommunityOwnerId(record);
-    if (ownerId && !rawMembers.some(function (member) { return member && String(member.id) === ownerId; })) {
-      rawMembers.unshift({ id: ownerId, name: 'Administrador', role: 'owner', source: 'account' });
+    var ownerKeys = uniqueIdentityKeys([ownerId].concat(record && Array.isArray(record.ownerIdentityKeys) ? record.ownerIdentityKeys : []));
+    var currentIsOwner = identitiesIntersect(currentProfile.identityKeys || [currentProfile.id], ownerKeys);
+    if (currentIsOwner) {
+      var ownerIndex = rawMembers.findIndex(function (member) {
+        return String(member && member.role || '') === 'owner' || identitiesIntersect(getMemberIdentityKeys(member), currentProfile.identityKeys || [currentProfile.id]);
+      });
+      var ownerProfile = Object.assign({}, currentProfile, { role: 'owner', source: 'account', joinedAt: rawMembers[ownerIndex] && rawMembers[ownerIndex].joinedAt || '' });
+      if (ownerIndex >= 0) rawMembers[ownerIndex] = Object.assign({}, rawMembers[ownerIndex], ownerProfile);
+      else rawMembers.unshift(ownerProfile);
+    } else if (ownerId && !rawMembers.some(function (member) { return member && String(member.id) === ownerId; })) {
+      rawMembers.unshift({ id: ownerId, name: 'Administrador', role: 'owner', source: 'account', identityKeys: ownerKeys });
     }
     var unique = new Map();
     rawMembers.forEach(function (member) {
@@ -1032,7 +1305,12 @@
     var name = document.createElement('strong');
     name.textContent = member.name;
     var source = document.createElement('span');
-    source.textContent = member.source === 'account' ? 'Conta principal' : 'Adicionado pelas mensagens';
+    var currentProfile = getCurrentUserProfile();
+    var isCurrentUser = identitiesIntersect(currentProfile.identityKeys || [currentProfile.id], getMemberIdentityKeys(member));
+    source.className = isCurrentUser ? 'community-room-member__presence is-online' : 'community-room-member__presence';
+    source.textContent = isCurrentUser
+      ? 'Online agora'
+      : (member.source === 'account' ? 'Conta principal' : member.source === 'public-discovery' ? 'Entrou pela descoberta' : 'Membro da comunidade');
     identity.append(name, source);
     var role = document.createElement('em');
     role.textContent = getRoleLabel(member.role);
@@ -1132,26 +1410,40 @@
 
   function createRequestItem(request) {
     var item = document.createElement('article');
-    item.className = 'community-room-member community-room-request-item';
+    item.className = 'community-room-request-item doke-card';
     item.dataset.communityRequestId = request.id;
+
     var avatar = document.createElement('b');
-    avatar.className = 'doke-avatar';
+    avatar.className = 'community-room-request-item__avatar doke-avatar';
     avatar.textContent = getMemberInitials(request.userName || 'Pessoa');
-    var identity = document.createElement('div');
+
+    var content = document.createElement('div');
+    content.className = 'community-room-request-item__content';
+
+    var heading = document.createElement('div');
+    heading.className = 'community-room-request-item__heading';
     var name = document.createElement('strong');
+    name.className = 'community-room-request-item__name';
     name.textContent = request.userName || 'Usuário';
+    var status = document.createElement('span');
+    status.className = 'community-room-request-item__status community-room-request-item__status--' + String(request.status || 'pending');
+    status.textContent = getRequestStatusLabel(request.status);
+    heading.append(name, status);
+
     var meta = document.createElement('span');
+    meta.className = 'community-room-request-item__meta';
     meta.textContent = request.relation || 'Solicitação de entrada';
-    identity.append(name, meta);
+    content.append(heading, meta);
+
     if (request.message) {
       var message = document.createElement('p');
       message.className = 'community-room-request-message';
       message.textContent = request.message;
-      identity.appendChild(message);
+      content.appendChild(message);
     }
-    var status = document.createElement('em');
-    status.textContent = getRequestStatusLabel(request.status);
-    item.append(avatar, identity, status);
+
+    item.append(avatar, content);
+
     if (request.status === 'pending') {
       var actions = document.createElement('div');
       actions.className = 'community-room-request-actions';
@@ -1183,16 +1475,18 @@
     }
   }
 
-  function resolveJoinRequest(requestId, status) {
+  async function resolveJoinRequest(requestId, status) {
     if (!canCommunity('addMembers')) return { ok: false, message: 'Sem permissão para revisar solicitações.' };
     if (status !== 'accepted' && status !== 'rejected') return { ok: false, message: 'Estado de solicitação inválido.' };
     var actor = getCurrentUserProfile();
     var operations = getCommunityDomainOperations();
     var communityId = getCurrentCommunityId();
     if (!operations || !operations.transact) return { ok: false, message: 'Serviço de comunidade indisponível.' };
+
     var operation = operations.transact(communityId, {
       type: status === 'accepted' ? 'JOIN_REQUEST_ACCEPTED' : 'JOIN_REQUEST_REJECTED',
-      actorId: actor.id, targetId: String(requestId || ''),
+      actorId: actor.id,
+      targetId: String(requestId || ''),
       operationId: createCommunityOperationId('join-request-' + status, communityId, actor.id)
     }, function (record) {
       var requests = Array.isArray(record.joinRequests) ? record.joinRequests.slice() : [];
@@ -1200,19 +1494,93 @@
       if (index < 0) return { ok: false, reason: 'request-not-found', message: 'Solicitação não encontrada.' };
       var request = Object.assign({}, requests[index]);
       if (request.status !== 'pending') return { ok: false, reason: 'request-already-resolved', message: 'Esta solicitação já foi analisada.' };
+
       var now = new Date().toISOString();
-      request.status = status; request.resolvedAt = now; request.resolvedBy = actor.id; requests[index] = request;
+      request.status = status;
+      request.resolvedAt = now;
+      request.resolvedBy = actor.id;
+      requests[index] = request;
+
       var members = Array.isArray(record.members) ? record.members.slice() : [];
+      var acceptedMember = null;
       if (status === 'accepted') {
-        var requestKeys = uniqueIdentityKeys((request.identityKeys || []).concat([request.userId, request.userEmail]));
-        var exists = members.some(function (candidate) { return identitiesIntersect(requestKeys, getMemberIdentityKeys(candidate)); });
-        if (!exists) members.push({ id: request.userId || requestKeys[0], name: request.userName || 'Membro', email: request.userEmail || '', identityKeys: requestKeys, role: 'member', source: 'join-request', joinedAt: now, addedBy: actor.id });
+        var accountKey = String(request.accountKey || request.userEmail || request.userId || '').trim();
+        var requestKeys = uniqueIdentityKeys([accountKey, request.userId, request.userEmail].concat(request.identityKeys || []));
+        if (!requestKeys.length) return { ok: false, reason: 'request-without-identity', message: 'A solicitação não possui uma identidade válida.' };
+
+        var memberIndex = members.findIndex(function (candidate) {
+          var candidateAccountKey = String(candidate && candidate.accountKey || '').trim().toLowerCase();
+          return (accountKey && candidateAccountKey && candidateAccountKey === accountKey.toLowerCase())
+            || identitiesIntersect(requestKeys, getMemberIdentityKeys(candidate));
+        });
+        var memberPatch = {
+          id: request.userId || accountKey || requestKeys[0],
+          accountKey: accountKey || requestKeys[0],
+          name: request.userName || 'Membro',
+          email: request.userEmail || '',
+          identityKeys: requestKeys,
+          role: 'member',
+          source: 'join-request',
+          joinedAt: memberIndex >= 0 && members[memberIndex].joinedAt || now,
+          addedBy: actor.id,
+          membershipVersion: Math.max(1, Number(memberIndex >= 0 && members[memberIndex].membershipVersion || 1))
+        };
+        if (memberIndex >= 0) {
+          if (String(members[memberIndex].role || '') === 'owner') return { ok: false, reason: 'owner-request-conflict', message: 'O proprietário já participa da comunidade.' };
+          members[memberIndex] = Object.assign({}, members[memberIndex], memberPatch);
+          acceptedMember = members[memberIndex];
+        } else {
+          members.push(memberPatch);
+          acceptedMember = memberPatch;
+        }
       }
-      return { record: Object.assign({}, record, { joinRequests: requests, members: members }), payload: { requestId: request.id, status: status } };
+
+      return {
+        record: Object.assign({}, record, { joinRequests: requests, members: members, updatedAt: now }),
+        result: { request: request, member: acceptedMember },
+        payload: { requestId: request.id, status: status, memberId: acceptedMember && acceptedMember.id || '' }
+      };
     });
-    return operation.ok
-      ? { ok: true, message: status === 'accepted' ? 'Solicitação aprovada e membro adicionado.' : 'Solicitação recusada.' }
-      : { ok: false, message: operation.message || 'Não foi possível concluir a solicitação.' };
+
+    if (!operation.ok) return { ok: false, message: operation.message || 'Não foi possível concluir a solicitação.' };
+
+    var persisted = operation.record || getCurrentCommunityRecord();
+    var persistedRequest = (persisted && Array.isArray(persisted.joinRequests) ? persisted.joinRequests : []).find(function (request) {
+      return String(request.id) === String(requestId);
+    });
+    if (!persistedRequest || persistedRequest.status !== status) {
+      return { ok: false, message: 'A decisão não foi persistida. Recarregue e tente novamente.' };
+    }
+
+    var resolved = operation.result && operation.result.request || persistedRequest;
+    var recipientId = String(resolved.userId || resolved.accountKey || resolved.userEmail || '').trim();
+    var recipientAccountKey = String(resolved.accountKey || resolved.userEmail || resolved.userId || recipientId).trim();
+    var communityTitle = String(persisted && (persisted.title || persisted.name) || 'a comunidade');
+    var notification = await createCommunityNotification({
+      type: status === 'accepted' ? 'community-request-approved' : 'community-request-rejected',
+      userId: recipientId,
+      recipientAccountKey: recipientAccountKey,
+      actorId: actor.id,
+      actorName: actor.name,
+      eventKey: [status === 'accepted' ? 'community-request-approved' : 'community-request-rejected', communityId, requestId, recipientAccountKey].filter(Boolean).join(':'),
+      title: status === 'accepted' ? 'Solicitação aprovada' : 'Solicitação recusada',
+      body: status === 'accepted'
+        ? 'Você agora participa de ' + communityTitle + '.'
+        : 'Sua solicitação para ' + communityTitle + ' foi recusada.',
+      targetUrl: status === 'accepted'
+        ? 'comunidade-interna.html?community=' + encodeURIComponent(communityId) + '&title=' + encodeURIComponent(communityTitle)
+        : 'comunidade.html',
+      actionLabel: status === 'accepted' ? 'Abrir comunidade' : 'Ver comunidades'
+    });
+    if (!notification) return { ok: false, message: 'A decisão foi salva, mas a notificação do solicitante não foi criada. Recarregue antes de tentar novamente.' };
+
+    return {
+      ok: true,
+      record: persisted,
+      request: persistedRequest,
+      member: operation.result && operation.result.member || null,
+      message: status === 'accepted' ? 'Solicitação aprovada e membro adicionado.' : 'Solicitação recusada.'
+    };
   }
 
   function getChannelMessageCount(channelId) {
@@ -1305,6 +1673,20 @@
     }
   }
 
+
+  function normalizeCommunityRules(value) {
+    var source = Array.isArray(value) ? value : String(value || '').split(/\r?\n/);
+    var seen = new Set();
+    return source.map(function (rule) {
+      return String(rule || '').replace(/\s+/g, ' ').trim().slice(0, 160);
+    }).filter(function (rule) {
+      var key = rule.toLowerCase();
+      if (!rule || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).slice(0, 10);
+  }
+
   function setPanelFeedback(node, message) {
     if (!node) return;
     node.textContent = message;
@@ -1325,6 +1707,7 @@
     var record = ensureCurrentCommunityRecord() || {};
     if (manageName) manageName.value = record.title || root.dataset.communityTitle || currentChannelName || '';
     if (manageDescription) manageDescription.value = record.description || record.copy || '';
+    if (manageRules) manageRules.value = normalizeCommunityRules(record.rules).join('\n');
     if (manageType) manageType.value = record.type || record.visibility || 'public';
     if (manageColor) manageColor.value = record.color || '#168f7d';
     manageCoverState = Object.assign({ name: '', type: '', dataUrl: '' }, record.cover || {});
@@ -1403,6 +1786,8 @@
 
   function updateRoomStats() {
     var memberCount = getCommunityMembers().length;
+    var currentMember = getCurrentCommunityMember();
+    if (memberCount === 0 && ['owner', 'member'].includes(String(currentMember.role || ''))) memberCount = 1;
     var messageCount = getChannelMessageCount(currentChannelId);
     var status = [
       formatCountLabel(memberCount, 'membro', 'membros'),
@@ -2205,6 +2590,20 @@
     activateSettingsSection(firstAllowed ? firstAllowed.dataset.communitySettingsTab : 'members');
   }
 
+  function openRequestedSettingsPanel() {
+    var params = new URLSearchParams(window.location.search || '');
+    var panelName = String(params.get('settings') || params.get('communitySettings') || '').trim();
+    if (!panelName) return;
+    var tab = settingsTabs.find(function (item) {
+      return item.dataset.communitySettingsTab === panelName;
+    });
+    if (!tab || tab.hidden || tab.disabled) return;
+    closeFloatingMenus();
+    var record = ensureCurrentCommunityRecord();
+    if (settingsName) settingsName.textContent = record && (record.title || record.name) || 'Comunidade';
+    activateSettingsSection(panelName);
+  }
+
   function closeCommunitySettings() {
     root.classList.remove('is-settings-mode', 'has-settings-panel');
     if (settingsSearchInput) settingsSearchInput.value = '';
@@ -2341,16 +2740,22 @@
   }
 
   if (requestList) {
-    requestList.addEventListener('click', function (event) {
+    requestList.addEventListener('click', async function (event) {
       var button = event.target.closest('[data-community-request-resolve]');
       if (!button || !requestList.contains(button)) return;
       var item = button.closest('[data-community-request-id]');
-      var result = resolveJoinRequest(item && item.dataset.communityRequestId, button.dataset.communityRequestResolve);
+      var actionButtons = item ? Array.prototype.slice.call(item.querySelectorAll('[data-community-request-resolve]')) : [];
+      actionButtons.forEach(function (actionButton) { actionButton.disabled = true; });
+      var result = await resolveJoinRequest(item && item.dataset.communityRequestId, button.dataset.communityRequestResolve);
       setPanelFeedback(requestFeedback, result.message);
       if (result.ok) {
         renderJoinRequests();
         renderCommunityMembers();
+        renderMemberCandidates();
         updateRoomStats();
+        syncCommunityPermissionUI();
+      } else {
+        actionButtons.forEach(function (actionButton) { actionButton.disabled = false; });
       }
     });
   }
@@ -2404,12 +2809,13 @@
             title: title,
             name: title,
             description: String(manageDescription && manageDescription.value || '').trim(),
+            rules: normalizeCommunityRules(manageRules && manageRules.value || storedRecord.rules),
             type: String(manageType && manageType.value || 'public'),
             color: String(manageColor && manageColor.value || '#168f7d'),
             cover: Object.assign({}, manageCoverState || {}),
             updatedAt: new Date().toISOString()
           }),
-          payload: { fields: ['title', 'description', 'type', 'color', 'cover'] }
+          payload: { fields: ['title', 'description', 'rules', 'type', 'color', 'cover'] }
         };
       });
       if (!operation.ok) {
@@ -2886,6 +3292,53 @@
     syncCommunityPermissionUI();
   });
 
+  function showCommunityWelcomeIfPending() {
+    var modal = document.querySelector('[data-community-welcome-modal]');
+    if (!modal) return;
+    var profile = getCurrentUserProfile();
+    var communityId = getCurrentCommunityId();
+    var key = 'doke.community.welcome.v1:' + communityId + ':' + profile.id;
+    var shouldOpen = false;
+    try {
+      shouldOpen = window.sessionStorage && window.sessionStorage.getItem(key) === '1';
+      if (shouldOpen) window.sessionStorage.removeItem(key);
+    } catch (error) {
+      shouldOpen = false;
+    }
+    if (!shouldOpen) return;
+    var record = getCurrentCommunityRecord() || currentCommunityContext || {};
+    var title = modal.querySelector('[data-community-welcome-title]');
+    if (title) title.textContent = 'Bem-vindo à ' + String(record.title || record.name || 'comunidade') + '!';
+    var rules = normalizeCommunityRules(record.rules);
+    var rulesBody = modal.querySelector('[data-community-welcome-rules-body]');
+    var rulesSection = modal.querySelector('[data-community-welcome-rules-section]');
+    var rulesList = modal.querySelector('[data-community-welcome-rules]');
+    if (rulesList) {
+      rulesList.replaceChildren();
+      rules.forEach(function (rule) {
+        var item = document.createElement('li');
+        item.textContent = rule;
+        rulesList.appendChild(item);
+      });
+    }
+    if (rulesSection) rulesSection.hidden = rules.length === 0;
+    if (rulesBody) rulesBody.hidden = rules.length === 0;
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('community-modal-open');
+    window.setTimeout(function () { modal.querySelector('.doke-btn--primary[data-community-welcome-close]')?.focus?.(); }, 40);
+  }
+
+  document.querySelectorAll('[data-community-welcome-close]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var modal = button.closest('[data-community-welcome-modal]');
+      if (!modal) return;
+      modal.hidden = true;
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('community-modal-open');
+    });
+  });
+
   var initiallyActiveChannel = channels.find(function (channel) { return channel.classList.contains('is-active'); }) || channels[0];
   if (initiallyActiveChannel) {
     currentChannelId = initiallyActiveChannel.dataset.channelId || currentChannelId;
@@ -2898,16 +3351,17 @@
     redirectToCommunityAccess({ action: 'deleted', reason: 'community-deleted' }, { id: initialCommunityId, title: currentCommunityContext && currentCommunityContext.title });
     return;
   }
-  var accessRecord = getCurrentCommunityRecord();
+  var accessRecord = repairRecentCreatedCommunityOwnership(getCurrentCommunityRecord());
   var accessDecision = getCommunityAccessDecision(accessRecord);
   if (!accessDecision.allowed) {
     root.dataset.communityAccessState = 'denied';
     redirectToCommunityAccess(accessDecision, accessRecord);
     return;
   }
+  writeCommunityAccessDebug('room-access-allowed', accessRecord, accessDecision);
+  try { window.sessionStorage && window.sessionStorage.removeItem('doke.community.recent-create.v1'); } catch (error) {}
 
   applyCommunityContext();
-  root.hidden = false;
   root.dataset.communityAccessState = 'allowed';
   ensureCurrentCommunityRecord();
   syncManageForm();
@@ -2916,11 +3370,16 @@
   renderCommunityMembers();
   renderJoinRequests();
   syncCommunityPermissionUI();
+  openRequestedSettingsPanel();
   filterChannels();
   renderPersistedMessagesForChannel(currentChannelId);
+  showCommunityWelcomeIfPending();
   updateSendState();
   updateComposerDraftState();
   scrollToStart();
+  root.hidden = false;
+  root.dataset.communityHydrated = 'true';
+  setCommunityRoomPageState('hydrated');
   };
 
   document.addEventListener('doke:route-ready', function (event) {
@@ -2936,6 +3395,22 @@
       window.DokeInitCommunityRoom();
     });
   });
+
+  window.setTimeout(function () {
+    var body = document.body;
+    var room = document.querySelector('[data-community-room]');
+    if (!body || !room || body.dataset.dataState !== 'loading') return;
+    body.dataset.dataState = 'error';
+    room.dataset.state = 'error';
+    room.setAttribute('aria-busy', 'false');
+    room.hidden = false;
+    var preloader = document.querySelector('[data-community-room-document-preloader]');
+    if (preloader) {
+      preloader.hidden = true;
+      preloader.setAttribute('aria-hidden', 'true');
+    }
+    console.error('[Community room] Hydration timeout: fallback reveal applied.');
+  }, 4500);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', window.DokeInitCommunityRoom, { once: true });

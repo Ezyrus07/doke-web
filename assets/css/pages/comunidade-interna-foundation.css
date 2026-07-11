@@ -9,7 +9,7 @@
 @import url("../components/shell/desktop-base-stability.css?v=20260616-chat-sidebar-split-scroll-v1");
 @import url("./chat-workspace-foundation.css?v=20260628-composer-focus-owner-v1");
 @import url("../components/cards/selectable-card.css?v=20260622-community-channel-select-v1");
-@import url("./comunidade-interna.css?v=20260710-community-settings-return-v1");
+@import url("./comunidade-interna.css?v=20260711-adaptive-hydration-v1");
 @import url("../layout/page-rail-authority.css?v=20260618-tablet-internal-rail-authority-v1");
 @import url("../layout/header.css?v=20260701-index-profile-contract-v1");
 @import url("./internal-workspace-foundation.css?v=20260616-chat-sidebar-split-scroll-v1");
@@ -31,3 +31,29 @@
 @import url("./chat-audio-draft-contract.css?v=20260621-chat-attachment-state-v8");
 @import url("./chat-mobile-room-state-contract.css?v=20260618-chat-closeout-v5");
 @import url("../components/overlays/modal-visual-contract.css?v=20260702-modal-check-form-contract-v1");
+@import url("../components/feedback/document-preloader.css?v=20260626-operational-hydration-v4");
+
+
+/* Community room boot contract: reveal the shell atomically after auth, access
+   and room data are ready instead of exposing a partially hydrated sidebar. */
+body[data-page="comunidade-interna"] .doke-document-preloader {
+  display: none;
+  animation: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+html.doke-community-document-reload body[data-page="comunidade-interna"] .doke-document-preloader {
+  display: grid;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+html.doke-community-document-reload body[data-page="comunidade-interna"] .doke-document-preloader[hidden] {
+  display: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}

@@ -21,7 +21,7 @@
 @import url("../components/shell/desktop-base-stability.css?v=20260501-desktop-base-stability-v1");
 @import url("../components/shell/mobile-base-stability.css?v=20260501-mobile-base-stability-v1");
 
-@import url("./comunidade.css?v=20260710-community-domain-stability-v1");
+@import url("./comunidade.css?v=20260710-community-entry-repair-v1");
 @import url("./comunidade/mobile-shell.css");
 @import url("./internal-action-surfaces.css?v=20260613-shared-context-actions-v1");
 @import url("./internal-list-pages.css?v=20260613-shared-context-actions-v1");
@@ -37,3 +37,30 @@
 @import url("../layout/page-rail-authority.css?v=20260614-responsive-header-control-rail-v1");
 @import url("../components/overlays/modal-visual-contract.css?v=20260702-modal-check-form-contract-v1");
 @import url("../components/states/empty-state-system.css?v=20260708-empty-state-system-v1");
+@import url("../components/feedback/document-preloader.css?v=20260626-operational-hydration-v4");
+
+
+/* Community boot contract: keep the canonical Doke document preloader above the
+   entire shell until hydration completes. This prevents a partially mounted
+   sidebar/header from becoming visible during cold navigation. */
+body[data-page="comunidade"] .doke-document-preloader {
+  display: none;
+  animation: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+html.doke-community-document-reload body[data-page="comunidade"] .doke-document-preloader {
+  display: grid;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+html.doke-community-document-reload body[data-page="comunidade"] .doke-document-preloader[hidden] {
+  display: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
