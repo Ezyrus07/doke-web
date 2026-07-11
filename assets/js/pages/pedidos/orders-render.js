@@ -38,11 +38,11 @@
   const applyAudienceComposition = (audience) => {
     const clientView = audience === 'client';
     document.body.dataset.ordersAudience = audience;
+    document.documentElement.dataset.ordersRole = audience;
     data.qs('.orders-page')?.classList.toggle('orders-page--client', clientView);
 
     data.qsa('[data-orders-agenda-toggle]').forEach((node) => {
       node.hidden = clientView;
-      node.style.display = clientView ? 'none' : '';
       node.setAttribute('aria-hidden', String(clientView));
     });
     data.qsa('[data-orders-hydration-ready="planner"], [data-orders-hydration-ready="insights"]').forEach((node) => {

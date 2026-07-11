@@ -243,14 +243,35 @@
     return isDemoProfessional(actor) && Boolean(conversation.orderId || conversation.serviceId);
   }
 
+  function collectIdentityKeys(entity) {
+    entity = entity || {};
+    var profile = entity.profile || {};
+    var profiles = Array.isArray(entity.profiles) ? entity.profiles : [];
+    var values = [
+      entity.id, entity.userId, entity.accountId, entity.email, entity.accountKey,
+      entity.providerProfileId, entity.professionalId, entity.clientId,
+      profile.id, profile.userId, profile.accountId, profile.email, profile.accountKey
+    ];
+    profiles.forEach(function (item) {
+      values.push(item && item.id, item && item.userId, item && item.accountId, item && item.email, item && item.accountKey);
+    });
+    return Array.from(new Set(values.map(function (value) {
+      return normalizeId(value).toLowerCase();
+    }).filter(Boolean)));
+  }
+
   function canAccessNotification(actor, notification, action) {
     actor = actor || getCurrentUser() || {};
     if (canAccessAdmin(actor) || normalizeRole(actor.role || actor.type) === 'moderator') return true;
-    var actorId = normalizeId(actor.id);
-    if (!actorId || !notification) return false;
-    var recipientId = normalizeId(notification.userId || notification.recipientId || notification.ownerId || '');
-    if (!recipientId) return true;
-    if (idEquals(recipientId, actorId)) return true;
+    if (!notification) return false;
+    var actorKeys = collectIdentityKeys(actor);
+    if (!actorKeys.length) return false;
+    var recipientKeys = [
+      notification.userId, notification.recipientId, notification.ownerId,
+      notification.recipientAccountKey, notification.accountKey, notification.email
+    ].map(function (value) { return normalizeId(value).toLowerCase(); }).filter(Boolean);
+    if (!recipientKeys.length) return true;
+    if (recipientKeys.some(function (key) { return actorKeys.indexOf(key) !== -1; })) return true;
     return isDemoProfessional(actor) && String(notification.category || '').toLowerCase() === 'orders';
   }
 

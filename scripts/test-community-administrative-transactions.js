@@ -9,7 +9,7 @@ const required = [
   "transactCurrentCommunity('INVITE_REGENERATED'",
   "transactCurrentCommunity('ROLE_CREATED'",
   "transactCurrentCommunity('ROLE_DELETED'",
-  "transactCurrentCommunity('MEMBER_ROLE_CHANGED'",
+  "transactCurrentCommunity('MEMBER_ROLES_CHANGED'",
   "transactCurrentCommunity('MEMBER_ADDED'"
 ];
 
@@ -21,6 +21,6 @@ for (const contract of required) {
 
 if (!file.includes("reason: 'protected-role'")) throw new Error('Protected role deletion guard is missing.');
 if (!file.includes("reason: 'already-member'")) throw new Error('Manual member duplication guard is missing.');
-if (!file.includes("previousRole: previousRole, nextRole: roleId")) throw new Error('Role change audit payload is missing.');
+if (!file.includes("roleId: roleId, assigned: shouldAssign")) throw new Error('Multi-role change audit payload is missing.');
 
 console.log('Community administrative transactions contract: OK');

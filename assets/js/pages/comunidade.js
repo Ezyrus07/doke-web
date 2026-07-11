@@ -437,7 +437,8 @@ window.DokeInitCommunity = function DokeInitCommunity() {
 
   const isCommunityDebugMode = () => {
     try {
-      return new URLSearchParams(window.location.search || '').get('communityDebug') === '1';
+      const value = new URLSearchParams(window.location.search || '').get('communityDebug');
+      return value === '1' || value === 'members';
     } catch (error) {
       return false;
     }
@@ -545,7 +546,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     const category = String(record?.category || record?.type || '').trim();
     const now = new Date().toISOString();
     const inviteCode = normalizeInviteCode(record?.invite?.code || record?.inviteCode || record?.code);
-    return {
+    const normalized = {
       id,
       title,
       category,
@@ -562,6 +563,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
         generation: Number(record?.invite?.generation || 1)
       } : null,
       ownerId: deriveCommunityOwnerId(record),
+      ownerAccountKey: normalizeIdentityKey(record?.ownerAccountKey || record?.ownerId || ''),
       ownerIdentityKeys: [...new Set((Array.isArray(record?.ownerIdentityKeys) ? record.ownerIdentityKeys : getCommunityOwnerIdentityKeys(record)).map(normalizeIdentityKey).filter(Boolean))],
       createdById: String(record?.createdById || record?.ownerId || '').trim(),
       roles: Array.isArray(record?.roles) ? record.roles : [],
@@ -598,6 +600,9 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       joinedAt: record?.joinedAt || now,
       updatedAt: now
     };
+    const projector = window.Doke?.communityDomain?.members?.projectCommunityMembers;
+    if (typeof projector === 'function') normalized.members = projector({ community: normalized, currentUser: getCurrentUserProfile() });
+    return normalized;
   };
 
   const getCommunityDomainOperations = () => window.Doke?.communityDomain?.operations || null;
@@ -643,7 +648,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     const id = card?.dataset.communityId || slugifyCommunity(title);
     const record = readLocalCommunities().find((item) => String(item?.id || '') === String(id));
     const cover = record?.coverDataUrl || card?.querySelector('img')?.getAttribute('src') || '';
-    const memberCount = Array.isArray(record?.members) ? record.members.length : Number(card?.dataset.memberCount || 0);
+    const memberCount = normalizeCommunityRecord(record || {}).members.length || Number(card?.dataset.memberCount || 0);
     const messageCount = Number(record?.messageCount || record?.messagesCount || card?.dataset.messageCount || 0);
     return {
       id,
@@ -1677,6 +1682,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       const rulesField = form.querySelector('textarea[name="communityRules"]');
       const creator = getCurrentUserProfile();
       const members = [{ ...creator, role: 'owner' }, ...getSelectedCreateMembers()];
+      const createdAt = new Date().toISOString();
       const communityDraft = {
         id: createCommunityId(nameField.value),
         title: nameField.value.trim(),
@@ -1684,6 +1690,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
         description: descriptionField?.value || '',
         rules: normalizeCommunityRules(rulesField?.value || ''),
         ownerId: creator.id,
+        ownerAccountKey: creator.accountKey || creator.email || creator.id,
         ownerIdentityKeys: creator.identityKeys,
         createdById: creator.id,
         coverName: createCoverState.name,
@@ -1691,7 +1698,13 @@ window.DokeInitCommunity = function DokeInitCommunity() {
         coverDataUrl: createCoverState.dataUrl,
         coverWidth: Number(createCoverState.width || 0),
         coverHeight: Number(createCoverState.height || 0),
-        members,
+        members: members.map((member, index) => ({
+          ...member,
+          role: index === 0 ? 'owner' : (member.role || 'member'),
+          joinedAt: member.joinedAt || createdAt,
+          source: index === 0 ? 'creator' : (member.source || 'creation-selection')
+        })),
+        createdAt,
         source: 'created'
       };
       const createOperation = getCommunityDomainOperations()?.create?.(communityDraft, {

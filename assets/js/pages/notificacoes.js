@@ -221,19 +221,74 @@
       syncSelectedActions();
     };
 
+    const restoreDismissedCard = (snapshot) => {
+      if (!snapshot?.card || !snapshot.parent) return;
+      const { card, parent, nextSibling } = snapshot;
+      if (!card.isConnected) parent.insertBefore(card, nextSibling?.isConnected ? nextSibling : null);
+      card.dataset.dismissed = 'false';
+      card.classList.remove('is-dismissing');
+      card.removeAttribute('aria-hidden');
+      card.querySelectorAll('a, button, input, select, textarea').forEach((control) => {
+        control.removeAttribute('tabindex');
+        if (control instanceof HTMLButtonElement) control.disabled = false;
+      });
+      syncReadControls(card);
+      refreshCards().forEach(bindNotificationCard);
+      updatéUnread();
+      updatéStats();
+      applyFilter(currentFilter, currentTimeFilter);
+      syncEmptyState();
+      syncSelectedActions();
+    };
+
     const dismissNotificationCard = (card) => {
       if (!card || card.dataset.dismissed === 'true' || card.classList.contains('is-dismissing')) return;
 
       const id = card.dataset.notificationId || '';
-      getNotificationsService()?.dismiss?.(id);
-      card.classList.add('is-dismissing');
-      card.setAttribute('aria-hidden', 'true');
-      card.querySelectorAll('a, button, input, select, textarea').forEach((control) => {
-        control.tabIndex = -1;
-        if (control instanceof HTMLButtonElement) control.disabled = true;
-      });
+      const service = getNotificationsService();
+      if (!id || !service || typeof service.dismiss !== 'function') {
+        finalizeDismissNotification(card);
+        return;
+      }
 
-      window.setTimeout(() => finalizeDismissNotification(card), 180);
+      const mutation = window.Doke?.experience?.optimistic;
+      if (!mutation?.mutate) {
+        Promise.resolve(service.dismiss(id))
+          .then(() => finalizeDismissNotification(card))
+          .catch(() => restoreDismissedCard({ card, parent: card.parentElement, nextSibling: card.nextSibling }));
+        return;
+      }
+
+      mutation.mutate({
+        key: `notifications:dismiss:${id}`,
+        boundary: root,
+        finalState: 'ready',
+        apply: () => {
+          const snapshot = { card, parent: card.parentElement, nextSibling: card.nextSibling };
+          card.classList.add('is-dismissing');
+          card.setAttribute('aria-hidden', 'true');
+          card.querySelectorAll('a, button, input, select, textarea').forEach((control) => {
+            control.tabIndex = -1;
+            if (control instanceof HTMLButtonElement) control.disabled = true;
+          });
+          return snapshot;
+        },
+        request: () => service.dismiss(id).then((result) => {
+          if (!result) throw new Error('A notificação não pôde ser dispensada.');
+          return result;
+        }),
+        commit: () => {
+          finalizeDismissNotification(card);
+          window.Doke?.experience?.cache?.invalidatePrefix?.('notifications:');
+          window.Doke?.stableShellRouter?.invalidate?.('notificacoes.html');
+        },
+        rollback: (snapshot, error) => {
+          restoreDismissedCard(snapshot);
+          document.dispatchEvent(new CustomEvent('doke:notification-action-error', {
+            detail: { action: 'dismiss', id, error: error?.message || String(error || '') }
+          }));
+        }
+      }).catch(() => {});
     };
 
     const getCanonicalTodayGroup = () => {
@@ -297,9 +352,7 @@
       });
     };
 
-    const hydrateLocalNotifications = () => {
-      const service = getNotificationsService();
-      if (!service || typeof service.listLocal !== 'function') return false;
+    const renderNotificationItems = (items) => {
       const group = getCanonicalTodayGroup();
       if (!group) return false;
 
@@ -307,8 +360,7 @@
       localCards.length = 0;
 
       const insertionAnchor = group.firstChild;
-      const items = service.listLocal({ dismissed: false }) || [];
-      items
+      (Array.isArray(items) ? items : [])
         .filter((notification) => !notification.dismissed)
         .slice()
         .forEach((notification) => {
@@ -330,29 +382,65 @@
       return true;
     };
 
-    const refreshLocalNotifications = () => {
-      if (hydrateLocalNotifications()) return;
-      return false;
+    const getNotificationsCacheKey = () => {
+      const user = window.Doke?.session?.getCurrentUser?.();
+      return `notifications:${user?.id || 'guest'}`;
+    };
+
+    const refreshLocalNotifications = ({ force = false } = {}) => {
+      const service = getNotificationsService();
+      if (!service) return Promise.resolve(false);
+
+      const cache = window.Doke?.experience?.cache;
+      const fetcher = () => {
+        if (typeof service.list === 'function') return service.list({ dismissed: false, currentUser: true });
+        if (typeof service.listLocal === 'function') return Promise.resolve(service.listLocal({ dismissed: false }));
+        return Promise.reject(new Error('Serviço de notificações indisponível.'));
+      };
+
+      if (!cache?.query) {
+        return fetcher().then(renderNotificationItems);
+      }
+
+      const hasRenderedItems = refreshCards().some((card) => card.dataset.dismissed !== 'true');
+      window.Doke?.experience?.states?.set?.(root, hasRenderedItems ? 'refreshing' : 'loading');
+
+      return cache.query({
+        key: getNotificationsCacheKey(),
+        fetcher,
+        staleTime: 15000,
+        keepPreviousData: true,
+        force
+      }).then((result) => {
+        renderNotificationItems(result.data);
+        window.Doke?.experience?.states?.set?.(root, 'ready');
+        if (result.revalidate) {
+          result.revalidate
+            .then((freshItems) => renderNotificationItems(freshItems))
+            .catch(() => window.Doke?.experience?.states?.set?.(root, 'ready'));
+        }
+        return true;
+      }).catch((error) => {
+        window.Doke?.experience?.states?.set?.(root, hasRenderedItems ? 'ready' : 'error', { error: error.message });
+        if (!hasRenderedItems) hydration?.error(error, { source: 'notifications-service' });
+        return false;
+      });
     };
 
 
     const markNotificationsHydrationAuth = () => {
       hydration?.mark('auth');
-      refreshLocalNotifications();
+      window.Doke?.experience?.cache?.invalidatePrefix?.('notifications:');
+      refreshLocalNotifications({ force: true });
     };
     document.addEventListener('doke:auth-surface-ready', markNotificationsHydrationAuth);
     document.addEventListener('doke:auth-session-change', markNotificationsHydrationAuth);
-    document.addEventListener('doke:notification-created', () => refreshLocalNotifications());
-    document.addEventListener('doke:message-sent', () => refreshLocalNotifications());
-    document.addEventListener('doke:order-created', () => refreshLocalNotifications());
     document.addEventListener('doke:page-hydration-ready', (event) => {
       if (event.detail?.page !== 'notificacoes') return;
       applyFilter(currentFilter, currentTimeFilter);
     });
     window.addEventListener('load', () => {
-      if (refreshLocalNotifications() === false) {
-        hydration?.error(new Error('Serviço de notificações indisponível.'), { source: 'notifications-service' });
-      }
+      refreshLocalNotifications({ force: true });
     }, { once: true });
 
     const syncContextPanelHost = () => {
@@ -962,11 +1050,13 @@
       markNotificationsHydrationAuth();
     }
     refreshLocalNotifications();
-    document.addEventListener('doke:notification-created', refreshLocalNotifications);
-    document.addEventListener('doke:order-created', refreshLocalNotifications);
-    document.addEventListener('doke:message-sent', refreshLocalNotifications);
-    document.addEventListener('doke:auth-session-change', refreshLocalNotifications);
-    document.addEventListener('doke:auth-surface-ready', refreshLocalNotifications);
+    const refreshAfterDomainEvent = () => {
+      window.Doke?.experience?.cache?.invalidatePrefix?.('notifications:');
+      refreshLocalNotifications({ force: true });
+    };
+    document.addEventListener('doke:notification-created', refreshAfterDomainEvent);
+    document.addEventListener('doke:order-created', refreshAfterDomainEvent);
+    document.addEventListener('doke:message-sent', refreshAfterDomainEvent);
     updatéUnread();
     updatéStats();
     applyFilter('all', 'all');

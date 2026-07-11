@@ -953,20 +953,23 @@ html.home-index-root body.home-index-shell.home-inline-filters-open .home-search
 }
 
 
-/* Bottom sheet filters — mobile pattern approved: overlay, fixed sheet, no layout push. */
+/* Bottom sheet filters — single mobile authority: fixed overlay, compact sheet, no layout push. */
 @media (max-width: 560px) {
   html.home-index-root body.home-index-shell.home-filter-sheet-open{
     overflow: hidden !important;
   }
 
   html.home-index-root body.home-index-shell.home-filter-sheet-open::before{
-    content: "";
-    position: fixed !important;
-    inset: 0 !important;
-    z-index: 900 !important;
-    background: rgba(13, 31, 51, 0.34);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    content: none;
+    display: none !important;
+  }
+
+  html.home-index-root body.home-index-shell.home-filter-sheet-open .bottom-nav,
+html.home-index-root body.home-index-shell.home-filter-sheet-open .mobile-bottom-nav,
+html.home-index-root body.home-index-shell.home-filter-sheet-open [data-mobile-bottom-nav]{
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
   }
 
   html.home-index-root body.home-index-shell .home-search-hero__filters-host,
@@ -977,46 +980,63 @@ html.home-index-root body.home-index-shell .more-services__filters-host{
   html.home-index-root body.home-index-shell .home-search-hero__filters-host .more-filters.more-filters--section[data-more-filters-panel],
 html.home-index-root body.home-index-shell .more-services__filters-host .more-filters.more-filters--section[data-more-filters-panel]{
     position: fixed !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    top: auto !important;
-    z-index: 930 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    max-height: min(84dvh, 720px) !important;
-    min-height: 52dvh !important;
-    display: grid !important;
-    grid-template-rows: auto minmax(0, 1fr) auto !important;
-    gap: 0;
+    inset: 0 !important;
+    z-index: 2147483000 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-width: none !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end;
+    row-gap: 0;
     margin: 0;
-    padding: 0;
+    padding: max(28px, env(safe-area-inset-top, 0px)) 0 0;
     border: 0;
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    background: #fff;
-    box-shadow: 0 -22px 52px rgba(9, 30, 54, 0.22);
+    border-radius: 0;
+    background: rgba(13, 31, 51, 0.38);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    box-shadow: none;
     overflow: hidden !important;
-    transform: translateY(0) !important;
+    transform: none !important;
+    isolation: isolate !important;
   }
 
   html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel][hidden]{
     display: none !important;
   }
 
+  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__header,
+html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__split-body,
+html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__actions{
+    width: calc(100% - 32px) !important;
+    max-width: 430px !important;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+  }
+
   html.home-index-root body.home-index-shell .more-filters__header{
     position: relative !important;
-    padding: 22px 20px 14px;
+    flex: 0 0 auto !important;
+    min-height: 86px !important;
+    padding: 20px 18px 16px;
     border-bottom: 1px solid rgba(219, 231, 242, 0.9);
-    background: rgba(255, 255, 255, 0.98);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    background: #fff;
+    box-shadow: 0 -22px 52px rgba(9, 30, 54, 0.22);
+    overflow: visible !important;
   }
 
   html.home-index-root body.home-index-shell .more-filters__header::before{
     content: "";
     position: absolute !important;
-    top: 8px !important;
+    top: 7px !important;
     left: 50% !important;
-    width: 42px !important;
-    height: 4px !important;
+    width: 34px !important;
+    height: 3px !important;
     border-radius: var(--radius-pill);
     transform: translateX(-50%) !important;
     background: rgba(120, 145, 170, 0.34);
@@ -1024,8 +1044,8 @@ html.home-index-root body.home-index-shell .more-services__filters-host .more-fi
 
   html.home-index-root body.home-index-shell .more-filters__header strong{
     display: block !important;
-    font-size: 17px;
-    line-height: 1.12;
+    font-size: 16px;
+    line-height: 1.1;
     color: #173d63;
     font-weight: var(--doke-type-weight-display, 800);
   }
@@ -1033,18 +1053,25 @@ html.home-index-root body.home-index-shell .more-services__filters-host .more-fi
   html.home-index-root body.home-index-shell .more-filters__header span{
     display: block !important;
     margin-top: 4px;
-    font-size: 12px;
+    max-width: calc(100% - 54px) !important;
+    font-size: 10px;
+    line-height: 1.25;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    white-space: normal;
+    overflow: visible !important;
+    text-overflow: clip;
     color: #6f839a;
     font-weight: var(--doke-type-weight-emphasis, 700);
   }
 
   html.home-index-root body.home-index-shell .more-filters__dismiss{
     position: absolute !important;
-    top: 18px !important;
+    top: 16px !important;
     right: 16px !important;
-    width: 38px !important;
-    height: var(--control-height-sm) !important;
-    border-radius: var(--radius-sm);
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: var(--radius-exact-13);
     border: 1px solid rgba(215, 229, 242, 0.95);
     background: #f7fbff;
     color: #2f5f94;
@@ -1053,32 +1080,45 @@ html.home-index-root body.home-index-shell .more-services__filters-host .more-fi
   }
 
   html.home-index-root body.home-index-shell .more-filters__split-body{
+    flex: 0 1 auto !important;
     min-height: 0 !important;
-    overflow-y: auto !important;
-    padding: 14px 20px 18px;
+    max-height: calc(100dvh - 188px - max(28px, env(safe-area-inset-top, 0px)) - env(safe-area-inset-bottom, 0px)) !important;
+    margin-bottom: 0;
+    padding: 12px 18px 0;
+    border-bottom: 0;
     display: grid !important;
     gap: 14px;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    background: #f6f9fc;
+    box-shadow: none;
+  }
+
+  html.home-index-root body.home-index-shell .more-filters__split-body::after{
+    content: "";
+    display: block !important;
+    height: 12px !important;
     background: #f6f9fc;
   }
 
   html.home-index-root body.home-index-shell .more-filters__split-nav{
     display: grid !important;
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 8px;
-    padding: 4px;
+    gap: 5px;
+    padding: 3px;
     border-radius: var(--radius-pill);
     background: #eaf2f9;
     overflow: visible !important;
   }
 
   html.home-index-root body.home-index-shell .more-filters__nav-button{
-    min-height: var(--control-height-sm) !important;
-    padding: 0 10px;
+    min-height: var(--control-height-xs) !important;
+    padding-inline: 8px;
     border: 0;
     border-radius: var(--radius-pill);
     background: transparent;
     color: #315a82;
-    font-size: 13px;
+    font-size: 11px;
     font-weight: var(--doke-type-weight-display, 800);
   }
 
@@ -1109,6 +1149,10 @@ html.home-index-root body.home-index-shell .more-filters__quick-toggles{
     gap: 10px;
   }
 
+  html.home-index-root body.home-index-shell .more-filters__quick-toggles{
+    gap: 8px;
+  }
+
   html.home-index-root body.home-index-shell .filter-field,
 html.home-index-root body.home-index-shell .filter-chip{
     min-width: 0 !important;
@@ -1130,14 +1174,16 @@ html.home-index-root body.home-index-shell .filter-chip{
   html.home-index-root body.home-index-shell .filter-field__select,
 html.home-index-root body.home-index-shell .ui-select__trigger,
 html.home-index-root body.home-index-shell .filter-chip{
-    min-height: 48px !important;
+    min-height: var(--control-height-md) !important;
     width: 100% !important;
-    border-radius: var(--radius-base);
+    border-radius: var(--radius-exact-13);
     border: 1px solid rgba(221, 232, 243, 0.92);
     background: #fff;
     box-shadow: 0 8px 18px rgba(18, 45, 75, 0.045);
     color: #244d75;
-    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: .02em;
+    font-weight: var(--doke-type-weight-display, 800);
   }
 
   html.home-index-root body.home-index-shell .filter-chip.is-active{
@@ -1147,18 +1193,23 @@ html.home-index-root body.home-index-shell .filter-chip{
   }
 
   html.home-index-root body.home-index-shell .more-filters__actions{
+    flex: 0 0 auto !important;
     display: grid !important;
-    grid-template-columns: 1fr 1.3fr !important;
+    grid-template-columns: 1fr 1.25fr !important;
     gap: 10px;
-    padding: 14px 20px calc(14px + env(safe-area-inset-bottom));
+    margin-top: 0;
+    padding: 12px 18px calc(12px + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid rgba(219, 231, 242, 0.9);
+    border-radius: 0 0 var(--radius-xs) var(--radius-xs);
     background: #fff;
+    box-shadow: 0 -8px 18px rgba(20, 48, 78, 0.045);
+    transform: translateY(-1px) !important;
   }
 
   html.home-index-root body.home-index-shell .filter-action{
-    min-height: 48px !important;
-    border-radius: var(--radius-exact-15);
-    font-size: 14px;
+    min-height: var(--control-height-md) !important;
+    border-radius: var(--radius-exact-13);
+    font-size: 12px;
     font-weight: var(--doke-type-weight-display, 800);
   }
 
@@ -1166,265 +1217,6 @@ html.home-index-root body.home-index-shell .filter-chip{
     background: #f3f7fb;
     color: #315a82;
     border: 1px solid rgba(218, 231, 242, 0.95);
-  }
-}
-
-
-/* Hotfix — mobile filter sheet visibility.
-   The previous body::before backdrop could sit above the sheet in some stacking contexts.
-   Make the panel itself the fixed overlay and make its inner blocks form the bottom sheet. */
-@media (max-width: 560px) {
-  html.home-index-root body.home-index-shell.home-filter-sheet-open::before{
-    content: none;
-    display: none !important;
-  }
-
-  html.home-index-root body.home-index-shell .home-search-hero__filters-host .more-filters.more-filters--section[data-more-filters-panel],
-html.home-index-root body.home-index-shell .more-services__filters-host .more-filters.more-filters--section[data-more-filters-panel]{
-    position: fixed !important;
-    inset: 0 !important;
-    z-index: 2147483000 !important;
-    width: 100vw !important;
-    height: 100dvh !important;
-    max-width: none !important;
-    max-height: none !important;
-    min-height: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: flex-end;
-    gap: 0;
-    margin: 0;
-    padding: max(18px, env(safe-area-inset-top)) 0 0;
-    border: 0;
-    border-radius: 0;
-    background: rgba(13, 31, 51, 0.38);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    box-shadow: none;
-    overflow: hidden !important;
-    transform: none !important;
-    isolation: isolate !important;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel][hidden]{
-    display: none !important;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__header,
-html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__split-body,
-html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__actions{
-    width: 100% !important;
-    max-width: 560px !important;
-    margin-left: auto;
-    margin-right: auto;
-    box-sizing: border-box;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__header{
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    background: #ffffff;
-    box-shadow: 0 -22px 52px rgba(9, 30, 54, 0.22);
-  }
-
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__split-body{
-    flex: 0 1 auto !important;
-    max-height: calc(84dvh - 132px - env(safe-area-inset-bottom)) !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__actions{
-    flex: 0 0 auto !important;
-    border-radius: 0;
-  }
-}
-
-/* Hotfix — complete mobile filter bottom sheet to the viewport bottom.
-   The previous sheet height was content-based, leaving a visible gap/bottom-nav area. */
-@media (max-width: 560px) {
-  html.home-index-root body.home-index-shell.home-filter-sheet-open .bottom-nav,
-html.home-index-root body.home-index-shell.home-filter-sheet-open .mobile-bottom-nav,
-html.home-index-root body.home-index-shell.home-filter-sheet-open [data-mobile-bottom-nav]{
-    opacity: 0 !important;
-    pointer-events: none !important;
-    visibility: hidden !important;
-  }
-
-  html.home-index-root body.home-index-shell .home-search-hero__filters-host .more-filters.more-filters--section[data-more-filters-panel],
-html.home-index-root body.home-index-shell .more-services__filters-host .more-filters.more-filters--section[data-more-filters-panel]{
-    padding-top: clamp(58px, 12dvh, 104px);
-    padding-bottom: 0;
-    justify-content: flex-end;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__header,
-html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__split-body,
-html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__actions{
-    max-width: 560px !important;
-    width: 100% !important;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__header{
-    flex: 0 0 auto !important;
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__split-body{
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    overflow-y: auto !important;
-    padding-bottom: 18px;
-    background: #f6f9fc;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__actions{
-    flex: 0 0 auto !important;
-    display: grid !important;
-    grid-template-columns: 1fr 1.3fr !important;
-    gap: 10px;
-    padding: 14px 20px calc(18px + env(safe-area-inset-bottom));
-    border-radius: 0;
-    background: #ffffff;
-    border-top: 1px solid rgba(219, 231, 242, 0.9);
-    box-shadow: 0 -10px 24px rgba(20, 48, 78, 0.06);
-  }
-}
-
-/* Hotfix — remove the visible strip between the filter sheet body and action bar.
-   Keep the bottom actions glued to the sheet content, not separated by backdrop. */
-@media (max-width: 560px) {
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel]{
-    row-gap: 0;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__split-body{
-    margin-bottom: 0;
-    border-bottom: 0;
-    box-shadow: none;
-    padding-bottom: 0;
-    background: #f6f9fc;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__split-body::after{
-    content: "";
-    display: block !important;
-    height: 14px !important;
-    background: #f6f9fc;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__actions{
-    margin-top: 0;
-    transform: translateY(-1px) !important;
-    border-top: 1px solid rgba(219, 231, 242, 0.9);
-    box-shadow: 0 -8px 18px rgba(20, 48, 78, 0.045);
-    background: #ffffff;
-  }
-}
-
-/* Index mobile closeout: compact filter sheet and stable visual details. */
-@media (max-width: 560px) {
-  html.home-index-root body.home-index-shell .home-search-hero__filters-host .more-filters.more-filters--section[data-more-filters-panel],
-html.home-index-root body.home-index-shell .more-services__filters-host .more-filters.more-filters--section[data-more-filters-panel]{
-    padding-top: max(28px, env(safe-area-inset-top, 0px));
-    justify-content: flex-end;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__header,
-html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__split-body,
-html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__actions{
-    width: calc(100% - 32px) !important;
-    max-width: 430px !important;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__header{
-    padding: 20px 18px 16px;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    min-height: 86px !important;
-    overflow: visible !important;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters__header::before{
-    top: 7px !important;
-    width: 34px !important;
-    height: 3px !important;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters__header strong{
-    font-size: 16px;
-    line-height: 1.1;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters__header span{
-    margin-top: 4px;
-    max-width: calc(100% - 54px) !important;
-    font-size: 10px;
-    line-height: 1.25;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    white-space: normal;
-    overflow: visible !important;
-    text-overflow: clip;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters__dismiss{
-    top: 16px !important;
-    right: 16px !important;
-    width: 36px !important;
-    height: 36px !important;
-    border-radius: var(--radius-exact-13);
-  }
-
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__split-body{
-    flex: 0 1 auto !important;
-    max-height: calc(100dvh - 188px - max(28px, env(safe-area-inset-top, 0px)) - env(safe-area-inset-bottom, 0px)) !important;
-    padding: 12px 18px 0;
-    overflow-y: auto !important;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__split-body::after{
-    height: 12px !important;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters__split-nav{
-    gap: 5px;
-    padding: 3px;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters__nav-button{
-    min-height: var(--control-height-xs) !important;
-    padding-inline: 8px;
-    font-size: 11px;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters__quick-toggles{
-    gap: 8px;
-  }
-
-  html.home-index-root body.home-index-shell .filter-field__select,
-html.home-index-root body.home-index-shell .ui-select__trigger,
-html.home-index-root body.home-index-shell .filter-chip{
-    min-height: var(--control-height-md) !important;
-    border-radius: var(--radius-exact-13);
-    font-size: 11px;
-    letter-spacing: 0.02em;
-  }
-
-  html.home-index-root body.home-index-shell .more-filters.more-filters--section[data-more-filters-panel] > .more-filters__actions{
-    grid-template-columns: 1fr 1.25fr !important;
-    gap: 10px;
-    padding: 12px 18px calc(12px + env(safe-area-inset-bottom, 0px));
-    border-radius: 0 0 var(--radius-xs) var(--radius-xs);
-  }
-
-  html.home-index-root body.home-index-shell .filter-action{
-    min-height: var(--control-height-md) !important;
-    border-radius: var(--radius-exact-13);
-    font-size: 12px;
   }
 
   html.home-index-root body.home-index-shell .featured-pros__grid .pro-card{

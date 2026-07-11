@@ -571,13 +571,46 @@ const getLocalOpenOrdersCount = () => {
   }).length;
 };
 
+const getOperationalIdentityKeys = (user) => {
+  const profile = user?.profile || {};
+  const profiles = Array.isArray(user?.profiles) ? user.profiles : [];
+  const values = [
+    user?.id,
+    user?.userId,
+    user?.accountId,
+    user?.email,
+    user?.providerProfileId,
+    user?.professionalId,
+    user?.clientId,
+    profile?.id,
+    profile?.userId,
+    profile?.accountId,
+    profile?.email,
+    ...profiles.flatMap((item) => [item?.id, item?.userId, item?.accountId, item?.email]),
+  ];
+  return new Set(values.map((value) => String(value || '').trim().toLowerCase()).filter(Boolean));
+};
+
+const notificationTargetsCurrentUser = (notification, user) => {
+  const userKeys = getOperationalIdentityKeys(user);
+  if (!userKeys.size) return true;
+  const recipientKeys = [
+    notification?.recipientAccountKey,
+    notification?.recipientId,
+    notification?.userId,
+    notification?.accountKey,
+    notification?.email,
+  ].map((value) => String(value || '').trim().toLowerCase()).filter(Boolean);
+  if (!recipientKeys.length) return true;
+  return recipientKeys.some((key) => userKeys.has(key));
+};
+
 const getLocalUnreadNotificationsCount = () => {
   const user = getCurrentSessionUser();
   const notifications = safeReadLocalCollection('doke.notifications.local.v1');
   return notifications.filter((notification) => {
     if (notification?.read === true || notification?.dismissed === true) return false;
-    if (!user?.id || !notification?.userId) return true;
-    return String(notification.userId) === String(user.id);
+    return notificationTargetsCurrentUser(notification, user);
   }).length;
 };
 
@@ -2346,7 +2379,7 @@ document.addEventListener("keydown", (event) => {
 
 initializeCurrentView();
 
-['doke:notification-created', 'doke:message-sent', 'doke:order-created', 'doke:order-status-changed', 'doke:auth-session-change', 'doke:auth-surface-ready'].forEach((eventName) => {
+['doke:notification-created', 'doke:notification-updated', 'doke:message-sent', 'doke:order-created', 'doke:order-status-changed', 'doke:auth-session-change', 'doke:auth-surface-ready'].forEach((eventName) => {
   document.addEventListener(eventName, () => {
     syncSidebarOperationalBadges();
     syncSidebarAdminLink();

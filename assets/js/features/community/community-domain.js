@@ -4,7 +4,7 @@
   var Doke = window.Doke || (window.Doke = {});
   if (Doke.communityDomain) return;
 
-  var SCHEMA_VERSION = 5;
+  var SCHEMA_VERSION = 7;
   var KEYS = Object.freeze({
     communities: 'doke.communities.local.v1',
     deleted: 'doke.communities.deleted.local.v1',
@@ -143,21 +143,61 @@
       name: String(role.name || '').trim(),
       color: String(role.color || '#64748b').trim() || '#64748b',
       system: Boolean(role.system),
-      permissions: normalizePermissions(role.permissions)
+      permissions: normalizePermissions(role.permissions),
+      createdAt: String(role.createdAt || '').trim(),
+      createdByAccountKey: normalizeIdentityKey(role.createdByAccountKey || '')
     };
   }
 
+  function normalizeRoleName(value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+  }
+
+  function projectCommunityRoles(options) {
+    options = options || {};
+    var community = options.community && typeof options.community === 'object' ? options.community : {};
+    var defaults = [
+      { id: 'owner', name: 'Administrador', color: '#0f6f64', system: true, permissions: { pinMessages: true, deleteMessages: true, addMembers: true, removeMembers: true, editCommunity: true, manageRoles: true } },
+      { id: 'moderator', name: 'Moderador', color: '#2167ae', system: true, permissions: { pinMessages: true, deleteMessages: true, addMembers: true, removeMembers: true } },
+      { id: 'member', name: 'Membro', color: '#64748b', system: true, permissions: {} }
+    ];
+    var seenIds = new Set();
+    var seenNames = new Set();
+    return defaults.concat(Array.isArray(community.roles) ? community.roles : []).map(normalizeRole).filter(Boolean).filter(function (role) {
+      var name = normalizeRoleName(role.name);
+      if (!role.id || !name || seenIds.has(role.id) || seenNames.has(name)) return false;
+      seenIds.add(role.id);
+      seenNames.add(name);
+      return true;
+    });
+  }
+
+  function normalizeMemberRoleIds(member) {
+    var raw = Array.isArray(member && member.roleIds) ? member.roleIds : [];
+    var primary = String(member && member.role || '').trim();
+    var ids = raw.concat(primary ? [primary] : []);
+    var seen = new Set();
+    return ids.map(function (value) { return String(value || '').trim(); }).filter(function (value) {
+      if (!value || seen.has(value)) return false;
+      seen.add(value);
+      return true;
+    });
+  }
+
   function normalizeMember(member) {
-    if (!member || !String(member.name || '').trim()) return null;
+    if (!member || typeof member !== 'object') return null;
     var identityKeys = getMemberIdentityKeys(member);
     var accountKey = normalizeIdentityKey(member.accountKey || member.email || identityKeys[0] || '');
+    var name = String(member.name || member.displayName || member.email || '').trim();
+    if (!name && !identityKeys.length) return null;
     return {
       id: String(member.id || member.userId || member.profileId || accountKey || '').trim(),
       accountKey: accountKey,
-      name: String(member.name || '').trim(),
+      name: name || 'Membro',
       email: String(member.email || '').trim(),
       identityKeys: uniqueIdentityKeys([accountKey].concat(identityKeys)),
-      role: String(member.role || 'member').trim() || 'member',
+      role: String(member.role || normalizeMemberRoleIds(member)[0] || 'member').trim() || 'member',
+      roleIds: normalizeMemberRoleIds(member).length ? normalizeMemberRoleIds(member) : ['member'],
       source: String(member.source || 'local').trim() || 'local',
       joinedAt: String(member.joinedAt || '').trim(),
       addedBy: String(member.addedBy || '').trim(),
@@ -169,9 +209,171 @@
     var ownerMember = (members || []).find(function (member) { return member.role === 'owner'; });
     return uniqueIdentityKeys([
       record && record.ownerId,
+      record && record.ownerAccountKey,
       record && record.createdById,
       record && record.creatorId
     ].concat(record && Array.isArray(record.ownerIdentityKeys) ? record.ownerIdentityKeys : [], getMemberIdentityKeys(ownerMember)));
+  }
+
+  function normalizeJoinRequest(request) {
+    if (!request || typeof request !== 'object') return null;
+    return Object.assign({}, request, {
+      id: String(request.id || '').trim(),
+      userId: String(request.userId || '').trim(),
+      accountKey: normalizeIdentityKey(request.accountKey || request.userEmail || request.userId || ''),
+      userEmail: String(request.userEmail || '').trim(),
+      identityKeys: uniqueIdentityKeys([
+        request.accountKey, request.userId, request.userEmail
+      ].concat(Array.isArray(request.identityKeys) ? request.identityKeys : [])),
+      status: ['pending', 'accepted', 'rejected', 'cancelled'].includes(request.status) ? request.status : 'pending'
+    });
+  }
+
+  function mergeMemberRecords(existing, incoming) {
+    var owner = existing.role === 'owner' || incoming.role === 'owner';
+    return normalizeMember(Object.assign({}, existing, incoming, {
+      id: existing.id || incoming.id,
+      accountKey: existing.accountKey || incoming.accountKey,
+      name: existing.name && existing.name !== 'Membro' ? existing.name : incoming.name,
+      email: existing.email || incoming.email,
+      identityKeys: uniqueIdentityKeys(getMemberIdentityKeys(existing).concat(getMemberIdentityKeys(incoming))),
+      role: owner ? 'owner' : (existing.role || incoming.role || 'member'),
+      roleIds: owner ? ['owner'] : normalizeMemberRoleIds(existing).concat(normalizeMemberRoleIds(incoming)),
+      joinedAt: existing.joinedAt || incoming.joinedAt,
+      source: existing.source || incoming.source
+    }));
+  }
+
+  function projectCommunityMembers(options) {
+    options = options || {};
+    var community = options.community && typeof options.community === 'object' ? options.community : {};
+    var currentUser = options.currentUser || null;
+    var members = (Array.isArray(community.members) ? community.members : []).map(normalizeMember).filter(Boolean);
+    var ownerKeys = deriveOwnerIdentityKeys(community, members);
+    var ownerId = String(community.ownerId || community.createdById || community.creatorId || '').trim();
+    var currentUserKeys = currentUser ? uniqueIdentityKeys([
+      currentUser.accountKey, currentUser.id, currentUser.email
+    ].concat(Array.isArray(currentUser.identityKeys) ? currentUser.identityKeys : getIdentityKeysFromUser(currentUser))) : [];
+    var currentUserIsOwner = ownerKeys.length && identitiesIntersect(ownerKeys, currentUserKeys);
+    var inactiveMemberKeys = (Array.isArray(community.membershipHistory) ? community.membershipHistory : []).filter(function (entry) {
+      return entry && ['removed', 'left'].includes(entry.action);
+    }).reduce(function (keys, entry) {
+      return keys.concat(Array.isArray(entry.identityKeys) ? entry.identityKeys : []);
+    }, []);
+    var ownerIndex = members.findIndex(function (member) {
+      return identitiesIntersect(getMemberIdentityKeys(member), ownerKeys);
+    });
+    if (ownerIndex < 0) ownerIndex = members.findIndex(function (member) { return member.role === 'owner'; });
+
+    if (ownerIndex < 0 && (ownerId || ownerKeys.length)) {
+      members.unshift(normalizeMember({
+        id: ownerId || ownerKeys[0],
+        accountKey: community.ownerAccountKey || (currentUserIsOwner && currentUser.accountKey) || ownerKeys[0] || ownerId,
+        identityKeys: uniqueIdentityKeys(ownerKeys.concat(currentUserIsOwner ? currentUserKeys : [])),
+        email: currentUserIsOwner && currentUser.email || community.ownerEmail || '',
+        name: currentUserIsOwner && currentUser.name || community.ownerName || community.createdByName || 'Administrador',
+        role: 'owner',
+        source: 'creator',
+        joinedAt: community.createdAt || community.joinedAt || ''
+      }));
+      ownerIndex = 0;
+    }
+
+    members = members.map(function (member, index) {
+      if (index !== ownerIndex) return Object.assign({}, member, { role: member.role === 'owner' ? 'member' : member.role, roleIds: member.role === 'owner' ? ['member'] : normalizeMemberRoleIds(member) });
+      var enrichedOwner = currentUserIsOwner ? {
+        accountKey: currentUser.accountKey || member.accountKey,
+        email: currentUser.email || member.email,
+        name: currentUser.name || member.name,
+        identityKeys: uniqueIdentityKeys(getMemberIdentityKeys(member).concat(currentUserKeys))
+      } : {};
+      return normalizeMember(Object.assign({}, member, enrichedOwner, { role: 'owner', roleIds: ['owner'], source: member.source || 'creator' }));
+    });
+
+    (Array.isArray(community.joinRequests) ? community.joinRequests : []).map(normalizeJoinRequest).filter(Boolean).forEach(function (request) {
+      if (request.status !== 'accepted' || !request.identityKeys.length) return;
+      if (identitiesIntersect(request.identityKeys, inactiveMemberKeys)) return;
+      var requestMember = normalizeMember({
+        id: request.userId || request.accountKey || request.userEmail || request.identityKeys[0],
+        accountKey: request.accountKey || request.userEmail || request.userId || request.identityKeys[0],
+        email: request.userEmail || '',
+        identityKeys: request.identityKeys,
+        name: request.userName || request.userEmail || 'Membro',
+        role: 'member',
+        source: 'join-request',
+        joinedAt: request.resolvedAt || request.requestedAt || '',
+        addedBy: request.resolvedBy || ''
+      });
+      var matchIndex = members.findIndex(function (member) {
+        return identitiesIntersect(getMemberIdentityKeys(member), request.identityKeys);
+      });
+      if (matchIndex >= 0) members[matchIndex] = mergeMemberRecords(members[matchIndex], requestMember);
+      else members.push(requestMember);
+    });
+
+    var roles = new Set(['owner', 'member', 'moderator'].concat(
+      (Array.isArray(community.roles) ? community.roles : []).map(function (role) { return String(role && role.id || '').trim(); }).filter(Boolean)
+    ));
+    members = members.map(function (member) {
+      if (member.role === 'owner') return Object.assign({}, member, { roleIds: ['owner'] });
+      var validRoleIds = normalizeMemberRoleIds(member).filter(function (roleId) { return roleId !== 'owner' && roles.has(roleId); });
+      if (!validRoleIds.length) validRoleIds = ['member'];
+      var primaryRole = validRoleIds.indexOf(member.role) !== -1 ? member.role : validRoleIds[validRoleIds.length - 1];
+      return Object.assign({}, member, { role: primaryRole, roleIds: validRoleIds });
+    });
+
+    var projected = [];
+    members.forEach(function (member) {
+      var keys = getMemberIdentityKeys(member);
+      var duplicateIndex = keys.length ? projected.findIndex(function (candidate) {
+        return identitiesIntersect(getMemberIdentityKeys(candidate), keys)
+          || Boolean(candidate.accountKey && member.accountKey && candidate.accountKey === member.accountKey);
+      }) : -1;
+      if (duplicateIndex >= 0) projected[duplicateIndex] = mergeMemberRecords(projected[duplicateIndex], member);
+      else projected.push(member);
+    });
+    var projectedOwnerIndex = projected.findIndex(function (member) {
+      return member.role === 'owner' || identitiesIntersect(getMemberIdentityKeys(member), ownerKeys);
+    });
+    return projected.map(function (member, index) {
+      return Object.assign({}, member, { role: index === projectedOwnerIndex ? 'owner' : (member.role === 'owner' ? 'member' : member.role), roleIds: index === projectedOwnerIndex ? ['owner'] : normalizeMemberRoleIds(member).filter(function (roleId) { return roleId !== 'owner'; }) });
+    });
+  }
+
+  function isMemberDebugEnabled() {
+    try {
+      return new URLSearchParams(window.location && window.location.search || '').get('communityDebug') === 'members';
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function debugMembers(stage, community, currentUser, renderedMembers) {
+    if (!isMemberDebugEnabled() || !window.console) return;
+    var projected = projectCommunityMembers({ community: community, currentUser: currentUser });
+    var relation = resolveCommunityRelationRaw(community, currentUser || resolveCurrentUser(), projected);
+    console.debug('[communityDebug:members]', stage, {
+      communityId: String(community && community.id || ''),
+      ownerId: String(community && community.ownerId || ''),
+      ownerIdentityKeys: deriveOwnerIdentityKeys(community, projected),
+      currentUser: currentUser ? { id: currentUser.id || '', email: currentUser.email || '', source: currentUser.source || '' } : null,
+      currentUserAccountKey: String(currentUser && currentUser.accountKey || ''),
+      persistedMembers: (Array.isArray(community && community.members) ? community.members : []).map(normalizeMember).filter(Boolean),
+      acceptedRequests: (Array.isArray(community && community.joinRequests) ? community.joinRequests : []).filter(function (request) {
+        return request && request.status === 'accepted';
+      }).map(function (request) {
+        return {
+          id: request.id || '', accountKey: request.accountKey || '', userId: request.userId || '',
+          userEmail: request.userEmail || '', identityKeys: request.identityKeys || [], status: request.status,
+          requestedAt: request.requestedAt || '', resolvedAt: request.resolvedAt || ''
+        };
+      }),
+      normalizedMembers: projected,
+      renderedMembers: Array.isArray(renderedMembers) ? renderedMembers : projected,
+      headerMemberCount: projected.length,
+      relation: relation.relation,
+      migrationVersion: Number(community && community.schemaVersion || 0)
+    });
   }
 
 
@@ -190,51 +392,31 @@
 
   function migrateRecord(record) {
     if (!record || typeof record !== 'object') return null;
+    debugMembers('before-migration', record, null);
     var next = Object.assign({}, record);
-    var members = (Array.isArray(next.members) ? next.members : []).map(normalizeMember).filter(Boolean);
-    var seenMembers = [];
-    members = members.filter(function (member) {
-      var duplicate = seenMembers.some(function (seen) {
-        var sharedCanonicalKey = identitiesIntersect(seen.identityKeys, member.identityKeys);
-        var sameStableAccount = seen.accountKey && member.accountKey && seen.accountKey === member.accountKey;
-        return sharedCanonicalKey || sameStableAccount;
-      });
-      if (!duplicate) seenMembers.push(member);
-      return !duplicate;
-    });
 
-    var roles = (Array.isArray(next.roles) ? next.roles : []).map(normalizeRole).filter(Boolean);
-    var roleIds = new Set();
-    roles = roles.filter(function (role) {
-      if (!role.id || roleIds.has(role.id)) return false;
-      roleIds.add(role.id);
-      return true;
-    });
+    var roles = projectCommunityRoles({ community: next }).filter(function (role) { return !role.system; });
 
-    var ownerIdentityKeys = deriveOwnerIdentityKeys(next, members);
+    var ownerIdentityKeys = deriveOwnerIdentityKeys(next, next.members);
     var ownerId = String(next.ownerId || next.createdById || next.creatorId || '').trim();
-    var ownerMembers = members.filter(function (member) { return member.role === 'owner'; });
+    var ownerMembers = (Array.isArray(next.members) ? next.members : []).map(normalizeMember).filter(Boolean).filter(function (member) { return member.role === 'owner'; });
     if (!ownerId && ownerMembers[0]) ownerId = String(ownerMembers[0].id || ownerMembers[0].identityKeys[0] || '').trim();
-
-    if (ownerIdentityKeys.length) {
-      var ownerIndex = members.findIndex(function (member) { return identitiesIntersect(member.identityKeys, ownerIdentityKeys); });
-      members = members.map(function (member, index) {
-        return Object.assign({}, member, { role: index === ownerIndex ? 'owner' : (member.role === 'owner' ? 'member' : member.role) });
-      });
-    }
 
     next.id = String(next.id || next.community || '').trim();
     next.title = String(next.title || next.name || 'Comunidade Doke').trim() || 'Comunidade Doke';
     next.ownerId = ownerId;
+    var canonicalOwner = ownerMembers.find(function (member) { return identitiesIntersect(getMemberIdentityKeys(member), ownerIdentityKeys); });
+    next.ownerAccountKey = normalizeIdentityKey(canonicalOwner && canonicalOwner.accountKey || ownerId || ownerIdentityKeys[0] || next.ownerAccountKey || '');
     next.ownerIdentityKeys = ownerIdentityKeys;
-    next.members = members;
     next.roles = roles;
     next.rules = normalizeRules(next.rules);
-    next.joinRequests = Array.isArray(next.joinRequests) ? next.joinRequests : [];
+    next.joinRequests = (Array.isArray(next.joinRequests) ? next.joinRequests : []).map(normalizeJoinRequest).filter(Boolean);
+    next.members = projectCommunityMembers({ community: next });
     next.membershipHistory = Array.isArray(next.membershipHistory) ? next.membershipHistory : [];
     next.ownershipHistory = Array.isArray(next.ownershipHistory) ? next.ownershipHistory : [];
     next.schemaVersion = SCHEMA_VERSION;
     next.updatedAt = String(next.updatedAt || nowIso());
+    debugMembers('after-migration', next, null);
     return next;
   }
 
@@ -249,9 +431,11 @@
 
   function list() {
     var tombstonedIds = new Set(readTombstones().map(function (item) { return String(item.id || '').trim(); }));
-    return parseArray(KEYS.communities).map(migrateRecord).filter(function (record) {
+    var records = parseArray(KEYS.communities).map(migrateRecord).filter(function (record) {
       return record && record.id && String(record.status || '').toLowerCase() !== 'deleted' && !tombstonedIds.has(record.id);
     });
+    records.forEach(function (record) { debugMembers('after-reload', record, null); });
+    return records;
   }
 
   function saveAll(records, metadata) {
@@ -343,6 +527,7 @@
     if (!nextRecord || nextRecord.id !== id) return { ok: false, reason: 'invalid-operation-result' };
     records[index] = nextRecord;
     if (!saveAll(records)) return { ok: false, reason: 'storage-write-failed' };
+    if (options.type === 'JOIN_REQUEST_ACCEPTED') debugMembers('after-approval', nextRecord, resolveCurrentUser());
     var event = appendEvent({
       communityId: id,
       type: options.type || 'COMMUNITY_UPDATED',
@@ -404,25 +589,23 @@
   function relationship(record, identityKeys) {
     var keys = uniqueIdentityKeys(identityKeys);
     if (!record || !keys.length) return 'visitor';
-    if (identitiesIntersect(keys, deriveOwnerIdentityKeys(record, record.members))) return 'owner';
-    var member = (Array.isArray(record.members) ? record.members : []).find(function (item) {
+    var members = projectCommunityMembers({ community: record });
+    if (identitiesIntersect(keys, deriveOwnerIdentityKeys(record, members))) return 'owner';
+    var member = members.find(function (item) {
       return identitiesIntersect(keys, getMemberIdentityKeys(item));
     });
     return member ? 'member' : 'visitor';
   }
 
-  function resolveCommunityRelation(options) {
-    options = options || {};
-    var community = migrateRecord(options.community);
-    var currentUser = options.currentUser || resolveCurrentUser();
+  function resolveCommunityRelationRaw(community, currentUser, members) {
     var currentKeys = uniqueIdentityKeys([
       currentUser && currentUser.accountKey
     ].concat(currentUser && Array.isArray(currentUser.identityKeys) ? currentUser.identityKeys : getIdentityKeysFromUser(currentUser)));
-    var ownerKeys = deriveOwnerIdentityKeys(community, community && community.members);
+    var ownerKeys = deriveOwnerIdentityKeys(community, members);
     var matchedOwnerKeys = currentKeys.filter(function (key) { return identitiesIntersect([key], ownerKeys); });
-    var matchedMember = community && Array.isArray(community.members) ? community.members.find(function (member) {
+    var matchedMember = (members || []).find(function (member) {
       return identitiesIntersect(currentKeys, getMemberIdentityKeys(member));
-    }) : null;
+    }) || null;
     var matchedMemberKeys = matchedMember ? currentKeys.filter(function (key) { return identitiesIntersect([key], getMemberIdentityKeys(matchedMember)); }) : [];
     var relation = matchedOwnerKeys.length ? 'owner' : (matchedMember ? 'member' : 'visitor');
 
@@ -438,32 +621,61 @@
     };
   }
 
+  function resolveCommunityRelation(options) {
+    options = options || {};
+    var community = options.community && typeof options.community === 'object' ? options.community : {};
+    var currentUser = options.currentUser || resolveCurrentUser();
+    var members = projectCommunityMembers({ community: community, currentUser: currentUser });
+    return resolveCommunityRelationRaw(community, currentUser, members);
+  }
+
   function can(permission, context) {
     context = context || {};
     if (context.relationship === 'owner' || String(context.member && context.member.role || '') === 'owner') return true;
-    var roleId = String(context.member && context.member.role || 'member');
-    var role = (Array.isArray(context.roles) ? context.roles : []).map(normalizeRole).filter(Boolean).find(function (item) {
-      return item.id === roleId;
+    var roleIds = normalizeMemberRoleIds(context.member || {});
+    if (!roleIds.length) roleIds = ['member'];
+    var roles = (Array.isArray(context.roles) ? context.roles : []).map(normalizeRole).filter(Boolean);
+    return roleIds.some(function (roleId) {
+      var role = roles.find(function (item) { return item.id === roleId; });
+      return Boolean(role && role.permissions && role.permissions[permission]);
     });
-    return Boolean(role && role.permissions && role.permissions[permission]);
   }
 
   function auditRecord(record) {
     var issues = [];
     if (!record || !record.id) issues.push('missing-id');
     if (!record || !record.title) issues.push('missing-title');
-    var members = record && Array.isArray(record.members) ? record.members : [];
+    var members = record && Array.isArray(record.members) ? record.members.map(normalizeMember).filter(Boolean) : [];
+    var projected = projectCommunityMembers({ community: record || {} });
     var ownerCount = members.filter(function (member) { return member.role === 'owner'; }).length;
     if (!record || !record.ownerId) issues.push('missing-owner-id');
     if (ownerCount !== 1) issues.push(ownerCount === 0 ? 'missing-owner-member' : 'multiple-owner-members');
     var roleIds = new Set((record && Array.isArray(record.roles) ? record.roles : []).map(function (role) { return role.id; }));
     members.forEach(function (member) {
       if (!getMemberIdentityKeys(member).length) issues.push('member-without-identity:' + String(member.id || member.name || 'unknown'));
-      if (!['owner', 'member', 'moderator'].includes(member.role) && !roleIds.has(member.role)) {
-        issues.push('member-with-unknown-role:' + String(member.id || member.name || 'unknown'));
+      normalizeMemberRoleIds(member).forEach(function (memberRoleId) {
+        if (!['owner', 'member', 'moderator'].includes(memberRoleId) && !roleIds.has(memberRoleId)) {
+          issues.push('member-with-unknown-role:' + String(member.id || member.name || 'unknown') + ':' + memberRoleId);
+        }
+      });
+    });
+    var seenAccounts = new Set();
+    members.forEach(function (member) {
+      if (member.accountKey && seenAccounts.has(member.accountKey)) issues.push('duplicate-member-account:' + member.accountKey);
+      if (member.accountKey) seenAccounts.add(member.accountKey);
+    });
+    (record && Array.isArray(record.joinRequests) ? record.joinRequests : []).map(normalizeJoinRequest).filter(Boolean).forEach(function (request) {
+      if (request.status === 'accepted' && request.identityKeys.length && !members.some(function (member) { return identitiesIntersect(request.identityKeys, getMemberIdentityKeys(member)); })) {
+        issues.push('accepted-request-without-member:' + String(request.id || request.accountKey || 'unknown'));
       }
     });
-    return { communityId: String(record && record.id || ''), valid: issues.length === 0, issues: issues };
+    if (Number.isFinite(Number(record && record.memberCount)) && Number(record.memberCount) !== projected.length) issues.push('member-count-mismatch');
+    var removedKeys = (record && Array.isArray(record.membershipHistory) ? record.membershipHistory : []).filter(function (entry) {
+      return entry && ['removed', 'left'].includes(entry.action);
+    }).reduce(function (keys, entry) { return keys.concat(entry.identityKeys || []); }, []);
+    if (removedKeys.length && projected.some(function (member) { return member.role !== 'owner' && identitiesIntersect(removedKeys, getMemberIdentityKeys(member)); })) issues.push('removed-member-still-active');
+    if (String(record && record.status || '').toLowerCase() === 'deleted' && projected.length) issues.push('deleted-community-with-active-members');
+    return { communityId: String(record && record.id || ''), valid: issues.length === 0, issues: uniqueIdentityKeys(issues), projectedMembers: projected };
   }
 
   function auditAll() {
@@ -510,6 +722,7 @@
     }),
     events: Object.freeze({ append: appendEvent, list: listEvents, findByOperationId: findEventByOperationId }),
     operations: Object.freeze({ create: createOperation, transact: transactCommunity, delete: deleteCommunity }),
+    members: Object.freeze({ projectCommunityMembers: projectCommunityMembers, debug: debugMembers }),
     identity: Object.freeze({
       normalizeKey: normalizeIdentityKey,
       uniqueKeys: uniqueIdentityKeys,
@@ -521,6 +734,7 @@
       userKeys: getIdentityKeysFromUser,
       accountKey: getAccountKeyFromUser
     }),
+    roles: Object.freeze({ projectCommunityRoles: projectCommunityRoles, normalize: normalizeRole }),
     permissions: Object.freeze({ keys: PERMISSION_KEYS, normalize: normalizePermissions, can: can }),
     migrations: Object.freeze({ migrateRecord: migrateRecord, migrateAll: migrateAll }),
     integrity: Object.freeze({ auditRecord: auditRecord, auditAll: auditAll })

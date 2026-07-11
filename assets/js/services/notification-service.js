@@ -116,6 +116,10 @@
 
   function fallbackList(filters) {
     filters = filters || {};
+    var repository = getRepository();
+    if (!repository || typeof repository.isStaticDemoEnabled !== 'function' || !repository.isStaticDemoEnabled()) {
+      return Promise.resolve([]);
+    }
     if (!Doke.mockData || typeof Doke.mockData.load !== 'function') return Promise.resolve([]);
     return Doke.mockData.load('notifications').then(function (notifications) {
       return (notifications || []).filter(function (notification) {

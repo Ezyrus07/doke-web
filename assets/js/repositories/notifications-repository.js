@@ -11,6 +11,8 @@
   var STORAGE_KEY = 'doke.notifications.local.v1';
   var LEGACY_STORAGE_KEY = 'doke.notifications';
   var FALLBACK_URL = 'assets/data/mock-notifications.json';
+  var MOCK_CLEANUP_KEY = 'doke.notifications.mock-cleanup.v1';
+  var MOCK_NOTIFICATION_IDS = Object.freeze(['not_001', 'not_002']);
   var cache = null;
 
   function clone(value) {
@@ -24,6 +26,63 @@
 
   function nowIso() {
     return new Date().toISOString();
+  }
+
+  function normalizeBoolean(value) {
+    return value === true || value === 'true' || value === '1' || value === 'on';
+  }
+
+  function isStaticDemoEnabled() {
+    var config = root.DOKE_RUNTIME_CONFIG && typeof root.DOKE_RUNTIME_CONFIG === 'object'
+      ? root.DOKE_RUNTIME_CONFIG
+      : {};
+    var configured = config.notificationsDemoData;
+    if (configured === undefined && config.flags) configured = config.flags.notificationsDemoData;
+
+    try {
+      var params = new URLSearchParams(root.location.search || '');
+      if (params.has('dokeNotificationsDemo')) configured = params.get('dokeNotificationsDemo');
+    } catch (error) {
+      // Ignore malformed URLs and keep the secure default: demo data disabled.
+    }
+
+    if (configured === undefined) {
+      try { configured = root.localStorage.getItem('doke.notifications.demoData'); }
+      catch (error) { configured = false; }
+    }
+
+    return normalizeBoolean(configured);
+  }
+
+  function isLegacyStaticMock(item) {
+    if (!item || typeof item !== 'object') return false;
+    var id = normalizeText(item.id);
+    if (MOCK_NOTIFICATION_IDS.indexOf(id) !== -1) return true;
+
+    var title = normalizeText(item.title);
+    var body = normalizeText(item.body || item.message || item.description);
+    return (title === 'Novo orçamento recebido' && body === 'Marcos enviou um orçamento para sua pintura residencial.')
+      || (title === 'Nova mensagem' && body === 'Ana respondeu sobre o serviço elétrico.');
+  }
+
+  function removeLegacyStaticMocks(items) {
+    return (Array.isArray(items) ? items : []).filter(function (item) {
+      return !isLegacyStaticMock(item);
+    });
+  }
+
+  function cleanupLegacyStaticMocks() {
+    var alreadyCleaned = false;
+    try { alreadyCleaned = root.localStorage.getItem(MOCK_CLEANUP_KEY) === 'done'; }
+    catch (error) { alreadyCleaned = false; }
+    if (alreadyCleaned) return;
+
+    var localItems = removeLegacyStaticMocks(safeRead(STORAGE_KEY));
+    var legacyItems = removeLegacyStaticMocks(safeRead(LEGACY_STORAGE_KEY));
+    safeWrite(STORAGE_KEY, localItems);
+    safeWrite(LEGACY_STORAGE_KEY, legacyItems);
+    try { root.localStorage.setItem(MOCK_CLEANUP_KEY, 'done'); }
+    catch (error) { /* localStorage may be unavailable. */ }
   }
 
   function createNotificationId() {
@@ -172,7 +231,11 @@
   }
 
   function readLocal() {
-    return mergeById(safeRead(STORAGE_KEY), safeRead(LEGACY_STORAGE_KEY));
+    cleanupLegacyStaticMocks();
+    return mergeById(
+      removeLegacyStaticMocks(safeRead(STORAGE_KEY)),
+      removeLegacyStaticMocks(safeRead(LEGACY_STORAGE_KEY))
+    );
   }
 
   function writeLocal(items) {
@@ -185,6 +248,8 @@
 
   function loadBase(options) {
     options = options || {};
+    if (!isStaticDemoEnabled()) return Promise.resolve([]);
+
     if (Doke.mockData && typeof Doke.mockData.load === 'function') {
       return Doke.mockData.load('notifications', options);
     }
@@ -378,6 +443,8 @@
     dismiss: dismiss,
     markAllAsRead: markAllAsRead,
     unreadCount: unreadCount,
+    isStaticDemoEnabled: isStaticDemoEnabled,
+    cleanupLegacyStaticMocks: cleanupLegacyStaticMocks,
     clearLocal: function () { writeLocal([]); }
   });
 })();

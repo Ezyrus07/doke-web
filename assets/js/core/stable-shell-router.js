@@ -2,7 +2,7 @@
   'use strict';
 
   var Doke = window.Doke || (window.Doke = {});
-  var ROUTER_VERSION = '20260709-sidebar-profile-sync-v1';
+  var ROUTER_VERSION = '20260711-experience-runtime-v1';
   var ROUTE_VISUAL_THRESHOLD_MS = 150;
   var ROUTE_SETTLEMENT_TIMEOUT_MS = 9000;
 
@@ -1060,7 +1060,7 @@
       navigate(window.location.href, { replace: true });
     });
 
-    window.DokeStableShellRouter = Object.freeze({ version: ROUTER_VERSION, navigate: navigate, warm: warm });
+    window.DokeStableShellRouter = publicRouter;
     window.DokeNavigate = function (href, options) {
       return navigate(href, options || {});
     };
@@ -1079,7 +1079,24 @@
     }
   }
 
-  Doke.stableShellRouter = Object.freeze({ version: ROUTER_VERSION, navigate: navigate, warm: warm, isEnabled: isEnabled });
+  function invalidateRoute(href) {
+    var url = new URL(href || window.location.href, window.location.href);
+    var key = url.pathname + url.search;
+    routeCache.delete(key);
+    routeWarmCache.delete(key);
+    return true;
+  }
+
+  var publicRouter = Object.freeze({
+    version: ROUTER_VERSION,
+    navigate: navigate,
+    warm: warm,
+    invalidate: invalidateRoute,
+    isEnabled: isEnabled,
+    isNavigating: function () { return navigating; }
+  });
+
+  Doke.stableShellRouter = publicRouter;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', bind, { once: true });
