@@ -4,7 +4,7 @@
   var Doke = window.Doke || (window.Doke = {});
   if (Doke.communityDomain) return;
 
-  var SCHEMA_VERSION = 7;
+  var SCHEMA_VERSION = 9;
   var KEYS = Object.freeze({
     communities: 'doke.communities.local.v1',
     deleted: 'doke.communities.deleted.local.v1',
@@ -17,7 +17,11 @@
     'addMembers',
     'removeMembers',
     'editCommunity',
-    'manageRoles'
+    'manageRoles',
+    'manageChannels',
+    'mentionRoles',
+    'bypassSlowMode',
+    'moderateMembers'
   ]);
 
   function nowIso() {
@@ -157,7 +161,7 @@
     options = options || {};
     var community = options.community && typeof options.community === 'object' ? options.community : {};
     var defaults = [
-      { id: 'owner', name: 'Administrador', color: '#0f6f64', system: true, permissions: { pinMessages: true, deleteMessages: true, addMembers: true, removeMembers: true, editCommunity: true, manageRoles: true } },
+      { id: 'owner', name: 'Administrador', color: '#0f6f64', system: true, permissions: { pinMessages: true, deleteMessages: true, addMembers: true, removeMembers: true, editCommunity: true, manageRoles: true, manageChannels: true, mentionRoles: true, bypassSlowMode: true, moderateMembers: true } },
       { id: 'moderator', name: 'Moderador', color: '#2167ae', system: true, permissions: { pinMessages: true, deleteMessages: true, addMembers: true, removeMembers: true } },
       { id: 'member', name: 'Membro', color: '#64748b', system: true, permissions: {} }
     ];
@@ -170,6 +174,46 @@
       seenNames.add(name);
       return true;
     });
+  }
+
+
+  function normalizeChannel(channel, index) {
+    if (!channel || typeof channel !== 'object') return null;
+    var id = String(channel.id || '').trim() || ('canal-' + String(index + 1));
+    var name = String(channel.name || channel.title || '').replace(/^#+/, '').replace(/\s+/g, ' ').trim().slice(0, 50);
+    if (!name) return null;
+    var allowedRoleIds = Array.isArray(channel.allowedRoleIds) ? channel.allowedRoleIds : [];
+    var sendRoleIds = Array.isArray(channel.sendRoleIds) ? channel.sendRoleIds : [];
+    return {
+      id: id,
+      name: name,
+      description: String(channel.description || '').replace(/\s+/g, ' ').trim().slice(0, 120),
+      category: String(channel.category || 'Canais').replace(/\s+/g, ' ').trim().slice(0, 40) || 'Canais',
+      type: ['text', 'announcements'].includes(String(channel.type || 'text')) ? String(channel.type || 'text') : 'text',
+      readOnly: Boolean(channel.readOnly),
+      allowedRoleIds: Array.from(new Set(allowedRoleIds.map(function (value) { return String(value || '').trim(); }).filter(Boolean))),
+      sendRoleIds: Array.from(new Set(sendRoleIds.map(function (value) { return String(value || '').trim(); }).filter(Boolean))),
+      slowModeSeconds: [0, 5, 10, 30, 60].includes(Number(channel.slowModeSeconds)) ? Number(channel.slowModeSeconds) : 0,
+      blockLinks: Boolean(channel.blockLinks),
+      position: Number.isFinite(Number(channel.position)) ? Number(channel.position) : index,
+      createdAt: String(channel.createdAt || '').trim(),
+      createdByAccountKey: normalizeIdentityKey(channel.createdByAccountKey || '')
+    };
+  }
+
+  function projectCommunityChannels(options) {
+    options = options || {};
+    var community = options.community && typeof options.community === 'object' ? options.community : {};
+    var source = Array.isArray(community.channels) ? community.channels : [];
+    if (!source.length) {
+      source = [{ id: 'geral', name: 'Geral', description: 'Conversa principal da comunidade', type: 'text', readOnly: false, position: 0 }];
+    }
+    var seen = new Set();
+    return source.map(normalizeChannel).filter(Boolean).filter(function (channel) {
+      if (seen.has(channel.id)) return false;
+      seen.add(channel.id);
+      return true;
+    }).sort(function (a, b) { return a.position - b.position || a.name.localeCompare(b.name); });
   }
 
   function normalizeMemberRoleIds(member) {
@@ -201,7 +245,12 @@
       source: String(member.source || 'local').trim() || 'local',
       joinedAt: String(member.joinedAt || '').trim(),
       addedBy: String(member.addedBy || '').trim(),
-      membershipVersion: Math.max(1, Number(member.membershipVersion || 1))
+      membershipVersion: Math.max(1, Number(member.membershipVersion || 1)),
+      mutedUntil: String(member.mutedUntil || '').trim(),
+      restrictedUntil: String(member.restrictedUntil || '').trim(),
+      disciplineReason: String(member.disciplineReason || '').trim().slice(0, 240),
+      disciplinedByAccountKey: normalizeIdentityKey(member.disciplinedByAccountKey || ''),
+      disciplinedAt: String(member.disciplinedAt || '').trim()
     };
   }
 
@@ -213,6 +262,24 @@
       record && record.createdById,
       record && record.creatorId
     ].concat(record && Array.isArray(record.ownerIdentityKeys) ? record.ownerIdentityKeys : [], getMemberIdentityKeys(ownerMember)));
+  }
+
+  function normalizeBan(entry) {
+    if (!entry || typeof entry !== 'object') return null;
+    var identityKeys = uniqueIdentityKeys([entry.accountKey, entry.email, entry.memberId].concat(Array.isArray(entry.identityKeys) ? entry.identityKeys : []));
+    if (!identityKeys.length) return null;
+    return {
+      id: String(entry.id || createId('ban')).trim(),
+      memberId: String(entry.memberId || '').trim(),
+      accountKey: normalizeIdentityKey(entry.accountKey || entry.email || identityKeys[0] || ''),
+      email: String(entry.email || '').trim(),
+      name: String(entry.name || 'Membro').trim() || 'Membro',
+      identityKeys: identityKeys,
+      reason: String(entry.reason || '').trim().slice(0, 240),
+      bannedAt: String(entry.bannedAt || nowIso()).trim(),
+      bannedByAccountKey: normalizeIdentityKey(entry.bannedByAccountKey || ''),
+      bannedByName: String(entry.bannedByName || '').trim()
+    };
   }
 
   function normalizeJoinRequest(request) {
@@ -249,6 +316,11 @@
     var community = options.community && typeof options.community === 'object' ? options.community : {};
     var currentUser = options.currentUser || null;
     var members = (Array.isArray(community.members) ? community.members : []).map(normalizeMember).filter(Boolean);
+    var bans = (Array.isArray(community.bans) ? community.bans : []).map(normalizeBan).filter(Boolean);
+    members = members.filter(function (member) {
+      if (member.role === 'owner') return true;
+      return !bans.some(function (ban) { return identitiesIntersect(getMemberIdentityKeys(member), ban.identityKeys); });
+    });
     var ownerKeys = deriveOwnerIdentityKeys(community, members);
     var ownerId = String(community.ownerId || community.createdById || community.creatorId || '').trim();
     var currentUserKeys = currentUser ? uniqueIdentityKeys([
@@ -256,7 +328,7 @@
     ].concat(Array.isArray(currentUser.identityKeys) ? currentUser.identityKeys : getIdentityKeysFromUser(currentUser))) : [];
     var currentUserIsOwner = ownerKeys.length && identitiesIntersect(ownerKeys, currentUserKeys);
     var inactiveMemberKeys = (Array.isArray(community.membershipHistory) ? community.membershipHistory : []).filter(function (entry) {
-      return entry && ['removed', 'left'].includes(entry.action);
+      return entry && ['removed', 'left', 'banned'].includes(entry.action);
     }).reduce(function (keys, entry) {
       return keys.concat(Array.isArray(entry.identityKeys) ? entry.identityKeys : []);
     }, []);
@@ -409,10 +481,12 @@
     next.ownerAccountKey = normalizeIdentityKey(canonicalOwner && canonicalOwner.accountKey || ownerId || ownerIdentityKeys[0] || next.ownerAccountKey || '');
     next.ownerIdentityKeys = ownerIdentityKeys;
     next.roles = roles;
+    next.channels = projectCommunityChannels({ community: next });
     next.rules = normalizeRules(next.rules);
     next.joinRequests = (Array.isArray(next.joinRequests) ? next.joinRequests : []).map(normalizeJoinRequest).filter(Boolean);
     next.members = projectCommunityMembers({ community: next });
     next.membershipHistory = Array.isArray(next.membershipHistory) ? next.membershipHistory : [];
+    next.bans = (Array.isArray(next.bans) ? next.bans : []).map(normalizeBan).filter(Boolean);
     next.ownershipHistory = Array.isArray(next.ownershipHistory) ? next.ownershipHistory : [];
     next.schemaVersion = SCHEMA_VERSION;
     next.updatedAt = String(next.updatedAt || nowIso());
@@ -607,7 +681,10 @@
       return identitiesIntersect(currentKeys, getMemberIdentityKeys(member));
     }) || null;
     var matchedMemberKeys = matchedMember ? currentKeys.filter(function (key) { return identitiesIntersect([key], getMemberIdentityKeys(matchedMember)); }) : [];
-    var relation = matchedOwnerKeys.length ? 'owner' : (matchedMember ? 'member' : 'visitor');
+    var matchedBan = (Array.isArray(community && community.bans) ? community.bans : []).map(normalizeBan).filter(Boolean).find(function (ban) {
+      return identitiesIntersect(currentKeys, ban.identityKeys);
+    }) || null;
+    var relation = matchedOwnerKeys.length ? 'owner' : (matchedBan ? 'banned' : (matchedMember ? 'member' : 'visitor'));
 
     return {
       relation: relation,
@@ -616,6 +693,7 @@
       ownerIdentityKeys: ownerKeys,
       matchedOwnerKeys: matchedOwnerKeys,
       matchedMember: matchedMember || null,
+      matchedBan: matchedBan,
       matchedMemberKeys: matchedMemberKeys,
       allowed: relation === 'owner' || relation === 'member'
     };
@@ -735,6 +813,7 @@
       accountKey: getAccountKeyFromUser
     }),
     roles: Object.freeze({ projectCommunityRoles: projectCommunityRoles, normalize: normalizeRole }),
+    channels: Object.freeze({ projectCommunityChannels: projectCommunityChannels, normalize: normalizeChannel }),
     permissions: Object.freeze({ keys: PERMISSION_KEYS, normalize: normalizePermissions, can: can }),
     migrations: Object.freeze({ migrateRecord: migrateRecord, migrateAll: migrateAll }),
     integrity: Object.freeze({ auditRecord: auditRecord, auditAll: auditAll })

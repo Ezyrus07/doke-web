@@ -470,12 +470,17 @@
     return true;
   };
 
-  const hydrateLocalConversations = (root) => {
+  const hydrateLocalConversations = (root, sourceConversations = null) => {
     const service = window.Doke?.services?.messages;
     const { ordersList } = getConversationLists(root);
-    if (!service?.listLocalConversations || !ordersList) return false;
+    if (!ordersList) return false;
 
-    const localConversations = service.listLocalConversations({ currentUser: true }) || [];
+    const experienceSnapshot = window.Doke?.messagesExperience?.getSnapshot?.() || [];
+    const localConversations = Array.isArray(sourceConversations)
+      ? sourceConversations
+      : experienceSnapshot.length
+        ? experienceSnapshot
+        : service?.listLocalConversations?.({ currentUser: true }) || [];
     localConversations.slice().reverse().forEach((conversation) => {
       if (!conversation?.id) return;
       const conversationId = String(conversation.id);
@@ -495,7 +500,11 @@
   };
 
   const persistConversationMessage = (conversationId, message) => {
-    return window.Doke?.services?.messages?.sendMessage?.(conversationId, {
+    const service = window.Doke?.services?.messages;
+    if (!service || typeof service.sendMessage !== "function") {
+      return Promise.reject(new Error("Serviço de mensagens indisponível."));
+    }
+    return service.sendMessage(conversationId, {
       body: message.text || message.body || "",
       text: message.text || message.body || "",
       type: message.type || "text",
@@ -508,7 +517,65 @@
       mine: message.mine !== false,
       author: message.author || "Você",
       replyTo: message.replyTo || null
-    }).catch((error) => console.warn("[DokeMessages:sendMessage]", error));
+    });
+  };
+
+  const createOptimisticMessageId = () => `optimistic_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
+  const setMessagesMutationState = (state, detail = {}) => {
+    const boundary = document.querySelector('[data-state-boundary="mensagens"]');
+    const states = window.Doke?.experience?.states;
+    if (states && typeof states.set === "function") {
+      states.set(boundary, state, Object.assign({ domain: "messages" }, detail));
+    } else if (boundary) {
+      boundary.dataset.experienceState = state;
+      boundary.setAttribute("aria-busy", state === "submitting" ? "true" : "false");
+    }
+    if (document.body) document.body.dataset.messagesExperienceState = state;
+  };
+
+  const sendOptimisticConversationMessage = async ({ conversationId, message, restoreDraft }) => {
+    const conversation = conversations[conversationId];
+    if (!conversation) throw new Error("Conversa não encontrada.");
+
+    const optimisticId = createOptimisticMessageId();
+    const optimisticMessage = Object.assign({}, message, {
+      id: optimisticId,
+      clientId: optimisticId,
+      deliveryState: "sending"
+    });
+
+    conversation.messages.push(optimisticMessage);
+    setMessagesMutationState("submitting", { conversationId, optimisticId });
+    renderThread(conversationId, { scrollTo: "end" });
+
+    try {
+      const persistedMessage = await persistConversationMessage(conversationId, optimisticMessage);
+      const index = conversation.messages.findIndex((item) => item && (item.id === optimisticId || item.clientId === optimisticId));
+      if (index !== -1) {
+        conversation.messages[index] = Object.assign({}, optimisticMessage, persistedMessage || {}, {
+          deliveryState: "sent",
+          clientId: optimisticId
+        });
+      }
+      window.Doke?.messagesExperience?.invalidate?.();
+      renderThread(conversationId, { scrollTo: "end" });
+      setMessagesMutationState("success", { conversationId, optimisticId });
+      window.setTimeout(() => setMessagesMutationState("ready", { conversationId }), 250);
+      return persistedMessage || optimisticMessage;
+    } catch (error) {
+      const index = conversation.messages.findIndex((item) => item && (item.id === optimisticId || item.clientId === optimisticId));
+      if (index !== -1) conversation.messages.splice(index, 1);
+      renderThread(conversationId, { scrollTo: "end" });
+      if (typeof restoreDraft === "function") restoreDraft();
+      setMessagesMutationState(navigator.onLine === false ? "offline" : "error", {
+        conversationId,
+        optimisticId,
+        error: error?.message || "Falha ao enviar mensagem."
+      });
+      showCopyToast(error?.message || "Não foi possível enviar a mensagem. O conteúdo foi restaurado.");
+      throw error;
+    }
   };
 
   const persistConversationState = (conversationId) => {
@@ -693,6 +760,7 @@
     const chargeForm = document.querySelector("[data-charge-form]");
     const chargeAmountInput = document.querySelector("[data-charge-amount]");
     const chargeInstallments = document.querySelector("[data-charge-installments]");
+    const chargeSubmitButton = chargeForm?.querySelector('button[type="submit"]');
     const chargeCancelButtons = document.querySelectorAll("[data-charge-cancel]");
     const completionModal = document.querySelector("[data-message-completion-modal]");
     const completionCloseButtons = Array.from(document.querySelectorAll("[data-message-completion-close]"));
@@ -1506,6 +1574,129 @@
       });
     };
 
+
+    const setChargeFormSubmitting = (submitting) => {
+      if (!chargeForm) return;
+      chargeForm.setAttribute('aria-busy', submitting ? 'true' : 'false');
+      if (chargeSubmitButton) {
+        chargeSubmitButton.disabled = submitting;
+        chargeSubmitButton.dataset.originalLabel = chargeSubmitButton.dataset.originalLabel || chargeSubmitButton.textContent.trim();
+        chargeSubmitButton.textContent = submitting ? 'Enviando proposta…' : chargeSubmitButton.dataset.originalLabel;
+      }
+      chargeCancelButtons.forEach((button) => {
+        button.disabled = submitting;
+      });
+    };
+
+    const invalidateProposalDomains = () => {
+      window.Doke?.messagesExperience?.invalidate?.();
+      const cache = window.Doke?.experience?.cache;
+      cache?.invalidatePrefix?.('orders:');
+      cache?.invalidatePrefix?.('notifications:');
+      const router = window.Doke?.stableShellRouter;
+      router?.invalidate?.('mensagens.html');
+      router?.invalidate?.('pedidos.html');
+      router?.invalidate?.('notificacoes.html');
+    };
+
+    const restoreConversationOrderSnapshot = (conversation, snapshot) => {
+      if (!conversation || !snapshot) return;
+      conversation.order = snapshot.order;
+      conversation.status = snapshot.status;
+      conversation.statusLabel = snapshot.statusLabel;
+      conversation.lastSeen = snapshot.lastSeen;
+      conversation.lastMessage = snapshot.lastMessage;
+    };
+
+    const sendOptimisticChargeProposal = async ({ conversationId, amount, installments }) => {
+      const conversation = conversations[conversationId];
+      if (!conversation) throw new Error('Conversa não encontrada.');
+
+      const optimisticId = createOptimisticMessageId();
+      const orderSnapshot = {
+        order: conversation.order ? JSON.parse(JSON.stringify(conversation.order)) : conversation.order,
+        status: conversation.status,
+        statusLabel: conversation.statusLabel,
+        lastSeen: conversation.lastSeen,
+        lastMessage: conversation.lastMessage
+      };
+      const previousOrderStatus = getOrderStatus(conversation) || 'accepted';
+      const optimisticMessage = {
+        id: optimisticId,
+        clientId: optimisticId,
+        author: 'Você',
+        time: 'agora',
+        text: 'Proposta pronta para aprovação. Você pode pagar por aqui para confirmar o atendimento.',
+        mine: true,
+        senderId: getCurrentUserId(),
+        type: 'charge',
+        amount,
+        installments,
+        paid: false,
+        deliveryState: 'sending'
+      };
+
+      conversation.messages.push(optimisticMessage);
+      setMessagesMutationState('submitting', { domain: 'proposal', conversationId, optimisticId });
+      renderThread(conversationId, { scrollTo: 'end' });
+
+      let persistedMessage = null;
+      try {
+        persistedMessage = await persistConversationMessage(conversationId, optimisticMessage);
+        const index = conversation.messages.findIndex((item) => item && (item.id === optimisticId || item.clientId === optimisticId));
+        if (index !== -1) {
+          conversation.messages[index] = Object.assign({}, optimisticMessage, persistedMessage || {}, {
+            deliveryState: 'sent',
+            clientId: optimisticId
+          });
+        }
+
+        await updateOrderFromConversation('quoted', {
+          amount,
+          budget: amount,
+          installments,
+          paymentMessageId: persistedMessage?.id || optimisticId,
+          messageId: persistedMessage?.id || optimisticId
+        });
+
+        invalidateProposalDomains();
+        renderThread(conversationId, { scrollTo: 'end' });
+        setMessagesMutationState('success', { domain: 'proposal', conversationId, optimisticId });
+        window.setTimeout(() => setMessagesMutationState('ready', { conversationId }), 250);
+        return persistedMessage || optimisticMessage;
+      } catch (error) {
+        const index = conversation.messages.findIndex((item) => item && (
+          item.id === optimisticId || item.clientId === optimisticId || (persistedMessage?.id && item.id === persistedMessage.id)
+        ));
+        if (index !== -1) conversation.messages.splice(index, 1);
+        restoreConversationOrderSnapshot(conversation, orderSnapshot);
+
+        const repository = window.Doke?.repositories?.messages;
+        await repository?.save?.(conversation).catch?.(() => null);
+
+        const orderId = orderSnapshot.order?.id || conversation.orderId;
+        const ordersService = window.Doke?.services?.orders;
+        if (orderId && persistedMessage && ordersService && typeof ordersService.updateStatus === 'function') {
+          await ordersService.updateStatus(orderId, previousOrderStatus, {
+            statusLabel: orderSnapshot.order?.statusLabel || orderSnapshot.statusLabel || '',
+            amount: orderSnapshot.order?.amount || orderSnapshot.order?.budget || '',
+            budget: orderSnapshot.order?.budget || orderSnapshot.order?.amount || '',
+            installments: orderSnapshot.order?.installments || ''
+          }).catch(() => null);
+        }
+
+        invalidateProposalDomains();
+        renderThread(conversationId, { scrollTo: 'end' });
+        setMessagesMutationState(navigator.onLine === false ? 'offline' : 'error', {
+          domain: 'proposal',
+          conversationId,
+          optimisticId,
+          error: error?.message || 'Falha ao enviar proposta.'
+        });
+        throw error;
+      }
+    };
+
     const openPaymentPageForCharge = (message) => {
       if (!message) return;
       const conversation = conversations[activeId];
@@ -1846,8 +2037,15 @@
       const { scrollTo = isSameThread ? "preserve" : "start", openOnMobile = false } = options;
       activeId = id;
       if (conversation.unread) {
+        const previousUnread = conversation.unread;
         conversation.unread = 0;
-        window.Doke?.services?.messages?.markAsRead?.(id)?.catch?.((error) => console.warn("[DokeMessages:markAsRead]", error));
+        window.Doke?.services?.messages?.markAsRead?.(id)?.then?.(() => {
+          window.Doke?.messagesExperience?.invalidate?.();
+        }).catch?.((error) => {
+          conversation.unread = previousUnread;
+          refreshConversationCards();
+          console.warn("[DokeMessages:markAsRead]", error);
+        });
       }
       const orderAction = root.querySelector(".messages-thread__action--order[data-messages-open-order-detail]");
       if (orderAction) orderAction.disabled = false;
@@ -1894,12 +2092,13 @@
           </div>
         </section>
       ` : "") + conversation.messages.map((message, index) => `
-        <article class="message-row${message.mine ? " message-row--me" : ""}${message.type === "charge" ? " message-row--charge" : ""}" data-message-index="${index}">
+        <article class="message-row${message.mine ? " message-row--me" : ""}${message.type === "charge" ? " message-row--charge" : ""}${message.deliveryState === "sending" ? " is-sending" : ""}${message.deliveryState === "failed" ? " is-failed" : ""}" data-message-index="${index}">
           ${message.mine ? "" : `<span class="message-row__avatar doke-avatar" aria-hidden="true">${activeInitials}</span>`}
           <div class="message-bubble doke-selectable-card${message.mine ? " message-bubble--me" : ""}${message.type === "image" ? " message-bubble--image-only" : ""}${message.type === "charge" ? " message-bubble--charge" : ""}${selectedMessageIndexes.has(index) ? " is-selected" : ""}" data-message-bubble data-message-index="${index}" role="option" tabindex="0" aria-selected="${selectedMessageIndexes.has(index) ? "true" : "false"}">
             <div class="message-bubble__meta">
               <span>${message.mine ? message.author : ""}</span>
               <span>${message.time}</span>
+              ${message.mine && message.deliveryState === "sending" ? '<span class="message-bubble__delivery" aria-label="Enviando">Enviando…</span>' : ''}
             </div>
             ${message.replyTo ? `
             <div class="message-bubble__reply${message.mine ? " message-bubble__reply--me" : ""}">
@@ -2560,9 +2759,9 @@
       toggleConversationSelectedByItem(item);
     });
 
-    const refreshLocalConversationSurface = ({ preferRequested = false } = {}) => {
+    const refreshLocalConversationSurface = ({ preferRequested = false, sourceConversations = null } = {}) => {
       const hadActiveConversation = Boolean(activeId && conversations[activeId]);
-      hydrateLocalConversations(root);
+      hydrateLocalConversations(root, sourceConversations);
       prepareConversationItems();
       refreshConversationCards();
       syncVisibility();
@@ -2595,11 +2794,21 @@
     document.addEventListener("doke:order-created", () => refreshLocalConversationSurface({ preferRequested: true }));
     document.addEventListener("doke:order-status-changed", () => refreshLocalConversationSurface({ preferRequested: true }));
     document.addEventListener("doke:message-sent", () => refreshLocalConversationSurface({ preferRequested: true }));
+    const handleMessagesExperienceUpdated = (event) => {
+      const items = Array.isArray(event.detail?.items) ? event.detail.items : [];
+      refreshLocalConversationSurface({ preferRequested: true, sourceConversations: items });
+    };
+    document.addEventListener('doke:messages-experience-updated', handleMessagesExperienceUpdated);
+    addRouteCleanup(() => document.removeEventListener('doke:messages-experience-updated', handleMessagesExperienceUpdated));
     document.addEventListener('doke:page-hydration-ready', (event) => {
       if (event.detail?.page !== 'mensagens') return;
       syncVisibility();
     });
     refreshLocalConversationSurface({ preferRequested: true });
+    window.Doke?.messagesExperience?.load?.().catch((error) => {
+      console.warn('[DokeMessages:experienceLoad]', error);
+      hydration?.fail?.(error);
+    });
     if (document.documentElement.dataset.authSurfaceReady === 'true') {
       hydration?.mark('auth');
     }
@@ -2755,35 +2964,60 @@
       }
       const value = String(composerInput?.value || "").trim();
       if (audioDraft && !audioDraft.hidden) {
-        const audioMessage = { author: "Você", time: "agora", mine: true, type: "audio", duration: formatAudioTime(Math.max(audioDraftSeconds, 1)), speed: "1x", replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null };
-        conversations[activeId].messages.push(audioMessage);
-        persistConversationMessage(activeId, audioMessage);
-        renderThread(activeId, { scrollTo: "end" });
+        const draftSeconds = Math.max(audioDraftSeconds, 1);
+        const replySnapshot = replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null;
+        const audioMessage = { author: "Você", time: "agora", mine: true, type: "audio", duration: formatAudioTime(draftSeconds), speed: "1x", replyTo: replySnapshot };
         composer.reset();
         clearReplyPreview();
         resetAudioDraft();
         composerInput?.focus();
+        sendOptimisticConversationMessage({
+          conversationId: activeId,
+          message: audioMessage,
+          restoreDraft: () => {
+            audioDraftSeconds = draftSeconds;
+            if (audioTime) audioTime.textContent = formatAudioTime(draftSeconds);
+            audioDraft?.removeAttribute("hidden");
+            audioButton?.classList.add("is-recording");
+            audioButton?.setAttribute("aria-pressed", "true");
+          }
+        }).catch(() => {});
         return;
       }
       if (imageDraftSrc) {
-        const imageMessage = { author: "Você", time: "agora", mine: true, type: "image", src: imageDraftSrc, replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null };
-        conversations[activeId].messages.push(imageMessage);
-        persistConversationMessage(activeId, imageMessage);
-        renderThread(activeId, { scrollTo: "end" });
+        const imageSnapshot = imageDraftSrc;
+        const replySnapshot = replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null;
+        const imageMessage = { author: "Você", time: "agora", mine: true, type: "image", src: imageSnapshot, replyTo: replySnapshot };
         composer.reset();
         clearReplyPreview();
         resetImageDraft();
         composerInput?.focus();
+        sendOptimisticConversationMessage({
+          conversationId: activeId,
+          message: imageMessage,
+          restoreDraft: () => {
+            imageDraftSrc = imageSnapshot;
+            if (imagePreview) imagePreview.src = imageSnapshot;
+            imageDraft?.removeAttribute("hidden");
+          }
+        }).catch(() => {});
         return;
       }
       if (!value) return;
-      const textMessage = { author: "Você", time: "agora", text: value, mine: true, replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null };
-      conversations[activeId].messages.push(textMessage);
-      persistConversationMessage(activeId, textMessage);
-      renderThread(activeId, { scrollTo: "end" });
+      const replySnapshot = replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null;
+      const textMessage = { author: "Você", time: "agora", text: value, mine: true, replyTo: replySnapshot };
       composer.reset();
       clearReplyPreview();
       composerInput?.focus();
+      sendOptimisticConversationMessage({
+        conversationId: activeId,
+        message: textMessage,
+        restoreDraft: () => {
+          if (composerInput) composerInput.value = value;
+          updateComposerState();
+          composerInput?.focus();
+        }
+      }).catch(() => {});
     });
 
     chargeButton?.addEventListener("click", () => {
@@ -2860,38 +3094,36 @@
       closeThreadMoreMenu();
     });
 
-    chargeForm?.addEventListener("submit", (event) => {
+    chargeForm?.addEventListener("submit", async (event) => {
       event.preventDefault();
-      if (!conversations[activeId]) return;
-      const normalized = String(chargeAmountInput?.value || "").trim();
-      if (!normalized) return;
-      const chargeMessage = {
-        author: "Você",
-        time: "agora",
-        text: "Proposta pronta para aprovação. Você pode pagar por aqui para confirmar o atendimento.",
-        mine: true,
-        senderId: getCurrentUserId(),
-        type: "charge",
-        amount: normalized.startsWith("R$") ? normalized : `R$ ${normalized}`,
-        installments: chargeInstallments?.selectedOptions?.[0]?.textContent || "À vista",
-        paid: false
-      };
-      conversations[activeId].messages.push(chargeMessage);
-      persistConversationMessage(activeId, chargeMessage)
-        .then((savedMessage) => {
-          if (savedMessage) Object.assign(chargeMessage, savedMessage);
-          return updateOrderFromConversation('quoted', {
-            amount: chargeMessage.amount,
-            budget: chargeMessage.amount,
-            installments: chargeMessage.installments
-          });
-        })
-        .then(() => {
-          closeChargeModal();
-          renderThread(activeId, { scrollTo: "end" });
-          showCopyToast('Proposta enviada ao cliente.');
-        })
-        .catch((error) => showCopyToast(error?.message || 'Não foi possível enviar a proposta.'));
+      if (!conversations[activeId] || chargeForm.getAttribute('aria-busy') === 'true') return;
+      const rawAmount = String(chargeAmountInput?.value || "").trim();
+      if (!rawAmount) {
+        chargeAmountInput?.focus();
+        return;
+      }
+
+      const conversationId = activeId;
+      const amount = rawAmount.startsWith("R$") ? rawAmount : `R$ ${rawAmount}`;
+      const installments = chargeInstallments?.selectedOptions?.[0]?.textContent || "À vista";
+      const amountDraft = chargeAmountInput?.value || '';
+      const installmentsDraft = chargeInstallments?.value || '';
+
+      setChargeFormSubmitting(true);
+      closeChargeModal();
+
+      try {
+        await sendOptimisticChargeProposal({ conversationId, amount, installments });
+        chargeForm.reset();
+        showCopyToast('Proposta enviada ao cliente.');
+      } catch (error) {
+        if (chargeAmountInput) chargeAmountInput.value = amountDraft;
+        if (chargeInstallments) chargeInstallments.value = installmentsDraft;
+        openChargeModal();
+        showCopyToast(error?.message || 'Não foi possível enviar a proposta. Os dados foram restaurados.');
+      } finally {
+        setChargeFormSubmitting(false);
+      }
     });
 
     chargeCancelButtons.forEach((button) => {

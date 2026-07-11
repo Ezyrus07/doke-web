@@ -138,6 +138,7 @@
        </div>
 
        <div class="chat-sidebar-scroll-region" data-chat-sidebar-scroll>
+        <nav class="community-room-channel-list" data-community-channel-list aria-label="Canais da comunidade"></nav>
 
        <section class="community-room-empty doke-empty-state doke-card doke-message-card" data-community-empty hidden>
         <span>Sem resultado</span>
@@ -217,6 +218,7 @@
         </div>
         <label class="community-room-composer__field messages-composer__field doke-chat-composer__field" aria-label="Mensagem">
          <textarea rows="1" placeholder="Digite sua mensagem..." data-community-composer-input class="doke-chat-composer__input doke-textarea"></textarea>
+         <div class="community-mention-picker doke-popover" data-community-mention-picker hidden role="listbox" aria-label="Sugestões de menção"></div>
          <button class="community-room-composer__emoji messages-composer__emoji-inside doke-chat-composer__emoji doke-icon-btn doke-icon-btn--flat" type="button" data-community-emoji aria-label="Adicionar emoji">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M9 10h.01"></path><path d="M15 10h.01"></path><path d="M8.5 14.2c1 1.2 2.3 1.8 3.5 1.8s2.5-.6 3.5-1.8"></path></svg>
          </button>
@@ -247,6 +249,8 @@
          <button class="community-settings-nav__item doke-btn" type="button" data-community-settings-tab="members" data-community-settings-label="Membros" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8.5" cy="9" r="3"></circle><circle cx="16.5" cy="8.5" r="2.5"></circle><path d="M3.5 18c.9-2.6 2.7-4 5-4s4.1 1.4 5 4"></path><path d="M13 17.5c.7-1.9 2-2.9 3.8-2.9 1.7 0 3 .9 3.7 2.9"></path></svg><span>Membros</span></button>
          <button class="community-settings-nav__item doke-btn" type="button" data-community-settings-tab="requests" data-community-settings-label="Solicitações de entrada" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5z"></path><path d="M8 8h8"></path><path d="M8 12h5"></path><path d="m15 16 1.5 1.5L19 15"></path></svg><span>Solicitações</span></button>
          <button class="community-settings-nav__item doke-btn" type="button" data-community-settings-tab="roles" data-community-settings-label="Cargos e permissões" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.8 18 6v5.2c0 3.7-2.4 6.9-6 8.1-3.6-1.2-6-4.4-6-8.1V6l6-2.2Z"></path><path d="m9.7 11.9 1.6 1.6 3.4-3.8"></path></svg><span>Cargos e permissões</span></button>
+         <button class="community-settings-nav__item doke-btn" type="button" data-community-settings-tab="channels" data-community-settings-label="Canais" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h16"></path></svg><span>Canais</span></button>
+         <button class="community-settings-nav__item doke-btn" type="button" data-community-settings-tab="audit" data-community-settings-label="Log de moderação" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12v16H6z"></path><path d="M9 8h6"></path><path d="M9 12h6"></path><path d="M9 16h4"></path></svg><span>Log de moderação</span></button>
          <button class="community-settings-nav__item doke-btn" type="button" data-community-settings-tab="invite" data-community-settings-label="Convites" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1.1l1.4-1.4a5 5 0 0 0-7.1-7.1L10.6 5.4"></path><path d="M14 11a5 5 0 0 0-7.1-.1l-1.4 1.4a5 5 0 0 0 7.1 7.1l.8-.8"></path></svg><span>Convites</span></button>
         </div>
         <div class="community-settings-nav__section">
@@ -348,12 +352,47 @@
           <label class="community-room-permission"><input class="doke-checkbox" type="checkbox" value="deleteMessages"><span><strong>Excluir mensagens</strong><small>Remover mensagens de outros membros.</small></span></label>
           <label class="community-room-permission"><input class="doke-checkbox" type="checkbox" value="addMembers"><span><strong>Adicionar membros</strong><small>Adicionar contatos existentes à comunidade.</small></span></label>
           <label class="community-room-permission"><input class="doke-checkbox" type="checkbox" value="removeMembers"><span><strong>Remover membros</strong><small>Retirar membros que não sejam administradores.</small></span></label>
+          <label class="community-room-permission"><input class="doke-checkbox" type="checkbox" value="moderateMembers"><span><strong>Moderar membros</strong><small>Silenciar, restringir e banir membros da comunidade.</small></span></label>
           <label class="community-room-permission"><input class="doke-checkbox" type="checkbox" value="editCommunity"><span><strong>Editar comunidade</strong><small>Alterar nome, descrição, capa e tema.</small></span></label>
           <label class="community-room-permission"><input class="doke-checkbox" type="checkbox" value="manageRoles"><span><strong>Gerenciar cargos</strong><small>Criar cargos, permissões e atribuições.</small></span></label>
+          <label class="community-room-permission"><input class="doke-checkbox" type="checkbox" value="manageChannels"><span><strong>Gerenciar canais</strong><small>Criar, editar e excluir canais da comunidade.</small></span></label>
+          <label class="community-room-permission"><input class="doke-checkbox" type="checkbox" value="bypassSlowMode"><span><strong>Ignorar modo lento</strong><small>Enviar sem aguardar o intervalo configurado no canal.</small></span></label>
+          <label class="community-room-permission"><input class="doke-checkbox" type="checkbox" value="mentionRoles"><span><strong>Mencionar cargos</strong><small>Notificar todos os membros de um cargo em uma mensagem.</small></span></label>
          </fieldset>
          <p class="community-room-panel-feedback" data-community-role-feedback hidden>Cargo criado com sucesso.</p>
          <button class="doke-btn doke-btn--primary" type="submit">Criar cargo</button>
         </form>
+       </section>
+      </aside>
+
+
+      <aside class="community-room-panel community-settings-panel" data-community-panel="channels" aria-hidden="true">
+       <div class="community-room-panel__backdrop" data-community-panel-close></div>
+       <section class="community-room-panel__surface" role="dialog" aria-modal="true" aria-label="Canais da comunidade">
+        <header class="community-room-panel__header"><div><h2>Canais</h2><p>Organize conversas e defina quem pode visualizar ou enviar mensagens.</p></div><button class="community-room-panel__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-community-panel-close aria-label="Fechar painel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></header>
+        <div class="community-room-channel-admin-list" data-community-channel-admin-list></div>
+        <form class="community-room-channel-form" data-community-channel-form>
+         <input type="hidden" data-community-channel-edit-id>
+         <label><span>Nome do canal</span><input class="doke-input" type="text" data-community-channel-name maxlength="50" placeholder="Ex.: avisos, suporte, geral"></label>
+         <label><span>Descrição</span><input class="doke-input" type="text" data-community-channel-description maxlength="120" placeholder="Explique o objetivo do canal"></label>
+         <label><span>Categoria</span><input class="doke-input" type="text" data-community-channel-category maxlength="40" placeholder="Ex.: Conversas, Equipe, Suporte"></label>
+         <label><span>Tipo</span><select class="doke-select" data-ui-select data-community-channel-type><option value="text">Conversa</option><option value="announcements">Avisos</option></select></label>
+         <label class="community-room-permission"><input class="doke-checkbox" type="checkbox" data-community-channel-readonly><span><strong>Somente leitura</strong><small>Apenas cargos autorizados podem enviar mensagens.</small></span></label>
+         <label><span>Modo lento</span><select class="doke-select" data-ui-select data-community-channel-slow-mode><option value="0">Desativado</option><option value="5">5 segundos</option><option value="10">10 segundos</option><option value="30">30 segundos</option><option value="60">1 minuto</option></select></label>
+         <label class="community-room-permission"><input class="doke-checkbox" type="checkbox" data-community-channel-block-links><span><strong>Bloquear links</strong><small>Impede o envio de endereços web neste canal.</small></span></label>
+         <fieldset class="community-room-channel-role-access"><legend>Cargos com acesso</legend><p>Sem seleção, todos os membros podem visualizar.</p><div data-community-channel-view-roles></div></fieldset>
+         <fieldset class="community-room-channel-role-access"><legend>Cargos que podem enviar</legend><p>Usado em canais somente leitura. O dono sempre pode enviar.</p><div data-community-channel-send-roles></div></fieldset>
+         <p class="community-room-panel-feedback" data-community-channel-feedback hidden></p>
+         <button class="doke-btn doke-btn--primary" type="submit" data-community-channel-submit>Criar canal</button>
+        </form>
+       </section>
+      </aside>
+
+      <aside class="community-room-panel community-settings-panel" data-community-panel="audit" aria-hidden="true">
+       <div class="community-room-panel__backdrop" data-community-panel-close></div>
+       <section class="community-room-panel__surface" role="dialog" aria-modal="true" aria-label="Log de moderação">
+        <header class="community-room-panel__header"><div><h2>Log de moderação</h2><p>Histórico das ações administrativas realizadas nas mensagens.</p></div><button class="community-room-panel__close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-community-panel-close aria-label="Fechar painel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></header>
+        <div class="community-audit-list" data-community-audit-list></div>
        </section>
       </aside>
 
@@ -446,7 +485,8 @@
  <script src="assets/js/components/media-lightbox.js?v=20260425-shared-media-lightbox-v1" defer></script>
  <script src="assets/js/features/community/community-domain.js?v=20260711-session-authority-v1" defer></script>
  <script src="assets/js/features/community/community-transition.js?v=20260711-shell-atomic-reveal-v1" defer></script>
- <script src="assets/js/pages/comunidade-interna.js?v=20260711-member-reconcile-v3" defer></script>
+  <script src="assets/js/components/message-author.js?v=20260711-message-author-v1" defer></script>
+<script src="assets/js/pages/comunidade-interna.js?v=20260711-member-reconcile-v3" defer></script>
   <script src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1" defer></script>
 </body>
 </html>

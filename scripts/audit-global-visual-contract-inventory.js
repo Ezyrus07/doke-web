@@ -288,6 +288,7 @@ function scanButtonLike(html) {
         'filter-toggle',
         'doke-card',
         'doke-overlay__backdrop',
+        'doke-modal__backdrop',
       ].includes(c) || c.startsWith('home-side-meta__') || c.startsWith('app-header__') || c.startsWith('sidebar__') || c.startsWith('bottom-nav__') || c.startsWith('settings-sidebar__') || c.startsWith('messages-') || c.startsWith('community-room-') || c.startsWith('orders-page-header__')),
       text: stripTags(raw).slice(0, 80),
       ariaLabel: attr(openTag, 'aria-label'),

@@ -1,0 +1,52 @@
+/* Shared author/avatar contract for direct messages and community channels. */
+.message-author-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  background: linear-gradient(135deg, #2a5f90, #1ba99a);
+  color: #fff;
+  font-size: .76rem;
+  font-weight: 850;
+  box-shadow: 0 8px 18px rgba(28, 84, 137, .14);
+}
+.message-author-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.message-row.has-author-avatar,
+body[data-page="comunidade-interna"] .community-room-message.has-author-avatar {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: start;
+  column-gap: 10px;
+}
+.message-row.is-message-group-continuation .message-author-avatar,
+body[data-page="comunidade-interna"] .community-room-message.is-message-group-continuation .message-author-avatar {
+  visibility: hidden;
+}
+.message-row.is-message-group-continuation .message-bubble__meta,
+body[data-page="comunidade-interna"] .community-room-message.is-message-group-continuation .message-bubble__meta {
+  display: none;
+}
+.message-row.is-message-group-continuation,
+body[data-page="comunidade-interna"] .community-room-message.is-message-group-continuation {
+  margin-top: 2px;
+}
+body[data-page="comunidade-interna"] .community-room-message.has-author-avatar,
+body[data-page="comunidade-interna"] .community-room-message--self.has-author-avatar {
+  justify-content: initial;
+}
+body[data-page="comunidade-interna"] .community-room-message.has-author-avatar .community-room-message__bubble,
+body[data-page="comunidade-interna"] .community-room-message--self.has-author-avatar .community-room-message__bubble {
+  justify-self: start;
+  margin-left: 0;
+}
+@media (max-width: 560px) {
+  .message-author-avatar { width: 34px; height: 34px; flex-basis: 34px; }
+  .message-row.has-author-avatar,
+  body[data-page="comunidade-interna"] .community-room-message.has-author-avatar {
+    grid-template-columns: 34px minmax(0, 1fr);
+    column-gap: 8px;
+  }
+}
