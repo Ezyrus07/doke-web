@@ -50,7 +50,7 @@
 
       <main class="page__content doke-page">
         <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean doke-page-shell doke-page-stack doke-form-page-rail">
-          <section class="become-pro-screen doke-form-page-screen" data-become-pro-page>
+          <section class="become-pro-screen doke-form-page-screen" data-become-pro-page data-state-boundary="tornar-profissional" data-view-state="loading" aria-busy="true">
             <header class="become-pro-intro doke-form-page-top">
               <h1 class="doke-form-page-title">TORNE-SE PROFISSIONAL</h1>
               <p class="doke-form-page-description">Crie seu perfil para receber pedidos e divulgar seus serviços.</p>
@@ -61,27 +61,27 @@
                 <div class="become-pro-progress doke-flow-progress" aria-label="Progresso do cadastro">
                   <div class="become-pro-progress__top doke-flow-progress__top">
                     <span data-step-progress-label>Etapa 1 de 4</span>
-                    <span>Perfil profissional</span>
+                    <span data-step-progress-name>Dados profissionais</span>
                   </div>
                   <div class="become-pro-progress__track doke-flow-progress__track" aria-hidden="true"><span class="become-pro-progress__fill doke-flow-progress__fill" data-step-progress-fill data-step-progress-value="25"></span></div>
                 </div>
 
                 <nav class="become-pro-steps doke-flow-steps" aria-label="Etapas do cadastro profissional">
-                  <button class="become-pro-step doke-flow-step is-active" type="button" data-step-target="1">
+                  <button class="become-pro-step doke-flow-step is-active" type="button" data-step-target="1" data-step-name="Dados profissionais">
                     <span>1</span>
-                    <div><strong>Dados</strong><small>Perfil público</small></div>
+                    <strong>Dados</strong>
                   </button>
-                  <button class="become-pro-step doke-flow-step" type="button" data-step-target="2">
+                  <button class="become-pro-step doke-flow-step" type="button" data-step-target="2" data-step-name="Atendimento">
                     <span>2</span>
-                    <div><strong>Atendimento</strong><small>Região e preço</small></div>
+                    <strong>Atendimento</strong>
                   </button>
-                  <button class="become-pro-step doke-flow-step" type="button" data-step-target="3">
+                  <button class="become-pro-step doke-flow-step" type="button" data-step-target="3" data-step-name="Verificação">
                     <span>3</span>
-                    <div><strong>Prova</strong><small>Portfólio e documentos</small></div>
+                    <strong>Verificação</strong>
                   </button>
-                  <button class="become-pro-step doke-flow-step" type="button" data-step-target="4">
+                  <button class="become-pro-step doke-flow-step" type="button" data-step-target="4" data-step-name="Revisão e envio">
                     <span>4</span>
-                    <div><strong>Revisão</strong><small>Envio e análise</small></div>
+                    <strong>Revisão</strong>
                   </button>
                 </nav>
 
@@ -132,17 +132,20 @@
                       </label>
                       <label class="become-pro-field become-pro-field--full doke-field"><span>Diferencial</span><textarea placeholder="Ex.: Trabalho com acabamento fino, proteção de móveis e entrega no prazo." class="doke-textarea"></textarea></label>
                     </div>
+
+                    <div class="become-pro-preferences">
+                      <h3>Preferências de atendimento</h3>
+                      <div class="become-pro-toggles" aria-label="Preferências de atendimento">
+                        <button class="become-pro-toggle is-active doke-choice-button" type="button" aria-pressed="true"><span></span><svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6Z"></path><path d="M8 10h8"></path></svg>Aceita orçamento pelo chat</button>
+                        <button class="become-pro-toggle is-active doke-choice-button" type="button" aria-pressed="true"><span></span><svg viewBox="0 0 24 24"><path d="m13 3-7 10h5l-1 8 7-11h-5z"></path></svg>Atende emergência</button>
+                      </div>
+                    </div>
                   </div>
 
                   <div class="become-pro-step-panel" data-step-panel="3" hidden>
                     <div class="become-pro-section-head">
                       <h2>Seguran&ccedil;a e verifica&ccedil;&atilde;o</h2>
-                      <p>Esses dados ficam privados e ajudam a liberar profissionais mais confi&aacute;veis na plataforma.</p>
-                    </div>
-
-                    <div class="become-pro-verification-note">
-                      <strong>Privado</strong>
-                      <span>CPF, CNPJ, documento, selfie e endere&ccedil;o completo n&atilde;o aparecem no perfil p&uacute;blico.</span>
+                      <p>Seus dados de identificação ficam privados e são usados apenas na análise da conta.</p>
                     </div>
 
                     <div class="become-pro-account-choice" role="group" aria-label="Tipo de conta">
@@ -163,7 +166,7 @@
                     <div class="become-pro-upload-grid" aria-label="Envio de documentos">
                       <label class="become-pro-upload-card"><input type="file" name="identityDocument" accept="image/*,.pdf"><span>Documento com foto</span><small>RG, CNH ou documento profissional.</small></label>
                       <label class="become-pro-upload-card"><input type="file" name="documentSelfie" accept="image/*"><span>Selfie de confirma&ccedil;&atilde;o</span><small>Ajuda a confirmar que o documento pertence a voc&ecirc;.</small></label>
-                      <label class="become-pro-upload-card"><input type="file" name="companyDocument" accept="image/*,.pdf"><span>Comprovante ou CNPJ</span><small>Opcional para pessoa f&iacute;sica, recomendado para empresa.</small></label>
+                      <label class="become-pro-upload-card" data-company-document hidden><input type="file" name="companyDocument" accept="image/*,.pdf"><span>Comprovante ou CNPJ</span><small>Documento da empresa ou comprovante equivalente.</small></label>
                     </div>
                   </div>
 
@@ -172,11 +175,11 @@
                       <h2>Confirma&ccedil;&atilde;o</h2>
                       <p>Revise os dados e envie seu perfil para an&aacute;lise antes de come&ccedil;ar a receber pedidos.</p>
                     </div>
-                    <div class="become-pro-privacy-grid">
-                      <div class="become-pro-privacy-card"><strong>Perfil p&uacute;blico</strong><span>Nome profissional, categoria, descri&ccedil;&atilde;o, regi&atilde;o e experi&ecirc;ncia.</span></div>
-                      <div class="become-pro-privacy-card"><strong>Dados privados</strong><span>CPF/CNPJ, documento, selfie, telefone e endere&ccedil;o detalhado.</span></div>
-                      <div class="become-pro-privacy-card"><strong>An&aacute;lise</strong><span>A Doke pode pedir corre&ccedil;&otilde;es antes de liberar o perfil profissional.</span></div>
-                    </div>
+                    <ul class="become-pro-review-list" aria-label="Resumo do envio">
+                      <li><strong>Perfil público</strong><span>Nome profissional, categoria, descrição, região e experiência.</span></li>
+                      <li><strong>Dados privados</strong><span>Documentos, telefone e endereço ficam protegidos.</span></li>
+                      <li><strong>Análise</strong><span>A Doke pode solicitar correções antes da liberação.</span></li>
+                    </ul>
                     <div class="become-pro-confirm">
                       <span>Depois da aprova&ccedil;&atilde;o, voc&ecirc; poder&aacute; adicionar certificados, portf&oacute;lio e an&uacute;ncios.</span>
                       <div class="become-pro-confirm-checks">
@@ -184,11 +187,6 @@
                         <label><input class="doke-checkbox" type="checkbox" checked> Aceito os termos para atuar como profissional na Doke e autorizo a an&aacute;lise dos dados.</label>
                       </div>
                     </div>
-                  </div>
-
-                  <div class="become-pro-toggles" aria-label="Preferências rápidas">
-                    <button class="become-pro-toggle is-active doke-choice-button" type="button" aria-pressed="true"><span></span><svg viewBox="0 0 24 24"><path d="M4 6h16v10H8l-4 4V6Z"></path><path d="M8 10h8"></path></svg>Aceita orçamento pelo chat</button>
-                    <button class="become-pro-toggle is-active doke-choice-button" type="button" aria-pressed="true"><span></span><svg viewBox="0 0 24 24"><path d="m13 3-7 10h5l-1 8 7-11h-5z"></path></svg>Atende emergência</button>
                   </div>
 
                   <div class="become-pro-actions doke-form-actions">
@@ -199,15 +197,15 @@
                 </form>
               </section>
 
-              <aside class="become-pro-benefits-card doke-form-page-side-card" aria-label="Benefícios de virar profissional">
-                <h2>Ao virar profissional</h2>
+              <aside class="become-pro-benefits-card doke-form-page-side-card" aria-label="Recursos da conta profissional">
+                <span class="become-pro-benefits-card__eyebrow">Conta profissional</span>
+                <h2>O que você libera</h2>
                 <ul>
-                  <li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Receber pedidos</strong><p>Seja encontrado por clientes que precisam de você.</p></div></li>
-                  <li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Criar anúncios</strong><p>Divulgue seus serviços e alcance mais pessoas.</p></div></li>
-                  <li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Exibir avaliações</strong><p>Construa confiança com avaliações de clientes.</p></div></li>
-                  <li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Montar portfólio</strong><p>Mostre seus trabalhos e destaque seu talento.</p></div></li>
-                  <li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><div><strong>Participar de comunidades</strong><p>Conecte-se, tire dúvidas e troque experiências.</p></div></li>
+                  <li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><strong>Receber pedidos de clientes</strong></li>
+                  <li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><strong>Publicar e divulgar serviços</strong></li>
+                  <li><span><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"></path></svg></span><strong>Construir reputação com avaliações</strong></li>
                 </ul>
+                <p class="become-pro-benefits-card__note">Seus documentos e dados pessoais não aparecem no perfil público.</p>
               </aside>
             </div>
 
@@ -234,7 +232,9 @@
   <script src="assets/js/core/app.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
   <script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
   <script src="assets/js/core/stable-shell-router.js?v=20260702-review-route-init-v1" defer></script>
-  <script src="assets/js/pages/tornar-profissional.js?v=20260518-become-pro-v23" defer></script>
+  <script src="assets/js/core/experience-runtime.js?v=20260711-experience-v1" defer></script>
+  <script src="assets/js/pages/professional-onboarding-experience.js?v=20260712-professional-onboarding-v2" defer></script>
+  <script src="assets/js/pages/tornar-profissional.js?v=20260712-professional-onboarding-v2" defer></script>
   <script src="assets/js/components/help/help-drawer.js?v=20260518-help-drawer-v1" defer></script>
   <script src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1" defer></script>
   <script src="assets/js/ui/mobile-interaction-standard.js?v=20260428-v1" defer></script>

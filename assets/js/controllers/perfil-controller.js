@@ -5,9 +5,12 @@
   var PAGE_NAME = 'perfil';
 
   function init(context) {
+    if (Doke.profileExperience && typeof Doke.profileExperience.query === 'function') {
+      return Doke.profileExperience.query().catch(function () { return {}; });
+    }
+
     if (Doke.controllerData && typeof Doke.controllerData.loadForPage === 'function') {
-      Doke.controllerData.loadForPage(PAGE_NAME);
-      return;
+      return Doke.controllerData.loadForPage(PAGE_NAME);
     }
 
     if (Doke.state) {

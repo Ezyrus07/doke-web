@@ -333,14 +333,7 @@
     window.DokeRefreshDetailGallery = syncGallery;
     syncGallery();
 
-    const favoriteButtons = Array.from(document.querySelectorAll('[data-favorite-toggle]'));
-    favoriteButtons.forEach((button) => {
-      button.addEventListener('click', () => {
-        const isPressed = button.getAttribute('aria-pressed') === 'true';
-        button.setAttribute('aria-pressed', String(!isPressed));
-        button.classList.toggle('is-active', !isPressed);
-      });
-    });
+    window.Doke?.detailAdExperience?.syncFavoriteButtons?.(root.dataset.serviceId || '');
 
     const modal = document.querySelector('[data-worker-modal]');
     const modalTitle = modal?.querySelector('[data-worker-modal-title]');

@@ -1,0 +1,32 @@
+.doke-connection-banner,
+.doke-browser-notification-prompt {
+  position: fixed;
+  z-index: 1200;
+  right: 20px;
+  bottom: 20px;
+  width: min(420px, calc(100vw - 32px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(24, 75, 118, 0.14);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 18px 45px rgba(24, 75, 118, 0.16);
+  color: #17324d;
+}
+.doke-connection-banner[hidden] { display: none; }
+.doke-connection-banner { align-items: flex-start; flex-direction: column; gap: 3px; }
+.doke-connection-banner strong { font-size: .92rem; }
+.doke-connection-banner span,
+.doke-browser-notification-prompt span { color: #657895; font-size: .82rem; line-height: 1.35; }
+.doke-browser-notification-prompt > div:first-child { display: grid; gap: 3px; }
+.doke-browser-notification-prompt__actions { display: flex; gap: 8px; flex: 0 0 auto; }
+body.is-offline [data-community-send],
+body.is-offline [data-community-event-form] button[type="submit"] { opacity: .72; }
+@media (max-width: 720px) {
+  .doke-connection-banner,
+  .doke-browser-notification-prompt { right: 16px; bottom: calc(76px + env(safe-area-inset-bottom)); flex-direction: column; align-items: stretch; }
+  .doke-browser-notification-prompt__actions { justify-content: flex-end; }
+}

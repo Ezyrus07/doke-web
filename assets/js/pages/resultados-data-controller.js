@@ -105,11 +105,26 @@
       return Promise.resolve(null);
     }
 
-    setDataState(root, 'loading');
-    setRegionState(root, 'loading');
+    var context = { filters: filters };
+    var cached = typeof Doke.pageDataOrchestrator.peekPageData === 'function'
+      ? Doke.pageDataOrchestrator.peekPageData(PAGE_NAME, context)
+      : null;
+    var initialState = cached ? 'refreshing' : 'loading';
+
+    setDataState(root, initialState);
+    if (Doke.experience && Doke.experience.states) {
+      Doke.experience.states.set(root, initialState, { page: PAGE_NAME });
+    }
+
+    if (cached) {
+      var currentRegion = getResultsRegion(root);
+      if (currentRegion) currentRegion.setAttribute('aria-busy', 'true');
+    } else {
+      setRegionState(root, 'loading');
+    }
 
     return Doke.pageDataOrchestrator
-      .getPageData(PAGE_NAME, { filters: filters })
+      .getPageData(PAGE_NAME, context, { maxAge: 45 * 1000 })
       .then(function (payload) {
         var normalized = normalizePayload(payload);
         var result = {
@@ -119,6 +134,7 @@
         };
 
         setDataState(root, normalized.services.length ? 'ready' : 'empty');
+        if (Doke.experience && Doke.experience.states) Doke.experience.states.set(root, normalized.services.length ? 'ready' : 'empty', { page: PAGE_NAME });
         setRegionState(root, normalized.services.length ? 'ready' : 'empty');
         updateNonVisualHooks(root, result);
         Doke.resultadosDataController.lastPayload = result;
@@ -133,6 +149,7 @@
         };
 
         setDataState(root, 'error', detail.error);
+        if (Doke.experience && Doke.experience.states) Doke.experience.states.set(root, navigator.onLine === false ? 'offline' : 'error', { page: PAGE_NAME, error: detail.error });
         setRegionState(root, 'error', detail.error);
         dispatch(root, 'doke:resultados-data-error', detail);
         return detail;
@@ -161,6 +178,7 @@
     var normalized = normalizePayload(event.detail.data);
     var result = { page: PAGE_NAME, filters: getQueryFilters(), data: normalized, source: 'stale-while-revalidate' };
     setDataState(root, normalized.services.length ? 'ready' : 'empty');
+    if (Doke.experience && Doke.experience.states) Doke.experience.states.set(root, normalized.services.length ? 'ready' : 'empty', { page: PAGE_NAME, source: 'stale-while-revalidate' });
     setRegionState(root, normalized.services.length ? 'ready' : 'empty');
     updateNonVisualHooks(root, result);
     Doke.resultadosDataController.lastPayload = result;

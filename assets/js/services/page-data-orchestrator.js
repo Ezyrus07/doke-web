@@ -187,13 +187,15 @@
     var page = normalizePageName(pageName);
     var normalizedContext = clone(context || {});
     var policy = options || {};
+    var maxAge = Math.max(0, Number(policy.maxAge));
+    if (!Number.isFinite(maxAge) || maxAge <= 0) maxAge = PAGE_DATA_CACHE_MAX_AGE;
     if (!Doke.repositoryBoundary || typeof Doke.repositoryBoundary.getPageData !== 'function') {
       return Promise.resolve({});
     }
 
     var key = getCacheKey(page, normalizedContext);
     var cached = pageDataCache.get(key);
-    var cacheIsValid = cached && Date.now() - cached.storedAt <= PAGE_DATA_CACHE_MAX_AGE;
+    var cacheIsValid = cached && Date.now() - cached.storedAt <= maxAge;
     if (cacheIsValid && policy.cache !== 'reload') {
       dispatchDataEvent('doke:page-data-cache-hit', {
         page: page,

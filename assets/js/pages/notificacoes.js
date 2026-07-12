@@ -11,6 +11,7 @@
     const timeButtons = [...root.querySelectorAll('[data-time-filter]')];
     const notificationsList = root.querySelector('.notifications-list');
     const localCards = [];
+    let banCountdownTimer = 0;
     let cards = [];
     const refreshCards = () => {
       cards = [...root.querySelectorAll('.notification-card')];
@@ -59,6 +60,10 @@
     const settingsClose = root.querySelector('[data-notifications-settings-close]');
     const settingsSave = root.querySelector('[data-notifications-settings-save]');
     const settingsReset = root.querySelector('[data-notifications-settings-reset]');
+    const dndDuration = root.querySelector('[data-notification-dnd-duration]');
+    const priorityMin = root.querySelector('[data-notification-priority-min]');
+    const mutedScopes = root.querySelector('[data-notification-muted-scopes]');
+    const mutedScopesList = root.querySelector('[data-notification-muted-scopes-list]');
     const activeChip = root.querySelector('[data-notifications-active-chip]');
     const filterStatusStack = root.querySelector('.notifications-filter-stack');
     const clearFilterButton = root.querySelector('[data-notifications-clear-filter]');
@@ -129,12 +134,67 @@
       return '<svg viewBox="0 0 24 24"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>';
     };
 
+    const getBanNotificationState = (notification) => {
+      if (!notification || notification.type !== 'community_member_banned') return null;
+      try {
+        const url = new URL(notification.targetUrl || '', window.location.href);
+        const expiresAt = url.searchParams.get('banExpiresAt') || '';
+        const expiresAtMs = expiresAt ? Date.parse(expiresAt) : 0;
+        return {
+          expiresAt,
+          expiresAtMs: Number.isFinite(expiresAtMs) ? expiresAtMs : 0,
+          reason: url.searchParams.get('banReason') || '',
+          moderator: url.searchParams.get('banModerator') || ''
+        };
+      } catch (_error) {
+        return { expiresAt: '', expiresAtMs: 0, reason: '', moderator: '' };
+      }
+    };
+
+    const formatBanCountdown = (expiresAtMs) => {
+      if (!expiresAtMs) return 'Banimento permanente';
+      const remainingSeconds = Math.max(0, Math.ceil((expiresAtMs - Date.now()) / 1000));
+      if (!remainingSeconds) return 'Banimento encerrado';
+      const days = Math.floor(remainingSeconds / 86400);
+      const hours = Math.floor((remainingSeconds % 86400) / 3600);
+      const minutes = Math.floor((remainingSeconds % 3600) / 60);
+      const seconds = remainingSeconds % 60;
+      if (days) return `Tempo restante: ${days}d ${String(hours).padStart(2, '0')}h`;
+      if (hours) return `Tempo restante: ${hours}h ${String(minutes).padStart(2, '0')}m`;
+      if (minutes) return `Tempo restante: ${minutes}m ${String(seconds).padStart(2, '0')}s`;
+      return `Tempo restante: ${seconds}s`;
+    };
+
+    const refreshBanNotificationCountdowns = () => {
+      const nodes = [...root.querySelectorAll('[data-notification-ban-countdown]')];
+      if (!nodes.length) {
+        if (banCountdownTimer) window.clearInterval(banCountdownTimer);
+        banCountdownTimer = 0;
+        return;
+      }
+      nodes.forEach((node) => {
+        const expiresAtMs = Number(node.dataset.notificationBanExpiresAt || 0);
+        node.textContent = formatBanCountdown(expiresAtMs);
+        node.classList.toggle('is-expired', Boolean(expiresAtMs && expiresAtMs <= Date.now()));
+      });
+    };
+
+    const ensureBanNotificationCountdown = () => {
+      refreshBanNotificationCountdowns();
+      if (banCountdownTimer || !root.querySelector('[data-notification-ban-countdown]')) return;
+      banCountdownTimer = window.setInterval(refreshBanNotificationCountdowns, 1000);
+    };
+
     const renderLocalNotificationCard = (notification) => {
       const category = notification.category || 'social';
       const isRead = Boolean(notification.read);
       const unreadClass = isRead ? '' : ' is-unread';
       const unreadToken = isRead ? '' : ' unread';
       const markReadLabel = isRead ? 'Lida' : 'Marcar lida';
+      const banState = getBanNotificationState(notification);
+      const banCountdownMarkup = banState
+        ? `<div class="notification-card__ban-status" data-notification-ban-countdown data-notification-ban-expires-at="${escapeHtml(String(banState.expiresAtMs || ''))}">${escapeHtml(formatBanCountdown(banState.expiresAtMs))}</div>`
+        : '';
       const card = document.createElement('article');
       card.className = `notification-card${unreadClass} ${getCategoryClass(category)} doke-card doke-notification-card`;
       card.dataset.category = `${category}${unreadToken}`;
@@ -156,6 +216,8 @@
           </div>
           <h3>${escapeHtml(notification.title)}</h3>
           <p>${escapeHtml(notification.body)}</p>
+          ${banCountdownMarkup}
+          ${notification.actionMessage ? `<p class="notification-card__action-status" data-status="${escapeHtml(notification.actionStatus || 'completed')}">${escapeHtml(notification.actionMessage)}</p>` : ''}
           <div class="notification-card__inline-actions">
             <a class="notification-card__inline-action doke-btn doke-btn--link" href="${escapeHtml(notification.targetUrl || 'notificacoes.html')}">${escapeHtml(notification.actionLabel || 'Abrir')}</a>
             <button class="notification-card__inline-action doke-btn doke-btn--link" type="button" data-mark-read${isRead ? ' disabled aria-disabled="true"' : ''}>${markReadLabel}</button>
@@ -191,7 +253,7 @@
       }
 
       const id = card.dataset.notificationId || '';
-      if (id) getNotificationsService()?.markAsRead?.(id);
+      if (id) { getNotificationsService()?.markAsRead?.(id); window.DokeInAppNotifications?.markAsRead?.(id); }
       card.classList.remove('is-unread');
       const tokens = (card.dataset.catégory || card.dataset.category || '').split(/\s+/).filter((token) => token !== 'unread');
       card.dataset.catégory = tokens.join(' ');
@@ -345,7 +407,7 @@
           return;
         }
         const id = card.dataset.notificationId || '';
-        if (id) getNotificationsService()?.markAsRead?.(id);
+        if (id) { getNotificationsService()?.markAsRead?.(id); window.DokeInAppNotifications?.markAsRead?.(id); }
         const primaryAction = card.querySelector('.notification-card__inline-actions a[href]');
         const href = primaryAction?.getAttribute('href');
         if (href) window.location.href = href;
@@ -378,6 +440,7 @@
       applyFilter(currentFilter, currentTimeFilter);
       syncSelectedActions();
       notificationsHydrationLocalReady = true;
+      ensureBanNotificationCountdown();
       hydration?.mark('local-notifications');
       return true;
     };
@@ -389,13 +452,15 @@
 
     const refreshLocalNotifications = ({ force = false } = {}) => {
       const service = getNotificationsService();
-      if (!service) return Promise.resolve(false);
+      const center = window.DokeInAppNotifications;
+      if (!service && !center) return Promise.resolve(false);
 
       const cache = window.Doke?.experience?.cache;
       const fetcher = () => {
-        if (typeof service.list === 'function') return service.list({ dismissed: false, currentUser: true });
-        if (typeof service.listLocal === 'function') return Promise.resolve(service.listLocal({ dismissed: false }));
-        return Promise.reject(new Error('Serviço de notificações indisponível.'));
+        const centerItems = center?.list?.() || [];
+        if (typeof service?.list === 'function') return Promise.resolve(service.list({ dismissed: false, currentUser: true })).then((items) => [...centerItems, ...(Array.isArray(items) ? items : [])].filter((item, index, all) => all.findIndex((entry) => String(entry.id) === String(item.id)) === index));
+        if (typeof service?.listLocal === 'function') return Promise.resolve([...centerItems, ...service.listLocal({ dismissed: false })].filter((item, index, all) => all.findIndex((entry) => String(entry.id) === String(item.id)) === index));
+        return Promise.resolve(centerItems);
       };
 
       if (!cache?.query) {
@@ -586,6 +651,14 @@
       if (!settingsPanel) return;
       settingsPanel.hidden = false;
       settingsToggle?.setAttribute('aria-expanded', 'true');
+      const prefs = window.DokeInAppNotifications?.getPreferences?.() || {};
+      settingsPanel.querySelectorAll('[data-notification-pref]').forEach((input) => { input.checked = prefs[input.dataset.notificationPref] !== false; });
+      if (priorityMin) priorityMin.value = prefs.priorityMin || 'silent';
+      if (mutedScopes && mutedScopesList) {
+        const scopes = Array.isArray(prefs.mutedScopes) ? prefs.mutedScopes : [];
+        mutedScopes.hidden = scopes.length === 0;
+        mutedScopesList.innerHTML = scopes.map((scope) => `<button class="doke-chip doke-btn" type="button" data-notification-unmute-scope="${escapeHtml(scope)}">${escapeHtml(prefs.mutedScopeLabels?.[scope] || scope)} <span aria-hidden="true">×</span></button>`).join('');
+      }
       closeFiltersPanel();
     };
 
@@ -797,13 +870,19 @@
     settingsClose?.addEventListener('click', closeSettingsPanel);
 
     settingsReset?.addEventListener('click', () => {
-      settingsPanel?.querySelectorAll('input[type="checkbox"]').forEach((input) => {
-        input.checked = ['No app','E-mail','Pedidos','Mensagens','Sociais','Anúncios'].includes(input.closest('label')?.querySelector('strong')?.textContent || '');
-      });
+      settingsPanel?.querySelectorAll('[data-notification-pref]').forEach((input) => { input.checked = !['dndEnabled'].includes(input.dataset.notificationPref); });
+      if (priorityMin) priorityMin.value = 'silent';
+      if (dndDuration) dndDuration.value = '60';
     });
 
     settingsSave?.addEventListener('click', () => {
       if (!settingsPanel) return;
+      const nextPrefs = {};
+      settingsPanel.querySelectorAll('[data-notification-pref]').forEach((input) => { nextPrefs[input.dataset.notificationPref] = input.checked; });
+      nextPrefs.priorityMin = priorityMin?.value || 'silent';
+      if (nextPrefs.dndEnabled) nextPrefs.dndUntil = Date.now() + (Number(dndDuration?.value || 60) * 60000);
+      else nextPrefs.dndUntil = 0;
+      window.DokeInAppNotifications?.setPreferences?.(nextPrefs);
       const existing = settingsPanel.querySelector('.notifications-settings-feedback');
       if (existing) existing.remove();
       const feedback = document.createElement('div');
@@ -815,6 +894,16 @@
         closeSettingsPanel();
       }, 1200);
     });
+
+    settingsPanel?.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-notification-unmute-scope]');
+      if (!button) return;
+      window.DokeInAppNotifications?.unmuteScope?.(button.dataset.notificationUnmuteScope || '');
+      button.remove();
+      if (mutedScopes && mutedScopesList && !mutedScopesList.children.length) mutedScopes.hidden = true;
+    });
+
+    document.addEventListener('doke:notification-center-changed', () => refreshLocalNotifications({ force: true }));
 
     root.querySelectorAll('[data-notifications-clear-filter]').forEach((button) => button.addEventListener('click', () => {
       const allButton = root.querySelector('[data-filter="all"]');

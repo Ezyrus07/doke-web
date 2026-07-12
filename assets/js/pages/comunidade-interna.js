@@ -50,6 +50,8 @@
   var channelTitle = root.querySelector('[data-community-thread-title]');
   var channelStatus = root.querySelector('[data-community-thread-status]');
   var channelAvatar = root.querySelector('.community-room-thread__avatar');
+  var disciplineNotice = null;
+  var disciplineNoticeTimer = null;
 
   function applyIncomingTransitionSnapshot() {
     var snapshot = incomingCommunityTransition && incomingCommunityTransition.context;
@@ -68,6 +70,8 @@
   applyIncomingTransitionSnapshot();
   var messageList = root.querySelector('[data-community-message-list]');
   var pinnedList = root.querySelector('.community-room-pinned-list');
+  var pinnedBanner = null;
+  var activeCommunityPinnedIndex = 0;
   var composer = root.querySelector('[data-community-composer]');
   var composerInput = root.querySelector('[data-community-composer-input]');
   var mentionPicker = root.querySelector('[data-community-mention-picker]');
@@ -87,6 +91,15 @@
   var moreToggle = root.querySelector('[data-community-more-toggle]');
   var actionsMenu = root.querySelector('[data-community-actions-menu]');
   var settingsOpen = root.querySelector('[data-community-settings-open]');
+  var messageAuthorFilter = root.querySelector('[data-community-message-author-filter]');
+  var messagePeriodFilter = root.querySelector('[data-community-message-period-filter]');
+  var messageAttachmentFilter = root.querySelector('[data-community-message-attachment-filter]');
+  var messageFilterClear = root.querySelector('[data-community-message-filter-clear]');
+  var replyPreview = root.querySelector('[data-community-reply-preview]');
+  var replyAuthor = root.querySelector('[data-community-reply-author]');
+  var replyText = root.querySelector('[data-community-reply-text]');
+  var replyCancel = root.querySelector('[data-community-reply-cancel]');
+  var pendingReply = null;
   var settingsSidebar = root.querySelector('[data-community-settings-sidebar]');
   var settingsName = root.querySelector('[data-community-settings-name]');
   var settingsSearchForm = root.querySelector('[data-community-settings-search-form]');
@@ -94,6 +107,42 @@
   var settingsTabs = Array.prototype.slice.call(root.querySelectorAll('[data-community-settings-tab]'));
   var settingsCloseButtons = Array.prototype.slice.call(root.querySelectorAll('[data-community-settings-close]'));
   var auditList = root.querySelector('[data-community-audit-list]');
+  var auditTypeFilter = root.querySelector('[data-community-audit-type]');
+  var auditSearchFilter = root.querySelector('[data-community-audit-search]');
+  var auditPeriodFilter = root.querySelector('[data-community-audit-period]');
+  var securitySummary = root.querySelector('[data-community-security-summary]');
+  var securityDisciplineList = root.querySelector('[data-community-security-discipline]');
+  var securityBanList = root.querySelector('[data-community-security-bans]');
+  var securityViolationList = root.querySelector('[data-community-security-violations]');
+  var securityFeedback = root.querySelector('[data-community-security-feedback]');
+  var securityCleanup = root.querySelector('[data-community-security-cleanup]');
+  var eventPanel = root.querySelector('[data-community-panel="events"]');
+  var eventSummary = root.querySelector('[data-community-events-summary]');
+  var eventList = root.querySelector('[data-community-events-list]');
+  var eventForm = root.querySelector('[data-community-event-form]');
+  var eventTitle = root.querySelector('[data-community-event-title]');
+  var eventDescription = root.querySelector('[data-community-event-description]');
+  var eventStart = root.querySelector('[data-community-event-start]');
+  var eventEnd = root.querySelector('[data-community-event-end]');
+  var eventLocation = root.querySelector('[data-community-event-location]');
+  var eventLimit = root.querySelector('[data-community-event-limit]');
+  var eventVisibility = root.querySelector('[data-community-event-visibility]');
+  var eventRoleList = root.querySelector('[data-community-event-roles]');
+  var eventReminder = root.querySelector('[data-community-event-reminder]');
+  var eventReminderMinutes = root.querySelector('[data-community-event-reminder-minutes]');
+  var eventRecurrence = root.querySelector('[data-community-event-recurrence]');
+  var eventEditId = root.querySelector('[data-community-event-edit-id]');
+  var eventFormTitle = root.querySelector('[data-community-event-form-title]');
+  var eventEditCancel = root.querySelector('[data-community-event-edit-cancel]');
+  var eventSubmit = root.querySelector('[data-community-event-submit]');
+  var eventCalendar = root.querySelector('[data-community-event-calendar]');
+  var eventMonthLabel = root.querySelector('[data-community-event-month-label]');
+  var eventMonthPrev = root.querySelector('[data-community-event-month-prev]');
+  var eventMonthNext = root.querySelector('[data-community-event-month-next]');
+  var eventFeedback = root.querySelector('[data-community-event-feedback]');
+  var eventCalendarCursor = new Date();
+  eventCalendarCursor.setDate(1);
+  var eventReminderTimer = 0;
   var attachButton = root.querySelector('[data-community-attach]');
   var attachmentInput = root.querySelector('[data-community-attachment-input]');
   var audioButton = root.querySelector('[data-community-audio]');
@@ -117,6 +166,16 @@
   var manageName = root.querySelector('[data-community-manage-name]');
   var manageDescription = root.querySelector('[data-community-manage-description]');
   var manageRules = root.querySelector('[data-community-manage-rules]');
+  var manageTags = root.querySelector('[data-community-manage-tags]');
+  var manageLinks = root.querySelector('[data-community-manage-links]');
+  var manageQuestions = root.querySelector('[data-community-manage-questions]');
+  var manageRequireRules = root.querySelector('[data-community-manage-require-rules]');
+  var manageDefaultChannel = root.querySelector('[data-community-manage-default-channel]');
+  var manageWelcomeMessage = root.querySelector('[data-community-manage-welcome-message]');
+  var manageChecklist = root.querySelector('[data-community-manage-checklist]');
+  var manageOnboardingAudience = root.querySelector('[data-community-manage-onboarding-audience]');
+  var manageEntryMode = root.querySelector('[data-community-manage-entry-mode]');
+  var manageIcon = root.querySelector('[data-community-manage-icon]');
   var manageType = root.querySelector('[data-community-manage-type]');
   var manageColor = root.querySelector('[data-community-manage-color]');
   var manageCover = root.querySelector('[data-community-manage-cover]');
@@ -124,11 +183,22 @@
   var manageCoverName = root.querySelector('[data-community-cover-name]');
   var manageCoverPreview = root.querySelector('[data-community-cover-preview]');
   var manageFeedback = root.querySelector('[data-community-manage-feedback]');
+  var profilePreview = root.querySelector('[data-community-profile-preview]');
+  var profilePreviewIcon = root.querySelector('[data-community-profile-preview-icon]');
+  var profilePreviewName = root.querySelector('[data-community-profile-preview-name]');
+  var profilePreviewDescription = root.querySelector('[data-community-profile-preview-description]');
+  var profilePreviewMeta = root.querySelector('[data-community-profile-preview-meta]');
   var themeButtons = Array.prototype.slice.call(root.querySelectorAll('[data-community-theme-color]'));
   var inviteCodeLabel = root.querySelector('[data-community-invite-code]');
   var inviteMeta = root.querySelector('[data-community-invite-meta]');
   var inviteCopy = root.querySelector('[data-community-invite-copy]');
   var inviteRegenerate = root.querySelector('[data-community-invite-regenerate]');
+  var inviteForm = root.querySelector('[data-community-invite-form]');
+  var inviteExpiry = root.querySelector('[data-community-invite-expiry]');
+  var inviteMaxUses = root.querySelector('[data-community-invite-max-uses]');
+  var inviteRequireApproval = root.querySelector('[data-community-invite-require-approval]');
+  var inviteRole = root.querySelector('[data-community-invite-role]');
+  var inviteList = root.querySelector('[data-community-invite-list]');
   var channelAdminList = root.querySelector('[data-community-channel-admin-list]');
   var channelForm = root.querySelector('[data-community-channel-form]');
   var channelNameInput = root.querySelector('[data-community-channel-name]');
@@ -728,7 +798,8 @@
       restrictedUntil: String(member.restrictedUntil || '').trim(),
       disciplineReason: String(member.disciplineReason || '').trim(),
       disciplinedByAccountKey: String(member.disciplinedByAccountKey || '').trim(),
-      disciplinedAt: String(member.disciplinedAt || '').trim()
+      disciplinedAt: String(member.disciplinedAt || '').trim(),
+      channelDiscipline: member.channelDiscipline && typeof member.channelDiscipline === 'object' && !Array.isArray(member.channelDiscipline) ? Object.assign({}, member.channelDiscipline) : {}
     };
   }
 
@@ -920,6 +991,7 @@
     root.querySelectorAll('[data-community-settings-tab="channels"], [data-community-panel="channels"]').forEach(function (node) { setPermissionState(node, canCommunity('manageChannels'), 'Sem permissão para gerenciar canais'); });
     root.querySelectorAll('[data-community-settings-tab="invite"]').forEach(function (node) { setPermissionState(node, canCommunity('addMembers'), 'Sem permissão para gerar convites'); });
     root.querySelectorAll('[data-community-settings-tab="requests"]').forEach(function (node) { setPermissionState(node, canCommunity('addMembers'), 'Sem permissão para revisar solicitações'); });
+    root.querySelectorAll('[data-community-settings-tab="security"], [data-community-panel="security"], [data-community-settings-tab="audit"], [data-community-panel="audit"]').forEach(function (node) { setPermissionState(node, canCommunity('moderateMembers'), 'Sem permissão para gerenciar segurança'); });
     if (memberAddToggle) setPermissionState(memberAddToggle, canCommunity('addMembers'), 'Sem permissão para adicionar membros');
     var currentMember = getCurrentCommunityMember();
     var isOwner = String(currentMember.role || '') === 'owner';
@@ -1067,6 +1139,9 @@
     if (role === 'owner' || role === 'member') {
       return { allowed: true, action: 'open', role: role, relationReport: relationReport };
     }
+    if (role === 'banned') {
+      return { allowed: false, action: 'banned', reason: 'community-ban-active', relationReport: relationReport };
+    }
 
     var visibility = normalizeCommunityVisibility(record);
     if (visibility === 'public') return { allowed: false, action: 'join', reason: 'membership-required', relationReport: relationReport };
@@ -1147,9 +1222,9 @@
     var service = getCommunityNotificationsService();
     var recipientAccountKey = String(payload && (payload.recipientAccountKey || payload.userId) || '').trim();
     if (!service || typeof service.create !== 'function' || !payload || !recipientAccountKey) return Promise.resolve(null);
-    return service.create({
+    var normalizedNotification = {
       type: payload.type || 'community_update',
-      category: 'social',
+      category: payload.category || 'social',
       userId: String(payload.userId || recipientAccountKey).trim(),
       recipientAccountKey: recipientAccountKey,
       actorId: String(payload.actorId || '').trim(),
@@ -1160,6 +1235,10 @@
       targetUrl: String(payload.targetUrl || 'comunidade.html'),
       actionLabel: String(payload.actionLabel || payload.action || 'Abrir'),
       read: false
+    };
+    return service.create(normalizedNotification).then(function (notification) {
+      window.DokeInAppNotifications && window.DokeInAppNotifications.publish(Object.assign({}, normalizedNotification, notification || {}));
+      return notification;
     }).catch(function (error) {
       console.warn('[DokeCommunity:createNotification]', error);
       return null;
@@ -1462,6 +1541,15 @@
     return saved || repaired;
   }
 
+  function getCommunityMembersForRecord(record) {
+    var canonicalRecord = record && typeof record === 'object' ? record : {};
+    var projector = window.Doke && window.Doke.communityDomain && window.Doke.communityDomain.members && window.Doke.communityDomain.members.projectCommunityMembers;
+    if (typeof projector === 'function') {
+      return projector({ community: canonicalRecord, currentUser: getCurrentUserProfile() });
+    }
+    return (Array.isArray(canonicalRecord.members) ? canonicalRecord.members : []).map(normalizeCommunityMember).filter(Boolean);
+  }
+
   function getCommunityMembers() {
     var canonicalRecord = getCurrentCommunityRecord() || {};
     var projector = window.Doke && window.Doke.communityDomain && window.Doke.communityDomain.members && window.Doke.communityDomain.members.projectCommunityMembers;
@@ -1618,40 +1706,290 @@
   }
 
   function getMemberDisciplineLabel(member) {
-    if (isFutureDisciplineDate(member && member.mutedUntil)) return 'Silenciado até ' + new Date(member.mutedUntil).toLocaleString('pt-BR');
-    if (isFutureDisciplineDate(member && member.restrictedUntil)) return 'Restrito até ' + new Date(member.restrictedUntil).toLocaleString('pt-BR');
-    return '';
+    if (isFutureDisciplineDate(member && member.mutedUntil)) return 'Silenciado até ' + formatDisciplineEnd(member.mutedUntil);
+    if (isFutureDisciplineDate(member && member.restrictedUntil)) return 'Restrito até ' + formatDisciplineEnd(member.restrictedUntil);
+    var activeChannels = Object.keys(member && member.channelDiscipline || {}).filter(function (channelId) {
+      return isFutureDisciplineDate(member.channelDiscipline[channelId] && member.channelDiscipline[channelId].until);
+    });
+    return activeChannels.length ? 'Restrição em ' + activeChannels.length + (activeChannels.length === 1 ? ' canal' : ' canais') : '';
+  }
+
+  function getCurrentMemberDisciplineState() {
+    var record = ensureCurrentCommunityRecord() || {};
+    var profile = getCurrentUserProfile();
+    var rawMembers = Array.isArray(record.members) ? record.members : [];
+    var member = rawMembers.find(function (candidate) {
+      return identitiesIntersect(profile.identityKeys || [profile.accountKey, profile.id, profile.email], getMemberIdentityKeys(candidate));
+    }) || getCurrentMemberForRecord(record);
+    if (!member) return null;
+    var effective = getEffectiveMemberDiscipline(member, currentChannelId || 'geral');
+    if (!effective) return null;
+    return {
+      type: effective.type,
+      until: effective.until,
+      reason: String(effective.reason || '').trim(),
+      scope: effective.scope,
+      channelId: effective.channelId || '',
+      member: member
+    };
+  }
+
+  function formatDisciplineEnd(until) {
+    var time = Date.parse(String(until || ''));
+    return Number.isFinite(time) ? new Date(time).toLocaleString('pt-BR') : 'data indisponível';
+  }
+
+  function formatDisciplineRemaining(until) {
+    var remaining = Math.max(0, Date.parse(String(until || '')) - Date.now());
+    if (!remaining) return 'encerrando agora';
+    var totalMinutes = Math.ceil(remaining / 60000);
+    if (totalMinutes < 60) return totalMinutes + (totalMinutes === 1 ? ' minuto restante' : ' minutos restantes');
+    var hours = Math.floor(totalMinutes / 60);
+    var minutes = totalMinutes % 60;
+    return hours + (hours === 1 ? ' hora' : ' horas') + (minutes ? ' e ' + minutes + ' min' : '') + ' restantes';
+  }
+
+  function ensureDisciplineNotice() {
+    if (disciplineNotice && disciplineNotice.isConnected) return disciplineNotice;
+    var thread = root.querySelector('[data-community-thread]');
+    var header = thread && thread.querySelector('.community-room-thread__header');
+    if (!thread || !header) return null;
+    var notice = document.createElement('section');
+    notice.className = 'community-discipline-notice';
+    notice.dataset.communityDisciplineNotice = 'true';
+    notice.hidden = true;
+    notice.setAttribute('role', 'status');
+    notice.setAttribute('aria-live', 'polite');
+    notice.innerHTML = '<span class="community-discipline-notice__icon" aria-hidden="true">!</span><div class="community-discipline-notice__copy"><strong data-community-discipline-title></strong><p data-community-discipline-message></p></div><span class="community-discipline-notice__time" data-community-discipline-time></span>';
+    header.insertAdjacentElement('afterend', notice);
+    disciplineNotice = notice;
+    return notice;
+  }
+
+  function renderCurrentMemberDisciplineNotice() {
+    var notice = ensureDisciplineNotice();
+    if (!notice) return;
+    var state = getCurrentMemberDisciplineState();
+    if (!state) {
+      notice.hidden = true;
+      if (disciplineNoticeTimer) { window.clearInterval(disciplineNoticeTimer); disciplineNoticeTimer = null; }
+      return;
+    }
+    var title = notice.querySelector('[data-community-discipline-title]');
+    var message = notice.querySelector('[data-community-discipline-message]');
+    var time = notice.querySelector('[data-community-discipline-time]');
+    if (title) title.textContent = state.type === 'mute' ? 'Você está silenciado nesta comunidade' : 'Seu envio de mensagens está temporariamente restrito';
+    if (message) message.textContent = state.reason ? 'Motivo: ' + state.reason : 'Você não pode enviar mensagens durante este período.';
+    if (time) time.textContent = formatDisciplineRemaining(state.until) + ' • até ' + formatDisciplineEnd(state.until);
+    notice.dataset.disciplineType = state.type;
+    notice.hidden = false;
+    if (!disciplineNoticeTimer) {
+      disciplineNoticeTimer = window.setInterval(function () {
+        var current = getCurrentMemberDisciplineState();
+        if (!current) {
+          renderCurrentMemberDisciplineNotice();
+          syncChannelComposerAccess();
+          return;
+        }
+        var currentTime = notice.querySelector('[data-community-discipline-time]');
+        if (currentTime) currentTime.textContent = formatDisciplineRemaining(current.until) + ' • até ' + formatDisciplineEnd(current.until);
+      }, 30000);
+    }
+  }
+
+  function notifyDisciplinedMember(target, action, reason, until) {
+    if (!target) return;
+    var record = ensureCurrentCommunityRecord() || {};
+    var persistedTarget = getCommunityMembersForRecord(record).find(function (member) {
+      return memberMatchesTarget(member, target.id || target.accountKey || target.email || '');
+    }) || target;
+    var recipientAccountKey = String(persistedTarget.accountKey || persistedTarget.email || persistedTarget.id || '').trim();
+    if (!recipientAccountKey) return;
+    var communityName = String(record.title || record.name || 'Comunidade');
+    var actor = getCurrentUserProfile();
+    var isClear = action === 'clear';
+    var typeLabel = action === 'mute' ? 'silenciado' : 'restringido';
+    createCommunityNotification({
+      type: isClear ? 'community_discipline_cleared' : 'community_discipline_applied',
+      recipientAccountKey: recipientAccountKey,
+      userId: String(persistedTarget.id || recipientAccountKey),
+      actorId: actor.id,
+      actorName: actor.name || 'Moderação',
+      eventKey: ['community-discipline', getCurrentCommunityId(), persistedTarget.id || recipientAccountKey, action, until || Date.now()].join(':'),
+      title: isClear ? 'Sua restrição foi removida' : 'Você foi ' + typeLabel + ' em ' + communityName,
+      body: isClear
+        ? 'Você já pode voltar a enviar mensagens na comunidade.'
+        : ('Motivo: ' + reason + '. Término previsto: ' + formatDisciplineEnd(until) + '.'),
+      targetUrl: 'comunidade-interna.html?community=' + encodeURIComponent(getCurrentCommunityId()),
+      actionLabel: 'Ver comunidade'
+    });
+  }
+
+
+  function notifyBannedMember(target, ban) {
+    if (!target) return;
+    var recipientAccountKey = String(target.accountKey || target.email || target.id || '').trim();
+    if (!recipientAccountKey) return;
+    var record = ensureCurrentCommunityRecord() || {};
+    var communityName = String(record.title || record.name || 'Comunidade');
+    var actor = getCurrentUserProfile();
+    var reason = String(ban && ban.reason || 'Não informado');
+    var expiresAt = String(ban && ban.expiresAt || '');
+    var moderatorName = String(ban && ban.bannedByName || actor.name || 'Moderação');
+    var targetParams = new URLSearchParams({
+      community: getCurrentCommunityId(),
+      communityAccess: 'banned',
+      banReason: reason,
+      banModerator: moderatorName
+    });
+    if (expiresAt) targetParams.set('banExpiresAt', expiresAt);
+    createCommunityNotification({
+      type: 'community_member_banned',
+      recipientAccountKey: recipientAccountKey,
+      userId: String(target.id || recipientAccountKey),
+      actorId: actor.id,
+      actorName: moderatorName,
+      eventKey: ['community-ban', getCurrentCommunityId(), target.id || recipientAccountKey, ban && ban.id || Date.now()].join(':'),
+      title: 'Você foi banido de ' + communityName,
+      body: 'Motivo: ' + reason + '. Aplicado por: ' + moderatorName + '. ' + (expiresAt ? 'Término previsto: ' + formatDisciplineEnd(expiresAt) + '.' : 'Banimento permanente.'),
+      targetUrl: 'comunidade.html?' + targetParams.toString(),
+      actionLabel: 'Ver detalhes'
+    });
+  }
+
+  function notifyUnbannedMember(target) {
+    if (!target) return;
+    var recipientAccountKey = String(target.accountKey || target.email || target.memberId || '').trim();
+    if (!recipientAccountKey) return;
+    var record = ensureCurrentCommunityRecord() || {};
+    var actor = getCurrentUserProfile();
+    createCommunityNotification({
+      type: 'community_member_unbanned',
+      recipientAccountKey: recipientAccountKey,
+      userId: String(target.memberId || recipientAccountKey),
+      actorId: actor.id,
+      actorName: actor.name || 'Moderação',
+      eventKey: ['community-unban', getCurrentCommunityId(), target.id || recipientAccountKey, Date.now()].join(':'),
+      title: 'Seu banimento foi removido',
+      body: 'Você já pode solicitar entrada ou usar um convite válido para voltar à comunidade ' + String(record.title || record.name || 'Comunidade') + '.',
+      targetUrl: 'comunidade.html?community=' + encodeURIComponent(getCurrentCommunityId()),
+      actionLabel: 'Ver comunidade'
+    });
   }
 
   function getDisciplineDurationMs(value) {
-    var map = { '1h': 3600000, '24h': 86400000, '7d': 604800000 };
-    return map[value] || 3600000;
+    var map = { '15m': 900000, '1h': 3600000, '6h': 21600000, '24h': 86400000, '3d': 259200000, '7d': 604800000, '30d': 2592000000 };
+    if (map[value]) return map[value];
+    var numericHours = Number(value);
+    return Number.isFinite(numericHours) && numericHours > 0 ? Math.min(numericHours, 8760) * 3600000 : 3600000;
   }
 
-  function disciplineCommunityMember(memberId, action, reason, durationKey) {
-    var profile = getCurrentUserProfile();
-    var result = transactCurrentCommunity('MEMBER_DISCIPLINE_CHANGED', memberId, function (storedRecord) {
-      if (!canCommunityForRecord('moderateMembers', storedRecord)) return { ok: false, message: 'Sem permissão para moderar membros.' };
-      var members = getCommunityMembersForRecord(storedRecord);
-      var target = members.find(function (member) { return String(member.id) === String(memberId); });
-      if (!target || target.role === 'owner') return { ok: false, message: 'Esse membro não pode receber esta ação.' };
-      var now = new Date();
-      var until = new Date(now.getTime() + getDisciplineDurationMs(durationKey || '1h')).toISOString();
-      var nextMembers = members.map(function (member) {
-        if (String(member.id) !== String(memberId)) return member;
-        var patch = { disciplineReason: reason, disciplinedAt: now.toISOString(), disciplinedByAccountKey: profile.accountKey || profile.email || profile.id || '' };
-        if (action === 'mute') patch.mutedUntil = until;
-        if (action === 'restrict') patch.restrictedUntil = until;
-        if (action === 'clear') { patch.mutedUntil = ''; patch.restrictedUntil = ''; patch.disciplineReason = ''; }
-        return Object.assign({}, member, patch);
+  function getMemberChannelDiscipline(member, channelId) {
+    var map = member && member.channelDiscipline && typeof member.channelDiscipline === 'object' ? member.channelDiscipline : {};
+    var entry = map[String(channelId || '')];
+    if (!entry || !isFutureDisciplineDate(entry.until)) return null;
+    return Object.assign({}, entry, { channelId: String(channelId || '') });
+  }
+
+  function getEffectiveMemberDiscipline(member, channelId) {
+    if (!member) return null;
+    if (isFutureDisciplineDate(member.mutedUntil)) return { type: 'mute', until: member.mutedUntil, reason: member.disciplineReason || '', scope: 'community' };
+    if (isFutureDisciplineDate(member.restrictedUntil)) return { type: 'restrict', until: member.restrictedUntil, reason: member.disciplineReason || '', scope: 'community' };
+    var channelEntry = getMemberChannelDiscipline(member, channelId);
+    if (channelEntry) return { type: channelEntry.type || 'restrict', until: channelEntry.until, reason: channelEntry.reason || '', scope: 'channel', channelId: channelEntry.channelId };
+    return null;
+  }
+
+  function cleanupExpiredCommunityDiscipline(silent) {
+    var now = Date.now();
+    var result = transactCurrentCommunity('COMMUNITY_DISCIPLINE_EXPIRED_CLEANUP', getCurrentCommunityId(), function (storedRecord) {
+      var changed = false;
+      var members = (Array.isArray(storedRecord.members) ? storedRecord.members : []).map(function (raw) {
+        var member = normalizeCommunityMember(raw);
+        if (!member) return raw;
+        var next = Object.assign({}, raw);
+        if (next.mutedUntil && (Date.parse(next.mutedUntil) || 0) <= now) { next.mutedUntil = ''; changed = true; }
+        if (next.restrictedUntil && (Date.parse(next.restrictedUntil) || 0) <= now) { next.restrictedUntil = ''; changed = true; }
+        var channelMap = next.channelDiscipline && typeof next.channelDiscipline === 'object' ? Object.assign({}, next.channelDiscipline) : {};
+        Object.keys(channelMap).forEach(function (channelId) {
+          if (!channelMap[channelId] || (Date.parse(channelMap[channelId].until) || 0) <= now) { delete channelMap[channelId]; changed = true; }
+        });
+        next.channelDiscipline = channelMap;
+        if (!next.mutedUntil && !next.restrictedUntil && !Object.keys(channelMap).length) {
+          next.disciplineReason = '';
+        }
+        return next;
       });
-      return { record: Object.assign({}, storedRecord, { members: nextMembers, updatedAt: now.toISOString() }), payload: { memberId: memberId, action: action, reason: reason, until: action === 'clear' ? '' : until } };
+      var bans = (Array.isArray(storedRecord.bans) ? storedRecord.bans : []).filter(function (ban) {
+        var active = !ban.expiresAt || (Date.parse(ban.expiresAt) || 0) > now;
+        if (!active) changed = true;
+        return active;
+      });
+      if (!changed) return { ok: false, reason: 'unchanged', message: 'Nenhum estado expirado.' };
+      return { record: Object.assign({}, storedRecord, { members: members, bans: bans, updatedAt: new Date().toISOString() }) };
     });
-    if (result.ok) appendCommunityAuditEvent(action === 'clear' ? 'memberDisciplineCleared' : (action === 'mute' ? 'memberMuted' : 'memberRestricted'), { targetMemberId: memberId, reason: reason, until: result.payload && result.payload.until });
+    if (result.ok) {
+      currentCommunityRecordSnapshot = null;
+      if (!silent) appendCommunityAuditEvent('disciplineExpiredCleanup', {});
+    }
     return result;
   }
 
-  function banCommunityMember(member, reason) {
+  function disciplineCommunityMember(memberId, action, reason, durationKey, scope, channelId) {
+    var profile = getCurrentUserProfile();
+    var targetBefore = null;
+    scope = scope === 'channel' ? 'channel' : 'community';
+    channelId = scope === 'channel' ? String(channelId || currentChannelId || 'geral') : '';
+    var result = transactCurrentCommunity('MEMBER_DISCIPLINE_CHANGED', memberId, function (storedRecord) {
+      if (!canCommunityForRecord('moderateMembers', storedRecord)) return { ok: false, message: 'Sem permissão para moderar membros.' };
+      var rawMembers = (Array.isArray(storedRecord.members) ? storedRecord.members : []).map(normalizeCommunityMember).filter(Boolean);
+      var target = rawMembers.find(function (member) { return String(member.id) === String(memberId) || memberMatchesTarget(member, memberId); });
+      if (!target || target.role === 'owner') return { ok: false, message: 'Esse membro não pode receber esta ação.' };
+      targetBefore = target;
+      var now = new Date();
+      var until = action === 'clear' ? '' : new Date(now.getTime() + getDisciplineDurationMs(durationKey || '1h')).toISOString();
+      var nextMembers = rawMembers.map(function (member) {
+        if (!memberMatchesTarget(member, target.id)) return member;
+        var patch = {
+          disciplinedAt: now.toISOString(),
+          disciplinedByAccountKey: profile.accountKey || profile.email || profile.id || ''
+        };
+        if (scope === 'channel') {
+          var channelMap = Object.assign({}, member.channelDiscipline || {});
+          if (action === 'clear') delete channelMap[channelId];
+          else channelMap[channelId] = { type: action, until: until, reason: reason, disciplinedAt: now.toISOString(), disciplinedByAccountKey: patch.disciplinedByAccountKey };
+          patch.channelDiscipline = channelMap;
+        } else {
+          patch.disciplineReason = action === 'clear' ? '' : reason;
+          if (action === 'mute') { patch.mutedUntil = until; patch.restrictedUntil = ''; }
+          if (action === 'restrict') { patch.restrictedUntil = until; patch.mutedUntil = ''; }
+          if (action === 'clear') { patch.mutedUntil = ''; patch.restrictedUntil = ''; }
+        }
+        return Object.assign({}, member, patch);
+      });
+      return {
+        record: Object.assign({}, storedRecord, { members: nextMembers, updatedAt: now.toISOString() }),
+        payload: { memberId: target.id, action: action, reason: reason, until: until, scope: scope, channelId: channelId },
+        result: { memberId: target.id, action: action, reason: reason, until: until, scope: scope, channelId: channelId }
+      };
+    });
+    if (result.ok) {
+      var operationPayload = result.result || result.event && result.event.payload || {};
+      appendCommunityAuditEvent(action === 'clear' ? 'memberDisciplineCleared' : (action === 'mute' ? 'memberMuted' : 'memberRestricted'), {
+        targetMemberId: operationPayload.memberId || memberId,
+        targetMemberName: targetBefore && targetBefore.name || '',
+        reason: reason,
+        until: operationPayload.until || '',
+        scope: operationPayload.scope || scope,
+        channelId: operationPayload.channelId || channelId
+      });
+      notifyDisciplinedMember(targetBefore, action, reason, operationPayload.until || '');
+      currentCommunityRecordSnapshot = null;
+    }
+    return result;
+  }
+
+  function banCommunityMember(member, reason, durationKey) {
     var profile = getCurrentUserProfile();
     var target = normalizeCommunityMember(member);
     if (!target) return { ok: false, message: 'Membro não encontrado.' };
@@ -1661,12 +1999,42 @@
       var current = members.find(function (item) { return String(item.id) === String(target.id); });
       if (!current || current.role === 'owner') return { ok: false, message: 'Esse membro não pode ser banido.' };
       var identityKeys = getMemberIdentityKeys(current);
-      var ban = { id: 'ban-' + Date.now().toString(36), memberId: current.id, accountKey: current.accountKey || '', email: current.email || '', name: current.name, identityKeys: identityKeys, reason: reason, bannedAt: new Date().toISOString(), bannedByAccountKey: profile.accountKey || profile.email || profile.id || '', bannedByName: profile.name || 'Administrador' };
+      var durationValue = String(durationKey || 'permanent').toLowerCase();
+      var expiresAt = '';
+      if (durationValue !== 'permanent' && durationValue !== 'permanente') {
+        expiresAt = new Date(Date.now() + getDisciplineDurationMs(durationValue)).toISOString();
+      }
+      var ban = { id: 'ban-' + Date.now().toString(36), memberId: current.id, accountKey: current.accountKey || '', email: current.email || '', name: current.name, identityKeys: identityKeys, reason: reason, bannedAt: new Date().toISOString(), expiresAt: expiresAt, bannedByAccountKey: profile.accountKey || profile.email || profile.id || '', bannedByName: profile.name || 'Administrador' };
       var bans = (Array.isArray(storedRecord.bans) ? storedRecord.bans : []).filter(function (entry) { return !identitiesIntersect(entry.identityKeys || [], identityKeys); });
       bans.push(ban);
-      return { record: Object.assign({}, storedRecord, { members: members.filter(function (item) { return String(item.id) !== String(target.id); }), bans: bans, updatedAt: new Date().toISOString() }), payload: { memberId: target.id, reason: reason } };
+      var membershipHistory = (Array.isArray(storedRecord.membershipHistory) ? storedRecord.membershipHistory : []).slice();
+      membershipHistory.push({
+        id: 'membership-' + Date.now().toString(36),
+        action: 'banned',
+        memberId: current.id,
+        identityKeys: identityKeys,
+        reason: reason,
+        createdAt: new Date().toISOString(),
+        actorAccountKey: profile.accountKey || profile.email || profile.id || ''
+      });
+      return {
+        record: Object.assign({}, storedRecord, {
+          members: members.filter(function (item) { return String(item.id) !== String(target.id); }),
+          bans: bans,
+          membershipHistory: membershipHistory.slice(-500),
+          updatedAt: new Date().toISOString()
+        }),
+        payload: { memberId: target.id, reason: reason }
+      };
     });
-    if (result.ok) appendCommunityAuditEvent('memberBanned', { targetMemberId: target.id, targetMemberName: target.name, reason: reason });
+    if (result.ok) {
+      var appliedBan = (Array.isArray(result.record && result.record.bans) ? result.record.bans : []).find(function (entry) {
+        return identitiesIntersect(entry.identityKeys || [], getMemberIdentityKeys(target));
+      }) || null;
+      appendCommunityAuditEvent('memberBanned', { targetMemberId: target.id, targetMemberName: target.name, reason: reason, until: appliedBan && appliedBan.expiresAt || '' });
+      notifyBannedMember(target, appliedBan || { reason: reason, bannedByName: profile.name || 'Administrador' });
+      currentCommunityRecordSnapshot = null;
+    }
     return result;
   }
 
@@ -1749,13 +2117,28 @@
       if (canModerateMember) {
         var discipline = document.createElement('div');
         discipline.className = 'community-member-directory__discipline-actions';
-        [['mute', 'Silenciar 1h'], ['restrict', 'Restringir 24h']].forEach(function (entry) {
+        var disciplineOptions = document.createElement('div');
+        disciplineOptions.className = 'community-member-directory__discipline-options';
+        var durationSelect = document.createElement('select');
+        durationSelect.className = 'doke-select';
+        durationSelect.dataset.communityDisciplineDuration = member.id;
+        [['15m', '15 minutos'], ['1h', '1 hora'], ['6h', '6 horas'], ['24h', '24 horas'], ['3d', '3 dias'], ['7d', '7 dias'], ['30d', '30 dias'], ['custom', 'Personalizado']].forEach(function (optionData) {
+          var option = document.createElement('option'); option.value = optionData[0]; option.textContent = optionData[1]; durationSelect.appendChild(option);
+        });
+        var scopeSelect = document.createElement('select');
+        scopeSelect.className = 'doke-select';
+        scopeSelect.dataset.communityDisciplineScope = member.id;
+        [['community', 'Toda a comunidade'], ['channel', 'Canal atual']].forEach(function (optionData) {
+          var option = document.createElement('option'); option.value = optionData[0]; option.textContent = optionData[1]; scopeSelect.appendChild(option);
+        });
+        disciplineOptions.append(durationSelect, scopeSelect);
+        discipline.appendChild(disciplineOptions);
+        [['mute', 'Silenciar'], ['restrict', 'Restringir']].forEach(function (entry) {
           var actionButton = document.createElement('button');
           actionButton.type = 'button';
           actionButton.className = 'doke-btn doke-btn--ghost doke-btn--sm';
           actionButton.dataset.communityMemberDiscipline = entry[0];
           actionButton.dataset.communityMemberId = member.id;
-          actionButton.dataset.duration = entry[0] === 'mute' ? '1h' : '24h';
           actionButton.textContent = entry[1];
           discipline.appendChild(actionButton);
         });
@@ -2183,16 +2566,54 @@
     return code;
   }
 
-  function createInviteRecord(previousInvite) {
+  function createInviteRecord(previousInvite, options) {
+    options = options || {};
     var createdAt = new Date();
-    var expiresAt = new Date(createdAt.getTime() + (30 * 24 * 60 * 60 * 1000));
+    var days = Math.max(0, Number(options.days == null ? 30 : options.days) || 0);
+    var expiresAt = days ? new Date(createdAt.getTime() + (days * 24 * 60 * 60 * 1000)).toISOString() : '';
     return {
+      id: String(options.id || 'invite-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7)),
       code: generateInviteCode(),
       active: true,
       createdAt: createdAt.toISOString(),
-      expiresAt: expiresAt.toISOString(),
-      generation: Number(previousInvite && previousInvite.generation || 0) + 1
+      expiresAt: expiresAt,
+      generation: Number(previousInvite && previousInvite.generation || 0) + 1,
+      maxUses: Math.max(0, Number(options.maxUses || 0) || 0),
+      uses: Math.max(0, Number(options.uses || 0) || 0),
+      requireApproval: Boolean(options.requireApproval),
+      autoRoleId: String(options.autoRoleId || ''),
+      createdByAccountKey: String(getCurrentUserProfile().accountKey || getCurrentUserProfile().id || '')
     };
+  }
+
+  function normalizeInviteRecord(invite) {
+    if (!invite || !normalizeInviteCode(invite.code)) return null;
+    return Object.assign({}, invite, {
+      id: String(invite.id || 'invite-' + normalizeInviteCode(invite.code).toLowerCase()),
+      code: normalizeInviteCode(invite.code),
+      active: invite.active !== false,
+      createdAt: String(invite.createdAt || new Date().toISOString()),
+      expiresAt: String(invite.expiresAt || ''),
+      maxUses: Math.max(0, Number(invite.maxUses || 0) || 0),
+      uses: Math.max(0, Number(invite.uses || 0) || 0),
+      requireApproval: Boolean(invite.requireApproval),
+      autoRoleId: String(invite.autoRoleId || '')
+    });
+  }
+
+  function getCommunityInvites(record) {
+    record = record || ensureCurrentCommunityRecord() || {};
+    var invites = (Array.isArray(record.invites) ? record.invites : []).map(normalizeInviteRecord).filter(Boolean);
+    var legacy = normalizeInviteRecord(record.invite);
+    if (legacy && !invites.some(function (item) { return item.code === legacy.code; })) invites.unshift(legacy);
+    return invites;
+  }
+
+  function isInviteUsable(invite) {
+    if (!invite || invite.active === false) return false;
+    if (invite.expiresAt && (Date.parse(invite.expiresAt) || 0) <= Date.now()) return false;
+    if (invite.maxUses > 0 && invite.uses >= invite.maxUses) return false;
+    return true;
   }
 
   function getCommunityInvite() {
@@ -2224,13 +2645,22 @@
   }
 
   function renderInviteCode() {
-    var invite = getCommunityInvite();
-    if (inviteCodeLabel) inviteCodeLabel.textContent = invite.code;
+    var record = ensureCurrentCommunityRecord() || {};
+    var invites = getCommunityInvites(record);
+    var primary = invites.find(isInviteUsable) || getCommunityInvite();
+    if (inviteCodeLabel) inviteCodeLabel.textContent = primary.code;
     if (inviteMeta) {
-      var expiresAt = invite.expiresAt ? new Date(invite.expiresAt) : null;
-      inviteMeta.textContent = expiresAt && !Number.isNaN(expiresAt.getTime())
-        ? 'Válido até ' + expiresAt.toLocaleDateString('pt-BR') + '. Gerar um novo código invalida o anterior.'
-        : 'Gerar um novo código invalida o anterior.';
+      var expiresAt = primary.expiresAt ? new Date(primary.expiresAt) : null;
+      var usage = primary.maxUses > 0 ? primary.uses + '/' + primary.maxUses + ' usos' : primary.uses + ' usos';
+      inviteMeta.textContent = (expiresAt && !Number.isNaN(expiresAt.getTime()) ? 'Válido até ' + expiresAt.toLocaleDateString('pt-BR') + ' • ' : 'Sem expiração • ') + usage;
+    }
+    if (inviteList) {
+      inviteList.innerHTML = invites.length ? invites.map(function (invite) {
+        var expired = invite.expiresAt && (Date.parse(invite.expiresAt) || 0) <= Date.now();
+        var exhausted = invite.maxUses > 0 && invite.uses >= invite.maxUses;
+        var status = invite.active === false ? 'Revogado' : expired ? 'Expirado' : exhausted ? 'Esgotado' : 'Ativo';
+        return '<article class="community-room-invite-item" data-community-invite-id="' + invite.id + '"><div><strong>' + invite.code + '</strong><span>' + status + ' • ' + invite.uses + (invite.maxUses > 0 ? '/' + invite.maxUses : '') + ' usos' + (invite.requireApproval ? ' • aprovação' : '') + '</span></div><div class="community-room-invite-item__actions"><button class="doke-btn doke-btn--ghost" type="button" data-community-invite-copy-code="' + invite.code + '">Copiar</button><button class="doke-btn doke-btn--ghost" type="button" data-community-invite-revoke="' + invite.id + '"' + (invite.active === false ? ' disabled' : '') + '>Revogar</button></div></article>';
+      }).join('') : '<p class="community-room-panel-empty">Nenhum convite criado.</p>';
     }
   }
 
@@ -2283,16 +2713,100 @@
     });
   }
 
+  function updateCommunityProfilePreview() {
+    if (!profilePreview) return;
+    var title = String(manageName && manageName.value || 'Comunidade').trim() || 'Comunidade';
+    var description = String(manageDescription && manageDescription.value || 'Descrição da comunidade').trim() || 'Descrição da comunidade';
+    var visibility = String(manageType && manageType.value || 'public');
+    var labels = { public: 'Pública', private: 'Privada', invite: 'Somente convite', hidden: 'Oculta' };
+    var iconUrl = String(manageIcon && manageIcon.value || '').trim();
+    if (profilePreviewName) profilePreviewName.textContent = title;
+    if (profilePreviewDescription) profilePreviewDescription.textContent = description;
+    if (profilePreviewMeta) profilePreviewMeta.textContent = labels[visibility] || 'Pública';
+    if (profilePreviewIcon) {
+      profilePreviewIcon.textContent = iconUrl ? '' : title.charAt(0).toUpperCase();
+      profilePreviewIcon.style.backgroundImage = iconUrl ? 'url("' + iconUrl.replace(/"/g, '') + '")' : '';
+    }
+  }
+
+  function normalizeOnboardingList(value, limit) {
+    return String(value || '').split(/\r?\n/).map(function (item) { return item.replace(/\s+/g, ' ').trim(); }).filter(Boolean).slice(0, limit || 8);
+  }
+
+  function getRulesVersion(record) {
+    return Math.max(1, Number(record && record.rulesVersion || 1));
+  }
+
+  function getCurrentMemberOnboardingState(record) {
+    record = record || getCurrentCommunityRecord() || {};
+    var member = getCurrentMemberForRecord(record);
+    if (!member || String(member.role || '') === 'owner') return { required: false, member: member, version: getRulesVersion(record) };
+    var profile = getCurrentUserProfile();
+    var audience = String(record.onboardingAudience || 'all');
+    var profileType = String(profile.type || profile.accountType || profile.role || '').toLowerCase();
+    if (audience !== 'all' && profileType && audience !== profileType) return { required: false, member: member, version: getRulesVersion(record) };
+    var version = getRulesVersion(record);
+    var acceptedVersion = Number(member.rulesAcceptedVersion || 0);
+    return {
+      required: Boolean(record.requireRulesAcceptance) && acceptedVersion < version,
+      member: member,
+      version: version,
+      acceptedVersion: acceptedVersion
+    };
+  }
+
+  function isOnboardingBlockingComposer() {
+    return getCurrentMemberOnboardingState().required;
+  }
+
+  function populateOnboardingChannelOptions(record) {
+    if (!manageDefaultChannel) return;
+    var selected = String(record && record.defaultChannelId || '');
+    manageDefaultChannel.innerHTML = '<option value="">Primeiro canal disponível</option>';
+    getCommunityChannelsForRecord(record || {}).forEach(function (channel) {
+      var option = document.createElement('option');
+      option.value = channel.id;
+      option.textContent = '# ' + channel.name;
+      manageDefaultChannel.appendChild(option);
+    });
+    manageDefaultChannel.value = selected;
+  }
+
+  function populateInviteRoleOptions(record) {
+    if (!inviteRole) return;
+    var selected = inviteRole.value;
+    inviteRole.innerHTML = '<option value="">Membro padrão</option>';
+    getCommunityRolesForRecord(record || {}).filter(function (role) { return !role.system && role.id !== 'owner'; }).forEach(function (role) {
+      var option = document.createElement('option');
+      option.value = role.id;
+      option.textContent = role.name;
+      inviteRole.appendChild(option);
+    });
+    inviteRole.value = selected;
+  }
+
   function syncManageForm() {
     var record = ensureCurrentCommunityRecord() || {};
     if (manageName) manageName.value = record.title || root.dataset.communityTitle || currentChannelName || '';
     if (manageDescription) manageDescription.value = record.description || record.copy || '';
     if (manageRules) manageRules.value = normalizeCommunityRules(record.rules).join('\n');
-    if (manageType) manageType.value = record.type || record.visibility || 'public';
+    if (manageTags) manageTags.value = (Array.isArray(record.tags) ? record.tags : []).join(', ');
+    if (manageLinks) manageLinks.value = (Array.isArray(record.links) ? record.links : []).join('\n');
+    if (manageQuestions) manageQuestions.value = (Array.isArray(record.joinQuestions) ? record.joinQuestions : []).join('\n');
+    if (manageEntryMode) manageEntryMode.value = record.entryMode === 'approval' ? 'approval' : 'auto';
+    if (manageRequireRules) manageRequireRules.checked = Boolean(record.requireRulesAcceptance);
+    if (manageWelcomeMessage) manageWelcomeMessage.value = String(record.welcomeMessage || '');
+    if (manageChecklist) manageChecklist.value = (Array.isArray(record.onboardingChecklist) ? record.onboardingChecklist : []).join('\n');
+    if (manageOnboardingAudience) manageOnboardingAudience.value = String(record.onboardingAudience || 'all');
+    populateOnboardingChannelOptions(record);
+    populateInviteRoleOptions(record);
+    if (manageIcon) manageIcon.value = String(record.iconUrl || '');
+    if (manageType) manageType.value = record.visibility || record.type || 'public';
     if (manageColor) manageColor.value = record.color || '#168f7d';
     manageCoverState = Object.assign({ name: '', type: '', dataUrl: '' }, record.cover || {});
     updateCoverPreview(manageCoverState);
     applyCommunityTheme(record.color || '#168f7d');
+    updateCommunityProfilePreview();
   }
 
   function applySavedCommunityRecord(record) {
@@ -2486,10 +3000,14 @@
 
   function syncChannelComposerAccess() {
     var channel = getCurrentChannelRecord();
-    var allowed = canSendToChannel(channel);
+    var disciplineState = getCurrentMemberDisciplineState();
+    var onboardingBlocked = isOnboardingBlockingComposer();
+    var allowed = canSendToChannel(channel) && !disciplineState && !onboardingBlocked;
     if (composerInput) {
       composerInput.disabled = !allowed;
-      composerInput.placeholder = allowed ? 'Digite sua mensagem...' : 'Este canal é somente leitura';
+      composerInput.placeholder = onboardingBlocked ? 'Aceite as regras para enviar mensagens' : (disciplineState
+        ? (disciplineState.type === 'mute' ? 'Você está silenciado temporariamente' : 'Seu envio está temporariamente restrito')
+        : (allowed ? 'Digite sua mensagem...' : 'Este canal é somente leitura'));
     }
     [attachButton, audioButton].forEach(function (button) { if (button) button.disabled = !allowed; });
     if (sendButton) sendButton.disabled = !allowed || (composerInput && !composerInput.value.trim() && !selectedAttachment && !hasActiveAudioDraft());
@@ -3027,6 +3545,10 @@
       type: type,
       text: String(payload && payload.text || '').trim(),
       mentions: Array.isArray(payload && payload.mentions) ? payload.mentions.map(function (mention) { return Object.assign({}, mention); }) : [],
+      replyTo: payload && payload.replyTo ? Object.assign({}, payload.replyTo) : null,
+      forwardedFrom: payload && payload.forwardedFrom ? Object.assign({}, payload.forwardedFrom) : null,
+      reactions: payload && payload.reactions && typeof payload.reactions === 'object' ? Object.assign({}, payload.reactions) : {},
+      threadReplies: Array.isArray(payload && payload.threadReplies) ? payload.threadReplies.map(function (reply) { return Object.assign({}, reply); }) : [],
       attachmentName: String(payload && payload.attachmentName || '').trim(),
       attachmentDisplayName: String(payload && payload.attachmentDisplayName || '').trim(),
       attachmentType: String(payload && payload.attachmentType || '').trim(),
@@ -3085,29 +3607,60 @@
   }
 
   function formatAuditEvent(event) {
-    var labels = { messageEdited: 'editou uma mensagem', messageDeleted: 'removeu uma mensagem', messageRestored: 'restaurou uma mensagem', messagePinned: 'fixou uma mensagem', messageUnpinned: 'desafixou uma mensagem', memberMuted: 'silenciou um membro', memberRestricted: 'restringiu um membro', memberDisciplineCleared: 'removeu uma restrição', memberBanned: 'baniu um membro', memberKicked: 'expulsou um membro' };
+    var labels = { messageEdited: 'editou uma mensagem', messageDeleted: 'removeu uma mensagem', messageRestored: 'restaurou uma mensagem', messagePinned: 'fixou uma mensagem', messageUnpinned: 'desafixou uma mensagem', memberMuted: 'silenciou um membro', memberRestricted: 'restringiu um membro', memberDisciplineCleared: 'removeu uma restrição', memberBanned: 'baniu um membro', memberUnbanned: 'desbaniu um membro', memberKicked: 'expulsou um membro', 'message-security-violation': 'violou uma regra de segurança', disciplineExpiredCleanup: 'limpou punições expiradas' };
     return labels[event.type] || 'realizou uma ação administrativa';
+  }
+
+  function getAuditEventCategory(event) {
+    if (!event) return 'other';
+    if (/^message/i.test(event.type || '')) return event.type === 'message-security-violation' ? 'security' : 'messages';
+    if (/memberMuted|memberRestricted|memberDisciplineCleared|disciplineExpiredCleanup/i.test(event.type || '')) return 'discipline';
+    if (/memberBanned|memberUnbanned|memberKicked/i.test(event.type || '')) return 'members';
+    if (/security|antispam|violation/i.test(event.type || '')) return 'security';
+    return 'other';
+  }
+
+  function getFilteredCommunityAuditEvents() {
+    var events = getCommunityAuditEvents();
+    var type = auditTypeFilter ? auditTypeFilter.value : 'all';
+    var term = normalize(auditSearchFilter && auditSearchFilter.value || '');
+    var days = Number(auditPeriodFilter && auditPeriodFilter.value || 0);
+    var cutoff = days > 0 ? Date.now() - days * 86400000 : 0;
+    return events.filter(function (event) {
+      if (type !== 'all' && getAuditEventCategory(event) !== type) return false;
+      if (cutoff && (Date.parse(event.createdAt) || 0) < cutoff) return false;
+      if (term) {
+        var haystack = normalize([event.actorName, event.targetMemberName, event.reason, event.type, event.channelId].join(' '));
+        if (haystack.indexOf(term) === -1) return false;
+      }
+      return true;
+    });
   }
 
   function renderCommunityAuditLog() {
     if (!auditList) return;
     auditList.innerHTML = '';
-    var events = getCommunityAuditEvents();
+    var events = getFilteredCommunityAuditEvents();
     if (!events.length) {
       var empty = document.createElement('p');
       empty.className = 'community-room-panel-empty';
-      empty.textContent = 'Nenhuma ação de moderação registrada.';
+      empty.textContent = 'Nenhuma ação encontrada para os filtros atuais.';
       auditList.appendChild(empty);
       return;
     }
     events.forEach(function (event) {
       var item = document.createElement('article');
       item.className = 'community-audit-item';
+      item.dataset.auditCategory = getAuditEventCategory(event);
       var copy = document.createElement('div');
       var title = document.createElement('strong');
       title.textContent = (event.actorName || 'Membro') + ' ' + formatAuditEvent(event);
       var meta = document.createElement('span');
-      meta.textContent = new Date(event.createdAt).toLocaleString('pt-BR') + (event.reason ? ' • Motivo: ' + event.reason : '');
+      var details = [formatDisciplineEnd(event.createdAt)];
+      if (event.targetMemberName) details.push(event.targetMemberName);
+      if (event.scope === 'channel' && event.channelId) details.push('Canal: #' + event.channelId);
+      if (event.reason) details.push('Motivo: ' + event.reason);
+      meta.textContent = details.join(' • ');
       copy.append(title, meta);
       item.appendChild(copy);
       if (event.type === 'messageDeleted' && event.messageId) {
@@ -3119,6 +3672,100 @@
         item.appendChild(restore);
       }
       auditList.appendChild(item);
+    });
+  }
+
+  function createSecurityEmpty(title, description) {
+    var empty = document.createElement('div');
+    empty.className = 'community-security-empty';
+    var strong = document.createElement('strong'); strong.textContent = title;
+    var text = document.createElement('p'); text.textContent = description;
+    empty.append(strong, text);
+    return empty;
+  }
+
+  function unbanCommunityMember(banId) {
+    var removed = null;
+    var result = transactCurrentCommunity('MEMBER_UNBANNED', banId, function (storedRecord) {
+      if (!canCommunityForRecord('moderateMembers', storedRecord)) return { ok: false, message: 'Sem permissão para desbanir membros.' };
+      var bans = (Array.isArray(storedRecord.bans) ? storedRecord.bans : []).filter(function (ban) {
+        if (String(ban.id) === String(banId)) { removed = ban; return false; }
+        return true;
+      });
+      if (!removed) return { ok: false, message: 'Banimento não encontrado.' };
+      var removedKeys = Array.isArray(removed.identityKeys) ? removed.identityKeys : [];
+      var membershipHistory = (Array.isArray(storedRecord.membershipHistory) ? storedRecord.membershipHistory : []).filter(function (entry) {
+        return !(entry && entry.action === 'banned' && identitiesIntersect(entry.identityKeys || [], removedKeys));
+      });
+      membershipHistory.push({ id: 'membership-' + Date.now().toString(36), action: 'unbanned', memberId: removed.memberId || '', identityKeys: removedKeys, createdAt: new Date().toISOString(), actorAccountKey: getCurrentUserProfile().accountKey || '' });
+      return { record: Object.assign({}, storedRecord, { bans: bans, membershipHistory: membershipHistory.slice(-500), updatedAt: new Date().toISOString() }), payload: { banId: banId } };
+    });
+    if (result.ok) {
+      appendCommunityAuditEvent('memberUnbanned', { targetMemberName: removed && removed.name || '', reason: removed && removed.reason || '' });
+      notifyUnbannedMember(removed);
+      currentCommunityRecordSnapshot = null;
+    }
+    return result;
+  }
+
+  function renderCommunitySecurityPanel() {
+    if (!securitySummary || !securityDisciplineList || !securityBanList || !securityViolationList) return;
+    cleanupExpiredCommunityDiscipline(true);
+    var record = ensureCurrentCommunityRecord() || {};
+    var now = Date.now();
+    var activeDiscipline = [];
+    getCommunityMembersForRecord(record).forEach(function (member) {
+      if (isFutureDisciplineDate(member.mutedUntil)) activeDiscipline.push({ member: member, type: 'mute', until: member.mutedUntil, reason: member.disciplineReason || '', scope: 'community' });
+      if (isFutureDisciplineDate(member.restrictedUntil)) activeDiscipline.push({ member: member, type: 'restrict', until: member.restrictedUntil, reason: member.disciplineReason || '', scope: 'community' });
+      Object.keys(member.channelDiscipline || {}).forEach(function (channelId) {
+        var entry = member.channelDiscipline[channelId];
+        if (entry && isFutureDisciplineDate(entry.until)) activeDiscipline.push({ member: member, type: entry.type || 'restrict', until: entry.until, reason: entry.reason || '', scope: 'channel', channelId: channelId });
+      });
+    });
+    var bans = (Array.isArray(record.bans) ? record.bans : []).filter(function (ban) { return !ban.expiresAt || (Date.parse(ban.expiresAt) || 0) > now; });
+    var violations = getCommunityAuditEvents().filter(function (event) { return getAuditEventCategory(event) === 'security'; }).slice(0, 12);
+
+    securitySummary.innerHTML = '';
+    [['Punições ativas', activeDiscipline.length], ['Banidos', bans.length], ['Violações recentes', violations.length]].forEach(function (entry) {
+      var card = document.createElement('article'); card.className = 'community-security-stat';
+      var value = document.createElement('strong'); value.textContent = String(entry[1]);
+      var label = document.createElement('span'); label.textContent = entry[0];
+      card.append(value, label); securitySummary.appendChild(card);
+    });
+
+    securityDisciplineList.innerHTML = '';
+    if (!activeDiscipline.length) securityDisciplineList.appendChild(createSecurityEmpty('Nenhuma punição ativa', 'Silenciamentos e restrições aparecerão aqui.'));
+    activeDiscipline.forEach(function (entry) {
+      var item = document.createElement('article'); item.className = 'community-security-item';
+      var copy = document.createElement('div');
+      var title = document.createElement('strong'); title.textContent = entry.member.name + ' • ' + (entry.type === 'mute' ? 'Silenciado' : 'Restrito');
+      var meta = document.createElement('span'); meta.textContent = (entry.scope === 'channel' ? 'Canal #' + entry.channelId + ' • ' : 'Toda a comunidade • ') + formatDisciplineRemaining(entry.until) + (entry.reason ? ' • ' + entry.reason : '');
+      copy.append(title, meta);
+      var clear = document.createElement('button'); clear.type = 'button'; clear.className = 'doke-btn doke-btn--secondary doke-btn--sm'; clear.textContent = 'Remover';
+      clear.dataset.communitySecurityClear = entry.member.id; clear.dataset.scope = entry.scope; clear.dataset.channelId = entry.channelId || '';
+      item.append(copy, clear); securityDisciplineList.appendChild(item);
+    });
+
+    securityBanList.innerHTML = '';
+    if (!bans.length) securityBanList.appendChild(createSecurityEmpty('Nenhuma conta banida', 'Banimentos ativos aparecerão aqui.'));
+    bans.forEach(function (ban) {
+      var item = document.createElement('article'); item.className = 'community-security-item';
+      var copy = document.createElement('div');
+      var title = document.createElement('strong'); title.textContent = ban.name || ban.email || 'Conta banida';
+      var meta = document.createElement('span'); meta.textContent = 'Banido em ' + formatDisciplineEnd(ban.bannedAt) + (ban.expiresAt ? ' • até ' + formatDisciplineEnd(ban.expiresAt) : ' • permanente') + (ban.reason ? ' • ' + ban.reason : '');
+      copy.append(title, meta);
+      var unban = document.createElement('button'); unban.type = 'button'; unban.className = 'doke-btn doke-btn--secondary doke-btn--sm'; unban.textContent = 'Desbanir'; unban.dataset.communityUnban = ban.id;
+      item.append(copy, unban); securityBanList.appendChild(item);
+    });
+
+    securityViolationList.innerHTML = '';
+    if (!violations.length) securityViolationList.appendChild(createSecurityEmpty('Nenhuma violação recente', 'O antispam não registrou ocorrências.'));
+    violations.forEach(function (event) {
+      var item = document.createElement('article'); item.className = 'community-security-item';
+      var copy = document.createElement('div');
+      var title = document.createElement('strong'); title.textContent = event.actorName || 'Membro';
+      var meta = document.createElement('span'); meta.textContent = (event.reason || 'Violação de segurança') + ' • ' + formatDisciplineEnd(event.createdAt);
+      copy.append(title, meta); item.appendChild(copy); securityViolationList.appendChild(item);
     });
   }
 
@@ -3240,6 +3887,11 @@
   function applyCommunityMessageAction(messageId, actionName) {
     if (actionName === 'delete') return deleteCommunityMessage(messageId);
     if (actionName === 'edit') return editCommunityMessage(messageId);
+    if (actionName === 'reply') { setPendingReply(getCommunityMessageRecord(messageId)); return true; }
+    if (actionName === 'thread') return addThreadReply(messageId);
+    if (actionName === 'forward') return forwardCommunityMessage(messageId);
+    if (actionName === 'history') { showMessageEditHistory(messageId); return true; }
+    if (String(actionName || '').indexOf('react:') === 0) return toggleMessageReaction(messageId, String(actionName).slice(6));
     if (actionName === 'pin' && !canCommunity('pinMessages')) return null;
     if (!messageId || !actionName) return null;
     var updated = updateCommunityMessageRecord(messageId, function (message) {
@@ -3267,9 +3919,61 @@
       var article = messageList && messageList.querySelector('[data-community-message-id="' + CSS.escape(messageId) + '"]');
       if (article) syncMessageActionState(article, updated);
       renderPinnedPanel();
+      renderCommunityPinnedBanner();
       updateRoomStats();
     }
     return updated;
+  }
+
+  function ensureCommunityPinnedBanner() {
+    if (pinnedBanner || !messageList || !messageList.parentElement) return pinnedBanner;
+    pinnedBanner = document.createElement('div');
+    pinnedBanner.className = 'community-pinned-banner';
+    pinnedBanner.dataset.communityPinnedBanner = 'true';
+    pinnedBanner.hidden = true;
+    pinnedBanner.innerHTML = '<button class="community-pinned-banner__main" type="button" data-community-pinned-jump><span class="community-pinned-banner__icon" aria-hidden="true">⌖</span><span class="community-pinned-banner__content"><strong data-community-pinned-author>Mensagem fixada</strong><span data-community-pinned-preview></span></span></button><span class="community-pinned-banner__position" data-community-pinned-position></span><span class="community-pinned-banner__nav"><button type="button" class="doke-icon-btn doke-icon-btn--flat" data-community-pinned-prev aria-label="Mensagem fixada anterior">‹</button><button type="button" class="doke-icon-btn doke-icon-btn--flat" data-community-pinned-next aria-label="Próxima mensagem fixada">›</button></span>';
+    messageList.parentElement.insertBefore(pinnedBanner, messageList);
+    pinnedBanner.querySelector('[data-community-pinned-jump]').addEventListener('click', function () {
+      var id = pinnedBanner.dataset.communityMessageId;
+      if (!id || !messageList) return;
+      var article = messageList.querySelector('[data-community-message-id="' + CSS.escape(id) + '"]');
+      if (!article) return;
+      article.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      article.classList.remove('is-pin-highlighted');
+      requestAnimationFrame(function () { article.classList.add('is-pin-highlighted'); });
+      window.setTimeout(function () { article.classList.remove('is-pin-highlighted'); }, 2600);
+    });
+    pinnedBanner.querySelector('[data-community-pinned-prev]').addEventListener('click', function () { moveCommunityPinnedBanner(-1); });
+    pinnedBanner.querySelector('[data-community-pinned-next]').addEventListener('click', function () { moveCommunityPinnedBanner(1); });
+    return pinnedBanner;
+  }
+
+  function renderCommunityPinnedBanner() {
+    var banner = ensureCommunityPinnedBanner();
+    if (!banner) return;
+    var pinned = getPinnedMessagesForCurrentChannel();
+    banner.hidden = pinned.length === 0;
+    if (!pinned.length) return;
+    activeCommunityPinnedIndex = Math.min(activeCommunityPinnedIndex, pinned.length - 1);
+    var record = pinned[activeCommunityPinnedIndex];
+    banner.dataset.communityMessageId = record.id || '';
+    var author = banner.querySelector('[data-community-pinned-author]');
+    var preview = banner.querySelector('[data-community-pinned-preview]');
+    var position = banner.querySelector('[data-community-pinned-position]');
+    var prev = banner.querySelector('[data-community-pinned-prev]');
+    var next = banner.querySelector('[data-community-pinned-next]');
+    if (author) author.textContent = (record.author || 'Você') + ':';
+    if (preview) preview.textContent = getMessagePreview(record);
+    if (position) position.textContent = (activeCommunityPinnedIndex + 1) + '/' + pinned.length;
+    if (prev) prev.disabled = pinned.length < 2;
+    if (next) next.disabled = pinned.length < 2;
+  }
+
+  function moveCommunityPinnedBanner(direction) {
+    var pinned = getPinnedMessagesForCurrentChannel();
+    if (!pinned.length) return;
+    activeCommunityPinnedIndex = (activeCommunityPinnedIndex + direction + pinned.length) % pinned.length;
+    renderCommunityPinnedBanner();
   }
 
   function getPinnedMessagesForCurrentChannel() {
@@ -3307,6 +4011,7 @@
   }
 
   function renderPinnedPanel() {
+    renderCommunityPinnedBanner();
     if (!pinnedList) return;
     pinnedList.innerHTML = '';
     var pinned = getPinnedMessagesForCurrentChannel();
@@ -3337,6 +4042,7 @@
     if (!messageList) return;
     clearRenderedLocalMessages();
     var records = getStoredChannelMessages(channelId || currentChannelId);
+    renderCommunityPinnedBanner();
     records.forEach(function (record, index) {
       var element = createMessageFromRecord(record, records, index);
       if (element) {
@@ -3351,6 +4057,7 @@
     renderPinnedPanel();
     updateRoomStats();
     focusRequestedMessage();
+    applyMessageSearchFilters();
   }
 
   function formatMessageTime(createdAt) {
@@ -3522,6 +4229,14 @@
     menu.appendChild(useful);
     if (canCommunity('pinMessages')) menu.appendChild(pin);
 
+    var replyAction = document.createElement('button');
+    replyAction.className='doke-btn doke-btn--ghost'; replyAction.type='button'; replyAction.dataset.communityContextAction='reply'; replyAction.dataset.communityMessageId=messageId; replyAction.setAttribute('role','menuitem'); replyAction.textContent='Responder';
+    menu.appendChild(replyAction);
+    ['👍','❤️','😂'].forEach(function(emoji){var reaction=document.createElement('button');reaction.className='doke-btn doke-btn--ghost';reaction.type='button';reaction.dataset.communityContextAction='react:'+emoji;reaction.dataset.communityMessageId=messageId;reaction.setAttribute('role','menuitem');reaction.textContent='Reagir '+emoji;menu.appendChild(reaction);});
+    var threadAction=document.createElement('button');threadAction.className='doke-btn doke-btn--ghost';threadAction.type='button';threadAction.dataset.communityContextAction='thread';threadAction.dataset.communityMessageId=messageId;threadAction.setAttribute('role','menuitem');threadAction.textContent='Responder em thread';menu.appendChild(threadAction);
+    var forwardAction=document.createElement('button');forwardAction.className='doke-btn doke-btn--ghost';forwardAction.type='button';forwardAction.dataset.communityContextAction='forward';forwardAction.dataset.communityMessageId=messageId;forwardAction.setAttribute('role','menuitem');forwardAction.textContent='Encaminhar';menu.appendChild(forwardAction);
+    if (Array.isArray(record.editHistory) && record.editHistory.length) { var historyAction=document.createElement('button');historyAction.className='doke-btn doke-btn--ghost';historyAction.type='button';historyAction.dataset.communityContextAction='history';historyAction.dataset.communityMessageId=messageId;historyAction.setAttribute('role','menuitem');historyAction.textContent='Ver histórico de edição';menu.appendChild(historyAction); }
+
     var profile = getCurrentUserProfile();
     var isOwnMessage = isMessageOwnedByCurrentUser(record);
     if (isOwnMessage && !record.deletedAt) {
@@ -3608,6 +4323,139 @@
     return card;
   }
 
+  function getMessageCompactPreview(record) {
+    if (!record) return 'Mensagem';
+    if (record.type === 'audio') return 'Áudio';
+    if (record.attachmentName && !record.text) return getAttachmentDisplayName(record);
+    return String(record.text || getAttachmentDisplayName(record) || 'Mensagem').replace(/\s+/g, ' ').trim().slice(0, 120);
+  }
+
+  function renderMessageRelations(bubble, options) {
+    if (!bubble || !options) return;
+    if (options.forwardedFrom) {
+      var forwarded = document.createElement('div');
+      forwarded.className = 'community-message-forwarded';
+      forwarded.textContent = 'Encaminhada de ' + String(options.forwardedFrom.author || 'membro');
+      bubble.appendChild(forwarded);
+    }
+    if (options.replyTo) {
+      var reply = document.createElement('button');
+      reply.type = 'button';
+      reply.className = 'community-message-reply-quote';
+      reply.dataset.communityReplyTarget = options.replyTo.id || '';
+      var strong = document.createElement('strong'); strong.textContent = options.replyTo.author || 'Mensagem';
+      var span = document.createElement('span'); span.textContent = options.replyTo.preview || 'Mensagem original';
+      reply.append(strong, span);
+      bubble.appendChild(reply);
+    }
+  }
+
+  function renderMessageReactions(bubble, record) {
+    if (!bubble || !record) return;
+    var reactions = record.reactions && typeof record.reactions === 'object' ? record.reactions : {};
+    var entries = Object.keys(reactions).filter(function (emoji) { return Array.isArray(reactions[emoji]) && reactions[emoji].length; });
+    var threadCount = Array.isArray(record.threadReplies) ? record.threadReplies.length : 0;
+    if (!entries.length && !threadCount) return;
+    var footer = document.createElement('div'); footer.className = 'community-message-extras';
+    entries.forEach(function (emoji) {
+      var button = document.createElement('button'); button.type='button'; button.className='community-message-reaction';
+      button.dataset.communityReactionEmoji=emoji; button.dataset.communityMessageId=record.id;
+      button.textContent=emoji + ' ' + reactions[emoji].length;
+      footer.appendChild(button);
+    });
+    if (threadCount) {
+      var thread = document.createElement('button'); thread.type='button'; thread.className='community-message-thread-link';
+      thread.dataset.communityThreadView=record.id;
+      thread.textContent=threadCount + (threadCount === 1 ? ' resposta na thread' : ' respostas na thread');
+      footer.appendChild(thread);
+    }
+    bubble.appendChild(footer);
+  }
+
+  function setPendingReply(record) {
+    pendingReply = record ? { id: record.id, author: record.author || 'Membro', preview: getMessageCompactPreview(record) } : null;
+    if (!replyPreview) return;
+    replyPreview.hidden = !pendingReply;
+    if (replyAuthor) replyAuthor.textContent = pendingReply ? pendingReply.author : '';
+    if (replyText) replyText.textContent = pendingReply ? pendingReply.preview : '';
+    if (pendingReply && composerInput) composerInput.focus();
+  }
+
+  function toggleMessageReaction(messageId, emoji) {
+    var profile = getCurrentUserProfile();
+    var key = String(profile.accountKey || profile.email || profile.id || '').trim().toLowerCase();
+    if (!key) return null;
+    var updated = updateCommunityMessageRecord(messageId, function (message) {
+      var reactions = message.reactions && typeof message.reactions === 'object' ? Object.assign({}, message.reactions) : {};
+      var list = Array.isArray(reactions[emoji]) ? reactions[emoji].map(function (item) { return String(item).toLowerCase(); }) : [];
+      reactions[emoji] = list.indexOf(key) >= 0 ? list.filter(function (item) { return item !== key; }) : list.concat(key);
+      if (!reactions[emoji].length) delete reactions[emoji];
+      message.reactions = reactions;
+      return message;
+    });
+    if (updated) renderPersistedMessagesForChannel(currentChannelId || 'geral');
+    return updated;
+  }
+
+  function addThreadReply(messageId) {
+    var record = getCommunityMessageRecord(messageId); if (!record || record.deletedAt) return false;
+    var text = String(window.prompt('Responder na thread:', '') || '').trim(); if (!text) return false;
+    var profile = getCurrentUserProfile();
+    var updated = updateCommunityMessageRecord(messageId, function (message) {
+      var replies = Array.isArray(message.threadReplies) ? message.threadReplies.slice() : [];
+      replies.push({ id:'thread_'+Date.now().toString(36), text:text, author:profile.name||'Membro', authorAccountKey:profile.accountKey||profile.id||'', createdAt:new Date().toISOString() });
+      message.threadReplies = replies.slice(-100);
+      return message;
+    });
+    if (updated) renderPersistedMessagesForChannel(currentChannelId || 'geral');
+    return Boolean(updated);
+  }
+
+  function showThreadReplies(messageId) {
+    var record = getCommunityMessageRecord(messageId); if (!record) return;
+    var replies = Array.isArray(record.threadReplies) ? record.threadReplies : [];
+    var content = replies.length ? replies.map(function (reply) { return (reply.author || 'Membro') + ': ' + reply.text; }).join('\n\n') : 'Nenhuma resposta na thread.';
+    window.alert(content);
+  }
+
+  function showMessageEditHistory(messageId) {
+    var record=getCommunityMessageRecord(messageId); if (!record) return;
+    var history=Array.isArray(record.editHistory)?record.editHistory:[];
+    var content=history.length?history.map(function(item,index){return (index+1)+'. '+item.text+'\n'+formatDisciplineEnd(item.editedAt);}).join('\n\n'):'Esta mensagem não possui versões anteriores.';
+    window.alert(content);
+  }
+
+  function forwardCommunityMessage(messageId) {
+    var record=getCommunityMessageRecord(messageId); if(!record||record.deletedAt)return false;
+    var available=getCommunityChannelsForRecord(getCurrentCommunityRecord()).filter(function(channel){return canViewChannel(channel);});
+    var names=available.map(function(channel){return channel.name;});
+    var selected=String(window.prompt('Encaminhar para qual canal?\n'+names.join(', '), currentChannelName||'Geral')||'').trim();
+    var target=available.find(function(channel){return normalize(channel.name)===normalize(selected)||String(channel.id)===selected;});
+    if(!target)return false;
+    var clone=createCommunityMessageRecord({type:record.type,text:record.text,attachmentName:record.attachmentName,attachmentDisplayName:record.attachmentDisplayName,attachmentType:record.attachmentType,attachmentSize:record.attachmentSize,attachmentKind:record.attachmentKind,attachmentDataUrl:record.attachmentDataUrl,audioDuration:record.audioDuration,forwardedFrom:{id:record.id,author:record.author||'Membro',channelId:record.channelId}});
+    clone.channelId=target.id; clone.channelName=target.name;
+    var previous=currentChannelId; currentChannelId=target.id; var persisted=persistCommunityMessage(clone); currentChannelId=previous;
+    if(persisted) setPanelFeedback(channelFeedback,'Mensagem encaminhada para #'+target.name+'.');
+    return Boolean(persisted);
+  }
+
+  function applyMessageSearchFilters() {
+    if (!messageList) return;
+    var authorTerm=normalize(messageAuthorFilter&&messageAuthorFilter.value||'');
+    var period=messagePeriodFilter?messagePeriodFilter.value:'all';
+    var onlyAttachment=Boolean(messageAttachmentFilter&&messageAttachmentFilter.checked);
+    var cutoff=0;
+    if(period==='today'){var start=new Date();start.setHours(0,0,0,0);cutoff=start.getTime();}
+    else if(/^\d+$/.test(period)) cutoff=Date.now()-Number(period)*86400000;
+    Array.prototype.slice.call(messageList.querySelectorAll('[data-community-message-id]')).forEach(function(article){
+      var record=getCommunityMessageRecord(article.dataset.communityMessageId)||{};
+      var matchesAuthor=!authorTerm||normalize(record.author).indexOf(authorTerm)!==-1;
+      var matchesPeriod=!cutoff||(Date.parse(record.createdAt)||0)>=cutoff;
+      var hasAttachment=Boolean(record.attachmentName||record.attachmentDataUrl||record.type==='audio');
+      article.hidden=!(matchesAuthor&&matchesPeriod&&(!onlyAttachment||hasAttachment));
+    });
+  }
+
   function createMessage(text, options) {
     options = options || {};
     var article = document.createElement('article');
@@ -3622,6 +4470,7 @@
     bubble.className = 'community-room-message__bubble message-bubble' + (mine ? ' message-bubble--me' : ' message-bubble--them');
 
     bubble.appendChild(createMessageHeader(options.author || 'Você', options.createdAt));
+    renderMessageRelations(bubble, options);
 
     if (text) {
       var paragraph = document.createElement('p');
@@ -3635,6 +4484,12 @@
     if (options.recordId) {
       article.dataset.communityMessageId = options.recordId;
       article.classList.toggle('is-community-message-pinned', Boolean(options.pinned));
+      if (options.pinned) {
+        var pinnedBadge = document.createElement('span');
+        pinnedBadge.className = 'community-message-pinned-badge';
+        pinnedBadge.textContent = '⌖ Fixada';
+        bubble.appendChild(pinnedBadge);
+      }
       appendCommunityMessageActions(bubble, {
         id: options.recordId,
         pinned: options.pinned,
@@ -3643,6 +4498,7 @@
       });
     }
 
+    if (options.record) renderMessageReactions(bubble, options.record);
     article.append(avatar, bubble);
     return article;
   }
@@ -3675,10 +4531,18 @@
     meta.textContent = duration;
 
     audio.append(play, track, meta);
-    bubble.append(createMessageHeader(options.author || 'Você', options.createdAt), audio);
+    bubble.appendChild(createMessageHeader(options.author || 'Você', options.createdAt));
+    renderMessageRelations(bubble, options);
+    bubble.appendChild(audio);
     if (options.recordId) {
       article.dataset.communityMessageId = options.recordId;
       article.classList.toggle('is-community-message-pinned', Boolean(options.pinned));
+      if (options.pinned) {
+        var pinnedBadge = document.createElement('span');
+        pinnedBadge.className = 'community-message-pinned-badge';
+        pinnedBadge.textContent = '⌖ Fixada';
+        bubble.appendChild(pinnedBadge);
+      }
       appendCommunityMessageActions(bubble, {
         id: options.recordId,
         pinned: options.pinned,
@@ -3686,6 +4550,7 @@
         usefulByMe: options.usefulByMe
       });
     }
+    if (options.record) renderMessageReactions(bubble, options.record);
     article.append(avatar, bubble);
     return article;
   }
@@ -3768,7 +4633,10 @@
       usefulCount: Number(record.usefulCount || 0),
       usefulByMe: isMessageUsefulByCurrentUser(record),
       mine: isMessageOwnedByCurrentUser(record),
-      mentions: Array.isArray(record.mentions) ? record.mentions : []
+      mentions: Array.isArray(record.mentions) ? record.mentions : [],
+      replyTo: record.replyTo || null,
+      forwardedFrom: record.forwardedFrom || null,
+      record: record
     };
     if (record.type === 'audio') {
       return createAudioMessage(record.audioDuration || '00:01', options);
@@ -3783,7 +4651,8 @@
 
   function updateSendState() {
     if (!sendButton || !composerInput) return;
-    sendButton.disabled = composerInput.value.trim().length === 0 && !selectedAttachment && !hasActiveAudioDraft();
+    var blocked = Boolean(getCurrentMemberDisciplineState()) || !canSendToChannel(getCurrentChannelRecord());
+    sendButton.disabled = blocked || (composerInput.value.trim().length === 0 && !selectedAttachment && !hasActiveAudioDraft());
   }
 
   function clearAttachment() {
@@ -3899,6 +4768,7 @@
     if (panelName === 'roles') renderRoles();
     if (panelName === 'requests') renderJoinRequests();
     if (panelName === 'audit') renderCommunityAuditLog();
+    if (panelName === 'security') renderCommunitySecurityPanel();
     if (panelName === 'transfer') renderOwnershipTransferOptions();
     if (panelName === 'members') {
       renderCommunityMembers();
@@ -3921,12 +4791,436 @@
     });
   }
 
+
+  function normalizeCommunityEvent(entry) {
+    if (!entry || typeof entry !== 'object') return null;
+    var startAt = String(entry.startAt || '').trim();
+    if (!startAt || !Number.isFinite(Date.parse(startAt))) return null;
+    return {
+      id: String(entry.id || createCommunityOperationId('event', getCurrentCommunityId(), 'local')).trim(),
+      title: String(entry.title || 'Evento').trim().slice(0, 80) || 'Evento',
+      description: String(entry.description || '').trim().slice(0, 400),
+      startAt: startAt,
+      endAt: String(entry.endAt || '').trim(),
+      location: String(entry.location || '').trim().slice(0, 160),
+      limit: Math.max(0, Number(entry.limit || 0)),
+      allowedRoleIds: Array.isArray(entry.allowedRoleIds) ? entry.allowedRoleIds.map(String).filter(Boolean) : [],
+      attendees: Array.isArray(entry.attendees) ? entry.attendees.map(String).filter(Boolean) : [],
+      recurrence: ['none', 'weekly', 'monthly'].includes(String(entry.recurrence || 'none')) ? String(entry.recurrence || 'none') : 'none',
+      seriesId: String(entry.seriesId || '').trim(),
+      reminderMinutes: Math.max(0, Number(entry.reminderMinutes || 0)),
+      reminderSentAccountKeys: Array.isArray(entry.reminderSentAccountKeys) ? entry.reminderSentAccountKeys.map(String).filter(Boolean) : [],
+      createdByAccountKey: String(entry.createdByAccountKey || '').trim(),
+      createdByName: String(entry.createdByName || '').trim(),
+      createdAt: String(entry.createdAt || new Date().toISOString()).trim(),
+      updatedAt: String(entry.updatedAt || '').trim(),
+      cancelledAt: String(entry.cancelledAt || '').trim()
+    };
+  }
+
+  function getCurrentProfileAccountKey() {
+    var profile = getCurrentUserProfile();
+    return String(profile.accountKey || profile.email || profile.id || '').trim().toLowerCase();
+  }
+
+  function canCurrentUserViewEvent(eventRecord) {
+    if (!eventRecord || eventRecord.cancelledAt) return false;
+    if (!eventRecord.allowedRoleIds.length) return true;
+    var record = getCurrentCommunityRecord() || {};
+    var member = getCurrentMemberForRecord(record);
+    if (member && member.role === 'owner') return true;
+    var roleIds = getCurrentMemberRoleIds();
+    return eventRecord.allowedRoleIds.some(function (roleId) { return roleIds.indexOf(roleId) !== -1; });
+  }
+
+  function formatCommunityEventDate(value) {
+    var date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return 'Data indisponível';
+    return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(date);
+  }
+
+  function getCommunityEvents(record) {
+    return (Array.isArray(record && record.events) ? record.events : []).map(normalizeCommunityEvent).filter(Boolean).sort(function (a, b) {
+      return Date.parse(a.startAt) - Date.parse(b.startAt);
+    });
+  }
+
+  function populateEventRoleOptions(record) {
+    if (!eventRoleList) return;
+    eventRoleList.replaceChildren();
+    var roles = getCommunityRoles(record).filter(function (role) { return role.id !== 'owner' && role.id !== 'member'; });
+    roles.forEach(function (role) {
+      var label = document.createElement('label');
+      label.className = 'community-event-role-option';
+      var input = document.createElement('input');
+      input.type = 'checkbox';
+      input.className = 'doke-checkbox';
+      input.value = role.id;
+      var span = document.createElement('span');
+      span.textContent = role.name || role.id;
+      label.append(input, span);
+      eventRoleList.appendChild(label);
+    });
+    eventRoleList.hidden = !eventVisibility || eventVisibility.value !== 'roles';
+  }
+
+  function setEventFeedback(message, state) {
+    if (!eventFeedback) return;
+    eventFeedback.textContent = String(message || '');
+    eventFeedback.hidden = !message;
+    if (state) eventFeedback.dataset.state = state;
+    else delete eventFeedback.dataset.state;
+  }
+
+  function getEventAttendeeLabels(eventRecord, record) {
+    var members = getCommunityMembersForRecord(record || getCurrentCommunityRecord() || {});
+    return eventRecord.attendees.map(function (accountKey) {
+      var member = members.find(function (item) {
+        return getMemberIdentityKeys(item).some(function (key) { return String(key || '').trim().toLowerCase() === String(accountKey || '').trim().toLowerCase(); });
+      });
+      return member && member.name ? member.name : accountKey;
+    });
+  }
+
+  function renderCommunityEventCalendar(events) {
+    if (!eventCalendar || !eventMonthLabel) return;
+    var year = eventCalendarCursor.getFullYear();
+    var month = eventCalendarCursor.getMonth();
+    eventMonthLabel.textContent = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(eventCalendarCursor);
+    eventCalendar.replaceChildren();
+    var firstDay = new Date(year, month, 1).getDay();
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    for (var blank = 0; blank < firstDay; blank += 1) {
+      var spacer = document.createElement('span');
+      spacer.className = 'community-event-calendar__day community-event-calendar__day--blank';
+      eventCalendar.appendChild(spacer);
+    }
+    for (var day = 1; day <= daysInMonth; day += 1) {
+      var dateKey = new Date(year, month, day);
+      var matching = events.filter(function (eventRecord) {
+        var start = new Date(eventRecord.startAt);
+        return start.getFullYear() === year && start.getMonth() === month && start.getDate() === day;
+      });
+      var cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'community-event-calendar__day';
+      cell.textContent = String(day);
+      if (matching.length) {
+        cell.classList.add('has-events');
+        cell.dataset.communityEventCalendarDate = dateKey.toISOString();
+        cell.setAttribute('aria-label', day + ': ' + matching.length + ' evento' + (matching.length === 1 ? '' : 's'));
+        var dot = document.createElement('span');
+        dot.className = 'community-event-calendar__dot';
+        dot.textContent = matching.length > 1 ? String(matching.length) : '';
+        cell.appendChild(dot);
+      }
+      eventCalendar.appendChild(cell);
+    }
+  }
+
+  function resetCommunityEventForm() {
+    if (!eventForm) return;
+    eventForm.reset();
+    if (eventEditId) eventEditId.value = '';
+    if (eventFormTitle) eventFormTitle.textContent = 'Criar evento';
+    if (eventSubmit) eventSubmit.textContent = 'Criar evento';
+    if (eventEditCancel) eventEditCancel.hidden = true;
+    if (eventLimit) eventLimit.value = '0';
+    if (eventReminder) eventReminder.checked = true;
+    if (eventReminderMinutes) eventReminderMinutes.value = '60';
+    if (eventRecurrence) eventRecurrence.value = 'none';
+    if (eventVisibility) eventVisibility.value = 'all';
+    if (eventRoleList) {
+      eventRoleList.hidden = true;
+      Array.prototype.slice.call(eventRoleList.querySelectorAll('input')).forEach(function (input) { input.checked = false; });
+    }
+  }
+
+  function startEditingCommunityEvent(eventRecord) {
+    if (!eventForm || !eventRecord) return;
+    if (eventEditId) eventEditId.value = eventRecord.id;
+    if (eventFormTitle) eventFormTitle.textContent = 'Editar evento';
+    if (eventSubmit) eventSubmit.textContent = 'Salvar alterações';
+    if (eventEditCancel) eventEditCancel.hidden = false;
+    if (eventTitle) eventTitle.value = eventRecord.title;
+    if (eventDescription) eventDescription.value = eventRecord.description;
+    if (eventStart) eventStart.value = new Date(eventRecord.startAt).toISOString().slice(0, 16);
+    if (eventEnd) eventEnd.value = eventRecord.endAt ? new Date(eventRecord.endAt).toISOString().slice(0, 16) : '';
+    if (eventLocation) eventLocation.value = eventRecord.location;
+    if (eventLimit) eventLimit.value = String(eventRecord.limit || 0);
+    if (eventVisibility) eventVisibility.value = eventRecord.allowedRoleIds.length ? 'roles' : 'all';
+    if (eventRecurrence) eventRecurrence.value = eventRecord.recurrence || 'none';
+    if (eventReminderMinutes) eventReminderMinutes.value = String(eventRecord.reminderMinutes || 0);
+    if (eventRoleList) {
+      eventRoleList.hidden = !eventRecord.allowedRoleIds.length;
+      Array.prototype.slice.call(eventRoleList.querySelectorAll('input')).forEach(function (input) {
+        input.checked = eventRecord.allowedRoleIds.indexOf(input.value) !== -1;
+      });
+    }
+    eventForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderCommunityEvents() {
+    if (!eventList) return;
+    var record = getCurrentCommunityRecord() || {};
+    populateEventRoleOptions(record);
+    var events = getCommunityEvents(record).filter(canCurrentUserViewEvent);
+    var now = Date.now();
+    var upcoming = events.filter(function (eventRecord) { return Date.parse(eventRecord.startAt) >= now; });
+    if (eventSummary) {
+      eventSummary.innerHTML = '<strong>' + upcoming.length + '</strong><span>próximo' + (upcoming.length === 1 ? '' : 's') + ' evento' + (upcoming.length === 1 ? '' : 's') + '</span>';
+    }
+    renderCommunityEventCalendar(events);
+    eventList.replaceChildren();
+    if (!events.length) {
+      var empty = document.createElement('div');
+      empty.className = 'community-room-panel-empty';
+      empty.innerHTML = '<strong>Nenhum evento disponível</strong><p>Crie o primeiro evento da comunidade.</p>';
+      eventList.appendChild(empty);
+      return;
+    }
+    var currentKey = getCurrentProfileAccountKey();
+    var canManage = canCommunity('editCommunity');
+    if (eventForm) eventForm.hidden = !canManage;
+    events.forEach(function (eventRecord) {
+      var card = document.createElement('article');
+      card.className = 'community-event-card';
+      card.dataset.communityEventId = eventRecord.id;
+      var attending = eventRecord.attendees.indexOf(currentKey) !== -1;
+      var full = eventRecord.limit > 0 && eventRecord.attendees.length >= eventRecord.limit && !attending;
+      var meta = [formatCommunityEventDate(eventRecord.startAt)];
+      if (eventRecord.location) meta.push(eventRecord.location);
+      if (eventRecord.limit > 0) meta.push(eventRecord.attendees.length + '/' + eventRecord.limit + ' participantes');
+      else meta.push(eventRecord.attendees.length + ' participante' + (eventRecord.attendees.length === 1 ? '' : 's'));
+      if (eventRecord.recurrence !== 'none') meta.push(eventRecord.recurrence === 'weekly' ? 'Semanal' : 'Mensal');
+      card.innerHTML = '<div class="community-event-card__date"><strong>' + new Date(eventRecord.startAt).getDate().toString().padStart(2, '0') + '</strong><span>' + new Intl.DateTimeFormat('pt-BR', { month: 'short' }).format(new Date(eventRecord.startAt)).replace('.', '') + '</span></div>' +
+        '<div class="community-event-card__content"><strong class="community-event-card__title"></strong><p class="community-event-card__description"></p><small class="community-event-card__meta"></small><details class="community-event-card__participants"><summary></summary><ul></ul></details><div class="community-event-card__actions"></div></div>';
+      card.querySelector('.community-event-card__title').textContent = eventRecord.title;
+      card.querySelector('.community-event-card__description').textContent = eventRecord.description || 'Sem descrição.';
+      card.querySelector('.community-event-card__meta').textContent = meta.join(' • ');
+      var participantDetails = card.querySelector('.community-event-card__participants');
+      participantDetails.querySelector('summary').textContent = 'Participantes (' + eventRecord.attendees.length + ')';
+      var participantList = participantDetails.querySelector('ul');
+      var attendeeLabels = getEventAttendeeLabels(eventRecord, record);
+      if (!attendeeLabels.length) {
+        var noAttendees = document.createElement('li');
+        noAttendees.textContent = 'Ninguém confirmou presença ainda.';
+        participantList.appendChild(noAttendees);
+      } else attendeeLabels.forEach(function (label) { var item = document.createElement('li'); item.textContent = label; participantList.appendChild(item); });
+      var actions = card.querySelector('.community-event-card__actions');
+      var rsvp = document.createElement('button');
+      rsvp.type = 'button';
+      rsvp.className = 'doke-btn ' + (attending ? 'doke-btn--ghost' : 'doke-btn--primary');
+      rsvp.dataset.communityEventRsvp = eventRecord.id;
+      rsvp.textContent = attending ? 'Cancelar presença' : (full ? 'Evento lotado' : 'Confirmar presença');
+      rsvp.disabled = full;
+      actions.appendChild(rsvp);
+      if (canManage) {
+        var edit = document.createElement('button');
+        edit.type = 'button';
+        edit.className = 'doke-btn doke-btn--ghost';
+        edit.dataset.communityEventEdit = eventRecord.id;
+        edit.textContent = 'Editar';
+        actions.appendChild(edit);
+        var cancel = document.createElement('button');
+        cancel.type = 'button';
+        cancel.className = 'doke-btn doke-btn--ghost';
+        cancel.dataset.communityEventCancel = eventRecord.id;
+        cancel.textContent = 'Cancelar evento';
+        actions.appendChild(cancel);
+      }
+      eventList.appendChild(card);
+    });
+  }
+
+
+  function createRecurringEventRecords(baseEvent) {
+    var records = [baseEvent];
+    if (!baseEvent || baseEvent.recurrence === 'none') return records;
+    var count = baseEvent.recurrence === 'weekly' ? 12 : 6;
+    var seriesId = baseEvent.seriesId || baseEvent.id;
+    var startDate = new Date(baseEvent.startAt);
+    var endDate = baseEvent.endAt ? new Date(baseEvent.endAt) : null;
+    for (var index = 1; index < count; index += 1) {
+      var nextStart = new Date(startDate);
+      var nextEnd = endDate ? new Date(endDate) : null;
+      if (baseEvent.recurrence === 'weekly') {
+        nextStart.setDate(nextStart.getDate() + (7 * index));
+        if (nextEnd) nextEnd.setDate(nextEnd.getDate() + (7 * index));
+      } else {
+        nextStart.setMonth(nextStart.getMonth() + index);
+        if (nextEnd) nextEnd.setMonth(nextEnd.getMonth() + index);
+      }
+      records.push(normalizeCommunityEvent(Object.assign({}, baseEvent, {
+        id: seriesId + '-occurrence-' + index,
+        seriesId: seriesId,
+        startAt: nextStart.toISOString(),
+        endAt: nextEnd ? nextEnd.toISOString() : '',
+        attendees: [],
+        reminderSentAccountKeys: [],
+        createdAt: new Date().toISOString()
+      })));
+    }
+    return records;
+  }
+
+  function notifyEventAttendees(eventRecord, record, titlePrefix) {
+    var profile = getCurrentUserProfile();
+    eventRecord.attendees.forEach(function (accountKey) {
+      if (!accountKey || accountKey === getCurrentProfileAccountKey()) return;
+      createCommunityNotification({
+        recipientAccountKey: accountKey,
+        userId: accountKey,
+        actorId: profile.id,
+        actorName: profile.name,
+        type: 'community_event_update',
+        eventKey: ['community-event-update', getCurrentCommunityId(), eventRecord.id, titlePrefix, accountKey].join(':'),
+        title: titlePrefix + ': ' + eventRecord.title,
+        body: formatCommunityEventDate(eventRecord.startAt) + (eventRecord.location ? ' • ' + eventRecord.location : ''),
+        targetUrl: 'comunidade-interna.html?community=' + encodeURIComponent(getCurrentCommunityId()) + '&panel=events',
+        actionLabel: 'Ver evento',
+        communityId: getCurrentCommunityId(),
+        eventId: eventRecord.id,
+        scopeKey: 'community:' + getCurrentCommunityId(),
+        actions: [
+          { label: 'Confirmar presença', action: 'event-rsvp', communityId: getCurrentCommunityId(), eventId: eventRecord.id, attending: true },
+          { label: 'Ver evento', url: 'comunidade-interna.html?community=' + encodeURIComponent(getCurrentCommunityId()) + '&panel=events' }
+        ]
+      });
+    });
+  }
+
+  function processCommunityEventReminders() {
+    var record = getCurrentCommunityRecord() || {};
+    var now = Date.now();
+    var dueEvents = getCommunityEvents(record).filter(function (eventRecord) {
+      if (!eventRecord.reminderMinutes || eventRecord.cancelledAt) return false;
+      var start = Date.parse(eventRecord.startAt);
+      return start > now && start - now <= eventRecord.reminderMinutes * 60000;
+    });
+    if (!dueEvents.length) return;
+    var changed = false;
+    var nextEvents = getCommunityEvents(record).map(function (eventRecord) {
+      var due = dueEvents.find(function (item) { return item.id === eventRecord.id; });
+      if (!due) return eventRecord;
+      var sent = eventRecord.reminderSentAccountKeys.slice();
+      due.attendees.forEach(function (accountKey) {
+        if (!accountKey || sent.indexOf(accountKey) !== -1) return;
+        createCommunityNotification({
+          recipientAccountKey: accountKey,
+          userId: accountKey,
+          actorId: eventRecord.createdByAccountKey,
+          actorName: eventRecord.createdByName,
+          type: 'community_event_reminder',
+          eventKey: ['community-event-reminder', getCurrentCommunityId(), eventRecord.id, accountKey].join(':'),
+          title: 'Lembrete: ' + eventRecord.title,
+          body: 'Começa em breve • ' + formatCommunityEventDate(eventRecord.startAt),
+          targetUrl: 'comunidade-interna.html?community=' + encodeURIComponent(getCurrentCommunityId()) + '&panel=events',
+          actionLabel: 'Ver evento'
+        });
+        sent.push(accountKey);
+        changed = true;
+      });
+      return changed ? Object.assign({}, eventRecord, { reminderSentAccountKeys: sent }) : eventRecord;
+    });
+    if (changed) transactCurrentCommunity('COMMUNITY_EVENT_REMINDERS_SENT', getCurrentCommunityId(), function (storedRecord) {
+      return { record: Object.assign({}, storedRecord, { events: nextEvents, updatedAt: new Date().toISOString() }), payload: {} };
+    });
+  }
+
+  function notifyEligibleEventMembers(eventRecord, record) {
+    var profile = getCurrentUserProfile();
+    getCommunityMembersForRecord(record).forEach(function (member) {
+      var accountKey = String(member.accountKey || member.email || member.id || '').trim().toLowerCase();
+      if (!accountKey || accountKey === getCurrentProfileAccountKey()) return;
+      var roleIds = normalizeMemberRoleIds(member);
+      if (eventRecord.allowedRoleIds.length && !eventRecord.allowedRoleIds.some(function (roleId) { return roleIds.indexOf(roleId) !== -1; })) return;
+      createCommunityNotification({
+        recipientAccountKey: accountKey,
+        userId: accountKey,
+        actorId: profile.id,
+        actorName: profile.name,
+        type: 'community_event',
+        eventKey: ['community-event', getCurrentCommunityId(), eventRecord.id, accountKey].join(':'),
+        title: 'Novo evento em ' + String(record.title || record.name || 'Comunidade'),
+        body: eventRecord.title + ' • ' + formatCommunityEventDate(eventRecord.startAt),
+        targetUrl: 'comunidade-interna.html?community=' + encodeURIComponent(getCurrentCommunityId()) + '&panel=events',
+        actionLabel: 'Ver evento',
+        communityId: getCurrentCommunityId(),
+        eventId: eventRecord.id,
+        scopeKey: 'community:' + getCurrentCommunityId(),
+        actions: [
+          { label: 'Confirmar presença', action: 'event-rsvp', communityId: getCurrentCommunityId(), eventId: eventRecord.id, attending: true },
+          { label: 'Ver evento', url: 'comunidade-interna.html?community=' + encodeURIComponent(getCurrentCommunityId()) + '&panel=events' }
+        ]
+      });
+    });
+  }
+
+
+
+  document.addEventListener('doke:notification-action', function (event) {
+    var action = event.detail || {};
+    if (action.kind === 'event-rsvp') {
+      if (String(action.communityId || '') !== String(getCurrentCommunityId() || '')) return;
+      var eventId = String(action.eventId || '');
+      var profileKey = getCurrentProfileAccountKey();
+      var changed = false;
+      var operation = transactCurrentCommunity('COMMUNITY_EVENT_RSVP_FROM_NOTIFICATION', eventId, function (record) {
+        var events = getCommunityEvents(record).map(function (eventRecord) {
+          if (String(eventRecord.id) !== eventId) return eventRecord;
+          var attendees = eventRecord.attendees.slice();
+          var index = attendees.indexOf(profileKey);
+          if (action.attending === false) {
+            if (index >= 0) { attendees.splice(index, 1); changed = true; }
+          } else if (index < 0 && !(eventRecord.limit > 0 && attendees.length >= eventRecord.limit)) {
+            attendees.push(profileKey); changed = true;
+          }
+          return Object.assign({}, eventRecord, { attendees: attendees });
+        });
+        return { record: Object.assign({}, record, { events: events, updatedAt: new Date().toISOString() }), payload: { eventId: eventId } };
+      });
+      if (operation && operation.ok !== false) {
+        renderCommunityEvents();
+        window.DokeInAppNotifications && window.DokeInAppNotifications.recordActionResult(action.notificationId, 'completed', action.attending === false ? 'Presença cancelada.' : 'Presença confirmada.', { kind: 'event-rsvp', communityId: getCurrentCommunityId(), eventId: eventId, attending: action.attending === false });
+      } else {
+        document.dispatchEvent(new CustomEvent('doke:notification-action-error', {
+          detail: { notificationId: action.notificationId, message: 'Não foi possível atualizar sua presença.', retryPayload: action }
+        }));
+      }
+    }
+    if (action.kind === 'request-decision') {
+      if (String(action.communityId || '') !== String(getCurrentCommunityId() || '')) return;
+      resolveJoinRequest(String(action.requestId || ''), action.decision === 'accepted' ? 'accepted' : 'rejected').then(function (result) {
+        if (result && result.ok) {
+          window.DokeInAppNotifications && window.DokeInAppNotifications.recordActionResult(action.notificationId, 'completed', action.decision === 'accepted' ? 'Solicitação aceita.' : 'Solicitação recusada.');
+          return;
+        }
+        document.dispatchEvent(new CustomEvent('doke:notification-action-error', {
+          detail: { notificationId: action.notificationId, message: 'Não foi possível processar a solicitação.', retryPayload: action }
+        }));
+      }).catch(function (error) {
+        document.dispatchEvent(new CustomEvent('doke:notification-action-error', {
+          detail: { notificationId: action.notificationId, message: error && error.message || 'Não foi possível processar a solicitação.', retryPayload: action }
+        }));
+      });
+    }
+  });
+
   function openCommunitySettings() {
     closeFloatingMenus();
     var record = ensureCurrentCommunityRecord();
     if (settingsName) settingsName.textContent = record && (record.title || record.name) || 'Comunidade';
     var firstAllowed = settingsTabs.find(function (tab) { return !tab.hidden && !tab.disabled; });
     activateSettingsSection(firstAllowed ? firstAllowed.dataset.communitySettingsTab : 'members');
+  }
+
+  function openRequestedRoomPanel() {
+    var params = new URLSearchParams(window.location.search || '');
+    var panelName = String(params.get('panel') || '').trim();
+    if (!panelName) return;
+    var trigger = root.querySelector('[data-community-panel-open="' + panelName + '"]');
+    if (trigger && !trigger.disabled) trigger.click();
   }
 
   function openRequestedSettingsPanel() {
@@ -3984,6 +5278,7 @@
       if (panel) {
         panel.classList.add('is-open');
         panel.setAttribute('aria-hidden', 'false');
+        if (panelName === 'events') renderCommunityEvents();
       }
     });
   });
@@ -3995,6 +5290,163 @@
         panel.setAttribute('aria-hidden', 'true');
       });
     });
+  });
+
+
+  if (eventVisibility) {
+    eventVisibility.addEventListener('change', function () {
+      if (eventRoleList) eventRoleList.hidden = eventVisibility.value !== 'roles';
+    });
+  }
+
+  if (eventEditCancel) eventEditCancel.addEventListener('click', function () {
+    resetCommunityEventForm();
+    setEventFeedback('', '');
+  });
+
+  if (eventMonthPrev) eventMonthPrev.addEventListener('click', function () {
+    eventCalendarCursor.setMonth(eventCalendarCursor.getMonth() - 1);
+    renderCommunityEvents();
+  });
+
+  if (eventMonthNext) eventMonthNext.addEventListener('click', function () {
+    eventCalendarCursor.setMonth(eventCalendarCursor.getMonth() + 1);
+    renderCommunityEvents();
+  });
+
+  if (eventCalendar) eventCalendar.addEventListener('click', function (event) {
+    var day = event.target.closest('[data-community-event-calendar-date]');
+    if (!day) return;
+    var date = new Date(day.dataset.communityEventCalendarDate || '');
+    if (!Number.isFinite(date.getTime())) return;
+    var match = getCommunityEvents(getCurrentCommunityRecord() || {}).find(function (eventRecord) {
+      var start = new Date(eventRecord.startAt);
+      return start.getFullYear() === date.getFullYear() && start.getMonth() === date.getMonth() && start.getDate() === date.getDate();
+    });
+    if (!match) return;
+    var card = eventList && eventList.querySelector('[data-community-event-id="' + match.id + '"]');
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+
+  if (eventForm) {
+    eventForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      setEventFeedback('', '');
+      var startAt = eventStart && eventStart.value ? new Date(eventStart.value).toISOString() : '';
+      var endAt = eventEnd && eventEnd.value ? new Date(eventEnd.value).toISOString() : '';
+      if (!eventTitle || !eventTitle.value.trim() || !startAt) {
+        setEventFeedback('Informe título e data de início.', 'error');
+        return;
+      }
+      if (endAt && Date.parse(endAt) <= Date.parse(startAt)) {
+        setEventFeedback('O término precisa ser depois do início.', 'error');
+        return;
+      }
+      var profile = getCurrentUserProfile();
+      var editId = String(eventEditId && eventEditId.value || '').trim();
+      var existing = editId ? getCommunityEvents(getCurrentCommunityRecord() || {}).find(function (item) { return item.id === editId; }) : null;
+      var allowedRoleIds = eventVisibility && eventVisibility.value === 'roles' && eventRoleList
+        ? Array.prototype.slice.call(eventRoleList.querySelectorAll('input:checked')).map(function (input) { return input.value; })
+        : [];
+      var eventRecord = normalizeCommunityEvent({
+        id: editId || createCommunityOperationId('event', getCurrentCommunityId(), profile.id),
+        title: eventTitle.value,
+        description: eventDescription && eventDescription.value,
+        startAt: startAt,
+        endAt: endAt,
+        location: eventLocation && eventLocation.value,
+        limit: eventLimit && eventLimit.value,
+        allowedRoleIds: allowedRoleIds,
+        attendees: existing ? existing.attendees : [],
+        recurrence: eventRecurrence && eventRecurrence.value || 'none',
+        seriesId: existing && existing.seriesId || '',
+        reminderMinutes: eventReminderMinutes && eventReminderMinutes.value || 0,
+        reminderSentAccountKeys: existing ? existing.reminderSentAccountKeys : [],
+        createdByAccountKey: existing && existing.createdByAccountKey || profile.accountKey || profile.id,
+        createdByName: existing && existing.createdByName || profile.name,
+        createdAt: existing && existing.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      var operationType = editId ? 'COMMUNITY_EVENT_UPDATED' : 'COMMUNITY_EVENT_CREATED';
+      var operation = transactCurrentCommunity(operationType, eventRecord.id, function (storedRecord) {
+        var events = getCommunityEvents(storedRecord).filter(function (item) { return item.id !== eventRecord.id; });
+        if (editId) events.push(eventRecord);
+        else createRecurringEventRecords(eventRecord).forEach(function (item) { if (item) events.push(item); });
+        return { record: Object.assign({}, storedRecord, { events: events, updatedAt: new Date().toISOString() }), payload: { eventId: eventRecord.id } };
+      });
+      if (!operation.ok) {
+        setEventFeedback(operation.message || 'Não foi possível salvar o evento.', 'error');
+        return;
+      }
+      appendCommunityAuditEvent(editId ? 'communityEventUpdated' : 'communityEventCreated', { eventId: eventRecord.id, title: eventRecord.title });
+      if (eventReminder && eventReminder.checked) {
+        if (editId) notifyEventAttendees(eventRecord, operation.record || getCurrentCommunityRecord() || {}, 'Evento atualizado');
+        else notifyEligibleEventMembers(eventRecord, operation.record || getCurrentCommunityRecord() || {});
+      }
+      resetCommunityEventForm();
+      setEventFeedback(editId ? 'Evento atualizado com sucesso.' : 'Evento criado com sucesso.', 'success');
+      renderCommunityEvents();
+      processCommunityEventReminders();
+    });
+  }
+
+  if (eventList) {
+    eventList.addEventListener('click', function (event) {
+      var rsvpButton = event.target.closest('[data-community-event-rsvp]');
+      var editButton = event.target.closest('[data-community-event-edit]');
+      var cancelButton = event.target.closest('[data-community-event-cancel]');
+      if (!rsvpButton && !editButton && !cancelButton) return;
+      var eventId = String((rsvpButton || editButton || cancelButton).dataset.communityEventRsvp || (rsvpButton || editButton || cancelButton).dataset.communityEventEdit || (rsvpButton || editButton || cancelButton).dataset.communityEventCancel || '');
+      if (editButton) {
+        var editable = getCommunityEvents(getCurrentCommunityRecord() || {}).find(function (item) { return item.id === eventId; });
+        if (editable) startEditingCommunityEvent(editable);
+        return;
+      }
+      var profileKey = getCurrentProfileAccountKey();
+      if (rsvpButton) {
+        var result = transactCurrentCommunity('COMMUNITY_EVENT_RSVP_CHANGED', eventId, function (storedRecord) {
+          var events = getCommunityEvents(storedRecord).map(function (eventRecord) {
+            if (eventRecord.id !== eventId) return eventRecord;
+            var attendees = eventRecord.attendees.slice();
+            var index = attendees.indexOf(profileKey);
+            if (index >= 0) attendees.splice(index, 1);
+            else {
+              if (eventRecord.limit > 0 && attendees.length >= eventRecord.limit) return eventRecord;
+              attendees.push(profileKey);
+            }
+            return Object.assign({}, eventRecord, { attendees: attendees });
+          });
+          return { record: Object.assign({}, storedRecord, { events: events, updatedAt: new Date().toISOString() }), payload: { eventId: eventId } };
+        });
+        if (!result.ok) setEventFeedback(result.message || 'Não foi possível atualizar sua presença.', 'error');
+      }
+      if (cancelButton) {
+        var confirmed = window.confirm('Cancelar este evento?');
+        if (!confirmed) return;
+        var cancellation = transactCurrentCommunity('COMMUNITY_EVENT_CANCELLED', eventId, function (storedRecord) {
+          var events = getCommunityEvents(storedRecord).map(function (eventRecord) {
+            return eventRecord.id === eventId ? Object.assign({}, eventRecord, { cancelledAt: new Date().toISOString() }) : eventRecord;
+          });
+          return { record: Object.assign({}, storedRecord, { events: events, updatedAt: new Date().toISOString() }), payload: { eventId: eventId } };
+        });
+        if (cancellation.ok) {
+          appendCommunityAuditEvent('communityEventCancelled', { eventId: eventId });
+          var cancelledRecord = getCommunityEvents(cancellation.record || getCurrentCommunityRecord() || {}).find(function (item) { return item.id === eventId; });
+          if (cancelledRecord) notifyEventAttendees(cancelledRecord, cancellation.record || getCurrentCommunityRecord() || {}, 'Evento cancelado');
+        }
+      }
+      renderCommunityEvents();
+    });
+  }
+
+
+  processCommunityEventReminders();
+  if (!eventReminderTimer) {
+    eventReminderTimer = window.setInterval(processCommunityEventReminders, 60000);
+  }
+  window.addEventListener('pagehide', function () {
+    if (eventReminderTimer) window.clearInterval(eventReminderTimer);
+    eventReminderTimer = 0;
   });
 
   function filterMemberPanelItems() {
@@ -4165,9 +5617,20 @@
         var disciplineId = disciplineButton.dataset.communityMemberId;
         var reason = disciplineAction === 'clear' ? 'restrição removida pelo moderador' : window.prompt('Informe o motivo da ação:');
         if (!reason) return;
-        var disciplineResult = disciplineCommunityMember(disciplineId, disciplineAction, reason.trim(), disciplineButton.dataset.duration || '1h');
+        var durationControl = memberList.querySelector('[data-community-discipline-duration="' + String(disciplineId).replace(/"/g, '\"') + '"]');
+        var scopeControl = memberList.querySelector('[data-community-discipline-scope="' + String(disciplineId).replace(/"/g, '\"') + '"]');
+        var durationValue = durationControl ? durationControl.value : '1h';
+        if (durationValue === 'custom') {
+          var customHours = window.prompt('Digite a duração em horas (ex.: 2, 12, 48):', '2');
+          if (!customHours || !Number(customHours) || Number(customHours) <= 0) return;
+          durationValue = String(Number(customHours));
+        }
+        var disciplineScope = scopeControl ? scopeControl.value : 'community';
+        var disciplineResult = disciplineCommunityMember(disciplineId, disciplineAction, reason.trim(), durationValue, disciplineScope, currentChannelId || 'geral');
         setPanelFeedback(memberFeedback, disciplineResult.ok ? 'Ação disciplinar aplicada.' : (disciplineResult.message || 'Não foi possível aplicar a ação.'));
         renderCommunityMembers();
+        renderCurrentMemberDisciplineNotice();
+        syncChannelComposerAccess();
         return;
       }
       var banButton = event.target.closest('[data-community-member-ban]');
@@ -4175,8 +5638,10 @@
         var banId = String(banButton.dataset.communityMemberBan || '');
         var banReason = window.prompt('Informe o motivo obrigatório do banimento:');
         if (!banReason || !banReason.trim()) return;
+        var banDuration = window.prompt('Duração do banimento: digite permanent, 7d, 30d ou a quantidade de horas.', 'permanent');
+        if (!banDuration) return;
         var banTarget = getCommunityMembers().find(function (member) { return String(member.id) === banId; });
-        var banResult = banCommunityMember(banTarget, banReason.trim());
+        var banResult = banCommunityMember(banTarget, banReason.trim(), banDuration.trim());
         setPanelFeedback(memberFeedback, banResult.ok ? 'Membro banido e removido da comunidade.' : (banResult.message || 'Não foi possível banir.'));
         renderCommunityMembers(); renderMemberCandidates(); updateRoomStats();
         return;
@@ -4260,6 +5725,12 @@
     });
   });
 
+  [manageName, manageDescription, manageType, manageIcon].forEach(function (field) {
+    if (!field) return;
+    field.addEventListener('input', updateCommunityProfilePreview);
+    field.addEventListener('change', updateCommunityProfilePreview);
+  });
+
   if (manageForm) {
     manageForm.addEventListener('submit', function (event) {
       event.preventDefault();
@@ -4272,18 +5743,33 @@
       }
       var operation = transactCurrentCommunity('COMMUNITY_UPDATED', record.id, function (storedRecord) {
         if (!canCommunity('editCommunity')) return { ok: false, reason: 'forbidden', message: 'Sem permissão para editar a comunidade.' };
+        var nextRules = normalizeCommunityRules(manageRules && manageRules.value || storedRecord.rules);
+        var previousRules = normalizeCommunityRules(storedRecord.rules);
+        var rulesChanged = JSON.stringify(nextRules) !== JSON.stringify(previousRules);
         return {
           record: Object.assign({}, storedRecord, {
             title: title,
             name: title,
             description: String(manageDescription && manageDescription.value || '').trim(),
-            rules: normalizeCommunityRules(manageRules && manageRules.value || storedRecord.rules),
+            rules: nextRules,
+            rulesVersion: rulesChanged ? getRulesVersion(storedRecord) + 1 : getRulesVersion(storedRecord),
+            requireRulesAcceptance: Boolean(manageRequireRules && manageRequireRules.checked),
+            defaultChannelId: String(manageDefaultChannel && manageDefaultChannel.value || ''),
+            welcomeMessage: String(manageWelcomeMessage && manageWelcomeMessage.value || '').trim().slice(0, 500),
+            onboardingChecklist: normalizeOnboardingList(manageChecklist && manageChecklist.value || '', 8),
+            onboardingAudience: ['all','client','professional'].includes(String(manageOnboardingAudience && manageOnboardingAudience.value || 'all')) ? String(manageOnboardingAudience.value) : 'all',
+            tags: String(manageTags && manageTags.value || '').split(',').map(function (item) { return item.trim(); }).filter(Boolean).slice(0, 8),
+            links: String(manageLinks && manageLinks.value || '').split(/\r?\n/).map(function (item) { return item.trim(); }).filter(Boolean).slice(0, 8),
+            joinQuestions: normalizeCommunityRules(manageQuestions && manageQuestions.value || storedRecord.joinQuestions).slice(0, 5),
+            entryMode: String(manageEntryMode && manageEntryMode.value || 'auto') === 'approval' ? 'approval' : 'auto',
             type: String(manageType && manageType.value || 'public'),
+            visibility: String(manageType && manageType.value || 'public'),
+            iconUrl: String(manageIcon && manageIcon.value || '').trim(),
             color: String(manageColor && manageColor.value || '#168f7d'),
             cover: Object.assign({}, manageCoverState || {}),
             updatedAt: new Date().toISOString()
           }),
-          payload: { fields: ['title', 'description', 'rules', 'type', 'color', 'cover'] }
+          payload: { fields: ['title', 'description', 'rules', 'rulesVersion', 'onboarding', 'tags', 'links', 'joinQuestions', 'entryMode', 'visibility', 'iconUrl', 'color', 'cover'] }
         };
       });
       if (!operation.ok) {
@@ -4325,6 +5811,51 @@
       }
       renderInviteCode();
       setPanelFeedback(memberFeedback, 'Novo convite gerado. O código anterior foi invalidado.');
+    });
+  }
+
+  if (inviteForm) {
+    inviteForm.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (!canCommunity('addMembers')) return;
+      var record = ensureCurrentCommunityRecord() || {};
+      var nextInvite = createInviteRecord(null, {
+        days: Number(inviteExpiry && inviteExpiry.value || 30),
+        maxUses: Number(inviteMaxUses && inviteMaxUses.value || 0),
+        requireApproval: Boolean(inviteRequireApproval && inviteRequireApproval.checked),
+        autoRoleId: String(inviteRole && inviteRole.value || '')
+      });
+      var operation = transactCurrentCommunity('INVITE_CREATED', nextInvite.id, function (storedRecord) {
+        var invites = getCommunityInvites(storedRecord);
+        invites.push(nextInvite);
+        return { record: Object.assign({}, storedRecord, { invites: invites, invite: storedRecord.invite || nextInvite, inviteCode: (storedRecord.invite && storedRecord.invite.code) || nextInvite.code, updatedAt: new Date().toISOString() }), payload: { inviteId: nextInvite.id, code: nextInvite.code, maxUses: nextInvite.maxUses, expiresAt: nextInvite.expiresAt } };
+      });
+      if (operation.ok) {
+        renderInviteCode();
+        if (inviteMaxUses) inviteMaxUses.value = '0';
+        if (inviteRequireApproval) inviteRequireApproval.checked = false;
+      }
+    });
+  }
+
+  if (inviteList) {
+    inviteList.addEventListener('click', function (event) {
+      var copy = event.target.closest('[data-community-invite-copy-code]');
+      if (copy) {
+        var code = copy.dataset.communityInviteCopyCode || '';
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).catch(function () {});
+        copy.textContent = 'Copiado';
+        window.setTimeout(function () { copy.textContent = 'Copiar'; }, 1000);
+        return;
+      }
+      var revoke = event.target.closest('[data-community-invite-revoke]');
+      if (!revoke || !canCommunity('addMembers')) return;
+      var inviteId = revoke.dataset.communityInviteRevoke;
+      var operation = transactCurrentCommunity('INVITE_REVOKED', inviteId, function (storedRecord) {
+        var invites = getCommunityInvites(storedRecord).map(function (invite) { return invite.id === inviteId ? Object.assign({}, invite, { active: false, revokedAt: new Date().toISOString() }) : invite; });
+        return { record: Object.assign({}, storedRecord, { invites: invites, updatedAt: new Date().toISOString() }), payload: { inviteId: inviteId } };
+      });
+      if (operation.ok) renderInviteCode();
     });
   }
 
@@ -4690,14 +6221,27 @@
     });
   }
 
+  if (replyCancel) replyCancel.addEventListener('click', function () { setPendingReply(null); });
+  [messageAuthorFilter, messagePeriodFilter, messageAttachmentFilter].forEach(function (control) {
+    if (!control) return;
+    control.addEventListener(control.tagName === 'INPUT' && control.type !== 'checkbox' ? 'input' : 'change', applyMessageSearchFilters);
+  });
+  if (messageFilterClear) messageFilterClear.addEventListener('click', function () {
+    if (messageAuthorFilter) messageAuthorFilter.value='';
+    if (messagePeriodFilter) messagePeriodFilter.value='all';
+    if (messageAttachmentFilter) messageAttachmentFilter.checked=false;
+    applyMessageSearchFilters();
+  });
+
   if (composer) {
     composer.addEventListener('submit', async function (event) {
       event.preventDefault();
       var text = composerInput ? composerInput.value.trim() : '';
       var currentMember = getCurrentMemberForRecord(ensureCurrentCommunityRecord() || {});
-      if (isFutureDisciplineDate(currentMember && currentMember.mutedUntil) || isFutureDisciplineDate(currentMember && currentMember.restrictedUntil)) {
-        var restrictionLabel = getMemberDisciplineLabel(currentMember) || 'Envio temporariamente bloqueado.';
-        setPanelFeedback(channelFeedback, restrictionLabel + (currentMember.disciplineReason ? ' • Motivo: ' + currentMember.disciplineReason : ''));
+      var currentDiscipline = getEffectiveMemberDiscipline(currentMember, currentChannelId || 'geral');
+      if (currentDiscipline) {
+        var restrictionLabel = (currentDiscipline.type === 'mute' ? 'Silenciado' : 'Restrito') + (currentDiscipline.scope === 'channel' ? ' neste canal' : ' na comunidade') + ' até ' + formatDisciplineEnd(currentDiscipline.until);
+        setPanelFeedback(channelFeedback, restrictionLabel + (currentDiscipline.reason ? ' • Motivo: ' + currentDiscipline.reason : ''));
         return;
       }
       if (!canSendToChannel(getCurrentChannelRecord())) { syncChannelComposerAccess(); return; }
@@ -4715,7 +6259,8 @@
       if (hasActiveAudioDraft()) {
         var audioRecord = createCommunityMessageRecord({
           type: 'audio',
-          audioDuration: formatAudioTime(Math.max(audioDraftSeconds, 1))
+          audioDuration: formatAudioTime(Math.max(audioDraftSeconds, 1)),
+          replyTo: pendingReply
         });
         var persistedAudio = persistCommunityMessage(audioRecord);
         if (persistedAudio) {
@@ -4738,7 +6283,8 @@
           attachmentType: attachmentPayload ? attachmentPayload.type : '',
           attachmentSize: attachmentPayload ? attachmentPayload.size : 0,
           attachmentKind: attachmentPayload ? attachmentPayload.kind : '',
-          attachmentDataUrl: attachmentPayload ? attachmentPayload.dataUrl : ''
+          attachmentDataUrl: attachmentPayload ? attachmentPayload.dataUrl : '',
+          replyTo: pendingReply
         });
         var persistedMessage = persistCommunityMessage(messageRecord);
         if (persistedMessage) {
@@ -4756,6 +6302,7 @@
         composerInput.style.height = 'auto';
       }
       selectedMentions = [];
+      setPendingReply(null);
       closeMentionPicker();
       clearAttachment();
       updateSendState();
@@ -4766,6 +6313,12 @@
 
   if (messageList) {
     messageList.addEventListener('click', function (event) {
+      var reaction=event.target.closest('[data-community-reaction-emoji]');
+      if(reaction){toggleMessageReaction(reaction.dataset.communityMessageId,reaction.dataset.communityReactionEmoji);return;}
+      var thread=event.target.closest('[data-community-thread-view]');
+      if(thread){showThreadReplies(thread.dataset.communityThreadView);return;}
+      var replyTarget=event.target.closest('[data-community-reply-target]');
+      if(replyTarget&&replyTarget.dataset.communityReplyTarget){var target=messageList.querySelector('[data-community-message-id="'+CSS.escape(replyTarget.dataset.communityReplyTarget)+'"]');if(target){target.scrollIntoView({block:'center',behavior:'smooth'});target.classList.add('is-community-message-target');window.setTimeout(function(){target.classList.remove('is-community-message-target');},1800);}return;}
     });
 
     messageList.addEventListener('contextmenu', function (event) {
@@ -4813,17 +6366,53 @@
     setChannelSelectionMode(!isSelectingChannels);
   });
 
+  [auditTypeFilter, auditPeriodFilter].forEach(function (control) {
+    if (control) control.addEventListener('change', renderCommunityAuditLog);
+  });
+  if (auditSearchFilter) auditSearchFilter.addEventListener('input', renderCommunityAuditLog);
+
+  if (securityCleanup) {
+    securityCleanup.addEventListener('click', function () {
+      var result = cleanupExpiredCommunityDiscipline(false);
+      setPanelFeedback(securityFeedback, result.ok ? 'Estados expirados removidos.' : (result.message || 'Não havia estados expirados.'));
+      renderCommunitySecurityPanel();
+      renderCommunityMembers();
+      syncChannelComposerAccess();
+    });
+  }
+
+  if (securityDisciplineList) {
+    securityDisciplineList.addEventListener('click', function (event) {
+      var button = event.target.closest('[data-community-security-clear]');
+      if (!button) return;
+      var result = disciplineCommunityMember(button.dataset.communitySecurityClear, 'clear', 'restrição removida pelo painel de segurança', '1h', button.dataset.scope || 'community', button.dataset.channelId || currentChannelId || 'geral');
+      setPanelFeedback(securityFeedback, result.ok ? 'Punição removida.' : (result.message || 'Não foi possível remover.'));
+      renderCommunitySecurityPanel(); renderCommunityMembers(); renderCurrentMemberDisciplineNotice(); syncChannelComposerAccess();
+    });
+  }
+
+  if (securityBanList) {
+    securityBanList.addEventListener('click', function (event) {
+      var button = event.target.closest('[data-community-unban]');
+      if (!button) return;
+      var result = unbanCommunityMember(button.dataset.communityUnban);
+      setPanelFeedback(securityFeedback, result.ok ? 'Conta desbanida.' : (result.message || 'Não foi possível desbanir.'));
+      renderCommunitySecurityPanel();
+    });
+  }
+
   window.addEventListener('storage', function (event) {
     if (event.key === COMMUNITY_CHANNEL_STATE_STORAGE_KEY) {
       renderChannels(getCurrentCommunityRecord());
       updateRoomStats();
       return;
     }
-    if (event.key === COMMUNITY_AUDIT_STORAGE_KEY) { renderCommunityAuditLog(); return; }
+    if (event.key === COMMUNITY_AUDIT_STORAGE_KEY) { renderCommunityAuditLog(); renderCommunitySecurityPanel(); return; }
     if (event.key === COMMUNITY_MESSAGES_STORAGE_KEY) {
       renderPersistedMessagesForChannel(currentChannelId || 'geral');
       if (!document.hidden) markChannelRead(currentChannelId || 'geral');
       renderPinnedPanel();
+      renderCommunityPinnedBanner();
       updateRoomStats();
       return;
     }
@@ -4855,43 +6444,55 @@
     renderJoinRequests();
     updateRoomStats();
     syncCommunityPermissionUI();
+    renderCurrentMemberDisciplineNotice();
+    syncChannelComposerAccess();
   });
 
   function showCommunityWelcomeIfPending() {
     var modal = document.querySelector('[data-community-welcome-modal]');
     if (!modal) return;
+    var record = getCurrentCommunityRecord() || currentCommunityContext || {};
+    var state = getCurrentMemberOnboardingState(record);
     var profile = getCurrentUserProfile();
     var communityId = getCurrentCommunityId();
     var key = 'doke.community.welcome.v1:' + communityId + ':' + profile.id;
-    var shouldOpen = false;
-    try {
-      shouldOpen = window.sessionStorage && window.sessionStorage.getItem(key) === '1';
-      if (shouldOpen) window.sessionStorage.removeItem(key);
-    } catch (error) {
-      shouldOpen = false;
-    }
-    if (!shouldOpen) return;
-    var record = getCurrentCommunityRecord() || currentCommunityContext || {};
+    var sessionPending = false;
+    try { sessionPending = window.sessionStorage && window.sessionStorage.getItem(key) === '1'; } catch (error) {}
+    if (!state.required && !sessionPending) return;
     var title = modal.querySelector('[data-community-welcome-title]');
     if (title) title.textContent = 'Bem-vindo à ' + String(record.title || record.name || 'comunidade') + '!';
+    var message = modal.querySelector('[data-community-welcome-message]');
+    if (message) message.textContent = String(record.welcomeMessage || 'Confira as regras e conclua os primeiros passos para participar.');
     var rules = normalizeCommunityRules(record.rules);
-    var rulesBody = modal.querySelector('[data-community-welcome-rules-body]');
-    var rulesSection = modal.querySelector('[data-community-welcome-rules-section]');
     var rulesList = modal.querySelector('[data-community-welcome-rules]');
-    if (rulesList) {
-      rulesList.replaceChildren();
-      rules.forEach(function (rule) {
-        var item = document.createElement('li');
-        item.textContent = rule;
-        rulesList.appendChild(item);
-      });
-    }
+    if (rulesList) { rulesList.replaceChildren(); rules.forEach(function (rule) { var item=document.createElement('li'); item.textContent=rule; rulesList.appendChild(item); }); }
+    var rulesSection = modal.querySelector('[data-community-welcome-rules-section]');
     if (rulesSection) rulesSection.hidden = rules.length === 0;
-    if (rulesBody) rulesBody.hidden = rules.length === 0;
+    var checklist = Array.isArray(record.onboardingChecklist) ? record.onboardingChecklist : [];
+    var checklistList = modal.querySelector('[data-community-welcome-checklist]');
+    if (checklistList) { checklistList.replaceChildren(); checklist.forEach(function (task) { var item=document.createElement('li'); item.textContent=task; checklistList.appendChild(item); }); }
+    var checklistSection = modal.querySelector('[data-community-welcome-checklist-section]');
+    if (checklistSection) checklistSection.hidden = checklist.length === 0;
+    var acceptRow = modal.querySelector('[data-community-rules-accept-row]');
+    var acceptInput = modal.querySelector('[data-community-rules-accept]');
+    if (acceptRow) acceptRow.hidden = !state.required;
+    if (acceptInput) acceptInput.checked = !state.required;
+    var acceptButton = modal.querySelector('[data-community-onboarding-accept]');
+    if (acceptButton) acceptButton.disabled = Boolean(state.required && acceptInput && !acceptInput.checked);
+    modal.dataset.rulesRequired = String(state.required);
+    var closeButton = modal.querySelector('[data-community-welcome-close]:not(.doke-modal__backdrop)');
+    if (closeButton) {
+      closeButton.hidden = false;
+      closeButton.setAttribute('aria-hidden', 'false');
+    }
     modal.hidden = false;
-    modal.setAttribute('aria-hidden', 'false');
+    modal.setAttribute('aria-hidden','false');
     document.body.classList.add('community-modal-open');
-    window.setTimeout(function () { modal.querySelector('.doke-btn--primary[data-community-welcome-close]')?.focus?.(); }, 40);
+    window.setTimeout(function () {
+      var focusTarget = state.required ? acceptInput : modal.querySelector('[data-community-welcome-close]:not(.doke-modal__backdrop)');
+      if (!focusTarget || focusTarget.hidden) focusTarget = modal.querySelector('.community-welcome-modal__dialog');
+      if (focusTarget && typeof focusTarget.focus === 'function') focusTarget.focus();
+    }, 60);
   }
 
   document.querySelectorAll('[data-community-welcome-close]').forEach(function (button) {
@@ -4899,14 +6500,55 @@
       var modal = button.closest('[data-community-welcome-modal]');
       if (!modal) return;
       modal.hidden = true;
-      modal.setAttribute('aria-hidden', 'true');
+      modal.setAttribute('aria-hidden','true');
       document.body.classList.remove('community-modal-open');
     });
   });
 
+  var onboardingRulesAccept = document.querySelector('[data-community-rules-accept]');
+  var onboardingAccept = document.querySelector('[data-community-onboarding-accept]');
+  if (onboardingRulesAccept && onboardingAccept) {
+    onboardingRulesAccept.addEventListener('change', function () {
+      var modal = onboardingRulesAccept.closest('[data-community-welcome-modal]');
+      var required = modal && modal.dataset.rulesRequired === 'true';
+      onboardingAccept.disabled = Boolean(required && !onboardingRulesAccept.checked);
+      var feedback = modal && modal.querySelector('[data-community-onboarding-feedback]');
+      if (feedback && onboardingRulesAccept.checked) {
+        feedback.hidden = true;
+        feedback.textContent = '';
+      }
+    });
+  }
+  if (onboardingAccept) onboardingAccept.addEventListener('click', function () {
+    var modal = onboardingAccept.closest('[data-community-welcome-modal]');
+    var required = modal && modal.dataset.rulesRequired === 'true';
+    var checkbox = modal && modal.querySelector('[data-community-rules-accept]');
+    var feedback = modal && modal.querySelector('[data-community-onboarding-feedback]');
+    if (required && checkbox && !checkbox.checked) { if (feedback) { feedback.textContent='Aceite as regras para continuar.'; feedback.hidden=false; } return; }
+    var record = getCurrentCommunityRecord() || {};
+    var profile = getCurrentUserProfile();
+    var operation = transactCurrentCommunity('COMMUNITY_RULES_ACCEPTED', profile.accountKey || profile.id, function (storedRecord) {
+      var members = (Array.isArray(storedRecord.members) ? storedRecord.members : []).map(function (member) {
+        if (!identitiesIntersect(getMemberIdentityKeys(member), profile.identityKeys || [profile.accountKey, profile.id, profile.email])) return member;
+        return Object.assign({}, member, { rulesAcceptedVersion: getRulesVersion(storedRecord), rulesAcceptedAt: new Date().toISOString(), onboardingCompletedAt: new Date().toISOString() });
+      });
+      return { record: Object.assign({}, storedRecord, { members: members, updatedAt: new Date().toISOString() }), payload: { rulesVersion: getRulesVersion(storedRecord) } };
+    });
+    if (!operation.ok && required) { if (feedback) { feedback.textContent=operation.message || 'Não foi possível registrar o aceite.'; feedback.hidden=false; } return; }
+    try { window.sessionStorage && window.sessionStorage.removeItem('doke.community.welcome.v1:' + getCurrentCommunityId() + ':' + profile.id); } catch (error) {}
+    if (modal) {
+      modal.hidden=true;
+      modal.setAttribute('aria-hidden','true');
+    }
+    document.body.classList.remove('community-modal-open');
+    syncChannelComposerAccess();
+  });
+
   var requestedChannelId = '';
   try { requestedChannelId = String(new URLSearchParams(window.location.search || '').get('channel') || '').trim(); } catch (error) {}
+  var defaultChannelId = String((getCurrentCommunityRecord() || {}).defaultChannelId || '');
   var initiallyActiveChannel = channels.find(function (channel) { return requestedChannelId && channel.dataset.channelId === requestedChannelId; })
+    || channels.find(function (channel) { return defaultChannelId && channel.dataset.channelId === defaultChannelId; })
     || channels.find(function (channel) { return channel.classList.contains('is-active'); })
     || channels[0];
   if (initiallyActiveChannel) {
@@ -4941,7 +6583,10 @@
   renderCommunityMembers();
   renderJoinRequests();
   syncCommunityPermissionUI();
+  renderCurrentMemberDisciplineNotice();
+  syncChannelComposerAccess();
   openRequestedSettingsPanel();
+  openRequestedRoomPanel();
   filterChannels();
   renderPersistedMessagesForChannel(currentChannelId);
   showCommunityWelcomeIfPending();

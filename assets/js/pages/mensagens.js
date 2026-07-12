@@ -261,12 +261,44 @@
     return allowed;
   };
 
+  const getCurrentMessageAuthorProfile = () => {
+    const sessionUser = window.Doke?.session?.getCurrentUser?.() || window.DokeAuth?.service?.getCurrentUser?.() || {};
+    const resolved = window.DokeMessageAuthor?.resolve?.({
+      name: sessionUser.displayName || sessionUser.name || sessionUser.fullName || sessionUser.email || 'Você',
+      avatarUrl: sessionUser.avatarUrl || sessionUser.avatar || sessionUser.photoUrl || sessionUser.photo || '',
+      initials: sessionUser.initials || sessionUser.avatarInitials || ''
+    }, 'Você') || { name: 'Você', url: '', initials: 'VC' };
+    return resolved;
+  };
+
+  const resolveThreadMessageAuthor = (message, conversation) => {
+    const current = getCurrentMessageAuthorProfile();
+    if (message?.mine) return current;
+    const peerName = message?.author || conversation?.name || conversation?.peerName || 'Membro';
+    return window.DokeMessageAuthor?.resolve?.({
+      name: peerName,
+      avatarUrl: message?.authorAvatarUrl || message?.avatarUrl || conversation?.avatarUrl || conversation?.photoUrl || conversation?.avatar || '',
+      initials: message?.authorInitials || conversation?.peerInitials || conversation?.initials || ''
+    }, peerName) || { name: peerName, url: '', initials: getConversationInitials(peerName) };
+  };
+
+  const renderMessageAuthorAvatar = (author) => {
+    if (author?.url) {
+      return `<span class="message-author-avatar doke-avatar" aria-hidden="true"><img src="${escapeHtml(author.url)}" alt="" loading="lazy" decoding="async"></span>`;
+    }
+    return `<span class="message-author-avatar doke-avatar" aria-hidden="true">${escapeHtml(author?.initials || 'DK')}</span>`;
+  };
+
   const normalizeLocalMessage = (message, conversation) => {
     const currentUserId = getCurrentUserId();
     const mine = message?.mine === true || Boolean(currentUserId && message?.senderId && String(message.senderId) === String(currentUserId));
     return {
       id: message?.id || "",
+      senderId: message?.senderId || message?.authorId || "",
       author: mine ? "Você" : message?.author || conversation?.name || "Doke",
+      authorAvatarUrl: message?.authorAvatarUrl || message?.avatarUrl || "",
+      authorInitials: message?.authorInitials || "",
+      createdAt: message?.createdAt || message?.sentAt || message?.timestamp || "",
       time: message?.time || "agora",
       text: message?.text || message?.body || "",
       mine,
@@ -293,6 +325,8 @@
     const hasOrderContext = Boolean(conversation?.orderId || order.id);
     return {
       avatar: conversation?.avatar || conversation?.peerInitials || "",
+      avatarUrl: conversation?.avatarUrl || conversation?.photoUrl || (/^(data:image\/|blob:|https?:\/\/|assets\/|\/)/i.test(String(conversation?.avatar || "")) ? conversation.avatar : ""),
+      peerInitials: conversation?.peerInitials || "",
       name: conversation?.name || conversation?.peerName || "Profissional Doke",
       peerRole: conversation?.peerRole || "professional",
       lastSeen: conversation?.lastSeen || "Conversa do pedido",
@@ -470,17 +504,12 @@
     return true;
   };
 
-  const hydrateLocalConversations = (root, sourceConversations = null) => {
+  const hydrateLocalConversations = (root) => {
     const service = window.Doke?.services?.messages;
     const { ordersList } = getConversationLists(root);
-    if (!ordersList) return false;
+    if (!service?.listLocalConversations || !ordersList) return false;
 
-    const experienceSnapshot = window.Doke?.messagesExperience?.getSnapshot?.() || [];
-    const localConversations = Array.isArray(sourceConversations)
-      ? sourceConversations
-      : experienceSnapshot.length
-        ? experienceSnapshot
-        : service?.listLocalConversations?.({ currentUser: true }) || [];
+    const localConversations = service.listLocalConversations({ currentUser: true }) || [];
     localConversations.slice().reverse().forEach((conversation) => {
       if (!conversation?.id) return;
       const conversationId = String(conversation.id);
@@ -500,11 +529,7 @@
   };
 
   const persistConversationMessage = (conversationId, message) => {
-    const service = window.Doke?.services?.messages;
-    if (!service || typeof service.sendMessage !== "function") {
-      return Promise.reject(new Error("Serviço de mensagens indisponível."));
-    }
-    return service.sendMessage(conversationId, {
+    return window.Doke?.services?.messages?.sendMessage?.(conversationId, {
       body: message.text || message.body || "",
       text: message.text || message.body || "",
       type: message.type || "text",
@@ -517,65 +542,38 @@
       mine: message.mine !== false,
       author: message.author || "Você",
       replyTo: message.replyTo || null
-    });
+    }).catch((error) => console.warn("[DokeMessages:sendMessage]", error));
   };
 
-  const createOptimisticMessageId = () => `optimistic_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-
-  const setMessagesMutationState = (state, detail = {}) => {
-    const boundary = document.querySelector('[data-state-boundary="mensagens"]');
-    const states = window.Doke?.experience?.states;
-    if (states && typeof states.set === "function") {
-      states.set(boundary, state, Object.assign({ domain: "messages" }, detail));
-    } else if (boundary) {
-      boundary.dataset.experienceState = state;
-      boundary.setAttribute("aria-busy", state === "submitting" ? "true" : "false");
-    }
-    if (document.body) document.body.dataset.messagesExperienceState = state;
-  };
-
-  const sendOptimisticConversationMessage = async ({ conversationId, message, restoreDraft }) => {
-    const conversation = conversations[conversationId];
-    if (!conversation) throw new Error("Conversa não encontrada.");
-
-    const optimisticId = createOptimisticMessageId();
-    const optimisticMessage = Object.assign({}, message, {
-      id: optimisticId,
-      clientId: optimisticId,
-      deliveryState: "sending"
+  const publishConversationNotification = (conversationId, message, kind = 'message') => {
+    const conversation = conversations[conversationId] || {};
+    const currentUserId = String(getCurrentUserId() || '');
+    const recipientAccountKey = String(
+      currentUserId && currentUserId === String(conversation.professionalId || '')
+        ? (conversation.clientId || '')
+        : (conversation.professionalId || conversation.clientId || '')
+    ).trim();
+    if (!recipientAccountKey || recipientAccountKey === currentUserId) return;
+    const isMention = kind === 'mention';
+    window.DokeInAppNotifications?.publish({
+      type: isMention ? 'direct_message_mention' : 'direct_message',
+      category: 'messages',
+      recipientAccountKey,
+      userId: recipientAccountKey,
+      actorId: currentUserId,
+      actorName: getCurrentUser()?.name || 'Nova mensagem',
+      eventKey: `direct-message:${conversationId}:${Date.now()}`,
+      title: isMention ? 'Você foi mencionado' : `Nova mensagem de ${getCurrentUser()?.name || 'um contato'}`,
+      body: String(message?.text || (message?.type === 'image' ? 'Imagem' : message?.type === 'audio' ? 'Áudio' : 'Nova mensagem')).slice(0, 140),
+      targetUrl: `mensagens.html?conversation=${encodeURIComponent(conversationId)}`,
+      actionLabel: 'Abrir conversa',
+      conversationId,
+      scopeKey: `conversation:${conversationId}`,
+      actions: [
+        { label: 'Responder', action: 'quick-reply', conversationId },
+        { label: 'Abrir', url: `mensagens.html?conversation=${encodeURIComponent(conversationId)}` }
+      ]
     });
-
-    conversation.messages.push(optimisticMessage);
-    setMessagesMutationState("submitting", { conversationId, optimisticId });
-    renderThread(conversationId, { scrollTo: "end" });
-
-    try {
-      const persistedMessage = await persistConversationMessage(conversationId, optimisticMessage);
-      const index = conversation.messages.findIndex((item) => item && (item.id === optimisticId || item.clientId === optimisticId));
-      if (index !== -1) {
-        conversation.messages[index] = Object.assign({}, optimisticMessage, persistedMessage || {}, {
-          deliveryState: "sent",
-          clientId: optimisticId
-        });
-      }
-      window.Doke?.messagesExperience?.invalidate?.();
-      renderThread(conversationId, { scrollTo: "end" });
-      setMessagesMutationState("success", { conversationId, optimisticId });
-      window.setTimeout(() => setMessagesMutationState("ready", { conversationId }), 250);
-      return persistedMessage || optimisticMessage;
-    } catch (error) {
-      const index = conversation.messages.findIndex((item) => item && (item.id === optimisticId || item.clientId === optimisticId));
-      if (index !== -1) conversation.messages.splice(index, 1);
-      renderThread(conversationId, { scrollTo: "end" });
-      if (typeof restoreDraft === "function") restoreDraft();
-      setMessagesMutationState(navigator.onLine === false ? "offline" : "error", {
-        conversationId,
-        optimisticId,
-        error: error?.message || "Falha ao enviar mensagem."
-      });
-      showCopyToast(error?.message || "Não foi possível enviar a mensagem. O conteúdo foi restaurado.");
-      throw error;
-    }
   };
 
   const persistConversationState = (conversationId) => {
@@ -760,7 +758,6 @@
     const chargeForm = document.querySelector("[data-charge-form]");
     const chargeAmountInput = document.querySelector("[data-charge-amount]");
     const chargeInstallments = document.querySelector("[data-charge-installments]");
-    const chargeSubmitButton = chargeForm?.querySelector('button[type="submit"]');
     const chargeCancelButtons = document.querySelectorAll("[data-charge-cancel]");
     const completionModal = document.querySelector("[data-message-completion-modal]");
     const completionCloseButtons = Array.from(document.querySelectorAll("[data-message-completion-close]"));
@@ -927,6 +924,9 @@
     let audioDraftSeconds = 0;
     let audioDraftTimer = null;
     let imageDraftSrc = "";
+    let messageContextIndex = -1;
+    let activeThreadMessageIndex = -1;
+    const advancedMessageFilter = { query: "", author: "all", period: "all", attachment: "all" };
 
     const updateComposerDraftState = () => {
       if (!composer) return;
@@ -1392,7 +1392,7 @@
 
     const openMessagesOrderDetail = (trigger) => {
       const conversation = conversations[activeId];
-      if (!conversation) return;
+      if (!conversation) { releaseNotificationAction(); return; }
       const layer = createMessagesOrderDetailLayer();
       const drawer = layer.querySelector(".orders-detail-drawer");
       activeOrderDetailTrigger = trigger || null;
@@ -1572,129 +1572,6 @@
         syncConversationOrderStatus(conversation, order);
         return persistConversationState(activeId).then(() => order);
       });
-    };
-
-
-    const setChargeFormSubmitting = (submitting) => {
-      if (!chargeForm) return;
-      chargeForm.setAttribute('aria-busy', submitting ? 'true' : 'false');
-      if (chargeSubmitButton) {
-        chargeSubmitButton.disabled = submitting;
-        chargeSubmitButton.dataset.originalLabel = chargeSubmitButton.dataset.originalLabel || chargeSubmitButton.textContent.trim();
-        chargeSubmitButton.textContent = submitting ? 'Enviando proposta…' : chargeSubmitButton.dataset.originalLabel;
-      }
-      chargeCancelButtons.forEach((button) => {
-        button.disabled = submitting;
-      });
-    };
-
-    const invalidateProposalDomains = () => {
-      window.Doke?.messagesExperience?.invalidate?.();
-      const cache = window.Doke?.experience?.cache;
-      cache?.invalidatePrefix?.('orders:');
-      cache?.invalidatePrefix?.('notifications:');
-      const router = window.Doke?.stableShellRouter;
-      router?.invalidate?.('mensagens.html');
-      router?.invalidate?.('pedidos.html');
-      router?.invalidate?.('notificacoes.html');
-    };
-
-    const restoreConversationOrderSnapshot = (conversation, snapshot) => {
-      if (!conversation || !snapshot) return;
-      conversation.order = snapshot.order;
-      conversation.status = snapshot.status;
-      conversation.statusLabel = snapshot.statusLabel;
-      conversation.lastSeen = snapshot.lastSeen;
-      conversation.lastMessage = snapshot.lastMessage;
-    };
-
-    const sendOptimisticChargeProposal = async ({ conversationId, amount, installments }) => {
-      const conversation = conversations[conversationId];
-      if (!conversation) throw new Error('Conversa não encontrada.');
-
-      const optimisticId = createOptimisticMessageId();
-      const orderSnapshot = {
-        order: conversation.order ? JSON.parse(JSON.stringify(conversation.order)) : conversation.order,
-        status: conversation.status,
-        statusLabel: conversation.statusLabel,
-        lastSeen: conversation.lastSeen,
-        lastMessage: conversation.lastMessage
-      };
-      const previousOrderStatus = getOrderStatus(conversation) || 'accepted';
-      const optimisticMessage = {
-        id: optimisticId,
-        clientId: optimisticId,
-        author: 'Você',
-        time: 'agora',
-        text: 'Proposta pronta para aprovação. Você pode pagar por aqui para confirmar o atendimento.',
-        mine: true,
-        senderId: getCurrentUserId(),
-        type: 'charge',
-        amount,
-        installments,
-        paid: false,
-        deliveryState: 'sending'
-      };
-
-      conversation.messages.push(optimisticMessage);
-      setMessagesMutationState('submitting', { domain: 'proposal', conversationId, optimisticId });
-      renderThread(conversationId, { scrollTo: 'end' });
-
-      let persistedMessage = null;
-      try {
-        persistedMessage = await persistConversationMessage(conversationId, optimisticMessage);
-        const index = conversation.messages.findIndex((item) => item && (item.id === optimisticId || item.clientId === optimisticId));
-        if (index !== -1) {
-          conversation.messages[index] = Object.assign({}, optimisticMessage, persistedMessage || {}, {
-            deliveryState: 'sent',
-            clientId: optimisticId
-          });
-        }
-
-        await updateOrderFromConversation('quoted', {
-          amount,
-          budget: amount,
-          installments,
-          paymentMessageId: persistedMessage?.id || optimisticId,
-          messageId: persistedMessage?.id || optimisticId
-        });
-
-        invalidateProposalDomains();
-        renderThread(conversationId, { scrollTo: 'end' });
-        setMessagesMutationState('success', { domain: 'proposal', conversationId, optimisticId });
-        window.setTimeout(() => setMessagesMutationState('ready', { conversationId }), 250);
-        return persistedMessage || optimisticMessage;
-      } catch (error) {
-        const index = conversation.messages.findIndex((item) => item && (
-          item.id === optimisticId || item.clientId === optimisticId || (persistedMessage?.id && item.id === persistedMessage.id)
-        ));
-        if (index !== -1) conversation.messages.splice(index, 1);
-        restoreConversationOrderSnapshot(conversation, orderSnapshot);
-
-        const repository = window.Doke?.repositories?.messages;
-        await repository?.save?.(conversation).catch?.(() => null);
-
-        const orderId = orderSnapshot.order?.id || conversation.orderId;
-        const ordersService = window.Doke?.services?.orders;
-        if (orderId && persistedMessage && ordersService && typeof ordersService.updateStatus === 'function') {
-          await ordersService.updateStatus(orderId, previousOrderStatus, {
-            statusLabel: orderSnapshot.order?.statusLabel || orderSnapshot.statusLabel || '',
-            amount: orderSnapshot.order?.amount || orderSnapshot.order?.budget || '',
-            budget: orderSnapshot.order?.budget || orderSnapshot.order?.amount || '',
-            installments: orderSnapshot.order?.installments || ''
-          }).catch(() => null);
-        }
-
-        invalidateProposalDomains();
-        renderThread(conversationId, { scrollTo: 'end' });
-        setMessagesMutationState(navigator.onLine === false ? 'offline' : 'error', {
-          domain: 'proposal',
-          conversationId,
-          optimisticId,
-          error: error?.message || 'Falha ao enviar proposta.'
-        });
-        throw error;
-      }
     };
 
     const openPaymentPageForCharge = (message) => {
@@ -2026,6 +1903,155 @@
       });
     };
 
+    const ensureAdvancedMessageSurfaces = () => {
+      if (!root.querySelector('[data-message-context-menu]')) {
+        const menu = document.createElement('div');
+        menu.className = 'messages-message-menu doke-toolbar';
+        menu.dataset.messageContextMenu = '';
+        menu.hidden = true;
+        menu.setAttribute('role', 'menu');
+        menu.innerHTML = `
+          <button class="doke-btn doke-btn--ghost" type="button" data-advanced-message-action="reply">Responder</button>
+          <button class="doke-btn doke-btn--ghost" type="button" data-advanced-message-action="thread">Responder em thread</button>
+          <button class="doke-btn doke-btn--ghost" type="button" data-advanced-message-action="react">Reagir</button>
+          <button class="doke-btn doke-btn--ghost" type="button" data-advanced-message-action="forward">Encaminhar</button>
+          <button class="doke-btn doke-btn--ghost" type="button" data-advanced-message-action="pin">Fixar mensagem</button>
+          <button class="doke-btn doke-btn--ghost" type="button" data-advanced-message-action="history">Histórico de edição</button>
+          <button class="doke-btn doke-btn--ghost" type="button" data-advanced-message-action="edit">Editar</button>`;
+        document.body.appendChild(menu);
+      }
+      if (!root.querySelector('[data-message-pinned-banner]')) {
+        const banner = document.createElement('button');
+        banner.className = 'messages-pinned-banner';
+        banner.dataset.messagePinnedBanner = '';
+        banner.hidden = true;
+        banner.innerHTML = `<button class="messages-pinned-banner__main" type="button" data-message-pinned-jump><span class="messages-pinned-banner__icon" aria-hidden="true">⌖</span><span class="messages-pinned-banner__content"><strong data-message-pinned-author>Mensagem fixada</strong><span data-message-pinned-preview></span></span></button><span class="messages-pinned-banner__position" data-message-pinned-position></span><span class="messages-pinned-banner__nav"><button type="button" class="doke-icon-btn doke-icon-btn--flat" data-message-pinned-prev aria-label="Mensagem fixada anterior">‹</button><button type="button" class="doke-icon-btn doke-icon-btn--flat" data-message-pinned-next aria-label="Próxima mensagem fixada">›</button></span>`;
+        threadBody?.parentElement?.insertBefore(banner, threadBody);
+      }
+      if (!root.querySelector('[data-messages-advanced-search]')) {
+        const panel = document.createElement('section');
+        panel.className = 'messages-advanced-search doke-message-card';
+        panel.dataset.messagesAdvancedSearch = '';
+        panel.hidden = true;
+        panel.innerHTML = `
+          <div class="messages-advanced-search__head"><strong>Buscar nesta conversa</strong><button class="doke-icon-btn doke-icon-btn--flat" type="button" data-messages-advanced-search-close aria-label="Fechar">×</button></div>
+          <div class="messages-advanced-search__grid">
+            <label><span>Texto</span><input class="doke-input" type="search" data-messages-advanced-query placeholder="Buscar mensagem..."></label>
+            <label><span>Autor</span><select class="doke-select" data-messages-advanced-author><option value="all">Todos</option><option value="me">Você</option><option value="other">Outra pessoa</option></select></label>
+            <label><span>Período</span><select class="doke-select" data-messages-advanced-period><option value="all">Todo período</option><option value="today">Hoje</option><option value="7d">Últimos 7 dias</option><option value="30d">Últimos 30 dias</option></select></label>
+            <label><span>Conteúdo</span><select class="doke-select" data-messages-advanced-attachment><option value="all">Tudo</option><option value="image">Imagem</option><option value="audio">Áudio</option><option value="file">Arquivo</option></select></label>
+          </div>`;
+        threadBody?.parentElement?.insertBefore(panel, threadBody);
+      }
+      if (!root.querySelector('[data-message-thread-panel]')) {
+        const panel = document.createElement('aside');
+        panel.className = 'messages-thread-replies';
+        panel.dataset.messageThreadPanel = '';
+        panel.hidden = true;
+        panel.innerHTML = `<header><div><strong>Thread</strong><span data-message-thread-summary></span></div><button class="doke-icon-btn doke-icon-btn--flat" type="button" data-message-thread-close aria-label="Fechar">×</button></header><div class="messages-thread-replies__list" data-message-thread-list></div><form data-message-thread-form><input class="doke-input" data-message-thread-input placeholder="Responder na thread"><button class="doke-btn doke-btn--primary" type="submit">Enviar</button></form>`;
+        document.body.appendChild(panel);
+      }
+      if (!root.querySelector('[data-message-history-modal]')) {
+        const modal = document.createElement('div');
+        modal.className = 'messages-history-modal';
+        modal.dataset.messageHistoryModal = '';
+        modal.hidden = true;
+        modal.innerHTML = `<button class="messages-history-modal__backdrop" type="button" data-message-history-close aria-label="Fechar histórico"></button><section role="dialog" aria-modal="true" aria-label="Histórico de edição"><header><strong>Histórico de edição</strong><button class="doke-icon-btn doke-icon-btn--flat" type="button" data-message-history-close>×</button></header><div data-message-history-list></div></section>`;
+        document.body.appendChild(modal);
+      }
+    };
+
+    const getMessageText = (message) => String(message?.text || (message?.type === 'image' ? 'Imagem' : message?.type === 'audio' ? 'Áudio' : '')).trim();
+    const ensureMessageAdvancedState = (message) => {
+      if (!message || typeof message !== 'object') return message;
+      if (!message.reactions || typeof message.reactions !== 'object') message.reactions = {};
+      if (!Array.isArray(message.editHistory)) message.editHistory = [];
+      if (!Array.isArray(message.threadReplies)) message.threadReplies = [];
+      if (typeof message.pinned !== 'boolean') message.pinned = false;
+      return message;
+    };
+    const messageMatchesAdvancedFilter = (message) => {
+      const query = advancedMessageFilter.query.toLowerCase();
+      if (query && !getMessageText(message).toLowerCase().includes(query)) return false;
+      if (advancedMessageFilter.author === 'me' && !message.mine) return false;
+      if (advancedMessageFilter.author === 'other' && message.mine) return false;
+      if (advancedMessageFilter.attachment !== 'all' && message.type !== advancedMessageFilter.attachment) return false;
+      if (advancedMessageFilter.period !== 'all' && message.createdAt) {
+        const created = Date.parse(message.createdAt);
+        if (created) {
+          const age = Date.now() - created;
+          const max = advancedMessageFilter.period === 'today' ? 86400000 : advancedMessageFilter.period === '7d' ? 604800000 : 2592000000;
+          if (age > max) return false;
+        }
+      }
+      return true;
+    };
+    const renderMessageReactions = (message, index) => {
+      ensureMessageAdvancedState(message);
+      const entries = Object.entries(message.reactions).filter(([, users]) => Array.isArray(users) && users.length);
+      if (!entries.length) return '';
+      return `<div class="message-bubble__reactions">${entries.map(([emoji, users]) => `<button type="button" class="message-reaction" data-message-reaction="${escapeHtml(emoji)}" data-message-index="${index}" aria-label="Reagir com ${escapeHtml(emoji)}">${escapeHtml(emoji)} <span>${users.length}</span></button>`).join('')}</div>`;
+    };
+    const renderMessageThreadLink = (message, index) => {
+      ensureMessageAdvancedState(message);
+      if (!message.threadReplies.length) return '';
+      return `<button class="message-thread-link doke-btn doke-btn--ghost doke-btn--sm" type="button" data-message-thread-open data-message-index="${message.originalIndex}">${message.threadReplies.length} ${message.threadReplies.length === 1 ? 'resposta' : 'respostas'}</button>`;
+    };
+    const persistAdvancedConversation = () => {
+      try { persistConversationState(activeId); } catch (error) { console.warn('[DokeMessages:advanced-persist]', error); }
+    };
+    const getPinnedMessages = (conversation) => (conversation?.messages || [])
+      .map((message, index) => ({ message: ensureMessageAdvancedState(message), index }))
+      .filter(item => item.message.pinned)
+      .sort((a, b) => String(b.message.pinnedAt || b.message.createdAt || '').localeCompare(String(a.message.pinnedAt || a.message.createdAt || '')));
+    const getPinnedMessagePreview = (message) => {
+      if (message?.type === 'image') return 'Imagem fixada';
+      if (message?.type === 'audio') return 'Áudio fixado';
+      if (message?.type === 'file') return message.fileName || 'Arquivo fixado';
+      return getMessageText(message) || 'Mensagem fixada';
+    };
+    const highlightMessage = (index) => {
+      const bubble = threadBody?.querySelector(`[data-message-bubble][data-message-index="${index}"]`);
+      if (!bubble) return;
+      bubble.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      bubble.classList.remove('is-pin-highlighted');
+      requestAnimationFrame(() => bubble.classList.add('is-pin-highlighted'));
+      window.setTimeout(() => bubble.classList.remove('is-pin-highlighted'), 2600);
+    };
+    let activePinnedIndex = 0;
+    const renderPinnedBanner = (conversation) => {
+      const banner = root.querySelector('[data-message-pinned-banner]');
+      if (!banner) return;
+      const pinned = getPinnedMessages(conversation);
+      banner.hidden = pinned.length === 0;
+      if (!pinned.length) {
+        activePinnedIndex = 0;
+        return;
+      }
+      activePinnedIndex = Math.min(activePinnedIndex, pinned.length - 1);
+      const current = pinned[activePinnedIndex];
+      banner.dataset.messageIndex = String(current.index);
+      const author = banner.querySelector('[data-message-pinned-author]');
+      const preview = banner.querySelector('[data-message-pinned-preview]');
+      const position = banner.querySelector('[data-message-pinned-position]');
+      const prev = banner.querySelector('[data-message-pinned-prev]');
+      const next = banner.querySelector('[data-message-pinned-next]');
+      if (author) author.textContent = `${current.message.mine ? 'Você' : (current.message.author || conversation.name)}:`;
+      if (preview) preview.textContent = getPinnedMessagePreview(current.message);
+      if (position) position.textContent = `${activePinnedIndex + 1}/${pinned.length}`;
+      if (prev) prev.disabled = pinned.length < 2;
+      if (next) next.disabled = pinned.length < 2;
+    };
+    const movePinnedBanner = (direction) => {
+      const conversation = conversations[activeId];
+      const pinned = getPinnedMessages(conversation);
+      if (!pinned.length) return;
+      activePinnedIndex = (activePinnedIndex + direction + pinned.length) % pinned.length;
+      renderPinnedBanner(conversation);
+    };
+
+    ensureAdvancedMessageSurfaces();
+
     const renderThread = (id, options = {}) => {
       const conversation = conversations[id];
       if (!conversation || !threadBody) {
@@ -2037,15 +2063,8 @@
       const { scrollTo = isSameThread ? "preserve" : "start", openOnMobile = false } = options;
       activeId = id;
       if (conversation.unread) {
-        const previousUnread = conversation.unread;
         conversation.unread = 0;
-        window.Doke?.services?.messages?.markAsRead?.(id)?.then?.(() => {
-          window.Doke?.messagesExperience?.invalidate?.();
-        }).catch?.((error) => {
-          conversation.unread = previousUnread;
-          refreshConversationCards();
-          console.warn("[DokeMessages:markAsRead]", error);
-        });
+        window.Doke?.services?.messages?.markAsRead?.(id)?.catch?.((error) => console.warn("[DokeMessages:markAsRead]", error));
       }
       const orderAction = root.querySelector(".messages-thread__action--order[data-messages-open-order-detail]");
       if (orderAction) orderAction.disabled = false;
@@ -2062,6 +2081,13 @@
       if (threadEmpty) threadEmpty.hidden = hasOrderContext || conversation.messages.length !== 0;
       if (threadBody) threadBody.hidden = !hasOrderContext && conversation.messages.length === 0;
       const activeInitials = getConversationInitials(conversation.name);
+      conversation.messages.forEach(ensureMessageAdvancedState);
+      const renderedMessages = conversation.messages.map((message, index, messages) => ({
+        ...message,
+        originalIndex: index,
+        groupStart: !window.DokeMessageAuthor || window.DokeMessageAuthor.startsGroup(messages, index, 300000),
+        resolvedAuthor: resolveThreadMessageAuthor(message, conversation)
+      })).filter(messageMatchesAdvancedFilter);
       const lockMessage = getConversationLockMessage(conversation);
       const lockTitle = isOrderDeclined(conversation) ? "Pedido recusado" : "Aguardando aceite do profissional";
       threadBody.innerHTML = (hasOrderContext ? renderLinkedOrderContext(conversation) : "") + (lockMessage ? `
@@ -2091,20 +2117,21 @@
             <p>${escapeHtml(lockMessage)}</p>
           </div>
         </section>
-      ` : "") + conversation.messages.map((message, index) => `
-        <article class="message-row${message.mine ? " message-row--me" : ""}${message.type === "charge" ? " message-row--charge" : ""}${message.deliveryState === "sending" ? " is-sending" : ""}${message.deliveryState === "failed" ? " is-failed" : ""}" data-message-index="${index}">
-          ${message.mine ? "" : `<span class="message-row__avatar doke-avatar" aria-hidden="true">${activeInitials}</span>`}
-          <div class="message-bubble doke-selectable-card${message.mine ? " message-bubble--me" : ""}${message.type === "image" ? " message-bubble--image-only" : ""}${message.type === "charge" ? " message-bubble--charge" : ""}${selectedMessageIndexes.has(index) ? " is-selected" : ""}" data-message-bubble data-message-index="${index}" role="option" tabindex="0" aria-selected="${selectedMessageIndexes.has(index) ? "true" : "false"}">
+      ` : "") + renderedMessages.map((message) => `
+        <article class="message-row has-author-avatar${message.mine ? " message-row--me" : ""}${message.type === "charge" ? " message-row--charge" : ""}${message.groupStart ? " is-message-group-start" : " is-message-group-continuation"}" data-message-index="${message.originalIndex}">
+          ${renderMessageAuthorAvatar(message.resolvedAuthor)}
+          <div class="message-bubble doke-selectable-card${message.mine ? " message-bubble--me" : ""}${message.type === "image" ? " message-bubble--image-only" : ""}${message.type === "charge" ? " message-bubble--charge" : ""}${message.pinned ? " is-message-pinned" : ""}${selectedMessageIndexes.has(message.originalIndex) ? " is-selected" : ""}" data-message-bubble data-message-index="${message.originalIndex}" role="option" tabindex="0" aria-selected="${selectedMessageIndexes.has(message.originalIndex) ? "true" : "false"}">
             <div class="message-bubble__meta">
-              <span>${message.mine ? message.author : ""}</span>
+              <span>${escapeHtml(message.mine ? "Você" : message.resolvedAuthor.name)}</span>
               <span>${message.time}</span>
-              ${message.mine && message.deliveryState === "sending" ? '<span class="message-bubble__delivery" aria-label="Enviando">Enviando…</span>' : ''}
             </div>
+            ${message.pinned ? `<span class="message-bubble__pinned-badge">⌖ Fixada</span>` : ""}
             ${message.replyTo ? `
             <div class="message-bubble__reply${message.mine ? " message-bubble__reply--me" : ""}">
               <strong>${message.replyTo.author}</strong>
               <span>${String(message.replyTo.text || "").slice(0, 72)}</span>
             </div>` : ""}
+            ${message.forwardedFrom ? `<div class="message-bubble__forwarded">Encaminhada de ${escapeHtml(message.forwardedFrom)}</div>` : ""}
             ${message.type === "audio" ? `
             <div class="message-bubble__audio">
               <span class="message-bubble__audio-play">▶</span>
@@ -2117,9 +2144,13 @@
             <div class="message-bubble__image">
               <img src="${message.src}" alt="Imagem enviada na conversa">
             </div>` : `<p>${message.text}</p>`}
+            ${message.editedAt ? `<span class="message-bubble__edited">editada</span>` : ""}
+            ${renderMessageReactions(message, message.originalIndex)}
+            ${renderMessageThreadLink(message, message.originalIndex)}
           </div>
         </article>
       `).join("");
+      renderPinnedBanner(conversation);
       conversation.messages.forEach((message, index) => {
         if (message.type !== "charge") return;
         const bubble = threadBody.querySelector(`.message-bubble[data-message-index="${index}"]`);
@@ -2759,9 +2790,9 @@
       toggleConversationSelectedByItem(item);
     });
 
-    const refreshLocalConversationSurface = ({ preferRequested = false, sourceConversations = null } = {}) => {
+    const refreshLocalConversationSurface = ({ preferRequested = false } = {}) => {
       const hadActiveConversation = Boolean(activeId && conversations[activeId]);
-      hydrateLocalConversations(root, sourceConversations);
+      hydrateLocalConversations(root);
       prepareConversationItems();
       refreshConversationCards();
       syncVisibility();
@@ -2794,24 +2825,166 @@
     document.addEventListener("doke:order-created", () => refreshLocalConversationSurface({ preferRequested: true }));
     document.addEventListener("doke:order-status-changed", () => refreshLocalConversationSurface({ preferRequested: true }));
     document.addEventListener("doke:message-sent", () => refreshLocalConversationSurface({ preferRequested: true }));
-    const handleMessagesExperienceUpdated = (event) => {
-      const items = Array.isArray(event.detail?.items) ? event.detail.items : [];
-      refreshLocalConversationSurface({ preferRequested: true, sourceConversations: items });
-    };
-    document.addEventListener('doke:messages-experience-updated', handleMessagesExperienceUpdated);
-    addRouteCleanup(() => document.removeEventListener('doke:messages-experience-updated', handleMessagesExperienceUpdated));
     document.addEventListener('doke:page-hydration-ready', (event) => {
       if (event.detail?.page !== 'mensagens') return;
       syncVisibility();
     });
     refreshLocalConversationSurface({ preferRequested: true });
-    window.Doke?.messagesExperience?.load?.().catch((error) => {
-      console.warn('[DokeMessages:experienceLoad]', error);
-      hydration?.fail?.(error);
-    });
     if (document.documentElement.dataset.authSurfaceReady === 'true') {
       hydration?.mark('auth');
     }
+
+    const closeMessageContextMenu = () => {
+      const menu = document.querySelector('[data-message-context-menu]');
+      if (menu) menu.hidden = true;
+      messageContextIndex = -1;
+    };
+    const openMessageContextMenu = (event, index) => {
+      const menu = document.querySelector('[data-message-context-menu]');
+      const message = conversations[activeId]?.messages?.[index];
+      if (!menu || !message) return;
+      messageContextIndex = index;
+      const edit = menu.querySelector('[data-advanced-message-action="edit"]');
+      if (edit) edit.hidden = !message.mine || message.type !== 'text';
+      const history = menu.querySelector('[data-advanced-message-action="history"]');
+      if (history) history.hidden = !Array.isArray(message.editHistory) || !message.editHistory.length;
+      const pin = menu.querySelector('[data-advanced-message-action="pin"]');
+      if (pin) pin.textContent = message.pinned ? 'Desfixar mensagem' : 'Fixar mensagem';
+      menu.style.left = `${Math.min(event.clientX, window.innerWidth - 240)}px`;
+      menu.style.top = `${Math.min(event.clientY, window.innerHeight - 300)}px`;
+      menu.hidden = false;
+    };
+    const openMessageHistory = (message) => {
+      const modal = document.querySelector('[data-message-history-modal]');
+      const list = modal?.querySelector('[data-message-history-list]');
+      if (!modal || !list) return;
+      const history = Array.isArray(message.editHistory) ? message.editHistory : [];
+      list.innerHTML = history.length ? history.slice().reverse().map(item => `<article><p>${escapeHtml(item.text || '')}</p><time>${escapeHtml(item.editedAt || '')}</time></article>`).join('') : '<p>Nenhuma versão anterior.</p>';
+      modal.hidden = false;
+    };
+    const openMessageThread = (index) => {
+      const panel = document.querySelector('[data-message-thread-panel]');
+      const message = conversations[activeId]?.messages?.[index];
+      if (!panel || !message) return;
+      ensureMessageAdvancedState(message);
+      activeThreadMessageIndex = index;
+      const list = panel.querySelector('[data-message-thread-list]');
+      const summary = panel.querySelector('[data-message-thread-summary]');
+      if (summary) summary.textContent = getMessageText(message).slice(0, 72);
+      if (list) list.innerHTML = message.threadReplies.length ? message.threadReplies.map(reply => `<article><strong>${escapeHtml(reply.author || 'Você')}</strong><p>${escapeHtml(reply.text || '')}</p><time>${escapeHtml(reply.time || '')}</time></article>`).join('') : '<p class="messages-thread-replies__empty">Nenhuma resposta ainda.</p>';
+      panel.hidden = false;
+      panel.querySelector('[data-message-thread-input]')?.focus();
+    };
+
+    threadBody?.addEventListener('contextmenu', (event) => {
+      const bubble = event.target.closest('[data-message-bubble]');
+      if (!bubble) return;
+      event.preventDefault();
+      openMessageContextMenu(event, Number(bubble.dataset.messageIndex || -1));
+    });
+
+    document.querySelector('[data-message-context-menu]')?.addEventListener('click', (event) => {
+      const action = event.target.closest('[data-advanced-message-action]')?.dataset.advancedMessageAction;
+      const message = conversations[activeId]?.messages?.[messageContextIndex];
+      if (!action || !message) return;
+      if (action === 'reply') setReplyPreview(message);
+      if (action === 'thread') openMessageThread(messageContextIndex);
+      if (action === 'react') {
+        const emoji = window.prompt('Emoji da reação:', '👍');
+        if (emoji) {
+          ensureMessageAdvancedState(message);
+          const userId = getCurrentUserId() || 'me';
+          const users = Array.isArray(message.reactions[emoji]) ? message.reactions[emoji] : [];
+          message.reactions[emoji] = users.includes(userId) ? users.filter(id => id !== userId) : users.concat(userId);
+          persistAdvancedConversation();
+          renderThread(activeId);
+        }
+      }
+      if (action === 'edit' && message.mine && message.type !== 'image' && message.type !== 'audio') {
+        const nextText = window.prompt('Editar mensagem:', getMessageText(message));
+        if (nextText && nextText.trim() && nextText.trim() !== getMessageText(message)) {
+          ensureMessageAdvancedState(message);
+          message.editHistory.push({ text: getMessageText(message), editedAt: new Date().toLocaleString('pt-BR') });
+          message.text = nextText.trim();
+          message.editedAt = new Date().toISOString();
+          persistAdvancedConversation();
+          renderThread(activeId);
+        }
+      }
+      if (action === 'pin') {
+        ensureMessageAdvancedState(message);
+        message.pinned = !message.pinned;
+        message.pinnedAt = message.pinned ? new Date().toISOString() : '';
+        persistAdvancedConversation();
+        renderThread(activeId);
+        showCopyToast(message.pinned ? 'Mensagem fixada' : 'Mensagem desafixada');
+      }
+      if (action === 'history') openMessageHistory(message);
+      if (action === 'forward') {
+        const targets = Object.entries(conversations).filter(([id]) => id !== activeId);
+        const targetName = window.prompt(`Encaminhar para qual conversa?\n${targets.map(([, c]) => c.name).join('\n')}`);
+        const target = targets.find(([, c]) => c.name.toLowerCase() === String(targetName || '').trim().toLowerCase());
+        if (target) {
+          const copy = { ...message, mine: true, author: 'Você', time: 'agora', forwardedFrom: message.mine ? 'Você' : message.author, reactions: {}, threadReplies: [], editHistory: [] };
+          target[1].messages.push(copy);
+          persistConversationMessage(target[0], copy);
+          showCopyToast('Mensagem encaminhada');
+        }
+      }
+      closeMessageContextMenu();
+    });
+
+    root.querySelector('[data-message-pinned-jump]')?.addEventListener('click', () => {
+      const banner = root.querySelector('[data-message-pinned-banner]');
+      const index = Number(banner?.dataset.messageIndex || -1);
+      if (index >= 0) highlightMessage(index);
+    });
+    root.querySelector('[data-message-pinned-prev]')?.addEventListener('click', () => movePinnedBanner(-1));
+    root.querySelector('[data-message-pinned-next]')?.addEventListener('click', () => movePinnedBanner(1));
+
+    threadBody?.addEventListener('click', (event) => {
+      const reaction = event.target.closest('[data-message-reaction]');
+      if (reaction) {
+        const index = Number(reaction.dataset.messageIndex || -1);
+        const message = conversations[activeId]?.messages?.[index];
+        if (!message) return;
+        ensureMessageAdvancedState(message);
+        const emoji = reaction.dataset.messageReaction;
+        const userId = getCurrentUserId() || 'me';
+        const users = Array.isArray(message.reactions[emoji]) ? message.reactions[emoji] : [];
+        message.reactions[emoji] = users.includes(userId) ? users.filter(id => id !== userId) : users.concat(userId);
+        persistAdvancedConversation();
+        renderThread(activeId);
+        return;
+      }
+      const threadLink = event.target.closest('[data-message-thread-open]');
+      if (threadLink) {
+        openMessageThread(Number(threadLink.dataset.messageIndex || -1));
+      }
+    });
+
+    document.querySelector('[data-message-thread-close]')?.addEventListener('click', () => {
+      const panel = document.querySelector('[data-message-thread-panel]');
+      if (panel) panel.hidden = true;
+      activeThreadMessageIndex = -1;
+    });
+    document.querySelector('[data-message-thread-form]')?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const input = event.currentTarget.querySelector('[data-message-thread-input]');
+      const value = String(input?.value || '').trim();
+      const message = conversations[activeId]?.messages?.[activeThreadMessageIndex];
+      if (!value || !message) return;
+      ensureMessageAdvancedState(message);
+      message.threadReplies.push({ author: 'Você', text: value, time: new Date().toLocaleString('pt-BR') });
+      if (input) input.value = '';
+      persistAdvancedConversation();
+      openMessageThread(activeThreadMessageIndex);
+      renderThread(activeId);
+    });
+    document.querySelectorAll('[data-message-history-close]').forEach(button => button.addEventListener('click', () => {
+      const modal = document.querySelector('[data-message-history-modal]');
+      if (modal) modal.hidden = true;
+    }));
 
     threadBody?.addEventListener("click", (event) => {
       const bubble = event.target.closest("[data-message-bubble]");
@@ -2964,60 +3137,99 @@
       }
       const value = String(composerInput?.value || "").trim();
       if (audioDraft && !audioDraft.hidden) {
-        const draftSeconds = Math.max(audioDraftSeconds, 1);
-        const replySnapshot = replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null;
-        const audioMessage = { author: "Você", time: "agora", mine: true, type: "audio", duration: formatAudioTime(draftSeconds), speed: "1x", replyTo: replySnapshot };
+        const audioMessage = { author: "Você", time: "agora", mine: true, type: "audio", duration: formatAudioTime(Math.max(audioDraftSeconds, 1)), speed: "1x", replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null };
+        conversations[activeId].messages.push(audioMessage);
+        persistConversationMessage(activeId, audioMessage);
+        publishConversationNotification(activeId, audioMessage, /(^|\s)@[\w.-]+/.test(String(audioMessage.text || '')) ? 'mention' : 'message');
+        renderThread(activeId, { scrollTo: "end" });
         composer.reset();
         clearReplyPreview();
         resetAudioDraft();
         composerInput?.focus();
-        sendOptimisticConversationMessage({
-          conversationId: activeId,
-          message: audioMessage,
-          restoreDraft: () => {
-            audioDraftSeconds = draftSeconds;
-            if (audioTime) audioTime.textContent = formatAudioTime(draftSeconds);
-            audioDraft?.removeAttribute("hidden");
-            audioButton?.classList.add("is-recording");
-            audioButton?.setAttribute("aria-pressed", "true");
-          }
-        }).catch(() => {});
         return;
       }
       if (imageDraftSrc) {
-        const imageSnapshot = imageDraftSrc;
-        const replySnapshot = replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null;
-        const imageMessage = { author: "Você", time: "agora", mine: true, type: "image", src: imageSnapshot, replyTo: replySnapshot };
+        const imageMessage = { author: "Você", time: "agora", mine: true, type: "image", src: imageDraftSrc, replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null };
+        conversations[activeId].messages.push(imageMessage);
+        persistConversationMessage(activeId, imageMessage);
+        publishConversationNotification(activeId, imageMessage, /(^|\s)@[\w.-]+/.test(String(imageMessage.text || '')) ? 'mention' : 'message');
+        renderThread(activeId, { scrollTo: "end" });
         composer.reset();
         clearReplyPreview();
         resetImageDraft();
         composerInput?.focus();
-        sendOptimisticConversationMessage({
-          conversationId: activeId,
-          message: imageMessage,
-          restoreDraft: () => {
-            imageDraftSrc = imageSnapshot;
-            if (imagePreview) imagePreview.src = imageSnapshot;
-            imageDraft?.removeAttribute("hidden");
-          }
-        }).catch(() => {});
         return;
       }
       if (!value) return;
-      const replySnapshot = replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null;
-      const textMessage = { author: "Você", time: "agora", text: value, mine: true, replyTo: replySnapshot };
+      const textMessage = { author: "Você", time: "agora", text: value, mine: true, replyTo: replyToMessage ? { author: replyToMessage.author, text: replyToMessage.text } : null };
+      conversations[activeId].messages.push(textMessage);
+      persistConversationMessage(activeId, textMessage);
+      publishConversationNotification(activeId, textMessage, /(^|\s)@[\w.-]+/.test(String(textMessage.text || '')) ? 'mention' : 'message');
+      renderThread(activeId, { scrollTo: "end" });
       composer.reset();
       clearReplyPreview();
       composerInput?.focus();
-      sendOptimisticConversationMessage({
-        conversationId: activeId,
-        message: textMessage,
-        restoreDraft: () => {
-          if (composerInput) composerInput.value = value;
-          updateComposerState();
-          composerInput?.focus();
+    });
+
+
+
+    const pendingNotificationActions = new Set();
+    document.addEventListener('doke:notification-action', (event) => {
+      const action = event.detail || {};
+      const actionId = String(action.id || action.actionKey || '');
+      if (actionId && pendingNotificationActions.has(actionId)) return;
+      if (actionId) pendingNotificationActions.add(actionId);
+      const releaseNotificationAction = () => { if (actionId) pendingNotificationActions.delete(actionId); };
+
+      if (action.kind === 'quick-reply') {
+        const conversationId = String(action.conversationId || '');
+        const text = String(action.text || '').trim();
+        if (!conversationId || !text || !conversations[conversationId]) {
+          document.dispatchEvent(new CustomEvent('doke:notification-action-error', {
+            detail: { notificationId: action.notificationId, message: 'Não foi possível localizar a conversa.', retryPayload: action }
+          }));
+          releaseNotificationAction();
+          return;
         }
-      }).catch(() => {});
+        const message = { id: `quick-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, author: 'Você', time: 'agora', text, mine: true, quickReply: true };
+        conversations[conversationId].messages.push(message);
+        Promise.resolve(persistConversationMessage(conversationId, message)).then(() => {
+          publishConversationNotification(conversationId, message, /(^|\s)@[\w.-]+/.test(text) ? 'mention' : 'message');
+          if (activeId === conversationId) renderThread(conversationId, { scrollTo: 'end' });
+          window.DokeInAppNotifications?.recordActionResult(action.notificationId, 'completed', 'Resposta enviada.', { kind: 'delete-last-message', conversationId, messageId: message.id });
+          showCopyToast('Resposta enviada pela notificação.');
+        }).catch((error) => {
+          conversations[conversationId].messages = conversations[conversationId].messages.filter((item) => item !== message);
+          document.dispatchEvent(new CustomEvent('doke:notification-action-error', {
+            detail: { notificationId: action.notificationId, message: error?.message || 'Não foi possível enviar a resposta.', retryPayload: action }
+          }));
+        }).finally(releaseNotificationAction);
+        return;
+      }
+
+      if (action.kind === 'delete-last-message') {
+        const conversationId = String(action.conversationId || '');
+        const conversation = conversations[conversationId];
+        if (!conversation) { releaseNotificationAction(); return; }
+        const messages = conversation.messages || [];
+        const index = action.messageId
+          ? messages.findIndex((message) => String(message.id || '') === String(action.messageId))
+          : messages.map((message) => Boolean(message.quickReply)).lastIndexOf(true);
+        if (index < 0) {
+          document.dispatchEvent(new CustomEvent('doke:notification-action-error', {
+            detail: { notificationId: action.notificationId, message: 'A resposta já não pode ser desfeita.' }
+          }));
+          releaseNotificationAction();
+          return;
+        }
+        messages.splice(index, 1);
+        if (activeId === conversationId) renderThread(conversationId, { scrollTo: 'preserve' });
+        window.DokeInAppNotifications?.recordActionResult(action.notificationId, 'completed', 'Resposta desfeita.');
+        releaseNotificationAction();
+        return;
+      }
+
+      releaseNotificationAction();
     });
 
     chargeButton?.addEventListener("click", () => {
@@ -3076,8 +3288,11 @@
       const action = event.target.closest("[data-thread-more-action]")?.dataset.threadMoreAction;
       if (!action) return;
       if (action === "search") {
-        setSearchExpanded(true);
-        window.setTimeout(() => getVisibleSearchInput()?.focus(), 20);
+        const panel = root.querySelector('[data-messages-advanced-search]');
+        if (panel) {
+          panel.hidden = !panel.hidden;
+          window.setTimeout(() => panel.querySelector('[data-messages-advanced-query]')?.focus(), 20);
+        }
       } else if (action === "archive") {
         if (conversations[activeId]) conversations[activeId].archived = true;
         syncVisibility();
@@ -3094,36 +3309,57 @@
       closeThreadMoreMenu();
     });
 
-    chargeForm?.addEventListener("submit", async (event) => {
+    const syncAdvancedMessageSearch = () => {
+      const panel = root.querySelector('[data-messages-advanced-search]');
+      if (!panel) return;
+      advancedMessageFilter.query = String(panel.querySelector('[data-messages-advanced-query]')?.value || '').trim();
+      advancedMessageFilter.author = String(panel.querySelector('[data-messages-advanced-author]')?.value || 'all');
+      advancedMessageFilter.period = String(panel.querySelector('[data-messages-advanced-period]')?.value || 'all');
+      advancedMessageFilter.attachment = String(panel.querySelector('[data-messages-advanced-attachment]')?.value || 'all');
+      renderThread(activeId, { scrollTo: 'preserve' });
+    };
+    root.querySelector('[data-messages-advanced-search]')?.addEventListener('input', syncAdvancedMessageSearch);
+    root.querySelector('[data-messages-advanced-search]')?.addEventListener('change', syncAdvancedMessageSearch);
+    root.querySelector('[data-messages-advanced-search-close]')?.addEventListener('click', () => {
+      const panel = root.querySelector('[data-messages-advanced-search]');
+      if (panel) panel.hidden = true;
+    });
+    document.addEventListener('click', (event) => {
+      if (!event.target.closest('[data-message-context-menu]') && !event.target.closest('[data-message-bubble]')) closeMessageContextMenu();
+    });
+
+    chargeForm?.addEventListener("submit", (event) => {
       event.preventDefault();
-      if (!conversations[activeId] || chargeForm.getAttribute('aria-busy') === 'true') return;
-      const rawAmount = String(chargeAmountInput?.value || "").trim();
-      if (!rawAmount) {
-        chargeAmountInput?.focus();
-        return;
-      }
-
-      const conversationId = activeId;
-      const amount = rawAmount.startsWith("R$") ? rawAmount : `R$ ${rawAmount}`;
-      const installments = chargeInstallments?.selectedOptions?.[0]?.textContent || "À vista";
-      const amountDraft = chargeAmountInput?.value || '';
-      const installmentsDraft = chargeInstallments?.value || '';
-
-      setChargeFormSubmitting(true);
-      closeChargeModal();
-
-      try {
-        await sendOptimisticChargeProposal({ conversationId, amount, installments });
-        chargeForm.reset();
-        showCopyToast('Proposta enviada ao cliente.');
-      } catch (error) {
-        if (chargeAmountInput) chargeAmountInput.value = amountDraft;
-        if (chargeInstallments) chargeInstallments.value = installmentsDraft;
-        openChargeModal();
-        showCopyToast(error?.message || 'Não foi possível enviar a proposta. Os dados foram restaurados.');
-      } finally {
-        setChargeFormSubmitting(false);
-      }
+      if (!conversations[activeId]) return;
+      const normalized = String(chargeAmountInput?.value || "").trim();
+      if (!normalized) return;
+      const chargeMessage = {
+        author: "Você",
+        time: "agora",
+        text: "Proposta pronta para aprovação. Você pode pagar por aqui para confirmar o atendimento.",
+        mine: true,
+        senderId: getCurrentUserId(),
+        type: "charge",
+        amount: normalized.startsWith("R$") ? normalized : `R$ ${normalized}`,
+        installments: chargeInstallments?.selectedOptions?.[0]?.textContent || "À vista",
+        paid: false
+      };
+      conversations[activeId].messages.push(chargeMessage);
+      persistConversationMessage(activeId, chargeMessage)
+        .then((savedMessage) => {
+          if (savedMessage) Object.assign(chargeMessage, savedMessage);
+          return updateOrderFromConversation('quoted', {
+            amount: chargeMessage.amount,
+            budget: chargeMessage.amount,
+            installments: chargeMessage.installments
+          });
+        })
+        .then(() => {
+          closeChargeModal();
+          renderThread(activeId, { scrollTo: "end" });
+          showCopyToast('Proposta enviada ao cliente.');
+        })
+        .catch((error) => showCopyToast(error?.message || 'Não foi possível enviar a proposta.'));
     });
 
     chargeCancelButtons.forEach((button) => {

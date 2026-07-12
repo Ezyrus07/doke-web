@@ -4,6 +4,9 @@
 
 :root {
   --doke-internal-page-bg: var(--doke-app-bg, #edf4fb);
+  --doke-internal-workspace-gap: clamp(16px, 1.8vw, 24px);
+  --doke-internal-section-gap: clamp(12px, 1.4vw, 18px);
+  --doke-internal-divider: 1px solid var(--border-color-soft, rgba(24, 75, 118, 0.10));
 }
 
 body.internal-shell-page,
@@ -48,8 +51,13 @@ body.profile-page-shell .page__content-inner {
 /* Internal Workspace Contract — flat app background (20260516-design-system-consolidation-v1)
    Responsabilidade: fundo das páginas internas. Remove faixas/overlays sem
    alterar geometria do shell, sidebar ou conteúdo de página. */
-:root {
-  --doke-internal-page-bg: var(--doke-app-bg, #edf4fb);
+
+body.internal-shell-page:not(.home-index-shell) :where(.doke-page-stack) {
+  gap: var(--doke-internal-workspace-gap);
+}
+
+body.internal-shell-page:not(.home-index-shell) :where(.doke-page-section) {
+  gap: var(--doke-internal-section-gap);
 }
 
 body.internal-shell-page:not(.home-index-shell),

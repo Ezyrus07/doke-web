@@ -196,13 +196,14 @@ const initBudgetPage = () => {
     const panels = [...form.querySelectorAll("[data-step-panel]")];
     const indicators = [...pageRoot.querySelectorAll("[data-step-target]")];
     const progressLabel = pageRoot.querySelector("[data-step-progress-label]");
+    const progressName = pageRoot.querySelector("[data-step-progress-name]");
     const progressFill = pageRoot.querySelector("[data-step-progress-fill]");
     const prevButton = form.querySelector("[data-step-prev]");
     const nextButton = form.querySelector("[data-step-next]");
     const submitButton = form.querySelector("[data-step-submit]");
     const exitButton = form.querySelector("[data-step-exit]");
     const actions = form.querySelector(".become-pro-actions");
-    const visualStepCount = Math.max(4, panels.length);
+    const visualStepCount = Math.max(1, panels.length);
     let currentStep = 0;
     let savedLocation = null;
     let lockedScrollY = 0;
@@ -446,6 +447,10 @@ const initBudgetPage = () => {
         }
       });
       if (progressLabel) progressLabel.textContent = `Etapa ${currentStep + 1} de ${panels.length}`;
+      if (progressName) {
+        const activeIndicator = indicators[currentStep];
+        progressName.textContent = activeIndicator?.dataset.stepName || activeIndicator?.querySelector("strong")?.textContent || "";
+      }
       if (progressFill) {
         progressFill.dataset.stepProgressValue = String(Math.round(((currentStep + 1) / visualStepCount) * 100));
       }

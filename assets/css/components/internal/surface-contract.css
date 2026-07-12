@@ -17,9 +17,11 @@
   --internal-surface-bg: rgba(255, 255, 255, 0.96);
   --internal-surface-border: var(--doke-card-border-line, var(--card-border-transparent));
   --internal-surface-border-soft: var(--doke-card-border-line-same-surface, var(--card-border-same-surface));
-  --internal-surface-shadow: var(--doke-elevation-surface);
-  --internal-surface-radius: 20px;
-  --internal-surface-radius-lg: 28px;
+  --internal-surface-shadow: var(--shadow-surface-xs);
+  --internal-panel-shadow: none;
+  --internal-control-shadow: none;
+  --internal-surface-radius: var(--radius-card);
+  --internal-surface-radius-lg: var(--radius-card-lg);
   --internal-control-border: var(--doke-card-border);
 }
 
@@ -32,21 +34,23 @@
 .surface-card,
 .surface-panel {
   border: var(--internal-surface-border);
-  box-shadow: var(--internal-surface-shadow);
 }
 
 .surface-card {
   border-radius: var(--internal-surface-radius);
+  box-shadow: var(--internal-surface-shadow);
 }
 
 .surface-panel {
+  border: var(--internal-surface-border-soft);
   border-radius: var(--internal-surface-radius-lg);
+  box-shadow: var(--internal-panel-shadow);
 }
 
 .surface-control {
   border: var(--border-soft);
-  border-radius: var(--internal-surface-radius);
-  box-shadow: var(--internal-surface-shadow);
+  border-radius: var(--radius-compact, 12px);
+  box-shadow: var(--internal-control-shadow);
 }
 
 /* Content surfaces
@@ -140,7 +144,7 @@
   gap: 16px;
   padding: 16px 18px;
   color: var(--content-disclosure-trigger-color);
-  font-weight: 800;
+  font-weight: var(--doke-type-weight-strong);
   list-style: none;
   cursor: pointer;
 }
@@ -193,7 +197,7 @@
    size, radius, fill, SVG stroke or base color. */
 :root {
   --content-surface-icon-size: 48px;
-  --content-surface-icon-radius: var(--radius-md);
+  --content-surface-icon-radius: var(--radius-sm);
   --content-surface-icon-color: var(--color-primary);
   --content-surface-icon-bg: var(--doke-visual-muted-bg);
   --content-surface-icon-shadow: none;
@@ -224,21 +228,21 @@
 
 .content-surface-icon--topic {
   --content-surface-icon-size: 58px;
-  --content-surface-icon-radius: 18px;
+  --content-surface-icon-radius: var(--radius-sm);
   --content-surface-icon-color: #2479d8;
   --content-surface-icon-bg: linear-gradient(135deg, #edf6ff, #dfeeff);
 }
 
 .content-surface-icon--support {
   --content-surface-icon-size: 64px;
-  --content-surface-icon-radius: 20px;
+  --content-surface-icon-radius: var(--radius-base);
   --content-surface-icon-color: #2479d8;
   --content-surface-icon-bg: linear-gradient(135deg, #edf6ff, #dfeeff);
 }
 
 .content-surface-icon--compact {
   --content-surface-icon-size: 48px;
-  --content-surface-icon-radius: var(--radius-md);
+  --content-surface-icon-radius: var(--radius-sm);
 }
 
 .content-surface-icon--floating {
@@ -253,7 +257,7 @@
   position: relative;
   z-index: 1;
   --content-surface-icon-size: 56px;
-  --content-surface-icon-radius: 18px;
+  --content-surface-icon-radius: var(--radius-sm);
   --content-surface-icon-color: #fff;
   --content-surface-icon-bg: rgba(11, 51, 93, 0.16);
   --content-surface-icon-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);

@@ -17,6 +17,7 @@
   --font-size-xl: 1.22rem;
   --font-size-2xl: 1.45rem;
 
+  --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
@@ -24,7 +25,7 @@
 
   /* Canonical typography weights. Poppins is loaded only through 800, so
      shared components must not request synthetic 850/900 weights. */
-  --doke-type-weight-regular: var(--font-weight-medium);
+  --doke-type-weight-regular: var(--font-weight-regular);
   --doke-type-weight-emphasis: var(--font-weight-semibold);
   --doke-type-weight-strong: var(--font-weight-bold);
   --doke-type-weight-display: var(--font-weight-extrabold);
@@ -182,27 +183,27 @@
   --gradient-page: #f5f6f8;
 
   /* Shadows ------------------------------------------------------------- */
-  --shadow-xs: 0 4px 12px rgba(15, 45, 75, 0.028);
-  --shadow-sm: 0 10px 26px rgba(15, 45, 75, 0.06);
-  --shadow-md: 0 14px 32px rgba(31, 68, 110, 0.08);
-  --shadow-lg: 0 18px 44px rgba(31, 68, 110, 0.10);
-  --shadow-xl: 0 24px 70px rgba(15, 23, 42, 0.13);
-  --shadow-card: 0 10px 26px rgba(15, 45, 75, 0.06);
-  --shadow-card-hover: 0 14px 32px rgba(31, 68, 110, 0.08);
-  --shadow-control: 0 10px 26px rgba(15, 45, 75, 0.06);
+  --shadow-xs: 0 2px 8px rgba(15, 45, 75, 0.03);
+  --shadow-sm: 0 6px 18px rgba(15, 45, 75, 0.045);
+  --shadow-md: 0 10px 26px rgba(31, 68, 110, 0.065);
+  --shadow-lg: 0 16px 38px rgba(31, 68, 110, 0.085);
+  --shadow-xl: 0 22px 58px rgba(15, 23, 42, 0.11);
+  --shadow-card: 0 4px 14px rgba(15, 45, 75, 0.04);
+  --shadow-card-hover: 0 8px 22px rgba(31, 68, 110, 0.065);
+  --shadow-control: 0 3px 10px rgba(15, 45, 75, 0.04);
   --shadow-dock: 0 18px 50px rgba(15, 23, 42, 0.14);
   --shadow-focus: 0 0 0 3px rgba(var(--color-primary-rgb), 0.18);
 
   /* Semantic shadow aliases. Prefer these contracts over raw box-shadow values. */
   --shadow-none: none;
-  --shadow-surface-xs: 0 4px 12px rgba(15, 45, 75, 0.028);
-  --shadow-surface-sm: 0 10px 26px rgba(15, 45, 75, 0.06);
-  --shadow-surface: 0 10px 26px rgba(15, 45, 75, 0.06);
-  --shadow-surface-strong: 0 14px 32px rgba(31, 68, 110, 0.08);
-  --shadow-surface-popover: 0 18px 44px rgba(31, 68, 110, 0.10);
-  --shadow-control-soft: 0 10px 26px rgba(15, 45, 75, 0.06);
-  --shadow-control-hover: 0 14px 32px rgba(31, 68, 110, 0.08);
-  --shadow-action-primary: 0 18px 34px rgba(27, 75, 121, 0.22);
+  --shadow-surface-xs: 0 2px 8px rgba(15, 45, 75, 0.03);
+  --shadow-surface-sm: 0 6px 18px rgba(15, 45, 75, 0.045);
+  --shadow-surface: 0 6px 18px rgba(15, 45, 75, 0.045);
+  --shadow-surface-strong: 0 10px 26px rgba(31, 68, 110, 0.065);
+  --shadow-surface-popover: 0 16px 38px rgba(31, 68, 110, 0.085);
+  --shadow-control-soft: none;
+  --shadow-control-hover: 0 4px 12px rgba(15, 45, 75, 0.055);
+  --shadow-action-primary: 0 10px 22px rgba(27, 75, 121, 0.18);
   --shadow-action-secondary: 0 8px 18px rgba(24, 168, 141, 0.16);
   --shadow-action-secondary-strong: 0 10px 20px rgba(27, 138, 120, 0.18);
   --doke-elevation-control: var(--shadow-control-soft);
@@ -244,7 +245,7 @@
   --doke-visual-border-muted: var(--border-muted);
   --doke-visual-border-strong: var(--border-strong);
   --doke-visual-radius-sm: var(--radius-sm);
-  --doke-visual-radius: var(--radius-surface);
+  --doke-visual-radius: var(--radius-card);
   --doke-visual-radius-lg: var(--radius-lg);
   --doke-visual-shadow: var(--doke-elevation-surface);
   --doke-visual-shadow-hover: var(--doke-elevation-surface-hover);
@@ -363,13 +364,13 @@
   --radius-exact-34: 34px;
 
   /* Semantic radius aliases. Components should prefer these over literals. */
-  --radius-control: var(--radius-sm);
-  --radius-control-lg: var(--radius-md);
-  --radius-card-sm: var(--radius-md);
-  --radius-card: var(--radius-lg);
-  --radius-card-lg: var(--radius-xl);
-  --radius-sheet: var(--radius-xl);
-  --radius-modal: var(--radius-xl);
+  --radius-control: var(--radius-compact);
+  --radius-control-lg: var(--radius-base);
+  --radius-card-sm: var(--radius-sm);
+  --radius-card: var(--radius-base);
+  --radius-card-lg: var(--radius-surface);
+  --radius-sheet: var(--radius-surface);
+  --radius-modal: var(--radius-lg);
   --radius-avatar: var(--radius-full);
 
   /* Spacing ------------------------------------------------------------- */
@@ -427,7 +428,7 @@
   --control-padding-x-lg: 20px;
   --control-font-size-sm: var(--font-size-sm);
   --control-font-size-md: var(--font-size-md);
-  --control-font-weight: var(--font-weight-bold);
+  --control-font-weight: var(--font-weight-semibold);
   --control-line-height: 1;
 
   /* Card/surface visual language ---------------------------------------- */
@@ -489,7 +490,7 @@
   --form-page-card-border-color: var(--surface-border-subtle);
   --form-page-card-border: var(--border-width) var(--border-style) var(--form-page-card-border-color);
   --form-page-card-radius: var(--radius-card-lg);
-  --form-page-card-radius-mobile: var(--radius-surface);
+  --form-page-card-radius-mobile: var(--radius-card);
   --form-page-card-shadow: var(--shadow-surface);
   --form-page-card-padding: clamp(22px, 2.4vw, 32px);
   --form-page-card-padding-mobile: var(--space-5);
@@ -500,7 +501,7 @@
   --form-field-gap: var(--space-2);
   --form-field-label-color: var(--color-primary-deep);
   --form-field-label-size: var(--font-size-sm);
-  --form-field-label-weight: var(--font-weight-extrabold);
+  --form-field-label-weight: var(--font-weight-semibold);
   --form-field-label-line-height: var(--line-height-snug);
   --form-helper-surface-bg: var(--color-surface-muted);
   --form-helper-surface-border: var(--border-soft);
@@ -549,7 +550,7 @@
   --toolbar-search-width-wide: min(360px, 42vw);
   --toolbar-search-padding-x: var(--control-padding-x-md);
   --toolbar-font-size: var(--control-font-size-md);
-  --toolbar-font-weight: var(--font-weight-bold);
+  --toolbar-font-weight: var(--font-weight-semibold);
 
   --select-height: var(--input-height-md);
   --select-radius: var(--input-radius);
@@ -577,21 +578,21 @@
   --state-surface-radius: var(--radius-card);
   --state-surface-radius-compact: var(--radius-md);
   --state-surface-shadow: var(--shadow-surface-xs);
-  --state-surface-padding: clamp(22px, 4vw, 32px);
+  --state-surface-padding: clamp(20px, 3vw, 28px);
   --state-surface-padding-compact: var(--space-5);
-  --state-surface-min-height: 180px;
-  --state-surface-min-height-compact: 128px;
+  --state-surface-min-height: 148px;
+  --state-surface-min-height-compact: 112px;
   --state-gap: var(--space-3);
   --state-gap-compact: var(--space-2);
-  --state-icon-size: 44px;
-  --state-icon-size-lg: 56px;
+  --state-icon-size: 40px;
+  --state-icon-size-lg: 48px;
   --state-icon-bg: var(--control-bg-soft-primary);
   --state-icon-border: var(--border-width) var(--border-style) var(--control-outline-soft-primary);
   --state-icon-color: var(--color-primary-strong);
   --state-title-color: var(--color-primary-deep);
   --state-title-size: var(--font-size-lg);
   --state-title-size-compact: var(--font-size-md);
-  --state-title-weight: var(--font-weight-extrabold);
+  --state-title-weight: var(--font-weight-bold);
   --state-title-line-height: var(--line-height-snug);
   --state-title-letter-spacing: -0.02em;
   --state-description-color: var(--color-text-muted);
@@ -679,9 +680,9 @@
   --tab-pill-border-color: var(--control-outline-same-surface);
   --tab-pill-border-color-hover: var(--control-outline-soft-primary-hover);
   --tab-pill-border: var(--border-width) var(--border-style) var(--tab-pill-border-color);
-  --tab-pill-shadow: var(--shadow-control-soft);
+  --tab-pill-shadow: none;
   --tab-pill-shadow-hover: var(--shadow-control-hover);
-  --tab-pill-shadow-active: 0 10px 22px rgba(var(--color-primary-rgb), 0.18);
+  --tab-pill-shadow-active: 0 6px 16px rgba(var(--color-primary-rgb), 0.14);
 
   /* Layout -------------------------------------------------------------- */
   --sidebar-width: 240px;
@@ -710,7 +711,7 @@
   --section-gap: var(--space-8);
   --section-gap-lg: var(--space-10);
   --section-title-size: var(--font-size-sm);
-  --section-title-letter-spacing: 0.18em;
+  --section-title-letter-spacing: var(--doke-type-tracking-label);
   --section-title-color: #365b81;
   --grid-card-gap: var(--space-4);
   --grid-card-gap-lg: 18px;
@@ -755,9 +756,9 @@
   --surface-outline-ring: rgba(43, 95, 148, 0.08);
   --surface-card-bg: var(--color-surface-raised);
   --surface-card-bg-muted: rgba(247, 250, 253, 0.96);
-  --surface-card-radius-sm: var(--radius-md);
-  --surface-card-radius-md: var(--radius-lg);
-  --surface-card-radius-lg: var(--radius-xl);
+  --surface-card-radius-sm: var(--radius-card-sm);
+  --surface-card-radius-md: var(--radius-card);
+  --surface-card-radius-lg: var(--radius-card-lg);
 
   --doke-card-bg: var(--color-surface);
   --doke-card-bg-soft: var(--color-surface-muted);
@@ -783,11 +784,11 @@
   --surface-shell-border: var(--doke-card-border);
   --surface-shell-bg: var(--color-surface-raised);
   --surface-shell-shadow: var(--shadow-surface-sm);
-  --surface-shell-radius: var(--radius-surface);
-  --surface-shell-radius-compact: var(--radius-md);
+  --surface-shell-radius: var(--radius-card-lg);
+  --surface-shell-radius-compact: var(--radius-card);
   --internal-surface-shadow: var(--shadow-surface);
-  --internal-surface-radius: var(--radius-base);
-  --internal-surface-radius-lg: var(--radius-xl);
+  --internal-surface-radius: var(--radius-card);
+  --internal-surface-radius-lg: var(--radius-card-lg);
 
   /* Legacy-compatible Doke UI aliases ---------------------------------- */
   --doke-ui-blue-900: #103b66;

@@ -39,64 +39,6 @@ body.post-service-page-shell svg {
   max-width: 790px;
 }
 
-.post-service-progress {
-  display: grid;
-  grid-template-columns: auto minmax(180px, 1fr);
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 22px;
-}
-
-.post-service-progress__pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  width: fit-content;
-  min-height: 34px;
-  padding: 0 12px;
-  border-radius: var(--radius-pill);
-  background: var(--control-bg-soft-primary, #eef6ff);
-  color: var(--post-service-blue-strong);
-  font-size: .88rem;
-  font-weight: 700;
-}
-
-.post-service-progress__track {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  align-items: center;
-  gap: 10px;
-}
-
-.post-service-progress__track span {
-  position: relative;
-  height: 7px;
-  border-radius: var(--radius-pill);
-  background: #e7eef7;
-}
-
-.post-service-progress__track span::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: 0;
-  width: 15px;
-  height: 15px;
-  transform: translate(50%, -50%);
-  border-radius: 50%;
-  border: 2px solid #d4e2f3;
-  background: #fff;
-  box-shadow: var(--doke-elevation-control);
-}
-
-.post-service-progress__track span.is-active {
-  background: linear-gradient(90deg, var(--post-service-blue), var(--post-service-blue-dark));
-}
-
-.post-service-progress__track span.is-active::after {
-  border-color: rgba(38, 116, 217, .42);
-}
-
 .post-service-section-head {
   margin-bottom: 16px;
 }
@@ -113,13 +55,13 @@ body.post-service-page-shell svg {
   font-size: 1.25rem;
   line-height: 1.1;
   letter-spacing: -0.035em;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .post-service-section-head p {
   margin: 6px 0 0;
   color: var(--post-service-muted);
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.5;
 }
 
@@ -148,7 +90,7 @@ body.post-service-page-shell svg {
   color: var(--post-service-blue-dark);
   font-size: .84rem;
   line-height: 1.25;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .post-service-field em {
@@ -189,7 +131,8 @@ body.post-service-page-shell svg {
 }
 
 
-.post-service-step-panel[hidden] {
+.post-service-step-panel[hidden],
+.post-service-field[data-price-field][hidden] {
   display: none;
 }
 
@@ -235,7 +178,7 @@ body.post-service-page-shell svg {
 }
 
 .post-service-upload-card {
-  min-height: 118px;
+  min-height: 92px;
   display: grid;
   align-content: center;
   gap: 8px;
@@ -248,7 +191,7 @@ body.post-service-page-shell svg {
 }
 
 .post-service-upload-card--main {
-  min-height: 250px;
+  min-height: 184px;
   background: linear-gradient(180deg, #fbfdff, #f4f9ff);
 }
 
@@ -270,6 +213,53 @@ body.post-service-page-shell svg {
   font-size: .82rem;
   line-height: 1.35;
   font-weight: 600;
+}
+
+.post-service-more-media {
+  min-width: 0;
+  align-self: start;
+  border: 1px solid rgba(24, 75, 118, 0.1);
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+
+.post-service-more-media > summary {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 14px;
+  color: var(--post-service-blue-dark);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.post-service-more-media > summary::-webkit-details-marker {
+  display: none;
+}
+
+.post-service-more-media > summary::after {
+  content: "+";
+  color: var(--post-service-blue-strong);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.post-service-more-media[open] > summary::after {
+  content: "−";
+}
+
+.post-service-more-media > summary span {
+  margin-left: auto;
+  color: var(--post-service-muted);
+  font-size: .78rem;
+  font-weight: 600;
+}
+
+.post-service-more-media .post-service-upload-list {
+  padding: 0 12px 12px;
 }
 
 .post-service-check-grid {
@@ -340,49 +330,54 @@ body.post-service-page-shell svg {
   transform: scale(1);
 }
 
-.post-service-review-grid {
+.post-service-review-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-block: 1px solid rgba(24, 75, 118, 0.1);
+}
+
+.post-service-review-list li {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: minmax(120px, 0.32fr) minmax(0, 1fr);
+  gap: 18px;
+  padding: 13px 0;
 }
 
-.post-service-review-card {
+.post-service-review-list li + li {
+  border-top: 1px solid rgba(24, 75, 118, 0.08);
+}
+
+.post-service-review-list li > div {
   display: grid;
-  gap: 7px;
-  padding: 16px;
-  border: 1px solid rgba(13, 47, 89, .08);
-  border-radius: var(--form-upload-radius, var(--radius-base));
-  background: var(--form-upload-bg, #fbfdff);
+  gap: 4px;
+  min-width: 0;
 }
 
-.post-service-review-card strong {
-  color: #6a809d;
-  font-size: .78rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-}
-
-.post-service-review-card span {
+.post-service-review-list strong {
   color: var(--post-service-blue-dark);
-  font-weight: 800;
+  font-weight: 700;
 }
 
-.post-service-review-card p {
+.post-service-review-list span {
+  color: var(--post-service-blue-dark);
+  font-weight: 700;
+}
+
+.post-service-review-list p {
   margin: 0;
   color: var(--post-service-muted);
   font-size: .88rem;
   line-height: 1.45;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .post-service-confirm {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   margin-top: 16px;
-  padding: 18px;
-  border-radius: var(--radius-md);
-  background: #f7fbff;
+  padding: 14px 0 0;
+  border-top: 1px solid rgba(24, 75, 118, 0.1);
 }
 
 .post-service-actions {
@@ -407,62 +402,62 @@ body.post-service-page-shell svg {
   }
 }
 
+.post-service-tips-card__eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--post-service-green-dark);
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
 .post-service-tips-card ul {
   display: grid;
-  gap: 16px;
-  margin: 22px 0 0;
+  gap: 12px;
+  margin: 18px 0 0;
   padding: 0;
   list-style: none;
 }
 
 .post-service-tips-card li {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
   align-items: center;
 }
 
 .post-service-tips-card li > span {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   display: grid;
   place-items: center;
-  border: 2px solid rgba(22, 184, 149, .45);
+  border: 1.5px solid rgba(22, 184, 149, .42);
   border-radius: var(--radius-pill);
   color: var(--post-service-green);
 }
 
 .post-service-tips-card li > span svg {
-  width: 16px;
-  height: 16px;
-  stroke-width: 2.6;
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.5;
 }
 
 .post-service-tips-card strong {
   display: block;
   color: var(--post-service-blue-dark);
-  font-weight: 800;
-}
-
-.post-service-tip-badge {
-  width: fit-content;
-  margin-top: 24px;
-  padding: 8px 12px;
-  border-radius: var(--radius-pill);
-  background: #ecf9f5;
-  color: var(--post-service-green-dark);
-  font-size: .78rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: .04em;
+  font-size: .9rem;
+  font-weight: 700;
 }
 
 .post-service-tips-card p {
-  margin: 12px 0 0;
+  margin: 16px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid rgba(24, 75, 118, 0.08);
   color: var(--post-service-muted);
-  font-size: .9rem;
+  font-size: .86rem;
   line-height: 1.45;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .post-service-submit-state {
@@ -540,30 +535,34 @@ body.post-service-page-shell svg {
 }
 
 @media (max-width: 1180px) {
-  .post-service-tips-card ul {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .post-service-tips-card {
+    display: none;
   }
 }
 
 @media (max-width: 760px) {
-  .post-service-progress {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
   .post-service-grid,
-  .post-service-segmented,
   .post-service-upload-layout,
   .post-service-upload-list,
-  .post-service-check-grid,
-  .post-service-review-grid,
-  .post-service-actions.has-back-action,
-  .post-service-tips-card ul {
+  .post-service-actions.has-back-action {
     grid-template-columns: 1fr;
+  }
+
+  .post-service-segmented {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .post-service-check-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .post-service-review-list li {
+    grid-template-columns: 1fr;
+    gap: 5px;
   }
 
   .post-service-upload-card--main {
-    min-height: 160px;
+    min-height: 148px;
   }
 
   .post-service-btn {
@@ -593,7 +592,7 @@ body.post-service-page-shell svg {
   body[data-page="anunciar-servico"].post-service-page-shell .post-service-field,
   body[data-page="anunciar-servico"].post-service-page-shell .post-service-upload-layout,
   body[data-page="anunciar-servico"].post-service-page-shell .post-service-upload-list,
-  body[data-page="anunciar-servico"].post-service-page-shell .post-service-review-grid,
+  body[data-page="anunciar-servico"].post-service-page-shell .post-service-review-list,
   body[data-page="anunciar-servico"].post-service-page-shell .post-service-actions,
   body[data-page="anunciar-servico"].post-service-page-shell .post-service-submit-state__actions {
     max-width: 100%;
@@ -644,12 +643,30 @@ body.post-service-page-shell svg {
   background: linear-gradient(90deg, var(--post-service-blue), var(--post-service-blue-dark));
 }
 
-.post-service-progress__fill.doke-flow-progress__fill::after {
-  content: none;
-}
-
 .post-service-steps.doke-flow-steps {
   --doke-flow-step-count: 4;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.post-service-step.doke-flow-step {
+  min-height: 50px;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+}
+
+.post-service-step.doke-flow-step > span {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-xs);
+  font-size: .78rem;
+}
+
+.post-service-step.doke-flow-step strong {
+  font-size: .86rem;
+  font-weight: 700;
 }
 
 @media (max-width: 1180px) {
@@ -660,6 +677,6 @@ body.post-service-page-shell svg {
 
 @media (max-width: 760px) {
   .post-service-steps.doke-flow-steps {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

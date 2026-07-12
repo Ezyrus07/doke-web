@@ -3,30 +3,30 @@
 body.orders-page-shell,
 body.notifications-page-shell,
 body.messages-page-shell {
-  --action-surface-bg: rgba(255, 255, 255, 0.88);
-  --action-surface-border: var(--border-color-muted);
-  --action-surface-shadow: 0 18px 38px rgba(28, 63, 102, 0.05);
-  --action-chip-bg: rgba(245, 248, 252, 0.98);
-  --action-chip-border: var(--border-color-muted);
-  --action-chip-text: #173a67;
-  --action-chip-muted: #6882a2;
-  --action-accent: #1f9d74;
-  --action-accent-strong: #1f4f84;
-  --action-control-size: 44px;
-  --action-control-radius: 16px;
+  --action-surface-bg: rgba(255, 255, 255, 0.96);
+  --action-surface-border: var(--border-color-soft);
+  --action-surface-shadow: var(--shadow-surface-xs);
+  --action-chip-bg: var(--control-bg-soft-primary, rgba(36, 95, 150, 0.08));
+  --action-chip-border: var(--control-outline-soft-primary, rgba(36, 95, 150, 0.12));
+  --action-chip-text: var(--color-primary-strong, #184a76);
+  --action-chip-muted: var(--color-text-muted, #6882a2);
+  --action-accent: var(--color-primary, #245f96);
+  --action-accent-strong: var(--color-primary-strong, #184a76);
+  --action-control-size: 40px;
+  --action-control-radius: var(--radius-compact, 12px);
 }
 
 body.orders-page-shell .orders-page-header__controls,
 body.notifications-page-shell .notifications-page-header__controls,
 body.messages-page-shell .messages-header-controls {
   display: grid;
-  gap: 12px;
-  padding: 16px 18px;
+  gap: 10px;
+  padding: 12px 14px;
   border: 1px solid var(--action-surface-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card, 16px);
   background: var(--action-surface-bg);
   box-shadow: var(--action-surface-shadow);
-  backdrop-filter: blur(14px);
+  backdrop-filter: none;
 }
 
 body.orders-page-shell .orders-filter-status-stack,
@@ -59,7 +59,7 @@ body.messages-page-shell .orders-active-filter-chip {
   background: var(--action-chip-bg);
   color: var(--action-chip-text);
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: var(--doke-type-weight-emphasis, 600);
   line-height: 1;
   white-space: nowrap;
 }
@@ -77,7 +77,7 @@ body.messages-page-shell .orders-active-filter-clear {
   color: var(--action-chip-muted);
   font: inherit;
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: var(--doke-type-weight-emphasis, 600);
   line-height: 1;
   white-space: nowrap;
 }
@@ -132,7 +132,7 @@ body.messages-page-shell .orders-select-option {
   color: var(--action-chip-text);
   font: inherit;
   font-size: 0.92rem;
-  font-weight: 700;
+  font-weight: var(--doke-type-weight-emphasis, 600);
   line-height: 1;
   white-space: nowrap;
   transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease;
@@ -149,7 +149,7 @@ body.orders-page-shell .orders-page-header__search-toggle[aria-expanded="true"],
 body.notifications-page-shell .orders-page-header__search-toggle[aria-expanded="true"],
 body.messages-page-shell .orders-page-header__search-toggle[aria-expanded="true"] {
   border-color: transparent;
-  background: #1f9d74;
+  background: var(--action-accent);
   color: #fff;
 }
 
@@ -165,7 +165,7 @@ body.notifications-page-shell .notifications-filters-panel .filter-chip span {
   align-items: center;
   justify-content: center;
   font-size: 0.72rem;
-  font-weight: 800;
+  font-weight: var(--doke-type-weight-strong, 700);
 }
 
 body.orders-page-shell .orders-filter-item.is-active span,
@@ -202,10 +202,10 @@ body.messages-page-shell .orders-select-summary {
   padding: 0 14px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--action-chip-border);
-  background: rgba(245, 248, 252, 0.98);
+  background: var(--action-chip-bg);
   color: var(--action-chip-text);
   font-size: 0.92rem;
-  font-weight: 800;
+  font-weight: var(--doke-type-weight-strong, 700);
   line-height: 1;
   white-space: nowrap;
 }
@@ -231,8 +231,8 @@ body.messages-page-shell .orders-select-option:disabled {
     gap: 12px;
     width: 100%;
     margin-top: 8px;
-    padding: 14px;
-    border-radius: var(--radius-surface);
+    padding: 12px;
+    border-radius: var(--radius-card, 16px);
     overflow: hidden;
     box-sizing: border-box;
   }
@@ -306,20 +306,3 @@ body.messages-page-shell .orders-select-option:disabled {
   }
 }
 
-
-/* --- Doke action surface base ownership ---
-   Component owns the expandable control surfaces. Fine-grained trigger polish
-   stays in filter-select-standard.css, which is loaded later. */
-body.orders-page-shell,
-body.notifications-page-shell,
-body.messages-page-shell {
-  --action-surface-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 249, 255, 0.96));
-  --action-surface-border: color-mix(in srgb, var(--color-border, var(--border-color-muted)) 82%, white);
-  --action-surface-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88), 0 20px 44px rgba(16, 38, 74, 0.08);
-  --action-chip-bg: rgba(247, 250, 255, 0.98);
-  --action-chip-border: var(--border-color-muted);
-  --action-chip-text: #173a67;
-  --action-chip-muted: #6983a3;
-  --action-accent: var(--color-primary, #4a7de8);
-  --action-accent-strong: var(--color-primary-strong, #2f62c9);
-}

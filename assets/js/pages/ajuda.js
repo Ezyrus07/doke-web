@@ -81,6 +81,143 @@
       target?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
     }
 
+
+    const supportExperience = window.Doke?.supportHelpExperience;
+    const ticketModal = document.querySelector('[data-help-ticket-modal]');
+    const ticketForm = document.querySelector('[data-help-ticket-form]');
+    const ticketSubmit = document.querySelector('[data-help-ticket-submit]');
+    const ticketFeedback = document.querySelector('[data-help-ticket-feedback]');
+    const openTicketButtons = [...document.querySelectorAll('[data-help-open-ticket]')];
+    const listTicketButtons = [...document.querySelectorAll('[data-help-list-tickets]')];
+    const closeTicketButtons = [...document.querySelectorAll('[data-help-ticket-close]')];
+    let lastTicketTrigger = null;
+    let draftTimer = 0;
+
+    const notifySupport = (title, body, category = 'support') => {
+      const toast = window.Doke?.operationalEventToast;
+      if (toast?.notify) {
+        toast.notify({
+          id: `support-${Date.now()}`,
+          category,
+          title,
+          body,
+          createdAt: new Date().toISOString()
+        });
+      }
+    };
+
+    const readTicketPayload = () => {
+      if (!ticketForm) return {};
+      const data = new FormData(ticketForm);
+      return {
+        subject: String(data.get('subject') || '').trim(),
+        category: String(data.get('category') || '').trim(),
+        message: String(data.get('message') || '').trim()
+      };
+    };
+
+    const restoreTicketDraft = () => {
+      const draft = supportExperience?.readDraft?.();
+      if (!draft || !ticketForm) return;
+      ['subject', 'category', 'message'].forEach((name) => {
+        const field = ticketForm.elements.namedItem(name);
+        if (field && typeof draft[name] === 'string') field.value = draft[name];
+      });
+    };
+
+    const saveTicketDraft = () => {
+      if (!supportExperience || !ticketForm) return;
+      window.clearTimeout(draftTimer);
+      draftTimer = window.setTimeout(() => {
+        try { supportExperience.saveDraft(readTicketPayload()); } catch (error) {}
+      }, 180);
+    };
+
+    const setTicketModalOpen = (open, trigger) => {
+      if (!ticketModal) return;
+      if (open) {
+        lastTicketTrigger = trigger instanceof HTMLElement ? trigger : null;
+        restoreTicketDraft();
+        ticketModal.hidden = false;
+        ticketModal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('doke-overlay-open');
+        requestAnimationFrame(() => ticketForm?.elements?.namedItem('subject')?.focus?.({ preventScroll: true }));
+      } else {
+        ticketModal.hidden = true;
+        ticketModal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('doke-overlay-open');
+        lastTicketTrigger?.focus?.({ preventScroll: true });
+      }
+    };
+
+    openTicketButtons.forEach((button) => {
+      button.addEventListener('click', () => setTicketModalOpen(true, button));
+    });
+
+    closeTicketButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        saveTicketDraft();
+        setTicketModalOpen(false);
+      });
+    });
+
+    ticketForm?.addEventListener('input', saveTicketDraft);
+    ticketForm?.addEventListener('change', saveTicketDraft);
+    ticketForm?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!supportExperience || supportExperience.isSubmitting?.()) return;
+      const originalText = ticketSubmit?.textContent || 'Enviar chamado';
+      if (ticketFeedback) ticketFeedback.textContent = '';
+      if (ticketSubmit) {
+        ticketSubmit.disabled = true;
+        ticketSubmit.setAttribute('aria-busy', 'true');
+        ticketSubmit.textContent = 'Enviando chamado…';
+      }
+      try {
+        const ticket = await supportExperience.submit(readTicketPayload());
+        ticketForm.reset();
+        setTicketModalOpen(false);
+        notifySupport('Chamado enviado', `Protocolo ${ticket.id || ticket.ticketId} criado com sucesso.`);
+      } catch (error) {
+        const message = error?.message || 'Não foi possível enviar o chamado. Seu rascunho foi preservado.';
+        if (ticketFeedback) ticketFeedback.textContent = message;
+        notifySupport('Chamado não enviado', message);
+      } finally {
+        if (ticketSubmit) {
+          ticketSubmit.disabled = false;
+          ticketSubmit.removeAttribute('aria-busy');
+          ticketSubmit.textContent = originalText;
+        }
+      }
+    });
+
+    listTicketButtons.forEach((button) => {
+      button.addEventListener('click', async () => {
+        if (!supportExperience) return;
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        try {
+          const tickets = await supportExperience.listTickets();
+          document.dispatchEvent(new CustomEvent('doke:support-tickets-loaded', { detail: { tickets: Array.isArray(tickets) ? tickets : [] } }));
+          notifySupport('Meus chamados', Array.isArray(tickets) && tickets.length ? `${tickets.length} chamado(s) encontrado(s).` : 'Nenhum chamado encontrado.');
+        } catch (error) {
+          notifySupport('Histórico indisponível', error?.message || 'Não foi possível consultar seus chamados.');
+        } finally {
+          button.disabled = false;
+          button.removeAttribute('aria-busy');
+        }
+      });
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && ticketModal && !ticketModal.hidden) {
+        saveTicketDraft();
+        setTicketModalOpen(false);
+      }
+    });
+
+    supportExperience?.init?.();
+
     applyFilter();
   };
 

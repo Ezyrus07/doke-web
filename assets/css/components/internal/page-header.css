@@ -1,31 +1,30 @@
-/* Reusable internal page header system.
-   Was previously owned from the page layer.
-   It now lives in components/internal because the header context cluster is reused by multiple internal screens. */
-/* Internal page header system
-   Reusable context-label + action cluster for internal views. */
+/* Internal page header context actions.
+   Owner: components/internal.
+   Responsibility: compact navigation/view actions inside the global app header.
+   Page CSS may position the cluster, but must not redefine its visual anatomy. */
 
 .page-header-context {
-  --doke-context-action-height: var(--toolbar-action-height, var(--control-height-lg, 48px));
-  --doke-context-action-height-compact: var(--toolbar-action-height-compact, var(--control-height-md, 42px));
-  --doke-context-action-padding-x: 18px;
-  --doke-context-action-padding-x-compact: 15px;
-  --doke-context-action-gap: var(--toolbar-gap-compact, 10px);
-  --doke-context-action-radius: var(--toolbar-radius, var(--radius-base, 16px));
-  --doke-context-action-bg: var(--toolbar-bg, var(--internal-surface-bg, rgba(255, 255, 255, 0.92)));
-  --doke-context-action-border: var(--toolbar-border-color, var(--control-outline-same-surface, transparent));
-  --doke-context-action-text: var(--toolbar-text, #12355d);
-  --doke-context-action-shadow: var(--toolbar-shadow, 0 10px 24px rgba(39, 58, 86, 0.06));
-  --doke-context-action-hover-bg: var(--toolbar-bg-hover, #fff);
-  --doke-context-action-hover-border: var(--toolbar-border-color-hover, var(--doke-context-action-border));
-  --doke-context-action-hover-shadow: var(--toolbar-shadow-hover, 0 14px 28px rgba(39, 58, 86, 0.10));
-  --doke-context-action-active-bg: linear-gradient(180deg, #1aa77a 0%, #148c69 100%);
+  --doke-context-action-height: var(--control-height-md, 42px);
+  --doke-context-action-height-compact: var(--control-height-sm, 38px);
+  --doke-context-action-padding-x: 14px;
+  --doke-context-action-padding-x-compact: 12px;
+  --doke-context-action-gap: var(--space-2, 8px);
+  --doke-context-action-radius: var(--radius-compact, 12px);
+  --doke-context-action-bg: var(--control-bg-same-surface, rgba(255, 255, 255, 0.92));
+  --doke-context-action-border: var(--control-outline-same-surface, rgba(24, 75, 118, 0.10));
+  --doke-context-action-text: var(--color-primary-strong, #184a76);
+  --doke-context-action-shadow: var(--shadow-control-soft, none);
+  --doke-context-action-hover-bg: var(--control-bg-soft-primary-hover, rgba(36, 95, 150, 0.11));
+  --doke-context-action-hover-border: var(--control-outline-soft-primary-hover, rgba(36, 95, 150, 0.18));
+  --doke-context-action-hover-shadow: var(--shadow-control-hover, 0 4px 12px rgba(15, 45, 75, 0.055));
+  --doke-context-action-active-bg: var(--color-primary, #245f96);
   --doke-context-action-active-border: transparent;
   --doke-context-action-active-text: #fff;
-  --doke-context-action-active-shadow: 0 18px 34px rgba(20, 140, 105, 0.22);
+  --doke-context-action-active-shadow: 0 6px 16px rgba(36, 95, 150, 0.16);
 
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
   flex: 0 0 auto;
 }
@@ -33,7 +32,7 @@
 .page-header-context__title {
   display: inline-flex;
   align-items: center;
-  margin-right: 4px;
+  margin-right: 2px;
   color: var(--color-text-muted);
   font-size: var(--doke-type-size-component-title);
   font-weight: var(--doke-type-weight-emphasis);
@@ -58,23 +57,17 @@
   color: var(--doke-context-action-text);
   box-shadow: var(--doke-context-action-shadow);
   font: inherit;
-  font-weight: var(--doke-type-weight-display);
+  font-weight: var(--doke-type-weight-emphasis);
   line-height: 1;
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
-  transition:
-    transform var(--transition-fast, 160ms ease),
-    box-shadow var(--transition-fast, 160ms ease),
-    background var(--transition-fast, 160ms ease),
-    border-color var(--transition-fast, 160ms ease),
-    color var(--transition-fast, 160ms ease);
+  transition: var(--doke-interaction-transition, background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease);
 }
 
 .page-header-context__action:hover,
 .doke-context-pill:hover {
-  transform: translateY(-1px);
-  border-color: transparent;
+  border-color: var(--doke-context-action-hover-border);
   background: var(--doke-context-action-hover-bg);
   box-shadow: var(--doke-context-action-hover-shadow);
 }
@@ -82,19 +75,26 @@
 .page-header-context__action:focus-visible,
 .doke-context-pill:focus-visible {
   outline: 0;
-  box-shadow: var(--doke-context-action-hover-shadow);
+  box-shadow: var(--doke-interaction-focus-ring, 0 0 0 3px rgba(36, 95, 150, 0.18));
 }
 
-:is(.page-header-context__action, .doke-context-pill):is([aria-expanded="true"], [aria-pressed="true"], .is-active, .is-view-active, .doke-context-pill--active, .doke-context-pill--success) {
+:is(.page-header-context__action, .doke-context-pill):is([aria-expanded="true"], [aria-pressed="true"], .is-active, .is-view-active, .doke-context-pill--active) {
   border-color: var(--doke-context-action-active-border);
   background: var(--doke-context-action-active-bg);
   color: var(--doke-context-action-active-text);
   box-shadow: var(--doke-context-action-active-shadow);
 }
 
+:is(.page-header-context__action, .doke-context-pill).doke-context-pill--success {
+  border-color: transparent;
+  background: var(--color-secondary, #168c7d);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(22, 140, 125, 0.16);
+}
+
 :is(.page-header-context__action, .doke-context-pill) svg {
-  width: 18px;
-  height: 18px;
+  width: 17px;
+  height: 17px;
   stroke: currentColor;
   fill: none;
   stroke-width: 1.9;
@@ -120,14 +120,7 @@
   .doke-context-pill {
     min-height: var(--doke-context-action-height-compact);
     padding-inline: var(--doke-context-action-padding-x-compact);
-    gap: 8px;
-    font-size: 0.92rem;
+    gap: 7px;
+    font-size: 0.9rem;
   }
-}
-
-
-/* Context actions are soft surface controls: light border only when the button background is close to the page surface. */
-.page-header-context__action,
-.doke-context-pill {
-  border-color: var(--doke-context-action-border);
 }

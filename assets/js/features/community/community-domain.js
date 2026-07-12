@@ -4,7 +4,7 @@
   var Doke = window.Doke || (window.Doke = {});
   if (Doke.communityDomain) return;
 
-  var SCHEMA_VERSION = 9;
+  var SCHEMA_VERSION = 10;
   var KEYS = Object.freeze({
     communities: 'doke.communities.local.v1',
     deleted: 'doke.communities.deleted.local.v1',
@@ -250,7 +250,11 @@
       restrictedUntil: String(member.restrictedUntil || '').trim(),
       disciplineReason: String(member.disciplineReason || '').trim().slice(0, 240),
       disciplinedByAccountKey: normalizeIdentityKey(member.disciplinedByAccountKey || ''),
-      disciplinedAt: String(member.disciplinedAt || '').trim()
+      disciplinedAt: String(member.disciplinedAt || '').trim(),
+      rulesAcceptedVersion: Math.max(0, Number(member.rulesAcceptedVersion || 0) || 0),
+      rulesAcceptedAt: String(member.rulesAcceptedAt || '').trim(),
+      onboardingCompletedAt: String(member.onboardingCompletedAt || '').trim(),
+      channelDiscipline: member.channelDiscipline && typeof member.channelDiscipline === 'object' && !Array.isArray(member.channelDiscipline) ? Object.assign({}, member.channelDiscipline) : {}
     };
   }
 
@@ -277,6 +281,7 @@
       identityKeys: identityKeys,
       reason: String(entry.reason || '').trim().slice(0, 240),
       bannedAt: String(entry.bannedAt || nowIso()).trim(),
+      expiresAt: String(entry.expiresAt || '').trim(),
       bannedByAccountKey: normalizeIdentityKey(entry.bannedByAccountKey || ''),
       bannedByName: String(entry.bannedByName || '').trim()
     };
@@ -298,6 +303,9 @@
 
   function mergeMemberRecords(existing, incoming) {
     var owner = existing.role === 'owner' || incoming.role === 'owner';
+    var existingDisciplineAt = Date.parse(String(existing.disciplinedAt || '')) || 0;
+    var incomingDisciplineAt = Date.parse(String(incoming.disciplinedAt || '')) || 0;
+    var disciplineSource = incomingDisciplineAt > existingDisciplineAt ? incoming : existing;
     return normalizeMember(Object.assign({}, existing, incoming, {
       id: existing.id || incoming.id,
       accountKey: existing.accountKey || incoming.accountKey,
@@ -307,7 +315,13 @@
       role: owner ? 'owner' : (existing.role || incoming.role || 'member'),
       roleIds: owner ? ['owner'] : normalizeMemberRoleIds(existing).concat(normalizeMemberRoleIds(incoming)),
       joinedAt: existing.joinedAt || incoming.joinedAt,
-      source: existing.source || incoming.source
+      source: existing.source || incoming.source,
+      mutedUntil: String(disciplineSource.mutedUntil || existing.mutedUntil || incoming.mutedUntil || '').trim(),
+      restrictedUntil: String(disciplineSource.restrictedUntil || existing.restrictedUntil || incoming.restrictedUntil || '').trim(),
+      disciplineReason: String(disciplineSource.disciplineReason || existing.disciplineReason || incoming.disciplineReason || '').trim(),
+      disciplinedByAccountKey: normalizeIdentityKey(disciplineSource.disciplinedByAccountKey || existing.disciplinedByAccountKey || incoming.disciplinedByAccountKey || ''),
+      disciplinedAt: String(disciplineSource.disciplinedAt || existing.disciplinedAt || incoming.disciplinedAt || '').trim(),
+      channelDiscipline: Object.assign({}, existing.channelDiscipline || {}, incoming.channelDiscipline || {})
     }));
   }
 
@@ -316,7 +330,9 @@
     var community = options.community && typeof options.community === 'object' ? options.community : {};
     var currentUser = options.currentUser || null;
     var members = (Array.isArray(community.members) ? community.members : []).map(normalizeMember).filter(Boolean);
-    var bans = (Array.isArray(community.bans) ? community.bans : []).map(normalizeBan).filter(Boolean);
+    var bans = (Array.isArray(community.bans) ? community.bans : []).map(normalizeBan).filter(function (ban) {
+      return ban && (!ban.expiresAt || (Date.parse(ban.expiresAt) || 0) > Date.now());
+    });
     members = members.filter(function (member) {
       if (member.role === 'owner') return true;
       return !bans.some(function (ban) { return identitiesIntersect(getMemberIdentityKeys(member), ban.identityKeys); });
@@ -365,6 +381,7 @@
     (Array.isArray(community.joinRequests) ? community.joinRequests : []).map(normalizeJoinRequest).filter(Boolean).forEach(function (request) {
       if (request.status !== 'accepted' || !request.identityKeys.length) return;
       if (identitiesIntersect(request.identityKeys, inactiveMemberKeys)) return;
+      if (bans.some(function (ban) { return identitiesIntersect(request.identityKeys, ban.identityKeys); })) return;
       var requestMember = normalizeMember({
         id: request.userId || request.accountKey || request.userEmail || request.identityKeys[0],
         accountKey: request.accountKey || request.userEmail || request.userId || request.identityKeys[0],
@@ -483,6 +500,12 @@
     next.roles = roles;
     next.channels = projectCommunityChannels({ community: next });
     next.rules = normalizeRules(next.rules);
+    next.rulesVersion = Math.max(1, Number(next.rulesVersion || 1) || 1);
+    next.requireRulesAcceptance = Boolean(next.requireRulesAcceptance);
+    next.defaultChannelId = String(next.defaultChannelId || '').trim();
+    next.welcomeMessage = String(next.welcomeMessage || '').trim().slice(0, 500);
+    next.onboardingChecklist = normalizeRules(next.onboardingChecklist).slice(0, 8);
+    next.onboardingAudience = ['all', 'client', 'professional'].includes(String(next.onboardingAudience || 'all')) ? String(next.onboardingAudience || 'all') : 'all';
     next.joinRequests = (Array.isArray(next.joinRequests) ? next.joinRequests : []).map(normalizeJoinRequest).filter(Boolean);
     next.members = projectCommunityMembers({ community: next });
     next.membershipHistory = Array.isArray(next.membershipHistory) ? next.membershipHistory : [];
@@ -681,7 +704,9 @@
       return identitiesIntersect(currentKeys, getMemberIdentityKeys(member));
     }) || null;
     var matchedMemberKeys = matchedMember ? currentKeys.filter(function (key) { return identitiesIntersect([key], getMemberIdentityKeys(matchedMember)); }) : [];
-    var matchedBan = (Array.isArray(community && community.bans) ? community.bans : []).map(normalizeBan).filter(Boolean).find(function (ban) {
+    var matchedBan = (Array.isArray(community && community.bans) ? community.bans : []).map(normalizeBan).filter(function (ban) {
+      return ban && (!ban.expiresAt || (Date.parse(ban.expiresAt) || 0) > Date.now());
+    }).find(function (ban) {
       return identitiesIntersect(currentKeys, ban.identityKeys);
     }) || null;
     var relation = matchedOwnerKeys.length ? 'owner' : (matchedBan ? 'banned' : (matchedMember ? 'member' : 'visitor'));

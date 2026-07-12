@@ -103,10 +103,10 @@
 <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean shell-home__workspace shell-home__workspace--clean wallet-shell-content doke-page-shell doke-page-stack">
 <section aria-busy="false" aria-labelledby="wallet-title" class="wallet-page doke-page-section" data-state-boundary="carteira" data-view-state="ready">
 <h1 class="sr-only" id="wallet-title">Carteira</h1>
-<div aria-atomic="true" aria-live="polite" data-state-region="" data-state-scope="carteira">
-<p data-state-loading="" hidden="" class="doke-loading-state">Carregando carteira...</p>
-<p data-state-empty="" hidden="" class="doke-empty-state">Nenhuma movimentação encontrada.</p>
-<p data-state-error="" hidden="" class="doke-error-state">Não foi possível carregar a carteira.</p>
+<div aria-atomic="true" aria-live="polite" class="wallet-page-status sr-only" data-state-region="" data-state-scope="carteira">
+<p data-state-loading="" hidden="">Carregando carteira...</p>
+<p data-state-empty="" hidden="">Nenhuma movimentação encontrada.</p>
+<p data-state-error="" hidden="">Não foi possível carregar a carteira.</p>
 </div>
 <div class="wallet-overview" data-wallet-view-panel="overview">
 <section aria-label="Resumo financeiro principal" class="wallet-hero doke-card doke-page-section">
@@ -135,64 +135,27 @@
 <strong data-wallet-account-field="nextPayout" data-wallet-next-payout="">Após saldo</strong>
 </div>
 </article>
-<article aria-label="Status da conta" class="wallet-hero-stat wallet-hero-stat--status">
-<span aria-hidden="true" class="wallet-hero-stat__icon">
-<svg viewbox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="m8.5 12.2 2.3 2.3 4.7-5"></path></svg>
-</span>
-<div class="wallet-hero-stat__content">
-<strong data-wallet-account-status="">Regular · Sem pendências</strong>
-</div>
-</article>
+
 </div>
 </section>
-<section aria-label="Indicadores financeiros" class="wallet-kpis">
-<article class="wallet-kpi doke-card">
-<span aria-hidden="true" class="wallet-kpi__icon wallet-kpi__icon--income">
-<svg viewbox="0 0 24 24"><path d="m7 15 4-4 3 3 4-5"></path><path d="M14 6h4v4"></path></svg>
-</span>
-<div class="wallet-kpi__content">
-<span>Entradas do mês</span>
-<strong data-wallet-kpi="monthly-income">R$ 0,00</strong>
-</div>
-</article>
-<article class="wallet-kpi doke-card">
-<span aria-hidden="true" class="wallet-kpi__icon wallet-kpi__icon--escrow">
-<svg viewbox="0 0 24 24"><path d="M12 3.5 18 6v5.2c0 4.4-2.6 7.3-6 9.3-3.4-2-6-4.9-6-9.3V6l6-2.5Z"></path><path d="M12 8.5v6"></path><path d="M9.5 11.5H14.5"></path></svg>
-</span>
-<div class="wallet-kpi__content">
-<span>Em garantia</span>
-<strong data-wallet-kpi="held-balance">R$ 0,00</strong>
-</div>
-</article>
-<article class="wallet-kpi doke-card">
-<span aria-hidden="true" class="wallet-kpi__icon wallet-kpi__icon--withdraw">
-<svg viewbox="0 0 24 24"><path d="M12 5v14"></path><path d="m7 14 5 5 5-5"></path></svg>
-</span>
-<div class="wallet-kpi__content">
-<span>Saques realizados</span>
-<strong data-wallet-kpi="withdrawals">R$ 0,00</strong>
-</div>
-</article>
-<article class="wallet-kpi doke-card">
-<span aria-hidden="true" class="wallet-kpi__icon wallet-kpi__icon--fee">%</span>
-<div class="wallet-kpi__content">
-<span>Taxas</span>
-<strong data-wallet-kpi="fees">R$ 0,00</strong>
-</div>
-</article>
-</section>
+
 <section class="wallet-layout doke-page-section">
 <section aria-labelledby="wallet-statement-title" class="wallet-panel wallet-panel--statement doke-card doke-page-section">
 <div class="wallet-panel__header wallet-panel__header--overview">
 <h2 id="wallet-statement-title">Movimentações recentes</h2>
-<div aria-label="Filtrar extrato" class="wallet-tabs" role="tablist">
+<div aria-label="Filtrar extrato" class="wallet-tabs" role="group">
 <button class="wallet-tab is-active doke-tab-pill" data-wallet-filter="all" type="button" aria-pressed="true">Todos</button>
 <button class="wallet-tab doke-tab-pill" data-wallet-filter="income" type="button" aria-pressed="false">Entradas</button>
 <button class="wallet-tab doke-tab-pill" data-wallet-filter="withdraw" type="button" aria-pressed="false">Saques</button>
 <button class="wallet-tab doke-tab-pill" data-wallet-filter="held" type="button" aria-pressed="false">Em garantia</button>
+<details class="wallet-filter-more">
+<summary class="wallet-filter-more__summary doke-tab-pill">Mais filtros</summary>
+<div class="wallet-filter-more__menu">
 <button class="wallet-tab doke-tab-pill" data-wallet-filter="available" type="button" aria-pressed="false">Liberados</button>
 <button class="wallet-tab doke-tab-pill" data-wallet-filter="processing" type="button" aria-pressed="false">Em processamento</button>
 <button class="wallet-tab doke-tab-pill" data-wallet-filter="completed" type="button" aria-pressed="false">Concluídos</button>
+</div>
+</details>
 </div>
 </div>
 <div class="wallet-statement-tools" aria-label="Refinar extrato">
@@ -256,9 +219,7 @@
 <section aria-labelledby="wallet-receivables-title" class="wallet-panel wallet-receivables-panel doke-card doke-page-section" data-wallet-receivables-panel="">
 <div class="wallet-panel__header wallet-panel__header--overview wallet-receivables-panel__header">
 <div>
-<span class="wallet-eyebrow doke-badge">Recebíveis</span>
 <h2 id="wallet-receivables-title">Próximos repasses</h2>
-<p>Liberações previstas dos pedidos.</p>
 </div>
 <span class="wallet-receivables-status" data-wallet-receivables-status="empty">Sem repasses</span>
 </div>

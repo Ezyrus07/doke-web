@@ -33,6 +33,11 @@
   min-width: 0;
 }
 
+.wallet-overview {
+  display: grid;
+  gap: clamp(16px, 2vw, 24px);
+}
+
 .wallet-hero,
 .wallet-panel,
 .wallet-analytics,
@@ -194,6 +199,84 @@
 
 .wallet-tab {
   flex: 0 0 auto;
+}
+
+.wallet-filter-more {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.wallet-filter-more__summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.wallet-filter-more__summary::-webkit-details-marker {
+  display: none;
+}
+
+.wallet-filter-more__summary::after {
+  content: "⌄";
+  display: inline-block;
+  font-size: 0.95rem;
+  line-height: 1;
+  transform-origin: center;
+  transition: transform 0.18s ease;
+}
+
+.wallet-filter-more[open] .wallet-filter-more__summary::after {
+  transform: rotate(180deg);
+}
+
+.wallet-filter-more__menu {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 8px);
+  z-index: 24;
+  display: grid;
+  gap: 6px;
+  min-width: 196px;
+  padding: 8px;
+  border: 1px solid var(--doke-visual-border);
+  border-radius: var(--radius-control-lg);
+  background: var(--doke-surface, #fff);
+  box-shadow: var(--doke-elevation-surface-hover);
+}
+
+.wallet-filter-more__menu .wallet-tab {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+@media (max-width: 900px) {
+  .wallet-filter-more {
+    flex: 1 1 100%;
+  }
+
+  .wallet-filter-more__menu {
+    position: static;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
+    margin-top: 8px;
+    box-sizing: border-box;
+    box-shadow: none;
+  }
+
+  .wallet-filter-more__menu .wallet-tab {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .wallet-filter-more__menu {
+    grid-template-columns: 1fr;
+  }
 }
 
 .wallet-bank-manage,
@@ -479,7 +562,7 @@
 
   body[data-page="carteira"] .wallet-hero .wallet-hero__meta {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: clamp(8px, 0.9vw, 10px);
     color: var(--doke-text, #12385f);
   }
@@ -702,7 +785,7 @@
 
 @media (min-width: 901px) and (max-width: 1180px) {
   body[data-page="carteira"] .wallet-hero .wallet-hero__meta {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -938,12 +1021,15 @@
 }
 
 .wallet-panel--statement .wallet-panel__header {
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: start;
+  gap: 12px;
   padding-bottom: 2px;
 }
 
 .wallet-panel--statement .wallet-panel__header h2 {
-  max-width: 15ch;
+  max-width: none;
 }
 
 .wallet-transaction {
@@ -1002,7 +1088,7 @@
   }
 
   body[data-page="carteira"] .wallet-panel--statement .wallet-panel__header {
-    gap: 16px;
+    gap: 12px;
   }
 
   body[data-page="carteira"] .wallet-panel--statement .wallet-panel__header h2 {
@@ -4876,7 +4962,7 @@ body[data-page="carteira"] .wallet-receivables-panel__header {
 
 body[data-page="carteira"] .wallet-receivables-panel__header h2 {
   max-width: 16ch;
-  margin: 6px 0 0;
+  margin: 0;
   font-size: clamp(1.08rem, 1.15vw, 1.24rem);
   line-height: 0.98;
   letter-spacing: var(--doke-type-tracking-display);

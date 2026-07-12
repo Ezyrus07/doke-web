@@ -129,12 +129,22 @@
 
   let settingsState = readStoredSettings();
 
-  const saveSettings = () => {
-    try {
-      window.localStorage?.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settingsState));
-    } catch (error) {
-      console.warn('[Doke] Não foi possível salvar as preferências de configurações.', error);
+  const saveSettings = async (section) => {
+    if (window.Doke?.settingsExperience?.persist) {
+      return window.Doke.settingsExperience.persist({
+        storageKey: SETTINGS_STORAGE_KEY,
+        settings: cloneSettings(settingsState),
+        section: section || 'all'
+      });
     }
+
+    const serialized = JSON.stringify(settingsState);
+    window.localStorage?.setItem(SETTINGS_STORAGE_KEY, serialized);
+    const confirmed = window.localStorage?.getItem(SETTINGS_STORAGE_KEY);
+    if (confirmed !== serialized) {
+      throw new Error('Não foi possível confirmar o salvamento das configurações.');
+    }
+    return cloneSettings(settingsState);
   };
 
   const getSettingValue = (path) => {
@@ -601,6 +611,37 @@
   const markPanelDirty = (input) => {
     const panel = input.closest('[data-settings-panel]');
     panel?.setAttribute('data-settings-dirty', 'true');
+    window.Doke?.settingsExperience?.setDirty?.(panel?.dataset.settingsPanel, true);
+  };
+
+  const setButtonPendingState = (button, pending) => {
+    if (!button) return;
+    const originalLabel = button.dataset.settingsOriginalLabel || button.textContent.trim();
+    button.dataset.settingsOriginalLabel = originalLabel;
+    button.disabled = Boolean(pending);
+    button.setAttribute('aria-busy', String(Boolean(pending)));
+    button.setAttribute('data-action-state', pending ? 'loading' : 'idle');
+    button.textContent = pending ? (button.dataset.actionLoadingLabel || 'Salvando…') : originalLabel;
+  };
+
+  const setButtonErrorFeedback = (button) => {
+    if (!button) return;
+    const originalLabel = button.dataset.settingsOriginalLabel || button.textContent.trim();
+    button.textContent = 'Tentar novamente';
+    button.disabled = false;
+    button.setAttribute('aria-busy', 'false');
+    button.setAttribute('data-action-state', 'error');
+    window.setTimeout(() => {
+      button.textContent = originalLabel;
+      button.setAttribute('data-action-state', 'idle');
+    }, 1800);
+  };
+
+  const reportSettingsError = (error, section) => {
+    console.warn('[Doke] Não foi possível salvar as configurações.', error);
+    document.dispatchEvent(new CustomEvent('doke:settings-save-failed', {
+      detail: { section, message: error?.message || String(error || 'Erro desconhecido') }
+    }));
   };
 
   const setButtonSavedFeedback = (button) => {
@@ -616,28 +657,49 @@
     }, 1200);
   };
 
-  const savePanelSettings = (panelName, button) => {
+  const savePanelSettings = async (panelName, button) => {
+    const previousState = cloneSettings(settingsState);
     const changed = collectPanelFields(panelName);
     const panel = document.querySelector(`[data-settings-panel="${panelName}"]`);
-    panel?.setAttribute('data-settings-dirty', 'false');
-    if (changed) saveSettings();
-    syncPaymentsSurface();
-    syncAvailabilitySurface();
-    syncSupportSurface();
-    setButtonSavedFeedback(button);
-    document.dispatchEvent(new CustomEvent('doke:settings-updated', {
-      detail: {
-        section: panelName,
-        settings: cloneSettings(settingsState)
-      }
-    }));
-    document.dispatchEvent(new CustomEvent('doke:settings-profile-updated', {
-      detail: {
-        section: panelName,
-        account: cloneSettings(settingsState.account || {}),
-        professional: cloneSettings(settingsState.professional || {})
-      }
-    }));
+
+    if (!changed && panel?.getAttribute('data-settings-dirty') !== 'true') {
+      setButtonSavedFeedback(button);
+      return;
+    }
+
+    setButtonPendingState(button, true);
+    window.Doke?.settingsExperience?.setState?.('submitting', { section: panelName });
+
+    try {
+      await saveSettings(panelName);
+      panel?.setAttribute('data-settings-dirty', 'false');
+      window.Doke?.settingsExperience?.setDirty?.(panelName, false);
+      syncPaymentsSurface();
+      syncAvailabilitySurface();
+      syncSupportSurface();
+      setButtonPendingState(button, false);
+      setButtonSavedFeedback(button);
+      window.Doke?.settingsExperience?.setState?.('success', { section: panelName });
+      document.dispatchEvent(new CustomEvent('doke:settings-updated', {
+        detail: { section: panelName, settings: cloneSettings(settingsState) }
+      }));
+      document.dispatchEvent(new CustomEvent('doke:settings-profile-updated', {
+        detail: {
+          section: panelName,
+          account: cloneSettings(settingsState.account || {}),
+          professional: cloneSettings(settingsState.professional || {})
+        }
+      }));
+    } catch (error) {
+      settingsState = previousState;
+      panel?.setAttribute('data-settings-dirty', 'true');
+      window.Doke?.settingsExperience?.setDirty?.(panelName, true);
+      setButtonPendingState(button, false);
+      setButtonErrorFeedback(button);
+      window.Doke?.settingsExperience?.setState?.(navigator.onLine === false ? 'offline' : 'error', { section: panelName });
+      reportSettingsError(error, panelName);
+      throw error;
+    }
   };
 
   const resetPanelFields = (panelName) => {
@@ -650,23 +712,38 @@
     syncAvailabilitySurface();
     syncSupportSurface();
     document.querySelector(`[data-settings-panel="${panelName}"]`)?.setAttribute('data-settings-dirty', 'false');
+    window.Doke?.settingsExperience?.setDirty?.(panelName, false);
   };
 
   preferenceInputs.forEach((input) => {
-    input.addEventListener('change', () => {
+    input.addEventListener('change', async () => {
       const preferencePath = input.dataset.settingsPreference;
       if (!preferencePath) return;
-      const changed = setSettingValue(preferencePath, Boolean(input.checked));
-      input.closest('.settings-list-item')?.classList.toggle('is-disabled', !input.checked);
+      const previousValue = getSettingValue(preferencePath);
+      const nextValue = Boolean(input.checked);
+      const changed = setSettingValue(preferencePath, nextValue);
+      input.closest('.settings-list-item')?.classList.toggle('is-disabled', !nextValue);
       if (!changed) return;
-      saveSettings();
-      document.dispatchEvent(new CustomEvent('doke:settings-updated', {
-        detail: {
-          path: preferencePath,
-          value: Boolean(input.checked),
-          settings: cloneSettings(settingsState)
-        }
-      }));
+
+      input.disabled = true;
+      input.setAttribute('aria-busy', 'true');
+      window.Doke?.settingsExperience?.setState?.('submitting', { path: preferencePath });
+      try {
+        await saveSettings(preferencePath);
+        window.Doke?.settingsExperience?.setState?.('success', { path: preferencePath });
+        document.dispatchEvent(new CustomEvent('doke:settings-updated', {
+          detail: { path: preferencePath, value: nextValue, settings: cloneSettings(settingsState) }
+        }));
+      } catch (error) {
+        setSettingValue(preferencePath, previousValue);
+        input.checked = Boolean(previousValue);
+        input.closest('.settings-list-item')?.classList.toggle('is-disabled', !input.checked);
+        window.Doke?.settingsExperience?.setState?.(navigator.onLine === false ? 'offline' : 'error', { path: preferencePath });
+        reportSettingsError(error, preferencePath);
+      } finally {
+        input.disabled = false;
+        input.setAttribute('aria-busy', 'false');
+      }
     }, { signal });
   });
 
@@ -680,7 +757,7 @@
       event.preventDefault();
       const panelName = normalizePanelName(button.dataset.settingsSavePanel);
       if (!panelName) return;
-      savePanelSettings(panelName, button);
+      savePanelSettings(panelName, button).catch(() => null);
     }, { signal });
   });
 
@@ -733,6 +810,7 @@
     setNarrowMenuMode(isNarrowSettings());
 
     document.querySelector('.settings-sidebar')?.removeAttribute('hidden');
+    window.Doke?.settingsExperience?.setState?.('ready');
   };
 
   let wasNarrow = isNarrowSettings();

@@ -67,3 +67,153 @@ body.search-results-body .results-users-grid .professional-showcase-card__cta,
 @import url("../components/states/empty-state-system.css?v=20260708-empty-state-system-v1");
 
 /* Result density is consolidated in search-results/display-density.css. */
+
+
+/* Results simplification pass 1 — local information hierarchy only.
+   Keeps search/filter/render contracts intact and reduces simultaneous chrome. */
+body.search-results-body .results-searchbar {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--doke-border-subtle, rgba(24, 75, 118, 0.10));
+  border-radius: var(--doke-radius-card, 16px);
+  background: var(--doke-surface, #fff);
+  box-shadow: none;
+}
+
+body.search-results-body .doke-results-search__form {
+  margin: 0;
+}
+
+/* The scope row already exposes the canonical filter trigger. */
+body.search-results-body .doke-results-search__form > .doke-results-search__mobile-filter {
+  display: none;
+}
+
+body.search-results-body .doke-results-search__scope {
+  margin: 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--doke-border-subtle, rgba(24, 75, 118, 0.10));
+}
+
+body.search-results-body .results-layout {
+  grid-template-columns: minmax(220px, 252px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+body.search-results-body .results-filters .results-panel {
+  border-radius: var(--doke-radius-card, 16px);
+  box-shadow: none;
+}
+
+body.search-results-body .results-panel__heading {
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+}
+
+body.search-results-body .results-panel__eyebrow {
+  display: none;
+}
+
+body.search-results-body .results-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 0;
+  margin-bottom: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--doke-border-subtle, rgba(24, 75, 118, 0.10));
+  border-radius: var(--doke-radius-card, 16px);
+  background: var(--doke-surface, #fff);
+  box-shadow: none;
+}
+
+body.search-results-body .results-summary__content {
+  min-width: 0;
+}
+
+body.search-results-body .results-summary__content h2 {
+  margin: 0 0 3px;
+  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+  line-height: 1.25;
+}
+
+body.search-results-body .results-summary__content p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+body.search-results-body .results-summary__stats {
+  flex: 0 0 auto;
+  min-width: 74px;
+  padding-left: 16px;
+  border-left: 1px solid var(--doke-border-subtle, rgba(24, 75, 118, 0.10));
+  text-align: right;
+}
+
+body.search-results-body .results-summary__stats strong {
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+body.search-results-body .results-active-chips:empty {
+  display: none;
+}
+
+body.search-results-body .results-active-chips {
+  margin: 0 0 14px;
+}
+
+body.search-results-body .results-category-list {
+  max-height: 228px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+body.search-results-body .results-filters__actions {
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  body.search-results-body .results-searchbar {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  body.search-results-body .results-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.search-results-body .results-summary {
+    padding: 14px 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  body.search-results-body .results-searchbar {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  body.search-results-body .doke-results-search__scope {
+    padding-top: 10px;
+  }
+
+  body.search-results-body .results-summary {
+    align-items: flex-start;
+    gap: 12px;
+    padding: 13px 14px;
+  }
+
+  body.search-results-body .results-summary__stats {
+    min-width: 58px;
+    padding-left: 10px;
+  }
+
+  body.search-results-body .results-summary__content p {
+    font-size: 0.82rem;
+  }
+}

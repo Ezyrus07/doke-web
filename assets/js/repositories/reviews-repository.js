@@ -43,11 +43,12 @@
   }
 
   function safeWrite(key, items) {
-    try {
-      root.localStorage.setItem(key, JSON.stringify(Array.isArray(items) ? items : []));
-    } catch (error) {
-      // localStorage can be unavailable in restricted contexts.
+    var serialized = JSON.stringify(Array.isArray(items) ? items : []);
+    root.localStorage.setItem(key, serialized);
+    if (root.localStorage.getItem(key) !== serialized) {
+      throw new Error('Não foi possível confirmar a persistência da avaliação.');
     }
+    return true;
   }
 
   function toArray(value) {

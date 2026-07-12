@@ -13,6 +13,8 @@
   <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <link rel="stylesheet" href="assets/css/components/domain/doke-domain-cards.css">
   <link rel="stylesheet" href="assets/css/components/flows/doke-product-flows.css">
+ <link rel="stylesheet" href="assets/css/components/in-app-notifications.css?v=20260712-quick-actions-v2">
+ <link rel="stylesheet" href="assets/css/components/community-runtime-stability.css?v=20260712-logic-stability-v1">
 </head>
 <body data-page="notificacoes" class="doke-app-shell-page app-shell-page internal-shell-page notifications-page-shell doke-flow doke-settings-flow has-global-header">
  <section class="doke-document-preloader" data-notifications-document-preloader aria-label="Carregando Doke" aria-hidden="false">
@@ -63,6 +65,10 @@
            <path d="m8.5 12 2.5 2.5 4.5-5"></path>
           </svg>
           <span>Selecionar</span>
+         </button>
+         <button class="page-header-context__action doke-context-pill doke-btn" type="button" data-notifications-settings-toggle aria-expanded="false" aria-controls="notifications-settings-panel">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3"></path><path d="M12 18v3"></path><path d="m4.2 4.2 2.1 2.1"></path><path d="m17.7 17.7 2.1 2.1"></path><path d="M3 12h3"></path><path d="M18 12h3"></path><path d="m4.2 19.8 2.1-2.1"></path><path d="m17.7 6.3 2.1-2.1"></path><circle cx="12" cy="12" r="3.5"></circle></svg>
+          <span>Preferências</span>
          </button>
         </div>
        </div>
@@ -204,6 +210,31 @@
        </div>
       </section>
 
+
+       <section class="notifications-settings-panel" id="notifications-settings-panel" data-notifications-settings-panel hidden aria-label="Preferências de notificações">
+        <header class="notifications-settings-panel__head">
+         <div><strong>Preferências de notificações</strong><span>Controle entrega, som e interrupções.</span></div>
+         <button class="doke-icon-btn doke-icon-btn--flat" type="button" data-notifications-settings-close aria-label="Fechar preferências">×</button>
+        </header>
+        <div class="notifications-settings-panel__options">
+         <label><span><strong>Mensagens</strong><small>Novas mensagens diretas</small></span><input type="checkbox" data-notification-pref="messages" checked></label>
+         <label><span><strong>Menções</strong><small>Quando citarem seu nome</small></span><input type="checkbox" data-notification-pref="mentions" checked></label>
+         <label><span><strong>Reações</strong><small>Reações às suas mensagens</small></span><input type="checkbox" data-notification-pref="reactions" checked></label>
+         <label><span><strong>Eventos</strong><small>Convites, mudanças e lembretes</small></span><input type="checkbox" data-notification-pref="events" checked></label>
+         <label><span><strong>Alertas sociais</strong><small>Comunidades e atividades gerais</small></span><input type="checkbox" data-notification-pref="social" checked></label>
+         <label><span><strong>Som</strong><small>Reproduzir alerta discreto</small></span><input type="checkbox" data-notification-pref="sound" checked></label>
+         <label><span><strong>Resumo acumulado</strong><small>Exibir resumo após o modo não perturbe</small></span><input type="checkbox" data-notification-pref="digest" checked></label>
+         <label><span><strong>Não perturbe</strong><small>Ocultar toasts temporariamente</small></span><input type="checkbox" data-notification-pref="dndEnabled"></label>
+         <label class="notifications-settings-panel__select"><span><strong>Duração do não perturbe</strong><small>Aplicada ao salvar</small></span><select class="doke-select" data-notification-dnd-duration><option value="60">1 hora</option><option value="240">4 horas</option><option value="480">8 horas</option><option value="1440">Até amanhã</option></select></label>
+         <label class="notifications-settings-panel__select"><span><strong>Prioridade mínima</strong><small>Alertas silenciosos continuam na central</small></span><select class="doke-select" data-notification-priority-min><option value="silent">Todas</option><option value="normal">Normal e alta</option><option value="high">Somente alta</option></select></label>
+        </div>
+        <div class="notifications-settings-panel__muted" data-notification-muted-scopes hidden><strong>Origens silenciadas</strong><div data-notification-muted-scopes-list></div></div>
+        <footer class="notifications-settings-panel__footer">
+         <button class="doke-btn doke-btn--ghost" type="button" data-notifications-settings-reset>Restaurar</button>
+         <button class="doke-btn doke-btn--primary" type="button" data-notifications-settings-save>Salvar</button>
+        </footer>
+       </section>
+
       <section class="notifications-hydration-skeleton doke-page-section" data-notifications-hydration-skeleton hidden aria-label="Carregando notificações">
        <article class="notifications-hydration-skeleton__card" aria-hidden="true">
         <span class="notifications-hydration-skeleton__icon doke-skeleton-line"></span>
@@ -280,7 +311,7 @@
   <script src="assets/js/core/experience-runtime.js?v=20260711-notifications-pilot-v1" defer></script>
   <script src="assets/js/core/page-hydration.js?v=20260628-stable-transition-v5" defer></script>
   <script src="assets/js/core/stable-shell-router.js?v=20260702-review-route-init-v1" defer></script>
-<script src="assets/js/pages/notificacoes.js?v=20260628-stable-transition-v5" defer></script>
+<script src="assets/js/pages/notificacoes.js?v=20260712-delivery-controls-v1" defer></script>
   <script src="assets/js/ui/responsive-interaction-guard.js?v=20260428-architecture" defer></script>
   <script src="assets/js/ui/mobile-drawer.js" defer></script>
   <script src="assets/js/ui/mobile-drawer-standard.js?v=20260701-drawer-detail-contract-v1" defer></script>
@@ -312,5 +343,9 @@
   <script src="assets/js/components/mobile-app-shell.js?v=20260701-navigation-registry-v1" defer></script>
   <script src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1" defer></script>
   <script src="assets/js/dev/flow-state-tools.js?v=20260622-flow-contract-v1" defer></script>
+ <script src="assets/js/features/in-app-notifications.js?v=20260712-quick-actions-v2" defer></script>
+ <script src="assets/js/features/browser-notification-bridge.js?v=20260712-logic-stability-v1" defer></script>
+ <script src="assets/js/features/community-runtime-stability.js?v=20260712-logic-stability-v1" defer></script>
+ <script src="assets/js/features/community-final-logic-stability.js?v=20260712-final-logic-v1" defer></script>
 </body>
 </html>

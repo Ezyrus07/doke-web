@@ -83,7 +83,8 @@
     return result;
   }
 
-  function load(root) {
+  function load(root, options) {
+    options = options || {};
     var serviceId = getServiceId(root);
 
     if (!hasDataDependencies()) {
@@ -91,10 +92,12 @@
       return Promise.resolve(null);
     }
 
-    setDataState(root, 'loading');
+    var hasReadyContent = root && root.dataset && (root.dataset.dataState === 'ready' || root.dataset.viewState === 'ready');
+    setDataState(root, hasReadyContent ? 'refreshing' : 'loading');
+    if (hasReadyContent) dispatch(root, 'doke:detail-ad-data-refreshing', { page: PAGE_NAME, serviceId: serviceId });
 
     return Doke.pageDataOrchestrator
-      .getPageData(PAGE_NAME, { serviceId: serviceId })
+      .getPageData(PAGE_NAME, { serviceId: serviceId, forceRefresh: Boolean(options.forceRefresh) })
       .then(function (payload) {
         return publishPayload(root, serviceId, payload, 'repository-or-cache');
       })

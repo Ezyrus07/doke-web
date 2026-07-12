@@ -1,0 +1,10 @@
+const fs=require('fs');
+const base=process.cwd();
+const read=p=>fs.readFileSync(base+'/'+p,'utf8');
+const moduleJs=read('assets/js/features/in-app-notifications.js');
+const messages=read('assets/js/pages/mensagens.js');
+const community=read('assets/js/pages/comunidade-interna.js');
+['quick-reply','event-rsvp','request-decision','recordActionResult'].forEach(token=>{if(!moduleJs.includes(token))throw new Error('Missing '+token)});
+if(!messages.includes("action.kind === 'quick-reply'"))throw new Error('Missing message quick reply handler');
+if(!community.includes("action.kind === 'event-rsvp'"))throw new Error('Missing event RSVP handler');
+console.log('Notification quick actions contract: OK');

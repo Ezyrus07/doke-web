@@ -4,16 +4,16 @@
    Placement, rails and card grids belong to pages/patterns. */
 
 :root {
-  --doke-section-header-gap: clamp(0.625rem, 1.4vw, 1.125rem);
-  --doke-section-header-margin-after: clamp(0.75rem, 1.6vw, 1.125rem);
-  --doke-section-title-size: clamp(1.05rem, 1.55vw, 1.45rem);
+  --doke-section-header-gap: clamp(0.625rem, 1.2vw, 1rem);
+  --doke-section-header-margin-after: clamp(0.75rem, 1.4vw, 1rem);
+  --doke-section-title-size: clamp(1.05rem, 1.4vw, 1.35rem);
   --doke-section-title-line: 1.16;
-  --doke-section-title-weight: 800;
+  --doke-section-title-weight: var(--doke-type-weight-strong, 700);
   --doke-section-title-letter: 0;
   --doke-section-action-height: 2.125rem;
-  --doke-section-action-padding-inline: 0.875rem;
-  --doke-section-action-radius: 999px;
-  --doke-section-action-size: 0.9rem;
+  --doke-section-action-padding-inline: 0.625rem;
+  --doke-section-action-radius: var(--radius-compact, 12px);
+  --doke-section-action-size: 0.875rem;
   --doke-section-eyebrow-size: 0.76rem;
 }
 
@@ -22,7 +22,7 @@
     --doke-section-header-gap: 0.625rem;
     --doke-section-header-margin-after: 0.75rem;
     --doke-section-title-size: 0.96rem;
-    --doke-section-title-letter: 0.08em;
+    --doke-section-title-letter: 0;
     --doke-section-action-height: 1.875rem;
     --doke-section-action-padding-inline: 0.625rem;
     --doke-section-action-size: 0.78rem;
@@ -85,7 +85,7 @@
   line-height: var(--doke-section-title-line);
   font-weight: var(--doke-section-title-weight);
   letter-spacing: var(--doke-section-title-letter);
-  text-transform: uppercase;
+  text-transform: none;
   text-wrap: balance;
 }
 
@@ -101,8 +101,8 @@
   color: var(--doke-text-muted, #6d8097);
   font-size: var(--doke-section-eyebrow-size);
   line-height: 1.1;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-weight: var(--doke-type-weight-strong, 700);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -122,20 +122,21 @@
   min-width: max-content;
   min-height: var(--doke-section-action-height);
   padding-inline: var(--doke-section-action-padding-inline);
-  border: 1px solid var(--doke-border-soft, rgba(30, 53, 87, 0.12));
+  border: 1px solid transparent;
   border-radius: var(--doke-section-action-radius);
-  background: var(--doke-surface, #fff);
+  background: transparent;
   color: var(--doke-accent, #2a5c92);
   font-size: var(--doke-section-action-size);
   line-height: 1;
-  font-weight: 800;
+  font-weight: var(--doke-type-weight-emphasis, 600);
   text-decoration: none;
   white-space: nowrap;
 }
 
 :where(.section-heading__link, .home-section-header a):hover {
-  border-color: rgba(42, 92, 146, 0.24);
+  border-color: transparent;
 }
+
 
 @media (max-width: 420px) {
   :where(.home-section-header, .section-heading) {
@@ -217,7 +218,7 @@
   line-height: var(--doke-section-title-line);
   font-weight: var(--doke-section-title-weight);
   letter-spacing: var(--doke-section-title-letter);
-  text-transform: uppercase;
+  text-transform: none;
   text-wrap: balance;
 }
 
@@ -233,8 +234,8 @@
   color: var(--doke-text-muted, #6d8097);
   font-size: var(--doke-section-eyebrow-size);
   line-height: 1.1;
-  font-weight: 800;
-  letter-spacing: 0.08em;
+  font-weight: var(--doke-type-weight-strong, 700);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -255,11 +256,11 @@
   padding-inline: var(--doke-section-action-padding-inline);
   border: 1px solid transparent;
   border-radius: var(--doke-section-action-radius);
-  background: var(--doke-section-action-bg, var(--doke-surface, #fff));
+  background: var(--doke-section-action-bg, transparent);
   color: var(--doke-accent, #2a5c92);
   font-size: var(--doke-section-action-size);
   line-height: 1;
-  font-weight: 700;
+  font-weight: var(--doke-type-weight-emphasis, 600);
   text-decoration: none;
   white-space: nowrap;
 }

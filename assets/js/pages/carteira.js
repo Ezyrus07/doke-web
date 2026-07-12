@@ -107,6 +107,7 @@
       note: document.querySelector('[data-wallet-receipt-note]')
     };
     const transactionFilterControls = document.querySelector('.wallet-tabs');
+    const filterMoreDisclosure = document.querySelector('.wallet-filter-more');
     const statementPeriodSelect = document.querySelector('[data-wallet-statement-period]');
     const statementSearchInput = document.querySelector('[data-wallet-statement-search]');
     const statementExportButton = document.querySelector('[data-wallet-export-statement]');
@@ -1598,6 +1599,9 @@
     filterButtons.forEach((button) => {
       button.addEventListener('click', () => {
         setTransactionFilter(button.dataset.walletFilter);
+        if (filterMoreDisclosure && button.closest('.wallet-filter-more')) {
+          filterMoreDisclosure.open = false;
+        }
       });
     });
 

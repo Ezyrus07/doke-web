@@ -51,6 +51,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
   let activeActionModalTrigger = null;
   let currentFilter = 'all';
   let lastCommunityRenderSignature = '';
+  let communityBanCountdownTimer = 0;
 
   const documentPreloader = document.documentElement.classList.contains('doke-community-document-reload')
     ? document.querySelector('[data-community-document-preloader]')
@@ -181,6 +182,17 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     }
     if (requestMessage) requestMessage.value = '';
     if (requestRole) requestRole.value = 'morador';
+    const questions = Array.isArray(card?.dataset.communityQuestions ? JSON.parse(card.dataset.communityQuestions || '[]') : []) ? JSON.parse(card?.dataset.communityQuestions || '[]') : [];
+    let questionWrap = requestForm?.querySelector('[data-community-request-questions]');
+    if (!questionWrap && requestForm) {
+      questionWrap = document.createElement('div');
+      questionWrap.dataset.communityRequestQuestions = '';
+      requestMessage?.parentElement?.after(questionWrap);
+    }
+    if (questionWrap) {
+      questionWrap.innerHTML = questions.map((question, index) => `<label><span>${escapeCommunityHtml(question)}</span><textarea class="doke-textarea" rows="2" required data-community-request-answer="${index}"></textarea></label>`).join('');
+      questionWrap.hidden = questions.length === 0;
+    }
 
     requestModal.hidden = false;
     requestModal.setAttribute('aria-hidden', 'false');
@@ -507,6 +519,110 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     };
   };
 
+
+  const getCommunityBanState = (record, profile = getCurrentUserProfile()) => {
+    const relationReport = getCommunityRelationReport(record, profile);
+    if (relationReport?.relation !== 'banned' || !relationReport?.matchedBan) {
+      return { relationReport, active: false, ban: null, expiresAtMs: 0 };
+    }
+    const expiresAtMs = relationReport.matchedBan?.expiresAt ? Date.parse(relationReport.matchedBan.expiresAt) : 0;
+    if (expiresAtMs && expiresAtMs <= Date.now()) {
+      return { relationReport, active: false, ban: relationReport.matchedBan, expiresAtMs };
+    }
+    return { relationReport, active: true, ban: relationReport.matchedBan, expiresAtMs };
+  };
+
+  const formatDurationClock = (totalSeconds) => {
+    const seconds = Math.max(0, Number(totalSeconds) || 0);
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+    if (days > 0) return `${days}d ${String(hours).padStart(2, '0')}h`;
+    if (hours > 0) return `${hours}h ${String(minutes).padStart(2, '0')}m`;
+    if (minutes > 0) return `${minutes}m ${String(remainingSeconds).padStart(2, '0')}s`;
+    return `${remainingSeconds}s`;
+  };
+
+  const getCommunityBanCountdownLabel = (banOrExpiresAt) => {
+    const expiresAtMs = typeof banOrExpiresAt === 'number'
+      ? banOrExpiresAt
+      : (banOrExpiresAt?.expiresAt ? Date.parse(banOrExpiresAt.expiresAt) : 0);
+    if (!expiresAtMs) return 'Banimento permanente';
+    const remainingMs = Math.max(0, expiresAtMs - Date.now());
+    if (remainingMs <= 0) return 'Banimento expirando';
+    return `Tempo restante: ${formatDurationClock(Math.ceil(remainingMs / 1000))}`;
+  };
+
+  const getCommunityBanMessage = (banOrExpiresAt) => {
+    const ban = banOrExpiresAt && typeof banOrExpiresAt === 'object' ? banOrExpiresAt : null;
+    const expiresAtMs = typeof banOrExpiresAt === 'number'
+      ? banOrExpiresAt
+      : (ban?.expiresAt ? Date.parse(ban.expiresAt) : 0);
+    const reason = ban?.reason ? ` Motivo: ${ban.reason}.` : '';
+    const moderator = ban?.bannedByName ? ` Aplicado por: ${ban.bannedByName}.` : '';
+    if (!expiresAtMs) return `Você foi banido permanentemente desta comunidade.${reason}${moderator}`;
+    const countdownLabel = getCommunityBanCountdownLabel(expiresAtMs).replace(/^Tempo restante:\s*/, '');
+    return `Você foi banido desta comunidade. Tempo restante: ${countdownLabel}.${reason}${moderator}`;
+  };
+
+  const stopCommunityBanCountdown = () => {
+    if (!communityBanCountdownTimer) return;
+    window.clearInterval(communityBanCountdownTimer);
+    communityBanCountdownTimer = 0;
+  };
+
+  const refreshCommunityBanCountdowns = () => {
+    const countdownNodes = [...page.querySelectorAll('[data-community-ban-countdown]')];
+    if (!countdownNodes.length) {
+      stopCommunityBanCountdown();
+      return;
+    }
+    let hasExpiredCard = false;
+    countdownNodes.forEach((node) => {
+      const expiresAtMs = Number(node.dataset.communityBanExpiresAt || 0);
+      const isPermanent = node.dataset.communityBanPermanent === 'true';
+      const label = isPermanent ? 'Banimento permanente' : getCommunityBanCountdownLabel(expiresAtMs);
+      node.textContent = label;
+      if (!isPermanent && expiresAtMs && expiresAtMs <= Date.now()) hasExpiredCard = true;
+    });
+    if (hasExpiredCard) {
+      stopCommunityBanCountdown();
+      window.setTimeout(() => renderCommunityCollections({ force: true }), 80);
+    }
+  };
+
+  const ensureCommunityBanCountdown = () => {
+    const hasBannedCards = Boolean(page.querySelector('[data-community-ban-countdown]'));
+    if (!hasBannedCards) {
+      stopCommunityBanCountdown();
+      return;
+    }
+    refreshCommunityBanCountdowns();
+    if (communityBanCountdownTimer) return;
+    communityBanCountdownTimer = window.setInterval(refreshCommunityBanCountdowns, 1000);
+  };
+
+
+  const cleanupExpiredCommunityBans = () => {
+    const communities = readLocalCommunities();
+    const nowMs = Date.now();
+    let changed = false;
+    const next = communities.map((record) => {
+      const bans = Array.isArray(record?.bans) ? record.bans : [];
+      const activeBans = bans.filter((ban) => {
+        if (!ban?.expiresAt) return true;
+        const expiresAtMs = Date.parse(ban.expiresAt);
+        return !Number.isFinite(expiresAtMs) || expiresAtMs > nowMs;
+      });
+      if (activeBans.length === bans.length) return record;
+      changed = true;
+      return { ...record, bans: activeBans, updatedAt: new Date().toISOString() };
+    });
+    if (changed) writeLocalCommunities(next);
+    return changed;
+  };
+
   const writeCommunityAccessDebug = (label, record, relationReport, decision = {}) => {
     if (!isCommunityDebugMode() || !window.console) return;
     const sessionUser = window.Doke?.session?.getCurrentUser?.() || null;
@@ -553,15 +669,42 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       type: String(record?.type || record?.visibility || category || 'public').trim() || 'public',
       visibility: String(record?.visibility || record?.type || category || 'public').trim() || 'public',
       description: String(record?.description || '').trim(),
+      rules: Array.isArray(record?.rules) ? record.rules : [],
+      tags: Array.isArray(record?.tags) ? record.tags : [],
+      links: Array.isArray(record?.links) ? record.links : [],
+      joinQuestions: Array.isArray(record?.joinQuestions) ? record.joinQuestions : [],
+      entryMode: record?.entryMode === 'approval' ? 'approval' : 'auto',
+      requireRulesAcceptance: Boolean(record?.requireRulesAcceptance),
+      rulesVersion: Math.max(1, Number(record?.rulesVersion || 1) || 1),
+      defaultChannelId: String(record?.defaultChannelId || ''),
+      welcomeMessage: String(record?.welcomeMessage || ''),
+      onboardingChecklist: Array.isArray(record?.onboardingChecklist) ? record.onboardingChecklist : [],
+      onboardingAudience: String(record?.onboardingAudience || 'all'),
+      iconUrl: String(record?.iconUrl || '').trim(),
       code: String(record?.code || '').trim(),
       inviteCode,
       invite: inviteCode ? {
+        id: String(record?.invite?.id || ('invite-' + inviteCode.toLowerCase())),
         code: inviteCode,
         active: record?.invite?.active !== false,
         createdAt: String(record?.invite?.createdAt || record?.inviteCreatedAt || now),
         expiresAt: String(record?.invite?.expiresAt || record?.inviteExpiresAt || ''),
-        generation: Number(record?.invite?.generation || 1)
+        generation: Number(record?.invite?.generation || 1),
+        maxUses: Math.max(0, Number(record?.invite?.maxUses || 0) || 0),
+        uses: Math.max(0, Number(record?.invite?.uses || 0) || 0),
+        requireApproval: Boolean(record?.invite?.requireApproval),
+        autoRoleId: String(record?.invite?.autoRoleId || '')
       } : null,
+      invites: Array.isArray(record?.invites) ? record.invites.map((invite) => ({
+        ...invite,
+        id: String(invite?.id || ('invite-' + normalizeInviteCode(invite?.code).toLowerCase())),
+        code: normalizeInviteCode(invite?.code),
+        active: invite?.active !== false,
+        maxUses: Math.max(0, Number(invite?.maxUses || 0) || 0),
+        uses: Math.max(0, Number(invite?.uses || 0) || 0),
+        requireApproval: Boolean(invite?.requireApproval),
+        autoRoleId: String(invite?.autoRoleId || '')
+      })).filter((invite) => invite.code) : [],
       ownerId: deriveCommunityOwnerId(record),
       ownerAccountKey: normalizeIdentityKey(record?.ownerAccountKey || record?.ownerId || ''),
       ownerIdentityKeys: [...new Set((Array.isArray(record?.ownerIdentityKeys) ? record.ownerIdentityKeys : getCommunityOwnerIdentityKeys(record)).map(normalizeIdentityKey).filter(Boolean))],
@@ -578,6 +721,9 @@ window.DokeInitCommunity = function DokeInitCommunity() {
         role: member.role || 'member',
         source: member.source || 'messages',
         joinedAt: String(member.joinedAt || '').trim(),
+        rulesAcceptedVersion: Math.max(0, Number(member.rulesAcceptedVersion || 0) || 0),
+        rulesAcceptedAt: String(member.rulesAcceptedAt || ''),
+        onboardingCompletedAt: String(member.onboardingCompletedAt || ''),
         addedBy: String(member.addedBy || '').trim()
       })) : [],
       joinRequests: Array.isArray(record?.joinRequests) ? record.joinRequests.filter((request) => request && request.id).map((request) => ({
@@ -594,6 +740,20 @@ window.DokeInitCommunity = function DokeInitCommunity() {
         resolvedBy: String(request.resolvedBy || '').trim(),
         attempt: Math.max(1, Number(request.attempt || 1))
       })) : [],
+      bans: Array.isArray(record?.bans) ? record.bans.map((ban) => ({
+        id: String(ban?.id || '').trim(),
+        memberId: String(ban?.memberId || '').trim(),
+        accountKey: normalizeIdentityKey(ban?.accountKey || ban?.email || ''),
+        email: String(ban?.email || '').trim(),
+        name: String(ban?.name || 'Membro').trim() || 'Membro',
+        identityKeys: [...new Set([ban?.accountKey, ban?.email, ban?.memberId, ...(Array.isArray(ban?.identityKeys) ? ban.identityKeys : [])].map(normalizeIdentityKey).filter(Boolean))],
+        reason: String(ban?.reason || '').trim(),
+        bannedAt: String(ban?.bannedAt || '').trim(),
+        expiresAt: String(ban?.expiresAt || '').trim(),
+        bannedByAccountKey: normalizeIdentityKey(ban?.bannedByAccountKey || ''),
+        bannedByName: String(ban?.bannedByName || '').trim()
+      })).filter((ban) => ban.identityKeys.length) : [],
+      membershipHistory: Array.isArray(record?.membershipHistory) ? record.membershipHistory.slice() : [],
       coverName: String(record?.coverName || record?.cover?.name || '').trim(),
       coverType: String(record?.coverType || record?.cover?.type || '').trim(),
       coverDataUrl: String(record?.coverDataUrl || record?.cover?.dataUrl || '').trim(),
@@ -783,7 +943,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
         operationId: createCommunityOperationId('join-request', communityId, profile.id)
       }, (storedRecord) => {
         const record = normalizeCommunityRecord(storedRecord);
-        if (!isRequestablePrivateCommunity(record)) return { ok: false, message: 'Esta comunidade não aceita solicitações de entrada.' };
+        if (!isRequestablePrivateCommunity(record) && record.entryMode !== 'approval' && !payload.inviteCode) return { ok: false, message: 'Esta comunidade não aceita solicitações de entrada.' };
         if (getCommunityRelationship(record, profile) !== 'visitor') return { ok: false, message: 'Você já participa desta comunidade.' };
         const requests = Array.isArray(record.joinRequests) ? record.joinRequests.slice() : [];
         const existingIndex = requests.findIndex((request) => identitiesIntersect(profile.identityKeys || [profile.id], request.identityKeys || [request.userId, request.userEmail]));
@@ -798,6 +958,8 @@ window.DokeInitCommunity = function DokeInitCommunity() {
           userEmail: profile.email,
           identityKeys: profile.identityKeys || [profile.accountKey, profile.email, profile.id].filter(Boolean),
           relation: String(payload.relation || '').trim(), message: String(payload.message || '').trim(),
+          answers: Array.isArray(payload.answers) ? payload.answers.map((answer) => String(answer || '').trim()).filter(Boolean).slice(0, 5) : [],
+          inviteCode: normalizeInviteCode(payload.inviteCode || ''),
           status: 'pending', requestedAt: now, resolvedAt: '', resolvedBy: '', attempt: Number(existing?.attempt || 0) + 1
         };
         if (existingIndex >= 0) requests[existingIndex] = request; else requests.push(request);
@@ -830,6 +992,10 @@ window.DokeInitCommunity = function DokeInitCommunity() {
 
   const joinPublicCommunity = (record) => {
     if (!record || !isPublicCommunity(record)) return { ok: false, message: 'Esta comunidade não aceita entrada pública.' };
+    if (normalizeCommunityRecord(record).entryMode === 'approval') {
+      submitPrivateCommunityRequest(record.id, { relation: 'participante', message: 'Solicitação pela descoberta pública.', answers: [] });
+      return { ok: true, pending: true, record: normalizeCommunityRecord(record), message: 'Solicitação enviada para aprovação.' };
+    }
     const profile = getCurrentUserProfile();
     const operations = getCommunityDomainOperations();
     if (!operations?.transact) return { ok: false, message: 'Serviço de comunidade indisponível.' };
@@ -857,7 +1023,8 @@ window.DokeInitCommunity = function DokeInitCommunity() {
 
     const profile = getCurrentUserProfile();
     const discoverable = readLocalCommunities().map(normalizeCommunityRecord).filter((record) => (
-      (isPublicCommunity(record) || isRequestablePrivateCommunity(record))
+      record.visibility !== 'hidden'
+      && (isPublicCommunity(record) || isRequestablePrivateCommunity(record))
       && getCommunityRelationship(record, profile) === 'visitor'
     ));
 
@@ -870,11 +1037,12 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       const coverMarkup = record.coverDataUrl
         ? `<img alt="" loading="lazy" src="${escapeCommunityHtml(record.coverDataUrl)}"/>`
         : '';
-      const actionMarkup = isPublic
+      const requiresApproval = record.entryMode === 'approval';
+      const actionMarkup = isPublic && !requiresApproval
         ? '<button class="community-card__action doke-btn doke-btn--primary" data-community-public-join type="button">Participar</button>'
         : `<button class="community-card__action doke-btn${isPending ? ' community-card__action--pending' : ''}" data-community-request type="button"${isPending ? ' disabled' : ''}>${isPending ? 'Solicitação pendente' : 'Solicitar entrada'}</button>`;
       return `
-        <article class="community-card community-discover-card doke-card doke-community-card" data-community-discover-card data-community-card data-community-id="${escapeCommunityHtml(record.id)}" data-title="${escapeCommunityHtml(record.title)}" data-category="${categoryFilterFromRecord(record)}">
+        <article class="community-card community-discover-card doke-card doke-community-card" data-community-discover-card data-community-card data-community-id="${escapeCommunityHtml(record.id)}" data-title="${escapeCommunityHtml(record.title)}" data-category="${categoryFilterFromRecord(record)}" data-community-questions='${JSON.stringify(record.joinQuestions || []).replace(/'/g, "&#39;")}'>
           <div class="community-card__cover">
             ${coverMarkup}
             <span class="community-card__cover-badge">${escapeCommunityHtml(categoryLabelFromRecord(record))}</span>
@@ -895,11 +1063,15 @@ window.DokeInitCommunity = function DokeInitCommunity() {
   };
 
   const renderLocalCommunities = () => {
+    cleanupExpiredCommunityBans();
     const continueList = page.querySelector('[data-community-continue-list]');
     const localSection = page.querySelector('[data-community-local-section]');
     if (!continueList) return;
     const currentProfile = getCurrentUserProfile();
-    const localCommunities = readLocalCommunities().filter((record) => getCommunityRelationship(record, currentProfile) !== 'visitor');
+    const localCommunities = readLocalCommunities().filter((record) => {
+      const relation = getCommunityRelationship(record, currentProfile);
+      return relation !== 'visitor';
+    });
     if (localSection) localSection.hidden = localCommunities.length === 0;
     continueList.querySelectorAll('[data-community-local-card]').forEach((item) => item.remove());
     const existingIds = new Set();
@@ -907,6 +1079,10 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     localCommunities.forEach((record) => {
       if (!record?.id || existingIds.has(record.id)) return;
       existingIds.add(record.id);
+      const relationReport = getCommunityRelationReport(record, currentProfile);
+      const banState = getCommunityBanState(record, currentProfile);
+      const isOwner = relationReport.relation === 'owner';
+      const isBanned = banState.active;
       const card = document.createElement('article');
       card.className = 'community-continue-card doke-card doke-community-card';
       card.dataset.category = record.category || 'local';
@@ -915,23 +1091,47 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       card.dataset.communityId = record.id;
       card.dataset.cardKind = 'community';
       card.dataset.communityLocalCard = '';
+      card.dataset.communityQuestions = JSON.stringify(record.joinQuestions || []);
+      if (isBanned && banState.expiresAtMs) {
+        card.dataset.communityBanExpiresAt = String(banState.expiresAtMs);
+      }
+      if (isBanned && !banState.expiresAtMs) {
+        card.dataset.communityBanPermanent = 'true';
+      }
       const coverMarkup = record.coverDataUrl
         ? `<img alt="" loading="lazy" src="${escapeCommunityHtml(record.coverDataUrl)}"/>`
         : '';
+      const activityLabel = isOwner
+        ? 'Criada por você'
+        : (isBanned ? 'Você foi banido' : 'Acesso liberado');
+      const metaPrimary = isBanned
+        ? 'Acesso bloqueado'
+        : (record.source === 'code' ? 'Entrou por código' : 'Comunidade local');
+      const metaSecondary = isBanned
+        ? `<span data-community-ban-countdown data-community-ban-expires-at="${escapeCommunityHtml(String(banState.expiresAtMs || ''))}" data-community-ban-permanent="${String(!banState.expiresAtMs)}">${escapeCommunityHtml(getCommunityBanCountdownLabel(banState.ban))}</span>`
+        : '<span class="community-online">online</span>';
+      const banDetailsMarkup = isBanned
+        ? `<div class="community-continue-card__ban-details"><span><strong>Motivo:</strong> ${escapeCommunityHtml(banState.ban?.reason || 'Não informado')}</span><span><strong>Aplicado por:</strong> ${escapeCommunityHtml(banState.ban?.bannedByName || 'Moderação')}</span></div>`
+        : '';
+      const actionMarkup = isBanned
+        ? `<button class="community-open-button doke-btn" type="button" disabled aria-disabled="true">Você foi banido</button>`
+        : '<button class="community-open-button doke-btn" data-community-enter type="button">Abrir</button>';
       card.innerHTML = `
         ${coverMarkup}
         <div class="community-continue-card__content">
           <span class="community-pill doke-chip">${categoryLabelFromRecord(record)}</span>
           <h3>${escapeCommunityHtml(record.title)}</h3>
-          <span class="community-activity">${getCommunityRelationship(record, currentProfile) === 'owner' ? 'Criada por você' : 'Acesso liberado'}</span>
-          <div class="community-continue-card__meta"><span>${record.source === 'code' ? 'Entrou por código' : 'Comunidade local'}</span><span class="community-online">online</span></div>
+          <span class="community-activity">${escapeCommunityHtml(activityLabel)}</span>
+          <div class="community-continue-card__meta"><span>${escapeCommunityHtml(metaPrimary)}</span>${metaSecondary}</div>
+          ${banDetailsMarkup}
         </div>
-        <button class="community-open-button doke-btn" data-community-enter type="button">Abrir</button>
+        ${actionMarkup}
       `;
-      const relationReport = getCommunityRelationReport(record, currentProfile);
       if (relationReport.relation === 'member') writeCommunityAccessDebug('listing-card-access-liberado', record, relationReport, { action: 'open' });
+      if (relationReport.relation === 'banned') writeCommunityAccessDebug('listing-card-banido', record, relationReport, { action: 'blocked', reason: 'banned' });
       continueList.prepend(card);
     });
+    ensureCommunityBanCountdown();
   };
 
   let isLeavingCommunitiesPage = false;
@@ -1072,7 +1272,8 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       if (submitButton) submitButton.disabled = true;
       const result = await submitPrivateCommunityRequest(activeRequestCommunityId, {
         relation: requestRole?.value || '',
-        message: requestMessage?.value || ''
+        message: requestMessage?.value || '',
+        answers: [...requestForm.querySelectorAll('[data-community-request-answer]')].map((field) => String(field.value || '').trim())
       });
       if (!result.ok) {
         if (submitButton) submitButton.disabled = false;
@@ -1165,7 +1366,15 @@ window.DokeInitCommunity = function DokeInitCommunity() {
       return;
     }
 
-    const relationship = getCommunityRelationship(record);
+    const relationReport = getCommunityRelationReport(record);
+    const relationship = relationReport.relation;
+    if (relationship === 'banned') {
+      setCommunityAccessFeedback(getCommunityBanMessage(relationReport.matchedBan), 'error');
+      card?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+      card?.querySelector('[data-community-ban-countdown]')?.focus?.();
+      clearCommunityAccessRoute();
+      return;
+    }
     if (relationship === 'owner' || relationship === 'member') {
       // Never reopen the room automatically after an access redirect. If the
       // room and listing temporarily disagree about identity, automatic reopen
@@ -1290,15 +1499,18 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     return cachedCreateMemberCandidates;
   };
 
-  const getCommunityInvite = (record) => {
-    const code = normalizeInviteCode(record?.invite?.code || record?.inviteCode || record?.code);
-    if (!code) return null;
-    return {
-      code,
-      active: record?.invite?.active !== false,
-      createdAt: String(record?.invite?.createdAt || record?.inviteCreatedAt || ''),
-      expiresAt: String(record?.invite?.expiresAt || record?.inviteExpiresAt || '')
-    };
+  const getCommunityInvites = (record) => {
+    const normalized = normalizeCommunityRecord(record || {});
+    const invites = Array.isArray(normalized.invites) ? normalized.invites.slice() : [];
+    if (normalized.invite && !invites.some((item) => item.code === normalized.invite.code)) invites.unshift(normalized.invite);
+    return invites.filter((invite) => invite && invite.code);
+  };
+
+  const getCommunityInvite = (record, code = '') => {
+    const normalizedCode = normalizeInviteCode(code);
+    const invites = getCommunityInvites(record);
+    if (normalizedCode) return invites.find((invite) => invite.code === normalizedCode) || null;
+    return invites.find((invite) => invite.active !== false && !isInviteExpired(invite) && !(invite.maxUses > 0 && invite.uses >= invite.maxUses)) || null;
   };
 
   const isInviteExpired = (invite) => {
@@ -1307,7 +1519,7 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     return Number.isFinite(expiresAt) && expiresAt <= Date.now();
   };
 
-  const joinCommunityByInvite = (record) => {
+  const joinCommunityByInvite = (record, invite) => {
     const profile = getCurrentUserProfile();
     const members = Array.isArray(record.members) ? record.members.slice() : [];
     const profileName = String(profile.name || '').trim().toLowerCase();
@@ -1321,7 +1533,8 @@ window.DokeInitCommunity = function DokeInitCommunity() {
         name: profile.name,
         email: profile.email,
         identityKeys: profile.identityKeys,
-        role: 'member',
+        role: String(invite && invite.autoRoleId || 'member'),
+        roleIds: invite && invite.autoRoleId ? ['member', String(invite.autoRoleId)] : ['member'],
         source: 'invite',
         joinedAt: new Date().toISOString(),
         addedBy: 'invite'
@@ -1347,17 +1560,40 @@ window.DokeInitCommunity = function DokeInitCommunity() {
     const code = normalizeInviteCode(rawCode);
     if (!code) return { ok: false, code, message: 'Digite um código válido.' };
 
-    const record = readLocalCommunities().find((community) => {
-      const invite = getCommunityInvite(community);
-      return invite && invite.code === code;
-    });
-    if (!record) return { ok: false, code, message: 'Convite não encontrado ou substituído por um novo código.' };
+    const record = readLocalCommunities().find((community) => Boolean(getCommunityInvite(community, code)));
+    if (!record) return { ok: false, code, message: 'Convite não encontrado ou revogado.' };
 
-    const invite = getCommunityInvite(record);
-    if (!invite.active) return { ok: false, code, message: 'Este convite foi desativado.' };
+    const invite = getCommunityInvite(record, code);
+    if (!invite || invite.active === false) return { ok: false, code, message: 'Este convite foi desativado.' };
     if (isInviteExpired(invite)) return { ok: false, code, message: 'Este convite expirou. Solicite um novo código.' };
+    if (invite.maxUses > 0 && invite.uses >= invite.maxUses) return { ok: false, code, message: 'Este convite atingiu o limite de usos.' };
+    const banState = getCommunityBanState(record, getCurrentUserProfile());
+    if (banState.active) {
+      return { ok: false, code, message: getCommunityBanMessage(banState.ban) };
+    }
 
-    const result = joinCommunityByInvite(record);
+    const requiresApproval = invite.requireApproval || normalizeCommunityRecord(record).entryMode === 'approval';
+    if (requiresApproval) {
+      const requestResult = submitPrivateCommunityRequest(record.id, {
+        relation: 'convidado',
+        message: 'Entrada solicitada com convite ' + code,
+        inviteCode: code,
+        answers: []
+      });
+      return { ok: false, pending: true, code, message: 'Convite validado. Sua entrada foi enviada para aprovação.' };
+    }
+
+    const result = joinCommunityByInvite(record, invite);
+    const communities = readLocalCommunities();
+    const index = communities.findIndex((item) => String(item?.id || '') === String(record.id));
+    if (index >= 0) {
+      const updated = normalizeCommunityRecord(communities[index]);
+      updated.invites = getCommunityInvites(updated).map((item) => item.code === code ? { ...item, uses: Number(item.uses || 0) + (result.alreadyMember ? 0 : 1) } : item);
+      if (updated.invite && updated.invite.code === code) updated.invite = updated.invites.find((item) => item.code === code) || updated.invite;
+      communities[index] = updated;
+      writeLocalCommunities(communities);
+      result.record = updated;
+    }
     return {
       ok: true,
       code,
@@ -1841,7 +2077,8 @@ window.DokeInitCommunity = function DokeInitCommunity() {
   applyFilters();
   window.addEventListener('storage', (event) => {
     if ([COMMUNITY_LIST_STORAGE_KEY, COMMUNITY_DELETED_STORAGE_KEY, COMMUNITY_LIFECYCLE_STORAGE_KEY].includes(event.key)) {
-      renderCommunityCollections();
+      cleanupExpiredCommunityBans();
+      renderCommunityCollections({ force: true });
     }
   });
 
@@ -1875,3 +2112,4 @@ if (document.readyState === 'loading') {
 } else {
   window.DokeInitCommunity();
 }
+

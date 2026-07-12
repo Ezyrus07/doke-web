@@ -37,6 +37,60 @@
   let selectedRating = 5;
   let currentConversation = null;
   let currentCharge = null;
+  let submitPromise = null;
+  const experience = window.Doke?.reviewFormExperience || null;
+
+
+  function setExperienceState(state, detail) {
+    if (experience?.setState) experience.setState(state, detail);
+    else {
+      root.dataset.viewState = state;
+      root.dataset.experienceState = state;
+      root.setAttribute('aria-busy', ['loading', 'refreshing', 'submitting'].includes(state) ? 'true' : 'false');
+    }
+  }
+
+  function buildDraft() {
+    const aspects = {};
+    aspectRows.forEach((row) => {
+      aspects[row.dataset.reviewAspect || ''] = Number(row.dataset.rating || 0);
+    });
+    return {
+      rating: selectedRating,
+      tags: getSelectedTags(),
+      aspects,
+      comment: generalComment?.value || ''
+    };
+  }
+
+  function saveDraft() {
+    experience?.saveDraft?.(buildDraft());
+  }
+
+  function restoreDraft() {
+    const draft = experience?.loadDraft?.();
+    if (!draft) return;
+    updateRating(Number(draft.rating) || 5);
+    const selectedTags = new Set(Array.isArray(draft.tags) ? draft.tags : []);
+    tagButtons.forEach((button) => button.classList.toggle('is-selected', selectedTags.has(normalizeText(button.textContent))));
+    if (generalComment && typeof draft.comment === 'string') generalComment.value = draft.comment;
+    aspectRows.forEach((row) => {
+      const value = Number(draft.aspects?.[row.dataset.reviewAspect || ''] || 0);
+      if (!value) return;
+      row.dataset.rating = String(value);
+      Array.from(row.querySelectorAll('[data-aspect-rating]')).forEach((candidate) => {
+        const candidateValue = Number(candidate.dataset.aspectRating || 0);
+        candidate.classList.toggle('is-active', candidateValue <= value);
+        candidate.setAttribute('aria-pressed', String(candidateValue === value));
+      });
+    });
+  }
+
+  function showError(error) {
+    const message = error?.message || 'Não foi possível enviar a avaliação. Seus dados foram preservados.';
+    document.dispatchEvent(new CustomEvent('doke:operational-error', { detail: { message, source: 'avaliacao-profissional' } }));
+    window.alert(message);
+  }
 
   function normalizeText(value) {
     return String(value || '').replace(/\s+/g, ' ').trim();
@@ -349,10 +403,16 @@
   }
 
   function persistReview() {
-    const repository = getMessagesRepository();
-    if (!repository?.getById || !repository?.save || !reviewContext.conversationId) {
-      openModal();
-      return Promise.resolve(null);
+    if (submitPromise) return submitPromise;
+
+    const messagesRepository = getMessagesRepository();
+    const reviewsRepository = getReviewsRepository();
+    if (!messagesRepository?.getById || !messagesRepository?.save || !reviewsRepository?.create || !reviewContext.conversationId) {
+      const error = new Error('O serviço de avaliações não está disponível. Sua avaliação não foi enviada.');
+      saveDraft();
+      setExperienceState(navigator.onLine === false ? 'offline' : 'error', { error: error.message });
+      showError(error);
+      return Promise.reject(error);
     }
 
     const review = {
@@ -363,15 +423,27 @@
       reviewedAt: new Date().toISOString()
     };
 
-    submitButton.disabled = true;
-    submitButton.setAttribute('aria-busy', 'true');
+    saveDraft();
+    const originalButtonText = submitButton?.textContent || 'Enviar avaliação';
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.setAttribute('aria-busy', 'true');
+      submitButton.textContent = 'Enviando avaliação…';
+    }
+    setExperienceState('submitting');
 
-    return repository.getById(reviewContext.conversationId)
+    let conversationSnapshot = null;
+    let persistedConversation = null;
+    let createdProfileReview = null;
+
+    submitPromise = messagesRepository.getById(reviewContext.conversationId)
       .then((conversation) => {
         if (!conversation) throw new Error('Conversa da avaliação não encontrada.');
         const charge = resolveCharge(conversation);
         if (!charge) throw new Error('Cobrança da avaliação não encontrada.');
+        if (charge.reviewed || charge.review) throw new Error('Este atendimento já foi avaliado.');
 
+        conversationSnapshot = JSON.parse(JSON.stringify(conversation));
         charge.paid = true;
         charge.completed = true;
         charge.reviewed = true;
@@ -390,41 +462,61 @@
         });
         currentConversation = conversation;
         currentCharge = charge;
-        return repository.save(conversation);
+        return messagesRepository.save(conversation);
       })
       .then((conversation) => {
-        const activeConversation = conversation || currentConversation;
-        return Promise.all([
-          createReviewNotification(activeConversation, review),
-          persistProfileReview(activeConversation, review),
-          markOrderReviewed(activeConversation, review),
-          registerWalletReceivable(activeConversation, review)
-        ]).then(([, profileReview, reviewedOrder, walletResult]) => ({ conversation: activeConversation, profileReview, reviewedOrder, walletResult }));
+        persistedConversation = conversation || currentConversation;
+        return reviewsRepository.create(createProfileReview(persistedConversation, review));
       })
-      .then(({ conversation, walletResult }) => {
-        if (walletResult?.transaction && currentCharge) {
-          currentCharge.walletTransactionId = walletResult.transaction.id;
-        }
+      .then((profileReview) => {
+        if (!profileReview?.id) throw new Error('A avaliação não foi confirmada pelo repositório.');
+        createdProfileReview = profileReview;
+        return markOrderReviewed(persistedConversation, review).then((orderResult) => {
+          if (getOrdersRepository()?.getById && !orderResult) throw new Error('O pedido não confirmou a avaliação.');
+          return orderResult;
+        });
+      })
+      .then((reviewedOrder) => Promise.allSettled([
+        createReviewNotification(persistedConversation, review),
+        registerWalletReceivable(persistedConversation, review)
+      ]).then((sideEffects) => ({ reviewedOrder, sideEffects })))
+      .then(({ sideEffects }) => {
+        const walletResult = sideEffects[1]?.status === 'fulfilled' ? sideEffects[1].value : null;
+        if (walletResult?.transaction && currentCharge) currentCharge.walletTransactionId = walletResult.transaction.id;
+        experience?.clearDraft?.();
+        experience?.invalidate?.();
+        document.dispatchEvent(new CustomEvent('doke:profile-review-created', { detail: { review: createdProfileReview } }));
         document.dispatchEvent(new CustomEvent('doke:order-reviewed', {
-          detail: {
-            conversation: conversation || currentConversation,
-            charge: currentCharge,
-            review,
-            walletTransaction: walletResult?.transaction || null
-          }
+          detail: { conversation: persistedConversation, charge: currentCharge, review, walletTransaction: walletResult?.transaction || null }
         }));
+        setExperienceState('success');
         openModal();
-        return conversation;
+        return persistedConversation;
       })
       .catch((error) => {
-        console.warn('[DokeReview:persist]', error);
-        openModal();
-        return null;
+        saveDraft();
+        const rollback = conversationSnapshot && messagesRepository.save
+          ? messagesRepository.save(conversationSnapshot).catch(() => null)
+          : Promise.resolve(null);
+        return rollback.then(() => {
+          setExperienceState(navigator.onLine === false ? 'offline' : 'error', { error: error.message });
+          showError(error);
+          throw error;
+        });
       })
       .finally(() => {
-        submitButton.disabled = false;
-        submitButton.removeAttribute('aria-busy');
+        submitPromise = null;
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.removeAttribute('aria-busy');
+          submitButton.textContent = originalButtonText;
+        }
+        if (root.dataset.experienceState !== 'error' && root.dataset.experienceState !== 'offline' && root.dataset.experienceState !== 'success') {
+          setExperienceState('ready');
+        }
       });
+
+    return submitPromise;
   }
 
   if (starGroup) {
@@ -432,12 +524,14 @@
       const button = event.target.closest('[data-rating]');
       if (!button) return;
       updateRating(Number(button.dataset.rating) || 5);
+      saveDraft();
     });
   }
 
   tagButtons.forEach((button) => {
     button.addEventListener('click', () => {
       button.classList.toggle('is-selected');
+      saveDraft();
     });
   });
 
@@ -461,12 +555,17 @@
           candidate.classList.toggle('is-active', candidateValue <= value);
           candidate.setAttribute('aria-pressed', String(candidateValue === value));
         });
+        saveDraft();
       });
     });
   });
 
+  if (generalComment) {
+    generalComment.addEventListener('input', saveDraft);
+  }
+
   if (submitButton) {
-    submitButton.addEventListener('click', persistReview);
+    submitButton.addEventListener('click', () => { persistReview().catch(() => null); });
   }
 
   if (modal) {
@@ -488,7 +587,8 @@
   });
 
   updateRating(selectedRating);
-  loadReviewContext();
+  restoreDraft();
+  loadReviewContext().finally(() => setExperienceState('ready'));
   }
 
   window.DokeInitReview = initProfessionalReview;

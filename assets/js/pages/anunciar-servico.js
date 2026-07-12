@@ -23,6 +23,7 @@
 
     const setStep = (step) => {
       currentStep = Math.max(1, Math.min(totalSteps, step));
+      root.dataset.currentStep = String(currentStep);
       panels.forEach((panel) => {
         const isActive = Number(panel.dataset.stepPanel) === currentStep;
         panel.hidden = !isActive;
@@ -131,10 +132,17 @@
         root.querySelector('.post-service-form-card')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
       } else {
         updateReview();
-        submitState.hidden = false;
-        submitState.classList.add('is-visible');
-        nextButton.disabled = true;
-        submitState?.querySelector('.post-service-submit-state__button')?.focus({ preventScroll: true });
+        const experience = window.Doke?.serviceFormExperience;
+        if (!experience?.submit) return;
+        experience.submit()
+          .then(() => {
+            submitState.hidden = false;
+            submitState.classList.add('is-visible');
+            submitState?.querySelector('a, button')?.focus({ preventScroll: true });
+          })
+          .catch((error) => {
+            window.dispatchEvent(new CustomEvent('doke:service-submit-error', { detail: { error } }));
+          });
       }
     });
 
@@ -159,7 +167,7 @@
 
     updateCount();
     updateReview();
-    setStep(1);
+    setStep(Number(window.Doke?.serviceFormExperience?.restoredStep || 1));
   };
 
   window.DokeInitPostService = initPostService;

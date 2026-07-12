@@ -1,0 +1,15 @@
+const fs = require('fs');
+const assert = require('assert');
+const page = fs.readFileSync('assets/js/pages/comunidade-interna.js', 'utf8');
+const domain = fs.readFileSync('assets/js/features/community/community-domain.js', 'utf8');
+const html = fs.readFileSync('comunidade-interna.html', 'utf8');
+assert(page.includes('COMMUNITY_RULES_ACCEPTED'), 'rules acceptance transaction missing');
+assert(page.includes('rulesAcceptedVersion'), 'accepted rules version missing');
+assert(page.includes('isOnboardingBlockingComposer'), 'composer onboarding guard missing');
+assert(page.includes('defaultChannelId'), 'default channel support missing');
+assert(page.includes('autoRoleId'), 'invite automatic role missing');
+assert(domain.includes('rulesVersion'), 'domain rules version missing');
+assert(domain.includes('onboardingCompletedAt'), 'domain onboarding completion missing');
+assert(html.includes('data-community-onboarding-accept'), 'onboarding accept action missing');
+assert(html.includes('data-community-manage-checklist'), 'onboarding checklist setting missing');
+console.log('Community onboarding contract: OK');

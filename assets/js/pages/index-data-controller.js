@@ -116,13 +116,27 @@
       return Promise.resolve(null);
     }
 
-    setRootState(root, 'loading');
+    var cached = typeof Doke.pageDataOrchestrator.peekPageData === 'function'
+      ? Doke.pageDataOrchestrator.peekPageData(PAGE_NAME, context)
+      : null;
+    var initialState = cached ? 'refreshing' : 'loading';
+
+    setRootState(root, initialState);
+    if (Doke.experience && Doke.experience.states) {
+      Doke.experience.states.set(root, initialState, { page: PAGE_NAME });
+    }
+
     ['featured-services', 'recommended-services', 'more-services', 'workers', 'publications'].forEach(function (kind) {
+      if (cached) {
+        var region = getRegion(root, kind);
+        if (region) region.setAttribute('aria-busy', 'true');
+        return;
+      }
       setRegionState(root, kind, 'loading');
     });
 
     return Doke.pageDataOrchestrator
-      .getPageData(PAGE_NAME, context)
+      .getPageData(PAGE_NAME, context, { maxAge: 45 * 1000 })
       .then(function (payload) {
         var data = normalizePayload(payload);
         var result = {
@@ -132,6 +146,7 @@
         };
 
         setRootState(root, 'ready');
+        if (Doke.experience && Doke.experience.states) Doke.experience.states.set(root, data.services.length || data.workers.length || data.publications.length ? 'ready' : 'empty', { page: PAGE_NAME });
         setRegionState(root, 'featured-services', data.services.length ? 'ready' : 'empty');
         setRegionState(root, 'recommended-services', data.services.length ? 'ready' : 'empty');
         setRegionState(root, 'more-services', data.services.length ? 'ready' : 'empty');
@@ -150,6 +165,7 @@
         };
 
         setRootState(root, 'error', detail.error);
+        if (Doke.experience && Doke.experience.states) Doke.experience.states.set(root, navigator.onLine === false ? 'offline' : 'error', { page: PAGE_NAME, error: detail.error });
         ['featured-services', 'recommended-services', 'more-services', 'workers', 'publications'].forEach(function (kind) {
           setRegionState(root, kind, 'error', detail.error);
         });
@@ -179,6 +195,11 @@
     if (!root) return;
     var data = normalizePayload(event.detail.data);
     setRootState(root, 'ready');
+    if (Doke.experience && Doke.experience.states) Doke.experience.states.set(root, data.services.length || data.workers.length || data.publications.length ? 'ready' : 'empty', { page: PAGE_NAME, source: 'stale-while-revalidate' });
+    ['featured-services', 'recommended-services', 'more-services', 'workers', 'publications'].forEach(function (kind) {
+      var region = getRegion(root, kind);
+      if (region) region.setAttribute('aria-busy', 'false');
+    });
     updateListHooks(root, data);
     Doke.indexDataController.lastPayload = {
       page: PAGE_NAME,
