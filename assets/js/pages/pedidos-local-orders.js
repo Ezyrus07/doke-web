@@ -311,8 +311,11 @@
     var id = escapeHtml(order.id);
     var status = escapeHtml(order.status || 'pending');
     var professionalView = isProfessionalView(order);
+    var normalizedOrderStatus = normalizeStatusToken(order.status);
     var canAcceptOrder = canTransitionOrder(order, 'accepted');
-    var canDeclineOrder = canTransitionOrder(order, 'cancelled') && professionalView;
+    var canDeclineOrder = professionalView && normalizedOrderStatus === 'pending' && canTransitionOrder(order, 'cancelled');
+    var canApproveProposal = !professionalView && canTransitionOrder(order, 'in_progress');
+    var canRejectProposal = !professionalView && normalizedOrderStatus === 'quoted' && canTransitionOrder(order, 'cancelled');
     var dispute = getWalletDisputeForOrder(order);
     var disputePresentation = getOrderDisputePresentation(dispute, order);
     var walletTransaction = getWalletTransactionForOrder(order);
@@ -420,6 +423,9 @@
         ` : canAcceptOrder || canDeclineOrder ? `
         ${canAcceptOrder ? `<button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-accept="${id}"><span>Aceitar pedido</span></button>` : ``}
         ${canDeclineOrder ? `<button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-decline="${id}"><span>Recusar</span></button>` : ``}
+        ` : canApproveProposal || canRejectProposal ? `
+        ${canApproveProposal ? `<button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-approve-proposal="${id}"><span>Aprovar proposta</span></button>` : ``}
+        ${canRejectProposal ? `<button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-reject-proposal="${id}"><span>Recusar proposta</span></button>` : ``}
         ` : `
         <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-open="details"><span>Ver detalhes</span></button>
         <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-open="chat"><span>${escapeHtml(getPrimaryActionLabel(order, professionalView))}</span></button>
@@ -570,15 +576,16 @@
     });
   }
 
-  function requestDeclineReason(orderId, trigger) {
+  function requestDeclineReason(orderId, trigger, options) {
+    options = options || {};
     var card = trigger && trigger.closest ? trigger.closest('.order-card') : null;
     var orderTitle = card && card.querySelector ? card.querySelector('.order-card__body h2')?.textContent : '';
     if (window.DokeDeclineReasonDialog && typeof window.DokeDeclineReasonDialog.request === 'function') {
       return window.DokeDeclineReasonDialog.request({
         trigger: trigger,
         orderTitle: orderTitle,
-        title: 'Recusar pedido',
-        text: 'Explique ao cliente por que este pedido não poderá ser atendido.'
+        title: options.title || 'Recusar pedido',
+        text: options.text || 'Explique ao cliente por que este pedido não poderá ser atendido.'
       });
     }
     window.alert('Não foi possível abrir o modal de justificativa. Recarregue a página e tente novamente.');
@@ -661,6 +668,74 @@
     }
     return Promise.resolve(null);
   }
+
+  document.addEventListener('click', function (event) {
+    var approveButton = event.target && event.target.closest && event.target.closest('[data-order-approve-proposal]');
+    var rejectButton = event.target && event.target.closest && event.target.closest('[data-order-reject-proposal]');
+    if (!approveButton && !rejectButton) return;
+
+    var orderId = approveButton ? approveButton.dataset.orderApproveProposal : rejectButton.dataset.orderRejectProposal;
+    var ordersService = Doke.services && Doke.services.orders;
+    if (!orderId || !ordersService) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    getOrderForTransition(orderId).then(function (order) {
+      var targetStatus = approveButton ? 'in_progress' : 'cancelled';
+      if (!order || !canTransitionOrder(order, targetStatus)) {
+        scheduleRender({ force: true });
+        window.alert('Esta proposta já não pode ser alterada.');
+        return;
+      }
+
+      if (approveButton) {
+        if (typeof ordersService.approveProposal !== 'function') throw new Error('Aprovação de proposta indisponível.');
+        var approveLabel = approveButton.querySelector('span') || approveButton;
+        approveButton.disabled = true;
+        approveButton.setAttribute('aria-disabled', 'true');
+        approveLabel.textContent = 'Aprovando...';
+        return ordersService.approveProposal(orderId, { approvalSource: 'orders-list' }).then(function () {
+          scheduleRender({ force: true });
+        }).catch(function (error) {
+          approveButton.disabled = false;
+          approveButton.removeAttribute('aria-disabled');
+          approveLabel.textContent = 'Aprovar proposta';
+          window.alert(error && error.message ? error.message : 'Não foi possível aprovar a proposta.');
+        });
+      }
+
+      if (typeof ordersService.rejectProposal !== 'function') throw new Error('Recusa de proposta indisponível.');
+      return requestDeclineReason(orderId, rejectButton, {
+        title: 'Recusar proposta',
+        text: 'Explique ao profissional por que a proposta não será aprovada.'
+      }).then(function (reason) {
+        if (!reason || !reason.trim()) return;
+        return getOrderForTransition(orderId).then(function (currentOrder) {
+          if (!currentOrder || !canTransitionOrder(currentOrder, 'cancelled')) {
+            scheduleRender({ force: true });
+            window.alert('Esta proposta já não pode ser recusada.');
+            return;
+          }
+          var rejectLabel = rejectButton.querySelector('span') || rejectButton;
+          rejectButton.disabled = true;
+          rejectButton.setAttribute('aria-disabled', 'true');
+          rejectLabel.textContent = 'Recusando...';
+          return ordersService.rejectProposal(orderId, reason.trim(), { rejectionSource: 'orders-list' }).then(function () {
+            scheduleRender({ force: true });
+          }).catch(function (error) {
+            rejectButton.disabled = false;
+            rejectButton.removeAttribute('aria-disabled');
+            rejectLabel.textContent = 'Recusar proposta';
+            window.alert(error && error.message ? error.message : 'Não foi possível recusar a proposta.');
+          });
+        });
+      });
+    }).catch(function (error) {
+      scheduleRender({ force: true });
+      window.alert(error && error.message ? error.message : 'Não foi possível validar a proposta.');
+    });
+  });
 
   document.addEventListener('click', function (event) {
     var acceptButton = event.target && event.target.closest && event.target.closest('[data-order-accept]');

@@ -29,14 +29,21 @@
     }
   }
 
-  function invalidateMarketplace() {
+  function invalidateMarketplace(reason) {
+    var invalidation = Doke.experience && Doke.experience.invalidation;
+    if (invalidation && typeof invalidation.invalidateDomains === 'function') {
+      return invalidation.invalidateDomains(['marketplace'], { reason: reason || 'marketplace-refresh' });
+    }
     invalidate('index');
     invalidate('resultados');
+    return null;
   }
 
-  INVALIDATION_EVENTS.forEach(function (eventName) {
-    document.addEventListener(eventName, invalidateMarketplace);
-  });
+  if (!(Doke.experience && Doke.experience.invalidation)) {
+    INVALIDATION_EVENTS.forEach(function (eventName) {
+      document.addEventListener(eventName, function () { invalidateMarketplace(eventName); });
+    });
+  }
 
   window.addEventListener('online', function () {
     var page = getPageKey();

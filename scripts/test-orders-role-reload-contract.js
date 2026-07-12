@@ -82,9 +82,14 @@ function findConversationByOrder(Doke, orderId) {
   ));
 }
 
+function countProposalMessages(conversation) {
+  return (conversation && Array.isArray(conversation.messages) ? conversation.messages : [])
+    .filter((message) => message && (message.type === 'proposal' || message.financialKind === 'proposal')).length;
+}
+
 function countChargeMessages(conversation) {
   return (conversation && Array.isArray(conversation.messages) ? conversation.messages : [])
-    .filter((message) => message && message.type === 'charge').length;
+    .filter((message) => message && message.type === 'charge' && message.financialKind === 'charge').length;
 }
 
 async function main() {
@@ -147,7 +152,8 @@ async function main() {
   assert(quotedReloaded && quotedReloaded.status === 'quoted', 'Cliente deve recuperar quoted após reload.');
   conversation = findConversationByOrder(clientAfterProposal, created.id);
   assert(conversation && conversation.locked === false, 'Chat deve permanecer liberado no estado quoted.');
-  assert(countChargeMessages(conversation) === 1, 'Proposta deve produzir exatamente uma mensagem de cobrança.');
+  assert(countProposalMessages(conversation) === 1, 'Proposta deve produzir exatamente uma mensagem de proposta.');
+  assert(countChargeMessages(conversation) === 0, 'Proposta ainda não aprovada não pode produzir cobrança.');
   assert(clientAfterProposal.services.orders.stateMachine.canTransition(quotedReloaded, 'in_progress', client) === true, 'Cliente vinculado deve poder aprovar proposta.');
   assert(clientAfterProposal.services.orders.stateMachine.canTransition(quotedReloaded, 'in_progress', professional) === false, 'Profissional não pode aprovar a própria proposta.');
 
@@ -157,7 +163,8 @@ async function main() {
     'Proposta duplicada deve ser bloqueada.'
   );
   const afterDuplicateAttempt = findConversationByOrder(duplicateProposalRuntime, created.id);
-  assert(countChargeMessages(afterDuplicateAttempt) === 1, 'Tentativa duplicada não pode criar cobrança adicional.');
+  assert(countProposalMessages(afterDuplicateAttempt) === 1, 'Tentativa duplicada não pode criar proposta adicional.');
+  assert(countChargeMessages(afterDuplicateAttempt) === 0, 'Tentativa duplicada de proposta não pode criar cobrança.');
 
   const declineClientRuntime = createRuntime(client);
   const declinedOrder = await declineClientRuntime.services.orders.create({

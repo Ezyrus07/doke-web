@@ -59,9 +59,17 @@
   }
 
   function invalidateRelated() {
-    if (Doke.experience && Doke.experience.cache && typeof Doke.experience.cache.invalidate === 'function') {
+    var invalidation = Doke.experience && Doke.experience.invalidation;
+    if (invalidation && typeof invalidation.invalidateDomains === 'function') {
+      return invalidation.invalidateDomains(
+        ['admin', 'wallet', 'orders', 'messages', 'notifications'],
+        { reason: 'admin-resolution' }
+      );
+    }
+
+    if (Doke.experience && Doke.experience.cache && typeof Doke.experience.cache.invalidatePrefix === 'function') {
       ['wallet:', 'orders:', 'notifications:', 'messages:'].forEach(function (prefix) {
-        Doke.experience.cache.invalidate(prefix);
+        Doke.experience.cache.invalidatePrefix(prefix);
       });
     }
     if (Doke.stableShellRouter && typeof Doke.stableShellRouter.invalidate === 'function') {
@@ -69,6 +77,7 @@
         Doke.stableShellRouter.invalidate(route);
       });
     }
+    return null;
   }
 
   Doke.adminExperience = {

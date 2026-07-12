@@ -170,8 +170,14 @@
 
     function invalidate(profileId, options) {
       options = options || {};
-      var cache = Doke.experience && Doke.experience.cache;
+      var domainInvalidation = Doke.experience && Doke.experience.invalidation;
+      if (domainInvalidation && typeof domainInvalidation.invalidateDomains === 'function') {
+        return domainInvalidation.invalidateDomains(['profiles'], {
+          reason: options.reason || 'profile-surface-update'
+        });
+      }
 
+      var cache = Doke.experience && Doke.experience.cache;
       if (cache) {
         if (profileId && typeof cache.invalidate === 'function') cache.invalidate(getCacheKey(profileId));
         else if (typeof cache.invalidatePrefix === 'function') cache.invalidatePrefix(config.cachePrefix);
@@ -179,6 +185,7 @@
 
       if (options.allProfiles) invalidateAllProfileCaches();
       invalidateRoutes();
+      return null;
     }
 
     function save(options) {
@@ -279,8 +286,13 @@
     normalizeProfile: normalizeProfile,
     resolveProfileId: resolveProfileId,
     invalidateAll: function () {
+      var domainInvalidation = Doke.experience && Doke.experience.invalidation;
+      if (domainInvalidation && typeof domainInvalidation.invalidateDomains === 'function') {
+        return domainInvalidation.invalidateDomains(['profiles'], { reason: 'profile-invalidate-all' });
+      }
       invalidateAllProfileCaches();
       invalidateRoutes();
+      return null;
     }
   });
 })();

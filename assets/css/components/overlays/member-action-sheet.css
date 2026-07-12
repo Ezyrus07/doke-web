@@ -1,0 +1,131 @@
+/*
+ * Doke member action sheet
+ * Shared authority for role assignment, temporary moderation and destructive member actions.
+ */
+
+body[data-page="comunidade-interna"] .community-member-directory__menu {
+  display: grid;
+  gap: 14px;
+  width: min(390px, calc(100vw - 32px));
+  padding: 16px;
+  border: 1px solid var(--border-color-soft, rgba(24, 75, 118, 0.12));
+  border-radius: 18px;
+  background: var(--surface-card, #fff);
+  box-shadow: 0 20px 48px rgba(24, 75, 118, 0.18);
+}
+
+body[data-page="comunidade-interna"] .community-member-directory__field {
+  gap: 10px;
+}
+
+body[data-page="comunidade-interna"] .community-member-directory__field > span {
+  color: var(--color-heading, #123b68);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+body[data-page="comunidade-interna"] .community-member-directory__discipline-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-color-soft, rgba(24, 75, 118, 0.10));
+}
+
+body[data-page="comunidade-interna"] .community-member-directory__discipline-options {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(136px, 0.85fr) minmax(170px, 1.15fr);
+  gap: 10px;
+}
+
+body[data-page="comunidade-interna"] .community-member-directory__discipline-options .doke-select,
+body[data-page="comunidade-interna"] .community-member-directory__discipline-options .ui-select,
+body[data-page="comunidade-interna"] .community-member-directory__discipline-options .ui-select__trigger,
+body[data-page="comunidade-interna"] .community-member-directory__menu .ui-select__trigger {
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+  min-height: 46px;
+  padding-inline: 14px 38px;
+  border: 1px solid var(--border-color-soft, rgba(24, 75, 118, 0.12));
+  border-radius: 12px;
+  background-color: #fff;
+  color: var(--color-heading, #123b68);
+  font-size: 0.84rem;
+  text-overflow: ellipsis;
+}
+
+body[data-page="comunidade-interna"] .community-member-directory__discipline-actions > .doke-btn,
+body[data-page="comunidade-interna"] .community-member-directory__remove {
+  width: 100%;
+  min-height: 46px;
+  justify-content: flex-start;
+  padding-inline: 14px;
+  border: 1px solid var(--border-color-soft, rgba(24, 75, 118, 0.12));
+  border-radius: 12px;
+  background: #fff;
+  color: var(--color-primary-strong, #244f77);
+  box-shadow: none;
+  font-size: 0.84rem;
+  font-weight: 650;
+}
+
+body[data-page="comunidade-interna"] .community-member-directory__discipline-actions > .doke-btn:is(:hover, :focus-visible) {
+  border-color: var(--border-color-active, rgba(36, 95, 146, 0.26));
+  background: var(--color-primary-soft, #edf5fb);
+}
+
+body[data-page="comunidade-interna"] .community-member-directory__discipline-actions > .doke-btn--danger,
+body[data-page="comunidade-interna"] .community-member-directory__remove {
+  border-color: rgba(198, 61, 61, 0.22);
+  background: rgba(198, 61, 61, 0.045);
+  color: var(--color-danger-strong, #bd3333);
+}
+
+body[data-page="comunidade-interna"] .community-member-directory__remove {
+  position: relative;
+  margin-top: 2px;
+}
+
+body[data-page="comunidade-interna"] .community-member-directory__remove::before {
+  content: "";
+  position: absolute;
+  top: -9px;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--border-color-soft, rgba(24, 75, 118, 0.10));
+}
+
+@media (max-width: 560px) {
+  body[data-page="comunidade-interna"] .community-member-directory__menu {
+    right: 12px;
+    bottom: 12px;
+    width: calc(100vw - 24px);
+    padding: 14px;
+  }
+
+  body[data-page="comunidade-interna"] .community-member-directory__discipline-options,
+  body[data-page="comunidade-interna"] .community-member-directory__discipline-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Runtime select contract used by the member moderation renderer. */
+body[data-page="comunidade-interna"] .community-member-directory__discipline-options .ui-select__trigger,
+body[data-page="comunidade-interna"] .community-member-directory__menu .ui-select__trigger {
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+  min-height: 46px;
+  padding-inline: 14px 38px;
+  border: 1px solid var(--border-color-soft, rgba(24, 75, 118, 0.12));
+  border-radius: 12px;
+  background: #fff;
+  color: var(--color-heading, #123b68);
+  font-size: 0.84rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

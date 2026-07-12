@@ -113,11 +113,16 @@
   }
 
   function invalidate() {
+    var domainInvalidation = Doke.experience && Doke.experience.invalidation;
+    if (domainInvalidation && typeof domainInvalidation.invalidateDomains === 'function') {
+      return domainInvalidation.invalidateDomains(['messages'], { reason: 'messages-experience' });
+    }
     var cache = Doke.experience && Doke.experience.cache;
     if (cache && typeof cache.invalidatePrefix === 'function') cache.invalidatePrefix('messages:');
     if (Doke.stableShellRouter && typeof Doke.stableShellRouter.invalidate === 'function') {
       Doke.stableShellRouter.invalidate('mensagens.html');
     }
+    return null;
   }
 
   function getSnapshot() {
@@ -133,9 +138,11 @@
     return clone(snapshot);
   }
 
-  ['doke:auth-session-change', 'doke:order-created', 'doke:order-status-changed', 'doke:message-sent'].forEach(function (eventName) {
-    document.addEventListener(eventName, function () { invalidate(); });
-  });
+  if (!(Doke.experience && Doke.experience.invalidation)) {
+    ['doke:auth-session-change', 'doke:order-created', 'doke:order-status-changed', 'doke:message-sent'].forEach(function (eventName) {
+      document.addEventListener(eventName, function () { invalidate(); });
+    });
+  }
 
   Doke.messagesExperience = Object.freeze({
     load: load,

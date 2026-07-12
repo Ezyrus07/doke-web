@@ -237,8 +237,12 @@
     }
 
     if (normalizedStatus === 'in_progress') {
-      title = 'Pagamento confirmado';
-      body = (actor.name || 'Cliente') + ' pagou a proposta do pedido "' + (order.serviceTitle || order.title || 'Pedido') + '". O atendimento foi liberado e está em andamento.';
+      var paymentStatus = normalizeText(options.paymentStatus || order.paymentStatus || '').toLowerCase();
+      var paymentConfirmed = ['paid', 'confirmed', 'held', 'released'].indexOf(paymentStatus) !== -1 || options.paymentConfirmed === true;
+      title = paymentConfirmed ? 'Pagamento confirmado' : 'Proposta aprovada';
+      body = paymentConfirmed
+        ? (actor.name || 'Cliente') + ' confirmou o pagamento do pedido "' + (order.serviceTitle || order.title || 'Pedido') + '". O atendimento segue em andamento.'
+        : (actor.name || 'Cliente') + ' aprovou a proposta do pedido "' + (order.serviceTitle || order.title || 'Pedido') + '". O atendimento foi liberado, mas o pagamento ainda não foi confirmado.';
       actionLabel = 'Abrir conversa';
       targetUrl = 'mensagens.html?order=' + encodeURIComponent(order.id || '') + (options.conversationId ? '&conversation=' + encodeURIComponent(options.conversationId) : '');
     }
@@ -251,8 +255,11 @@
     }
 
     if (normalizedStatus === 'cancelled') {
-      title = 'Pedido recusado';
-      body = (actor.name || 'Profissional') + ' recusou o pedido "' + (order.serviceTitle || order.title || 'Pedido') + '".';
+      var proposalRejected = order.cancellationType === 'proposal_rejected' || options.cancellationType === 'proposal_rejected';
+      title = proposalRejected ? 'Proposta recusada' : 'Pedido recusado';
+      body = proposalRejected
+        ? (actor.name || 'Cliente') + ' recusou a proposta do pedido "' + (order.serviceTitle || order.title || 'Pedido') + '".'
+        : (actor.name || 'Profissional') + ' recusou o pedido "' + (order.serviceTitle || order.title || 'Pedido') + '".';
       if (options.reason || order.refusalReason) body += ' Justificativa: ' + (options.reason || order.refusalReason);
     }
 
@@ -293,6 +300,7 @@
     var messageText = normalizeText(message.text || message.body || '');
     if (!messageText && message.type === 'image') messageText = 'Enviou uma imagem.';
     if (!messageText && message.type === 'audio') messageText = 'Enviou um áudio.';
+    if (!messageText && message.type === 'proposal') messageText = 'Enviou uma proposta.';
     if (!messageText && message.type === 'charge') messageText = 'Enviou uma cobrança.';
     var compactMessage = messageText.length > 96 ? messageText.slice(0, 93) + '...' : messageText;
     var serviceTitle = conversation.order && (conversation.order.serviceTitle || conversation.order.title) || 'um pedido';
@@ -312,6 +320,39 @@
       body: (actor.name || message.author || 'Contato') + ' sobre ' + serviceTitle + ': "' + (compactMessage || 'Nova atualização na conversa.') + '"',
       targetUrl: 'mensagens.html?order=' + encodeURIComponent(conversation.orderId || '') + (conversation.id ? '&conversation=' + encodeURIComponent(conversation.id) : ''),
       actionLabel: 'Abrir conversa',
+      read: false
+    });
+  }
+
+  function createPaymentHeld(payment, options) {
+    payment = payment || {};
+    options = options || {};
+    var order = options.order || {};
+    var conversation = options.conversation || {};
+    var actor = options.actor || getCurrentUser() || {};
+    var recipientId = normalizeText(payment.professionalId || order.professionalId || order.providerId || conversation.professionalId || '');
+    if (!recipientId) return Promise.resolve(null);
+    var grossAmount = Number(payment.grossAmount || payment.amount || 0);
+    var amountLabel = Number.isFinite(grossAmount)
+      ? grossAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+      : normalizeText(payment.grossAmount || payment.amount || '');
+    var title = normalizeText(order.serviceTitle || order.title || conversation.serviceTitle || 'Pedido');
+
+    return create({
+      type: 'payment_held',
+      category: 'payments',
+      userId: recipientId,
+      actorId: actor.id || payment.clientId || '',
+      actorName: actor.name || order.clientName || conversation.clientName || 'Cliente Doke',
+      orderId: payment.orderId || order.id || conversation.orderId || '',
+      conversationId: payment.conversationId || conversation.id || '',
+      messageId: payment.messageId || payment.chargeMessageId || '',
+      serviceId: order.serviceId || conversation.serviceId || '',
+      eventKey: ['payment_held', payment.id || '', recipientId].filter(Boolean).join(':'),
+      title: 'Pagamento em garantia',
+      body: (actor.name || order.clientName || 'O cliente') + ' confirmou o pagamento de ' + (amountLabel || 'valor combinado') + ' para "' + title + '". O valor ficará em garantia até a conclusão.',
+      targetUrl: 'mensagens.html?order=' + encodeURIComponent(payment.orderId || order.id || '') + (payment.conversationId ? '&conversation=' + encodeURIComponent(payment.conversationId) : ''),
+      actionLabel: 'Acompanhar atendimento',
       read: false
     });
   }
@@ -389,6 +430,7 @@
     create: create,
     createOrderCreated: createOrderCreated,
     createOrderStatusChanged: createOrderStatusChanged,
+    createPaymentHeld: createPaymentHeld,
     createMessageReceived: createMessageReceived,
     markAsRead: markAsRead,
     dismiss: dismiss,

@@ -64,9 +64,41 @@
     }
     return user.role === "client" && String(order.clientId || "") === String(user.id) && current === "quoted" && ["in_progress", "cancelled"].includes(target);
   };
-  const canUseChargeAction = (conversation) => Boolean(
-    isProfessionalConversationView(conversation) && canTransitionConversationOrder(conversation, "quoted")
-  );
+  const getMessageIdentifier = (message) => String(message?.id || message?.messageId || "").trim();
+  const getFinancialMessageKind = (conversation, message) => {
+    const type = String(message?.type || "").toLowerCase();
+    if (type === "proposal") return "proposal";
+    if (type !== "charge") return "";
+    const explicitKind = String(message?.financialKind || message?.kind || "").toLowerCase();
+    if (explicitKind === "proposal" || explicitKind === "charge") return explicitKind;
+    if (message?.chargeCreatedAt || message?.chargeStatus) return "charge";
+    const chargeMessageId = String(conversation?.order?.chargeMessageId || "");
+    if (chargeMessageId) return getMessageIdentifier(message) === chargeMessageId ? "charge" : "proposal";
+    return "proposal";
+  };
+  const isProposalMessage = (conversation, message) => getFinancialMessageKind(conversation, message) === "proposal";
+  const isChargeMessage = (conversation, message) => getFinancialMessageKind(conversation, message) === "charge";
+  const isFinancialMessage = (conversation, message) => Boolean(getFinancialMessageKind(conversation, message));
+  const getActualChargeMessage = (conversation) => {
+    const messages = Array.isArray(conversation?.messages) ? conversation.messages : [];
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      if (isChargeMessage(conversation, messages[index])) return messages[index];
+    }
+    return null;
+  };
+  const getFinancialActionKind = (conversation) => {
+    const user = getCurrentUser();
+    if (!conversation || !user?.id || !isProfessionalConversationView(conversation)) return "";
+    if (canTransitionConversationOrder(conversation, "quoted")) return "proposal";
+    const order = getConversationOrder(conversation);
+    const service = window.Doke?.services?.orders;
+    if (normalizeStatusToken(order.status) !== "in_progress" || getActualChargeMessage(conversation)) return "";
+    if (typeof service?.canCreateCharge === "function") {
+      return service.canCreateCharge(order, user) ? "charge" : "";
+    }
+    return order.proposalApprovedAt && !order.chargeMessageId ? "charge" : "";
+  };
+  const canUseChargeAction = (conversation) => Boolean(getFinancialActionKind(conversation));
 
   const getDisputeReasonLabel = (dispute) => {
     const code = normalizeStatusToken(dispute?.reasonCode || "");
@@ -148,131 +180,221 @@
     return { state: "contestacao", label: "Em contestação", title: "Pedido em contestação", text: "Mantenha a conversa centralizada aqui até a análise ser concluída.", dispute };
   };
 
+  const getProposalCardPresentation = (conversation, message) => {
+    const professionalView = isProfessionalConversationView(conversation);
+    const orderStatus = getOrderStatus(conversation);
+    const rejected = orderStatus === "cancelled" && conversation?.order?.cancellationType === "proposal_rejected";
+    const approved = Boolean(conversation?.order?.proposalApprovedAt) || ["in_progress", "completed"].includes(orderStatus);
+
+    if (professionalView) {
+      if (rejected) {
+        return {
+          label: "Proposta recusada",
+          status: "Pedido encerrado",
+          state: "rejected",
+          kicker: "Cliente recusou a proposta",
+          text: message.text || "O cliente recusou a proposta e o pedido foi encerrado.",
+          details: ["Valor proposto", message.installments || "À vista"],
+          note: conversation?.order?.refusalReason || "A decisão ficou registrada no pedido.",
+          actionHtml: '<span class="message-bubble__charge-meta">Proposta recusada</span>',
+          passive: true
+        };
+      }
+      if (approved) {
+        return {
+          label: "Proposta aprovada",
+          status: "Atendimento liberado",
+          state: "approved",
+          kicker: "Cliente aprovou a proposta",
+          text: message.text || "O cliente aprovou os valores. O atendimento pode seguir e a cobrança será emitida separadamente.",
+          details: ["Proposta aceita", message.installments || "À vista"],
+          note: "Proposta e cobrança são registros distintos.",
+          actionHtml: '<span class="message-bubble__charge-meta">Atendimento em andamento</span>',
+          passive: true
+        };
+      }
+      return {
+        label: "Proposta enviada",
+        status: "Aguardando decisão",
+        state: "pending",
+        kicker: "Proposta para aprovação",
+        text: message.text || "Sua proposta foi enviada. O cliente precisa aprovar ou recusar antes do atendimento.",
+        details: ["Valor proposto", message.installments || "À vista"],
+        note: "Aguardando a decisão do cliente.",
+        actionHtml: '<span class="message-bubble__charge-meta">Cliente ainda não decidiu</span>',
+        passive: true
+      };
+    }
+
+    if (rejected) {
+      return {
+        label: "Proposta recusada",
+        status: "Pedido encerrado",
+        state: "rejected",
+        kicker: "Decisão registrada",
+        text: message.text || "A proposta foi recusada e o pedido foi encerrado.",
+        details: ["Valor proposto", message.installments || "À vista"],
+        note: conversation?.order?.refusalReason || "A decisão ficou registrada no histórico.",
+        actionHtml: '<span class="message-bubble__charge-meta">Proposta recusada</span>',
+        passive: true
+      };
+    }
+    if (approved) {
+      return {
+        label: "Proposta aprovada",
+        status: "Atendimento liberado",
+        state: "approved",
+        kicker: "Proposta aceita",
+        text: message.text || "Você aprovou a proposta. A cobrança será enviada separadamente pelo profissional.",
+        details: ["Proposta aceita", message.installments || "À vista"],
+        note: "A aprovação não confirma pagamento.",
+        actionHtml: '<span class="message-bubble__charge-meta">Aguardando cobrança</span>',
+        passive: true
+      };
+    }
+    return {
+      label: "Proposta enviada",
+      status: "Aguardando sua decisão",
+      state: "pending",
+      kicker: "Proposta para aprovação",
+      text: message.text || "Revise os valores e escolha aprovar ou recusar a proposta.",
+      details: ["Valor proposto", message.installments || "À vista"],
+      note: "A aprovação libera o atendimento, mas não confirma pagamento.",
+      actionHtml: '<button class="message-bubble__charge-pay doke-btn doke-btn--primary" type="button" data-message-approve-proposal>Aprovar proposta</button><button class="message-bubble__charge-pay doke-btn doke-btn--ghost" type="button" data-message-reject-proposal>Recusar proposta</button>',
+      passive: false
+    };
+  };
+
   const getChargeCardPresentation = (conversation, message) => {
     const professionalView = isProfessionalConversationView(conversation);
     const ownerView = professionalView && message?.mine === true;
     const orderStatus = getOrderStatus(conversation);
+    const paymentStatus = normalizeStatusToken(conversation?.order?.paymentStatus || message?.paymentStatus || "");
     const reviewed = message?.reviewed === true;
-    const completed = reviewed || message?.completed === true || orderStatus === 'completed';
-    const paid = completed || message?.paid === true || orderStatus === 'in_progress';
+    const completed = reviewed || message?.completed === true || orderStatus === "completed";
+    const paid = message?.paid === true || ["paid", "confirmed", "held", "released"].includes(paymentStatus);
 
     if (ownerView) {
       if (reviewed) {
         return {
-          label: 'Cobrança concluída',
-          status: 'Avaliação recebida',
-          state: 'reviewed',
-          kicker: 'Atendimento avaliado',
-          text: message.text || 'O cliente concluiu o fluxo e registrou a avaliação do atendimento.',
-          details: ['Recebimento pela Doke', message.installments || 'À vista'],
-          note: 'Fluxo encerrado com avaliação registrada.',
+          label: "Cobrança concluída",
+          status: "Avaliação recebida",
+          state: "reviewed",
+          kicker: "Atendimento avaliado",
+          text: message.text || "O cliente concluiu o fluxo e registrou a avaliação do atendimento.",
+          details: ["Recebimento pela Doke", message.installments || "À vista"],
+          note: "Fluxo encerrado com avaliação registrada.",
           actionHtml: '<span class="message-bubble__charge-meta">Concluído</span>' + getChargeReceiptActionHtml(conversation, message),
           passive: true
         };
       }
-
       if (completed) {
         return {
-          label: 'Cobrança concluída',
-          status: 'Aguardando avaliação',
-          state: 'completed',
-          kicker: 'Atendimento finalizado',
-          text: message.text || 'O pedido foi finalizado e o cliente ainda pode avaliar o atendimento.',
-          details: ['Recebimento pela Doke', message.installments || 'À vista'],
-          note: 'Pedido encerrado. A avaliação do cliente pode chegar a qualquer momento.',
+          label: "Cobrança concluída",
+          status: "Aguardando avaliação",
+          state: "completed",
+          kicker: "Atendimento finalizado",
+          text: message.text || "O pedido foi finalizado e o cliente ainda pode avaliar o atendimento.",
+          details: ["Recebimento pela Doke", message.installments || "À vista"],
+          note: "Pedido encerrado. A avaliação do cliente pode chegar a qualquer momento.",
           actionHtml: '<span class="message-bubble__charge-meta">Pedido finalizado</span>' + getChargeReceiptActionHtml(conversation, message),
           passive: true
         };
       }
-
       if (paid) {
         return {
-          label: 'Cobrança aprovada',
-          status: 'Pagamento confirmado',
-          state: 'paid',
-          kicker: 'Atendimento liberado',
-          text: message.text || 'O cliente confirmou o pagamento. Agora combine a execução e os próximos passos pelo chat.',
-          details: ['Recebimento pela Doke', message.installments || 'À vista'],
-          note: 'Pagamento confirmado. Siga com o atendimento.',
-          actionHtml: '<span class="message-bubble__charge-meta">Siga com o atendimento</span>' + getChargeReceiptActionHtml(conversation, message),
+          label: "Cobrança paga",
+          status: "Pagamento confirmado",
+          state: "paid",
+          kicker: "Pagamento registrado",
+          text: message.text || "O cliente confirmou o pagamento. Mantenha a execução registrada pelo chat.",
+          details: ["Recebimento pela Doke", message.installments || "À vista"],
+          note: "Pagamento confirmado. Siga com o atendimento.",
+          actionHtml: '<span class="message-bubble__charge-meta">Pagamento confirmado</span>' + getChargeReceiptActionHtml(conversation, message),
           passive: true
         };
       }
-
       return {
-        label: 'Cobrança enviada ao cliente',
-        status: 'Aguardando cliente',
-        state: 'pending',
-        kicker: 'Proposta enviada',
-        text: message.text || 'Sua proposta foi enviada. O cliente precisa aprovar e pagar para liberar o atendimento.',
-        details: ['Recebimento pela Doke', message.installments || 'À vista'],
-        note: 'Aguardando aprovação e pagamento do cliente.',
-        actionHtml: '<span class="message-bubble__charge-meta">Cliente ainda não pagou</span>',
+        label: "Cobrança enviada",
+        status: "Aguardando pagamento",
+        state: "pending",
+        kicker: "Pagamento pendente",
+        text: message.text || "A cobrança foi enviada ao cliente e ainda aguarda pagamento.",
+        details: ["Pagamento pela Doke", message.installments || "À vista"],
+        note: "O atendimento continua em andamento; pagamento ainda não confirmado.",
+        actionHtml: '<span class="message-bubble__charge-meta">Aguardando cliente</span>',
         passive: true
       };
     }
 
     if (reviewed) {
       return {
-        label: 'Cobrança enviada',
-        status: 'Atendimento avaliado',
-        state: 'reviewed',
-        kicker: 'Proposta aprovada',
-        text: message.text || 'O atendimento foi concluído e avaliado.',
-        details: ['Pagamento seguro pela Doke', message.installments || 'À vista'],
-        note: 'Fluxo encerrado com avaliação registrada.',
+        label: "Cobrança paga",
+        status: "Atendimento avaliado",
+        state: "reviewed",
+        kicker: "Fluxo concluído",
+        text: message.text || "O atendimento foi concluído e avaliado.",
+        details: ["Pagamento seguro pela Doke", message.installments || "À vista"],
+        note: "Fluxo encerrado com avaliação registrada.",
         actionHtml: getChargeReceiptActionHtml(conversation, message),
         passive: true
       };
     }
-
     if (completed) {
       return {
-        label: 'Cobrança enviada',
-        status: 'Aguardando avaliação',
-        state: 'completed',
-        kicker: 'Proposta para aprovação',
-        text: message.text || 'O atendimento foi concluído. Você ainda pode avaliar por aqui.',
-        details: ['Pagamento seguro pela Doke', message.installments || 'À vista'],
-        note: 'Avalie para concluir o atendimento.',
+        label: "Cobrança paga",
+        status: "Aguardando avaliação",
+        state: "completed",
+        kicker: "Atendimento concluído",
+        text: message.text || "O atendimento foi concluído. Você ainda pode avaliar por aqui.",
+        details: ["Pagamento seguro pela Doke", message.installments || "À vista"],
+        note: "Avalie para concluir o fluxo.",
         actionHtml: '<button class="message-bubble__charge-pay is-done doke-btn doke-btn--soft" type="button" data-message-review>Avaliar</button>' + getChargeReceiptActionHtml(conversation, message),
         passive: false
       };
     }
-
     if (paid) {
       return {
-        label: 'Cobrança enviada',
-        status: 'Pagamento confirmado',
-        state: 'paid',
-        kicker: 'Proposta para aprovação',
-        text: message.text || 'Pagamento confirmado. Agora você pode finalizar o pedido por aqui.',
-        details: ['Pagamento seguro pela Doke', message.installments || 'À vista'],
-        note: 'Confirme para encerrar o atendimento.',
+        label: "Cobrança paga",
+        status: "Pagamento confirmado",
+        state: "paid",
+        kicker: "Pagamento registrado",
+        text: message.text || "Pagamento confirmado. Agora você pode acompanhar e finalizar o atendimento.",
+        details: ["Pagamento seguro pela Doke", message.installments || "À vista"],
+        note: "Confirme quando o serviço for concluído.",
         actionHtml: '<button class="message-bubble__charge-pay is-complete doke-btn doke-btn--success" type="button" data-message-complete>Finalizar pedido</button>' + getChargeReceiptActionHtml(conversation, message),
         passive: false
       };
     }
-
     return {
-      label: 'Cobrança enviada',
-      status: 'Aguardando pagamento',
-      state: 'pending',
-      kicker: 'Proposta para aprovação',
-      text: message.text || 'Proposta pronta para aprovação. Você pode pagar por aqui para confirmar o atendimento.',
-      details: ['Pagamento seguro pela Doke', message.installments || 'À vista'],
-      note: 'Confirme para liberar o atendimento.',
+      label: "Cobrança recebida",
+      status: "Aguardando pagamento",
+      state: "pending",
+      kicker: "Pagamento pendente",
+      text: message.text || "A cobrança foi emitida com base na proposta aprovada.",
+      details: ["Pagamento seguro pela Doke", message.installments || "À vista"],
+      note: "O pagamento será confirmado apenas na etapa própria.",
       actionHtml: '<button class="message-bubble__charge-pay doke-btn doke-btn--primary" type="button" data-message-pay>Pagar agora</button>',
       passive: false
     };
   };
+
+  const getFinancialCardPresentation = (conversation, message) => isProposalMessage(conversation, message)
+    ? getProposalCardPresentation(conversation, message)
+    : getChargeCardPresentation(conversation, message);
+
   const syncChargeActionVisibility = (conversation) => {
-    const allowed = canUseChargeAction(conversation);
+    const actionKind = getFinancialActionKind(conversation);
+    const allowed = Boolean(actionKind);
     const button = document.querySelector("[data-messages-charge]");
     if (!button) return false;
+    const label = actionKind === "charge" ? "Cobrança" : "Proposta";
+    const text = button.querySelector("span");
+    if (text) text.textContent = label;
+    button.setAttribute("aria-label", actionKind === "charge" ? "Enviar cobrança" : "Enviar proposta");
     button.hidden = !allowed;
     button.setAttribute("aria-hidden", allowed ? "false" : "true");
-    if (!allowed) button.disabled = true;
+    button.disabled = !allowed;
     return allowed;
   };
 
@@ -454,11 +576,13 @@
   const isOrderPendingAcceptance = (conversation) => getOrderStatus(conversation) === "pending";
   const isOrderDeclined = (conversation) => getOrderStatus(conversation) === "cancelled";
 
-  const getMessagePreview = (message) => {
+  const getMessagePreview = (message, conversation = null) => {
     if (!message) return "";
     if (message.type === "audio") return "Áudio enviado";
     if (message.type === "image") return "Imagem enviada";
-    if (message.type === "charge") return `Cobrança ${message.amount}`;
+    const financialKind = getFinancialMessageKind(conversation, message);
+    if (financialKind === "proposal") return `Proposta ${message.amount || "enviada"}`;
+    if (financialKind === "charge") return `Cobrança ${message.amount || "enviada"}`;
     return String(message.text || "");
   };
 
@@ -472,7 +596,7 @@
         <span class="message-item__content">
           <span class="message-item__line"><strong>${escapeHtml(conversation.name)}</strong><span class="message-item__time">${escapeHtml(lastMessage?.time || "agora")}</span></span>
           <span class="message-item__deal-status doke-badge ${getStatusToneClass(statusLabel)}">${escapeHtml(statusLabel)}</span>
-          <span class="message-item__preview">${escapeHtml(getMessagePreview(lastMessage) || "Sem mensagens ainda.")}</span>
+          <span class="message-item__preview">${escapeHtml(getMessagePreview(lastMessage, conversation) || "Sem mensagens ainda.")}</span>
           <span class="message-item__status">${escapeHtml(conversation.lastSeen || "Conversa do pedido")}</span>
         </span>
         <span class="message-item__badge doke-badge" ${conversation.unread ? "" : "hidden"}>${escapeHtml(conversation.unread || "")}</span>
@@ -1036,23 +1160,17 @@
       document.documentElement.classList.toggle("chat-room-mobile-open", mobileOpen);
     };
     const normalize = (value) => String(value || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-    const getLatestChargeMessage = (conversationId) => {
-      const messages = conversations[conversationId]?.messages || [];
-      for (let index = messages.length - 1; index >= 0; index -= 1) {
-        if (messages[index]?.type === "charge") return messages[index];
-      }
-      return null;
-    };
+    const getLatestChargeMessage = (conversationId) => getActualChargeMessage(conversations[conversationId]);
 
-    const requestDeclineReason = (orderId, trigger) => {
+    const requestDeclineReason = (orderId, trigger, options = {}) => {
       const conversation = conversations[activeId];
       const orderTitle = conversation?.order?.title || conversation?.order?.serviceTitle || "";
       if (window.DokeDeclineReasonDialog && typeof window.DokeDeclineReasonDialog.request === "function") {
         return window.DokeDeclineReasonDialog.request({
           trigger,
           orderTitle,
-          title: "Recusar pedido",
-          text: "Explique ao cliente por que este pedido não poderá ser atendido."
+          title: options.title || "Recusar pedido",
+          text: options.text || "Explique ao cliente por que este pedido não poderá ser atendido."
         });
       }
       showCopyToast("Não foi possível abrir o modal de justificativa. Recarregue a página e tente novamente.");
@@ -1186,23 +1304,18 @@
       return layer;
     };
 
-    const getConversationChargeMessage = (conversation) => {
-      const messages = Array.isArray(conversation?.messages) ? conversation.messages : [];
-      for (let index = messages.length - 1; index >= 0; index -= 1) {
-        if (messages[index]?.type === "charge") return messages[index];
-      }
-      return null;
-    };
+    const getConversationChargeMessage = (conversation) => getActualChargeMessage(conversation);
 
     const getMessagesOrderTimeline = (status, order, charge) => {
       const accepted = ["accepted", "conversation", "responded", "quoted", "in_progress", "completed"].includes(status);
-      const paymentConfirmed = Boolean(charge?.paid) || status === "in_progress" || status === "completed";
+      const proposalApproved = Boolean(order?.proposalApprovedAt) || ["in_progress", "completed"].includes(status);
       const completed = status === "completed";
 
       if (status === "cancelled") {
+        const proposalRejected = order?.cancellationType === "proposal_rejected";
         return [
           { label: "Pedido recebido", date: order.createdAt || "Registrado na Doke", done: true, current: false },
-          { label: "Pedido recusado", date: order.refusalReason || "Fluxo encerrado", done: false, current: true },
+          { label: proposalRejected ? "Proposta recusada" : "Pedido recusado", date: order.refusalReason || "Fluxo encerrado", done: false, current: true },
           { label: "Conversa bloqueada", date: "Atendimento indisponível", done: false, current: false }
         ];
       }
@@ -1211,18 +1324,18 @@
         { label: "Pedido recebido", date: order.createdAt || "Registrado na Doke", done: true, current: false },
         { label: "Aceite do profissional", date: accepted ? "Pedido aceito" : "Aguardando resposta", done: accepted, current: status === "pending" },
         {
-          label: "Proposta e pagamento",
-          date: paymentConfirmed
-            ? "Pagamento confirmado"
+          label: "Decisão da proposta",
+          date: proposalApproved
+            ? "Proposta aprovada"
             : status === "quoted"
-              ? "Proposta enviada · aguardando pagamento"
+              ? "Aguardando decisão do cliente"
               : "Próxima etapa",
-          done: paymentConfirmed,
-          current: status === "quoted" && !paymentConfirmed
+          done: proposalApproved,
+          current: status === "quoted"
         },
         {
           label: "Atendimento",
-          date: completed ? "Serviço concluído" : status === "in_progress" ? "Etapa atual" : "Após confirmação",
+          date: completed ? "Serviço concluído" : status === "in_progress" ? "Etapa atual" : "Após aprovação",
           done: completed,
           current: status === "in_progress"
         }
@@ -1291,31 +1404,27 @@
           flow: order.flow || "O pedido já teve retorno e está em negociação. Use a conversa para alinhar escopo e próximos passos.",
           actionTitle: professionalView ? "Enviar proposta" : "Acompanhar resposta",
           actionNote: professionalView
-            ? "Formalize a proposta para transformar a negociação em cobrança aprovada."
+            ? "Formalize a proposta para registrar valor, prazo e condições antes da decisão do cliente."
             : "Acompanhe a negociação e confirme os detalhes antes do pagamento.",
           aiTitle: "Fluxo em negociação",
           aiText: "O histórico da conversa já existe; agora o importante é consolidar proposta, valor e prazo."
         },
         quoted: {
           statusLabel: order.statusLabel || "Proposta enviada",
-          smartBadge: charge?.paid ? "Pagamento confirmado" : "Aguardando pagamento",
-          riskLabel: charge?.paid ? "Baixo" : "Médio",
-          riskTone: charge?.paid ? "info" : "risk",
-          flow: order.flow || (charge?.paid
-            ? "A proposta foi aprovada e o pagamento já foi registrado. O atendimento segue em andamento."
-            : "A proposta foi enviada e o próximo passo é a confirmação do pagamento para liberar o atendimento."),
-          actionTitle: professionalView ? "Acompanhar proposta" : "Concluir pagamento",
+          smartBadge: "Aguardando decisão",
+          riskLabel: "Médio",
+          riskTone: "risk",
+          flow: order.flow || "A proposta foi enviada e o cliente deve aprovar ou recusar antes do atendimento.",
+          actionTitle: professionalView ? "Acompanhar proposta" : "Decidir proposta",
           actionNote: professionalView
-            ? "Aguarde a confirmação do cliente e mantenha a conversa pronta para iniciar o atendimento."
-            : "O pagamento precisa ser confirmado na tela de checkout para iniciar o atendimento.",
+            ? "Aguarde a decisão do cliente e mantenha a conversa pronta para iniciar o atendimento."
+            : "Revise valores, prazo e escopo antes de aprovar ou recusar.",
           aiTitle: "Proposta formalizada",
-          aiText: charge?.paid
-            ? "O pagamento já entrou no fluxo e o pedido está pronto para execução."
-            : "A negociação já virou cobrança. O próximo passo obrigatório é confirmar o pagamento."
+          aiText: "A negociação já virou proposta. O próximo passo obrigatório é a decisão do cliente."
         },
         in_progress: {
           statusLabel: order.statusLabel || "Em andamento",
-          smartBadge: charge?.paid ? "Pagamento confirmado" : "Atendimento ativo",
+          smartBadge: charge?.paid ? "Pagamento confirmado" : charge ? "Cobrança enviada" : "Proposta aprovada",
           riskLabel: "Baixo",
           riskTone: "success",
           flow: order.flow || "A proposta foi aprovada e o atendimento está em andamento.",
@@ -1324,7 +1433,11 @@
             ? "Mantenha o cliente atualizado na conversa enquanto executa o serviço."
             : "Use a conversa para acompanhar o andamento e receber atualizações do profissional.",
           aiTitle: "Atendimento iniciado",
-          aiText: "Pagamento confirmado e pedido em andamento. Agora a conversa deve servir para acompanhamento e execução."
+          aiText: charge?.paid
+            ? "Pagamento confirmado e pedido em andamento. A conversa deve servir para acompanhamento e execução."
+            : charge
+              ? "Cobrança enviada e pedido em andamento. O pagamento ainda não foi confirmado."
+              : "Proposta aprovada e pedido em andamento. A cobrança ainda precisa ser emitida pelo profissional."
         },
         completed: {
           statusLabel: order.statusLabel || "Concluído",
@@ -1416,7 +1529,7 @@
         const secondaryBadge = details.smartBadge && details.smartBadge !== details.statusLabel
           ? details.smartBadge
           : details.status === "in_progress"
-            ? "Pagamento confirmado"
+            ? "Proposta aprovada"
             : "Conversa ativa";
         statusbar.innerHTML = `
           <span class="orders-detail-pill">${escapeHtml(details.statusLabel)}</span>
@@ -1522,8 +1635,12 @@
       const statusLabel = disputePresentation ? disputePresentation.label : order.statusLabel || 'Em negociação';
       const isDeclined = isOrderDeclined(conversation);
       const canAccept = canTransitionConversationOrder(conversation, 'accepted');
-      const canDecline = professionalView && canTransitionConversationOrder(conversation, 'cancelled');
+      const canDeclineRequest = professionalView && orderStatus === 'pending' && canTransitionConversationOrder(conversation, 'cancelled');
+      const canRejectProposal = !professionalView && orderStatus === 'quoted' && canTransitionConversationOrder(conversation, 'cancelled');
+      const canDecline = canDeclineRequest || canRejectProposal;
       const canQuote = canTransitionConversationOrder(conversation, 'quoted');
+      const canApproveProposal = canTransitionConversationOrder(conversation, 'in_progress');
+      const financialActionKind = getFinancialActionKind(conversation);
       let primaryLabel = 'Aguardando aceite';
       let primaryClass = 'doke-btn--soft';
       let primaryAttrs = 'aria-disabled="true" disabled';
@@ -1540,12 +1657,20 @@
         primaryLabel = 'Enviar proposta';
         primaryClass = 'doke-btn--primary';
         primaryAttrs = 'data-messages-proposal-action';
+      } else if (financialActionKind === 'charge') {
+        primaryLabel = 'Enviar cobrança';
+        primaryClass = 'doke-btn--primary';
+        primaryAttrs = 'data-messages-charge-action';
+      } else if (canApproveProposal) {
+        primaryLabel = 'Aprovar proposta';
+        primaryClass = 'doke-btn--primary';
+        primaryAttrs = 'data-messages-approve-proposal';
       } else if (orderStatus === 'accepted' || orderStatus === 'conversation' || orderStatus === 'responded') {
         primaryLabel = professionalView ? 'Proposta indisponível' : 'Aguardando proposta';
       } else if (orderStatus === 'quoted') {
         primaryLabel = professionalView ? 'Proposta enviada' : 'Ver proposta';
       } else if (orderStatus === 'in_progress') {
-        primaryLabel = 'Em atendimento';
+        primaryLabel = getConversationChargeMessage(conversation) ? 'Cobrança enviada' : 'Em atendimento';
       } else if (orderStatus === 'completed') {
         primaryLabel = 'Pedido concluído';
       }
@@ -1573,7 +1698,7 @@
           </div>
           <div class="messages-order-card__actions doke-order-card__actions">
             <button class="messages-order-card__button messages-order-card__button--ghost doke-btn doke-btn--ghost" type="button" data-messages-open-order-detail>Ver detalhes</button>
-            ${canDecline ? `<button class="messages-order-card__button doke-btn doke-btn--ghost" type="button" data-messages-decline-order>Recusar</button>` : ""}
+            ${canDecline ? `<button class="messages-order-card__button doke-btn doke-btn--ghost" type="button" data-messages-decline-order>${professionalView ? "Recusar" : "Recusar proposta"}</button>` : ""}
             <button class="messages-order-card__button doke-btn ${primaryClass}" type="button" ${primaryAttrs}>${primaryLabel}</button>
           </div>
         </div>
@@ -1608,8 +1733,10 @@
       if (!orderId || !service) return Promise.resolve(null);
       const action = status === 'quoted' && typeof service.quote === 'function'
         ? service.quote(orderId, options)
-        : status === 'in_progress' && typeof service.start === 'function'
-          ? service.start(orderId, options)
+        : status === 'in_progress' && typeof service.approveProposal === 'function'
+          ? service.approveProposal(orderId, options)
+          : status === 'in_progress'
+            ? Promise.reject(new Error('Comando canônico de aprovação indisponível.'))
           : status === 'completed' && typeof service.complete === 'function'
             ? service.complete(orderId, options)
             : typeof service.updateStatus === 'function'
@@ -1618,6 +1745,80 @@
       return action.then((order) => {
         syncConversationOrderStatus(conversation, order);
         return persistConversationState(activeId).then(() => order);
+      });
+    };
+
+    const approveActiveProposal = (trigger) => {
+      const conversation = conversations[activeId];
+      const ordersService = window.Doke?.services?.orders;
+      if (!conversation || typeof ordersService?.approveProposal !== 'function') {
+        showCopyToast("A aprovação da proposta está indisponível. Recarregue a página e tente novamente.");
+        return Promise.resolve(null);
+      }
+      if (!canTransitionConversationOrder(conversation, 'in_progress')) {
+        renderThread(activeId, { scrollTo: "preserve" });
+        showCopyToast("Esta proposta já não pode ser aprovada.");
+        return Promise.resolve(null);
+      }
+
+      if (trigger) {
+        trigger.disabled = true;
+        trigger.setAttribute('aria-busy', 'true');
+      }
+      return updateOrderFromConversation('in_progress', { approvalSource: 'messages-proposal' }).then((order) => {
+        if (conversation) {
+          conversation.lastSeen = order?.statusLabel || 'Proposta aprovada';
+          conversation.lastMessage = 'Proposta aprovada pelo cliente';
+        }
+        return persistConversationState(activeId).then(() => {
+          renderThread(activeId, { scrollTo: "preserve" });
+          showCopyToast("Proposta aprovada. O atendimento foi liberado.");
+          return order;
+        });
+      }).catch((error) => {
+        renderThread(activeId, { scrollTo: "preserve" });
+        showCopyToast(error?.message || "Não foi possível aprovar a proposta.");
+        return null;
+      });
+    };
+
+    const rejectActiveProposal = (trigger) => {
+      const conversation = conversations[activeId];
+      const orderId = conversation?.order?.id || conversation?.orderId;
+      const ordersService = window.Doke?.services?.orders;
+      if (!conversation || !orderId || !ordersService?.rejectProposal) {
+        showCopyToast("Não foi possível localizar a proposta vinculada.");
+        return Promise.resolve(null);
+      }
+      if (!canTransitionConversationOrder(conversation, 'cancelled')) {
+        renderThread(activeId, { scrollTo: "preserve" });
+        showCopyToast("Esta proposta já não pode ser recusada.");
+        return Promise.resolve(null);
+      }
+
+      return requestDeclineReason(orderId, trigger, {
+        title: "Recusar proposta",
+        text: "Explique ao profissional por que a proposta não será aprovada."
+      }).then((reason) => {
+        if (!reason || !reason.trim()) return null;
+        if (trigger) {
+          trigger.disabled = true;
+          trigger.setAttribute('aria-busy', 'true');
+        }
+        return ordersService.rejectProposal(orderId, reason.trim(), { rejectionSource: 'messages-proposal' }).then((order) => {
+          syncConversationOrderStatus(conversation, order);
+          conversation.lastSeen = order?.statusLabel || 'Proposta recusada';
+          conversation.lastMessage = 'Proposta recusada pelo cliente';
+          return persistConversationState(activeId).then(() => order);
+        }).then((order) => {
+          renderThread(activeId, { scrollTo: "preserve" });
+          showCopyToast("Proposta recusada e pedido encerrado.");
+          return order;
+        }).catch((error) => {
+          renderThread(activeId, { scrollTo: "preserve" });
+          showCopyToast(error?.message || "Não foi possível recusar a proposta.");
+          return null;
+        });
       });
     };
 
@@ -2165,9 +2366,9 @@
           </div>
         </section>
       ` : "") + renderedMessages.map((message) => `
-        <article class="message-row has-author-avatar${message.mine ? " message-row--me" : ""}${message.type === "charge" ? " message-row--charge" : ""}${message.groupStart ? " is-message-group-start" : " is-message-group-continuation"}" data-message-index="${message.originalIndex}">
+        <article class="message-row has-author-avatar${message.mine ? " message-row--me" : ""}${isFinancialMessage(conversation, message) ? " message-row--charge" : ""}${message.groupStart ? " is-message-group-start" : " is-message-group-continuation"}" data-message-index="${message.originalIndex}">
           ${renderMessageAuthorAvatar(message.resolvedAuthor)}
-          <div class="message-bubble doke-selectable-card${message.mine ? " message-bubble--me" : ""}${message.type === "image" ? " message-bubble--image-only" : ""}${message.type === "charge" ? " message-bubble--charge" : ""}${message.pinned ? " is-message-pinned" : ""}${selectedMessageIndexes.has(message.originalIndex) ? " is-selected" : ""}" data-message-bubble data-message-index="${message.originalIndex}" role="option" tabindex="0" aria-selected="${selectedMessageIndexes.has(message.originalIndex) ? "true" : "false"}">
+          <div class="message-bubble doke-selectable-card${message.mine ? " message-bubble--me" : ""}${message.type === "image" ? " message-bubble--image-only" : ""}${isFinancialMessage(conversation, message) ? " message-bubble--charge" : ""}${message.pinned ? " is-message-pinned" : ""}${selectedMessageIndexes.has(message.originalIndex) ? " is-selected" : ""}" data-message-bubble data-message-index="${message.originalIndex}" role="option" tabindex="0" aria-selected="${selectedMessageIndexes.has(message.originalIndex) ? "true" : "false"}">
             <div class="message-bubble__meta">
               <span>${escapeHtml(message.mine ? "Você" : message.resolvedAuthor.name)}</span>
               <span>${message.time}</span>
@@ -2199,7 +2400,7 @@
       `).join("");
       renderPinnedBanner(conversation);
       conversation.messages.forEach((message, index) => {
-        if (message.type !== "charge") return;
+        if (!isFinancialMessage(conversation, message)) return;
         const bubble = threadBody.querySelector(`.message-bubble[data-message-index="${index}"]`);
         if (!bubble) return;
         const paragraph = bubble.querySelector("p");
@@ -2207,7 +2408,7 @@
         const chargeCard = document.createElement("div");
         chargeCard.className = "message-bubble__charge doke-card doke-message-card";
         chargeCard.dataset.domainCard = "message";
-        const chargePresentation = getChargeCardPresentation(conversation, message);
+        const chargePresentation = getFinancialCardPresentation(conversation, message);
         const chargeActionClass = chargePresentation.passive
           ? 'message-bubble__charge-actions message-bubble__charge-actions--passive'
           : 'message-bubble__charge-actions';
@@ -2226,7 +2427,7 @@
               <p class="message-bubble__charge-text">${chargePresentation.text}</p>
             </div>
           </div>
-          <div class="message-bubble__charge-details" aria-label="Detalhes da cobrança">
+          <div class="message-bubble__charge-details" aria-label="Detalhes financeiros">
             ${chargePresentation.details.map((detail) => `<span>${detail}</span>`).join('')}
           </div>
           <div class="${chargeActionClass}">
@@ -2343,6 +2544,35 @@
 
     const openChargeModal = () => {
       if (!chargeModal) return;
+      const conversation = conversations[activeId];
+      const actionKind = getFinancialActionKind(conversation);
+      if (!actionKind) return;
+      const isCharge = actionKind === "charge";
+      chargeModal.dataset.financialAction = actionKind;
+      const eyebrow = chargeModal.querySelector(".charge-modal__eyebrow");
+      const eyebrowTextNode = eyebrow ? Array.from(eyebrow.childNodes).find((node) => node.nodeType === 3) : null;
+      if (eyebrowTextNode) eyebrowTextNode.nodeValue = isCharge ? "Cobrança" : "Proposta";
+      const title = chargeModal.querySelector(".doke-financial-modal__title");
+      const description = chargeModal.querySelector(".surface-modal__intro p");
+      const amountLabel = chargeModal.querySelector(".charge-modal__field > span");
+      const submit = chargeForm?.querySelector('[type="submit"]');
+      const close = chargeModal.querySelector("[data-charge-cancel][aria-label]");
+      if (title) title.textContent = isCharge ? "Nova cobrança" : "Nova proposta";
+      if (description) description.textContent = isCharge
+        ? "Envie a cobrança correspondente ao valor aprovado."
+        : "Formalize o valor para aprovação do cliente.";
+      if (amountLabel) amountLabel.textContent = isCharge ? "Valor da cobrança" : "Valor da proposta";
+      if (submit) {
+        submit.textContent = isCharge ? "Enviar cobrança" : "Enviar proposta";
+        submit.dataset.actionLoadingLabel = isCharge ? "Enviando cobrança" : "Enviando proposta";
+      }
+      if (close) close.setAttribute("aria-label", isCharge ? "Fechar cobrança" : "Fechar proposta");
+      if (isCharge && chargeAmountInput) {
+        const approvedAmount = String(conversation?.order?.proposalAmount || conversation?.order?.budget || "")
+          .replace(/^\s*R\$\s*/i, "")
+          .trim();
+        if (approvedAmount) chargeAmountInput.value = approvedAmount;
+      }
       if (typeof chargeModal.showModal === "function") {
         if (!chargeModal.open) chargeModal.showModal();
       } else {
@@ -2450,7 +2680,7 @@
     const completeChargeMessage = (conversationId, messageIndex) => {
       const conversation = conversations[conversationId];
       const currentMessage = conversation?.messages?.[messageIndex];
-      if (!conversation || !currentMessage || currentMessage.type !== 'charge') return Promise.reject(new Error('Cobrança não encontrada.'));
+      if (!conversation || !currentMessage || !isChargeMessage(conversation, currentMessage)) return Promise.reject(new Error('Cobrança não encontrada.'));
 
       const previous = {
         paid: currentMessage.paid,
@@ -2724,17 +2954,28 @@
     root.addEventListener("click", (event) => {
       const acceptOrderButton = event.target.closest("[data-messages-accept-order]");
       const declineOrderButton = event.target.closest("[data-messages-decline-order]");
+      const approveProposalButton = event.target.closest("[data-messages-approve-proposal]");
       const proposalButton = event.target.closest("[data-messages-proposal-action]");
-      if (proposalButton && root.contains(proposalButton)) {
+      const chargeActionButton = event.target.closest("[data-messages-charge-action]");
+      const financialActionButton = proposalButton || chargeActionButton;
+      if (financialActionButton && root.contains(financialActionButton)) {
         event.preventDefault();
         event.stopPropagation();
         const conversation = conversations[activeId];
-        if (!canUseChargeAction(conversation)) {
+        const actionKind = getFinancialActionKind(conversation);
+        if (!actionKind) {
           renderThread(activeId, { scrollTo: "preserve" });
-          showCopyToast("A proposta não está disponível no estado atual deste pedido.");
+          showCopyToast("Esta ação financeira não está disponível no estado atual do pedido.");
           return;
         }
         openChargeModal();
+        return;
+      }
+
+      if (approveProposalButton && root.contains(approveProposalButton)) {
+        event.preventDefault();
+        event.stopPropagation();
+        approveActiveProposal(approveProposalButton);
         return;
       }
 
@@ -2770,7 +3011,11 @@
           return;
         }
 
-        requestDeclineReason(orderId, declineOrderButton).then((reason) => {
+        const proposalRejection = !isProfessionalConversationView(conversation) && getOrderStatus(conversation) === 'quoted';
+        requestDeclineReason(orderId, declineOrderButton, proposalRejection ? {
+          title: "Recusar proposta",
+          text: "Explique ao profissional por que a proposta não será aprovada."
+        } : {}).then((reason) => {
           if (!reason || !reason.trim()) return;
           if (!canTransitionConversationOrder(conversation, "cancelled")) {
             renderThread(activeId, { scrollTo: "preserve" });
@@ -2780,7 +3025,10 @@
 
           declineOrderButton.disabled = true;
           declineOrderButton.textContent = "Recusando...";
-          ordersService.decline(orderId, reason.trim()).then((order) => {
+          const declineTask = proposalRejection && typeof ordersService.rejectProposal === 'function'
+            ? ordersService.rejectProposal(orderId, reason.trim(), { rejectionSource: 'messages-order-card' })
+            : ordersService.decline(orderId, reason.trim());
+          declineTask.then((order) => {
             if (conversation) {
               syncConversationOrderStatus(conversation, order);
               conversation.order = Object.assign({}, conversation.order || {}, { refusalReason: reason.trim() });
@@ -2790,7 +3038,7 @@
             renderThread(activeId, { scrollTo: "end" });
           }).catch((error) => {
             declineOrderButton.disabled = false;
-            declineOrderButton.textContent = "Recusar";
+            declineOrderButton.textContent = proposalRejection ? "Recusar proposta" : "Recusar";
             showCopyToast(error?.message || "Não foi possível recusar o pedido.");
           });
         });
@@ -3087,12 +3335,27 @@
         return;
       }
 
+      const approveProposalButton = event.target.closest("[data-message-approve-proposal]");
+      if (approveProposalButton) {
+        event.preventDefault();
+        approveActiveProposal(approveProposalButton);
+        return;
+      }
+
+      const rejectProposalButton = event.target.closest("[data-message-reject-proposal]");
+      if (rejectProposalButton) {
+        event.preventDefault();
+        rejectActiveProposal(rejectProposalButton);
+        return;
+      }
+
       const payButton = event.target.closest("[data-message-pay]");
       if (payButton) {
         event.preventDefault();
         const index = Number(bubble?.dataset.messageIndex || -1);
-        const currentMessage = conversations[activeId]?.messages?.[index];
-        if (!currentMessage || currentMessage.type !== "charge") return;
+        const conversation = conversations[activeId];
+        const currentMessage = conversation?.messages?.[index];
+        if (!currentMessage || !isChargeMessage(conversation, currentMessage)) return;
         confirmChargePayment(currentMessage);
         return;
       }
@@ -3103,7 +3366,7 @@
         const index = Number(bubble?.dataset.messageIndex || -1);
         const conversation = conversations[activeId];
         const currentMessage = conversation?.messages?.[index];
-        if (!currentMessage || currentMessage.type !== "charge") return;
+        if (!currentMessage || !isChargeMessage(conversation, currentMessage)) return;
         openReceiptModal(conversation, currentMessage, receiptButton);
         return;
       }
@@ -3114,7 +3377,7 @@
         const index = Number(bubble?.dataset.messageIndex || -1);
         const conversation = conversations[activeId];
         const currentMessage = conversation?.messages?.[index];
-        if (!currentMessage || currentMessage.type !== "charge") return;
+        if (!currentMessage || !isChargeMessage(conversation, currentMessage)) return;
 
         if (!openCompletionModal(index, currentMessage)) {
           completeButton.disabled = true;
@@ -3131,8 +3394,9 @@
       if (reviewButton) {
         event.preventDefault();
         const index = Number(bubble?.dataset.messageIndex || -1);
-        const currentMessage = conversations[activeId]?.messages?.[index];
-        if (!currentMessage || currentMessage.type !== "charge") return;
+        const conversation = conversations[activeId];
+        const currentMessage = conversation?.messages?.[index];
+        if (!currentMessage || !isChargeMessage(conversation, currentMessage)) return;
         openReviewPageForCharge(currentMessage);
         return;
       }
@@ -3323,13 +3587,14 @@
     chargeButton?.addEventListener("click", () => {
       const activeConversation = conversations[activeId];
       if (!activeConversation) {
-        showCopyToast("Selecione uma conversa para enviar proposta.");
+        showCopyToast("Selecione uma conversa para continuar.");
         renderEmptyThread();
         return;
       }
-      if (!canUseChargeAction(activeConversation)) {
+      const actionKind = getFinancialActionKind(activeConversation);
+      if (!actionKind) {
         syncChargeActionVisibility(activeConversation);
-        showCopyToast("A proposta não está disponível no estado atual deste pedido.");
+        showCopyToast("Esta ação financeira não está disponível no estado atual do pedido.");
         return;
       }
       const lockMessage = getConversationLockMessage(activeConversation);
@@ -3424,20 +3689,25 @@
       const orderId = conversation?.order?.id || conversation?.orderId;
       const normalized = String(chargeAmountInput?.value || "").trim();
       const submitButton = chargeForm.querySelector('[type="submit"]');
+      const actionKind = chargeModal?.dataset.financialAction || getFinancialActionKind(conversation);
+      const isChargeAction = actionKind === "charge";
+      const command = isChargeAction ? ordersService?.createCharge : ordersService?.submitProposal;
 
-      if (!conversation || !orderId || !ordersService?.submitProposal) {
-        showCopyToast("Não foi possível localizar o pedido vinculado à conversa.");
+      if (!conversation || !orderId || typeof command !== "function") {
+        showCopyToast(isChargeAction
+          ? "O comando de cobrança está indisponível."
+          : "O comando de proposta está indisponível.");
         return;
       }
       if (!normalized) {
-        showCopyToast("Informe o valor da proposta.");
+        showCopyToast(isChargeAction ? "Informe o valor da cobrança." : "Informe o valor da proposta.");
         chargeAmountInput?.focus();
         return;
       }
-      if (!canUseChargeAction(conversation)) {
+      if (!canUseChargeAction(conversation) || getFinancialActionKind(conversation) !== actionKind) {
         closeChargeModal();
         renderThread(conversationId, { scrollTo: "preserve" });
-        showCopyToast("A proposta não está disponível no estado atual deste pedido.");
+        showCopyToast("O pedido mudou de estado e esta ação não está mais disponível.");
         return;
       }
 
@@ -3445,29 +3715,33 @@
       const installments = chargeInstallments?.selectedOptions?.[0]?.textContent || "À vista";
       if (submitButton) submitButton.disabled = true;
 
-      ordersService.submitProposal(orderId, {
+      command.call(ordersService, orderId, {
         amount,
         budget: amount,
         installments,
-        messageText: "Proposta pronta para aprovação. Você pode pagar por aqui para confirmar o atendimento."
+        messageText: isChargeAction
+          ? "Cobrança enviada. Realize o pagamento pela Doke para registrar a transação com segurança."
+          : "Proposta pronta para aprovação. Revise os valores e confirme para liberar o atendimento."
       }).then((result) => {
         const currentConversation = conversations[conversationId];
         if (currentConversation && result?.order) syncConversationOrderStatus(currentConversation, result.order);
         if (currentConversation && result?.message) {
-          const messageId = String(result.message.id || result.message.messageId || "");
-          const alreadyHydrated = messageId && currentConversation.messages.some((message) => String(message.id || message.messageId || "") === messageId);
+          const messageId = getMessageIdentifier(result.message);
+          const alreadyHydrated = messageId && currentConversation.messages.some((message) => getMessageIdentifier(message) === messageId);
           if (!alreadyHydrated) currentConversation.messages.push(result.message);
-          currentConversation.lastMessage = getMessagePreview(result.message) || currentConversation.lastMessage;
+          currentConversation.lastMessage = getMessagePreview(result.message, currentConversation) || currentConversation.lastMessage;
           currentConversation.lastSeen = result.order?.statusLabel || currentConversation.lastSeen;
         }
         closeChargeModal();
         if (activeId === conversationId) renderThread(conversationId, { scrollTo: "end" });
-        showCopyToast("Proposta enviada ao cliente.");
+        showCopyToast(isChargeAction ? "Cobrança enviada ao cliente." : "Proposta enviada ao cliente.");
       }).catch((error) => {
         if (error?.rollbackMessageFailed) {
-          console.warn("[DokeMessages:proposalRollback]", error.rollbackError || error);
+          console.warn("[DokeMessages:financialMessageRollback]", error.rollbackError || error);
         }
-        showCopyToast(error?.message || "Não foi possível enviar a proposta.");
+        showCopyToast(error?.message || (isChargeAction
+          ? "Não foi possível enviar a cobrança."
+          : "Não foi possível enviar a proposta."));
       }).finally(() => {
         if (submitButton) submitButton.disabled = false;
       });

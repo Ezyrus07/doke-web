@@ -975,6 +975,16 @@
         payment: options.payment || order.payment,
         proposalAmount: options.amount || order.proposalAmount || '',
         proposalInstallments: options.installments || order.proposalInstallments || '',
+        proposalMessageId: options.proposalMessageId || order.proposalMessageId || '',
+        proposalCreatedAt: options.proposalCreatedAt || order.proposalCreatedAt || '',
+        proposalApprovedAt: options.proposalApprovedAt || order.proposalApprovedAt || '',
+        proposalApprovedBy: options.proposalApprovedBy || order.proposalApprovedBy || '',
+        approvalSource: options.approvalSource || order.approvalSource || '',
+        proposalRejectedAt: options.proposalRejectedAt || order.proposalRejectedAt || '',
+        proposalRejectedBy: options.proposalRejectedBy || order.proposalRejectedBy || '',
+        proposalRejectionSource: options.rejectionSource || order.proposalRejectionSource || '',
+        cancellationType: options.cancellationType || order.cancellationType || '',
+        paymentStatus: options.paymentStatus || order.paymentStatus || '',
         acceptedAt: normalizedStatus === 'accepted' || normalizedStatus === 'conversation' ? order.acceptedAt || updatedAt : order.acceptedAt || '',
         quotedAt: normalizedStatus === 'quoted' ? order.quotedAt || updatedAt : order.quotedAt || '',
         startedAt: normalizedStatus === 'in_progress' ? order.startedAt || updatedAt : order.startedAt || '',
@@ -1012,8 +1022,14 @@
 
   function decline(orderId, reason) {
     var normalizedReason = normalizeText(reason);
+    var actor = getCurrentUser() || {};
     if (!normalizedReason) return Promise.reject(new Error('Informe uma justificativa para recusar o pedido.'));
-    return saveStatus(orderId, 'cancelled', 'Pedido recusado', { reason: normalizedReason });
+    return getById(orderId).then(function (order) {
+      if (actor.role === 'client' && normalizeStatusToken(order && order.status || '') === 'quoted') {
+        return rejectProposal(orderId, normalizedReason, { rejectionSource: 'decline-alias' });
+      }
+      return saveStatus(orderId, 'cancelled', 'Pedido recusado', { reason: normalizedReason });
+    });
   }
 
   function findConversationForOrder(orderId) {
@@ -1039,8 +1055,9 @@
     return Promise.resolve(null);
   }
 
-  function rollbackProposalMessage(conversationId, messageId, originalError) {
+  function rollbackFinancialMessage(conversationId, messageId, originalError, messageLabel) {
     var messagesService = services.messages;
+    var label = normalizeText(messageLabel || 'mensagem');
     if (!messagesService || typeof messagesService.removeMessage !== 'function' || !conversationId || !messageId) {
       throw originalError;
     }
@@ -1048,12 +1065,12 @@
     return messagesService.removeMessage(conversationId, messageId).then(function (removed) {
       if (!removed) {
         originalError.rollbackMessageFailed = true;
-        originalError.rollbackError = 'A mensagem da proposta não pôde ser removida.';
+        originalError.rollbackError = 'A mensagem de ' + label + ' não pôde ser removida.';
       }
       throw originalError;
     }).catch(function (rollbackError) {
       if (rollbackError === originalError) throw originalError;
-      console.warn('[DokeOrders:rollbackProposalMessage]', rollbackError);
+      console.warn('[DokeOrders:rollbackFinancialMessage]', rollbackError);
       originalError.rollbackMessageFailed = true;
       originalError.rollbackError = rollbackError && rollbackError.message || String(rollbackError || '');
       throw originalError;
@@ -1084,13 +1101,16 @@
         return { order: order, conversation: conversation };
       });
     }).then(function (context) {
+      var proposalCreatedAt = nowIso();
       var messagePayload = {
-        type: 'charge',
-        body: normalizeText(payload.messageText || '') || 'Proposta pronta para aprovação. Você pode pagar por aqui para confirmar o atendimento.',
-        text: normalizeText(payload.messageText || '') || 'Proposta pronta para aprovação. Você pode pagar por aqui para confirmar o atendimento.',
+        type: 'proposal',
+        financialKind: 'proposal',
+        proposalStatus: 'pending',
+        proposalCreatedAt: proposalCreatedAt,
+        body: normalizeText(payload.messageText || '') || 'Proposta pronta para aprovação. Revise os valores e confirme para liberar o atendimento.',
+        text: normalizeText(payload.messageText || '') || 'Proposta pronta para aprovação. Revise os valores e confirme para liberar o atendimento.',
         amount: amount,
         installments: installments,
-        paid: false,
         orderId: orderId,
         senderId: actor.id || '',
         mine: true,
@@ -1106,7 +1126,9 @@
         return quote(orderId, {
           amount: amount,
           budget: amount,
-          installments: installments
+          installments: installments,
+          proposalMessageId: messageId,
+          proposalCreatedAt: proposalCreatedAt
         }).then(function (order) {
           var result = {
             order: order,
@@ -1123,7 +1145,258 @@
             return result;
           });
         }, function (error) {
-          return rollbackProposalMessage(context.conversation.id, messageId, error);
+          return rollbackFinancialMessage(context.conversation.id, messageId, error, 'proposta');
+        });
+      });
+    });
+  }
+
+  function getMessageIdentifier(message) {
+    return normalizeText(message && (message.id || message.messageId) || '');
+  }
+
+  function isActualChargeMessage(message, order) {
+    if (!message || normalizeText(message.type).toLowerCase() !== 'charge') return false;
+    var messageId = getMessageIdentifier(message);
+    var chargeMessageId = normalizeText(order && order.chargeMessageId || '');
+    var financialKind = normalizeText(message.financialKind || message.kind || '').toLowerCase();
+    if (financialKind === 'proposal') return false;
+    if (financialKind === 'charge') return true;
+    if (message.chargeCreatedAt || message.chargeStatus) return true;
+    if (chargeMessageId) return messageId === chargeMessageId;
+    return false;
+  }
+
+  function findExistingCharge(conversation, order) {
+    var messages = Array.isArray(conversation && conversation.messages) ? conversation.messages : [];
+    for (var index = messages.length - 1; index >= 0; index -= 1) {
+      if (isActualChargeMessage(messages[index], order)) return messages[index];
+    }
+    return null;
+  }
+
+  function isPaymentConfirmed(order) {
+    var paymentStatus = normalizeText(order && order.paymentStatus || '').toLowerCase();
+    return ['paid', 'confirmed', 'held', 'released'].indexOf(paymentStatus) !== -1;
+  }
+
+  function canCreateCharge(order, actor) {
+    if (!order || !actor || actor.role !== 'professional') return false;
+    if (!canProfessionalActOnOrder(actor, order)) return false;
+    if (normalizeStatusToken(order.status || 'pending') !== 'in_progress') return false;
+    if (!order.proposalApprovedAt || parseCurrencyValue(order.proposalAmount || order.budget || '') <= 0) return false;
+    if (isPaymentConfirmed(order)) return false;
+    return !normalizeText(order.chargeMessageId || order.chargeCreatedAt || '');
+  }
+
+  function saveChargeMetadata(order, conversation, message, payload, actor) {
+    var createdAt = normalizeText(message && message.chargeCreatedAt || '') || nowIso();
+    var messageId = getMessageIdentifier(message);
+    var metadata = {
+      id: order.id,
+      orderId: order.id,
+      status: normalizeStatusToken(order.status || 'in_progress'),
+      statusLabel: order.statusLabel || 'Em andamento',
+      chargeCreatedAt: order.chargeCreatedAt || createdAt,
+      chargeCreatedBy: actor.id || '',
+      chargeMessageId: messageId,
+      chargeAmount: payload.amount,
+      chargeInstallments: payload.installments,
+      paymentStatus: 'pending',
+      detailFlow: 'O atendimento está em andamento e a cobrança foi enviada ao cliente. O pagamento ainda está pendente.',
+      nextAction: 'Acompanhar pagamento',
+      updatedAt: nowIso(),
+      actorId: actor.id || '',
+      actorRole: actor.role || 'guest'
+    };
+
+    var persistence;
+    if (shouldUseOrdersWriteCanary()) {
+      persistence = ordersWriteCanaryAction('charge', order.id, metadata, payload);
+    } else if (shouldUseOrdersApi()) {
+      persistence = ordersBoundaryAction('charge', metadata);
+    } else {
+      var updated = Object.assign({}, order, metadata);
+      persistence = assertRepository().save(updated);
+    }
+
+    return persistence.then(function (saved) {
+      if (!saved) throw new Error('A cobrança não pôde ser vinculada ao pedido.');
+      return updateLinkedConversation(saved, saved.status || 'in_progress', metadata).then(function (updatedConversation) {
+        document.dispatchEvent(new CustomEvent('doke:order-charge-created', {
+          detail: {
+            order: saved,
+            conversation: updatedConversation || conversation || null,
+            message: message
+          }
+        }));
+        return saved;
+      });
+    });
+  }
+
+  var chargeCreationTasks = Object.create(null);
+
+  function runChargeCreation(orderId, executor) {
+    if (chargeCreationTasks[orderId]) return chargeCreationTasks[orderId];
+    var task = Promise.resolve().then(executor);
+    chargeCreationTasks[orderId] = task.then(function (result) {
+      delete chargeCreationTasks[orderId];
+      return result;
+    }, function (error) {
+      delete chargeCreationTasks[orderId];
+      throw error;
+    });
+    return chargeCreationTasks[orderId];
+  }
+
+  function createCharge(orderId, payload) {
+    payload = payload || {};
+    var normalizedOrderId = normalizeText(orderId);
+    var actor = getCurrentUser() || {};
+    var messagesService = services.messages;
+
+    if (!normalizedOrderId) return Promise.reject(new Error('Pedido inválido para cobrança.'));
+    if (!messagesService || typeof messagesService.sendMessage !== 'function') {
+      return Promise.reject(new Error('Serviço de mensagens indisponível para criar a cobrança.'));
+    }
+
+    return runChargeCreation(normalizedOrderId, function () {
+      return getById(normalizedOrderId).then(function (order) {
+        if (!order) throw new Error('Pedido não encontrado.');
+        if (actor.role !== 'professional' || !canProfessionalActOnOrder(actor, order)) {
+          throw new Error('Somente o profissional vinculado pode enviar a cobrança.');
+        }
+        if (normalizeStatusToken(order.status || 'pending') !== 'in_progress') {
+          throw new Error('A cobrança só pode ser enviada depois que a proposta for aprovada.');
+        }
+        if (!order.proposalApprovedAt) {
+          throw new Error('A cobrança exige uma proposta previamente aprovada pelo cliente.');
+        }
+        if (isPaymentConfirmed(order)) {
+          throw new Error('Este pedido já possui pagamento confirmado.');
+        }
+
+        return findConversationForOrder(normalizedOrderId).then(function (conversation) {
+          if (!conversation || !conversation.id) throw new Error('Conversa vinculada ao pedido não encontrada.');
+          var existingCharge = findExistingCharge(conversation, order);
+          if (existingCharge) {
+            return {
+              order: order,
+              conversation: conversation,
+              message: existingCharge,
+              conversationId: conversation.id,
+              idempotent: true
+            };
+          }
+          if (order.chargeMessageId || order.chargeCreatedAt) {
+            throw new Error('Já existe uma cobrança registrada para este pedido.');
+          }
+          if (!canCreateCharge(order, actor)) {
+            throw new Error('A cobrança não está disponível no estado atual deste pedido.');
+          }
+          return { order: order, conversation: conversation };
+        });
+      }).then(function (context) {
+        if (context.idempotent) return context;
+        var approvedAmount = normalizeText(context.order.proposalAmount || context.order.budget || '');
+        var requestedAmount = normalizeText(payload.amount || payload.budget || approvedAmount);
+        var approvedValue = parseCurrencyValue(approvedAmount);
+        var requestedValue = parseCurrencyValue(requestedAmount);
+        if (approvedValue <= 0 || requestedValue <= 0) {
+          throw new Error('A cobrança precisa ter um valor válido e maior que zero.');
+        }
+        if (Math.abs(approvedValue - requestedValue) > 0.005) {
+          throw new Error('A cobrança deve usar o mesmo valor aprovado na proposta.');
+        }
+
+        var installments = normalizeText(payload.installments || context.order.proposalInstallments || '') || 'À vista';
+        var chargeCreatedAt = nowIso();
+        var messagePayload = {
+          type: 'charge',
+          financialKind: 'charge',
+          chargeStatus: 'pending',
+          chargeCreatedAt: chargeCreatedAt,
+          paymentStatus: 'pending',
+          body: normalizeText(payload.messageText || '') || 'Cobrança enviada. Realize o pagamento pela Doke para registrar a transação com segurança.',
+          text: normalizeText(payload.messageText || '') || 'Cobrança enviada. Realize o pagamento pela Doke para registrar a transação com segurança.',
+          amount: approvedAmount,
+          installments: installments,
+          paid: false,
+          orderId: normalizedOrderId,
+          senderId: actor.id || '',
+          mine: true,
+          author: 'Você',
+          deferSideEffects: true
+        };
+
+        return messagesService.sendMessage(context.conversation.id, messagePayload).then(function (message) {
+          var messageId = getMessageIdentifier(message);
+          if (!message || !messageId) {
+            throw new Error('A mensagem da cobrança não pôde ser persistida.');
+          }
+
+          return Promise.all([
+            getById(normalizedOrderId),
+            findConversationForOrder(normalizedOrderId)
+          ]).then(function (latestState) {
+            var latestOrder = latestState[0];
+            var latestConversation = latestState[1];
+            if (!latestOrder || !latestConversation || !latestConversation.id) {
+              throw new Error('O pedido ou a conversa deixou de estar disponível durante a cobrança.');
+            }
+            if (actor.role !== 'professional' || !canProfessionalActOnOrder(actor, latestOrder)) {
+              throw new Error('O vínculo profissional mudou antes da cobrança ser confirmada.');
+            }
+            if (normalizeStatusToken(latestOrder.status || 'pending') !== 'in_progress' || !latestOrder.proposalApprovedAt) {
+              throw new Error('O estado do pedido mudou antes da cobrança ser confirmada.');
+            }
+            if (isPaymentConfirmed(latestOrder)) {
+              throw new Error('O pagamento foi confirmado antes da cobrança ser concluída.');
+            }
+
+            var persistedChargeId = normalizeText(latestOrder.chargeMessageId || '');
+            if (persistedChargeId && persistedChargeId !== messageId) {
+              throw new Error('Outra cobrança já foi registrada para este pedido.');
+            }
+
+            var chargeMessages = (Array.isArray(latestConversation.messages) ? latestConversation.messages : [])
+              .filter(function (candidate) { return isActualChargeMessage(candidate, latestOrder); })
+              .slice()
+              .sort(function (left, right) {
+                var leftTime = normalizeText(left && (left.chargeCreatedAt || left.createdAt || left.timestamp) || '');
+                var rightTime = normalizeText(right && (right.chargeCreatedAt || right.createdAt || right.timestamp) || '');
+                if (leftTime !== rightTime) return leftTime < rightTime ? -1 : 1;
+                var leftId = getMessageIdentifier(left);
+                var rightId = getMessageIdentifier(right);
+                return leftId < rightId ? -1 : leftId > rightId ? 1 : 0;
+              });
+            if (chargeMessages.length && getMessageIdentifier(chargeMessages[0]) !== messageId) {
+              throw new Error('Outra cobrança concorrente foi registrada primeiro para este pedido.');
+            }
+
+            return saveChargeMetadata(latestOrder, latestConversation, message, {
+              amount: approvedAmount,
+              installments: installments
+            }, actor);
+          }).then(function (order) {
+            var result = {
+              order: order,
+              message: message,
+              conversationId: context.conversation.id
+            };
+            if (typeof messagesService.commitMessageEffects !== 'function') return result;
+            return messagesService.commitMessageEffects(context.conversation.id, message, { actor: actor }).catch(function (sideEffectError) {
+              console.warn('[DokeOrders:commitChargeMessageEffects]', sideEffectError);
+              result.sideEffectsPending = true;
+              result.sideEffectsError = sideEffectError && sideEffectError.message || String(sideEffectError || '');
+              return null;
+            }).then(function () {
+              return result;
+            });
+          }, function (error) {
+            return rollbackFinancialMessage(context.conversation.id, messageId, error, 'cobrança');
+          });
         });
       });
     });
@@ -1136,17 +1409,201 @@
       budget: normalizeText(payload.amount || payload.budget || ''),
       payment: payload.installments || 'Pagamento seguro pela Doke',
       installments: payload.installments || '',
+      proposalMessageId: normalizeText(payload.proposalMessageId || ''),
+      proposalCreatedAt: normalizeText(payload.proposalCreatedAt || ''),
       detailFlow: 'O profissional enviou uma proposta. Revise os valores e confirme para liberar o atendimento.',
       nextAction: 'Aprovar proposta'
     });
   }
 
-  function start(orderId, options) {
+  var proposalDecisionTasks = Object.create(null);
+
+  function runProposalDecision(orderId, executor) {
+    if (proposalDecisionTasks[orderId]) return proposalDecisionTasks[orderId];
+    var task = Promise.resolve().then(executor);
+    proposalDecisionTasks[orderId] = task.then(function (order) {
+      delete proposalDecisionTasks[orderId];
+      return order;
+    }, function (error) {
+      delete proposalDecisionTasks[orderId];
+      throw error;
+    });
+    return proposalDecisionTasks[orderId];
+  }
+
+  function approveProposal(orderId, options) {
     options = options || {};
-    return saveStatus(orderId, 'in_progress', 'Em andamento', Object.assign({}, options, {
-      detailFlow: options.detailFlow || 'A proposta foi aprovada e o atendimento está em andamento.',
-      nextAction: options.nextAction || 'Acompanhar atendimento'
-    }));
+    var normalizedOrderId = normalizeText(orderId);
+    var actor = getCurrentUser() || {};
+
+    if (!normalizedOrderId) return Promise.reject(new Error('Pedido inválido para aprovação da proposta.'));
+
+    return runProposalDecision(normalizedOrderId, function () {
+      return getById(normalizedOrderId).then(function (order) {
+        if (!order) throw new Error('Pedido não encontrado.');
+        var currentStatus = normalizeStatusToken(order.status || 'pending');
+
+        if (currentStatus === 'in_progress') {
+          if (!isOrderClient(actor, order)) throw new Error('Você não tem permissão para aprovar esta proposta.');
+          return order;
+        }
+
+        if (currentStatus !== 'quoted') {
+          throw new Error('A proposta só pode ser aprovada quando o pedido estiver aguardando aprovação.');
+        }
+        if (!isOrderClient(actor, order)) {
+          throw new Error('Somente o cliente vinculado pode aprovar esta proposta.');
+        }
+        if (parseCurrencyValue(order.proposalAmount || order.budget || '') <= 0) {
+          throw new Error('A proposta não possui um valor válido para aprovação.');
+        }
+
+        return saveStatus(normalizedOrderId, 'in_progress', 'Em andamento', Object.assign({}, options, {
+          proposalApprovedAt: order.proposalApprovedAt || nowIso(),
+          proposalApprovedBy: actor.id,
+          approvalSource: options.approvalSource || 'client-confirmation',
+          paymentStatus: order.paymentStatus || 'pending',
+          detailFlow: options.detailFlow || 'A proposta foi aprovada pelo cliente e o atendimento está em andamento.',
+          nextAction: options.nextAction || 'Acompanhar atendimento'
+        }));
+      });
+    });
+  }
+
+  function rejectProposal(orderId, reason, options) {
+    options = options || {};
+    var normalizedOrderId = normalizeText(orderId);
+    var normalizedReason = normalizeText(reason);
+    var actor = getCurrentUser() || {};
+
+    if (!normalizedOrderId) return Promise.reject(new Error('Pedido inválido para recusa da proposta.'));
+    if (!normalizedReason) return Promise.reject(new Error('Informe uma justificativa para recusar a proposta.'));
+
+    return runProposalDecision(normalizedOrderId, function () {
+      return getById(normalizedOrderId).then(function (order) {
+        if (!order) throw new Error('Pedido não encontrado.');
+        var currentStatus = normalizeStatusToken(order.status || 'pending');
+
+        if (currentStatus === 'cancelled' && order.cancellationType === 'proposal_rejected') {
+          if (!isOrderClient(actor, order)) throw new Error('Você não tem permissão para recusar esta proposta.');
+          return order;
+        }
+        if (currentStatus !== 'quoted') {
+          throw new Error('A proposta só pode ser recusada enquanto aguarda a decisão do cliente.');
+        }
+        if (!isOrderClient(actor, order)) {
+          throw new Error('Somente o cliente vinculado pode recusar esta proposta.');
+        }
+
+        return saveStatus(normalizedOrderId, 'cancelled', 'Proposta recusada', Object.assign({}, options, {
+          reason: normalizedReason,
+          proposalRejectedAt: order.proposalRejectedAt || nowIso(),
+          proposalRejectedBy: actor.id,
+          cancellationType: 'proposal_rejected',
+          detailFlow: options.detailFlow || 'O cliente recusou a proposta. O pedido foi encerrado sem iniciar o atendimento.',
+          nextAction: options.nextAction || 'Pedido encerrado'
+        }));
+      });
+    });
+  }
+
+  function start(orderId, options) {
+    return approveProposal(orderId, options || {});
+  }
+
+  var paymentHoldTasks = Object.create(null);
+
+  function recordPaymentHold(orderId, payload) {
+    payload = payload || {};
+    var normalizedOrderId = normalizeText(orderId);
+    var actor = getCurrentUser() || {};
+
+    if (!normalizedOrderId) return Promise.reject(new Error('Pedido inválido para confirmação do pagamento.'));
+    if (!normalizeText(payload.paymentId || '')) return Promise.reject(new Error('Pagamento não identificado.'));
+    if (!normalizeText(payload.chargeMessageId || payload.messageId || '')) return Promise.reject(new Error('Cobrança não identificada.'));
+    if (shouldUseOrdersApi() || shouldUseOrdersWriteCanary()) {
+      return Promise.reject(new Error('Use o comando de pagamento da API para confirmar este pagamento.'));
+    }
+    if (paymentHoldTasks[normalizedOrderId]) return paymentHoldTasks[normalizedOrderId];
+
+    var task = assertRepository().getById(normalizedOrderId).then(function (order) {
+      if (!order) throw new Error('Pedido não encontrado.');
+      if (!isOrderClient(actor, order)) throw new Error('Somente o cliente vinculado pode confirmar este pagamento.');
+      if (normalizeStatusToken(order.status || '') !== 'in_progress') {
+        throw new Error('O pagamento só pode ser confirmado enquanto o atendimento está em andamento.');
+      }
+      if (!order.proposalApprovedAt) throw new Error('A proposta precisa estar aprovada antes do pagamento.');
+
+      var paymentId = normalizeText(payload.paymentId || '');
+      var chargeMessageId = normalizeText(payload.chargeMessageId || payload.messageId || '');
+      var persistedChargeMessageId = normalizeText(order.chargeMessageId || '');
+      if (!persistedChargeMessageId || persistedChargeMessageId !== chargeMessageId) {
+        throw new Error('A cobrança não corresponde ao pedido informado.');
+      }
+
+      var expectedAmount = parseCurrencyValue(order.chargeAmount || order.proposalAmount || order.budget || '');
+      var grossAmount = parseCurrencyValue(payload.amount || order.chargeAmount || order.proposalAmount || '');
+      var chargedAmount = parseCurrencyValue(payload.chargedAmount || grossAmount);
+      var discountAmount = parseCurrencyValue(payload.discountAmount || 0);
+      if (!expectedAmount || !grossAmount || Math.abs(expectedAmount - grossAmount) > 0.009) {
+        throw new Error('O valor bruto do pagamento não corresponde à cobrança aprovada.');
+      }
+      if (!chargedAmount || discountAmount < 0 || Math.abs(chargedAmount + discountAmount - grossAmount) > 0.009) {
+        throw new Error('O valor cobrado e o desconto não correspondem ao total da cobrança.');
+      }
+
+      var currentPaymentStatus = normalizeText(order.paymentStatus || 'pending').toLowerCase();
+      if (['held', 'paid', 'confirmed', 'released'].indexOf(currentPaymentStatus) !== -1) {
+        if (normalizeText(order.paymentId || '') !== paymentId) {
+          throw new Error('Este pedido já possui outro pagamento confirmado.');
+        }
+        return order;
+      }
+      if (['pending', 'processing', ''].indexOf(currentPaymentStatus) === -1) {
+        throw new Error('O pedido não aceita confirmação de pagamento no estado financeiro atual.');
+      }
+
+      var confirmedAt = normalizeText(payload.confirmedAt || payload.paidAt || '') || nowIso();
+      var updated = Object.assign({}, order, {
+        paymentStatus: 'held',
+        escrowStatus: 'held',
+        paymentId: paymentId,
+        paymentMessageId: chargeMessageId,
+        paymentAmount: chargedAmount,
+        paymentChargedAmount: chargedAmount,
+        paymentGrossAmount: grossAmount,
+        paymentDiscountAmount: discountAmount,
+        paymentMethod: normalizeText(payload.method || payload.paymentMethod || ''),
+        paymentConfirmedAt: order.paymentConfirmedAt || confirmedAt,
+        paymentConfirmedBy: actor.id,
+        walletTransactionId: normalizeText(payload.walletTransactionId || order.walletTransactionId || ''),
+        detailFlow: payload.detailFlow || 'Pagamento confirmado e mantido em garantia pela Doke enquanto o serviço está em andamento.',
+        nextAction: payload.nextAction || 'Acompanhar atendimento',
+        updatedAt: confirmedAt
+      });
+
+      return assertRepository().save(updated).then(function (saved) {
+        return updateLinkedConversation(saved, 'in_progress', {
+          paymentStatus: 'held',
+          paymentConfirmed: true,
+          paymentMessageId: chargeMessageId
+        }).then(function (conversation) {
+          document.dispatchEvent(new CustomEvent('doke:order-payment-held', {
+            detail: { order: saved, conversation: conversation, paymentId: paymentId }
+          }));
+          return saved;
+        });
+      });
+    });
+
+    paymentHoldTasks[normalizedOrderId] = task.then(function (order) {
+      delete paymentHoldTasks[normalizedOrderId];
+      return order;
+    }, function (error) {
+      delete paymentHoldTasks[normalizedOrderId];
+      throw error;
+    });
+    return paymentHoldTasks[normalizedOrderId];
   }
 
   function complete(orderId, options) {
@@ -1176,7 +1633,12 @@
     decline: decline,
     quote: quote,
     submitProposal: submitProposal,
+    createCharge: createCharge,
+    canCreateCharge: canCreateCharge,
+    approveProposal: approveProposal,
+    rejectProposal: rejectProposal,
     start: start,
+    recordPaymentHold: recordPaymentHold,
     complete: complete,
     updateStatus: updateStatus,
     stateMachine: Object.freeze({

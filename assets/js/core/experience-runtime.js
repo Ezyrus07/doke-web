@@ -1,10 +1,14 @@
 /* Doke experience runtime
-   Responsibility: shared async state, stale-while-revalidate cache and
-   optimistic mutations for data-driven product surfaces. */
+   Responsibility: shared async state, stale-while-revalidate cache,
+   optimistic mutations and domain invalidation for data-driven surfaces. */
 (function () {
   'use strict';
 
   var Doke = window.Doke || (window.Doke = {});
+  var RUNTIME_VERSION = '20260712-domain-invalidation-v1';
+
+  if (Doke.experience && Doke.experience.version === RUNTIME_VERSION) return;
+
   var entries = new Map();
   var activeMutations = new Map();
   var VALID_STATES = new Set([
@@ -19,12 +23,86 @@
     'success'
   ]);
 
+  var DOMAIN_RULES = Object.freeze({
+    orders: Object.freeze({
+      cachePrefixes: Object.freeze(['orders:']),
+      routes: Object.freeze(['pedidos.html'])
+    }),
+    messages: Object.freeze({
+      cachePrefixes: Object.freeze(['messages:']),
+      routes: Object.freeze(['mensagens.html'])
+    }),
+    notifications: Object.freeze({
+      cachePrefixes: Object.freeze(['notifications:']),
+      routes: Object.freeze(['notificacoes.html'])
+    }),
+    wallet: Object.freeze({
+      cachePrefixes: Object.freeze(['wallet:']),
+      routes: Object.freeze(['carteira.html'])
+    }),
+    marketplace: Object.freeze({
+      cachePrefixes: Object.freeze(['marketplace:']),
+      routes: Object.freeze(['index.html', 'resultados.html']),
+      pageData: Object.freeze(['index', 'resultados'])
+    }),
+    profiles: Object.freeze({
+      cachePrefixes: Object.freeze(['profile:', 'profile-client:', 'profile-professional:', 'profile-owner:']),
+      routes: Object.freeze(['perfil.html', 'perfil-cliente.html', 'perfil-profissional.html', 'meu-perfil.html'])
+    }),
+    detailAd: Object.freeze({
+      cachePrefixes: Object.freeze(['detail-ad:']),
+      routes: Object.freeze(['detalhe-anuncio.html']),
+      pageData: Object.freeze(['detalhe-anuncio'])
+    }),
+    admin: Object.freeze({
+      routes: Object.freeze(['admin.html'])
+    }),
+    payment: Object.freeze({
+      routes: Object.freeze(['pagamento-profissional.html'])
+    })
+  });
+
+  var EVENT_DOMAIN_RULES = Object.freeze({
+    'doke:auth-session-change': Object.freeze(['orders', 'messages', 'notifications', 'wallet', 'marketplace', 'profiles', 'detailAd']),
+    'doke:order-created': Object.freeze(['orders', 'notifications']),
+    'doke:order-status-changed': Object.freeze(['orders', 'messages', 'notifications']),
+    'doke:message-sent': Object.freeze(['messages', 'notifications']),
+    'doke:payment-confirmed': Object.freeze(['orders', 'messages', 'notifications', 'wallet', 'payment']),
+    'doke:order-completed': Object.freeze(['orders', 'messages', 'notifications', 'wallet', 'payment']),
+    'doke:wallet-receivable-created': Object.freeze(['wallet', 'admin']),
+    'doke:wallet-receivable-updated': Object.freeze(['wallet', 'admin']),
+    'doke:wallet-withdraw-requested': Object.freeze(['wallet', 'admin']),
+    'doke:wallet-withdraw-completed': Object.freeze(['wallet', 'admin']),
+    'doke:wallet-withdraw-resolved': Object.freeze(['wallet', 'admin']),
+    'doke:wallet-bank-account-saved': Object.freeze(['wallet']),
+    'doke:wallet-dispute-opened': Object.freeze(['wallet', 'admin', 'orders', 'messages', 'notifications']),
+    'doke:wallet-dispute-resolved': Object.freeze(['wallet', 'admin', 'orders', 'messages', 'notifications']),
+    'doke:profile-updated': Object.freeze(['profiles', 'marketplace']),
+    'doke:review-created': Object.freeze(['profiles', 'marketplace', 'orders', 'notifications', 'detailAd']),
+    'doke:review-updated': Object.freeze(['profiles', 'marketplace', 'orders', 'notifications', 'detailAd']),
+    'doke:service-created': Object.freeze(['marketplace', 'profiles', 'detailAd']),
+    'doke:service-updated': Object.freeze(['marketplace', 'profiles', 'detailAd']),
+    'doke:service-deleted': Object.freeze(['marketplace', 'profiles', 'detailAd']),
+    'doke:service-favorite-changed': Object.freeze(['marketplace']),
+    'doke:professional-application-submitted': Object.freeze(['profiles', 'admin'])
+  });
+
   function now() {
     return Date.now();
   }
 
   function normalizeState(state) {
     return VALID_STATES.has(state) ? state : 'idle';
+  }
+
+  function normalizeList(value) {
+    if (Array.isArray(value)) return value.filter(Boolean).map(String);
+    if (value == null || value === '') return [];
+    return [String(value)];
+  }
+
+  function unique(values) {
+    return Array.from(new Set(values));
   }
 
   function resolveBoundary(boundary) {
@@ -187,9 +265,112 @@
     return task;
   }
 
+  function invalidatePageData(page) {
+    var orchestrator = Doke.pageDataOrchestrator;
+    if (!orchestrator) return false;
+    if (typeof orchestrator.invalidatePageData === 'function') {
+      orchestrator.invalidatePageData(page);
+      return true;
+    }
+    if (typeof orchestrator.invalidate === 'function') {
+      orchestrator.invalidate(page);
+      return true;
+    }
+    return false;
+  }
+
+  function invalidateDomains(domainNames, options) {
+    options = options || {};
+    var domains = unique(normalizeList(domainNames));
+    var cachePrefixes = normalizeList(options.cachePrefixes);
+    var routes = normalizeList(options.routes);
+    var pageData = normalizeList(options.pageData);
+
+    domains.forEach(function (domainName) {
+      var rule = DOMAIN_RULES[domainName];
+      if (!rule) return;
+      cachePrefixes = cachePrefixes.concat(rule.cachePrefixes || []);
+      routes = routes.concat(rule.routes || []);
+      pageData = pageData.concat(rule.pageData || []);
+    });
+
+    cachePrefixes = unique(cachePrefixes);
+    routes = unique(routes);
+    pageData = unique(pageData);
+
+    var cacheEntries = 0;
+    cachePrefixes.forEach(function (prefix) {
+      cacheEntries += invalidatePrefix(prefix);
+    });
+
+    var invalidatedRoutes = [];
+    if (Doke.stableShellRouter && typeof Doke.stableShellRouter.invalidate === 'function') {
+      routes.forEach(function (route) {
+        Doke.stableShellRouter.invalidate(route);
+        invalidatedRoutes.push(route);
+      });
+    }
+
+    var invalidatedPageData = [];
+    pageData.forEach(function (page) {
+      if (invalidatePageData(page)) invalidatedPageData.push(page);
+    });
+
+    var report = Object.freeze({
+      domains: Object.freeze(domains.slice()),
+      cachePrefixes: Object.freeze(cachePrefixes.slice()),
+      routes: Object.freeze(invalidatedRoutes.slice()),
+      pageData: Object.freeze(invalidatedPageData.slice()),
+      cacheEntries: cacheEntries,
+      reason: options.reason || '',
+      sourceEvent: options.sourceEvent || ''
+    });
+
+    document.dispatchEvent(new CustomEvent('doke:domains-invalidated', { detail: report }));
+    return report;
+  }
+
+  function invalidateEvent(eventName, detail) {
+    var normalizedEvent = String(eventName || '');
+    var domains = EVENT_DOMAIN_RULES[normalizedEvent] || [];
+    return invalidateDomains(domains, {
+      reason: detail && detail.reason ? detail.reason : normalizedEvent,
+      sourceEvent: normalizedEvent
+    });
+  }
+
+  function bindInvalidationEvents() {
+    if (Doke.__experienceDomainInvalidationBound === RUNTIME_VERSION) return;
+    Doke.__experienceDomainInvalidationBound = RUNTIME_VERSION;
+    var handledEvents = typeof WeakSet === 'function' ? new WeakSet() : null;
+
+    Object.keys(EVENT_DOMAIN_RULES).forEach(function (eventName) {
+      var handler = function (event) {
+        if (handledEvents && event && typeof event === 'object') {
+          if (handledEvents.has(event)) return;
+          handledEvents.add(event);
+        }
+        invalidateEvent(eventName, event && event.detail ? event.detail : {});
+      };
+      document.addEventListener(eventName, handler);
+      window.addEventListener(eventName, handler);
+    });
+  }
+
+  var invalidation = Object.freeze({
+    domains: DOMAIN_RULES,
+    events: EVENT_DOMAIN_RULES,
+    invalidateDomains: invalidateDomains,
+    invalidateEvent: invalidateEvent
+  });
+
   Doke.experience = Object.freeze({
+    version: RUNTIME_VERSION,
     states: Object.freeze({ set: setState, normalize: normalizeState }),
     cache: Object.freeze({ query: query, write: write, get: getEntry, invalidate: invalidate, invalidatePrefix: invalidatePrefix }),
-    optimistic: Object.freeze({ mutate: mutate })
+    optimistic: Object.freeze({ mutate: mutate }),
+    invalidation: invalidation
   });
+
+  bindInvalidationEvents();
 })();

@@ -1,0 +1,174 @@
+/*
+ * Doke Workspace Surface Contract
+ * Shared final authority for the neutral white canvas used by settings and chat workspaces.
+ * Component states (selected rows, badges, message ownership and alerts) keep their own colors.
+ */
+
+body[data-page="configuracoes"],
+body[data-page="mensagens"],
+body[data-page="comunidade-interna"] {
+  --shell-page-bg: #fff;
+  --chat-app-bg: #fff;
+  --chat-surface: #fff;
+  --chat-surface-muted: #fff;
+  --community-surface: #fff;
+  --community-surface-muted: #fff;
+  background: #fff;
+}
+
+body[data-page="configuracoes"] :where(
+  .app-shell,
+  .page.settings-page-frame,
+  .page__content,
+  .settings-main,
+  .settings-layout,
+  .settings-sidebar,
+  .settings-content,
+  .settings-panel,
+  .settings-card,
+  .settings-card__body,
+  .settings-card__footer,
+  .doke-settings-shell,
+  .doke-settings-shell__sidebar,
+  .doke-settings-shell__content,
+  .doke-settings-shell__panel,
+  .doke-settings-surface,
+  .doke-settings-surface__header,
+  .doke-settings-surface__body,
+  .doke-settings-surface__footer
+) {
+  background-color: #fff;
+}
+
+body[data-page="mensagens"] :where(
+  .app-shell,
+  .page,
+  .page__content,
+  .app-shell-page__workspace,
+  .shell-home__workspace,
+  .messages-page-shell,
+  .messages-shell-content,
+  .messages-app,
+  .messages-sidebar,
+  .messages-thread,
+  .messages-thread__body,
+  .messages-composer
+) {
+  background-color: #fff;
+}
+
+body[data-page="comunidade-interna"] :where(
+  .app-shell,
+  .page,
+  .page__content,
+  .app-shell-page__workspace,
+  .shell-home__workspace,
+  .messages-page-shell,
+  .messages-shell-content,
+  .community-room-shell-page,
+  .community-room-page,
+  .community-room-shell,
+  .community-room-layout,
+  .community-room-sidebar,
+  .community-room-thread,
+  .community-room-thread__body,
+  .community-room-composer,
+  .community-settings-sidebar,
+  .community-settings-panel,
+  .doke-settings-shell,
+  .doke-settings-shell__sidebar,
+  .doke-settings-shell__content,
+  .doke-settings-shell__panel,
+  .doke-settings-surface,
+  .doke-settings-surface__header,
+  .doke-settings-surface__body,
+  .doke-settings-surface__footer
+) {
+  background-color: #fff;
+}
+
+
+/*
+ * Workspace geometry correction v8
+ * Removes residual page rails/gutters between the global sidebar and the workspace.
+ * This file is loaded last and is the final authority only for these three workspaces.
+ */
+body[data-page="configuracoes"] .app-shell,
+body[data-page="mensagens"] .app-shell,
+body[data-page="comunidade-interna"] .app-shell {
+  gap: 0;
+  column-gap: 0;
+  overflow-x: hidden;
+}
+
+body[data-page="configuracoes"] .app-shell > .page,
+body[data-page="mensagens"] .app-shell > .page,
+body[data-page="comunidade-interna"] .app-shell > .page {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  justify-self: stretch;
+  align-self: stretch;
+}
+
+body[data-page="configuracoes"] .page__content,
+body[data-page="mensagens"] .page__content,
+body[data-page="comunidade-interna"] .page__content,
+body[data-page="configuracoes"] .settings-main,
+body[data-page="configuracoes"] .settings-layout,
+body[data-page="mensagens"] .messages-page-shell,
+body[data-page="comunidade-interna"] .community-room-shell-page {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  padding-inline: 0;
+}
+
+body[data-page="configuracoes"] .settings-layout,
+body[data-page="comunidade-interna"] .community-settings-shell {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media (max-width: 760px) {
+  body[data-page="configuracoes"] .settings-layout,
+  body[data-page="comunidade-interna"] .community-settings-shell {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    overflow-x: hidden;
+  }
+}
+
+/* Configuracoes white canvas final authority v9 */
+html:has(body[data-page="configuracoes"]),
+body[data-page="configuracoes"],
+body[data-page="configuracoes"] .app-shell,
+body[data-page="configuracoes"] .page.settings-page-frame,
+body[data-page="configuracoes"] .page__content,
+body[data-page="configuracoes"] .settings-main,
+body[data-page="configuracoes"] .settings-layout,
+body[data-page="configuracoes"] .settings-sidebar,
+body[data-page="configuracoes"] .settings-content,
+body[data-page="configuracoes"] .settings-panel,
+body[data-page="configuracoes"] .settings-card {
+  background: #fff;
+  background-color: #fff;
+}
+
+body[data-page="configuracoes"] .page.settings-page-frame,
+body[data-page="configuracoes"] .settings-main,
+body[data-page="configuracoes"] .settings-layout {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+body[data-page="configuracoes"] .settings-sidebar {
+  border-radius: 0;
+  box-shadow: none;
+}

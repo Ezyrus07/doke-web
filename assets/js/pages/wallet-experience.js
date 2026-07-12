@@ -113,12 +113,19 @@
   }
 
   function invalidate() {
-    var cache = Doke.experience && Doke.experience.cache;
-    if (cache && typeof cache.invalidatePrefix === 'function') cache.invalidatePrefix('wallet:');
-    if (Doke.stableShellRouter && typeof Doke.stableShellRouter.invalidate === 'function') {
-      Doke.stableShellRouter.invalidate('carteira.html');
+    var domainInvalidation = Doke.experience && Doke.experience.invalidation;
+    var report = null;
+    if (domainInvalidation && typeof domainInvalidation.invalidateDomains === 'function') {
+      report = domainInvalidation.invalidateDomains(['wallet'], { reason: 'wallet-experience' });
+    } else {
+      var cache = Doke.experience && Doke.experience.cache;
+      if (cache && typeof cache.invalidatePrefix === 'function') cache.invalidatePrefix('wallet:');
+      if (Doke.stableShellRouter && typeof Doke.stableShellRouter.invalidate === 'function') {
+        Doke.stableShellRouter.invalidate('carteira.html');
+      }
     }
     document.dispatchEvent(new CustomEvent('doke:wallet-experience-invalidated'));
+    return report;
   }
 
   function mutate(options) {
@@ -149,21 +156,23 @@
     });
   }
 
-  [
-    'doke:auth-session-change',
-    'doke:payment-confirmed',
-    'doke:order-completed',
-    'doke:wallet-receivable-created',
-    'doke:wallet-receivable-updated',
-    'doke:wallet-withdraw-requested',
-    'doke:wallet-withdraw-completed',
-    'doke:wallet-withdraw-resolved',
-    'doke:wallet-bank-account-saved',
-    'doke:wallet-dispute-opened',
-    'doke:wallet-dispute-resolved'
-  ].forEach(function (eventName) {
-    document.addEventListener(eventName, invalidate);
-  });
+  if (!(Doke.experience && Doke.experience.invalidation)) {
+    [
+      'doke:auth-session-change',
+      'doke:payment-confirmed',
+      'doke:order-completed',
+      'doke:wallet-receivable-created',
+      'doke:wallet-receivable-updated',
+      'doke:wallet-withdraw-requested',
+      'doke:wallet-withdraw-completed',
+      'doke:wallet-withdraw-resolved',
+      'doke:wallet-bank-account-saved',
+      'doke:wallet-dispute-opened',
+      'doke:wallet-dispute-resolved'
+    ].forEach(function (eventName) {
+      document.addEventListener(eventName, invalidate);
+    });
+  }
 
   Doke.walletExperience = Object.freeze({
     load: load,

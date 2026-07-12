@@ -426,7 +426,8 @@
     if (!message) return '';
     if (message.type === 'audio') return 'Áudio enviado';
     if (message.type === 'image') return 'Imagem enviada';
-    if (message.type === 'charge') return message.amount ? 'Proposta ' + message.amount : 'Proposta enviada';
+    if (message.type === 'proposal') return message.amount ? 'Proposta ' + message.amount : 'Proposta enviada';
+    if (message.type === 'charge') return message.amount ? 'Cobrança ' + message.amount : 'Cobrança enviada';
     return normalizeText(message.text || message.body || '');
   }
 

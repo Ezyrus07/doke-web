@@ -97,6 +97,9 @@
       updateStatus: '/orders/:id/status',
       transition: '/orders/:id/status'
     }),
+    payments: Object.freeze({
+      confirm: '/payments/:id/confirm'
+    }),
     walletSummary: Object.freeze({
       saveBankAccount: '/wallet/bank-account'
     }),

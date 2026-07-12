@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const PAYMENT_CONTROLLER_VERSION = '20260711-payment-completion-release-v2';
+  const PAYMENT_CONTROLLER_VERSION = '20260712-canonical-payment-hold-v1';
   const Doke = window.Doke || (window.Doke = {});
 
   let latestPaymentState = {
@@ -113,6 +113,15 @@
     }
   }
 
+  function isActualChargeMessage(conversation, message) {
+    if (!message || String(message.type || '').toLowerCase() !== 'charge') return false;
+    const explicitKind = normalizeText(message.financialKind || message.kind || '').toLowerCase();
+    if (explicitKind === 'proposal') return false;
+    if (explicitKind === 'charge' || message.chargeCreatedAt || message.chargeStatus) return true;
+    const chargeMessageId = normalizeText(conversation?.order?.chargeMessageId || '');
+    return Boolean(chargeMessageId) && String(message.id || message.messageId || '') === chargeMessageId;
+  }
+
   function setPaymentExperienceState(state, detail) {
     const nextState = normalizeText(state || 'ready') || 'ready';
     root.dataset.paymentExperienceState = nextState;
@@ -176,6 +185,10 @@
     return window.Doke?.services?.wallet || null;
   }
 
+  function getPaymentService() {
+    return window.Doke?.services?.payments || null;
+  }
+
   function setTextAll(selector, value) {
     const text = normalizeText(value);
     if (!text) return;
@@ -195,9 +208,9 @@
     const messages = Array.isArray(conversation?.messages) ? conversation.messages : [];
     if (paymentContext.messageId) {
       const byId = messages.find((message) => String(message.id || '') === String(paymentContext.messageId));
-      if (byId && byId.type === 'charge') return byId;
+      if (isActualChargeMessage(conversation, byId)) return byId;
     }
-    return messages.slice().reverse().find((message) => message && message.type === 'charge') || null;
+    return messages.slice().reverse().find((message) => isActualChargeMessage(conversation, message)) || null;
   }
 
   function getMessageTimeValue(message) {
@@ -345,8 +358,8 @@
       if (!conversation) throw new Error('Conversa de pagamento não encontrada.');
       const messages = Array.isArray(conversation.messages) ? conversation.messages : [];
       const charge = paymentContext.messageId
-        ? messages.find((message) => String(message.id || '') === String(paymentContext.messageId))
-        : messages.slice().reverse().find((message) => message && message.type === 'charge');
+        ? messages.find((message) => String(message.id || '') === String(paymentContext.messageId) && isActualChargeMessage(conversation, message))
+        : messages.slice().reverse().find((message) => isActualChargeMessage(conversation, message));
       if (!charge && paymentContext.messageId) throw new Error('Cobrança do pagamento não encontrada.');
       if (!charge) return conversation;
       Object.assign(charge, flags || {});
@@ -354,25 +367,6 @@
       currentConversation = conversation;
       currentCharge = charge;
       return messagesRepository.save(conversation);
-    });
-  }
-
-  function registerWalletHold() {
-    const walletService = getWalletService();
-    if (!walletService?.registerHeldReceivableFromPayment) {
-      return Promise.reject(new Error('Carteira indisponível para registrar o pagamento.'));
-    }
-    return walletService.registerHeldReceivableFromPayment({
-      order: currentOrder || currentConversation?.order || {},
-      conversation: currentConversation,
-      charge: currentCharge,
-      amount: formatCurrency(getCurrentTotal()),
-      orderId: paymentContext.orderId || currentOrder?.id || currentConversation?.orderId || '',
-      conversationId: paymentContext.conversationId || currentConversation?.id || '',
-      messageId: paymentContext.messageId || currentCharge?.id || ''
-    }).then((result) => {
-      if (!result) throw new Error('Não foi possível registrar o valor em garantia.');
-      return result;
     });
   }
 
@@ -420,10 +414,13 @@
   function registerPayment() {
     if (paymentTask) return paymentTask;
 
-    const ordersService = getOrdersService();
+    const paymentService = getPaymentService();
     const orderId = paymentContext.orderId || currentOrder?.id || currentConversation?.orderId;
-    if (!orderId || !ordersService?.start) {
-      return Promise.reject(new Error('Pedido de pagamento não encontrado.'));
+    if (!orderId || !paymentService?.confirmChargePayment) {
+      return Promise.reject(new Error('Comando canônico de pagamento indisponível.'));
+    }
+    if (!isActualChargeMessage(currentConversation, currentCharge)) {
+      return Promise.reject(new Error('O pagamento só pode ser iniciado a partir de uma cobrança válida.'));
     }
 
     publishLatestPaymentState({ status: 'registering-payment', error: '' });
@@ -431,48 +428,33 @@
     setPaymentExperienceState('submitting', { action: 'confirm-payment' });
     setPaymentActionPending(true);
 
-    paymentTask = capturePaymentSnapshot(orderId).then((snapshot) => {
-      if (currentOrder) {
-        currentOrder = Object.assign({}, currentOrder, { status: 'in_progress', statusLabel: 'Em andamento' });
-      }
-      if (currentCharge) {
-        currentCharge = Object.assign({}, currentCharge, {
-          paid: true,
-          paymentMethod: selectedMethod,
-          paidAmount: formatCurrency(getCurrentTotal())
-        });
-      }
-      applyPaymentContext();
+    const usesPoints = Boolean(pointsInput && pointsInput.checked);
+    const discountAmount = usesPoints ? POINTS_DISCOUNT : 0;
 
-      return ordersService.start(orderId, {
-        conversationId: paymentContext.conversationId || currentConversation?.id || '',
-        paymentMessageId: paymentContext.messageId || currentCharge?.id || ''
-      }).then((order) => {
-        currentOrder = order || currentOrder;
-        return persistChargeState({
-          paid: true,
-          paymentMethod: selectedMethod,
-          paidAmount: formatCurrency(getCurrentTotal())
-        });
-      }).then(() => registerWalletHold())
-        .then((walletResult) => {
-          invalidatePaymentDomains();
-          document.dispatchEvent(new CustomEvent('doke:payment-confirmed', {
-            detail: {
-              order: currentOrder,
-              conversation: currentConversation,
-              charge: currentCharge,
-              walletTransaction: walletResult?.transaction || null
-            }
-          }));
-          applyPaymentContext();
-          setPaymentExperienceState('success', { action: 'confirm-payment' });
-          publishLatestPaymentState({ status: 'paid', error: '' });
-          return currentOrder;
-        }).catch((error) => rollbackPayment(snapshot, orderId).catch((rollbackError) => {
-          error.rollbackError = rollbackError;
-          throw error;
-        }).then(() => { throw error; }));
+    paymentTask = paymentService.confirmChargePayment(orderId, {
+      conversationId: paymentContext.conversationId || currentConversation?.id || '',
+      messageId: paymentContext.messageId || currentCharge?.id || '',
+      chargeMessageId: paymentContext.messageId || currentCharge?.id || '',
+      method: selectedMethod,
+      amount: getCurrentTotal(),
+      chargedAmount: getCurrentTotal(),
+      grossAmount: baseTotal,
+      discountAmount
+    }).then((result) => {
+      if (!result || !result.payment || result.payment.status !== 'held') {
+        throw new Error('O pagamento não foi confirmado em garantia.');
+      }
+      currentOrder = result.order || currentOrder;
+      currentConversation = result.conversation || currentConversation;
+      currentCharge = result.charge || resolveCharge(currentConversation) || currentCharge;
+      paymentContext.orderId = currentOrder?.id || paymentContext.orderId;
+      paymentContext.conversationId = currentConversation?.id || paymentContext.conversationId;
+      paymentContext.messageId = currentCharge?.id || paymentContext.messageId;
+      invalidatePaymentDomains();
+      applyPaymentContext();
+      setPaymentExperienceState('success', { action: 'confirm-payment' });
+      publishLatestPaymentState({ status: 'paid', error: '' });
+      return currentOrder;
     }).catch((error) => {
       setPaymentExperienceState(navigator.onLine === false ? 'offline' : 'error', { action: 'confirm-payment' });
       publishLatestPaymentState({

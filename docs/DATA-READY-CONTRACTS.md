@@ -757,3 +757,44 @@ Prepared beta launch contracts for payments/checkout/escrow, KYC/professional ve
 ## Sprint 106–120 frontend beta canary data contract
 
 The beta launch frontend canary must force `dataProvider=mock` while allowing selected launch domains to call a local/staging API by explicit manual activation only. Mutations require `idempotencyKey`, unsafe production-like targets are blocked, and rollback must restore local storage state.
+
+## Domain invalidation contract
+
+Cross-page cache and route invalidation is owned by `Doke.experience.invalidation` in `assets/js/core/experience-runtime.js`.
+
+### Canonical domains
+
+- `orders`
+- `messages`
+- `notifications`
+- `wallet`
+- `marketplace`
+- `profiles`
+- `detailAd`
+- `admin`
+- `payment`
+
+Page modules and form adapters should invalidate domain names instead of repeating cache prefixes and route lists:
+
+```js
+Doke.experience.invalidation.invalidateDomains(
+  ['orders', 'messages', 'notifications'],
+  { reason: 'order-status-changed' }
+);
+```
+
+Known operational events are mapped centrally. Examples:
+
+- `doke:order-status-changed` invalidates Orders, Messages and Notifications.
+- `doke:payment-confirmed` invalidates Orders, Messages, Notifications, Wallet and Payment.
+- `doke:profile-updated` invalidates Profiles and Marketplace.
+- `doke:service-created` invalidates Marketplace, Profiles and the service detail surface.
+- `doke:review-created` invalidates Profiles, Marketplace, Orders, Notifications and the service detail surface.
+
+### Rules
+
+- Domain maps own cache prefixes, route documents and page-data keys.
+- Page modules may keep a fallback only for pages where `experience-runtime.js` is not loaded yet.
+- New operational events must be added to the central event map before page-specific listener lists are created.
+- Invalidation marks cached data stale; it does not delete persisted repository data.
+- Community invalidation remains isolated until the Community workstream is integrated.

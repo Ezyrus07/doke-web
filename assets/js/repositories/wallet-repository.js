@@ -1862,3 +1862,230 @@
     registerReceivable: registerReceivable
   });
 })();
+/* Doke Payments Repository
+   Responsibility: local/mock persistence boundary for canonical payment records. */
+(function () {
+  'use strict';
+
+  var root = window;
+  var Doke = root.Doke || (root.Doke = {});
+  var repositories = Doke.repositories || (Doke.repositories = {});
+
+  var STORAGE_KEY = 'doke.payments.local.v1';
+  function clone(value) {
+    if (value == null) return value;
+    try { return JSON.parse(JSON.stringify(value)); }
+    catch (error) { return value; }
+  }
+
+  function normalizeText(value) {
+    return String(value || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function nowIso() {
+    return new Date().toISOString();
+  }
+
+  function parseAmount(value) {
+    if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+    var normalized = normalizeText(value).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+    var parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  function roundCurrency(value) {
+    var amount = Number(value || 0);
+    return Number.isFinite(amount) ? Math.round(amount * 100) / 100 : 0;
+  }
+
+  function normalizeStatus(value) {
+    var status = normalizeText(value).toLowerCase();
+    var aliases = {
+      pending: 'processing',
+      confirmed: 'held',
+      paid: 'held',
+      escrowed: 'held',
+      available: 'released'
+    };
+    return aliases[status] || status || 'processing';
+  }
+
+  function getStatusRank(status) {
+    var ranks = { failed: 0, processing: 1, held: 2, released: 3, refunded: 3 };
+    return ranks[normalizeStatus(status)] == null ? 0 : ranks[normalizeStatus(status)];
+  }
+
+  function hashText(value) {
+    var text = normalizeText(value);
+    var hash = 5381;
+    for (var index = 0; index < text.length; index += 1) {
+      hash = ((hash << 5) + hash) ^ text.charCodeAt(index);
+    }
+    return (hash >>> 0).toString(36);
+  }
+
+  function createPaymentId(eventKey) {
+    return 'payment_' + hashText(eventKey || ('payment:' + Date.now().toString(36)));
+  }
+
+  function safeRead() {
+    try {
+      var raw = root.localStorage.getItem(STORAGE_KEY);
+      var parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function safeWrite(items) {
+    try { root.localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.isArray(items) ? items : [])); }
+    catch (error) { /* localStorage may be unavailable in constrained browser modes. */ }
+  }
+
+  function getCurrentUser() {
+    if (Doke.session && typeof Doke.session.getCurrentUser === 'function') return Doke.session.getCurrentUser();
+    try {
+      var raw = root.localStorage.getItem('doke.auth.session.v1');
+      var session = raw ? JSON.parse(raw) : null;
+      return session && session.user ? session.user : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function canAccess(payment, actor) {
+    actor = actor || getCurrentUser() || {};
+    if (!actor.id) return false;
+    if (['admin', 'support'].indexOf(normalizeText(actor.role).toLowerCase()) !== -1) return true;
+    return String(payment.clientId || '') === String(actor.id)
+      || String(payment.professionalId || '') === String(actor.id);
+  }
+
+  function normalizePayment(raw) {
+    raw = raw || {};
+    var eventKey = normalizeText(raw.eventKey || [
+      'payment_hold',
+      raw.orderId || '',
+      raw.messageId || raw.chargeMessageId || '',
+      raw.clientId || ''
+    ].filter(Boolean).join(':'));
+    var createdAt = raw.createdAt || nowIso();
+    return Object.assign({}, raw, {
+      id: normalizeText(raw.id) || createPaymentId(eventKey),
+      eventKey: eventKey,
+      orderId: normalizeText(raw.orderId || ''),
+      conversationId: normalizeText(raw.conversationId || ''),
+      messageId: normalizeText(raw.messageId || raw.chargeMessageId || ''),
+      chargeMessageId: normalizeText(raw.chargeMessageId || raw.messageId || ''),
+      clientId: normalizeText(raw.clientId || ''),
+      professionalId: normalizeText(raw.professionalId || raw.providerId || ''),
+      amount: roundCurrency(parseAmount(raw.amount || raw.chargedAmount || raw.grossAmount || 0)),
+      chargedAmount: roundCurrency(parseAmount(raw.chargedAmount || raw.amount || 0)),
+      grossAmount: roundCurrency(parseAmount(raw.grossAmount || raw.amount || 0)),
+      discountAmount: roundCurrency(parseAmount(raw.discountAmount || 0)),
+      currency: normalizeText(raw.currency || 'BRL') || 'BRL',
+      method: normalizeText(raw.method || raw.paymentMethod || ''),
+      status: normalizeStatus(raw.status),
+      escrowStatus: normalizeText(raw.escrowStatus || raw.status || 'processing').toLowerCase(),
+      walletTransactionId: normalizeText(raw.walletTransactionId || ''),
+      createdAt: createdAt,
+      updatedAt: raw.updatedAt || createdAt
+    });
+  }
+
+  function readLocal() {
+    return clone(safeRead().map(normalizePayment));
+  }
+
+  function writeLocal(items) {
+    var normalized = (Array.isArray(items) ? items : []).map(normalizePayment);
+    safeWrite(normalized);
+    return clone(normalized);
+  }
+
+  function list(filters) {
+    filters = filters || {};
+    var actor = filters.currentUser === false ? null : getCurrentUser();
+    var items = readLocal().filter(function (payment) {
+      if (actor && !canAccess(payment, actor)) return false;
+      if (!actor && filters.currentUser !== false) return false;
+      if (filters.orderId && String(payment.orderId) !== String(filters.orderId)) return false;
+      if (filters.messageId && String(payment.messageId) !== String(filters.messageId)) return false;
+      if (filters.status && normalizeStatus(payment.status) !== normalizeStatus(filters.status)) return false;
+      return true;
+    });
+    return Promise.resolve(clone(items));
+  }
+
+  function findLocal(predicate) {
+    return readLocal().find(predicate) || null;
+  }
+
+  function getById(id) {
+    var payment = findLocal(function (item) { return String(item.id) === String(id || ''); });
+    if (payment && !canAccess(payment)) return Promise.reject(new Error('Você não tem permissão para acessar este pagamento.'));
+    return Promise.resolve(clone(payment));
+  }
+
+  function getByEventKey(eventKey) {
+    var payment = findLocal(function (item) { return String(item.eventKey) === String(eventKey || ''); });
+    if (payment && !canAccess(payment)) return Promise.reject(new Error('Você não tem permissão para acessar este pagamento.'));
+    return Promise.resolve(clone(payment));
+  }
+
+  function getByOrderId(orderId) {
+    var matches = readLocal().filter(function (item) { return String(item.orderId) === String(orderId || ''); });
+    matches.sort(function (left, right) {
+      return String(right.updatedAt || right.createdAt || '').localeCompare(String(left.updatedAt || left.createdAt || ''));
+    });
+    var payment = matches[0] || null;
+    if (payment && !canAccess(payment)) return Promise.reject(new Error('Você não tem permissão para acessar este pagamento.'));
+    return Promise.resolve(clone(payment));
+  }
+
+  function save(payment) {
+    var normalized = normalizePayment(payment);
+    var actor = getCurrentUser() || {};
+    if (!canAccess(normalized, actor)) return Promise.reject(new Error('Você não tem permissão para alterar este pagamento.'));
+
+    var items = readLocal();
+    var index = items.findIndex(function (item) {
+      return String(item.id) === String(normalized.id)
+        || Boolean(normalized.eventKey && item.eventKey && String(item.eventKey) === String(normalized.eventKey));
+    });
+    var previous = index >= 0 ? items[index] : null;
+
+    if (previous && getStatusRank(normalized.status) < getStatusRank(previous.status)) {
+      return Promise.resolve({ payment: clone(previous), created: false, updated: false });
+    }
+
+    var saved = normalizePayment(Object.assign({}, previous || {}, normalized, {
+      id: previous && previous.id || normalized.id,
+      createdAt: previous && previous.createdAt || normalized.createdAt,
+      updatedAt: nowIso()
+    }));
+
+    if (index >= 0) items.splice(index, 1, saved);
+    else items.unshift(saved);
+    writeLocal(items);
+
+    document.dispatchEvent(new CustomEvent(previous ? 'doke:payment-updated' : 'doke:payment-created', {
+      detail: { payment: clone(saved), previous: clone(previous) }
+    }));
+    return Promise.resolve({ payment: clone(saved), created: !previous, updated: Boolean(previous) });
+  }
+
+  repositories.payments = Object.freeze({
+    storageKey: STORAGE_KEY,
+    normalize: normalizePayment,
+    createPaymentId: createPaymentId,
+    readLocal: readLocal,
+    writeLocal: writeLocal,
+    list: list,
+    getById: getById,
+    getByEventKey: getByEventKey,
+    getByOrderId: getByOrderId,
+    save: save
+  });
+})();

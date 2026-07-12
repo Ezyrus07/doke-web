@@ -295,8 +295,12 @@
       targetUrl = 'mensagens.html?order=' + encodeURIComponent(order.id || '');
       actionLabel = 'Abrir conversa';
     } else if (normalizedStatus === 'in_progress') {
-      title = 'Pagamento confirmado';
-      body = 'O atendimento de "' + (order.serviceTitle || order.title || 'Pedido') + '" foi liberado.';
+      var paymentStatus = normalizeText(order.paymentStatus || '').toLowerCase();
+      var paymentHeld = ['paid', 'confirmed', 'held', 'released'].indexOf(paymentStatus) !== -1;
+      title = paymentHeld ? 'Pagamento em garantia' : 'Proposta aprovada';
+      body = paymentHeld
+        ? 'O pagamento de "' + (order.serviceTitle || order.title || 'Pedido') + '" foi confirmado e está protegido pela Doke.'
+        : 'A proposta de "' + (order.serviceTitle || order.title || 'Pedido') + '" foi aprovada. O pagamento continua pendente.';
       targetUrl = 'mensagens.html?order=' + encodeURIComponent(order.id || '');
       actionLabel = 'Abrir conversa';
     } else if (normalizedStatus === 'completed') {
@@ -335,6 +339,7 @@
     var text = normalizeText(message.text || message.body || 'Nova atualização na conversa.');
     if (!text && message.type === 'image') text = 'Enviou uma imagem.';
     if (!text && message.type === 'audio') text = 'Enviou um áudio.';
+    if (!text && message.type === 'proposal') text = 'Enviou uma proposta.';
     if (!text && message.type === 'charge') text = 'Enviou uma cobrança.';
     var peerName = normalizeText(message.author || conversation.peerName || conversation.name || 'Contato');
     var orderTitle = normalizeText(conversation.order && (conversation.order.serviceTitle || conversation.order.title) || conversation.serviceTitle || 'um pedido');

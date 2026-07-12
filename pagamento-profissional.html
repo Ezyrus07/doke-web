@@ -63,9 +63,10 @@
               <section class="payment-card payment-method-card" aria-labelledby="method-title">
                 <div class="payment-card__header payment-card__header--compact">
                   <div>
+                    <span class="payment-section-number" aria-hidden="true">1</span>
                     <div>
-                      <h2 id="method-title">Como você quer pagar?</h2>
-                      <p>Escolha uma forma de pagamento para continuar.</p>
+                      <h2 id="method-title">Forma de pagamento</h2>
+                      <p>Escolha a opção que funciona melhor para você.</p>
                     </div>
                   </div>
                 </div>
@@ -132,7 +133,29 @@
                 </div>
               </section>
 
+              <section class="payment-card payment-review" aria-labelledby="review-title">
+                <div class="payment-card__header payment-card__header--compact">
+                  <div>
+                    <span class="payment-section-number" aria-hidden="true">2</span>
+                    <div>
+                      <h2 id="review-title">Confirmação</h2>
+                      <p>Revise o resumo ao lado antes de pagar.</p>
+                    </div>
+                  </div>
+                </div>
 
+                <label class="payment-confirm-check" data-payment-confirm-check>
+                  <input class="doke-checkbox" type="checkbox" data-payment-confirm-input>
+                  <span><strong>Revisei a proposta e os dados do pedido.</strong><small>Ao confirmar, concordo com os termos de pagamento da Doke.</small></span>
+                </label>
+
+                <div class="payment-security-note">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.8 19 7v5.2c0 4-2.7 7.2-7 8-4.3-.8-7-4-7-8V7l7-3.2Z"></path><path d="m8.5 12 2.2 2.2 4.8-5"></path></svg>
+                  <span>O pagamento fica registrado no pedido. Nunca envie senha ou código do cartão pelo chat.</span>
+                </div>
+
+                <p class="payment-error" data-payment-error hidden>Não foi possível confirmar o pagamento. Verifique os dados e tente novamente.</p>
+              </section>
             </div>
 
             <aside class="payment-summary" aria-labelledby="summary-title">
@@ -163,19 +186,6 @@
                 <div class="payment-summary__amount">
                   <div><small>Total</small><span data-payment-installments>À vista</span></div>
                   <strong data-summary-total>R$ 280,00</strong>
-                </div>
-
-                <div class="payment-summary__confirmation" aria-labelledby="review-title">
-                  <h3 id="review-title">Confirme para pagar</h3>
-                  <label class="payment-confirm-check" data-payment-confirm-check>
-                    <input class="doke-checkbox" type="checkbox" data-payment-confirm-input>
-                    <span><strong>Revisei a proposta e os dados do pedido.</strong><small>Ao confirmar, concordo com os termos de pagamento da Doke.</small></span>
-                  </label>
-                  <p class="payment-security-note">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.8 19 7v5.2c0 4-2.7 7.2-7 8-4.3-.8-7-4-7-8V7l7-3.2Z"></path><path d="m8.5 12 2.2 2.2 4.8-5"></path></svg>
-                    <span>O pagamento fica registrado no pedido. Nunca envie senha ou código do cartão pelo chat.</span>
-                  </p>
-                  <p class="payment-error" data-payment-error hidden>Não foi possível confirmar o pagamento. Verifique os dados e tente novamente.</p>
                 </div>
 
                 <div class="doke-form-actions payment-summary__actions">
@@ -308,7 +318,6 @@
   <script src="assets/js/services/mock-data-service.js?v=20260707" defer></script>
   <script src="assets/js/services/profile-service.js?v=20260707" defer></script>
   <script src="assets/js/services/search-service.js?v=20260707" defer></script>
-  <script src="assets/js/services/order-service.js?v=20260707" defer></script>
   <script src="assets/js/services/message-service.js?v=20260626-order-status-flow-v1" defer></script>
   <script src="assets/js/services/notification-service.js?v=20260626-order-status-flow-v1" defer></script>
   <script src="assets/js/repositories/orders-repository.js?v=20260626-order-status-flow-v2" defer></script>
@@ -316,7 +325,8 @@
   <script src="assets/js/repositories/notifications-repository.js?v=20260626-order-status-flow-v2" defer></script>
   <script src="assets/js/repositories/wallet-repository.js?v=20260627-wallet-held-v1" defer></script>
   <script src="assets/js/services/wallet-service.js?v=20260702-wallet-release-on-completion-v1" defer></script>
-  <script src="assets/js/services/orders-service.js?v=20260626-payment-redirect-v1" defer></script>
+  <script src="assets/js/services/orders-service.js?v=20260712-canonical-payment-hold-v1" defer></script>
+  <script src="assets/js/services/payment-service.js?v=20260712-canonical-payment-hold-v1" defer></script>
   <script src="assets/js/services/domain-data-service.js?v=20260707" defer></script>
   <script src="assets/js/controllers/controller-data.js?v=20260707" defer></script>
   <script src="assets/js/core/dom.js?v=20260707" defer></script>
@@ -324,7 +334,7 @@
   <script src="assets/js/core/view-state.js?v=20260707" defer></script>
   <script src="assets/js/core/page-bootstrap.js?v=20260707" defer></script>
   <script src="assets/js/controllers/page-controller-registry.js?v=20260707" defer></script>
-  <script src="assets/js/pages/pagamento-profissional.js?v=20260702-wallet-release-on-completion-v1" defer></script>
+  <script src="assets/js/pages/pagamento-profissional.js?v=20260712-canonical-payment-hold-v1" defer></script>
   <script src="assets/js/controllers/controller-bootstrap.js?v=20260707" defer></script>
   <script src="assets/js/components/mobile-app-shell.js?v=20260701-navigation-registry-v1" defer></script>
   <script src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1" defer></script>

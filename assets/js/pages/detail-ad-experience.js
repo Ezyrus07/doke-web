@@ -35,6 +35,12 @@
     }
   }
 
+  function invalidateDomains(domains, reason) {
+    var invalidation = Doke.experience && Doke.experience.invalidation;
+    if (!invalidation || typeof invalidation.invalidateDomains !== 'function') return null;
+    return invalidation.invalidateDomains(domains, { reason: reason || 'detail-ad' });
+  }
+
   function favoriteStorageKey() {
     return FAVORITES_KEY_PREFIX + resolveUserId();
   }
@@ -87,11 +93,13 @@
       document.dispatchEvent(new CustomEvent('doke:service-favorite-changed', {
         detail: { serviceId: serviceId, isFavorite: !wasActive }
       }));
-      if (Doke.experience && Doke.experience.cache && typeof Doke.experience.cache.invalidatePrefix === 'function') {
-        Doke.experience.cache.invalidatePrefix('marketplace:');
+      if (!invalidateDomains(['marketplace'], 'service-favorite-changed')) {
+        if (Doke.experience && Doke.experience.cache && typeof Doke.experience.cache.invalidatePrefix === 'function') {
+          Doke.experience.cache.invalidatePrefix('marketplace:');
+        }
+        Doke.stableShellRouter && Doke.stableShellRouter.invalidate && Doke.stableShellRouter.invalidate('index.html');
+        Doke.stableShellRouter && Doke.stableShellRouter.invalidate && Doke.stableShellRouter.invalidate('resultados.html');
       }
-      Doke.stableShellRouter && Doke.stableShellRouter.invalidate && Doke.stableShellRouter.invalidate('index.html');
-      Doke.stableShellRouter && Doke.stableShellRouter.invalidate && Doke.stableShellRouter.invalidate('resultados.html');
       return !wasActive;
     }).catch(function (error) {
       try { writeFavorites(before); } catch (_) {}
@@ -137,6 +145,7 @@
   }
 
   function invalidate() {
+    if (invalidateDomains(['detailAd'], 'detail-ad-refresh')) return;
     if (Doke.pageDataOrchestrator && typeof Doke.pageDataOrchestrator.invalidate === 'function') {
       Doke.pageDataOrchestrator.invalidate(PAGE);
     }

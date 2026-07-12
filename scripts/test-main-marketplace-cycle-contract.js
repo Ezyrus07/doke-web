@@ -130,7 +130,8 @@ function createReloadedDoke(user) {
     'assets/js/repositories/notifications-repository.js',
     'assets/js/services/notification-service.js',
     'assets/js/services/message-service.js',
-    'assets/js/services/orders-service.js'
+    'assets/js/services/orders-service.js',
+    'assets/js/services/payment-service.js'
   ].forEach((relativePath) => {
     const filename = path.join(projectRoot, relativePath);
     vm.runInContext(fs.readFileSync(filename, 'utf8'), reloadSandbox, { filename: relativePath });
@@ -147,7 +148,8 @@ function createReloadedDoke(user) {
   'assets/js/services/notification-service.js',
   'assets/js/services/message-service.js',
   'assets/js/services/orders-service.js',
-  'assets/js/services/wallet-service.js'
+  'assets/js/services/wallet-service.js',
+  'assets/js/services/payment-service.js'
 ].forEach(runAsset);
 
 function setUser(user) {
@@ -158,11 +160,26 @@ function getConversationByOrder(Doke, orderId) {
   return Doke.repositories.messages.readLocal().find((item) => String(item.orderId || item.order && item.order.id) === String(orderId));
 }
 
+function isProposalMessage(message) {
+  return Boolean(message) && (message.type === 'proposal' || message.financialKind === 'proposal');
+}
+
+function isActualChargeMessage(message) {
+  return Boolean(message) && message.type === 'charge' && message.financialKind === 'charge';
+}
+
+function getProposal(conversation, messageId) {
+  const messages = Array.isArray(conversation && conversation.messages) ? conversation.messages : [];
+  return messageId
+    ? messages.find((message) => String(message.id || '') === String(messageId) && isProposalMessage(message))
+    : messages.slice().reverse().find(isProposalMessage);
+}
+
 function getCharge(conversation, messageId) {
   const messages = Array.isArray(conversation && conversation.messages) ? conversation.messages : [];
   return messageId
-    ? messages.find((message) => String(message.id || '') === String(messageId))
-    : messages.slice().reverse().find((message) => message && message.type === 'charge');
+    ? messages.find((message) => String(message.id || '') === String(messageId) && isActualChargeMessage(message))
+    : messages.slice().reverse().find(isActualChargeMessage);
 }
 
 async function persistChargeState(Doke, conversationId, messageId, flags) {
@@ -174,22 +191,6 @@ async function persistChargeState(Doke, conversationId, messageId, flags) {
   if (flags && flags.paid) charge.text = charge.text || 'Pagamento confirmado. Atendimento liberado.';
   const savedConversation = await Doke.repositories.messages.save(conversation);
   return { conversation: savedConversation, charge };
-}
-
-async function registerPaymentHold(Doke, order, conversation, charge, amount) {
-  const result = await Doke.services.wallet.registerHeldReceivableFromPayment({
-    order,
-    conversation,
-    charge,
-    amount,
-    orderId: order.id,
-    conversationId: conversation.id,
-    messageId: charge.id
-  });
-  assert(result && result.transaction, 'Pagamento não criou recebível em garantia na carteira.');
-  assert(result.transaction.status === 'held', 'Recebível pós-pagamento deveria ficar held.');
-  assert(result.transaction.grossAmount === parseCurrency(amount), 'Recebível held não preservou valor bruto da cobrança.');
-  return result.transaction;
 }
 
 async function releaseReceivable(Doke, order, conversation, charge, amount) {
@@ -329,7 +330,8 @@ async function main() {
     'Proposta não deveria ser enviada antes do aceite.'
   );
   conversation = getConversationByOrder(Doke, order.id);
-  assert(!getCharge(conversation), 'Tentativa inválida de proposta não deveria persistir cobrança.');
+  assert(!getProposal(conversation), 'Tentativa inválida de proposta não deveria persistir mensagem de proposta.');
+  assert(!getCharge(conversation), 'Tentativa inválida de proposta não deveria criar cobrança.');
 
   const accepted = await Doke.services.orders.accept(order.id);
   assert(accepted.status === 'accepted', 'Pedido não foi aceito.');
@@ -340,54 +342,83 @@ async function main() {
     'Proposta com valor inválido deveria ser rejeitada pelo domínio.'
   );
   conversation = getConversationByOrder(Doke, order.id);
-  assert(!getCharge(conversation), 'Valor inválido não deveria persistir mensagem de proposta.');
+  assert(!getProposal(conversation), 'Valor inválido não deveria persistir mensagem de proposta.');
+  assert(!getCharge(conversation), 'Valor inválido não deveria criar cobrança.');
 
   const proposal = await Doke.services.orders.submitProposal(order.id, {
     amount,
     installments: 'À vista',
     messageText: 'Proposta para aprovação'
   });
-  const chargeMessage = proposal.message;
+  const proposalMessage = proposal.message;
   const quoted = proposal.order;
-  assert(chargeMessage && chargeMessage.id, 'Comando de proposta não gerou mensagem no chat.');
+  assert(proposalMessage && proposalMessage.id, 'Comando de proposta não gerou mensagem no chat.');
+  assert(proposalMessage.type === 'proposal' && proposalMessage.financialKind === 'proposal', 'Proposta deve ter tipo financeiro próprio.');
   assert(quoted.status === 'quoted', 'Pedido deveria ficar quoted após envio da proposta.');
   conversation = getConversationByOrder(Doke, order.id);
   assert(conversation.status === 'quoted' && conversation.locked === false, 'Conversa deveria ficar quoted e desbloqueada.');
-  assert(getCharge(conversation, chargeMessage.id), 'Conversa quoted deveria manter mensagem type=charge.');
+  assert(getProposal(conversation, proposalMessage.id), 'Conversa quoted deveria manter a mensagem da proposta.');
+  assert(!getCharge(conversation), 'Envio da proposta não pode criar cobrança antecipada.');
   assert(Doke.repositories.notifications.readLocal().some((item) => item.title === 'Proposta enviada' && item.userId === 'user_cliente_demo'), 'Proposta deveria notificar o cliente.');
 
-  const chargeCountAfterProposal = conversation.messages.filter((message) => message && message.type === 'charge').length;
+  const proposalCountAfterSubmit = conversation.messages.filter(isProposalMessage).length;
   await assertRejects(
     Doke.services.orders.submitProposal(order.id, { amount: 'R$ 300,00', installments: 'À vista' }),
     'Pedido quoted não deveria aceitar uma segunda proposta pelo mesmo comando.'
   );
   conversation = getConversationByOrder(Doke, order.id);
-  assert(conversation.messages.filter((message) => message && message.type === 'charge').length === chargeCountAfterProposal, 'Proposta repetida não deveria criar cobrança duplicada.');
+  assert(conversation.messages.filter(isProposalMessage).length === proposalCountAfterSubmit, 'Proposta repetida não deveria criar mensagem duplicada.');
+  assert(!getCharge(conversation), 'Proposta repetida não pode criar cobrança.');
 
   const reloadedDoke = createReloadedDoke(currentUser);
   const reloadedOrder = reloadedDoke.repositories.orders.listLocal({ currentUser: true }).find((item) => item.id === order.id);
   const reloadedConversation = reloadedDoke.repositories.messages.listLocal({ currentUser: true, orderId: order.id })[0];
   assert(reloadedOrder && reloadedOrder.status === 'quoted', 'Reload deveria preservar o estado quoted do pedido.');
   assert(reloadedConversation && reloadedConversation.status === 'quoted', 'Reload deveria preservar o estado quoted da conversa.');
-  assert(getCharge(reloadedConversation, chargeMessage.id), 'Reload deveria preservar a mensagem da proposta.');
+  assert(getProposal(reloadedConversation, proposalMessage.id), 'Reload deveria preservar a mensagem da proposta.');
+  assert(!getCharge(reloadedConversation), 'Reload de quoted não pode inventar cobrança.');
 
   setUser({ id: 'user_cliente_demo', name: 'Cliente Doke', role: 'client', initials: 'CD', avatarInitials: 'CD' });
   const clientConversation = Doke.repositories.messages.listLocal({ currentUser: true, orderId: order.id })[0];
-  assert(clientConversation && getCharge(clientConversation, chargeMessage.id), 'Cliente deveria ver cobrança na conversa.');
+  assert(clientConversation && getProposal(clientConversation, proposalMessage.id), 'Cliente deveria ver a proposta na conversa.');
+  assert(!getCharge(clientConversation), 'Cliente não deve ver cobrança antes da aprovação.');
 
-  const inProgress = await Doke.services.orders.start(order.id, {
+  const inProgress = await Doke.services.orders.approveProposal(order.id, {
     conversationId: conversation.id,
-    paymentMessageId: chargeMessage.id
+    approvalSource: 'main-marketplace-cycle'
   });
-  assert(inProgress.status === 'in_progress', 'Pagamento deveria mover pedido para in_progress.');
-  let persisted = await persistChargeState(Doke, conversation.id, chargeMessage.id, {
-    paid: true,
-    paymentMethod: 'Pix',
-    paidAmount: amount
+  assert(inProgress.status === 'in_progress', 'Aprovação deveria mover pedido para in_progress.');
+  assert(inProgress.paymentStatus === 'pending', 'Aprovação deveria manter o pagamento pendente.');
+
+  setUser({ id: 'user_profissional_demo', name: 'Profissional Doke', role: 'professional', initials: 'PD', avatarInitials: 'PD' });
+  const chargeResult = await Doke.services.orders.createCharge(order.id, {
+    amount,
+    installments: 'À vista'
   });
-  assert(persisted.charge.paid === true, 'Cobrança deveria ficar paid=true após pagamento.');
-  const held = await registerPaymentHold(Doke, inProgress, persisted.conversation, persisted.charge, amount);
-  assert(held.status === 'held', 'Carteira deveria registrar held após pagamento.');
+  const chargeMessage = chargeResult.message;
+  assert(chargeMessage && chargeMessage.id, 'Comando de cobrança não gerou mensagem no chat.');
+  assert(chargeMessage.type === 'charge' && chargeMessage.financialKind === 'charge', 'Cobrança deve ter tipo financeiro próprio.');
+  assert(chargeResult.order.status === 'in_progress', 'Cobrança não deve alterar o estado de execução.');
+  assert(chargeResult.order.paymentStatus === 'pending', 'Cobrança não pode confirmar pagamento automaticamente.');
+  assert(chargeResult.order.chargeMessageId === chargeMessage.id, 'Pedido deve guardar o identificador da cobrança canônica.');
+
+  setUser({ id: 'user_cliente_demo', name: 'Cliente Doke', role: 'client', initials: 'CD', avatarInitials: 'CD' });
+  conversation = getConversationByOrder(Doke, order.id);
+  assert(getProposal(conversation, proposalMessage.id), 'Cobrança não pode substituir a proposta aprovada.');
+  assert(getCharge(conversation, chargeMessage.id), 'Cliente deve recuperar a cobrança real na conversa.');
+  const paymentResult = await Doke.services.payments.confirmChargePayment(order.id, {
+    conversationId: conversation.id,
+    messageId: chargeMessage.id,
+    amount: 280,
+    grossAmount: 280,
+    discountAmount: 0,
+    method: 'Pix'
+  });
+  assert(paymentResult.payment.status === 'held', 'Pagamento canônico deveria terminar held.');
+  assert(paymentResult.order.paymentStatus === 'held', 'Pedido deveria registrar pagamento em garantia.');
+  assert(paymentResult.charge.paid === true, 'Cobrança deveria ficar paid=true após pagamento.');
+  assert(paymentResult.walletTransaction.status === 'held', 'Carteira deveria registrar held após pagamento.');
+  let persisted = { conversation: paymentResult.conversation, charge: paymentResult.charge };
 
   const completed = await Doke.services.orders.complete(order.id);
   assert(completed.status === 'completed', 'Conclusão deveria mover pedido para completed.');
@@ -429,7 +460,9 @@ async function main() {
   assert(finalCharge.walletTransactionId, 'Cobrança final deveria guardar walletTransactionId.');
 
   const notifications = Doke.repositories.notifications.readLocal();
-  assert(notifications.some((item) => item.title === 'Pagamento confirmado' && item.userId === 'user_profissional_demo'), 'Pagamento confirmado deveria notificar o profissional.');
+  assert(notifications.some((item) => item.title === 'Proposta aprovada' && item.userId === 'user_profissional_demo'), 'Aprovação da proposta deveria notificar o profissional.');
+  assert(notifications.some((item) => item.type === 'payment_held' && item.userId === 'user_profissional_demo'), 'Pagamento deveria notificar o profissional com semântica de garantia.');
+  assert(!notifications.some((item) => item.title === 'Pagamento confirmado' && item.orderId === order.id), 'Aprovação não deveria gerar notificação falsa de pagamento.');
   assert(notifications.some((item) => item.title === 'Pedido concluído' && item.userId === 'user_profissional_demo'), 'Conclusão deveria notificar o profissional.');
   assert(notifications.some((item) => item.title === 'Saldo disponível' && item.userId === 'user_profissional_demo'), 'Liberação financeira deveria notificar o profissional.');
   assert(notifications.some((item) => item.type === 'order_reviewed' && item.userId === 'user_profissional_demo'), 'Avaliação deveria notificar o profissional.');
@@ -460,7 +493,7 @@ async function main() {
     if (!injectConcurrentCancellation || key !== 'doke.conversations.local.v1') return;
     const persistedConversations = JSON.parse(String(value || '[]'));
     const hasRaceProposal = persistedConversations.some((item) => String(item.orderId || '') === String(raceOrder.id)
-      && (item.messages || []).some((message) => message && message.type === 'charge'));
+      && (item.messages || []).some((message) => isProposalMessage(message)));
     if (!hasRaceProposal) return;
     injectConcurrentCancellation = false;
     const persistedOrders = JSON.parse(storage['doke.orders.local.v1'] || '[]');
@@ -479,7 +512,8 @@ async function main() {
   );
   context.localStorage.setItem = originalSetItem;
   const raceConversationAfterRollback = getConversationByOrder(Doke, raceOrder.id);
-  assert(!getCharge(raceConversationAfterRollback), 'Falha concorrente deveria remover a mensagem provisória da proposta.');
+  assert(!getProposal(raceConversationAfterRollback), 'Falha concorrente deveria remover a mensagem provisória da proposta.');
+  assert(!getCharge(raceConversationAfterRollback), 'Rollback da proposta não deveria criar cobrança.');
   assert(raceMessageSentEvents === 0, 'Proposta revertida não deveria publicar evento de mensagem enviada.');
   assert(Doke.repositories.notifications.readLocal().length === notificationsBeforeRace, 'Proposta revertida não deveria gerar notificação fantasma.');
   assert(raceConversation && raceConversation.id === raceConversationAfterRollback.id, 'Rollback deveria preservar a conversa original.');

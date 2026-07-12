@@ -99,13 +99,20 @@
   }
 
   function invalidate() {
+    var domainInvalidation = Doke.experience && Doke.experience.invalidation;
+    if (domainInvalidation && typeof domainInvalidation.invalidateDomains === 'function') {
+      return domainInvalidation.invalidateDomains(['orders', 'messages', 'notifications'], {
+        reason: 'orders-experience'
+      });
+    }
     var cache = Doke.experience && Doke.experience.cache;
-    if (cache) cache.invalidatePrefix('orders:');
+    if (cache && typeof cache.invalidatePrefix === 'function') cache.invalidatePrefix('orders:');
     if (Doke.stableShellRouter && typeof Doke.stableShellRouter.invalidate === 'function') {
       Doke.stableShellRouter.invalidate('pedidos.html');
       Doke.stableShellRouter.invalidate('notificacoes.html');
       Doke.stableShellRouter.invalidate('mensagens.html');
     }
+    return null;
   }
 
   function snapshotCard(card) {
@@ -203,7 +210,9 @@
     setState: setState
   });
 
-  ['doke:auth-session-change', 'doke:order-created', 'doke:order-status-changed'].forEach(function (name) {
-    document.addEventListener(name, function () { invalidate(); });
-  });
+  if (!(Doke.experience && Doke.experience.invalidation)) {
+    ['doke:auth-session-change', 'doke:order-created', 'doke:order-status-changed'].forEach(function (name) {
+      document.addEventListener(name, function () { invalidate(); });
+    });
+  }
 })();
