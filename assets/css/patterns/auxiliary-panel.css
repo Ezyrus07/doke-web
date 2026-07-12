@@ -1,0 +1,38 @@
+/* Shared off-canvas/modal panel composition. */
+.doke-aux-panel { position: fixed; inset: 0; z-index: var(--z-modal, 1000); pointer-events: none; }
+.doke-aux-panel[aria-hidden="false"] { pointer-events: auto; }
+.doke-aux-panel__backdrop { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 0; background: rgba(13, 39, 62, 0.28); }
+.doke-aux-panel__surface {
+  position: absolute;
+  inset-block: 0;
+  right: 0;
+  width: min(720px, calc(100vw - 32px));
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  border-left: 1px solid var(--border-color-soft, rgba(24, 75, 118, 0.12));
+  background: var(--doke-visual-surface, #fff);
+  box-shadow: -18px 0 48px rgba(18, 58, 91, 0.14);
+}
+.doke-aux-panel__header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  min-height: 88px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--border-color-soft, rgba(24, 75, 118, 0.12));
+  background: var(--doke-visual-surface, #fff);
+}
+.doke-aux-panel__header h2 { margin: 0; color: var(--color-heading, #0b3158); font-size: clamp(1.5rem, 2vw, 2rem); line-height: 1.08; }
+.doke-aux-panel__header p { margin: 5px 0 0; max-width: 54ch; color: var(--color-text-muted, #647c99); line-height: 1.45; }
+.doke-aux-panel__body { width: 100%; min-width: 0; padding: 24px 28px 32px; }
+@media (max-width: 700px) {
+  .doke-aux-panel__surface { width: 100%; max-width: none; border-left: 0; }
+  .doke-aux-panel__header { min-height: 80px; padding: 20px; }
+  .doke-aux-panel__body { padding: 20px; }
+}

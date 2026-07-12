@@ -177,11 +177,28 @@
     }
   }
 
+  function canActorAccessConversation(actor, conversation) {
+    if (!actor || !actor.id || !conversation) return false;
+    if (actor.role === 'admin' || actor.role === 'support') return true;
+    var actorId = String(actor.id);
+    var participants = Array.isArray(conversation.participants) ? conversation.participants.map(String) : [];
+    if (participants.indexOf(actorId) !== -1) return true;
+    if (actor.role === 'client') return String(conversation.clientId || conversation.order && conversation.order.clientId || '') === actorId;
+    if (actor.role === 'professional') {
+      var professionalId = String(conversation.professionalId || conversation.order && (conversation.order.professionalId || conversation.order.providerId) || '');
+      if (professionalId === actorId) return true;
+      return actorId === 'user_profissional_demo' && Boolean(conversation.orderId || conversation.order && conversation.order.id);
+    }
+    return false;
+  }
+
   function assertConversationAccess(conversation, action, actor) {
+    var currentActor = actor || getCurrentUser() || {};
     var security = getSecurity();
     if (security && typeof security.assertResourceAccess === 'function') {
-      return security.assertResourceAccess('conversation', conversation, action || 'read_conversation', actor || getCurrentUser() || {});
+      return security.assertResourceAccess('conversation', conversation, action || 'read_conversation', currentActor);
     }
+    if (!canActorAccessConversation(currentActor, conversation)) throw new Error('Você não tem permissão para acessar esta conversa.');
     return true;
   }
 
@@ -301,12 +318,40 @@
     });
   }
 
+  function commitMessageEffects(conversationId, message, options) {
+    options = options || {};
+    var actor = options.actor || getCurrentUser();
+    var notificationsService = services.notifications;
+    if (!message || !notificationsService || typeof notificationsService.createMessageReceived !== 'function') {
+      return message ? dispatchMessageSent(conversationId, message) : Promise.resolve(message);
+    }
+
+    return getConversationById(conversationId).then(function (conversation) {
+      if (!conversation) return message;
+      return notificationsService.createMessageReceived(conversation, message, {
+        actor: actor
+      }).catch(function (error) {
+        console.warn('[DokeMessages:createMessageNotification]', error);
+        return null;
+      }).then(function () {
+        document.dispatchEvent(new CustomEvent('doke:message-sent', {
+          detail: {
+            conversation: conversation,
+            message: message
+          }
+        }));
+        return message;
+      });
+    });
+  }
+
   function sendMessage(conversationId, payload) {
     payload = payload || {};
     var repository = getRepository();
     var user = getCurrentUser();
     var body = normalizeText(payload.body || payload.text || '');
     var type = payload.type || (payload.src ? 'image' : 'text');
+    var deferSideEffects = payload.deferSideEffects === true;
 
     if (!conversationId) return Promise.reject(new Error('Conversa inválida.'));
     if (type === 'text' && !body) return Promise.reject(new Error('Escreva uma mensagem para enviar.'));
@@ -327,33 +372,42 @@
         mine: payload.mine !== false,
         read: true
       });
+      delete messagePayload.deferSideEffects;
 
       if (shouldUseMessagesApi()) return messagesBoundarySendMessage(conversationId, messagePayload);
       if (!repository || typeof repository.addMessage !== 'function') return Promise.resolve(null);
       return repository.addMessage(conversationId, messagePayload);
     }).then(function (message) {
-      var notificationsService = services.notifications;
-      if (!message || !notificationsService || typeof notificationsService.createMessageReceived !== 'function') {
-        return message ? dispatchMessageSent(conversationId, message) : message;
-      }
+      if (deferSideEffects) return message;
+      return commitMessageEffects(conversationId, message, { actor: user });
+    });
+  }
 
-      return getConversationById(conversationId).then(function (conversation) {
-        if (!conversation) return message;
-        return notificationsService.createMessageReceived(conversation, message, {
-          actor: user
-        }).catch(function (error) {
-          console.warn('[DokeMessages:createMessageNotification]', error);
-          return null;
-        }).then(function () {
-          document.dispatchEvent(new CustomEvent('doke:message-sent', {
-            detail: {
-              conversation: conversation,
-              message: message
-            }
-          }));
-          return message;
-        });
+  function removeMessage(conversationId, messageId) {
+    if (!conversationId || !messageId) return Promise.resolve(false);
+    var actor = getCurrentUser() || {};
+    return getConversationById(conversationId).then(function (conversation) {
+      if (!conversation) return false;
+      assertConversationAccess(conversation, 'send_message', actor);
+      var message = (conversation.messages || []).find(function (item) {
+        return String(item && (item.id || item.messageId) || '') === String(messageId);
       });
+      if (!message) return false;
+      var canRemove = actor.role === 'admin' || actor.role === 'support' || String(message.senderId || '') === String(actor.id || '');
+      if (!canRemove) throw new Error('Você não tem permissão para remover esta mensagem.');
+      if (shouldUseMessagesApi()) {
+        throw new Error('Remoção compensatória de mensagem ainda não está disponível no provider de API.');
+      }
+      var repository = getRepository();
+      if (!repository || typeof repository.removeMessage !== 'function') return false;
+      return repository.removeMessage(conversationId, messageId);
+    }).then(function (removed) {
+      if (removed) {
+        document.dispatchEvent(new CustomEvent('doke:message-removed', {
+          detail: { conversationId: conversationId, messageId: messageId }
+        }));
+      }
+      return removed;
     });
   }
 
@@ -389,6 +443,8 @@
     createConversationForOrder: createConversationForOrder,
     updateConversationOrder: updateConversationOrder,
     sendMessage: sendMessage,
+    commitMessageEffects: commitMessageEffects,
+    removeMessage: removeMessage,
     markAsRead: markAsRead,
     unreadCount: unreadCount
   });

@@ -1,0 +1,79 @@
+/*
+ * Doke Entity Row Contract
+ * Reusable row/card for members, roles, channels, invites and settings lists.
+ */
+
+:where(
+  .doke-entity-row,
+  .settings-list-item,
+  .community-room-role-item,
+  .community-room-channel-admin-item,
+  .community-room-invite-item,
+  .community-security-item
+) {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 68px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--doke-settings-border, var(--border-color-soft));
+  border-radius: var(--doke-settings-radius, var(--radius-base));
+  background: var(--doke-settings-surface, #fff);
+  box-shadow: none;
+}
+
+:where(
+  .doke-entity-row,
+  .settings-list-item,
+  .community-room-role-item,
+  .community-room-channel-admin-item,
+  .community-room-invite-item,
+  .community-security-item
+) > :where(div, section) {
+  min-width: 0;
+}
+
+:where(
+  .doke-entity-row,
+  .settings-list-item,
+  .community-room-role-item,
+  .community-room-channel-admin-item,
+  .community-room-invite-item,
+  .community-security-item
+) :where(strong, h2, h3) {
+  overflow-wrap: anywhere;
+}
+
+:where(.doke-entity-row__actions, .community-room-channel-admin-item__actions, .community-room-invite-item__actions) {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+:where(.doke-entity-row__actions, .community-room-channel-admin-item__actions, .community-room-invite-item__actions) > :where(.doke-btn, .doke-icon-btn) {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 760px) {
+  :where(
+    .doke-entity-row,
+    .settings-list-item,
+    .community-room-role-item,
+    .community-room-channel-admin-item,
+    .community-room-invite-item,
+    .community-security-item
+  ) {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  :where(.doke-entity-row__actions, .community-room-channel-admin-item__actions, .community-room-invite-item__actions) {
+    justify-content: flex-start;
+    width: 100%;
+  }
+}

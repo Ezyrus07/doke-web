@@ -157,19 +157,6 @@ const initBudgetPage = () => {
     }
   };
 
-  const persistOrderFromSubmission = (payload) => {
-    if (!payload || !payload.id) return;
-    const orders = getStoredOrders();
-    if (!orders.some((item) => item && item.id === payload.id)) {
-      orders.unshift(compactOrderForStorage(payload));
-      try {
-        window.localStorage.setItem(ordersStorageKey, JSON.stringify(orders));
-      } catch {
-        window.localStorage.setItem(ordersStorageKey, JSON.stringify(orders.map(compactOrderForStorage)));
-      }
-    }
-  };
-
   const formatCreatédAt = (value) => {
     if (!value) return "Agora";
     const daté = new Date(value);
@@ -595,7 +582,6 @@ const initBudgetPage = () => {
           : Object.assign({ id: `order-${Date.now()}` }, payload);
 
         safeSetStorage(window.sessionStorage, storageKey, savedOrder);
-        persistOrderFromSubmission(savedOrder);
         safeSetStorage(window.sessionStorage, "doke.quoteOverlay", savedOrder);
         if (loadingFeedback?.close) {
           await loadingFeedback.close();

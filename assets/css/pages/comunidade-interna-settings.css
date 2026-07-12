@@ -5,24 +5,24 @@
  */
 
 body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode {
-  --community-settings-bg: var(--shell-page-bg, #eef7fd);
-  --community-settings-surface: var(--doke-visual-surface, #fff);
-  --community-settings-surface-muted: var(--doke-visual-surface-muted, #f5f9fd);
-  --community-settings-border: var(--border-color-soft, rgba(24, 75, 118, 0.12));
-  --community-settings-border-strong: var(--border-color, rgba(24, 75, 118, 0.18));
-  --community-settings-text: var(--color-heading, #0b3158);
-  --community-settings-muted: var(--color-text-muted, #647c99);
-  --community-settings-primary: var(--color-primary, #245f92);
-  --community-settings-primary-strong: var(--color-primary-strong, #174f7d);
-  --community-settings-primary-soft: var(--color-primary-soft, #eaf3fa);
-  --community-settings-danger: var(--color-danger-strong, #c63d3d);
-  --community-settings-danger-soft: #fff8f8;
-  --community-settings-radius-lg: var(--doke-visual-radius-lg, 22px);
-  --community-settings-radius: var(--doke-visual-radius, 16px);
-  --community-settings-radius-sm: var(--doke-visual-radius-sm, 13px);
-  --community-settings-sidebar-width: 360px;
-  --community-settings-content-max: 1080px;
-  --community-settings-gutter: 44px;
+  --community-settings-bg: var(--doke-settings-bg, var(--shell-page-bg, #eef7fd));
+  --community-settings-surface: var(--doke-settings-surface, var(--doke-visual-surface, #fff));
+  --community-settings-surface-muted: var(--doke-settings-surface-muted, var(--doke-visual-surface-muted, #f5f9fd));
+  --community-settings-border: var(--doke-settings-border, var(--border-color-soft, rgba(24, 75, 118, 0.12)));
+  --community-settings-border-strong: var(--doke-settings-border-strong, var(--border-color, rgba(24, 75, 118, 0.18)));
+  --community-settings-text: var(--doke-settings-text, var(--color-heading, #0b3158));
+  --community-settings-muted: var(--doke-settings-muted, var(--color-text-muted, #647c99));
+  --community-settings-primary: var(--doke-settings-primary, var(--color-primary, #245f92));
+  --community-settings-primary-strong: var(--doke-settings-primary-strong, var(--color-primary-strong, #174f7d));
+  --community-settings-primary-soft: var(--doke-settings-primary-soft, var(--color-primary-soft, #eaf3fa));
+  --community-settings-danger: var(--doke-settings-danger, var(--color-danger-strong, #c63d3d));
+  --community-settings-danger-soft: var(--doke-settings-danger-soft, #fff8f8);
+  --community-settings-radius-lg: var(--doke-settings-radius-lg, var(--doke-visual-radius-lg, 22px));
+  --community-settings-radius: var(--doke-settings-radius, var(--doke-visual-radius, 16px));
+  --community-settings-radius-sm: var(--doke-settings-radius-sm, var(--doke-visual-radius-sm, 13px));
+  --community-settings-sidebar-width: var(--doke-settings-sidebar-width, 360px);
+  --community-settings-content-max: var(--doke-settings-content-max, 1080px);
+  --community-settings-gutter: var(--doke-settings-gutter, 44px);
   grid-template-columns: var(--community-settings-sidebar-width) minmax(0, 1fr);
   gap: 0;
   min-width: 0;
@@ -290,7 +290,7 @@ body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .co
   top: 0;
   z-index: 10;
   flex: 0 0 auto;
-  min-height: 112px;
+  min-height: var(--doke-settings-header-min-height, 112px);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -364,8 +364,7 @@ body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .co
   box-sizing: border-box;
   width: min(calc(100% - (var(--community-settings-gutter) * 2)), var(--community-settings-content-max));
   max-width: var(--community-settings-content-max);
-  margin-right: auto;
-  margin-left: var(--community-settings-gutter);
+  margin-inline: auto;
 }
 
 body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel :is(label, fieldset) {
@@ -377,6 +376,8 @@ body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .co
 body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-security-filters label {
   display: grid;
   gap: 8px;
+  align-self: start;
+  align-content: start;
 }
 
 body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel label > span:first-child,
@@ -400,15 +401,24 @@ body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .co
 }
 
 body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel :is(.doke-input, .doke-select) {
-  min-height: 50px;
-  padding-inline: 16px;
+  height: var(--doke-settings-control-height, 50px);
+  min-height: var(--doke-settings-control-height, 50px);
+  max-height: var(--doke-settings-control-height, 50px);
+  padding-inline: var(--doke-settings-control-padding-x, 16px);
 }
 
 body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .doke-textarea {
-  min-height: 132px;
-  padding: 14px 16px;
+  height: auto;
+  min-height: var(--doke-settings-textarea-md, 132px);
+  max-height: none;
+  padding: 14px var(--doke-settings-control-padding-x, 16px);
   line-height: 1.55;
   resize: vertical;
+}
+
+
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel textarea.doke-textarea[rows="3"] {
+  min-height: var(--doke-settings-textarea-sm, 108px);
 }
 
 body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel :is(.doke-input, .doke-select, .doke-textarea):is(:hover, :focus, :focus-visible) {
@@ -469,7 +479,7 @@ body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [da
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: start;
-  gap: 20px;
+  gap: var(--doke-settings-grid-gap-y, 20px) var(--doke-settings-grid-gap-x, 22px);
   padding: 32px 0 0;
   overflow: visible;
 }
@@ -501,7 +511,7 @@ body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [da
 body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-onboarding-settings {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  gap: var(--doke-settings-grid-gap-y, 18px) var(--doke-settings-grid-gap-x, 22px);
 }
 
 body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="manage"] .community-onboarding-settings > legend,
@@ -895,7 +905,7 @@ body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .co
 /* Audit. */
 body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel .community-security-filters {
   display: grid;
-  grid-template-columns: minmax(160px, 0.8fr) minmax(260px, 1.5fr) minmax(180px, 0.9fr);
+  grid-template-columns: minmax(150px, 0.78fr) minmax(300px, 1.55fr) minmax(170px, 0.82fr);
   gap: 14px;
   margin-top: 32px;
 }
@@ -927,7 +937,7 @@ body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .co
 }
 
 body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-summary > * {
-  min-height: 100px;
+  min-height: 92px;
   display: grid;
   align-content: center;
   gap: 5px;
@@ -1074,7 +1084,7 @@ body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .co
 body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode [data-community-panel="transfer"] .community-room-manage-form {
   display: grid;
   align-content: start;
-  gap: 20px;
+  gap: var(--doke-settings-grid-gap-y, 20px) var(--doke-settings-grid-gap-x, 22px);
   padding: 32px 0 0;
 }
 
@@ -1370,5 +1380,80 @@ body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .co
 body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-item .doke-btn {
   flex: 0 0 auto;
   border: 1px solid var(--community-settings-border);
+  background: #fff;
+}
+
+/* Shared state migration v5: one rail and one empty-state geometry. */
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-settings-panel :is(
+  .community-security-summary,
+  .community-security-filters,
+  .community-audit-list,
+  .community-security-section
+) {
+  width: min(100%, var(--community-settings-content-max));
+  margin-inline: auto;
+}
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-audit-list > .community-room-panel-empty,
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-empty {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 104px;
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  margin: 0;
+  padding: 20px 22px;
+  border: 1px dashed var(--community-settings-border-strong);
+  border-radius: var(--community-settings-radius);
+  background: var(--community-settings-surface-muted);
+  color: var(--community-settings-muted);
+  text-align: left;
+}
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-filters {
+  grid-template-columns: minmax(160px, .8fr) minmax(260px, 1.5fr) minmax(180px, .85fr);
+  align-items: end;
+}
+body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-filters :is(.doke-input, .doke-select) {
+  width: 100%;
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  body[data-page="comunidade-interna"] .community-room-layout.is-settings-mode .community-security-filters { grid-template-columns: 1fr; }
+}
+
+/* White surfaces sweep v6 */
+body[data-page="comunidade-interna"] {
+  --community-settings-surface: #fff;
+  --community-settings-surface-muted: #fff;
+}
+
+body[data-page="comunidade-interna"] .community-settings-shell,
+body[data-page="comunidade-interna"] .community-settings-sidebar,
+body[data-page="comunidade-interna"] .community-settings-panel,
+body[data-page="comunidade-interna"] .community-settings-card,
+body[data-page="comunidade-interna"] .community-settings-section,
+body[data-page="comunidade-interna"] .community-settings-footer,
+body[data-page="comunidade-interna"] .community-settings-empty,
+body[data-page="comunidade-interna"] .community-settings-hero,
+body[data-page="comunidade-interna"] .community-settings-metric,
+body[data-page="comunidade-interna"] .community-settings-row,
+body[data-page="comunidade-interna"] .community-settings-item,
+body[data-page="comunidade-interna"] .community-settings-form,
+body[data-page="comunidade-interna"] .community-settings-form-grid,
+body[data-page="comunidade-interna"] .community-settings-subsection,
+body[data-page="comunidade-interna"] .community-settings-danger,
+body[data-page="comunidade-interna"] .community-settings-empty-state,
+body[data-page="comunidade-interna"] .community-settings-card-soft,
+body[data-page="comunidade-interna"] .community-settings-role-card,
+body[data-page="comunidade-interna"] .community-settings-channel-card,
+body[data-page="comunidade-interna"] .community-settings-invite-card {
+  background: #fff;
+}
+
+body[data-page="comunidade-interna"] .community-settings-shell input,
+body[data-page="comunidade-interna"] .community-settings-shell select,
+body[data-page="comunidade-interna"] .community-settings-shell textarea,
+body[data-page="comunidade-interna"] .community-settings-shell .doke-input,
+body[data-page="comunidade-interna"] .community-settings-shell .doke-textarea {
   background: #fff;
 }

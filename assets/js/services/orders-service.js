@@ -481,11 +481,21 @@
     }
   }
 
+  function canActorReadOrder(actor, order) {
+    if (!actor || !actor.id || !order) return false;
+    if (actor.role === 'admin' || actor.role === 'support') return true;
+    if (actor.role === 'professional') return canProfessionalActOnOrder(actor, order);
+    if (actor.role === 'client') return isOrderClient(actor, order);
+    return false;
+  }
+
   function assertOrderAccess(order, action, actor) {
+    var currentActor = actor || getCurrentUser() || {};
     var security = getSecurity();
     if (security && typeof security.assertResourceAccess === 'function') {
-      return security.assertResourceAccess('order', order, action || 'read_order', actor || getCurrentUser() || {});
+      return security.assertResourceAccess('order', order, action || 'read_order', currentActor);
     }
+    if (!canActorReadOrder(currentActor, order)) throw new Error('Você não tem permissão para acessar este pedido.');
     return true;
   }
 
@@ -510,6 +520,12 @@
 
   function normalizeText(value) {
     return String(value || '').trim();
+  }
+
+  function parseCurrencyValue(value) {
+    var normalized = normalizeText(value).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+    var amount = Number(normalized);
+    return Number.isFinite(amount) ? amount : 0;
   }
 
   function nowIso() {
@@ -570,6 +586,60 @@
 
   function getStatusMeta(status) {
     return STATUS_META[status] || STATUS_META.pending;
+  }
+
+  var ORDER_TRANSITIONS = Object.freeze({
+    pending: Object.freeze({
+      accepted: Object.freeze(['professional']),
+      cancelled: Object.freeze(['professional'])
+    }),
+    accepted: Object.freeze({
+      quoted: Object.freeze(['professional'])
+    }),
+    conversation: Object.freeze({
+      quoted: Object.freeze(['professional'])
+    }),
+    quoted: Object.freeze({
+      in_progress: Object.freeze(['client']),
+      cancelled: Object.freeze(['client'])
+    }),
+    in_progress: Object.freeze({
+      completed: Object.freeze(['client', 'professional']),
+      cancelled: Object.freeze(['client', 'professional'])
+    }),
+    completed: Object.freeze({}),
+    cancelled: Object.freeze({})
+  });
+
+  function normalizeStatusToken(status) {
+    var normalized = normalizeText(status || '').toLowerCase();
+    return normalized === 'conversation' ? 'accepted' : normalized;
+  }
+
+  function getAllowedTransitions(status, role) {
+    var currentStatus = normalizeStatusToken(status || 'pending');
+    var transitions = ORDER_TRANSITIONS[currentStatus] || {};
+    return Object.keys(transitions).filter(function (nextStatus) {
+      return !role || transitions[nextStatus].indexOf(role) !== -1;
+    });
+  }
+
+  function canTransition(order, nextStatus, actor) {
+    var currentStatus = normalizeStatusToken(order && order.status || 'pending');
+    var targetStatus = normalizeStatusToken(nextStatus);
+    var role = normalizeText(actor && actor.role || '').toLowerCase();
+    if (!targetStatus || currentStatus === targetStatus) return false;
+    var transitions = ORDER_TRANSITIONS[currentStatus] || {};
+    if (!Array.isArray(transitions[targetStatus]) || transitions[targetStatus].indexOf(role) === -1) return false;
+    return canActorTransition(actor, order, targetStatus);
+  }
+
+  function assertCanonicalTransition(order, nextStatus, actor) {
+    if (canTransition(order, nextStatus, actor)) return true;
+    var currentStatus = normalizeStatusToken(order && order.status || 'pending');
+    var allowed = getAllowedTransitions(currentStatus, normalizeText(actor && actor.role || '').toLowerCase());
+    var detail = allowed.length ? ' Próximos estados permitidos: ' + allowed.join(', ') + '.' : '';
+    throw new Error('Transição inválida de ' + currentStatus + ' para ' + normalizeStatusToken(nextStatus) + '.' + detail);
   }
 
   function getApiActionForStatus(status) {
@@ -888,10 +958,11 @@
     var repository = assertRepository();
     return repository.getById(orderId).then(function (order) {
       if (!order) throw new Error('Pedido não encontrado.');
-      var normalizedStatus = nextStatus || order.status || 'pending';
+      var normalizedStatus = normalizeStatusToken(nextStatus || order.status || 'pending');
       if (!assertOrderTransitionAccess(actor, order, normalizedStatus)) {
         throw new Error('Você não tem permissão para alterar este pedido.');
       }
+      assertCanonicalTransition(order, normalizedStatus, actor);
 
       var meta = getStatusMeta(normalizedStatus);
       var updatedAt = nowIso();
@@ -945,6 +1016,119 @@
     return saveStatus(orderId, 'cancelled', 'Pedido recusado', { reason: normalizedReason });
   }
 
+  function findConversationForOrder(orderId) {
+    var messagesService = services.messages;
+    if (!messagesService) return Promise.resolve(null);
+
+    if (typeof messagesService.listLocalConversations === 'function') {
+      var local = messagesService.listLocalConversations({ currentUser: true, orderId: orderId }) || [];
+      var localMatch = local.find(function (conversation) {
+        return String(conversation && (conversation.orderId || conversation.order && conversation.order.id) || '') === String(orderId || '');
+      });
+      if (localMatch) return Promise.resolve(localMatch);
+    }
+
+    if (typeof messagesService.listConversations === 'function') {
+      return messagesService.listConversations({ currentUser: true, orderId: orderId }).then(function (items) {
+        return (items || []).find(function (conversation) {
+          return String(conversation && (conversation.orderId || conversation.order && conversation.order.id) || '') === String(orderId || '');
+        }) || null;
+      });
+    }
+
+    return Promise.resolve(null);
+  }
+
+  function rollbackProposalMessage(conversationId, messageId, originalError) {
+    var messagesService = services.messages;
+    if (!messagesService || typeof messagesService.removeMessage !== 'function' || !conversationId || !messageId) {
+      throw originalError;
+    }
+
+    return messagesService.removeMessage(conversationId, messageId).then(function (removed) {
+      if (!removed) {
+        originalError.rollbackMessageFailed = true;
+        originalError.rollbackError = 'A mensagem da proposta não pôde ser removida.';
+      }
+      throw originalError;
+    }).catch(function (rollbackError) {
+      if (rollbackError === originalError) throw originalError;
+      console.warn('[DokeOrders:rollbackProposalMessage]', rollbackError);
+      originalError.rollbackMessageFailed = true;
+      originalError.rollbackError = rollbackError && rollbackError.message || String(rollbackError || '');
+      throw originalError;
+    });
+  }
+
+  function submitProposal(orderId, payload) {
+    payload = payload || {};
+    var actor = getCurrentUser() || {};
+    var amount = normalizeText(payload.amount || payload.budget || '');
+    var installments = normalizeText(payload.installments || '') || 'À vista';
+    var messagesService = services.messages;
+
+    if (!amount) return Promise.reject(new Error('Informe o valor da proposta.'));
+    if (parseCurrencyValue(amount) <= 0) return Promise.reject(new Error('Informe um valor de proposta válido e maior que zero.'));
+    if (!messagesService || typeof messagesService.sendMessage !== 'function') {
+      return Promise.reject(new Error('Serviço de mensagens indisponível para enviar a proposta.'));
+    }
+
+    return getById(orderId).then(function (order) {
+      if (!order) throw new Error('Pedido não encontrado.');
+      if (!assertOrderTransitionAccess(actor, order, 'quoted')) {
+        throw new Error('Você não tem permissão para enviar proposta neste pedido.');
+      }
+      assertCanonicalTransition(order, 'quoted', actor);
+      return findConversationForOrder(orderId).then(function (conversation) {
+        if (!conversation || !conversation.id) throw new Error('Conversa vinculada ao pedido não encontrada.');
+        return { order: order, conversation: conversation };
+      });
+    }).then(function (context) {
+      var messagePayload = {
+        type: 'charge',
+        body: normalizeText(payload.messageText || '') || 'Proposta pronta para aprovação. Você pode pagar por aqui para confirmar o atendimento.',
+        text: normalizeText(payload.messageText || '') || 'Proposta pronta para aprovação. Você pode pagar por aqui para confirmar o atendimento.',
+        amount: amount,
+        installments: installments,
+        paid: false,
+        orderId: orderId,
+        senderId: actor.id || '',
+        mine: true,
+        author: 'Você',
+        deferSideEffects: true
+      };
+
+      return messagesService.sendMessage(context.conversation.id, messagePayload).then(function (message) {
+        if (!message || !(message.id || message.messageId)) {
+          throw new Error('A mensagem da proposta não pôde ser persistida.');
+        }
+        var messageId = message.id || message.messageId;
+        return quote(orderId, {
+          amount: amount,
+          budget: amount,
+          installments: installments
+        }).then(function (order) {
+          var result = {
+            order: order,
+            message: message,
+            conversationId: context.conversation.id
+          };
+          if (typeof messagesService.commitMessageEffects !== 'function') return result;
+          return messagesService.commitMessageEffects(context.conversation.id, message, { actor: actor }).catch(function (sideEffectError) {
+            console.warn('[DokeOrders:commitProposalMessageEffects]', sideEffectError);
+            result.sideEffectsPending = true;
+            result.sideEffectsError = sideEffectError && sideEffectError.message || String(sideEffectError || '');
+            return null;
+          }).then(function () {
+            return result;
+          });
+        }, function (error) {
+          return rollbackProposalMessage(context.conversation.id, messageId, error);
+        });
+      });
+    });
+  }
+
   function quote(orderId, payload) {
     payload = payload || {};
     return saveStatus(orderId, 'quoted', 'Proposta enviada', {
@@ -991,8 +1175,14 @@
     accept: accept,
     decline: decline,
     quote: quote,
+    submitProposal: submitProposal,
     start: start,
     complete: complete,
-    updateStatus: updateStatus
+    updateStatus: updateStatus,
+    stateMachine: Object.freeze({
+      transitions: ORDER_TRANSITIONS,
+      canTransition: canTransition,
+      getAllowedTransitions: getAllowedTransitions
+    })
   });
 })();

@@ -24,6 +24,16 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+async function assertRejects(task, message) {
+  let rejected = false;
+  try {
+    await task;
+  } catch (error) {
+    rejected = true;
+  }
+  assert(rejected, message);
+}
+
 function parseCurrency(value) {
   const normalized = String(value || '').replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
   const parsed = Number(normalized);
@@ -79,6 +89,53 @@ const sandbox = vm.createContext(context);
 function runAsset(relativePath) {
   const filename = path.join(projectRoot, relativePath);
   vm.runInContext(fs.readFileSync(filename, 'utf8'), sandbox, { filename: relativePath });
+}
+
+function createReloadedDoke(user) {
+  const reloadListeners = Object.create(null);
+  const reloadContext = {
+    console,
+    Date,
+    Intl,
+    Math,
+    JSON,
+    Promise,
+    setTimeout,
+    clearTimeout,
+    URLSearchParams,
+    encodeURIComponent,
+    fetch: () => Promise.resolve({ ok: true, json: () => Promise.resolve([]) }),
+    localStorage: context.localStorage,
+    CustomEvent: context.CustomEvent,
+    document: {
+      addEventListener: (type, callback) => {
+        if (!reloadListeners[type]) reloadListeners[type] = [];
+        reloadListeners[type].push(callback);
+      },
+      dispatchEvent: (event) => {
+        (reloadListeners[event.type] || []).forEach((callback) => callback(event));
+      }
+    },
+    location: context.location,
+    Doke: {
+      mockData: { load: () => Promise.resolve([]) },
+      session: { getCurrentUser: () => user }
+    }
+  };
+  reloadContext.window = reloadContext;
+  const reloadSandbox = vm.createContext(reloadContext);
+  [
+    'assets/js/repositories/orders-repository.js',
+    'assets/js/repositories/messages-repository.js',
+    'assets/js/repositories/notifications-repository.js',
+    'assets/js/services/notification-service.js',
+    'assets/js/services/message-service.js',
+    'assets/js/services/orders-service.js'
+  ].forEach((relativePath) => {
+    const filename = path.join(projectRoot, relativePath);
+    vm.runInContext(fs.readFileSync(filename, 'utf8'), reloadSandbox, { filename: relativePath });
+  });
+  return reloadSandbox.Doke;
 }
 
 [
@@ -255,29 +312,64 @@ async function main() {
   assert(conversation && conversation.locked === true, 'Conversa inicial deveria existir bloqueada.');
   assert(Doke.repositories.notifications.readLocal().some((item) => item.type === 'order_created' && item.userId === 'user_profissional_demo'), 'Criação deveria notificar o profissional.');
 
+  setUser(null);
+  assert(Doke.repositories.orders.listLocal({ currentUser: true }).length === 0, 'Visitante não deveria listar pedidos persistidos.');
+  assert(Doke.repositories.messages.listLocal({ currentUser: true }).length === 0, 'Visitante não deveria listar conversas persistidas.');
+
+  setUser({ id: 'user_cliente_outro', name: 'Outro Cliente', role: 'client', initials: 'OC', avatarInitials: 'OC' });
+  assert(Doke.repositories.orders.listLocal({ currentUser: true }).length === 0, 'Outro cliente não deveria visualizar o pedido.');
+  assert(Doke.repositories.messages.listLocal({ currentUser: true }).length === 0, 'Outro cliente não deveria visualizar a conversa.');
+  await assertRejects(Doke.services.orders.getById(order.id), 'Outro cliente não deveria ler o pedido pelo service.');
+  await assertRejects(Doke.services.messages.getConversationById(conversation.id), 'Outro cliente não deveria ler a conversa pelo service.');
+  await assertRejects(Doke.services.orders.accept(order.id), 'Cliente sem vínculo não deveria aceitar pedido como profissional.');
+
   setUser({ id: 'user_profissional_demo', name: 'Profissional Doke', role: 'professional', initials: 'PD', avatarInitials: 'PD' });
+  await assertRejects(
+    Doke.services.orders.submitProposal(order.id, { amount, installments: 'À vista' }),
+    'Proposta não deveria ser enviada antes do aceite.'
+  );
+  conversation = getConversationByOrder(Doke, order.id);
+  assert(!getCharge(conversation), 'Tentativa inválida de proposta não deveria persistir cobrança.');
+
   const accepted = await Doke.services.orders.accept(order.id);
   assert(accepted.status === 'accepted', 'Pedido não foi aceito.');
   conversation = getConversationByOrder(Doke, order.id);
   assert(conversation.status === 'accepted' && conversation.locked === false, 'Conversa não destravou após aceite.');
+  await assertRejects(
+    Doke.services.orders.submitProposal(order.id, { amount: 'valor inválido', installments: 'À vista' }),
+    'Proposta com valor inválido deveria ser rejeitada pelo domínio.'
+  );
+  conversation = getConversationByOrder(Doke, order.id);
+  assert(!getCharge(conversation), 'Valor inválido não deveria persistir mensagem de proposta.');
 
-  const chargeMessage = await Doke.services.messages.sendMessage(conversation.id, {
-    type: 'charge',
-    body: 'Proposta para aprovação',
-    text: 'Proposta para aprovação',
+  const proposal = await Doke.services.orders.submitProposal(order.id, {
     amount,
     installments: 'À vista',
-    paid: false,
-    orderId: order.id
+    messageText: 'Proposta para aprovação'
   });
-  assert(chargeMessage && chargeMessage.id, 'Cobrança não gerou mensagem no chat.');
-
-  const quoted = await Doke.services.orders.quote(order.id, { amount, installments: 'À vista' });
+  const chargeMessage = proposal.message;
+  const quoted = proposal.order;
+  assert(chargeMessage && chargeMessage.id, 'Comando de proposta não gerou mensagem no chat.');
   assert(quoted.status === 'quoted', 'Pedido deveria ficar quoted após envio da proposta.');
   conversation = getConversationByOrder(Doke, order.id);
   assert(conversation.status === 'quoted' && conversation.locked === false, 'Conversa deveria ficar quoted e desbloqueada.');
   assert(getCharge(conversation, chargeMessage.id), 'Conversa quoted deveria manter mensagem type=charge.');
   assert(Doke.repositories.notifications.readLocal().some((item) => item.title === 'Proposta enviada' && item.userId === 'user_cliente_demo'), 'Proposta deveria notificar o cliente.');
+
+  const chargeCountAfterProposal = conversation.messages.filter((message) => message && message.type === 'charge').length;
+  await assertRejects(
+    Doke.services.orders.submitProposal(order.id, { amount: 'R$ 300,00', installments: 'À vista' }),
+    'Pedido quoted não deveria aceitar uma segunda proposta pelo mesmo comando.'
+  );
+  conversation = getConversationByOrder(Doke, order.id);
+  assert(conversation.messages.filter((message) => message && message.type === 'charge').length === chargeCountAfterProposal, 'Proposta repetida não deveria criar cobrança duplicada.');
+
+  const reloadedDoke = createReloadedDoke(currentUser);
+  const reloadedOrder = reloadedDoke.repositories.orders.listLocal({ currentUser: true }).find((item) => item.id === order.id);
+  const reloadedConversation = reloadedDoke.repositories.messages.listLocal({ currentUser: true, orderId: order.id })[0];
+  assert(reloadedOrder && reloadedOrder.status === 'quoted', 'Reload deveria preservar o estado quoted do pedido.');
+  assert(reloadedConversation && reloadedConversation.status === 'quoted', 'Reload deveria preservar o estado quoted da conversa.');
+  assert(getCharge(reloadedConversation, chargeMessage.id), 'Reload deveria preservar a mensagem da proposta.');
 
   setUser({ id: 'user_cliente_demo', name: 'Cliente Doke', role: 'client', initials: 'CD', avatarInitials: 'CD' });
   const clientConversation = Doke.repositories.messages.listLocal({ currentUser: true, orderId: order.id })[0];
@@ -341,6 +433,92 @@ async function main() {
   assert(notifications.some((item) => item.title === 'Pedido concluído' && item.userId === 'user_profissional_demo'), 'Conclusão deveria notificar o profissional.');
   assert(notifications.some((item) => item.title === 'Saldo disponível' && item.userId === 'user_profissional_demo'), 'Liberação financeira deveria notificar o profissional.');
   assert(notifications.some((item) => item.type === 'order_reviewed' && item.userId === 'user_profissional_demo'), 'Avaliação deveria notificar o profissional.');
+
+  setUser({ id: 'user_cliente_demo', name: 'Cliente Doke', role: 'client', initials: 'CD', avatarInitials: 'CD' });
+  const raceOrder = await Doke.services.orders.create({
+    serviceId: 'svc-race-proposal',
+    professionalId: 'user_profissional_demo',
+    providerId: 'user_profissional_demo',
+    providerName: 'Profissional Doke',
+    serviceTitle: 'Teste de concorrência da proposta',
+    title: 'Teste de concorrência da proposta',
+    location: 'Salvador - BA'
+  });
+  setUser({ id: 'user_profissional_demo', name: 'Profissional Doke', role: 'professional', initials: 'PD', avatarInitials: 'PD' });
+  await Doke.services.orders.accept(raceOrder.id);
+  const raceConversation = getConversationByOrder(Doke, raceOrder.id);
+  const notificationsBeforeRace = Doke.repositories.notifications.readLocal().length;
+  let raceMessageSentEvents = 0;
+  context.document.addEventListener('doke:message-sent', (event) => {
+    if (String(event.detail && event.detail.message && event.detail.message.orderId || '') === String(raceOrder.id)) raceMessageSentEvents += 1;
+  });
+
+  const originalSetItem = context.localStorage.setItem;
+  let injectConcurrentCancellation = true;
+  context.localStorage.setItem = (key, value) => {
+    originalSetItem(key, value);
+    if (!injectConcurrentCancellation || key !== 'doke.conversations.local.v1') return;
+    const persistedConversations = JSON.parse(String(value || '[]'));
+    const hasRaceProposal = persistedConversations.some((item) => String(item.orderId || '') === String(raceOrder.id)
+      && (item.messages || []).some((message) => message && message.type === 'charge'));
+    if (!hasRaceProposal) return;
+    injectConcurrentCancellation = false;
+    const persistedOrders = JSON.parse(storage['doke.orders.local.v1'] || '[]');
+    const target = persistedOrders.find((item) => String(item.id || '') === String(raceOrder.id));
+    if (target) {
+      target.status = 'cancelled';
+      target.statusLabel = 'Pedido cancelado em outra sessão';
+      target.updatedAt = new Date().toISOString();
+      Doke.repositories.orders.writeLocal(persistedOrders);
+    }
+  };
+
+  await assertRejects(
+    Doke.services.orders.submitProposal(raceOrder.id, { amount: 'R$ 190,00', installments: 'À vista' }),
+    'Mudança concorrente de estado deveria impedir a conclusão da proposta.'
+  );
+  context.localStorage.setItem = originalSetItem;
+  const raceConversationAfterRollback = getConversationByOrder(Doke, raceOrder.id);
+  assert(!getCharge(raceConversationAfterRollback), 'Falha concorrente deveria remover a mensagem provisória da proposta.');
+  assert(raceMessageSentEvents === 0, 'Proposta revertida não deveria publicar evento de mensagem enviada.');
+  assert(Doke.repositories.notifications.readLocal().length === notificationsBeforeRace, 'Proposta revertida não deveria gerar notificação fantasma.');
+  assert(raceConversation && raceConversation.id === raceConversationAfterRollback.id, 'Rollback deveria preservar a conversa original.');
+
+  setUser({ id: 'user_cliente_demo', name: 'Cliente Doke', role: 'client', initials: 'CD', avatarInitials: 'CD' });
+  const declinedOrderSource = await Doke.services.orders.create({
+    serviceId: 'svc-decline-contract',
+    professionalId: 'user_profissional_demo',
+    providerId: 'user_profissional_demo',
+    providerName: 'Profissional Doke',
+    serviceTitle: 'Pedido para recusa',
+    title: 'Pedido para recusa',
+    location: 'Salvador - BA'
+  });
+  setUser({ id: 'user_profissional_demo', name: 'Profissional Doke', role: 'professional', initials: 'PD', avatarInitials: 'PD' });
+  const declinedOrder = await Doke.services.orders.decline(declinedOrderSource.id, 'Agenda indisponível para o período solicitado.');
+  assert(declinedOrder.status === 'cancelled', 'Recusa deveria mover o pedido para cancelled.');
+  assert(declinedOrder.refusalReason === 'Agenda indisponível para o período solicitado.', 'Recusa deveria persistir a justificativa.');
+  const declinedConversation = getConversationByOrder(Doke, declinedOrder.id);
+  assert(declinedConversation && declinedConversation.status === 'cancelled', 'Conversa deveria refletir a recusa do pedido.');
+  assert(declinedConversation.locked === true, 'Conversa recusada deveria permanecer bloqueada.');
+  assert(declinedConversation.order.refusalReason === declinedOrder.refusalReason, 'Conversa deveria persistir a justificativa da recusa.');
+  await assertRejects(Doke.services.orders.accept(declinedOrder.id), 'Pedido recusado não deveria voltar para accepted.');
+  await assertRejects(
+    Doke.services.orders.submitProposal(declinedOrder.id, { amount: 'R$ 150,00', installments: 'À vista' }),
+    'Pedido recusado não deveria aceitar proposta.'
+  );
+
+  setUser({ id: 'user_cliente_demo', name: 'Cliente Doke', role: 'client', initials: 'CD', avatarInitials: 'CD' });
+  const declinedReload = createReloadedDoke(currentUser);
+  const declinedReloadOrder = declinedReload.repositories.orders.listLocal({ currentUser: true }).find((item) => item.id === declinedOrder.id);
+  const declinedReloadConversation = declinedReload.repositories.messages.listLocal({ currentUser: true, orderId: declinedOrder.id })[0];
+  assert(declinedReloadOrder && declinedReloadOrder.status === 'cancelled', 'Reload do cliente deveria preservar o pedido recusado.');
+  assert(declinedReloadOrder.refusalReason === declinedOrder.refusalReason, 'Reload deveria preservar a justificativa da recusa.');
+  assert(declinedReloadConversation && declinedReloadConversation.locked === true, 'Reload deveria manter a conversa recusada bloqueada.');
+  await assertRejects(
+    Doke.services.messages.sendMessage(declinedConversation.id, { text: 'Tentativa após recusa', type: 'text' }),
+    'Cliente não deveria enviar mensagem em pedido recusado.'
+  );
 
   console.log('Main marketplace cycle contract: OK');
 }

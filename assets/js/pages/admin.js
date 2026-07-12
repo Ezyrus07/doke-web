@@ -18,6 +18,11 @@
   var withdrawModalSubmit = document.querySelector('[data-admin-withdraw-submit]');
   var searchQuery = '';
   var toastTimer = null;
+  var loadPromise = null;
+
+  function experience() {
+    return Doke.adminExperience || null;
+  }
 
   function clean(value) {
     return String(value || '').replace(/\s+/g, ' ').trim();
@@ -437,7 +442,7 @@
     if (!withdrawModal || !canUseAdmin()) return;
     var wallet = walletService();
     if (!wallet || typeof wallet.resolveWithdraw !== 'function') {
-      showToast('Resolução de saque indisponível.');
+      showToast('Resolução de saque indisponível. Esta ação administrativa ainda não possui autoridade ativa.');
       return;
     }
     var transactionId = clean(withdrawModal.dataset.transactionId || '');
@@ -449,22 +454,42 @@
       if (withdrawReasonInput) withdrawReasonInput.focus({ preventScroll: true });
       return;
     }
-    if (withdrawModalSubmit) withdrawModalSubmit.disabled = true;
+    var mutationKey = 'withdraw:' + transactionId;
+    var runtime = experience();
+    if (runtime && runtime.isSubmitting(mutationKey)) return;
+    if (withdrawModalSubmit) {
+      withdrawModalSubmit.disabled = true;
+      withdrawModalSubmit.setAttribute('aria-busy', 'true');
+    }
     showToast(action === 'decline' ? 'Recusando saque...' : 'Aprovando saque...');
-    Promise.resolve(wallet.resolveWithdraw(Object.assign({ transactionId: transactionId, action: action, reason: reason }, getAdminActorPayload()))).then(function (result) {
-      closeWithdrawModal();
-      showToast(result && result.action === 'declined' ? 'Saque recusado e auditado.' : 'Saque aprovado e concluído.');
-      return loadAdminData();
-    }).catch(function (error) {
+    var operation = function () {
+      return Promise.resolve(wallet.resolveWithdraw(Object.assign({ transactionId: transactionId, action: action, reason: reason }, getAdminActorPayload()))).then(function (result) {
+        if (!result || (!result.id && !result.transactionId && !result.action)) {
+          throw new Error('A autoridade financeira não confirmou a decisão do saque.');
+        }
+        if (runtime) runtime.invalidateRelated();
+        closeWithdrawModal();
+        showToast(result.action === 'declined' ? 'Saque recusado e auditado.' : 'Saque aprovado e concluído.');
+        return loadAdminData(true);
+      });
+    };
+    var promise = runtime ? runtime.runMutation(mutationKey, operation) : operation();
+    promise.catch(function (error) {
       showToast(error && error.message ? error.message : 'Não foi possível resolver o saque.');
     }).finally(function () {
-      if (withdrawModalSubmit) withdrawModalSubmit.disabled = false;
+      if (withdrawModalSubmit) {
+        withdrawModalSubmit.disabled = false;
+        withdrawModalSubmit.removeAttribute('aria-busy');
+      }
     });
   }
 
-  function loadAdminData() {
+  function loadAdminData(force) {
+    if (loadPromise && !force) return loadPromise;
+    var runtime = experience();
+    if (runtime) runtime.startLoad();
     var orders = listOrders();
-    return Promise.all([listDisputes(), listTransactions(), listAuditEvents()]).then(function (result) {
+    loadPromise = Promise.all([listDisputes(), listTransactions(), listAuditEvents()]).then(function (result) {
       var disputes = result[0];
       var transactions = result[1];
       var auditEvents = result[2];
@@ -473,34 +498,52 @@
       renderPayments(transactions);
       renderWithdraws(transactions);
       renderAudit(disputes, transactions, auditEvents);
+      if (runtime) runtime.finishLoad();
+      return { disputes: disputes, transactions: transactions, auditEvents: auditEvents };
     }).catch(function (error) {
+      if (runtime) runtime.fail(error);
       showToast(error && error.message ? error.message : 'Não foi possível carregar o admin.');
+      throw error;
+    }).finally(function () {
+      loadPromise = null;
     });
+    return loadPromise;
   }
 
   function resolveDispute(button) {
     if (!button || !canUseAdmin()) return;
     var wallet = walletService();
     if (!wallet || typeof wallet.resolveDispute !== 'function') {
-      showToast('Resolução indisponível.');
+      showToast('Resolução indisponível. Esta ação administrativa ainda não possui autoridade ativa.');
       return;
     }
     var disputeId = clean(button.dataset.disputeId);
     var resolution = clean(button.dataset.adminDisputeResolve);
     if (!disputeId || !resolution) return;
+    var mutationKey = 'dispute:' + disputeId;
+    var runtime = experience();
+    if (runtime && runtime.isSubmitting(mutationKey)) return;
 
     var card = button.closest('[data-admin-dispute-card]');
     var buttons = card ? Array.prototype.slice.call(card.querySelectorAll('button')) : [button];
-    buttons.forEach(function (item) { item.disabled = true; });
+    buttons.forEach(function (item) { item.disabled = true; item.setAttribute('aria-busy', 'true'); });
     showToast(resolution === 'cliente' ? 'Reembolsando cliente...' : 'Liberando repasse...');
 
-    Promise.resolve(wallet.resolveDispute(Object.assign({ disputeId: disputeId, resolution: resolution }, getAdminActorPayload()))).then(function () {
-      showToast(resolution === 'cliente' ? 'Contestação encerrada. Cliente reembolsado.' : 'Contestação encerrada. Repasse liberado.');
-      return loadAdminData();
-    }).catch(function (error) {
+    var operation = function () {
+      return Promise.resolve(wallet.resolveDispute(Object.assign({ disputeId: disputeId, resolution: resolution }, getAdminActorPayload()))).then(function (result) {
+        if (!result || (!result.id && !result.disputeId && !result.status && !result.resolution)) {
+          throw new Error('A autoridade financeira não confirmou a resolução da contestação.');
+        }
+        if (runtime) runtime.invalidateRelated();
+        showToast(resolution === 'cliente' ? 'Contestação encerrada. Cliente reembolsado.' : 'Contestação encerrada. Repasse liberado.');
+        return loadAdminData(true);
+      });
+    };
+    var promise = runtime ? runtime.runMutation(mutationKey, operation) : operation();
+    promise.catch(function (error) {
       showToast(error && error.message ? error.message : 'Não foi possível concluir a análise.');
     }).finally(function () {
-      buttons.forEach(function (item) { item.disabled = false; });
+      buttons.forEach(function (item) { item.disabled = false; item.removeAttribute('aria-busy'); });
     });
   }
 
@@ -509,7 +552,12 @@
     if (locked) locked.hidden = allowed;
     if (dashboard) dashboard.hidden = !allowed;
     if (root) root.dataset.adminAccess = allowed ? 'allowed' : 'blocked';
-    if (allowed) loadAdminData();
+    if (!allowed) {
+      var runtime = experience();
+      if (runtime) runtime.setState('ready', { access: 'blocked' });
+      return;
+    }
+    loadAdminData().catch(function () { /* state and toast handled by loadAdminData */ });
   }
 
   function bind() {
@@ -558,12 +606,12 @@
     }
 
     document.addEventListener('doke:auth-session-change', updateAccess);
-    document.addEventListener('doke:wallet-dispute-resolved', loadAdminData);
-    document.addEventListener('doke:wallet-dispute-opened', loadAdminData);
-    document.addEventListener('doke:wallet-dispute-responded', loadAdminData);
-    document.addEventListener('doke:wallet-withdraw-requested', loadAdminData);
-    document.addEventListener('doke:wallet-withdraw-completed', loadAdminData);
-    document.addEventListener('doke:wallet-withdraw-resolved', loadAdminData);
+    document.addEventListener('doke:wallet-dispute-resolved', function () { loadAdminData(true).catch(function () {}); });
+    document.addEventListener('doke:wallet-dispute-opened', function () { loadAdminData(true).catch(function () {}); });
+    document.addEventListener('doke:wallet-dispute-responded', function () { loadAdminData(true).catch(function () {}); });
+    document.addEventListener('doke:wallet-withdraw-requested', function () { loadAdminData(true).catch(function () {}); });
+    document.addEventListener('doke:wallet-withdraw-completed', function () { loadAdminData(true).catch(function () {}); });
+    document.addEventListener('doke:wallet-withdraw-resolved', function () { loadAdminData(true).catch(function () {}); });
   }
 
   function init() {

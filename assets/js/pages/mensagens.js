@@ -1,5 +1,6 @@
 (() => {
   const conversations = {};
+  let hydratedConversationScope = "";
 
   const getConversationInitials = (name) => String(name || "")
     .trim()
@@ -18,23 +19,14 @@
 
   const getCurrentUser = () => {
     try {
-      const sessionUser = window.Doke?.session?.getCurrentUser?.() || window.DokeAuth?.service?.getCurrentUser?.();
-      if (sessionUser) return sessionUser;
-    } catch (error) {
-      // fallback below
-    }
-
-    try {
-      const raw = window.localStorage.getItem("doke.auth.session.v1");
-      const session = raw ? JSON.parse(raw) : null;
-      return session?.user || null;
+      return window.Doke?.session?.getCurrentUser?.() || window.DokeAuth?.service?.getCurrentUser?.() || null;
     } catch (error) {
       return null;
     }
   };
 
   const getCurrentUserId = () => getCurrentUser()?.id || "";
-  const getCurrentUserRole = () => getCurrentUser()?.role || "client";
+  const getCurrentUserRole = () => getCurrentUser()?.role || "guest";
   const isProfessionalUser = (user = getCurrentUser()) => Boolean(user?.role === "professional");
   const isDemoProfessionalUser = (user = getCurrentUser()) => Boolean(isProfessionalUser(user) && String(user?.id) === "user_profissional_demo");
   const isProfessionalConversationView = (conversation) => {
@@ -44,14 +36,37 @@
     if (professionalId && professionalId === String(user.id)) return true;
     return isDemoProfessionalUser(user) && Boolean(conversation?.orderId || conversation?.order?.id);
   };
-  const canUseChargeAction = (conversation) => Boolean(isProfessionalConversationView(conversation));
-
   const normalizeStatusToken = (value) => String(value || "")
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9_]+/g, "_")
     .replace(/^_+|_+$/g, "");
+
+  const getOrdersStateMachine = () => window.Doke?.services?.orders?.stateMachine || null;
+  const getConversationOrder = (conversation) => Object.assign({}, conversation?.order || {}, {
+    id: conversation?.order?.id || conversation?.orderId || "",
+    clientId: conversation?.order?.clientId || conversation?.clientId || "",
+    professionalId: conversation?.order?.professionalId || conversation?.professionalId || "",
+    providerId: conversation?.order?.providerId || conversation?.professionalId || "",
+    status: conversation?.order?.status || conversation?.status || "pending"
+  });
+  const canTransitionConversationOrder = (conversation, nextStatus) => {
+    const user = getCurrentUser();
+    if (!conversation || !user?.id) return false;
+    const order = getConversationOrder(conversation);
+    const stateMachine = getOrdersStateMachine();
+    if (stateMachine?.canTransition) return stateMachine.canTransition(order, nextStatus, user);
+    const current = normalizeStatusToken(order.status);
+    const target = normalizeStatusToken(nextStatus);
+    if (user.role === "professional" && isProfessionalConversationView(conversation)) {
+      return current === "pending" ? ["accepted", "cancelled"].includes(target) : ["accepted", "conversation"].includes(current) && target === "quoted";
+    }
+    return user.role === "client" && String(order.clientId || "") === String(user.id) && current === "quoted" && ["in_progress", "cancelled"].includes(target);
+  };
+  const canUseChargeAction = (conversation) => Boolean(
+    isProfessionalConversationView(conversation) && canTransitionConversationOrder(conversation, "quoted")
+  );
 
   const getDisputeReasonLabel = (dispute) => {
     const code = normalizeStatusToken(dispute?.reasonCode || "");
@@ -504,15 +519,37 @@
     return true;
   };
 
+  const getConversationScopeKey = () => {
+    const user = getCurrentUser();
+    return user?.id ? `${String(user.id)}:${String(user.role || "guest")}` : "guest";
+  };
+
+  const clearHydratedConversationScope = (root) => {
+    Object.keys(conversations).forEach((conversationId) => delete conversations[conversationId]);
+    root?.querySelectorAll?.('[data-local-conversation="true"]').forEach((card) => card.remove());
+  };
+
   const hydrateLocalConversations = (root) => {
     const service = window.Doke?.services?.messages;
     const { ordersList } = getConversationLists(root);
-    if (!service?.listLocalConversations || !ordersList) return false;
+    const scopeKey = getConversationScopeKey();
+    const scopeChanged = scopeKey !== hydratedConversationScope;
+
+    if (scopeChanged) {
+      clearHydratedConversationScope(root);
+      hydratedConversationScope = scopeKey;
+    }
+
+    if (!service?.listLocalConversations || !ordersList) {
+      return { scopeChanged, count: 0, conversationIds: [] };
+    }
 
     const localConversations = service.listLocalConversations({ currentUser: true }) || [];
+    const currentConversationIds = new Set();
     localConversations.slice().reverse().forEach((conversation) => {
       if (!conversation?.id) return;
       const conversationId = String(conversation.id);
+      currentConversationIds.add(conversationId);
       const reconciliation = reconcileLocalConversationOrder(conversation);
       const sourceConversation = reconciliation.conversation || conversation;
       if (reconciliation.changed) {
@@ -525,7 +562,19 @@
       conversations[conversationId] = Object.assign({}, conversations[conversationId] || {}, mapped);
       ensureLocalConversationCard(root, conversationId, conversations[conversationId]);
     });
-    return true;
+
+    Object.keys(conversations).forEach((conversationId) => {
+      if (!currentConversationIds.has(conversationId)) delete conversations[conversationId];
+    });
+    root.querySelectorAll('[data-local-conversation="true"]').forEach((card) => {
+      if (!currentConversationIds.has(String(card.dataset.messageId || ""))) card.remove();
+    });
+
+    return {
+      scopeChanged,
+      count: currentConversationIds.size,
+      conversationIds: Array.from(currentConversationIds)
+    };
   };
 
   const persistConversationMessage = (conversationId, message) => {
@@ -1463,7 +1512,6 @@
 
     const renderLinkedOrderContext = (conversation) => {
       const order = conversation?.order || {};
-      const role = getCurrentUserRole();
       const professionalView = isProfessionalConversationView(conversation);
       const peerLabel = professionalView ? 'Cliente' : 'Profissional';
       const peerName = professionalView
@@ -1472,37 +1520,36 @@
       const orderStatus = getOrderStatus(conversation);
       const disputePresentation = getConversationDisputePresentation(conversation);
       const statusLabel = disputePresentation ? disputePresentation.label : order.statusLabel || 'Em negociação';
-      const isPending = isOrderPendingAcceptance(conversation);
       const isDeclined = isOrderDeclined(conversation);
-      const unlocked = isOrderConversationUnlocked(conversation);
+      const canAccept = canTransitionConversationOrder(conversation, 'accepted');
+      const canDecline = professionalView && canTransitionConversationOrder(conversation, 'cancelled');
+      const canQuote = canTransitionConversationOrder(conversation, 'quoted');
       let primaryLabel = 'Aguardando aceite';
       let primaryClass = 'doke-btn--soft';
       let primaryAttrs = 'aria-disabled="true" disabled';
+
       if (disputePresentation && !isDisputePresentationActive(disputePresentation)) {
         primaryLabel = disputePresentation.state === 'reembolsado' ? 'Cliente reembolsado' : 'Repasse liberado';
-        primaryClass = 'doke-btn--soft';
-        primaryAttrs = 'aria-disabled="true" disabled';
-      } else if (isPending && professionalView) {
+      } else if (canAccept) {
         primaryLabel = 'Aceitar pedido';
         primaryClass = 'doke-btn--primary';
         primaryAttrs = 'data-messages-accept-order';
       } else if (isDeclined) {
         primaryLabel = 'Pedido recusado';
+      } else if (canQuote) {
+        primaryLabel = 'Enviar proposta';
+        primaryClass = 'doke-btn--primary';
+        primaryAttrs = 'data-messages-proposal-action';
       } else if (orderStatus === 'accepted' || orderStatus === 'conversation' || orderStatus === 'responded') {
-        primaryLabel = professionalView ? 'Enviar proposta' : 'Aguardando proposta';
-        primaryClass = professionalView ? 'doke-btn--primary' : 'doke-btn--soft';
-        primaryAttrs = professionalView ? 'data-messages-proposal-action' : 'aria-disabled="true" disabled';
+        primaryLabel = professionalView ? 'Proposta indisponível' : 'Aguardando proposta';
       } else if (orderStatus === 'quoted') {
         primaryLabel = professionalView ? 'Proposta enviada' : 'Ver proposta';
       } else if (orderStatus === 'in_progress') {
         primaryLabel = 'Em atendimento';
       } else if (orderStatus === 'completed') {
         primaryLabel = 'Pedido concluído';
-      } else if (unlocked && professionalView) {
-        primaryLabel = 'Enviar proposta';
-        primaryClass = 'doke-btn--primary';
-        primaryAttrs = 'data-messages-proposal-action';
       }
+
       return `
       <section class="messages-order-card messages-order-card--inline doke-card doke-order-card" data-domain-card="order" data-messages-order-context aria-label="Pedido vinculado à conversa">
         <div class="messages-order-card__head doke-order-card__meta">
@@ -1526,7 +1573,7 @@
           </div>
           <div class="messages-order-card__actions doke-order-card__actions">
             <button class="messages-order-card__button messages-order-card__button--ghost doke-btn doke-btn--ghost" type="button" data-messages-open-order-detail>Ver detalhes</button>
-            ${isPending && professionalView ? `<button class="messages-order-card__button doke-btn doke-btn--ghost" type="button" data-messages-decline-order>Recusar</button>` : ""}
+            ${canDecline ? `<button class="messages-order-card__button doke-btn doke-btn--ghost" type="button" data-messages-decline-order>Recusar</button>` : ""}
             <button class="messages-order-card__button doke-btn ${primaryClass}" type="button" ${primaryAttrs}>${primaryLabel}</button>
           </div>
         </div>
@@ -2681,7 +2728,13 @@
       if (proposalButton && root.contains(proposalButton)) {
         event.preventDefault();
         event.stopPropagation();
-        chargeButton?.click();
+        const conversation = conversations[activeId];
+        if (!canUseChargeAction(conversation)) {
+          renderThread(activeId, { scrollTo: "preserve" });
+          showCopyToast("A proposta não está disponível no estado atual deste pedido.");
+          return;
+        }
+        openChargeModal();
         return;
       }
 
@@ -2690,16 +2743,23 @@
         event.stopPropagation();
         const conversation = conversations[activeId];
         const orderId = conversation?.order?.id || conversation?.orderId;
-        if (!orderId || !window.Doke?.services?.orders) return;
+        const ordersService = window.Doke?.services?.orders;
+        const nextStatus = acceptOrderButton ? "accepted" : "cancelled";
+        if (!orderId || !ordersService) return;
+        if (!canTransitionConversationOrder(conversation, nextStatus)) {
+          renderThread(activeId, { scrollTo: "preserve" });
+          showCopyToast("Esta ação não é permitida no estado atual do pedido.");
+          return;
+        }
 
         if (acceptOrderButton) {
           acceptOrderButton.disabled = true;
           acceptOrderButton.textContent = "Aceitando...";
-          window.Doke.services.orders.accept(orderId).then((order) => {
+          ordersService.accept(orderId).then((order) => {
             if (conversation) {
-              conversation.order = Object.assign({}, conversation.order || {}, order || {}, { status: "accepted", statusLabel: "Pedido aceito" });
-              conversation.lastSeen = "Conversa liberada";
-              conversation.lastMessage = "Conversa liberada";
+              syncConversationOrderStatus(conversation, order);
+              conversation.lastSeen = order?.statusLabel || "Conversa liberada";
+              conversation.lastMessage = order?.statusLabel || "Conversa liberada";
             }
             renderThread(activeId, { scrollTo: "end" });
           }).catch((error) => {
@@ -2712,14 +2772,20 @@
 
         requestDeclineReason(orderId, declineOrderButton).then((reason) => {
           if (!reason || !reason.trim()) return;
+          if (!canTransitionConversationOrder(conversation, "cancelled")) {
+            renderThread(activeId, { scrollTo: "preserve" });
+            showCopyToast("Este pedido já não pode ser recusado.");
+            return;
+          }
 
           declineOrderButton.disabled = true;
           declineOrderButton.textContent = "Recusando...";
-          window.Doke.services.orders.decline(orderId, reason.trim()).then((order) => {
+          ordersService.decline(orderId, reason.trim()).then((order) => {
             if (conversation) {
-              conversation.order = Object.assign({}, conversation.order || {}, order || {}, { status: "cancelled", statusLabel: "Pedido recusado", refusalReason: reason.trim() });
-              conversation.lastSeen = "Pedido recusado";
-              conversation.lastMessage = "Pedido recusado";
+              syncConversationOrderStatus(conversation, order);
+              conversation.order = Object.assign({}, conversation.order || {}, { refusalReason: reason.trim() });
+              conversation.lastSeen = order?.statusLabel || "Pedido recusado";
+              conversation.lastMessage = order?.statusLabel || "Pedido recusado";
             }
             renderThread(activeId, { scrollTo: "end" });
           }).catch((error) => {
@@ -2791,16 +2857,32 @@
     });
 
     const refreshLocalConversationSurface = ({ preferRequested = false } = {}) => {
-      const hadActiveConversation = Boolean(activeId && conversations[activeId]);
-      hydrateLocalConversations(root);
+      const previousActiveId = activeId;
+      const hydrationResult = hydrateLocalConversations(root);
+      const activeConversationRemoved = Boolean(previousActiveId && !conversations[previousActiveId]);
+
+      if (hydrationResult.scopeChanged) {
+        selectedConversationIds.clear();
+        selectedMessageIndexes.clear();
+        activeId = "";
+        renderEmptyThread();
+      } else if (activeConversationRemoved) {
+        activeId = "";
+        renderEmptyThread();
+      }
+
       prepareConversationItems();
       refreshConversationCards();
       syncVisibility();
       hydration?.mark('local-conversations');
+
       const nextConversationFromOrder = requestedOrderId
         ? Object.keys(conversations).find((id) => String(conversations[id]?.orderId || conversations[id]?.order?.id || "") === String(requestedOrderId))
         : "";
-      if (preferRequested && !hadActiveConversation) {
+      const hasActiveConversation = Boolean(activeId && conversations[activeId]);
+      const shouldSelectConversation = preferRequested && !hasActiveConversation;
+
+      if (shouldSelectConversation) {
         const nextId = (requestedConversationId && conversations[requestedConversationId] ? requestedConversationId : "")
           || nextConversationFromOrder
           || refreshConversationItems().find((item) => item.dataset.messageId && conversations[item.dataset.messageId])?.dataset.messageId
@@ -2812,6 +2894,11 @@
           syncVisibility();
           renderThread(nextId, { scrollTo: "start", openOnMobile: Boolean(requestedOrderId || requestedConversationId) });
         }
+        return;
+      }
+
+      if (hasActiveConversation) {
+        renderThread(activeId, { scrollTo: "preserve", openOnMobile: false });
       }
     };
 
@@ -2825,6 +2912,7 @@
     document.addEventListener("doke:order-created", () => refreshLocalConversationSurface({ preferRequested: true }));
     document.addEventListener("doke:order-status-changed", () => refreshLocalConversationSurface({ preferRequested: true }));
     document.addEventListener("doke:message-sent", () => refreshLocalConversationSurface({ preferRequested: true }));
+    document.addEventListener("doke:message-removed", () => refreshLocalConversationSurface({ preferRequested: true }));
     document.addEventListener('doke:page-hydration-ready', (event) => {
       if (event.detail?.page !== 'mensagens') return;
       syncVisibility();
@@ -3241,7 +3329,7 @@
       }
       if (!canUseChargeAction(activeConversation)) {
         syncChargeActionVisibility(activeConversation);
-        showCopyToast("Cobrança é uma ação disponível apenas para profissionais.");
+        showCopyToast("A proposta não está disponível no estado atual deste pedido.");
         return;
       }
       const lockMessage = getConversationLockMessage(activeConversation);
@@ -3330,36 +3418,59 @@
 
     chargeForm?.addEventListener("submit", (event) => {
       event.preventDefault();
-      if (!conversations[activeId]) return;
+      const conversationId = activeId;
+      const conversation = conversations[conversationId];
+      const ordersService = window.Doke?.services?.orders;
+      const orderId = conversation?.order?.id || conversation?.orderId;
       const normalized = String(chargeAmountInput?.value || "").trim();
-      if (!normalized) return;
-      const chargeMessage = {
-        author: "Você",
-        time: "agora",
-        text: "Proposta pronta para aprovação. Você pode pagar por aqui para confirmar o atendimento.",
-        mine: true,
-        senderId: getCurrentUserId(),
-        type: "charge",
-        amount: normalized.startsWith("R$") ? normalized : `R$ ${normalized}`,
-        installments: chargeInstallments?.selectedOptions?.[0]?.textContent || "À vista",
-        paid: false
-      };
-      conversations[activeId].messages.push(chargeMessage);
-      persistConversationMessage(activeId, chargeMessage)
-        .then((savedMessage) => {
-          if (savedMessage) Object.assign(chargeMessage, savedMessage);
-          return updateOrderFromConversation('quoted', {
-            amount: chargeMessage.amount,
-            budget: chargeMessage.amount,
-            installments: chargeMessage.installments
-          });
-        })
-        .then(() => {
-          closeChargeModal();
-          renderThread(activeId, { scrollTo: "end" });
-          showCopyToast('Proposta enviada ao cliente.');
-        })
-        .catch((error) => showCopyToast(error?.message || 'Não foi possível enviar a proposta.'));
+      const submitButton = chargeForm.querySelector('[type="submit"]');
+
+      if (!conversation || !orderId || !ordersService?.submitProposal) {
+        showCopyToast("Não foi possível localizar o pedido vinculado à conversa.");
+        return;
+      }
+      if (!normalized) {
+        showCopyToast("Informe o valor da proposta.");
+        chargeAmountInput?.focus();
+        return;
+      }
+      if (!canUseChargeAction(conversation)) {
+        closeChargeModal();
+        renderThread(conversationId, { scrollTo: "preserve" });
+        showCopyToast("A proposta não está disponível no estado atual deste pedido.");
+        return;
+      }
+
+      const amount = normalized.startsWith("R$") ? normalized : `R$ ${normalized}`;
+      const installments = chargeInstallments?.selectedOptions?.[0]?.textContent || "À vista";
+      if (submitButton) submitButton.disabled = true;
+
+      ordersService.submitProposal(orderId, {
+        amount,
+        budget: amount,
+        installments,
+        messageText: "Proposta pronta para aprovação. Você pode pagar por aqui para confirmar o atendimento."
+      }).then((result) => {
+        const currentConversation = conversations[conversationId];
+        if (currentConversation && result?.order) syncConversationOrderStatus(currentConversation, result.order);
+        if (currentConversation && result?.message) {
+          const messageId = String(result.message.id || result.message.messageId || "");
+          const alreadyHydrated = messageId && currentConversation.messages.some((message) => String(message.id || message.messageId || "") === messageId);
+          if (!alreadyHydrated) currentConversation.messages.push(result.message);
+          currentConversation.lastMessage = getMessagePreview(result.message) || currentConversation.lastMessage;
+          currentConversation.lastSeen = result.order?.statusLabel || currentConversation.lastSeen;
+        }
+        closeChargeModal();
+        if (activeId === conversationId) renderThread(conversationId, { scrollTo: "end" });
+        showCopyToast("Proposta enviada ao cliente.");
+      }).catch((error) => {
+        if (error?.rollbackMessageFailed) {
+          console.warn("[DokeMessages:proposalRollback]", error.rollbackError || error);
+        }
+        showCopyToast(error?.message || "Não foi possível enviar a proposta.");
+      }).finally(() => {
+        if (submitButton) submitButton.disabled = false;
+      });
     });
 
     chargeCancelButtons.forEach((button) => {

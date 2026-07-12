@@ -50,17 +50,13 @@
         var sessionUser = Doke.session.getCurrentUser();
         if (sessionUser) return sessionUser;
       }
-    } catch (error) {
-      // keep fallback below
-    }
-
-    try {
-      var raw = window.localStorage.getItem('doke.auth.session.v1');
-      var session = raw ? JSON.parse(raw) : null;
-      return session && session.user ? session.user : null;
+      if (window.DokeAuth && window.DokeAuth.service && typeof window.DokeAuth.service.getCurrentUser === 'function') {
+        return window.DokeAuth.service.getCurrentUser() || null;
+      }
     } catch (error) {
       return null;
     }
+    return null;
   }
 
   function getInitials(value) {
@@ -79,7 +75,7 @@
 
   function isProfessionalView(order) {
     var user = getCurrentUser();
-    if (!user || !user.id) return false;
+    if (!user || !user.id || user.role !== 'professional') return false;
     if (String(user.id) === String(order.professionalId || order.providerId)) return true;
     return isDemoProfessional(user) && Boolean(order && order.id && (order.clientId || order.serviceId));
   }
@@ -91,6 +87,25 @@
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9_]+/g, '_')
       .replace(/^_+|_+$/g, '');
+  }
+
+  function canTransitionOrder(order, nextStatus) {
+    var user = getCurrentUser();
+    var stateMachine = Doke.services && Doke.services.orders && Doke.services.orders.stateMachine;
+    if (!order || !user || !user.id) return false;
+    if (stateMachine && typeof stateMachine.canTransition === 'function') {
+      return stateMachine.canTransition(order, nextStatus, user);
+    }
+
+    var currentStatus = normalizeStatusToken(order.status || 'pending');
+    var targetStatus = normalizeStatusToken(nextStatus);
+    if (user.role === 'professional' && isProfessionalView(order)) {
+      return currentStatus === 'pending' && (targetStatus === 'accepted' || targetStatus === 'cancelled');
+    }
+    if (user.role === 'client' && String(order.clientId || '') === String(user.id)) {
+      return currentStatus === 'quoted' && (targetStatus === 'in_progress' || targetStatus === 'cancelled');
+    }
+    return false;
   }
 
   function getWalletDisputeForOrder(order) {
@@ -296,6 +311,8 @@
     var id = escapeHtml(order.id);
     var status = escapeHtml(order.status || 'pending');
     var professionalView = isProfessionalView(order);
+    var canAcceptOrder = canTransitionOrder(order, 'accepted');
+    var canDeclineOrder = canTransitionOrder(order, 'cancelled') && professionalView;
     var dispute = getWalletDisputeForOrder(order);
     var disputePresentation = getOrderDisputePresentation(dispute, order);
     var walletTransaction = getWalletTransactionForOrder(order);
@@ -400,9 +417,9 @@
         ${disputePresentation ? `
         <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-open="details"><span>Ver detalhes</span></button>
         <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-open="chat"><span>Conversa</span></button>
-        ` : professionalView && (order.status || 'pending') === 'pending' ? `
-        <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-accept="${id}"><span>Aceitar pedido</span></button>
-        <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-decline="${id}"><span>Recusar</span></button>
+        ` : canAcceptOrder || canDeclineOrder ? `
+        ${canAcceptOrder ? `<button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-accept="${id}"><span>Aceitar pedido</span></button>` : ``}
+        ${canDeclineOrder ? `<button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-decline="${id}"><span>Recusar</span></button>` : ``}
         ` : `
         <button class="order-card__button order-card__button--primary doke-btn doke-btn--primary" type="button" data-order-open="details"><span>Ver detalhes</span></button>
         <button class="order-card__button order-card__button--secondary doke-btn doke-btn--ghost" type="button" data-order-open="chat"><span>${escapeHtml(getPrimaryActionLabel(order, professionalView))}</span></button>
@@ -632,6 +649,19 @@
     });
   });
 
+  function getOrderForTransition(orderId) {
+    var service = Doke.services && Doke.services.orders;
+    if (service && typeof service.getById === 'function') return service.getById(orderId);
+    var repository = Doke.repositories && Doke.repositories.orders;
+    if (repository && typeof repository.listLocal === 'function') {
+      var order = repository.listLocal({ currentUser: true }).find(function (item) {
+        return String(item && item.id || '') === String(orderId || '');
+      }) || null;
+      return Promise.resolve(order);
+    }
+    return Promise.resolve(null);
+  }
+
   document.addEventListener('click', function (event) {
     var acceptButton = event.target && event.target.closest && event.target.closest('[data-order-accept]');
     var declineButton = event.target && event.target.closest && event.target.closest('[data-order-decline]');
@@ -641,46 +671,70 @@
     if (!orderId || !Doke.services || !Doke.services.orders) return;
 
     event.preventDefault();
+    event.stopPropagation();
 
-    if (acceptButton) {
-      var acceptLabel = acceptButton.querySelector('span') || acceptButton;
-      acceptLabel.textContent = 'Aceitando...';
-      var acceptExperience = window.DokeOrders && window.DokeOrders.experience;
-      var acceptTask = acceptExperience && typeof acceptExperience.mutateStatus === 'function'
-        ? acceptExperience.mutateStatus({ orderId: orderId, action: 'accept', card: acceptButton.closest('.order-card') })
-        : Doke.services.orders.accept(orderId);
-
-      acceptTask.then(function () {
+    getOrderForTransition(orderId).then(function (order) {
+      var nextStatus = acceptButton ? 'accepted' : 'cancelled';
+      if (!order || !canTransitionOrder(order, nextStatus)) {
         scheduleRender({ force: true });
-        if (typeof window.DokeNavigate === 'function') window.DokeNavigate('mensagens.html?order=' + encodeURIComponent(orderId));
-        else window.location.href = 'mensagens.html?order=' + encodeURIComponent(orderId);
-      }).catch(function (error) {
-        acceptButton.disabled = false;
-        acceptButton.removeAttribute('aria-disabled');
-        acceptLabel.textContent = 'Aceitar pedido';
-        window.alert(error && error.message ? error.message : 'Não foi possível aceitar o pedido.');
+        window.alert('Esta ação não é permitida no estado atual do pedido.');
+        return;
+      }
+
+      if (acceptButton) {
+        var acceptLabel = acceptButton.querySelector('span') || acceptButton;
+        acceptButton.disabled = true;
+        acceptButton.setAttribute('aria-disabled', 'true');
+        acceptLabel.textContent = 'Aceitando...';
+        var acceptExperience = window.DokeOrders && window.DokeOrders.experience;
+        var acceptTask = acceptExperience && typeof acceptExperience.mutateStatus === 'function'
+          ? acceptExperience.mutateStatus({ orderId: orderId, action: 'accept', card: acceptButton.closest('.order-card') })
+          : Doke.services.orders.accept(orderId);
+
+        acceptTask.then(function () {
+          scheduleRender({ force: true });
+          if (typeof window.DokeNavigate === 'function') window.DokeNavigate('mensagens.html?order=' + encodeURIComponent(orderId));
+          else window.location.href = 'mensagens.html?order=' + encodeURIComponent(orderId);
+        }).catch(function (error) {
+          acceptButton.disabled = false;
+          acceptButton.removeAttribute('aria-disabled');
+          acceptLabel.textContent = 'Aceitar pedido';
+          window.alert(error && error.message ? error.message : 'Não foi possível aceitar o pedido.');
+        });
+        return;
+      }
+
+      requestDeclineReason(orderId, declineButton).then(function (reason) {
+        if (!reason || !reason.trim()) return;
+        return getOrderForTransition(orderId).then(function (currentOrder) {
+          if (!currentOrder || !canTransitionOrder(currentOrder, 'cancelled')) {
+            scheduleRender({ force: true });
+            window.alert('Este pedido já não pode ser recusado.');
+            return;
+          }
+
+          var declineLabel = declineButton.querySelector('span') || declineButton;
+          declineButton.disabled = true;
+          declineButton.setAttribute('aria-disabled', 'true');
+          declineLabel.textContent = 'Recusando...';
+          var declineExperience = window.DokeOrders && window.DokeOrders.experience;
+          var declineTask = declineExperience && typeof declineExperience.mutateStatus === 'function'
+            ? declineExperience.mutateStatus({ orderId: orderId, action: 'decline', args: [reason.trim()], card: declineButton.closest('.order-card') })
+            : Doke.services.orders.decline(orderId, reason.trim());
+
+          return declineTask.then(function () {
+            scheduleRender({ force: true });
+          }).catch(function (error) {
+            declineButton.disabled = false;
+            declineButton.removeAttribute('aria-disabled');
+            declineLabel.textContent = 'Recusar';
+            window.alert(error && error.message ? error.message : 'Não foi possível recusar o pedido.');
+          });
+        });
       });
-      return;
-    }
-
-    requestDeclineReason(orderId, declineButton).then(function (reason) {
-      if (!reason || !reason.trim()) return;
-
-      var declineLabel = declineButton.querySelector('span') || declineButton;
-      declineLabel.textContent = 'Recusando...';
-      var declineExperience = window.DokeOrders && window.DokeOrders.experience;
-      var declineTask = declineExperience && typeof declineExperience.mutateStatus === 'function'
-        ? declineExperience.mutateStatus({ orderId: orderId, action: 'decline', args: [reason.trim()], card: declineButton.closest('.order-card') })
-        : Doke.services.orders.decline(orderId, reason.trim());
-
-      declineTask.then(function () {
-        scheduleRender({ force: true });
-      }).catch(function (error) {
-        declineButton.disabled = false;
-        declineButton.removeAttribute('aria-disabled');
-        declineLabel.textContent = 'Recusar';
-        window.alert(error && error.message ? error.message : 'Não foi possível recusar o pedido.');
-      });
+    }).catch(function (error) {
+      scheduleRender({ force: true });
+      window.alert(error && error.message ? error.message : 'Não foi possível validar o estado do pedido.');
     });
   });
 

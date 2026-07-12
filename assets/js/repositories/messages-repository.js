@@ -232,7 +232,7 @@
   }
 
   function matchesCurrentUser(conversation, user) {
-    if (!user || !user.id) return true;
+    if (!user || !user.id) return false;
     if ((conversation.participants || []).map(String).indexOf(String(user.id)) !== -1) return true;
     if (user.role === 'professional') {
       if (String(conversation.professionalId) === String(user.id)) return true;
@@ -422,6 +422,40 @@
     return Promise.resolve(clone(normalizedMessage));
   }
 
+  function getMessagePreview(message) {
+    if (!message) return '';
+    if (message.type === 'audio') return 'Áudio enviado';
+    if (message.type === 'image') return 'Imagem enviada';
+    if (message.type === 'charge') return message.amount ? 'Proposta ' + message.amount : 'Proposta enviada';
+    return normalizeText(message.text || message.body || '');
+  }
+
+  function removeMessage(conversationId, messageId) {
+    var id = normalizeText(conversationId);
+    var targetMessageId = normalizeText(messageId);
+    if (!id || !targetMessageId) return Promise.resolve(false);
+
+    var conversations = readLocal();
+    var index = conversations.findIndex(function (item) { return String(item.id) === id; });
+    if (index < 0) return Promise.resolve(false);
+
+    var conversation = conversations[index];
+    var messages = Array.isArray(conversation.messages) ? conversation.messages : [];
+    var nextMessages = messages.filter(function (message) {
+      return String(message && (message.id || message.messageId) || '') !== targetMessageId;
+    });
+    if (nextMessages.length === messages.length) return Promise.resolve(false);
+
+    conversation.messages = nextMessages;
+    var lastMessage = nextMessages.length ? nextMessages[nextMessages.length - 1] : null;
+    conversation.lastMessage = getMessagePreview(lastMessage) || conversation.lastSeen || conversation.statusLabel || 'Conversa do pedido';
+    conversation.updatedAt = nowIso();
+    conversations.splice(index, 1);
+    conversations.unshift(conversation);
+    writeLocal(conversations);
+    return Promise.resolve(true);
+  }
+
   function markAsRead(conversationId) {
     var id = normalizeText(conversationId);
     var conversations = readLocal();
@@ -452,6 +486,7 @@
     createForOrder: createForOrder,
     updateOrderContext: updateOrderContext,
     addMessage: addMessage,
+    removeMessage: removeMessage,
     markAsRead: markAsRead,
     clearLocal: function () { writeLocal([]); }
   });

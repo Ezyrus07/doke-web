@@ -1,18 +1,18 @@
 /* Configurações — rebuild estrutural da página, sem herdar centralização de container global. */
 
 body.doke-settings-redesign {
-  --settings-bg: var(--shell-page-bg, #eef7fd);
-  --settings-surface: var(--doke-visual-surface);
-  --settings-surface-muted: var(--doke-visual-surface-muted);
-  --settings-border: var(--border-color-soft);
-  --settings-border-strong: var(--border-color);
-  --settings-text: var(--color-heading);
-  --settings-muted: var(--color-text-muted);
-  --settings-primary: var(--color-primary);
-  --settings-primary-strong: var(--color-primary-strong);
-  --settings-primary-soft: var(--color-primary-soft);
+  --settings-bg: var(--doke-settings-bg, var(--shell-page-bg, #eef7fd));
+  --settings-surface: var(--doke-settings-surface, var(--doke-visual-surface));
+  --settings-surface-muted: var(--doke-settings-surface-muted, var(--doke-visual-surface-muted));
+  --settings-border: var(--doke-settings-border, var(--border-color-soft));
+  --settings-border-strong: var(--doke-settings-border-strong, var(--border-color));
+  --settings-text: var(--doke-settings-text, var(--color-heading));
+  --settings-muted: var(--doke-settings-muted, var(--color-text-muted));
+  --settings-primary: var(--doke-settings-primary, var(--color-primary));
+  --settings-primary-strong: var(--doke-settings-primary-strong, var(--color-primary-strong));
+  --settings-primary-soft: var(--doke-settings-primary-soft, var(--color-primary-soft));
   --settings-green: var(--color-secondary);
-  --settings-danger: var(--color-danger-strong);
+  --settings-danger: var(--doke-settings-danger, var(--color-danger-strong));
   --doke-form-control-border: var(--settings-border);
   --doke-form-control-bg: var(--settings-surface-muted);
   --doke-form-control-color: #123761;
@@ -21,9 +21,9 @@ body.doke-settings-redesign {
   --doke-form-control-focus-border: rgba(31, 93, 145, 0.55);
   --doke-form-control-focus-ring: 0 0 0 4px rgba(31, 93, 145, 0.08);
   --doke-form-control-focus-bg: #fff;
-  --settings-radius-lg: var(--doke-visual-radius-lg);
-  --settings-radius-md: var(--doke-visual-radius);
-  --settings-radius-sm: var(--doke-visual-radius-sm);
+  --settings-radius-lg: var(--doke-settings-radius-lg, var(--doke-visual-radius-lg));
+  --settings-radius-md: var(--doke-settings-radius, var(--doke-visual-radius));
+  --settings-radius-sm: var(--doke-settings-radius-sm, var(--doke-visual-radius-sm));
   --settings-shadow: var(--doke-elevation-surface-hover);
   background: var(--settings-bg);
 }
@@ -69,7 +69,7 @@ body.doke-settings-redesign svg {
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-columns: 360px minmax(0, 1fr);
+  grid-template-columns: var(--doke-settings-sidebar-width, 360px) minmax(0, 1fr);
   gap: 0;
   align-items: stretch;
 }
@@ -207,12 +207,12 @@ body.doke-settings-redesign svg {
 
 .settings-card__header {
   flex: 0 0 auto;
-  min-height: 112px;
+  min-height: var(--doke-settings-header-min-height, 112px);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 28px 44px;
+  padding: 28px var(--doke-settings-gutter, 44px);
   border-bottom: 1px solid var(--settings-border);
 }
 
@@ -259,7 +259,7 @@ body.doke-settings-redesign svg {
   grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
   gap: clamp(24px, 4vw, 72px);
   align-items: center;
-  max-width: 1080px;
+  max-width: var(--doke-settings-content-max, 1080px);
   padding-bottom: 30px;
   border-bottom: var(--doke-visual-border);
 }
@@ -310,7 +310,7 @@ body.doke-settings-redesign svg {
 }
 
 .settings-form {
-  max-width: 1080px;
+  max-width: var(--doke-settings-content-max, 1080px);
   padding-top: 30px;
 }
 
@@ -321,7 +321,7 @@ body.doke-settings-redesign svg {
 .settings-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  gap: var(--doke-settings-grid-gap-y, 18px) var(--doke-settings-grid-gap-x, 18px);
 }
 
 .settings-field {
@@ -350,14 +350,14 @@ body.doke-settings-redesign svg {
 
 .settings-list-item {
   min-width: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 22px;
-  padding: 18px;
-  border: var(--doke-visual-border);
-  border-radius: var(--radius-md);
-  background: var(--doke-visual-surface-muted);
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--settings-border);
+  border-radius: var(--settings-radius-md);
+  background: var(--settings-surface);
 }
 
 .settings-list-item--danger {
@@ -591,7 +591,7 @@ body.doke-settings-redesign svg {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  gap: var(--doke-settings-grid-gap-y, 18px) var(--doke-settings-grid-gap-x, 18px);
   margin-top: 18px;
   padding: 16px 18px;
   border: var(--doke-visual-border);
@@ -623,7 +623,7 @@ body.doke-settings-redesign svg {
 }
 
 .settings-tag-row {
-  max-width: 1080px;
+  max-width: var(--doke-settings-content-max, 1080px);
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -750,7 +750,7 @@ body.doke-settings-redesign svg {
 }
 
 .settings-pro-cta {
-  max-width: 1080px;
+  max-width: var(--doke-settings-content-max, 1080px);
   margin-top: 28px;
   padding: 20px;
   display: flex;
@@ -798,7 +798,7 @@ body.doke-settings-redesign svg {
 
 .professional-onboarding {
   display: grid;
-  gap: 18px;
+  gap: var(--doke-settings-grid-gap-y, 18px) var(--doke-settings-grid-gap-x, 18px);
 }
 
 .professional-step {
@@ -847,7 +847,7 @@ body.doke-settings-redesign svg {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  gap: var(--doke-settings-grid-gap-y, 18px) var(--doke-settings-grid-gap-x, 18px);
   padding: 18px;
   border: var(--doke-visual-border);
   border-radius: var(--radius-md);
@@ -983,4 +983,37 @@ body.doke-settings-redesign svg {
 .settings-pro-cta,
 .settings-pro-cta:where(:hover, :focus-within) {
   border-color: transparent;
+}
+
+/* White surfaces sweep v6 */
+body.doke-settings-redesign {
+  --settings-bg: #fff;
+  --settings-surface: #fff;
+  --settings-surface-muted: #fff;
+  --doke-form-control-bg: #fff;
+}
+
+body.doke-settings-redesign .settings-main,
+body.doke-settings-redesign .settings-sidebar,
+body.doke-settings-redesign .settings-card,
+body.doke-settings-redesign .settings-card__footer,
+body.doke-settings-redesign .settings-section,
+body.doke-settings-redesign .settings-surface,
+body.doke-settings-redesign .settings-group,
+body.doke-settings-redesign .settings-upload,
+body.doke-settings-redesign .settings-empty,
+body.doke-settings-redesign .settings-field,
+body.doke-settings-redesign .settings-inline-card,
+body.doke-settings-redesign .settings-summary-card,
+body.doke-settings-redesign .settings-profile-card {
+  background: #fff;
+}
+
+body.doke-settings-redesign .doke-input,
+body.doke-settings-redesign .doke-textarea,
+body.doke-settings-redesign select,
+body.doke-settings-redesign input,
+body.doke-settings-redesign textarea,
+body.doke-settings-redesign .settings-sidebar-search__input {
+  background: #fff;
 }

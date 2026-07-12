@@ -31,10 +31,32 @@
     ]
   };
 
+  const appendDetailContent = (container, paragraphs, category) => {
+    container.replaceChildren();
+    paragraphs.forEach((text) => {
+      const paragraph = document.createElement('p');
+      paragraph.textContent = text;
+      container.append(paragraph);
+    });
+
+    const list = document.createElement('ul');
+    const categoryItem = document.createElement('li');
+    const statusItem = document.createElement('li');
+    const originItem = document.createElement('li');
+    categoryItem.textContent = `Categoria: ${category}`;
+    statusItem.textContent = 'Status: exemplo navegável';
+    originItem.textContent = 'Origem: central de novidades';
+    list.append(categoryItem, statusItem, originItem);
+    container.append(list);
+  };
+
   const initNewsPage = () => {
     const root = document.querySelector('[data-news-page]');
     if (!root || root.dataset.ready === 'true') return;
     root.dataset.ready = 'true';
+
+    const experience = window.Doke?.newsExperience;
+    const preference = experience?.begin?.() || { filter: 'all', expanded: false };
 
     window.DokeHomeDrawer?.create?.();
 
@@ -50,9 +72,21 @@
     const modalCategory = root.querySelector('[data-news-detail-category]');
     const modalContent = root.querySelector('[data-news-detail-content]');
     const modalCloseButtons = [...root.querySelectorAll('[data-news-detail-close]')];
+    let activeFilter = preference.filter || 'all';
+
+    const persistPreference = () => {
+      try {
+        experience?.savePreference?.({
+          filter: activeFilter,
+          expanded: loadMore?.dataset.expanded === 'true'
+        });
+      } catch (error) {
+        console.warn('[Doke][Novidades] Preferência mantida apenas nesta sessão.', error);
+      }
+    };
 
     const openDetail = (source) => {
-      if (!modal) return;
+      if (!modal || !source) return;
       const title = source.querySelector('h2, h3')?.textContent?.trim() || 'Novidade';
       const summary = source.querySelector('p')?.textContent?.trim() || 'Veja os detalhes desta novidade da plataforma.';
       const date = source.querySelector('time')?.textContent?.trim() || 'Atualização recente';
@@ -66,7 +100,7 @@
       modalSummary.textContent = summary;
       modalDate.textContent = date;
       modalCategory.textContent = category;
-      modalContent.innerHTML = '<p>' + paragraphs.map((item) => item.replace(/[&<>"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]))).join('</p><p>') + '</p><ul><li>Categoria: ' + category + '</li><li>Status: exemplo navegável</li><li>Origem: central de novidades</li></ul>';
+      appendDetailContent(modalContent, paragraphs, category);
 
       modal.hidden = false;
       modal.setAttribute('aria-hidden', 'false');
@@ -107,7 +141,8 @@
       if (event.key === 'Escape' && modal && !modal.hidden) closeDetail();
     });
 
-    const applyFilter = (category) => {
+    const applyFilter = (category, { persist = true } = {}) => {
+      activeFilter = category;
       filters.forEach((button) => {
         const isActive = button.dataset.newsFilter === category;
         button.classList.toggle('is-active', isActive);
@@ -117,41 +152,41 @@
       cards.forEach((card) => {
         const cardCategory = card.dataset.newsCategory || 'all';
         const shouldShow = category === 'all' || cardCategory === category;
-        if (card.classList.contains('is-extra') && card.hidden && shouldShow && loadMore?.dataset.expanded !== 'true') {
+        if (card.classList.contains('is-extra') && loadMore?.dataset.expanded !== 'true' && shouldShow) {
+          card.hidden = true;
           return;
         }
         card.hidden = !shouldShow;
       });
 
       if (loadMore) {
-        if (category === 'all') {
-          loadMore.hidden = false;
-          if (loadMore.dataset.expanded !== 'true') {
-            extraCards.forEach((card) => { card.hidden = true; });
-          }
-        } else {
-          loadMore.hidden = true;
-        }
+        loadMore.hidden = category !== 'all';
       }
+
+      if (persist) persistPreference();
     };
 
     filters.forEach((button) => {
       button.addEventListener('click', () => applyFilter(button.dataset.newsFilter || 'all'));
     });
 
+    if (loadMore) {
+      loadMore.dataset.expanded = preference.expanded ? 'true' : 'false';
+      loadMore.querySelector('span').textContent = preference.expanded ? 'Mostrar menos' : 'Carregar mais';
+    }
+
     loadMore?.addEventListener('click', () => {
       const expanded = loadMore.dataset.expanded === 'true';
       loadMore.dataset.expanded = expanded ? 'false' : 'true';
-      if (expanded) {
-        extraCards.forEach((card) => { card.hidden = true; });
-        loadMore.querySelector('span').textContent = 'Carregar mais';
-      } else {
-        extraCards.forEach((card) => { card.hidden = false; });
-        loadMore.querySelector('span').textContent = 'Mostrar menos';
-      }
+      extraCards.forEach((card) => {
+        card.hidden = expanded || (activeFilter !== 'all' && card.dataset.newsCategory !== activeFilter);
+      });
+      loadMore.querySelector('span').textContent = expanded ? 'Carregar mais' : 'Mostrar menos';
+      persistPreference();
     });
 
-    applyFilter('all');
+    applyFilter(activeFilter, { persist: false });
+    experience?.ready?.({ source: 'static-editorial-content' });
   };
 
   window.DokeInitNews = initNewsPage;

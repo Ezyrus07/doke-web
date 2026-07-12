@@ -886,7 +886,7 @@ body[data-page="comunidade-interna"] .community-room-message__bubble {
   display: grid;
   gap: 6px;
   width: fit-content;
-  min-width: 0;
+  min-width: min(180px, 100%);
   max-width: 100%;
   padding: 10px 12px;
   border: 1px solid rgba(24, 75, 118, 0.11);
@@ -3974,9 +3974,8 @@ body[data-page="comunidade-interna"] .community-events-panel :is(
   .community-events-list,
   .community-event-form
 ) {
-  width: calc(100% - 48px);
-  margin-left: 24px;
-  margin-right: 24px;
+  width: min(calc(100% - 48px), 672px);
+  margin-inline: auto;
 }
 
 body[data-page="comunidade-interna"] .community-events-panel .community-events-summary {
@@ -3999,6 +3998,8 @@ body[data-page="comunidade-interna"] .community-events-panel .community-event-fo
 body[data-page="comunidade-interna"] .community-events-panel .community-event-form > label,
 body[data-page="comunidade-interna"] .community-events-panel .community-event-form__grid > label {
   display: grid;
+  align-self: start;
+  align-content: start;
   gap: 8px;
   min-width: 0;
 }
@@ -4018,16 +4019,18 @@ body[data-page="comunidade-interna"] .community-events-panel .community-event-fo
 body[data-page="comunidade-interna"] .community-events-panel .community-event-form :is(.doke-input, .doke-select) {
   width: 100%;
   min-width: 0;
-  min-height: 50px;
-  padding-inline: 16px;
+  height: var(--doke-settings-control-height, 50px);
+  min-height: var(--doke-settings-control-height, 50px);
+  max-height: var(--doke-settings-control-height, 50px);
+  padding-inline: var(--doke-settings-control-padding-x, 16px);
   border: 1px solid rgba(24, 75, 118, 0.14);
   border-radius: 13px;
   background: #f5f9fd;
 }
 
 body[data-page="comunidade-interna"] .community-events-panel .community-event-form .doke-textarea {
-  min-height: 132px;
-  padding: 14px 16px;
+  min-height: var(--doke-settings-textarea-md, 132px);
+  padding: 14px var(--doke-settings-control-padding-x, 16px);
   border: 1px solid rgba(24, 75, 118, 0.14);
   border-radius: 13px;
   background: #f5f9fd;
@@ -4180,4 +4183,74 @@ body[data-page="comunidade-interna"] .community-room-layout > .community-room-pa
     max-inline-size: 100vw;
     max-width: 100vw;
   }
+}
+
+/* Shared component migration v5: page keeps positioning only. */
+body[data-page="comunidade-interna"] .community-room-actions-menu {
+  right: 20px;
+  top: calc(100% - 8px);
+}
+body[data-page="comunidade-interna"] .community-room-message-menu {
+  min-width: 232px;
+  max-width: min(288px, calc(100vw - 24px));
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--border-color-soft, rgba(24, 75, 118, 0.14));
+  border-radius: var(--doke-visual-radius, 16px);
+  background: var(--doke-visual-surface, #fff);
+  box-shadow: 0 16px 40px rgba(18, 58, 91, 0.16);
+}
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel[data-community-panel="pinned"] .community-room-pinned-list {
+  width: 100%;
+  display: grid;
+  gap: 12px;
+  padding: 24px 28px;
+}
+body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel[data-community-panel="pinned"] .community-room-pinned-list article {
+  width: 100%;
+  min-height: 0;
+  padding: 18px;
+  border: 1px solid var(--border-color-soft, rgba(24, 75, 118, 0.14));
+  border-radius: var(--doke-visual-radius, 16px);
+  background: var(--doke-visual-surface-muted, #f7fafc);
+  box-shadow: none;
+}
+@media (max-width: 700px) {
+  body[data-page="comunidade-interna"] .community-room-layout > .community-room-panel[data-community-panel="pinned"] .community-room-pinned-list { padding: 20px; }
+}
+
+/* White surfaces sweep v6 */
+body[data-page="comunidade-interna"] {
+  --community-surface: #fff;
+  --community-surface-muted: #fff;
+}
+
+body[data-page="comunidade-interna"] .community-layout,
+body[data-page="comunidade-interna"] .community-sidebar,
+body[data-page="comunidade-interna"] .community-thread,
+body[data-page="comunidade-interna"] .community-thread__body,
+body[data-page="comunidade-interna"] .community-room,
+body[data-page="comunidade-interna"] .community-room__main,
+body[data-page="comunidade-interna"] .community-room__sidebar,
+body[data-page="comunidade-interna"] .community-room__content,
+body[data-page="comunidade-interna"] .community-room__composer,
+body[data-page="comunidade-interna"] .community-room-message__bubble,
+body[data-page="comunidade-interna"] .community-room-message__reply,
+body[data-page="comunidade-interna"] .community-room-search,
+body[data-page="comunidade-interna"] .community-channel-card,
+body[data-page="comunidade-interna"] .community-room-panel,
+body[data-page="comunidade-interna"] .community-room-panel__surface,
+body[data-page="comunidade-interna"] .community-room-pinned__item,
+body[data-page="comunidade-interna"] .community-room-event-card,
+body[data-page="comunidade-interna"] .community-room-event-form,
+body[data-page="comunidade-interna"] .community-room-menu {
+  background: #fff;
+}
+
+body[data-page="comunidade-interna"] .community-room input,
+body[data-page="comunidade-interna"] .community-room select,
+body[data-page="comunidade-interna"] .community-room textarea,
+body[data-page="comunidade-interna"] .community-room .doke-input,
+body[data-page="comunidade-interna"] .community-room .doke-textarea {
+  background: #fff;
 }

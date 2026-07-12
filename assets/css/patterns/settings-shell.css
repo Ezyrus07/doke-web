@@ -1,0 +1,107 @@
+/*
+ * Doke Settings Shell Contract
+ * Shared by account settings and community administration.
+ * Responsibility: settings workspace geometry, rail, panel surfaces and spacing tokens.
+ * Pages may add domain-specific sections, but must not redefine these primitives.
+ */
+
+:where(.doke-settings-shell) {
+  --doke-settings-bg: var(--shell-page-bg, #eef7fd);
+  --doke-settings-surface: var(--doke-visual-surface, #fff);
+  --doke-settings-surface-muted: var(--doke-visual-surface-muted, #f5f9fd);
+  --doke-settings-border: var(--border-color-soft, rgba(24, 75, 118, 0.12));
+  --doke-settings-border-strong: var(--border-color, rgba(24, 75, 118, 0.18));
+  --doke-settings-text: var(--color-heading, #0b3158);
+  --doke-settings-muted: var(--color-text-muted, #647c99);
+  --doke-settings-primary: var(--color-primary, #245f92);
+  --doke-settings-primary-strong: var(--color-primary-strong, #174f7d);
+  --doke-settings-primary-soft: var(--color-primary-soft, #eaf3fa);
+  --doke-settings-danger: var(--color-danger-strong, #c63d3d);
+  --doke-settings-danger-soft: #fff8f8;
+  --doke-settings-sidebar-width: clamp(340px, 27vw, 382px);
+  --doke-settings-content-max: 1080px;
+  --doke-settings-gutter: clamp(28px, 3.2vw, 44px);
+  --doke-settings-header-min-height: 104px;
+  --doke-settings-radius-lg: var(--doke-visual-radius-lg, 22px);
+  --doke-settings-radius: var(--doke-visual-radius, 16px);
+  --doke-settings-radius-sm: var(--doke-visual-radius-sm, 13px);
+  --doke-settings-shadow: var(--doke-elevation-surface-hover, 0 18px 44px rgba(16, 60, 97, 0.08));
+  min-width: 0;
+  min-height: 0;
+  background: var(--doke-settings-bg);
+}
+
+:where(.doke-settings-shell__sidebar, .doke-settings-shell__content, .doke-settings-shell__panel) {
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+:where(.doke-settings-surface) {
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--doke-settings-border);
+  background: var(--doke-settings-surface);
+  box-shadow: none;
+}
+
+:where(.doke-settings-surface__header) {
+  min-height: var(--doke-settings-header-min-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px var(--doke-settings-gutter);
+  border-bottom: 1px solid var(--doke-settings-border);
+  background: var(--doke-settings-surface);
+}
+
+:where(.doke-settings-surface__body) {
+  min-width: 0;
+  padding: 30px var(--doke-settings-gutter);
+}
+
+:where(.doke-settings-surface__footer) {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px var(--doke-settings-gutter);
+  border-top: 1px solid var(--doke-settings-border);
+  background: color-mix(in srgb, var(--doke-settings-surface-muted) 82%, #fff);
+}
+
+:where(.doke-settings-rail) {
+  box-sizing: border-box;
+  width: min(calc(100% - (var(--doke-settings-gutter) * 2)), var(--doke-settings-content-max));
+  max-width: var(--doke-settings-content-max);
+  margin-inline: auto;
+}
+
+@media (max-width: 1180px) {
+  :where(.doke-settings-shell) {
+    --doke-settings-sidebar-width: 320px;
+    --doke-settings-gutter: 28px;
+  }
+}
+
+@media (max-width: 760px) {
+  :where(.doke-settings-shell) {
+    --doke-settings-gutter: 18px;
+    --doke-settings-header-min-height: 92px;
+  }
+
+  :where(.doke-settings-surface__header) {
+    align-items: flex-start;
+    padding-block: 20px;
+  }
+
+  :where(.doke-settings-surface__body) {
+    padding-block: 22px;
+  }
+
+  :where(.doke-settings-surface__footer) {
+    flex-wrap: wrap;
+  }
+}

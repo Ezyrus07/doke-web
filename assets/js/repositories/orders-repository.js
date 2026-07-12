@@ -280,7 +280,8 @@
   }
 
   function matchesCurrentUser(order, user) {
-    if (!user || !user.id) return true;
+    if (!user || !user.id) return false;
+    if (user.role === 'admin' || user.role === 'support') return true;
     if (user.role === 'professional') {
       if (String(order.professionalId || order.providerId) === String(user.id)) return true;
       // Backward-compatible mock rule: orders created from service-card provider IDs
@@ -288,7 +289,7 @@
       return isDemoProfessional(user) && Boolean(order.id && (order.clientId || order.serviceId));
     }
     if (user.role === 'client') return String(order.clientId) === String(user.id);
-    return true;
+    return false;
   }
 
   function list(filters) {
