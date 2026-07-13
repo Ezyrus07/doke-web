@@ -12,11 +12,13 @@ const HTML_FILES = [
   'orcamento.html',
 ];
 
-const FLOW_PAGES = [
-  'anunciar-servico.html',
-  'tornar-profissional.html',
-  'orcamento.html',
-];
+const FLOW_PAGE_INITIAL_PROGRESS = Object.freeze({
+  'anunciar-servico.html': 25,
+  'tornar-profissional.html': 50,
+  'orcamento.html': 25,
+});
+
+const FLOW_PAGES = Object.keys(FLOW_PAGE_INITIAL_PROGRESS);
 
 const FLOW_SCRIPTS = [
   'assets/js/pages/anunciar-servico.js',
@@ -71,7 +73,8 @@ function findInlineStyles(text) {
 const pageReports = HTML_FILES.map((file) => {
   const text = read(file);
   const inlineStyles = findInlineStyles(text);
-  const requiredProgressTokens = FLOW_PAGES.includes(file) ? ['data-step-progress-fill', 'data-step-progress-value="25"'] : [];
+  const initialProgress = FLOW_PAGE_INITIAL_PROGRESS[file];
+  const requiredProgressTokens = initialProgress ? ['data-step-progress-fill', `data-step-progress-value="${initialProgress}"`] : [];
   const missingRequiredHooks = requiredProgressTokens.filter((token) => !text.includes(token));
   return {
     file,

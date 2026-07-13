@@ -3,9 +3,33 @@
 
   var Doke = window.Doke || (window.Doke = {});
   var PAGE_NAME = 'index';
+  var hydrationRoot = null;
+  var hydration = null;
+
+  function getHydration(root) {
+    if (!root || !window.DokePageHydration?.create) return null;
+    if (hydrationRoot === root && hydration) return hydration;
+    hydrationRoot = root;
+    hydration = window.DokePageHydration.create({
+      page: PAGE_NAME,
+      root: root,
+      skeletonSelectors: '[data-home-hydration-skeleton]',
+      readySelectors: '[data-home-hydration-ready]',
+      errorSelectors: '[data-state-error]',
+      skeletonMode: 'hard-load',
+      maxDuration: 9000,
+      hasItems: function () { return true; }
+    });
+    return hydration;
+  }
 
   function getRoot() {
-    return document.querySelector('[data-page="home"], .home-index-shell, .shell-home__workspace');
+    // The body is preserved by the stable-shell router. Using it as the
+    // hydration root would reuse the already-completed hydration instance
+    // when the home DOM is replaced, leaving the new ready surfaces hidden.
+    // The page boundary is replaced on every route commit and therefore is
+    // the correct lifecycle root for a fresh home hydration.
+    return document.querySelector('[data-state-boundary="index"], .shell-home__workspace');
   }
 
   function getRegion(root, kind) {
@@ -107,12 +131,15 @@
 
   function load(root) {
     var context = getHomeContext();
+    var pageHydration = getHydration(root);
+    pageHydration?.start();
 
     if (!hasDataDependencies()) {
       setRootState(root, 'idle', 'data-dependencies-not-loaded');
       ['featured-services', 'recommended-services', 'more-services', 'workers', 'publications'].forEach(function (kind) {
         setRegionState(root, kind, 'idle');
       });
+      pageHydration?.ready({ hasItems: true });
       return Promise.resolve(null);
     }
 
@@ -155,6 +182,7 @@
         updateListHooks(root, data);
         Doke.indexDataController.lastPayload = result;
         dispatch(root, 'doke:index-data-ready', result);
+        pageHydration?.ready({ hasItems: true });
         return result;
       })
       .catch(function (error) {
@@ -170,6 +198,7 @@
           setRegionState(root, kind, 'error', detail.error);
         });
         dispatch(root, 'doke:index-data-error', detail);
+        pageHydration?.error(error, { source: 'index-data-controller' });
         return detail;
       });
   }

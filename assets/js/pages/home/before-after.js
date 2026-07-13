@@ -258,7 +258,7 @@ window.DokeHomeBeforeAfter = (() => {
 
     dialog.dataset.instagramLayout = 'v5-comments';
     dialog.innerHTML = `
-      <button class="before-after-preview__close before-after-preview__close--fixed" type="button" data-before-after-close aria-label="Fechar antes e depois">
+      <button class="before-after-preview__close before-after-preview__close--fixed doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-before-after-close aria-label="Fechar antes e depois">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
       </button>
 
@@ -285,7 +285,7 @@ window.DokeHomeBeforeAfter = (() => {
           <section class="before-after-post__comments-sheet" data-before-after-comments-sheet>
           <div class="before-after-post__comments-head">
             <strong><span data-before-after-comment-count>0</span> comentários</strong>
-            <button class="before-after-post__comments-close" type="button" data-before-after-comments-close aria-label="Fechar comentários">
+            <button class="before-after-post__comments-close doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-before-after-comments-close aria-label="Fechar comentários">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
             </button>
           </div>

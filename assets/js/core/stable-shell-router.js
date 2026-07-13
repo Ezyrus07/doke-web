@@ -36,6 +36,11 @@
     '/perfil.html'
   ]);
   var HYDRATION_BARRIER_ROUTES = new Set([
+    '/index.html',
+    '/meu-perfil.html',
+    '/perfil-cliente.html',
+    '/configuracoes.html',
+    '/tornar-profissional.html',
     '/pedidos.html',
     '/mensagens.html',
     '/notificacoes.html'
@@ -731,7 +736,16 @@
     var names = ROUTE_INIT[path] || [];
     names.forEach(function (name) {
       if (typeof window[name] !== 'function') return;
-      try { window[name](); } catch (error) { console.error('[DokeStableShell:init:' + name + ']', error); }
+      try {
+        var outcome = window[name]();
+        if (outcome && typeof outcome.then === 'function') {
+          outcome.catch(function (error) {
+            console.error('[DokeStableShell:init:' + name + ']', error);
+          });
+        }
+      } catch (error) {
+        console.error('[DokeStableShell:init:' + name + ']', error);
+      }
     });
     try {
       if (window.Doke && window.Doke.controllers && typeof window.Doke.controllers.initCurrentPage === 'function') {

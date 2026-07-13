@@ -2275,7 +2275,7 @@
         panel.dataset.messagesAdvancedSearch = '';
         panel.hidden = true;
         panel.innerHTML = `
-          <div class="messages-advanced-search__head"><strong>Buscar nesta conversa</strong><button class="doke-icon-btn doke-icon-btn--flat" type="button" data-messages-advanced-search-close aria-label="Fechar">×</button></div>
+          <div class="messages-advanced-search__head"><strong>Buscar nesta conversa</strong><button class="doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-messages-advanced-search-close aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></div>
           <div class="messages-advanced-search__grid">
             <label><span>Texto</span><input class="doke-input" type="search" data-messages-advanced-query placeholder="Buscar mensagem..."></label>
             <label><span>Autor</span><select class="doke-select" data-messages-advanced-author><option value="all">Todos</option><option value="me">Você</option><option value="other">Outra pessoa</option></select></label>
@@ -2289,7 +2289,7 @@
         panel.className = 'messages-thread-replies';
         panel.dataset.messageThreadPanel = '';
         panel.hidden = true;
-        panel.innerHTML = `<header><div><strong>Thread</strong><span data-message-thread-summary></span></div><button class="doke-icon-btn doke-icon-btn--flat" type="button" data-message-thread-close aria-label="Fechar">×</button></header><div class="messages-thread-replies__list" data-message-thread-list></div><form data-message-thread-form><input class="doke-input" data-message-thread-input placeholder="Responder na thread"><button class="doke-btn doke-btn--primary" type="submit">Enviar</button></form>`;
+        panel.innerHTML = `<header><div><strong>Thread</strong><span data-message-thread-summary></span></div><button class="doke-close-button doke-icon-btn doke-icon-btn--flat" type="button" data-message-thread-close aria-label="Fechar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></header><div class="messages-thread-replies__list" data-message-thread-list></div><form data-message-thread-form><input class="doke-input" data-message-thread-input placeholder="Responder na thread"><button class="doke-btn doke-btn--primary" type="submit">Enviar</button></form>`;
         document.body.appendChild(panel);
       }
       if (!root.querySelector('[data-message-history-modal]')) {
@@ -3333,14 +3333,14 @@
       openMessageContextMenu(event, Number(bubble.dataset.messageIndex || -1));
     });
 
-    document.querySelector('[data-message-context-menu]')?.addEventListener('click', (event) => {
+    document.querySelector('[data-message-context-menu]')?.addEventListener('click', async (event) => {
       const action = event.target.closest('[data-advanced-message-action]')?.dataset.advancedMessageAction;
       const message = conversations[activeId]?.messages?.[messageContextIndex];
       if (!action || !message) return;
       if (action === 'reply') setReplyPreview(message);
       if (action === 'thread') openMessageThread(messageContextIndex);
       if (action === 'react') {
-        const emoji = window.prompt('Emoji da reação:', '👍');
+        const emoji = await window.DokeDialog.prompt('Escolha o emoji da reação.', '👍', { title: 'Adicionar reação', label: 'Emoji', confirmText: 'Adicionar' });
         if (emoji) {
           ensureMessageAdvancedState(message);
           const userId = getCurrentUserId() || 'me';
@@ -3351,7 +3351,7 @@
         }
       }
       if (action === 'edit' && message.mine && message.type !== 'image' && message.type !== 'audio') {
-        const nextText = window.prompt('Editar mensagem:', getMessageText(message));
+        const nextText = await window.DokeDialog.prompt('Edite o conteúdo da mensagem.', getMessageText(message), { title: 'Editar mensagem', label: 'Mensagem', confirmText: 'Salvar' });
         if (nextText && nextText.trim() && nextText.trim() !== getMessageText(message)) {
           ensureMessageAdvancedState(message);
           message.editHistory.push({ text: getMessageText(message), editedAt: new Date().toLocaleString('pt-BR') });
@@ -3372,7 +3372,7 @@
       if (action === 'history') openMessageHistory(message);
       if (action === 'forward') {
         const targets = Object.entries(conversations).filter(([id]) => id !== activeId);
-        const targetName = window.prompt(`Encaminhar para qual conversa?\n${targets.map(([, c]) => c.name).join('\n')}`);
+        const targetName = await window.DokeDialog.prompt(`Escolha a conversa de destino.\n\n${targets.map(([, c]) => c.name).join('\n')}`, '', { title: 'Encaminhar mensagem', label: 'Conversa', confirmText: 'Encaminhar' });
         const target = targets.find(([, c]) => c.name.toLowerCase() === String(targetName || '').trim().toLowerCase());
         if (target) {
           const copy = { ...message, mine: true, author: 'Você', time: 'agora', forwardedFrom: message.mine ? 'Você' : message.author, reactions: {}, threadReplies: [], editHistory: [] };

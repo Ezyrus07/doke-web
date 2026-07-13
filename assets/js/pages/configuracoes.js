@@ -11,6 +11,17 @@
     const controller = new AbortController();
     activeController = controller;
     const { signal } = controller;
+    const hydration = window.DokePageHydration?.create?.({
+      page: 'configuracoes',
+      root: settingsRoot,
+      skeletonSelectors: '[data-settings-hydration-skeleton]',
+      readySelectors: '[data-settings-hydration-ready]',
+      errorSelectors: '[data-state-error]',
+      skeletonMode: 'hard-load',
+      maxDuration: 9000,
+      hasItems: () => true
+    }) || null;
+    hydration?.start();
 
   const pageBody = document.body;
   const sidebarItems = Array.from(document.querySelectorAll('.settings-sidebar__item'));
@@ -795,27 +806,32 @@
   }
 
   const initState = async () => {
-    const initialPanel = getPanelFromLocation() || document.querySelector('.settings-sidebar__item.is-active')?.dataset.settingsTab || sidebarItems.find((item) => item.dataset.settingsTab)?.dataset.settingsTab;
-    if (initialPanel) {
-      activateTab(initialPanel, { scroll: false, updateLocation: Boolean(getPanelFromLocation()) });
+    try {
+      const initialPanel = getPanelFromLocation() || document.querySelector('.settings-sidebar__item.is-active')?.dataset.settingsTab || sidebarItems.find((item) => item.dataset.settingsTab)?.dataset.settingsTab;
+      if (initialPanel) {
+        activateTab(initialPanel, { scroll: false, updateLocation: Boolean(getPanelFromLocation()) });
+      }
+
+      await hydrateSettings();
+      if (signal.aborted) return;
+      filterSettings('');
+      syncPreferenceInputs();
+      syncSettingsFieldInputs();
+      syncPaymentsSurface();
+      syncAvailabilitySurface();
+      syncSupportSurface();
+      syncSecuritySessionSurface();
+      await hydrateProfileForm();
+      if (signal.aborted) return;
+      updateSearchClearState();
+      setMobileSearchOpen(false);
+
+      setNarrowMenuMode(isNarrowSettings() && !getPanelFromLocation());
+      document.querySelector('.settings-sidebar')?.removeAttribute('hidden');
+      hydration?.ready({ hasItems: true });
+    } catch (error) {
+      hydration?.error(error, { source: 'settings-controller' });
     }
-
-    await hydrateSettings();
-    if (signal.aborted) return;
-    filterSettings('');
-    syncPreferenceInputs();
-    syncSettingsFieldInputs();
-    syncPaymentsSurface();
-    syncAvailabilitySurface();
-    syncSupportSurface();
-    syncSecuritySessionSurface();
-    hydrateProfileForm();
-    updateSearchClearState();
-    setMobileSearchOpen(false);
-
-    setNarrowMenuMode(isNarrowSettings() && !getPanelFromLocation());
-
-    document.querySelector('.settings-sidebar')?.removeAttribute('hidden');
   };
 
   let wasNarrow = isNarrowSettings();

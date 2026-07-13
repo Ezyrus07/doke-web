@@ -10,6 +10,36 @@
   const INTERNAL_NAVIGATION_TTL = 1800;
   const activeHydrations = new Map();
   const ROUTE_SKELETON_CONTRACTS = Object.freeze({
+    '/index.html': Object.freeze({
+      boundary: '[data-state-boundary="index"]',
+      skeleton: '[data-home-hydration-skeleton]',
+      ready: '[data-home-hydration-ready]',
+      splash: '[data-home-document-preloader]'
+    }),
+    '/meu-perfil.html': Object.freeze({
+      boundary: '[data-state-boundary="meu-perfil"]',
+      skeleton: '[data-profile-hydration-skeleton]',
+      ready: '[data-profile-hydration-ready]',
+      splash: '[data-profile-document-preloader]'
+    }),
+    '/perfil-cliente.html': Object.freeze({
+      boundary: '[data-state-boundary="perfil-cliente"]',
+      skeleton: '[data-profile-hydration-skeleton]',
+      ready: '[data-profile-hydration-ready]',
+      splash: '[data-profile-document-preloader]'
+    }),
+    '/configuracoes.html': Object.freeze({
+      boundary: '[data-state-boundary="configuracoes"]',
+      skeleton: '[data-settings-hydration-skeleton]',
+      ready: '[data-settings-hydration-ready]',
+      splash: '[data-settings-document-preloader]'
+    }),
+    '/tornar-profissional.html': Object.freeze({
+      boundary: '[data-state-boundary="tornar-profissional"]',
+      skeleton: '[data-professional-onboarding-hydration-skeleton]',
+      ready: '[data-professional-onboarding-hydration-ready]',
+      splash: '[data-professional-onboarding-document-preloader]'
+    }),
     '/pedidos.html': Object.freeze({
       boundary: '[data-state-boundary="pedidos"]',
       skeleton: '[data-orders-hydration-skeleton], [data-orders-hydration-count-skeleton]',
@@ -117,6 +147,11 @@
 
   const toArray = (value) => Array.isArray(value) ? value : [value].filter(Boolean);
 
+  const toDatasetKey = (value) => String(value || '')
+    .trim()
+    .replace(/[^a-zA-Z0-9]+([a-zA-Z0-9])/g, (_, char) => char.toUpperCase())
+    .replace(/^[^a-zA-Z]+/, '');
+
   const resolveRoot = (root) => {
     if (!root) return document.body;
     if (typeof root === 'string') return document.querySelector(root) || document.body;
@@ -209,7 +244,8 @@
         document.body.dataset.pageHydration = nextState;
         document.body.dataset.pageHydrationSkeleton = useSkeleton ? 'on' : 'off';
         document.body.dataset.pageHydrationBoot = splashDuration > 0 ? 'on' : 'off';
-        document.body.dataset[`${page}Hydration`] = nextState;
+        const pageHydrationKey = toDatasetKey(`${page}-hydration`);
+        if (pageHydrationKey) document.body.dataset[pageHydrationKey] = nextState;
       }
       document.dispatchEvent(new CustomEvent('doke:page-hydration-state', {
         detail: Object.assign({ page, state: nextState }, detail)

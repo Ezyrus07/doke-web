@@ -593,7 +593,7 @@ const initBudgetPage = () => {
           await loadingFeedback.close();
         }
         restoreSubmitButton();
-        window.alert(error?.message || "Não foi possível enviar o orçamento agora.");
+        window.DokeDialog.alert(error?.message || "Não foi possível enviar o orçamento agora.");
       }
     });
   }

@@ -1,6 +1,6 @@
 /* Doke document preloader contract
-   Responsibility: first-paint app boot surface for data-driven pages before
-   page hydration swaps into skeleton or ready content. */
+   Responsibility: canonical first-paint boot surface for full document loads.
+   Stable-shell internal navigation never replays this surface. */
 
 body .doke-document-preloader {
   position: fixed;
@@ -10,13 +10,23 @@ body .doke-document-preloader {
   place-items: center;
   background: linear-gradient(180deg, #eaf3fa 0%, #e3eff8 100%);
   color: var(--color-primary, #2a5f90);
+  opacity: 1;
+  visibility: visible;
   pointer-events: auto;
   isolation: isolate;
-  animation: dokeDocumentPreloaderAutoHide 760ms ease forwards;
+  transition: opacity 180ms ease, visibility 180ms ease;
+  animation: dokeDocumentPreloaderFailsafe 4s ease forwards;
 }
 
 body .doke-document-preloader[hidden] {
   display: none;
+}
+
+body .doke-document-preloader.is-leaving,
+html[data-doke-document-boot="ready"] body .doke-document-preloader {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 body .doke-document-preloader__mark {
@@ -25,7 +35,7 @@ body .doke-document-preloader__mark {
   inline-size: clamp(132px, 12vw, 178px);
   min-block-size: 82px;
   padding: 18px 22px;
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-xl, 24px);
   background: #ffffff;
   box-shadow: 0 24px 58px rgba(18, 55, 95, 0.13);
 }
@@ -36,9 +46,13 @@ body .doke-document-preloader__logo {
   block-size: auto;
 }
 
-@keyframes dokeDocumentPreloaderAutoHide {
+body.orders-page-shell .orders-document-preloader.doke-document-preloader {
+  animation: dokeDocumentPreloaderFailsafe 4s ease forwards;
+}
+
+@keyframes dokeDocumentPreloaderFailsafe {
   0%,
-  78% {
+  94% {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
@@ -52,8 +66,9 @@ body .doke-document-preloader__logo {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  body .doke-document-preloader {
-    animation-duration: 1ms;
-    animation-delay: 640ms;
+  body .doke-document-preloader,
+  body.orders-page-shell .orders-document-preloader.doke-document-preloader {
+    transition: none;
+    animation-duration: 4s;
   }
 }

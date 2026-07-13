@@ -1,0 +1,133 @@
+/* Doke system dialog
+   Replaces browser alert/confirm/prompt with an accessible in-product modal. */
+.doke-system-dialog[hidden] { display: none; }
+.doke-system-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: grid;
+  place-items: center;
+  padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
+}
+.doke-system-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(15, 38, 63, 0.42);
+}
+.doke-system-dialog__surface {
+  position: relative;
+  width: min(100%, 480px);
+  overflow: hidden;
+  border: 1px solid rgba(24, 75, 118, 0.12);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 28px 70px rgba(13, 43, 76, 0.22);
+}
+.doke-system-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 24px 24px 14px;
+}
+.doke-system-dialog__heading { min-width: 0; }
+.doke-system-dialog__eyebrow {
+  display: block;
+  margin-bottom: 5px;
+  color: #2a6da8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.doke-system-dialog__title {
+  margin: 0;
+  color: #0c3768;
+  font-size: 1.18rem;
+  line-height: 1.25;
+}
+.doke-system-dialog__close {
+  flex: 0 0 auto;
+}
+.doke-system-dialog__body {
+  display: grid;
+  gap: 16px;
+  padding: 0 24px 22px;
+}
+.doke-system-dialog__message {
+  margin: 0;
+  color: #657c99;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  white-space: pre-line;
+}
+.doke-system-dialog__field { display: grid; gap: 8px; }
+.doke-system-dialog__label { color: #173b67; font-size: 0.82rem; font-weight: 700; }
+.doke-system-dialog__input,
+.doke-system-dialog__textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 50px;
+  padding: 12px 14px;
+  border: 1px solid rgba(24, 75, 118, 0.16);
+  border-radius: 14px;
+  background: #f7fafe;
+  color: #15385f;
+  font: inherit;
+  outline: none;
+}
+.doke-system-dialog__textarea { min-height: 112px; resize: vertical; }
+.doke-system-dialog__input:focus,
+.doke-system-dialog__textarea:focus {
+  border-color: rgba(35, 111, 199, 0.58);
+  box-shadow: 0 0 0 3px rgba(35, 111, 199, 0.12);
+}
+.doke-system-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px 22px;
+  border-top: 1px solid rgba(24, 75, 118, 0.1);
+  background: #f8fbfe;
+}
+.doke-system-dialog__button {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid rgba(24, 75, 118, 0.14);
+  border-radius: 13px;
+  background: #fff;
+  color: #184671;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.doke-system-dialog__button--primary {
+  border-color: #2269a5;
+  background: #2269a5;
+  color: #fff;
+}
+.doke-system-dialog__button--danger {
+  border-color: #cf4d49;
+  background: #cf4d49;
+  color: #fff;
+}
+.doke-system-dialog__button:focus-visible,
+.doke-system-dialog__close:focus-visible {
+  outline: 3px solid rgba(35, 111, 199, 0.2);
+  outline-offset: 2px;
+}
+body.doke-system-dialog-open { overflow: hidden; }
+@media (max-width: 560px) {
+  .doke-system-dialog { align-items: end; padding: 12px; }
+  .doke-system-dialog__surface { width: 100%; border-radius: 20px; }
+  .doke-system-dialog__header { padding: 20px 20px 12px; }
+  .doke-system-dialog__body { padding: 0 20px 20px; }
+  .doke-system-dialog__actions { padding: 14px 20px 20px; }
+  .doke-system-dialog__actions > * { flex: 1; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .doke-system-dialog:not([hidden]) .doke-system-dialog__surface { animation: doke-system-dialog-in 170ms ease-out both; }
+  @keyframes doke-system-dialog-in { from { opacity: 0; transform: translateY(10px) scale(.985); } }
+}

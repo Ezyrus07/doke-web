@@ -27,11 +27,21 @@ const inlineCloseExceptions = [
   'doke-search-field__button',
 ];
 
-const htmlFiles = fs.readdirSync(ROOT)
-  .filter((file) => file.endsWith('.html'))
-  .sort();
+const sourceFiles = [
+  ...fs.readdirSync(ROOT).filter((file) => file.endsWith('.html')),
+  ...walkJs(path.join(ROOT, 'assets/js')).map((file) => path.relative(ROOT, file).replace(/\\/g, '/')),
+].sort();
 
-for (const file of htmlFiles) {
+function walkJs(directory) {
+  if (!fs.existsSync(directory)) return [];
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const absolute = path.join(directory, entry.name);
+    if (entry.isDirectory()) return walkJs(absolute);
+    return entry.isFile() && entry.name.endsWith('.js') ? [absolute] : [];
+  });
+}
+
+for (const file of sourceFiles) {
   const html = read(file);
   const buttons = html.match(/<button\b[\s\S]*?<\/button>/gi) || [];
   for (const button of buttons) {
@@ -49,6 +59,10 @@ for (const file of htmlFiles) {
 
     if (!className.split(/\s+/).includes('doke-close-button')) {
       failures.push(`${file}: close control must include doke-close-button -> ${className || '(no class)'}`);
+    }
+
+    if (/^[×✕x]$/i.test(text)) {
+      failures.push(`${file}: close control must use the canonical SVG icon, not a text glyph -> ${className}`);
     }
 
     if (text && /fechar/i.test(text) && !button.includes('doke-close-button__label')) {
@@ -81,4 +95,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`Close button contract OK (${htmlFiles.length} active HTML files scanned).`);
+console.log(`Close button contract OK (${sourceFiles.length} active HTML/JS sources scanned).`);

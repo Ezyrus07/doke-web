@@ -1,0 +1,85 @@
+/* Doke close button authority.
+ * Responsibility: final site-wide anatomy for modal, drawer, sheet, lightbox
+ * and toast close controls. Page CSS may position the control but must not
+ * redefine its dimensions, shape, icon or interaction surface.
+ */
+
+button.doke-close-button.doke-icon-btn.doke-icon-btn--flat {
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 var(--doke-close-button-size, 42px);
+  width: var(--doke-close-button-size, 42px);
+  height: var(--doke-close-button-size, 42px);
+  min-width: var(--doke-close-button-size, 42px);
+  min-height: var(--doke-close-button-size, 42px);
+  max-width: var(--doke-close-button-size, 42px);
+  max-height: var(--doke-close-button-size, 42px);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-exact-14, 14px);
+  background: var(--doke-close-button-bg, #f3f7fb);
+  color: var(--doke-close-button-color, #174f82);
+  box-shadow: none;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast, 160ms ease),
+    color var(--transition-fast, 160ms ease),
+    transform var(--transition-fast, 160ms ease);
+}
+
+button.doke-close-button.doke-icon-btn.doke-icon-btn--flat:hover {
+  border-color: transparent;
+  background: var(--doke-close-button-hover-bg, #e8f1f9);
+  color: var(--doke-close-button-color, #174f82);
+  transform: translateY(-1px);
+}
+
+button.doke-close-button.doke-icon-btn.doke-icon-btn--flat:focus-visible {
+  border-color: transparent;
+  background: var(--doke-close-button-hover-bg, #e8f1f9);
+  color: var(--doke-close-button-color, #174f82);
+  outline: 3px solid rgba(42, 95, 144, 0.18);
+  outline-offset: 2px;
+}
+
+button.doke-close-button.doke-icon-btn.doke-icon-btn--flat:active {
+  transform: translateY(0);
+}
+
+button.doke-close-button.doke-icon-btn.doke-icon-btn--flat > svg {
+  display: block;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+@media (max-width: 560px) {
+  button.doke-close-button.doke-icon-btn.doke-icon-btn--flat {
+    flex-basis: var(--doke-close-button-size-mobile, 38px);
+    width: var(--doke-close-button-size-mobile, 38px);
+    height: var(--doke-close-button-size-mobile, 38px);
+    min-width: var(--doke-close-button-size-mobile, 38px);
+    min-height: var(--doke-close-button-size-mobile, 38px);
+    max-width: var(--doke-close-button-size-mobile, 38px);
+    max-height: var(--doke-close-button-size-mobile, 38px);
+    border-radius: var(--radius-exact-13, 13px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button.doke-close-button.doke-icon-btn.doke-icon-btn--flat {
+    transition: none;
+  }
+}

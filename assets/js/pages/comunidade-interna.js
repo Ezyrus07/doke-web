@@ -137,8 +137,15 @@
   var eventMonthPrev = root.querySelector('[data-community-event-month-prev]');
   var eventMonthNext = root.querySelector('[data-community-event-month-next]');
   var eventFeedback = root.querySelector('[data-community-event-feedback]');
+  var eventViewTabs = Array.prototype.slice.call(root.querySelectorAll('[data-community-events-view]'));
+  var eventViewPanels = Array.prototype.slice.call(root.querySelectorAll('[data-community-events-view-panel]'));
+  var eventFooter = root.querySelector('[data-community-events-footer]');
+  var eventFormCancel = root.querySelector('[data-community-event-form-cancel]');
+  var eventCreateOpen = root.querySelector('[data-community-event-create-open]');
+  var eventAdvanced = root.querySelector('[data-community-event-advanced]');
   var eventCalendarCursor = new Date();
   eventCalendarCursor.setDate(1);
+  var eventSelectedDateKey = new Date().toISOString().slice(0, 10);
   var eventReminderTimer = 0;
   var attachButton = root.querySelector('[data-community-attach]');
   var attachmentInput = root.querySelector('[data-community-attachment-input]');
@@ -802,7 +809,7 @@
   }
 
 
-  var COMMUNITY_PERMISSION_KEYS = ['deleteMessages', 'addMembers', 'removeMembers', 'editCommunity', 'manageRoles', 'manageChannels', 'mentionRoles', 'bypassSlowMode', 'moderateMembers'];
+  var COMMUNITY_PERMISSION_KEYS = ['deleteMessages', 'addMembers', 'removeMembers', 'editCommunity', 'manageEvents', 'manageRoles', 'manageChannels', 'mentionRoles', 'bypassSlowMode', 'moderateMembers'];
 
   function normalizePermissions(permissions) {
     var normalized = {};
@@ -814,8 +821,8 @@
 
   function getDefaultRoles() {
     return [
-      { id: 'owner', name: 'Administrador', color: '#0f6f64', system: true, permissions: normalizePermissions({ deleteMessages: true, addMembers: true, removeMembers: true, editCommunity: true, manageRoles: true, manageChannels: true, mentionRoles: true, bypassSlowMode: true, moderateMembers: true }) },
-      { id: 'moderator', name: 'Moderador', color: '#2167ae', system: true, permissions: normalizePermissions({ deleteMessages: true, addMembers: true, removeMembers: true, moderateMembers: true }) },
+      { id: 'owner', name: 'Administrador', color: '#0f6f64', system: true, permissions: normalizePermissions({ deleteMessages: true, addMembers: true, removeMembers: true, editCommunity: true, manageEvents: true, manageRoles: true, manageChannels: true, mentionRoles: true, bypassSlowMode: true, moderateMembers: true }) },
+      { id: 'moderator', name: 'Moderador', color: '#2167ae', system: true, permissions: normalizePermissions({ deleteMessages: true, addMembers: true, removeMembers: true, manageEvents: true, moderateMembers: true }) },
       { id: 'member', name: 'Membro', color: '#64748b', system: true, permissions: normalizePermissions({}) }
     ];
   }
@@ -964,6 +971,37 @@
     if (String(member.role || '') === 'owner') return true;
     var role = getCommunityRoles().find(function (item) { return String(item.id) === String(member.role || 'member'); });
     return Boolean(role && role.permissions && role.permissions[permission]);
+  }
+
+  function canManageCommunityEvents(record) {
+    var currentRecord = record || getCurrentCommunityRecord() || {};
+    var profile = getCurrentUserProfile();
+    var member = getCurrentMemberForRecord(currentRecord) || {};
+    var memberRoleIds = normalizeMemberRoleIds(member).map(function (roleId) { return String(roleId || '').toLowerCase(); });
+
+    if (String(member.role || '').toLowerCase() === 'owner' || memberRoleIds.indexOf('owner') !== -1) return true;
+
+    var ownerMember = Array.isArray(currentRecord.members) ? currentRecord.members.find(function (item) {
+      return String(item && item.role || '').toLowerCase() === 'owner' || normalizeMemberRoleIds(item).some(function (roleId) { return String(roleId || '').toLowerCase() === 'owner'; });
+    }) : null;
+    var ownerKeys = uniqueIdentityKeys([
+      currentRecord.ownerId,
+      currentRecord.ownerAccountKey,
+      currentRecord.ownerEmail,
+      currentRecord.createdById,
+      currentRecord.createdByAccountKey,
+      currentRecord.creatorId
+    ].concat(Array.isArray(currentRecord.ownerIdentityKeys) ? currentRecord.ownerIdentityKeys : []).concat(getMemberIdentityKeys(ownerMember)));
+    if (identitiesIntersect(profile.identityKeys || uniqueIdentityKeys([profile.id, profile.accountKey, profile.email]), ownerKeys)) return true;
+
+    var roles = getCommunityRolesForRecord(currentRecord);
+    var hasRolePermission = memberRoleIds.some(function (roleId) {
+      var role = roles.find(function (item) { return String(item && item.id || '').toLowerCase() === roleId; });
+      return Boolean(role && role.permissions && role.permissions.manageEvents);
+    });
+    if (hasRolePermission) return true;
+
+    return canCommunityForRecord('manageEvents', currentRecord);
   }
 
   function setPermissionState(node, allowed, unavailableLabel) {
@@ -3907,7 +3945,7 @@
     return messages.find(function (message) { return message && message.id === messageId; }) || null;
   }
 
-  function deleteCommunityMessage(messageId) {
+  async function deleteCommunityMessage(messageId) {
     if (!messageId) return false;
     var record = getCommunityMessageRecord(messageId);
     if (!record || record.deletedAt) return false;
@@ -3917,7 +3955,7 @@
     if (isModeratorAction && !canCommunity('deleteMessages')) return false;
     var reason = '';
     if (isModeratorAction) {
-      reason = String(window.prompt('Informe o motivo da remoção desta mensagem:') || '').trim();
+      reason = String(await window.DokeDialog.prompt('Informe o motivo da remoção desta mensagem:', '', { title: 'Remover mensagem', label: 'Motivo da remoção', confirmText: 'Remover', danger: true }) || '').trim();
       if (!reason) return false;
     }
     var updated = updateCommunityMessageRecord(messageId, function (message) {
@@ -3934,10 +3972,10 @@
     return true;
   }
 
-  function editCommunityMessage(messageId) {
+  async function editCommunityMessage(messageId) {
     var record = getCommunityMessageRecord(messageId);
     if (!record || record.deletedAt || !isMessageOwnedByCurrentUser(record)) return false;
-    var nextText = String(window.prompt('Editar mensagem:', record.text || '') || '').trim();
+    var nextText = String(await window.DokeDialog.prompt('Edite o conteúdo da mensagem:', record.text || '', { title: 'Editar mensagem', label: 'Mensagem', confirmText: 'Salvar' }) || '').trim();
     if (!nextText || nextText === String(record.text || '').trim()) return false;
     var profile = getCurrentUserProfile();
     var updated = updateCommunityMessageRecord(messageId, function (message) {
@@ -4358,9 +4396,9 @@ function clearRenderedLocalMessages() {
     return updated;
   }
 
-  function addThreadReply(messageId) {
+  async function addThreadReply(messageId) {
     var record = getCommunityMessageRecord(messageId); if (!record || record.deletedAt) return false;
-    var text = String(window.prompt('Responder na thread:', '') || '').trim(); if (!text) return false;
+    var text = String(await window.DokeDialog.prompt('Escreva sua resposta para a thread:', '', { title: 'Responder na thread', label: 'Resposta', confirmText: 'Responder' }) || '').trim(); if (!text) return false;
     var profile = getCurrentUserProfile();
     var updated = updateCommunityMessageRecord(messageId, function (message) {
       var replies = Array.isArray(message.threadReplies) ? message.threadReplies.slice() : [];
@@ -4376,21 +4414,21 @@ function clearRenderedLocalMessages() {
     var record = getCommunityMessageRecord(messageId); if (!record) return;
     var replies = Array.isArray(record.threadReplies) ? record.threadReplies : [];
     var content = replies.length ? replies.map(function (reply) { return (reply.author || 'Membro') + ': ' + reply.text; }).join('\n\n') : 'Nenhuma resposta na thread.';
-    window.alert(content);
+    window.DokeDialog.alert(content, { title: 'Respostas da thread' });
   }
 
   function showMessageEditHistory(messageId) {
     var record=getCommunityMessageRecord(messageId); if (!record) return;
     var history=Array.isArray(record.editHistory)?record.editHistory:[];
     var content=history.length?history.map(function(item,index){return (index+1)+'. '+item.text+'\n'+formatDisciplineEnd(item.editedAt);}).join('\n\n'):'Esta mensagem não possui versões anteriores.';
-    window.alert(content);
+    window.DokeDialog.alert(content, { title: 'Histórico de edição' });
   }
 
-  function forwardCommunityMessage(messageId) {
+  async function forwardCommunityMessage(messageId) {
     var record=getCommunityMessageRecord(messageId); if(!record||record.deletedAt)return false;
     var available=getCommunityChannelsForRecord(getCurrentCommunityRecord()).filter(function(channel){return canViewChannel(channel);});
     var names=available.map(function(channel){return channel.name;});
-    var selected=String(window.prompt('Encaminhar para qual canal?\n'+names.join(', '), currentChannelName||'Geral')||'').trim();
+    var selected=String(await window.DokeDialog.prompt('Escolha o canal de destino.\n\n'+names.join(', '), currentChannelName||'Geral', { title: 'Encaminhar mensagem', label: 'Canal', confirmText: 'Encaminhar' })||'').trim();
     var target=available.find(function(channel){return normalize(channel.name)===normalize(selected)||String(channel.id)===selected;});
     if(!target)return false;
     var clone=createCommunityMessageRecord({type:record.type,text:record.text,attachmentName:record.attachmentName,attachmentDisplayName:record.attachmentDisplayName,attachmentType:record.attachmentType,attachmentSize:record.attachmentSize,attachmentKind:record.attachmentKind,attachmentDataUrl:record.attachmentDataUrl,audioDuration:record.audioDuration,forwardedFrom:{id:record.id,author:record.author||'Membro',channelId:record.channelId}});
@@ -4832,33 +4870,68 @@ function clearRenderedLocalMessages() {
     var month = eventCalendarCursor.getMonth();
     eventMonthLabel.textContent = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(eventCalendarCursor);
     eventCalendar.replaceChildren();
-    var firstDay = new Date(year, month, 1).getDay();
+    var firstDay = new Date(year, month, 1, 12);
+    var startWeekday = (firstDay.getDay() + 6) % 7;
     var daysInMonth = new Date(year, month + 1, 0).getDate();
-    for (var blank = 0; blank < firstDay; blank += 1) {
-      var spacer = document.createElement('span');
-      spacer.className = 'community-event-calendar__day community-event-calendar__day--blank';
-      eventCalendar.appendChild(spacer);
-    }
-    for (var day = 1; day <= daysInMonth; day += 1) {
-      var dateKey = new Date(year, month, day);
-      var matching = events.filter(function (eventRecord) {
+    var daysInPrevMonth = new Date(year, month, 0).getDate();
+    var totalCells = 42;
+
+    function appendDay(dayNumber, dateKey, muted) {
+      var matching = muted ? [] : events.filter(function (eventRecord) {
         var start = new Date(eventRecord.startAt);
-        return start.getFullYear() === year && start.getMonth() === month && start.getDate() === day;
+        return start.getFullYear() === year && start.getMonth() === month && start.getDate() === dayNumber && !eventRecord.cancelledAt;
       });
       var cell = document.createElement('button');
       cell.type = 'button';
-      cell.className = 'community-event-calendar__day';
-      cell.textContent = String(day);
-      if (matching.length) {
-        cell.classList.add('has-events');
-        cell.dataset.communityEventCalendarDate = dateKey.toISOString();
-        cell.setAttribute('aria-label', day + ': ' + matching.length + ' evento' + (matching.length === 1 ? '' : 's'));
-        var dot = document.createElement('span');
-        dot.className = 'community-event-calendar__dot';
-        dot.textContent = matching.length > 1 ? String(matching.length) : '';
-        cell.appendChild(dot);
+      cell.className = 'community-event-calendar__day orders-planner__day';
+      cell.textContent = String(dayNumber);
+      if (muted) {
+        cell.classList.add('is-muted');
+        cell.disabled = true;
+      } else {
+        cell.dataset.communityEventCalendarDate = dateKey;
+        if (dateKey === eventSelectedDateKey) cell.classList.add('is-active');
+        if (matching.length) {
+          cell.classList.add('has-events');
+          cell.setAttribute('aria-label', dayNumber + ': ' + matching.length + ' evento' + (matching.length === 1 ? '' : 's'));
+          var dot = document.createElement('span');
+          dot.className = 'community-event-calendar__dot';
+          cell.appendChild(dot);
+        }
       }
       eventCalendar.appendChild(cell);
+    }
+
+    for (var leading = 0; leading < startWeekday; leading += 1) {
+      appendDay(daysInPrevMonth - startWeekday + leading + 1, '', true);
+    }
+    for (var day = 1; day <= daysInMonth; day += 1) {
+      var dateKey = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+      appendDay(day, dateKey, false);
+    }
+    var trailing = totalCells - (startWeekday + daysInMonth);
+    for (var nextDay = 1; nextDay <= trailing; nextDay += 1) appendDay(nextDay, '', true);
+  }
+
+  function setCommunityEventView(viewName, options) {
+    var nextView = viewName === 'create' ? 'create' : 'agenda';
+    var settings = options || {};
+    eventViewTabs.forEach(function (tab) {
+      var selected = tab.dataset.communityEventsView === nextView;
+      tab.classList.toggle('is-active', selected);
+      tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+    });
+    eventViewPanels.forEach(function (panel) {
+      var selected = panel.dataset.communityEventsViewPanel === nextView;
+      panel.classList.toggle('is-active', selected);
+      panel.hidden = !selected;
+    });
+    if (eventFooter) eventFooter.hidden = nextView !== 'create';
+    if (eventPanel) eventPanel.dataset.eventsView = nextView;
+    if (nextView === 'create' && settings.focus !== false) {
+      window.requestAnimationFrame(function () {
+        if (eventTitle) eventTitle.focus({ preventScroll: true });
+      });
     }
   }
 
@@ -4882,6 +4955,8 @@ function clearRenderedLocalMessages() {
 
   function startEditingCommunityEvent(eventRecord) {
     if (!eventForm || !eventRecord) return;
+    setCommunityEventView('create', { focus: false });
+    if (eventAdvanced) eventAdvanced.open = true;
     if (eventEditId) eventEditId.value = eventRecord.id;
     if (eventFormTitle) eventFormTitle.textContent = 'Editar evento';
     if (eventSubmit) eventSubmit.textContent = 'Salvar alterações';
@@ -4912,20 +4987,30 @@ function clearRenderedLocalMessages() {
     var now = Date.now();
     var upcoming = events.filter(function (eventRecord) { return Date.parse(eventRecord.startAt) >= now; });
     if (eventSummary) {
-      eventSummary.innerHTML = '<strong>' + upcoming.length + '</strong><span>próximo' + (upcoming.length === 1 ? '' : 's') + ' evento' + (upcoming.length === 1 ? '' : 's') + '</span>';
+      eventSummary.innerHTML = '<span>Próximos eventos</span><strong>' + upcoming.length + '</strong>';
     }
     renderCommunityEventCalendar(events);
     eventList.replaceChildren();
+    var canManage = canManageCommunityEvents(record);
+    eventViewTabs.forEach(function (tab) {
+      if (tab.dataset.communityEventsView !== 'create') return;
+      tab.hidden = !canManage;
+      tab.disabled = false;
+      tab.setAttribute('aria-disabled', 'false');
+      tab.title = '';
+    });
+    if (eventForm) eventForm.hidden = !canManage;
+    if (!canManage && eventPanel && eventPanel.dataset.eventsView === 'create') setCommunityEventView('agenda', { focus: false });
     if (!events.length) {
       var empty = document.createElement('div');
       empty.className = 'community-room-panel-empty';
-      empty.innerHTML = '<strong>Nenhum evento disponível</strong><p>Crie o primeiro evento da comunidade.</p>';
+      empty.innerHTML = '<strong>Nenhum evento agendado</strong><p>Crie um evento para reunir os membros ou organizar uma atividade.</p>';
       eventList.appendChild(empty);
+      if (eventCreateOpen) eventCreateOpen.hidden = !canManage;
       return;
     }
+    if (eventCreateOpen) eventCreateOpen.hidden = true;
     var currentKey = getCurrentProfileAccountKey();
-    var canManage = canCommunity('editCommunity');
-    if (eventForm) eventForm.hidden = !canManage;
     events.forEach(function (eventRecord) {
       var card = document.createElement('article');
       card.className = 'community-event-card';
@@ -4937,13 +5022,16 @@ function clearRenderedLocalMessages() {
       if (eventRecord.limit > 0) meta.push(eventRecord.attendees.length + '/' + eventRecord.limit + ' participantes');
       else meta.push(eventRecord.attendees.length + ' participante' + (eventRecord.attendees.length === 1 ? '' : 's'));
       if (eventRecord.recurrence !== 'none') meta.push(eventRecord.recurrence === 'weekly' ? 'Semanal' : 'Mensal');
-      card.innerHTML = '<div class="community-event-card__date"><strong>' + new Date(eventRecord.startAt).getDate().toString().padStart(2, '0') + '</strong><span>' + new Intl.DateTimeFormat('pt-BR', { month: 'short' }).format(new Date(eventRecord.startAt)).replace('.', '') + '</span></div>' +
-        '<div class="community-event-card__content"><strong class="community-event-card__title"></strong><p class="community-event-card__description"></p><small class="community-event-card__meta"></small><details class="community-event-card__participants"><summary></summary><ul></ul></details><div class="community-event-card__actions"></div></div>';
+      card.innerHTML = '<div class="community-event-card__main">' +
+        '<div class="community-event-card__date"><span class="community-event-card__date-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14" rx="2.5"></rect><path d="M8 3.5v4M16 3.5v4M4 10h16"></path></svg></span><strong>' + new Date(eventRecord.startAt).getDate().toString().padStart(2, '0') + '</strong><span>' + new Intl.DateTimeFormat('pt-BR', { month: 'short' }).format(new Date(eventRecord.startAt)).replace('.', '') + '</span></div>' +
+        '<div class="community-event-card__content"><div class="community-event-card__header"><strong class="community-event-card__title"></strong></div><p class="community-event-card__description"></p><div class="community-event-card__meta"><span class="community-event-card__meta-item community-event-card__meta-date"></span><span class="community-event-card__meta-item community-event-card__meta-attendees"></span></div></div></div>' +
+        '<div class="community-event-card__footer"><details class="community-event-card__participants"><summary><span class="community-event-card__action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 19c.8-3.2 2.7-5 5.5-5s4.7 1.8 5.5 5"></path><circle cx="17" cy="9" r="2.3"></circle><path d="M15.5 14.8c2.4-.5 4.3.8 5 3.2"></path></svg></span><span class="community-event-card__participants-label"></span></summary><ul></ul></details><div class="community-event-card__actions"></div></div>';
       card.querySelector('.community-event-card__title').textContent = eventRecord.title;
       card.querySelector('.community-event-card__description').textContent = eventRecord.description || 'Sem descrição.';
-      card.querySelector('.community-event-card__meta').textContent = meta.join(' • ');
+      card.querySelector('.community-event-card__meta-date').textContent = meta[0];
+      card.querySelector('.community-event-card__meta-attendees').textContent = meta.slice(1).join(' • ');
       var participantDetails = card.querySelector('.community-event-card__participants');
-      participantDetails.querySelector('summary').textContent = 'Participantes (' + eventRecord.attendees.length + ')';
+      participantDetails.querySelector('.community-event-card__participants-label').textContent = 'Participantes (' + eventRecord.attendees.length + ')';
       var participantList = participantDetails.querySelector('ul');
       var attendeeLabels = getEventAttendeeLabels(eventRecord, record);
       if (!attendeeLabels.length) {
@@ -4954,23 +5042,23 @@ function clearRenderedLocalMessages() {
       var actions = card.querySelector('.community-event-card__actions');
       var rsvp = document.createElement('button');
       rsvp.type = 'button';
-      rsvp.className = 'doke-btn ' + (attending ? 'doke-btn--ghost' : 'doke-btn--primary');
+      rsvp.className = 'doke-btn community-event-card__rsvp ' + (attending ? 'doke-btn--ghost' : 'doke-btn--primary');
       rsvp.dataset.communityEventRsvp = eventRecord.id;
-      rsvp.textContent = attending ? 'Cancelar presença' : (full ? 'Evento lotado' : 'Confirmar presença');
+      rsvp.innerHTML = '<span class="community-event-card__action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"></circle><path d="m8.5 12 2.2 2.2 4.8-5"></path></svg></span><span>' + (attending ? 'Cancelar presença' : (full ? 'Evento lotado' : 'Confirmar presença')) + '</span>';
       rsvp.disabled = full;
       actions.appendChild(rsvp);
       if (canManage) {
         var edit = document.createElement('button');
         edit.type = 'button';
-        edit.className = 'doke-btn doke-btn--ghost';
+        edit.className = 'doke-btn doke-btn--ghost community-event-card__edit';
         edit.dataset.communityEventEdit = eventRecord.id;
-        edit.textContent = 'Editar';
+        edit.innerHTML = '<span class="community-event-card__action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5-4-4L4 16v4Z"></path><path d="m12.8 7.2 4 4"></path></svg></span><span>Editar</span>';
         actions.appendChild(edit);
         var cancel = document.createElement('button');
         cancel.type = 'button';
-        cancel.className = 'doke-btn doke-btn--ghost';
+        cancel.className = 'doke-btn doke-btn--ghost community-event-card__cancel';
         cancel.dataset.communityEventCancel = eventRecord.id;
-        cancel.textContent = 'Cancelar evento';
+        cancel.innerHTML = '<span class="community-event-card__action-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 7h14M9 7V4h6v3M8 10v7M12 10v7M16 10v7M7 7l1 13h8l1-13"></path></svg></span><span>Cancelar evento</span>';
         actions.appendChild(cancel);
       }
       eventList.appendChild(card);
@@ -5222,7 +5310,10 @@ function clearRenderedLocalMessages() {
       if (panel) {
         panel.classList.add('is-open');
         panel.setAttribute('aria-hidden', 'false');
-        if (panelName === 'events') renderCommunityEvents();
+        if (panelName === 'events') {
+          setCommunityEventView('agenda', { focus: false });
+          renderCommunityEvents();
+        }
         if (panelName === 'members') {
           var memberPanelBody = panel.querySelector('.community-room-panel__body');
           if (memberPanelBody) memberPanelBody.scrollTop = 0;
@@ -5246,6 +5337,34 @@ function clearRenderedLocalMessages() {
   });
 
 
+  eventViewTabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      var viewName = tab.dataset.communityEventsView;
+      if (viewName === 'create') {
+        var record = getCurrentCommunityRecord() || {};
+        if (!canManageCommunityEvents(record)) return;
+      }
+      if (viewName === 'create' && !String(eventEditId && eventEditId.value || '').trim()) resetCommunityEventForm();
+      setEventFeedback('', '');
+      setCommunityEventView(viewName);
+    });
+  });
+
+  if (eventCreateOpen) eventCreateOpen.addEventListener('click', function () {
+    var record = getCurrentCommunityRecord() || {};
+    if (!canManageCommunityEvents(record)) return;
+    resetCommunityEventForm();
+    setEventFeedback('', '');
+    setCommunityEventView('create');
+  });
+
+  if (eventFormCancel) eventFormCancel.addEventListener('click', function () {
+    resetCommunityEventForm();
+    setEventFeedback('', '');
+    setCommunityEventView('agenda', { focus: false });
+  });
+
+
   if (eventVisibility) {
     eventVisibility.addEventListener('change', function () {
       if (eventRoleList) eventRoleList.hidden = eventVisibility.value !== 'roles';
@@ -5255,6 +5374,7 @@ function clearRenderedLocalMessages() {
   if (eventEditCancel) eventEditCancel.addEventListener('click', function () {
     resetCommunityEventForm();
     setEventFeedback('', '');
+    setCommunityEventView('agenda', { focus: false });
   });
 
   if (eventMonthPrev) eventMonthPrev.addEventListener('click', function () {
@@ -5270,8 +5390,11 @@ function clearRenderedLocalMessages() {
   if (eventCalendar) eventCalendar.addEventListener('click', function (event) {
     var day = event.target.closest('[data-community-event-calendar-date]');
     if (!day) return;
-    var date = new Date(day.dataset.communityEventCalendarDate || '');
+    var dateKey = String(day.dataset.communityEventCalendarDate || '');
+    var date = new Date(dateKey + 'T12:00:00');
     if (!Number.isFinite(date.getTime())) return;
+    eventSelectedDateKey = dateKey;
+    renderCommunityEvents();
     var match = getCommunityEvents(getCurrentCommunityRecord() || {}).find(function (eventRecord) {
       var start = new Date(eventRecord.startAt);
       return start.getFullYear() === date.getFullYear() && start.getMonth() === date.getMonth() && start.getDate() === date.getDate();
@@ -5284,6 +5407,11 @@ function clearRenderedLocalMessages() {
   if (eventForm) {
     eventForm.addEventListener('submit', function (event) {
       event.preventDefault();
+      var permissionRecord = getCurrentCommunityRecord() || {};
+      if (!canManageCommunityEvents(permissionRecord)) {
+        setEventFeedback('Somente o dono ou membros com um cargo autorizado podem criar ou editar eventos.', 'error');
+        return;
+      }
       setEventFeedback('', '');
       var startAt = eventStart && eventStart.value ? new Date(eventStart.value).toISOString() : '';
       var endAt = eventEnd && eventEnd.value ? new Date(eventEnd.value).toISOString() : '';
@@ -5337,20 +5465,21 @@ function clearRenderedLocalMessages() {
         else notifyEligibleEventMembers(eventRecord, operation.record || getCurrentCommunityRecord() || {});
       }
       resetCommunityEventForm();
-      setEventFeedback(editId ? 'Evento atualizado com sucesso.' : 'Evento criado com sucesso.', 'success');
       renderCommunityEvents();
+      setCommunityEventView('agenda', { focus: false });
       processCommunityEventReminders();
     });
   }
 
   if (eventList) {
-    eventList.addEventListener('click', function (event) {
+    eventList.addEventListener('click', async function (event) {
       var rsvpButton = event.target.closest('[data-community-event-rsvp]');
       var editButton = event.target.closest('[data-community-event-edit]');
       var cancelButton = event.target.closest('[data-community-event-cancel]');
       if (!rsvpButton && !editButton && !cancelButton) return;
       var eventId = String((rsvpButton || editButton || cancelButton).dataset.communityEventRsvp || (rsvpButton || editButton || cancelButton).dataset.communityEventEdit || (rsvpButton || editButton || cancelButton).dataset.communityEventCancel || '');
       if (editButton) {
+        if (!canManageCommunityEvents(getCurrentCommunityRecord() || {})) return;
         var editable = getCommunityEvents(getCurrentCommunityRecord() || {}).find(function (item) { return item.id === eventId; });
         if (editable) startEditingCommunityEvent(editable);
         return;
@@ -5374,7 +5503,8 @@ function clearRenderedLocalMessages() {
         if (!result.ok) setEventFeedback(result.message || 'Não foi possível atualizar sua presença.', 'error');
       }
       if (cancelButton) {
-        var confirmed = window.confirm('Cancelar este evento?');
+        if (!canManageCommunityEvents(getCurrentCommunityRecord() || {})) return;
+        var confirmed = await window.DokeDialog.confirm('O evento deixará de aparecer como ativo para os membros.', { title: 'Cancelar evento?', confirmText: 'Cancelar evento', danger: true });
         if (!confirmed) return;
         var cancellation = transactCurrentCommunity('COMMUNITY_EVENT_CANCELLED', eventId, function (storedRecord) {
           var events = getCommunityEvents(storedRecord).map(function (eventRecord) {
@@ -5547,7 +5677,7 @@ function clearRenderedLocalMessages() {
   }
 
   if (memberList) {
-    memberList.addEventListener('click', function (event) {
+    memberList.addEventListener('click', async function (event) {
       var toggle = event.target.closest('[data-community-member-menu-toggle]');
       if (toggle && memberList.contains(toggle)) {
         var menuId = String(toggle.dataset.communityMemberMenuToggle || '');
@@ -5598,13 +5728,13 @@ function clearRenderedLocalMessages() {
       if (disciplineButton && memberList.contains(disciplineButton)) {
         var disciplineAction = disciplineButton.dataset.communityMemberDiscipline;
         var disciplineId = disciplineButton.dataset.communityMemberId;
-        var reason = disciplineAction === 'clear' ? 'restrição removida pelo moderador' : window.prompt('Informe o motivo da ação:');
+        var reason = disciplineAction === 'clear' ? 'restrição removida pelo moderador' : await window.DokeDialog.prompt('Explique por que esta ação disciplinar está sendo aplicada.', '', { title: 'Motivo da ação', label: 'Motivo', confirmText: 'Continuar' });
         if (!reason) return;
         var durationControl = memberList.querySelector('[data-community-discipline-duration="' + String(disciplineId).replace(/"/g, '\"') + '"]');
         var scopeControl = memberList.querySelector('[data-community-discipline-scope="' + String(disciplineId).replace(/"/g, '\"') + '"]');
         var durationValue = durationControl ? durationControl.value : '1h';
         if (durationValue === 'custom') {
-          var customHours = window.prompt('Digite a duração em horas (ex.: 2, 12, 48):', '2');
+          var customHours = await window.DokeDialog.prompt('Digite a duração da restrição em horas.', '2', { title: 'Duração personalizada', label: 'Horas', confirmText: 'Aplicar' });
           if (!customHours || !Number(customHours) || Number(customHours) <= 0) return;
           durationValue = String(Number(customHours));
         }
@@ -5619,9 +5749,9 @@ function clearRenderedLocalMessages() {
       var banButton = event.target.closest('[data-community-member-ban]');
       if (banButton && memberList.contains(banButton)) {
         var banId = String(banButton.dataset.communityMemberBan || '');
-        var banReason = window.prompt('Informe o motivo obrigatório do banimento:');
+        var banReason = await window.DokeDialog.prompt('Informe o motivo obrigatório do banimento.', '', { title: 'Banir membro', label: 'Motivo', confirmText: 'Continuar', danger: true });
         if (!banReason || !banReason.trim()) return;
-        var banDuration = window.prompt('Duração do banimento: digite permanent, 7d, 30d ou a quantidade de horas.', 'permanent');
+        var banDuration = await window.DokeDialog.prompt('Use “permanent”, “7d”, “30d” ou uma quantidade de horas.', 'permanent', { title: 'Duração do banimento', label: 'Duração', confirmText: 'Banir', danger: true });
         if (!banDuration) return;
         var banTarget = getCommunityMembers().find(function (member) { return String(member.id) === banId; });
         var banResult = banCommunityMember(banTarget, banReason.trim(), banDuration.trim());
@@ -6024,16 +6154,16 @@ function clearRenderedLocalMessages() {
   }
 
   root.querySelectorAll('[data-community-exit]').forEach(function (button) {
-    button.addEventListener('click', function () {
+    button.addEventListener('click', async function () {
       var member = getCurrentCommunityMember();
       if (String(member.role || '') === 'owner') {
-        window.alert('O proprietário precisa transferir a propriedade ou excluir a comunidade.');
+        window.DokeDialog.alert('O proprietário precisa transferir a propriedade ou excluir a comunidade.', { title: 'Não é possível sair' });
         return;
       }
       if (String(member.role || '') === 'visitor') return;
       var record = ensureCurrentCommunityRecord();
       var name = record && (record.title || record.name) || 'esta comunidade';
-      if (!window.confirm('Sair de ' + name + '? Você perderá o acesso até entrar novamente.')) return;
+      if (!await window.DokeDialog.confirm('Você perderá o acesso a ' + name + ' até entrar novamente.', { title: 'Sair da comunidade?', confirmText: 'Sair', danger: true })) return;
       var result = leaveCurrentCommunity();
       if (!result.ok) return;
       try {

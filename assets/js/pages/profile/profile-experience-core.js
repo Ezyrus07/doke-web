@@ -260,12 +260,20 @@
     }
 
     function init() {
-      if (initialized || !isCurrentSurface()) return;
+      if (!isCurrentSurface()) return Promise.resolve(null);
+      var operation;
+      if (initialized) {
+        operation = query({ force: true });
+        operation.catch(function () {});
+        return operation;
+      }
       initialized = true;
       applySurfaceContract();
       bindListeners();
       setState('loading');
-      query().catch(function () {});
+      operation = query();
+      operation.catch(function () {});
+      return operation;
     }
 
     var api = Object.freeze({

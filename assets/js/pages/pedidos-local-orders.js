@@ -590,7 +590,7 @@
       });
       return;
     }
-    window.alert('Relato enviado. O pedido entrou em contestação.');
+    window.DokeDialog.alert('Relato enviado. O pedido entrou em contestação.');
   }
 
   function requestIssueReport(orderId, trigger) {
@@ -605,7 +605,7 @@
         submitLabel: 'Enviar relato'
       });
     }
-    window.alert('Não foi possível abrir o relato. Recarregue a página e tente novamente.');
+    window.DokeDialog.alert('Não foi possível abrir o relato. Recarregue a página e tente novamente.');
     return Promise.resolve(null);
   }
 
@@ -635,7 +635,7 @@
         text: options.text || 'Explique ao cliente por que este pedido não poderá ser atendido.'
       });
     }
-    window.alert('Não foi possível abrir o modal de justificativa. Recarregue a página e tente novamente.');
+    window.DokeDialog.alert('Não foi possível abrir o modal de justificativa. Recarregue a página e tente novamente.');
     return Promise.resolve(null);
   }
 
@@ -690,7 +690,7 @@
     getOrderForTransition(orderId).then(function (order) {
       if (!order || typeof ordersService.canCancelBeforePayment !== 'function' || !ordersService.canCancelBeforePayment(order, getCurrentUser())) {
         scheduleRender({ force: true });
-        window.alert('Este pedido já não pode ser cancelado por este fluxo.');
+        window.DokeDialog.alert('Este pedido já não pode ser cancelado por este fluxo.');
         return null;
       }
       return requestDeclineReason(orderId, cancelButton, {
@@ -705,7 +705,7 @@
         scheduleRender({ force: true });
       });
     }).catch(function (error) {
-      window.alert(error && error.message ? error.message : 'Não foi possível cancelar o pedido.');
+      window.DokeDialog.alert(error && error.message ? error.message : 'Não foi possível cancelar o pedido.');
     }).finally(function () {
       cancelButton.disabled = false;
       cancelButton.removeAttribute('aria-busy');
@@ -732,7 +732,7 @@
         showIssueFeedback(orderId, result);
         scheduleRender({ force: true });
       }).catch(function (error) {
-        window.alert(error && error.message ? error.message : 'Não foi possível enviar o relato.');
+        window.DokeDialog.alert(error && error.message ? error.message : 'Não foi possível enviar o relato.');
       }).finally(function () {
         reportButton.disabled = false;
         reportButton.textContent = 'Relatar problema';
@@ -769,7 +769,7 @@
       var targetStatus = approveButton ? 'in_progress' : 'cancelled';
       if (!order || !canTransitionOrder(order, targetStatus)) {
         scheduleRender({ force: true });
-        window.alert('Esta proposta já não pode ser alterada.');
+        window.DokeDialog.alert('Esta proposta já não pode ser alterada.');
         return;
       }
 
@@ -785,7 +785,7 @@
           approveButton.disabled = false;
           approveButton.removeAttribute('aria-disabled');
           approveLabel.textContent = 'Aprovar proposta';
-          window.alert(error && error.message ? error.message : 'Não foi possível aprovar a proposta.');
+          window.DokeDialog.alert(error && error.message ? error.message : 'Não foi possível aprovar a proposta.');
         });
       }
 
@@ -798,7 +798,7 @@
         return getOrderForTransition(orderId).then(function (currentOrder) {
           if (!currentOrder || !canTransitionOrder(currentOrder, 'cancelled')) {
             scheduleRender({ force: true });
-            window.alert('Esta proposta já não pode ser recusada.');
+            window.DokeDialog.alert('Esta proposta já não pode ser recusada.');
             return;
           }
           var rejectLabel = rejectButton.querySelector('span') || rejectButton;
@@ -811,13 +811,13 @@
             rejectButton.disabled = false;
             rejectButton.removeAttribute('aria-disabled');
             rejectLabel.textContent = 'Recusar proposta';
-            window.alert(error && error.message ? error.message : 'Não foi possível recusar a proposta.');
+            window.DokeDialog.alert(error && error.message ? error.message : 'Não foi possível recusar a proposta.');
           });
         });
       });
     }).catch(function (error) {
       scheduleRender({ force: true });
-      window.alert(error && error.message ? error.message : 'Não foi possível validar a proposta.');
+      window.DokeDialog.alert(error && error.message ? error.message : 'Não foi possível validar a proposta.');
     });
   });
 
@@ -836,7 +836,7 @@
       var nextStatus = acceptButton ? 'accepted' : 'cancelled';
       if (!order || !canTransitionOrder(order, nextStatus)) {
         scheduleRender({ force: true });
-        window.alert('Esta ação não é permitida no estado atual do pedido.');
+        window.DokeDialog.alert('Esta ação não é permitida no estado atual do pedido.');
         return;
       }
 
@@ -858,7 +858,7 @@
           acceptButton.disabled = false;
           acceptButton.removeAttribute('aria-disabled');
           acceptLabel.textContent = 'Aceitar pedido';
-          window.alert(error && error.message ? error.message : 'Não foi possível aceitar o pedido.');
+          window.DokeDialog.alert(error && error.message ? error.message : 'Não foi possível aceitar o pedido.');
         });
         return;
       }
@@ -868,7 +868,7 @@
         return getOrderForTransition(orderId).then(function (currentOrder) {
           if (!currentOrder || !canTransitionOrder(currentOrder, 'cancelled')) {
             scheduleRender({ force: true });
-            window.alert('Este pedido já não pode ser recusado.');
+            window.DokeDialog.alert('Este pedido já não pode ser recusado.');
             return;
           }
 
@@ -887,13 +887,13 @@
             declineButton.disabled = false;
             declineButton.removeAttribute('aria-disabled');
             declineLabel.textContent = 'Recusar';
-            window.alert(error && error.message ? error.message : 'Não foi possível recusar o pedido.');
+            window.DokeDialog.alert(error && error.message ? error.message : 'Não foi possível recusar o pedido.');
           });
         });
       });
     }).catch(function (error) {
       scheduleRender({ force: true });
-      window.alert(error && error.message ? error.message : 'Não foi possível validar o estado do pedido.');
+      window.DokeDialog.alert(error && error.message ? error.message : 'Não foi possível validar o estado do pedido.');
     });
   });
 

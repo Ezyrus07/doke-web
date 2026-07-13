@@ -36,7 +36,14 @@ body.become-pro-page-shell svg {
 }
 
 .become-pro-intro {
+  max-width: 820px;
+  gap: 10px;
+}
+
+body[data-page="tornar-profissional"] .become-pro-intro .doke-form-page-description {
   max-width: 760px;
+  font-size: 1.02rem;
+  line-height: 1.55;
 }
 
 
@@ -78,6 +85,10 @@ body.become-pro-page-shell svg {
   grid-column: 1 / -1;
 }
 
+.become-pro-field--conditional[hidden] {
+  display: none;
+}
+
 .become-pro-field > span {
   color: var(--pro-blue-dark);
   font-size: .84rem;
@@ -92,6 +103,15 @@ body.become-pro-page-shell svg {
   color: #7287a3;
   font-size: .82rem;
   font-weight: 700;
+}
+
+.become-pro-field .become-pro-field-note {
+  position: static;
+  margin-top: -2px;
+  color: #7287a3;
+  font-size: .78rem;
+  line-height: 1.35;
+  font-weight: 600;
 }
 
 .become-pro-field--price .doke-input {
@@ -193,11 +213,40 @@ body.become-pro-page-shell svg {
 
 .become-pro-confirm {
   display: grid;
-  gap: 14px;
-  padding: 16px 0 0;
-  border-top: 1px solid rgba(24, 75, 118, 0.1);
+  gap: 16px;
+  padding: 0;
   color: var(--pro-muted);
   font-weight: 500;
+}
+
+.become-pro-confirm__notice {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid rgba(38, 116, 217, .13);
+  border-radius: var(--radius-sm);
+  background: rgba(38, 116, 217, .055);
+}
+
+.become-pro-confirm__notice strong,
+.become-pro-confirm__heading h3 {
+  margin: 0;
+  color: var(--pro-blue-dark);
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.become-pro-confirm__notice span,
+.become-pro-confirm__heading p {
+  margin: 0;
+  color: var(--pro-muted);
+  font-size: .84rem;
+  line-height: 1.45;
+}
+
+.become-pro-confirm__heading {
+  display: grid;
+  gap: 3px;
 }
 
 .become-pro-confirm label {
@@ -291,16 +340,28 @@ body.become-pro-page-shell svg {
 }
 
 .become-pro-upload-card {
-  min-height: 68px;
+  min-height: 88px;
   display: grid;
-  align-content: center;
-  gap: 3px;
-  padding: 12px 14px;
-  border: var(--form-upload-border, 1px dashed rgba(38, 116, 217, .28));
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: var(--form-upload-border, 1px dashed rgba(38, 116, 217, .32));
   border-radius: var(--form-control-surface-radius, var(--radius-sm));
   background: var(--form-upload-bg, #fbfdff);
   color: var(--pro-muted);
   cursor: pointer;
+  transition: border-color .16s ease, background-color .16s ease, box-shadow .16s ease;
+}
+
+.become-pro-upload-card:hover {
+  border-color: rgba(38, 116, 217, .5);
+  background: #fff;
+}
+
+.become-pro-upload-card:has(input:focus-visible) {
+  border-color: var(--doke-form-control-focus-border);
+  box-shadow: var(--doke-form-control-focus-ring);
 }
 
 .become-pro-upload-card input {
@@ -309,48 +370,106 @@ body.become-pro-page-shell svg {
   height: 1px;
   overflow: hidden;
   clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
-.become-pro-upload-card span {
+.become-pro-upload-card__icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: rgba(42, 95, 144, 0.08);
+  color: var(--pro-blue-strong);
+}
+
+.become-pro-upload-card__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.become-pro-upload-card__body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.become-pro-upload-card__body strong {
+  overflow: hidden;
   color: var(--pro-blue-dark);
+  font-size: .9rem;
   font-weight: 700;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.become-pro-upload-card small {
-  color: #6a809d;
-  font-size: .82rem;
-  line-height: 1.35;
+.become-pro-upload-card__body strong em {
+  color: var(--pro-muted);
+  font-size: .76rem;
+  font-style: normal;
   font-weight: 600;
 }
 
-.become-pro-review-list {
-  margin: 0 0 16px;
-  padding: 0;
-  list-style: none;
-  border-block: 1px solid rgba(24, 75, 118, 0.1);
+.become-pro-upload-card__body small {
+  color: #6a809d;
+  font-size: .8rem;
+  line-height: 1.4;
+  font-weight: 600;
 }
 
-.become-pro-review-list li {
-  display: grid;
-  grid-template-columns: minmax(120px, 0.32fr) minmax(0, 1fr);
-  gap: 18px;
-  padding: 13px 0;
-}
-
-.become-pro-review-list li + li {
-  border-top: 1px solid rgba(24, 75, 118, 0.08);
-}
-
-.become-pro-review-list strong {
-  color: var(--pro-blue-dark);
+.become-pro-upload-card__action {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 12px;
+  border: 1px solid rgba(42, 95, 144, 0.14);
+  border-radius: var(--radius-pill);
+  background: #fff;
+  color: var(--pro-blue-strong);
+  font-size: .78rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
-.become-pro-review-list span {
+.become-pro-review-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 18px;
+}
+
+.become-pro-review-summary > div {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(24, 75, 118, 0.1);
+  border-radius: var(--radius-sm);
+  background: var(--pro-surface-soft);
+}
+
+.become-pro-review-summary__wide {
+  grid-column: 1 / -1;
+}
+
+.become-pro-review-summary dt {
+  margin: 0 0 5px;
   color: var(--pro-muted);
-  font-size: .88rem;
+  font-size: .76rem;
+  line-height: 1.2;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .045em;
+}
+
+.become-pro-review-summary dd {
+  margin: 0;
+  color: var(--pro-blue-dark);
+  font-size: .9rem;
   line-height: 1.45;
-  font-weight: 500;
+  font-weight: 650;
+  overflow-wrap: anywhere;
 }
 
 .become-pro-confirm-checks {
@@ -504,9 +623,12 @@ body.become-pro-page-shell svg {
     grid-template-columns: 1fr;
   }
 
-  .become-pro-review-list li {
+  .become-pro-review-summary {
     grid-template-columns: 1fr;
-    gap: 4px;
+  }
+
+  .become-pro-review-summary__wide {
+    grid-column: auto;
   }
 
   .become-pro-toggle {
@@ -553,65 +675,159 @@ body.become-pro-page-shell svg {
 }
 
 
-/* Flow progress contract adoption - torne-se profissional.
-   Keeps the onboarding progress anatomy aligned with the shared form flow pattern. */
-.become-pro-progress.doke-flow-progress {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.become-pro-progress__track.doke-flow-progress__track {
-  display: block;
-  height: 6px;
-  border-radius: var(--radius-pill, var(--radius-pill));
-  background: rgba(42, 95, 144, 0.1);
-}
-
-.become-pro-progress__fill.doke-flow-progress__fill {
-  background: linear-gradient(90deg, var(--pro-blue), var(--pro-blue-dark));
-}
-
-.become-pro-progress__fill.doke-flow-progress__fill::after {
-  content: none;
-}
-
 .become-pro-steps.doke-flow-steps {
-  --doke-flow-step-count: 4;
-  gap: 8px;
-  margin-bottom: 20px;
+  --doke-flow-step-count: 2;
+  gap: 10px;
+  margin-bottom: 22px;
 }
 
 .become-pro-step.doke-flow-step {
-  min-height: 50px;
-  gap: 8px;
-  padding: 8px 10px;
+  min-height: 54px;
+  gap: 10px;
+  padding: 9px 12px;
   border-radius: var(--radius-sm);
   box-shadow: none;
 }
 
 .become-pro-step.doke-flow-step > span {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: var(--radius-xs);
   font-size: 0.78rem;
 }
 
 .become-pro-step.doke-flow-step strong {
-  font-size: 0.86rem;
+  font-size: 0.88rem;
   font-weight: 700;
-}
-
-
-@media (max-width: 1180px) {
-  .become-pro-steps.doke-flow-steps {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 760px) {
   .become-pro-steps.doke-flow-steps {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Professional application lifecycle projection.
+   Responsibility: page-specific layout for application states; shared button anatomy remains in components. */
+.become-pro-application-status {
+  display: grid;
+  gap: 12px;
+  max-width: 820px;
+}
+
+.become-pro-application-status[hidden] {
+  display: none;
+}
+
+.become-pro-application-status__badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 28px;
+  padding-inline: 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(42, 95, 144, 0.08);
+  color: var(--pro-blue-strong);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.become-pro-application-status h2 {
+  margin: 0;
+  color: var(--pro-blue-dark);
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+
+.become-pro-application-status p,
+.become-pro-application-status small {
+  margin: 0;
+  color: var(--pro-muted);
+  line-height: 1.55;
+}
+
+.become-pro-application-status__reason {
+  padding: 14px 16px;
+  border: 1px solid rgba(180, 35, 24, 0.16);
+  border-radius: var(--radius-sm);
+  background: rgba(254, 242, 242, 0.72);
+  color: #8f271f;
+  line-height: 1.5;
+  font-weight: 600;
+}
+
+.become-pro-application-status__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.become-pro-form-feedback {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+.become-pro-form-feedback[hidden] {
+  display: none;
+}
+
+.become-pro-form-feedback.is-error {
+  border: 1px solid rgba(180, 35, 24, 0.14);
+  background: #fef2f2;
+  color: #9f2d24;
+}
+
+.become-pro-form-feedback.is-success {
+  border: 1px solid rgba(13, 143, 119, 0.14);
+  background: #ecfdf5;
+  color: #0b715f;
+}
+
+.become-pro-upload-card.has-file {
+  border-style: solid;
+  border-color: rgba(13, 143, 119, 0.28);
+  background: rgba(236, 253, 245, 0.72);
+}
+
+.become-pro-upload-card.has-file .become-pro-upload-card__icon {
+  background: rgba(13, 143, 119, 0.1);
+  color: var(--pro-green-dark);
+}
+
+.become-pro-upload-card.has-file .become-pro-upload-card__action {
+  border-color: rgba(13, 143, 119, 0.18);
+  color: var(--pro-green-dark);
+}
+
+.become-pro-step[disabled] {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+@media (max-width: 760px) {
+  .become-pro-application-status__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .become-pro-application-status__actions .doke-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .become-pro-upload-card {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .become-pro-upload-card__action {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 }

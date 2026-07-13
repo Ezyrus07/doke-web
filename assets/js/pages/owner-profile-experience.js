@@ -102,6 +102,26 @@
 
   var ownerSurfaceInitialized = false;
   var ownerMediaController = null;
+  var ownerHydrationBoundary = null;
+  var ownerHydration = null;
+
+  function ensureOwnerHydration() {
+    var boundary = document.querySelector('[data-state-boundary="meu-perfil"]');
+    if (!boundary || !window.DokePageHydration?.create) return null;
+    if (ownerHydrationBoundary === boundary && ownerHydration) return ownerHydration;
+    ownerHydrationBoundary = boundary;
+    ownerHydration = window.DokePageHydration.create({
+      page: 'meu-perfil',
+      root: boundary,
+      skeletonSelectors: '[data-profile-hydration-skeleton]',
+      readySelectors: '[data-profile-hydration-ready]',
+      errorSelectors: '[data-state-error]',
+      skeletonMode: 'hard-load',
+      maxDuration: 8000,
+      hasItems: function () { return true; }
+    });
+    return ownerHydration;
+  }
 
   function setMediaFeedback(message, isError) {
     var feedback = document.querySelector('[data-profile-media-feedback]');
@@ -146,28 +166,24 @@
   }
 
   window.DokeInitOwnerProfile = function DokeInitOwnerProfile() {
-    if (!document.querySelector('[data-state-boundary="meu-perfil"]')) return;
+    if (!document.querySelector('[data-state-boundary="meu-perfil"]')) return Promise.resolve(null);
     bindMediaEditing();
+    var hydration = ensureOwnerHydration();
+    hydration?.start();
 
-    if (!ownerSurfaceInitialized) {
-      ownerSurfaceInitialized = true;
-      Doke.ownerProfileExperience.init();
-      return;
-    }
+    var operation = ownerSurfaceInitialized
+      ? Doke.ownerProfileExperience.query({ force: true })
+      : Doke.ownerProfileExperience.init();
+    ownerSurfaceInitialized = true;
 
-    var service = Doke.services && Doke.services.profile;
-    if (!service || typeof service.getCurrentProfile !== 'function') {
-      render(null);
-      return;
-    }
-
-    Promise.resolve(service.getCurrentProfile()).then(function (profile) {
-      latestProfile = profile || null;
-      render(latestProfile);
-    }).catch(function () {
-      render(null);
+    return Promise.resolve(operation).then(function (result) {
+      hydration?.ready({ hasItems: true });
+      return result;
+    }).catch(function (error) {
+      hydration?.error(error);
+      throw error;
     });
   };
 
-  window.DokeInitOwnerProfile();
+  Promise.resolve(window.DokeInitOwnerProfile()).catch(function () {});
 })();

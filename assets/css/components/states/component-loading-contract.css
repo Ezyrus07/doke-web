@@ -108,3 +108,241 @@
     animation: none;
   }
 }
+
+/* Shared page hydration skeletons.
+   Responsibility: first-load placeholders for data-driven page compositions.
+   Final component anatomy remains owned by each page/component; these selectors
+   only describe reusable loading surfaces and preserve broad page geometry. */
+:where(.doke-page-hydration-skeleton)[hidden] {
+  display: none;
+}
+
+:where(.doke-page-hydration-skeleton) {
+  display: grid;
+  inline-size: 100%;
+  min-inline-size: 0;
+  gap: clamp(14px, 2vw, 24px);
+  pointer-events: none;
+}
+
+:where(.doke-page-hydration-skeleton__surface) {
+  min-inline-size: 0;
+  border: 1px solid var(--doke-card-border, rgba(24, 75, 118, 0.10));
+  border-radius: var(--radius-surface, 24px);
+  background: var(--color-surface-raised, rgba(255, 255, 255, 0.96));
+  box-shadow: var(--doke-elevation-surface, 0 18px 42px rgba(24, 75, 118, 0.07));
+}
+
+:where(.doke-page-hydration-skeleton__block) {
+  display: block;
+  min-inline-size: 0;
+  border-radius: var(--state-skeleton-radius, var(--radius-pill));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--doke-loading-surface) 88%, transparent) 0%, var(--doke-loading-sheen) 48%, color-mix(in srgb, var(--doke-loading-surface) 88%, transparent) 100%),
+    var(--doke-loading-surface);
+  background-size: 220% 100%;
+  animation: doke-component-loading-sheen var(--doke-loading-duration) ease-in-out infinite;
+}
+
+:where(.doke-page-hydration-skeleton__field) {
+  block-size: 64px;
+  border-radius: var(--radius-control, 14px);
+}
+
+:where(.doke-page-hydration-skeleton__line) {
+  block-size: 14px;
+}
+
+:where(.doke-page-hydration-skeleton__line--title) {
+  block-size: 32px;
+  inline-size: min(58%, 420px);
+}
+
+:where(.doke-page-hydration-skeleton__line--medium) {
+  inline-size: min(76%, 620px);
+}
+
+:where(.doke-page-hydration-skeleton__line--short) {
+  inline-size: min(42%, 280px);
+}
+
+:where(.doke-page-hydration-skeleton--profile) {
+  grid-template-columns: 1fr;
+}
+
+:where(.doke-page-hydration-skeleton--profile) .doke-page-hydration-skeleton__hero {
+  overflow: hidden;
+}
+
+:where(.doke-page-hydration-skeleton--profile) .doke-page-hydration-skeleton__cover {
+  min-block-size: clamp(120px, 16vw, 188px);
+  border-radius: var(--radius-surface, 24px) var(--radius-surface, 24px) 0 0;
+}
+
+:where(.doke-page-hydration-skeleton--profile) .doke-page-hydration-skeleton__identity {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
+  gap: clamp(12px, 1.8vw, 22px);
+  padding: 0 clamp(18px, 3vw, 34px) clamp(18px, 2.4vw, 28px);
+  margin-block-start: -42px;
+}
+
+:where(.doke-page-hydration-skeleton--profile) .doke-page-hydration-skeleton__avatar {
+  inline-size: clamp(84px, 9vw, 116px);
+  aspect-ratio: 1;
+  border: 5px solid var(--color-surface, #fff);
+  border-radius: var(--radius-full, 999px);
+}
+
+:where(.doke-page-hydration-skeleton--profile) .doke-page-hydration-skeleton__copy {
+  display: grid;
+  gap: 12px;
+  padding-block-end: 4px;
+}
+
+:where(.doke-page-hydration-skeleton--profile) .doke-page-hydration-skeleton__action {
+  inline-size: 150px;
+  block-size: 48px;
+  border-radius: var(--radius-control, 14px);
+}
+
+:where(.doke-page-hydration-skeleton--profile) .doke-page-hydration-skeleton__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0 clamp(18px, 3vw, 34px) clamp(18px, 2.4vw, 28px);
+}
+
+:where(.doke-page-hydration-skeleton--profile) .doke-page-hydration-skeleton__metric {
+  min-block-size: 92px;
+  border-radius: var(--radius-base, 16px);
+}
+
+:where(.doke-page-hydration-skeleton--profile) .doke-page-hydration-skeleton__details {
+  min-block-size: 260px;
+  padding: clamp(20px, 3vw, 32px);
+}
+
+:where(.doke-page-hydration-skeleton--settings) {
+  grid-template-columns: minmax(220px, 290px) minmax(0, 1fr);
+  align-items: start;
+}
+
+:where(.doke-page-hydration-skeleton--settings) .doke-page-hydration-skeleton__menu,
+:where(.doke-page-hydration-skeleton--settings) .doke-page-hydration-skeleton__panel {
+  display: grid;
+  gap: 14px;
+  padding: clamp(20px, 2.5vw, 30px);
+}
+
+:where(.doke-page-hydration-skeleton--settings) .doke-page-hydration-skeleton__menu {
+  min-block-size: 520px;
+}
+
+:where(.doke-page-hydration-skeleton--settings) .doke-page-hydration-skeleton__panel {
+  min-block-size: 620px;
+}
+
+:where(.doke-page-hydration-skeleton--settings) .doke-page-hydration-skeleton__field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+:where(.doke-page-hydration-skeleton--settings) .doke-page-hydration-skeleton__field {
+  block-size: 64px;
+  border-radius: var(--radius-control, 14px);
+}
+
+:where(.doke-page-hydration-skeleton--form) .doke-page-hydration-skeleton__intro {
+  display: grid;
+  gap: 12px;
+}
+
+:where(.doke-page-hydration-skeleton--form) .doke-page-hydration-skeleton__form-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+  gap: clamp(16px, 2.4vw, 28px);
+  align-items: start;
+}
+
+:where(.doke-page-hydration-skeleton--form) .doke-page-hydration-skeleton__form-card,
+:where(.doke-page-hydration-skeleton--form) .doke-page-hydration-skeleton__side-card {
+  display: grid;
+  gap: 16px;
+  padding: clamp(20px, 2.8vw, 32px);
+}
+
+:where(.doke-page-hydration-skeleton--form) .doke-page-hydration-skeleton__form-card {
+  min-block-size: 560px;
+}
+
+:where(.doke-page-hydration-skeleton--form) .doke-page-hydration-skeleton__side-card {
+  min-block-size: 320px;
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__search {
+  min-block-size: clamp(118px, 15vw, 170px);
+  padding: clamp(20px, 3vw, 34px);
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__search-pill {
+  inline-size: min(100%, 760px);
+  block-size: 58px;
+  border-radius: var(--radius-pill, 999px);
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__section {
+  display: grid;
+  gap: 16px;
+  padding: clamp(18px, 2.4vw, 28px);
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+:where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__card {
+  min-block-size: 210px;
+  border-radius: var(--radius-base, 16px);
+}
+
+@media (max-width: 1180px) {
+  :where(.doke-page-hydration-skeleton--settings),
+  :where(.doke-page-hydration-skeleton--form) .doke-page-hydration-skeleton__form-layout {
+    grid-template-columns: 1fr;
+  }
+
+  :where(.doke-page-hydration-skeleton--settings) .doke-page-hydration-skeleton__menu {
+    min-block-size: 320px;
+  }
+}
+
+@media (max-width: 760px) {
+  :where(.doke-page-hydration-skeleton--profile) .doke-page-hydration-skeleton__identity {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  :where(.doke-page-hydration-skeleton--profile) .doke-page-hydration-skeleton__action {
+    display: none;
+  }
+
+  :where(.doke-page-hydration-skeleton--profile) .doke-page-hydration-skeleton__metrics,
+  :where(.doke-page-hydration-skeleton--settings) .doke-page-hydration-skeleton__field-grid,
+  :where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__cards {
+    grid-template-columns: 1fr;
+  }
+
+  :where(.doke-page-hydration-skeleton--home) .doke-page-hydration-skeleton__cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.doke-page-hydration-skeleton__block) {
+    animation: none;
+  }
+}

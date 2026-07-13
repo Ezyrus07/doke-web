@@ -83,16 +83,43 @@
   });
 
   var clientSurfaceInitialized = false;
+  var clientHydrationBoundary = null;
+  var clientHydration = null;
+
+  function ensureClientHydration() {
+    var boundary = document.querySelector('[data-state-boundary="perfil-cliente"]');
+    if (!boundary || !window.DokePageHydration?.create) return null;
+    if (clientHydrationBoundary === boundary && clientHydration) return clientHydration;
+    clientHydrationBoundary = boundary;
+    clientHydration = window.DokePageHydration.create({
+      page: 'perfil-cliente',
+      root: boundary,
+      skeletonSelectors: '[data-profile-hydration-skeleton]',
+      readySelectors: '[data-profile-hydration-ready]',
+      errorSelectors: '[data-state-error]',
+      skeletonMode: 'hard-load',
+      maxDuration: 8000,
+      hasItems: function () { return true; }
+    });
+    return clientHydration;
+  }
 
   window.DokeInitClientProfile = function DokeInitClientProfile() {
-    if (!document.querySelector('[data-state-boundary="perfil-cliente"]')) return;
-    if (!clientSurfaceInitialized) {
-      clientSurfaceInitialized = true;
-      Doke.clientProfileExperience.init();
-      return;
-    }
-    Doke.clientProfileExperience.query({ force: true }).catch(function () {});
+    if (!document.querySelector('[data-state-boundary="perfil-cliente"]')) return Promise.resolve(null);
+    var hydration = ensureClientHydration();
+    hydration?.start();
+    var operation = clientSurfaceInitialized
+      ? Doke.clientProfileExperience.query({ force: true })
+      : Doke.clientProfileExperience.init();
+    clientSurfaceInitialized = true;
+    return Promise.resolve(operation).then(function (result) {
+      hydration?.ready({ hasItems: true });
+      return result;
+    }).catch(function (error) {
+      hydration?.error(error);
+      throw error;
+    });
   };
 
-  window.DokeInitClientProfile();
+  Promise.resolve(window.DokeInitClientProfile()).catch(function () {});
 })();

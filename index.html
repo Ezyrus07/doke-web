@@ -17,8 +17,15 @@
   <link rel="stylesheet" href="assets/css/core/index.css?v=20260702-sidebar-quick-alert-flow-v1">
   <link rel="stylesheet" href="assets/css/pages/app-shell.css?v=20260702-sidebar-quick-alert-flow-v1">
   <link rel="stylesheet" href="assets/css/pages/home.css?v=20260704-footer-viewport-contract-v1">
+  <link rel="stylesheet" href="assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1">
+ <link rel="stylesheet" href="assets/css/components/ui-surface/close-button-authority.css?v=20260713-global-v1">
 </head>
 <body data-page="home" data-page-key="index" class="doke-app-shell-page app-shell-page internal-shell-page shell-home home-index-shell doke-flow doke-search-flow has-global-header">
+  <section class="doke-document-preloader" data-doke-document-preloader data-home-document-preloader aria-label="Carregando Doke" aria-hidden="false">
+    <div class="doke-document-preloader__mark">
+      <img class="doke-document-preloader__logo" src="assets/img/doke-logo-lockup.png" alt="Doke" decoding="async">
+    </div>
+  </section>
   <div class="app-shell" data-shell-contract="app-shell">
         <aside class="sidebar" data-shell-sidebar data-sidebar-contract="global-sidebar"></aside>
 
@@ -111,13 +118,37 @@
         </header>
 
 <main class="page__content doke-page">
-        <div class="page__content-inner container shell-home__workspace shell-home__workspace--clean doke-page-shell doke-page-stack" data-state-boundary="index" data-state-scope="index" data-view-state="ready" aria-busy="false">
+        <div class="page__content-inner container shell-home__workspace shell-home__workspace--clean doke-page-shell doke-page-stack" data-state-boundary="index" data-state-scope="index" data-view-state="loading" aria-busy="true">
             <div class="doke-state-region" data-state-region data-state-scope="index" aria-live="polite" hidden>
               <p data-state-loading hidden class="doke-loading-state">Carregando página inicial...</p>
               <p data-state-empty hidden class="doke-empty-state">Nenhum conteúdo disponível na página inicial.</p>
               <p data-state-error hidden class="doke-error-state">Não foi possível carregar a página inicial.</p>
             </div>
-          <section class="home-search-hero doke-page-section" aria-label="Buscar serviços">
+          <div class="doke-page-hydration-skeleton doke-page-hydration-skeleton--home" data-home-hydration-skeleton aria-label="Carregando página inicial" aria-hidden="true">
+            <section class="doke-page-hydration-skeleton__surface doke-page-hydration-skeleton__search">
+              <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line doke-page-hydration-skeleton__line--short"></span>
+              <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__search-pill"></span>
+            </section>
+            <section class="doke-page-hydration-skeleton__surface doke-page-hydration-skeleton__section">
+              <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line doke-page-hydration-skeleton__line--title"></span>
+              <div class="doke-page-hydration-skeleton__cards">
+                <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__card"></span>
+                <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__card"></span>
+                <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__card"></span>
+                <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__card"></span>
+              </div>
+            </section>
+            <section class="doke-page-hydration-skeleton__surface doke-page-hydration-skeleton__section">
+              <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__line doke-page-hydration-skeleton__line--medium"></span>
+              <div class="doke-page-hydration-skeleton__cards">
+                <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__card"></span>
+                <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__card"></span>
+                <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__card"></span>
+                <span class="doke-page-hydration-skeleton__block doke-page-hydration-skeleton__card"></span>
+              </div>
+            </section>
+          </div>
+          <section class="home-search-hero doke-page-section" data-home-hydration-ready hidden aria-label="Buscar serviços">
 <div class="home-search-hero__panel">
               <div class="home-search-hero__card">
                 <form class="doke-search-panel__form doke-search-pill doke-search-pill--toolbar" action="resultados.html" role="search" data-searchbox novalidate autocomplete="off">
@@ -167,7 +198,7 @@
             </div>
           </section>
 
-          <section class="home-catégories doke-page-section" aria-label="Categorias">
+          <section class="home-catégories doke-page-section" data-home-hydration-ready hidden aria-label="Categorias">
             <div class="home-catégories__rail">
               <button class="home-catégories__arrow home-catégories__arrow--prev" type="button" aria-label="Ver catégorias anteriores" data-catégory-arrow="prev">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -220,7 +251,7 @@
             </div>
           </section>
 
-          <section class="featured-services doke-page-section" aria-labelledby="featured-services-title" data-list-region data-home-list-region="featured-services" data-state="idle">
+          <section class="featured-services doke-page-section" data-home-hydration-ready hidden aria-labelledby="featured-services-title" data-list-region data-home-list-region="featured-services" data-state="idle">
             <div class="section-heading section-heading--spread home-section-header">
               <div>
                 <h2 class="section-heading__title home-section-title" id="featured-services-title">Destaques para você</h2>
@@ -328,7 +359,7 @@
             </div>
           </section>
 
-          <section class="short-videos doke-page-section" aria-labelledby="short-videos-title" data-list-region data-home-list-region="workers" data-state="idle">
+          <section class="short-videos doke-page-section" data-home-hydration-ready hidden aria-labelledby="short-videos-title" data-list-region data-home-list-region="workers" data-state="idle">
             <div class="section-heading section-heading--spread home-section-header home-media-section__header">
               <div>
                 <h2 class="section-heading__title home-section-title" id="short-videos-title">Vídeos de profissionais</h2>
@@ -347,7 +378,7 @@
             </div>
           </section>
 
-          <section class="home-publications doke-page-section" aria-labelledby="home-publications-title" data-list-region data-home-list-region="publications" data-state="idle">
+          <section class="home-publications doke-page-section" data-home-hydration-ready hidden aria-labelledby="home-publications-title" data-list-region data-home-list-region="publications" data-state="idle">
             <div class="section-heading section-heading--spread home-section-header home-publications__header home-media-section__header">
               <div>
                 <h2 class="section-heading__title home-section-title" id="home-publications-title">Publicações em destaque</h2>
@@ -435,7 +466,7 @@
             </div>
           </section>
 
-          <section class="more-services doke-page-section" aria-labelledby="more-services-title" data-list-region data-home-list-region="more-services" data-state="idle">
+          <section class="more-services doke-page-section" data-home-hydration-ready hidden aria-labelledby="more-services-title" data-list-region data-home-list-region="more-services" data-state="idle">
             <div class="section-heading section-heading--spread home-section-header home-section-header--stacked">
               <div>
                 <h2 class="section-heading__title home-section-title" id="more-services-title">Mais anúncios</h2>
@@ -739,7 +770,7 @@
           </section>
 
 
-          <section class="professional-showcase doke-page-section" aria-labelledby="professional-showcase-title" data-list-region data-home-list-region="professionals" data-state="idle">
+          <section class="professional-showcase doke-page-section" data-home-hydration-ready hidden aria-labelledby="professional-showcase-title" data-list-region data-home-list-region="professionals" data-state="idle">
             <div class="section-heading section-heading--spread home-section-header professional-showcase__header">
               <div>
                 <h2 class="section-heading__title home-section-title" id="professional-showcase-title">Profissionais em destaque</h2>
@@ -1206,8 +1237,8 @@
   <script src="assets/js/core/navigation-registry.js?v=20260701-navigation-registry-v1"></script>
   <script src="assets/js/core/app.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
   <script src="assets/js/components/operational-event-toast.js?v=20260702-sidebar-quick-alert-flow-v1" defer></script>
-  <script src="assets/js/core/page-hydration.js?v=20260628-stable-transition-v5" defer></script>
-  <script src="assets/js/core/stable-shell-router.js?v=20260702-review-route-init-v1" defer></script>
+  <script src="assets/js/core/page-hydration.js?v=20260713-shared-page-hydration-v1" defer></script>
+  <script src="assets/js/core/stable-shell-router.js?v=20260713-shared-page-hydration-v1" defer></script>
   <script src="assets/js/pages/search-data.js?v=20260505-publications-home-v2"></script>
 <script src="assets/js/pages/home/filters.js?v=20260506-home-filters-v23"></script>
   <script src="assets/js/pages/home/search.js"></script>
@@ -1222,7 +1253,7 @@
   <script src="assets/js/core/experience-runtime.js?v=20260711-marketplace-v1" defer></script>
   <script src="assets/js/core/navigation-prefetch.js?v=20260711-marketplace-v1" defer></script>
   <script src="assets/js/pages/marketplace-experience.js?v=20260711-marketplace-v1" defer></script>
-  <script src="assets/js/pages/index-data-controller.js?v=20260628-swr-v1" defer></script>
+  <script src="assets/js/pages/index-data-controller.js?v=20260713-home-route-rehydration-v1" defer></script>
   <script src="assets/js/pages/search-results.js?v=20260505-results-worker-tabs-v11"></script>
   <script src="assets/js/pages/home/filter-route.js?v=20260427-v26-filter-route"></script>
   <script src="assets/js/ui/responsive-interaction-guard.js?v=20260531-tablet-runtime-cutoff-v1"></script>
@@ -1257,5 +1288,6 @@
     <script src="assets/js/components/ad-card-interactions.js?v=20260609-workers-mobile-v3" defer></script>
   <script src="assets/js/pages/home/mobile-interaction-contract.js?v=20260506-v23"></script>
   <script src="assets/js/core/ipad-safari-scroll-guard.js?v=20260602-v1" defer></script>
+  <script src="assets/js/core/document-preloader.js?v=20260712-global-document-boot-v1" defer></script>
 </body>
 </html>
