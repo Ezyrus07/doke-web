@@ -26,7 +26,7 @@
   --doke-soft-button-bg-secondary-hover: var(--control-bg-soft-secondary-hover);
 }
 
-:where(.doke-btn, .doke-button) {
+:is(.doke-btn, .doke-button) {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
@@ -58,70 +58,70 @@
 }
 
 
-:where(.doke-btn, .doke-button):where(:focus-visible) {
+:is(.doke-btn, .doke-button):focus-visible {
   outline: 0;
   box-shadow: var(--doke-interaction-focus-ring, var(--shadow-focus, 0 0 0 3px rgba(31, 101, 173, 0.16)));
 }
 
-:where(.doke-btn, .doke-button):where([disabled], [aria-disabled="true"]) {
+:is(.doke-btn, .doke-button):is([disabled], [aria-disabled="true"]) {
   cursor: not-allowed;
   opacity: 0.58;
   transform: none;
   box-shadow: none;
 }
 
-:where(.doke-btn--primary, .doke-button--primary) {
+:is(.doke-btn--primary, .doke-button--primary) {
   background: var(--gradient-button-primary, var(--color-primary));
   border-color: transparent;
   color: var(--color-white);
   box-shadow: var(--shadow-action-primary);
 }
 
-:where(.doke-btn--secondary, .doke-button--secondary) {
+:is(.doke-btn--secondary, .doke-button--secondary) {
   background: var(--doke-soft-button-bg-secondary);
   border-color: var(--doke-soft-button-border-secondary);
   color: var(--color-secondary-strong);
   box-shadow: none;
 }
 
-:where(.doke-btn--ghost, .doke-button--ghost) {
+:is(.doke-btn--ghost, .doke-button--ghost) {
   background: var(--control-bg-same-surface);
   border-color: var(--control-outline-same-surface);
   color: var(--btn-text);
   box-shadow: none;
 }
 
-:where(.doke-btn--soft, .doke-button--soft) {
+:is(.doke-btn--soft, .doke-button--soft) {
   background: var(--doke-soft-button-bg-primary);
   border-color: var(--doke-soft-button-border-primary);
   color: var(--color-primary-strong);
   box-shadow: none;
 }
 
-:where(.doke-btn--danger, .doke-button--danger) {
+:is(.doke-btn--danger, .doke-button--danger) {
   background: var(--color-danger-soft);
   border-color: var(--doke-soft-button-border-danger);
   color: var(--color-danger-strong);
 }
 
-:where(.doke-btn--sm, .doke-button--sm) {
+:is(.doke-btn--sm, .doke-button--sm) {
   min-height: var(--doke-btn-height-sm);
   padding-inline: var(--btn-padding-x-sm);
   border-radius: var(--btn-radius-sm);
   font-size: var(--control-font-size-sm);
 }
 
-:where(.doke-btn--lg, .doke-button--lg) {
+:is(.doke-btn--lg, .doke-button--lg) {
   min-height: var(--doke-btn-height-lg);
   padding-inline: var(--btn-padding-x-lg);
   border-radius: var(--btn-radius-lg);
 }
 
-:where(.doke-btn--pill, .doke-button--pill) {
+:is(.doke-btn--pill, .doke-button--pill) {
   border-radius: var(--doke-btn-radius-pill);
 }
 
-:where(.doke-btn--block, .doke-button--block) {
+:is(.doke-btn--block, .doke-button--block) {
   width: 100%;
 }
 
@@ -152,13 +152,15 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  :where(.doke-btn, .doke-button, .doke-icon-btn, .doke-action-button):where(:hover) {
+  :is(.doke-btn, .doke-button):where(:hover),
+  :where(.doke-icon-btn, .doke-action-button):where(:hover) {
     transform: var(--doke-interaction-lift-control);
     box-shadow: var(--doke-interaction-shadow-control);
   }
 }
 
-:where(.doke-btn, .doke-button, .doke-icon-btn, .doke-action-button):where(:active) {
+:is(.doke-btn, .doke-button):where(:active),
+:where(.doke-icon-btn, .doke-action-button):where(:active) {
   transform: scale(0.97);
 }
 
@@ -189,24 +191,25 @@
   box-shadow: none;
 }
 
-:where(.doke-btn--soft, .doke-button--soft, .doke-icon-btn--soft, .doke-action-button--soft):where(:hover, :focus-visible, [aria-expanded="true"]) {
+:is(.doke-btn--soft, .doke-button--soft):where(:hover, :focus-visible, [aria-expanded="true"]),
+:where(.doke-icon-btn--soft, .doke-action-button--soft):where(:hover, :focus-visible, [aria-expanded="true"]) {
   border-color: var(--doke-soft-button-border-primary-hover);
   background: var(--doke-soft-button-bg-primary-hover);
 }
 
-:where(.doke-btn--secondary, .doke-button--secondary):where(:hover, :focus-visible, [aria-expanded="true"]) {
+:is(.doke-btn--secondary, .doke-button--secondary):where(:hover, :focus-visible, [aria-expanded="true"]) {
   border-color: var(--doke-soft-button-border-secondary-hover);
   background: var(--doke-soft-button-bg-secondary-hover);
 }
 
-:where(.doke-btn--success, .doke-button--success) {
+:is(.doke-btn--success, .doke-button--success) {
   background: var(--color-secondary, #168f7d);
   border-color: transparent;
   color: var(--color-white, #fff);
   box-shadow: var(--shadow-action-primary);
 }
 
-:where(.doke-btn--link, .doke-button--link) {
+:is(.doke-btn--link, .doke-button--link) {
   min-height: auto;
   padding: 0;
   border: 0;
@@ -216,7 +219,7 @@
   box-shadow: none;
 }
 
-:where(.doke-btn--link, .doke-button--link):where(:hover, :active) {
+:is(.doke-btn--link, .doke-button--link):where(:hover, :active) {
   transform: none;
   box-shadow: none;
 }
@@ -228,7 +231,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :where(.doke-btn, .doke-button, .doke-icon-btn, .doke-action-button) {
+  :is(.doke-btn, .doke-button),
+  :where(.doke-icon-btn, .doke-action-button) {
     transition:
       background-color 160ms ease,
       border-color 160ms ease,
@@ -236,7 +240,8 @@
       opacity 160ms ease;
   }
 
-  :where(.doke-btn, .doke-button, .doke-icon-btn, .doke-action-button):where(:hover, :active) {
+  :is(.doke-btn, .doke-button):where(:hover, :active),
+  :where(.doke-icon-btn, .doke-action-button):where(:hover, :active) {
     transform: none;
   }
 }
@@ -311,7 +316,7 @@
 }
 
 /* Filled CTAs stay borderless; soft buttons use their own subtle outline above. */
-:where(.doke-btn--primary, .doke-button--primary, .doke-btn--success, .doke-button--success),
-:where(.doke-btn--primary, .doke-button--primary, .doke-btn--success, .doke-button--success):where(:hover, :focus-visible, :active) {
+:is(.doke-btn--primary, .doke-button--primary, .doke-btn--success, .doke-button--success),
+:is(.doke-btn--primary, .doke-button--primary, .doke-btn--success, .doke-button--success):where(:hover, :focus-visible, :active) {
   border-color: transparent;
 }

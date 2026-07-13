@@ -1274,18 +1274,22 @@ html.home-index-root body.home-index-shell .filter-chip{
 }
 
 
-/* Index mobile: Mais anúncios follows the same two-column density adopted by resultados.html. */
+/* Index mobile: "Mais anúncios" reuses the resultados.html list-card contract.
+   Page CSS owns only the one-column composition; shared card anatomy remains in components/cards. */
 @media (max-width: 560px) {
   html.home-index-root body.home-index-shell section.more-services .service-grid.service-grid--compact[data-more-services-grid] {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-flow: row;
+    gap: 12px;
+    inline-size: 100%;
+    max-inline-size: 100%;
     overflow: visible;
     padding: 0;
     scroll-snap-type: none;
   }
 
-  html.home-index-root body.home-index-shell section.more-services .service-grid.service-grid--compact[data-more-services-grid] > article.doke-ad-card {
+  html.home-index-root body.home-index-shell section.more-services .service-grid.service-grid--compact[data-more-services-grid] > article.doke-ad-card--results {
     inline-size: 100%;
     min-inline-size: 0;
     max-inline-size: 100%;

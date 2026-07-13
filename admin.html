@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
   <script defer src="assets/js/core/shell-state-early.js?v=20260614-drawer-canonical-v2"></script>
-  <link href="assets/css/pages/admin-foundation.css?v=20260713-admin-visual-v2" rel="stylesheet" />
+  <link href="assets/css/pages/admin-foundation.css?v=20260713-admin-wallet-parity-v5-no-hero" rel="stylesheet" />
   <script>document.documentElement.classList.add("doke-mobile-shell-pending");</script>
   <script defer src="assets/js/core/ipad-safari-early-guard.js?v=20260531-v3"></script>
   <link rel="stylesheet" href="assets/css/components/feedback/document-preloader.css?v=20260712-global-document-boot-v1">
@@ -78,7 +78,7 @@
 
       <main class="page__content doke-page">
         <div class="page__content-inner container app-shell-page__workspace app-shell-page__workspace--clean admin-shell-content doke-page-shell doke-page-stack">
-          <section class="admin-page doke-page-section" aria-labelledby="admin-title" data-admin-root data-state-boundary="admin" data-view-state="loading" aria-busy="true">
+          <section class="admin-page doke-page-section" aria-label="Painel administrativo" data-admin-root data-state-boundary="admin" data-view-state="loading" aria-busy="true">
             <section class="admin-locked" data-admin-locked hidden>
               <span class="admin-locked__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="M12 3.5 18 6v5.2c0 4.4-2.6 7.3-6 9.3-3.4-2-6-4.9-6-9.3V6l6-2.5Z"></path><path d="M9.5 12.5 11.2 14l3.3-4"></path></svg>
@@ -89,24 +89,23 @@
             </section>
 
             <div data-admin-dashboard hidden>
-              <section class="admin-hero" aria-labelledby="admin-title">
-                <div>
-                  <span class="admin-eyebrow">Ação mock de suporte</span>
-                  <h1 class="admin-hero__title" id="admin-title">Admin operacional</h1>
-                  <p class="admin-hero__copy">Centralize verificações de identidade, contestações, pagamentos, saques e auditoria sem expor decisões administrativas ao cliente ou profissional.</p>
-                </div>
-                <div class="admin-hero__actions">
-                  <a class="doke-btn doke-btn--ghost" href="pedidos.html">Ver pedidos</a>
-                  <a class="doke-btn doke-btn--ghost" href="carteira.html">Ver carteira</a>
-                </div>
-              </section>
-
               <section class="admin-grid" aria-label="Resumo administrativo">
-                <article class="admin-card"><span class="admin-card__label">Verificações pendentes</span><strong class="admin-card__value" data-admin-stat="verifications">0</strong><p class="admin-card__copy">Identidades aguardando análise.</p></article>
-                <article class="admin-card"><span class="admin-card__label">Contestações abertas</span><strong class="admin-card__value" data-admin-stat="disputes">0</strong><p class="admin-card__copy">Aguardando resposta ou decisão.</p></article>
-                <article class="admin-card"><span class="admin-card__label">Pagamentos em garantia</span><strong class="admin-card__value" data-admin-stat="held">0</strong><p class="admin-card__copy">Valores ainda não liberados.</p></article>
-                <article class="admin-card"><span class="admin-card__label">Recebíveis bloqueados</span><strong class="admin-card__value" data-admin-stat="blocked">0</strong><p class="admin-card__copy">Repasse pausado por contestação.</p></article>
-                <article class="admin-card"><span class="admin-card__label">Saques pendentes</span><strong class="admin-card__value" data-admin-stat="withdraws">0</strong><p class="admin-card__copy">Solicitações em processamento.</p></article>
+                <article class="admin-card">
+                  <span class="admin-card__icon admin-card__icon--info" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.5 18 6v5.2c0 4.4-2.6 7.3-6 9.3-3.4-2-6-4.9-6-9.3V6l6-2.5Z"></path><path d="M9 12h6"></path></svg></span>
+                  <div class="admin-card__content"><strong class="admin-card__value" data-admin-stat="verifications">0</strong><span class="admin-card__label">Verificações pendentes</span><p class="admin-card__copy">Identidades aguardando análise.</p></div>
+                </article>
+                <article class="admin-card">
+                  <span class="admin-card__icon admin-card__icon--warning" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4 20 19H4L12 4Z"></path><path d="M12 9v4"></path><path d="M12 16h.01"></path></svg></span>
+                  <div class="admin-card__content"><strong class="admin-card__value" data-admin-stat="disputes">0</strong><span class="admin-card__label">Contestações abertas</span><p class="admin-card__copy">Aguardando resposta ou decisão.</p></div>
+                </article>
+                <article class="admin-card">
+                  <span class="admin-card__icon admin-card__icon--neutral" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="13" rx="2"></rect><path d="M8 10h8"></path><path d="M8 14h5"></path></svg></span>
+                  <div class="admin-card__content"><strong class="admin-card__value" data-admin-stat="held">0</strong><span class="admin-card__label">Pagamentos em garantia</span><p class="admin-card__copy">Valores ainda não liberados.</p></div>
+                </article>
+                <article class="admin-card">
+                  <span class="admin-card__icon admin-card__icon--success" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 4h12v16H6z"></path><path d="M9 8h6"></path><path d="M9 12h6"></path><path d="M9 16h4"></path></svg></span>
+                  <div class="admin-card__content"><strong class="admin-card__value" data-admin-stat="blocked">0</strong><span class="admin-card__label">Recebíveis bloqueados</span><p class="admin-card__copy">Repasses pausados por contestação.</p></div>
+                </article>
               </section>
 
               <div class="admin-layout">
@@ -127,7 +126,7 @@
                       <div>
                         <span class="admin-panel__eyebrow">Contestações</span>
                         <h2 class="admin-panel__title" id="admin-disputes-title">Fila de análise</h2>
-                        <p class="admin-panel__copy">Use apenas como suporte mock. As regras financeiras reutilizam a carteira.</p>
+                        <p class="admin-panel__copy">Priorize casos que aguardam resposta ou decisão administrativa.</p>
                       </div>
                     </div>
                     <div class="admin-list" data-admin-disputes></div>
@@ -155,7 +154,7 @@
                     <div class="admin-panel__header">
                       <div>
                         <span class="admin-panel__eyebrow">Saques</span>
-                        <h2 class="admin-panel__title" id="admin-withdraws-title">Pendentes</h2>
+                        <div class="admin-panel__title-row"><h2 class="admin-panel__title" id="admin-withdraws-title">Pendentes</h2><strong class="admin-panel__count" data-admin-stat="withdraws">0</strong></div>
                         <p class="admin-panel__copy">Aprove ou recuse saques mock com registro de auditoria.</p>
                       </div>
                     </div>
@@ -165,7 +164,7 @@
                   <section class="admin-panel" aria-labelledby="admin-audit-title">
                     <div class="admin-panel__header">
                       <div>
-                        <span class="admin-panel__eyebrow">Auditoria mock</span>
+                        <span class="admin-panel__eyebrow">Auditoria</span>
                         <h2 class="admin-panel__title" id="admin-audit-title">Eventos recentes</h2>
                         <p class="admin-panel__copy">Rastro operacional de notificações e decisões financeiras.</p>
                       </div>
